@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+
+message ReleaseDescriptor {
+  string digest = 1;
+  string artifact_reference = 2;
+  string service = 3;
+  string semantic_version = 4;
+  string world = 5;
+  string publisher = 6;
+  string media_type = 7;
+  uint64 size_bytes = 8;
+  uint64 created_at_unix_millis = 9;
+  bool admitted = 10;
+  map<string, string> annotations = 11;
+}
+
+message PublishReleaseRequest {
+  ReleaseDescriptor release = 1;
+}
+
+message PublishReleaseResponse {
+  ReleaseDescriptor release = 1;
+  repeated string admission_warnings = 2;
+}
+
+message GetReleaseRequest {
+  string digest = 1;
+}
+
+message GetReleaseResponse {
+  optional ReleaseDescriptor release = 1;
+}
+
+message ListReleasesRequest {
+  optional string service = 1;
+  PageRequest page = 2;
+}
+
+message ListReleasesResponse {
+  repeated ReleaseDescriptor releases = 1;
+  PageResponse page = 2;
+}
+
+service ReleaseService {
+  rpc PublishRelease(PublishReleaseRequest) returns (PublishReleaseResponse);
+  rpc GetRelease(GetReleaseRequest) returns (GetReleaseResponse);
+  rpc ListReleases(ListReleasesRequest) returns (ListReleasesResponse);
+}

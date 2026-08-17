@@ -1,0 +1,11 @@
+[package]
+name = "latent"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Developer and operator CLI entry point."
+
+[lints]
+workspace = true

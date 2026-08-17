@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+message ResourceBudget {
+  uint64 cpu_fuel = 1;
+  uint64 memory_bytes = 2;
+  optional uint64 wall_deadline_unix_millis = 3;
+  uint32 child_calls = 4;
+  uint32 outbound_requests = 5;
+  uint64 state_read_bytes = 6;
+  uint64 state_write_bytes = 7;
+  uint64 blob_read_bytes = 8;
+  uint64 blob_write_bytes = 9;
+  uint64 log_bytes = 10;
+  uint32 effect_count = 11;
+}
+
+message PlatformError {
+  string code = 1;
+  string message = 2;
+  bool retryable = 3;
+  map<string, string> details = 4;
+}
+
+message ObjectMetadata {
+  string name = 1;
+  optional string tenant = 2;
+  optional string namespace = 3;
+  map<string, string> labels = 4;
+  map<string, string> annotations = 5;
+}
+
+message PageRequest {
+  uint32 page_size = 1;
+  optional string page_token = 2;
+}
+
+message PageResponse {
+  optional string next_page_token = 1;
+}
+
+message Empty {}

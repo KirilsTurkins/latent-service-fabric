@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+
+message AuditActor {
+  string subject = 1;
+  string actor_type = 2;
+  optional string tenant = 3;
+  map<string, string> attributes = 4;
+}
+
+message AuditEvent {
+  string id = 1;
+  AuditActor actor = 2;
+  string action = 3;
+  string resource = 4;
+  string outcome = 5;
+  uint64 occurred_at_unix_millis = 6;
+  optional string reason = 7;
+  map<string, string> attributes = 8;
+}
+
+message QueryAuditRequest {
+  optional string tenant = 1;
+  optional string actor = 2;
+  optional string action = 3;
+  optional string resource_prefix = 4;
+  optional uint64 from_unix_millis = 5;
+  optional uint64 to_unix_millis = 6;
+  PageRequest page = 7;
+}
+
+message QueryAuditResponse {
+  repeated AuditEvent events = 1;
+  PageResponse page = 2;
+}
+
+service AuditService {
+  rpc QueryAudit(QueryAuditRequest) returns (QueryAuditResponse);
+}

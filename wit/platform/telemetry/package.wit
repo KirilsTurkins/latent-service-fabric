@@ -1,0 +1,26 @@
+package latent:telemetry@0.1.0;
+
+interface custom {
+    enum metric-kind {
+        counter,
+        up-down-counter,
+        gauge,
+        histogram,
+    }
+
+    record metric {
+        name: string,
+        kind: metric-kind,
+        value: f64,
+        unit: string,
+        attributes: list<tuple<string, string>>,
+    }
+
+    variant telemetry-error {
+        invalid-name,
+        budget-exhausted,
+        unavailable,
+    }
+
+    emit-metric: func(metric: metric) -> result<bool, telemetry-error>;
+}

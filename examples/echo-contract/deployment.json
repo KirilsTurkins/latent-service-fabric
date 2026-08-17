@@ -1,0 +1,49 @@
+{
+  "apiVersion": "latent.dev/v1alpha1",
+  "kind": "Deployment",
+  "metadata": {
+    "name": "echo-production",
+    "tenant": "examples"
+  },
+  "spec": {
+    "service": "examples/echo",
+    "release": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "route": {
+      "weight": 10000
+    },
+    "grants": [
+      {
+        "capability": "latent:context/context@0.1.0",
+        "policy": "examples/default-context"
+      },
+      {
+        "capability": "latent:log/log@0.1.0",
+        "policy": "examples/default-log"
+      }
+    ],
+    "resources": {
+      "cpuFuel": 1000000,
+      "memoryBytes": 4194304,
+      "wallDeadlineUnixMillis": null,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 16384,
+      "effectCount": 0
+    },
+    "availability": {
+      "minimumCachedCopies": 1,
+      "minimumZones": 1
+    },
+    "placement": {
+      "trustClass": "internal",
+      "architectures": [
+        "x86_64",
+        "aarch64"
+      ]
+    }
+  }
+}

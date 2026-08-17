@@ -1,0 +1,14 @@
+/target/
+/.idea/
+/.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+artifacts/
+.generated/

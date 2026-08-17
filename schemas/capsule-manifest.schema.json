@@ -1,0 +1,237 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1alpha1/capsule-manifest.schema.json",
+  "title": "LSF Capsule",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "component",
+    "exports",
+    "imports",
+    "execution",
+    "compatibility"
+  ],
+  "properties": {
+    "apiVersion": {
+      "const": "latent.dev/v1alpha1"
+    },
+    "kind": {
+      "const": "Capsule"
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tenant": {
+          "type": "string",
+          "minLength": 1
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "digest",
+        "version",
+        "world"
+      ],
+      "properties": {
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "world": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "exports": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "imports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contract"
+        ],
+        "properties": {
+          "contract": {
+            "type": "string",
+            "minLength": 1
+          },
+          "optional": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "threading",
+        "stateModel",
+        "limits"
+      ],
+      "properties": {
+        "backend": {
+          "enum": [
+            "wasm-component",
+            "ephemeral-process",
+            "container",
+            "microvm",
+            "remote-provider"
+          ]
+        },
+        "threading": {
+          "enum": [
+            "single-threaded",
+            "reentrant",
+            "cooperative"
+          ]
+        },
+        "stateModel": {
+          "enum": [
+            "stateless",
+            "transactional-keyed",
+            "entity",
+            "durable-workflow"
+          ]
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cpuFuel",
+            "memoryBytes",
+            "childCalls",
+            "outboundRequests",
+            "stateReadBytes",
+            "stateWriteBytes",
+            "blobReadBytes",
+            "blobWriteBytes",
+            "logBytes",
+            "effectCount"
+          ],
+          "properties": {
+            "cpuFuel": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "memoryBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "wallDeadlineUnixMillis": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "childCalls": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "outboundRequests": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stateReadBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stateWriteBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "blobReadBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "blobWriteBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "logBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "effectCount": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "hostCallDepthMaximum": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "componentCallDepthMaximum": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "snapshotEligible": {
+          "type": "boolean"
+        },
+        "fusionEligible": {
+          "type": "boolean"
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimumFabricVersion"
+      ],
+      "properties": {
+        "minimumFabricVersion": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+[package]
+name = "latent-control-store"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Interface contracts for latent-control-store."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+latent-manifest = { path = "../latent-manifest" }
+latent-routing = { path = "../latent-routing" }
+latent-node = { path = "../latent-node" }
+latent-artifacts = { path = "../latent-artifacts" }
+latent-policy = { path = "../latent-policy" }
+latent-audit = { path = "../latent-audit" }

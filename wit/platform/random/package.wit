@@ -1,0 +1,12 @@
+package latent:random@0.1.0;
+
+interface random {
+    variant random-error {
+        invalid-length,
+        budget-exhausted,
+        unavailable,
+    }
+
+    bytes: func(length: u32) -> result<list<u8>, random-error>;
+    u64-value: func() -> result<u64, random-error>;
+}

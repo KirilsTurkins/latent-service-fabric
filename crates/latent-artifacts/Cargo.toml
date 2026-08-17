@@ -1,0 +1,16 @@
+[package]
+name = "latent-artifacts"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Interface contracts for latent-artifacts."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+latent-contracts = { path = "../latent-contracts" }
+latent-manifest = { path = "../latent-manifest" }

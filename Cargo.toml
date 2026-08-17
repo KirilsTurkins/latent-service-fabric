@@ -1,0 +1,57 @@
+[workspace]
+resolver = "2"
+members = [
+    "apps/latentd",
+    "apps/latent-control",
+    "apps/latent",
+    "crates/latent-core",
+    "crates/latent-manifest",
+    "crates/latent-contracts",
+    "crates/latent-artifacts",
+    "crates/latent-oci",
+    "crates/latent-signing",
+    "crates/latent-policy",
+    "crates/latent-routing",
+    "crates/latent-admission",
+    "crates/latent-scheduler",
+    "crates/latent-activation",
+    "crates/latent-executor",
+    "crates/latent-wasmtime",
+    "crates/latent-capabilities",
+    "crates/latent-blobs",
+    "crates/latent-commit",
+    "crates/latent-identity",
+    "crates/latent-ingress",
+    "crates/latent-triggers",
+    "crates/latent-state",
+    "crates/latent-effects",
+    "crates/latent-workflows",
+    "crates/latent-wire",
+    "crates/latent-wrpc",
+    "crates/latent-node",
+    "crates/latent-control-store",
+    "crates/latent-telemetry",
+    "crates/latent-audit",
+    "crates/latent-testkit",
+    "sdk/rust",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "Apache-2.0"
+authors = ["Latent Service Fabric contributors"]
+repository = "https://github.com/latent-service-fabric/latent-fabric"
+homepage = "https://github.com/latent-service-fabric/latent-fabric"
+description = "Interface-first architecture scaffold for the Latent Service Fabric"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"

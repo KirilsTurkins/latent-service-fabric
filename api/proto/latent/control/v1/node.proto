@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+
+message CellCapacity {
+  string class = 1;
+  uint32 total = 2;
+  uint32 available = 3;
+}
+
+message CacheEntry {
+  string key = 1;
+  string release_digest = 2;
+  string tier = 3;
+  uint64 size_bytes = 4;
+  uint64 last_access_unix_millis = 5;
+}
+
+message NodeDescriptor {
+  string id = 1;
+  string architecture = 2;
+  string operating_system = 3;
+  repeated string cpu_features = 4;
+  repeated string trust_classes = 5;
+  optional string region = 6;
+  optional string zone = 7;
+  string endpoint = 8;
+  string identity = 9;
+  map<string, string> attributes = 10;
+}
+
+message NodeInventory {
+  NodeDescriptor node = 1;
+  repeated CellCapacity cell_capacity = 2;
+  uint32 memory_pressure_milli = 3;
+  uint64 queue_depth = 4;
+  uint64 route_generation = 5;
+  repeated CacheEntry cache_entries = 6;
+  uint64 observed_at_unix_millis = 7;
+}
+
+message RegisterNodeRequest {
+  NodeDescriptor node = 1;
+}
+
+message RegisterNodeResponse {
+  uint64 accepted_route_generation = 1;
+  uint64 heartbeat_interval_millis = 2;
+}
+
+message ReportInventoryRequest {
+  NodeInventory inventory = 1;
+}
+
+message HeartbeatRequest {
+  string node_id = 1;
+  uint64 generation = 2;
+  uint64 observed_at_unix_millis = 3;
+  bool healthy = 4;
+  map<string, string> attributes = 5;
+}
+
+message GetNodeRequest {
+  string node_id = 1;
+}
+
+message GetNodeResponse {
+  optional NodeInventory inventory = 1;
+}
+
+message ListNodesRequest {
+  optional string trust_class = 1;
+  optional string region = 2;
+  optional string zone = 3;
+  PageRequest page = 4;
+}
+
+message ListNodesResponse {
+  repeated NodeInventory nodes = 1;
+  PageResponse page = 2;
+}
+
+service NodeService {
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+  rpc ReportInventory(ReportInventoryRequest) returns (Empty);
+  rpc Heartbeat(HeartbeatRequest) returns (Empty);
+  rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+}

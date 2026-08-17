@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+
+message CapabilityGrant {
+  string capability = 1;
+  string policy = 2;
+  repeated string operations = 3;
+  map<string, string> constraints = 4;
+}
+
+message AvailabilityPolicy {
+  uint32 minimum_cached_copies = 1;
+  uint32 minimum_zones = 2;
+}
+
+message PlacementPolicy {
+  string trust_class = 1;
+  repeated string architectures = 2;
+  repeated string regions = 3;
+  repeated string zones = 4;
+  repeated string required_features = 5;
+}
+
+message Deployment {
+  string id = 1;
+  ObjectMetadata metadata = 2;
+  string service = 3;
+  string release_digest = 4;
+  uint32 route_weight = 5;
+  repeated CapabilityGrant grants = 6;
+  ResourceBudget resources = 7;
+  AvailabilityPolicy availability = 8;
+  PlacementPolicy placement = 9;
+  uint64 generation = 10;
+}
+
+message ApplyDeploymentRequest {
+  Deployment deployment = 1;
+  optional uint64 expected_generation = 2;
+}
+
+message ApplyDeploymentResponse {
+  Deployment deployment = 1;
+  repeated string warnings = 2;
+}
+
+message GetDeploymentRequest {
+  string id = 1;
+}
+
+message GetDeploymentResponse {
+  optional Deployment deployment = 1;
+}
+
+message ListDeploymentsRequest {
+  optional string service = 1;
+  PageRequest page = 2;
+}
+
+message ListDeploymentsResponse {
+  repeated Deployment deployments = 1;
+  PageResponse page = 2;
+}
+
+message DeleteDeploymentRequest {
+  string id = 1;
+  optional uint64 expected_generation = 2;
+}
+
+message WatchDeploymentRequest {
+  string id = 1;
+  uint64 after_generation = 2;
+}
+
+message DeploymentEvent {
+  string kind = 1;
+  Deployment deployment = 2;
+  uint64 occurred_at_unix_millis = 3;
+}
+
+service DeploymentService {
+  rpc ApplyDeployment(ApplyDeploymentRequest) returns (ApplyDeploymentResponse);
+  rpc GetDeployment(GetDeploymentRequest) returns (GetDeploymentResponse);
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  rpc DeleteDeployment(DeleteDeploymentRequest) returns (Empty);
+  rpc WatchDeployment(WatchDeploymentRequest) returns (stream DeploymentEvent);
+}

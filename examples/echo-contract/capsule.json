@@ -1,0 +1,57 @@
+{
+  "apiVersion": "latent.dev/v1alpha1",
+  "kind": "Capsule",
+  "metadata": {
+    "name": "examples/echo",
+    "tenant": "examples",
+    "labels": {
+      "tier": "example"
+    },
+    "annotations": {
+      "latent.dev/purpose": "contract-only"
+    }
+  },
+  "component": {
+    "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "version": "0.1.0",
+    "world": "examples:echo/service@0.1.0"
+  },
+  "exports": [
+    "examples:echo/api@0.1.0"
+  ],
+  "imports": [
+    {
+      "contract": "latent:context/context@0.1.0",
+      "optional": false
+    },
+    {
+      "contract": "latent:log/log@0.1.0",
+      "optional": false
+    }
+  ],
+  "execution": {
+    "backend": "wasm-component",
+    "threading": "reentrant",
+    "stateModel": "stateless",
+    "limits": {
+      "cpuFuel": 1000000,
+      "memoryBytes": 4194304,
+      "wallDeadlineUnixMillis": null,
+      "childCalls": 0,
+      "outboundRequests": 0,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "logBytes": 16384,
+      "effectCount": 0
+    },
+    "hostCallDepthMaximum": 8,
+    "componentCallDepthMaximum": 4,
+    "snapshotEligible": true,
+    "fusionEligible": true
+  },
+  "compatibility": {
+    "minimumFabricVersion": "0.1.0"
+  }
+}

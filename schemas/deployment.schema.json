@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1alpha1/deployment.schema.json",
+  "title": "LSF Deployment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "spec"
+  ],
+  "properties": {
+    "apiVersion": {
+      "const": "latent.dev/v1alpha1"
+    },
+    "kind": {
+      "const": "Deployment"
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tenant": {
+          "type": "string",
+          "minLength": 1
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "service",
+        "release",
+        "route",
+        "resources",
+        "availability",
+        "placement"
+      ],
+      "properties": {
+        "service": {
+          "type": "string",
+          "minLength": 1
+        },
+        "release": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$"
+        },
+        "route": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "weight"
+          ],
+          "properties": {
+            "weight": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            }
+          }
+        },
+        "grants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "capability",
+              "policy"
+            ],
+            "properties": {
+              "capability": {
+                "type": "string",
+                "minLength": 1
+              },
+              "policy": {
+                "type": "string",
+                "minLength": 1
+              },
+              "operations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "uniqueItems": true
+              },
+              "constraints": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cpuFuel",
+            "memoryBytes",
+            "childCalls",
+            "outboundRequests",
+            "stateReadBytes",
+            "stateWriteBytes",
+            "blobReadBytes",
+            "blobWriteBytes",
+            "logBytes",
+            "effectCount"
+          ],
+          "properties": {
+            "cpuFuel": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "memoryBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "wallDeadlineUnixMillis": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "childCalls": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "outboundRequests": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stateReadBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "stateWriteBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "blobReadBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "blobWriteBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "logBytes": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "effectCount": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "availability": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "minimumCachedCopies",
+            "minimumZones"
+          ],
+          "properties": {
+            "minimumCachedCopies": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minimumZones": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "placement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "trustClass"
+          ],
+          "properties": {
+            "trustClass": {
+              "type": "string",
+              "minLength": 1
+            },
+            "architectures": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "regions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "zones": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "requiredFeatures": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

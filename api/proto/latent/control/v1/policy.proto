@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+
+message Policy {
+  string id = 1;
+  ObjectMetadata metadata = 2;
+  string document = 3;
+  uint64 generation = 4;
+}
+
+message ApplyPolicyRequest {
+  Policy policy = 1;
+  optional uint64 expected_generation = 2;
+}
+
+message ApplyPolicyResponse {
+  Policy policy = 1;
+}
+
+message GetPolicyRequest {
+  string id = 1;
+}
+
+message GetPolicyResponse {
+  optional Policy policy = 1;
+}
+
+message EvaluatePolicyRequest {
+  string policy_id = 1;
+  string action = 2;
+  string subject = 3;
+  string resource = 4;
+  map<string, string> attributes = 5;
+}
+
+message PolicyReason {
+  string code = 1;
+  string message = 2;
+  map<string, string> attributes = 3;
+}
+
+message EvaluatePolicyResponse {
+  string decision = 1;
+  repeated PolicyReason reasons = 2;
+  map<string, string> obligations = 3;
+  string policy_version = 4;
+}
+
+message DeletePolicyRequest {
+  string id = 1;
+  optional uint64 expected_generation = 2;
+}
+
+service PolicyService {
+  rpc ApplyPolicy(ApplyPolicyRequest) returns (ApplyPolicyResponse);
+  rpc GetPolicy(GetPolicyRequest) returns (GetPolicyResponse);
+  rpc EvaluatePolicy(EvaluatePolicyRequest) returns (EvaluatePolicyResponse);
+  rpc DeletePolicy(DeletePolicyRequest) returns (Empty);
+}

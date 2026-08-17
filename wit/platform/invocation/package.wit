@@ -1,0 +1,43 @@
+package latent:service@0.1.0;
+
+interface invoke {
+    record target {
+        service: string,
+        contract: string,
+        function: string,
+        route: option<string>,
+    }
+
+    record call-options {
+        deadline-unix-millis: option<u64>,
+        priority: u8,
+        idempotency-key: option<string>,
+        metadata: list<tuple<string, string>>,
+    }
+
+    record invocation-result {
+        payload: list<u8>,
+        media-type: string,
+        metadata: list<tuple<string, string>>,
+    }
+
+    variant platform-error {
+        unavailable,
+        deadline-exceeded,
+        cancelled,
+        resource-exhausted,
+        permission-denied,
+        incompatible-contract,
+        state-conflict,
+        dependency-failed,
+        guest-trap(string),
+        internal(string),
+    }
+
+    call: async func(
+        target: target,
+        payload: list<u8>,
+        media-type: string,
+        options: call-options,
+    ) -> result<invocation-result, platform-error>;
+}

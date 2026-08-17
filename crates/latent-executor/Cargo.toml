@@ -1,0 +1,16 @@
+[package]
+name = "latent-executor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Interface contracts for latent-executor."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+latent-activation = { path = "../latent-activation" }
+latent-artifacts = { path = "../latent-artifacts" }

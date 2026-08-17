@@ -1,0 +1,29 @@
+name: Architecture proposal
+description: Propose a change to an LSF invariant, contract, or subsystem boundary
+title: "[Architecture] "
+labels: ["architecture"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed contract or decision
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility and migration
+  - type: textarea
+    id: resource-model
+    attributes:
+      label: Resource-allocation impact
+  - type: textarea
+    id: security
+    attributes:
+      label: Security impact

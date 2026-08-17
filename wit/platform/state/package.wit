@@ -1,0 +1,46 @@
+package latent:state@0.1.0;
+
+interface key-value {
+    type transaction-handle = u64;
+
+    record value {
+        bytes: list<u8>,
+        media-type: string,
+        metadata: list<tuple<string, string>>,
+    }
+
+    record versioned-value {
+        value: value,
+        version: u64,
+    }
+
+    record entry {
+        key: list<u8>,
+        value: versioned-value,
+    }
+
+    record commit-receipt {
+        transaction-id: string,
+        committed-version: u64,
+        committed-at-unix-millis: u64,
+    }
+
+    variant state-error {
+        not-found,
+        conflict,
+        permission-denied,
+        invalid-key,
+        read-budget-exhausted,
+        write-budget-exhausted,
+        transaction-closed,
+        unavailable,
+    }
+
+    begin: func(namespace: string, entity-key: option<string>) -> result<transaction-handle, state-error>;
+    get: func(transaction: transaction-handle, key: list<u8>) -> result<option<versioned-value>, state-error>;
+    scan: func(transaction: transaction-handle, prefix: list<u8>, limit: u32) -> result<list<entry>, state-error>;
+    put: func(transaction: transaction-handle, key: list<u8>, value: value) -> result<bool, state-error>;
+    delete: func(transaction: transaction-handle, key: list<u8>) -> result<bool, state-error>;
+    commit: func(transaction: transaction-handle) -> result<commit-receipt, state-error>;
+    rollback: func(transaction: transaction-handle) -> result<bool, state-error>;
+}

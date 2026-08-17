@@ -1,0 +1,1113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "project": "Latent Service Fabric",
+  "repository": "latent-fabric",
+  "version": "0.1.0",
+  "generatedAt": "2026-08-17T00:00:00Z",
+  "interfaceOnly": true,
+  "manifestExcludesSelf": true,
+  "fileCount": 220,
+  "totalBytes": 239243,
+  "files": [
+    {
+      "path": ".gitattributes",
+      "sizeBytes": 86,
+      "sha256": "9ca3722e799f762b4382c59fe30d265b2f1d23e8d5ec22b0f98f2077a77e8e67"
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/architecture.yml",
+      "sizeBytes": 687,
+      "sha256": "d0195aff61fe3b0e35e505363617f80c12e4e8d4a32c1e89c377d1876541cf28"
+    },
+    {
+      "path": ".github/pull_request_template.md",
+      "sizeBytes": 568,
+      "sha256": "b90e6911a85d28cb3f627df686e7597c783e6ed6f165f4a1af62497ec6343129"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sizeBytes": 785,
+      "sha256": "4b173107473fbc90c94eba8caa72be371e102eaa7ab57c79381ded22f07429aa"
+    },
+    {
+      "path": ".gitignore",
+      "sizeBytes": 124,
+      "sha256": "4084720f735eed69ff61e6e604457cc6df22da8f6740a142d7b1721ba45e738f"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "sizeBytes": 1221,
+      "sha256": "0d0b2c8945daa2c8511aa8c1bba6f0ee12713621374bf417ec36b8beb2235ae3"
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "sizeBytes": 306,
+      "sha256": "0e5baaee97b2f17190dd61be4e873d45d77cdf74a48bdf2ec6e0fc382143e0a3"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "sizeBytes": 1510,
+      "sha256": "fd151d09b3f1c5d9f937540343109119b33c12d43739779bb703ba2df8520f9b"
+    },
+    {
+      "path": "Cargo.toml",
+      "sizeBytes": 1539,
+      "sha256": "c1d0dc33d5c6928ac41ef92d26c637c6dd042f05380a02686b9a5c43cb22dde6"
+    },
+    {
+      "path": "LICENSE",
+      "sizeBytes": 10173,
+      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+    },
+    {
+      "path": "Makefile",
+      "sizeBytes": 297,
+      "sha256": "fcd6085f768c81ce04c6efc00ccfdb90a4a5ca133ace69dfdea053298a254c90"
+    },
+    {
+      "path": "NOTICE",
+      "sizeBytes": 209,
+      "sha256": "f0ed785b696cfcbe9e1e32f747715d30c44234b6e5c683267412958fe5b2c2d4"
+    },
+    {
+      "path": "README.md",
+      "sizeBytes": 3670,
+      "sha256": "6192f2c455580586674bdd93fe209889be64bf075e6f62a06612a1dd6a266810"
+    },
+    {
+      "path": "SECURITY.md",
+      "sizeBytes": 636,
+      "sha256": "b4ebd6abe32d2857fd3ebe231ce4119de2b8f7eb2dd16b8e195a93e6d680e8d7"
+    },
+    {
+      "path": "VALIDATION.md",
+      "sizeBytes": 2537,
+      "sha256": "0b76b69fdfbf2360d4598d007dbd15ed5ceb75da19bfa3a2ae2e74d431461f87"
+    },
+    {
+      "path": "adr/0001-use-rust-for-the-runtime.md",
+      "sizeBytes": 572,
+      "sha256": "b44b7bc0ff079c39ea5f581a1449bbfec3f873ca605b725e698ad13f5d33b68b"
+    },
+    {
+      "path": "adr/0002-use-the-webassembly-component-model.md",
+      "sizeBytes": 448,
+      "sha256": "647fd0e279fa543c4005905545b64beb80bacd906c0a2515fbf6a61312e3f4a9"
+    },
+    {
+      "path": "adr/0003-use-wit-as-the-capsule-contract-authority.md",
+      "sizeBytes": 407,
+      "sha256": "0a21423ac61d538d6170d139bfe1e2dbfd8420dc4c0e17b4c7d0a50c46d8cb7f"
+    },
+    {
+      "path": "adr/0004-use-wasmtime-as-the-first-execution-engine.md",
+      "sizeBytes": 505,
+      "sha256": "79e345bec902568b131fa006a0b22b77ce4179f0b527b4a2c0b836fea91e8e05"
+    },
+    {
+      "path": "adr/0005-forbid-per-service-idle-execution-allocation.md",
+      "sizeBytes": 446,
+      "sha256": "7a29b56bbfaefc55c365e8bb263b592e8114614461d7e390d20e198b35642209"
+    },
+    {
+      "path": "adr/0006-use-reusable-generic-execution-cells.md",
+      "sizeBytes": 379,
+      "sha256": "47a804c897b1087e794be69c2ce06efea914a742c344c07b13b6bdb150290f77"
+    },
+    {
+      "path": "adr/0007-distribute-capsules-as-oci-artifacts.md",
+      "sizeBytes": 399,
+      "sha256": "11d117de0cc6b8523a6564aab9c157a00195fcb1a9e3b1d9aa11d24ed8eef2ff"
+    },
+    {
+      "path": "adr/0008-compile-aot-artifacts-only-in-a-trusted-boundary.md",
+      "sizeBytes": 436,
+      "sha256": "9f9d19a5171af2fab6bc9d0522702d9ec03dc3cf7e0ad83ae61537f62f836b93"
+    },
+    {
+      "path": "adr/0009-use-capability-based-host-access.md",
+      "sizeBytes": 459,
+      "sha256": "b549019e08427a05c86d6c0f1aa40ff74a13e0aea013fd9f672c45c5de277587"
+    },
+    {
+      "path": "adr/0010-separate-immutable-capsule-metadata-from-deployment-policy.md",
+      "sizeBytes": 480,
+      "sha256": "fc0c2d01d5edb071a22f45e627774c2158222694968bba52b7688220c833be9b"
+    },
+    {
+      "path": "adr/0011-keep-the-control-plane-out-of-the-invocation-hot-path.md",
+      "sizeBytes": 431,
+      "sha256": "92be48a18574b2d23747f156f9616a536a1c4d9905feeadfa660f1d456bcdf36"
+    },
+    {
+      "path": "adr/0012-place-remote-invocation-behind-a-wit-native-transport-abstraction.md",
+      "sizeBytes": 517,
+      "sha256": "ebd99707ac95f706418543cd645309a229130ff3fc535c6ea27f05aac2ef704a"
+    },
+    {
+      "path": "adr/0013-use-explicit-state-transactions-and-effect-intents.md",
+      "sizeBytes": 443,
+      "sha256": "dedde427a8ad282524c1f7f3b8a4100dfec9a4ec1c4f510d79fcade521306a11"
+    },
+    {
+      "path": "adr/0014-do-not-promise-universal-exactly-once-external-effects.md",
+      "sizeBytes": 400,
+      "sha256": "160b62b2a48d343f93eb57246d5674602bf4cc7346edb561fd448f6886a8712b"
+    },
+    {
+      "path": "adr/0015-build-a-single-node-stateless-fabric-before-clustering.md",
+      "sizeBytes": 421,
+      "sha256": "6187df0be298a2acf7478aa1ad5b44c33e49eb6f88c782d6a7c3bf8f17b6f25d"
+    },
+    {
+      "path": "adr/0016-keep-paging-continuation-eviction-and-fusion-optional.md",
+      "sizeBytes": 426,
+      "sha256": "ce082c5c4bd7cde4d8128e38064ef3137067e61321821addb44b465a3568af6f"
+    },
+    {
+      "path": "adr/0017-use-fixed-trust-class-execution-hosts-for-stronger-containment.md",
+      "sizeBytes": 466,
+      "sha256": "04a5103f67421f21ab02e7e0c86784cdc81e23ccd14706ac5460502fecdbb6ce"
+    },
+    {
+      "path": "adr/0018-treat-latent-service-fabric-as-a-working-name.md",
+      "sizeBytes": 487,
+      "sha256": "e7dc0a4eb62f0271876547a7536f4b96966f0b89d81a7c000a28c02c2defcfbf"
+    },
+    {
+      "path": "adr/README.md",
+      "sizeBytes": 158,
+      "sha256": "cc635c9aee94da0ccaf12809b3b8d40d1c1deffad377fb61e907e40dbbbaa205"
+    },
+    {
+      "path": "api/proto/README.md",
+      "sizeBytes": 450,
+      "sha256": "1500a09da4d29179aea2a925114cace5198765ba4c3a196608ca79f5577c2979"
+    },
+    {
+      "path": "api/proto/buf.yaml",
+      "sizeBytes": 68,
+      "sha256": "e43f53667310e35118378d3b7e17516cea7edf02c274b7cb1ebc2521d5d70dd7"
+    },
+    {
+      "path": "api/proto/latent/control/v1/audit.proto",
+      "sizeBytes": 909,
+      "sha256": "b38106b5597bc9a950b00b114f4371402614bd08515b7220348f280edcc9ef2d"
+    },
+    {
+      "path": "api/proto/latent/control/v1/binding.proto",
+      "sizeBytes": 1608,
+      "sha256": "6125223ca43a03d8f5d14b146bcb8a5764c8560572c7dd8f1dc253813847dd5e"
+    },
+    {
+      "path": "api/proto/latent/control/v1/capability.proto",
+      "sizeBytes": 1067,
+      "sha256": "3307ec1349191b89da1e837445af3e57d875327c7ce0b323a19a90eeb7ce7de2"
+    },
+    {
+      "path": "api/proto/latent/control/v1/common.proto",
+      "sizeBytes": 883,
+      "sha256": "7fcaa0b1846f8aa09a72c935e928eda8b99e1e5c1e6216dc41c3fe7915cce7b6"
+    },
+    {
+      "path": "api/proto/latent/control/v1/contract.proto",
+      "sizeBytes": 1542,
+      "sha256": "40a521a388af3086d69f7f4948072c0c984d4614eb8da26a098ad490c61ee325"
+    },
+    {
+      "path": "api/proto/latent/control/v1/deployment.proto",
+      "sizeBytes": 2076,
+      "sha256": "43cffb0ad4b3917361a13686dd13298172b08f3bcbdb829dd88ac400886a9a0f"
+    },
+    {
+      "path": "api/proto/latent/control/v1/node.proto",
+      "sizeBytes": 2023,
+      "sha256": "435fecec25ed52652a66c68ff64c0fc0d841cd741ef9d40c133aa44a020839e1"
+    },
+    {
+      "path": "api/proto/latent/control/v1/policy.proto",
+      "sizeBytes": 1282,
+      "sha256": "278c1728914374463d33aabc4fe31bf22a682539a21ff6f2445b85026e1bcd87"
+    },
+    {
+      "path": "api/proto/latent/control/v1/release.proto",
+      "sizeBytes": 1159,
+      "sha256": "ac752361d34bf219af777a98919dd0d20a1a64a20fb4ed7ca3ba4adc552d2f3e"
+    },
+    {
+      "path": "api/proto/latent/control/v1/route.proto",
+      "sizeBytes": 1186,
+      "sha256": "2d32f0a0be2b3c480def301f2cb6f4cd0111d2c5052c773e33143c80e9c648cc"
+    },
+    {
+      "path": "api/proto/latent/control/v1/trigger.proto",
+      "sizeBytes": 1301,
+      "sha256": "2b19ffaef9ab694650c40bd03ecdb523e1d10b243acb2def9c0c64d7e97d03f4"
+    },
+    {
+      "path": "api/proto/latent/invocation/v1/invocation.proto",
+      "sizeBytes": 2462,
+      "sha256": "eaabaa983de99d01ba9675a7669c1422d96b117fd4e85bd13bad5d5f52ba1fa8"
+    },
+    {
+      "path": "apps/latent/Cargo.toml",
+      "sizeBytes": 238,
+      "sha256": "14ae663d623f9eebbc3ba1ac4b7fc131eb581aeabefd930473310459d213014c"
+    },
+    {
+      "path": "apps/latent/src/main.rs",
+      "sizeBytes": 143,
+      "sha256": "6933f8a71474ed1f65a8bfb2b8e2ac9c6cbe22998ad5afca869157323a31af97"
+    },
+    {
+      "path": "apps/latent-control/Cargo.toml",
+      "sizeBytes": 243,
+      "sha256": "ce861a7e92c00b275eac948ffa0e27260b11638fb6909b718e41f226b932cb0e"
+    },
+    {
+      "path": "apps/latent-control/src/main.rs",
+      "sizeBytes": 140,
+      "sha256": "fd0723de78333803e3f91f94e310be9d1d3321106dc1cf546ddb77404482f3eb"
+    },
+    {
+      "path": "apps/latentd/Cargo.toml",
+      "sizeBytes": 236,
+      "sha256": "b218c178c5bb1289b9ad8ae64819702ac154c8440c3233647b9cf72499f87db1"
+    },
+    {
+      "path": "apps/latentd/src/main.rs",
+      "sizeBytes": 140,
+      "sha256": "afa58abc1cb01bf696cc4e301696fc3e38e7b90f4f35308e0df3f30c5b3bdb3b"
+    },
+    {
+      "path": "benchmarks/README.md",
+      "sizeBytes": 241,
+      "sha256": "a44af2f84f7aa2d4e745a3798036c1ccf5c1077d07d0895c88826337dc21fa5d"
+    },
+    {
+      "path": "benchmarks/activation-latency/README.md",
+      "sizeBytes": 344,
+      "sha256": "0cdbd0ea6dd7e4544e28392ffc57bf32beb67da2bfb926e5682c5ec5861ebbe1"
+    },
+    {
+      "path": "benchmarks/activation-latency/benchmark.toml",
+      "sizeBytes": 87,
+      "sha256": "e36594fc52f82935536081fa68b314ec947172c269c594d9a9535e4474226a8a"
+    },
+    {
+      "path": "benchmarks/fusion/README.md",
+      "sizeBytes": 314,
+      "sha256": "91bb9348b14bca73f84b49530c4a1478256463275a7adae07d71f697bed647a3"
+    },
+    {
+      "path": "benchmarks/fusion/benchmark.toml",
+      "sizeBytes": 75,
+      "sha256": "09e1553f40ed222528b4be39e29a5a97c5ec86632c831edca65c603639ce8233"
+    },
+    {
+      "path": "benchmarks/idle-scaling/README.md",
+      "sizeBytes": 346,
+      "sha256": "c752fa43d9d78596a886a1a4af55987e51f9ff85a149014bf5ee2db82a0bc647"
+    },
+    {
+      "path": "benchmarks/idle-scaling/benchmark.toml",
+      "sizeBytes": 81,
+      "sha256": "8c0a54868736946c0f72ba2f254eee6e4b56eeb234e9dd5bea82aab0a39da68b"
+    },
+    {
+      "path": "benchmarks/local-call/README.md",
+      "sizeBytes": 312,
+      "sha256": "65199e8b652858f53aa466837d8ad47629e3441a297b57635422177a1568ba52"
+    },
+    {
+      "path": "benchmarks/local-call/benchmark.toml",
+      "sizeBytes": 79,
+      "sha256": "5efb3733b9552529c04c5009be7a60b79c58c1f82d97887b908b0a3ce349299e"
+    },
+    {
+      "path": "benchmarks/memory-reclamation/README.md",
+      "sizeBytes": 316,
+      "sha256": "ce35b8fe70623cae78a9ff3b4b33dd8ae3554cc3b03f0f9e29333ec6c9c50a8e"
+    },
+    {
+      "path": "benchmarks/memory-reclamation/benchmark.toml",
+      "sizeBytes": 87,
+      "sha256": "475e8c8b62c425caa7822926a1b81fac18af7084dae861a8a01c3e00c0b12426"
+    },
+    {
+      "path": "benchmarks/remote-call/README.md",
+      "sizeBytes": 297,
+      "sha256": "298883999e9e317ea343a413e27e8d8aee946cc80cc7dd2f7451ba4c5946dd74"
+    },
+    {
+      "path": "benchmarks/remote-call/benchmark.toml",
+      "sizeBytes": 80,
+      "sha256": "c779671533292d4e41432301835b4d054cd09a53dbca9343eeeaf5318d24b318"
+    },
+    {
+      "path": "benchmarks/state-throughput/README.md",
+      "sizeBytes": 327,
+      "sha256": "01ede993d1519f318f7beabe6d5c5fc0c5ce05a0c9ab80c478a8a3a1c7cddbcf"
+    },
+    {
+      "path": "benchmarks/state-throughput/benchmark.toml",
+      "sizeBytes": 85,
+      "sha256": "797f1226720b7e4517fa2ae69f000005d061f307def2eee250be7adb98612405"
+    },
+    {
+      "path": "crates/latent-activation/Cargo.toml",
+      "sizeBytes": 358,
+      "sha256": "4b119cec5b4134aa42a4211d69fad3a3378f912aaf7064794c9b5d8dbbbc70a1"
+    },
+    {
+      "path": "crates/latent-activation/src/lib.rs",
+      "sizeBytes": 2571,
+      "sha256": "d91a9b9ef49a3d01f8aa31fe53811bef5a960820a567c4af2422ad0c86372dab"
+    },
+    {
+      "path": "crates/latent-admission/Cargo.toml",
+      "sizeBytes": 356,
+      "sha256": "cf3b02c94e4800eb4bf568dbc8756ec90137c52c257be521941f40ad7b6b7d0f"
+    },
+    {
+      "path": "crates/latent-admission/src/lib.rs",
+      "sizeBytes": 1444,
+      "sha256": "93cb7f3e71cf08a41ccb36e3afdf0c42b38c4893fe838b4963dce5fcc82da07d"
+    },
+    {
+      "path": "crates/latent-artifacts/Cargo.toml",
+      "sizeBytes": 410,
+      "sha256": "09c8bd9eb2cb6891bae01d6c30d7e0c540fea59d4e3382705e62dcd767e7251e"
+    },
+    {
+      "path": "crates/latent-artifacts/src/lib.rs",
+      "sizeBytes": 3311,
+      "sha256": "36fbe7ecb47408dc0dc45ca9596225b56c892fa0f68ef650c9f8d8c180045868"
+    },
+    {
+      "path": "crates/latent-audit/Cargo.toml",
+      "sizeBytes": 300,
+      "sha256": "6c6adfe86156a4d9fdd3a675eee4f0bdbef176aa2fa865f36ab479572e45c384"
+    },
+    {
+      "path": "crates/latent-audit/src/lib.rs",
+      "sizeBytes": 1460,
+      "sha256": "2501487d4a97235f30e34a8965684d16c70a8ef31b70630105ffec77ede1433a"
+    },
+    {
+      "path": "crates/latent-blobs/Cargo.toml",
+      "sizeBytes": 300,
+      "sha256": "da9c0bb7a08140b523bba5a51cae03c686a174a89402a77b626b02905f888776"
+    },
+    {
+      "path": "crates/latent-blobs/src/lib.rs",
+      "sizeBytes": 2467,
+      "sha256": "4e79b89fc0b444eb3a1731ff48b690fd00bc62d140be428b30225d59659faa8b"
+    },
+    {
+      "path": "crates/latent-capabilities/Cargo.toml",
+      "sizeBytes": 314,
+      "sha256": "824b1d46315e4d5119123fc50df486981bff4d990ef54669aa3b6438bce8305b"
+    },
+    {
+      "path": "crates/latent-capabilities/src/lib.rs",
+      "sizeBytes": 2751,
+      "sha256": "482c89a703c74a1f225c8096633e30a66975f8d1c69dbf2cee13ce3c017057af"
+    },
+    {
+      "path": "crates/latent-commit/Cargo.toml",
+      "sizeBytes": 394,
+      "sha256": "92ca72af7ae85aa2696a7bfc565f131cd68db7f73e0084fd4fd5a786a09483c7"
+    },
+    {
+      "path": "crates/latent-commit/src/lib.rs",
+      "sizeBytes": 2192,
+      "sha256": "c2001fac6e67c10dc9109d0af29ebb6a92a2501f9182afedcba14ea4e5661788"
+    },
+    {
+      "path": "crates/latent-contracts/Cargo.toml",
+      "sizeBytes": 308,
+      "sha256": "7db8000eec5005479a9c37001e487442dd21e1c13e10e352c6ceb5d414781292"
+    },
+    {
+      "path": "crates/latent-contracts/src/lib.rs",
+      "sizeBytes": 3169,
+      "sha256": "7a3778c5a0308aba6482534984e58f923bc4559723465f186868f6d6835d3213"
+    },
+    {
+      "path": "crates/latent-control-store/Cargo.toml",
+      "sizeBytes": 598,
+      "sha256": "ac4292773461552e8dcaa22b561983c8b1f3e65cdba85bcaf606480c46dc7900"
+    },
+    {
+      "path": "crates/latent-control-store/src/lib.rs",
+      "sizeBytes": 3858,
+      "sha256": "39513850fc19d9554650e6eaf4c94d2dfd5a5b2633cf8d09da413016be4c54f9"
+    },
+    {
+      "path": "crates/latent-core/Cargo.toml",
+      "sizeBytes": 240,
+      "sha256": "26feb9aa454bd13da07e3af2cb32d076f175b6c9ed92bb7ce78444745538a13c"
+    },
+    {
+      "path": "crates/latent-core/src/budget.rs",
+      "sizeBytes": 983,
+      "sha256": "bb0db8962a4a01f379907a6694c3e1412f19aff5a6a6cd329f4771bb0df22b1d"
+    },
+    {
+      "path": "crates/latent-core/src/error.rs",
+      "sizeBytes": 1013,
+      "sha256": "b3d91d906b94c6fc8e78f11de31e720e68f9202770336af27463674f405e5c7d"
+    },
+    {
+      "path": "crates/latent-core/src/identity.rs",
+      "sizeBytes": 514,
+      "sha256": "a8c8357e0ce7c0fa5985b24a74bee381132c271b61a7958f89f72e0584727b32"
+    },
+    {
+      "path": "crates/latent-core/src/ids.rs",
+      "sizeBytes": 1396,
+      "sha256": "310d382169fa9c45a2af8d0143f8b11132c724999fccfca590fe35c934da4d2f"
+    },
+    {
+      "path": "crates/latent-core/src/lib.rs",
+      "sizeBytes": 876,
+      "sha256": "dd4d74e70dc47fbed9c24c79460e45e35cd6e4e3dba0711bb436c2c51f790f80"
+    },
+    {
+      "path": "crates/latent-core/src/lifecycle.rs",
+      "sizeBytes": 561,
+      "sha256": "4904324d6edd408ec107f0fd41f700fbfc2b0af62c0cf2e380bee7ea26debf76"
+    },
+    {
+      "path": "crates/latent-effects/Cargo.toml",
+      "sizeBytes": 304,
+      "sha256": "b482165c521b5e7038534e5cd7298bd11f6d1f969f4ea23a4d1953becf7e2f0f"
+    },
+    {
+      "path": "crates/latent-effects/src/lib.rs",
+      "sizeBytes": 2807,
+      "sha256": "b984a75215437fc9b193c2e24b0a5874aeef069618312b2efc448162ff1f3ef1"
+    },
+    {
+      "path": "crates/latent-executor/Cargo.toml",
+      "sizeBytes": 412,
+      "sha256": "c1541bb9cc277f6fc22a5fadd5221d0424520c61b93d7460bc619d6464b2c9d2"
+    },
+    {
+      "path": "crates/latent-executor/src/lib.rs",
+      "sizeBytes": 2803,
+      "sha256": "17263b09ccecfc200f7d0b4300015ed5eed8f842dd93b4892e4805a8f9445987"
+    },
+    {
+      "path": "crates/latent-identity/Cargo.toml",
+      "sizeBytes": 306,
+      "sha256": "455c3a1af4ee37b906cf28c60668f53a2efc1681fbeb531f367b25a9bac4ad6a"
+    },
+    {
+      "path": "crates/latent-identity/src/lib.rs",
+      "sizeBytes": 2494,
+      "sha256": "b0e887757cca54acec6518f154c76340c698e0768415ee0152b5cadd276bb804"
+    },
+    {
+      "path": "crates/latent-ingress/Cargo.toml",
+      "sizeBytes": 458,
+      "sha256": "9a0644d2fe23f01710dd68fb765e5c1c0e84efd3adc1fbba9eb138576ba187df"
+    },
+    {
+      "path": "crates/latent-ingress/src/lib.rs",
+      "sizeBytes": 2000,
+      "sha256": "7aa66fd492d0678851c0e3d8a2195881dabf2cbfe2a282231cb7135917b46a36"
+    },
+    {
+      "path": "crates/latent-manifest/Cargo.toml",
+      "sizeBytes": 306,
+      "sha256": "a769f15c38dd3fda8aa2196750eccda015f8c91240650536c01304cfca96d30e"
+    },
+    {
+      "path": "crates/latent-manifest/src/lib.rs",
+      "sizeBytes": 5262,
+      "sha256": "19d6022198acf9c46d61f1db07780e5002f2b7608f0b5fc8e0ce13c469484d3f"
+    },
+    {
+      "path": "crates/latent-node/Cargo.toml",
+      "sizeBytes": 398,
+      "sha256": "ff53c57a41147af7bf01954318dbe640bb70a5d7ab33cac15fb93714a4c8621b"
+    },
+    {
+      "path": "crates/latent-node/src/lib.rs",
+      "sizeBytes": 2331,
+      "sha256": "5d6c352a469a477333b8a2d7a555a451475e131a8768b8e2ff5c180a9e814b37"
+    },
+    {
+      "path": "crates/latent-oci/Cargo.toml",
+      "sizeBytes": 348,
+      "sha256": "947cda9e3d60f6cb7750e86c05fd55921f250af3cb11fec5f1367d1a2aca3a17"
+    },
+    {
+      "path": "crates/latent-oci/src/lib.rs",
+      "sizeBytes": 2067,
+      "sha256": "dff44307885fe7c9fdf90484b8911ca4faab5a5b377f75e69879d86aeabe0df7"
+    },
+    {
+      "path": "crates/latent-policy/Cargo.toml",
+      "sizeBytes": 352,
+      "sha256": "44026200b4fe0e76a6b8a6a7c902b89c8dc601bfbf865f9f0c27c81566266760"
+    },
+    {
+      "path": "crates/latent-policy/src/lib.rs",
+      "sizeBytes": 1758,
+      "sha256": "9cbeaeb2cf7a27b9e15b42a3d3ee8f829abc02e206c58ac4fa99b5f6fea32449"
+    },
+    {
+      "path": "crates/latent-routing/Cargo.toml",
+      "sizeBytes": 354,
+      "sha256": "916d82a421ef0b31dfb6da8c6925f47ad10174cc710e604364129bf921bb38e0"
+    },
+    {
+      "path": "crates/latent-routing/src/lib.rs",
+      "sizeBytes": 2878,
+      "sha256": "722d65f542ff3f13f210eaf8695e6497a280064866696e85756eef1d23d69d0a"
+    },
+    {
+      "path": "crates/latent-scheduler/Cargo.toml",
+      "sizeBytes": 362,
+      "sha256": "abdcfbc6abbdefaba9c53ef9d97057fdaa05399a50f2322a7645a7240617e404"
+    },
+    {
+      "path": "crates/latent-scheduler/src/lib.rs",
+      "sizeBytes": 2401,
+      "sha256": "a5a8218e400479e3ab5f80e6c83d9983c81c6ef5947d31faacefc9d42edcb8e3"
+    },
+    {
+      "path": "crates/latent-signing/Cargo.toml",
+      "sizeBytes": 304,
+      "sha256": "e6296bee6c97244c0f26f627ed717de62d03c94aafdc7de572f4f05f73c6ce87"
+    },
+    {
+      "path": "crates/latent-signing/src/lib.rs",
+      "sizeBytes": 1858,
+      "sha256": "a0f97585855ae97af250a8e9c49da6754f1fcfa0fa69c58dd5a5e2cc0ec71394"
+    },
+    {
+      "path": "crates/latent-state/Cargo.toml",
+      "sizeBytes": 300,
+      "sha256": "2c52c94fc6e406bb20576feac7a0c6f8e38ecac1c5d964f2b3746022c1c0a0e8"
+    },
+    {
+      "path": "crates/latent-state/src/lib.rs",
+      "sizeBytes": 3397,
+      "sha256": "dfa6502265ff6846a82a1b2417d77dc8688f7a13f3c8bfa6277763c4a18deea4"
+    },
+    {
+      "path": "crates/latent-telemetry/Cargo.toml",
+      "sizeBytes": 362,
+      "sha256": "7398adb7e12c563c00240d080ad3ebd711df401c367b7413c9f47b91d176bee1"
+    },
+    {
+      "path": "crates/latent-telemetry/src/lib.rs",
+      "sizeBytes": 1838,
+      "sha256": "e7a8927b3000b1841c71365a179c73ec072298238d6470c2d6c5b08936195f56"
+    },
+    {
+      "path": "crates/latent-testkit/Cargo.toml",
+      "sizeBytes": 502,
+      "sha256": "ff1b97029ad51776e0b05d382132c8e7d8c8b25658f17b3f5d2b50a327937f9d"
+    },
+    {
+      "path": "crates/latent-testkit/src/lib.rs",
+      "sizeBytes": 1799,
+      "sha256": "6fb58925db0c705cf1c9672a00c3ffe105938e5dd4a46f96aed2c04153f56616"
+    },
+    {
+      "path": "crates/latent-triggers/Cargo.toml",
+      "sizeBytes": 410,
+      "sha256": "bc0b053cdda2183f83931e6e4fd9fb9e12c9150ff29e7e6b143d1bbf69fcb29f"
+    },
+    {
+      "path": "crates/latent-triggers/src/lib.rs",
+      "sizeBytes": 2139,
+      "sha256": "7843882684f9f051b4287e673086b3f51275dc24ee8e3ff5033b35d55d708c93"
+    },
+    {
+      "path": "crates/latent-wasmtime/Cargo.toml",
+      "sizeBytes": 408,
+      "sha256": "9e6014ecf7514fbb170cb687cdddbbd2c58dc577b7ca11c07606caee4cbe004d"
+    },
+    {
+      "path": "crates/latent-wasmtime/src/lib.rs",
+      "sizeBytes": 1887,
+      "sha256": "68f8b5b5938519578c99586685ac866506c544549c1bea857d52d18dab9a4aae"
+    },
+    {
+      "path": "crates/latent-wire/Cargo.toml",
+      "sizeBytes": 352,
+      "sha256": "4da43c81fb61ad447fe7ab015665b13aea7d0c1f66487e35df6dc5687eddef0c"
+    },
+    {
+      "path": "crates/latent-wire/src/lib.rs",
+      "sizeBytes": 2227,
+      "sha256": "d6937ee10103facc1a95913194142eb7f7038138785393d0ac17820cee74d1e8"
+    },
+    {
+      "path": "crates/latent-workflows/Cargo.toml",
+      "sizeBytes": 400,
+      "sha256": "1a0f0814d45ce14d28629e8bdb36ddc0cbac36525aaabde8821cfda6ff1a5676"
+    },
+    {
+      "path": "crates/latent-workflows/src/lib.rs",
+      "sizeBytes": 2694,
+      "sha256": "3b1c268e2b21b9979f999333a63e48aa14f8978a8d964467013f3c4a1a1cbb97"
+    },
+    {
+      "path": "crates/latent-wrpc/Cargo.toml",
+      "sizeBytes": 394,
+      "sha256": "fb0ba69bc3423b7fd1583e7a096a99174ec11e81c2a7751377fcd7bdcc79eede"
+    },
+    {
+      "path": "crates/latent-wrpc/src/lib.rs",
+      "sizeBytes": 1431,
+      "sha256": "bb9f863271e75313bd6e613e3489ca72f8fb43b08c269c6f549000abaa4ae12a"
+    },
+    {
+      "path": "docs/api-surface.md",
+      "sizeBytes": 3657,
+      "sha256": "46fdc680bca089b5f11493914f87023ef32448c772553ea7aaa396a9a293af0c"
+    },
+    {
+      "path": "docs/architecture/blob-model.md",
+      "sizeBytes": 994,
+      "sha256": "f9b519a316fb83f7c885588706f614b72d299f02cc7b376b6d63e150fcffb593"
+    },
+    {
+      "path": "docs/architecture/cluster-topology.md",
+      "sizeBytes": 1544,
+      "sha256": "bf4044565b13d445e6e3e19bfc33e8af510f400e2b4dccce4266f841cab4109d"
+    },
+    {
+      "path": "docs/architecture/contracts-and-bindings.md",
+      "sizeBytes": 1800,
+      "sha256": "6ab2604598fa27440e71dd0dd16c510f3828386c7d169d0835976f7ea68ecb75"
+    },
+    {
+      "path": "docs/architecture/control-plane.md",
+      "sizeBytes": 2542,
+      "sha256": "66ec1c9ce05438c4bfa7d1bfe73b45b2f13818006a29da76f42368a5bab81af8"
+    },
+    {
+      "path": "docs/architecture/data-plane.md",
+      "sizeBytes": 2326,
+      "sha256": "438310a604e6e1932638d5bb95801c429853d8bfef2de4321dec8775e8e72652"
+    },
+    {
+      "path": "docs/architecture/execution-cells.md",
+      "sizeBytes": 1962,
+      "sha256": "b1c6c89e2aef1e07493afabf14e3582dcb262f987f627a14dcded52510252cfb"
+    },
+    {
+      "path": "docs/architecture/identity-and-capabilities.md",
+      "sizeBytes": 1254,
+      "sha256": "9efa270ecaeb3f52dabcd159fabc245b1a3b1e0ea02d29086853481434d9bed7"
+    },
+    {
+      "path": "docs/architecture/ingress-and-triggers.md",
+      "sizeBytes": 1349,
+      "sha256": "82f0fb4761903ccd7c047d0d737b849348cb8a747a630ad79da1fa109b3d548f"
+    },
+    {
+      "path": "docs/architecture/overview.md",
+      "sizeBytes": 3664,
+      "sha256": "418960b1da890f8c3df728c6c3ae01e058965f0f5372f54fccd21395c3cee83b"
+    },
+    {
+      "path": "docs/architecture/security.md",
+      "sizeBytes": 1798,
+      "sha256": "3661f3987d4652c4167936b23ddaa627d6c1e4bb3c90482ceffb91e782a84fc1"
+    },
+    {
+      "path": "docs/architecture/state-and-effects.md",
+      "sizeBytes": 1661,
+      "sha256": "ecf2c35b3d70c5b98a7124503b6e36d4f49fdf86d557f91b4c5c8e16bfcc52e3"
+    },
+    {
+      "path": "docs/architecture/versioning-and-deployment.md",
+      "sizeBytes": 1431,
+      "sha256": "9112f34a3b8d0fcc893511988537503465cbaad7bfc4f9828f35116c40b39f37"
+    },
+    {
+      "path": "docs/component-development/creating-a-capsule.md",
+      "sizeBytes": 1021,
+      "sha256": "37eba64d3e3519c91ad566aeb260604836c0eef46e7bccf375c09b71297894a1"
+    },
+    {
+      "path": "docs/operations/topology.md",
+      "sizeBytes": 1168,
+      "sha256": "a6cadd30b80fa88620cbd11a8e1e55afb9a70a2ad9140cd104e0651b34d3a578"
+    },
+    {
+      "path": "docs/protocol/activation-lifecycle.md",
+      "sizeBytes": 1384,
+      "sha256": "3a4a850d57ef02166512984c8253508aa46344813a7648ec2d58cc8865b5f9c9"
+    },
+    {
+      "path": "docs/protocol/commit-protocol.md",
+      "sizeBytes": 1201,
+      "sha256": "a3674a5a02fb515f42fe7d893772a7ff409f7c3c94fb5dc75de756592672e019"
+    },
+    {
+      "path": "docs/protocol/platform-errors.md",
+      "sizeBytes": 1707,
+      "sha256": "32c0617298f6c071b6bec80b8afdef7382e246e222b0c0e09f7dcb41331fe07b"
+    },
+    {
+      "path": "docs/roadmap.md",
+      "sizeBytes": 1389,
+      "sha256": "2704a7f59bd5a495ca7343ec717c2854861b0701ace02bd372b7ef75471c140e"
+    },
+    {
+      "path": "docs/testing/invariants.md",
+      "sizeBytes": 1531,
+      "sha256": "5b249f3ff0cf601f52dca94d54b0ecfa2b5b1e0aaa2eb87d57b4e327d101dd34"
+    },
+    {
+      "path": "examples/README.md",
+      "sizeBytes": 322,
+      "sha256": "e4ae9b41a283a130babe6d51d443f0a478dc7053f798b25140e074401071d377"
+    },
+    {
+      "path": "examples/bindings/gateway-to-echo.json",
+      "sizeBytes": 414,
+      "sha256": "83ed942fd9ae0295aa06d1c52d177113c4dffd4698e5ec2eeb7a7d1860667fe5"
+    },
+    {
+      "path": "examples/counter-contract/capsule.json",
+      "sizeBytes": 1301,
+      "sha256": "eceba2661d8a16147280f548709285de78dc1a4127288846f7caac180d76b2da"
+    },
+    {
+      "path": "examples/counter-contract/wit/counter.wit",
+      "sizeBytes": 637,
+      "sha256": "9d6ddb332be6073c8d20a760cbd2e8c862f42d6f32456df4feccc2355628b2a5"
+    },
+    {
+      "path": "examples/echo-contract/capsule.json",
+      "sizeBytes": 1297,
+      "sha256": "46dc912e34f1520e75753e0346211537833ce7b60233519d4245ba80b1a7cd84"
+    },
+    {
+      "path": "examples/echo-contract/deployment.json",
+      "sizeBytes": 1107,
+      "sha256": "3796afd19a35937a547da8e95208882981b556a23b8a5641fd5dcfcc92ed3f8a"
+    },
+    {
+      "path": "examples/echo-contract/http-trigger.json",
+      "sizeBytes": 424,
+      "sha256": "88df85b8f3160e8765a1a05a8eb60a5bf8b58c7d5e3dd0d32e0ee7e6a598ad52"
+    },
+    {
+      "path": "examples/echo-contract/wit/echo.wit",
+      "sizeBytes": 302,
+      "sha256": "5a36463c6f335b2fa8a3c169242f7d01bacd9dd33589b439ecc869e89ca293c6"
+    },
+    {
+      "path": "examples/order-workflow-contract/wit/order-workflow.wit",
+      "sizeBytes": 828,
+      "sha256": "04360bc03c3e31f958740e3acb8c806196b4d8cf51348362ace8b9378a699857"
+    },
+    {
+      "path": "examples/policies/default-log-policy.json",
+      "sizeBytes": 283,
+      "sha256": "740fb6077829463c59cefcbc420edd0370e36420c1bf8451a1543060a9ee72bc"
+    },
+    {
+      "path": "research/README.md",
+      "sizeBytes": 200,
+      "sha256": "c184fca181cc8794734d449a9c45d7bfdd690e4419bf66f341043a0545fb44ed"
+    },
+    {
+      "path": "research/call-graph-fusion/README.md",
+      "sizeBytes": 278,
+      "sha256": "668c6b4d496d894a9ce45cdb2917740243a9d7dbdcd83f07e9b234d97d3a547a"
+    },
+    {
+      "path": "research/continuation-eviction/README.md",
+      "sizeBytes": 292,
+      "sha256": "ea215d51e62229d492e298d10cdbb8444fa8ecf9355a37f2fedf12bc300b38ed"
+    },
+    {
+      "path": "research/hardware-capabilities/README.md",
+      "sizeBytes": 234,
+      "sha256": "908538846f64ef7d3f12a5d325b637af3e4127a84c1b01d8d23e41256e9ba5f1"
+    },
+    {
+      "path": "research/native-sfi/README.md",
+      "sizeBytes": 288,
+      "sha256": "b984323352a3fc4745eef114f3b8bfeb6f891c3fdc21915c89c12250b8d5de93"
+    },
+    {
+      "path": "research/userfault-pager/README.md",
+      "sizeBytes": 321,
+      "sha256": "9116efd033a6c7ce6eb41a9babbf5e8394d69f6868adff6bd84d55269c921123"
+    },
+    {
+      "path": "rfcs/0000-template.md",
+      "sizeBytes": 322,
+      "sha256": "ed70b1e86c51a1aa4b668cb481e69869dcf5415c76c739fea5d0de8f9062a389"
+    },
+    {
+      "path": "rfcs/README.md",
+      "sizeBytes": 223,
+      "sha256": "cedfd938d1e8c2e0c6b42d32d3a23b6184db9de4d9f50e343eef787b09edf9ca"
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "sizeBytes": 86,
+      "sha256": "f32338bdcf61d8100b7125baa6a4822dfb41c81c8299489df0475436c6218f7a"
+    },
+    {
+      "path": "rustfmt.toml",
+      "sizeBytes": 113,
+      "sha256": "2d0562f04f39c74eac44973c8464645e3d3b5f93d6b07ec7258792f8a850fc38"
+    },
+    {
+      "path": "schemas/README.md",
+      "sizeBytes": 360,
+      "sha256": "449f8a7ebe137e2031cd998b5aac65daa0eb3c03ef50d397e61de722bf123817"
+    },
+    {
+      "path": "schemas/binding.schema.json",
+      "sizeBytes": 2072,
+      "sha256": "99c86a3b33bba7c7270ec53855b6c4e1a66361e2e4ff2232d663e798b1018d36"
+    },
+    {
+      "path": "schemas/capsule-manifest.schema.json",
+      "sizeBytes": 5272,
+      "sha256": "4cabd11ed602bf5e9564c41b13f11623583c278b72dfab920ebd34f2dbb1a7f1"
+    },
+    {
+      "path": "schemas/deployment.schema.json",
+      "sizeBytes": 5963,
+      "sha256": "259b1ee43b828c62c61f77108089c1870633faa239446d59238b72a20795413f"
+    },
+    {
+      "path": "schemas/policy.schema.json",
+      "sizeBytes": 1458,
+      "sha256": "a8ab8956d298952deac410468ef87963bb11fc771fb7a27206b375db5e222a89"
+    },
+    {
+      "path": "schemas/route-snapshot.schema.json",
+      "sizeBytes": 926,
+      "sha256": "5863e45fd7f484bab781584ab51fd6065c9d0de4ff7de1db78bf50dc77a52dcb"
+    },
+    {
+      "path": "schemas/trigger.schema.json",
+      "sizeBytes": 2196,
+      "sha256": "fc2c285e1b9fb24121f19dda77b7a3e76bf70b635bc5056d7ccf208dc26b7491"
+    },
+    {
+      "path": "sdk/README.md",
+      "sizeBytes": 420,
+      "sha256": "55494a400a6e34dde20770b4f1da58de46e795d70dc26c95b3383ac0d59931a0"
+    },
+    {
+      "path": "sdk/c/include/latent/latent.h",
+      "sizeBytes": 3261,
+      "sha256": "a1436009f59c25f0dae35c4b58854a1f448b4efe7580c91e25acc921f4d175d0"
+    },
+    {
+      "path": "sdk/dotnet/Latent.Sdk/Abstractions.cs",
+      "sizeBytes": 2212,
+      "sha256": "ba52a984536f5288daaee2f2ac713c7d532021a0743b99aedea72e161ad02b81"
+    },
+    {
+      "path": "sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj",
+      "sizeBytes": 414,
+      "sha256": "8dfa3d14ec7284255562599c1d6991c4f865b824fef009b47ce9b2df7fd0c071"
+    },
+    {
+      "path": "sdk/go/go.mod",
+      "sizeBytes": 34,
+      "sha256": "c4f1425518140f59773083b82a768a3783befd47246460586999d32fa8d3b28f"
+    },
+    {
+      "path": "sdk/go/latent.go",
+      "sizeBytes": 2106,
+      "sha256": "11b3d5f2a1c9832ac1c4721542886dfde730687c7fc725dce41105af339215c6"
+    },
+    {
+      "path": "sdk/java-client/build.gradle.kts",
+      "sizeBytes": 196,
+      "sha256": "632f8dd33ebe81e454d3d96110c7143a8334e336290bbb8a992dc9ec3e50fba6"
+    },
+    {
+      "path": "sdk/java-client/settings.gradle.kts",
+      "sizeBytes": 40,
+      "sha256": "d2bec319296b4d77e1218274e3fecd04bd47d07c92c0064f06876393c49df01b"
+    },
+    {
+      "path": "sdk/java-client/src/main/java/dev/latent/sdk/GuestContext.java",
+      "sizeBytes": 337,
+      "sha256": "6ac060034e179e15f369ad1f7cd2e9fa25cfe517618de0a82b9bf74761169d7a"
+    },
+    {
+      "path": "sdk/java-client/src/main/java/dev/latent/sdk/InvokeRequest.java",
+      "sizeBytes": 85,
+      "sha256": "5a8c8350b8e3c840fa9a8da2fca71e33ad1581ea0cfaa02161bfefc4b59ffdcc"
+    },
+    {
+      "path": "sdk/java-client/src/main/java/dev/latent/sdk/InvokeResponse.java",
+      "sizeBytes": 87,
+      "sha256": "58f50446739c7b3622736ab100dc803a085548bedf72a62be11b7ddbbccad6de"
+    },
+    {
+      "path": "sdk/java-client/src/main/java/dev/latent/sdk/LatentClient.java",
+      "sizeBytes": 243,
+      "sha256": "5d6391b6b2d43b1f9f99579f7ed297cd72ee3bf3cfd7f99f1fddb953d50d4363"
+    },
+    {
+      "path": "sdk/java-client/src/main/java/dev/latent/sdk/Models.java",
+      "sizeBytes": 2161,
+      "sha256": "119354b7290630b5edffc832e874cc637d4f5b0b03c82a6e4ec81f5a0c698ea3"
+    },
+    {
+      "path": "sdk/rust/Cargo.toml",
+      "sizeBytes": 350,
+      "sha256": "551b8aeee415ed626cf9713eff8876e208754d837efa8fc46b501c5c15a37da8"
+    },
+    {
+      "path": "sdk/rust/src/lib.rs",
+      "sizeBytes": 2479,
+      "sha256": "10ec7f429f06c045e428285754409dbb2aa55c1c6b9e44714aebd1ff553bcbdf"
+    },
+    {
+      "path": "sdk/typescript-client/package.json",
+      "sizeBytes": 329,
+      "sha256": "c7c136794263eaba6922dcea643c5444cfac6a3f2ff86945ae68389c9d39c181"
+    },
+    {
+      "path": "sdk/typescript-client/src/index.ts",
+      "sizeBytes": 2462,
+      "sha256": "cff1e4c3d6fb837c410ddedcdd68736e2c5befd7cb81b356ff9a7cc29dfc068e"
+    },
+    {
+      "path": "sdk/typescript-client/tsconfig.json",
+      "sizeBytes": 291,
+      "sha256": "cc4f464a5d52db4e6e3a61885dd3dd644285454228ae7452415c82d4dcb2fdf1"
+    },
+    {
+      "path": "tests/README.md",
+      "sizeBytes": 135,
+      "sha256": "dccf4edecf0e9eda022193bbc6a68ac3473fa384c41caff5d45e425e4ee38070"
+    },
+    {
+      "path": "tests/chaos/README.md",
+      "sizeBytes": 276,
+      "sha256": "25a96e017bc91fd9c868c37fd4c7bf2417aa6e72e3732ee4c916b9898babf2b7"
+    },
+    {
+      "path": "tests/compatibility/README.md",
+      "sizeBytes": 274,
+      "sha256": "a723ac50686dae08470ea0fd9c75e1ff5ded08ee7c0dba46cc6ab1a3d9329872"
+    },
+    {
+      "path": "tests/conformance/README.md",
+      "sizeBytes": 620,
+      "sha256": "03bd374c63aa3877c49709509d7b8c4c2a622a6945fdf6ed51b874afb9f4a8b0"
+    },
+    {
+      "path": "tests/integration/README.md",
+      "sizeBytes": 293,
+      "sha256": "8239a1404f7c7d1b4c6aff7d9e3fbc441efb5f3c5141f29666b7c211487b5049"
+    },
+    {
+      "path": "tests/leak/README.md",
+      "sizeBytes": 249,
+      "sha256": "90ed6f6dc105a86c5cff70269a88f0b5b9f692094a6d791c8c92f20fdbc37aef"
+    },
+    {
+      "path": "tests/security/README.md",
+      "sizeBytes": 342,
+      "sha256": "cef531cf13d8a719538ede0bc64e1206015497eeee861a7e67ed0b3b8d40b7a3"
+    },
+    {
+      "path": "tools/README.md",
+      "sizeBytes": 286,
+      "sha256": "ae0b8279ce3d7d89a717168e966ba1bebf34168f79c0677e10b63e7378e00d81"
+    },
+    {
+      "path": "tools/validate_repository.py",
+      "sizeBytes": 6830,
+      "sha256": "c4b490a039c6a2f3ceceeb6800dac1e66deb72c6e67969672f68fadf9207ff5c"
+    },
+    {
+      "path": "wit/README.md",
+      "sizeBytes": 524,
+      "sha256": "d9b85e8e10f8af996e89ed8b2942c34812effe6249e1a347598f1f855374709e"
+    },
+    {
+      "path": "wit/platform/blob/package.wit",
+      "sizeBytes": 867,
+      "sha256": "e73a86a069223567fd782ef0e20d83a8f25a1353d39b6d2c174c31bbfb936210"
+    },
+    {
+      "path": "wit/platform/clock/package.wit",
+      "sizeBytes": 139,
+      "sha256": "a009ecd4ad23d581523fe97b66327ebe352ac27c9c72d4e09ecc9bb003c466ea"
+    },
+    {
+      "path": "wit/platform/context/package.wit",
+      "sizeBytes": 1117,
+      "sha256": "3e0a783816d96cf9c87c2280885067117c1581b3f747dc19cf496a4ed799b3dd"
+    },
+    {
+      "path": "wit/platform/events/package.wit",
+      "sizeBytes": 572,
+      "sha256": "b599d127622a47c4d763df29ca5d0907f083566645a5d882d593701f39db68c1"
+    },
+    {
+      "path": "wit/platform/http/package.wit",
+      "sizeBytes": 997,
+      "sha256": "6ae7533f6e81d6364601a12d5f533ee60342eb6ba2e897e545e10743b4e92945"
+    },
+    {
+      "path": "wit/platform/invocation/package.wit",
+      "sizeBytes": 991,
+      "sha256": "31d74fdf38474a09d1fc0c5f67ba974e34fa9f8a4539dae3da9e098014577819"
+    },
+    {
+      "path": "wit/platform/log/package.wit",
+      "sizeBytes": 418,
+      "sha256": "071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e"
+    },
+    {
+      "path": "wit/platform/random/package.wit",
+      "sizeBytes": 272,
+      "sha256": "c8ceca00269182f27c785fe17bd42eb4776bcde96828e5b5f2786aa15dbedc60"
+    },
+    {
+      "path": "wit/platform/runtime/world.wit",
+      "sizeBytes": 558,
+      "sha256": "8dfb4076a53ed66f332def355a16ff35b2e01a3987db49aebbcff54de88efa09"
+    },
+    {
+      "path": "wit/platform/secrets/package.wit",
+      "sizeBytes": 407,
+      "sha256": "4e0593c21ac5e3051500717fcf347cf7e23821816a9fc15945c68e93cee4ee54"
+    },
+    {
+      "path": "wit/platform/state/package.wit",
+      "sizeBytes": 1450,
+      "sha256": "3f2862a27509e8d723e497ff9f6f9d416a86e54b96a7a11e2e6172040c4aee93"
+    },
+    {
+      "path": "wit/platform/telemetry/package.wit",
+      "sizeBytes": 505,
+      "sha256": "c79721b703eca86c55ab04ddcb37cbc7965287db64880c0a0bb555b92baaadc6"
+    },
+    {
+      "path": "wit/platform/timer/package.wit",
+      "sizeBytes": 610,
+      "sha256": "3c35d5a9078315848f86144e0f8f65cb7a4f8da1a54905098d4ff9c6e227090e"
+    }
+  ]
+}

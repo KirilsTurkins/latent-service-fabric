@@ -1,0 +1,17 @@
+package latent:platform@0.1.0;
+
+world capsule {
+    import latent:context/context@0.1.0;
+    import latent:log/log@0.1.0;
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    import latent:random/random@0.1.0;
+    import latent:blob/blob@0.1.0;
+    import latent:state/key-value@0.1.0;
+    import latent:events/publisher@0.1.0;
+    import latent:http/client@0.1.0;
+    import latent:secrets/reader@0.1.0;
+    import latent:timer/scheduler@0.1.0;
+    import latent:telemetry/custom@0.1.0;
+    import latent:service/invoke@0.1.0;
+}

@@ -1,0 +1,29 @@
+package examples:counter@0.1.0;
+
+interface api {
+    variant counter-error {
+        invalid-delta,
+        state-conflict,
+    }
+
+    record increment-request {
+        counter-id: string,
+        delta: s64,
+    }
+
+    record counter-value {
+        counter-id: string,
+        value: s64,
+        version: u64,
+    }
+
+    increment: func(request: increment-request) -> result<counter-value, counter-error>;
+    get: func(counter-id: string) -> result<counter-value, counter-error>;
+}
+
+world service {
+    import latent:context/context@0.1.0;
+    import latent:state/key-value@0.1.0;
+    import latent:log/log@0.1.0;
+    export api;
+}

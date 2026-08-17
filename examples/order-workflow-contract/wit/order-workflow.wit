@@ -1,0 +1,32 @@
+package examples:order-workflow@0.1.0;
+
+interface api {
+    record start-order {
+        order-id: string,
+        customer-id: string,
+        amount-cents: u64,
+    }
+
+    record workflow-handle {
+        instance-id: string,
+        status: string,
+    }
+
+    variant workflow-error {
+        invalid-order,
+        duplicate-order,
+        unavailable,
+    }
+
+    start: func(request: start-order) -> result<workflow-handle, workflow-error>;
+    status: func(instance-id: string) -> result<workflow-handle, workflow-error>;
+    cancel: func(instance-id: string, reason: string) -> result<workflow-handle, workflow-error>;
+}
+
+world service {
+    import latent:context/context@0.1.0;
+    import latent:state/key-value@0.1.0;
+    import latent:timer/scheduler@0.1.0;
+    import latent:events/publisher@0.1.0;
+    export api;
+}

@@ -1,0 +1,16 @@
+[package]
+name = "latent-workflows"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Interface contracts for latent-workflows."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+latent-state = { path = "../latent-state" }
+latent-effects = { path = "../latent-effects" }

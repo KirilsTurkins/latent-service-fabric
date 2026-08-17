@@ -1,0 +1,26 @@
+package latent:timer@0.1.0;
+
+interface scheduler {
+    record timer-request {
+        timer-id: string,
+        wake-at-unix-millis: u64,
+        payload: list<u8>,
+        media-type: string,
+        idempotency-key: string,
+    }
+
+    record timer-receipt {
+        timer-id: string,
+        scheduled-at-unix-millis: u64,
+    }
+
+    variant timer-error {
+        invalid-time,
+        permission-denied,
+        budget-exhausted,
+        unavailable,
+    }
+
+    schedule: func(request: timer-request) -> result<timer-receipt, timer-error>;
+    cancel: func(timer-id: string) -> result<bool, timer-error>;
+}

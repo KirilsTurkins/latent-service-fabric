@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+
+message FunctionDescriptor {
+  string id = 1;
+  string name = 2;
+  bool asynchronous = 3;
+  string signature = 4;
+  optional string documentation = 5;
+  map<string, string> attributes = 6;
+}
+
+message InterfaceDescriptor {
+  string id = 1;
+  repeated FunctionDescriptor functions = 2;
+  optional string documentation = 3;
+  string digest = 4;
+}
+
+message ContractDescriptor {
+  string id = 1;
+  string package_name = 2;
+  string semantic_version = 3;
+  repeated InterfaceDescriptor interfaces = 4;
+  repeated string dependencies = 5;
+  string digest = 6;
+}
+
+message GetContractRequest {
+  string id = 1;
+}
+
+message GetContractResponse {
+  optional ContractDescriptor contract = 1;
+}
+
+message ListContractsRequest {
+  optional string package_prefix = 1;
+  PageRequest page = 2;
+}
+
+message ListContractsResponse {
+  repeated ContractDescriptor contracts = 1;
+  PageResponse page = 2;
+}
+
+message CompareContractsRequest {
+  string consumer_contract_id = 1;
+  string provider_contract_id = 2;
+}
+
+message CompatibilityIssue {
+  string path = 1;
+  string code = 2;
+  string message = 3;
+}
+
+message CompareContractsResponse {
+  string compatibility_level = 1;
+  repeated CompatibilityIssue issues = 2;
+}
+
+service ContractService {
+  rpc GetContract(GetContractRequest) returns (GetContractResponse);
+  rpc ListContracts(ListContractsRequest) returns (ListContractsResponse);
+  rpc CompareContracts(CompareContractsRequest) returns (CompareContractsResponse);
+}

@@ -1,0 +1,18 @@
+[package]
+name = "latent-testkit"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Interface contracts for latent-testkit."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+latent-activation = { path = "../latent-activation" }
+latent-executor = { path = "../latent-executor" }
+latent-node = { path = "../latent-node" }
+latent-telemetry = { path = "../latent-telemetry" }

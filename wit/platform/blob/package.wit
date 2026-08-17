@@ -1,0 +1,27 @@
+package latent:blob@0.1.0;
+
+interface blob {
+    type blob-handle = u64;
+
+    record blob-reference {
+        digest: string,
+        size: u64,
+        media-type: string,
+    }
+
+    variant blob-error {
+        not-found,
+        permission-denied,
+        invalid-range,
+        checksum-mismatch,
+        budget-exhausted,
+        unavailable,
+    }
+
+    create: func(media-type: string, expected-size: option<u64>) -> result<blob-handle, blob-error>;
+    open: func(reference: blob-reference) -> result<blob-handle, blob-error>;
+    write: func(handle: blob-handle, offset: u64, bytes: list<u8>) -> result<u64, blob-error>;
+    read: func(handle: blob-handle, offset: u64, length: u32) -> result<list<u8>, blob-error>;
+    seal: func(handle: blob-handle) -> result<blob-reference, blob-error>;
+    close: func(handle: blob-handle) -> result<bool, blob-error>;
+}

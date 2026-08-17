@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+
+message BindingEndpoint {
+  string service = 1;
+  string contract = 2;
+  optional string route = 3;
+}
+
+message Binding {
+  string id = 1;
+  ObjectMetadata metadata = 2;
+  BindingEndpoint consumer = 3;
+  BindingEndpoint provider = 4;
+  string mode = 5;
+  uint64 generation = 6;
+}
+
+message ApplyBindingRequest {
+  Binding binding = 1;
+  optional uint64 expected_generation = 2;
+}
+
+message ApplyBindingResponse {
+  Binding binding = 1;
+  repeated string warnings = 2;
+}
+
+message GetBindingRequest {
+  string id = 1;
+}
+
+message GetBindingResponse {
+  optional Binding binding = 1;
+}
+
+message ListBindingsRequest {
+  optional string consumer_service = 1;
+  optional string provider_service = 2;
+  PageRequest page = 3;
+}
+
+message ListBindingsResponse {
+  repeated Binding bindings = 1;
+  PageResponse page = 2;
+}
+
+message DeleteBindingRequest {
+  string id = 1;
+  optional uint64 expected_generation = 2;
+}
+
+message ValidateBindingGraphRequest {
+  repeated Binding bindings = 1;
+}
+
+message ValidateBindingGraphResponse {
+  bool valid = 1;
+  repeated string errors = 2;
+  repeated string warnings = 3;
+  string graph_digest = 4;
+}
+
+service BindingService {
+  rpc ApplyBinding(ApplyBindingRequest) returns (ApplyBindingResponse);
+  rpc GetBinding(GetBindingRequest) returns (GetBindingResponse);
+  rpc ListBindings(ListBindingsRequest) returns (ListBindingsResponse);
+  rpc DeleteBinding(DeleteBindingRequest) returns (Empty);
+  rpc ValidateBindingGraph(ValidateBindingGraphRequest) returns (ValidateBindingGraphResponse);
+}

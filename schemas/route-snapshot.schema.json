@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1alpha1/route-snapshot.schema.json",
+  "title": "LSF Compiled Route Snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "generation",
+    "generatedAtUnixMillis",
+    "services",
+    "bindings",
+    "policyDigests",
+    "snapshotDigest"
+  ],
+  "properties": {
+    "generation": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "generatedAtUnixMillis": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "policyDigests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "snapshotDigest": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

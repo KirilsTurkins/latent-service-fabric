@@ -1,0 +1,50 @@
+package latent:http@0.1.0;
+
+interface client {
+    enum method {
+        get,
+        head,
+        post,
+        put,
+        patch,
+        delete,
+        options,
+    }
+
+    record header {
+        name: string,
+        value: string,
+    }
+
+    record request {
+        method: method,
+        url: string,
+        headers: list<header>,
+        body: option<list<u8>>,
+        body-media-type: option<string>,
+        idempotency-key: option<string>,
+        timeout-millis: option<u64>,
+    }
+
+    record response {
+        status: u16,
+        headers: list<header>,
+        body: list<u8>,
+        body-media-type: option<string>,
+    }
+
+    variant http-error {
+        invalid-url,
+        permission-denied,
+        request-too-large,
+        response-too-large,
+        deadline-exceeded,
+        budget-exhausted,
+        dns-failed,
+        tls-failed,
+        connection-failed,
+        unavailable,
+    }
+
+    send: async func(request: request) -> result<response, http-error>;
+}

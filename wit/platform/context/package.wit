@@ -1,0 +1,41 @@
+package latent:context@0.1.0;
+
+interface context {
+    record principal {
+        subject: string,
+        kind: string,
+        tenant: option<string>,
+        service: option<string>,
+        claims: list<tuple<string, string>>,
+    }
+
+    record trace-context {
+        trace-id: string,
+        span-id: string,
+        trace-flags: u8,
+        baggage: list<tuple<string, string>>,
+    }
+
+    record resource-budget {
+        cpu-fuel: u64,
+        memory-bytes: u64,
+        wall-deadline-unix-millis: option<u64>,
+        child-calls: u32,
+        outbound-requests: u32,
+        state-read-bytes: u64,
+        state-write-bytes: u64,
+        blob-read-bytes: u64,
+        blob-write-bytes: u64,
+        log-bytes: u64,
+        effect-count: u32,
+    }
+
+    activation-id: func() -> string;
+    root-activation-id: func() -> string;
+    parent-activation-id: func() -> option<string>;
+    principal: func() -> principal;
+    trace: func() -> trace-context;
+    deadline-unix-millis: func() -> option<u64>;
+    remaining-budget: func() -> resource-budget;
+    metadata: func() -> list<tuple<string, string>>;
+}

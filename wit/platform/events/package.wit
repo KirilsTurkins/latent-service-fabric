@@ -1,0 +1,26 @@
+package latent:events@0.1.0;
+
+interface publisher {
+    record event {
+        topic: string,
+        key: option<string>,
+        payload: list<u8>,
+        media-type: string,
+        attributes: list<tuple<string, string>>,
+        idempotency-key: string,
+    }
+
+    record publish-receipt {
+        event-id: string,
+        accepted-at-unix-millis: u64,
+    }
+
+    variant event-error {
+        invalid-topic,
+        permission-denied,
+        budget-exhausted,
+        unavailable,
+    }
+
+    publish: func(event: event) -> result<publish-receipt, event-error>;
+}

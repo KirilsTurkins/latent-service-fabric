@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package latent.invocation.v1;
+
+message InvocationTarget {
+  string tenant = 1;
+  string service = 2;
+  string contract = 3;
+  string function = 4;
+  optional string route = 5;
+}
+
+message ResourceBudget {
+  uint64 cpu_fuel = 1;
+  uint64 memory_bytes = 2;
+  optional uint64 wall_deadline_unix_millis = 3;
+  uint32 child_calls = 4;
+  uint32 outbound_requests = 5;
+  uint64 state_read_bytes = 6;
+  uint64 state_write_bytes = 7;
+  uint64 blob_read_bytes = 8;
+  uint64 blob_write_bytes = 9;
+  uint64 log_bytes = 10;
+  uint32 effect_count = 11;
+}
+
+message InvokeRequest {
+  optional string activation_id = 1;
+  optional string parent_activation_id = 2;
+  optional string root_activation_id = 3;
+  InvocationTarget target = 4;
+  bytes payload = 5;
+  string media_type = 6;
+  optional uint64 deadline_unix_millis = 7;
+  uint32 priority = 8;
+  optional string idempotency_key = 9;
+  ResourceBudget budget = 10;
+  map<string, string> metadata = 11;
+}
+
+message PlatformError {
+  string code = 1;
+  string message = 2;
+  bool retryable = 3;
+  map<string, string> details = 4;
+}
+
+message BudgetConsumption {
+  uint64 cpu_fuel = 1;
+  uint64 peak_memory_bytes = 2;
+  uint64 wall_time_micros = 3;
+  uint32 child_calls = 4;
+  uint32 outbound_requests = 5;
+  uint64 state_read_bytes = 6;
+  uint64 state_write_bytes = 7;
+  uint64 blob_read_bytes = 8;
+  uint64 blob_write_bytes = 9;
+  uint64 log_bytes = 10;
+  uint32 effect_count = 11;
+}
+
+message InvokeResponse {
+  string activation_id = 1;
+  string revision_id = 2;
+  string release_digest = 3;
+  uint64 route_generation = 4;
+  oneof result {
+    Success success = 5;
+    PlatformError error = 6;
+  }
+  BudgetConsumption consumption = 7;
+}
+
+message Success {
+  bytes payload = 1;
+  string media_type = 2;
+  optional string committed_state_version = 3;
+  repeated string effect_ids = 4;
+  map<string, string> metadata = 5;
+}
+
+message CancelRequest {
+  string activation_id = 1;
+  string reason = 2;
+}
+
+message CancelResponse {
+  bool accepted = 1;
+}
+
+message GetActivationRequest {
+  string activation_id = 1;
+}
+
+message ActivationStatus {
+  string activation_id = 1;
+  string phase = 2;
+  optional string terminal_state = 3;
+  uint64 last_updated_unix_millis = 4;
+  map<string, string> metadata = 5;
+}
+
+service InvocationService {
+  rpc Invoke(InvokeRequest) returns (InvokeResponse);
+  rpc Cancel(CancelRequest) returns (CancelResponse);
+  rpc GetActivation(GetActivationRequest) returns (ActivationStatus);
+}

@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+
+message CapabilityDescriptor {
+  string id = 1;
+  string contract = 2;
+  string provider = 3;
+  repeated string operations = 4;
+  map<string, string> attributes = 5;
+}
+
+message ListCapabilitiesRequest {
+  optional string contract_prefix = 1;
+  optional string provider = 2;
+  PageRequest page = 3;
+}
+
+message ListCapabilitiesResponse {
+  repeated CapabilityDescriptor capabilities = 1;
+  PageResponse page = 2;
+}
+
+message ExplainCapabilityGrantRequest {
+  string deployment_id = 1;
+  string capability_id = 2;
+  string principal = 3;
+  string operation = 4;
+  map<string, string> attributes = 5;
+}
+
+message ExplainCapabilityGrantResponse {
+  bool allowed = 1;
+  repeated string reasons = 2;
+  map<string, string> obligations = 3;
+  string policy_digest = 4;
+}
+
+service CapabilityService {
+  rpc ListCapabilities(ListCapabilitiesRequest) returns (ListCapabilitiesResponse);
+  rpc ExplainCapabilityGrant(ExplainCapabilityGrantRequest) returns (ExplainCapabilityGrantResponse);
+}

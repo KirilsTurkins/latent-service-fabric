@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+message RevisionRoute {
+  string revision_id = 1;
+  string release_digest = 2;
+  uint32 weight = 3;
+  map<string, string> attributes = 4;
+}
+
+message ServiceRoute {
+  string route_id = 1;
+  string service = 2;
+  repeated RevisionRoute revisions = 3;
+}
+
+message BindingRoute {
+  string binding_id = 1;
+  string consumer_service = 2;
+  string imported_contract = 3;
+  string provider_service = 4;
+  string provider_contract = 5;
+  string mode = 6;
+  string policy_digest = 7;
+}
+
+message RouteSnapshot {
+  uint64 generation = 1;
+  uint64 generated_at_unix_millis = 2;
+  repeated ServiceRoute services = 3;
+  repeated BindingRoute bindings = 4;
+  repeated string policy_digests = 5;
+  string snapshot_digest = 6;
+}
+
+message GetRouteSnapshotRequest {
+  optional uint64 generation = 1;
+}
+
+message GetRouteSnapshotResponse {
+  RouteSnapshot snapshot = 1;
+}
+
+message WatchRouteSnapshotsRequest {
+  uint64 after_generation = 1;
+  string node_id = 2;
+}
+
+service RouteService {
+  rpc GetRouteSnapshot(GetRouteSnapshotRequest) returns (GetRouteSnapshotResponse);
+  rpc WatchRouteSnapshots(WatchRouteSnapshotsRequest) returns (stream RouteSnapshot);
+}

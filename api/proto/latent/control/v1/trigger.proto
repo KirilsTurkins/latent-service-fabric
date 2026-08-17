@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+
+message TriggerTarget {
+  string service = 1;
+  string contract = 2;
+  string function = 3;
+  optional string route = 4;
+}
+
+message Trigger {
+  string id = 1;
+  ObjectMetadata metadata = 2;
+  string kind = 3;
+  TriggerTarget target = 4;
+  map<string, string> configuration = 5;
+  uint64 generation = 6;
+}
+
+message ApplyTriggerRequest {
+  Trigger trigger = 1;
+  optional uint64 expected_generation = 2;
+}
+
+message ApplyTriggerResponse {
+  Trigger trigger = 1;
+  repeated string warnings = 2;
+}
+
+message GetTriggerRequest {
+  string id = 1;
+}
+
+message GetTriggerResponse {
+  optional Trigger trigger = 1;
+}
+
+message ListTriggersRequest {
+  optional string kind = 1;
+  optional string target_service = 2;
+  PageRequest page = 3;
+}
+
+message ListTriggersResponse {
+  repeated Trigger triggers = 1;
+  PageResponse page = 2;
+}
+
+message DeleteTriggerRequest {
+  string id = 1;
+  optional uint64 expected_generation = 2;
+}
+
+service TriggerService {
+  rpc ApplyTrigger(ApplyTriggerRequest) returns (ApplyTriggerResponse);
+  rpc GetTrigger(GetTriggerRequest) returns (GetTriggerResponse);
+  rpc ListTriggers(ListTriggersRequest) returns (ListTriggersResponse);
+  rpc DeleteTrigger(DeleteTriggerRequest) returns (Empty);
+}
