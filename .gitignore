@@ -12,3 +12,8 @@ Thumbs.db
 coverage/
 artifacts/
 .generated/
+/sdk/typescript-client/node_modules/
+/sdk/typescript-client/dist/
+/sdk/java-client/build/
+/sdk/dotnet/**/bin/
+/sdk/dotnet/**/obj/

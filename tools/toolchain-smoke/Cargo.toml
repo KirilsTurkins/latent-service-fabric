@@ -1,0 +1,22 @@
+[package]
+name = "latent-toolchain-smoke"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Compile-only probes for the pinned Phase 0 toolchain and generated WIT bindings."
+publish = false
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+blake3.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+tokio.workspace = true
+toml.workspace = true
+wasmtime.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wit-bindgen.workspace = true

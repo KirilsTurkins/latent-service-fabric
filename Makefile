@@ -1,19 +1,39 @@
-.PHONY: check fmt fmt-check clippy schemas tree
+CARGO ?= cargo
+PYTHON ?= python3
+
+.PHONY: check guest-bindings fmt fmt-check clippy test schemas repository-tests contracts sdks validate tree
 
 check:
-	cargo check --workspace --all-targets
+	$(CARGO) check --workspace --all-targets --all-features --locked
+
+guest-bindings:
+	$(CARGO) check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
 
 fmt:
-	cargo fmt --all
+	$(CARGO) fmt --all
 
 fmt-check:
-	cargo fmt --all --check
+	$(CARGO) fmt --all --check
 
 clippy:
-	cargo clippy --workspace --all-targets --all-features
+	$(CARGO) clippy --workspace --all-targets --all-features --locked
+
+test:
+	$(CARGO) test --workspace --all-targets --all-features --locked
 
 schemas:
-	python3 tools/validate_repository.py
+	$(PYTHON) tools/validate_repository.py
+
+repository-tests:
+	$(PYTHON) -m unittest discover -s tools/tests
+
+contracts:
+	tools/validate_contracts.sh
+
+sdks:
+	tools/validate_sdks.sh
+
+validate: fmt-check check clippy test contracts sdks
 
 tree:
-	find . -type f | sort
+	find . -type f 		-not -path './.git/*' 		-not -path './target/*' 		-not -path '*/node_modules/*' 		| sort
