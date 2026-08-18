@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage the platform runtime WIT package with all repository-local dependencies."""
+"""Stage a WIT package with the repository-local platform dependencies it imports."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLATFORM_WIT = ROOT / "wit" / "platform"
+DEFAULT_SOURCE = PLATFORM_WIT / "runtime"
 
 
 def copy_wit_tree(source: Path, destination: Path) -> None:
@@ -20,14 +21,21 @@ def copy_wit_tree(source: Path, destination: Path) -> None:
         shutil.copyfile(path, target)
 
 
-def stage(destination: Path) -> None:
+def stage(destination: Path, source: Path = DEFAULT_SOURCE) -> None:
+    source = source.resolve()
+    destination = destination.resolve()
+    if not source.is_dir():
+        raise FileNotFoundError(f"WIT package source does not exist: {source}")
+    if destination == source or source in destination.parents:
+        raise ValueError("WIT staging destination must not be inside the source package")
+
     if destination.exists():
         shutil.rmtree(destination)
     (destination / "deps").mkdir(parents=True)
 
-    copy_wit_tree(PLATFORM_WIT / "runtime", destination)
+    copy_wit_tree(source, destination)
     for package in sorted(path for path in PLATFORM_WIT.iterdir() if path.is_dir()):
-        if package.name == "runtime":
+        if package.name == "runtime" or package.resolve() == source:
             continue
         copy_wit_tree(package, destination / "deps" / package.name)
 
@@ -35,8 +43,9 @@ def stage(destination: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("destination", type=Path)
+    parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
     arguments = parser.parse_args()
-    stage(arguments.destination.resolve())
+    stage(arguments.destination, arguments.source)
     return 0
 
 

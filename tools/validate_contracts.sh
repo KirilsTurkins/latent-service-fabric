@@ -7,7 +7,7 @@ OUTPUT="${TARGET_ROOT}/contracts"
 
 cd "${ROOT}"
 rm -rf "${OUTPUT}"
-mkdir -p "${OUTPUT}/wit" "${OUTPUT}/proto"
+mkdir -p "${OUTPUT}/wit" "${OUTPUT}/proto" "${OUTPUT}/example-wit"
 
 python3 tools/validate_repository.py
 python3 -m unittest discover -s tools/tests
@@ -26,7 +26,9 @@ wasm-tools component wit "${OUTPUT}/runtime-wit" --json > "${OUTPUT}/wit/platfor
 while IFS= read -r package; do
     relative="${package#"${ROOT}/"}"
     artifact="${relative//\//-}"
-    wasm-tools component wit "${package}" --json > "${OUTPUT}/wit/${artifact}.json"
+    staged="${OUTPUT}/example-wit/${artifact}"
+    python3 tools/stage_runtime_wit.py "${staged}" --source "${package}"
+    wasm-tools component wit "${staged}" --json > "${OUTPUT}/wit/${artifact}.json"
 done < <(find "${ROOT}/examples" -type d -name wit | sort)
 
 buf lint api/proto
