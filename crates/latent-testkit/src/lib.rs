@@ -1,6 +1,10 @@
-//! Conformance harness and invariant probe interfaces for execution backends and nodes.
+//! Conformance harness, invariant probes, and deterministic test utilities.
 
 #![forbid(unsafe_code)]
+
+pub mod deterministic;
+
+pub use deterministic::{block_on, DeterministicIds, ManualClock, TempWorkspace};
 
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{BoxFuture, Metadata, PlatformError};
