@@ -13,7 +13,7 @@ The Phase 0 baseline makes the interface scaffold executable without implementin
 | `wit-bindgen` | 0.60.0 | Guest-side Rust bindings, including native WIT async functions |
 | Tokio | 1.53.1 | Selected async runtime for later Phase 0 implementation work |
 | Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
-| TOML | 1.1.4+spec-1.1.0 | Configuration parsing and serialization |
+| TOML | 1.1.4 | Configuration parsing and serialization; the published crate carries `+spec-1.1.0` build metadata |
 | BLAKE3 | 1.8.5 | Content hashing |
 | Clap | 4.6.4 | CLI surfaces |
 | `tempfile` | 3.27.0 | Test-only temporary storage |
@@ -24,7 +24,7 @@ The Phase 0 baseline makes the interface scaffold executable without implementin
 | Eclipse Temurin JDK | 21.0.11+10 | Exact Java compiler and runtime distribution (`setup-java` selector `21.0.11+10.0.LTS`) |
 | Zig / Clang / C target | 0.16.0 / 21.1.8 / `x86_64-linux-gnu` | Exact bundled C frontend for the C11 header smoke test |
 
-Workspace dependencies are exact requirements in the root `Cargo.toml`. New Phase 0 crates should consume them with `workspace = true` rather than selecting independent versions.
+Workspace dependencies are exact requirements in the root `Cargo.toml`. New Phase 0 crates should consume them with `workspace = true` rather than selecting independent versions. Cargo ignores SemVer build metadata in dependency requirements, so the TOML requirement is deliberately written as `=1.1.4`; the resolved package recorded in `Cargo.lock` may display `1.1.4+spec-1.1.0`.
 
 ## Reproducibility boundary
 
