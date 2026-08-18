@@ -68,7 +68,7 @@ fn write_bindgen_invocations(output: &Path, staged_wit: &Path) -> io::Result<()>
         "wasmtime::component::bindgen!({{\n    path: {path_literal},\n    world: \"capsule\",\n}});\n"
     );
     let guest = format!(
-        "wit_bindgen::generate!({{\n    path: {path_literal},\n    world: \"capsule\",\n}});\n"
+        "wit_bindgen::generate!({{\n    path: {path_literal},\n    world: \"capsule\",\n    generate_all,\n}});\n"
     );
 
     fs::write(output.join("host_bindings.rs"), host)?;
