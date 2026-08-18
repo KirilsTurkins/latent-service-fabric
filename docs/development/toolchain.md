@@ -20,9 +20,17 @@ The Phase 0 baseline makes the interface scaffold executable without implementin
 | `wasm-tools` | 1.254.0 | Component Model-aware parsing of every WIT package and world |
 | Buf | 1.72.0 | Protobuf linting and descriptor-set generation |
 | Python / `jsonschema` | 3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
-| Go / Node / TypeScript / Java / .NET | 1.23.2 / 22.16.0 / 5.8.3 / 21 / 8.0.423 | Cross-language interface compilation |
+| Go / Node / TypeScript / .NET | 1.23.2 / 22.16.0 / 5.8.3 / 8.0.423 | Cross-language interface compilation |
+| Eclipse Temurin JDK | 21.0.11+10 | Exact Java compiler and runtime distribution (`setup-java` selector `21.0.11+10.0.LTS`) |
+| Zig / Clang / C target | 0.16.0 / 21.1.8 / `x86_64-linux-gnu` | Exact bundled C frontend for the C11 header smoke test |
 
 Workspace dependencies are exact requirements in the root `Cargo.toml`. New Phase 0 crates should consume them with `workspace = true` rather than selecting independent versions.
+
+## Reproducibility boundary
+
+CI uses the explicit `ubuntu-24.04` hosted-runner label instead of `ubuntu-latest`. Language and contract compilers are installed at the exact versions above and `tools/check_tool_versions.py` verifies the installed binaries before the SDK surfaces compile. The C check does not use the runner-provided `cc`; it uses Zig 0.16.0's bundled Clang 21.1.8 frontend with the explicit `x86_64-linux-gnu` target and C11 mode. Runner-provided shell and filesystem utilities remain outside the compiler identity boundary.
+
+TypeScript is pinned by both `package.json` and `package-lock.json`. The SDK validation installs with `npm ci` and then verifies the local compiler version against `tools/toolchain.toml`; the CI workflow therefore does not duplicate the TypeScript version as an unrelated literal.
 
 ## Clean-checkout validation sequence
 
@@ -46,6 +54,8 @@ tools/validate_contracts.sh
 tools/validate_sdks.sh
 ```
 
+The root lockfile is authoritative. Neither local validation nor CI generates or substitutes a dependency graph; a missing or stale `Cargo.lock` causes the `--locked` commands and repository validator to fail.
+
 The MSRV check used by CI can also be reproduced explicitly:
 
 ```bash
@@ -63,10 +73,11 @@ buf --version
 python --version
 go version
 node --version
-tsc --version
+node sdk/typescript-client/node_modules/typescript/bin/tsc --version
 javac -version
+java -XshowSettings:properties -version
 dotnet --version
-cc --version
+zig version
 ```
 
 ## Generated-output policy

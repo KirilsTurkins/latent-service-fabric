@@ -8,30 +8,11 @@ permissions:
   contents: read
 
 jobs:
-  lockfile:
-    name: Resolve bootstrap lockfile
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.97.1
-      - name: Resolve pinned dependency graph
-        run: cargo generate-lockfile
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cargo-lock
-          path: Cargo.lock
-          if-no-files-found: error
-
   rust:
     name: Rust 1.97.1
-    needs: lockfile
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: cargo-lock
-          path: .
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
           components: rustfmt, clippy
@@ -49,28 +30,18 @@ jobs:
 
   msrv:
     name: Rust MSRV 1.94.1
-    needs: lockfile
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: cargo-lock
-          path: .
       - uses: dtolnay/rust-toolchain@1.94.1
       - name: Check workspace at MSRV
         run: cargo +1.94.1 check --workspace --all-targets --all-features --locked
 
   contracts:
     name: Repository contracts
-    needs: lockfile
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: cargo-lock
-          path: .
       - uses: actions/setup-python@v5
         with:
           python-version: 3.13.5
@@ -92,9 +63,12 @@ jobs:
 
   sdks:
     name: Cross-language SDK surfaces
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
       - uses: actions/setup-go@v5
         with:
           go-version: 1.23.2
@@ -106,9 +80,17 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: "21.0.11+10.0.LTS"
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.423
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: "0.16.0"
       - name: Validate SDK surfaces
-        run: tools/validate_sdks.sh
+        env:
+          EXPECTED_TYPESCRIPT_VERSION: 5.8.3
+        run: |
+          tools/validate_sdks.sh
+          test "$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)" = \
+            "Version ${EXPECTED_TYPESCRIPT_VERSION}"

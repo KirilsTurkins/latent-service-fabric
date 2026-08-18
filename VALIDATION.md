@@ -17,18 +17,20 @@ The command is intentionally non-mutating for authoritative sources. Formatting 
 
 ## What is validated
 
+- The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph.
 - The pinned Rust toolchain, MSRV, target, direct dependency versions, Python requirements, and CI tool versions remain synchronized.
 - Every Rust workspace target compiles, passes Clippy, and runs its tests using the committed lockfile.
 - The runtime WIT world is staged with all platform dependencies; every platform and example WIT package is parsed by `wasm-tools`; generated Wasmtime host bindings and `wit-bindgen` guest bindings compile.
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
 - All six JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, binding, policy, and trigger examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interface surfaces compile or pass syntax checks.
+- SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.8 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
 - Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
 - Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
 
 ## CI jobs
 
-The workflow separates default Rust checks, the MSRV check, contract validation, and SDK validation. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.
+The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract validation, and SDK validation. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.
 
 ## Scope
 

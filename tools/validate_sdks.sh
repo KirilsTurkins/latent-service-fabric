@@ -4,18 +4,20 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_ROOT="${CARGO_TARGET_DIR:-${ROOT}/target}"
 OUTPUT="${TARGET_ROOT}/contracts/sdk"
-CC="${CC:-cc}"
+C_TARGET="x86_64-linux-gnu"
 
 cd "${ROOT}"
 rm -rf "${OUTPUT}"
 mkdir -p "${OUTPUT}/c" "${OUTPUT}/dotnet" "${OUTPUT}/java"
+
+npm ci --prefix sdk/typescript-client --ignore-scripts
+python3 tools/check_tool_versions.py
 
 (
     cd sdk/go
     go test ./...
 )
 
-npm ci --prefix sdk/typescript-client --ignore-scripts
 npm --prefix sdk/typescript-client run build -- --noEmit
 
 mapfile -t java_sources < <(find sdk/java-client/src/main/java -type f -name '*.java' | sort)
@@ -32,12 +34,12 @@ dotnet build sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj \
     -p:BaseIntermediateOutputPath="${OUTPUT}/dotnet/obj/" \
     -p:ContinuousIntegrationBuild=true
 
-cat > "${OUTPUT}/c/header-smoke.c" <<'EOF'
+cat > "${OUTPUT}/c/header-smoke.c" <<'EOF_C'
 #include <latent/latent.h>
 
 int main(void) {
     return 0;
 }
-EOF
-"${CC}" -std=c11 -Wall -Wextra -Werror -pedantic -fsyntax-only \
-    -I sdk/c/include "${OUTPUT}/c/header-smoke.c"
+EOF_C
+zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
+    -fsyntax-only -I sdk/c/include "${OUTPUT}/c/header-smoke.c"
