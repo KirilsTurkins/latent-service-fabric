@@ -5,8 +5,16 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Compile-only probes for the pinned Phase 0 toolchain and generated WIT bindings."
+description = "Compile probes and generated component fixtures for the pinned Phase 0 toolchain."
 publish = false
+
+[[example]]
+name = "echo-capsule"
+path = "examples/echo_capsule/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 blake3.workspace = true
