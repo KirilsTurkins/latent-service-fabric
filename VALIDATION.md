@@ -1,38 +1,37 @@
-# Validation report
+# Validation baseline
 
-Generated and validated on **2026-08-17**.
+Updated on **2026-08-18** for the Phase 0 executable contract and toolchain baseline.
 
-This repository is intentionally an interface and architecture scaffold. It contains type models, traits, WIT contracts, Protobuf services, JSON Schemas, SDK abstractions, documentation, conformance specifications, and empty binary entry points. It does not contain runtime behavior.
+## Entry point
 
-## Checks completed successfully
+After installing the exact prerequisites in [`docs/development/toolchain.md`](docs/development/toolchain.md), a clean checkout is validated with:
 
-- Repository structural validator: `python3 tools/validate_repository.py`
-- All JSON and TOML files parse successfully.
-- All six JSON Schemas are valid Draft 2020-12 schemas.
-- Capsule, deployment, binding, policy, and trigger examples conform to their schemas.
-- The GitHub Actions workflow parses as valid YAML.
-- Cargo workspace members and local path dependencies resolve structurally.
-- The 29 internal Rust crates plus the Rust SDK form an acyclic dependency graph.
-- Rust cross-crate imports resolve against the declared public interface surface in a static scan.
-- Rust source delimiters and interface-only policy checks pass.
-- Protobuf imports resolve within `api/proto/` and all definitions declare `proto3` packages.
-- WIT files declare packages and define at least one interface or world.
-- Java SDK interfaces compile with `javac 21.0.11`.
-- Go SDK interfaces pass `go test ./...` with Go 1.23.2.
-- TypeScript SDK interfaces pass strict `tsc --noEmit` with TypeScript 5.8.3.
-- C SDK header passes GCC 14.2 C11 syntax validation with warnings treated as errors.
+```bash
+python3.13 -m venv .venv
+. .venv/bin/activate
+python -m pip install --requirement tools/requirements.lock
+make validate
+```
 
-## Checks deferred to CI or a development machine
+The command is intentionally non-mutating for authoritative sources. Formatting is checked with `cargo fmt --all --check`; generated bindings and descriptors are written below `target/` or Cargo `OUT_DIR`.
 
-The generation environment did not include the following toolchains:
+## What is validated
 
-- Rust/Cargo: `cargo check`, `cargo fmt --check`, and Clippy were not executed locally.
-- `buf`/`protoc`: Protobuf definitions were structurally checked but not compiled.
-- `wasm-tools`: WIT packages were structurally checked but not parsed by a Component Model toolchain.
-- .NET SDK: the C# interface project was inspected but not compiled locally.
+- The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph.
+- The pinned Rust toolchain, MSRV, target, direct dependency versions, Python requirements, and CI tool versions remain synchronized.
+- Every Rust workspace target compiles, passes Clippy, and runs its tests using the committed lockfile.
+- The runtime WIT world is staged with all platform dependencies; every platform and example WIT package is parsed by `wasm-tools`; generated Wasmtime host bindings and `wit-bindgen` guest bindings compile.
+- All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
+- All six JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, binding, policy, and trigger examples validate against their corresponding schemas.
+- Rust, Go, TypeScript, Java, .NET, and C SDK interface surfaces compile or pass syntax checks.
+- SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.8 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
+- Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
+- Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
 
-The repository includes CI and build metadata for these checks. The first implementation commit should make a clean CI run a merge requirement before interfaces are treated as frozen.
+## CI jobs
 
-## Scope limitation
+The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract validation, and SDK validation. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.
 
-Passing these checks establishes repository consistency, syntax for the locally available SDK toolchains, and schema/example validity. It does not establish runtime correctness, wire compatibility with generated clients, performance, isolation, or the zero-idle-allocation invariant; those require the implementation and the conformance/benchmark suites described under `tests/` and `benchmarks/`.
+## Scope
+
+Passing this baseline establishes source consistency and compilability. It does not establish runtime correctness, performance, isolation, wire compatibility of future generated clients, or the zero-idle-allocation invariant under execution. Those require the Phase 0 vertical slice and the conformance and benchmark suites described under `tests/` and `benchmarks/`.

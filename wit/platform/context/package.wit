@@ -1,7 +1,7 @@
 package latent:context@0.1.0;
 
 interface context {
-    record principal {
+    record invocation-principal {
         subject: string,
         kind: string,
         tenant: option<string>,
@@ -33,7 +33,7 @@ interface context {
     activation-id: func() -> string;
     root-activation-id: func() -> string;
     parent-activation-id: func() -> option<string>;
-    principal: func() -> principal;
+    principal: func() -> invocation-principal;
     trace: func() -> trace-context;
     deadline-unix-millis: func() -> option<u64>;
     remaining-budget: func() -> resource-budget;
