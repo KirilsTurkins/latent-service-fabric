@@ -38,6 +38,7 @@ research/              Experimental tracks kept outside the production core
 docs/                  Architecture, protocol, operations, and security documentation
 tests/                 Conformance, isolation, chaos, and leak-test specifications
 benchmarks/            Benchmark definitions for validating LSF claims
+tools/                 Pinned validation, generation, and compile-smoke tooling
 ```
 
 ## Intended binaries
@@ -63,9 +64,18 @@ The first vertical slice will:
 
 See [`docs/architecture/overview.md`](docs/architecture/overview.md), [`docs/api-surface.md`](docs/api-surface.md), and [`docs/testing/invariants.md`](docs/testing/invariants.md).
 
-## Build status
+## Build and validation
 
-The Rust workspace is designed to compile using only the Rust standard library. CI is configured to run formatting, compilation, Clippy, and repository consistency checks. The checks completed in the generation environment and the unavailable toolchains are recorded in [`VALIDATION.md`](VALIDATION.md).
+The Phase 0 build baseline pins Rust, Component Model, Protobuf, schema, and SDK tools. After installing the prerequisites documented in [`docs/development/toolchain.md`](docs/development/toolchain.md), validate a clean checkout with:
+
+```bash
+python3.13 -m venv .venv
+. .venv/bin/activate
+python -m pip install --requirement tools/requirements.lock
+make validate
+```
+
+Generated bindings, parsed WIT output, Protobuf descriptors, and SDK compiler artifacts are isolated under Cargo `OUT_DIR` or `target/contracts/`; handwritten contract sources are never overwritten. See [`VALIDATION.md`](VALIDATION.md) for the checks performed.
 
 ## License
 
