@@ -4,11 +4,11 @@ mod logic;
 
 wit_bindgen::generate!({
     path: [
-        "../../examples/echo-contract/wit",
         "../../wit/platform/context",
         "../../wit/platform/log",
+        "../../examples/echo-contract/wit",
     ],
-    world: "service",
+    world: "examples:echo/service@0.1.0",
     generate_all,
 });
 

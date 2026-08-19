@@ -62,6 +62,23 @@ jobs:
           version: 1.72.0
       - name: Validate contracts, echo component, and generated bindings
         run: tools/validate_contracts.sh
+      - name: Record echo capsule build evidence
+        run: |
+          cat target/capsules/echo/build.json
+          cat target/capsules/echo/sha256.txt
+      - name: Upload echo capsule build evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-0-echo-capsule-${{ github.sha }}
+          path: |
+            target/capsules/echo/echo-capsule.wasm
+            target/capsules/echo/capsule.json
+            target/capsules/echo/build.json
+            target/capsules/echo/interface.json
+            target/capsules/echo/interface/
+            target/capsules/echo/sha256.txt
+          if-no-files-found: error
+          retention-days: 14
 
   sdks:
     name: Cross-language SDK surfaces

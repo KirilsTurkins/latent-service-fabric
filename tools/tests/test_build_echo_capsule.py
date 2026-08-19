@@ -9,6 +9,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "tools" / "build_echo_capsule.py"
+COMPONENT_SOURCE = (
+    ROOT
+    / "tools"
+    / "toolchain-smoke"
+    / "examples"
+    / "echo_capsule"
+    / "component.rs"
+)
 SPEC = importlib.util.spec_from_file_location("build_echo_capsule", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 build_echo_capsule = importlib.util.module_from_spec(SPEC)
@@ -16,6 +24,19 @@ SPEC.loader.exec_module(build_echo_capsule)
 
 
 class BuildEchoCapsuleTests(unittest.TestCase):
+    def test_wit_bindgen_loads_dependencies_before_the_echo_world(self) -> None:
+        source = COMPONENT_SOURCE.read_text(encoding="utf-8")
+        context_index = source.index('"../../wit/platform/context"')
+        log_index = source.index('"../../wit/platform/log"')
+        echo_index = source.index('"../../examples/echo-contract/wit"')
+
+        self.assertLess(context_index, echo_index)
+        self.assertLess(log_index, echo_index)
+        self.assertIn(
+            'world: "examples:echo/service@0.1.0"',
+            source,
+        )
+
     def test_root_world_surface_is_exact(self) -> None:
         wit = """\
 package root:component;
