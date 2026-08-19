@@ -4,8 +4,10 @@ mod errors;
 mod state;
 mod types;
 
-use crate::{CellClass, CellLease, CellPool, CellPoolSnapshot};
-use errors::{cancelled_error, cell_class_name, deadline_error, now_unix_millis, pool_error};
+use crate::{CellClass, CellLease, CellLeaseControl, CellPool, CellPoolSnapshot};
+use errors::{
+    cancelled_error, cell_class_name, deadline_error, pool_error, SystemWallClock, WallClock,
+};
 use latent_core::{
     ActivationId, BoxFuture, CellId, NodeId, PlatformError, PlatformErrorCode, ResourceBudget,
     TenantId,
@@ -23,6 +25,7 @@ pub(crate) use types::LeaseControl;
 
 const DROPPED_LEASE_REASON: &str = "lease dropped before an explicit release or quarantine";
 const GENERATION_EXHAUSTED_REASON: &str = "cell generation counter exhausted";
+const LEASE_TOKEN_EXHAUSTED_REASON: &str = "cell lease-token sequence exhausted";
 
 /// Node-owned configuration for the single Phase 0 cell class.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -69,6 +72,13 @@ impl std::fmt::Debug for FixedCellPool {
 impl FixedCellPool {
     /// Creates every generic slot up front. Capacity cannot change afterward.
     pub fn new(config: FixedCellPoolConfig) -> Result<Self, PlatformError> {
+        Self::new_with_clock(config, Arc::new(SystemWallClock))
+    }
+
+    fn new_with_clock(
+        config: FixedCellPoolConfig,
+        clock: Arc<dyn WallClock>,
+    ) -> Result<Self, PlatformError> {
         if config.capacity == 0 {
             return Err(pool_error(
                 PlatformErrorCode::InvalidArgument,
@@ -104,6 +114,7 @@ impl FixedCellPool {
         Ok(Self {
             inner: Arc::new(PoolInner {
                 config,
+                clock,
                 state: Mutex::new(PoolState {
                     idle,
                     active: HashMap::new(),
@@ -174,7 +185,7 @@ impl FixedCellPool {
         }
 
         let deadline = budget.wall_deadline_unix_millis;
-        let now = now_unix_millis();
+        let now = self.inner.clock.now_unix_millis();
         if deadline.is_some_and(|value| value <= now) {
             return Err(deadline_error(&activation_id, deadline.unwrap_or(now)));
         }
@@ -209,7 +220,7 @@ impl FixedCellPool {
         );
 
         let received = if let Some(deadline) = deadline {
-            let now = now_unix_millis();
+            let now = self.inner.clock.now_unix_millis();
             if deadline <= now {
                 registration.expire();
                 return Err(deadline_error(&activation_id, deadline));
@@ -231,15 +242,13 @@ impl FixedCellPool {
         registration.disarm();
         match received {
             Ok(Ok(grant)) => {
-                if deadline.is_some_and(|value| value <= now_unix_millis()) {
+                if let Some(expired_deadline) = deadline
+                    .filter(|value| *value <= self.inner.clock.now_unix_millis())
+                {
                     drop(grant);
-                    Err(deadline_error(
-                        &activation_id,
-                        deadline.unwrap_or_else(now_unix_millis),
-                    ))
-                } else {
-                    Ok(grant.accept())
+                    return Err(deadline_error(&activation_id, expired_deadline));
                 }
+                Ok(grant.accept())
             }
             Ok(Err(error)) => Err(error),
             Err(_) => Err(cancelled_error(&activation_id)),
@@ -266,6 +275,14 @@ impl CellPool for FixedCellPool {
 
     fn release<'a>(&'a self, lease: CellLease) -> BoxFuture<'a, Result<(), PlatformError>> {
         Box::pin(async move { lease.finish(&self.inner, LeaseDisposition::Reusable) })
+    }
+
+    fn capacity(&self, class: CellClass) -> u32 {
+        self.inner.observations(class).capacity
+    }
+
+    fn available(&self, class: CellClass) -> u32 {
+        self.inner.observations(class).available
     }
 
     fn cancel_waiting<'a>(
@@ -297,7 +314,7 @@ impl CellLease {
             class: identity.class,
             granted_budget: identity.granted_budget.clone(),
             expires_at_unix_millis: identity.expires_at_unix_millis,
-            control: Some(LeaseControl { owner, identity }),
+            control: Some(CellLeaseControl::Fixed(LeaseControl { owner, identity })),
         }
     }
 
@@ -314,6 +331,21 @@ impl CellLease {
                 "cell-pool.double-release",
                 [("activation_id", self.activation_id.0.clone())],
             ));
+        };
+        let control = match control {
+            CellLeaseControl::Fixed(control) => control,
+            CellLeaseControl::External(_) => {
+                return Err(pool_error(
+                    PlatformErrorCode::InvalidArgument,
+                    "cell lease belongs to a different pool implementation",
+                    false,
+                    "cell-pool.foreign-lease",
+                    [
+                        ("activation_id", self.activation_id.0.clone()),
+                        ("cell_id", self.id.0.clone()),
+                    ],
+                ));
+            }
         };
         if !control.identity.matches_visible(&self) {
             return Err(pool_error(
@@ -352,14 +384,17 @@ impl CellLease {
         let identity = control.identity.clone();
         let result = owner.finish_lease(identity, disposition);
         if result.is_ok() {
-            self.control.take();
+            self.control = None;
         }
         result
     }
 
     pub(super) fn reclaim_unaccepted(&mut self) {
         if let Some(control) = self.control.take() {
-            control.reclaim_unaccepted();
+            match control {
+                CellLeaseControl::Fixed(control) => control.reclaim_unaccepted(),
+                CellLeaseControl::External(lifecycle) => lifecycle.on_unaccepted(),
+            }
         }
     }
 }
@@ -394,7 +429,10 @@ impl Eq for CellLease {}
 impl Drop for CellLease {
     fn drop(&mut self) {
         if let Some(control) = self.control.take() {
-            control.quarantine_dropped();
+            match control {
+                CellLeaseControl::Fixed(control) => control.quarantine_dropped(),
+                CellLeaseControl::External(lifecycle) => lifecycle.on_abandoned(),
+            }
         }
     }
 }

@@ -2,12 +2,21 @@ use crate::CellClass;
 use latent_core::{ActivationId, ErrorDetail, Metadata, PlatformError, PlatformErrorCode};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub(super) fn now_unix_millis() -> u64 {
-    let millis = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis();
-    u64::try_from(millis).unwrap_or(u64::MAX)
+pub(super) trait WallClock: Send + Sync {
+    fn now_unix_millis(&self) -> u64;
+}
+
+#[derive(Debug, Default)]
+pub(super) struct SystemWallClock;
+
+impl WallClock for SystemWallClock {
+    fn now_unix_millis(&self) -> u64 {
+        let millis = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis();
+        u64::try_from(millis).unwrap_or(u64::MAX)
+    }
 }
 
 pub(super) fn len_u32(length: usize) -> u32 {

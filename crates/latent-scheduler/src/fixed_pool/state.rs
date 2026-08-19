@@ -1,20 +1,21 @@
 use super::errors::{
-    all_quarantined_error, cancelled_error, deadline_error, len_u32, now_unix_millis, pool_error,
+    all_quarantined_error, cancelled_error, deadline_error, len_u32, pool_error, WallClock,
 };
 use super::types::{
     deliver, Delivery, IdleCell, LeaseDisposition, LeaseIdentity, LeaseRequest, PendingGrant,
     PoolState, QuarantinedCell, Reservation, Waiter,
 };
-use super::{FixedCellPoolConfig, GENERATION_EXHAUSTED_REASON};
-use crate::{CellClass, CellLease, CellPoolSnapshot};
-use latent_core::{
-    ActivationId, PlatformError, PlatformErrorCode, ResourceBudget, TenantId,
+use super::{
+    FixedCellPoolConfig, GENERATION_EXHAUSTED_REASON, LEASE_TOKEN_EXHAUSTED_REASON,
 };
+use crate::{CellClass, CellLease, CellPoolSnapshot};
+use latent_core::{ActivationId, PlatformError, PlatformErrorCode, ResourceBudget, TenantId};
 use std::sync::{Arc, Mutex, MutexGuard};
 use tokio::sync::oneshot;
 
 pub(super) struct PoolInner {
     pub(super) config: FixedCellPoolConfig,
+    pub(super) clock: Arc<dyn WallClock>,
     pub(super) state: Mutex<PoolState>,
 }
 
@@ -43,7 +44,8 @@ impl PoolInner {
             let token = match state.take_lease_token() {
                 Ok(token) => token,
                 Err(error) => {
-                    state.idle.push_front(cell);
+                    Self::quarantine_token_exhaustion_locked(&mut state, cell);
+                    state.assert_invariants(&self.config);
                     return Err(error);
                 }
             };
@@ -180,7 +182,7 @@ impl PoolInner {
                                 id: active.cell.id,
                                 generation,
                             },
-                            now_unix_millis(),
+                            self.clock.now_unix_millis(),
                         )
                     } else {
                         state.quarantined.insert(
@@ -242,11 +244,12 @@ impl PoolInner {
             let token = match state.take_lease_token() {
                 Ok(token) => token,
                 Err(error) => {
-                    state.idle.push_back(cell);
+                    Self::quarantine_token_exhaustion_locked(state, cell);
                     deliveries.push(Delivery::Error {
                         sender: waiter.sender,
-                        error,
+                        error: error.clone(),
                     });
+                    Self::fail_all_waiters_locked(state, &error, &mut deliveries);
                     return deliveries;
                 }
             };
@@ -267,6 +270,30 @@ impl PoolInner {
                 grant: PendingGrant::new(lease),
             });
             return deliveries;
+        }
+    }
+
+    fn quarantine_token_exhaustion_locked(state: &mut PoolState, cell: IdleCell) {
+        state.quarantined.insert(
+            cell.id.clone(),
+            QuarantinedCell {
+                cell,
+                _reason: LEASE_TOKEN_EXHAUSTED_REASON.to_owned(),
+            },
+        );
+    }
+
+    fn fail_all_waiters_locked(
+        state: &mut PoolState,
+        error: &PlatformError,
+        deliveries: &mut Vec<Delivery>,
+    ) {
+        while let Some(waiter) = state.waiters.pop_front() {
+            state.waiting_by_activation.remove(&waiter.activation_id);
+            deliveries.push(Delivery::Error {
+                sender: waiter.sender,
+                error: error.clone(),
+            });
         }
     }
 
