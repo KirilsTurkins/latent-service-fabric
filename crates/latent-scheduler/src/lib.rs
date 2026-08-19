@@ -2,6 +2,10 @@
 
 #![forbid(unsafe_code)]
 
+mod fixed_pool;
+
+pub use fixed_pool::{FixedCellPool, FixedCellPoolConfig};
+
 use latent_activation::ActivationEnvelope;
 use latent_core::{
     ActivationId, BoxFuture, CellId, Metadata, NodeId, PlatformError, ReleaseDigest, ResourceBudget,
@@ -27,7 +31,12 @@ pub struct SchedulingRequest {
     pub required_features: Vec<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// One active, pool-managed cell assignment.
+///
+/// The lease is intentionally not cloneable. Consuming it through `CellPool::release`
+/// or `CellPool::quarantine` establishes the only reusable disposition. Dropping a
+/// live lease without either operation conservatively quarantines its generic slot.
+#[must_use = "a cell lease must be released or quarantined"]
 pub struct CellLease {
     pub id: CellId,
     pub activation_id: ActivationId,
@@ -35,6 +44,18 @@ pub struct CellLease {
     pub class: CellClass,
     pub granted_budget: ResourceBudget,
     pub expires_at_unix_millis: u64,
+    control: Option<fixed_pool::LeaseControl>,
+}
+
+/// Constant-time observations exported by a cell pool to the spike harness.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CellPoolSnapshot {
+    pub class: CellClass,
+    pub capacity: u32,
+    pub available: u32,
+    pub queue_depth: u32,
+    pub active_leases: u32,
+    pub quarantined: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -77,8 +98,26 @@ pub trait CellPool: Send + Sync {
 
     fn release<'a>(&'a self, lease: CellLease) -> BoxFuture<'a, Result<(), PlatformError>>;
 
-    fn capacity(&self, class: CellClass) -> u32;
-    fn available(&self, class: CellClass) -> u32;
+    fn cancel_waiting<'a>(
+        &'a self,
+        activation_id: &'a ActivationId,
+    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+
+    fn quarantine<'a>(
+        &'a self,
+        lease: CellLease,
+        reason: String,
+    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+
+    fn observations(&self, class: CellClass) -> CellPoolSnapshot;
+
+    fn capacity(&self, class: CellClass) -> u32 {
+        self.observations(class).capacity
+    }
+
+    fn available(&self, class: CellClass) -> u32 {
+        self.observations(class).available
+    }
 }
 
 pub trait ClusterPlacement: Send + Sync {
