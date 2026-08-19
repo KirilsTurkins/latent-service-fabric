@@ -5,6 +5,8 @@ use crate::{CellClass, CellPool};
 use latent_core::{
     ActivationId, CellId, NodeId, PlatformErrorCode, ResourceBudget, TenantId,
 };
+use std::future::{poll_fn, Future};
+use std::task::Poll;
 use std::time::Duration;
 
 fn pool(capacity: u32, queue_capacity: u32) -> FixedCellPool {
@@ -302,21 +304,29 @@ async fn duplicate_return_cannot_inflate_available_capacity() {
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn cancelling_after_handoff_reclaims_an_unaccepted_grant() {
+async fn dropping_a_ready_waiter_reclaims_an_unaccepted_grant() {
     let pool = pool(1, 1);
     let owner = acquire(&pool, "activation-owner", None)
         .await
         .expect("owner lease");
-    let waiter_pool = pool.clone();
-    let waiter = tokio::spawn(async move {
-        acquire(&waiter_pool, "activation-unaccepted", None).await
-    });
-    wait_for_queue_depth(&pool, 1).await;
+    let activation_id = ActivationId("activation-unaccepted".to_owned());
+    let tenant = TenantId("tenant-test".to_owned());
+    let budget = budget(None);
+    let mut waiter = Box::pin(pool.acquire(
+        &activation_id,
+        &tenant,
+        CellClass::Standard,
+        &budget,
+    ));
+    poll_fn(|context| {
+        assert!(matches!(waiter.as_mut().poll(context), Poll::Pending));
+        Poll::Ready(())
+    })
+    .await;
+    assert_eq!(pool.observations().queue_depth, 1);
 
     pool.release(owner).await.expect("release owner");
-    waiter.abort();
-    let join_error = waiter.await.expect_err("waiter must be aborted");
-    assert!(join_error.is_cancelled());
+    drop(waiter);
     wait_for_settled(&pool).await;
 
     let observations = pool.observations();
