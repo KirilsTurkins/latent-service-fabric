@@ -22,7 +22,9 @@ jobs:
       - name: Check workspace
         run: cargo check --workspace --all-targets --all-features --locked
       - name: Check generated guest bindings
-        run: cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
+        run: |
+          cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
+          cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
       - name: Run Clippy
         run: cargo clippy --workspace --all-targets --all-features --locked
       - name: Run tests

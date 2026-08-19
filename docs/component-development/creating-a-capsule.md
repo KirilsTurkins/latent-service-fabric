@@ -25,4 +25,18 @@ signature or local trust declaration
 - Domain errors are explicit WIT variants.
 - Platform failures remain separate.
 
-The `examples/echo-contract` directory demonstrates the shape without providing a runtime implementation.
+## Phase 0 fixture
+
+`examples/echo-contract` contains the first executable capsule fixture. Its Rust source implements the checked-in WIT world through `wit-bindgen`, imports only activation context and structured logging, and produces a locally trusted bundle with a computed digest:
+
+```bash
+make echo-capsule
+```
+
+The stronger verification command builds twice, compares the component bytes, validates the inferred world, and executes typed component tests through Wasmtime:
+
+```bash
+make echo-capsule-check
+```
+
+Generated artifacts live under `target/capsules/echo-rust/` and are not authoritative source. The checked-in WIT contract, Rust source, capsule template, root lockfile, and toolchain baseline are authoritative.

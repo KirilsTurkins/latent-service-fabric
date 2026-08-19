@@ -1,7 +1,11 @@
-//! Compile-only probes for the dependencies selected by the Phase 0 baseline.
+//! Compile probes for the dependencies selected by the Phase 0 baseline.
 //!
-//! This crate deliberately does not construct an engine, store, executor, listener,
-//! thread, process, or service-owned runtime resource.
+//! The native library does not construct an engine, store, executor, listener,
+//! thread, process, or service-owned runtime resource. The ignored component
+//! integration test constructs only invocation-scoped Wasmtime state.
+
+#[path = "../../../examples/echo-contract/guest-rust/src/logic.rs"]
+pub mod echo_fixture;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod host {
@@ -14,6 +18,10 @@ pub mod host {
 
     pub mod bindings {
         include!(concat!(env!("OUT_DIR"), "/host_bindings.rs"));
+    }
+
+    pub mod echo_bindings {
+        include!(concat!(env!("OUT_DIR"), "/echo_host_bindings.rs"));
     }
 
     pub fn digest(bytes: &[u8]) -> [u8; 32] {

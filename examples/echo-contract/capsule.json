@@ -8,7 +8,8 @@
       "tier": "example"
     },
     "annotations": {
-      "latent.dev/purpose": "contract-only"
+      "latent.dev/purpose": "phase-0-echo-fixture-template",
+      "latent.dev/source": "examples/echo-contract/guest-rust"
     }
   },
   "component": {
