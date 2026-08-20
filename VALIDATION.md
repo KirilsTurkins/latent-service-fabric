@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-18** for the Phase 0 executable contract, toolchain baseline, and Rust echo capsule fixture.
+Updated on **2026-08-19** for the Phase 0 executable contract, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -17,9 +17,11 @@ The command is intentionally non-mutating for authoritative sources. Formatting 
 
 ## What is validated
 
-- The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph.
+- The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph. Adding Tokio to `latent-scheduler` changes only that workspace package's dependency list; existing registry checksums remain byte-for-byte unchanged.
 - The pinned Rust toolchain, MSRV, target, direct dependency versions, Python requirements, and CI tool versions remain synchronized.
 - Every Rust workspace target compiles, passes Clippy, and runs its tests using the committed lockfile.
+- The fixed execution-cell pool tests cover startup-fixed capacity, concurrent acquisition limits, bounded FIFO rejection, duplicate activations and returns, modified and foreign lease identities, explicit cancellation, deterministic deadline expiry with an injected wall clock, queued-future drop before release, explicit and drop-triggered quarantine, unaccepted handoff reclamation, token-sequence exhaustion, and barrier-controlled multi-threaded release/cancellation and release/task-abort races.
+- An integration test implements `CellPool` outside `latent-scheduler` using only the original required trait methods, mints an affine lease through `CellLease::new`, and proves that the issuer-retained `CellLeaseLifecycle` capability can disposition or observe abandonment without access to `FixedCellPool` internals.
 - The runtime WIT world is staged with all platform dependencies; every platform and example WIT package is parsed by `wasm-tools`; generated Wasmtime host bindings and `wit-bindgen` guest bindings compile.
 - The Rust echo guest returns normal input unchanged and its shared implementation tests cover `empty-message`, `message-too-large`, the exact 65,536-byte boundary, UTF-8 byte accounting, and bounded activation-ID logging data.
 - The echo guest is built as a `wasm32-wasip2` Component Model artifact with generated WIT bindings. `wasm-tools validate` accepts it, and the extracted root world must import exactly `latent:context/context@0.1.0` and `latent:log/log@0.1.0` and export exactly `examples:echo/api@0.1.0`.
@@ -48,6 +50,16 @@ make echo-capsule-reproducibility
 
 The artifact remains generated rather than checked in. The generated `capsule.json` starts from the checked-in contract example but replaces its placeholder digest with the actual `sha256:` content digest and marks the artifact as an unsigned local clean build.
 
+## Fixed cell-pool command
+
+Run the focused scheduler test target explicitly:
+
+```bash
+cargo test -p latent-scheduler --all-targets --locked
+```
+
+The pool itself creates no runtime, operating-system thread, listener, socket, connection, component instance, store, or memory. Queued acquisition and deadline timers execute on the caller-provided shared Tokio runtime.
+
 ## CI jobs
 
 The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.
@@ -56,8 +68,8 @@ After a successful contracts job, the workflow prints `build.json` and `sha256.t
 
 ## Allocation boundary
 
-Contract and capsule validation starts compiler and validator commands only. It does not start a service process, construct a Wasmtime engine or store, create an async runtime or worker pool, open a listener, lease an execution cell, or reserve capsule-owned execution state.
+Contract and capsule validation starts compiler and validator commands only. It does not start a service process, construct a Wasmtime engine or store, create an async runtime or worker pool, open a listener, lease an execution cell, or reserve capsule-owned execution state. The fixed pool stores only node-owned slot identifiers and generation counters while idle; activation and tenant identity exist only in bounded waiters and active leases.
 
 ## Scope
 
-Passing this baseline establishes source consistency, guest behavior, component-interface validity, and same-boundary build reproducibility. It does not establish runtime invocation correctness, performance, isolation, cross-platform byte identity, wire compatibility of future generated clients, or the zero-idle-allocation invariant under execution. Those require the remaining Phase 0 vertical slice and the conformance and benchmark suites described under `tests/` and `benchmarks/`.
+Passing this baseline establishes source consistency, guest behavior, component-interface validity, fixed cell-pool accounting, and same-boundary build reproducibility. It does not establish runtime invocation correctness, performance, Wasmtime isolation, cross-platform byte identity, wire compatibility of future generated clients, or the complete zero-idle-allocation invariant under execution. Those require the remaining Phase 0 vertical slice and the conformance and benchmark suites described under `tests/` and `benchmarks/`.

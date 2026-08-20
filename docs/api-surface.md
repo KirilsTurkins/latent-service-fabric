@@ -43,7 +43,7 @@
 | `latent-policy` | `PolicyEngine`, `PolicyRepository` |
 | `latent-routing` | `RouteResolver`, `RouteCompiler`, snapshot source/publisher |
 | `latent-admission` | `AdmissionController`, `QuotaProvider` |
-| `latent-scheduler` | `ActivationScheduler`, `CellPool`, `ClusterPlacement` |
+| `latent-scheduler` | open `CellPool`, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `CellPoolSnapshot`, `ActivationScheduler`, `ClusterPlacement` |
 | `latent-activation` | `ActivationManager`, `ActivationJournal` |
 | `latent-executor` | `ExecutionBackend`, backend registry and cancellation |
 | `latent-wasmtime` | engine factory, AOT compiler/cache/validator |
