@@ -1,10 +1,31 @@
 use super::support::{
     acquire, assert_exact_accounting, pool, wait_for_queue_depth, wait_for_settled,
 };
-use crate::CellPool;
-use latent_core::{ActivationId, PlatformErrorCode};
+use crate::{CellLease, CellPool, FixedCellPool};
+use latent_core::{ActivationId, PlatformError, PlatformErrorCode};
+use std::future::{poll_fn, Future};
 use std::sync::Arc;
+use std::task::Poll;
 use tokio::sync::Barrier;
+
+async fn acquire_after_queue_registration(
+    pool: FixedCellPool,
+    activation: String,
+    registered: tokio::sync::oneshot::Sender<()>,
+) -> Result<CellLease, PlatformError> {
+    let mut acquisition = Box::pin(acquire(&pool, &activation, None));
+    poll_fn(|context| match acquisition.as_mut().poll(context) {
+        Poll::Pending => Poll::Ready(()),
+        Poll::Ready(result) => {
+            panic!("acquisition completed before queue registration: {result:?}")
+        }
+    })
+    .await;
+    registered
+        .send(())
+        .expect("queue registration observer remains active");
+    acquisition.await
+}
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn release_and_explicit_cancellation_race_is_linearizable() {
@@ -15,9 +36,16 @@ async fn release_and_explicit_cancellation_race_is_linearizable() {
             .expect("owner lease");
         let waiter_name = format!("waiter-explicit-{iteration}");
         let waiter_activation = ActivationId(waiter_name.clone());
-        let waiter_pool = pool.clone();
-        let waiter = tokio::spawn(async move { acquire(&waiter_pool, &waiter_name, None).await });
-        wait_for_queue_depth(&pool, 1).await;
+        let (registered_sender, registered_receiver) = tokio::sync::oneshot::channel();
+        let waiter = tokio::spawn(acquire_after_queue_registration(
+            pool.clone(),
+            waiter_name,
+            registered_sender,
+        ));
+        registered_receiver
+            .await
+            .expect("waiter task registered its queue entry");
+        assert_eq!(pool.observations().queue_depth, 1);
 
         let barrier = Arc::new(Barrier::new(3));
         let release_pool = pool.clone();
@@ -69,11 +97,17 @@ async fn release_and_task_abort_race_preserves_exact_capacity_accounting() {
         let owner = acquire(&pool, &format!("owner-abort-{iteration}"), None)
             .await
             .expect("owner lease");
-        let waiter_pool = pool.clone();
-        let waiter = tokio::spawn(async move {
-            acquire(&waiter_pool, &format!("waiter-abort-{iteration}"), None).await
-        });
-        wait_for_queue_depth(&pool, 1).await;
+        let waiter_name = format!("waiter-abort-{iteration}");
+        let (registered_sender, registered_receiver) = tokio::sync::oneshot::channel();
+        let waiter = tokio::spawn(acquire_after_queue_registration(
+            pool.clone(),
+            waiter_name,
+            registered_sender,
+        ));
+        registered_receiver
+            .await
+            .expect("waiter task registered its queue entry");
+        assert_eq!(pool.observations().queue_depth, 1);
 
         let abort_handle = waiter.abort_handle();
         let barrier = Arc::new(Barrier::new(3));
