@@ -1,8 +1,8 @@
+use super::super::types::LeaseDisposition;
 use super::support::{
     acquire, assert_exact_accounting, budget, pool, pool_with_clock, wait_for_queue_depth,
     wait_for_settled,
 };
-use super::super::types::LeaseDisposition;
 use crate::{CellClass, CellPool};
 use latent_core::{ActivationId, CellId, PlatformErrorCode, TenantId};
 use std::future::{poll_fn, Future};
