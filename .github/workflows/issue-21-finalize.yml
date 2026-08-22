@@ -1,0 +1,13 @@
+name: Issue 21 finalization rerun placeholder
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "This placeholder exists only so the explicitly re-run finalization job can remove it."

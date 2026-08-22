@@ -2,6 +2,23 @@ version: v1
 lint:
   use:
     - STANDARD
+  # Phase 0 shipped these response types before STANDARD RPC naming was enabled.
+  # Keep the existing wire API stable while enforcing every other STANDARD rule.
+  ignore_only:
+    RPC_REQUEST_RESPONSE_UNIQUE:
+      - latent/control/v1/binding.proto
+      - latent/control/v1/deployment.proto
+      - latent/control/v1/node.proto
+      - latent/control/v1/policy.proto
+      - latent/control/v1/trigger.proto
+    RPC_RESPONSE_STANDARD_NAME:
+      - latent/control/v1/binding.proto
+      - latent/control/v1/deployment.proto
+      - latent/control/v1/node.proto
+      - latent/control/v1/policy.proto
+      - latent/control/v1/route.proto
+      - latent/control/v1/trigger.proto
+      - latent/invocation/v1/invocation.proto
 breaking:
   use:
     - FILE
