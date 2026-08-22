@@ -4,41 +4,9 @@
 
 ## System decomposition
 
-```mermaid
-flowchart TB
-    subgraph Developer["Developer plane"]
-      Build[WIT and component builds]
-      Supply[SBOM, provenance, signatures]
-      Build --> Supply --> Registry[OCI registry]
-    end
+![Animated LSF system decomposition](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/system-decomposition.gif?raw=1)
 
-    subgraph Control["Control plane"]
-      Catalog[Release and contract catalogs]
-      Policy[Policy and binding compiler]
-      Routes[Route compiler]
-      Inventory[Node inventory]
-      Store[(Desired-state store)]
-      Catalog --> Policy --> Routes
-      Store --- Catalog
-      Inventory --- Routes
-    end
-
-    subgraph Data["Data plane"]
-      Ingress[Shared ingress]
-      Resolver[Local snapshot resolver]
-      Admission[Admission controller]
-      Scheduler[Fair scheduler]
-      Materializer[Artifact materializer]
-      Binder[Capability binder]
-      Cells[Fixed cell pool]
-      Commit[Commit coordinator]
-      Outbox[Effect outbox]
-      Ingress --> Resolver --> Admission --> Scheduler --> Materializer --> Binder --> Cells --> Commit --> Outbox
-    end
-
-    Registry --> Materializer
-    Routes -->|immutable snapshots| Resolver
-```
+*Animated render generated from the [SVG source](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/system-decomposition.svg) by the [Wiki diagram generator](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/visuals/generate_diagrams.py).*
 
 ## Control plane
 
