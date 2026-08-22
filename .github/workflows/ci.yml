@@ -1,21 +1,48 @@
 name: CI
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  issue21-audit-artifact:
-    name: Issue 21 audit validation artifact
+  rust:
+    name: Rust 1.97.1
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
         with:
-          fetch-depth: 0
+          components: rustfmt, clippy
+          targets: wasm32-wasip2
+      - name: Check formatting
+        run: cargo fmt --all --check
+      - name: Check workspace
+        run: cargo check --workspace --all-targets --all-features --locked
+      - name: Check generated guest bindings
+        run: |
+          cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
+          cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --all-features --locked
+      - name: Run tests
+        run: cargo test --workspace --all-targets --all-features --locked
+
+  msrv:
+    name: Rust MSRV 1.94.1
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94.1
+      - name: Check workspace at MSRV
+        run: cargo +1.94.1 check --workspace --all-targets --all-features --locked
+
+  contracts:
+    name: Repository contracts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: 3.13.5
@@ -25,93 +52,63 @@ jobs:
         run: python -m pip install --requirement tools/requirements.lock
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
-          components: rustfmt, clippy
-          targets: wasm32-wasip2,wasm32-unknown-unknown
+          targets: wasm32-wasip2
       - uses: bytecodealliance/actions/wasm-tools/setup@v1
         with:
           version: 1.254.0
       - uses: bufbuild/buf-setup-action@v1
         with:
           version: 1.72.0
-      - name: Apply the permanent component-pipeline correction
-        run: python3 tools/patch_issue19_self_contained.py
-      - name: Refresh the lockfile from the development baseline
-        shell: bash
+      - name: Validate contracts, echo component, and generated bindings
+        run: tools/validate_contracts.sh
+      - name: Record echo capsule build evidence
         run: |
-          git fetch origin development
-          git checkout origin/development -- Cargo.lock
-          cargo check -p latent-wasmtime --all-targets --all-features
-      - name: Format and validate the touched implementation
-        shell: bash
-        run: |
-          set +e
-          LOG=tools/issue21-validation.log
-          STATUS=tools/issue21-validation.status
-          : > "${LOG}"
-          rustfmt --edition 2021 \
-            crates/latent-wasmtime/src/bindings.rs \
-            crates/latent-wasmtime/src/host.rs \
-            crates/latent-wasmtime/tests/echo_backend.rs \
-            tools/toolchain-smoke/examples/oversized_log_capsule/component.rs
-
-          status=0
-          run_gate() {
-            label=$1
-            shift
-            printf '\n[%s]\n$' "${label}" >> "${LOG}"
-            printf ' %q' "$@" >> "${LOG}"
-            printf '\n' >> "${LOG}"
-            "$@" 2>&1 | tee -a "${LOG}"
-            rc=${PIPESTATUS[0]}
-            if [[ ${rc} -ne 0 ]]; then
-              status=${rc}
-            fi
-          }
-
-          run_gate check cargo check -p latent-wasmtime --all-targets --all-features --locked
-          run_gate clippy cargo clippy -p latent-wasmtime --all-targets --all-features --locked --no-deps
-          run_gate test cargo test -p latent-wasmtime --all-targets --all-features --locked
-          run_gate repository python3 tools/validate_repository.py
-          run_gate repository-tests python3 -m unittest discover -s tools/tests
-          run_gate guest-bindings cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
-          run_gate echo-build python3 tools/build_echo_capsule.py --verify-reproducible
-          run_gate attack-core cargo build -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-unknown-unknown --release --locked
-
-          ATTACK_CORE="${GITHUB_WORKSPACE}/target/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm"
-          ATTACK_COMPONENT="${GITHUB_WORKSPACE}/target/capsules/oversized-log/oversized-log-capsule.wasm"
-          mkdir -p "$(dirname "${ATTACK_COMPONENT}")"
-          run_gate attack-component wasm-tools component new "${ATTACK_CORE}" -o "${ATTACK_COMPONENT}"
-          run_gate attack-validate wasm-tools validate "${ATTACK_COMPONENT}"
-          run_gate integration env \
-            LSF_ECHO_COMPONENT="${GITHUB_WORKSPACE}/target/capsules/echo/echo-capsule.wasm" \
-            LSF_ECHO_CAPSULE="${GITHUB_WORKSPACE}/target/capsules/echo/capsule.json" \
-            LSF_OVERSIZED_LOG_COMPONENT="${ATTACK_COMPONENT}" \
-            cargo test -p latent-wasmtime --test echo_backend --locked -- --ignored --nocapture
-
-          printf '%s\n' "${status}" > "${STATUS}"
-          exit 0
-      - name: Upload generated sources, lockfile, and validation evidence
+          cat target/capsules/echo/build.json
+          cat target/capsules/echo/sha256.txt
+      - name: Upload echo capsule build evidence
         uses: actions/upload-artifact@v4
         with:
-          name: issue-21-audit-${{ github.sha }}
+          name: phase-0-echo-capsule-${{ github.sha }}
           path: |
-            Cargo.lock
-            rust-toolchain.toml
-            tools/toolchain.toml
-            tools/build_echo_capsule.py
-            tools/validate_contracts.sh
-            tools/tests/test_build_echo_capsule.py
-            examples/echo-contract/README.md
-            docs/development/toolchain.md
-            docs/development/phase-0-wasmtime.md
-            crates/latent-wasmtime/src/bindings.rs
-            crates/latent-wasmtime/src/host.rs
-            crates/latent-wasmtime/tests/echo_backend.rs
-            tools/toolchain-smoke/examples/oversized_log_capsule/component.rs
             target/capsules/echo/echo-capsule.wasm
             target/capsules/echo/capsule.json
-            target/capsules/oversized-log/oversized-log-capsule.wasm
-            tools/issue21-validation.log
-            tools/issue21-validation.status
+            target/capsules/echo/build.json
+            target/capsules/echo/interface.json
+            target/capsules/echo/interface/
+            target/capsules/echo/sha256.txt
           if-no-files-found: error
-          retention-days: 2
+          retention-days: 14
+
+  sdks:
+    name: Cross-language SDK surfaces
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.23.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+          cache: npm
+          cache-dependency-path: sdk/typescript-client/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21.0.11+10.0.LTS"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.423
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: "0.16.0"
+      - name: Validate SDK surfaces
+        env:
+          EXPECTED_TYPESCRIPT_VERSION: 5.8.3
+        run: |
+          tools/validate_sdks.sh
+          test "$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)" = \
+            "Version ${EXPECTED_TYPESCRIPT_VERSION}"
