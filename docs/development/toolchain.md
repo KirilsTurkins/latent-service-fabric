@@ -9,12 +9,13 @@ The Phase 0 baseline makes the interface scaffold executable and builds the firs
 | Rust toolchain | 1.97.1 | Default formatter, compiler, Clippy, tests, and echo-component build |
 | Rust MSRV | 1.94.1 | Oldest compiler checked for all native workspace targets |
 | Rust guest target | `wasm32-wasip2` | Compile generated guest bindings and the echo Component Model fixture |
-| Wasmtime | 47.0.3 | Host-side Component Model bindings; no engine or store is instantiated here |
+| Wasmtime | 47.0.3 | Host-side Component Model engine, generated bindings, and Phase 0 echo execution |
 | `wit-bindgen` | 0.60.0 | Guest-side Rust bindings and canonical ABI exports generated from WIT |
 | Tokio | 1.53.1 | Selected async runtime for later Phase 0 implementation work |
 | Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
 | TOML | 1.1.4 | Configuration parsing and serialization; the published crate carries `+spec-1.1.0` build metadata |
-| BLAKE3 | 1.8.5 | General content hashing selected for later runtime work |
+| BLAKE3 | 1.8.5 | Runtime cache keys and prepared-component identity |
+| SHA-256 (`sha2`) | 0.10.9 | Component digest verification against generated capsule metadata |
 | Clap | 4.6.4 | CLI surfaces |
 | `tempfile` | 3.27.0 | Test-only temporary storage |
 | `wasm-tools` | 1.254.0 | WIT parsing, component validation, and interface extraction |
