@@ -37,3 +37,5 @@ buf build api/proto --as-file-descriptor-set -o "${OUTPUT}/proto/latent-api.bin"
 cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
 python3 tools/build_echo_capsule.py --verify-reproducible
+LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
+    cargo test -p latent-wasmtime --test echo_backend --locked -- --ignored --nocapture

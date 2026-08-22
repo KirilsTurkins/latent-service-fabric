@@ -5,12 +5,21 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-wasmtime."
+description = "Phase 0 Wasmtime Component Model execution backend for Latent Service Fabric."
 
 [lints]
 workspace = true
 
 [dependencies]
-latent-core = { path = "../latent-core" }
+blake3.workspace = true
 latent-artifacts = { path = "../latent-artifacts" }
+latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
+latent-manifest = { path = "../latent-manifest" }
+sha2 = "=0.10.9"
+wasmtime.workspace = true
+
+[dev-dependencies]
+latent-activation = { path = "../latent-activation" }
+latent-routing = { path = "../latent-routing" }
+tokio.workspace = true
