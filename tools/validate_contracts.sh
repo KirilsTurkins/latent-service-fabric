@@ -36,6 +36,13 @@ buf build api/proto --as-file-descriptor-set -o "${OUTPUT}/proto/latent-api.bin"
 
 cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
+cargo check -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --locked
 python3 tools/build_echo_capsule.py --verify-reproducible
+cargo build -p latent-toolchain-smoke --example oversized-log-capsule \
+    --target wasm32-wasip2 --release --locked
+OVERSIZED_LOG_COMPONENT="${TARGET_ROOT}/wasm32-wasip2/release/examples/oversized-log-capsule.wasm"
+wasm-tools validate "${OVERSIZED_LOG_COMPONENT}"
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
+LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
+LSF_OVERSIZED_LOG_COMPONENT="${OVERSIZED_LOG_COMPONENT}" \
     cargo test -p latent-wasmtime --test echo_backend --locked -- --ignored --nocapture
