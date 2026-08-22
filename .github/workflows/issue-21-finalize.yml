@@ -1,9 +1,13 @@
 name: Issue 21 finalize
 
 on:
-  push:
+  pull_request:
     branches:
-      - feat/issue-21-wasmtime-echo
+      - development
+
+concurrency:
+  group: issue-21-finalize-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
