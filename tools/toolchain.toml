@@ -2,6 +2,7 @@
 toolchain = "1.97.1"
 msrv = "1.94.1"
 target = "wasm32-wasip2"
+component-target = "wasm32-unknown-unknown"
 
 [rust.dependencies]
 blake3 = "1.8.5"

@@ -27,7 +27,8 @@ CAPSULE_SCHEMA = ROOT / "schemas" / "capsule-manifest.schema.json"
 
 PACKAGE = "latent-toolchain-smoke"
 EXAMPLE = "echo-capsule"
-TARGET = "wasm32-wasip2"
+BINDINGS_TARGET = "wasm32-wasip2"
+CORE_TARGET = "wasm32-unknown-unknown"
 PROFILE = "release"
 ARTIFACT_NAME = "echo-capsule.wasm"
 SOURCE_WORLD = "examples:echo/service@0.1.0"
@@ -95,10 +96,20 @@ def parse_version(output: str, tool: str) -> str:
 
 
 def verify_tool_versions(toolchain: dict[str, Any]) -> None:
-    configured_target = str(toolchain["rust"]["target"])
-    if configured_target != TARGET:
+    configured_bindings_target = str(toolchain["rust"]["target"])
+    if configured_bindings_target != BINDINGS_TARGET:
         raise BuildError(
-            f"tools/toolchain.toml selects {configured_target}; the echo fixture expects {TARGET}"
+            "tools/toolchain.toml selects "
+            f"{configured_bindings_target} for generated-binding checks; "
+            f"the echo fixture expects {BINDINGS_TARGET}"
+        )
+
+    configured_core_target = str(toolchain["rust"]["component-target"])
+    if configured_core_target != CORE_TARGET:
+        raise BuildError(
+            "tools/toolchain.toml selects "
+            f"{configured_core_target} for component cores; "
+            f"the echo fixture expects {CORE_TARGET}"
         )
 
     rustc = command_from_environment("RUSTC", "rustc")
@@ -205,7 +216,7 @@ def build_once(build_directory: Path) -> bytes:
             "--locked",
             "--release",
             "--target",
-            TARGET,
+            CORE_TARGET,
             "--package",
             PACKAGE,
             "--example",
@@ -217,7 +228,22 @@ def build_once(build_directory: Path) -> bytes:
         ],
         environment=canonical_build_environment(),
     )
-    return extract_cargo_artifact(completed.stdout).read_bytes()
+    core_artifact = extract_cargo_artifact(completed.stdout)
+    component_artifact = build_directory / "componentized" / ARTIFACT_NAME
+    component_artifact.parent.mkdir(parents=True, exist_ok=True)
+    wasm_tools = command_from_environment("WASM_TOOLS", "wasm-tools")
+    run_checked(
+        [
+            *wasm_tools,
+            "component",
+            "new",
+            str(core_artifact),
+            "-o",
+            str(component_artifact),
+        ],
+        environment=canonical_build_environment(),
+    )
+    return component_artifact.read_bytes()
 
 
 def build_component(target_root: Path, verify_reproducible: bool) -> tuple[bytes, bool]:
@@ -390,7 +416,7 @@ def validate_and_stage_output(
             "cargoPackage": PACKAGE,
             "cargoTarget": EXAMPLE,
             "profile": PROFILE,
-            "target": TARGET,
+            "target": CORE_TARGET,
             "sourceWorld": SOURCE_WORLD,
             "imports": sorted(EXPECTED_IMPORTS),
             "exports": sorted(EXPECTED_EXPORTS),

@@ -8,7 +8,8 @@ The Phase 0 baseline makes the interface scaffold executable and builds the firs
 | --- | ---: | --- |
 | Rust toolchain | 1.97.1 | Default formatter, compiler, Clippy, tests, and echo-component build |
 | Rust MSRV | 1.94.1 | Oldest compiler checked for all native workspace targets |
-| Rust guest target | `wasm32-wasip2` | Compile generated guest bindings and the echo Component Model fixture |
+| Rust binding-check target | `wasm32-wasip2` | Compile generated guest bindings against the preview-2 target |
+| Rust component-core target | `wasm32-unknown-unknown` | Build a self-contained core module before explicit Component Model wrapping |
 | Wasmtime | 47.0.3 | Host-side Component Model engine, generated bindings, and Phase 0 echo execution |
 | `wit-bindgen` | 0.60.0 | Guest-side Rust bindings and canonical ABI exports generated from WIT |
 | Tokio | 1.53.1 | Selected async runtime for later Phase 0 implementation work |
@@ -18,7 +19,7 @@ The Phase 0 baseline makes the interface scaffold executable and builds the firs
 | SHA-256 (`sha2`) | 0.10.9 | Component digest verification against generated capsule metadata |
 | Clap | 4.6.4 | CLI surfaces |
 | `tempfile` | 3.27.0 | Test-only temporary storage |
-| `wasm-tools` | 1.254.0 | WIT parsing, component validation, and interface extraction |
+| `wasm-tools` | 1.254.0 | WIT parsing, component validation, explicit componentization, and interface extraction |
 | Buf | 1.72.0 | Protobuf linting and descriptor-set generation |
 | Python / `jsonschema` | 3.13.5 / 4.26.0 | Repository, generated capsule, and Draft 2020-12 schema validation |
 | Go / Node / TypeScript / .NET | 1.23.2 / 22.16.0 / 5.8.3 / 8.0.423 | Cross-language interface compilation |
@@ -33,7 +34,7 @@ CI uses the explicit `ubuntu-24.04` hosted-runner label instead of `ubuntu-lates
 
 TypeScript is pinned by both `package.json` and `package-lock.json`. The SDK validation installs with `npm ci` and then verifies the local compiler version against `tools/toolchain.toml`; the CI workflow therefore does not duplicate the TypeScript version as an unrelated literal.
 
-The echo build tool requires the active Rust and `wasm-tools` versions to equal the baseline. It removes ambient `RUSTFLAGS`, `CARGO_ENCODED_RUSTFLAGS`, and `CARGO_TARGET_DIR` from the child Cargo environment; disables incremental compilation; fixes release codegen units, debug information, stripping, locale, timezone, and `SOURCE_DATE_EPOCH`; and always uses the committed lockfile. `make echo-capsule-reproducibility` performs two isolated clean builds and compares the complete component bytes before publishing the generated output.
+The echo build tool requires the active Rust and `wasm-tools` versions to equal the baseline. It removes ambient `RUSTFLAGS`, `CARGO_ENCODED_RUSTFLAGS`, and `CARGO_TARGET_DIR` from the child Cargo environment; disables incremental compilation; fixes release codegen units, debug information, stripping, locale, timezone, and `SOURCE_DATE_EPOCH`; and always uses the committed lockfile. It compiles a self-contained core for `wasm32-unknown-unknown`, wraps that core explicitly with `wasm-tools component new`, validates the resulting component, and rejects any import/export surface beyond the two declared Phase 0 host capabilities and echo export. `make echo-capsule-reproducibility` performs two isolated clean core-build-and-componentization passes and compares the complete component bytes before publishing the generated output.
 
 The Phase 0 reproducibility claim is deliberately bounded: byte identity is verified for the same checkout and source path on the same host platform with the pinned compiler, target, lockfile, and canonical release settings. Cross-platform byte identity is not claimed.
 
@@ -59,7 +60,7 @@ tools/validate_contracts.sh
 tools/validate_sdks.sh
 ```
 
-`tools/validate_contracts.sh` also compiles the generated echo bindings for `wasm32-wasip2`, builds the release component twice, requires byte-identical output, validates the binary with `wasm-tools`, extracts its interface, rejects any import/export drift, and emits generated capsule metadata with the actual SHA-256 digest.
+`tools/validate_contracts.sh` compiles the generated echo and oversized-log bindings for `wasm32-wasip2`, builds each authority-free core for `wasm32-unknown-unknown`, wraps each core with `wasm-tools component new`, requires byte-identical echo output across two clean builds, validates both components, extracts the echo interface, rejects any import/export drift, emits generated capsule metadata with the actual SHA-256 digest, and executes the oversized canonical-ABI host-call-fuel regression through the Wasmtime backend.
 
 The root lockfile is authoritative. Neither local validation nor CI generates or substitutes a dependency graph; a missing or stale `Cargo.lock` causes the `--locked` commands and repository validator to fail.
 
@@ -70,7 +71,7 @@ rustup toolchain install 1.94.1 --profile minimal
 cargo +1.94.1 check --workspace --all-targets --all-features --locked
 ```
 
-The Rust toolchain file installs `rustfmt`, Clippy, and `wasm32-wasip2`. Install the remaining contract tools at the selected versions, for example with `cargo install wasm-tools --version 1.254.0 --locked` and the Buf 1.72.0 release binary. Verify prerequisite resolution before validation with:
+The Rust toolchain file installs `rustfmt`, Clippy, `wasm32-wasip2`, and `wasm32-unknown-unknown`. Install the remaining contract tools at the selected versions, for example with `cargo install wasm-tools --version 1.254.0 --locked` and the Buf 1.72.0 release binary. Verify prerequisite resolution before validation with:
 
 ```bash
 rustc --version

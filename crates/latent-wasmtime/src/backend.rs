@@ -19,7 +19,9 @@ use wasmtime::component::{Component, HasSelf, Linker};
 use wasmtime::{Config, Engine, Store, WasmBacktraceDetails};
 
 use crate::bindings;
-use crate::host::{ActivationHostContext, BoundedLogSink, HostState};
+use crate::host::{
+    hostcall_fuel_limit, ActivationHostContext, BoundedLogSink, HostState,
+};
 use crate::{WasmtimeEngineFactory, WasmtimeEngineProfile};
 
 pub const BACKEND_ID: &str = "wasmtime-component-phase-0";
@@ -102,8 +104,9 @@ impl Phase0WasmtimeConfig {
 
     fn configuration_digest(&self) -> String {
         let material = format!(
-            "component-model=1;component-model-async=1;fuel=1;epoch=1;max-component={};\
-             max-memory={};max-fuel={};wasm-stack={};async-stack={};cache-entries={};\
+            "component-model=1;component-model-async=1;fuel=1;epoch=1;aggregate-memory=1;\
+             hostcall-fuel=v1-bounded-log-payload;max-component={};max-memory={};\
+             max-fuel={};wasm-stack={};async-stack={};cache-entries={};\
              cache-bytes={};invocation-log-entries={};invocation-log-bytes={};\
              retained-log-entries={};retained-log-bytes={};epoch-ticks={};target={};cpu={}",
             self.maximum_component_bytes,
@@ -171,6 +174,14 @@ impl Phase0WasmtimeEngineFactory {
         configuration.insert("component-model-async".to_owned(), "enabled".to_owned());
         configuration.insert("fuel".to_owned(), "enabled".to_owned());
         configuration.insert("epoch-interruption".to_owned(), "enabled".to_owned());
+        configuration.insert(
+            "memory-accounting".to_owned(),
+            "aggregate-linear-memory".to_owned(),
+        );
+        configuration.insert(
+            "hostcall-fuel".to_owned(),
+            "per-invocation-bounded-log-payload".to_owned(),
+        );
         configuration.insert(
             "maximum-memory-bytes".to_owned(),
             config.maximum_memory_bytes.to_string(),
@@ -603,6 +614,10 @@ impl Phase0WasmtimeBackend {
         let started = Instant::now();
         self.stores_created.fetch_add(1, Ordering::Relaxed);
         let mut store = Store::new(&self.engine, host_state);
+        store.set_hostcall_fuel(hostcall_fuel_limit(
+            self.config.invocation_log_maximum_bytes,
+            request.budget.log_bytes,
+        ));
         store.limiter(|state| &mut state.limiter);
         store.set_fuel(request.budget.cpu_fuel).map_err(|error| {
             platform_error(
