@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - feat/issue-21-wasmtime-echo
-  pull_request:
-    branches:
-      - development
 
 permissions:
   contents: write
@@ -27,7 +24,7 @@ jobs:
         run: |
           cat tools/issue21-payload/part-* | tr -d '\n' | base64 --decode > /tmp/issue-21.tar.gz
           printf '%s  %s\n' \
-            'f0f3bcf60a2aa9e9befb8b7a9399abbb111e707dbf52acd82a3381fd438aec52' \
+            'aba8817670e2ed4d10911edfa82246f9da9158a0eb71f9785bf60c950ae98feb' \
             '/tmp/issue-21.tar.gz' | sha256sum --check
           tar --extract --gzip --file /tmp/issue-21.tar.gz --directory .
       - name: Refresh locked dependency graph
@@ -40,6 +37,8 @@ jobs:
         run: cargo clippy -p latent-wasmtime --all-targets --all-features --locked -- -D warnings
       - name: Test implementation
         run: cargo test -p latent-wasmtime --all-targets --all-features --locked
+      - name: Validate repository scripts
+        run: bash -n tools/validate_contracts.sh
       - name: Commit implementation
         shell: bash
         run: |
@@ -49,13 +48,14 @@ jobs:
           git rm -r -- tools/issue21-payload
           git add -- \
             Cargo.lock \
-            .github/workflows/ci.yml \
             crates/latent-wasmtime/Cargo.toml \
             crates/latent-wasmtime/build.rs \
             crates/latent-wasmtime/src/lib.rs \
+            crates/latent-wasmtime/src/backend.rs \
             crates/latent-wasmtime/src/bindings.rs \
-            crates/latent-wasmtime/src/runtime.rs \
+            crates/latent-wasmtime/src/host.rs \
             crates/latent-wasmtime/tests/echo_backend.rs \
-            docs/architecture/wasmtime-phase-0.md
+            docs/development/phase-0-wasmtime.md \
+            tools/validate_contracts.sh
           git commit -m 'feat: implement the Phase 0 Wasmtime echo backend'
           git push origin HEAD:feat/issue-21-wasmtime-echo
