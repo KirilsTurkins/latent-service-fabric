@@ -14,6 +14,23 @@ const MAX_LOG_MESSAGE_BYTES: usize = 256;
 const MAX_LOG_FIELDS: usize = 16;
 const MAX_LOG_FIELD_NAME_BYTES: usize = 64;
 const MAX_LOG_FIELD_VALUE_BYTES: usize = 256;
+const HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES: usize = 4 * 1024;
+const HOSTCALL_FUEL_PER_FIELD_OVERHEAD_BYTES: usize = 32;
+const MAX_LOG_GUEST_PAYLOAD_BYTES: usize = MAX_LOG_MESSAGE_BYTES
+    + MAX_LOG_FIELDS * (MAX_LOG_FIELD_NAME_BYTES + MAX_LOG_FIELD_VALUE_BYTES);
+const MAX_LOG_CANONICAL_OVERHEAD_BYTES: usize = HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES
+    + MAX_LOG_FIELDS * HOSTCALL_FUEL_PER_FIELD_OVERHEAD_BYTES;
+
+pub(crate) fn hostcall_fuel_limit(
+    configured_maximum_log_bytes: usize,
+    delegated_log_bytes: u64,
+) -> usize {
+    let delegated = usize::try_from(delegated_log_bytes).unwrap_or(usize::MAX);
+    let permitted_payload = configured_maximum_log_bytes
+        .min(delegated)
+        .min(MAX_LOG_GUEST_PAYLOAD_BYTES);
+    MAX_LOG_CANONICAL_OVERHEAD_BYTES.saturating_add(permitted_payload)
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CapturedLog {
@@ -201,9 +218,18 @@ fn level_name(level: log::Level) -> &'static str {
 }
 
 #[derive(Debug)]
+struct PendingMemoryGrowth {
+    bytes: usize,
+    previous_peak_memory_bytes: usize,
+}
+
+#[derive(Debug)]
 pub(crate) struct TrackingLimiter {
     limits: StoreLimits,
-    peak_memory_bytes: u64,
+    maximum_memory_bytes: usize,
+    current_memory_bytes: usize,
+    peak_memory_bytes: usize,
+    pending_memory_growth: Option<PendingMemoryGrowth>,
 }
 
 impl TrackingLimiter {
@@ -217,12 +243,20 @@ impl TrackingLimiter {
                 .memories(16)
                 .trap_on_grow_failure(true)
                 .build(),
+            maximum_memory_bytes,
+            current_memory_bytes: 0,
             peak_memory_bytes: 0,
+            pending_memory_growth: None,
         }
     }
 
     pub(crate) fn peak_memory_bytes(&self) -> u64 {
-        self.peak_memory_bytes
+        u64::try_from(self.peak_memory_bytes).unwrap_or(u64::MAX)
+    }
+
+    #[cfg(test)]
+    fn current_memory_bytes(&self) -> usize {
+        self.current_memory_bytes
     }
 }
 
@@ -233,16 +267,39 @@ impl ResourceLimiter for TrackingLimiter {
         desired: usize,
         maximum: Option<usize>,
     ) -> wasmtime::Result<bool> {
+        // A later limiter callback means the previous permitted growth completed.
+        self.pending_memory_growth = None;
+
+        let growth = desired.saturating_sub(current);
+        let aggregate = self
+            .current_memory_bytes
+            .checked_add(growth)
+            .ok_or_else(|| wasmtime::Error::msg("aggregate linear-memory accounting overflow"))?;
+        if aggregate > self.maximum_memory_bytes {
+            return Err(wasmtime::Error::msg(format!(
+                "aggregate linear-memory budget exceeded: requested {aggregate} bytes, limit {} bytes",
+                self.maximum_memory_bytes
+            )));
+        }
+
         let allowed = self.limits.memory_growing(current, desired, maximum)?;
         if allowed {
-            self.peak_memory_bytes = self
-                .peak_memory_bytes
-                .max(u64::try_from(desired).unwrap_or(u64::MAX));
+            let previous_peak_memory_bytes = self.peak_memory_bytes;
+            self.current_memory_bytes = aggregate;
+            self.peak_memory_bytes = self.peak_memory_bytes.max(aggregate);
+            self.pending_memory_growth = Some(PendingMemoryGrowth {
+                bytes: growth,
+                previous_peak_memory_bytes,
+            });
         }
         Ok(allowed)
     }
 
     fn memory_grow_failed(&mut self, error: wasmtime::Error) -> wasmtime::Result<()> {
+        if let Some(pending) = self.pending_memory_growth.take() {
+            self.current_memory_bytes = self.current_memory_bytes.saturating_sub(pending.bytes);
+            self.peak_memory_bytes = pending.previous_peak_memory_bytes;
+        }
         self.limits.memory_grow_failed(error)
     }
 
@@ -252,6 +309,7 @@ impl ResourceLimiter for TrackingLimiter {
         desired: usize,
         maximum: Option<usize>,
     ) -> wasmtime::Result<bool> {
+        self.pending_memory_growth = None;
         self.limits.table_growing(current, desired, maximum)
     }
 
@@ -444,5 +502,58 @@ fn principal_kind(kind: PrincipalKind) -> &'static str {
         PrincipalKind::Administrator => "administrator",
         PrincipalKind::Anonymous => "anonymous",
         _ => "unknown",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const WASM_PAGE_BYTES: usize = 64 * 1024;
+
+    #[test]
+    fn aggregate_memory_budget_counts_all_linear_memories() {
+        let mut limiter = TrackingLimiter::new(2 * WASM_PAGE_BYTES);
+
+        assert!(
+            limiter
+                .memory_growing(0, WASM_PAGE_BYTES, None)
+                .expect("first memory must fit")
+        );
+        assert!(
+            limiter
+                .memory_growing(0, WASM_PAGE_BYTES, None)
+                .expect("second memory must fit exactly")
+        );
+        assert_eq!(limiter.current_memory_bytes(), 2 * WASM_PAGE_BYTES);
+        assert_eq!(
+            limiter.peak_memory_bytes(),
+            u64::try_from(2 * WASM_PAGE_BYTES).expect("test value fits u64")
+        );
+
+        let error = limiter
+            .memory_growing(WASM_PAGE_BYTES, 2 * WASM_PAGE_BYTES, None)
+            .expect_err("aggregate growth beyond the activation budget must trap");
+        assert!(
+            error
+                .to_string()
+                .contains("aggregate linear-memory budget exceeded")
+        );
+        assert_eq!(limiter.current_memory_bytes(), 2 * WASM_PAGE_BYTES);
+        assert_eq!(
+            limiter.peak_memory_bytes(),
+            u64::try_from(2 * WASM_PAGE_BYTES).expect("test value fits u64")
+        );
+    }
+
+    #[test]
+    fn hostcall_fuel_is_bounded_by_the_log_contract_and_delegated_budget() {
+        let contract_ceiling = MAX_LOG_CANONICAL_OVERHEAD_BYTES + MAX_LOG_GUEST_PAYLOAD_BYTES;
+        assert_eq!(hostcall_fuel_limit(usize::MAX, u64::MAX), contract_ceiling);
+        assert_eq!(
+            hostcall_fuel_limit(128, 64),
+            MAX_LOG_CANONICAL_OVERHEAD_BYTES + 64
+        );
+        assert!(contract_ceiling < 128 * 1024 * 1024);
     }
 }
