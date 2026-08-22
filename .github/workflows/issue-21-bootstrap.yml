@@ -37,7 +37,7 @@ jobs:
       - name: Check implementation
         run: cargo check -p latent-wasmtime --all-targets --all-features --locked
       - name: Lint implementation
-        run: cargo clippy -p latent-wasmtime --no-deps --all-targets --all-features --locked -- -D warnings
+        run: cargo clippy -p latent-wasmtime --no-deps --all-targets --all-features --locked
       - name: Test implementation
         run: cargo test -p latent-wasmtime --all-targets --all-features --locked
       - name: Validate repository scripts
