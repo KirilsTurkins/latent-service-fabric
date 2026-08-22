@@ -6,6 +6,7 @@ on:
       - docs/wiki
     paths:
       - "wiki/pages/**"
+      - "wiki/visuals/**"
       - ".github/workflows/publish-wiki.yml"
   workflow_dispatch:
 
@@ -22,15 +23,89 @@ jobs:
     steps:
       - name: Check out Wiki source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Validate managed pages
+      - name: Set up diagram renderer
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: wiki/visuals/requirements.txt
+
+      - name: Generate animated Wiki diagrams
         shell: bash
         run: |
           set -euo pipefail
+          python -m pip install --requirement wiki/visuals/requirements.txt
+          python wiki/visuals/generate_diagrams.py
+
+      - name: Validate managed pages and visuals
+        shell: bash
+        run: |
+          set -euo pipefail
+
           test -f wiki/pages/Home.md
           test -f wiki/pages/_Sidebar.md
           test -f wiki/pages/_Footer.md
           test "$(find wiki/pages -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 20
+
+          for asset in \
+            wiki/pages/assets/architecture-at-a-glance.gif \
+            wiki/pages/assets/architecture-at-a-glance.svg \
+            wiki/pages/assets/system-decomposition.gif \
+            wiki/pages/assets/system-decomposition.svg
+          do
+            test -s "${asset}"
+          done
+
+          if grep -RIn --include='*.md' '```mermaid' wiki/pages; then
+            echo "Mermaid blocks are not permitted in the managed Wiki."
+            exit 1
+          fi
+
+          if grep -RInE --include='*.md' '^\|.*\[\[[^]]+\|[^]]+\]\].*\|' wiki/pages; then
+            echo "MediaWiki links containing pipes break Markdown table column parsing."
+            exit 1
+          fi
+
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          for path in (
+              Path("wiki/pages/assets/architecture-at-a-glance.gif"),
+              Path("wiki/pages/assets/system-decomposition.gif"),
+          ):
+              with Image.open(path) as image:
+                  if image.format != "GIF" or not getattr(image, "is_animated", False):
+                      raise SystemExit(f"{path} is not an animated GIF")
+                  if image.n_frames < 12:
+                      raise SystemExit(f"{path} has too few animation frames")
+
+          for path in (
+              Path("wiki/pages/assets/architecture-at-a-glance.svg"),
+              Path("wiki/pages/assets/system-decomposition.svg"),
+          ):
+              source = path.read_text(encoding="utf-8")
+              if "<svg" not in source or "@keyframes" not in source or "animateMotion" not in source:
+                  raise SystemExit(f"{path} is not an animated SVG source")
+          PY
+
+      - name: Record generated visual assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add wiki/pages/assets
+
+          if git diff --cached --quiet; then
+            echo "Generated visual assets are already current."
+          else
+            git commit -m "docs(wiki): regenerate animated visual assets"
+            git push origin HEAD:docs/wiki
+          fi
 
       - name: Publish pages
         shell: bash
@@ -47,7 +122,7 @@ jobs:
             "https://x-access-token:${WIKI_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" \
             "${wiki_dir}"
 
-          # Preserve unknown pages while replacing all LSF-managed pages.
+          # Preserve unknown pages while replacing all LSF-managed pages and assets.
           cp -a "${pages_dir}/." "${wiki_dir}/"
 
           cd "${wiki_dir}"
