@@ -1,0 +1,102 @@
+name: Bootstrap and verify LSF Wiki
+
+on:
+  push:
+    branches:
+      - docs/wiki
+    paths:
+      - ".github/workflows/bootstrap-wiki.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lsf-wiki-publish
+  cancel-in-progress: true
+
+jobs:
+  publish-and-report:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out Wiki source
+        uses: actions/checkout@v4
+
+      - name: Validate managed pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f wiki/pages/Home.md
+          test -f wiki/pages/_Sidebar.md
+          test -f wiki/pages/_Footer.md
+          test "$(find wiki/pages -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 20
+
+      - name: Publish pages
+        id: publish
+        continue-on-error: true
+        shell: bash
+        env:
+          WIKI_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pages_dir="${GITHUB_WORKSPACE}/wiki/pages"
+          wiki_dir="${RUNNER_TEMP}/wiki-repository"
+          rm -rf "${wiki_dir}"
+
+          git clone \
+            "https://x-access-token:${WIKI_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" \
+            "${wiki_dir}"
+
+          cp -a "${pages_dir}/." "${wiki_dir}/"
+
+          cd "${wiki_dir}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: publish complete LSF wiki"
+            current_branch="$(git branch --show-current)"
+            git push origin "HEAD:${current_branch}"
+          fi
+
+      - name: Record publication result
+        if: always()
+        shell: bash
+        env:
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin docs/wiki
+
+          rm -f wiki/PUBLISHED_OK.md wiki/PUBLISH_FAILED.md
+          if [ "${PUBLISH_OUTCOME}" = "success" ]; then
+            marker="wiki/PUBLISHED_OK.md"
+            heading="LSF Wiki publication succeeded"
+          else
+            marker="wiki/PUBLISH_FAILED.md"
+            heading="LSF Wiki publication failed"
+          fi
+
+          cat > "${marker}" <<EOF
+          # ${heading}
+
+          - Source commit: ${GITHUB_SHA}
+          - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          - Outcome: ${PUBLISH_OUTCOME}
+          EOF
+
+          git add wiki/PUBLISHED_OK.md wiki/PUBLISH_FAILED.md 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(wiki): record publication result"
+            git push origin HEAD:docs/wiki
+          fi
+
+      - name: Fail when publication failed
+        if: steps.publish.outcome != 'success'
+        shell: bash
+        run: exit 1
