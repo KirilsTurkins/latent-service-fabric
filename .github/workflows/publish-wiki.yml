@@ -1,0 +1,65 @@
+name: Publish LSF Wiki
+
+on:
+  push:
+    branches:
+      - docs/wiki
+    paths:
+      - "wiki/pages/**"
+      - ".github/workflows/publish-wiki.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lsf-wiki-publish
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out Wiki source
+        uses: actions/checkout@v4
+
+      - name: Validate managed pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f wiki/pages/Home.md
+          test -f wiki/pages/_Sidebar.md
+          test -f wiki/pages/_Footer.md
+          test "$(find wiki/pages -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 20
+
+      - name: Publish pages
+        shell: bash
+        env:
+          WIKI_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pages_dir="${GITHUB_WORKSPACE}/wiki/pages"
+          wiki_dir="${RUNNER_TEMP}/wiki-repository"
+          rm -rf "${wiki_dir}"
+
+          git clone \
+            "https://x-access-token:${WIKI_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" \
+            "${wiki_dir}"
+
+          # Preserve unknown pages while replacing all LSF-managed pages.
+          cp -a "${pages_dir}/." "${wiki_dir}/"
+
+          cd "${wiki_dir}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+
+          if git diff --cached --quiet; then
+            echo "Wiki is already current."
+            exit 0
+          fi
+
+          git commit -m "docs: publish complete LSF wiki"
+          current_branch="$(git branch --show-current)"
+          git push origin "HEAD:${current_branch}"
