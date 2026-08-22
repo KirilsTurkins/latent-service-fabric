@@ -67,9 +67,22 @@ jobs:
           }
 
           run_gate check cargo check -p latent-wasmtime --all-targets --all-features --locked
-          run_gate clippy cargo clippy -p latent-wasmtime --all-targets --all-features --locked -- -D warnings
+          run_gate clippy cargo clippy -p latent-wasmtime --all-targets --all-features --locked --no-deps -- -D warnings
           run_gate test cargo test -p latent-wasmtime --all-targets --all-features --locked
-          run_gate contracts tools/validate_contracts.sh
+          run_gate repository python3 tools/validate_repository.py
+          run_gate repository-tests python3 -m unittest discover -s tools/tests
+          run_gate guest-bindings cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
+          run_gate echo-bindings cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
+          run_gate attack-bindings cargo check -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --locked
+          run_gate echo-build python3 tools/build_echo_capsule.py --verify-reproducible
+          run_gate attack-build cargo build -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --release --locked
+          run_gate attack-validate wasm-tools validate target/wasm32-wasip2/release/examples/oversized-log-capsule.wasm
+          run_gate integration env \
+            LSF_ECHO_COMPONENT=target/capsules/echo/echo-capsule.wasm \
+            LSF_ECHO_CAPSULE=target/capsules/echo/capsule.json \
+            LSF_OVERSIZED_LOG_COMPONENT=target/wasm32-wasip2/release/examples/oversized-log-capsule.wasm \
+            cargo test -p latent-wasmtime --test echo_backend --locked -- --ignored --nocapture
+
           printf '%s\n' "${status}" > "${STATUS}"
           exit 0
       - name: Upload generated lockfile and validation evidence
