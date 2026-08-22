@@ -16,10 +16,11 @@ latent-artifacts = { path = "../latent-artifacts" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
 latent-manifest = { path = "../latent-manifest" }
-sha2 = "=0.10.9"
+sha2.workspace = true
 wasmtime.workspace = true
 
 [dev-dependencies]
+serde_json.workspace = true
 latent-activation = { path = "../latent-activation" }
 latent-routing = { path = "../latent-routing" }
 tokio.workspace = true
