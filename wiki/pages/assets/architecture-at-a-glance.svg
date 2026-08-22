@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="610" viewBox="0 0 1200 610" role="img" aria-labelledby="title desc">
+      <title id="title">LSF architecture at a glance</title>
+      <desc id="desc">Immutable releases become temporary, capability-scoped activations in a fixed pool.</desc>
+      
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#06101d"/><stop offset=".55" stop-color="#0a1830"/><stop offset="1" stop-color="#11152d"/>
+      </linearGradient>
+      <linearGradient id="cyanBlue" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#40e0ff"/><stop offset="1" stop-color="#5b8cff"/>
+      </linearGradient>
+      <linearGradient id="purplePink" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#c66cff"/><stop offset="1" stop-color="#ff718d"/>
+      </linearGradient>
+      <linearGradient id="greenAmber" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#58f0ae"/><stop offset="1" stop-color="#ffca6a"/>
+      </linearGradient>
+      <radialGradient id="halo"><stop offset="0" stop-color="#40e0ff" stop-opacity=".55"/><stop offset="1" stop-color="#40e0ff" stop-opacity="0"/></radialGradient>
+      <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+        <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#17324d" stroke-width="1" opacity=".42"/>
+      </pattern>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".42"/>
+      </filter>
+      <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <marker id="arrowCyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#40e0ff"/>
+      </marker>
+      <marker id="arrowMagenta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#c66cff"/>
+      </marker>
+      <style>
+        text { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+        .title { fill:#e9f5ff; font-size:28px; font-weight:750; letter-spacing:.2px; }
+        .subtitle { fill:#92a9bd; font-size:14px; }
+        .label { fill:#e9f5ff; font-size:14px; font-weight:700; }
+        .small { fill:#92a9bd; font-size:11px; }
+        .tiny { fill:#92a9bd; font-size:10px; }
+        .box { fill:#0d1c30; stroke:#264966; stroke-width:1.4; }
+        .box2 { fill:#102540; stroke:#315a7d; stroke-width:1.4; }
+        .edge { fill:none; stroke:#40e0ff; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+        .edge2 { fill:none; stroke:#c66cff; stroke-width:2.3; stroke-linecap:round; stroke-linejoin:round; }
+        
+      @keyframes dash { to { stroke-dashoffset: -38; } }
+      @keyframes pulse { 0%,100% { opacity:.48; transform:scale(.96); } 50% { opacity:1; transform:scale(1.04); } }
+      @keyframes glow { 0%,100% { opacity:.30; } 50% { opacity:.92; } }
+      @keyframes scan { from { transform:translateX(-220px); } to { transform:translateX(1320px); } }
+      .flow { stroke-dasharray: 10 12; animation: dash 1.6s linear infinite; }
+      .pulse { transform-box: fill-box; transform-origin: center; animation: pulse 2.4s ease-in-out infinite; }
+      .glow { animation: glow 1.8s ease-in-out infinite; }
+      .scan { animation: scan 7s linear infinite; }
+      .cell-a { animation: glow 3.2s ease-in-out infinite; }
+      .cell-b { animation: glow 3.2s .8s ease-in-out infinite; }
+      .cell-c { animation: glow 3.2s 1.6s ease-in-out infinite; }
+      .cell-d { animation: glow 3.2s 2.4s ease-in-out infinite; }
+      @media (prefers-reduced-motion: reduce) {
+        .flow,.pulse,.glow,.scan,.cell-a,.cell-b,.cell-c,.cell-d { animation:none !important; }
+      }
+    
+      </style>
+    </defs>
+    
+      <rect width="1200" height="610" rx="24" fill="url(#bg)"/>
+      <rect x="1" y="1" width="1198" height="608" rx="23" fill="none" stroke="#274461"/>
+      <rect width="1200" height="610" rx="24" fill="url(#grid)" opacity=".43"/>
+      <rect class="scan" x="-220" y="0" width="180" height="610" fill="url(#cyanBlue)" opacity=".035" transform="skewX(-14)"/>
+      <text class="title" x="42" y="48">LSF architecture at a glance</text>
+      <text class="subtitle" x="42" y="73">Immutable releases become temporary, capability-scoped activations in a fixed pool.</text>
+      <rect x="38" y="90" width="292" height="28" rx="14" fill="#0b2b25" stroke="#2a7a61"/><text x="52" y="109" fill="#58f0ae" font-size="10.5" font-weight="800" letter-spacing=".35">DORMANT RELEASES · ZERO EXECUTION ALLOCATION</text>
+      <g filter="url(#shadow)">
+        <rect class="box" x="42" y="126" width="163" height="52" rx="14"/>
+        <rect x="42" y="126" width="5" height="52" rx="2.5" fill="#58f0ae"/>
+        <circle cx="187" cy="144" r="4" fill="#58f0ae" opacity=".85"/>
+        <text class="label" x="58" y="154">Developer tooling</text>
+        <text class="small" x="58" y="175">build + sign</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="42" y="210" width="163" height="52" rx="14"/>
+        <rect x="42" y="210" width="5" height="52" rx="2.5" fill="#c66cff"/>
+        <circle cx="187" cy="228" r="4" fill="#c66cff" opacity=".85"/>
+        <text class="label" x="58" y="238">Management client</text>
+        <text class="small" x="58" y="259">desired state</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="42" y="362" width="163" height="52" rx="14"/>
+        <rect x="42" y="362" width="5" height="52" rx="2.5" fill="#40e0ff"/>
+        <circle cx="187" cy="380" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="58" y="390">Shared ingress</text>
+        <text class="small" x="58" y="411">HTTP · RPC · events</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="328" y="210" width="190" height="52" rx="14"/>
+        <rect x="328" y="210" width="5" height="52" rx="2.5" fill="#c66cff"/>
+        <circle cx="500" cy="228" r="4" fill="#c66cff" opacity=".85"/>
+        <text class="label" x="344" y="238">Control plane</text>
+        <text class="small" x="344" y="259">policy · routes · audit</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="328" y="362" width="190" height="52" rx="14"/>
+        <rect x="328" y="362" width="5" height="52" rx="2.5" fill="#40e0ff"/>
+        <circle cx="500" cy="380" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="344" y="390">Resolve + admit</text>
+        <text class="small" x="344" y="411">snapshot · quota · deadline</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="328" y="126" width="190" height="52" rx="14"/>
+        <rect x="328" y="126" width="5" height="52" rx="2.5" fill="#58f0ae"/>
+        <circle cx="500" cy="144" r="4" fill="#58f0ae" opacity=".85"/>
+        <text class="label" x="344" y="154">OCI registry</text>
+        <text class="small" x="344" y="175">immutable capsules</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="645" y="119" width="190" height="58" rx="14"/>
+        <rect x="645" y="119" width="5" height="58" rx="2.5" fill="#ffca6a"/>
+        <circle cx="817" cy="137" r="4" fill="#ffca6a" opacity=".85"/>
+        <text class="label" x="661" y="147">Route snapshot</text>
+        <text class="small" x="661" y="168">immutable generation</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="584" y="348" width="170" height="80" rx="14"/>
+        <rect x="584" y="348" width="5" height="80" rx="2.5" fill="#40e0ff"/>
+        <circle cx="736" cy="366" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="600" y="376">Reusable cell pool</text>
+        <text class="small" x="600" y="397">fixed node capacity</text>
+      </g>
+    <rect class="cell-a" x="605" y="386" width="24" height="24" rx="6" fill="#40e0ff" opacity="0.38" filter="url(#softGlow)"/><rect class="cell-b" x="641" y="386" width="24" height="24" rx="6" fill="#40e0ff" opacity="0.38" filter="url(#softGlow)"/><rect class="cell-c" x="677" y="386" width="24" height="24" rx="6" fill="#40e0ff" opacity="0.38" filter="url(#softGlow)"/><rect class="cell-d" x="713" y="386" width="24" height="24" rx="6" fill="#40e0ff" opacity="0.38" filter="url(#softGlow)"/>
+      <g filter="url(#shadow)">
+        <rect class="box2" x="812" y="348" width="180" height="80" rx="14"/>
+        <rect x="812" y="348" width="5" height="80" rx="2.5" fill="#c66cff"/>
+        <circle cx="974" cy="366" r="4" fill="#c66cff" opacity=".85"/>
+        <text class="label" x="828" y="376">Temporary activation</text>
+        <text class="small" x="828" y="397">fresh store + budget</text>
+      </g>
+    <circle class="pulse" cx="970" cy="368" r="8" fill="#ff718d" filter="url(#softGlow)"/>
+      <g filter="url(#shadow)">
+        <rect class="box" x="820" y="452" width="190" height="52" rx="14"/>
+        <rect x="820" y="452" width="5" height="52" rx="2.5" fill="#58f0ae"/>
+        <circle cx="992" cy="470" r="4" fill="#58f0ae" opacity=".85"/>
+        <text class="label" x="836" y="480">Capability broker</text>
+        <text class="small" x="836" y="501">scoped handles</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="810" y="520" width="190" height="52" rx="14"/>
+        <rect x="810" y="520" width="5" height="52" rx="2.5" fill="#ffca6a"/>
+        <circle cx="982" cy="538" r="4" fill="#ffca6a" opacity=".85"/>
+        <text class="label" x="826" y="548">Result + accounting</text>
+        <text class="small" x="826" y="569">output · trace · usage</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="580" y="520" width="180" height="52" rx="14"/>
+        <rect x="580" y="520" width="5" height="52" rx="2.5" fill="#5b8cff"/>
+        <circle cx="742" cy="538" r="4" fill="#5b8cff" opacity=".85"/>
+        <text class="label" x="596" y="548">State backend</text>
+        <text class="small" x="596" y="569">transactional commit</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="1020" y="520" width="160" height="52" rx="14"/>
+        <rect x="1020" y="520" width="5" height="52" rx="2.5" fill="#ff718d"/>
+        <circle cx="1162" cy="538" r="4" fill="#ff718d" opacity=".85"/>
+        <text class="label" x="1036" y="548">Effect providers</text>
+        <text class="small" x="1036" y="569">durable intents</text>
+      </g>
+    <path class="edge flow" d="M 205.0 150.0 L 270.0 150.0 L 270.0 236.0 L 328.0 236.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge2 flow" d="M 205.0 236.0 L 328.0 236.0" marker-end="url(#arrowMagenta)" opacity=".82"/><path class="edge2 flow" d="M 518.0 236.0 L 580.0 236.0 L 580.0 145.0 L 645.0 145.0" marker-end="url(#arrowMagenta)" opacity=".82"/><path class="edge flow" d="M 205.0 388.0 L 328.0 388.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 740.0 178.0 L 740.0 208.0 L 422.0 208.0 L 422.0 351.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 518.0 388.0 L 584.0 388.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 754.0 388.0 L 812.0 388.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge2 flow" d="M 902.0 428.0 L 902.0 452.0" marker-end="url(#arrowMagenta)" opacity=".82"/><path class="edge flow" d="M 915.0 504.0 L 915.0 520.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 820.0 478.0 L 670.0 478.0 L 670.0 520.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 1010.0 478.0 L 1100.0 478.0 L 1100.0 520.0" marker-end="url(#arrowCyan)" opacity=".82"/><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="0.0s" repeatCount="indefinite" path="M 205.0 150.0 L 270.0 150.0 L 270.0 236.0 L 328.0 236.0"/>
+        </circle><circle r="5" fill="#c66cff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="0.24s" repeatCount="indefinite" path="M 205.0 236.0 L 328.0 236.0"/>
+        </circle><circle r="5" fill="#c66cff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="0.48s" repeatCount="indefinite" path="M 518.0 236.0 L 580.0 236.0 L 580.0 145.0 L 645.0 145.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="0.72s" repeatCount="indefinite" path="M 205.0 388.0 L 328.0 388.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="0.96s" repeatCount="indefinite" path="M 518.0 388.0 L 584.0 388.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="1.2s" repeatCount="indefinite" path="M 754.0 388.0 L 812.0 388.0"/>
+        </circle><circle r="5" fill="#c66cff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="1.44s" repeatCount="indefinite" path="M 902.0 428.0 L 902.0 452.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="1.68s" repeatCount="indefinite" path="M 915.0 504.0 L 915.0 520.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="1.92s" repeatCount="indefinite" path="M 820.0 478.0 L 670.0 478.0 L 670.0 520.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.8s" begin="2.16s" repeatCount="indefinite" path="M 1010.0 478.0 L 1100.0 478.0 L 1100.0 520.0"/>
+        </circle><text class="tiny" x="602" y="442">lease → run → scrub → reuse</text>
+    </svg>

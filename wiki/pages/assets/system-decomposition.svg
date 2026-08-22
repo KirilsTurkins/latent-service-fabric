@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="710" viewBox="0 0 1200 710" role="img" aria-labelledby="title desc">
+      <title id="title">LSF system decomposition</title>
+      <desc id="desc">The control plane compiles metadata; the data plane executes from local immutable snapshots.</desc>
+      
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#06101d"/><stop offset=".55" stop-color="#0a1830"/><stop offset="1" stop-color="#11152d"/>
+      </linearGradient>
+      <linearGradient id="cyanBlue" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#40e0ff"/><stop offset="1" stop-color="#5b8cff"/>
+      </linearGradient>
+      <linearGradient id="purplePink" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#c66cff"/><stop offset="1" stop-color="#ff718d"/>
+      </linearGradient>
+      <linearGradient id="greenAmber" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#58f0ae"/><stop offset="1" stop-color="#ffca6a"/>
+      </linearGradient>
+      <radialGradient id="halo"><stop offset="0" stop-color="#40e0ff" stop-opacity=".55"/><stop offset="1" stop-color="#40e0ff" stop-opacity="0"/></radialGradient>
+      <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+        <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#17324d" stroke-width="1" opacity=".42"/>
+      </pattern>
+      <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".42"/>
+      </filter>
+      <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <marker id="arrowCyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#40e0ff"/>
+      </marker>
+      <marker id="arrowMagenta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#c66cff"/>
+      </marker>
+      <style>
+        text { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+        .title { fill:#e9f5ff; font-size:28px; font-weight:750; letter-spacing:.2px; }
+        .subtitle { fill:#92a9bd; font-size:14px; }
+        .label { fill:#e9f5ff; font-size:14px; font-weight:700; }
+        .small { fill:#92a9bd; font-size:11px; }
+        .tiny { fill:#92a9bd; font-size:10px; }
+        .box { fill:#0d1c30; stroke:#264966; stroke-width:1.4; }
+        .box2 { fill:#102540; stroke:#315a7d; stroke-width:1.4; }
+        .edge { fill:none; stroke:#40e0ff; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
+        .edge2 { fill:none; stroke:#c66cff; stroke-width:2.3; stroke-linecap:round; stroke-linejoin:round; }
+        
+      @keyframes dash { to { stroke-dashoffset: -38; } }
+      @keyframes pulse { 0%,100% { opacity:.48; transform:scale(.96); } 50% { opacity:1; transform:scale(1.04); } }
+      @keyframes glow { 0%,100% { opacity:.30; } 50% { opacity:.92; } }
+      @keyframes scan { from { transform:translateX(-220px); } to { transform:translateX(1320px); } }
+      .flow { stroke-dasharray: 10 12; animation: dash 1.6s linear infinite; }
+      .pulse { transform-box: fill-box; transform-origin: center; animation: pulse 2.4s ease-in-out infinite; }
+      .glow { animation: glow 1.8s ease-in-out infinite; }
+      .scan { animation: scan 7s linear infinite; }
+      .cell-a { animation: glow 3.2s ease-in-out infinite; }
+      .cell-b { animation: glow 3.2s .8s ease-in-out infinite; }
+      .cell-c { animation: glow 3.2s 1.6s ease-in-out infinite; }
+      .cell-d { animation: glow 3.2s 2.4s ease-in-out infinite; }
+      @media (prefers-reduced-motion: reduce) {
+        .flow,.pulse,.glow,.scan,.cell-a,.cell-b,.cell-c,.cell-d { animation:none !important; }
+      }
+    
+      </style>
+    </defs>
+    
+      <rect width="1200" height="710" rx="24" fill="url(#bg)"/>
+      <rect x="1" y="1" width="1198" height="708" rx="23" fill="none" stroke="#274461"/>
+      <rect width="1200" height="710" rx="24" fill="url(#grid)" opacity=".43"/>
+      <rect class="scan" x="-220" y="0" width="180" height="710" fill="url(#cyanBlue)" opacity=".035" transform="skewX(-14)"/>
+      <text class="title" x="42" y="48">LSF system decomposition</text>
+      <text class="subtitle" x="42" y="73">The control plane compiles metadata; the data plane executes from local immutable snapshots.</text>
+      <rect x="34" y="96" width="1132" height="148" rx="18" fill="#0d1c30" stroke="#58f0ae" stroke-opacity=".42"/><text x="52" y="124" fill="#58f0ae" font-size="12" font-weight="850" letter-spacing="1.2">DEVELOPER PLANE</text><text class="tiny" x="220" y="123">build, attest, sign, publish</text><rect x="34" y="264" width="1132" height="164" rx="18" fill="#0d1c30" stroke="#c66cff" stroke-opacity=".42"/><text x="52" y="292" fill="#c66cff" font-size="12" font-weight="850" letter-spacing="1.2">CONTROL PLANE</text><text class="tiny" x="180" y="291">compile desired state into immutable snapshots</text><rect x="34" y="448" width="1132" height="212" rx="18" fill="#0d1c30" stroke="#40e0ff" stroke-opacity=".42"/><text x="52" y="476" fill="#40e0ff" font-size="12" font-weight="850" letter-spacing="1.2">DATA PLANE · INVOCATION HOT PATH</text><text class="tiny" x="330" y="475">resolve locally, admit, schedule, execute, commit</text>
+      <g filter="url(#shadow)">
+        <rect class="box" x="78" y="146" width="210" height="62" rx="14"/>
+        <rect x="78" y="146" width="5" height="62" rx="2.5" fill="#58f0ae"/>
+        <circle cx="270" cy="164" r="4" fill="#58f0ae" opacity=".85"/>
+        <text class="label" x="94" y="174">WIT + component build</text>
+        <text class="small" x="94" y="195">polyglot guest boundary</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="366" y="146" width="210" height="62" rx="14"/>
+        <rect x="366" y="146" width="5" height="62" rx="2.5" fill="#58f0ae"/>
+        <circle cx="558" cy="164" r="4" fill="#58f0ae" opacity=".85"/>
+        <text class="label" x="382" y="174">Supply-chain evidence</text>
+        <text class="small" x="382" y="195">SBOM · provenance · signature</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="876" y="146" width="210" height="62" rx="14"/>
+        <rect x="876" y="146" width="5" height="62" rx="2.5" fill="#58f0ae"/>
+        <circle cx="1068" cy="164" r="4" fill="#58f0ae" opacity=".85"/>
+        <text class="label" x="892" y="174">OCI registry</text>
+        <text class="small" x="892" y="195">content-addressed releases</text>
+      </g>
+    <path class="edge flow" d="M 288.0 177.0 L 366.0 177.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 576.0 177.0 L 876.0 177.0" marker-end="url(#arrowCyan)" opacity=".82"/>
+      <g filter="url(#shadow)">
+        <rect class="box" x="78" y="318" width="188" height="64" rx="14"/>
+        <rect x="78" y="318" width="5" height="64" rx="2.5" fill="#c66cff"/>
+        <circle cx="248" cy="336" r="4" fill="#c66cff" opacity=".85"/>
+        <text class="label" x="94" y="346">Release + contracts</text>
+        <text class="small" x="94" y="367">digests · WIT graph</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="320" y="318" width="188" height="64" rx="14"/>
+        <rect x="320" y="318" width="5" height="64" rx="2.5" fill="#c66cff"/>
+        <circle cx="490" cy="336" r="4" fill="#c66cff" opacity=".85"/>
+        <text class="label" x="336" y="346">Policy + bindings</text>
+        <text class="small" x="336" y="367">grants · modes · quotas</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="562" y="318" width="188" height="64" rx="14"/>
+        <rect x="562" y="318" width="5" height="64" rx="2.5" fill="#c66cff"/>
+        <circle cx="732" cy="336" r="4" fill="#c66cff" opacity=".85"/>
+        <text class="label" x="578" y="346">Route compiler</text>
+        <text class="small" x="578" y="367">revision selection</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="804" y="294" width="160" height="50" rx="14"/>
+        <rect x="804" y="294" width="5" height="50" rx="2.5" fill="#ffca6a"/>
+        <circle cx="946" cy="312" r="4" fill="#ffca6a" opacity=".85"/>
+        <text class="label" x="820" y="322">Desired state</text>
+        <text class="small" x="820" y="343">generation checks</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="804" y="356" width="160" height="50" rx="14"/>
+        <rect x="804" y="356" width="5" height="50" rx="2.5" fill="#ffca6a"/>
+        <circle cx="946" cy="374" r="4" fill="#ffca6a" opacity=".85"/>
+        <text class="label" x="820" y="384">Node inventory</text>
+        <text class="small" x="820" y="405">capacity · locality</text>
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="1008" y="318" width="126" height="64" rx="14"/>
+        <rect x="1008" y="318" width="5" height="64" rx="2.5" fill="#c66cff"/>
+        <circle cx="1116" cy="336" r="4" fill="#c66cff" opacity=".85"/>
+        <text class="label" x="1024" y="346">Snapshot</text>
+        <text class="small" x="1024" y="367">digest + generation</text>
+      </g>
+    <path class="edge2 flow" d="M 266.0 350.0 L 320.0 350.0" marker-end="url(#arrowMagenta)" opacity=".82"/><path class="edge2 flow" d="M 508.0 350.0 L 562.0 350.0" marker-end="url(#arrowMagenta)" opacity=".82"/><path class="edge2 flow" d="M 750.0 350.0 L 1008.0 350.0" marker-end="url(#arrowMagenta)" opacity=".82"/><path d="M 884 344 L 884 350" stroke="#ffca6a" stroke-width="2"/><path d="M 964 381 L 990 381 L 990 350" fill="none" stroke="#ffca6a" stroke-width="2"/>
+      <g filter="url(#shadow)">
+        <rect class="box2" x="58" y="520" width="120" height="56" rx="14"/>
+        <rect x="58" y="520" width="5" height="56" rx="2.5" fill="#40e0ff"/>
+        <circle cx="160" cy="538" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="74" y="548">Ingress</text>
+        
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="198" y="520" width="120" height="56" rx="14"/>
+        <rect x="198" y="520" width="5" height="56" rx="2.5" fill="#40e0ff"/>
+        <circle cx="300" cy="538" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="214" y="548">Resolver</text>
+        
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="338" y="520" width="120" height="56" rx="14"/>
+        <rect x="338" y="520" width="5" height="56" rx="2.5" fill="#40e0ff"/>
+        <circle cx="440" cy="538" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="354" y="548">Admission</text>
+        
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="478" y="520" width="120" height="56" rx="14"/>
+        <rect x="478" y="520" width="5" height="56" rx="2.5" fill="#40e0ff"/>
+        <circle cx="580" cy="538" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="494" y="548">Scheduler</text>
+        
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="618" y="520" width="136" height="56" rx="14"/>
+        <rect x="618" y="520" width="5" height="56" rx="2.5" fill="#40e0ff"/>
+        <circle cx="736" cy="538" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="634" y="548">Materializer</text>
+        
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="774" y="520" width="120" height="56" rx="14"/>
+        <rect x="774" y="520" width="5" height="56" rx="2.5" fill="#40e0ff"/>
+        <circle cx="876" cy="538" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="790" y="548">Binder</text>
+        
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="914" y="504" width="126" height="72" rx="14"/>
+        <rect x="914" y="504" width="5" height="72" rx="2.5" fill="#40e0ff"/>
+        <circle cx="1022" cy="522" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="930" y="532">Cell pool</text>
+        
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box2" x="1060" y="520" width="86" height="56" rx="14"/>
+        <rect x="1060" y="520" width="5" height="56" rx="2.5" fill="#40e0ff"/>
+        <circle cx="1128" cy="538" r="4" fill="#40e0ff" opacity=".85"/>
+        <text class="label" x="1076" y="548">Commit</text>
+        
+      </g>
+    <path class="edge flow" d="M 178.0 548.0 L 198.0 548.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 318.0 548.0 L 338.0 548.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 458.0 548.0 L 478.0 548.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 598.0 548.0 L 618.0 548.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 754.0 548.0 L 774.0 548.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 894.0 548.0 L 914.0 548.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge flow" d="M 1040.0 548.0 L 1060.0 548.0" marker-end="url(#arrowCyan)" opacity=".82"/><rect class="cell-a" x="932" y="548" width="15" height="15" rx="4" fill="#40e0ff" opacity="0.32" filter="url(#softGlow)"/><rect class="cell-b" x="956" y="548" width="15" height="15" rx="4" fill="#40e0ff" opacity="0.32" filter="url(#softGlow)"/><rect class="cell-c" x="980" y="548" width="15" height="15" rx="4" fill="#40e0ff" opacity="0.32" filter="url(#softGlow)"/><rect class="cell-d" x="1004" y="548" width="15" height="15" rx="4" fill="#40e0ff" opacity="0.32" filter="url(#softGlow)"/><path class="edge2 flow" d="M 1070.0 382.0 L 1070.0 492.0 L 258.0 492.0 L 258.0 520.0" marker-end="url(#arrowMagenta)" opacity=".82"/><path class="edge flow" d="M 980.0 208.0 L 980.0 238.0 L 686.0 238.0 L 686.0 520.0" marker-end="url(#arrowCyan)" opacity=".82"/><text class="tiny" x="650" y="486" fill="#c66cff">immutable route snapshot</text><text class="tiny" x="704" y="230" fill="#40e0ff">verified capsule / AOT derivative</text>
+      <g filter="url(#shadow)">
+        <rect class="box" x="664" y="596" width="164" height="42" rx="14"/>
+        <rect x="664" y="596" width="5" height="42" rx="2.5" fill="#5b8cff"/>
+        <circle cx="810" cy="614" r="4" fill="#5b8cff" opacity=".85"/>
+        <text class="label" x="680" y="624">State backend</text>
+        
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="846" y="596" width="164" height="42" rx="14"/>
+        <rect x="846" y="596" width="5" height="42" rx="2.5" fill="#ff718d"/>
+        <circle cx="992" cy="614" r="4" fill="#ff718d" opacity=".85"/>
+        <text class="label" x="862" y="624">Effect outbox</text>
+        
+      </g>
+    
+      <g filter="url(#shadow)">
+        <rect class="box" x="1028" y="596" width="118" height="42" rx="14"/>
+        <rect x="1028" y="596" width="5" height="42" rx="2.5" fill="#ffca6a"/>
+        <circle cx="1128" cy="614" r="4" fill="#ffca6a" opacity=".85"/>
+        <text class="label" x="1044" y="624">Telemetry</text>
+        
+      </g>
+    <path class="edge" d="M 1103.0 576.0 L 1103.0 596.0" marker-end="url(#arrowCyan)" opacity=".82"/><path class="edge2" d="M 1103.0 576.0 L 928.0 596.0" marker-end="url(#arrowMagenta)" opacity=".82"/><path class="edge" d="M 1103.0 576.0 L 746.0 596.0" marker-end="url(#arrowCyan)" opacity=".82"/><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="4.2s" begin="0.0s" repeatCount="indefinite" path="M 288.0 177.0 L 366.0 177.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="4.2s" begin="0.38s" repeatCount="indefinite" path="M 576.0 177.0 L 876.0 177.0"/>
+        </circle><circle r="5" fill="#c66cff" filter="url(#softGlow)">
+          <animateMotion dur="4.2s" begin="0.76s" repeatCount="indefinite" path="M 266.0 350.0 L 320.0 350.0"/>
+        </circle><circle r="5" fill="#c66cff" filter="url(#softGlow)">
+          <animateMotion dur="4.2s" begin="1.1400000000000001s" repeatCount="indefinite" path="M 508.0 350.0 L 562.0 350.0"/>
+        </circle><circle r="5" fill="#c66cff" filter="url(#softGlow)">
+          <animateMotion dur="4.2s" begin="1.52s" repeatCount="indefinite" path="M 750.0 350.0 L 1008.0 350.0"/>
+        </circle><circle r="5" fill="#c66cff" filter="url(#softGlow)">
+          <animateMotion dur="4.2s" begin="1.9s" repeatCount="indefinite" path="M 1070.0 382.0 L 1070.0 492.0 L 258.0 492.0 L 258.0 520.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="4.2s" begin="2.2800000000000002s" repeatCount="indefinite" path="M 980.0 208.0 L 980.0 238.0 L 686.0 238.0 L 686.0 520.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.4s" begin="0.0s" repeatCount="indefinite" path="M 178.0 548.0 L 198.0 548.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.4s" begin="0.32s" repeatCount="indefinite" path="M 318.0 548.0 L 338.0 548.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.4s" begin="0.64s" repeatCount="indefinite" path="M 458.0 548.0 L 478.0 548.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.4s" begin="0.96s" repeatCount="indefinite" path="M 598.0 548.0 L 618.0 548.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.4s" begin="1.28s" repeatCount="indefinite" path="M 754.0 548.0 L 774.0 548.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.4s" begin="1.6s" repeatCount="indefinite" path="M 894.0 548.0 L 914.0 548.0"/>
+        </circle><circle r="5" fill="#40e0ff" filter="url(#softGlow)">
+          <animateMotion dur="3.4s" begin="1.92s" repeatCount="indefinite" path="M 1040.0 548.0 L 1060.0 548.0"/>
+        </circle><rect x="50" y="486" width="1098" height="104" rx="16" fill="none" stroke="#40e0ff" stroke-width="1.2" stroke-dasharray="5 8" opacity=".38"/><text x="58" y="684" fill="#58f0ae" font-size="11" font-weight="800">CONTROL PLANE OUTAGE TOLERANCE</text><text class="small" x="300" y="684">valid local snapshots keep existing routes invokable.</text>
+    </svg>
