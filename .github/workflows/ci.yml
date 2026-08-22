@@ -8,17 +8,13 @@ permissions:
   contents: read
 
 jobs:
-  issue21-finalize:
-    name: Finalize Issue 21 audit fixes
-    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/issue-21-wasmtime-echo' && github.actor != 'github-actions[bot]'
+  issue21-audit-artifact:
+    name: Issue 21 audit validation artifact
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feat/issue-21-wasmtime-echo
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
@@ -38,16 +34,17 @@ jobs:
         with:
           version: 1.72.0
       - name: Refresh the lockfile from the development baseline
+        shell: bash
         run: |
           git fetch origin development
           git checkout origin/development -- Cargo.lock
           cargo check -p latent-wasmtime --all-targets --all-features
       - name: Format and validate the touched implementation
-        id: validate
         shell: bash
         run: |
           set +e
           LOG=tools/issue21-validation.log
+          STATUS=tools/issue21-validation.status
           : > "${LOG}"
           rustfmt --edition 2021 \
             crates/latent-wasmtime/src/bindings.rs \
@@ -73,34 +70,22 @@ jobs:
           run_gate clippy cargo clippy -p latent-wasmtime --all-targets --all-features --locked -- -D warnings
           run_gate test cargo test -p latent-wasmtime --all-targets --all-features --locked
           run_gate contracts tools/validate_contracts.sh
-
-          echo "status=${status}" >> "${GITHUB_OUTPUT}"
+          printf '%s\n' "${status}" > "${STATUS}"
           exit 0
-      - name: Publish the generated lockfile and validation result
-        shell: bash
-        env:
-          VALIDATION_STATUS: ${{ steps.validate.outputs.status }}
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git checkout origin/development -- .github/workflows/ci.yml
-          git rm -f -- .github/workflows/issue-21-finalize.yml
-          if [[ "${VALIDATION_STATUS}" == "0" ]]; then
-            rm -f tools/issue21-validation.log
-          else
-            git add -- tools/issue21-validation.log
-          fi
-          git add -- \
-            .github/workflows/ci.yml \
-            Cargo.lock \
-            crates/latent-wasmtime/src/bindings.rs \
-            crates/latent-wasmtime/src/host.rs \
-            crates/latent-wasmtime/tests/echo_backend.rs \
+      - name: Upload generated lockfile and validation evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-21-audit-${{ github.sha }}
+          path: |
+            Cargo.lock
+            crates/latent-wasmtime/src/bindings.rs
+            crates/latent-wasmtime/src/host.rs
+            crates/latent-wasmtime/tests/echo_backend.rs
             tools/toolchain-smoke/examples/oversized_log_capsule/component.rs
-          git diff --cached --check
-          git commit -m 'fix: finalize Phase 0 Wasmtime audit corrections'
-          git push origin HEAD:feat/issue-21-wasmtime-echo
-          exit "${VALIDATION_STATUS}"
+            tools/issue21-validation.log
+            tools/issue21-validation.status
+          if-no-files-found: error
+          retention-days: 2
 
   rust:
     name: Rust 1.97.1
