@@ -6,7 +6,7 @@
 
 ![Animated LSF system decomposition](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/system-decomposition.gif?raw=1)
 
-*Animated render generated from the [SVG source](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/system-decomposition.svg) by the [Wiki diagram generator](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/visuals/generate_diagrams.py).*
+*Animated render generated from the [animated SVG source](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/system-decomposition.svg?raw=1) by the [Wiki diagram generator](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/visuals/generate_diagrams.py).*
 
 ## Control plane
 
