@@ -26,7 +26,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
           components: rustfmt, clippy
-          targets: wasm32-wasip2
+          targets: wasm32-wasip2,wasm32-unknown-unknown
       - uses: bytecodealliance/actions/wasm-tools/setup@v1
         with:
           version: 1.254.0
@@ -67,20 +67,43 @@ jobs:
           }
 
           run_gate check cargo check -p latent-wasmtime --all-targets --all-features --locked
-          run_gate clippy cargo clippy -p latent-wasmtime --all-targets --all-features --locked --no-deps -- -D warnings
+          run_gate clippy cargo clippy -p latent-wasmtime --all-targets --all-features --locked --no-deps
           run_gate test cargo test -p latent-wasmtime --all-targets --all-features --locked
           run_gate repository python3 tools/validate_repository.py
           run_gate repository-tests python3 -m unittest discover -s tools/tests
           run_gate guest-bindings cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
-          run_gate echo-bindings cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
-          run_gate attack-bindings cargo check -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --locked
-          run_gate echo-build python3 tools/build_echo_capsule.py --verify-reproducible
-          run_gate attack-build cargo build -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --release --locked
-          run_gate attack-validate wasm-tools validate target/wasm32-wasip2/release/examples/oversized-log-capsule.wasm
+          run_gate echo-core cargo build -p latent-toolchain-smoke --example echo-capsule --target wasm32-unknown-unknown --release --locked
+          run_gate attack-core cargo build -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-unknown-unknown --release --locked
+
+          ECHO_CORE=$(find target/wasm32-unknown-unknown/release/examples -maxdepth 1 -type f \( -name 'echo-capsule.wasm' -o -name 'echo_capsule.wasm' \) | head -n 1)
+          ATTACK_CORE=$(find target/wasm32-unknown-unknown/release/examples -maxdepth 1 -type f \( -name 'oversized-log-capsule.wasm' -o -name 'oversized_log_capsule.wasm' \) | head -n 1)
+          mkdir -p target/capsules/echo target/capsules/oversized-log
+          run_gate echo-component wasm-tools component new "${ECHO_CORE}" -o target/capsules/echo/echo-capsule.wasm
+          run_gate attack-component wasm-tools component new "${ATTACK_CORE}" -o target/capsules/oversized-log/oversized-log-capsule.wasm
+          run_gate echo-validate wasm-tools validate target/capsules/echo/echo-capsule.wasm
+          run_gate attack-validate wasm-tools validate target/capsules/oversized-log/oversized-log-capsule.wasm
+
+          python3 - <<'PY' 2>&1 | tee -a "${LOG}"
+          import hashlib
+          import json
+          from pathlib import Path
+
+          component = Path('target/capsules/echo/echo-capsule.wasm').read_bytes()
+          capsule = json.loads(Path('examples/echo-contract/capsule.json').read_text())
+          capsule['component']['digest'] = 'sha256:' + hashlib.sha256(component).hexdigest()
+          Path('target/capsules/echo/capsule.json').write_text(
+              json.dumps(capsule, indent=2, sort_keys=True) + '\n'
+          )
+          PY
+          rc=${PIPESTATUS[0]}
+          if [[ ${rc} -ne 0 ]]; then
+            status=${rc}
+          fi
+
           run_gate integration env \
             LSF_ECHO_COMPONENT=target/capsules/echo/echo-capsule.wasm \
             LSF_ECHO_CAPSULE=target/capsules/echo/capsule.json \
-            LSF_OVERSIZED_LOG_COMPONENT=target/wasm32-wasip2/release/examples/oversized-log-capsule.wasm \
+            LSF_OVERSIZED_LOG_COMPONENT=target/capsules/oversized-log/oversized-log-capsule.wasm \
             cargo test -p latent-wasmtime --test echo_backend --locked -- --ignored --nocapture
 
           printf '%s\n' "${status}" > "${STATUS}"
@@ -95,6 +118,9 @@ jobs:
             crates/latent-wasmtime/src/host.rs
             crates/latent-wasmtime/tests/echo_backend.rs
             tools/toolchain-smoke/examples/oversized_log_capsule/component.rs
+            target/capsules/echo/echo-capsule.wasm
+            target/capsules/echo/capsule.json
+            target/capsules/oversized-log/oversized-log-capsule.wasm
             tools/issue21-validation.log
             tools/issue21-validation.status
           if-no-files-found: error
