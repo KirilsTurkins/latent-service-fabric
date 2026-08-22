@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feat/issue-21-wasmtime-echo
+  pull_request:
+    branches:
+      - development
 
 permissions:
   contents: write
