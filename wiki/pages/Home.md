@@ -22,31 +22,18 @@ Artifact storage, route indexes, policy metadata, and bounded caches may grow wi
 ## Start here
 
 | Reader | Recommended path |
-|---|---|
-| New to LSF | [[Core-Concepts|Core concepts]] → [[Architecture]] → [[FAQ]] |
-| Evaluating the design | [[Architecture]] → [[Execution-Cells|Execution cells]] → [[Security-and-Isolation|Security and isolation]] → [[Testing-and-Benchmarks|Testing and benchmarks]] |
-| Building a capsule | [[Capsule-Development|Capsule development]] → [[Contracts-and-APIs|Contracts and APIs]] → [[State-and-Effects|State and effects]] |
-| Contributing to LSF | [[Getting-Started|Getting started]] → [[Development-Workflow|Development workflow]] → [[Design-Governance|Design governance]] |
-| Tracking implementation | [[Roadmap]] → [repository issues](https://github.com/KirilsTurkins/latent-service-fabric/issues) |
+| --- | --- |
+| New to LSF | [Core concepts](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Core-Concepts) → [Architecture](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Architecture) → [FAQ](https://github.com/KirilsTurkins/latent-service-fabric/wiki/FAQ) |
+| Evaluating the design | [Architecture](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Architecture) → [Execution cells](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Execution-Cells) → [Security and isolation](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Security-and-Isolation) → [Testing and benchmarks](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Testing-and-Benchmarks) |
+| Building a capsule | [Capsule development](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Capsule-Development) → [Contracts and APIs](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Contracts-and-APIs) → [State and effects](https://github.com/KirilsTurkins/latent-service-fabric/wiki/State-and-Effects) |
+| Contributing to LSF | [Getting started](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Getting-Started) → [Development workflow](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Development-Workflow) → [Design governance](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Design-Governance) |
+| Tracking implementation | [Roadmap](https://github.com/KirilsTurkins/latent-service-fabric/wiki/Roadmap) → [repository issues](https://github.com/KirilsTurkins/latent-service-fabric/issues) |
 
 ## Architecture at a glance
 
-```mermaid
-flowchart LR
-    Dev[Developer tooling] --> OCI[OCI registry]
-    Mgmt[Management client] --> CP[latent-control]
-    CP --> DB[(Control state)]
-    CP --> Snap[Immutable route snapshots]
-    Ingress[Shared ingress and triggers] --> Node[latentd node]
-    Snap --> Node
-    Node --> Admit[Resolve and admit]
-    Admit --> Pool[Fixed reusable cell pool]
-    Pool --> Act[Temporary activation]
-    Act --> Caps[Capability broker]
-    Caps --> State[(State backend)]
-    Caps --> Effects[Shared effect providers]
-    Act --> Result[Result and accounting]
-```
+![Animated LSF architecture at a glance](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/architecture-at-a-glance.gif?raw=1)
+
+*Animated render generated from the [SVG source](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/architecture-at-a-glance.svg) by the [Wiki diagram generator](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/visuals/generate_diagrams.py).*
 
 A service is not a process. A release is an immutable capsule artifact. A deployment combines a release with mutable grants and limits. A route selects a revision. A request becomes a temporary activation in a generic cell.
 
