@@ -33,7 +33,7 @@ Artifact storage, route indexes, policy metadata, and bounded caches may grow wi
 
 ![Animated LSF architecture at a glance](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/architecture-at-a-glance.gif?raw=1)
 
-*Animated render generated from the [SVG source](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/architecture-at-a-glance.svg) by the [Wiki diagram generator](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/visuals/generate_diagrams.py).*
+*Animated render generated from the [animated SVG source](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/pages/assets/architecture-at-a-glance.svg?raw=1) by the [Wiki diagram generator](https://github.com/KirilsTurkins/latent-service-fabric/blob/docs/wiki/wiki/visuals/generate_diagrams.py).*
 
 A service is not a process. A release is an immutable capsule artifact. A deployment combines a release with mutable grants and limits. A route selects a revision. A request becomes a temporary activation in a generic cell.
 
