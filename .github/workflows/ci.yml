@@ -8,6 +8,100 @@ permissions:
   contents: read
 
 jobs:
+  issue21-finalize:
+    name: Finalize Issue 21 audit fixes
+    if: github.event_name == 'push' && github.ref == 'refs/heads/feat/issue-21-wasmtime-echo' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/issue-21-wasmtime-echo
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+          cache: pip
+          cache-dependency-path: tools/requirements.lock
+      - name: Install Python validator dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2
+      - uses: bytecodealliance/actions/wasm-tools/setup@v1
+        with:
+          version: 1.254.0
+      - uses: bufbuild/buf-setup-action@v1
+        with:
+          version: 1.72.0
+      - name: Refresh the lockfile from the development baseline
+        run: |
+          git fetch origin development
+          git checkout origin/development -- Cargo.lock
+          cargo check -p latent-wasmtime --all-targets --all-features
+      - name: Format and validate the touched implementation
+        id: validate
+        shell: bash
+        run: |
+          set +e
+          LOG=tools/issue21-validation.log
+          : > "${LOG}"
+          rustfmt --edition 2021 \
+            crates/latent-wasmtime/src/bindings.rs \
+            crates/latent-wasmtime/src/host.rs \
+            crates/latent-wasmtime/tests/echo_backend.rs \
+            tools/toolchain-smoke/examples/oversized_log_capsule/component.rs
+
+          status=0
+          run_gate() {
+            label=$1
+            shift
+            printf '\n[%s]\n$' "${label}" >> "${LOG}"
+            printf ' %q' "$@" >> "${LOG}"
+            printf '\n' >> "${LOG}"
+            "$@" 2>&1 | tee -a "${LOG}"
+            rc=${PIPESTATUS[0]}
+            if [[ ${rc} -ne 0 ]]; then
+              status=${rc}
+            fi
+          }
+
+          run_gate check cargo check -p latent-wasmtime --all-targets --all-features --locked
+          run_gate clippy cargo clippy -p latent-wasmtime --all-targets --all-features --locked -- -D warnings
+          run_gate test cargo test -p latent-wasmtime --all-targets --all-features --locked
+          run_gate contracts tools/validate_contracts.sh
+
+          echo "status=${status}" >> "${GITHUB_OUTPUT}"
+          exit 0
+      - name: Publish the generated lockfile and validation result
+        shell: bash
+        env:
+          VALIDATION_STATUS: ${{ steps.validate.outputs.status }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout origin/development -- .github/workflows/ci.yml
+          git rm -f -- .github/workflows/issue-21-finalize.yml
+          if [[ "${VALIDATION_STATUS}" == "0" ]]; then
+            rm -f tools/issue21-validation.log
+          else
+            git add -- tools/issue21-validation.log
+          fi
+          git add -- \
+            .github/workflows/ci.yml \
+            Cargo.lock \
+            crates/latent-wasmtime/src/bindings.rs \
+            crates/latent-wasmtime/src/host.rs \
+            crates/latent-wasmtime/tests/echo_backend.rs \
+            tools/toolchain-smoke/examples/oversized_log_capsule/component.rs
+          git diff --cached --check
+          git commit -m 'fix: finalize Phase 0 Wasmtime audit corrections'
+          git push origin HEAD:feat/issue-21-wasmtime-echo
+          exit "${VALIDATION_STATUS}"
+
   rust:
     name: Rust 1.97.1
     runs-on: ubuntu-24.04
