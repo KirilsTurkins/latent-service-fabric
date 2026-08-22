@@ -132,9 +132,32 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "Wiki is already current."
-            exit 0
+          else
+            git commit -m "docs: publish complete LSF wiki"
+            current_branch="$(git branch --show-current)"
+            git push origin "HEAD:${current_branch}"
           fi
 
-          git commit -m "docs: publish complete LSF wiki"
-          current_branch="$(git branch --show-current)"
-          git push origin "HEAD:${current_branch}"
+      - name: Record successful publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${GITHUB_WORKSPACE}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          cat > wiki/PUBLISHED_OK.md <<EOF
+          # LSF Wiki publication succeeded
+
+          - Source commit: ${GITHUB_SHA}
+          - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          - Visual pipeline: animated SVG sources and GitHub-compatible GIF renders
+          EOF
+
+          git add wiki/PUBLISHED_OK.md
+          if git diff --cached --quiet; then
+            echo "Publication marker is already current."
+          else
+            git commit -m "docs(wiki): record successful publication"
+            git push origin HEAD:docs/wiki
+          fi
