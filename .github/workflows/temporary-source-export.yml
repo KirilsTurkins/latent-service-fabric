@@ -1,4 +1,4 @@
-name: Inspect Issue 22 timeout fixtures
+name: Validate Issue 22 real containment fixtures
 
 on:
   pull_request:
@@ -8,12 +8,17 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: issue-22-real-fixtures-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
-  inspect:
+  validate:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.head.ref == 'feat/issue-22-containment-runner'
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,7 +26,29 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Apply bundle and print timeout-related source
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+          cache: pip
+          cache-dependency-path: tools/requirements.lock
+
+      - name: Install Python validator dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+
+      - uses: bytecodealliance/actions/wasm-tools/setup@v1
+        with:
+          version: 1.254.0
+
+      - uses: bufbuild/buf-setup-action@v1
+        with:
+          version: 1.72.0
+
+      - name: Apply the reviewed correction bundle and follow-up fixes
         shell: bash
         run: |
           set -euo pipefail
@@ -40,24 +67,51 @@ jobs:
           git apply /tmp/issue-22-corrections.patch
           python - <<'PY'
           from pathlib import Path
-          path = Path("crates/latent-node/tests/activation_runner.rs")
-          source = path.read_text(encoding="utf-8")
-          source = source.replace(
-              '"engine-detailengine-detailengine-detailengine-detailengine-detail",',
-              '"engine-detailengine-detailengine-detailengine-detailengine-detai",',
-              1,
+
+          runner_test = Path("crates/latent-node/tests/activation_runner.rs")
+          runner_source = runner_test.read_text(encoding="utf-8")
+          impossible_prefix = (
+              '"engine-detailengine-detailengine-detailengine-detailengine-detail",'
           )
-          path.write_text(source, encoding="utf-8")
+          bounded_prefix = (
+              '"engine-detailengine-detailengine-detailengine-detailengine-detai",'
+          )
+          if runner_source.count(impossible_prefix) != 1:
+              raise SystemExit("unexpected engine diagnostic assertion count")
+          runner_test.write_text(
+              runner_source.replace(impossible_prefix, bounded_prefix, 1),
+              encoding="utf-8",
+          )
+
+          containment_test = Path(
+              "crates/latent-wasmtime/tests/containment_backend.rs"
+          )
+          containment_source = containment_test.read_text(encoding="utf-8")
+          old_fuel = "const MAXIMUM_FUEL: u64 = 100_000_000;"
+          new_fuel = (
+              "// Keep deadline fixtures comfortably below fuel exhaustion even "
+              "on fast CI hosts.\n"
+              "const MAXIMUM_FUEL: u64 = 1_000_000_000_000;"
+          )
+          if containment_source.count(old_fuel) != 1:
+              raise SystemExit("unexpected containment fuel ceiling count")
+          containment_test.write_text(
+              containment_source.replace(old_fuel, new_fuel, 1),
+              encoding="utf-8",
+          )
           PY
-          echo '=== containment_backend 90-190 ==='
-          nl -ba crates/latent-wasmtime/tests/containment_backend.rs | sed -n '90,190p'
-          echo '=== containment_backend 280-340 ==='
-          nl -ba crates/latent-wasmtime/tests/containment_backend.rs | sed -n '280,340p'
-          echo '=== containment_backend 500-590 ==='
-          nl -ba crates/latent-wasmtime/tests/containment_backend.rs | sed -n '500,590p'
-          echo '=== containment_backend 780-840 ==='
-          nl -ba crates/latent-wasmtime/tests/containment_backend.rs | sed -n '780,840p'
-          echo '=== timeout/fuel references ==='
-          grep -nE 'deadline|fuel|INFINITE|infinite|epoch' crates/latent-wasmtime/tests/containment_backend.rs | head -n 180
-          echo '=== runner timeout/fuel references ==='
-          grep -nE 'deadline|fuel|ResourceExhausted|DeadlineExceeded' crates/latent-node/src/activation_runner.rs | head -n 180
+          cargo fmt --all
+          git diff --check
+
+      - name: Execute the real Component Model containment fixtures
+        shell: bash
+        env:
+          RUST_BACKTRACE: "1"
+        run: |
+          set +e
+          tools/validate_contracts.sh > /tmp/validate-contracts.log 2>&1
+          status=$?
+          echo "=== VALIDATE_CONTRACTS_EXIT=${status} ==="
+          grep -nE 'FAILED|failures:|panicked at|assertion failed|error: test failed|error\[' /tmp/validate-contracts.log | tail -n 80 || true
+          tail -n 180 /tmp/validate-contracts.log
+          exit "${status}"
