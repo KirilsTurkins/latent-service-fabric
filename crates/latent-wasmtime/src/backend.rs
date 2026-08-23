@@ -1,8 +1,7 @@
 use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::fmt::Write as _;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
@@ -10,7 +9,7 @@ use latent_core::{
     ReleaseDigest, ResourceBudget,
 };
 use latent_executor::{
-    ExecutionBackend, ExecutionCancellation, ExecutionRequest, GuestOutcome, GuestTrap,
+    ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
     PreparationKey, PreparedComponent,
 };
 use latent_manifest::ExecutionBackendKind;
@@ -19,9 +18,12 @@ use wasmtime::component::{Component, HasSelf, Linker};
 use wasmtime::{Config, Engine, Store, WasmBacktraceDetails};
 
 use crate::bindings;
-use crate::host::{
-    hostcall_fuel_limit, ActivationHostContext, BoundedLogSink, HostState,
+use crate::containment::{
+    bounded_text, classify_runtime_error, configure_epoch, interrupted_outcome,
+    monotonic_deadline, platform_error, start_epoch_ticker, RuntimeResourceCounters,
+    RuntimeResourceSnapshot, StopControl, MAX_DIAGNOSTIC_BYTES,
 };
+use crate::host::{hostcall_fuel_limit, ActivationHostContext, BoundedLogSink, HostState};
 use crate::{WasmtimeEngineFactory, WasmtimeEngineProfile};
 
 pub const BACKEND_ID: &str = "wasmtime-component-phase-0";
@@ -35,7 +37,6 @@ pub const ECHO_DOMAIN_ERROR_MEDIA_TYPE: &str = "application/vnd.latent.echo-erro
 
 const EMPTY_MESSAGE_OUTPUT: &[u8] = br#"{"error":"empty-message"}"#;
 const MESSAGE_TOO_LARGE_OUTPUT: &[u8] = br#"{"error":"message-too-large"}"#;
-const MAX_DIAGNOSTIC_BYTES: usize = 512;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Phase0WasmtimeConfig {
@@ -53,6 +54,7 @@ pub struct Phase0WasmtimeConfig {
     pub retained_log_maximum_entries: usize,
     pub retained_log_maximum_bytes: usize,
     pub epoch_deadline_ticks: u64,
+    pub epoch_tick_interval_millis: u64,
 }
 
 impl Default for Phase0WasmtimeConfig {
@@ -72,6 +74,7 @@ impl Default for Phase0WasmtimeConfig {
             retained_log_maximum_entries: 256,
             retained_log_maximum_bytes: 512 * 1024,
             epoch_deadline_ticks: 1,
+            epoch_tick_interval_millis: 5,
         }
     }
 }
@@ -91,7 +94,8 @@ impl Phase0WasmtimeConfig {
             || self.invocation_log_maximum_bytes == 0
             || self.retained_log_maximum_entries == 0
             || self.retained_log_maximum_bytes == 0
-            || self.epoch_deadline_ticks == 0;
+            || self.epoch_deadline_ticks == 0
+            || self.epoch_tick_interval_millis == 0;
         if invalid {
             return Err(platform_error(
                 PlatformErrorCode::InvalidArgument,
@@ -108,7 +112,8 @@ impl Phase0WasmtimeConfig {
              hostcall-fuel=v2-echo-world-max-transfer;max-component={};max-memory={};\
              max-fuel={};wasm-stack={};async-stack={};cache-entries={};\
              cache-bytes={};invocation-log-entries={};invocation-log-bytes={};\
-             retained-log-entries={};retained-log-bytes={};epoch-ticks={};target={};cpu={}",
+             retained-log-entries={};retained-log-bytes={};epoch-ticks={};\
+             epoch-tick-ms={};target={};cpu={}",
             self.maximum_component_bytes,
             self.maximum_memory_bytes,
             self.maximum_fuel,
@@ -121,6 +126,7 @@ impl Phase0WasmtimeConfig {
             self.retained_log_maximum_entries,
             self.retained_log_maximum_bytes,
             self.epoch_deadline_ticks,
+            self.epoch_tick_interval_millis,
             self.target_triple,
             self.cpu_feature_set,
         );
@@ -167,6 +173,10 @@ impl Phase0WasmtimeEngineFactory {
                 false,
             )
         })?;
+        start_epoch_ticker(
+            &engine,
+            Duration::from_millis(config.epoch_tick_interval_millis),
+        )?;
 
         let configuration_digest = config.configuration_digest();
         let mut configuration = Metadata::new();
@@ -174,6 +184,10 @@ impl Phase0WasmtimeEngineFactory {
         configuration.insert("component-model-async".to_owned(), "enabled".to_owned());
         configuration.insert("fuel".to_owned(), "enabled".to_owned());
         configuration.insert("epoch-interruption".to_owned(), "enabled".to_owned());
+        configuration.insert(
+            "epoch-tick-interval-millis".to_owned(),
+            config.epoch_tick_interval_millis.to_string(),
+        );
         configuration.insert(
             "memory-accounting".to_owned(),
             "aggregate-linear-memory".to_owned(),
@@ -362,7 +376,7 @@ pub struct Phase0WasmtimeBackend {
     config: Phase0WasmtimeConfig,
     cache: Mutex<PreparedCache>,
     log_sink: BoundedLogSink,
-    stores_created: AtomicU64,
+    resources: RuntimeResourceCounters,
 }
 
 impl Phase0WasmtimeBackend {
@@ -381,7 +395,7 @@ impl Phase0WasmtimeBackend {
             )),
             config,
             log_sink,
-            stores_created: AtomicU64::new(0),
+            resources: RuntimeResourceCounters::default(),
         }
     }
 
@@ -390,7 +404,11 @@ impl Phase0WasmtimeBackend {
     }
 
     pub fn stores_created(&self) -> u64 {
-        self.stores_created.load(Ordering::Relaxed)
+        self.resources.snapshot().stores_created
+    }
+
+    pub fn resource_snapshot(&self) -> RuntimeResourceSnapshot {
+        self.resources.snapshot()
     }
 
     pub fn log_sink(&self) -> BoundedLogSink {
@@ -493,9 +511,11 @@ impl Phase0WasmtimeBackend {
 
     async fn invoke_inner(
         &self,
-        request: ExecutionRequest,
+        mut request: ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
     ) -> Result<GuestOutcome, PlatformError> {
+        let _active_invocation = self.resources.active_invocation();
+
         if cancellation.activation_id() != &request.activation.activation_id {
             return Err(platform_error(
                 PlatformErrorCode::InvalidArgument,
@@ -504,13 +524,14 @@ impl Phase0WasmtimeBackend {
             ));
         }
         if cancellation.is_cancelled() {
-            return Ok(GuestOutcome::Interrupted {
-                reason: cancellation.reason().map_or_else(
+            return Ok(interrupted_outcome(
+                latent_executor::GuestInterruptionKind::Cancelled,
+                cancellation.reason().map_or_else(
                     || "cancelled before guest execution".to_owned(),
                     |reason| bounded_text(&reason, MAX_DIAGNOSTIC_BYTES),
                 ),
-                consumption: BudgetConsumption::default(),
-            });
+                BudgetConsumption::default(),
+            ));
         }
         if request.prepared.backend != BACKEND_ID {
             return Err(platform_error(
@@ -563,6 +584,23 @@ impl Phase0WasmtimeBackend {
         self.validate_bound_imports(&request)?;
         self.validate_invocation_budget(&request.budget, &runtime.declared_budget)?;
 
+        let cancellation_probe = cancellation.probe();
+        let cancellation_guard = cancellation_probe
+            .as_ref()
+            .map(|_| self.resources.cancellation_probe());
+        let deadline = monotonic_deadline(earliest_deadline(
+            request.activation.deadline_unix_millis,
+            request.budget.wall_deadline_unix_millis,
+        ))?;
+        let stop = Arc::new(StopControl::new(deadline, cancellation_probe));
+        if let Some(kind) = stop.observe() {
+            return Ok(interrupted_outcome(
+                kind,
+                stop.reason(kind),
+                BudgetConsumption::default(),
+            ));
+        }
+
         let effective_memory = request
             .budget
             .memory_bytes
@@ -583,16 +621,16 @@ impl Phase0WasmtimeBackend {
             ));
         }
 
-        let input = String::from_utf8(request.activation.input.clone()).map_err(|_| {
+        let temporary_buffer_guard = self.resources.temporary_buffer();
+        let input = String::from_utf8(std::mem::take(&mut request.activation.input)).map_err(|_| {
             platform_error(
                 PlatformErrorCode::InvalidArgument,
                 "the Phase 0 echo input must be valid UTF-8",
                 false,
             )
         })?;
-        let activation_id = request.activation.activation_id.clone();
         let host_context = ActivationHostContext::new(
-            activation_id.clone(),
+            request.activation.activation_id.clone(),
             request.activation.root_activation_id.clone(),
             request.activation.parent_activation_id.clone(),
             request.activation.principal.clone(),
@@ -612,7 +650,8 @@ impl Phase0WasmtimeBackend {
         );
 
         let started = Instant::now();
-        self.stores_created.fetch_add(1, Ordering::Relaxed);
+        let host_state_guard = self.resources.host_state();
+        let store_guard = self.resources.store();
         let mut store = Store::new(&self.engine, host_state);
         store.set_hostcall_fuel(hostcall_fuel_limit(
             self.config.invocation_log_maximum_bytes,
@@ -629,24 +668,20 @@ impl Phase0WasmtimeBackend {
                 false,
             )
         })?;
-        #[cfg(target_has_atomic = "64")]
-        store.set_epoch_deadline(self.config.epoch_deadline_ticks);
+        configure_epoch(
+            &mut store,
+            Arc::clone(&stop),
+            self.config.epoch_deadline_ticks,
+        );
 
-        let instance = runtime
-            .pre
-            .instantiate_async(&mut store)
-            .await
-            .map_err(|error| {
-                platform_error(
-                    PlatformErrorCode::DependencyFailed,
-                    &format!("component instantiation failed: {}", bounded_error(&error)),
-                    false,
-                )
-            })?;
-        let call_result = instance
-            .examples_echo_api()
-            .call_echo(&mut store, &input)
-            .await;
+        let call_result = async {
+            let instance = runtime.pre.instantiate_async(&mut store).await?;
+            instance
+                .examples_echo_api()
+                .call_echo(&mut store, &input)
+                .await
+        }
+        .await;
 
         let remaining_fuel = store.get_fuel().unwrap_or(0);
         let wall_time_micros = u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX);
@@ -658,12 +693,21 @@ impl Phase0WasmtimeBackend {
             ..BudgetConsumption::default()
         };
         let logs = store.data().logs.entries();
+        let memory_exhausted = call_result
+            .as_ref()
+            .err()
+            .is_some_and(is_memory_limit_error);
 
-        drop(instance);
+        // Cleanup order is intentional: the call future has already dropped the
+        // guest instance, then the store and host state, temporary input, and the
+        // live cancellation probe are reclaimed before a reusable proof escapes.
         drop(store);
-        self.log_sink.publish(logs);
+        drop(store_guard);
+        drop(host_state_guard);
+        drop(input);
+        drop(temporary_buffer_guard);
 
-        match call_result {
+        let outcome = match call_result {
             Ok(Ok(output)) => Ok(GuestOutcome::Returned {
                 output: output.into_bytes(),
                 output_media_type: ECHO_SUCCESS_MEDIA_TYPE.to_owned(),
@@ -683,16 +727,13 @@ impl Phase0WasmtimeBackend {
                     consumption,
                 })
             }
-            Err(error) => Ok(GuestOutcome::Trapped {
-                trap: GuestTrap {
-                    code: "guest-trap".to_owned(),
-                    message: bounded_error(&error),
-                    guest_backtrace: Vec::new(),
-                    metadata: Metadata::new(),
-                },
-                consumption,
-            }),
-        }
+            Err(error) => classify_runtime_error(&error, &stop, memory_exhausted, consumption),
+        };
+
+        drop(stop);
+        drop(cancellation_guard);
+        self.log_sink.publish(logs);
+        outcome
     }
 
     fn validate_key(
@@ -922,6 +963,16 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
         Box::pin(async move { self.invoke_inner(request, cancellation).await })
     }
 
+    fn invoke_contained<'a>(
+        &'a self,
+        request: ExecutionRequest,
+        cancellation: &'a dyn ExecutionCancellation,
+    ) -> BoxFuture<'a, ExecutionReport> {
+        Box::pin(async move {
+            ExecutionReport::reusable(self.invoke_inner(request, cancellation).await)
+        })
+    }
+
     fn release<'a>(
         &'a self,
         prepared: PreparedComponent,
@@ -938,6 +989,21 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
             Ok(())
         })
     }
+}
+
+fn earliest_deadline(first: Option<u64>, second: Option<u64>) -> Option<u64> {
+    match (first, second) {
+        (Some(first), Some(second)) => Some(first.min(second)),
+        (Some(value), None) | (None, Some(value)) => Some(value),
+        (None, None) => None,
+    }
+}
+
+fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
+    let message = error.to_string().to_ascii_lowercase();
+    message.contains("aggregate linear-memory budget exceeded")
+        || message.contains("memory minimum size")
+        || message.contains("memory size") && message.contains("limit")
 }
 
 fn prepared_handle(key: &PreparationKey, component_digest: &str) -> String {
@@ -963,15 +1029,6 @@ fn sha256_digest(bytes: &[u8]) -> String {
     output
 }
 
-fn platform_error(code: PlatformErrorCode, message: &str, retryable: bool) -> PlatformError {
-    PlatformError {
-        code,
-        message: bounded_text(message, MAX_DIAGNOSTIC_BYTES),
-        retryable,
-        details: Vec::new(),
-    }
-}
-
 fn error_with_detail<const N: usize>(
     code: PlatformErrorCode,
     message: &str,
@@ -995,15 +1052,4 @@ fn error_with_detail<const N: usize>(
 
 fn bounded_error(error: &wasmtime::Error) -> String {
     bounded_text(&error.to_string(), MAX_DIAGNOSTIC_BYTES)
-}
-
-fn bounded_text(value: &str, maximum_bytes: usize) -> String {
-    if value.len() <= maximum_bytes {
-        return value.to_owned();
-    }
-    let mut end = maximum_bytes;
-    while !value.is_char_boundary(end) {
-        end -= 1;
-    }
-    value[..end].to_owned()
 }
