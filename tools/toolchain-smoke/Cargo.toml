@@ -24,6 +24,14 @@ test = false
 bench = false
 doc = false
 
+[[example]]
+name = "containment-capsule"
+path = "examples/containment_capsule/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 blake3.workspace = true
 clap.workspace = true
