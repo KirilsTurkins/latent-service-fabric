@@ -675,6 +675,7 @@ impl Phase0WasmtimeBackend {
             self.config.epoch_deadline_ticks,
         );
 
+        let component_instance_guard = self.resources.component_instance();
         let call_result = async {
             let instance = runtime.pre.instantiate_async(&mut store).await?;
             instance
@@ -683,6 +684,7 @@ impl Phase0WasmtimeBackend {
                 .await
         }
         .await;
+        drop(component_instance_guard);
 
         let remaining_fuel = store.get_fuel().unwrap_or(0);
         let wall_time_micros = u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX);
@@ -700,7 +702,7 @@ impl Phase0WasmtimeBackend {
             .is_some_and(is_memory_limit_error);
 
         // Cleanup order is intentional: the call future has already dropped the
-        // guest instance, then the store and host state, temporary input, and the
+        // guest instance and its guard, then the store and host state, temporary input, and the
         // live cancellation probe are reclaimed before a reusable proof escapes.
         drop(store);
         drop(store_guard);

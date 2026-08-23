@@ -18,3 +18,6 @@ latent-executor = { path = "../latent-executor" }
 latent-routing = { path = "../latent-routing" }
 latent-scheduler = { path = "../latent-scheduler" }
 tokio.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread"] }

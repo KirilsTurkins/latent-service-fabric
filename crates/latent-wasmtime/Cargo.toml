@@ -22,5 +22,7 @@ wasmtime.workspace = true
 [dev-dependencies]
 serde_json.workspace = true
 latent-activation = { path = "../latent-activation" }
+latent-node = { path = "../latent-node" }
 latent-routing = { path = "../latent-routing" }
-tokio.workspace = true
+latent-scheduler = { path = "../latent-scheduler" }
+tokio = { workspace = true, features = ["rt-multi-thread"] }

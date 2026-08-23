@@ -19,19 +19,34 @@ use self::latent::log::log::{self, Field, Level};
 use logic::{MessageRejection, MAX_LOG_ACTIVATION_ID_BYTES};
 
 const TRAP_MODE: &str = "__latent_test_trap";
+const DELAYED_TRAP_MODE: &str = "__latent_test_delayed_trap";
 const INFINITE_MODE: &str = "__latent_test_infinite";
 const MEMORY_MODE: &str = "__latent_test_memory";
+const DELAYED_ECHO_PREFIX: &str = "__latent_test_delayed_echo:";
 const LOG_MESSAGE: &str = "containment fixture invocation";
 const MEMORY_CHUNK_BYTES: usize = 64 * 1024;
+const CONTROLLED_DELAY_ITERATIONS: u64 = 2_000_000;
 
 struct ContainmentCapsule;
 
 impl Guest for ContainmentCapsule {
     fn echo(message: String) -> Result<String, EchoError> {
+        if let Some(delayed_message) = message.strip_prefix(DELAYED_ECHO_PREFIX) {
+            controlled_delay();
+            return normal_echo(delayed_message.to_owned());
+        }
+
         match message.as_str() {
             TRAP_MODE => panic!("controlled containment fixture trap"),
+            DELAYED_TRAP_MODE => {
+                controlled_delay();
+                panic!("controlled delayed containment fixture trap");
+            }
             INFINITE_MODE => infinite_guest_loop(),
-            MEMORY_MODE => exhaust_guest_memory(),
+            MEMORY_MODE => {
+                controlled_delay();
+                exhaust_guest_memory();
+            }
             _ => normal_echo(message),
         }
     }
@@ -67,6 +82,16 @@ fn normal_echo(message: String) -> Result<String, EchoError> {
         MessageRejection::Empty => EchoError::EmptyMessage,
         MessageRejection::OverLimit => EchoError::MessageTooLarge,
     })
+}
+
+
+#[inline(never)]
+fn controlled_delay() {
+    let mut counter = 0_u64;
+    while counter < CONTROLLED_DELAY_ITERATIONS {
+        counter = counter.wrapping_add(1);
+        std::hint::black_box(counter);
+    }
 }
 
 #[inline(never)]

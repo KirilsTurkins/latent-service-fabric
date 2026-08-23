@@ -3,9 +3,11 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use latent_activation::{ActivationEnvelope, TraceContext};
+use latent_activation::{
+    ActivationEnvelope, ActivationManager, ActivationOutcome, TraceContext,
+};
 use latent_artifacts::{ArtifactDescriptor, CapsuleArtifact};
 use latent_core::{
     ActivationId, ArtifactReference, CapabilityId, CellId, ContractId, FunctionId,
@@ -30,7 +32,8 @@ use sha2::{Digest, Sha256};
 const TRAP_MODE: &str = "__latent_test_trap";
 const INFINITE_MODE: &str = "__latent_test_infinite";
 const MEMORY_MODE: &str = "__latent_test_memory";
-const MAXIMUM_FUEL: u64 = 100_000_000;
+// Keep deadline fixtures comfortably below fuel exhaustion even on fast CI hosts.
+const MAXIMUM_FUEL: u64 = 1_000_000_000_000;
 const MAXIMUM_MEMORY_BYTES: u64 = 32 * 1024 * 1024;
 
 #[derive(Default)]
@@ -105,7 +108,8 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
         prepared_cache_maximum_entries: 2,
         ..Phase0WasmtimeConfig::default()
     };
-    let factory = Phase0WasmtimeEngineFactory::new(config).expect("factory must build");
+    let factory =
+        Phase0WasmtimeEngineFactory::new(config.clone()).expect("factory must build");
     let backend = factory.create_backend_instance();
     let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
     let prepared = backend
@@ -149,7 +153,11 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
     assert_healthy_echo(&backend, &prepared, 2).await;
 
     let deadline_id = ActivationId("containment-deadline".to_owned());
-    let deadline = now_unix_millis().saturating_add(25);
+    let requested_deadline = Duration::from_millis(25);
+    let deadline = now_unix_millis().saturating_add(
+        u64::try_from(requested_deadline.as_millis()).expect("test duration fits u64"),
+    );
+    let deadline_started = Instant::now();
     let timed_out = invoke(
         &backend,
         prepared.clone(),
@@ -159,7 +167,9 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
         &TestCancellation::never(deadline_id),
     )
     .await;
+    let deadline_elapsed = deadline_started.elapsed();
     assert_interrupted(timed_out, GuestInterruptionKind::DeadlineExceeded);
+    assert_deadline_tolerance(deadline_elapsed, requested_deadline, &config);
     assert_backend_reclaimed(&backend);
     assert_healthy_echo(&backend, &prepared, 3).await;
 
@@ -186,16 +196,22 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
     assert_healthy_echo(&backend, &prepared, 4).await;
 
     let memory_id = ActivationId("containment-memory".to_owned());
+    let granted_memory = 8 * 1024 * 1024;
     let memory = invoke(
         &backend,
         prepared.clone(),
         memory_id.clone(),
         MEMORY_MODE,
-        budget(MAXIMUM_FUEL, 8 * 1024 * 1024, None),
+        budget(MAXIMUM_FUEL, granted_memory, None),
         &TestCancellation::never(memory_id),
     )
     .await;
-    assert_interrupted(memory, GuestInterruptionKind::MemoryExhausted);
+    let memory_consumption = assert_interrupted(memory, GuestInterruptionKind::MemoryExhausted);
+    assert!(
+        memory_consumption.peak_memory_bytes <= granted_memory,
+        "reported peak {} exceeded grant {granted_memory}",
+        memory_consumption.peak_memory_bytes
+    );
     assert_backend_reclaimed(&backend);
     assert_healthy_echo(&backend, &prepared, 5).await;
 
@@ -292,7 +308,10 @@ async fn invoke(
     .expect("controlled failure remains an execution outcome")
 }
 
-fn assert_interrupted(outcome: GuestOutcome, expected: GuestInterruptionKind) {
+fn assert_interrupted(
+    outcome: GuestOutcome,
+    expected: GuestInterruptionKind,
+) -> latent_core::BudgetConsumption {
     match outcome {
         GuestOutcome::Interrupted {
             kind,
@@ -303,6 +322,7 @@ fn assert_interrupted(outcome: GuestOutcome, expected: GuestInterruptionKind) {
             assert!(!reason.is_empty());
             assert!(reason.len() <= 512);
             assert!(consumption.wall_time_micros > 0);
+            consumption
         }
         other => panic!("expected {expected:?}, got {other:?}"),
     }
@@ -327,6 +347,7 @@ fn assert_backend_reclaimed(backend: &Phase0WasmtimeBackend) {
     assert_eq!(snapshot.active_invocations, 0);
     assert_eq!(snapshot.live_stores, 0);
     assert_eq!(snapshot.live_host_states, 0);
+    assert_eq!(snapshot.live_component_instances, 0);
     assert_eq!(snapshot.live_temporary_buffers, 0);
     assert_eq!(snapshot.live_cancellation_probes, 0);
 }
@@ -502,4 +523,398 @@ fn now_unix_millis() -> u64 {
         .unwrap_or_default()
         .as_millis();
     u64::try_from(millis).unwrap_or(u64::MAX)
+}
+
+const DELAYED_TRAP_MODE: &str = "__latent_test_delayed_trap";
+const DELAYED_ECHO_PREFIX: &str = "__latent_test_delayed_echo:";
+const DEADLINE_CI_SCHEDULING_ALLOWANCE_MILLIS: u64 = 500;
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires the containment component built by tools/validate_contracts.sh"]
+async fn healthy_activations_remain_correct_while_an_infinite_activation_times_out() {
+    let (runner, pool, backend, config) = runner_fixture(5).await;
+    let requested_deadline = Duration::from_millis(75);
+    let deadline = now_unix_millis().saturating_add(
+        u64::try_from(requested_deadline.as_millis()).expect("test duration fits u64"),
+    );
+    let failure_id = ActivationId("mixed-deadline-failure".to_owned());
+    let failure = {
+        let runner = Arc::clone(&runner);
+        tokio::spawn(async move {
+            let started = Instant::now();
+            let outcome = runner
+                .invoke(activation_envelope(
+                    failure_id,
+                    INFINITE_MODE,
+                    budget(MAXIMUM_FUEL, 16 * 1024 * 1024, Some(deadline)),
+                ))
+                .await;
+            (started.elapsed(), outcome)
+        })
+    };
+    wait_for_runtime_active(&backend, 1).await;
+    let healthy = spawn_mixed_healthy(&runner, "deadline", 4);
+    wait_for_runtime_active(&backend, 2).await;
+
+    let (elapsed, outcome) = tokio::time::timeout(Duration::from_secs(5), failure)
+        .await
+        .expect("deadline fixture terminates")
+        .expect("deadline task joins");
+    let consumption = assert_activation_failure(
+        outcome,
+        latent_core::ActivationTerminalState::DeadlineExceeded,
+        latent_core::PlatformErrorCode::DeadlineExceeded,
+        "activation.deadline-exceeded",
+    );
+    assert!(consumption.wall_time_micros > 0);
+    assert_deadline_tolerance(elapsed, requested_deadline, &config);
+
+    assert_mixed_healthy(healthy, &backend, "deadline").await;
+    assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires the containment component built by tools/validate_contracts.sh"]
+async fn healthy_activations_remain_correct_while_another_activation_traps() {
+    let (runner, pool, backend, _) = runner_fixture(5).await;
+    let failure_id = ActivationId("mixed-trap-failure".to_owned());
+    let failure = {
+        let runner = Arc::clone(&runner);
+        tokio::spawn(async move {
+            runner
+                .invoke(activation_envelope(
+                    failure_id,
+                    DELAYED_TRAP_MODE,
+                    budget(MAXIMUM_FUEL, 16 * 1024 * 1024, None),
+                ))
+                .await
+        })
+    };
+    wait_for_runtime_active(&backend, 1).await;
+    let healthy = spawn_mixed_healthy(&runner, "trap", 4);
+    wait_for_runtime_active(&backend, 2).await;
+
+    let outcome = tokio::time::timeout(Duration::from_secs(5), failure)
+        .await
+        .expect("trap fixture terminates")
+        .expect("trap task joins");
+    assert_activation_failure(
+        outcome,
+        latent_core::ActivationTerminalState::GuestTrap,
+        latent_core::PlatformErrorCode::GuestTrap,
+        "activation.guest-trap",
+    );
+    assert_mixed_healthy(healthy, &backend, "trap").await;
+    assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "requires the containment component built by tools/validate_contracts.sh"]
+async fn memory_pressure_stays_within_the_grant_while_healthy_activations_complete() {
+    let (runner, pool, backend, _) = runner_fixture(5).await;
+    let granted_memory = 8 * 1024 * 1024;
+    let failure_id = ActivationId("mixed-memory-failure".to_owned());
+    let failure = {
+        let runner = Arc::clone(&runner);
+        tokio::spawn(async move {
+            runner
+                .invoke(activation_envelope(
+                    failure_id,
+                    MEMORY_MODE,
+                    budget(MAXIMUM_FUEL, granted_memory, None),
+                ))
+                .await
+        })
+    };
+    wait_for_runtime_active(&backend, 1).await;
+    let healthy = spawn_mixed_healthy(&runner, "memory", 4);
+    wait_for_runtime_active(&backend, 2).await;
+
+    let outcome = tokio::time::timeout(Duration::from_secs(5), failure)
+        .await
+        .expect("memory fixture terminates")
+        .expect("memory task joins");
+    let consumption = assert_activation_failure(
+        outcome,
+        latent_core::ActivationTerminalState::ResourceExhausted,
+        latent_core::PlatformErrorCode::ResourceExhausted,
+        "activation.memory-exhausted",
+    );
+    assert!(
+        consumption.peak_memory_bytes <= granted_memory,
+        "reported peak {} exceeded grant {granted_memory}",
+        consumption.peak_memory_bytes
+    );
+    assert_mixed_healthy(healthy, &backend, "memory").await;
+    assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
+}
+
+async fn runner_fixture(
+    capacity: u32,
+) -> (
+    Arc<latent_node::Phase0ActivationRunner>,
+    latent_scheduler::FixedCellPool,
+    Arc<Phase0WasmtimeBackend>,
+    Phase0WasmtimeConfig,
+) {
+    let artifact = load_containment_artifact();
+    let config = Phase0WasmtimeConfig {
+        maximum_memory_bytes: MAXIMUM_MEMORY_BYTES,
+        maximum_fuel: MAXIMUM_FUEL,
+        epoch_tick_interval_millis: 1,
+        prepared_cache_maximum_entries: 2,
+        ..Phase0WasmtimeConfig::default()
+    };
+    let factory = Phase0WasmtimeEngineFactory::new(config.clone()).expect("factory must build");
+    let backend = Arc::new(factory.create_backend_instance());
+    let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
+    let prepared = backend
+        .prepare(&artifact, &key)
+        .await
+        .expect("containment fixture must prepare");
+    let pool = latent_scheduler::FixedCellPool::new(
+        latent_scheduler::FixedCellPoolConfig::new(
+            NodeId("mixed-containment-node".to_owned()),
+            latent_scheduler::CellClass::Standard,
+            capacity,
+            32,
+        ),
+    )
+    .expect("mixed containment pool is valid");
+    let runner_pool: Arc<dyn latent_scheduler::CellPool> = Arc::new(pool.clone());
+    let runner_backend: Arc<dyn ExecutionBackend> = backend.clone();
+    let runner = Arc::new(
+        latent_node::Phase0ActivationRunner::new(
+            latent_node::Phase0ActivationRunnerConfig::default(),
+            runner_pool,
+            runner_backend,
+            prepared,
+            bound_imports(),
+        )
+        .expect("mixed containment runner is valid"),
+    );
+    (runner, pool, backend, config)
+}
+
+fn spawn_mixed_healthy(
+    runner: &Arc<latent_node::Phase0ActivationRunner>,
+    suite: &str,
+    count: u64,
+) -> Vec<(
+    ActivationId,
+    String,
+    tokio::task::JoinHandle<ActivationOutcome>,
+)> {
+    (0..count)
+        .map(|index| {
+            let activation_id = ActivationId(format!("mixed-{suite}-healthy-{index}"));
+            let expected = format!("{suite}-healthy-output-{index}");
+            let input = format!("{DELAYED_ECHO_PREFIX}{expected}");
+            let runner = Arc::clone(runner);
+            let task_activation_id = activation_id.clone();
+            let task = tokio::spawn(async move {
+                runner
+                    .invoke(activation_envelope(
+                        task_activation_id,
+                        &input,
+                        budget(MAXIMUM_FUEL, 16 * 1024 * 1024, None),
+                    ))
+                    .await
+            });
+            (activation_id, expected, task)
+        })
+        .collect()
+}
+
+async fn assert_mixed_healthy(
+    tasks: Vec<(
+        ActivationId,
+        String,
+        tokio::task::JoinHandle<ActivationOutcome>,
+    )>,
+    backend: &Phase0WasmtimeBackend,
+    suite: &str,
+) {
+    for (activation_id, expected, task) in tasks {
+        let outcome = tokio::time::timeout(Duration::from_secs(5), task)
+            .await
+            .unwrap_or_else(|_| panic!("{suite} healthy invocation timed out"))
+            .expect("healthy task joins");
+        match outcome {
+            ActivationOutcome::Succeeded(success) => {
+                assert_eq!(success.output, expected.as_bytes());
+                assert_eq!(success.output_media_type, ECHO_SUCCESS_MEDIA_TYPE);
+            }
+            ActivationOutcome::Failed { error, .. } => {
+                panic!("{suite} healthy activation failed: {error:?}");
+            }
+        }
+        let logs = backend.log_sink().snapshot_for(&activation_id);
+        assert_eq!(logs.len(), 1, "healthy activation has one isolated log");
+        assert_eq!(
+            logs[0].fields.get("activation_id"),
+            Some(&activation_id.0),
+            "host context must remain activation-local"
+        );
+    }
+}
+
+fn activation_envelope(
+    activation_id: ActivationId,
+    message: &str,
+    budget: ResourceBudget,
+) -> ActivationEnvelope {
+    let deadline = budget.wall_deadline_unix_millis;
+    ActivationEnvelope {
+        activation_id: activation_id.clone(),
+        parent_activation_id: None,
+        root_activation_id: activation_id.clone(),
+        principal: InvocationPrincipal {
+            subject: "containment-test".to_owned(),
+            kind: PrincipalKind::Service,
+            tenant: Some(TenantId("examples".to_owned())),
+            service: Some(ServiceId("containment".to_owned())),
+            claims: Metadata::new(),
+        },
+        target: InvocationTarget {
+            tenant: TenantId("examples".to_owned()),
+            service: ServiceId("echo".to_owned()),
+            contract: ContractId(ECHO_EXPORT.to_owned()),
+            function: FunctionId("echo".to_owned()),
+            route: None,
+        },
+        resolved_revision: None,
+        deadline_unix_millis: deadline,
+        priority: 0,
+        trace: TraceContext {
+            trace_id: TraceId(format!("trace-{}", activation_id.0)),
+            span_id: SpanId(format!("span-{}", activation_id.0)),
+            trace_flags: 1,
+            baggage: Metadata::from([("suite".to_owned(), "issue-22-mixed".to_owned())]),
+        },
+        idempotency_key: None,
+        retry_attempt: 0,
+        budget,
+        metadata: Metadata::new(),
+        input: message.as_bytes().to_vec(),
+        input_media_type: ECHO_SUCCESS_MEDIA_TYPE.to_owned(),
+    }
+}
+
+fn bound_imports() -> Vec<BoundImport> {
+    vec![
+        BoundImport {
+            capability: CapabilityId("context".to_owned()),
+            contract: CONTEXT_IMPORT.to_owned(),
+            opaque_handle: "activation-context".to_owned(),
+        },
+        BoundImport {
+            capability: CapabilityId("log".to_owned()),
+            contract: LOG_IMPORT.to_owned(),
+            opaque_handle: "bounded-log".to_owned(),
+        },
+    ]
+}
+
+fn assert_activation_failure(
+    outcome: ActivationOutcome,
+    terminal_state: latent_core::ActivationTerminalState,
+    code: latent_core::PlatformErrorCode,
+    detail_kind: &str,
+) -> latent_core::BudgetConsumption {
+    match outcome {
+        ActivationOutcome::Failed {
+            terminal_state: actual_terminal_state,
+            error,
+            consumption,
+        } => {
+            assert_eq!(actual_terminal_state, terminal_state);
+            assert_eq!(error.code, code);
+            assert!(!error.retryable);
+            assert!(error.message.len() <= 512);
+            assert_eq!(error.details.len(), 1);
+            assert_eq!(error.details[0].kind, detail_kind);
+            assert!(error.details[0]
+                .fields
+                .iter()
+                .all(|(name, value)| name.len() <= 64 && value.len() <= 256));
+            consumption
+        }
+        ActivationOutcome::Succeeded(success) => {
+            panic!("expected failure, got output {:?}", success.output);
+        }
+    }
+}
+
+fn assert_deadline_tolerance(
+    elapsed: Duration,
+    requested_deadline: Duration,
+    config: &Phase0WasmtimeConfig,
+) {
+    let containment_tolerance = Duration::from_millis(
+        config
+            .epoch_tick_interval_millis
+            .saturating_mul(config.epoch_deadline_ticks),
+    );
+    let maximum_elapsed = requested_deadline
+        .saturating_add(containment_tolerance)
+        .saturating_add(Duration::from_millis(
+            DEADLINE_CI_SCHEDULING_ALLOWANCE_MILLIS,
+        ));
+    assert!(
+        elapsed <= maximum_elapsed,
+        "deadline interruption took {elapsed:?}, exceeding {maximum_elapsed:?}"
+    );
+}
+
+async fn wait_for_runtime_active(backend: &Phase0WasmtimeBackend, minimum: u64) {
+    tokio::time::timeout(Duration::from_secs(2), async {
+        while backend.resource_snapshot().active_invocations < minimum {
+            tokio::task::yield_now().await;
+        }
+    })
+    .await
+    .unwrap_or_else(|_| panic!("runtime never reached {minimum} concurrent invocations"));
+}
+
+fn assert_end_to_end_reclaimed(
+    runner: &latent_node::Phase0ActivationRunner,
+    pool: &latent_scheduler::FixedCellPool,
+    backend: &Phase0WasmtimeBackend,
+    capacity: u32,
+) {
+    let runner_snapshot = runner.snapshot();
+    assert_eq!(runner_snapshot.active_cancellation_registrations, 0);
+    assert_eq!(runner_snapshot.running_invocations, 0);
+    assert_eq!(runner_snapshot.disposition_failures, 0);
+    assert_eq!(runner_snapshot.quarantined_cells, 0);
+    assert_eq!(
+        runner_snapshot.released_cells,
+        runner_snapshot.total_invocations,
+        "every terminal path must release its affine lease exactly once"
+    );
+
+    let runtime = backend.resource_snapshot();
+    assert_eq!(runtime.active_invocations, 0);
+    assert_eq!(runtime.live_stores, 0);
+    assert_eq!(runtime.live_host_states, 0);
+    assert_eq!(runtime.live_component_instances, 0);
+    assert_eq!(runtime.live_temporary_buffers, 0);
+    assert_eq!(runtime.live_cancellation_probes, 0);
+
+    let cache = backend.cache_snapshot();
+    assert_eq!(cache.entries, 1);
+    assert!(cache.entries <= cache.maximum_entries);
+    assert!(cache.source_bytes <= cache.maximum_source_bytes);
+
+    let observations = pool.observations();
+    assert_eq!(observations.capacity, capacity);
+    assert_eq!(observations.available, capacity);
+    assert_eq!(observations.active_leases, 0);
+    assert_eq!(observations.queue_depth, 0);
+    assert_eq!(observations.quarantined, 0);
+    assert_eq!(
+        observations.available + observations.active_leases + observations.quarantined,
+        observations.capacity
+    );
 }

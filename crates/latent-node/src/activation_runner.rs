@@ -24,6 +24,8 @@ const MAX_ERROR_DETAILS: usize = 8;
 const MAX_DETAIL_FIELDS: usize = 16;
 const MAX_DETAIL_NAME_BYTES: usize = 64;
 const MAX_DETAIL_VALUE_BYTES: usize = 256;
+const CANCELLATION_MESSAGE: &str = "activation cancelled";
+const DEADLINE_MESSAGE: &str = "activation wall-clock deadline exceeded";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Phase0ActivationRunnerConfig {
@@ -155,7 +157,7 @@ impl Phase0ActivationRunner {
             return cancellation_failure(cancellation.reason());
         }
         if deadline_expired(effective_deadline) {
-            return deadline_failure("activation deadline expired before cell acquisition");
+            return deadline_failure();
         }
 
         let Some(tenant) = envelope.principal.tenant.clone() else {
@@ -195,11 +197,11 @@ impl Phase0ActivationRunner {
             }
             LeaseResolution::DeadlineExceeded => {
                 let _ = self.pool.cancel_waiting(&activation_id).await;
-                return deadline_failure("activation deadline expired while queued");
+                return deadline_failure();
             }
             LeaseResolution::Acquired(Ok(lease)) => lease,
             LeaseResolution::Acquired(Err(error)) => {
-                return failure(sanitize_error(error), BudgetConsumption::default());
+                return failure_for_platform_error(error, BudgetConsumption::default());
             }
         };
 
@@ -212,7 +214,7 @@ impl Phase0ActivationRunner {
             return self
                 .release_before_execution(
                     lease,
-                    deadline_failure("activation deadline expired before guest execution"),
+                    deadline_failure(),
                 )
                 .await;
         }
@@ -234,8 +236,9 @@ impl Phase0ActivationRunner {
                 self.counters
                     .disposition_failures
                     .fetch_add(1, Ordering::Relaxed);
-                failure(
-                    sanitize_error(error),
+                disposition_failure(
+                    "release",
+                    error,
                     outcome_consumption(&intended_outcome),
                 )
             }
@@ -248,6 +251,7 @@ impl Phase0ActivationRunner {
         lease: CellLease,
         cancellation: CancellationToken,
     ) -> ActivationOutcome {
+        let effective_deadline = envelope.deadline_unix_millis;
         let cell_id = lease.id.clone();
         let mut cell_metadata = Metadata::new();
         cell_metadata.insert("node-id".to_owned(), lease.node.0.clone());
@@ -274,6 +278,7 @@ impl Phase0ActivationRunner {
         drop(running_guard);
 
         let ExecutionReport { outcome, cleanup } = report;
+        let outcome = apply_execution_precedence(outcome, &cancellation, effective_deadline);
         let disposition_name = match &cleanup {
             ExecutionCleanup::Reusable => "released",
             ExecutionCleanup::Quarantine { .. } => "quarantined",
@@ -281,13 +286,13 @@ impl Phase0ActivationRunner {
         let mapped = map_execution_outcome(outcome, &cell_id.0, disposition_name);
         let consumption = outcome_consumption(&mapped);
 
-        let disposition = match cleanup {
+        let (disposition, disposition_operation) = match cleanup {
             ExecutionCleanup::Reusable => {
                 let result = self.pool.release(lease).await;
                 if result.is_ok() {
                     self.counters.released_cells.fetch_add(1, Ordering::Relaxed);
                 }
-                result
+                (result, "release")
             }
             ExecutionCleanup::Quarantine { reason } => {
                 let reason = bounded_text(
@@ -304,7 +309,7 @@ impl Phase0ActivationRunner {
                         .quarantined_cells
                         .fetch_add(1, Ordering::Relaxed);
                 }
-                result
+                (result, "quarantine")
             }
         };
 
@@ -314,7 +319,7 @@ impl Phase0ActivationRunner {
                 self.counters
                     .disposition_failures
                     .fetch_add(1, Ordering::Relaxed);
-                failure(sanitize_error(error), consumption)
+                disposition_failure(disposition_operation, error, consumption)
             }
         }
     }
@@ -551,11 +556,69 @@ impl Drop for AtomicCounterGuard<'_> {
     }
 }
 
+fn apply_execution_precedence(
+    outcome: Result<GuestOutcome, PlatformError>,
+    cancellation: &CancellationToken,
+    effective_deadline: Option<u64>,
+) -> Result<GuestOutcome, PlatformError> {
+    let consumption = execution_result_consumption(&outcome);
+    if cancellation.is_cancelled() {
+        return Ok(GuestOutcome::Interrupted {
+            kind: GuestInterruptionKind::Cancelled,
+            reason: bounded_text(
+                cancellation
+                    .reason()
+                    .as_deref()
+                    .unwrap_or(CANCELLATION_MESSAGE),
+                MAX_DIAGNOSTIC_BYTES,
+            ),
+            consumption,
+        });
+    }
+
+    if deadline_expired(effective_deadline) {
+        // Recheck cancellation at the deadline handoff. Cancellation wins when
+        // both signals are visible before the guest result is accepted.
+        if cancellation.is_cancelled() {
+            return Ok(GuestOutcome::Interrupted {
+                kind: GuestInterruptionKind::Cancelled,
+                reason: bounded_text(
+                    cancellation
+                        .reason()
+                        .as_deref()
+                        .unwrap_or(CANCELLATION_MESSAGE),
+                    MAX_DIAGNOSTIC_BYTES,
+                ),
+                consumption,
+            });
+        }
+        return Ok(GuestOutcome::Interrupted {
+            kind: GuestInterruptionKind::DeadlineExceeded,
+            reason: DEADLINE_MESSAGE.to_owned(),
+            consumption,
+        });
+    }
+
+    outcome
+}
+
+fn execution_result_consumption(
+    outcome: &Result<GuestOutcome, PlatformError>,
+) -> BudgetConsumption {
+    match outcome {
+        Ok(GuestOutcome::Returned { consumption, .. })
+        | Ok(GuestOutcome::Trapped { consumption, .. })
+        | Ok(GuestOutcome::Interrupted { consumption, .. }) => consumption.clone(),
+        Err(_) => BudgetConsumption::default(),
+    }
+}
+
 fn map_execution_outcome(
     outcome: Result<GuestOutcome, PlatformError>,
     cell_id: &str,
     disposition: &str,
 ) -> ActivationOutcome {
+    let bounded_cell_id = bounded_text(cell_id, MAX_DETAIL_VALUE_BYTES);
     match outcome {
         Ok(GuestOutcome::Returned {
             output,
@@ -563,7 +626,7 @@ fn map_execution_outcome(
             consumption,
         }) => {
             let mut metadata = Metadata::new();
-            metadata.insert("cell-id".to_owned(), cell_id.to_owned());
+            metadata.insert("cell-id".to_owned(), bounded_cell_id);
             metadata.insert("cell-disposition".to_owned(), disposition.to_owned());
             ActivationOutcome::Succeeded(ActivationSuccess {
                 output,
@@ -580,7 +643,7 @@ fn map_execution_outcome(
                 "code".to_owned(),
                 bounded_text(&trap.code, MAX_DETAIL_VALUE_BYTES),
             );
-            fields.insert("cell_id".to_owned(), cell_id.to_owned());
+            fields.insert("cell_id".to_owned(), bounded_cell_id);
             failure(
                 PlatformError {
                     code: PlatformErrorCode::GuestTrap,
@@ -598,58 +661,130 @@ fn map_execution_outcome(
             kind,
             reason,
             consumption,
-        }) => {
-            let (code, detail_kind) = match kind {
-                GuestInterruptionKind::Cancelled => {
-                    (PlatformErrorCode::Cancelled, "activation.cancelled")
-                }
-                GuestInterruptionKind::DeadlineExceeded => (
-                    PlatformErrorCode::DeadlineExceeded,
-                    "activation.deadline-exceeded",
-                ),
-                GuestInterruptionKind::FuelExhausted => (
-                    PlatformErrorCode::ResourceExhausted,
-                    "activation.fuel-exhausted",
-                ),
-                GuestInterruptionKind::MemoryExhausted => (
-                    PlatformErrorCode::ResourceExhausted,
-                    "activation.memory-exhausted",
-                ),
-            };
-            let mut fields = Metadata::new();
-            fields.insert("cell_id".to_owned(), cell_id.to_owned());
-            failure(
-                PlatformError {
-                    code,
-                    message: bounded_text(&reason, MAX_DIAGNOSTIC_BYTES),
-                    retryable: false,
-                    details: vec![ErrorDetail {
-                        kind: detail_kind.to_owned(),
-                        fields,
-                    }],
-                },
-                consumption,
-            )
-        }
-        Err(error) => failure(sanitize_error(error), BudgetConsumption::default()),
+        }) => match kind {
+            GuestInterruptionKind::Cancelled => {
+                failure(cancellation_error(Some(reason)), consumption)
+            }
+            GuestInterruptionKind::DeadlineExceeded => failure(deadline_error(), consumption),
+            GuestInterruptionKind::FuelExhausted
+            | GuestInterruptionKind::MemoryExhausted => {
+                let (detail_kind, message) = match kind {
+                    GuestInterruptionKind::FuelExhausted => {
+                        ("activation.fuel-exhausted", reason)
+                    }
+                    GuestInterruptionKind::MemoryExhausted => {
+                        ("activation.memory-exhausted", reason)
+                    }
+                    GuestInterruptionKind::Cancelled
+                    | GuestInterruptionKind::DeadlineExceeded => unreachable!(),
+                };
+                let mut fields = Metadata::new();
+                fields.insert("cell_id".to_owned(), bounded_cell_id);
+                failure(
+                    PlatformError {
+                        code: PlatformErrorCode::ResourceExhausted,
+                        message: bounded_text(&message, MAX_DIAGNOSTIC_BYTES),
+                        retryable: false,
+                        details: vec![ErrorDetail {
+                            kind: detail_kind.to_owned(),
+                            fields,
+                        }],
+                    },
+                    consumption,
+                )
+            }
+        },
+        Err(error) => failure_for_platform_error(error, BudgetConsumption::default()),
     }
 }
 
 fn cancellation_failure(reason: Option<String>) -> ActivationOutcome {
-    failure(
-        platform_error(
-            PlatformErrorCode::Cancelled,
-            reason.as_deref().unwrap_or("activation cancelled"),
-            false,
-        ),
-        BudgetConsumption::default(),
-    )
+    failure(cancellation_error(reason), BudgetConsumption::default())
 }
 
-fn deadline_failure(message: &str) -> ActivationOutcome {
+fn deadline_failure() -> ActivationOutcome {
+    failure(deadline_error(), BudgetConsumption::default())
+}
+
+fn cancellation_error(reason: Option<String>) -> PlatformError {
+    let message = reason
+        .filter(|reason| !reason.trim().is_empty())
+        .unwrap_or_else(|| CANCELLATION_MESSAGE.to_owned());
+    PlatformError {
+        code: PlatformErrorCode::Cancelled,
+        message: bounded_text(&message, MAX_DIAGNOSTIC_BYTES),
+        retryable: false,
+        details: vec![ErrorDetail {
+            kind: "activation.cancelled".to_owned(),
+            fields: Metadata::new(),
+        }],
+    }
+}
+
+fn deadline_error() -> PlatformError {
+    PlatformError {
+        code: PlatformErrorCode::DeadlineExceeded,
+        message: DEADLINE_MESSAGE.to_owned(),
+        retryable: false,
+        details: vec![ErrorDetail {
+            kind: "activation.deadline-exceeded".to_owned(),
+            fields: Metadata::new(),
+        }],
+    }
+}
+
+fn failure_for_platform_error(
+    error: PlatformError,
+    consumption: BudgetConsumption,
+) -> ActivationOutcome {
+    let error = match error.code {
+        PlatformErrorCode::Cancelled => cancellation_error(Some(error.message)),
+        PlatformErrorCode::DeadlineExceeded => deadline_error(),
+        _ => sanitize_error(error),
+    };
+    failure(error, consumption)
+}
+
+fn disposition_failure(
+    operation: &str,
+    error: PlatformError,
+    consumption: BudgetConsumption,
+) -> ActivationOutcome {
+    let error = sanitize_error(error);
+    let mut fields = Metadata::new();
+    fields.insert(
+        "operation".to_owned(),
+        bounded_text(operation, MAX_DETAIL_VALUE_BYTES),
+    );
+    fields.insert(
+        "cause_code".to_owned(),
+        bounded_text(&format!("{:?}", error.code), MAX_DETAIL_VALUE_BYTES),
+    );
+    fields.insert(
+        "cause_message".to_owned(),
+        bounded_text(&error.message, MAX_DETAIL_VALUE_BYTES),
+    );
+    if let Some(detail) = error.details.first() {
+        fields.insert(
+            "cause_detail".to_owned(),
+            bounded_text(&detail.kind, MAX_DETAIL_VALUE_BYTES),
+        );
+    }
+
     failure(
-        platform_error(PlatformErrorCode::DeadlineExceeded, message, false),
-        BudgetConsumption::default(),
+        PlatformError {
+            code: PlatformErrorCode::Internal,
+            message: bounded_text(
+                &format!("cell {operation} failed during activation cleanup"),
+                MAX_DIAGNOSTIC_BYTES,
+            ),
+            retryable: false,
+            details: vec![ErrorDetail {
+                kind: format!("cell-disposition.{operation}-failed"),
+                fields,
+            }],
+        },
+        consumption,
     )
 }
 
@@ -770,4 +905,39 @@ fn bounded_text(value: &str, maximum_bytes: usize) -> String {
         end -= 1;
     }
     value[..end].to_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn early_and_running_cancellation_use_the_same_terminal_error_shape() {
+        let early = cancellation_failure(Some("same cancellation".to_owned()));
+        let running = map_execution_outcome(
+            Ok(GuestOutcome::Interrupted {
+                kind: GuestInterruptionKind::Cancelled,
+                reason: "same cancellation".to_owned(),
+                consumption: BudgetConsumption::default(),
+            }),
+            "cell-not-exported-for-cancellation",
+            "released",
+        );
+        assert_eq!(early, running);
+    }
+
+    #[test]
+    fn early_and_running_deadline_use_the_same_terminal_error_shape() {
+        let early = deadline_failure();
+        let running = map_execution_outcome(
+            Ok(GuestOutcome::Interrupted {
+                kind: GuestInterruptionKind::DeadlineExceeded,
+                reason: "stage-specific backend text".to_owned(),
+                consumption: BudgetConsumption::default(),
+            }),
+            "cell-not-exported-for-deadline",
+            "released",
+        );
+        assert_eq!(early, running);
+    }
 }

@@ -259,7 +259,7 @@ async fn maps_every_terminal_failure_and_keeps_the_process_healthy() {
             "engine",
             ActivationTerminalState::PlatformFailed,
             PlatformErrorCode::Internal,
-            "engine-detailengine-detailengine-detailengine-detailengine-detail",
+            "engine-detailengine-detailengine-detailengine-detailengine-detai",
         ),
     ];
 

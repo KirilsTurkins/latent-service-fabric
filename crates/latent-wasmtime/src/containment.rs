@@ -14,6 +14,7 @@ pub struct RuntimeResourceSnapshot {
     pub active_invocations: u64,
     pub live_stores: u64,
     pub live_host_states: u64,
+    pub live_component_instances: u64,
     pub live_temporary_buffers: u64,
     pub live_cancellation_probes: u64,
     pub stores_created: u64,
@@ -24,6 +25,7 @@ pub(crate) struct RuntimeResourceCounters {
     active_invocations: AtomicU64,
     live_stores: AtomicU64,
     live_host_states: AtomicU64,
+    live_component_instances: AtomicU64,
     live_temporary_buffers: AtomicU64,
     live_cancellation_probes: AtomicU64,
     stores_created: AtomicU64,
@@ -43,6 +45,10 @@ impl RuntimeResourceCounters {
         CounterGuard::new(&self.live_host_states)
     }
 
+    pub(crate) fn component_instance(&self) -> CounterGuard<'_> {
+        CounterGuard::new(&self.live_component_instances)
+    }
+
     pub(crate) fn temporary_buffer(&self) -> CounterGuard<'_> {
         CounterGuard::new(&self.live_temporary_buffers)
     }
@@ -56,6 +62,7 @@ impl RuntimeResourceCounters {
             active_invocations: self.active_invocations.load(Ordering::Relaxed),
             live_stores: self.live_stores.load(Ordering::Relaxed),
             live_host_states: self.live_host_states.load(Ordering::Relaxed),
+            live_component_instances: self.live_component_instances.load(Ordering::Relaxed),
             live_temporary_buffers: self.live_temporary_buffers.load(Ordering::Relaxed),
             live_cancellation_probes: self.live_cancellation_probes.load(Ordering::Relaxed),
             stores_created: self.stores_created.load(Ordering::Relaxed),
@@ -289,8 +296,35 @@ pub(crate) fn classify_runtime_error(
     memory_exhausted: bool,
     consumption: BudgetConsumption,
 ) -> Result<GuestOutcome, PlatformError> {
-    if let Some(kind) = stop.kind() {
+    if let Some(kind) = stop.observe() {
         return Ok(interrupted_outcome(kind, stop.reason(kind), consumption));
+    }
+    classify_runtime_failure(
+        None,
+        memory_exhausted,
+        error.downcast_ref::<Trap>(),
+        consumption,
+    )
+}
+
+fn classify_runtime_failure(
+    stop_kind: Option<GuestInterruptionKind>,
+    memory_exhausted: bool,
+    trap: Option<&Trap>,
+    consumption: BudgetConsumption,
+) -> Result<GuestOutcome, PlatformError> {
+    if let Some(kind) = stop_kind {
+        let reason = match kind {
+            GuestInterruptionKind::Cancelled => "activation cancelled",
+            GuestInterruptionKind::DeadlineExceeded => {
+                "activation wall-clock deadline exceeded"
+            }
+            GuestInterruptionKind::FuelExhausted => "activation CPU fuel exhausted",
+            GuestInterruptionKind::MemoryExhausted => {
+                "activation linear-memory limit exceeded"
+            }
+        };
+        return Ok(interrupted_outcome(kind, reason.to_owned(), consumption));
     }
     if memory_exhausted {
         return Ok(interrupted_outcome(
@@ -300,7 +334,7 @@ pub(crate) fn classify_runtime_error(
         ));
     }
 
-    if let Some(trap) = error.downcast_ref::<Trap>() {
+    if let Some(trap) = trap {
         if matches!(trap, Trap::OutOfFuel) {
             return Ok(interrupted_outcome(
                 GuestInterruptionKind::FuelExhausted,
@@ -391,10 +425,140 @@ pub(crate) fn bounded_text(value: &str, maximum_bytes: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::AtomicBool;
+
+    struct TestCancellationProbe {
+        cancelled: AtomicBool,
+    }
+
+    impl TestCancellationProbe {
+        fn new(cancelled: bool) -> Self {
+            Self {
+                cancelled: AtomicBool::new(cancelled),
+            }
+        }
+
+        fn cancel(&self) {
+            self.cancelled.store(true, Ordering::Release);
+        }
+    }
+
+    impl ExecutionCancellationProbe for TestCancellationProbe {
+        fn is_cancelled(&self) -> bool {
+            self.cancelled.load(Ordering::Acquire)
+        }
+
+        fn reason(&self) -> Option<String> {
+            Some("controlled cancellation".to_owned())
+        }
+    }
 
     #[test]
     fn bounded_text_preserves_utf8_boundaries() {
         assert_eq!(bounded_text("aéz", 2), "a");
         assert_eq!(bounded_text("aéz", 3), "aé");
+    }
+
+    #[test]
+    fn first_stop_cause_is_sticky_across_repeated_epoch_observations() {
+        let probe = Arc::new(TestCancellationProbe::new(false));
+        let stop = StopControl::new(
+            Some(Instant::now() - Duration::from_millis(1)),
+            Some(probe.clone()),
+        );
+
+        assert_eq!(
+            stop.observe(),
+            Some(GuestInterruptionKind::DeadlineExceeded)
+        );
+        probe.cancel();
+        assert_eq!(
+            stop.observe(),
+            Some(GuestInterruptionKind::DeadlineExceeded),
+            "a later cancellation must not replace the first deadline cause"
+        );
+        assert_eq!(stop.kind(), Some(GuestInterruptionKind::DeadlineExceeded));
+    }
+
+    #[test]
+    fn cancellation_wins_when_cancellation_and_deadline_are_first_visible_together() {
+        let probe = Arc::new(TestCancellationProbe::new(true));
+        let stop = StopControl::new(
+            Some(Instant::now() - Duration::from_millis(1)),
+            Some(probe),
+        );
+
+        assert_eq!(stop.observe(), Some(GuestInterruptionKind::Cancelled));
+        assert_eq!(stop.observe(), Some(GuestInterruptionKind::Cancelled));
+    }
+
+    #[test]
+    fn cancellation_and_deadline_precede_fuel_exhaustion() {
+        let cancellation = classify_runtime_failure(
+            Some(GuestInterruptionKind::Cancelled),
+            false,
+            Some(&Trap::OutOfFuel),
+            consumption(),
+        )
+        .expect("cancellation remains a guest interruption");
+        assert_interruption(cancellation, GuestInterruptionKind::Cancelled);
+
+        let deadline = classify_runtime_failure(
+            Some(GuestInterruptionKind::DeadlineExceeded),
+            false,
+            Some(&Trap::OutOfFuel),
+            consumption(),
+        )
+        .expect("deadline remains a guest interruption");
+        assert_interruption(deadline, GuestInterruptionKind::DeadlineExceeded);
+    }
+
+    #[test]
+    fn memory_precedes_fuel_and_guest_trap_classification() {
+        let fuel = classify_runtime_failure(
+            None,
+            true,
+            Some(&Trap::OutOfFuel),
+            consumption(),
+        )
+        .expect("memory denial remains a guest interruption");
+        assert_interruption(fuel, GuestInterruptionKind::MemoryExhausted);
+
+        let trap = classify_runtime_failure(
+            None,
+            true,
+            Some(&Trap::UnreachableCodeReached),
+            consumption(),
+        )
+        .expect("memory denial remains a guest interruption");
+        assert_interruption(trap, GuestInterruptionKind::MemoryExhausted);
+    }
+
+    #[test]
+    fn fuel_exhaustion_precedes_generic_guest_trap_classification() {
+        let outcome = classify_runtime_failure(
+            None,
+            false,
+            Some(&Trap::OutOfFuel),
+            consumption(),
+        )
+        .expect("fuel exhaustion remains a guest interruption");
+        assert_interruption(outcome, GuestInterruptionKind::FuelExhausted);
+    }
+
+    fn consumption() -> BudgetConsumption {
+        BudgetConsumption {
+            cpu_fuel: 7,
+            peak_memory_bytes: 4096,
+            wall_time_micros: 11,
+            ..BudgetConsumption::default()
+        }
+    }
+
+    fn assert_interruption(outcome: GuestOutcome, expected: GuestInterruptionKind) {
+        match outcome {
+            GuestOutcome::Interrupted { kind, .. } => assert_eq!(kind, expected),
+            other => panic!("expected {expected:?}, got {other:?}"),
+        }
     }
 }
