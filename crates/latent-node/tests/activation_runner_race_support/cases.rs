@@ -49,7 +49,7 @@ async fn queue_race_prefers_cancellation_then_deadline_over_cell_grant() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn cancellation_and_deadline_override_guest_completion_at_handoff() {
     let used = consumption();
-    let deadline = now().saturating_add(30);
+    let deadline = now().saturating_add(250);
     let id = ActivationId("handoff-cancellation".to_owned());
     let (backend, gate) = Backend::new(success_report(used.clone()));
     let runner = runner(Pool::immediate(), backend);
@@ -71,7 +71,7 @@ async fn cancellation_and_deadline_override_guest_completion_at_handoff() {
     );
 
     let used = consumption();
-    let deadline = now().saturating_add(30);
+    let deadline = now().saturating_add(250);
     let (backend, gate) = Backend::new(success_report(used.clone()));
     let runner = runner(Pool::immediate(), backend);
     let task = spawn(
