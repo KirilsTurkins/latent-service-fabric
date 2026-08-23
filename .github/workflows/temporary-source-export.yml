@@ -85,12 +85,27 @@ jobs:
           )
           PY
 
-          echo "=== ISSUE_22_WORKFLOW_BASE64_BEGIN ==="
-          base64 --wrap=0 .github/workflows/issue-22-containment.yml
-          echo
-          echo "=== ISSUE_22_WORKFLOW_BASE64_END ==="
+          echo "=== PATCHED FILES ==="
+          grep '^diff --git ' /tmp/issue-22-corrections.patch || true
+          echo "=== CHANGED WORKFLOW FILES ==="
+          git diff --name-only -- .github/workflows || true
 
-          rm -f .github/workflows/issue-22-containment.yml
+          while IFS= read -r workflow_path; do
+            [[ -z "${workflow_path}" ]] && continue
+            [[ "${workflow_path}" == ".github/workflows/temporary-source-export.yml" ]] && continue
+            echo "=== WORKFLOW_BASE64_BEGIN:${workflow_path} ==="
+            if [[ -f "${workflow_path}" ]]; then
+              base64 --wrap=0 "${workflow_path}"
+              echo
+            fi
+            echo "=== WORKFLOW_BASE64_END:${workflow_path} ==="
+            if git cat-file -e "HEAD:${workflow_path}" 2>/dev/null; then
+              git restore --source=HEAD --worktree --staged -- "${workflow_path}"
+            else
+              rm -f "${workflow_path}"
+            fi
+          done < <(git diff --name-only -- .github/workflows)
+
           rm -f .github/lsf22-correction.part00
           rm -f .github/lsf22-correction.part01
           rm -f .github/lsf22-correction.part02
