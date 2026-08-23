@@ -16,6 +16,14 @@ test = false
 bench = false
 doc = false
 
+[[example]]
+name = "oversized-log-capsule"
+path = "examples/oversized_log_capsule/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 blake3.workspace = true
 clap.workspace = true

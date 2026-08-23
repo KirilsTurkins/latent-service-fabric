@@ -3,6 +3,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_ROOT="${CARGO_TARGET_DIR:-${ROOT}/target}"
+if [[ "${TARGET_ROOT}" != /* ]]; then
+    TARGET_ROOT="${ROOT}/${TARGET_ROOT}"
+fi
 OUTPUT="${TARGET_ROOT}/contracts"
 
 cd "${ROOT}"
@@ -36,4 +39,16 @@ buf build api/proto --as-file-descriptor-set -o "${OUTPUT}/proto/latent-api.bin"
 
 cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
+cargo check -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --locked
 python3 tools/build_echo_capsule.py --verify-reproducible
+cargo build -p latent-toolchain-smoke --example oversized-log-capsule \
+    --target wasm32-unknown-unknown --release --locked
+OVERSIZED_LOG_CORE="${TARGET_ROOT}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm"
+OVERSIZED_LOG_COMPONENT="${TARGET_ROOT}/capsules/oversized-log/oversized-log-capsule.wasm"
+mkdir -p "$(dirname "${OVERSIZED_LOG_COMPONENT}")"
+wasm-tools component new "${OVERSIZED_LOG_CORE}" -o "${OVERSIZED_LOG_COMPONENT}"
+wasm-tools validate "${OVERSIZED_LOG_COMPONENT}"
+LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
+LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
+LSF_OVERSIZED_LOG_COMPONENT="${OVERSIZED_LOG_COMPONENT}" \
+    cargo test -p latent-wasmtime --test echo_backend --locked -- --ignored --nocapture

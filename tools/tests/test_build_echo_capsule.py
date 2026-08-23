@@ -24,6 +24,14 @@ SPEC.loader.exec_module(build_echo_capsule)
 
 
 class BuildEchoCapsuleTests(unittest.TestCase):
+    def test_component_build_uses_a_self_contained_core_target(self) -> None:
+        self.assertEqual(build_echo_capsule.BINDINGS_TARGET, "wasm32-wasip2")
+        self.assertEqual(build_echo_capsule.CORE_TARGET, "wasm32-unknown-unknown")
+        self.assertNotEqual(
+            build_echo_capsule.BINDINGS_TARGET,
+            build_echo_capsule.CORE_TARGET,
+        )
+
     def test_wit_bindgen_loads_dependencies_before_the_echo_world(self) -> None:
         source = COMPONENT_SOURCE.read_text(encoding="utf-8")
         context_index = source.index('"../../wit/platform/context"')

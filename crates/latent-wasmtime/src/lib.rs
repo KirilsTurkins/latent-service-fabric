@@ -1,10 +1,27 @@
-//! Wasmtime-specific preparation and execution seam definitions.
+//! Wasmtime Component Model preparation and execution for the Phase 0 echo spike.
+//!
+//! The concrete backend intentionally supports only `examples:echo/service@0.1.0`.
+//! It retains a bounded node-owned cache of compiled component state, while every
+//! invocation receives a fresh Wasmtime store, limiter, host context, log buffer,
+//! and component instance. The linker registers only the declared context and log
+//! imports; no WASI implementation or ambient operating-system authority is added.
 
 #![forbid(unsafe_code)]
+
+mod backend;
+mod bindings;
+mod host;
 
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{BoxFuture, Metadata, PlatformError, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
+
+pub use backend::{
+    Phase0WasmtimeBackend, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory,
+    PreparedCacheSnapshot, BACKEND_ID, CONTEXT_IMPORT, ECHO_DOMAIN_ERROR_MEDIA_TYPE, ECHO_EXPORT,
+    ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD, LOG_IMPORT, WASMTIME_VERSION,
+};
+pub use host::{BoundedLogSink, CapturedLog};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WasmtimeEngineProfile {
@@ -49,10 +66,8 @@ pub trait AheadOfTimeCache: Send + Sync {
         key: &'a PreparationKey,
     ) -> BoxFuture<'a, Result<Option<AheadOfTimeArtifact>, PlatformError>>;
 
-    fn put<'a>(
-        &'a self,
-        artifact: AheadOfTimeArtifact,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn put<'a>(&'a self, artifact: AheadOfTimeArtifact)
+        -> BoxFuture<'a, Result<(), PlatformError>>;
 }
 
 pub trait PrecompiledArtifactValidator: Send + Sync {
