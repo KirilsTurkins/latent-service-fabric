@@ -146,7 +146,7 @@ The real Component Model tests combine `Phase0WasmtimeBackend`, `Phase0Activatio
 - repeated failures with bounded prepared handles and zero live runtime resources; and
 - exact pool accounting after every mixed workload.
 
-Runner and containment unit tests additionally cover queue bias, cancellation/deadline versus completion, cancellation/deadline versus fuel exhaustion, registration removal, disposition failure precedence, first-stop-cause stickiness, and the memory-before-fuel-before-trap classifier.
+Barrier-controlled runner integration tests cover cancellation before deadline before cell grant, cancellation and deadline versus guest completion at result handoff, cancellation accepted after handoff but before registration removal, and release/quarantine failure precedence with consumption preservation. Containment unit tests cover first-stop-cause stickiness and memory-before-fuel-before-trap classification.
 
 `ActivationRunnerSnapshot` and `RuntimeResourceSnapshot` expose constant-time counters used by these tests. A completed workload must leave zero live registrations, running invocations, stores, host states, component instances, temporary buffers, and cancellation probes. Prepared cache entries and bytes must remain within configured limits. Pool observations must satisfy:
 
