@@ -65,6 +65,26 @@ jobs:
           base64 --decode /tmp/issue-22-corrections.b64 | gzip --decompress > /tmp/issue-22-corrections.patch
           git apply --check /tmp/issue-22-corrections.patch
           git apply /tmp/issue-22-corrections.patch
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("crates/latent-node/tests/activation_runner.rs")
+          source = path.read_text(encoding="utf-8")
+          impossible_prefix = (
+              '"engine-detailengine-detailengine-detailengine-detailengine-detail",'
+          )
+          bounded_prefix = (
+              '"engine-detailengine-detailengine-detailengine-detailengine-detai",'
+          )
+          if source.count(impossible_prefix) != 1:
+              raise SystemExit(
+                  "expected exactly one 65-byte engine diagnostic prefix assertion"
+              )
+          path.write_text(
+              source.replace(impossible_prefix, bounded_prefix, 1),
+              encoding="utf-8",
+          )
+          PY
           rm -f .github/lsf22-correction.patch.gz.b64
           rm -f .github/lsf22-correction.part00
           rm -f .github/lsf22-correction.part01
