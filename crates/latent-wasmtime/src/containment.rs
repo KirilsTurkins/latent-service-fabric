@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -316,13 +316,9 @@ fn classify_runtime_failure(
     if let Some(kind) = stop_kind {
         let reason = match kind {
             GuestInterruptionKind::Cancelled => "activation cancelled",
-            GuestInterruptionKind::DeadlineExceeded => {
-                "activation wall-clock deadline exceeded"
-            }
+            GuestInterruptionKind::DeadlineExceeded => "activation wall-clock deadline exceeded",
             GuestInterruptionKind::FuelExhausted => "activation CPU fuel exhausted",
-            GuestInterruptionKind::MemoryExhausted => {
-                "activation linear-memory limit exceeded"
-            }
+            GuestInterruptionKind::MemoryExhausted => "activation linear-memory limit exceeded",
         };
         return Ok(interrupted_outcome(kind, reason.to_owned(), consumption));
     }
@@ -483,10 +479,7 @@ mod tests {
     #[test]
     fn cancellation_wins_when_cancellation_and_deadline_are_first_visible_together() {
         let probe = Arc::new(TestCancellationProbe::new(true));
-        let stop = StopControl::new(
-            Some(Instant::now() - Duration::from_millis(1)),
-            Some(probe),
-        );
+        let stop = StopControl::new(Some(Instant::now() - Duration::from_millis(1)), Some(probe));
 
         assert_eq!(stop.observe(), Some(GuestInterruptionKind::Cancelled));
         assert_eq!(stop.observe(), Some(GuestInterruptionKind::Cancelled));
@@ -515,13 +508,8 @@ mod tests {
 
     #[test]
     fn memory_precedes_fuel_and_guest_trap_classification() {
-        let fuel = classify_runtime_failure(
-            None,
-            true,
-            Some(&Trap::OutOfFuel),
-            consumption(),
-        )
-        .expect("memory denial remains a guest interruption");
+        let fuel = classify_runtime_failure(None, true, Some(&Trap::OutOfFuel), consumption())
+            .expect("memory denial remains a guest interruption");
         assert_interruption(fuel, GuestInterruptionKind::MemoryExhausted);
 
         let trap = classify_runtime_failure(
@@ -536,13 +524,8 @@ mod tests {
 
     #[test]
     fn fuel_exhaustion_precedes_generic_guest_trap_classification() {
-        let outcome = classify_runtime_failure(
-            None,
-            false,
-            Some(&Trap::OutOfFuel),
-            consumption(),
-        )
-        .expect("fuel exhaustion remains a guest interruption");
+        let outcome = classify_runtime_failure(None, false, Some(&Trap::OutOfFuel), consumption())
+            .expect("fuel exhaustion remains a guest interruption");
         assert_interruption(outcome, GuestInterruptionKind::FuelExhausted);
     }
 

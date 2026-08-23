@@ -84,7 +84,6 @@ fn normal_echo(message: String) -> Result<String, EchoError> {
     })
 }
 
-
 #[inline(never)]
 fn controlled_delay() {
     let mut counter = 0_u64;

@@ -5,9 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use latent_activation::{
-    ActivationEnvelope, ActivationManager, ActivationOutcome, TraceContext,
-};
+use latent_activation::{ActivationEnvelope, ActivationManager, ActivationOutcome, TraceContext};
 use latent_artifacts::{ArtifactDescriptor, CapsuleArtifact};
 use latent_core::{
     ActivationId, ArtifactReference, CapabilityId, CellId, ContractId, FunctionId,
@@ -108,8 +106,7 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
         prepared_cache_maximum_entries: 2,
         ..Phase0WasmtimeConfig::default()
     };
-    let factory =
-        Phase0WasmtimeEngineFactory::new(config.clone()).expect("factory must build");
+    let factory = Phase0WasmtimeEngineFactory::new(config.clone()).expect("factory must build");
     let backend = factory.create_backend_instance();
     let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
     let prepared = backend
@@ -221,7 +218,11 @@ async fn contains_real_component_failures_and_reclaims_every_invocation_resource
             &backend,
             prepared.clone(),
             activation_id.clone(),
-            if index % 2 == 0 { TRAP_MODE } else { INFINITE_MODE },
+            if index % 2 == 0 {
+                TRAP_MODE
+            } else {
+                INFINITE_MODE
+            },
             if index % 2 == 0 {
                 budget(MAXIMUM_FUEL, 16 * 1024 * 1024, None)
             } else {
@@ -480,11 +481,7 @@ fn request(
     }
 }
 
-fn budget(
-    cpu_fuel: u64,
-    memory_bytes: u64,
-    deadline: Option<u64>,
-) -> ResourceBudget {
+fn budget(cpu_fuel: u64, memory_bytes: u64, deadline: Option<u64>) -> ResourceBudget {
     ResourceBudget {
         cpu_fuel,
         memory_bytes,
@@ -672,14 +669,12 @@ async fn runner_fixture(
         .prepare(&artifact, &key)
         .await
         .expect("containment fixture must prepare");
-    let pool = latent_scheduler::FixedCellPool::new(
-        latent_scheduler::FixedCellPoolConfig::new(
-            NodeId("mixed-containment-node".to_owned()),
-            latent_scheduler::CellClass::Standard,
-            capacity,
-            32,
-        ),
-    )
+    let pool = latent_scheduler::FixedCellPool::new(latent_scheduler::FixedCellPoolConfig::new(
+        NodeId("mixed-containment-node".to_owned()),
+        latent_scheduler::CellClass::Standard,
+        capacity,
+        32,
+    ))
     .expect("mixed containment pool is valid");
     let runner_pool: Arc<dyn latent_scheduler::CellPool> = Arc::new(pool.clone());
     let runner_backend: Arc<dyn ExecutionBackend> = backend.clone();
@@ -889,8 +884,7 @@ fn assert_end_to_end_reclaimed(
     assert_eq!(runner_snapshot.disposition_failures, 0);
     assert_eq!(runner_snapshot.quarantined_cells, 0);
     assert_eq!(
-        runner_snapshot.released_cells,
-        runner_snapshot.total_invocations,
+        runner_snapshot.released_cells, runner_snapshot.total_invocations,
         "every terminal path must release its affine lease exactly once"
     );
 

@@ -37,7 +37,10 @@ fn stage_runtime_world(platform_wit: &Path, destination: &Path) -> io::Result<()
         if !package.file_type()?.is_dir() || package.file_name() == OsStr::new("runtime") {
             continue;
         }
-        copy_wit_tree(&package.path(), &destination.join("deps").join(package.file_name()))?;
+        copy_wit_tree(
+            &package.path(),
+            &destination.join("deps").join(package.file_name()),
+        )?;
     }
 
     Ok(())

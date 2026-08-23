@@ -212,10 +212,7 @@ impl Phase0ActivationRunner {
         }
         if deadline_expired(effective_deadline) {
             return self
-                .release_before_execution(
-                    lease,
-                    deadline_failure(),
-                )
+                .release_before_execution(lease, deadline_failure())
                 .await;
         }
 
@@ -236,11 +233,7 @@ impl Phase0ActivationRunner {
                 self.counters
                     .disposition_failures
                     .fetch_add(1, Ordering::Relaxed);
-                disposition_failure(
-                    "release",
-                    error,
-                    outcome_consumption(&intended_outcome),
-                )
+                disposition_failure("release", error, outcome_consumption(&intended_outcome))
             }
         }
     }
@@ -666,17 +659,15 @@ fn map_execution_outcome(
                 failure(cancellation_error(Some(reason)), consumption)
             }
             GuestInterruptionKind::DeadlineExceeded => failure(deadline_error(), consumption),
-            GuestInterruptionKind::FuelExhausted
-            | GuestInterruptionKind::MemoryExhausted => {
+            GuestInterruptionKind::FuelExhausted | GuestInterruptionKind::MemoryExhausted => {
                 let (detail_kind, message) = match kind {
-                    GuestInterruptionKind::FuelExhausted => {
-                        ("activation.fuel-exhausted", reason)
-                    }
+                    GuestInterruptionKind::FuelExhausted => ("activation.fuel-exhausted", reason),
                     GuestInterruptionKind::MemoryExhausted => {
                         ("activation.memory-exhausted", reason)
                     }
-                    GuestInterruptionKind::Cancelled
-                    | GuestInterruptionKind::DeadlineExceeded => unreachable!(),
+                    GuestInterruptionKind::Cancelled | GuestInterruptionKind::DeadlineExceeded => {
+                        unreachable!()
+                    }
                 };
                 let mut fields = Metadata::new();
                 fields.insert("cell_id".to_owned(), bounded_cell_id);

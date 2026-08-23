@@ -34,11 +34,8 @@ impl Guest for EchoCapsule {
         let fields = [
             Field {
                 name: "activation_id".to_owned(),
-                value: logic::bounded_utf8_prefix(
-                    &activation_id,
-                    MAX_LOG_ACTIVATION_ID_BYTES,
-                )
-                .to_owned(),
+                value: logic::bounded_utf8_prefix(&activation_id, MAX_LOG_ACTIVATION_ID_BYTES)
+                    .to_owned(),
             },
             Field {
                 name: "message_bytes".to_owned(),

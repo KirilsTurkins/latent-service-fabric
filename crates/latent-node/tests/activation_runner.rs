@@ -211,12 +211,7 @@ impl ExecutionBackend for LegacyBackend {
         _request: ExecutionRequest,
         _cancellation: &'a dyn ExecutionCancellation,
     ) -> BoxFuture<'a, Result<GuestOutcome, PlatformError>> {
-        Box::pin(async move {
-            Ok(returned(
-                b"legacy-success",
-                BudgetConsumption::default(),
-            ))
-        })
+        Box::pin(async move { Ok(returned(b"legacy-success", BudgetConsumption::default())) })
     }
 
     fn release<'a>(
