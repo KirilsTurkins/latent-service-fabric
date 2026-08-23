@@ -3,13 +3,14 @@
 //! The concrete backend intentionally supports only `examples:echo/service@0.1.0`.
 //! It retains a bounded node-owned cache of compiled component state, while every
 //! invocation receives a fresh Wasmtime store, limiter, host context, log buffer,
-//! and component instance. The linker registers only the declared context and log
-//! imports; no WASI implementation or ambient operating-system authority is added.
+//! and component instance. Epoch interruption and fuel stop non-cooperative guest
+//! code without exposing WASI or ambient operating-system authority.
 
 #![forbid(unsafe_code)]
 
 mod backend;
 mod bindings;
+mod containment;
 mod host;
 
 use latent_artifacts::CapsuleArtifact;
@@ -21,6 +22,7 @@ pub use backend::{
     PreparedCacheSnapshot, BACKEND_ID, CONTEXT_IMPORT, ECHO_DOMAIN_ERROR_MEDIA_TYPE, ECHO_EXPORT,
     ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD, LOG_IMPORT, WASMTIME_VERSION,
 };
+pub use containment::RuntimeResourceSnapshot;
 pub use host::{BoundedLogSink, CapturedLog};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
