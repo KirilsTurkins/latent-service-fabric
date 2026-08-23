@@ -1,10 +1,16 @@
-//! Node identity, inventory, route watching, registration, and health interfaces.
+//! Node identity, inventory, route watching, registration, health, and Phase 0 activation orchestration.
 
 #![forbid(unsafe_code)]
+
+mod activation_runner;
 
 use latent_artifacts::CacheEntryDescriptor;
 use latent_core::{BoxFuture, Metadata, NodeId, PlatformError, RouteGeneration};
 use latent_routing::RouteSnapshot;
+
+pub use activation_runner::{
+    ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CellClassCapacity {
