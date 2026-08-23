@@ -1,4 +1,4 @@
-name: Validate Issue 22 real containment fixtures
+name: Apply and validate Issue 22 corrections
 
 on:
   pull_request:
@@ -6,14 +6,14 @@ on:
       - development
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
-  group: issue-22-real-fixtures-${{ github.event.pull_request.number }}
+  group: issue-22-correction-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
-  validate:
+  correct:
     if: >-
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.head.ref == 'feat/issue-22-containment-runner'
@@ -48,7 +48,7 @@ jobs:
         with:
           version: 1.72.0
 
-      - name: Apply the reviewed correction bundle and follow-up fixes
+      - name: Apply the reviewed correction bundle
         shell: bash
         run: |
           set -euo pipefail
@@ -100,18 +100,43 @@ jobs:
               encoding="utf-8",
           )
           PY
+          rm -f .github/lsf22-correction.patch.gz.b64
+          rm -f .github/lsf22-correction.part00
+          rm -f .github/lsf22-correction.part01
+          rm -f .github/lsf22-correction.part02
+          rm -f .github/lsf22-correction.part03
+          rm -f .github/lsf22-correction.part04
+          rm -f .github/lsf22-correction.part05
+          rm -f .github/lsf22-correction.part06
+          rm .github/workflows/temporary-source-export.yml
           cargo fmt --all
           git diff --check
 
-      - name: Execute the real Component Model containment fixtures
+      - name: Validate repository structure
+        run: python tools/validate_repository.py
+
+      - name: Check the complete workspace
+        run: cargo check --workspace --all-targets --all-features --locked
+
+      - name: Run Clippy for the complete workspace
+        run: cargo clippy --workspace --all-targets --all-features --locked
+
+      - name: Run scheduler tests
+        run: cargo test -p latent-scheduler --all-targets --locked
+
+      - name: Run the complete workspace test suite
+        run: cargo test --workspace --all-targets --all-features --locked
+
+      - name: Build and execute the real Component Model containment fixtures
+        run: tools/validate_contracts.sh
+
+      - name: Commit the validated corrections
         shell: bash
-        env:
-          RUST_BACKTRACE: "1"
         run: |
-          set +e
-          tools/validate_contracts.sh > /tmp/validate-contracts.log 2>&1
-          status=$?
-          echo "=== VALIDATE_CONTRACTS_EXIT=${status} ==="
-          grep -nE 'FAILED|failures:|panicked at|assertion failed|error: test failed|error\[' /tmp/validate-contracts.log | tail -n 80 || true
-          tail -n 180 /tmp/validate-contracts.log
-          exit "${status}"
+          set -euo pipefail
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "fix: complete issue 22 containment acceptance coverage"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
