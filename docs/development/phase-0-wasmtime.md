@@ -6,7 +6,7 @@ Issue #21 implements the first executable `ExecutionBackend` for one deliberatel
 
 `Phase0WasmtimeEngineFactory` constructs one node-owned Wasmtime 47.0.3 engine with the Component Model and Component Model async support enabled. Fuel accounting and epoch interruption are enabled, the Wasm and asynchronous stacks have explicit maximum sizes, and detailed Wasm backtraces are disabled. The factory does not create a Tokio runtime, worker thread, listener, socket, execution cell, or persistent component instance.
 
-The generated profile and preparation key include a digest of every Phase 0 engine, store, cache, and log bound that affects compatibility. The digest records aggregate linear-memory accounting and per-invocation host-call fuel as compatibility-relevant behavior. A preparation key created by a different Wasmtime version, target, CPU profile, or configuration is rejected before compilation.
+The generated profile and preparation key include a digest of every Phase 0 engine, store, cache, and log bound that affects compatibility. The digest records aggregate linear-memory accounting and the echo world's per-call guest-to-host transfer ceiling as compatibility-relevant behavior. A preparation key created by a different Wasmtime version, target, CPU profile, or configuration is rejected before compilation.
 
 ## Trust and interface validation
 
@@ -33,7 +33,7 @@ Each `invoke` creates a fresh:
 
 The store is initialized with the invocation fuel grant, an epoch deadline, and the effective minimum of the invocation, cell, and node memory limits. Linear-memory growth is accounted across every memory in the store: a component with multiple memories cannot multiply the activation's `memory_bytes` grant, and `peak_memory_bytes` reports the aggregate peak rather than the largest individual memory.
 
-Before typed instantiation, `backend.rs` configures `Store::set_hostcall_fuel` for that fresh store. The value is derived from the delegated `log_bytes` grant and the maximum message, field count, field-name, and field-value shapes accepted by the Phase 0 log host. This replaces Wasmtime's broad default with a per-call bound below the permitted canonical-ABI logging payload, so oversized guest-to-host strings or lists trap before Wasmtime lifts them into unbounded Rust allocations.
+Before typed instantiation, `backend.rs` configures `Store::set_hostcall_fuel` exactly once for the fresh store. Wasmtime applies this value to every guest-to-host Component Model transfer, so the allowance is sized for the largest transfer permitted anywhere in the Phase 0 world: the 65,536-byte successful echo result plus conservative canonical-ABI headroom. The tighter log message, field-shape, entry-count, and delegated-byte limits remain enforced by `InvocationLogBuffer` after lifting. A single store-wide allowance cannot use the 256-byte log-message ceiling without incorrectly rejecting valid echo results.
 
 The generated typed binding calls `echo`; no handwritten canonical-ABI value decoding is used. Success returns UTF-8 bytes. The declared `empty-message` and `message-too-large` variants return a bounded JSON domain-error payload with media type `application/vnd.latent.echo-error+json`. Wasmtime call failures become a bounded `GuestOutcome::Trapped`; timeout and running-cancellation classification is completed by issue #22.
 
@@ -47,7 +47,7 @@ The byte bound accounts for source component bytes, while entry count bounds com
 
 ## Validation
 
-The repository contract gate builds the Issue #19 echo artifact, loads both its generated component bytes and generated `capsule.json`, and invokes it through `ExecutionBackend::prepare` and `ExecutionBackend::invoke`. It also builds a same-interface capsule that passes an oversized string to `latent:log/log` and verifies deterministic host-call-fuel rejection before the log sink accepts any bytes:
+The repository contract gate builds the Issue #19 echo artifact, loads both its generated component bytes and generated `capsule.json`, and invokes it through `ExecutionBackend::prepare` and `ExecutionBackend::invoke`. It verifies that an exact 65,536-byte success result round-trips through generated bindings. It also builds a same-interface capsule that passes a string larger than the world-wide guest-to-host transfer allowance to `latent:log/log` and verifies deterministic host-call-fuel rejection before the log sink accepts any bytes:
 
 ```bash
 tools/validate_contracts.sh

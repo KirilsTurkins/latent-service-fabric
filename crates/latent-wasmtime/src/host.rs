@@ -10,26 +10,34 @@ use wasmtime::{ResourceLimiter, StoreLimits, StoreLimitsBuilder};
 use crate::bindings::latent::context::context;
 use crate::bindings::latent::log::log;
 
+const MAX_ECHO_RESULT_BYTES: usize = 64 * 1024;
 const MAX_LOG_MESSAGE_BYTES: usize = 256;
 const MAX_LOG_FIELDS: usize = 16;
 const MAX_LOG_FIELD_NAME_BYTES: usize = 64;
 const MAX_LOG_FIELD_VALUE_BYTES: usize = 256;
-const HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES: usize = 4 * 1024;
+// Reserve explicit canonical-ABI headroom above the largest dynamic payload in
+// the Phase 0 world. Wasmtime applies this allowance to every guest-to-host
+// Component Model transfer, including lifting the echo export result.
+const HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES: usize = 16 * 1024;
 const HOSTCALL_FUEL_PER_FIELD_OVERHEAD_BYTES: usize = 32;
 const MAX_LOG_GUEST_PAYLOAD_BYTES: usize = MAX_LOG_MESSAGE_BYTES
     + MAX_LOG_FIELDS * (MAX_LOG_FIELD_NAME_BYTES + MAX_LOG_FIELD_VALUE_BYTES);
 const MAX_LOG_CANONICAL_OVERHEAD_BYTES: usize = HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES
     + MAX_LOG_FIELDS * HOSTCALL_FUEL_PER_FIELD_OVERHEAD_BYTES;
+const MAX_ECHO_CANONICAL_TRANSFER_BYTES: usize =
+    HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES + MAX_ECHO_RESULT_BYTES;
 
 pub(crate) fn hostcall_fuel_limit(
     configured_maximum_log_bytes: usize,
     delegated_log_bytes: u64,
 ) -> usize {
     let delegated = usize::try_from(delegated_log_bytes).unwrap_or(usize::MAX);
-    let permitted_payload = configured_maximum_log_bytes
+    let permitted_log_payload = configured_maximum_log_bytes
         .min(delegated)
         .min(MAX_LOG_GUEST_PAYLOAD_BYTES);
-    MAX_LOG_CANONICAL_OVERHEAD_BYTES.saturating_add(permitted_payload)
+    let maximum_log_transfer =
+        MAX_LOG_CANONICAL_OVERHEAD_BYTES.saturating_add(permitted_log_payload);
+    MAX_ECHO_CANONICAL_TRANSFER_BYTES.max(maximum_log_transfer)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -547,13 +555,15 @@ mod tests {
     }
 
     #[test]
-    fn hostcall_fuel_is_bounded_by_the_log_contract_and_delegated_budget() {
-        let contract_ceiling = MAX_LOG_CANONICAL_OVERHEAD_BYTES + MAX_LOG_GUEST_PAYLOAD_BYTES;
-        assert_eq!(hostcall_fuel_limit(usize::MAX, u64::MAX), contract_ceiling);
-        assert_eq!(
-            hostcall_fuel_limit(128, 64),
-            MAX_LOG_CANONICAL_OVERHEAD_BYTES + 64
+    fn hostcall_fuel_covers_the_largest_guest_to_host_transfer_in_the_world() {
+        let world_ceiling = hostcall_fuel_limit(usize::MAX, u64::MAX);
+        assert_eq!(world_ceiling, MAX_ECHO_CANONICAL_TRANSFER_BYTES);
+        assert!(world_ceiling > MAX_ECHO_RESULT_BYTES);
+        assert!(
+            world_ceiling
+                > MAX_LOG_CANONICAL_OVERHEAD_BYTES + MAX_LOG_GUEST_PAYLOAD_BYTES
         );
-        assert!(contract_ceiling < 128 * 1024 * 1024);
+        assert_eq!(hostcall_fuel_limit(128, 64), world_ceiling);
+        assert!(world_ceiling < 128 * 1024);
     }
 }

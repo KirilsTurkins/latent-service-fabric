@@ -105,7 +105,7 @@ impl Phase0WasmtimeConfig {
     fn configuration_digest(&self) -> String {
         let material = format!(
             "component-model=1;component-model-async=1;fuel=1;epoch=1;aggregate-memory=1;\
-             hostcall-fuel=v1-bounded-log-payload;max-component={};max-memory={};\
+             hostcall-fuel=v2-echo-world-max-transfer;max-component={};max-memory={};\
              max-fuel={};wasm-stack={};async-stack={};cache-entries={};\
              cache-bytes={};invocation-log-entries={};invocation-log-bytes={};\
              retained-log-entries={};retained-log-bytes={};epoch-ticks={};target={};cpu={}",
@@ -180,7 +180,7 @@ impl Phase0WasmtimeEngineFactory {
         );
         configuration.insert(
             "hostcall-fuel".to_owned(),
-            "per-invocation-bounded-log-payload".to_owned(),
+            "per-call-echo-world-max-transfer".to_owned(),
         );
         configuration.insert(
             "maximum-memory-bytes".to_owned(),

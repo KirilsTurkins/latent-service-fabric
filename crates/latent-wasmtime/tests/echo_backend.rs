@@ -26,6 +26,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 const MAX_MESSAGE_BYTES: usize = 64 * 1024;
+const OVERSIZED_HOSTCALL_MESSAGE_BYTES: usize = 128 * 1024;
 
 #[derive(Debug)]
 struct NeverCancelled {
@@ -99,6 +100,28 @@ async fn invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_
         .expect("echo invocation must complete");
     assert_returned(success, b"hello from Wasmtime", ECHO_SUCCESS_MEDIA_TYPE);
 
+    let maximum_message = "m".repeat(MAX_MESSAGE_BYTES);
+    let maximum_activation = ActivationId("activation-maximum".to_owned());
+    let maximum = backend
+        .invoke(
+            request(
+                prepared.clone(),
+                maximum_activation.clone(),
+                maximum_message.clone(),
+                &invocation_budget,
+            ),
+            &NeverCancelled {
+                activation_id: maximum_activation.clone(),
+            },
+        )
+        .await
+        .expect("the exact 64 KiB echo boundary must complete");
+    assert_returned(
+        maximum,
+        maximum_message.as_bytes(),
+        ECHO_SUCCESS_MEDIA_TYPE,
+    );
+
     let empty_activation = ActivationId("activation-empty".to_owned());
     let empty = backend
         .invoke(
@@ -141,8 +164,13 @@ async fn invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_
         ECHO_DOMAIN_ERROR_MEDIA_TYPE,
     );
 
-    assert_eq!(backend.stores_created(), 3);
-    for activation_id in [success_activation, empty_activation, oversized_activation] {
+    assert_eq!(backend.stores_created(), 4);
+    for activation_id in [
+        success_activation,
+        maximum_activation,
+        empty_activation,
+        oversized_activation,
+    ] {
         let logs = backend.log_sink().snapshot_for(&activation_id);
         assert_eq!(
             logs.len(),
@@ -322,13 +350,14 @@ async fn oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel() {
         .await
         .expect("same-interface attack fixture must prepare");
 
+    assert!(OVERSIZED_HOSTCALL_MESSAGE_BYTES > MAX_MESSAGE_BYTES);
     let activation_id = ActivationId("activation-hostcall-fuel".to_owned());
     let outcome = backend
         .invoke(
             request(
                 prepared,
                 activation_id.clone(),
-                "x".repeat(32 * 1024),
+                "x".repeat(OVERSIZED_HOSTCALL_MESSAGE_BYTES),
                 &invocation_budget,
             ),
             &NeverCancelled {

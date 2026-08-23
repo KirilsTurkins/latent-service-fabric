@@ -6,7 +6,7 @@ mod generated {
 
 pub use generated::{exports, latent, Service};
 
-use crate::host::{hostcall_fuel_limit, HostState};
+use crate::host::HostState;
 
 pub struct ServicePre<T: 'static> {
     inner: generated::ServicePre<T>,
@@ -25,13 +25,6 @@ impl ServicePre<HostState> {
         &self,
         store: &mut wasmtime::Store<HostState>,
     ) -> wasmtime::Result<Service> {
-        let delegated_log_bytes =
-            <HostState as generated::latent::context::context::Host>::remaining_budget(
-                store.data_mut(),
-            )
-            .await
-            .log_bytes;
-        store.set_hostcall_fuel(hostcall_fuel_limit(usize::MAX, delegated_log_bytes));
         self.inner.instantiate_async(store).await
     }
 }
