@@ -5,12 +5,16 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-node."
+description = "Node contracts and the Phase 0 contained activation runner."
 
 [lints]
 workspace = true
 
 [dependencies]
-latent-core = { path = "../latent-core" }
-latent-routing = { path = "../latent-routing" }
+latent-activation = { path = "../latent-activation" }
 latent-artifacts = { path = "../latent-artifacts" }
+latent-core = { path = "../latent-core" }
+latent-executor = { path = "../latent-executor" }
+latent-routing = { path = "../latent-routing" }
+latent-scheduler = { path = "../latent-scheduler" }
+tokio.workspace = true
