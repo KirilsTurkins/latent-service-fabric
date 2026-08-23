@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -67,10 +67,10 @@ pub(crate) struct CounterGuard<'a> {
     counter: &'a AtomicU64,
 }
 
-impl CounterGuard<'_> {
-    fn new(counter: &AtomicU64) -> CounterGuard<'_> {
+impl<'a> CounterGuard<'a> {
+    fn new(counter: &'a AtomicU64) -> Self {
         counter.fetch_add(1, Ordering::Relaxed);
-        CounterGuard { counter }
+        Self { counter }
     }
 }
 
@@ -330,11 +330,21 @@ pub(crate) fn classify_runtime_error(
         });
     }
 
-    Err(platform_error(
-        PlatformErrorCode::Internal,
-        "Wasmtime execution failed without a classifiable guest trap",
-        false,
-    ))
+    // Host-import errors and component-model lifting failures are guest-visible
+    // execution failures, not engine construction failures. Keep the diagnostic
+    // generic and bounded so no guest-controlled value or Wasmtime context chain
+    // escapes into the activation result.
+    let mut metadata = Metadata::new();
+    metadata.insert("classification".to_owned(), "runtime-error".to_owned());
+    Ok(GuestOutcome::Trapped {
+        trap: GuestTrap {
+            code: "guest-runtime-error".to_owned(),
+            message: "guest execution failed".to_owned(),
+            guest_backtrace: Vec::new(),
+            metadata,
+        },
+        consumption,
+    })
 }
 
 fn trap_label(trap: &Trap) -> &'static str {
