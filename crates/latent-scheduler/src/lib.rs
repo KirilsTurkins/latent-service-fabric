@@ -190,11 +190,8 @@ pub trait CellPool: Send + Sync {
         lease: CellLease,
         reason: String,
     ) -> BoxFuture<'a, Result<(), PlatformError>> {
-        let error = unsupported_pool_operation(
-            "quarantine",
-            Some(&lease.activation_id),
-            Some(&reason),
-        );
+        let error =
+            unsupported_pool_operation("quarantine", Some(&lease.activation_id), Some(&reason));
         Box::pin(async move {
             drop(lease);
             Err(error)

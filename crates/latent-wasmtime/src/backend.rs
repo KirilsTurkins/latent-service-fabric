@@ -19,9 +19,9 @@ use wasmtime::{Config, Engine, Store, WasmBacktraceDetails};
 
 use crate::bindings;
 use crate::containment::{
-    bounded_text, classify_runtime_error, configure_epoch, interrupted_outcome,
-    monotonic_deadline, platform_error, start_epoch_ticker, RuntimeResourceCounters,
-    RuntimeResourceSnapshot, StopControl, MAX_DIAGNOSTIC_BYTES,
+    bounded_text, classify_runtime_error, configure_epoch, interrupted_outcome, monotonic_deadline,
+    platform_error, start_epoch_ticker, RuntimeResourceCounters, RuntimeResourceSnapshot,
+    StopControl, MAX_DIAGNOSTIC_BYTES,
 };
 use crate::host::{hostcall_fuel_limit, ActivationHostContext, BoundedLogSink, HostState};
 use crate::{WasmtimeEngineFactory, WasmtimeEngineProfile};
@@ -622,13 +622,14 @@ impl Phase0WasmtimeBackend {
         }
 
         let temporary_buffer_guard = self.resources.temporary_buffer();
-        let input = String::from_utf8(std::mem::take(&mut request.activation.input)).map_err(|_| {
-            platform_error(
-                PlatformErrorCode::InvalidArgument,
-                "the Phase 0 echo input must be valid UTF-8",
-                false,
-            )
-        })?;
+        let input =
+            String::from_utf8(std::mem::take(&mut request.activation.input)).map_err(|_| {
+                platform_error(
+                    PlatformErrorCode::InvalidArgument,
+                    "the Phase 0 echo input must be valid UTF-8",
+                    false,
+                )
+            })?;
         let host_context = ActivationHostContext::new(
             request.activation.activation_id.clone(),
             request.activation.root_activation_id.clone(),

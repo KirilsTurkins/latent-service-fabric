@@ -32,10 +32,7 @@ pub struct TriggerDispatch {
 }
 
 pub trait TriggerRegistry: Send + Sync {
-    fn apply<'a>(
-        &'a self,
-        trigger: TriggerManifest,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn apply<'a>(&'a self, trigger: TriggerManifest) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn get<'a>(
         &'a self,
@@ -72,8 +69,5 @@ pub trait TriggerDispatcher: Send + Sync {
         event: TriggerEvent,
     ) -> BoxFuture<'a, Result<TriggerDispatch, PlatformError>>;
 
-    fn dispatch<'a>(
-        &'a self,
-        dispatch: TriggerDispatch,
-    ) -> BoxFuture<'a, ActivationOutcome>;
+    fn dispatch<'a>(&'a self, dispatch: TriggerDispatch) -> BoxFuture<'a, ActivationOutcome>;
 }

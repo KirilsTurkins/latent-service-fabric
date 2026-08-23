@@ -2,9 +2,7 @@
 
 #![forbid(unsafe_code)]
 
-use latent_core::{
-    ActivationId, BlobDigest, BoxFuture, Metadata, PlatformError, TenantId,
-};
+use latent_core::{ActivationId, BlobDigest, BoxFuture, Metadata, PlatformError, TenantId};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BlobReference {

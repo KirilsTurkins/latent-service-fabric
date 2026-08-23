@@ -1,12 +1,10 @@
-use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use latent_core::{BudgetConsumption, Metadata, PlatformError, PlatformErrorCode};
-use latent_executor::{
-    ExecutionCancellationProbe, GuestInterruptionKind, GuestOutcome, GuestTrap,
-};
+use latent_executor::{ExecutionCancellationProbe, GuestInterruptionKind, GuestOutcome, GuestTrap};
 use wasmtime::{Engine, Store, Trap, UpdateDeadline};
 
 pub(crate) const MAX_DIAGNOSTIC_BYTES: usize = 512;
@@ -136,7 +134,10 @@ impl StopControl {
             self.record(StopCause::Cancelled);
             return stop_kind(self.cause());
         }
-        if self.deadline.is_some_and(|deadline| Instant::now() >= deadline) {
+        if self
+            .deadline
+            .is_some_and(|deadline| Instant::now() >= deadline)
+        {
             self.record(StopCause::DeadlineExceeded);
             return stop_kind(self.cause());
         }
@@ -160,9 +161,7 @@ impl StopControl {
             GuestInterruptionKind::DeadlineExceeded => {
                 "activation wall-clock deadline exceeded".to_owned()
             }
-            GuestInterruptionKind::FuelExhausted => {
-                "activation CPU fuel exhausted".to_owned()
-            }
+            GuestInterruptionKind::FuelExhausted => "activation CPU fuel exhausted".to_owned(),
             GuestInterruptionKind::MemoryExhausted => {
                 "activation linear-memory limit exceeded".to_owned()
             }
@@ -191,10 +190,7 @@ fn stop_kind(cause: StopCause) -> Option<GuestInterruptionKind> {
     }
 }
 
-pub(crate) fn start_epoch_ticker(
-    engine: &Engine,
-    interval: Duration,
-) -> Result<(), PlatformError> {
+pub(crate) fn start_epoch_ticker(engine: &Engine, interval: Duration) -> Result<(), PlatformError> {
     #[cfg(target_has_atomic = "64")]
     {
         let weak_engine = engine.weak();
@@ -294,11 +290,7 @@ pub(crate) fn classify_runtime_error(
     consumption: BudgetConsumption,
 ) -> Result<GuestOutcome, PlatformError> {
     if let Some(kind) = stop.kind() {
-        return Ok(interrupted_outcome(
-            kind,
-            stop.reason(kind),
-            consumption,
-        ));
+        return Ok(interrupted_outcome(kind, stop.reason(kind), consumption));
     }
     if memory_exhausted {
         return Ok(interrupted_outcome(
@@ -330,10 +322,7 @@ pub(crate) fn classify_runtime_error(
         return Ok(GuestOutcome::Trapped {
             trap: GuestTrap {
                 code: "guest-trap".to_owned(),
-                message: bounded_text(
-                    &format!("guest trapped: {label}"),
-                    MAX_DIAGNOSTIC_BYTES,
-                ),
+                message: bounded_text(&format!("guest trapped: {label}"), MAX_DIAGNOSTIC_BYTES),
                 guest_backtrace: Vec::new(),
                 metadata,
             },

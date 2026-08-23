@@ -17,9 +17,7 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::oneshot;
-use types::{
-    IdleCell, LeaseDisposition, PendingGrant, PoolState, Reservation, WaitRegistration,
-};
+use types::{IdleCell, LeaseDisposition, PendingGrant, PoolState, Reservation, WaitRegistration};
 
 pub(crate) use types::LeaseControl;
 
@@ -38,12 +36,7 @@ pub struct FixedCellPoolConfig {
 
 impl FixedCellPoolConfig {
     #[must_use]
-    pub fn new(
-        node: NodeId,
-        class: CellClass,
-        capacity: u32,
-        queue_capacity: u32,
-    ) -> Self {
+    pub fn new(node: NodeId, class: CellClass, capacity: u32, queue_capacity: u32) -> Self {
         Self {
             node,
             class,
@@ -242,8 +235,8 @@ impl FixedCellPool {
         registration.disarm();
         match received {
             Ok(Ok(grant)) => {
-                if let Some(expired_deadline) = deadline
-                    .filter(|value| *value <= self.inner.clock.now_unix_millis())
+                if let Some(expired_deadline) =
+                    deadline.filter(|value| *value <= self.inner.clock.now_unix_millis())
                 {
                     drop(grant);
                     return Err(deadline_error(&activation_id, expired_deadline));
@@ -306,7 +299,10 @@ impl CellPool for FixedCellPool {
 }
 
 impl CellLease {
-    pub(super) fn managed(identity: types::LeaseIdentity, owner: std::sync::Weak<PoolInner>) -> Self {
+    pub(super) fn managed(
+        identity: types::LeaseIdentity,
+        owner: std::sync::Weak<PoolInner>,
+    ) -> Self {
         Self {
             id: identity.cell.id.clone(),
             activation_id: identity.activation_id.clone(),

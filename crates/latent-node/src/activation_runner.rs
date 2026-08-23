@@ -44,8 +44,7 @@ impl Default for Phase0ActivationRunnerConfig {
 
 impl Phase0ActivationRunnerConfig {
     fn validate(&self) -> Result<(), PlatformError> {
-        if self.maximum_cancellation_reason_bytes == 0
-            || self.maximum_quarantine_reason_bytes == 0
+        if self.maximum_cancellation_reason_bytes == 0 || self.maximum_quarantine_reason_bytes == 0
         {
             return Err(platform_error(
                 PlatformErrorCode::InvalidArgument,
@@ -174,12 +173,9 @@ impl Phase0ActivationRunner {
         // The inner scope guarantees that a losing acquisition future is dropped
         // before cancel_waiting is invoked or the envelope proceeds to execution.
         let resolution = {
-            let acquire = self.pool.acquire(
-                &activation_id,
-                &tenant,
-                self.config.cell_class,
-                &budget,
-            );
+            let acquire =
+                self.pool
+                    .acquire(&activation_id, &tenant, self.config.cell_class, &budget);
             tokio::pin!(acquire);
             let deadline_wait = wait_for_deadline(effective_deadline);
             tokio::pin!(deadline_wait);
@@ -238,7 +234,10 @@ impl Phase0ActivationRunner {
                 self.counters
                     .disposition_failures
                     .fetch_add(1, Ordering::Relaxed);
-                failure(sanitize_error(error), outcome_consumption(&intended_outcome))
+                failure(
+                    sanitize_error(error),
+                    outcome_consumption(&intended_outcome),
+                )
             }
         }
     }
@@ -271,10 +270,7 @@ impl Phase0ActivationRunner {
         };
 
         let running_guard = AtomicCounterGuard::new(&self.counters.running_invocations);
-        let report = self
-            .backend
-            .invoke_contained(request, &cancellation)
-            .await;
+        let report = self.backend.invoke_contained(request, &cancellation).await;
         drop(running_guard);
 
         let ExecutionReport { outcome, cleanup } = report;
@@ -350,9 +346,7 @@ impl Phase0ActivationRunner {
         Ok((token, guard))
     }
 
-    fn lock_registrations(
-        &self,
-    ) -> MutexGuard<'_, HashMap<ActivationId, Arc<CancellationState>>> {
+    fn lock_registrations(&self) -> MutexGuard<'_, HashMap<ActivationId, Arc<CancellationState>>> {
         self.registrations
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -360,12 +354,11 @@ impl Phase0ActivationRunner {
 }
 
 impl ActivationManager for Phase0ActivationRunner {
-    fn invoke<'a>(
-        &'a self,
-        envelope: ActivationEnvelope,
-    ) -> BoxFuture<'a, ActivationOutcome> {
+    fn invoke<'a>(&'a self, envelope: ActivationEnvelope) -> BoxFuture<'a, ActivationOutcome> {
         Box::pin(async move {
-            self.counters.total_invocations.fetch_add(1, Ordering::Relaxed);
+            self.counters
+                .total_invocations
+                .fetch_add(1, Ordering::Relaxed);
             let activation_id = envelope.activation_id.clone();
             let (cancellation, registration) = match self.register(activation_id) {
                 Ok(registration) => registration,
@@ -395,7 +388,11 @@ impl ActivationManager for Phase0ActivationRunner {
                     )
                 })?;
             state.cancel(bounded_text(
-                if reason.is_empty() { "cancelled" } else { reason },
+                if reason.is_empty() {
+                    "cancelled"
+                } else {
+                    reason
+                },
                 self.config.maximum_cancellation_reason_bytes,
             ));
 
@@ -714,11 +711,7 @@ fn sanitize_error(mut error: PlatformError) -> PlatformError {
     error
 }
 
-fn platform_error(
-    code: PlatformErrorCode,
-    message: &str,
-    retryable: bool,
-) -> PlatformError {
+fn platform_error(code: PlatformErrorCode, message: &str, retryable: bool) -> PlatformError {
     PlatformError {
         code,
         message: bounded_text(message, MAX_DIAGNOSTIC_BYTES),

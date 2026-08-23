@@ -51,11 +51,7 @@ impl ExecutionCancellation for NeverCancelled {
 #[ignore = "requires the component and capsule metadata produced by tools/build_echo_capsule.py"]
 async fn invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary() {
     let artifact = load_issue19_artifact();
-    let invocation_budget = artifact
-        .manifest
-        .execution
-        .resource_budget_ceiling
-        .clone();
+    let invocation_budget = artifact.manifest.execution.resource_budget_ceiling.clone();
 
     let config = Phase0WasmtimeConfig {
         maximum_memory_bytes: 8 * 1024 * 1024,
@@ -116,11 +112,7 @@ async fn invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_
         )
         .await
         .expect("the exact 64 KiB echo boundary must complete");
-    assert_returned(
-        maximum,
-        maximum_message.as_bytes(),
-        ECHO_SUCCESS_MEDIA_TYPE,
-    );
+    assert_returned(maximum, maximum_message.as_bytes(), ECHO_SUCCESS_MEDIA_TYPE);
 
     let empty_activation = ActivationId("activation-empty".to_owned());
     let empty = backend
@@ -379,14 +371,17 @@ async fn oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel() {
 fn load_issue19_artifact() -> CapsuleArtifact {
     let component_path = required_env_path("LSF_ECHO_COMPONENT");
     let capsule_path = required_env_path("LSF_ECHO_CAPSULE");
-    let component_bytes = fs::read(&component_path)
-        .expect("LSF_ECHO_COMPONENT must identify a readable component");
+    let component_bytes =
+        fs::read(&component_path).expect("LSF_ECHO_COMPONENT must identify a readable component");
     let document: Value = serde_json::from_slice(
         &fs::read(&capsule_path).expect("LSF_ECHO_CAPSULE must identify readable JSON"),
     )
     .expect("LSF_ECHO_CAPSULE must contain valid JSON");
     let manifest = parse_capsule_manifest(&document);
-    assert_eq!(manifest.component_digest.0, component_digest(&component_bytes));
+    assert_eq!(
+        manifest.component_digest.0,
+        component_digest(&component_bytes)
+    );
 
     CapsuleArtifact {
         descriptor: ArtifactDescriptor {
@@ -504,10 +499,7 @@ fn parse_capsule_manifest(document: &Value) -> CapsuleManifest {
             snapshot_eligible: required_bool(document, "/execution/snapshotEligible"),
             fusion_eligible: required_bool(document, "/execution/fusionEligible"),
         },
-        minimum_fabric_version: required_string(
-            document,
-            "/compatibility/minimumFabricVersion",
-        ),
+        minimum_fabric_version: required_string(document, "/compatibility/minimumFabricVersion"),
     }
 }
 

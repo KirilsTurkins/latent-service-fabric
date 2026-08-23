@@ -47,10 +47,7 @@ pub trait DeploymentStore: Send + Sync {
 }
 
 pub trait BindingStore: Send + Sync {
-    fn apply<'a>(
-        &'a self,
-        binding: BindingManifest,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn apply<'a>(&'a self, binding: BindingManifest) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn get<'a>(
         &'a self,
@@ -63,10 +60,7 @@ pub trait BindingStore: Send + Sync {
 }
 
 pub trait TriggerStore: Send + Sync {
-    fn apply<'a>(
-        &'a self,
-        trigger: TriggerManifest,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn apply<'a>(&'a self, trigger: TriggerManifest) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn get<'a>(
         &'a self,
@@ -79,10 +73,7 @@ pub trait TriggerStore: Send + Sync {
 }
 
 pub trait ControlPolicyStore: Send + Sync {
-    fn apply<'a>(
-        &'a self,
-        policy: PolicyManifest,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn apply<'a>(&'a self, policy: PolicyManifest) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn get<'a>(
         &'a self,
@@ -101,10 +92,7 @@ pub trait NodeInventoryStore: Send + Sync {
         descriptor: NodeDescriptor,
     ) -> BoxFuture<'a, Result<(), PlatformError>>;
 
-    fn report<'a>(
-        &'a self,
-        inventory: NodeInventory,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn report<'a>(&'a self, inventory: NodeInventory) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn get<'a>(
         &'a self,
@@ -113,10 +101,7 @@ pub trait NodeInventoryStore: Send + Sync {
 }
 
 pub trait CompiledRouteStore: Send + Sync {
-    fn put<'a>(
-        &'a self,
-        snapshot: RouteSnapshot,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn put<'a>(&'a self, snapshot: RouteSnapshot) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn current<'a>(&'a self) -> BoxFuture<'a, Result<RouteSnapshot, PlatformError>>;
 

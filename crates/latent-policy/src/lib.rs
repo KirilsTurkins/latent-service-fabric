@@ -61,10 +61,7 @@ pub trait PolicyRepository: Send + Sync {
         id: &'a PolicyId,
     ) -> BoxFuture<'a, Result<Option<PolicyManifest>, PlatformError>>;
 
-    fn put<'a>(
-        &'a self,
-        policy: PolicyManifest,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn put<'a>(&'a self, policy: PolicyManifest) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn delete<'a>(&'a self, id: &'a PolicyId) -> BoxFuture<'a, Result<(), PlatformError>>;
 }

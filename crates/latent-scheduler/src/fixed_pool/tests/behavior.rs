@@ -51,9 +51,8 @@ async fn bounded_queue_rejects_excess_work_deterministically() {
         .await
         .expect("owner lease");
     let waiter_pool = pool.clone();
-    let waiter = tokio::spawn(async move {
-        acquire(&waiter_pool, "activation-waiting", None).await
-    });
+    let waiter =
+        tokio::spawn(async move { acquire(&waiter_pool, "activation-waiting", None).await });
     wait_for_queue_depth(&pool, 1).await;
 
     let error = acquire(&pool, "activation-rejected", None)
@@ -79,9 +78,8 @@ async fn cancelled_waiter_never_receives_a_later_lease() {
         .await
         .expect("owner lease");
     let waiter_pool = pool.clone();
-    let waiter = tokio::spawn(async move {
-        acquire(&waiter_pool, "activation-cancelled", None).await
-    });
+    let waiter =
+        tokio::spawn(async move { acquire(&waiter_pool, "activation-cancelled", None).await });
     wait_for_queue_depth(&pool, 1).await;
 
     pool.cancel_queued(&ActivationId("activation-cancelled".to_owned()))
@@ -107,9 +105,10 @@ async fn expired_waiter_never_receives_a_later_lease() {
         .expect("owner lease");
     let deadline = clock.now().saturating_add(1_000);
     let waiter_pool = pool.clone();
-    let waiter = tokio::spawn(async move {
-        acquire(&waiter_pool, "activation-expired", Some(deadline)).await
-    });
+    let waiter =
+        tokio::spawn(
+            async move { acquire(&waiter_pool, "activation-expired", Some(deadline)).await },
+        );
     wait_for_queue_depth(&pool, 1).await;
 
     assert_eq!(clock.advance(1_001), deadline + 1);
@@ -255,12 +254,7 @@ async fn dropping_a_queued_acquisition_removes_it_before_any_release() {
     let activation_id = ActivationId("activation-dropped-waiter".to_owned());
     let tenant = TenantId("tenant-test".to_owned());
     let budget = budget(None);
-    let mut waiter = Box::pin(pool.acquire(
-        &activation_id,
-        &tenant,
-        CellClass::Standard,
-        &budget,
-    ));
+    let mut waiter = Box::pin(pool.acquire(&activation_id, &tenant, CellClass::Standard, &budget));
     poll_fn(|context| {
         assert!(matches!(waiter.as_mut().poll(context), Poll::Pending));
         Poll::Ready(())
@@ -292,12 +286,7 @@ async fn dropping_a_ready_waiter_reclaims_an_unaccepted_grant() {
     let activation_id = ActivationId("activation-unaccepted".to_owned());
     let tenant = TenantId("tenant-test".to_owned());
     let budget = budget(None);
-    let mut waiter = Box::pin(pool.acquire(
-        &activation_id,
-        &tenant,
-        CellClass::Standard,
-        &budget,
-    ));
+    let mut waiter = Box::pin(pool.acquire(&activation_id, &tenant, CellClass::Standard, &budget));
     poll_fn(|context| {
         assert!(matches!(waiter.as_mut().poll(context), Poll::Pending));
         Poll::Ready(())
@@ -323,9 +312,8 @@ async fn quarantining_the_last_cell_fails_waiters_without_hanging() {
         .await
         .expect("owner lease");
     let waiter_pool = pool.clone();
-    let waiter = tokio::spawn(async move {
-        acquire(&waiter_pool, "activation-waiting", None).await
-    });
+    let waiter =
+        tokio::spawn(async move { acquire(&waiter_pool, "activation-waiting", None).await });
     wait_for_queue_depth(&pool, 1).await;
 
     pool.quarantine_lease(lease, "backend reset failed")

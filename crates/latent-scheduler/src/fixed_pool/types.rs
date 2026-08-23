@@ -1,10 +1,8 @@
 use super::errors::sequence_exhausted;
 use super::state::PoolInner;
-use super::{DROPPED_LEASE_REASON, FixedCellPoolConfig};
+use super::{FixedCellPoolConfig, DROPPED_LEASE_REASON};
 use crate::{CellClass, CellLease};
-use latent_core::{
-    ActivationId, CellId, NodeId, PlatformError, ResourceBudget, TenantId,
-};
+use latent_core::{ActivationId, CellId, NodeId, PlatformError, ResourceBudget, TenantId};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Weak;
 use tokio::sync::oneshot;
@@ -224,11 +222,7 @@ pub(super) struct WaitRegistration {
 }
 
 impl WaitRegistration {
-    pub(super) fn new(
-        owner: Weak<PoolInner>,
-        waiter_id: u64,
-        activation_id: ActivationId,
-    ) -> Self {
+    pub(super) fn new(owner: Weak<PoolInner>, waiter_id: u64, activation_id: ActivationId) -> Self {
         Self {
             owner,
             waiter_id,

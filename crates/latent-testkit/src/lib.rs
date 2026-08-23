@@ -41,10 +41,7 @@ pub struct IdleScalingObservation {
 pub trait BackendHarness: Send + Sync {
     fn backend(&self) -> &dyn ExecutionBackend;
 
-    fn invoke<'a>(
-        &'a self,
-        envelope: ActivationEnvelope,
-    ) -> BoxFuture<'a, ActivationOutcome>;
+    fn invoke<'a>(&'a self, envelope: ActivationEnvelope) -> BoxFuture<'a, ActivationOutcome>;
 }
 
 pub trait ConformanceSuite: Send + Sync {

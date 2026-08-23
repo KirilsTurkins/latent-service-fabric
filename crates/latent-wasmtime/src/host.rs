@@ -20,10 +20,10 @@ const MAX_LOG_FIELD_VALUE_BYTES: usize = 256;
 // Component Model transfer, including lifting the echo export result.
 const HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES: usize = 16 * 1024;
 const HOSTCALL_FUEL_PER_FIELD_OVERHEAD_BYTES: usize = 32;
-const MAX_LOG_GUEST_PAYLOAD_BYTES: usize = MAX_LOG_MESSAGE_BYTES
-    + MAX_LOG_FIELDS * (MAX_LOG_FIELD_NAME_BYTES + MAX_LOG_FIELD_VALUE_BYTES);
-const MAX_LOG_CANONICAL_OVERHEAD_BYTES: usize = HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES
-    + MAX_LOG_FIELDS * HOSTCALL_FUEL_PER_FIELD_OVERHEAD_BYTES;
+const MAX_LOG_GUEST_PAYLOAD_BYTES: usize =
+    MAX_LOG_MESSAGE_BYTES + MAX_LOG_FIELDS * (MAX_LOG_FIELD_NAME_BYTES + MAX_LOG_FIELD_VALUE_BYTES);
+const MAX_LOG_CANONICAL_OVERHEAD_BYTES: usize =
+    HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES + MAX_LOG_FIELDS * HOSTCALL_FUEL_PER_FIELD_OVERHEAD_BYTES;
 const MAX_ECHO_CANONICAL_TRANSFER_BYTES: usize =
     HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES + MAX_ECHO_RESULT_BYTES;
 
@@ -523,16 +523,12 @@ mod tests {
     fn aggregate_memory_budget_counts_all_linear_memories() {
         let mut limiter = TrackingLimiter::new(2 * WASM_PAGE_BYTES);
 
-        assert!(
-            limiter
-                .memory_growing(0, WASM_PAGE_BYTES, None)
-                .expect("first memory must fit")
-        );
-        assert!(
-            limiter
-                .memory_growing(0, WASM_PAGE_BYTES, None)
-                .expect("second memory must fit exactly")
-        );
+        assert!(limiter
+            .memory_growing(0, WASM_PAGE_BYTES, None)
+            .expect("first memory must fit"));
+        assert!(limiter
+            .memory_growing(0, WASM_PAGE_BYTES, None)
+            .expect("second memory must fit exactly"));
         assert_eq!(limiter.current_memory_bytes(), 2 * WASM_PAGE_BYTES);
         assert_eq!(
             limiter.peak_memory_bytes(),
@@ -542,11 +538,9 @@ mod tests {
         let error = limiter
             .memory_growing(WASM_PAGE_BYTES, 2 * WASM_PAGE_BYTES, None)
             .expect_err("aggregate growth beyond the activation budget must trap");
-        assert!(
-            error
-                .to_string()
-                .contains("aggregate linear-memory budget exceeded")
-        );
+        assert!(error
+            .to_string()
+            .contains("aggregate linear-memory budget exceeded"));
         assert_eq!(limiter.current_memory_bytes(), 2 * WASM_PAGE_BYTES);
         assert_eq!(
             limiter.peak_memory_bytes(),
@@ -559,10 +553,7 @@ mod tests {
         let world_ceiling = hostcall_fuel_limit(usize::MAX, u64::MAX);
         assert_eq!(world_ceiling, MAX_ECHO_CANONICAL_TRANSFER_BYTES);
         assert!(world_ceiling > MAX_ECHO_RESULT_BYTES);
-        assert!(
-            world_ceiling
-                > MAX_LOG_CANONICAL_OVERHEAD_BYTES + MAX_LOG_GUEST_PAYLOAD_BYTES
-        );
+        assert!(world_ceiling > MAX_LOG_CANONICAL_OVERHEAD_BYTES + MAX_LOG_GUEST_PAYLOAD_BYTES);
         assert_eq!(hostcall_fuel_limit(128, 64), world_ceiling);
         assert!(world_ceiling < 128 * 1024);
     }

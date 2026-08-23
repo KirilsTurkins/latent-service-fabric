@@ -57,11 +57,9 @@ pub(super) fn pool_with_clock(
     now_unix_millis: u64,
 ) -> (FixedCellPool, TestWallClock) {
     let clock = TestWallClock::new(now_unix_millis);
-    let pool = FixedCellPool::new_with_clock(
-        config(capacity, queue_capacity),
-        Arc::new(clock.clone()),
-    )
-    .expect("valid fixed pool");
+    let pool =
+        FixedCellPool::new_with_clock(config(capacity, queue_capacity), Arc::new(clock.clone()))
+            .expect("valid fixed pool");
     (pool, clock)
 }
 
@@ -89,13 +87,8 @@ pub(super) async fn acquire(
     let activation_id = ActivationId(activation.to_owned());
     let tenant = TenantId("tenant-test".to_owned());
     let budget = budget(deadline);
-    pool.acquire(
-        &activation_id,
-        &tenant,
-        CellClass::Standard,
-        &budget,
-    )
-    .await
+    pool.acquire(&activation_id, &tenant, CellClass::Standard, &budget)
+        .await
 }
 
 pub(super) async fn wait_for_queue_depth(pool: &FixedCellPool, expected: u32) {

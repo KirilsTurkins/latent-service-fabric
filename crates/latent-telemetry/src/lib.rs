@@ -54,10 +54,7 @@ pub struct SpanRecord {
 }
 
 pub trait TelemetrySink: Send + Sync {
-    fn emit_metric<'a>(
-        &'a self,
-        point: MetricPoint,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn emit_metric<'a>(&'a self, point: MetricPoint) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn emit_log<'a>(&'a self, record: LogRecord) -> BoxFuture<'a, Result<(), PlatformError>>;
 
