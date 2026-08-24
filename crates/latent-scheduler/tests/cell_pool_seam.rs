@@ -2,9 +2,7 @@ use latent_core::{
     ActivationId, BoxFuture, CellId, NodeId, PlatformError, PlatformErrorCode, ResourceBudget,
     TenantId,
 };
-use latent_scheduler::{
-    CellClass, CellLease, CellLeaseLifecycle, CellPool, CellPoolSnapshot,
-};
+use latent_scheduler::{CellClass, CellLease, CellLeaseLifecycle, CellPool, CellPoolSnapshot};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 
@@ -107,7 +105,11 @@ impl CellPool for ExternalPool {
     }
 
     fn capacity(&self, class: CellClass) -> u32 {
-        if class == CellClass::Standard { 1 } else { 0 }
+        if class == CellClass::Standard {
+            1
+        } else {
+            0
+        }
     }
 
     fn available(&self, class: CellClass) -> u32 {

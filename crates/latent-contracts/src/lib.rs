@@ -112,8 +112,10 @@ pub trait ContractRegistry: Send + Sync {
         contract: ContractDescriptor,
     ) -> BoxFuture<'a, Result<(), PlatformError>>;
 
-    fn list<'a>(&'a self, package_prefix: &'a str)
-        -> BoxFuture<'a, Result<Vec<ContractDescriptor>, PlatformError>>;
+    fn list<'a>(
+        &'a self,
+        package_prefix: &'a str,
+    ) -> BoxFuture<'a, Result<Vec<ContractDescriptor>, PlatformError>>;
 }
 
 pub trait CompatibilityChecker: Send + Sync {

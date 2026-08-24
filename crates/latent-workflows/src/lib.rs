@@ -11,11 +11,22 @@ use latent_state::StateMutation;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SuspensionPoint {
-    Timer { wake_at_unix_millis: u64 },
-    Event { topic: String, correlation_key: String },
-    Effect { effect_id: String },
-    ChildWorkflow { instance_id: WorkflowInstanceId },
-    Manual { reason: String },
+    Timer {
+        wake_at_unix_millis: u64,
+    },
+    Event {
+        topic: String,
+        correlation_key: String,
+    },
+    Effect {
+        effect_id: String,
+    },
+    ChildWorkflow {
+        instance_id: WorkflowInstanceId,
+    },
+    Manual {
+        reason: String,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -56,10 +67,7 @@ pub struct WorkflowTransition {
 }
 
 pub trait ContinuationStore: Send + Sync {
-    fn put<'a>(
-        &'a self,
-        continuation: Continuation,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn put<'a>(&'a self, continuation: Continuation) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn get<'a>(
         &'a self,

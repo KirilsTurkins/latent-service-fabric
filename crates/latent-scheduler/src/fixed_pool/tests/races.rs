@@ -62,10 +62,7 @@ async fn release_and_explicit_cancellation_race_is_linearizable() {
         });
 
         barrier.wait().await;
-        release
-            .await
-            .expect("release task")
-            .expect("release owner");
+        release.await.expect("release task").expect("release owner");
         let cancel_result = cancel.await.expect("cancel task");
         let waiter_result = waiter.await.expect("waiter task");
         match (cancel_result, waiter_result) {
@@ -124,10 +121,7 @@ async fn release_and_task_abort_race_preserves_exact_capacity_accounting() {
         });
 
         barrier.wait().await;
-        release
-            .await
-            .expect("release task")
-            .expect("release owner");
+        release.await.expect("release task").expect("release owner");
         abort.await.expect("abort task");
         match waiter.await {
             Ok(Ok(lease)) => pool.release(lease).await.expect("release winning grant"),
@@ -158,13 +152,11 @@ async fn lease_token_exhaustion_quarantines_the_slot_and_fails_all_waiters() {
     }
 
     let first_pool = pool.clone();
-    let first = tokio::spawn(async move {
-        acquire(&first_pool, "activation-waiting-1", None).await
-    });
+    let first =
+        tokio::spawn(async move { acquire(&first_pool, "activation-waiting-1", None).await });
     let second_pool = pool.clone();
-    let second = tokio::spawn(async move {
-        acquire(&second_pool, "activation-waiting-2", None).await
-    });
+    let second =
+        tokio::spawn(async move { acquire(&second_pool, "activation-waiting-2", None).await });
     wait_for_queue_depth(&pool, 2).await;
 
     pool.release(owner).await.expect("release owner");

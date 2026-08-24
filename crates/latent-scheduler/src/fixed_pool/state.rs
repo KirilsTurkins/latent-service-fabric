@@ -5,9 +5,7 @@ use super::types::{
     deliver, Delivery, IdleCell, LeaseDisposition, LeaseIdentity, LeaseRequest, PendingGrant,
     PoolState, QuarantinedCell, Reservation, Waiter,
 };
-use super::{
-    FixedCellPoolConfig, GENERATION_EXHAUSTED_REASON, LEASE_TOKEN_EXHAUSTED_REASON,
-};
+use super::{FixedCellPoolConfig, GENERATION_EXHAUSTED_REASON, LEASE_TOKEN_EXHAUSTED_REASON};
 use crate::{CellClass, CellLease, CellPoolSnapshot};
 use latent_core::{ActivationId, PlatformError, PlatformErrorCode, ResourceBudget, TenantId};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -233,10 +231,7 @@ impl PoolInner {
             if waiter.deadline.is_some_and(|deadline| deadline <= now) {
                 deliveries.push(Delivery::Error {
                     sender: waiter.sender,
-                    error: deadline_error(
-                        &waiter.activation_id,
-                        waiter.deadline.unwrap_or(now),
-                    ),
+                    error: deadline_error(&waiter.activation_id, waiter.deadline.unwrap_or(now)),
                 });
                 continue;
             }
@@ -314,10 +309,7 @@ impl PoolInner {
         deliveries
     }
 
-    pub(super) fn cancel_waiter(
-        &self,
-        activation_id: &ActivationId,
-    ) -> Result<(), PlatformError> {
+    pub(super) fn cancel_waiter(&self, activation_id: &ActivationId) -> Result<(), PlatformError> {
         let sender = {
             let mut state = self.lock_state();
             let Some(waiter_id) = state.waiting_by_activation.remove(activation_id) else {
@@ -351,7 +343,11 @@ impl PoolInner {
             return;
         }
         state.waiting_by_activation.remove(activation_id);
-        if let Some(index) = state.waiters.iter().position(|waiter| waiter.id == waiter_id) {
+        if let Some(index) = state
+            .waiters
+            .iter()
+            .position(|waiter| waiter.id == waiter_id)
+        {
             state.waiters.remove(index);
         }
         state.assert_invariants(&self.config);
@@ -380,8 +376,7 @@ impl PoolInner {
     }
 
     fn configured_capacity(&self) -> usize {
-        usize::try_from(self.config.capacity)
-            .expect("u32 capacity fits usize on supported hosts")
+        usize::try_from(self.config.capacity).expect("u32 capacity fits usize on supported hosts")
     }
 
     fn lock_state(&self) -> MutexGuard<'_, PoolState> {

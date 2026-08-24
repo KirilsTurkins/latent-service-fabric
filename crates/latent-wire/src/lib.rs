@@ -74,10 +74,7 @@ pub trait DuplexChannel: Send + Sync {
 }
 
 pub trait RequestMultiplexer: Send + Sync {
-    fn call<'a>(
-        &'a self,
-        frame: WireFrame,
-    ) -> BoxFuture<'a, Result<WireFrame, PlatformError>>;
+    fn call<'a>(&'a self, frame: WireFrame) -> BoxFuture<'a, Result<WireFrame, PlatformError>>;
 
     fn cancel<'a>(
         &'a self,

@@ -56,10 +56,7 @@ pub trait IngressAdapter: Send + Sync {
         principal: InvocationPrincipal,
     ) -> BoxFuture<'a, Result<ActivationEnvelope, PlatformError>>;
 
-    fn from_outcome(
-        &self,
-        outcome: ActivationOutcome,
-    ) -> Result<IngressResponse, PlatformError>;
+    fn from_outcome(&self, outcome: ActivationOutcome) -> Result<IngressResponse, PlatformError>;
 }
 
 pub trait IngressRouter: Send + Sync {
@@ -68,8 +65,5 @@ pub trait IngressRouter: Send + Sync {
         request: IngressRequest,
     ) -> BoxFuture<'a, Result<IngressResponse, PlatformError>>;
 
-    fn route_trigger<'a>(
-        &'a self,
-        event: TriggerEvent,
-    ) -> BoxFuture<'a, ActivationOutcome>;
+    fn route_trigger<'a>(&'a self, event: TriggerEvent) -> BoxFuture<'a, ActivationOutcome>;
 }

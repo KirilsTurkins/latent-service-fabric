@@ -100,8 +100,5 @@ pub trait RouteSnapshotSource: Send + Sync {
 }
 
 pub trait RouteSnapshotPublisher: Send + Sync {
-    fn publish<'a>(
-        &'a self,
-        snapshot: RouteSnapshot,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn publish<'a>(&'a self, snapshot: RouteSnapshot) -> BoxFuture<'a, Result<(), PlatformError>>;
 }

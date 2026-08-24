@@ -72,10 +72,7 @@ pub trait CapabilityProvider: Send + Sync {
         call: CapabilityCall,
     ) -> BoxFuture<'a, Result<CapabilityResponse, PlatformError>>;
 
-    fn release<'a>(
-        &'a self,
-        handle: CapabilityHandle,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn release<'a>(&'a self, handle: CapabilityHandle) -> BoxFuture<'a, Result<(), PlatformError>>;
 }
 
 pub trait CapabilityBroker: Send + Sync {

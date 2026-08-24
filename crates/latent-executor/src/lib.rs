@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+use std::sync::Arc;
+
 use latent_activation::ActivationEnvelope;
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
@@ -58,6 +60,15 @@ pub struct GuestTrap {
     pub metadata: Metadata,
 }
 
+/// Stable reason why non-cooperative guest execution was stopped.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GuestInterruptionKind {
+    Cancelled,
+    DeadlineExceeded,
+    FuelExhausted,
+    MemoryExhausted,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GuestOutcome {
     Returned {
@@ -70,15 +81,72 @@ pub enum GuestOutcome {
         consumption: BudgetConsumption,
     },
     Interrupted {
+        kind: GuestInterruptionKind,
         reason: String,
         consumption: BudgetConsumption,
     },
+}
+
+/// Cloneable, `'static` cancellation view that a runtime may retain in a store.
+///
+/// The probe deliberately exposes no mutation. The activation runner owns the
+/// cancellation state and the execution backend can only observe it from an
+/// epoch callback or another non-cooperative interruption checkpoint.
+pub trait ExecutionCancellationProbe: Send + Sync {
+    fn is_cancelled(&self) -> bool;
+    fn reason(&self) -> Option<String>;
 }
 
 pub trait ExecutionCancellation: Send + Sync {
     fn activation_id(&self) -> &ActivationId;
     fn is_cancelled(&self) -> bool;
     fn reason(&self) -> Option<String>;
+
+    /// Returns a live cancellation view suitable for a runtime-owned callback.
+    ///
+    /// Legacy handles remain source-compatible. They are still checked before
+    /// invocation, but cannot interrupt a running guest unless they expose a
+    /// probe.
+    fn probe(&self) -> Option<Arc<dyn ExecutionCancellationProbe>> {
+        None
+    }
+}
+
+/// Backend proof describing whether the generic cell can be reused.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExecutionCleanup {
+    Reusable,
+    Quarantine { reason: String },
+}
+
+/// Invocation result plus the backend's cleanup proof.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExecutionReport {
+    pub outcome: Result<GuestOutcome, PlatformError>,
+    pub cleanup: ExecutionCleanup,
+}
+
+impl ExecutionReport {
+    #[must_use]
+    pub fn reusable(outcome: Result<GuestOutcome, PlatformError>) -> Self {
+        Self {
+            outcome,
+            cleanup: ExecutionCleanup::Reusable,
+        }
+    }
+
+    #[must_use]
+    pub fn quarantine(
+        outcome: Result<GuestOutcome, PlatformError>,
+        reason: impl Into<String>,
+    ) -> Self {
+        Self {
+            outcome,
+            cleanup: ExecutionCleanup::Quarantine {
+                reason: reason.into(),
+            },
+        }
+    }
 }
 
 pub trait ExecutionBackend: Send + Sync {
@@ -95,6 +163,25 @@ pub trait ExecutionBackend: Send + Sync {
         request: ExecutionRequest,
         cancellation: &'a dyn ExecutionCancellation,
     ) -> BoxFuture<'a, Result<GuestOutcome, PlatformError>>;
+
+    /// Invokes the guest and returns explicit cell-reuse evidence.
+    ///
+    /// Backends that do not override this method are conservatively treated as
+    /// unable to prove safe reuse. This prevents a new orchestrator from silently
+    /// returning a potentially contaminated cell merely because it is wrapping a
+    /// legacy backend.
+    fn invoke_contained<'a>(
+        &'a self,
+        request: ExecutionRequest,
+        cancellation: &'a dyn ExecutionCancellation,
+    ) -> BoxFuture<'a, ExecutionReport> {
+        Box::pin(async move {
+            ExecutionReport::quarantine(
+                self.invoke(request, cancellation).await,
+                "execution backend did not provide a cleanup proof",
+            )
+        })
+    }
 
     fn release<'a>(
         &'a self,

@@ -66,10 +66,7 @@ pub struct ActivationEvent {
 }
 
 pub trait ActivationManager: Send + Sync {
-    fn invoke<'a>(
-        &'a self,
-        envelope: ActivationEnvelope,
-    ) -> BoxFuture<'a, ActivationOutcome>;
+    fn invoke<'a>(&'a self, envelope: ActivationEnvelope) -> BoxFuture<'a, ActivationOutcome>;
 
     fn cancel<'a>(
         &'a self,
@@ -79,10 +76,7 @@ pub trait ActivationManager: Send + Sync {
 }
 
 pub trait ActivationJournal: Send + Sync {
-    fn append<'a>(
-        &'a self,
-        event: ActivationEvent,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn append<'a>(&'a self, event: ActivationEvent) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn read<'a>(
         &'a self,

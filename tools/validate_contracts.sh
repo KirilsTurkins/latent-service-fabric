@@ -40,6 +40,7 @@ buf build api/proto --as-file-descriptor-set -o "${OUTPUT}/proto/latent-api.bin"
 cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --locked
+cargo check -p latent-toolchain-smoke --example containment-capsule --target wasm32-wasip2 --locked
 python3 tools/build_echo_capsule.py --verify-reproducible
 cargo build -p latent-toolchain-smoke --example oversized-log-capsule \
     --target wasm32-unknown-unknown --release --locked
@@ -48,7 +49,19 @@ OVERSIZED_LOG_COMPONENT="${TARGET_ROOT}/capsules/oversized-log/oversized-log-cap
 mkdir -p "$(dirname "${OVERSIZED_LOG_COMPONENT}")"
 wasm-tools component new "${OVERSIZED_LOG_CORE}" -o "${OVERSIZED_LOG_COMPONENT}"
 wasm-tools validate "${OVERSIZED_LOG_COMPONENT}"
+
+cargo build -p latent-toolchain-smoke --example containment-capsule \
+    --target wasm32-unknown-unknown --release --locked
+CONTAINMENT_CORE="${TARGET_ROOT}/wasm32-unknown-unknown/release/examples/containment_capsule.wasm"
+CONTAINMENT_COMPONENT="${TARGET_ROOT}/capsules/containment/containment-capsule.wasm"
+mkdir -p "$(dirname "${CONTAINMENT_COMPONENT}")"
+wasm-tools component new "${CONTAINMENT_CORE}" -o "${CONTAINMENT_COMPONENT}"
+wasm-tools validate "${CONTAINMENT_COMPONENT}"
+
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
 LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
 LSF_OVERSIZED_LOG_COMPONENT="${OVERSIZED_LOG_COMPONENT}" \
     cargo test -p latent-wasmtime --test echo_backend --locked -- --ignored --nocapture
+
+LSF_CONTAINMENT_COMPONENT="${CONTAINMENT_COMPONENT}" \
+    cargo test -p latent-wasmtime --test containment_backend --locked -- --ignored --nocapture

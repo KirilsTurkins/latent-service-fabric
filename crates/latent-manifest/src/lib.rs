@@ -181,10 +181,8 @@ pub struct ManifestViolation {
 
 pub trait ManifestCodec: Send + Sync {
     fn decode_capsule(&self, bytes: &[u8]) -> Result<CapsuleManifest, Vec<ManifestViolation>>;
-    fn decode_deployment(
-        &self,
-        bytes: &[u8],
-    ) -> Result<DeploymentManifest, Vec<ManifestViolation>>;
+    fn decode_deployment(&self, bytes: &[u8])
+        -> Result<DeploymentManifest, Vec<ManifestViolation>>;
     fn decode_binding(&self, bytes: &[u8]) -> Result<BindingManifest, Vec<ManifestViolation>>;
     fn decode_trigger(&self, bytes: &[u8]) -> Result<TriggerManifest, Vec<ManifestViolation>>;
     fn decode_policy(&self, bytes: &[u8]) -> Result<PolicyManifest, Vec<ManifestViolation>>;
