@@ -14,6 +14,8 @@ cd "${ROOT}"
 # containment components, and runs the lower-level Wasmtime containment tests.
 tools/validate_contracts.sh
 
+# The executable matrix includes `verify-recovery`, which retains one
+# runtime/pool/backend/prepared-runner composition across a trap and echo.
 LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
 LSF_CONTAINMENT_COMPONENT="${TARGET_ROOT}/capsules/containment/containment-capsule.wasm" \
     cargo test -p latentd --test phase0_spike_e2e --locked -- --ignored --nocapture

@@ -51,6 +51,20 @@ Before reading or compiling the component, the executable validates scalar confi
 
 The process opens no listener or socket.
 
+## Same-process recovery proof
+
+`verify-recovery` is a second finite spike command for the containment fixture. It builds one Tokio runtime, capacity-one fixed pool, Wasmtime backend, prepared component, and activation runner; invokes the fixture's controlled trap; checks that its cell, resources, and raw topology were restored; then invokes a healthy echo through that same composition before one final shutdown.
+
+`make phase0-spike-demo` stages the containment capsule inside the executable acceptance test and runs this command with a healthy post-trap input. For direct use, pass a local capsule whose `latent.dev/artifact` annotation points at the containment component (or pass that component with a capsule carrying its matching digest):
+
+```text
+latentd phase0-spike verify-recovery --capsule <containment-capsule> \
+  --input 'healthy after a contained trap' --pool-capacity 1 \
+  --memory-bytes 16777216 --fuel 1000000000000 --timeout-ms 1000
+```
+
+The command deliberately requires `--pool-capacity 1`, so successful recovery proves that the trapped activation's only cell was released and reused. Its `recovery.activations` array has both raw phase reports: the runner's cumulative `total_invocations` advances from `1` to `2`, while the prepared cache remains at one entry. This is a spike-only containment proof, not a daemon or Phase 1 API.
+
 ## Stdout contract
 
 For an invocation attempt, stdout contains exactly one compact JSON object followed by a newline. Diagnostics and the non-production warning are written to stderr. The schema identifier is:
@@ -65,11 +79,14 @@ Stable top-level fields include:
 - `elapsed_time_micros` and `consumption`;
 - `cell.disposition` plus before/after fixed-pool observations;
 - bounded `logs`;
-- immutable `topology`, including worker, pool, and listener/socket counts;
+- `topology.before_component_load` and `topology.after_activations`, containing raw worker, fixed-pool, and process socket observations;
 - bounded preparation-cache observations;
+- `recovery` only for `verify-recovery`, with the two in-process activation reports and cumulative runner evidence;
 - `shutdown`, including active leases, waiters, cancellation registrations, live Wasmtime resources, retained logs, and prepared entries.
 
 A declared WIT domain error is represented by `outcome: "domain_error"` and `error.kind: "domain"`. Infrastructure failures use `error.kind: "platform"`. The echo output is UTF-8 by contract and is returned as `output.utf8`.
+
+`topology.runtime_workers`, `topology.pool_capacity`, and `topology.listener_socket_count` remain as convenience fields. The acceptance test does not trust `topology.unchanged` alone: it compares each raw post-activation fingerprint with `before_component_load`. Tokio worker counts come from runtime thread lifecycle hooks, fixed capacity comes from the concrete pool observation, and socket counts come from a process-level platform probe rather than a literal assigned by the spike.
 
 ## Stable exit codes
 

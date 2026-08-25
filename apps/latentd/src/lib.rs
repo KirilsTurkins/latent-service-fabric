@@ -1,9 +1,11 @@
 //! Explicit composition root for the non-production Phase 0 activation spike.
 //!
-//! `latentd phase0-spike invoke-once` is intentionally finite. It wires the
-//! fixed cell pool, Wasmtime containment backend, activation runner, bounded
-//! preparation cache, bounded logs, deadlines, and cancellation into one local
-//! executable path. It is not a Phase 1 management or invocation API.
+//! `latentd phase0-spike invoke-once` is intentionally finite. Its
+//! `verify-recovery` sibling retains the same composition for a controlled
+//! trap followed by a successful echo. Both wire the fixed cell pool, Wasmtime
+//! containment backend, activation runner, bounded preparation cache, bounded
+//! logs, deadlines, and cancellation into one local executable path. They are
+//! not Phase 1 management or invocation APIs.
 
 #![forbid(unsafe_code)]
 
@@ -12,6 +14,7 @@ use std::fs;
 use std::io::{self, Write as _};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -24,7 +27,7 @@ use latent_core::{
     PlatformErrorCode, PrincipalKind, ReleaseDigest, ResourceBudget, ServiceId, SpanId, TenantId,
     TraceId,
 };
-use latent_executor::{BoundImport, ExecutionBackend};
+use latent_executor::{BoundImport, ExecutionBackend, PreparedComponent};
 use latent_manifest::{
     CapsuleManifest, ContractExport, ContractImport, ExecutionBackendKind, ExecutionRequirements,
     ObjectMetadata, StateModel, ThreadingModel,
@@ -33,9 +36,9 @@ use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0Activa
 use latent_routing::InvocationTarget;
 use latent_scheduler::{CellClass, CellPool, CellPoolSnapshot, FixedCellPool, FixedCellPoolConfig};
 use latent_wasmtime::{
-    CapturedLog, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory, PreparedCacheSnapshot,
-    RuntimeResourceSnapshot, CONTEXT_IMPORT, ECHO_DOMAIN_ERROR_MEDIA_TYPE, ECHO_EXPORT,
-    ECHO_SUCCESS_MEDIA_TYPE, LOG_IMPORT,
+    CapturedLog, Phase0WasmtimeBackend, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory,
+    PreparedCacheSnapshot, RuntimeResourceSnapshot, CONTEXT_IMPORT, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, LOG_IMPORT,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -50,7 +53,8 @@ pub const EXIT_INVALID_COMPONENT_OR_CONFIGURATION: u8 = 13;
 pub const EXIT_INTERNAL_SPIKE_FAILURE: u8 = 14;
 
 const RESULT_SCHEMA_VERSION: &str = "latent.phase0.spike.result.v1";
-const SURFACE_NAME: &str = "latentd.phase0-spike.invoke-once";
+const INVOKE_ONCE_SURFACE_NAME: &str = "latentd.phase0-spike.invoke-once";
+const VERIFY_RECOVERY_SURFACE_NAME: &str = "latentd.phase0-spike.verify-recovery";
 const DEFAULT_ACTIVATION_ID: &str = "phase0-spike-0000000000000001";
 const SPIKE_NODE_ID: &str = "phase0-spike-node-0";
 const SPIKE_TRACE_ID: &str = "phase0-spike-trace-0000000000000001";
@@ -63,6 +67,7 @@ const MAX_POOL_CAPACITY: u32 = 4096;
 const MAX_QUEUE_CAPACITY: u32 = 65_536;
 const MAX_COMPONENT_LIMIT_BYTES: usize = 1024 * 1024 * 1024;
 const EPOCH_TICK_INTERVAL_MILLIS: u64 = 1;
+const RUNTIME_WORKER_START_TIMEOUT_MILLIS: u64 = 1_000;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -99,6 +104,12 @@ enum Phase0Command {
         about = "Prepare one local capsule, invoke echo once, report cleanup, and exit"
     )]
     InvokeOnce(InvokeOnceArgs),
+
+    #[command(
+        name = "verify-recovery",
+        about = "Run a controlled trap and a successful echo through one retained Phase 0 composition"
+    )]
+    VerifyRecovery(VerifyRecoveryArgs),
 }
 
 #[derive(Debug, Args)]
@@ -168,7 +179,13 @@ struct InvokeOnceArgs {
     activation_id: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Args)]
+struct VerifyRecoveryArgs {
+    #[command(flatten)]
+    invocation: InvokeOnceArgs,
+}
+
+#[derive(Debug, Clone)]
 struct ValidatedConfig {
     capsule: PathBuf,
     component: Option<PathBuf>,
@@ -186,6 +203,7 @@ struct ValidatedConfig {
     log_max_entries: usize,
     log_max_bytes: usize,
     activation_id: ActivationId,
+    surface: &'static str,
 }
 
 impl TryFrom<InvokeOnceArgs> for ValidatedConfig {
@@ -302,6 +320,49 @@ impl TryFrom<InvokeOnceArgs> for ValidatedConfig {
             log_max_entries: arguments.log_max_entries,
             log_max_bytes: arguments.log_max_bytes,
             activation_id: ActivationId(arguments.activation_id),
+            surface: INVOKE_ONCE_SURFACE_NAME,
+        })
+    }
+}
+
+#[derive(Debug)]
+struct ValidatedRecoveryConfig {
+    invocation: ValidatedConfig,
+    trap_activation_id: ActivationId,
+    recovery_activation_id: ActivationId,
+}
+
+impl TryFrom<VerifyRecoveryArgs> for ValidatedRecoveryConfig {
+    type Error = PlatformError;
+
+    fn try_from(arguments: VerifyRecoveryArgs) -> Result<Self, Self::Error> {
+        let mut invocation = ValidatedConfig::try_from(arguments.invocation)?;
+        invocation.surface = VERIFY_RECOVERY_SURFACE_NAME;
+        if invocation.pool_capacity != 1 {
+            return Err(configuration_error(
+                "verify-recovery requires --pool-capacity 1 to prove cell reuse",
+                [("pool_capacity", invocation.pool_capacity.to_string())],
+            ));
+        }
+        if invocation.cancel_after_ms.is_some() {
+            return Err(configuration_error(
+                "verify-recovery owns its controlled trap and does not accept --cancel-after-ms",
+                std::iter::empty::<(&str, String)>(),
+            ));
+        }
+        if invocation.input.is_empty() {
+            return Err(configuration_error(
+                "verify-recovery requires a non-empty successful echo input",
+                std::iter::empty::<(&str, String)>(),
+            ));
+        }
+
+        let trap_activation_id = recovery_activation_id(&invocation.activation_id, "trap")?;
+        let recovery_activation_id = recovery_activation_id(&invocation.activation_id, "recovery")?;
+        Ok(Self {
+            invocation,
+            trap_activation_id,
+            recovery_activation_id,
         })
     }
 }
@@ -323,17 +384,18 @@ struct SpikeResult {
     logs: Vec<LogReport>,
     topology: TopologyReport,
     preparation: PreparationReport,
+    recovery: Option<RecoveryReport>,
     shutdown: ShutdownReport,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct OutputReport {
     media_type: String,
     utf8: String,
     bytes: usize,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct ErrorReport {
     kind: String,
     code: String,
@@ -342,13 +404,13 @@ struct ErrorReport {
     details: Vec<ErrorDetailReport>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct ErrorDetailReport {
     kind: String,
     fields: Metadata,
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 struct ConsumptionReport {
     cpu_fuel: u64,
     peak_memory_bytes: u64,
@@ -363,7 +425,7 @@ struct ConsumptionReport {
     effect_count: u32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct CellReport {
     disposition: String,
     pool_before: Option<PoolSnapshotReport>,
@@ -380,7 +442,7 @@ struct PoolSnapshotReport {
     quarantined: u32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct LogReport {
     activation_id: String,
     level: String,
@@ -388,15 +450,72 @@ struct LogReport {
     fields: Metadata,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+struct TopologyFingerprintReport {
+    /// Worker threads observed through Tokio's lifecycle hooks, not the CLI value.
+    runtime_workers: usize,
+    /// Fixed pool capacity observed from the concrete fixed pool.
+    pool_capacity: u32,
+    /// Process-owned socket descriptors observed by the platform topology probe.
+    listener_socket_count: u32,
+}
+
 #[derive(Debug, Clone, Serialize)]
 struct TopologyReport {
     initialized: bool,
+    /// Kept for the v1 convenience view; its raw source is `before_component_load`.
     runtime_workers: usize,
     wasmtime_epoch_ticker_threads: u32,
     pool_capacity: u32,
     pool_queue_capacity: u32,
     listener_socket_count: u32,
+    /// Raw process/runtime/pool observation captured before any capsule or component is loaded.
+    before_component_load: Option<TopologyFingerprintReport>,
+    /// Raw observations captured after each completed activation in this process.
+    after_activations: Vec<TopologyFingerprintReport>,
     unchanged: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ActivationReport {
+    activation_id: String,
+    outcome: String,
+    terminal_state: Option<String>,
+    output: Option<OutputReport>,
+    error: Option<ErrorReport>,
+    elapsed_time_micros: u64,
+    consumption: ConsumptionReport,
+    cell: CellReport,
+    logs: Vec<LogReport>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RunnerSnapshotReport {
+    active_cancellation_registrations: u64,
+    running_invocations: u64,
+    total_invocations: u64,
+    released_cells: u64,
+    quarantined_cells: u64,
+    disposition_failures: u64,
+}
+
+#[derive(Debug, Serialize)]
+struct RecoveryActivationReport {
+    phase: String,
+    activation: ActivationReport,
+    /// Cumulative runner counters demonstrate that one runner served both calls.
+    runner: RunnerSnapshotReport,
+    /// Cache observations demonstrate that the prepared component remains retained between calls.
+    prepared_cache: CacheSnapshotReport,
+    backend_resources: RuntimeResourceReport,
+    retained_log_entries: usize,
+}
+
+#[derive(Debug, Serialize)]
+struct RecoveryReport {
+    expected_failure: String,
+    activation_count: u32,
+    activations: Vec<RecoveryActivationReport>,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -441,6 +560,54 @@ struct RuntimeResourceReport {
 struct ProcessReport {
     result: SpikeResult,
     exit_code: u8,
+}
+
+#[derive(Clone, Debug, Default)]
+struct RuntimeTopologyMonitor {
+    worker_threads_started: Arc<AtomicUsize>,
+    worker_threads_stopped: Arc<AtomicUsize>,
+}
+
+impl RuntimeTopologyMonitor {
+    fn worker_started(&self) {
+        self.worker_threads_started.fetch_add(1, Ordering::AcqRel);
+    }
+
+    fn worker_stopped(&self) {
+        self.worker_threads_stopped.fetch_add(1, Ordering::AcqRel);
+    }
+
+    fn active_workers(&self) -> usize {
+        self.worker_threads_started
+            .load(Ordering::Acquire)
+            .saturating_sub(self.worker_threads_stopped.load(Ordering::Acquire))
+    }
+}
+
+struct CompletedInvocation {
+    activation: ActivationReport,
+    exit_code: u8,
+    pool_after: CellPoolSnapshot,
+    runner_snapshot: ActivationRunnerSnapshot,
+    resources: RuntimeResourceSnapshot,
+    retained_log_entries: usize,
+    cache: PreparedCacheSnapshot,
+}
+
+struct PreparedComposition {
+    loaded: LoadedArtifact,
+    backend: Arc<Phase0WasmtimeBackend>,
+    prepared: PreparedComponent,
+    cache_after_prepare: PreparedCacheSnapshot,
+    runner: Arc<Phase0ActivationRunner>,
+}
+
+struct PreparationFailure {
+    component_bytes: u64,
+    cache_after_prepare: PreparedCacheSnapshot,
+    cache_after_release: PreparedCacheSnapshot,
+    resources: RuntimeResourceSnapshot,
+    error: PlatformError,
 }
 
 enum EntryOutcome {
@@ -504,29 +671,85 @@ fn run_entry() -> EntryOutcome {
                 ))
             }
         },
+        Command::Phase0Spike(Phase0SpikeArgs {
+            command: Phase0Command::VerifyRecovery(arguments),
+        }) => match ValidatedRecoveryConfig::try_from(arguments) {
+            Ok(config) => EntryOutcome::Report(run_recovery_validated(config)),
+            Err(error) => {
+                eprintln!(
+                    "configuration rejected before runtime initialization: {}",
+                    error.message
+                );
+                EntryOutcome::Report(platform_uninitialized_report_for_surface(
+                    DEFAULT_ACTIVATION_ID,
+                    error,
+                    EXIT_INVALID_COMPONENT_OR_CONFIGURATION,
+                    "invalid_component_or_configuration",
+                    VERIFY_RECOVERY_SURFACE_NAME,
+                ))
+            }
+        },
     }
 }
 
 fn run_validated(config: ValidatedConfig) -> ProcessReport {
-    let topology = TopologyReport {
-        initialized: false,
-        runtime_workers: config.runtime_workers,
-        wasmtime_epoch_ticker_threads: 1,
-        pool_capacity: config.pool_capacity,
-        pool_queue_capacity: config.pool_queue_capacity,
-        listener_socket_count: 0,
-        unchanged: false,
+    let composition = match construct_runtime_composition(&config) {
+        Ok(composition) => composition,
+        Err(report) => return *report,
     };
+    let RuntimeComposition {
+        runtime,
+        pool,
+        topology,
+        monitor,
+    } = composition;
+    let mut report = runtime.block_on(execute_once(&config, pool, topology, monitor));
+    drop(runtime);
+    record_runtime_shutdown(&mut report);
+    report
+}
 
+fn run_recovery_validated(config: ValidatedRecoveryConfig) -> ProcessReport {
+    let composition = match construct_runtime_composition(&config.invocation) {
+        Ok(composition) => composition,
+        Err(report) => return *report,
+    };
+    let RuntimeComposition {
+        runtime,
+        pool,
+        topology,
+        monitor,
+    } = composition;
+    let mut report = runtime.block_on(execute_recovery(&config, pool, topology, monitor));
+    drop(runtime);
+    record_runtime_shutdown(&mut report);
+    report
+}
+
+struct RuntimeComposition {
+    runtime: tokio::runtime::Runtime,
+    pool: Arc<FixedCellPool>,
+    topology: TopologyReport,
+    monitor: RuntimeTopologyMonitor,
+}
+
+fn construct_runtime_composition(
+    config: &ValidatedConfig,
+) -> Result<RuntimeComposition, Box<ProcessReport>> {
+    let monitor = RuntimeTopologyMonitor::default();
+    let started_monitor = monitor.clone();
+    let stopped_monitor = monitor.clone();
     let runtime = match Builder::new_multi_thread()
         .worker_threads(config.runtime_workers)
         .thread_name("latentd-phase0-worker")
+        .on_thread_start(move || started_monitor.worker_started())
+        .on_thread_stop(move || stopped_monitor.worker_stopped())
         .enable_time()
         .build()
     {
         Ok(runtime) => runtime,
         Err(error) => {
-            return platform_uninitialized_report(
+            return Err(Box::new(platform_uninitialized_report(
                 &config.activation_id.0,
                 spike_error(
                     PlatformErrorCode::Internal,
@@ -536,7 +759,7 @@ fn run_validated(config: ValidatedConfig) -> ProcessReport {
                 ),
                 EXIT_INTERNAL_SPIKE_FAILURE,
                 "internal_spike_failure",
-            );
+            )));
         }
     };
 
@@ -549,50 +772,64 @@ fn run_validated(config: ValidatedConfig) -> ProcessReport {
         Ok(pool) => Arc::new(pool),
         Err(error) => {
             drop(runtime);
-            return platform_uninitialized_report(
+            return Err(Box::new(platform_uninitialized_report(
                 &config.activation_id.0,
                 error,
                 EXIT_INVALID_COMPONENT_OR_CONFIGURATION,
                 "invalid_component_or_configuration",
-            );
+            )));
         }
     };
 
-    let mut initialized_topology = topology;
-    initialized_topology.initialized = true;
-    let mut report = runtime.block_on(execute_once(
-        &config,
-        Arc::clone(&pool),
-        initialized_topology,
-    ));
-    drop(runtime);
-    report.result.shutdown.runtime_stopped = true;
-    recompute_shutdown(&mut report.result.shutdown);
-    report
+    let baseline = match runtime.block_on(wait_for_runtime_topology(
+        &monitor,
+        &pool,
+        config.runtime_workers,
+    )) {
+        Ok(baseline) => baseline,
+        Err(error) => {
+            let pool_snapshot = pool.observations();
+            let mut report = preflight_failure(
+                config,
+                configured_topology(config),
+                pool_snapshot,
+                pool_snapshot,
+                0,
+                error,
+            );
+            drop(runtime);
+            record_runtime_shutdown(&mut report);
+            return Err(Box::new(report));
+        }
+    };
+
+    Ok(RuntimeComposition {
+        runtime,
+        pool,
+        topology: topology_from_baseline(baseline, config.pool_queue_capacity),
+        monitor,
+    })
 }
 
-async fn execute_once(
+fn record_runtime_shutdown(report: &mut ProcessReport) {
+    report.result.shutdown.runtime_stopped = true;
+    recompute_shutdown(&mut report.result.shutdown);
+}
+
+async fn prepare_composition(
     config: &ValidatedConfig,
-    pool: Arc<FixedCellPool>,
-    topology: TopologyReport,
-) -> ProcessReport {
-    let pool_before = pool.observations();
+    pool: &Arc<FixedCellPool>,
+) -> Result<PreparedComposition, PreparationFailure> {
     let loaded = match load_artifact(config) {
         Ok(loaded) => loaded,
-        Err(error) => {
-            return preflight_failure(config, topology, pool_before, pool.observations(), 0, error);
-        }
+        Err(error) => return Err(empty_preparation_failure(config, 0, error)),
     };
-
     if let Err(error) = validate_requested_budget(config, &loaded.artifact.manifest) {
-        return preflight_failure(
+        return Err(empty_preparation_failure(
             config,
-            topology,
-            pool_before,
-            pool.observations(),
             loaded.component_bytes,
             error,
-        );
+        ));
     }
 
     let declared_budget = &loaded.artifact.manifest.execution.resource_budget_ceiling;
@@ -612,14 +849,11 @@ async fn execute_once(
     let factory = match Phase0WasmtimeEngineFactory::new(wasmtime_config) {
         Ok(factory) => factory,
         Err(error) => {
-            return preflight_failure(
+            return Err(empty_preparation_failure(
                 config,
-                topology,
-                pool_before,
-                pool.observations(),
                 loaded.component_bytes,
                 error,
-            );
+            ))
         }
     };
     let preparation_key =
@@ -632,18 +866,14 @@ async fn execute_once(
         Err(error) => {
             let resources = backend.resource_snapshot();
             let cache = backend.cache_snapshot();
-            let logs = backend.log_sink();
-            logs.clear();
-            return preflight_failure_with_backend(
-                config,
-                topology,
-                pool_before,
-                pool.observations(),
-                loaded.component_bytes,
-                cache,
+            backend.log_sink().clear();
+            return Err(PreparationFailure {
+                component_bytes: loaded.component_bytes,
+                cache_after_prepare: cache.clone(),
+                cache_after_release: cache,
                 resources,
                 error,
-            );
+            });
         }
     };
     let cache_after_prepare = backend.cache_snapshot();
@@ -663,25 +893,96 @@ async fn execute_once(
             let error = release_error.map_or(error, |release_error| {
                 cleanup_error("prepared-component release", release_error)
             });
-            let cache_after_release = backend.cache_snapshot();
-            return preflight_failure_with_preparation(
-                config,
-                topology,
-                pool_before,
-                pool.observations(),
-                loaded.component_bytes,
+            return Err(PreparationFailure {
+                component_bytes: loaded.component_bytes,
                 cache_after_prepare,
-                cache_after_release,
-                backend.resource_snapshot(),
+                cache_after_release: backend.cache_snapshot(),
+                resources: backend.resource_snapshot(),
                 error,
-            );
+            });
         }
     };
 
-    let deadline = match now_unix_millis().checked_add(config.timeout_ms) {
-        Some(deadline) => deadline,
-        None => {
-            let _ = backend.release(prepared).await;
+    Ok(PreparedComposition {
+        loaded,
+        backend,
+        prepared,
+        cache_after_prepare,
+        runner,
+    })
+}
+
+fn empty_preparation_failure(
+    config: &ValidatedConfig,
+    component_bytes: u64,
+    error: PlatformError,
+) -> PreparationFailure {
+    PreparationFailure {
+        component_bytes,
+        cache_after_prepare: empty_cache_snapshot(config),
+        cache_after_release: empty_cache_snapshot(config),
+        resources: RuntimeResourceSnapshot::default(),
+        error,
+    }
+}
+
+fn preparation_failure_report(
+    config: &ValidatedConfig,
+    topology: TopologyReport,
+    pool_before: CellPoolSnapshot,
+    pool: &FixedCellPool,
+    failure: PreparationFailure,
+) -> ProcessReport {
+    preflight_failure_with_preparation(
+        config,
+        topology,
+        pool_before,
+        pool.observations(),
+        failure.component_bytes,
+        failure.cache_after_prepare,
+        failure.cache_after_release,
+        failure.resources,
+        failure.error,
+    )
+}
+
+async fn execute_once(
+    config: &ValidatedConfig,
+    pool: Arc<FixedCellPool>,
+    mut topology: TopologyReport,
+    monitor: RuntimeTopologyMonitor,
+) -> ProcessReport {
+    let pool_before = pool.observations();
+    let PreparedComposition {
+        loaded,
+        backend,
+        prepared,
+        cache_after_prepare,
+        runner,
+    } = match prepare_composition(config, &pool).await {
+        Ok(composition) => composition,
+        Err(failure) => {
+            return preparation_failure_report(config, topology, pool_before, &pool, failure);
+        }
+    };
+
+    let completed = match invoke_prepared(
+        config,
+        &loaded.artifact.manifest,
+        &pool,
+        &backend,
+        &runner,
+        &mut topology,
+        &monitor,
+    )
+    .await
+    {
+        Ok(completed) => completed,
+        Err(error) => {
+            let release_error = backend.release(prepared).await.err();
+            let error = release_error.map_or(error, |release_error| {
+                cleanup_error("prepared-component release", release_error)
+            });
             return preflight_failure_with_preparation(
                 config,
                 topology,
@@ -691,14 +992,231 @@ async fn execute_once(
                 cache_after_prepare,
                 backend.cache_snapshot(),
                 backend.resource_snapshot(),
-                configuration_error(
-                    "invocation timeout overflows the Unix millisecond deadline",
-                    [("timeout_ms", config.timeout_ms.to_string())],
-                ),
+                error,
             );
         }
     };
-    let envelope = activation_envelope(config, &loaded.artifact.manifest, deadline);
+    let mut result = spike_result_from_activation(
+        config.surface,
+        &completed.activation,
+        topology,
+        PreparationReport {
+            component_bytes: loaded.component_bytes,
+            cache_after_prepare: cache_report(&cache_after_prepare),
+            cache_after_release: CacheSnapshotReport::default(),
+        },
+        shutdown_from_completed(&completed),
+        None,
+    );
+    let mut exit_code = completed.exit_code;
+
+    if let Err(error) = backend.release(prepared).await {
+        apply_cleanup_failure(
+            &mut result,
+            cleanup_error("prepared-component release", error),
+        );
+        exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+    }
+    result.preparation.cache_after_release = cache_report(&backend.cache_snapshot());
+    result.shutdown.prepared_cache_entries = backend.cache_snapshot().entries;
+    recompute_shutdown(&mut result.shutdown);
+
+    if !result.shutdown.clean_without_runtime() {
+        let error = dirty_shutdown_error(&result.shutdown);
+        apply_cleanup_failure(&mut result, error);
+        exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+    }
+    if !result.topology.unchanged {
+        let error = topology_changed_error(&result.topology);
+        apply_cleanup_failure(&mut result, error);
+        exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+    }
+
+    ProcessReport { result, exit_code }
+}
+
+async fn execute_recovery(
+    recovery: &ValidatedRecoveryConfig,
+    pool: Arc<FixedCellPool>,
+    mut topology: TopologyReport,
+    monitor: RuntimeTopologyMonitor,
+) -> ProcessReport {
+    let config = &recovery.invocation;
+    let pool_before = pool.observations();
+    let PreparedComposition {
+        loaded,
+        backend,
+        prepared,
+        cache_after_prepare,
+        runner,
+    } = match prepare_composition(config, &pool).await {
+        Ok(composition) => composition,
+        Err(failure) => {
+            return preparation_failure_report(config, topology, pool_before, &pool, failure);
+        }
+    };
+
+    let trap_config = recovery_invocation_config(
+        config,
+        recovery.trap_activation_id.clone(),
+        "__latent_test_trap",
+    );
+    let trapped = match invoke_prepared(
+        &trap_config,
+        &loaded.artifact.manifest,
+        &pool,
+        &backend,
+        &runner,
+        &mut topology,
+        &monitor,
+    )
+    .await
+    {
+        Ok(completed) => completed,
+        Err(error) => {
+            let release_error = backend.release(prepared).await.err();
+            let error = release_error.map_or(error, |release_error| {
+                cleanup_error("prepared-component release", release_error)
+            });
+            return preflight_failure_with_preparation(
+                config,
+                topology,
+                pool_before,
+                pool.observations(),
+                loaded.component_bytes,
+                cache_after_prepare,
+                backend.cache_snapshot(),
+                backend.resource_snapshot(),
+                error,
+            );
+        }
+    };
+    // This check intentionally happens before the healthy call. With one cell,
+    // it establishes that the trap released all activation-owned capacity and
+    // resources before the retained runner is asked to recover.
+    let trap_verification_error = verify_trap_recovery_step(&trapped, &topology);
+
+    let healthy_config = recovery_invocation_config(
+        config,
+        recovery.recovery_activation_id.clone(),
+        &config.input,
+    );
+    let healthy = match invoke_prepared(
+        &healthy_config,
+        &loaded.artifact.manifest,
+        &pool,
+        &backend,
+        &runner,
+        &mut topology,
+        &monitor,
+    )
+    .await
+    {
+        Ok(completed) => completed,
+        Err(error) => {
+            let mut result = spike_result_from_activation(
+                config.surface,
+                &trapped.activation,
+                topology,
+                PreparationReport {
+                    component_bytes: loaded.component_bytes,
+                    cache_after_prepare: cache_report(&cache_after_prepare),
+                    cache_after_release: CacheSnapshotReport::default(),
+                },
+                shutdown_from_completed(&trapped),
+                Some(RecoveryReport {
+                    expected_failure: "trap".to_owned(),
+                    activation_count: 1,
+                    activations: vec![recovery_activation_report("trap", &trapped)],
+                }),
+            );
+            let exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+            if let Err(release_error) = backend.release(prepared).await {
+                apply_cleanup_failure(
+                    &mut result,
+                    cleanup_error("prepared-component release", release_error),
+                );
+            } else {
+                apply_cleanup_failure(&mut result, error);
+            }
+            result.preparation.cache_after_release = cache_report(&backend.cache_snapshot());
+            result.shutdown.prepared_cache_entries = backend.cache_snapshot().entries;
+            recompute_shutdown(&mut result.shutdown);
+            if !result.shutdown.clean_without_runtime() {
+                let shutdown_error = dirty_shutdown_error(&result.shutdown);
+                apply_cleanup_failure(&mut result, shutdown_error);
+            }
+            return ProcessReport { result, exit_code };
+        }
+    };
+
+    let recovery_report = RecoveryReport {
+        expected_failure: "trap".to_owned(),
+        activation_count: 2,
+        activations: vec![
+            recovery_activation_report("trap", &trapped),
+            recovery_activation_report("recovery", &healthy),
+        ],
+    };
+    let verification_error = trap_verification_error
+        .or_else(|| verify_recovery_completion(&healthy, &topology, &config.input));
+    let mut result = spike_result_from_activation(
+        config.surface,
+        &healthy.activation,
+        topology,
+        PreparationReport {
+            component_bytes: loaded.component_bytes,
+            cache_after_prepare: cache_report(&cache_after_prepare),
+            cache_after_release: CacheSnapshotReport::default(),
+        },
+        shutdown_from_completed(&healthy),
+        Some(recovery_report),
+    );
+    let mut exit_code = EXIT_SUCCESS;
+
+    if let Err(error) = backend.release(prepared).await {
+        apply_cleanup_failure(
+            &mut result,
+            cleanup_error("prepared-component release", error),
+        );
+        exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+    }
+    result.preparation.cache_after_release = cache_report(&backend.cache_snapshot());
+    result.shutdown.prepared_cache_entries = backend.cache_snapshot().entries;
+    recompute_shutdown(&mut result.shutdown);
+
+    if !result.shutdown.clean_without_runtime() {
+        let shutdown_error = dirty_shutdown_error(&result.shutdown);
+        apply_cleanup_failure(&mut result, shutdown_error);
+        exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+    }
+    if let Some(error) = verification_error {
+        apply_cleanup_failure(&mut result, error);
+        exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+    }
+
+    ProcessReport { result, exit_code }
+}
+
+async fn invoke_prepared(
+    config: &ValidatedConfig,
+    manifest: &CapsuleManifest,
+    pool: &Arc<FixedCellPool>,
+    backend: &Arc<Phase0WasmtimeBackend>,
+    runner: &Arc<Phase0ActivationRunner>,
+    topology: &mut TopologyReport,
+    monitor: &RuntimeTopologyMonitor,
+) -> Result<CompletedInvocation, PlatformError> {
+    let pool_before = pool.observations();
+    let deadline = now_unix_millis()
+        .checked_add(config.timeout_ms)
+        .ok_or_else(|| {
+            configuration_error(
+                "invocation timeout overflows the Unix millisecond deadline",
+                [("timeout_ms", config.timeout_ms.to_string())],
+            )
+        })?;
+    let envelope = activation_envelope(config, manifest, deadline);
 
     let started = Instant::now();
     let invocation = runner.invoke(envelope);
@@ -732,83 +1250,41 @@ async fn execute_once(
     let logs = log_sink.snapshot_for(&config.activation_id);
     log_sink.clear();
     let retained_log_entries = log_sink.snapshot().len();
-    let disposition = cell_disposition(&runner_snapshot);
-
-    let (mut result, mut exit_code) = activation_result(
+    record_topology_after_activation(topology, monitor, pool)?;
+    let (activation, exit_code) = activation_report(
         config,
-        topology,
         pool_before,
         pool_after,
-        loaded.component_bytes,
-        cache_after_prepare,
         runner_snapshot,
-        resources,
         logs,
-        retained_log_entries,
-        disposition,
         outcome,
         elapsed_time_micros,
     );
 
-    if let Err(error) = backend.release(prepared).await {
-        apply_cleanup_failure(
-            &mut result,
-            cleanup_error("prepared-component release", error),
-        );
-        exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
-    }
-    result.preparation.cache_after_release = cache_report(&backend.cache_snapshot());
-    result.shutdown.prepared_cache_entries = backend.cache_snapshot().entries;
-    recompute_shutdown(&mut result.shutdown);
-
-    if !result.shutdown.clean_without_runtime() {
-        let error = dirty_shutdown_error(&result.shutdown);
-        apply_cleanup_failure(&mut result, error);
-        exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
-    }
-
-    ProcessReport { result, exit_code }
+    Ok(CompletedInvocation {
+        activation,
+        exit_code,
+        pool_after,
+        runner_snapshot,
+        resources,
+        retained_log_entries,
+        cache: backend.cache_snapshot(),
+    })
 }
 
-fn activation_result(
+fn activation_report(
     config: &ValidatedConfig,
-    mut topology: TopologyReport,
     pool_before: CellPoolSnapshot,
     pool_after: CellPoolSnapshot,
-    component_bytes: u64,
-    cache_after_prepare: PreparedCacheSnapshot,
     runner_snapshot: ActivationRunnerSnapshot,
-    resources: RuntimeResourceSnapshot,
     logs: Vec<CapturedLog>,
-    retained_log_entries: usize,
-    disposition: String,
     outcome: ActivationOutcome,
     elapsed_time_micros: u64,
-) -> (SpikeResult, u8) {
-    topology.unchanged = topology.pool_capacity == pool_before.capacity
-        && pool_before.capacity == pool_after.capacity
-        && topology.listener_socket_count == 0;
-
+) -> (ActivationReport, u8) {
     let (outcome_name, terminal_state, output, error, consumption, exit_code) =
         classify_activation_outcome(outcome);
-    let shutdown = ShutdownReport {
-        clean: false,
-        runtime_stopped: false,
-        active_leases: pool_after.active_leases,
-        queued_waiters: pool_after.queue_depth,
-        cancellation_registrations: runner_snapshot.active_cancellation_registrations,
-        running_invocations: runner_snapshot.running_invocations,
-        retained_log_entries,
-        prepared_cache_entries: cache_after_prepare.entries,
-        backend_resources: runtime_resource_report(&resources),
-    };
-
     (
-        SpikeResult {
-            schema_version: RESULT_SCHEMA_VERSION,
-            surface: SURFACE_NAME,
-            production_ready: false,
-            phase1_api_compatible: false,
+        ActivationReport {
             activation_id: config.activation_id.0.clone(),
             outcome: outcome_name,
             terminal_state,
@@ -817,21 +1293,511 @@ fn activation_result(
             elapsed_time_micros,
             consumption,
             cell: CellReport {
-                disposition,
+                disposition: cell_disposition(&runner_snapshot),
                 pool_before: Some(pool_report(&pool_before)),
                 pool_after: Some(pool_report(&pool_after)),
             },
             logs: logs.into_iter().map(log_report).collect(),
-            topology,
-            preparation: PreparationReport {
-                component_bytes,
-                cache_after_prepare: cache_report(&cache_after_prepare),
-                cache_after_release: CacheSnapshotReport::default(),
-            },
-            shutdown,
         },
         exit_code,
     )
+}
+
+fn shutdown_from_completed(completed: &CompletedInvocation) -> ShutdownReport {
+    ShutdownReport {
+        clean: false,
+        runtime_stopped: false,
+        active_leases: completed.pool_after.active_leases,
+        queued_waiters: completed.pool_after.queue_depth,
+        cancellation_registrations: completed.runner_snapshot.active_cancellation_registrations,
+        running_invocations: completed.runner_snapshot.running_invocations,
+        retained_log_entries: completed.retained_log_entries,
+        prepared_cache_entries: completed.cache.entries,
+        backend_resources: runtime_resource_report(&completed.resources),
+    }
+}
+
+fn spike_result_from_activation(
+    surface: &'static str,
+    activation: &ActivationReport,
+    topology: TopologyReport,
+    preparation: PreparationReport,
+    shutdown: ShutdownReport,
+    recovery: Option<RecoveryReport>,
+) -> SpikeResult {
+    SpikeResult {
+        schema_version: RESULT_SCHEMA_VERSION,
+        surface,
+        production_ready: false,
+        phase1_api_compatible: false,
+        activation_id: activation.activation_id.clone(),
+        outcome: activation.outcome.clone(),
+        terminal_state: activation.terminal_state.clone(),
+        output: activation.output.clone(),
+        error: activation.error.clone(),
+        elapsed_time_micros: activation.elapsed_time_micros,
+        consumption: activation.consumption.clone(),
+        cell: activation.cell.clone(),
+        logs: activation.logs.clone(),
+        topology,
+        preparation,
+        recovery,
+        shutdown,
+    }
+}
+
+fn recovery_activation_id(base: &ActivationId, phase: &str) -> Result<ActivationId, PlatformError> {
+    let value = format!("{}-{phase}", base.0);
+    if value.len() > MAX_ACTIVATION_ID_BYTES {
+        return Err(configuration_error(
+            "activation ID is too long for the verify-recovery phase suffix",
+            [
+                ("activation_id_bytes", base.0.len().to_string()),
+                ("phase", phase.to_owned()),
+            ],
+        ));
+    }
+    Ok(ActivationId(value))
+}
+
+fn recovery_invocation_config(
+    base: &ValidatedConfig,
+    activation_id: ActivationId,
+    input: &str,
+) -> ValidatedConfig {
+    let mut config = base.clone();
+    config.activation_id = activation_id;
+    config.input = input.to_owned();
+    config.cancel_after_ms = None;
+    config
+}
+
+fn recovery_activation_report(
+    phase: &str,
+    completed: &CompletedInvocation,
+) -> RecoveryActivationReport {
+    RecoveryActivationReport {
+        phase: phase.to_owned(),
+        activation: completed.activation.clone(),
+        runner: runner_snapshot_report(&completed.runner_snapshot),
+        prepared_cache: cache_report(&completed.cache),
+        backend_resources: runtime_resource_report(&completed.resources),
+        retained_log_entries: completed.retained_log_entries,
+    }
+}
+
+fn runner_snapshot_report(snapshot: &ActivationRunnerSnapshot) -> RunnerSnapshotReport {
+    RunnerSnapshotReport {
+        active_cancellation_registrations: snapshot.active_cancellation_registrations,
+        running_invocations: snapshot.running_invocations,
+        total_invocations: snapshot.total_invocations,
+        released_cells: snapshot.released_cells,
+        quarantined_cells: snapshot.quarantined_cells,
+        disposition_failures: snapshot.disposition_failures,
+    }
+}
+
+fn verify_trap_recovery_step(
+    trapped: &CompletedInvocation,
+    topology: &TopologyReport,
+) -> Option<PlatformError> {
+    if trapped.activation.outcome != "trap"
+        || trapped
+            .activation
+            .error
+            .as_ref()
+            .map(|error| error.code.as_str())
+            != Some("guest_trap")
+    {
+        return Some(recovery_verification_error(
+            "controlled recovery failure did not produce the expected guest trap",
+            [
+                ("actual_outcome", trapped.activation.outcome.clone()),
+                (
+                    "actual_error_code",
+                    trapped
+                        .activation
+                        .error
+                        .as_ref()
+                        .map(|error| error.code.clone())
+                        .unwrap_or_else(|| "none".to_owned()),
+                ),
+            ],
+        ));
+    }
+    if let Some(error) = verify_recovery_step("trap", trapped) {
+        return Some(error);
+    }
+    if trapped.runner_snapshot.total_invocations != 1 || trapped.cache.entries != 1 {
+        return Some(recovery_verification_error(
+            "controlled trap did not retain exactly one prepared runner composition",
+            [
+                (
+                    "runner_total_invocations",
+                    trapped.runner_snapshot.total_invocations.to_string(),
+                ),
+                ("prepared_cache_entries", trapped.cache.entries.to_string()),
+            ],
+        ));
+    }
+    let Some(before) = topology.before_component_load.as_ref() else {
+        return Some(recovery_verification_error(
+            "recovery composition has no pre-component topology observation",
+            std::iter::empty::<(&str, String)>(),
+        ));
+    };
+    if topology.after_activations.len() != 1 || topology.after_activations[0] != *before {
+        return Some(recovery_verification_error(
+            "runtime, pool, or socket topology changed after the controlled trap",
+            [(
+                "after_activation_count",
+                topology.after_activations.len().to_string(),
+            )],
+        ));
+    }
+    None
+}
+
+fn verify_recovery_completion(
+    healthy: &CompletedInvocation,
+    topology: &TopologyReport,
+    expected_output: &str,
+) -> Option<PlatformError> {
+    let recovered_output = healthy
+        .activation
+        .output
+        .as_ref()
+        .map(|output| output.utf8.as_str());
+    if healthy.activation.outcome != "success" || recovered_output != Some(expected_output) {
+        return Some(recovery_verification_error(
+            "same-composition recovery invocation did not echo the requested input",
+            [
+                ("actual_outcome", healthy.activation.outcome.clone()),
+                (
+                    "actual_output",
+                    recovered_output.unwrap_or("<no-output>").to_owned(),
+                ),
+            ],
+        ));
+    }
+    if let Some(error) = verify_recovery_step("recovery", healthy) {
+        return Some(error);
+    }
+    if healthy.runner_snapshot.total_invocations != 2 || healthy.cache.entries != 1 {
+        return Some(recovery_verification_error(
+            "recovery did not reuse the original runner and prepared component",
+            [
+                (
+                    "runner_total_invocations",
+                    healthy.runner_snapshot.total_invocations.to_string(),
+                ),
+                ("prepared_cache_entries", healthy.cache.entries.to_string()),
+            ],
+        ));
+    }
+
+    let Some(before) = topology.before_component_load.as_ref() else {
+        return Some(recovery_verification_error(
+            "recovery composition has no pre-component topology observation",
+            std::iter::empty::<(&str, String)>(),
+        ));
+    };
+    if topology.after_activations.len() != 2
+        || topology
+            .after_activations
+            .iter()
+            .any(|after| after != before)
+    {
+        return Some(recovery_verification_error(
+            "runtime, pool, or socket topology changed during recovery verification",
+            [(
+                "after_activation_count",
+                topology.after_activations.len().to_string(),
+            )],
+        ));
+    }
+    None
+}
+
+fn verify_recovery_step(phase: &str, completed: &CompletedInvocation) -> Option<PlatformError> {
+    let pool = &completed.pool_after;
+    let runner = completed.runner_snapshot;
+    let resources = &completed.resources;
+    let reusable_pool = pool.capacity == 1
+        && pool.available == 1
+        && pool.active_leases == 0
+        && pool.queue_depth == 0
+        && pool.quarantined == 0;
+    let fully_reclaimed = runner.active_cancellation_registrations == 0
+        && runner.running_invocations == 0
+        && completed.retained_log_entries == 0
+        && resources.active_invocations == 0
+        && resources.live_stores == 0
+        && resources.live_host_states == 0
+        && resources.live_component_instances == 0
+        && resources.live_temporary_buffers == 0
+        && resources.live_cancellation_probes == 0;
+    if completed.activation.cell.disposition != "released" || !reusable_pool || !fully_reclaimed {
+        return Some(recovery_verification_error(
+            "recovery phase did not release its capacity-one cell and contained resources",
+            [
+                ("phase", phase.to_owned()),
+                (
+                    "cell_disposition",
+                    completed.activation.cell.disposition.clone(),
+                ),
+                ("pool_available", pool.available.to_string()),
+                ("pool_active_leases", pool.active_leases.to_string()),
+                ("pool_quarantined", pool.quarantined.to_string()),
+                (
+                    "cancellation_registrations",
+                    runner.active_cancellation_registrations.to_string(),
+                ),
+                (
+                    "running_invocations",
+                    runner.running_invocations.to_string(),
+                ),
+                (
+                    "retained_log_entries",
+                    completed.retained_log_entries.to_string(),
+                ),
+            ],
+        ));
+    }
+    None
+}
+
+fn recovery_verification_error<I, K>(message: impl Into<String>, fields: I) -> PlatformError
+where
+    I: IntoIterator<Item = (K, String)>,
+    K: Into<String>,
+{
+    spike_error(
+        PlatformErrorCode::Internal,
+        message,
+        "phase0-spike.recovery-verification-failed",
+        fields,
+    )
+}
+
+fn configured_topology(config: &ValidatedConfig) -> TopologyReport {
+    TopologyReport {
+        initialized: false,
+        runtime_workers: config.runtime_workers,
+        wasmtime_epoch_ticker_threads: 1,
+        pool_capacity: config.pool_capacity,
+        pool_queue_capacity: config.pool_queue_capacity,
+        listener_socket_count: 0,
+        before_component_load: None,
+        after_activations: Vec::new(),
+        unchanged: false,
+    }
+}
+
+fn topology_from_baseline(
+    baseline: TopologyFingerprintReport,
+    pool_queue_capacity: u32,
+) -> TopologyReport {
+    TopologyReport {
+        initialized: true,
+        runtime_workers: baseline.runtime_workers,
+        wasmtime_epoch_ticker_threads: 1,
+        pool_capacity: baseline.pool_capacity,
+        pool_queue_capacity,
+        listener_socket_count: baseline.listener_socket_count,
+        before_component_load: Some(baseline),
+        after_activations: Vec::new(),
+        unchanged: true,
+    }
+}
+
+async fn wait_for_runtime_topology(
+    monitor: &RuntimeTopologyMonitor,
+    pool: &FixedCellPool,
+    expected_workers: usize,
+) -> Result<TopologyFingerprintReport, PlatformError> {
+    let deadline =
+        tokio::time::Instant::now() + Duration::from_millis(RUNTIME_WORKER_START_TIMEOUT_MILLIS);
+    loop {
+        if monitor.active_workers() == expected_workers {
+            return observe_topology(monitor, pool);
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err(spike_error(
+                PlatformErrorCode::Internal,
+                "fixed Tokio runtime did not start its configured worker count",
+                "phase0-spike.runtime-worker-observation-failed",
+                [
+                    ("expected_workers", expected_workers.to_string()),
+                    ("observed_workers", monitor.active_workers().to_string()),
+                ],
+            ));
+        }
+        tokio::task::yield_now().await;
+        tokio::time::sleep(Duration::from_millis(1)).await;
+    }
+}
+
+fn record_topology_after_activation(
+    topology: &mut TopologyReport,
+    monitor: &RuntimeTopologyMonitor,
+    pool: &FixedCellPool,
+) -> Result<(), PlatformError> {
+    let observation = observe_topology(monitor, pool)?;
+    topology.after_activations.push(observation);
+    recompute_topology_unchanged(topology);
+    Ok(())
+}
+
+fn observe_topology(
+    monitor: &RuntimeTopologyMonitor,
+    pool: &FixedCellPool,
+) -> Result<TopologyFingerprintReport, PlatformError> {
+    let runtime_workers = monitor.active_workers();
+    let pool_snapshot = pool.observations();
+    Ok(TopologyFingerprintReport {
+        runtime_workers,
+        pool_capacity: pool_snapshot.capacity,
+        listener_socket_count: observed_process_socket_count()?,
+    })
+}
+
+fn recompute_topology_unchanged(topology: &mut TopologyReport) {
+    let direct_view = TopologyFingerprintReport {
+        runtime_workers: topology.runtime_workers,
+        pool_capacity: topology.pool_capacity,
+        listener_socket_count: topology.listener_socket_count,
+    };
+    topology.unchanged = match topology.before_component_load.as_ref() {
+        Some(before) => {
+            before == &direct_view
+                && topology
+                    .after_activations
+                    .iter()
+                    .all(|after| after == before)
+        }
+        None => false,
+    };
+}
+
+#[cfg(target_os = "linux")]
+fn observed_process_socket_count() -> Result<u32, PlatformError> {
+    let descriptors = fs::read_dir("/proc/self/fd").map_err(|error| {
+        spike_error(
+            PlatformErrorCode::Internal,
+            format!("failed to inspect /proc/self/fd for process socket topology: {error}"),
+            "phase0-spike.socket-observation-failed",
+            std::iter::empty::<(&str, String)>(),
+        )
+    })?;
+    let mut socket_count = 0_usize;
+    for descriptor in descriptors.flatten() {
+        let Ok(target) = fs::read_link(descriptor.path()) else {
+            continue;
+        };
+        if target.to_string_lossy().starts_with("socket:[") {
+            socket_count = socket_count.saturating_add(1);
+        }
+    }
+    u32::try_from(socket_count).map_err(|_| {
+        spike_error(
+            PlatformErrorCode::Internal,
+            "process socket descriptor count cannot be represented",
+            "phase0-spike.socket-observation-overflow",
+            [("socket_count", socket_count.to_string())],
+        )
+    })
+}
+
+#[cfg(target_os = "windows")]
+fn observed_process_socket_count() -> Result<u32, PlatformError> {
+    let output = std::process::Command::new("netstat")
+        .arg("-ano")
+        .output()
+        .map_err(|error| {
+            spike_error(
+                PlatformErrorCode::Internal,
+                format!("failed to inspect Windows process socket topology: {error}"),
+                "phase0-spike.socket-observation-failed",
+                std::iter::empty::<(&str, String)>(),
+            )
+        })?;
+    if !output.status.success() {
+        return Err(spike_error(
+            PlatformErrorCode::Internal,
+            "Windows netstat did not complete while observing process socket topology",
+            "phase0-spike.socket-observation-failed",
+            [("status", output.status.to_string())],
+        ));
+    }
+    let process_id = std::process::id().to_string();
+    let socket_count = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| {
+            let fields = line.split_whitespace().collect::<Vec<_>>();
+            fields.len() >= 4 && fields.last() == Some(&process_id.as_str())
+        })
+        .count();
+    u32::try_from(socket_count).map_err(|_| {
+        spike_error(
+            PlatformErrorCode::Internal,
+            "process socket count cannot be represented",
+            "phase0-spike.socket-observation-overflow",
+            [("socket_count", socket_count.to_string())],
+        )
+    })
+}
+
+#[cfg(any(target_os = "macos", target_os = "freebsd"))]
+fn observed_process_socket_count() -> Result<u32, PlatformError> {
+    let process_id = std::process::id().to_string();
+    let output = std::process::Command::new("lsof")
+        .args(["-nP", "-a", "-p", process_id.as_str(), "-i"])
+        .output()
+        .map_err(|error| {
+            spike_error(
+                PlatformErrorCode::Internal,
+                format!("failed to inspect process socket topology with lsof: {error}"),
+                "phase0-spike.socket-observation-failed",
+                std::iter::empty::<(&str, String)>(),
+            )
+        })?;
+    if !output.status.success() {
+        return Err(spike_error(
+            PlatformErrorCode::Internal,
+            "lsof did not complete while observing process socket topology",
+            "phase0-spike.socket-observation-failed",
+            [("status", output.status.to_string())],
+        ));
+    }
+    let socket_count = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .skip(1)
+        .filter(|line| !line.trim().is_empty())
+        .count();
+    u32::try_from(socket_count).map_err(|_| {
+        spike_error(
+            PlatformErrorCode::Internal,
+            "process socket count cannot be represented",
+            "phase0-spike.socket-observation-overflow",
+            [("socket_count", socket_count.to_string())],
+        )
+    })
+}
+
+#[cfg(not(any(
+    target_os = "linux",
+    target_os = "windows",
+    target_os = "macos",
+    target_os = "freebsd"
+)))]
+fn observed_process_socket_count() -> Result<u32, PlatformError> {
+    Err(spike_error(
+        PlatformErrorCode::Internal,
+        "this platform has no supported process socket topology probe",
+        "phase0-spike.socket-observation-unsupported",
+        std::iter::empty::<(&str, String)>(),
+    ))
 }
 
 fn classify_activation_outcome(
@@ -931,29 +1897,6 @@ fn preflight_failure(
     )
 }
 
-fn preflight_failure_with_backend(
-    config: &ValidatedConfig,
-    topology: TopologyReport,
-    pool_before: CellPoolSnapshot,
-    pool_after: CellPoolSnapshot,
-    component_bytes: u64,
-    cache: PreparedCacheSnapshot,
-    resources: RuntimeResourceSnapshot,
-    error: PlatformError,
-) -> ProcessReport {
-    preflight_failure_with_preparation(
-        config,
-        topology,
-        pool_before,
-        pool_after,
-        component_bytes,
-        cache.clone(),
-        cache,
-        resources,
-        error,
-    )
-}
-
 fn preflight_failure_with_preparation(
     config: &ValidatedConfig,
     mut topology: TopologyReport,
@@ -969,9 +1912,7 @@ fn preflight_failure_with_preparation(
         "Phase 0 spike rejected input before leasing a cell: {}",
         bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES)
     );
-    topology.unchanged = topology.pool_capacity == pool_before.capacity
-        && pool_before.capacity == pool_after.capacity
-        && topology.listener_socket_count == 0;
+    recompute_topology_unchanged(&mut topology);
     let internal = error.code == PlatformErrorCode::Internal;
     let mut shutdown = ShutdownReport {
         clean: false,
@@ -989,7 +1930,7 @@ fn preflight_failure_with_preparation(
     ProcessReport {
         result: SpikeResult {
             schema_version: RESULT_SCHEMA_VERSION,
-            surface: SURFACE_NAME,
+            surface: config.surface,
             production_ready: false,
             phase1_api_compatible: false,
             activation_id: config.activation_id.0.clone(),
@@ -1015,6 +1956,7 @@ fn preflight_failure_with_preparation(
                 cache_after_prepare: cache_report(&cache_after_prepare),
                 cache_after_release: cache_report(&cache_after_release),
             },
+            recovery: None,
             shutdown,
         },
         exit_code: if internal {
@@ -1054,10 +1996,26 @@ fn platform_uninitialized_report(
     exit_code: u8,
     outcome: &str,
 ) -> ProcessReport {
+    platform_uninitialized_report_for_surface(
+        activation_id,
+        error,
+        exit_code,
+        outcome,
+        INVOKE_ONCE_SURFACE_NAME,
+    )
+}
+
+fn platform_uninitialized_report_for_surface(
+    activation_id: &str,
+    error: PlatformError,
+    exit_code: u8,
+    outcome: &str,
+    surface: &'static str,
+) -> ProcessReport {
     ProcessReport {
         result: SpikeResult {
             schema_version: RESULT_SCHEMA_VERSION,
-            surface: SURFACE_NAME,
+            surface,
             production_ready: false,
             phase1_api_compatible: false,
             activation_id: activation_id.to_owned(),
@@ -1080,9 +2038,12 @@ fn platform_uninitialized_report(
                 pool_capacity: 0,
                 pool_queue_capacity: 0,
                 listener_socket_count: 0,
-                unchanged: true,
+                before_component_load: None,
+                after_activations: Vec::new(),
+                unchanged: false,
             },
             preparation: PreparationReport::default(),
+            recovery: None,
             shutdown: ShutdownReport {
                 clean: true,
                 runtime_stopped: true,
@@ -1302,7 +2263,7 @@ fn activation_envelope(
             service: None,
             claims: Metadata::from([
                 ("role".to_owned(), "phase0-spike".to_owned()),
-                ("surface".to_owned(), SURFACE_NAME.to_owned()),
+                ("surface".to_owned(), config.surface.to_owned()),
             ]),
         },
         target: InvocationTarget {
@@ -1325,11 +2286,21 @@ fn activation_envelope(
         retry_attempt: 0,
         budget,
         metadata: Metadata::from([
-            ("mode".to_owned(), "invoke-once".to_owned()),
+            (
+                "mode".to_owned(),
+                spike_mode_name(config.surface).to_owned(),
+            ),
             ("production-ready".to_owned(), "false".to_owned()),
         ]),
         input: config.input.as_bytes().to_vec(),
         input_media_type: ECHO_SUCCESS_MEDIA_TYPE.to_owned(),
+    }
+}
+
+fn spike_mode_name(surface: &str) -> &'static str {
+    match surface {
+        VERIFY_RECOVERY_SURFACE_NAME => "verify-recovery",
+        _ => "invoke-once",
     }
 }
 
@@ -1690,6 +2661,36 @@ fn dirty_shutdown_error(shutdown: &ShutdownReport) -> PlatformError {
             (
                 "prepared_cache_entries",
                 shutdown.prepared_cache_entries.to_string(),
+            ),
+        ],
+    )
+}
+
+fn topology_changed_error(topology: &TopologyReport) -> PlatformError {
+    spike_error(
+        PlatformErrorCode::Internal,
+        "Phase 0 spike observed a runtime, pool, or socket topology change",
+        "phase0-spike.topology-changed",
+        [
+            (
+                "after_activation_count",
+                topology.after_activations.len().to_string(),
+            ),
+            (
+                "baseline_runtime_workers",
+                topology
+                    .before_component_load
+                    .as_ref()
+                    .map(|baseline| baseline.runtime_workers.to_string())
+                    .unwrap_or_else(|| "unobserved".to_owned()),
+            ),
+            (
+                "observed_runtime_workers",
+                topology
+                    .after_activations
+                    .last()
+                    .map(|observation| observation.runtime_workers.to_string())
+                    .unwrap_or_else(|| "unobserved".to_owned()),
             ),
         ],
     )

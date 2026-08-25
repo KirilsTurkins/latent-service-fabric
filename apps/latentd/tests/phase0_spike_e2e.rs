@@ -17,7 +17,7 @@ const MAXIMUM_CONTAINMENT_MEMORY: u64 = 32 * 1024 * 1024;
 
 #[test]
 #[ignore = "requires Rust Wasm targets, wasm-tools, Buf, and the contract-validation toolchain"]
-fn executable_covers_success_failures_and_post_failure_recovery() {
+fn executable_covers_success_failures_and_same_runtime_post_failure_recovery() {
     let root = repository_root();
     let fixtures = fixture_paths(&root);
     let temporary = TempDir::new().expect("temporary fixture directory must be created");
@@ -42,7 +42,7 @@ fn executable_covers_success_failures_and_post_failure_recovery() {
         .as_array()
         .expect("logs must be an array")
         .is_empty());
-    assert_fixed_and_clean(&success.document, 2, 2);
+    assert_fixed_and_clean(&success.document, 2, 2, 1);
 
     let domain_error = invoke(&fixtures.echo_capsule, "", &[]);
     assert_exit(&domain_error.output, EXIT_DOMAIN_ERROR);
@@ -50,7 +50,7 @@ fn executable_covers_success_failures_and_post_failure_recovery() {
     assert_eq!(domain_error.document["error"]["kind"], "domain");
     assert_eq!(domain_error.document["error"]["code"], "empty-message");
     assert_eq!(domain_error.document["cell"]["disposition"], "released");
-    assert_fixed_and_clean(&domain_error.document, 1, 1);
+    assert_fixed_and_clean(&domain_error.document, 1, 1, 1);
 
     let timeout = invoke(
         &containment_capsule,
@@ -69,7 +69,7 @@ fn executable_covers_success_failures_and_post_failure_recovery() {
     assert_eq!(timeout.document["error"]["kind"], "platform");
     assert_eq!(timeout.document["error"]["code"], "deadline_exceeded");
     assert_eq!(timeout.document["cell"]["disposition"], "released");
-    assert_fixed_and_clean(&timeout.document, 1, 1);
+    assert_fixed_and_clean(&timeout.document, 1, 1, 1);
 
     let trap = invoke(
         &containment_capsule,
@@ -81,7 +81,7 @@ fn executable_covers_success_failures_and_post_failure_recovery() {
     assert_eq!(trap.document["error"]["kind"], "platform");
     assert_eq!(trap.document["error"]["code"], "guest_trap");
     assert_eq!(trap.document["cell"]["disposition"], "released");
-    assert_fixed_and_clean(&trap.document, 1, 1);
+    assert_fixed_and_clean(&trap.document, 1, 1, 1);
 
     let cancelled = invoke(
         &containment_capsule,
@@ -101,20 +101,55 @@ fn executable_covers_success_failures_and_post_failure_recovery() {
     assert_eq!(cancelled.document["outcome"], "cancelled");
     assert_eq!(cancelled.document["error"]["code"], "cancelled");
     assert_eq!(cancelled.document["cell"]["disposition"], "released");
-    assert_fixed_and_clean(&cancelled.document, 1, 1);
+    assert_fixed_and_clean(&cancelled.document, 1, 1, 1);
 
-    let recovery = invoke(
+    let recovery = verify_recovery(
         &containment_capsule,
         "healthy after contained failures",
-        &["--fuel", "1000000000000", "--memory-bytes", "16777216"],
+        &[
+            "--pool-capacity",
+            "1",
+            "--fuel",
+            "1000000000000",
+            "--memory-bytes",
+            "16777216",
+            "--activation-id",
+            "same-runtime-recovery",
+        ],
     );
     assert_exit(&recovery.output, EXIT_SUCCESS);
+    assert_eq!(
+        recovery.document["surface"],
+        "latentd.phase0-spike.verify-recovery"
+    );
     assert_eq!(recovery.document["outcome"], "success");
     assert_eq!(
         recovery.document["output"]["utf8"],
         "healthy after contained failures"
     );
-    assert_fixed_and_clean(&recovery.document, 1, 1);
+    let activations = recovery.document["recovery"]["activations"]
+        .as_array()
+        .expect("recovery report must expose both in-process activations");
+    assert_eq!(activations.len(), 2);
+    assert_eq!(activations[0]["phase"], "trap");
+    assert_eq!(activations[0]["activation"]["outcome"], "trap");
+    assert_eq!(activations[0]["activation"]["error"]["code"], "guest_trap");
+    assert_released_capacity_one_cell(&activations[0]["activation"]);
+    assert_eq!(activations[0]["runner"]["total_invocations"], 1);
+    assert_eq!(activations[0]["prepared_cache"]["entries"], 1);
+    assert_reclaimed_backend_resources(&activations[0]["backend_resources"]);
+
+    assert_eq!(activations[1]["phase"], "recovery");
+    assert_eq!(activations[1]["activation"]["outcome"], "success");
+    assert_eq!(
+        activations[1]["activation"]["output"]["utf8"],
+        "healthy after contained failures"
+    );
+    assert_released_capacity_one_cell(&activations[1]["activation"]);
+    assert_eq!(activations[1]["runner"]["total_invocations"], 2);
+    assert_eq!(activations[1]["prepared_cache"]["entries"], 1);
+    assert_reclaimed_backend_resources(&activations[1]["backend_resources"]);
+    assert_fixed_and_clean(&recovery.document, 1, 1, 2);
 
     let invalid_component = temporary.path().join("invalid-component.wasm");
     fs::write(&invalid_component, [0_u8, 1, 2, 3])
@@ -134,7 +169,7 @@ fn executable_covers_success_failures_and_post_failure_recovery() {
     );
     assert_eq!(invalid.document["cell"]["disposition"], "not_leased");
     assert_eq!(invalid.document["cell"]["pool_after"]["active_leases"], 0);
-    assert_fixed_and_clean(&invalid.document, 1, 1);
+    assert_fixed_and_clean(&invalid.document, 1, 1, 0);
 }
 
 struct Fixtures {
@@ -242,9 +277,17 @@ struct Invocation {
 }
 
 fn invoke(capsule: &Path, input: &str, extra_arguments: &[&str]) -> Invocation {
+    execute("invoke-once", capsule, input, extra_arguments)
+}
+
+fn verify_recovery(capsule: &Path, input: &str, extra_arguments: &[&str]) -> Invocation {
+    execute("verify-recovery", capsule, input, extra_arguments)
+}
+
+fn execute(command: &str, capsule: &Path, input: &str, extra_arguments: &[&str]) -> Invocation {
     let output = Command::new(env!("CARGO_BIN_EXE_latentd"))
         .arg("phase0-spike")
-        .arg("invoke-once")
+        .arg(command)
         .arg("--capsule")
         .arg(capsule)
         .arg("--input")
@@ -277,14 +320,27 @@ fn assert_exit(output: &Output, expected: i32) {
     );
 }
 
-fn assert_fixed_and_clean(document: &Value, workers: u64, capacity: u64) {
+fn assert_fixed_and_clean(document: &Value, workers: u64, capacity: u64, activation_count: usize) {
     assert_eq!(document["schema_version"], "latent.phase0.spike.result.v1");
     assert_eq!(document["production_ready"], false);
     assert_eq!(document["phase1_api_compatible"], false);
     assert_eq!(document["topology"]["runtime_workers"], workers);
     assert_eq!(document["topology"]["pool_capacity"], capacity);
     assert_eq!(document["topology"]["listener_socket_count"], 0);
-    assert_eq!(document["topology"]["unchanged"], true);
+    let before = &document["topology"]["before_component_load"];
+    assert_eq!(before["runtime_workers"], workers);
+    assert_eq!(before["pool_capacity"], capacity);
+    assert_eq!(before["listener_socket_count"], 0);
+    let after = document["topology"]["after_activations"]
+        .as_array()
+        .expect("topology must expose raw post-activation observations");
+    assert_eq!(after.len(), activation_count);
+    for observation in after {
+        assert_eq!(
+            observation, before,
+            "runtime worker, pool, or socket topology changed across an activation"
+        );
+    }
     assert_eq!(document["shutdown"]["clean"], true);
     assert_eq!(document["shutdown"]["runtime_stopped"], true);
     assert_eq!(document["shutdown"]["active_leases"], 0);
@@ -293,7 +349,11 @@ fn assert_fixed_and_clean(document: &Value, workers: u64, capacity: u64) {
     assert_eq!(document["shutdown"]["running_invocations"], 0);
     assert_eq!(document["shutdown"]["retained_log_entries"], 0);
     assert_eq!(document["shutdown"]["prepared_cache_entries"], 0);
-    let resources = document["shutdown"]["backend_resources"]
+    assert_reclaimed_backend_resources(&document["shutdown"]["backend_resources"]);
+}
+
+fn assert_reclaimed_backend_resources(resources: &Value) {
+    let resources = resources
         .as_object()
         .expect("backend resources must be an object");
     for (name, value) in resources {
@@ -301,4 +361,14 @@ fn assert_fixed_and_clean(document: &Value, workers: u64, capacity: u64) {
             assert_eq!(value, 0, "backend resource {name} must be reclaimed");
         }
     }
+}
+
+fn assert_released_capacity_one_cell(activation: &Value) {
+    assert_eq!(activation["cell"]["disposition"], "released");
+    let after = &activation["cell"]["pool_after"];
+    assert_eq!(after["capacity"], 1);
+    assert_eq!(after["available"], 1);
+    assert_eq!(after["active_leases"], 0);
+    assert_eq!(after["queue_depth"], 0);
+    assert_eq!(after["quarantined"], 0);
 }

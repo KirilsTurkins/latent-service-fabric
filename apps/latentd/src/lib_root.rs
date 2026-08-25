@@ -14,7 +14,7 @@
     clippy::needless_pass_by_value,
     clippy::single_match_else,
     clippy::too_many_arguments,
-    clippy::too_many_lines,
+    clippy::too_many_lines
 )]
 
 #[path = "lib.rs"]

@@ -43,7 +43,7 @@ tools/                 Pinned validation, generation, and compile-smoke tooling
 
 ## Intended binaries
 
-- `latentd`: data-plane node runtime. Its only current behavior is `phase0-spike invoke-once`, a finite local composition harness.
+- `latentd`: data-plane node runtime. Its only current behaviors are the finite local `phase0-spike invoke-once` harness and its `verify-recovery` containment proof.
 - `latent-control`: clustered control-plane application placeholder.
 - `latent`: future build, package, deployment, inspection, invocation, and benchmark CLI placeholder.
 
@@ -83,7 +83,7 @@ Run the complete local Phase 0 executable demonstration with:
 make phase0-spike-demo
 ```
 
-The command validates contracts, builds the real guest and runtime, exercises success and containment failures only through the `latentd` executable path, and finishes with one successful echo result. See [`docs/phase-0-spike.md`](docs/phase-0-spike.md) for the CLI, JSON schema, exit codes, cleanup proof, and limitations.
+The command validates contracts, builds the real guest and runtime, exercises success and containment failures only through the `latentd` executable path, includes a single-process trap-to-success recovery proof, and finishes with one successful echo result. See [`docs/phase-0-spike.md`](docs/phase-0-spike.md) for the CLI, JSON schema, exit codes, cleanup proof, and limitations.
 
 Generated bindings, parsed WIT output, Protobuf descriptors, and SDK compiler artifacts are isolated under Cargo `OUT_DIR` or `target/contracts/`; handwritten contract sources are never overwritten. See [`VALIDATION.md`](VALIDATION.md) for the checks performed.
 
