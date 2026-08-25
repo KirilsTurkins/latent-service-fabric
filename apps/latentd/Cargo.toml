@@ -7,6 +7,9 @@ license.workspace = true
 authors.workspace = true
 description = "Data-plane node runtime and explicit Phase 0 spike composition root."
 
+[lib]
+path = "src/lib_root.rs"
+
 [lints]
 workspace = true
 
