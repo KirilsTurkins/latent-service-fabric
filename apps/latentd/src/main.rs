@@ -1,5 +1,5 @@
 //! Data-plane node runtime entry point.
-//!
-//! This binary intentionally has no runtime behavior in the interface scaffold.
 
-fn main() {}
+fn main() -> std::process::ExitCode {
+    latentd::main_entry()
+}

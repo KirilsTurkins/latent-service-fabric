@@ -1,0 +1,89 @@
+name: Issue 23 validation
+
+on:
+  push:
+    branches:
+      - feat/phase-0-spike-harness
+  pull_request:
+    branches:
+      - development
+    paths:
+      - "apps/latentd/**"
+      - "crates/latent-activation/**"
+      - "crates/latent-node/**"
+      - "crates/latent-scheduler/**"
+      - "crates/latent-wasmtime/**"
+      - "examples/echo-contract/**"
+      - "tools/toolchain-smoke/**"
+      - "tools/build_echo_capsule.py"
+      - "tools/run_phase0_spike.sh"
+      - "tools/validate_contracts.sh"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "Makefile"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    name: Workspace and latentd spike
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt, clippy
+      - name: Normalize branch patch for review
+        run: |
+          cargo fmt --all
+          cargo generate-lockfile
+      - name: Upload normalized Rust patch
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-23-normalized-${{ github.sha }}
+          path: |
+            Cargo.lock
+            apps/latentd/Cargo.toml
+            apps/latentd/src/lib.rs
+            apps/latentd/src/main.rs
+            apps/latentd/tests/phase0_spike_e2e.rs
+          if-no-files-found: error
+          retention-days: 3
+      - name: Check formatting
+        run: cargo fmt --all --check
+      - name: Check complete workspace
+        run: cargo check --workspace --all-targets --all-features --locked
+      - name: Run Clippy on complete workspace
+        run: cargo clippy --workspace --all-targets --all-features --locked
+      - name: Run non-ignored workspace tests
+        run: cargo test --workspace --all-targets --all-features --locked
+
+  executable-spike:
+    name: Real executable Phase 0 spike
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+          cache: pip
+          cache-dependency-path: tools/requirements.lock
+      - name: Install repository validator dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@v1
+        with:
+          version: 1.254.0
+      - uses: bufbuild/buf-setup-action@v1
+        with:
+          version: 1.72.0
+      - name: Validate, build, exercise, and demonstrate the spike
+        env:
+          LSF_SPIKE_INPUT: issue-23 executable validation
+        run: make phase0-spike-demo

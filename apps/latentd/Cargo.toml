@@ -5,7 +5,26 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Data-plane node runtime entry point."
+description = "Data-plane node runtime and explicit Phase 0 spike composition root."
 
 [lints]
 workspace = true
+
+[dependencies]
+clap.workspace = true
+latent-activation = { path = "../../crates/latent-activation" }
+latent-artifacts = { path = "../../crates/latent-artifacts" }
+latent-core = { path = "../../crates/latent-core" }
+latent-executor = { path = "../../crates/latent-executor" }
+latent-manifest = { path = "../../crates/latent-manifest" }
+latent-node = { path = "../../crates/latent-node" }
+latent-routing = { path = "../../crates/latent-routing" }
+latent-scheduler = { path = "../../crates/latent-scheduler" }
+latent-wasmtime = { path = "../../crates/latent-wasmtime" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+
+[dev-dependencies]
+tempfile.workspace = true

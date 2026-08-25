@@ -1,7 +1,7 @@
 CARGO ?= cargo
 PYTHON ?= python3
 
-.PHONY: check guest-bindings echo-capsule echo-capsule-reproducibility fmt fmt-check clippy test schemas repository-tests contracts sdks validate tree
+.PHONY: check guest-bindings echo-capsule echo-capsule-reproducibility phase0-spike-demo fmt fmt-check clippy test schemas repository-tests contracts sdks validate tree
 
 check:
 	$(CARGO) check --workspace --all-targets --all-features --locked
@@ -15,6 +15,9 @@ echo-capsule:
 
 echo-capsule-reproducibility:
 	$(PYTHON) tools/build_echo_capsule.py --verify-reproducible
+
+phase0-spike-demo:
+	tools/run_phase0_spike.sh
 
 fmt:
 	$(CARGO) fmt --all
