@@ -4,7 +4,7 @@ Latent Service Fabric (LSF) is an interface-first research and engineering proje
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> This repository is an architecture and API scaffold. It intentionally contains no runtime, storage, networking, compiler, scheduler, or provider implementation yet.
+> Most of this repository remains an architecture and API scaffold. Phase 0 additionally contains a narrow, explicitly non-production executable spike for one local echo capsule; it does not imply Phase 1 API compatibility or production readiness.
 
 ## Core invariant
 
@@ -25,8 +25,8 @@ The number of operating-system processes, threads, sockets, and execution cells 
 ## Repository map
 
 ```text
-apps/                 Binary entry-point placeholders
-crates/               Rust architectural interfaces and data models
+apps/                 Binary entry points and the explicit latentd Phase 0 spike mode
+crates/               Rust architectural interfaces, data models, and Phase 0 runtime pieces
 wit/                  WIT packages for platform capabilities
 api/proto/            Protobuf service definitions
 schemas/              JSON Schemas for declarative resources
@@ -43,11 +43,11 @@ tools/                 Pinned validation, generation, and compile-smoke tooling
 
 ## Intended binaries
 
-- `latentd`: data-plane node runtime; standalone mode will embed control-plane modules.
-- `latent-control`: clustered control-plane application.
-- `latent`: build, package, deployment, inspection, invocation, and benchmark CLI.
+- `latentd`: data-plane node runtime. Its only current behaviors are the finite local `phase0-spike invoke-once` harness and its `verify-recovery` containment proof.
+- `latent-control`: clustered control-plane application placeholder.
+- `latent`: future build, package, deployment, inspection, invocation, and benchmark CLI placeholder.
 
-The current binaries are zero-behavior placeholders so that the intended workspace shape is explicit without implying an implementation.
+The `latentd` spike has no management API, public invocation listener, persistent catalog, deployment surface, or production operations contract.
 
 ## First implementation milestone
 
@@ -62,6 +62,8 @@ The first vertical slice will:
 7. drop all activation-owned state, and
 8. prove that registering dormant services does not change process, thread, socket, or cell counts.
 
+The Phase 0 spike currently proves the local component preparation, cell lease, contained echo invocation, cleanup, and machine-readable result portions of that slice. Routing, admission, trust, and standalone APIs remain later work.
+
 See [`docs/architecture/overview.md`](docs/architecture/overview.md), [`docs/api-surface.md`](docs/api-surface.md), and [`docs/testing/invariants.md`](docs/testing/invariants.md).
 
 ## Build and validation
@@ -74,6 +76,14 @@ python3.13 -m venv .venv
 python -m pip install --requirement tools/requirements.lock
 make validate
 ```
+
+Run the complete local Phase 0 executable demonstration with:
+
+```bash
+make phase0-spike-demo
+```
+
+The command validates contracts, builds the real guest and runtime, exercises success and containment failures only through the `latentd` executable path, includes a single-process trap-to-success recovery proof, and finishes with one successful echo result. See [`docs/phase-0-spike.md`](docs/phase-0-spike.md) for the CLI, JSON schema, exit codes, cleanup proof, and limitations.
 
 Generated bindings, parsed WIT output, Protobuf descriptors, and SDK compiler artifacts are isolated under Cargo `OUT_DIR` or `target/contracts/`; handwritten contract sources are never overwritten. See [`VALIDATION.md`](VALIDATION.md) for the checks performed.
 
