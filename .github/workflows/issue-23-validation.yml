@@ -1,9 +1,6 @@
 name: Issue 23 validation
 
 on:
-  push:
-    branches:
-      - feat/phase-0-spike-harness
   pull_request:
     branches:
       - development
@@ -36,26 +33,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
           components: rustfmt, clippy
-      - name: Normalize branch patch for review
-        run: |
-          cargo fmt --all
-          cargo generate-lockfile
-      - name: Upload normalized Rust patch
-        uses: actions/upload-artifact@v4
-        with:
-          name: issue-23-normalized-${{ github.sha }}
-          path: |
-            Cargo.lock
-            apps/latentd/Cargo.toml
-            apps/latentd/src/lib.rs
-            apps/latentd/src/main.rs
-            apps/latentd/tests/phase0_spike_e2e.rs
-          if-no-files-found: error
-          retention-days: 3
       - name: Check formatting
         run: cargo fmt --all --check
       - name: Check complete workspace
         run: cargo check --workspace --all-targets --all-features --locked
+      - name: Run strict Clippy on the spike crate
+        run: cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D warnings
       - name: Run Clippy on complete workspace
         run: cargo clippy --workspace --all-targets --all-features --locked
       - name: Run non-ignored workspace tests
