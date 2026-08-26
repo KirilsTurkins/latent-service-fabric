@@ -1,75 +1,91 @@
 # Validation baseline
 
-Updated on **2026-08-19** for the Phase 0 executable contract, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-26** for the completed Phase 0 executable feasibility gate.
 
-## Entry point
+## Entry points
 
-After installing the exact prerequisites in [`docs/development/toolchain.md`](docs/development/toolchain.md), a clean checkout is validated with:
+After installing the exact prerequisites in [`docs/development/toolchain.md`](docs/development/toolchain.md):
 
 ```bash
 python3.13 -m venv .venv
 . .venv/bin/activate
 python -m pip install --requirement tools/requirements.lock
+```
+
+Use the general repository validation for contract/toolchain/SDK source consistency:
+
+```bash
 make validate
 ```
 
-The command is intentionally non-mutating for authoritative sources. Formatting is checked with `cargo fmt --all --check`; generated bindings, descriptors, and capsule artifacts are written below `target/` or Cargo `OUT_DIR`.
-
-## What is validated
-
-- The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph. Adding Tokio to `latent-scheduler` changes only that workspace package's dependency list; existing registry checksums remain byte-for-byte unchanged.
-- The pinned Rust toolchain, MSRV, target, direct dependency versions, Python requirements, and CI tool versions remain synchronized.
-- Every Rust workspace target compiles, passes Clippy, and runs its tests using the committed lockfile.
-- The fixed execution-cell pool tests cover startup-fixed capacity, concurrent acquisition limits, bounded FIFO rejection, duplicate activations and returns, modified and foreign lease identities, explicit cancellation, deterministic deadline expiry with an injected wall clock, queued-future drop before release, explicit and drop-triggered quarantine, unaccepted handoff reclamation, token-sequence exhaustion, and barrier-controlled multi-threaded release/cancellation and release/task-abort races.
-- An integration test implements `CellPool` outside `latent-scheduler` using only the original required trait methods, mints an affine lease through `CellLease::new`, and proves that the issuer-retained `CellLeaseLifecycle` capability can disposition or observe abandonment without access to `FixedCellPool` internals.
-- The runtime WIT world is staged with all platform dependencies; every platform and example WIT package is parsed by `wasm-tools`; generated Wasmtime host bindings and `wit-bindgen` guest bindings compile.
-- The Rust echo guest returns normal input unchanged and its shared implementation tests cover `empty-message`, `message-too-large`, the exact 65,536-byte boundary, UTF-8 byte accounting, and bounded activation-ID logging data.
-- The echo guest is built as a `wasm32-wasip2` Component Model artifact with generated WIT bindings. `wasm-tools validate` accepts it, and the extracted root world must import exactly `latent:context/context@0.1.0` and `latent:log/log@0.1.0` and export exactly `examples:echo/api@0.1.0`.
-- The extracted component interface contains the exported `echo` function and both declared domain-error variants. Any ambient WASI import, missing import, or unexpected export fails validation.
-- Two isolated clean echo builds must be byte-identical. A generated capsule manifest, build receipt, and SHA-256 file record stable metadata, local-build trust, the documented reproducibility boundary, and the computed component digest beneath `target/capsules/echo/`.
-- All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
-- All six JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, binding, policy, and trigger examples validate against their corresponding schemas.
-- Rust, Go, TypeScript, Java, .NET, and C SDK interface surfaces compile or pass syntax checks.
-- SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.8 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
-- Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
-- Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
-
-## Echo fixture commands
-
-Build and validate one generated fixture:
+Use the complete Phase 0 feasibility gate for the executable/runtime proof:
 
 ```bash
-make echo-capsule
+make phase0-gate
 ```
 
-Run the two-build digest stability check explicitly:
+PR CI uses `make phase0-gate-smoke`, which executes the same scenarios with smaller deterministic benchmark sample counts. Both commands are non-mutating for authoritative sources; generated artifacts remain under `target/` or Cargo `OUT_DIR`.
 
-```bash
-make echo-capsule-reproducibility
-```
+## Phase 0 gate sequence
 
-The artifact remains generated rather than checked in. The generated `capsule.json` starts from the checked-in contract example but replaces its placeholder digest with the actual `sha256:` content digest and marks the artifact as an unsigned local clean build.
+`tools/run_phase0_gate.sh` is the single clean-checkout sequence required by issue #25. It fails fast and performs, in order:
 
-## Fixed cell-pool command
+1. `cargo fmt --all --check`;
+2. `cargo check --workspace --all-targets --all-features --locked`;
+3. `cargo clippy --workspace --all-targets --all-features --locked`;
+4. `cargo test --workspace --all-targets --all-features --locked`;
+5. `tools/run_phase0_spike.sh`, which runs repository-contract validation, builds the echo and containment components, runs the ignored real-executable E2E suite, and finishes through `latentd phase0-spike invoke-once`;
+6. `tools/run_phase0_baselines.sh`, which repeats mandatory real-executable probes and runs the retained resource/containment/saturation measurements; and
+7. a gate receipt check that rejects a baseline unless all required issue-24 invariants are present and passing and all required terminal outcomes were observed.
 
-Run the focused scheduler test target explicitly:
+Full-profile output is written to `target/phase0-gate/full/`; smoke output is written to `target/phase0-gate/smoke/`. Each contains `baseline/raw-results.json`, `baseline/BASELINE.md`, and `gate-summary.json`.
 
-```bash
-cargo test -p latent-scheduler --all-targets --locked
-```
+## What repository-contract validation covers
 
-The pool itself creates no runtime, operating-system thread, listener, socket, connection, component instance, store, or memory. Queued acquisition and deadline timers execute on the caller-provided shared Tokio runtime.
+`tools/validate_contracts.sh` validates the authoritative repository and contract layer before runtime execution:
 
-## CI jobs
+- pinned Rust/MSRV/Component Model/Buf/Python/dependency versions and the committed `Cargo.lock`;
+- Rust workspace structure and source consistency;
+- all platform/example WIT packages, including generated Wasmtime host bindings and `wit-bindgen` guest bindings;
+- the real Rust echo guest, its domain-error behavior, Component Model interface, reproducible two-build digest, generated capsule manifest, and absence of ambient WASI imports;
+- the containment and oversized-log component fixtures used by runtime tests;
+- real `latent-wasmtime` echo/containment integration tests through generated bindings;
+- all Protobuf files through Buf and a deterministic descriptor set;
+- all six JSON Schemas plus checked-in examples; and
+- repository validator/tool tests.
 
-The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.
+`make validate` additionally compiles/syntax-checks the Rust, Go, TypeScript, Java, .NET, and C SDK surfaces with the pinned tool identities documented by the repository.
 
-After a successful contracts job, the workflow prints `build.json` and `sha256.txt` and uploads the generated component, capsule metadata, extracted interface, build receipt, and digest as `phase-0-echo-capsule-${GITHUB_SHA}` for 14 days. This retained artifact is reproducibility evidence for the locally trusted fixture; it is not a signed or distributable release artifact.
+## What the executable gate covers
 
-## Allocation boundary
+The ignored `apps/latentd/tests/phase0_spike_e2e.rs` test is only enabled by the spike/gate command because it requires the external Component Model toolchain. It launches the real `latentd` binary and proves:
 
-Contract and capsule validation starts compiler and validator commands only. It does not start a service process, construct a Wasmtime engine or store, create an async runtime or worker pool, open a listener, lease an execution cell, or reserve capsule-owned execution state. The fixed pool stores only node-owned slot identifiers and generation counters while idle; activation and tenant identity exist only in bounded waiters and active leases.
+- successful echo output through generated WIT bindings and real Wasmtime Component Model invocation;
+- declared `empty-message` domain error mapping;
+- invalid component bytes fail as invalid component/configuration without leasing a cell;
+- guest timeout, guest trap, and explicit cancellation return the expected terminal classifications;
+- a trap followed by a healthy invocation in the same composition recovers correctly;
+- every executable result reports released/not-leased capacity, no retained activation-owned runtime state, unchanged configured topology, zero listeners, and clean shutdown.
+
+The baseline runner adds memory pressure, bounded queue saturation, repeated cause-specific post-failure recovery, cold/warm latency distributions, activation phase timing, fixed-pool throughput, cache bounds, RSS/file-descriptor observations, and explicit post-release checks.
+
+## Checked-in reference evidence
+
+Issue #24 committed the full-profile evidence at:
+
+- [`benchmarks/phase0/raw-results.json`](benchmarks/phase0/raw-results.json)
+- [`benchmarks/phase0/BASELINE.md`](benchmarks/phase0/BASELINE.md)
+
+All 19 invariant checks in that run are `PASS`. The report records the environment/configuration required to compare runs. See [`docs/phase-0-baselines.md`](docs/phase-0-baselines.md) for measurement methodology and [`docs/phase-0-completion.md`](docs/phase-0-completion.md) for the gate interpretation and Phase 1 handoff.
+
+## Resource/topology interpretation
+
+The measured composition uses a node-fixed two-cell pool and two configured runtime workers. Process count remains one, listener/open-socket counts remain zero, and no per-service process/thread/socket/cell is introduced. A bounded Wasmtime epoch-interruption helper thread appears after component preparation, so raw OS thread count may increase by one while configured runtime workers remain fixed; the reference run returns to one process thread after runtime shutdown.
+
+Every measured activation terminal path returns its lease or records the expected pre-lease rejection. After each sample there is no active waiter, cancellation registration, invocation, store, host state, component instance, temporary buffer, cancellation probe, retained log, quarantine, or unbounded cache growth. Final explicit release clears the prepared cache and all live backend resource counts return to zero.
+
+RSS validation intentionally checks bounded range/net growth after warm-up rather than byte-identical return because allocators and Wasmtime may retain bounded arenas. Linux `/proc` is currently required for the strict process/resource reference probe.
 
 ## Scope
 
-Passing this baseline establishes source consistency, guest behavior, component-interface validity, fixed cell-pool accounting, and same-boundary build reproducibility. It does not establish runtime invocation correctness, performance, Wasmtime isolation, cross-platform byte identity, wire compatibility of future generated clients, or the complete zero-idle-allocation invariant under execution. Those require the remaining Phase 0 vertical slice and the conformance and benchmark suites described under `tests/` and `benchmarks/`.
+Passing the Phase 0 gate establishes the finite local feasibility claims recorded in [`docs/phase-0-completion.md`](docs/phase-0-completion.md). It does not establish production security, stable APIs, routing/admission, generic multi-service dispatch, persistent deployment management, durable state/effects, remote-call equivalence, cluster behavior, production telemetry/SLOs, long-duration leak freedom, cross-platform resource-probe parity, or the 100,000 dormant-service invariant.

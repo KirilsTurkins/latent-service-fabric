@@ -4,7 +4,7 @@ Latent Service Fabric (LSF) is an interface-first research and engineering proje
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Most of this repository remains an architecture and API scaffold. Phase 0 additionally contains a narrow, explicitly non-production executable spike for one local echo capsule; it does not imply Phase 1 API compatibility or production readiness.
+> Phase 0 is complete as a narrow feasibility gate. The repository contains a real local echo-component spike and measured containment/resource evidence, but most product surfaces remain architecture/API scaffold. Phase 0 is not Phase 1 API compatibility or production readiness.
 
 ## Core invariant
 
@@ -37,38 +37,29 @@ rfcs/                  Future design proposals
 research/              Experimental tracks kept outside the production core
 docs/                  Architecture, protocol, operations, and security documentation
 tests/                 Conformance, isolation, chaos, and leak-test specifications
-benchmarks/            Benchmark definitions for validating LSF claims
-tools/                 Pinned validation, generation, and compile-smoke tooling
+benchmarks/            Benchmark definitions and checked-in Phase 0 evidence
+tools/                 Pinned validation, generation, spike, benchmark, and gate tooling
 ```
 
 ## Intended binaries
 
-- `latentd`: data-plane node runtime. Its only current behaviors are the finite local `phase0-spike invoke-once` harness and its `verify-recovery` containment proof.
+- `latentd`: data-plane node runtime. Its only current executable behavior is the finite local `phase0-spike` harness used by the Phase 0 proof.
 - `latent-control`: clustered control-plane application placeholder.
 - `latent`: future build, package, deployment, inspection, invocation, and benchmark CLI placeholder.
 
-The `latentd` spike has no management API, public invocation listener, persistent catalog, deployment surface, or production operations contract.
+The `latentd` spike has no management API, public invocation listener, persistent catalog, deployment surface, generic multi-service dispatch, or production operations contract.
 
-## First implementation milestone
+## Phase 0 result
 
-The first vertical slice will:
+Phase 0 proved one real Rust echo component can be built with generated WIT bindings, loaded and invoked through Wasmtime Component Model bindings, run through a fixed generic cell pool, and reclaimed after success, declared domain error, trap, timeout, cancellation, memory pressure, and bounded queue saturation. The checked-in full baseline also records fixed configured workers/process/socket/cell topology and bounded resource growth for the measured run.
 
-1. load one signed or locally trusted capsule,
-2. resolve one route,
-3. admit one invocation,
-4. lease one generic execution cell,
-5. invoke one WIT export,
-6. return one result,
-7. drop all activation-owned state, and
-8. prove that registering dormant services does not change process, thread, socket, or cell counts.
+It did **not** prove routing, admission, deployment management, production trust/security, durable state/effects, remote invocation, cluster operation, production SLOs, or the 100,000 dormant-service invariant.
 
-The Phase 0 spike currently proves the local component preparation, cell lease, contained echo invocation, cleanup, and machine-readable result portions of that slice. Routing, admission, trust, and standalone APIs remain later work.
-
-See [`docs/architecture/overview.md`](docs/architecture/overview.md), [`docs/api-surface.md`](docs/api-surface.md), and [`docs/testing/invariants.md`](docs/testing/invariants.md).
+See [`docs/phase-0-completion.md`](docs/phase-0-completion.md) for the gate decision and Phase 1 handoff, [`docs/architecture/overview.md`](docs/architecture/overview.md) for the architecture boundary, and [`docs/testing/invariants.md`](docs/testing/invariants.md) for proven versus future invariants.
 
 ## Build and validation
 
-The Phase 0 build baseline pins Rust, Component Model, Protobuf, schema, and SDK tools. After installing the prerequisites documented in [`docs/development/toolchain.md`](docs/development/toolchain.md), validate a clean checkout with:
+The Phase 0 build baseline pins Rust, Component Model, Protobuf, schema, and SDK tools. After installing the prerequisites in [`docs/development/toolchain.md`](docs/development/toolchain.md), run the general repository validation with:
 
 ```bash
 python3.13 -m venv .venv
@@ -77,15 +68,21 @@ python -m pip install --requirement tools/requirements.lock
 make validate
 ```
 
-Run the complete local Phase 0 executable demonstration with:
+Run the complete Phase 0 completion gate with:
+
+```bash
+make phase0-gate
+```
+
+That single command performs workspace Rust checks, contract/component validation, the real executable spike E2E and containment/recovery suite, then the full resource/baseline profile. Evidence is written under `target/phase0-gate/full/`; the checked-in reference evidence remains under [`benchmarks/phase0/`](benchmarks/phase0/). PR CI runs the same gate with smaller benchmark sample counts via `make phase0-gate-smoke`.
+
+For only the executable demonstration, use:
 
 ```bash
 make phase0-spike-demo
 ```
 
-The command validates contracts, builds the real guest and runtime, exercises success and containment failures only through the `latentd` executable path, includes a single-process trap-to-success recovery proof, and finishes with one successful echo result. See [`docs/phase-0-spike.md`](docs/phase-0-spike.md) for the CLI, JSON schema, exit codes, cleanup proof, and limitations.
-
-Generated bindings, parsed WIT output, Protobuf descriptors, and SDK compiler artifacts are isolated under Cargo `OUT_DIR` or `target/contracts/`; handwritten contract sources are never overwritten. See [`VALIDATION.md`](VALIDATION.md) for the checks performed.
+Generated bindings, parsed WIT output, Protobuf descriptors, capsule artifacts, and gate output are isolated under Cargo `OUT_DIR` or `target/`; handwritten contract sources are never overwritten. See [`VALIDATION.md`](VALIDATION.md) for the exact validation layers.
 
 ## License
 
