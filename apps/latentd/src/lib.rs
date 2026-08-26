@@ -9,41 +9,35 @@
 
 #![forbid(unsafe_code)]
 
-use std::collections::BTreeMap;
+#[cfg(target_os = "linux")]
 use std::fs;
 use std::io::{self, Write as _};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::ExitCode;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use clap::{error::ErrorKind, Args, Parser, Subcommand};
-use latent_activation::{ActivationEnvelope, ActivationManager, ActivationOutcome, TraceContext};
-use latent_artifacts::{ArtifactDescriptor, CapsuleArtifact};
+use latent_activation::{ActivationManager, ActivationOutcome};
 use latent_core::{
-    ActivationId, ActivationTerminalState, ArtifactReference, BudgetConsumption, CapabilityId,
-    ContractId, ErrorDetail, FunctionId, InvocationPrincipal, Metadata, NodeId, PlatformError,
-    PlatformErrorCode, PrincipalKind, ReleaseDigest, ResourceBudget, ServiceId, SpanId, TenantId,
-    TraceId,
+    ActivationId, ActivationTerminalState, BudgetConsumption, ErrorDetail, Metadata, NodeId,
+    PlatformError, PlatformErrorCode,
 };
-use latent_executor::{BoundImport, ExecutionBackend, PreparedComponent};
-use latent_manifest::{
-    CapsuleManifest, ContractExport, ContractImport, ExecutionBackendKind, ExecutionRequirements,
-    ObjectMetadata, StateModel, ThreadingModel,
-};
-use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig};
-use latent_routing::InvocationTarget;
-use latent_scheduler::{CellClass, CellPool, CellPoolSnapshot, FixedCellPool, FixedCellPoolConfig};
+use latent_executor::{ExecutionBackend, PreparedComponent};
+use latent_manifest::CapsuleManifest;
+use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner};
+use latent_scheduler::{CellClass, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
-    CapturedLog, Phase0WasmtimeBackend, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory,
-    PreparedCacheSnapshot, RuntimeResourceSnapshot, CONTEXT_IMPORT, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
-    ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, LOG_IMPORT,
+    CapturedLog, Phase0WasmtimeBackend, PreparedCacheSnapshot, RuntimeResourceSnapshot,
+    ECHO_DOMAIN_ERROR_MEDIA_TYPE,
 };
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::Value;
-use sha2::{Digest as _, Sha256};
-use tokio::runtime::Builder;
+
+use crate::phase0_composition::{
+    self, Phase0InvocationConfig, Phase0LoadedArtifact, Phase0PreparationConfig,
+    Phase0RuntimeConfig, Phase0RuntimeWorkerMonitor,
+};
 
 pub const EXIT_SUCCESS: u8 = 0;
 pub const EXIT_DOMAIN_ERROR: u8 = 10;
@@ -66,8 +60,6 @@ const MAX_RUNTIME_WORKERS: usize = 64;
 const MAX_POOL_CAPACITY: u32 = 4096;
 const MAX_QUEUE_CAPACITY: u32 = 65_536;
 const MAX_COMPONENT_LIMIT_BYTES: usize = 1024 * 1024 * 1024;
-const EPOCH_TICK_INTERVAL_MILLIS: u64 = 1;
-const RUNTIME_WORKER_START_TIMEOUT_MILLIS: u64 = 1_000;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -562,27 +554,7 @@ struct ProcessReport {
     exit_code: u8,
 }
 
-#[derive(Clone, Debug, Default)]
-struct RuntimeTopologyMonitor {
-    worker_threads_started: Arc<AtomicUsize>,
-    worker_threads_stopped: Arc<AtomicUsize>,
-}
-
-impl RuntimeTopologyMonitor {
-    fn worker_started(&self) {
-        self.worker_threads_started.fetch_add(1, Ordering::AcqRel);
-    }
-
-    fn worker_stopped(&self) {
-        self.worker_threads_stopped.fetch_add(1, Ordering::AcqRel);
-    }
-
-    fn active_workers(&self) -> usize {
-        self.worker_threads_started
-            .load(Ordering::Acquire)
-            .saturating_sub(self.worker_threads_stopped.load(Ordering::Acquire))
-    }
-}
+type RuntimeTopologyMonitor = Phase0RuntimeWorkerMonitor;
 
 struct CompletedInvocation {
     activation: ActivationReport,
@@ -595,7 +567,7 @@ struct CompletedInvocation {
 }
 
 struct PreparedComposition {
-    loaded: LoadedArtifact,
+    loaded: Phase0LoadedArtifact,
     backend: Arc<Phase0WasmtimeBackend>,
     prepared: PreparedComponent,
     cache_after_prepare: PreparedCacheSnapshot,
@@ -736,50 +708,27 @@ struct RuntimeComposition {
 fn construct_runtime_composition(
     config: &ValidatedConfig,
 ) -> Result<RuntimeComposition, Box<ProcessReport>> {
-    let monitor = RuntimeTopologyMonitor::default();
-    let started_monitor = monitor.clone();
-    let stopped_monitor = monitor.clone();
-    let runtime = match Builder::new_multi_thread()
-        .worker_threads(config.runtime_workers)
-        .thread_name("latentd-phase0-worker")
-        .on_thread_start(move || started_monitor.worker_started())
-        .on_thread_stop(move || stopped_monitor.worker_stopped())
-        .enable_time()
-        .build()
-    {
-        Ok(runtime) => runtime,
+    let shared = match phase0_composition::construct_runtime_composition(&Phase0RuntimeConfig {
+        node_id: NodeId(SPIKE_NODE_ID.to_owned()),
+        pool_capacity: config.pool_capacity,
+        pool_queue_capacity: config.pool_queue_capacity,
+        runtime_workers: config.runtime_workers,
+    }) {
+        Ok(composition) => composition,
         Err(error) => {
             return Err(Box::new(platform_uninitialized_report(
                 &config.activation_id.0,
-                spike_error(
-                    PlatformErrorCode::Internal,
-                    format!("failed to construct the fixed Tokio runtime: {error}"),
-                    "phase0-spike.runtime-build-failed",
-                    [("runtime_workers", config.runtime_workers.to_string())],
-                ),
+                error,
                 EXIT_INTERNAL_SPIKE_FAILURE,
                 "internal_spike_failure",
             )));
         }
     };
-
-    let pool = match FixedCellPool::new(FixedCellPoolConfig::new(
-        NodeId(SPIKE_NODE_ID.to_owned()),
-        CellClass::Standard,
-        config.pool_capacity,
-        config.pool_queue_capacity,
-    )) {
-        Ok(pool) => Arc::new(pool),
-        Err(error) => {
-            drop(runtime);
-            return Err(Box::new(platform_uninitialized_report(
-                &config.activation_id.0,
-                error,
-                EXIT_INVALID_COMPONENT_OR_CONFIGURATION,
-                "invalid_component_or_configuration",
-            )));
-        }
-    };
+    let crate::phase0_composition::Phase0RuntimeComposition {
+        runtime,
+        pool,
+        workers: monitor,
+    } = shared;
 
     let baseline = match runtime.block_on(wait_for_runtime_topology(
         &monitor,
@@ -820,74 +769,41 @@ async fn prepare_composition(
     config: &ValidatedConfig,
     pool: &Arc<FixedCellPool>,
 ) -> Result<PreparedComposition, PreparationFailure> {
-    let loaded = match load_artifact(config) {
-        Ok(loaded) => loaded,
-        Err(error) => return Err(empty_preparation_failure(config, 0, error)),
-    };
-    if let Err(error) = validate_requested_budget(config, &loaded.artifact.manifest) {
-        return Err(empty_preparation_failure(
-            config,
-            loaded.component_bytes,
-            error,
-        ));
-    }
-
-    let declared_budget = &loaded.artifact.manifest.execution.resource_budget_ceiling;
-    let wasmtime_config = Phase0WasmtimeConfig {
-        maximum_component_bytes: config.component_max_bytes,
-        maximum_memory_bytes: declared_budget.memory_bytes,
-        maximum_fuel: declared_budget.cpu_fuel,
-        prepared_cache_maximum_entries: config.prepared_cache_entries,
-        prepared_cache_maximum_source_bytes: config.prepared_cache_bytes,
-        invocation_log_maximum_entries: config.log_max_entries,
-        invocation_log_maximum_bytes: config.log_max_bytes,
-        retained_log_maximum_entries: config.log_max_entries,
-        retained_log_maximum_bytes: config.log_max_bytes,
-        epoch_tick_interval_millis: EPOCH_TICK_INTERVAL_MILLIS,
-        ..Phase0WasmtimeConfig::default()
-    };
-    let factory = match Phase0WasmtimeEngineFactory::new(wasmtime_config) {
-        Ok(factory) => factory,
-        Err(error) => {
-            return Err(empty_preparation_failure(
-                config,
-                loaded.component_bytes,
-                error,
-            ))
-        }
-    };
-    let preparation_key =
-        factory.preparation_key(loaded.artifact.descriptor.release_digest.clone());
-    let backend = Arc::new(factory.create_backend_instance());
-    drop(factory);
-
-    let prepared = match backend.prepare(&loaded.artifact, &preparation_key).await {
-        Ok(prepared) => prepared,
-        Err(error) => {
-            let resources = backend.resource_snapshot();
-            let cache = backend.cache_snapshot();
-            backend.log_sink().clear();
-            return Err(PreparationFailure {
-                component_bytes: loaded.component_bytes,
-                cache_after_prepare: cache.clone(),
-                cache_after_release: cache,
-                resources,
-                error,
-            });
-        }
-    };
-    let cache_after_prepare = backend.cache_snapshot();
+    let prepared_backend =
+        match phase0_composition::prepare_phase0_backend(&Phase0PreparationConfig {
+            capsule: config.capsule.clone(),
+            component: config.component.clone(),
+            component_maximum_bytes: config.component_max_bytes,
+            prepared_cache_maximum_entries: config.prepared_cache_entries,
+            prepared_cache_maximum_bytes: config.prepared_cache_bytes,
+            invocation_log_maximum_entries: config.log_max_entries,
+            invocation_log_maximum_bytes: config.log_max_bytes,
+            retained_log_maximum_entries: config.log_max_entries,
+            retained_log_maximum_bytes: config.log_max_bytes,
+            requested_memory_bytes: config.memory_bytes,
+            requested_fuel: config.fuel,
+        })
+        .await
+        {
+            Ok(prepared) => prepared,
+            Err(error) => return Err(empty_preparation_failure(config, 0, error)),
+        };
+    let crate::phase0_composition::Phase0PreparedBackend {
+        loaded,
+        backend,
+        prepared,
+        cache_after_prepare,
+        timings: _,
+    } = prepared_backend;
 
     let backend_for_runner: Arc<dyn ExecutionBackend> = backend.clone();
     let pool_for_runner: Arc<dyn CellPool> = pool.clone();
-    let runner = match Phase0ActivationRunner::new(
-        Phase0ActivationRunnerConfig::default(),
+    let runner = match phase0_composition::create_phase0_activation_runner(
         pool_for_runner,
         backend_for_runner,
         prepared.clone(),
-        bound_imports(),
     ) {
-        Ok(runner) => Arc::new(runner),
+        Ok(runner) => runner,
         Err(error) => {
             let release_error = backend.release(prepared).await.err();
             let error = release_error.map_or(error, |release_error| {
@@ -1216,7 +1132,22 @@ async fn invoke_prepared(
                 [("timeout_ms", config.timeout_ms.to_string())],
             )
         })?;
-    let envelope = activation_envelope(config, manifest, deadline);
+    let envelope = phase0_composition::phase0_activation_envelope(
+        manifest,
+        &Phase0InvocationConfig {
+            activation_id: config.activation_id.clone(),
+            input: &config.input,
+            memory_bytes: config.memory_bytes,
+            fuel: config.fuel,
+            deadline_unix_millis: deadline,
+            surface: config.surface,
+            mode: spike_mode_name(config.surface),
+            principal_subject: "phase0-spike-user",
+            default_tenant: "phase0-spike",
+            trace_id: SPIKE_TRACE_ID,
+            span_id: SPIKE_SPAN_ID,
+        },
+    );
 
     let started = Instant::now();
     let invocation = runner.invoke(envelope);
@@ -1616,26 +1547,8 @@ async fn wait_for_runtime_topology(
     pool: &FixedCellPool,
     expected_workers: usize,
 ) -> Result<TopologyFingerprintReport, PlatformError> {
-    let deadline =
-        tokio::time::Instant::now() + Duration::from_millis(RUNTIME_WORKER_START_TIMEOUT_MILLIS);
-    loop {
-        if monitor.active_workers() == expected_workers {
-            return observe_topology(monitor, pool);
-        }
-        if tokio::time::Instant::now() >= deadline {
-            return Err(spike_error(
-                PlatformErrorCode::Internal,
-                "fixed Tokio runtime did not start its configured worker count",
-                "phase0-spike.runtime-worker-observation-failed",
-                [
-                    ("expected_workers", expected_workers.to_string()),
-                    ("observed_workers", monitor.active_workers().to_string()),
-                ],
-            ));
-        }
-        tokio::task::yield_now().await;
-        tokio::time::sleep(Duration::from_millis(1)).await;
-    }
+    phase0_composition::wait_for_runtime_workers(monitor, expected_workers).await?;
+    observe_topology(monitor, pool)
 }
 
 fn record_topology_after_activation(
@@ -2066,442 +1979,10 @@ fn emit_report(report: ProcessReport) -> ExitCode {
     ExitCode::from(report.exit_code)
 }
 
-#[derive(Debug)]
-struct LoadedArtifact {
-    artifact: CapsuleArtifact,
-    component_bytes: u64,
-}
-
-fn load_artifact(config: &ValidatedConfig) -> Result<LoadedArtifact, PlatformError> {
-    let manifest_path = if config.capsule.is_dir() {
-        config.capsule.join("capsule.json")
-    } else {
-        config.capsule.clone()
-    };
-    if !manifest_path.is_file() {
-        return Err(input_error(
-            format!(
-                "capsule manifest is not a readable file: {}",
-                manifest_path.display()
-            ),
-            "phase0-spike.capsule-not-found",
-            [("capsule", manifest_path.display().to_string())],
-        ));
-    }
-
-    let manifest_bytes = fs::read(&manifest_path).map_err(|error| {
-        input_error(
-            format!("failed to read capsule manifest: {error}"),
-            "phase0-spike.capsule-read-failed",
-            [("capsule", manifest_path.display().to_string())],
-        )
-    })?;
-    let document: CapsuleDocument = serde_json::from_slice(&manifest_bytes).map_err(|error| {
-        input_error(
-            format!("capsule manifest is not valid JSON for the spike: {error}"),
-            "phase0-spike.capsule-decode-failed",
-            [("capsule", manifest_path.display().to_string())],
-        )
-    })?;
-    let manifest = document.into_manifest()?;
-    let base_directory = manifest_path.parent().unwrap_or_else(|| Path::new("."));
-    let component_path = match &config.component {
-        Some(path) => path.clone(),
-        None => manifest
-            .metadata
-            .annotations
-            .get("latent.dev/artifact")
-            .map(|path| base_directory.join(path))
-            .ok_or_else(|| {
-                input_error(
-                    "--component is required when the capsule lacks latent.dev/artifact",
-                    "phase0-spike.component-path-missing",
-                    [("capsule", manifest_path.display().to_string())],
-                )
-            })?,
-    };
-    if !component_path.is_file() {
-        return Err(input_error(
-            format!(
-                "component is not a readable file: {}",
-                component_path.display()
-            ),
-            "phase0-spike.component-not-found",
-            [("component", component_path.display().to_string())],
-        ));
-    }
-
-    let metadata = fs::metadata(&component_path).map_err(|error| {
-        input_error(
-            format!("failed to inspect component file: {error}"),
-            "phase0-spike.component-inspection-failed",
-            [("component", component_path.display().to_string())],
-        )
-    })?;
-    let component_bytes = metadata.len();
-    let maximum = u64::try_from(config.component_max_bytes).unwrap_or(u64::MAX);
-    if component_bytes == 0 || component_bytes > maximum {
-        return Err(input_error(
-            "component size is zero or exceeds --component-max-bytes",
-            "phase0-spike.component-size-rejected",
-            [
-                ("component_bytes", component_bytes.to_string()),
-                ("component_max_bytes", maximum.to_string()),
-            ],
-        ));
-    }
-    let prepared_cache_maximum = u64::try_from(config.prepared_cache_bytes).unwrap_or(u64::MAX);
-    if component_bytes > prepared_cache_maximum {
-        return Err(configuration_error(
-            "component cannot fit in the bounded prepared cache",
-            [
-                ("component_bytes", component_bytes.to_string()),
-                ("prepared_cache_bytes", prepared_cache_maximum.to_string()),
-            ],
-        ));
-    }
-
-    let bytes = fs::read(&component_path).map_err(|error| {
-        input_error(
-            format!("failed to read component file: {error}"),
-            "phase0-spike.component-read-failed",
-            [("component", component_path.display().to_string())],
-        )
-    })?;
-    let actual_digest = component_digest(&bytes);
-    if manifest.component_digest.0 != actual_digest {
-        return Err(input_error(
-            "component digest does not match capsule metadata",
-            "phase0-spike.component-digest-mismatch",
-            [
-                ("expected", manifest.component_digest.0.clone()),
-                ("actual", actual_digest),
-            ],
-        ));
-    }
-
-    let size_bytes = u64::try_from(bytes.len()).map_err(|_| {
-        input_error(
-            "component size cannot be represented by the artifact descriptor",
-            "phase0-spike.component-size-overflow",
-            std::iter::empty::<(&str, String)>(),
-        )
-    })?;
-    let descriptor = ArtifactDescriptor {
-        reference: ArtifactReference(format!("file://{}", component_path.display())),
-        release_digest: manifest.component_digest.clone(),
-        media_type: "application/vnd.wasm.component.v1+wasm".to_owned(),
-        size_bytes,
-        publisher: None,
-        layers: Vec::new(),
-        annotations: manifest.metadata.annotations.clone(),
-    };
-
-    Ok(LoadedArtifact {
-        artifact: CapsuleArtifact {
-            descriptor,
-            manifest,
-            contracts: Vec::new(),
-            component_bytes: bytes,
-        },
-        component_bytes: size_bytes,
-    })
-}
-
-fn validate_requested_budget(
-    config: &ValidatedConfig,
-    manifest: &CapsuleManifest,
-) -> Result<(), PlatformError> {
-    let declared = &manifest.execution.resource_budget_ceiling;
-    if declared.memory_bytes == 0 || declared.cpu_fuel == 0 {
-        return Err(input_error(
-            "capsule declares a zero memory or fuel ceiling",
-            "phase0-spike.invalid-capsule-budget",
-            [
-                ("declared_memory_bytes", declared.memory_bytes.to_string()),
-                ("declared_cpu_fuel", declared.cpu_fuel.to_string()),
-            ],
-        ));
-    }
-    if config.memory_bytes > declared.memory_bytes || config.fuel > declared.cpu_fuel {
-        return Err(configuration_error(
-            "requested invocation budget exceeds the capsule-declared ceiling",
-            [
-                ("requested_memory_bytes", config.memory_bytes.to_string()),
-                ("declared_memory_bytes", declared.memory_bytes.to_string()),
-                ("requested_cpu_fuel", config.fuel.to_string()),
-                ("declared_cpu_fuel", declared.cpu_fuel.to_string()),
-            ],
-        ));
-    }
-    Ok(())
-}
-
-fn activation_envelope(
-    config: &ValidatedConfig,
-    manifest: &CapsuleManifest,
-    deadline: u64,
-) -> ActivationEnvelope {
-    let tenant = manifest
-        .metadata
-        .tenant
-        .clone()
-        .unwrap_or_else(|| TenantId("phase0-spike".to_owned()));
-    let mut budget = manifest.execution.resource_budget_ceiling.clone();
-    budget.cpu_fuel = config.fuel;
-    budget.memory_bytes = config.memory_bytes;
-    budget.wall_deadline_unix_millis = Some(deadline);
-
-    ActivationEnvelope {
-        activation_id: config.activation_id.clone(),
-        parent_activation_id: None,
-        root_activation_id: config.activation_id.clone(),
-        principal: InvocationPrincipal {
-            subject: "phase0-spike-user".to_owned(),
-            kind: PrincipalKind::User,
-            tenant: Some(tenant.clone()),
-            service: None,
-            claims: Metadata::from([
-                ("role".to_owned(), "phase0-spike".to_owned()),
-                ("surface".to_owned(), config.surface.to_owned()),
-            ]),
-        },
-        target: InvocationTarget {
-            tenant,
-            service: ServiceId("echo".to_owned()),
-            contract: ContractId(ECHO_EXPORT.to_owned()),
-            function: FunctionId("echo".to_owned()),
-            route: None,
-        },
-        resolved_revision: None,
-        deadline_unix_millis: Some(deadline),
-        priority: 0,
-        trace: TraceContext {
-            trace_id: TraceId(SPIKE_TRACE_ID.to_owned()),
-            span_id: SpanId(SPIKE_SPAN_ID.to_owned()),
-            trace_flags: 1,
-            baggage: Metadata::from([("surface".to_owned(), "phase0-spike".to_owned())]),
-        },
-        idempotency_key: None,
-        retry_attempt: 0,
-        budget,
-        metadata: Metadata::from([
-            (
-                "mode".to_owned(),
-                spike_mode_name(config.surface).to_owned(),
-            ),
-            ("production-ready".to_owned(), "false".to_owned()),
-        ]),
-        input: config.input.as_bytes().to_vec(),
-        input_media_type: ECHO_SUCCESS_MEDIA_TYPE.to_owned(),
-    }
-}
-
 fn spike_mode_name(surface: &str) -> &'static str {
     match surface {
         VERIFY_RECOVERY_SURFACE_NAME => "verify-recovery",
         _ => "invoke-once",
-    }
-}
-
-fn bound_imports() -> Vec<BoundImport> {
-    vec![
-        BoundImport {
-            capability: CapabilityId("context".to_owned()),
-            contract: CONTEXT_IMPORT.to_owned(),
-            opaque_handle: "phase0-spike-activation-context".to_owned(),
-        },
-        BoundImport {
-            capability: CapabilityId("log".to_owned()),
-            contract: LOG_IMPORT.to_owned(),
-            opaque_handle: "phase0-spike-bounded-log".to_owned(),
-        },
-    ]
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CapsuleDocument {
-    api_version: String,
-    kind: String,
-    metadata: MetadataDocument,
-    component: ComponentDocument,
-    exports: Vec<String>,
-    imports: Vec<ImportDocument>,
-    execution: ExecutionDocument,
-    compatibility: CompatibilityDocument,
-}
-
-#[derive(Debug, Deserialize)]
-struct MetadataDocument {
-    name: String,
-    #[serde(default)]
-    tenant: Option<String>,
-    #[serde(default)]
-    namespace: Option<String>,
-    #[serde(default)]
-    labels: BTreeMap<String, String>,
-    #[serde(default)]
-    annotations: BTreeMap<String, String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ComponentDocument {
-    digest: String,
-    version: String,
-    world: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct ImportDocument {
-    contract: String,
-    optional: bool,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ExecutionDocument {
-    backend: String,
-    threading: String,
-    state_model: String,
-    limits: LimitsDocument,
-    host_call_depth_maximum: u32,
-    component_call_depth_maximum: u32,
-    snapshot_eligible: bool,
-    fusion_eligible: bool,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct LimitsDocument {
-    cpu_fuel: u64,
-    memory_bytes: u64,
-    wall_deadline_unix_millis: Option<u64>,
-    child_calls: u32,
-    outbound_requests: u32,
-    state_read_bytes: u64,
-    state_write_bytes: u64,
-    blob_read_bytes: u64,
-    blob_write_bytes: u64,
-    log_bytes: u64,
-    effect_count: u32,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CompatibilityDocument {
-    minimum_fabric_version: String,
-}
-
-impl CapsuleDocument {
-    fn into_manifest(self) -> Result<CapsuleManifest, PlatformError> {
-        if self.kind != "Capsule" {
-            return Err(input_error(
-                "capsule document kind must be Capsule",
-                "phase0-spike.unexpected-document-kind",
-                [("kind", self.kind)],
-            ));
-        }
-        if self.metadata.name.trim().is_empty()
-            || self.component.digest.trim().is_empty()
-            || self.component.version.trim().is_empty()
-            || self.component.world.trim().is_empty()
-        {
-            return Err(input_error(
-                "capsule identity and component fields must be non-empty",
-                "phase0-spike.empty-capsule-field",
-                std::iter::empty::<(&str, String)>(),
-            ));
-        }
-
-        let backend = match self.execution.backend.as_str() {
-            "wasm-component" => ExecutionBackendKind::WasmComponent,
-            value => {
-                return Err(input_error(
-                    "the Phase 0 spike supports only the wasm-component backend",
-                    "phase0-spike.unsupported-backend",
-                    [("backend", value.to_owned())],
-                ));
-            }
-        };
-        let threading = match self.execution.threading.as_str() {
-            "single-threaded" => ThreadingModel::SingleThreaded,
-            "reentrant" => ThreadingModel::Reentrant,
-            "cooperative" => ThreadingModel::Cooperative,
-            value => {
-                return Err(input_error(
-                    "capsule declares an unknown threading model",
-                    "phase0-spike.unknown-threading-model",
-                    [("threading", value.to_owned())],
-                ));
-            }
-        };
-        let state_model = match self.execution.state_model.as_str() {
-            "stateless" => StateModel::Stateless,
-            "transactional-keyed" => StateModel::TransactionalKeyed,
-            "entity" => StateModel::Entity,
-            "durable-workflow" => StateModel::DurableWorkflow,
-            value => {
-                return Err(input_error(
-                    "capsule declares an unknown state model",
-                    "phase0-spike.unknown-state-model",
-                    [("state_model", value.to_owned())],
-                ));
-            }
-        };
-        let limits = self.execution.limits;
-
-        Ok(CapsuleManifest {
-            api_version: self.api_version,
-            metadata: ObjectMetadata {
-                name: self.metadata.name,
-                tenant: self.metadata.tenant.map(TenantId),
-                namespace: self.metadata.namespace,
-                labels: self.metadata.labels,
-                annotations: self.metadata.annotations,
-            },
-            semantic_version: self.component.version,
-            component_digest: ReleaseDigest(self.component.digest),
-            world: ContractId(self.component.world),
-            exports: self
-                .exports
-                .into_iter()
-                .map(|contract| ContractExport {
-                    contract: ContractId(contract),
-                })
-                .collect(),
-            imports: self
-                .imports
-                .into_iter()
-                .map(|import| ContractImport {
-                    contract: ContractId(import.contract),
-                    optional: import.optional,
-                })
-                .collect(),
-            execution: ExecutionRequirements {
-                backend,
-                threading,
-                state_model,
-                resource_budget_ceiling: ResourceBudget {
-                    cpu_fuel: limits.cpu_fuel,
-                    memory_bytes: limits.memory_bytes,
-                    wall_deadline_unix_millis: limits.wall_deadline_unix_millis,
-                    child_calls: limits.child_calls,
-                    outbound_requests: limits.outbound_requests,
-                    state_read_bytes: limits.state_read_bytes,
-                    state_write_bytes: limits.state_write_bytes,
-                    blob_read_bytes: limits.blob_read_bytes,
-                    blob_write_bytes: limits.blob_write_bytes,
-                    log_bytes: limits.log_bytes,
-                    effect_count: limits.effect_count,
-                },
-                host_call_depth_maximum: self.execution.host_call_depth_maximum,
-                component_call_depth_maximum: self.execution.component_call_depth_maximum,
-                snapshot_eligible: self.execution.snapshot_eligible,
-                fusion_eligible: self.execution.fusion_eligible,
-            },
-            minimum_fabric_version: self.compatibility.minimum_fabric_version,
-        })
     }
 }
 
@@ -2734,18 +2215,6 @@ where
     )
 }
 
-fn input_error<I, K>(
-    message: impl Into<String>,
-    kind: impl Into<String>,
-    fields: I,
-) -> PlatformError
-where
-    I: IntoIterator<Item = (K, String)>,
-    K: Into<String>,
-{
-    spike_error(PlatformErrorCode::CorruptArtifact, message, kind, fields)
-}
-
 fn spike_error<I, K>(
     code: PlatformErrorCode,
     message: impl Into<String>,
@@ -2769,17 +2238,6 @@ where
             fields,
         }],
     }
-}
-
-fn component_digest(bytes: &[u8]) -> String {
-    let digest = Sha256::digest(bytes);
-    format!(
-        "sha256:{}",
-        digest
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>()
-    )
 }
 
 fn now_unix_millis() -> u64 {

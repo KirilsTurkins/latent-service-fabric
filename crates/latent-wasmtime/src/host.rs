@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::Instant;
 
 use latent_core::{
     ActivationId, InvocationPrincipal as FabricPrincipal, Metadata, PrincipalKind,
@@ -389,6 +390,16 @@ pub(crate) struct HostState {
     context: ActivationHostContext,
     pub(crate) limiter: TrackingLimiter,
     pub(crate) logs: InvocationLogBuffer,
+    host_call_timing: HostCallTiming,
+}
+
+/// In-guest host-import time. This is intentionally reported separately from
+/// setup and cleanup; it is a subset of the guest-call interval, not an
+/// additional latency component.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) struct HostCallTiming {
+    pub(crate) calls: u64,
+    pub(crate) elapsed_micros: u64,
 }
 
 impl HostState {
@@ -408,28 +419,52 @@ impl HostState {
             context,
             limiter: TrackingLimiter::new(maximum_memory_bytes),
             logs,
+            host_call_timing: HostCallTiming::default(),
         }
+    }
+
+    pub(crate) fn host_call_timing(&self) -> HostCallTiming {
+        self.host_call_timing
+    }
+
+    fn record_host_call(&mut self, started: Instant) {
+        self.host_call_timing.calls = self.host_call_timing.calls.saturating_add(1);
+        self.host_call_timing.elapsed_micros = self
+            .host_call_timing
+            .elapsed_micros
+            .saturating_add(u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX));
     }
 }
 
 impl context::Host for HostState {
     async fn activation_id(&mut self) -> String {
-        self.context.activation_id.0.clone()
+        let started = Instant::now();
+        let value = self.context.activation_id.0.clone();
+        self.record_host_call(started);
+        value
     }
 
     async fn root_activation_id(&mut self) -> String {
-        self.context.root_activation_id.0.clone()
+        let started = Instant::now();
+        let value = self.context.root_activation_id.0.clone();
+        self.record_host_call(started);
+        value
     }
 
     async fn parent_activation_id(&mut self) -> Option<String> {
-        self.context
+        let started = Instant::now();
+        let value = self
+            .context
             .parent_activation_id
             .as_ref()
-            .map(|activation_id| activation_id.0.clone())
+            .map(|activation_id| activation_id.0.clone());
+        self.record_host_call(started);
+        value
     }
 
     async fn principal(&mut self) -> context::InvocationPrincipal {
-        context::InvocationPrincipal {
+        let started = Instant::now();
+        let value = context::InvocationPrincipal {
             subject: self.context.principal.subject.clone(),
             kind: principal_kind(self.context.principal.kind).to_owned(),
             tenant: self
@@ -445,25 +480,34 @@ impl context::Host for HostState {
                 .as_ref()
                 .map(|service| service.0.clone()),
             claims: metadata_pairs(&self.context.principal.claims),
-        }
+        };
+        self.record_host_call(started);
+        value
     }
 
     async fn trace(&mut self) -> context::TraceContext {
-        context::TraceContext {
+        let started = Instant::now();
+        let value = context::TraceContext {
             trace_id: self.context.trace_id.clone(),
             span_id: self.context.span_id.clone(),
             trace_flags: self.context.trace_flags,
             baggage: metadata_pairs(&self.context.baggage),
-        }
+        };
+        self.record_host_call(started);
+        value
     }
 
     async fn deadline_unix_millis(&mut self) -> Option<u64> {
-        self.context.deadline_unix_millis
+        let started = Instant::now();
+        let value = self.context.deadline_unix_millis;
+        self.record_host_call(started);
+        value
     }
 
     async fn remaining_budget(&mut self) -> context::ResourceBudget {
+        let started = Instant::now();
         let budget = &self.context.budget;
-        context::ResourceBudget {
+        let value = context::ResourceBudget {
             cpu_fuel: budget.cpu_fuel,
             memory_bytes: budget.memory_bytes,
             wall_deadline_unix_millis: budget.wall_deadline_unix_millis,
@@ -475,11 +519,16 @@ impl context::Host for HostState {
             blob_write_bytes: budget.blob_write_bytes,
             log_bytes: budget.log_bytes,
             effect_count: budget.effect_count,
-        }
+        };
+        self.record_host_call(started);
+        value
     }
 
     async fn metadata(&mut self) -> Vec<(String, String)> {
-        metadata_pairs(&self.context.metadata)
+        let started = Instant::now();
+        let value = metadata_pairs(&self.context.metadata);
+        self.record_host_call(started);
+        value
     }
 }
 
@@ -490,7 +539,10 @@ impl log::Host for HostState {
         message: String,
         fields: Vec<log::Field>,
     ) -> Result<bool, log::LogError> {
-        self.logs.write(level, message, fields)
+        let started = Instant::now();
+        let result = self.logs.write(level, message, fields);
+        self.record_host_call(started);
+        result
     }
 }
 

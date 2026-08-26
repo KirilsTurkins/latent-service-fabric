@@ -5,8 +5,8 @@ use std::time::{Duration, Instant};
 
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
-    BoxFuture, BudgetConsumption, ErrorDetail, Metadata, PlatformError, PlatformErrorCode,
-    ReleaseDigest, ResourceBudget,
+    ActivationId, BoxFuture, BudgetConsumption, ErrorDetail, Metadata, PlatformError,
+    PlatformErrorCode, ReleaseDigest, ResourceBudget,
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
@@ -23,7 +23,9 @@ use crate::containment::{
     platform_error, start_epoch_ticker, RuntimeResourceCounters, RuntimeResourceSnapshot,
     StopControl, MAX_DIAGNOSTIC_BYTES,
 };
-use crate::host::{hostcall_fuel_limit, ActivationHostContext, BoundedLogSink, HostState};
+use crate::host::{
+    hostcall_fuel_limit, ActivationHostContext, BoundedLogSink, HostCallTiming, HostState,
+};
 use crate::{WasmtimeEngineFactory, WasmtimeEngineProfile};
 
 pub const BACKEND_ID: &str = "wasmtime-component-phase-0";
@@ -37,6 +39,7 @@ pub const ECHO_DOMAIN_ERROR_MEDIA_TYPE: &str = "application/vnd.latent.echo-erro
 
 const EMPTY_MESSAGE_OUTPUT: &[u8] = br#"{"error":"empty-message"}"#;
 const MESSAGE_TOO_LARGE_OUTPUT: &[u8] = br#"{"error":"message-too-large"}"#;
+const INVOCATION_TIMING_MAXIMUM_ENTRIES: usize = 256;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Phase0WasmtimeConfig {
@@ -140,6 +143,37 @@ pub struct PreparedCacheSnapshot {
     pub source_bytes: usize,
     pub maximum_entries: usize,
     pub maximum_source_bytes: usize,
+}
+
+/// Precise Phase 0 backend boundaries for one contained invocation.
+///
+/// `host_call_micros` is intentionally a subset of `guest_call_micros`, so
+/// host-import work is observable without being counted twice in latency sums.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Phase0InvocationTiming {
+    /// Validation, host-state/store construction, and instance preparation
+    /// before entering the typed guest export.
+    pub backend_setup_micros: u64,
+    /// Time in the typed guest export call, including Wasmtime's automatic
+    /// canonical-ABI component post-return before the call yields.
+    pub guest_call_micros: u64,
+    /// Time spent in Phase 0 host imports during the guest-call interval.
+    pub host_call_micros: u64,
+    pub host_call_count: u64,
+    /// Host-visible post-return/result accounting after the typed guest call
+    /// completes. Canonical-ABI post-return itself is included in
+    /// `guest_call_micros` because Wasmtime completes it inside the safe typed
+    /// call API.
+    pub component_post_return_micros: u64,
+    /// Store/instance/host-state, temporary-buffer, and runtime resource
+    /// reclamation.
+    pub activation_resource_reclamation_micros: u64,
+    /// Guest result classification after activation resources are reclaimed.
+    pub outcome_classification_micros: u64,
+    /// Final cancellation/log cleanup and construction of the reusable proof.
+    pub reusable_proof_micros: u64,
+    /// End-to-end backend interval through return of the reusable proof.
+    pub backend_total_micros: u64,
 }
 
 pub struct Phase0WasmtimeEngineFactory {
@@ -370,6 +404,55 @@ impl PreparedCache {
     }
 }
 
+struct InvocationTimingStore {
+    entries: HashMap<String, Phase0InvocationTiming>,
+    insertion_order: VecDeque<String>,
+    maximum_entries: usize,
+}
+
+impl InvocationTimingStore {
+    fn new(maximum_entries: usize) -> Self {
+        Self {
+            entries: HashMap::new(),
+            insertion_order: VecDeque::new(),
+            maximum_entries,
+        }
+    }
+
+    fn insert(&mut self, activation_id: String, timing: Phase0InvocationTiming) {
+        self.remove(&activation_id);
+        while self.entries.len() >= self.maximum_entries {
+            let Some(oldest) = self.insertion_order.pop_front() else {
+                break;
+            };
+            self.entries.remove(&oldest);
+        }
+        self.insertion_order.push_back(activation_id.clone());
+        self.entries.insert(activation_id, timing);
+    }
+
+    fn update_reusable_proof(&mut self, activation_id: &str, elapsed_micros: u64) {
+        if let Some(timing) = self.entries.get_mut(activation_id) {
+            timing.reusable_proof_micros =
+                timing.reusable_proof_micros.saturating_add(elapsed_micros);
+            timing.backend_total_micros =
+                timing.backend_total_micros.saturating_add(elapsed_micros);
+        }
+    }
+
+    fn remove(&mut self, activation_id: &str) -> Option<Phase0InvocationTiming> {
+        let timing = self.entries.remove(activation_id)?;
+        if let Some(position) = self
+            .insertion_order
+            .iter()
+            .position(|candidate| candidate == activation_id)
+        {
+            self.insertion_order.remove(position);
+        }
+        Some(timing)
+    }
+}
+
 pub struct Phase0WasmtimeBackend {
     engine: Engine,
     profile: WasmtimeEngineProfile,
@@ -377,6 +460,7 @@ pub struct Phase0WasmtimeBackend {
     cache: Mutex<PreparedCache>,
     log_sink: BoundedLogSink,
     resources: RuntimeResourceCounters,
+    timings: Mutex<InvocationTimingStore>,
 }
 
 impl Phase0WasmtimeBackend {
@@ -396,6 +480,9 @@ impl Phase0WasmtimeBackend {
             config,
             log_sink,
             resources: RuntimeResourceCounters::default(),
+            timings: Mutex::new(InvocationTimingStore::new(
+                INVOCATION_TIMING_MAXIMUM_ENTRIES,
+            )),
         }
     }
 
@@ -413,6 +500,16 @@ impl Phase0WasmtimeBackend {
 
     pub fn log_sink(&self) -> BoundedLogSink {
         self.log_sink.clone()
+    }
+
+    /// Returns and removes the timing record for one contained invocation.
+    /// The internal store is bounded so observing timings cannot retain an
+    /// unbounded activation history.
+    pub fn take_invocation_timing(
+        &self,
+        activation_id: &ActivationId,
+    ) -> Option<Phase0InvocationTiming> {
+        self.lock_timings().remove(&activation_id.0)
     }
 
     fn prepare_inner(
@@ -511,9 +608,27 @@ impl Phase0WasmtimeBackend {
 
     async fn invoke_inner(
         &self,
-        mut request: ExecutionRequest,
+        request: ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
     ) -> Result<GuestOutcome, PlatformError> {
+        let activation_id = request.activation.activation_id.clone();
+        let started = Instant::now();
+        let mut timing = Phase0InvocationTiming::default();
+        let outcome = self
+            .invoke_inner_timed(request, cancellation, &mut timing)
+            .await;
+        timing.backend_total_micros = elapsed_micros(started);
+        self.lock_timings().insert(activation_id.0, timing);
+        outcome
+    }
+
+    async fn invoke_inner_timed(
+        &self,
+        mut request: ExecutionRequest,
+        cancellation: &dyn ExecutionCancellation,
+        timing: &mut Phase0InvocationTiming,
+    ) -> Result<GuestOutcome, PlatformError> {
+        let setup_started = Instant::now();
         let _active_invocation = self.resources.active_invocation();
 
         if cancellation.activation_id() != &request.activation.activation_id {
@@ -650,7 +765,7 @@ impl Phase0WasmtimeBackend {
             self.config.invocation_log_maximum_bytes,
         );
 
-        let started = Instant::now();
+        let contained_execution_started = Instant::now();
         let host_state_guard = self.resources.host_state();
         let store_guard = self.resources.store();
         let mut store = Store::new(&self.engine, host_state);
@@ -676,18 +791,35 @@ impl Phase0WasmtimeBackend {
         );
 
         let component_instance_guard = self.resources.component_instance();
-        let call_result = async {
-            let instance = runtime.pre.instantiate_async(&mut store).await?;
-            instance
-                .examples_echo_api()
-                .call_echo(&mut store, &input)
-                .await
-        }
-        .await;
-        drop(component_instance_guard);
+        let (call_result, component_instance) =
+            match runtime.pre.instantiate_async(&mut store).await {
+                Ok(instance) => {
+                    timing.backend_setup_micros = elapsed_micros(setup_started);
+                    let guest_call_started = Instant::now();
+                    let result = instance
+                        .examples_echo_api()
+                        .call_echo(&mut store, &input)
+                        .await;
+                    timing.guest_call_micros = elapsed_micros(guest_call_started);
+                    (result, Some(instance))
+                }
+                Err(error) => {
+                    timing.backend_setup_micros = elapsed_micros(setup_started);
+                    (Err(error), None)
+                }
+            };
 
+        // The generated typed call completes Wasmtime's canonical-ABI
+        // post-return before it yields. This explicit boundary separates that
+        // completed guest/component call from the host-side result extraction
+        // and subsequent resource reclamation below.
+        let component_post_return_started = Instant::now();
         let remaining_fuel = store.get_fuel().unwrap_or(0);
-        let wall_time_micros = u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX);
+        let wall_time_micros = elapsed_micros(contained_execution_started);
+        let HostCallTiming {
+            calls: host_call_count,
+            elapsed_micros: host_call_micros,
+        } = store.data().host_call_timing();
         let consumption = BudgetConsumption {
             cpu_fuel: request.budget.cpu_fuel.saturating_sub(remaining_fuel),
             peak_memory_bytes: store.data().limiter.peak_memory_bytes(),
@@ -700,16 +832,25 @@ impl Phase0WasmtimeBackend {
             .as_ref()
             .err()
             .is_some_and(is_memory_limit_error);
+        timing.host_call_count = host_call_count;
+        timing.host_call_micros = host_call_micros;
+        timing.component_post_return_micros = elapsed_micros(component_post_return_started);
 
-        // Cleanup order is intentional: the call future has already dropped the
-        // guest instance and its guard, then the store and host state, temporary input, and the
-        // live cancellation probe are reclaimed before a reusable proof escapes.
+        // Cleanup order is intentional: after the guest call and its
+        // component-model post-return complete, the actual component instance,
+        // store/host state, temporary input, and all activation-owned guards
+        // are reclaimed before a reusable proof escapes.
+        let reclamation_started = Instant::now();
+        drop(component_instance);
+        drop(component_instance_guard);
         drop(store);
         drop(store_guard);
         drop(host_state_guard);
         drop(input);
         drop(temporary_buffer_guard);
+        timing.activation_resource_reclamation_micros = elapsed_micros(reclamation_started);
 
+        let classification_started = Instant::now();
         let outcome = match call_result {
             Ok(Ok(output)) => Ok(GuestOutcome::Returned {
                 output: output.into_bytes(),
@@ -732,10 +873,13 @@ impl Phase0WasmtimeBackend {
             }
             Err(error) => classify_runtime_error(&error, &stop, memory_exhausted, consumption),
         };
+        timing.outcome_classification_micros = elapsed_micros(classification_started);
 
+        let reusable_proof_started = Instant::now();
         drop(stop);
         drop(cancellation_guard);
         self.log_sink.publish(logs);
+        timing.reusable_proof_micros = elapsed_micros(reusable_proof_started);
         outcome
     }
 
@@ -943,6 +1087,12 @@ impl Phase0WasmtimeBackend {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
+
+    fn lock_timings(&self) -> MutexGuard<'_, InvocationTimingStore> {
+        self.timings
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
 }
 
 impl ExecutionBackend for Phase0WasmtimeBackend {
@@ -972,7 +1122,13 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
         cancellation: &'a dyn ExecutionCancellation,
     ) -> BoxFuture<'a, ExecutionReport> {
         Box::pin(async move {
-            ExecutionReport::reusable(self.invoke_inner(request, cancellation).await)
+            let activation_id = request.activation.activation_id.clone();
+            let outcome = self.invoke_inner(request, cancellation).await;
+            let proof_started = Instant::now();
+            let report = ExecutionReport::reusable(outcome);
+            self.lock_timings()
+                .update_reusable_proof(&activation_id.0, elapsed_micros(proof_started));
+            report
         })
     }
 
@@ -1000,6 +1156,10 @@ fn earliest_deadline(first: Option<u64>, second: Option<u64>) -> Option<u64> {
         (Some(value), None) | (None, Some(value)) => Some(value),
         (None, None) => None,
     }
+}
+
+fn elapsed_micros(started: Instant) -> u64 {
+    u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX)
 }
 
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
