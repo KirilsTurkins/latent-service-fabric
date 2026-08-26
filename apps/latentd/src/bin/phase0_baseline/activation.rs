@@ -1,9 +1,10 @@
 async fn invoke_case(
-    config: &EffectiveConfig,
     manifest: &CapsuleManifest,
     pool: &Arc<FixedCellPool>,
     backend: &Arc<Phase0WasmtimeBackend>,
     runner: &Arc<Phase0ActivationRunner>,
+    timings: &PhaseTimingRecorder,
+    workers: &RuntimeWorkerMonitor,
     process_entry: Instant,
     request: InvocationRequest<'_>,
 ) -> Result<ActivationSample, BenchError> {
@@ -15,13 +16,21 @@ async fn invoke_case(
     let deadline = now_unix_millis()
         .checked_add(request.timeout_ms)
         .ok_or_else(|| BenchError::new("activation deadline overflow"))?;
-    let envelope = activation_envelope(
+    let envelope = phase0_composition::phase0_activation_envelope(
         manifest,
-        activation_id.clone(),
-        request.input,
-        request.memory_bytes,
-        request.fuel,
-        deadline,
+        &Phase0InvocationConfig {
+            activation_id: activation_id.clone(),
+            input: request.input,
+            memory_bytes: request.memory_bytes,
+            fuel: request.fuel,
+            deadline_unix_millis: deadline,
+            surface: SURFACE,
+            mode: "phase0-baseline",
+            principal_subject: "phase0-baseline-user",
+            default_tenant: "phase0-baseline",
+            trace_id: TRACE_ID,
+            span_id: SPAN_ID,
+        },
     );
 
     let started = Instant::now();
@@ -42,6 +51,7 @@ async fn invoke_case(
         invocation.await
     };
     let elapsed_micros = duration_micros(started.elapsed());
+    let phase_timings = timings.take_report(&activation_id, elapsed_micros)?;
     let overshoot = match request.expected {
         ExpectedOutcome::Timeout => Some(
             elapsed_micros.saturating_sub(request.timeout_ms.saturating_mul(1_000)),
@@ -67,12 +77,12 @@ async fn invoke_case(
     let _captured_logs = log_sink.snapshot_for(&activation_id);
     log_sink.clear();
     let retained_log_entries_after_clear = log_sink.snapshot().len();
+    let observed_runtime_workers_after = workers.active_workers();
     let process_after = observe_process(
         &format!("after_{}_{:08}", request.scenario, request.iteration),
         process_entry,
     );
 
-    let _ = config;
     Ok(ActivationSample {
         scenario: request.scenario.to_owned(),
         iteration: request.iteration,
@@ -82,11 +92,13 @@ async fn invoke_case(
         expected_outcome: request.expected.name().to_owned(),
         contract_result_valid,
         outcome,
+        phase_timings,
         pool_after,
         runner_after,
         prepared_cache_after,
         backend_resources_after,
         retained_log_entries_after_clear,
+        observed_runtime_workers_after,
         process_after,
     })
 }
@@ -96,12 +108,12 @@ fn classify_outcome(outcome: ActivationOutcome) -> OutcomeReport {
         ActivationOutcome::Succeeded(success)
             if success.output_media_type == ECHO_DOMAIN_ERROR_MEDIA_TYPE =>
         {
-            let error_code = serde_json::from_slice::<serde_json::Value>(&success.output)
+            let error_code = serde_json::from_slice::<Value>(&success.output)
                 .ok()
                 .and_then(|document| {
                     document
                         .get("error")
-                        .and_then(serde_json::Value::as_str)
+                        .and_then(Value::as_str)
                         .map(str::to_owned)
                 })
                 .unwrap_or_else(|| "declared-domain-error".to_owned());

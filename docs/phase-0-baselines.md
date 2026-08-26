@@ -81,9 +81,9 @@ Two end-to-end activation throughput modes execute through the complete activati
 1. exactly `pool_capacity` concurrent delayed echoes;
 2. exactly `pool_capacity + pool_queue_capacity` concurrent delayed echoes.
 
-A concurrent pool monitor records maximum active leases and queue depth. The saturation mode fails unless it observes both configured bounds. Queued activation acquire-wait, total latency, batch latency, and throughput are reported separately from the at-capacity mode.
+A concurrent pool monitor records maximum active leases and queue depth. The at-capacity mode fails unless it observes `active_leases == pool_capacity` and `queue_depth == 0`; the bounded-queue mode fails unless it observes both configured bounds. Queued activation acquire-wait, total latency, batch latency, and throughput are reported separately for each mode.
 
-For the bounded-queue run, a benchmark-only gate pauses the first real leases immediately after the shared pool grants them and before those real activation runners enter Wasmtime. It releases only after the raw pool observes both the configured active and queued bounds. This prevents CPU-bound delayed guests from starving the scheduler before waiters can enqueue; it creates no synthetic leases or backend results, and the raw acquisition timing remains separate from the coordination pause.
+For both runs, a benchmark-only gate pauses real leases immediately after the shared pool grants them and before those real activation runners enter Wasmtime. It releases only after the raw pool observes the mode's required state: capacity with no queued waiter, or capacity plus the bounded queue. This prevents CPU-bound delayed guests from serializing the at-capacity measurement or starving the scheduler before queue-saturation waiters can enqueue; it creates no synthetic leases or backend results, and the raw acquisition timing remains separate from the coordination pause.
 
 The lower-level fixed-pool probe remains separate. It measures direct acquire, queued wait, release, overflow rejection, and acquire/release throughput without presenting those operations as activation throughput.
 

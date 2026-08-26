@@ -40,6 +40,7 @@ async fn run_pool_probe(
             .map_err(platform_error)?,
         );
     }
+    let maximum_observed_active_leases = pool.observations().active_leases;
 
     let mut queued = Vec::new();
     for waiter in 0..config.pool_queue_capacity {
@@ -64,6 +65,7 @@ async fn run_pool_probe(
         }));
     }
     wait_for_queue_depth(&pool, config.pool_queue_capacity).await?;
+    let maximum_observed_queue_depth = pool.observations().queue_depth;
 
     let overflow_id = ActivationId("pool-overflow".to_owned());
     let overflow_budget = pool_budget(10_000);
@@ -155,6 +157,8 @@ async fn run_pool_probe(
         throughput_operations,
         throughput_elapsed_micros,
         throughput_operations_per_second,
+        maximum_observed_active_leases,
+        maximum_observed_queue_depth,
         final_state,
     })
 }
@@ -176,7 +180,67 @@ async fn wait_for_queue_depth(
             )));
         }
         tokio::task::yield_now().await;
-        tokio::time::sleep(Duration::from_millis(1)).await;
+    }
+}
+
+async fn wait_for_activation_saturation(
+    pool: &FixedCellPool,
+    mode: ThroughputMode,
+    expected_active: u32,
+    expected_queue: u32,
+) -> Result<(), BenchError> {
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+    loop {
+        let snapshot = pool.observations();
+        if snapshot.active_leases == expected_active && snapshot.queue_depth == expected_queue {
+            return Ok(());
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err(BenchError::new(format!(
+                "real {} activation workload did not reach its coordinated pool state: active={} expected={}, queue={} expected={}",
+                mode.name(),
+                snapshot.active_leases,
+                expected_active,
+                snapshot.queue_depth,
+                expected_queue
+            )));
+        }
+        tokio::task::yield_now().await;
+    }
+}
+
+/// The two throughput conditions required by the Phase 0 baseline. Both hold
+/// real acquired leases at the common gate until the raw pool proves the
+/// condition, so a CPU-bound guest cannot serialize the observation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ThroughputMode {
+    AtCapacity,
+    BoundedQueueSaturation,
+}
+
+impl ThroughputMode {
+    const fn name(self) -> &'static str {
+        match self {
+            Self::AtCapacity => "at_capacity",
+            Self::BoundedQueueSaturation => "bounded_queue_saturation",
+        }
+    }
+
+    fn activations_per_batch(self, config: &EffectiveConfig) -> Result<u32, BenchError> {
+        match self {
+            Self::AtCapacity => Ok(config.pool_capacity),
+            Self::BoundedQueueSaturation => config
+                .pool_capacity
+                .checked_add(config.pool_queue_capacity)
+                .ok_or_else(|| BenchError::new("saturated activation count overflow")),
+        }
+    }
+
+    const fn expected_queue_depth(self, config: &EffectiveConfig) -> u32 {
+        match self {
+            Self::AtCapacity => 0,
+            Self::BoundedQueueSaturation => config.pool_queue_capacity,
+        }
     }
 }
 
@@ -186,53 +250,174 @@ async fn run_activation_throughput(
     pool: &Arc<FixedCellPool>,
     backend: &Arc<Phase0WasmtimeBackend>,
     runner: &Arc<Phase0ActivationRunner>,
+    timings: &PhaseTimingRecorder,
+    saturation_gate: &ThroughputSaturationGate,
+    workers: &RuntimeWorkerMonitor,
     process_entry: Instant,
     samples: &mut Vec<ActivationSample>,
 ) -> Result<ActivationThroughputReport, BenchError> {
+    let at_capacity = run_throughput_mode(
+        config,
+        manifest,
+        pool,
+        backend,
+        runner,
+        timings,
+        saturation_gate,
+        workers,
+        process_entry,
+        ThroughputMode::AtCapacity,
+        samples,
+    )
+    .await?;
+    let bounded_queue_saturation = run_throughput_mode(
+        config,
+        manifest,
+        pool,
+        backend,
+        runner,
+        timings,
+        saturation_gate,
+        workers,
+        process_entry,
+        ThroughputMode::BoundedQueueSaturation,
+        samples,
+    )
+    .await?;
+    Ok(ActivationThroughputReport {
+        at_capacity,
+        bounded_queue_saturation,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_throughput_mode(
+    config: &EffectiveConfig,
+    manifest: &CapsuleManifest,
+    pool: &Arc<FixedCellPool>,
+    backend: &Arc<Phase0WasmtimeBackend>,
+    runner: &Arc<Phase0ActivationRunner>,
+    timings: &PhaseTimingRecorder,
+    saturation_gate: &ThroughputSaturationGate,
+    workers: &RuntimeWorkerMonitor,
+    process_entry: Instant,
+    mode: ThroughputMode,
+    samples: &mut Vec<ActivationSample>,
+) -> Result<ThroughputModeReport, BenchError> {
+    let mode_name = mode.name();
+    let activations_per_batch = mode.activations_per_batch(config)?;
+    let expected_queue_depth = mode.expected_queue_depth(config);
     let total_started = Instant::now();
     let mut batch_micros = Vec::new();
+    let mut activation_latencies = Vec::new();
+    let mut acquire_waits = Vec::new();
+    let mut queued_acquire_waits = Vec::new();
     let mut activation_count = 0_u64;
+    let mut maximum_observed_active_leases = 0_u32;
+    let mut maximum_observed_queue_depth = 0_u32;
 
     for batch in 0..config.throughput_batches {
+        // Both required modes acquire real leases before guest execution. This
+        // proves the at-capacity state as well as the bounded-queue state.
+        saturation_gate.close();
+        let participant_count = usize::try_from(activations_per_batch)
+            .map_err(|_| BenchError::new("activation batch size does not fit usize"))?;
+        let barrier = Arc::new(Barrier::new(participant_count.saturating_add(1)));
+        let done = Arc::new(AtomicBool::new(false));
+        let monitor_pool = Arc::clone(pool);
+        let monitor_done = Arc::clone(&done);
+        let monitor = tokio::spawn(async move {
+            let mut maximum_active = 0_u32;
+            let mut maximum_queue = 0_u32;
+            loop {
+                let snapshot = monitor_pool.observations();
+                maximum_active = maximum_active.max(snapshot.active_leases);
+                maximum_queue = maximum_queue.max(snapshot.queue_depth);
+                if monitor_done.load(Ordering::Acquire)
+                    && snapshot.active_leases == 0
+                    && snapshot.queue_depth == 0
+                {
+                    return (maximum_active, maximum_queue);
+                }
+                tokio::task::yield_now().await;
+            }
+        });
+
         let batch_started = Instant::now();
         let mut handles = Vec::new();
-        for slot in 0..config.pool_capacity {
+        for slot in 0..activations_per_batch {
             let activation_id = ActivationId(format!(
-                "baseline-throughput-{batch:08}-{slot:04}"
+                "baseline-throughput-{mode_name}-{batch:08}-{slot:04}"
             ));
-            let expected_output = format!("throughput-{batch}-{slot}");
+            let expected_output = format!("throughput-{mode_name}-{batch}-{slot}");
             let input = format!("{FIXTURE_DELAYED_ECHO_PREFIX}{expected_output}");
-            let deadline = now_unix_millis().saturating_add(5_000);
-            let envelope = activation_envelope(
+            let deadline = now_unix_millis().saturating_add(10_000);
+            let envelope = phase0_composition::phase0_activation_envelope(
                 manifest,
-                activation_id.clone(),
-                &input,
-                config.memory_bytes,
-                config.fuel,
-                deadline,
+                &Phase0InvocationConfig {
+                    activation_id: activation_id.clone(),
+                    input: &input,
+                    memory_bytes: config.memory_bytes,
+                    fuel: config.fuel,
+                    deadline_unix_millis: deadline,
+                    surface: SURFACE,
+                    mode: "phase0-baseline",
+                    principal_subject: "phase0-baseline-user",
+                    default_tenant: "phase0-baseline",
+                    trace_id: TRACE_ID,
+                    span_id: SPAN_ID,
+                },
             );
             let worker_runner = Arc::clone(runner);
+            let worker_barrier = Arc::clone(&barrier);
+            let worker_timings = timings.clone();
             handles.push(tokio::spawn(async move {
+                worker_barrier.wait().await;
                 let started = Instant::now();
                 let outcome = worker_runner.invoke(envelope).await;
-                (
+                let elapsed_micros = duration_micros(started.elapsed());
+                let phase_timings = worker_timings
+                    .take_report(&activation_id, elapsed_micros)?;
+                Ok::<_, BenchError>((
                     activation_id,
                     expected_output,
-                    duration_micros(started.elapsed()),
+                    elapsed_micros,
+                    phase_timings,
                     classify_outcome(outcome),
-                )
+                ))
             }));
         }
 
+        barrier.wait().await;
+        let saturation_result = wait_for_activation_saturation(
+            pool,
+            mode,
+            config.pool_capacity,
+            expected_queue_depth,
+        )
+        .await;
+        // Always release real leases, including when the proof fails, before
+        // joining the participants so a failed assertion cannot deadlock the
+        // benchmark process.
+        saturation_gate.open();
         let mut completed = Vec::new();
         for handle in handles {
             completed.push(handle.await.map_err(|error| {
                 BenchError::new(format!("activation throughput task failed: {error}"))
-            })?);
+            })??);
         }
+        done.store(true, Ordering::Release);
+        let (batch_maximum_active, batch_maximum_queue) = monitor.await.map_err(|error| {
+            BenchError::new(format!("activation throughput monitor failed: {error}"))
+        })?;
+        saturation_result?;
+        maximum_observed_active_leases =
+            maximum_observed_active_leases.max(batch_maximum_active);
+        maximum_observed_queue_depth = maximum_observed_queue_depth.max(batch_maximum_queue);
+
         let elapsed = duration_micros(batch_started.elapsed());
         batch_micros.push(elapsed);
-        activation_count = activation_count.saturating_add(u64::from(config.pool_capacity));
+        activation_count = activation_count.saturating_add(u64::from(activations_per_batch));
 
         let pool_after = pool_snapshot(&pool.observations());
         let runner_after = runner_snapshot(&runner.snapshot());
@@ -240,40 +425,69 @@ async fn run_activation_throughput(
         let backend_resources_after = runtime_resources(&backend.resource_snapshot());
         backend.log_sink().clear();
         let retained_log_entries_after_clear = backend.log_sink().snapshot().len();
+        let observed_runtime_workers_after = workers.active_workers();
         let process_after = observe_process(
-            &format!("after_throughput_batch_{batch:08}"),
+            &format!("after_throughput_{mode_name}_batch_{batch:08}"),
             process_entry,
         );
 
-        for (activation_id, expected_output, activation_elapsed, outcome) in completed {
+        for (activation_id, expected_output, elapsed_micros, phase_timings, outcome) in completed {
+            activation_latencies.push(elapsed_micros);
+            acquire_waits.push(phase_timings.acquire_or_queue_wait_micros);
+            if phase_timings.acquisition_queued {
+                queued_acquire_waits.push(phase_timings.acquire_or_queue_wait_micros);
+            }
             let contract_result_valid = outcome.name == "success"
                 && outcome.output_utf8.as_deref() == Some(expected_output.as_str());
             samples.push(ActivationSample {
-                scenario: "throughput_echo".to_owned(),
+                scenario: format!("throughput_{mode_name}"),
                 iteration: u32::try_from(samples.len()).unwrap_or(u32::MAX),
                 activation_id: activation_id.0,
-                elapsed_micros: activation_elapsed,
+                elapsed_micros,
                 timeout_or_cancel_overshoot_micros: None,
                 expected_outcome: "success".to_owned(),
                 contract_result_valid,
                 outcome,
+                phase_timings,
                 pool_after: pool_after.clone(),
                 runner_after: runner_after.clone(),
                 prepared_cache_after: prepared_cache_after.clone(),
                 backend_resources_after: backend_resources_after.clone(),
                 retained_log_entries_after_clear,
+                observed_runtime_workers_after,
                 process_after: process_after.clone(),
             });
         }
     }
 
+    if maximum_observed_active_leases != config.pool_capacity
+        || maximum_observed_queue_depth != expected_queue_depth
+    {
+        return Err(BenchError::new(format!(
+            "real {} activation batch did not reach its coordinated pool state: active={} expected={}, queue={} expected={}",
+            mode_name,
+            maximum_observed_active_leases,
+            config.pool_capacity,
+            maximum_observed_queue_depth,
+            expected_queue_depth
+        )));
+    }
+
     let elapsed_micros = duration_micros(total_started.elapsed());
-    Ok(ActivationThroughputReport {
+    Ok(ThroughputModeReport {
+        mode: mode_name.to_owned(),
         activations: activation_count,
         elapsed_micros,
         activations_per_second: rate_per_second(activation_count, elapsed_micros),
         batch_micros: distribution(&batch_micros)
             .ok_or_else(|| BenchError::new("activation throughput produced no batches"))?,
+        activation_latency_micros: distribution(&activation_latencies)
+            .ok_or_else(|| BenchError::new("activation throughput produced no samples"))?,
+        acquire_wait_micros: distribution(&acquire_waits)
+            .ok_or_else(|| BenchError::new("activation throughput produced no acquire samples"))?,
+        queued_acquire_wait_micros: distribution(&queued_acquire_waits),
+        maximum_observed_active_leases,
+        maximum_observed_queue_depth,
     })
 }
 

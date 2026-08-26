@@ -8,7 +8,6 @@
 
 #![forbid(unsafe_code)]
 #![allow(
-    dead_code,
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
@@ -87,10 +86,10 @@ const FIXTURE_INFINITE: &str = "__latent_test_infinite";
 const FIXTURE_MEMORY: &str = "__latent_test_memory";
 const FIXTURE_DELAYED_ECHO_PREFIX: &str = "__latent_test_delayed_echo:";
 
-include!("phase0_baseline/corrected_definitions.rs");
+include!("phase0_baseline/definitions.rs");
 include!("phase0_baseline/timing.rs");
 include!("phase0_baseline/analysis.rs");
-include!("phase0_baseline/corrected_activation.rs");
-include!("phase0_baseline/corrected_throughput.rs");
-include!("phase0_baseline/corrected_run.rs");
-include!("phase0_baseline/corrected_report.rs");
+include!("phase0_baseline/activation.rs");
+include!("phase0_baseline/throughput.rs");
+include!("phase0_baseline/run.rs");
+include!("phase0_baseline/report.rs");

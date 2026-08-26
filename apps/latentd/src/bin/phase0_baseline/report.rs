@@ -25,24 +25,16 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
     let _ = writeln!(report, "# Phase 0 activation and resource baseline\n");
     let _ = writeln!(
         report,
-        "**Status:** {}  ",
+        "**Status:** {}",
         if passed { "PASS" } else { "FAIL" }
     );
+    let _ = writeln!(report, "**Schema:** `{}`", document.schema_version);
     let _ = writeln!(
         report,
-        "**Schema:** `{}`  ",
-        document.schema_version
-    );
-    let _ = writeln!(
-        report,
-        "**Generated:** Unix epoch {} ms  ",
+        "**Generated:** Unix epoch {} ms",
         document.generated_at_unix_millis
     );
-    let _ = writeln!(
-        report,
-        "**Raw results:** `{}`\n",
-        raw_path.display()
-    );
+    let _ = writeln!(report, "**Raw results:** `{}`\n", raw_path.display());
     let _ = writeln!(
         report,
         "> Observational Phase 0 evidence only. These values are not production SLOs, scaling commitments, or competitive claims.\n"
@@ -88,10 +80,35 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
     );
     report.push('\n');
 
-    let _ = writeln!(report, "## Runtime and sample configuration\n");
+    let _ = writeln!(report, "## Runtime configuration and pass/fail thresholds\n");
     let _ = writeln!(report, "| Field | Value |");
     let _ = writeln!(report, "|---|---:|");
     report_row(&mut report, "Mode", &format!("{:?}", document.config.mode));
+    report_row(
+        &mut report,
+        "Independent issue-23 cold samples",
+        &document.executable_harness.samples.len().to_string(),
+    );
+    report_row(
+        &mut report,
+        "Warm echo samples",
+        &document.config.warm_samples.to_string(),
+    );
+    report_row(
+        &mut report,
+        "Mixed-sequence repetitions",
+        &document.config.sequence_repetitions.to_string(),
+    );
+    report_row(
+        &mut report,
+        "Throughput batches per mode",
+        &document.config.throughput_batches.to_string(),
+    );
+    report_row(
+        &mut report,
+        "Pool iterations per worker",
+        &document.config.pool_iterations.to_string(),
+    );
     report_row(
         &mut report,
         "Runtime workers",
@@ -106,26 +123,6 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
         &mut report,
         "Pool queue capacity",
         &document.config.pool_queue_capacity.to_string(),
-    );
-    report_row(
-        &mut report,
-        "Warm echo samples",
-        &document.config.warm_samples.to_string(),
-    );
-    report_row(
-        &mut report,
-        "Mixed-sequence repetitions",
-        &document.config.sequence_repetitions.to_string(),
-    );
-    report_row(
-        &mut report,
-        "Activation throughput batches",
-        &document.config.throughput_batches.to_string(),
-    );
-    report_row(
-        &mut report,
-        "Pool iterations per worker",
-        &document.config.pool_iterations.to_string(),
     );
     report_row(&mut report, "Fuel grant", &document.config.fuel.to_string());
     report_row(
@@ -148,30 +145,64 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
         "Cancellation delay",
         &format!("{} ms", document.config.cancel_after_ms),
     );
-    report.push('\n');
-
-    let _ = writeln!(report, "## Artifact\n");
-    let _ = writeln!(report, "| Field | Value |");
-    let _ = writeln!(report, "|---|---|");
-    report_row(&mut report, "Capsule", &document.artifact.capsule_path);
-    report_row(&mut report, "Component", &document.artifact.component_path);
-    report_row(&mut report, "Digest", &document.artifact.component_digest);
     report_row(
         &mut report,
-        "Component bytes",
-        &document.artifact.component_bytes.to_string(),
+        "Maximum interruption overshoot",
+        &format!("{} ms", document.config.maximum_overshoot_ms),
+    );
+    report_row(
+        &mut report,
+        "RSS growth allowance",
+        &format_bytes(document.config.rss_growth_allowance_bytes),
+    );
+    report_row(
+        &mut report,
+        "File-descriptor growth allowance",
+        &document.config.fd_growth_allowance.to_string(),
     );
     report.push('\n');
+
+    let _ = writeln!(report, "## Exact issue-23 executable probe\n");
+    let _ = writeln!(
+        report,
+        "Cold samples come from fresh launches of the real `latentd phase0-spike invoke-once` command. The same checked executable probe also retains trap, timeout, and same-composition post-trap recovery documents; all use the shared Phase 0 composition API.\n"
+    );
+    report_distribution_row_header(&mut report);
+    report_distribution_row(
+        &mut report,
+        "Process launch to completion",
+        &document
+            .executable_harness
+            .process_launch_to_completion_micros,
+    );
+    report_distribution_row(
+        &mut report,
+        "Cold activation inside issue-23 harness",
+        &document.executable_harness.cold_activation_micros,
+    );
+    let _ = writeln!(
+        report,
+        "Exact failure/recovery probes retained: {}.\n",
+        document.executable_harness.failure_recovery_samples.len()
+    );
 
     let _ = writeln!(report, "## Startup and preparation\n");
     let _ = writeln!(report, "| Metric | Microseconds |");
     let _ = writeln!(report, "|---|---:|");
     report_row(
         &mut report,
-        "Rust entry to fixed runtime/pool ready",
+        "External process launch to runtime/pool ready",
         &document
             .timings
-            .process_entry_to_runtime_ready_micros
+            .process_launch_to_runtime_ready_micros
+            .to_string(),
+    );
+    report_row(
+        &mut report,
+        "Rust entry to observed worker/pool readiness",
+        &document
+            .timings
+            .rust_entry_to_runtime_ready_micros
             .to_string(),
     );
     report_row(
@@ -197,88 +228,73 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
     );
     report_row(
         &mut report,
-        "Rust entry to first invocation ready",
+        "Rust entry to retained invocation readiness",
         &document
             .timings
-            .process_entry_to_first_invocation_ready_micros
+            .rust_entry_to_first_invocation_ready_micros
+            .to_string(),
+    );
+    report_row(
+        &mut report,
+        "Prepared-component release",
+        &document
+            .timings
+            .prepared_component_release_micros
             .to_string(),
     );
     report.push('\n');
 
-    let _ = writeln!(report, "## Activation distributions\n");
+    let _ = writeln!(report, "## Activation and cleanup distributions\n");
     let _ = writeln!(
         report,
-        "Percentiles use nearest-rank ordering over raw wall-clock samples.\n"
+        "Percentiles use nearest-rank ordering over the raw samples. The typed guest-call interval includes Wasmtime's automatic canonical post-return; backend boundaries then separately record setup, in-guest host imports, host-visible post-call result accounting, activation-resource reclamation, outcome classification, reusable-proof return, and cell disposition. `post_invocation_cleanup_micros` is the authoritative sum after the host-visible guest-call completion boundary; `backend_resource_cleanup_micros` is retained only as a residual interval.\n"
     );
-    let _ = writeln!(
-        report,
-        "| Metric | N | Min | P50 | P95 | P99 | Max | Mean |"
-    );
-    let _ = writeln!(report, "|---|---:|---:|---:|---:|---:|---:|---:|");
+    report_distribution_row_header(&mut report);
     for (name, distribution) in &document.timings.distributions {
-        let _ = writeln!(
-            report,
-            "| {} | {} | {} | {} | {} | {} | {} | {:.1} |",
-            markdown_cell(name),
-            distribution.samples,
-            distribution.minimum,
-            distribution.p50,
-            distribution.p95,
-            distribution.p99,
-            distribution.maximum,
-            distribution.mean
-        );
+        report_distribution_row(&mut report, name, distribution);
     }
     report.push('\n');
 
     let _ = writeln!(report, "## Fixed-pool and activation throughput\n");
-    let _ = writeln!(report, "| Metric | Value |");
-    let _ = writeln!(report, "|---|---:|");
-    report_row(
-        &mut report,
-        "Immediate acquire P50",
-        &format!("{} us", document.pool_probe.acquire_micros.p50),
+    let _ = writeln!(report, "| Metric | At capacity | Bounded queue saturation |");
+    let _ = writeln!(report, "|---|---:|---:|");
+    let capacity = &document.activation_throughput.at_capacity;
+    let saturated = &document.activation_throughput.bounded_queue_saturation;
+    let _ = writeln!(
+        report,
+        "| Activations | {} | {} |",
+        capacity.activations, saturated.activations
     );
-    report_row(
-        &mut report,
-        "Queued wait P95",
-        &format!("{} us", document.pool_probe.queued_wait_micros.p95),
+    let _ = writeln!(
+        report,
+        "| Activations/second | {:.1} | {:.1} |",
+        capacity.activations_per_second, saturated.activations_per_second
     );
-    report_row(
-        &mut report,
-        "Release P50",
-        &format!("{} us", document.pool_probe.release_micros.p50),
+    let _ = writeln!(
+        report,
+        "| Maximum active leases | {} | {} |",
+        capacity.maximum_observed_active_leases,
+        saturated.maximum_observed_active_leases
     );
-    report_row(
-        &mut report,
-        "Bounded overflow rejected",
-        &document.pool_probe.overflow_rejected.to_string(),
+    let _ = writeln!(
+        report,
+        "| Maximum queue depth | {} | {} |",
+        capacity.maximum_observed_queue_depth,
+        saturated.maximum_observed_queue_depth
     );
-    report_row(
-        &mut report,
-        "Pool acquire/release operations",
-        &document.pool_probe.throughput_operations.to_string(),
+    let _ = writeln!(
+        report,
+        "| Acquire-wait P95 (us) | {} | {} |",
+        capacity.acquire_wait_micros.p95,
+        saturated.acquire_wait_micros.p95
     );
-    report_row(
-        &mut report,
-        "Pool operations/second",
-        &format!(
-            "{:.1}",
-            document.pool_probe.throughput_operations_per_second
-        ),
-    );
-    report_row(
-        &mut report,
-        "Concurrent activations",
-        &document.activation_throughput.activations.to_string(),
-    );
-    report_row(
-        &mut report,
-        "Activations/second at configured capacity",
-        &format!(
-            "{:.1}",
-            document.activation_throughput.activations_per_second
-        ),
+    let _ = writeln!(
+        report,
+        "| Queued acquire-wait P95 (us) | n/a | {} |",
+        saturated
+            .queued_acquire_wait_micros
+            .as_ref()
+            .map_or(0, |distribution| distribution.p95)
     );
     report.push('\n');
 
@@ -311,6 +327,29 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
         "- Compare runs only when CPU, memory, OS/kernel, Rust, Wasmtime, target, build profile, pool topology, limits, fixture digest, and sample configuration are recorded and materially equivalent."
     );
     report
+}
+
+fn report_distribution_row_header(report: &mut String) {
+    let _ = writeln!(
+        report,
+        "| Metric | N | Min | P50 | P95 | P99 | Max | Mean |"
+    );
+    let _ = writeln!(report, "|---|---:|---:|---:|---:|---:|---:|---:|");
+}
+
+fn report_distribution_row(report: &mut String, name: &str, distribution: &Distribution) {
+    let _ = writeln!(
+        report,
+        "| {} | {} | {} | {} | {} | {} | {} | {:.1} |",
+        markdown_cell(name),
+        distribution.samples,
+        distribution.minimum,
+        distribution.p50,
+        distribution.p95,
+        distribution.p99,
+        distribution.maximum,
+        distribution.mean
+    );
 }
 
 fn report_row(report: &mut String, name: &str, value: &str) {

@@ -57,44 +57,6 @@ fn resources_are_reclaimed(resources: &RuntimeResourceReport) -> bool {
         && resources.live_cancellation_probes == 0
 }
 
-fn expected_outcome_for_scenario(scenario: &str) -> Option<&'static str> {
-    match scenario {
-        "cold_echo" | "warm_echo" | "sequence_echo" | "recovery_echo" | "throughput_echo" => {
-            Some("success")
-        }
-        "domain_error" => Some("domain_error"),
-        "trap" => Some("trap"),
-        "timeout" => Some("timeout"),
-        "cancellation" => Some("cancelled"),
-        "memory_pressure" => Some("resource_exhausted"),
-        _ => None,
-    }
-}
-
-fn failure_recovery_is_healthy(samples: &[ActivationSample]) -> bool {
-    let failure_scenarios = [
-        "domain_error",
-        "trap",
-        "timeout",
-        "cancellation",
-        "memory_pressure",
-    ];
-    for (index, sample) in samples.iter().enumerate() {
-        if failure_scenarios.contains(&sample.scenario.as_str()) {
-            let Some(next) = samples.get(index.saturating_add(1)) else {
-                return false;
-            };
-            if next.scenario != "recovery_echo"
-                || next.outcome.name != "success"
-                || !next.contract_result_valid
-            {
-                return false;
-            }
-        }
-    }
-    true
-}
-
 fn outcome_summary(samples: &[ActivationSample]) -> String {
     let mut counts = BTreeMap::<String, usize>::new();
     for sample in samples {

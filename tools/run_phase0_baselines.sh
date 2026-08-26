@@ -422,7 +422,12 @@ if not phase_fields.issubset(first_sample.get("phase_timings", {})):
 saturated = document.get("activation_throughput", {}).get(
     "bounded_queue_saturation", {}
 )
+at_capacity = document.get("activation_throughput", {}).get("at_capacity", {})
 config = document.get("config", {})
+if at_capacity.get("maximum_observed_active_leases") != config.get("pool_capacity"):
+    raise SystemExit("at-capacity activation throughput did not reach pool capacity")
+if at_capacity.get("maximum_observed_queue_depth") != 0:
+    raise SystemExit("at-capacity activation throughput unexpectedly queued work")
 if saturated.get("maximum_observed_active_leases") != config.get("pool_capacity"):
     raise SystemExit("real activation saturation did not reach pool capacity")
 if saturated.get("maximum_observed_queue_depth") != config.get("pool_queue_capacity"):

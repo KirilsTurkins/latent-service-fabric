@@ -12,11 +12,10 @@ struct PhaseTimingRecorder {
     state: Arc<Mutex<HashMap<String, MutableActivationPhaseTiming>>>,
 }
 
-/// A test-only coordination seam around the real pool acquisition. During the
-/// bounded-queue throughput probe, acquired cells pause here before the real
-/// runner enters Wasmtime. That gives every remaining real activation a chance
-/// to enqueue, proving the configured capacity and queue bound before any
-/// delayed guest call occupies a Tokio worker.
+/// A test-only coordination seam around the real pool acquisition. During each
+/// coordinated throughput probe, acquired cells pause here before the real
+/// runner enters Wasmtime. That proves the at-capacity or bounded-queue raw
+/// pool state before any delayed guest call can occupy a Tokio worker.
 #[derive(Clone, Debug)]
 struct ThroughputSaturationGate {
     closed: tokio::sync::watch::Sender<bool>,

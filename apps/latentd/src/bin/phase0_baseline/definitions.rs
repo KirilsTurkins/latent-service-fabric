@@ -16,6 +16,14 @@ struct Cli {
     #[arg(long, value_name = "PATH")]
     capsule: PathBuf,
 
+    /// Measurements collected by repeatedly launching the real issue-23 executable path.
+    #[arg(long, value_name = "PATH")]
+    executable_harness_probe: PathBuf,
+
+    /// Parent-process wall-clock timestamp captured immediately before process launch.
+    #[arg(long)]
+    parent_launch_unix_micros: u64,
+
     /// Machine-readable raw result destination.
     #[arg(long, value_name = "PATH")]
     output_json: PathBuf,
@@ -48,7 +56,7 @@ struct Cli {
     #[arg(long)]
     sequence_repetitions: Option<u32>,
 
-    /// Concurrent activation-throughput batches; profile default when omitted.
+    /// Concurrent activation-throughput batches per mode; profile default when omitted.
     #[arg(long)]
     throughput_batches: Option<u32>,
 
@@ -113,8 +121,8 @@ impl EffectiveConfig {
     fn from_cli(cli: &Cli) -> Result<Self, BenchError> {
         let (warm_samples, sequence_repetitions, throughput_batches, pool_iterations) =
             match cli.mode {
-                BenchmarkMode::Smoke => (3, 1, 2, 16),
-                BenchmarkMode::Full => (30, 8, 20, 1_000),
+                BenchmarkMode::Smoke => (5, 2, 2, 32),
+                BenchmarkMode::Full => (40, 10, 24, 2_000),
             };
         let config = Self {
             mode: cli.mode,
@@ -148,9 +156,10 @@ impl EffectiveConfig {
             || config.memory_pressure_bytes == 0
             || config.timeout_ms == 0
             || config.cancel_after_ms == 0
+            || cli.parent_launch_unix_micros == 0
         {
             return Err(BenchError::new(
-                "all capacities, counts, budgets, and interruption delays must be non-zero",
+                "all capacities, counts, budgets, interruption delays, and launch timestamps must be non-zero",
             ));
         }
         Ok(config)
@@ -213,7 +222,7 @@ struct ProcessSnapshot {
     notes: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 struct PoolSnapshotReport {
     capacity: u32,
     available: u32,
@@ -267,6 +276,33 @@ struct OutcomeReport {
     consumption: ConsumptionReport,
 }
 
+#[derive(Debug, Clone, Default, Serialize)]
+struct ActivationPhaseTimingReport {
+    acquisition_queued: bool,
+    acquire_or_queue_wait_micros: u64,
+    /// Wasmtime's existing consumption observation, retained for continuity.
+    contained_execution_micros: u64,
+    /// Explicit backend boundaries recorded inside `Phase0WasmtimeBackend`.
+    backend_setup_micros: u64,
+    guest_call_micros: u64,
+    host_call_micros: u64,
+    host_call_count: u64,
+    component_post_return_micros: u64,
+    activation_resource_reclamation_micros: u64,
+    outcome_classification_micros: u64,
+    reusable_proof_micros: u64,
+    backend_total_micros: u64,
+    /// Legacy residual interval. It contains setup and host work and is not an
+    /// authoritative cleanup measurement.
+    backend_resource_cleanup_micros: u64,
+    cell_disposition_micros: u64,
+    /// Authoritative cleanup interval from the host-visible guest-call/
+    /// canonical-post-return completion boundary through reusable-proof return
+    /// and cell disposition.
+    post_invocation_cleanup_micros: u64,
+    total_invocation_micros: u64,
+}
+
 #[derive(Debug, Clone, Serialize)]
 struct ActivationSample {
     scenario: String,
@@ -277,12 +313,22 @@ struct ActivationSample {
     expected_outcome: String,
     contract_result_valid: bool,
     outcome: OutcomeReport,
+    phase_timings: ActivationPhaseTimingReport,
     pool_after: PoolSnapshotReport,
     runner_after: RunnerSnapshotReport,
     prepared_cache_after: CacheSnapshotReport,
     backend_resources_after: RuntimeResourceReport,
     retained_log_entries_after_clear: usize,
+    observed_runtime_workers_after: usize,
     process_after: ProcessSnapshot,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct TopologySnapshot {
+    label: String,
+    observed_runtime_workers: usize,
+    process: ProcessSnapshot,
+    pool: PoolSnapshotReport,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -303,15 +349,29 @@ struct PoolProbeReport {
     throughput_operations: u64,
     throughput_elapsed_micros: u64,
     throughput_operations_per_second: f64,
+    maximum_observed_active_leases: u32,
+    maximum_observed_queue_depth: u32,
     final_state: PoolSnapshotReport,
 }
 
 #[derive(Debug, Clone, Serialize)]
-struct ActivationThroughputReport {
+struct ThroughputModeReport {
+    mode: String,
     activations: u64,
     elapsed_micros: u64,
     activations_per_second: f64,
     batch_micros: Distribution,
+    activation_latency_micros: Distribution,
+    acquire_wait_micros: Distribution,
+    queued_acquire_wait_micros: Option<Distribution>,
+    maximum_observed_active_leases: u32,
+    maximum_observed_queue_depth: u32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ActivationThroughputReport {
+    at_capacity: ThroughputModeReport,
+    bounded_queue_saturation: ThroughputModeReport,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -338,13 +398,57 @@ struct ArtifactReport {
     component_bytes: u64,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct ExecutableHarnessProbeSample {
+    iteration: u32,
+    launch_to_completion_micros: u64,
+    activation_elapsed_micros: u64,
+    runtime_workers: usize,
+    pool_capacity: u32,
+    listener_socket_count: u32,
+    shutdown_clean: bool,
+    topology_unchanged: bool,
+    output_utf8: String,
+    raw_result: Value,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct ExecutableHarnessFailureProbeSample {
+    scenario: String,
+    command: Vec<String>,
+    expected_exit_code: i32,
+    exit_code: i32,
+    expected_outcome: String,
+    raw_result: Value,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct ExecutableHarnessProbeDocument {
+    schema_version: String,
+    command: Vec<String>,
+    samples: Vec<ExecutableHarnessProbeSample>,
+    failure_recovery_samples: Vec<ExecutableHarnessFailureProbeSample>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct ExecutableHarnessProbeReport {
+    schema_version: String,
+    command: Vec<String>,
+    samples: Vec<ExecutableHarnessProbeSample>,
+    failure_recovery_samples: Vec<ExecutableHarnessFailureProbeSample>,
+    process_launch_to_completion_micros: Distribution,
+    cold_activation_micros: Distribution,
+}
+
 #[derive(Debug, Clone, Serialize)]
 struct TimingReport {
-    process_entry_to_runtime_ready_micros: u64,
+    process_launch_to_runtime_ready_micros: u64,
+    rust_entry_to_runtime_ready_micros: u64,
     capsule_validation_and_load_micros: u64,
     wasmtime_engine_construction_micros: u64,
     component_preparation_micros: u64,
-    process_entry_to_first_invocation_ready_micros: u64,
+    rust_entry_to_first_invocation_ready_micros: u64,
+    prepared_component_release_micros: u64,
     distributions: BTreeMap<String, Distribution>,
 }
 
@@ -359,21 +463,16 @@ struct BaselineDocument {
     environment: EnvironmentReport,
     artifact: ArtifactReport,
     config: EffectiveConfig,
+    executable_harness: ExecutableHarnessProbeReport,
     timings: TimingReport,
     pool_probe: PoolProbeReport,
     activation_throughput: ActivationThroughputReport,
     activation_samples: Vec<ActivationSample>,
     process_snapshots: Vec<ProcessSnapshot>,
+    topology_snapshots: Vec<TopologySnapshot>,
     checks: Vec<Check>,
     limitations: Vec<String>,
     conclusions: Vec<String>,
-}
-
-#[derive(Debug)]
-struct LoadedArtifact {
-    artifact: CapsuleArtifact,
-    component_path: PathBuf,
-    component_bytes: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -412,17 +511,22 @@ struct InvocationRequest<'a> {
 
 struct AsyncRunResult {
     artifact: ArtifactReport,
+    executable_harness: ExecutableHarnessProbeReport,
     validation_micros: u64,
     engine_micros: u64,
     preparation_micros: u64,
     first_invocation_ready_micros: u64,
+    prepared_release_micros: u64,
     pool_probe: PoolProbeReport,
     activation_throughput: ActivationThroughputReport,
     activation_samples: Vec<ActivationSample>,
     process_snapshots: Vec<ProcessSnapshot>,
+    topology_snapshots: Vec<TopologySnapshot>,
     checks: Vec<Check>,
     distributions: BTreeMap<String, Distribution>,
 }
+
+type RuntimeWorkerMonitor = Phase0RuntimeWorkerMonitor;
 
 fn main() -> ExitCode {
     let process_entry = Instant::now();
@@ -435,125 +539,4 @@ fn main() -> ExitCode {
             ExitCode::from(2)
         }
     }
-}
-
-fn run(cli: Cli, process_entry: Instant) -> Result<bool, BenchError> {
-    let config = EffectiveConfig::from_cli(&cli)?;
-    let initial_snapshot = observe_process("process_entry", process_entry);
-
-    let runtime = Builder::new_multi_thread()
-        .worker_threads(config.runtime_workers)
-        .thread_name("phase0-baseline-worker")
-        .enable_time()
-        .build()
-        .map_err(|error| BenchError::new(format!("failed to build Tokio runtime: {error}")))?;
-    let pool = Arc::new(
-        FixedCellPool::new(FixedCellPoolConfig::new(
-            NodeId(NODE_ID.to_owned()),
-            CellClass::Standard,
-            config.pool_capacity,
-            config.pool_queue_capacity,
-        ))
-        .map_err(platform_error)?,
-    );
-    runtime.block_on(async {
-        let mut readiness_tasks = Vec::new();
-        for _ in 0..config.runtime_workers {
-            readiness_tasks.push(tokio::spawn(async { tokio::task::yield_now().await }));
-        }
-        for task in readiness_tasks {
-            let _ = task.await;
-        }
-        tokio::time::sleep(Duration::from_millis(10)).await;
-    });
-    let runtime_ready_micros = elapsed_micros(process_entry);
-    let runtime_ready_snapshot = observe_process("runtime_and_pool_ready", process_entry);
-
-    let mut result = runtime.block_on(run_async(
-        &cli,
-        &config,
-        Arc::clone(&pool),
-        process_entry,
-    ))?;
-    result.process_snapshots.insert(0, runtime_ready_snapshot);
-    result.process_snapshots.insert(0, initial_snapshot.clone());
-
-    drop(pool);
-    drop(runtime);
-    std::thread::sleep(Duration::from_millis(25));
-    let final_snapshot = observe_process("runtime_stopped", process_entry);
-    let final_thread_pass = match (initial_snapshot.thread_count, final_snapshot.thread_count) {
-        (Some(initial), Some(final_count)) => final_count <= initial.saturating_add(1),
-        _ => false,
-    };
-    result.checks.push(Check {
-        name: "runtime_shutdown_returns_thread_count_to_process_baseline".to_owned(),
-        passed: final_thread_pass,
-        expected: format!("at most {} threads", initial_snapshot.thread_count.unwrap_or(0) + 1),
-        observed: final_snapshot
-            .thread_count
-            .map_or_else(|| "unsupported".to_owned(), |value| value.to_string()),
-    });
-    result.process_snapshots.push(final_snapshot);
-
-    let environment = environment_report();
-    let all_passed = result.checks.iter().all(|check| check.passed);
-    let status = if all_passed { "pass" } else { "fail" }.to_owned();
-    let limitations = vec![
-        "Measurements are observations from one finite local process and are not production SLOs, capacity guarantees, or competitive claims.".to_owned(),
-        "Wall-clock distributions include host scheduling noise; compare like-for-like hardware, kernel, toolchain, target, profile, and runtime configuration.".to_owned(),
-        "RSS allocators and Wasmtime may retain bounded arenas after first use; the invariant checks bounded range and monotonic growth after warm-up rather than requiring byte-for-byte return.".to_owned(),
-        "Linux /proc supplies RSS, virtual memory, thread, descriptor, and socket probes. Other operating systems are reported unsupported and fail the strict checked-in smoke baseline.".to_owned(),
-        "Component preparation is measured in-process after capsule validation and before the first activation; process-loader time before Rust main is not observable here.".to_owned(),
-    ];
-    let conclusions = if all_passed {
-        vec![
-            "All configured fixed-capacity and bounded-growth invariants passed for this sample window.".to_owned(),
-            "Trap, timeout, cancellation, domain error, and memory-pressure samples did not prevent the immediately following echo from succeeding.".to_owned(),
-            "The prepared cache remained bounded while active and returned to zero after explicit release.".to_owned(),
-        ]
-    } else {
-        vec![
-            "At least one configured invariant failed; inspect the raw checks and samples before using this run as a comparison baseline.".to_owned(),
-        ]
-    };
-
-    let document = BaselineDocument {
-        schema_version: SCHEMA_VERSION,
-        generated_at_unix_millis: now_unix_millis(),
-        status,
-        observational_only: true,
-        production_ready: false,
-        phase1_api_compatible: false,
-        environment,
-        artifact: result.artifact,
-        config: config.clone(),
-        timings: TimingReport {
-            process_entry_to_runtime_ready_micros: runtime_ready_micros,
-            capsule_validation_and_load_micros: result.validation_micros,
-            wasmtime_engine_construction_micros: result.engine_micros,
-            component_preparation_micros: result.preparation_micros,
-            process_entry_to_first_invocation_ready_micros: result.first_invocation_ready_micros,
-            distributions: result.distributions,
-        },
-        pool_probe: result.pool_probe,
-        activation_throughput: result.activation_throughput,
-        activation_samples: result.activation_samples,
-        process_snapshots: result.process_snapshots,
-        checks: result.checks,
-        limitations,
-        conclusions,
-    };
-
-    write_outputs(&cli.output_json, &cli.output_report, &document)?;
-    println!(
-        "{}",
-        serde_json::to_string(&json!({
-            "schema_version": SCHEMA_VERSION,
-            "status": document.status,
-            "raw_results": cli.output_json,
-            "report": cli.output_report,
-        }))?
-    );
-    Ok(all_passed)
 }
