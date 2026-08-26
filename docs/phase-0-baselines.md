@@ -1,58 +1,110 @@
 # Phase 0 activation, containment, and resource baselines
 
-The Phase 0 baseline is a reproducible observational probe for the executable spike. It composes the real fixed cell pool, Wasmtime backend, prepared component, and activation runner in one retained process. It is not a production benchmark, service-level objective, competitive comparison, cluster-capacity model, or Phase 1 API.
+The Phase 0 baseline records reproducible observational evidence for issue #24. It is not a production benchmark, service-level objective, competitive comparison, cluster-capacity model, or Phase 1 API.
 
 ## Commands
 
-The deterministic CI-sized run is:
+Run the deterministic CI-sized profile:
 
 ```bash
 tools/run_phase0_baselines.sh smoke target/phase0-baseline/smoke
 ```
 
-The heavier local run is:
+Run and refresh the checked-in full-profile reference:
 
 ```bash
-tools/run_phase0_baselines.sh full target/phase0-baseline/full
+tools/run_phase0_baselines.sh full benchmarks/phase0
 ```
 
-Both commands run `tools/validate_contracts.sh` first. The benchmark therefore fails rather than skipping when the Rust Wasm targets, `wasm-tools`, Buf, validator dependencies, generated echo capsule, or containment component are unavailable. The runner builds `phase0-baseline` in release mode with `--locked`, stages the containment component with an exact SHA-256 capsule digest, and writes:
+Both commands run `tools/validate_contracts.sh` first. Missing Rust Wasm targets, `wasm-tools`, Buf, validator dependencies, generated capsules, or containment fixtures therefore fail the command rather than silently skipping measurements.
 
-- `raw-results.json`: the machine-readable measurements, snapshots, distributions, checks, limitations, and conclusions.
-- `BASELINE.md`: a concise report generated from the same raw document.
+## Exact issue-23 executable path
 
-The checked-in snapshot under `benchmarks/phase0/` is a reference observation from the documented environment. New runs should be stored separately and compared only when their environment and configuration are materially equivalent.
+Before retained measurements begin, the runner repeatedly launches:
 
-## Measurement method
+```text
+latentd phase0-spike invoke-once
+```
 
-The harness records distinct durations for Rust process entry to fixed runtime/pool readiness, capsule validation and component loading, Wasmtime engine/backend construction, component preparation, and process entry to first-invocation readiness. It then retains one prepared backend and runner across:
+Each launch uses the staged containment capsule and the same worker, pool, queue, memory, fuel, and timeout configuration as the retained benchmark. The complete issue-23 JSON result is retained in `raw-results.json`. Every sample must return the expected echo, report unchanged pre-load/post-activation topology, and prove a clean shutdown.
 
-1. one cold echo and a configurable warm-echo sample set;
-2. repeated echo, declared domain error, trap, timeout, explicit cancellation, and memory-pressure cases;
-3. a successful echo immediately after every failure;
-4. direct fixed-pool acquire/release samples, capacity saturation, every bounded queue slot, one rejected overflow waiter, and concurrent acquire/release throughput;
-5. concurrent delayed-echo batches with exactly the configured cell capacity.
+These fresh-process samples provide the cold-activation distribution and ensure that configuration validation, topology monitoring, preparation, cleanup, and result semantics from issue #23 cannot regress while a separately reconstructed benchmark still passes.
 
-Latency and interruption values are retained as raw samples and summarized with minimum, nearest-rank P50/P95/P99, maximum, and mean. Throughput is an observed operation count divided by measured batch wall time.
+## Startup and readiness
 
-## Invariants and resource probes
+The parent process captures a wall-clock timestamp immediately before spawning `phase0-baseline`. The child reports readiness only after Tokio worker lifecycle hooks observe exactly the configured worker count and the fixed pool reports its configured capacity. No fixed readiness sleep is used.
 
-At idle, after every activation or throughput batch, after prepared-component release, and after runtime shutdown, the harness records the available platform observations. The strict checked-in and CI baseline uses Linux `/proc` to record:
+The output distinguishes:
+
+- external process launch to runtime/pool readiness;
+- Rust entry to runtime/pool readiness;
+- capsule validation and component loading;
+- Wasmtime engine/backend construction;
+- component preparation;
+- Rust entry to retained invocation readiness;
+- prepared-component release.
+
+## Activation phase timings
+
+The retained runner uses transparent timing wrappers around the real `FixedCellPool` and `Phase0WasmtimeBackend`. Every raw activation sample records:
+
+- immediate acquisition or bounded-queue wait;
+- contained guest execution;
+- total backend call to the reusable-proof boundary;
+- backend resource-cleanup/host-overhead interval;
+- cell release or quarantine disposition;
+- combined post-invocation cleanup;
+- total invocation latency.
+
+The backend cleanup interval is the reusable-proof boundary minus Wasmtime’s guest wall-time measurement. It therefore includes bounded backend setup and host overhead in addition to destruction of activation-owned runtime resources. This limitation is recorded explicitly rather than presenting the value as pure destructor time.
+
+## Cold, warm, containment, and recovery distributions
+
+Cold echo samples come from independent launches of the exact issue-23 executable. Warm samples use one retained preparation. Domain error, trap, timeout, cancellation, and memory pressure each have distinct raw scenarios and are immediately followed by separately labelled recovery scenarios:
+
+- `recovery_after_domain_error`;
+- `recovery_after_trap`;
+- `recovery_after_timeout`;
+- `recovery_after_cancellation`;
+- `recovery_after_memory_pressure`.
+
+Minimum, nearest-rank P50/P95/P99, maximum, and mean are emitted for latency and cleanup measurements. The full profile uses multiple cold launches and repeated containment/recovery sequences; a single measurement is never presented as a distribution.
+
+## Capacity and bounded queue saturation
+
+Two end-to-end activation throughput modes execute through the complete activation runner and Wasmtime backend:
+
+1. exactly `pool_capacity` concurrent delayed echoes;
+2. exactly `pool_capacity + pool_queue_capacity` concurrent delayed echoes.
+
+A concurrent pool monitor records maximum active leases and queue depth. The saturation mode fails unless it observes both configured bounds. Queued activation acquire-wait, total latency, batch latency, and throughput are reported separately from the at-capacity mode.
+
+The lower-level fixed-pool probe remains separate. It measures direct acquire, queued wait, release, overflow rejection, and acquire/release throughput without presenting those operations as activation throughput.
+
+## Topology and bounded-growth invariants
+
+Structured topology fingerprints are recorded before capsule/component loading, after preparation, after completed workloads, after prepared-component release, and after runtime shutdown. They include:
 
 - process and child-process count;
 - OS thread count;
-- file-descriptor count;
-- process-owned open socket descriptors and process-owned TCP/TCP6 listening sockets;
-- resident-set and virtual-memory size;
-- fixed-pool capacity, available cells, active leases, queued waiters, and quarantined cells;
-- activation-runner cancellation registrations, running and total invocations, releases, quarantines, and disposition failures;
-- prepared-cache entries, source bytes, and configured bounds;
-- live Wasmtime invocations, stores, host states, component instances, temporary buffers, and cancellation probes.
+- lifecycle-observed Tokio worker count;
+- open and listening socket count;
+- fixed-pool capacity, availability, active leases, queue depth, and quarantine count;
+- file descriptors, RSS, and virtual memory;
+- runner cancellation and invocation counters;
+- prepared-cache entries and bytes;
+- live stores, host states, component instances, temporary buffers, and cancellation probes.
 
-A run fails when topology changes, an activation-owned resource remains live, the queue exceeds its configured bound, the cache exceeds its configured bound or does not clear on release, a failure degrades the next echo, timeout/cancellation overshoot exceeds the configured allowance, or RSS/file descriptors move outside the finite steady-state allowance. Cumulative `stores_created` is reported separately and is not treated as a live resource.
+The configured Tokio worker count, process count, sockets, listeners, and structured cell state must remain stable across loading and repeated calls. One bounded Wasmtime epoch-ticker thread may appear during engine construction; the post-preparation OS-thread count must then remain constant.
 
-## Comparison rules and limitations
+Every completed activation must return active leases, waiters, cancellation registrations, running invocations, live stores, host states, component instances, temporary buffers, cancellation probes, retained logs, and quarantines to baseline. RSS and file descriptors must remain within the recorded finite allowances.
 
-Compare observations only when CPU, total memory, OS and kernel, Rust and Cargo versions, Rust target, Wasmtime version, release/debug profile, repository commit, fixture digest, worker count, pool and queue capacity, budgets, timeout settings, sample counts, and probe support are recorded and materially equivalent.
+## Checked-in evidence
 
-Shared-host scheduling, CPU frequency, page-fault state, filesystem cache, allocator behavior, and runner virtualization add noise. Wasmtime or the allocator may retain a bounded arena after first use, so the resource gate tests a configured finite range and monotonic trend after warm-up rather than byte-for-byte RSS return. The harness does not make claims about autoscaling, clustered placement, stateful services, networking, long-duration leak behavior, or production concurrency.
+`benchmarks/phase0/raw-results.json` and `benchmarks/phase0/BASELINE.md` are generated from the same full-profile run. The branch workflow runs the deterministic smoke gate first, then regenerates and commits those full-profile files to the PR branch. The evidence commit uses `[skip ci]` to avoid a workflow loop.
+
+Reference files must not be replaced with measurements from a materially different CPU, memory size, OS/kernel, Rust/Wasmtime toolchain, target, build profile, fixture digest, pool topology, budget, threshold, or sample configuration without documenting the new environment and reason.
+
+## Unsupported conclusions
+
+The baseline does not support conclusions about production SLOs, competitive performance, cluster scaling, 100,000-service density, state throughput, remote-call latency, networking, autoscaling, long-duration leaks, or call-graph fusion. Those remain later-phase work.
