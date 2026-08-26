@@ -25,13 +25,13 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
     let _ = writeln!(report, "# Phase 0 activation and resource baseline\n");
     let _ = writeln!(
         report,
-        "**Status:** {}  ",
+        "**Status:** {}",
         if passed { "PASS" } else { "FAIL" }
     );
-    let _ = writeln!(report, "**Schema:** `{}`  ", document.schema_version);
+    let _ = writeln!(report, "**Schema:** `{}`", document.schema_version);
     let _ = writeln!(
         report,
-        "**Generated:** Unix epoch {} ms  ",
+        "**Generated:** Unix epoch {} ms",
         document.generated_at_unix_millis
     );
     let _ = writeln!(report, "**Raw results:** `{}`\n", raw_path.display());
