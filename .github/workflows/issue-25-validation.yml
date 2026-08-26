@@ -29,6 +29,8 @@ on:
       - "tools/run_phase0_spike.sh"
       - "tools/toolchain-smoke/**"
       - "tools/validate_contracts.sh"
+      - "tools/validate_phase0_gate.py"
+      - "tools/tests/test_validate_phase0_gate.py"
       - "Cargo.lock"
       - "Cargo.toml"
   workflow_dispatch:
