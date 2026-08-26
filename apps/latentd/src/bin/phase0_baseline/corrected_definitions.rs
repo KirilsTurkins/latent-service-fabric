@@ -280,10 +280,25 @@ struct OutcomeReport {
 struct ActivationPhaseTimingReport {
     acquisition_queued: bool,
     acquire_or_queue_wait_micros: u64,
+    /// Wasmtime's existing consumption observation, retained for continuity.
     contained_execution_micros: u64,
+    /// Explicit backend boundaries recorded inside `Phase0WasmtimeBackend`.
+    backend_setup_micros: u64,
+    guest_call_micros: u64,
+    host_call_micros: u64,
+    host_call_count: u64,
+    component_post_return_micros: u64,
+    activation_resource_reclamation_micros: u64,
+    outcome_classification_micros: u64,
+    reusable_proof_micros: u64,
     backend_total_micros: u64,
+    /// Legacy residual interval. It contains setup and host work and is not an
+    /// authoritative cleanup measurement.
     backend_resource_cleanup_micros: u64,
     cell_disposition_micros: u64,
+    /// Authoritative cleanup interval from the host-visible guest-call/
+    /// canonical-post-return completion boundary through reusable-proof return
+    /// and cell disposition.
     post_invocation_cleanup_micros: u64,
     total_invocation_micros: u64,
 }
@@ -397,11 +412,22 @@ struct ExecutableHarnessProbeSample {
     raw_result: Value,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+struct ExecutableHarnessFailureProbeSample {
+    scenario: String,
+    command: Vec<String>,
+    expected_exit_code: i32,
+    exit_code: i32,
+    expected_outcome: String,
+    raw_result: Value,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 struct ExecutableHarnessProbeDocument {
     schema_version: String,
     command: Vec<String>,
     samples: Vec<ExecutableHarnessProbeSample>,
+    failure_recovery_samples: Vec<ExecutableHarnessFailureProbeSample>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -409,6 +435,7 @@ struct ExecutableHarnessProbeReport {
     schema_version: String,
     command: Vec<String>,
     samples: Vec<ExecutableHarnessProbeSample>,
+    failure_recovery_samples: Vec<ExecutableHarnessFailureProbeSample>,
     process_launch_to_completion_micros: Distribution,
     cold_activation_micros: Distribution,
 }
@@ -506,27 +533,7 @@ struct AsyncRunResult {
     distributions: BTreeMap<String, Distribution>,
 }
 
-#[derive(Clone, Debug, Default)]
-struct RuntimeWorkerMonitor {
-    started: Arc<AtomicUsize>,
-    stopped: Arc<AtomicUsize>,
-}
-
-impl RuntimeWorkerMonitor {
-    fn worker_started(&self) {
-        self.started.fetch_add(1, Ordering::AcqRel);
-    }
-
-    fn worker_stopped(&self) {
-        self.stopped.fetch_add(1, Ordering::AcqRel);
-    }
-
-    fn active_workers(&self) -> usize {
-        self.started
-            .load(Ordering::Acquire)
-            .saturating_sub(self.stopped.load(Ordering::Acquire))
-    }
-}
+type RuntimeWorkerMonitor = Phase0RuntimeWorkerMonitor;
 
 fn main() -> ExitCode {
     let process_entry = Instant::now();

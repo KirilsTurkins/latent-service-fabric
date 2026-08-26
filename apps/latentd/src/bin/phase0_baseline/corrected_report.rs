@@ -165,7 +165,7 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
     let _ = writeln!(report, "## Exact issue-23 executable probe\n");
     let _ = writeln!(
         report,
-        "The cold distribution below comes from fresh launches of the real `latentd phase0-spike invoke-once` command, not from the retained benchmark composition. Each raw sample includes the complete issue-23 JSON result.\n"
+        "Cold samples come from fresh launches of the real `latentd phase0-spike invoke-once` command. The same checked executable probe also retains trap, timeout, and same-composition post-trap recovery documents; all use the shared Phase 0 composition API.\n"
     );
     report_distribution_row_header(&mut report);
     report_distribution_row(
@@ -180,7 +180,11 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
         "Cold activation inside issue-23 harness",
         &document.executable_harness.cold_activation_micros,
     );
-    report.push('\n');
+    let _ = writeln!(
+        report,
+        "Exact failure/recovery probes retained: {}.\n",
+        document.executable_harness.failure_recovery_samples.len()
+    );
 
     let _ = writeln!(report, "## Startup and preparation\n");
     let _ = writeln!(report, "| Metric | Microseconds |");
@@ -243,7 +247,7 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
     let _ = writeln!(report, "## Activation and cleanup distributions\n");
     let _ = writeln!(
         report,
-        "Percentiles use nearest-rank ordering over the raw samples. Structured phase timings cover acquisition/queue wait, contained guest execution, backend reusable-proof cleanup, cell disposition, combined post-invocation cleanup, and total invocation.\n"
+        "Percentiles use nearest-rank ordering over the raw samples. The typed guest-call interval includes Wasmtime's automatic canonical post-return; backend boundaries then separately record setup, in-guest host imports, host-visible post-call result accounting, activation-resource reclamation, outcome classification, reusable-proof return, and cell disposition. `post_invocation_cleanup_micros` is the authoritative sum after the host-visible guest-call completion boundary; `backend_resource_cleanup_micros` is retained only as a residual interval.\n"
     );
     report_distribution_row_header(&mut report);
     for (name, distribution) in &document.timings.distributions {

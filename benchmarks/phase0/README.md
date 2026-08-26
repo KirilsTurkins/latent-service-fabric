@@ -10,9 +10,9 @@ They are checked-in observational evidence, not an SLO or universal performance 
 
 The raw document includes:
 
-- multiple independent cold samples through the exact `latentd phase0-spike invoke-once` executable path;
+- multiple independent cold samples plus exact trap, timeout, and post-trap recovery probes through the `latentd phase0-spike` executable path;
 - parent-process launch-to-readiness timing without a fixed readiness sleep;
-- warm, containment, cause-specific recovery, and cleanup distributions;
+- warm, containment, cause-specific recovery, and cleanup distributions built through the shared Phase 0 composition API used by the executable;
 - complete-runner activation throughput at capacity and under full bounded-queue saturation;
 - pre-load, post-preparation, post-workload, post-release, and shutdown topology/resource observations;
 - every pass/fail threshold and invariant result;

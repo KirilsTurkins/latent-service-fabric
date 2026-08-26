@@ -287,9 +287,7 @@ fn observe_process(label: &str, process_entry: Instant) -> ProcessSnapshot {
     let listening_socket_count = Some(count_listening_sockets(&socket_inodes, &mut notes));
 
     let child_process_count = read_child_process_count(&mut notes);
-    let process_count = child_process_count
-        .and_then(|count| u32::try_from(count).ok())
-        .map_or(1, |children| 1_u32.saturating_add(children));
+    let process_count = child_process_count.map_or(1, |children| 1_u32.saturating_add(children));
     let probe_supported = thread_count.is_some()
         && rss_bytes.is_some()
         && virtual_memory_bytes.is_some()

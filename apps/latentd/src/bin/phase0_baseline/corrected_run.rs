@@ -2,30 +2,24 @@ fn run(cli: Cli, process_entry: Instant) -> Result<bool, BenchError> {
     let config = EffectiveConfig::from_cli(&cli)?;
     let initial_snapshot = observe_process("process_entry", process_entry);
 
-    let workers = RuntimeWorkerMonitor::default();
-    let started_workers = workers.clone();
-    let stopped_workers = workers.clone();
-    let runtime = Builder::new_multi_thread()
-        .worker_threads(config.runtime_workers)
-        .thread_name("latentd-phase0-worker")
-        .on_thread_start(move || started_workers.worker_started())
-        .on_thread_stop(move || stopped_workers.worker_stopped())
-        .enable_time()
-        .build()
-        .map_err(|error| BenchError::new(format!("failed to build Tokio runtime: {error}")))?;
-    let pool = Arc::new(
-        FixedCellPool::new(FixedCellPoolConfig::new(
-            NodeId(NODE_ID.to_owned()),
-            CellClass::Standard,
-            config.pool_capacity,
-            config.pool_queue_capacity,
+    let shared_runtime = phase0_composition::construct_runtime_composition(&Phase0RuntimeConfig {
+        node_id: NodeId(NODE_ID.to_owned()),
+        pool_capacity: config.pool_capacity,
+        pool_queue_capacity: config.pool_queue_capacity,
+        runtime_workers: config.runtime_workers,
+    })
+    .map_err(platform_error)?;
+    let latentd::phase0_composition::Phase0RuntimeComposition {
+        runtime,
+        pool,
+        workers,
+    } = shared_runtime;
+    runtime
+        .block_on(phase0_composition::wait_for_runtime_workers(
+            &workers,
+            config.runtime_workers,
         ))
-        .map_err(platform_error)?,
-    );
-    runtime.block_on(wait_for_runtime_workers(
-        &workers,
-        config.runtime_workers,
-    ))?;
+        .map_err(platform_error)?;
     let rust_entry_to_runtime_ready_micros = elapsed_micros(process_entry);
     let process_launch_to_runtime_ready_micros = now_unix_micros()
         .saturating_sub(cli.parent_launch_unix_micros);
@@ -80,8 +74,9 @@ fn run(cli: Cli, process_entry: Instant) -> Result<bool, BenchError> {
     let status = if all_passed { "pass" } else { "fail" }.to_owned();
     let limitations = vec![
         "Measurements are observations from finite local processes and are not production SLOs, capacity guarantees, or competitive claims.".to_owned(),
-        "The mandatory executable probe launches the exact issue-23 `latentd phase0-spike invoke-once` path for independent cold samples; retained warm and saturation measurements use the same concrete Phase 0 runtime components after that parity gate passes.".to_owned(),
-        "Contained-execution time is the Wasmtime-reported guest wall time. Backend cleanup is measured from the reusable-proof boundary minus that guest time and therefore includes bounded backend setup/host overhead as well as resource destruction.".to_owned(),
+        "The mandatory executable probe launches the exact issue-23 `latentd phase0-spike` commands for independent cold success, trap, timeout, and post-trap recovery samples. Retained measurements construct their runtime, preparation, bounded cache/log configuration, bindings, and activation runner through that same shared composition API.".to_owned(),
+        "Post-invocation cleanup is timed inside `Phase0WasmtimeBackend` from the host-visible typed guest-call completion boundary (after Wasmtime's automatic canonical post-return) through post-call result accounting, activation-resource reclamation, outcome classification, and reusable-proof return, then adds cell disposition. The legacy backend residual remains for comparison only and is not presented as isolated cleanup.".to_owned(),
+        "The bounded-queue throughput probe briefly holds the first real leases after acquisition until the raw pool observes both configured bounds; no synthetic lease or backend result is used. Raw acquisition timing excludes that coordination pause, while saturation batch latency includes it as a stress-observation cost.".to_owned(),
         "Wall-clock distributions include host scheduling noise; compare only like-for-like hardware, kernel, toolchain, target, profile, fixture digest, and runtime configuration.".to_owned(),
         "RSS allocators and Wasmtime may retain bounded arenas after first use; the invariant checks bounded range and monotonic growth after warm-up rather than requiring byte-for-byte return.".to_owned(),
         "Linux /proc supplies RSS, virtual memory, thread, descriptor, and socket probes. Unsupported platforms fail the strict reference run instead of silently omitting evidence.".to_owned(),
@@ -142,26 +137,6 @@ fn run(cli: Cli, process_entry: Instant) -> Result<bool, BenchError> {
     Ok(all_passed)
 }
 
-async fn wait_for_runtime_workers(
-    workers: &RuntimeWorkerMonitor,
-    expected: usize,
-) -> Result<(), BenchError> {
-    let deadline = tokio::time::Instant::now()
-        + Duration::from_millis(RUNTIME_WORKER_START_TIMEOUT_MILLIS);
-    loop {
-        if workers.active_workers() == expected {
-            return Ok(());
-        }
-        if tokio::time::Instant::now() >= deadline {
-            return Err(BenchError::new(format!(
-                "Tokio runtime did not start its configured workers: expected {expected}, observed {}",
-                workers.active_workers()
-            )));
-        }
-        tokio::task::yield_now().await;
-    }
-}
-
 async fn run_async(
     cli: &Cli,
     config: &EffectiveConfig,
@@ -175,60 +150,51 @@ async fn run_async(
         config,
     )?;
 
-    let validation_started = Instant::now();
-    let loaded = load_artifact(&cli.capsule)?;
-    validate_requested_budgets(config, &loaded.artifact.manifest)?;
-    let validation_micros = duration_micros(validation_started.elapsed());
-
-    let declared = &loaded.artifact.manifest.execution.resource_budget_ceiling;
-    let engine_started = Instant::now();
-    let factory = Phase0WasmtimeEngineFactory::new(Phase0WasmtimeConfig {
-        maximum_component_bytes: COMPONENT_MAXIMUM_BYTES,
-        maximum_memory_bytes: declared.memory_bytes,
-        maximum_fuel: declared.cpu_fuel,
-        prepared_cache_maximum_entries: PREPARED_CACHE_MAXIMUM_ENTRIES,
-        prepared_cache_maximum_source_bytes: PREPARED_CACHE_MAXIMUM_BYTES,
-        invocation_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
-        invocation_log_maximum_bytes: LOG_MAXIMUM_BYTES,
-        retained_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
-        retained_log_maximum_bytes: LOG_MAXIMUM_BYTES,
-        epoch_tick_interval_millis: EPOCH_TICK_INTERVAL_MILLIS,
-        ..Phase0WasmtimeConfig::default()
-    })
+    let prepared_backend = phase0_composition::prepare_phase0_backend(
+        &Phase0PreparationConfig {
+            capsule: cli.capsule.clone(),
+            component: None,
+            component_maximum_bytes: COMPONENT_MAXIMUM_BYTES,
+            prepared_cache_maximum_entries: PREPARED_CACHE_MAXIMUM_ENTRIES,
+            prepared_cache_maximum_bytes: PREPARED_CACHE_MAXIMUM_BYTES,
+            invocation_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
+            invocation_log_maximum_bytes: LOG_MAXIMUM_BYTES,
+            retained_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
+            retained_log_maximum_bytes: LOG_MAXIMUM_BYTES,
+            requested_memory_bytes: config.memory_bytes.max(config.memory_pressure_bytes),
+            requested_fuel: config.fuel,
+        },
+    )
+    .await
     .map_err(platform_error)?;
-    let preparation_key =
-        factory.preparation_key(loaded.artifact.descriptor.release_digest.clone());
-    let backend = Arc::new(factory.create_backend_instance());
-    drop(factory);
-    let engine_micros = duration_micros(engine_started.elapsed());
-
-    let preparation_started = Instant::now();
-    let prepared = backend
-        .prepare(&loaded.artifact, &preparation_key)
-        .await
-        .map_err(platform_error)?;
-    let preparation_micros = duration_micros(preparation_started.elapsed());
-    let cache_after_prepare = backend.cache_snapshot();
+    let latentd::phase0_composition::Phase0PreparedBackend {
+        loaded,
+        backend,
+        prepared,
+        cache_after_prepare,
+        timings: preparation_timings,
+    } = prepared_backend;
+    let validation_micros = preparation_timings.capsule_validation_and_load_micros;
+    let engine_micros = preparation_timings.wasmtime_engine_construction_micros;
+    let preparation_micros = preparation_timings.component_preparation_micros;
 
     let timings = PhaseTimingRecorder::default();
+    let throughput_saturation_gate = ThroughputSaturationGate::new();
     let pool_for_runner: Arc<dyn CellPool> = Arc::new(TimingCellPool::new(
         Arc::clone(&pool),
         timings.clone(),
+        throughput_saturation_gate.clone(),
     ));
     let backend_for_runner: Arc<dyn ExecutionBackend> = Arc::new(TimingExecutionBackend::new(
         Arc::clone(&backend),
         timings.clone(),
     ));
-    let runner = Arc::new(
-        Phase0ActivationRunner::new(
-            Phase0ActivationRunnerConfig::default(),
-            pool_for_runner,
-            backend_for_runner,
-            prepared.clone(),
-            bound_imports(),
-        )
-        .map_err(platform_error)?,
-    );
+    let runner = phase0_composition::create_phase0_activation_runner(
+        pool_for_runner,
+        backend_for_runner,
+        prepared.clone(),
+    )
+    .map_err(platform_error)?;
     let first_invocation_ready_micros = elapsed_micros(process_entry);
     let prepared_process = observe_process("after_component_preparation", process_entry);
     let after_component_preparation = TopologySnapshot {
@@ -252,6 +218,17 @@ async fn run_async(
             }),
         expected: "at least three successful fresh-process calls through latentd phase0-spike with clean shutdown and unchanged topology".to_owned(),
         observed: format!("{} fresh process samples", executable_harness.samples.len()),
+    });
+    checks.push(Check {
+        name: "real_issue23_executable_failure_and_recovery_probe_passed".to_owned(),
+        passed: executable_failure_and_recovery_probe_is_healthy(
+            &executable_harness.failure_recovery_samples,
+        ),
+        expected: "exact issue-23 executable probes cover trap, timeout, and same-composition post-trap recovery".to_owned(),
+        observed: format!(
+            "{} failure/recovery executable samples",
+            executable_harness.failure_recovery_samples.len()
+        ),
     });
     checks.push(Check {
         name: "linux_process_resource_probe_supported".to_owned(),
@@ -392,6 +369,7 @@ async fn run_async(
         &backend,
         &runner,
         &timings,
+        &throughput_saturation_gate,
         &workers,
         process_entry,
         &mut samples,
@@ -834,6 +812,11 @@ fn load_executable_harness_probe(
             )));
         }
     }
+    if !executable_failure_and_recovery_probe_is_healthy(&document.failure_recovery_samples) {
+        return Err(BenchError::new(
+            "issue-23 executable failure/recovery probe did not prove trap, timeout, and post-failure recovery",
+        ));
+    }
     let launch_values = document
         .samples
         .iter()
@@ -852,6 +835,48 @@ fn load_executable_harness_probe(
         cold_activation_micros: distribution(&cold_values)
             .ok_or_else(|| BenchError::new("executable probe has no cold activation samples"))?,
         samples: document.samples,
+        failure_recovery_samples: document.failure_recovery_samples,
+    })
+}
+
+fn executable_failure_and_recovery_probe_is_healthy(
+    samples: &[ExecutableHarnessFailureProbeSample],
+) -> bool {
+    let find = |scenario: &str| samples.iter().find(|sample| sample.scenario == scenario);
+    let clean_topology = |result: &Value| {
+        result["shutdown"]["clean"] == Value::Bool(true)
+            && result["topology"]["unchanged"] == Value::Bool(true)
+    };
+    let trap = find("trap");
+    let timeout = find("timeout");
+    let recovery = find("trap_then_recovery");
+    trap.is_some_and(|sample| {
+        sample.expected_exit_code == 12
+            && sample.exit_code == 12
+            && sample.expected_outcome == "trap"
+            && sample.raw_result["outcome"] == "trap"
+            && clean_topology(&sample.raw_result)
+    }) && timeout.is_some_and(|sample| {
+        sample.expected_exit_code == 11
+            && sample.exit_code == 11
+            && sample.expected_outcome == "timeout"
+            && sample.raw_result["outcome"] == "timeout"
+            && clean_topology(&sample.raw_result)
+    }) && recovery.is_some_and(|sample| {
+        let activations = sample.raw_result["recovery"]["activations"].as_array();
+        sample.expected_exit_code == 0
+            && sample.exit_code == 0
+            && sample.expected_outcome == "success"
+            && sample.raw_result["outcome"] == "success"
+            && sample.raw_result["recovery"]["expected_failure"] == "trap"
+            && activations.is_some_and(|activations| {
+                activations.len() == 2
+                    && activations[0]["phase"] == "trap"
+                    && activations[0]["activation"]["outcome"] == "trap"
+                    && activations[1]["phase"] == "recovery"
+                    && activations[1]["activation"]["outcome"] == "success"
+            })
+            && clean_topology(&sample.raw_result)
     })
 }
 
@@ -961,9 +986,22 @@ fn insert_phase_distributions(
     distributions: &mut BTreeMap<String, Distribution>,
     samples: &[ActivationSample],
 ) {
-    let metrics: [(&str, fn(&ActivationPhaseTimingReport) -> u64); 7] = [
+    let metrics: [(&str, fn(&ActivationPhaseTimingReport) -> u64); 14] = [
         ("acquire_or_queue_wait_micros", |value| value.acquire_or_queue_wait_micros),
         ("contained_execution_micros", |value| value.contained_execution_micros),
+        ("backend_setup_micros", |value| value.backend_setup_micros),
+        ("guest_call_micros", |value| value.guest_call_micros),
+        ("host_call_micros", |value| value.host_call_micros),
+        ("component_post_return_micros", |value| value.component_post_return_micros),
+        (
+            "activation_resource_reclamation_micros",
+            |value| value.activation_resource_reclamation_micros,
+        ),
+        (
+            "outcome_classification_micros",
+            |value| value.outcome_classification_micros,
+        ),
+        ("reusable_proof_micros", |value| value.reusable_proof_micros),
         ("backend_total_micros", |value| value.backend_total_micros),
         ("backend_resource_cleanup_micros", |value| value.backend_resource_cleanup_micros),
         ("cell_disposition_micros", |value| value.cell_disposition_micros),

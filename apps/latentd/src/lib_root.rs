@@ -17,6 +17,10 @@
     clippy::too_many_lines
 )]
 
+/// Shared internal Phase 0 composition used by the executable and baseline.
+#[doc(hidden)]
+pub mod phase0_composition;
+
 #[path = "lib.rs"]
 mod spike;
 

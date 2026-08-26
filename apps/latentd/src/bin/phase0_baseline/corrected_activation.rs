@@ -16,13 +16,21 @@ async fn invoke_case(
     let deadline = now_unix_millis()
         .checked_add(request.timeout_ms)
         .ok_or_else(|| BenchError::new("activation deadline overflow"))?;
-    let envelope = activation_envelope(
+    let envelope = phase0_composition::phase0_activation_envelope(
         manifest,
-        activation_id.clone(),
-        request.input,
-        request.memory_bytes,
-        request.fuel,
-        deadline,
+        &Phase0InvocationConfig {
+            activation_id: activation_id.clone(),
+            input: request.input,
+            memory_bytes: request.memory_bytes,
+            fuel: request.fuel,
+            deadline_unix_millis: deadline,
+            surface: SURFACE,
+            mode: "phase0-baseline",
+            principal_subject: "phase0-baseline-user",
+            default_tenant: "phase0-baseline",
+            trace_id: TRACE_ID,
+            span_id: SPAN_ID,
+        },
     );
 
     let started = Instant::now();

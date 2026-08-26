@@ -8,6 +8,7 @@ if [[ "${TARGET_ROOT}" != /* ]]; then
 fi
 MODE="${1:-full}"
 OUTPUT_DIR="${2:-${TARGET_ROOT}/phase0-baseline/${MODE}}"
+EXECUTABLE_PROBE="${TARGET_ROOT}/phase0-baseline/${MODE}/executable-harness-probe.json"
 
 case "${MODE}" in
     smoke|full) ;;
@@ -76,7 +77,7 @@ document["metadata"].setdefault("annotations", {})["latent.dev/artifact"] = comp
 )
 PY
 
-mkdir -p "${OUTPUT_DIR}"
+mkdir -p "${OUTPUT_DIR}" "${TARGET_ROOT}/phase0-baseline/${MODE}"
 cargo build -p latentd --bin latentd --bin phase0-baseline --release --locked
 
 # Produce independent cold samples through the exact issue-23 executable
@@ -85,7 +86,7 @@ cargo build -p latentd --bin latentd --bin phase0-baseline --release --locked
 python3 - \
     "${TARGET_ROOT}/release/latentd" \
     "${STAGED_DIR}/capsule.json" \
-    "${OUTPUT_DIR}/executable-harness-probe.json" \
+    "${EXECUTABLE_PROBE}" \
     "${MODE}" \
     "${POOL_CAPACITY}" \
     "${QUEUE_CAPACITY}" \
@@ -127,6 +128,16 @@ base_command = [
     "1000000000000",
     "--timeout-ms",
     "1000",
+    "--component-max-bytes",
+    str(64 * 1024 * 1024),
+    "--prepared-cache-entries",
+    "1",
+    "--prepared-cache-bytes",
+    str(64 * 1024 * 1024),
+    "--log-max-entries",
+    "64",
+    "--log-max-bytes",
+    str(64 * 1024),
 ]
 
 samples: list[dict[str, object]] = []
@@ -176,12 +187,117 @@ for iteration in range(sample_count):
         }
     )
 
+
+def command_with_input(
+    command_name: str,
+    input_value: str,
+    *,
+    pool_capacity_override: int | None = None,
+    timeout_ms: int | None = None,
+    activation_id: str,
+) -> list[str]:
+    command = list(base_command)
+    command[2] = command_name
+    command[command.index("--input") + 1] = input_value
+    if pool_capacity_override is not None:
+        command[command.index("--pool-capacity") + 1] = str(pool_capacity_override)
+    if timeout_ms is not None:
+        command[command.index("--timeout-ms") + 1] = str(timeout_ms)
+    command.extend(["--activation-id", activation_id])
+    return command
+
+
+def run_failure_probe(
+    scenario: str,
+    command: list[str],
+    expected_exit_code: int,
+    expected_outcome: str,
+) -> dict[str, object]:
+    completed = subprocess.run(command, text=True, capture_output=True, check=False)
+    if completed.returncode != expected_exit_code:
+        raise SystemExit(
+            f"issue-23 executable {scenario} probe returned {completed.returncode}, "
+            f"expected {expected_exit_code}: {completed.stderr}"
+        )
+    lines = [line for line in completed.stdout.splitlines() if line.strip()]
+    if len(lines) != 1:
+        raise SystemExit(
+            f"issue-23 executable {scenario} probe emitted {len(lines)} JSON lines"
+        )
+    result = json.loads(lines[0])
+    if result.get("schema_version") != "latent.phase0.spike.result.v1":
+        raise SystemExit(f"issue-23 executable {scenario} probe has an unexpected schema")
+    if result.get("outcome") != expected_outcome:
+        raise SystemExit(
+            f"issue-23 executable {scenario} probe returned {result.get('outcome')}, "
+            f"expected {expected_outcome}"
+        )
+    if not result.get("shutdown", {}).get("clean"):
+        raise SystemExit(f"issue-23 executable {scenario} probe did not shut down cleanly")
+    if not result.get("topology", {}).get("unchanged"):
+        raise SystemExit(f"issue-23 executable {scenario} probe changed topology")
+    return {
+        "scenario": scenario,
+        "command": command,
+        "expected_exit_code": expected_exit_code,
+        "exit_code": completed.returncode,
+        "expected_outcome": expected_outcome,
+        "raw_result": result,
+    }
+
+
+failure_recovery_samples = [
+    run_failure_probe(
+        "trap",
+        command_with_input(
+            "invoke-once",
+            "__latent_test_trap",
+            activation_id="baseline-executable-trap",
+        ),
+        12,
+        "trap",
+    ),
+    run_failure_probe(
+        "timeout",
+        command_with_input(
+            "invoke-once",
+            "__latent_test_infinite",
+            timeout_ms=25,
+            activation_id="baseline-executable-timeout",
+        ),
+        11,
+        "timeout",
+    ),
+    run_failure_probe(
+        "trap_then_recovery",
+        command_with_input(
+            "verify-recovery",
+            "phase0 executable recovery echo",
+            pool_capacity_override=1,
+            activation_id="baseline-executable-recovery",
+        ),
+        0,
+        "success",
+    ),
+]
+
+recovery_document = failure_recovery_samples[2]["raw_result"]
+recovery_activations = recovery_document.get("recovery", {}).get("activations", [])
+if (
+    recovery_document.get("recovery", {}).get("expected_failure") != "trap"
+    or len(recovery_activations) != 2
+    or recovery_activations[0].get("activation", {}).get("outcome") != "trap"
+    or recovery_activations[1].get("activation", {}).get("outcome") != "success"
+):
+    raise SystemExit("issue-23 executable post-trap recovery probe is incomplete")
+
 output.write_text(
     json.dumps(
         {
-            "schema_version": "latent.phase0.executable-probe.v1",
+            "schema_version": "latent.phase0.executable-probe.v2",
             "command": base_command,
             "samples": samples,
+            "failure_recovery_samples": failure_recovery_samples,
         },
         indent=2,
         sort_keys=True,
@@ -197,7 +313,7 @@ PY
 python3 - \
     "${TARGET_ROOT}/release/phase0-baseline" \
     "${STAGED_DIR}/capsule.json" \
-    "${OUTPUT_DIR}/executable-harness-probe.json" \
+    "${EXECUTABLE_PROBE}" \
     "${OUTPUT_DIR}/raw-results.json" \
     "${OUTPUT_DIR}/BASELINE.md" \
     "${MODE}" \
@@ -276,6 +392,10 @@ if document.get("status") != "pass":
     raise SystemExit(f"Phase 0 baseline invariants failed: {failures}")
 if len(document.get("executable_harness", {}).get("samples", [])) < 3:
     raise SystemExit("independent issue-23 cold-start evidence is missing")
+failure_probe = document.get("executable_harness", {}).get("failure_recovery_samples", [])
+failure_scenarios = {sample.get("scenario") for sample in failure_probe}
+if failure_scenarios != {"trap", "timeout", "trap_then_recovery"}:
+    raise SystemExit("exact issue-23 failure/recovery executable evidence is incomplete")
 if document.get("timings", {}).get("distributions", {}).get(
     "cold_echo_elapsed_micros", {}
 ).get("samples", 0) < 3:
@@ -283,6 +403,14 @@ if document.get("timings", {}).get("distributions", {}).get(
 phase_fields = {
     "acquire_or_queue_wait_micros",
     "contained_execution_micros",
+    "backend_setup_micros",
+    "guest_call_micros",
+    "host_call_micros",
+    "host_call_count",
+    "component_post_return_micros",
+    "activation_resource_reclamation_micros",
+    "outcome_classification_micros",
+    "reusable_proof_micros",
     "backend_resource_cleanup_micros",
     "cell_disposition_micros",
     "post_invocation_cleanup_micros",

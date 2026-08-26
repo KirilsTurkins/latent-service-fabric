@@ -183,6 +183,27 @@ async fn wait_for_queue_depth(
     }
 }
 
+async fn wait_for_activation_saturation(
+    pool: &FixedCellPool,
+    expected_active: u32,
+    expected_queue: u32,
+) -> Result<(), BenchError> {
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+    loop {
+        let snapshot = pool.observations();
+        if snapshot.active_leases == expected_active && snapshot.queue_depth == expected_queue {
+            return Ok(());
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err(BenchError::new(format!(
+                "real activation workload did not reach bounded saturation: active={} expected={}, queue={} expected={}",
+                snapshot.active_leases, expected_active, snapshot.queue_depth, expected_queue
+            )));
+        }
+        tokio::task::yield_now().await;
+    }
+}
+
 async fn run_activation_throughput(
     config: &EffectiveConfig,
     manifest: &CapsuleManifest,
@@ -190,6 +211,7 @@ async fn run_activation_throughput(
     backend: &Arc<Phase0WasmtimeBackend>,
     runner: &Arc<Phase0ActivationRunner>,
     timings: &PhaseTimingRecorder,
+    saturation_gate: &ThroughputSaturationGate,
     workers: &RuntimeWorkerMonitor,
     process_entry: Instant,
     samples: &mut Vec<ActivationSample>,
@@ -201,6 +223,7 @@ async fn run_activation_throughput(
         backend,
         runner,
         timings,
+        saturation_gate,
         workers,
         process_entry,
         "at_capacity",
@@ -220,6 +243,7 @@ async fn run_activation_throughput(
         backend,
         runner,
         timings,
+        saturation_gate,
         workers,
         process_entry,
         "bounded_queue_saturation",
@@ -242,6 +266,7 @@ async fn run_throughput_mode(
     backend: &Arc<Phase0WasmtimeBackend>,
     runner: &Arc<Phase0ActivationRunner>,
     timings: &PhaseTimingRecorder,
+    saturation_gate: &ThroughputSaturationGate,
     workers: &RuntimeWorkerMonitor,
     process_entry: Instant,
     mode: &str,
@@ -259,6 +284,11 @@ async fn run_throughput_mode(
     let mut maximum_observed_queue_depth = 0_u32;
 
     for batch in 0..config.throughput_batches {
+        if require_queue_saturation {
+            saturation_gate.close();
+        } else {
+            saturation_gate.open();
+        }
         let participant_count = usize::try_from(activations_per_batch)
             .map_err(|_| BenchError::new("activation batch size does not fit usize"))?;
         let barrier = Arc::new(Barrier::new(participant_count.saturating_add(1)));
@@ -291,13 +321,21 @@ async fn run_throughput_mode(
             let expected_output = format!("throughput-{mode}-{batch}-{slot}");
             let input = format!("{FIXTURE_DELAYED_ECHO_PREFIX}{expected_output}");
             let deadline = now_unix_millis().saturating_add(10_000);
-            let envelope = activation_envelope(
+            let envelope = phase0_composition::phase0_activation_envelope(
                 manifest,
-                activation_id.clone(),
-                &input,
-                config.memory_bytes,
-                config.fuel,
-                deadline,
+                &Phase0InvocationConfig {
+                    activation_id: activation_id.clone(),
+                    input: &input,
+                    memory_bytes: config.memory_bytes,
+                    fuel: config.fuel,
+                    deadline_unix_millis: deadline,
+                    surface: SURFACE,
+                    mode: "phase0-baseline",
+                    principal_subject: "phase0-baseline-user",
+                    default_tenant: "phase0-baseline",
+                    trace_id: TRACE_ID,
+                    span_id: SPAN_ID,
+                },
             );
             let worker_runner = Arc::clone(runner);
             let worker_barrier = Arc::clone(&barrier);
@@ -320,6 +358,18 @@ async fn run_throughput_mode(
         }
 
         barrier.wait().await;
+        let saturation_result = if require_queue_saturation {
+            let result = wait_for_activation_saturation(
+                pool,
+                config.pool_capacity,
+                config.pool_queue_capacity,
+            )
+            .await;
+            saturation_gate.open();
+            result
+        } else {
+            Ok(())
+        };
         let mut completed = Vec::new();
         for handle in handles {
             completed.push(handle.await.map_err(|error| {
@@ -330,6 +380,7 @@ async fn run_throughput_mode(
         let (batch_maximum_active, batch_maximum_queue) = monitor.await.map_err(|error| {
             BenchError::new(format!("activation throughput monitor failed: {error}"))
         })?;
+        saturation_result?;
         maximum_observed_active_leases =
             maximum_observed_active_leases.max(batch_maximum_active);
         maximum_observed_queue_depth = maximum_observed_queue_depth.max(batch_maximum_queue);

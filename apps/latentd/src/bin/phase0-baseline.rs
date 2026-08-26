@@ -24,50 +24,46 @@
     clippy::type_complexity
 )]
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+#[cfg(target_os = "linux")]
+use std::collections::BTreeSet;
+use std::collections::{BTreeMap, HashMap};
 use std::error::Error;
 use std::fmt::{self, Write as _};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use clap::{Parser, ValueEnum};
-use latent_activation::{ActivationEnvelope, ActivationManager, ActivationOutcome, TraceContext};
-use latent_artifacts::{ArtifactDescriptor, CapsuleArtifact};
+use latent_activation::{ActivationManager, ActivationOutcome};
+use latent_artifacts::CapsuleArtifact;
 use latent_core::{
-    ActivationId, ArtifactReference, BoxFuture, BudgetConsumption, CapabilityId, ContractId,
-    FunctionId, InvocationPrincipal, Metadata, NodeId, PlatformError, PlatformErrorCode,
-    PrincipalKind, ReleaseDigest, ResourceBudget, ServiceId, SpanId, TenantId, TraceId,
+    ActivationId, BoxFuture, BudgetConsumption, NodeId, PlatformError, PlatformErrorCode,
+    ResourceBudget, TenantId,
 };
 use latent_executor::{
-    BoundImport, ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest,
-    GuestOutcome, PreparationKey, PreparedComponent,
+    ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
+    PreparationKey, PreparedComponent,
 };
-use latent_manifest::{
-    CapsuleManifest, ContractExport, ContractImport, ExecutionBackendKind, ExecutionRequirements,
-    ObjectMetadata, StateModel, ThreadingModel,
-};
-use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig};
-use latent_routing::InvocationTarget;
-use latent_scheduler::{
-    CellClass, CellLease, CellPool, CellPoolSnapshot, FixedCellPool, FixedCellPoolConfig,
-};
+use latent_manifest::CapsuleManifest;
+use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner};
+use latent_scheduler::{CellClass, CellLease, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
-    Phase0WasmtimeBackend, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory,
-    PreparedCacheSnapshot, RuntimeResourceSnapshot, CONTEXT_IMPORT, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
-    ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, LOG_IMPORT,
+    Phase0InvocationTiming, Phase0WasmtimeBackend, PreparedCacheSnapshot, RuntimeResourceSnapshot,
+    ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+};
+use latentd::phase0_composition::{
+    self, Phase0InvocationConfig, Phase0PreparationConfig, Phase0RuntimeConfig,
+    Phase0RuntimeWorkerMonitor,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use sha2::{Digest as _, Sha256};
-use tokio::runtime::Builder;
 use tokio::sync::Barrier;
 
 const SCHEMA_VERSION: &str = "latent.phase0.baseline.v2";
-const EXECUTABLE_PROBE_SCHEMA_VERSION: &str = "latent.phase0.executable-probe.v1";
+const EXECUTABLE_PROBE_SCHEMA_VERSION: &str = "latent.phase0.executable-probe.v2";
 const SURFACE: &str = "latentd.phase0-baseline";
 const NODE_ID: &str = "phase0-baseline-node-0";
 const TRACE_ID: &str = "phase0-baseline-trace-00000001";
@@ -78,8 +74,6 @@ const PREPARED_CACHE_MAXIMUM_ENTRIES: usize = 1;
 const PREPARED_CACHE_MAXIMUM_BYTES: usize = 64 * 1024 * 1024;
 const LOG_MAXIMUM_ENTRIES: usize = 64;
 const LOG_MAXIMUM_BYTES: usize = 64 * 1024;
-const EPOCH_TICK_INTERVAL_MILLIS: u64 = 1;
-const RUNTIME_WORKER_START_TIMEOUT_MILLIS: u64 = 2_000;
 const DEFAULT_FUEL: u64 = 1_000_000_000_000;
 const DEFAULT_MEMORY_BYTES: u64 = 16 * 1024 * 1024;
 const DEFAULT_MEMORY_PRESSURE_BYTES: u64 = 4 * 1024 * 1024;
@@ -95,7 +89,6 @@ const FIXTURE_DELAYED_ECHO_PREFIX: &str = "__latent_test_delayed_echo:";
 
 include!("phase0_baseline/corrected_definitions.rs");
 include!("phase0_baseline/timing.rs");
-include!("phase0_baseline/artifact.rs");
 include!("phase0_baseline/analysis.rs");
 include!("phase0_baseline/corrected_activation.rs");
 include!("phase0_baseline/corrected_throughput.rs");

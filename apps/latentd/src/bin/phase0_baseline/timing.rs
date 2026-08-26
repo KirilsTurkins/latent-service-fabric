@@ -3,14 +3,47 @@ struct MutableActivationPhaseTiming {
     acquisition_queued: bool,
     acquire_or_queue_wait_micros: Option<u64>,
     contained_execution_micros: Option<u64>,
-    backend_total_micros: Option<u64>,
-    backend_resource_cleanup_micros: Option<u64>,
+    backend_timing: Option<Phase0InvocationTiming>,
     cell_disposition_micros: Option<u64>,
 }
 
 #[derive(Clone, Debug, Default)]
 struct PhaseTimingRecorder {
     state: Arc<Mutex<HashMap<String, MutableActivationPhaseTiming>>>,
+}
+
+/// A test-only coordination seam around the real pool acquisition. During the
+/// bounded-queue throughput probe, acquired cells pause here before the real
+/// runner enters Wasmtime. That gives every remaining real activation a chance
+/// to enqueue, proving the configured capacity and queue bound before any
+/// delayed guest call occupies a Tokio worker.
+#[derive(Clone, Debug)]
+struct ThroughputSaturationGate {
+    closed: tokio::sync::watch::Sender<bool>,
+}
+
+impl ThroughputSaturationGate {
+    fn new() -> Self {
+        let (closed, _receiver) = tokio::sync::watch::channel(false);
+        Self { closed }
+    }
+
+    fn close(&self) {
+        self.closed.send_replace(true);
+    }
+
+    fn open(&self) {
+        self.closed.send_replace(false);
+    }
+
+    async fn wait_until_open(&self) {
+        let mut state = self.closed.subscribe();
+        while *state.borrow_and_update() {
+            if state.changed().await.is_err() {
+                return;
+            }
+        }
+    }
 }
 
 impl PhaseTimingRecorder {
@@ -29,16 +62,13 @@ impl PhaseTimingRecorder {
     fn record_backend(
         &self,
         activation_id: &ActivationId,
-        backend_total_micros: u64,
         contained_execution_micros: u64,
+        backend_timing: Option<Phase0InvocationTiming>,
     ) {
         let mut state = self.lock();
         let timing = state.entry(activation_id.0.clone()).or_default();
-        timing.backend_total_micros = Some(backend_total_micros);
         timing.contained_execution_micros = Some(contained_execution_micros);
-        timing.backend_resource_cleanup_micros = Some(
-            backend_total_micros.saturating_sub(contained_execution_micros),
-        );
+        timing.backend_timing = backend_timing;
     }
 
     fn record_disposition(&self, activation_id: &ActivationId, elapsed_micros: u64) {
@@ -75,15 +105,9 @@ impl PhaseTimingRecorder {
                 activation_id.0
             ))
         })?;
-        let backend_total = timing.backend_total_micros.ok_or_else(|| {
+        let backend_timing = timing.backend_timing.ok_or_else(|| {
             BenchError::new(format!(
-                "phase timing recorder has no backend result for {}",
-                activation_id.0
-            ))
-        })?;
-        let backend_cleanup = timing.backend_resource_cleanup_micros.ok_or_else(|| {
-            BenchError::new(format!(
-                "phase timing recorder has no backend-cleanup result for {}",
+                "Phase0WasmtimeBackend did not return explicit timing boundaries for {}",
                 activation_id.0
             ))
         })?;
@@ -97,10 +121,26 @@ impl PhaseTimingRecorder {
             acquisition_queued: timing.acquisition_queued,
             acquire_or_queue_wait_micros: acquire,
             contained_execution_micros: contained,
-            backend_total_micros: backend_total,
-            backend_resource_cleanup_micros: backend_cleanup,
+            backend_setup_micros: backend_timing.backend_setup_micros,
+            guest_call_micros: backend_timing.guest_call_micros,
+            host_call_micros: backend_timing.host_call_micros,
+            host_call_count: backend_timing.host_call_count,
+            component_post_return_micros: backend_timing.component_post_return_micros,
+            activation_resource_reclamation_micros: backend_timing
+                .activation_resource_reclamation_micros,
+            outcome_classification_micros: backend_timing.outcome_classification_micros,
+            reusable_proof_micros: backend_timing.reusable_proof_micros,
+            backend_total_micros: backend_timing.backend_total_micros,
+            backend_resource_cleanup_micros: backend_timing
+                .backend_total_micros
+                .saturating_sub(contained),
             cell_disposition_micros: disposition,
-            post_invocation_cleanup_micros: backend_cleanup.saturating_add(disposition),
+            post_invocation_cleanup_micros: backend_timing
+                .component_post_return_micros
+                .saturating_add(backend_timing.activation_resource_reclamation_micros)
+                .saturating_add(backend_timing.outcome_classification_micros)
+                .saturating_add(backend_timing.reusable_proof_micros)
+                .saturating_add(disposition),
             total_invocation_micros,
         })
     }
@@ -116,11 +156,20 @@ impl PhaseTimingRecorder {
 struct TimingCellPool {
     inner: Arc<FixedCellPool>,
     timings: PhaseTimingRecorder,
+    saturation_gate: ThroughputSaturationGate,
 }
 
 impl TimingCellPool {
-    fn new(inner: Arc<FixedCellPool>, timings: PhaseTimingRecorder) -> Self {
-        Self { inner, timings }
+    fn new(
+        inner: Arc<FixedCellPool>,
+        timings: PhaseTimingRecorder,
+        saturation_gate: ThroughputSaturationGate,
+    ) -> Self {
+        Self {
+            inner,
+            timings,
+            saturation_gate,
+        }
     }
 }
 
@@ -137,6 +186,7 @@ impl CellPool for TimingCellPool {
         let budget = budget.clone();
         let inner = Arc::clone(&self.inner);
         let timings = self.timings.clone();
+        let saturation_gate = self.saturation_gate.clone();
         Box::pin(async move {
             let queued = inner.observations().available == 0;
             let started = Instant::now();
@@ -148,11 +198,13 @@ impl CellPool for TimingCellPool {
                 duration_micros(started.elapsed()),
                 queued,
             );
-            result
+            let lease = result?;
+            saturation_gate.wait_until_open().await;
+            Ok(lease)
         })
     }
 
-    fn release<'a>(&'a self, lease: CellLease) -> BoxFuture<'a, Result<(), PlatformError>> {
+    fn release(&self, lease: CellLease) -> BoxFuture<'_, Result<(), PlatformError>> {
         let activation_id = lease.activation_id.clone();
         let inner = Arc::clone(&self.inner);
         let timings = self.timings.clone();
@@ -179,11 +231,11 @@ impl CellPool for TimingCellPool {
         self.inner.cancel_waiting(activation_id)
     }
 
-    fn quarantine<'a>(
-        &'a self,
+    fn quarantine(
+        &self,
         lease: CellLease,
         reason: String,
-    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+    ) -> BoxFuture<'_, Result<(), PlatformError>> {
         let activation_id = lease.activation_id.clone();
         let inner = Arc::clone(&self.inner);
         let timings = self.timings.clone();
@@ -239,32 +291,33 @@ impl ExecutionBackend for TimingExecutionBackend {
     ) -> BoxFuture<'a, ExecutionReport> {
         let activation_id = request.activation.activation_id.clone();
         Box::pin(async move {
-            let started = Instant::now();
             let report = self.inner.invoke_contained(request, cancellation).await;
-            let backend_total_micros = duration_micros(started.elapsed());
             let contained_execution_micros = execution_wall_time_micros(&report.outcome);
+            let backend_timing = self.inner.take_invocation_timing(&activation_id);
             self.timings.record_backend(
                 &activation_id,
-                backend_total_micros,
                 contained_execution_micros,
+                backend_timing,
             );
             report
         })
     }
 
-    fn release<'a>(
-        &'a self,
+    fn release(
+        &self,
         prepared: PreparedComponent,
-    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+    ) -> BoxFuture<'_, Result<(), PlatformError>> {
         self.inner.release(prepared)
     }
 }
 
 fn execution_wall_time_micros(outcome: &Result<GuestOutcome, PlatformError>) -> u64 {
     match outcome {
-        Ok(GuestOutcome::Returned { consumption, .. })
-        | Ok(GuestOutcome::Trapped { consumption, .. })
-        | Ok(GuestOutcome::Interrupted { consumption, .. }) => consumption.wall_time_micros,
+        Ok(
+            GuestOutcome::Returned { consumption, .. }
+            | GuestOutcome::Trapped { consumption, .. }
+            | GuestOutcome::Interrupted { consumption, .. },
+        ) => consumption.wall_time_micros,
         Err(_) => 0,
     }
 }

@@ -26,9 +26,9 @@ Before retained measurements begin, the runner repeatedly launches:
 latentd phase0-spike invoke-once
 ```
 
-Each launch uses the staged containment capsule and the same worker, pool, queue, memory, fuel, and timeout configuration as the retained benchmark. The complete issue-23 JSON result is retained in `raw-results.json`. Every sample must return the expected echo, report unchanged pre-load/post-activation topology, and prove a clean shutdown.
+Each cold launch uses the staged containment capsule and the same worker, pool, queue, memory, fuel, and timeout configuration as the retained benchmark. The complete issue-23 JSON result is retained in `raw-results.json`. The executable-probe set also runs exact trap and timeout commands plus exact `verify-recovery` post-trap recovery. Every sample must report unchanged topology and a clean shutdown.
 
-These fresh-process samples provide the cold-activation distribution and ensure that configuration validation, topology monitoring, preparation, cleanup, and result semantics from issue #23 cannot regress while a separately reconstructed benchmark still passes.
+These fresh-process samples provide the cold-activation distribution and exercise success, failure, and recovery semantics from issue #23. The retained benchmark does not reconstruct those components: both binaries call the shared internal Phase 0 composition API for runtime creation, artifact loading, preparation, bounded cache/log configuration, bindings, and activation-runner construction.
 
 ## Startup and readiness
 
@@ -46,17 +46,21 @@ The output distinguishes:
 
 ## Activation phase timings
 
-The retained runner uses transparent timing wrappers around the real `FixedCellPool` and `Phase0WasmtimeBackend`. Every raw activation sample records:
+The retained runner uses a transparent pool wrapper and backend boundaries recorded inside the real `Phase0WasmtimeBackend`. Every raw activation sample records:
 
 - immediate acquisition or bounded-queue wait;
-- contained guest execution;
+- Wasmtime-reported contained guest execution and the typed guest-call boundary (which includes Wasmtime's automatic canonical-ABI post-return);
+- setup and in-guest host-import work as separate observations;
+- host-visible post-call result accounting after that completed post-return boundary;
+- store/instance/host-state/temporary-buffer reclamation;
+- outcome classification and return of the reusable proof;
 - total backend call to the reusable-proof boundary;
-- backend resource-cleanup/host-overhead interval;
+- the legacy backend residual interval;
 - cell release or quarantine disposition;
 - combined post-invocation cleanup;
 - total invocation latency.
 
-The backend cleanup interval is the reusable-proof boundary minus Wasmtime’s guest wall-time measurement. It therefore includes bounded backend setup and host overhead in addition to destruction of activation-owned runtime resources. This limitation is recorded explicitly rather than presenting the value as pure destructor time.
+`post_invocation_cleanup_micros` is the authoritative cleanup metric: it begins at the host-visible completion of the typed guest call, after Wasmtime's automatic canonical-ABI post-return, and sums post-call result accounting, activation-resource reclamation, outcome classification, reusable-proof return, and cell disposition. The legacy `backend_resource_cleanup_micros` residual remains for trend comparison only; it includes setup and host work and is explicitly not presented as isolated cleanup latency.
 
 ## Cold, warm, containment, and recovery distributions
 
@@ -78,6 +82,8 @@ Two end-to-end activation throughput modes execute through the complete activati
 2. exactly `pool_capacity + pool_queue_capacity` concurrent delayed echoes.
 
 A concurrent pool monitor records maximum active leases and queue depth. The saturation mode fails unless it observes both configured bounds. Queued activation acquire-wait, total latency, batch latency, and throughput are reported separately from the at-capacity mode.
+
+For the bounded-queue run, a benchmark-only gate pauses the first real leases immediately after the shared pool grants them and before those real activation runners enter Wasmtime. It releases only after the raw pool observes both the configured active and queued bounds. This prevents CPU-bound delayed guests from starving the scheduler before waiters can enqueue; it creates no synthetic leases or backend results, and the raw acquisition timing remains separate from the coordination pause.
 
 The lower-level fixed-pool probe remains separate. It measures direct acquire, queued wait, release, overflow rejection, and acquire/release throughput without presenting those operations as activation throughput.
 
