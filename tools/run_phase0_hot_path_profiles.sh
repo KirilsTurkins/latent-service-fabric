@@ -326,8 +326,8 @@ run_candidate() {
 run_profile cold-preparation 1 1 1 1
 run_profile first-activation 1 1 1 1
 run_profile warm-execution 4000 1 1 1
-run_profile failure-containment 1 100 1 1
-run_profile cleanup 1 160 1 1
+run_profile failure-containment 1 10 1 1
+run_profile cleanup 1 10 1 1
 run_profile contention 1 1 96 1
 
 # Each candidate is a separate process with the same fixture, toolchain,
