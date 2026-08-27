@@ -217,6 +217,7 @@ PY
         --runtime-workers "$runtime_workers" \
         --pool-capacity "$pool_capacity" \
         --pool-queue-capacity 4 \
+        --coordination-timeout-ms 15000 \
         --wasmtime-allocator "$allocator" \
         --wasmtime-copy-on-write-images "$copy_on_write"
 }

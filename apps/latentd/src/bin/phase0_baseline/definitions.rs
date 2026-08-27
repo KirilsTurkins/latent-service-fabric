@@ -107,6 +107,12 @@ struct Cli {
     #[arg(long, default_value_t = DEFAULT_MAXIMUM_TIMEOUT_OVERSHOOT_MILLIS)]
     maximum_overshoot_ms: u64,
 
+    /// Time allowed to prove a real fixed-pool or activation coordination state.
+    /// The default keeps normal baseline runs bounded; native profiler runs may
+    /// extend this without weakening the required observed state.
+    #[arg(long, default_value_t = DEFAULT_COORDINATION_TIMEOUT_MILLIS)]
+    coordination_timeout_ms: u64,
+
     /// Allowed steady-state RSS range before fixed-capacity growth fails.
     #[arg(long, default_value_t = DEFAULT_RSS_GROWTH_ALLOWANCE_BYTES)]
     rss_growth_allowance_bytes: u64,
@@ -140,6 +146,7 @@ struct EffectiveConfig {
     timeout_ms: u64,
     cancel_after_ms: u64,
     maximum_overshoot_ms: u64,
+    coordination_timeout_ms: u64,
     rss_growth_allowance_bytes: u64,
     fd_growth_allowance: u64,
     wasmtime_allocator: WasmtimeAllocator,
@@ -170,6 +177,7 @@ impl EffectiveConfig {
             timeout_ms: cli.timeout_ms,
             cancel_after_ms: cli.cancel_after_ms,
             maximum_overshoot_ms: cli.maximum_overshoot_ms,
+            coordination_timeout_ms: cli.coordination_timeout_ms,
             rss_growth_allowance_bytes: cli.rss_growth_allowance_bytes,
             fd_growth_allowance: cli.fd_growth_allowance,
             wasmtime_allocator: cli.wasmtime_allocator,
@@ -187,10 +195,11 @@ impl EffectiveConfig {
             || config.memory_pressure_bytes == 0
             || config.timeout_ms == 0
             || config.cancel_after_ms == 0
+            || config.coordination_timeout_ms == 0
             || cli.parent_launch_unix_micros == 0
         {
             return Err(BenchError::new(
-                "all capacities, counts, budgets, interruption delays, and launch timestamps must be non-zero",
+                "all capacities, counts, budgets, interruption and coordination delays, and launch timestamps must be non-zero",
             ));
         }
         Ok(config)

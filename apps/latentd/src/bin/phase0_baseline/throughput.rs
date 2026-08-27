@@ -64,7 +64,12 @@ async fn run_pool_probe(
             Ok::<u64, BenchError>(waited)
         }));
     }
-    wait_for_queue_depth(&pool, config.pool_queue_capacity).await?;
+    wait_for_queue_depth(
+        &pool,
+        config.pool_queue_capacity,
+        config.coordination_timeout_ms,
+    )
+    .await?;
     let maximum_observed_queue_depth = pool.observations().queue_depth;
 
     let overflow_id = ActivationId("pool-overflow".to_owned());
@@ -166,8 +171,9 @@ async fn run_pool_probe(
 async fn wait_for_queue_depth(
     pool: &FixedCellPool,
     expected: u32,
+    timeout_ms: u64,
 ) -> Result<(), BenchError> {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+    let deadline = tokio::time::Instant::now() + Duration::from_millis(timeout_ms);
     loop {
         let snapshot = pool.observations();
         if snapshot.queue_depth == expected {
@@ -188,8 +194,9 @@ async fn wait_for_activation_saturation(
     mode: ThroughputMode,
     expected_active: u32,
     expected_queue: u32,
+    timeout_ms: u64,
 ) -> Result<(), BenchError> {
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(2);
+    let deadline = tokio::time::Instant::now() + Duration::from_millis(timeout_ms);
     loop {
         let snapshot = pool.observations();
         if snapshot.active_leases == expected_active && snapshot.queue_depth == expected_queue {
@@ -394,6 +401,7 @@ async fn run_throughput_mode(
             mode,
             config.pool_capacity,
             expected_queue_depth,
+            config.coordination_timeout_ms,
         )
         .await;
         // Always release real leases, including when the proof fails, before
