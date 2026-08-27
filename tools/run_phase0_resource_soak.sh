@@ -205,7 +205,10 @@ printf '%s\n' "Raw archive: $OUTPUT_DIR"
 # This is mandatory fixture/toolchain validation. It is deliberately outside
 # normal PR smoke execution; missing targets or tools abort the soak rather
 # than letting it silently produce an incomplete archive.
-tools/validate_contracts.sh
+# Keep the mandatory fixture validation and the measured executable in one
+# isolated target root.  The staged capsule below must be the exact fixture
+# that this validation produced, never a similarly named default-target file.
+CARGO_TARGET_DIR="$TARGET_ROOT" tools/validate_contracts.sh
 
 ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json"
 CONTAINMENT_COMPONENT="${TARGET_ROOT}/capsules/containment/containment-capsule.wasm"

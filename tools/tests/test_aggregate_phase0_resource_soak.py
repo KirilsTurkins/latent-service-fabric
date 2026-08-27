@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 AGGREGATOR = ROOT / "tools" / "aggregate_phase0_resource_soak.py"
+RUNNER = ROOT / "tools" / "run_phase0_resource_soak.sh"
 CALIBRATION = (
     ROOT
     / "benchmarks"
@@ -235,6 +236,12 @@ def host_document(phase: str) -> dict[str, object]:
 
 
 class Phase0ResourceSoakAggregateTests(unittest.TestCase):
+    def test_runner_validates_fixtures_in_the_isolated_soak_target_root(self) -> None:
+        runner = RUNNER.read_text(encoding="utf-8")
+        self.assertIn(
+            'CARGO_TARGET_DIR="$TARGET_ROOT" tools/validate_contracts.sh', runner
+        )
+
     def make_archive(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temporary = tempfile.TemporaryDirectory()
         archive = Path(temporary.name)
