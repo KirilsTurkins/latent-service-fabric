@@ -28,8 +28,8 @@ use latent_manifest::CapsuleManifest;
 use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner};
 use latent_scheduler::{CellClass, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
-    CapturedLog, Phase0WasmtimeBackend, PreparedCacheSnapshot, RuntimeResourceSnapshot,
-    ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    CapturedLog, Phase0InstanceAllocator, Phase0WasmtimeBackend, PreparedCacheSnapshot,
+    RuntimeResourceSnapshot, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
 };
 use serde::Serialize;
 use serde_json::Value;
@@ -776,12 +776,16 @@ async fn prepare_composition(
             component_maximum_bytes: config.component_max_bytes,
             prepared_cache_maximum_entries: config.prepared_cache_entries,
             prepared_cache_maximum_bytes: config.prepared_cache_bytes,
+            prepared_cache_enabled: true,
             invocation_log_maximum_entries: config.log_max_entries,
             invocation_log_maximum_bytes: config.log_max_bytes,
             retained_log_maximum_entries: config.log_max_entries,
             retained_log_maximum_bytes: config.log_max_bytes,
             requested_memory_bytes: config.memory_bytes,
             requested_fuel: config.fuel,
+            wasmtime_instance_allocator: Phase0InstanceAllocator::OnDemand,
+            wasmtime_copy_on_write_images: true,
+            wasmtime_pooling_maximum_instances: config.pool_capacity,
         })
         .await
         {
@@ -793,7 +797,7 @@ async fn prepare_composition(
         backend,
         prepared,
         cache_after_prepare,
-        timings: _,
+        ..
     } = prepared_backend;
 
     let backend_for_runner: Arc<dyn ExecutionBackend> = backend.clone();

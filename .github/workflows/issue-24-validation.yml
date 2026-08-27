@@ -14,6 +14,7 @@ on:
       - "benchmarks/phase0/**"
       - "docs/phase-0-baselines.md"
       - "docs/phase-0-completion.md"
+      - "docs/phase-0-hot-path-profiling.md"
       - "VALIDATION.md"
       - "examples/echo-contract/**"
       - "tools/toolchain-smoke/**"
@@ -21,7 +22,12 @@ on:
       - "tools/run_phase0_baselines.sh"
       - "tools/run_phase0_calibration.sh"
       - "tools/aggregate_phase0_calibration.py"
+      - "tools/aggregate_phase0_hot_path_profiles.py"
+      - "tools/run_phase0_hot_path_profiles.sh"
+      - "tools/reassemble_phase0_hot_path_profile_archive.py"
       - "tools/tests/test_aggregate_phase0_calibration.py"
+      - "tools/tests/test_aggregate_phase0_hot_path_profiles.py"
+      - "tools/tests/test_reassemble_phase0_hot_path_profile_archive.py"
       - "tools/validate_contracts.sh"
       - "Cargo.lock"
       - "Cargo.toml"
@@ -47,6 +53,8 @@ jobs:
           cache-dependency-path: tools/requirements.lock
       - name: Install repository validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
+      - name: Install checked-in evidence archive verifier
+        run: sudo apt-get update && sudo apt-get install --yes zstd
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
           targets: wasm32-wasip2,wasm32-unknown-unknown
@@ -63,8 +71,12 @@ jobs:
         run: cargo check --workspace --all-targets --all-features --locked
       - name: Compile benchmark with strict Clippy
         run: cargo clippy -p latentd --bin phase0-baseline --all-features --locked --no-deps -- -D warnings
-      - name: Test calibration aggregation rules
-        run: python -m unittest tools.tests.test_aggregate_phase0_calibration
+      - name: Test Phase 0 aggregation rules
+        run: >-
+          python -m unittest
+          tools.tests.test_aggregate_phase0_calibration
+          tools.tests.test_aggregate_phase0_hot_path_profiles
+          tools.tests.test_reassemble_phase0_hot_path_profile_archive
       - name: Run deterministic Phase 0 baseline smoke
         run: tools/run_phase0_baselines.sh smoke "${RUNNER_TEMP}/phase0-baseline"
       - name: Upload raw measurements and report

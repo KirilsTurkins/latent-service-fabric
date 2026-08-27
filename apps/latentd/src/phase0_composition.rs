@@ -20,7 +20,7 @@ use latent_core::{
     Metadata, NodeId, PlatformError, PlatformErrorCode, PrincipalKind, ReleaseDigest,
     ResourceBudget, ServiceId, SpanId, TenantId, TraceId,
 };
-use latent_executor::{BoundImport, ExecutionBackend, PreparedComponent};
+use latent_executor::{BoundImport, ExecutionBackend, PreparationKey, PreparedComponent};
 use latent_manifest::{
     CapsuleManifest, ContractExport, ContractImport, ExecutionBackendKind, ExecutionRequirements,
     ObjectMetadata, StateModel, ThreadingModel,
@@ -29,8 +29,9 @@ use latent_node::{Phase0ActivationRunner, Phase0ActivationRunnerConfig};
 use latent_routing::InvocationTarget;
 use latent_scheduler::{CellClass, CellPool, FixedCellPool, FixedCellPoolConfig};
 use latent_wasmtime::{
-    Phase0WasmtimeBackend, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory,
-    PreparedCacheSnapshot, CONTEXT_IMPORT, ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, LOG_IMPORT,
+    Phase0InstanceAllocator, Phase0WasmtimeBackend, Phase0WasmtimeConfig,
+    Phase0WasmtimeEngineFactory, PreparedCacheSnapshot, CONTEXT_IMPORT, ECHO_EXPORT,
+    ECHO_SUCCESS_MEDIA_TYPE, LOG_IMPORT,
 };
 use serde::Deserialize;
 use sha2::{Digest as _, Sha256};
@@ -154,6 +155,9 @@ pub struct Phase0PreparationConfig {
     pub component_maximum_bytes: usize,
     pub prepared_cache_maximum_entries: usize,
     pub prepared_cache_maximum_bytes: usize,
+    /// The ordinary Phase 0 path uses a bounded node-owned cache.  The
+    /// profiling harness alone may disable reuse to compare a cold prepare.
+    pub prepared_cache_enabled: bool,
     pub invocation_log_maximum_entries: usize,
     pub invocation_log_maximum_bytes: usize,
     pub retained_log_maximum_entries: usize,
@@ -162,6 +166,15 @@ pub struct Phase0PreparationConfig {
     pub requested_memory_bytes: u64,
     /// The largest invocation fuel grant that this retained composition will accept.
     pub requested_fuel: u64,
+    /// Explicit allocator choice for bounded profiling experiments. The normal
+    /// executable path uses on-demand allocation.
+    pub wasmtime_instance_allocator: Phase0InstanceAllocator,
+    /// Explicitly select Wasmtime's initialized-memory COW behavior so an
+    /// experiment cannot be confused with an ambient default.
+    pub wasmtime_copy_on_write_images: bool,
+    /// The pool experiment may reserve no more than this many concurrently
+    /// instantiable resources. It tracks the fixed cell capacity.
+    pub wasmtime_pooling_maximum_instances: u32,
 }
 
 #[derive(Debug)]
@@ -174,6 +187,10 @@ pub struct Phase0LoadedArtifact {
 pub struct Phase0PreparedBackend {
     pub loaded: Phase0LoadedArtifact,
     pub backend: Arc<Phase0WasmtimeBackend>,
+    /// The exact key used for the first preparation.  Keeping it with the
+    /// prepared result lets the benchmark make a narrow same-key reuse probe
+    /// instead of inferring cache behaviour from an unrelated phase total.
+    pub preparation_key: PreparationKey,
     pub prepared: PreparedComponent,
     pub cache_after_prepare: PreparedCacheSnapshot,
     pub timings: Phase0PreparationTimings,
@@ -204,11 +221,18 @@ pub async fn prepare_phase0_backend(
         maximum_fuel: declared.cpu_fuel,
         prepared_cache_maximum_entries: config.prepared_cache_maximum_entries,
         prepared_cache_maximum_source_bytes: config.prepared_cache_maximum_bytes,
+        prepared_cache_enabled: config.prepared_cache_enabled,
         invocation_log_maximum_entries: config.invocation_log_maximum_entries,
         invocation_log_maximum_bytes: config.invocation_log_maximum_bytes,
         retained_log_maximum_entries: config.retained_log_maximum_entries,
         retained_log_maximum_bytes: config.retained_log_maximum_bytes,
         epoch_tick_interval_millis: PHASE0_EPOCH_TICK_INTERVAL_MILLIS,
+        instance_allocator: config.wasmtime_instance_allocator,
+        copy_on_write_images: config.wasmtime_copy_on_write_images,
+        pooling_maximum_instances: match config.wasmtime_instance_allocator {
+            Phase0InstanceAllocator::OnDemand => 1,
+            Phase0InstanceAllocator::Pooling => config.wasmtime_pooling_maximum_instances,
+        },
         ..Phase0WasmtimeConfig::default()
     })?;
     let preparation_key =
@@ -225,6 +249,7 @@ pub async fn prepare_phase0_backend(
     Ok(Phase0PreparedBackend {
         loaded,
         backend,
+        preparation_key,
         prepared,
         cache_after_prepare,
         timings: Phase0PreparationTimings {

@@ -18,7 +18,7 @@ use latent_core::{BoxFuture, Metadata, PlatformError, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 
 pub use backend::{
-    Phase0InvocationTiming, Phase0WasmtimeBackend, Phase0WasmtimeConfig,
+    Phase0InstanceAllocator, Phase0InvocationTiming, Phase0WasmtimeBackend, Phase0WasmtimeConfig,
     Phase0WasmtimeEngineFactory, PreparedCacheSnapshot, BACKEND_ID, CONTEXT_IMPORT,
     ECHO_DOMAIN_ERROR_MEDIA_TYPE, ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD, LOG_IMPORT,
     WASMTIME_VERSION,
