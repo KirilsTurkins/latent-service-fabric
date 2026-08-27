@@ -256,11 +256,11 @@ run_profile() {
         "$warm_samples" "$sequence_repetitions" "$throughput_batches" "$pool_iterations" \
         2 2 on-demand true
     write_command_json "$allocation_root/command.json" "heaptrack" \
-        heaptrack --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}"
-    heaptrack --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}" \
+        heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}"
+    heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}" \
         >"$allocation_root/stdout.log" 2>"$allocation_root/stderr.log"
     if [[ ! -f "$allocation_root/heaptrack.gz" ]]; then
-        mapfile -t heaptrack_outputs < <(find "$allocation_root" -maxdepth 1 -type f -name 'heaptrack*.gz' -print)
+        mapfile -t heaptrack_outputs < <(find "$allocation_root" -maxdepth 1 -type f -name 'heaptrack*.gz*' -print)
         if (( ${#heaptrack_outputs[@]} != 1 )); then
             printf '%s\n' "heaptrack did not create exactly one raw profile for $workload" >&2
             exit 1
