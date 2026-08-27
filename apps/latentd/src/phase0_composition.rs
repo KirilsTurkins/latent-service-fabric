@@ -29,8 +29,9 @@ use latent_node::{Phase0ActivationRunner, Phase0ActivationRunnerConfig};
 use latent_routing::InvocationTarget;
 use latent_scheduler::{CellClass, CellPool, FixedCellPool, FixedCellPoolConfig};
 use latent_wasmtime::{
-    Phase0WasmtimeBackend, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory,
-    PreparedCacheSnapshot, CONTEXT_IMPORT, ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, LOG_IMPORT,
+    Phase0InstanceAllocator, Phase0WasmtimeBackend, Phase0WasmtimeConfig,
+    Phase0WasmtimeEngineFactory, PreparedCacheSnapshot, CONTEXT_IMPORT, ECHO_EXPORT,
+    ECHO_SUCCESS_MEDIA_TYPE, LOG_IMPORT,
 };
 use serde::Deserialize;
 use sha2::{Digest as _, Sha256};
@@ -162,6 +163,15 @@ pub struct Phase0PreparationConfig {
     pub requested_memory_bytes: u64,
     /// The largest invocation fuel grant that this retained composition will accept.
     pub requested_fuel: u64,
+    /// Explicit allocator choice for bounded profiling experiments. The normal
+    /// executable path uses on-demand allocation.
+    pub wasmtime_instance_allocator: Phase0InstanceAllocator,
+    /// Explicitly select Wasmtime's initialized-memory COW behavior so an
+    /// experiment cannot be confused with an ambient default.
+    pub wasmtime_copy_on_write_images: bool,
+    /// The pool experiment may reserve no more than this many concurrently
+    /// instantiable resources. It tracks the fixed cell capacity.
+    pub wasmtime_pooling_maximum_instances: u32,
 }
 
 #[derive(Debug)]
@@ -209,6 +219,12 @@ pub async fn prepare_phase0_backend(
         retained_log_maximum_entries: config.retained_log_maximum_entries,
         retained_log_maximum_bytes: config.retained_log_maximum_bytes,
         epoch_tick_interval_millis: PHASE0_EPOCH_TICK_INTERVAL_MILLIS,
+        instance_allocator: config.wasmtime_instance_allocator,
+        copy_on_write_images: config.wasmtime_copy_on_write_images,
+        pooling_maximum_instances: match config.wasmtime_instance_allocator {
+            Phase0InstanceAllocator::OnDemand => 1,
+            Phase0InstanceAllocator::Pooling => config.wasmtime_pooling_maximum_instances,
+        },
         ..Phase0WasmtimeConfig::default()
     })?;
     let preparation_key =

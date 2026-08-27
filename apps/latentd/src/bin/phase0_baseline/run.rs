@@ -163,6 +163,9 @@ async fn run_async(
             retained_log_maximum_bytes: LOG_MAXIMUM_BYTES,
             requested_memory_bytes: config.memory_bytes.max(config.memory_pressure_bytes),
             requested_fuel: config.fuel,
+            wasmtime_instance_allocator: config.wasmtime_allocator.into(),
+            wasmtime_copy_on_write_images: config.wasmtime_copy_on_write_images,
+            wasmtime_pooling_maximum_instances: config.pool_capacity,
         },
     )
     .await

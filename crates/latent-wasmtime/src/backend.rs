@@ -15,7 +15,7 @@ use latent_executor::{
 use latent_manifest::ExecutionBackendKind;
 use sha2::{Digest, Sha256};
 use wasmtime::component::{Component, HasSelf, Linker};
-use wasmtime::{Config, Engine, Store, WasmBacktraceDetails};
+use wasmtime::{Config, Engine, PoolingAllocationConfig, Store, WasmBacktraceDetails};
 
 use crate::bindings;
 use crate::containment::{
@@ -40,6 +40,27 @@ pub const ECHO_DOMAIN_ERROR_MEDIA_TYPE: &str = "application/vnd.latent.echo-erro
 const EMPTY_MESSAGE_OUTPUT: &[u8] = br#"{"error":"empty-message"}"#;
 const MESSAGE_TOO_LARGE_OUTPUT: &[u8] = br#"{"error":"message-too-large"}"#;
 const INVOCATION_TIMING_MAXIMUM_ENTRIES: usize = 256;
+const PHASE0_POOLING_MAX_COMPONENT_INSTANCE_BYTES: usize = 1024 * 1024;
+const PHASE0_POOLING_MAX_CORE_INSTANCE_BYTES: usize = 1024 * 1024;
+
+/// Bounded Wasmtime allocator modes that the Phase 0 profiling harness may
+/// compare. The default remains on-demand allocation: pooling is an
+/// experiment, not a change to the Phase 0 execution contract.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Phase0InstanceAllocator {
+    OnDemand,
+    Pooling,
+}
+
+impl Phase0InstanceAllocator {
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::OnDemand => "on_demand",
+            Self::Pooling => "pooling",
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Phase0WasmtimeConfig {
@@ -58,6 +79,14 @@ pub struct Phase0WasmtimeConfig {
     pub retained_log_maximum_bytes: usize,
     pub epoch_deadline_ticks: u64,
     pub epoch_tick_interval_millis: u64,
+    /// The allocator mode is part of the preparation-key compatibility
+    /// material. Only the profiling harness selects the pooling experiment.
+    pub instance_allocator: Phase0InstanceAllocator,
+    /// Make Wasmtime's platform-default COW behavior explicit and measurable.
+    pub copy_on_write_images: bool,
+    /// Upper bound for every preallocated pooling resource. It is ignored by
+    /// on-demand allocation and must be non-zero for the pooling experiment.
+    pub pooling_maximum_instances: u32,
 }
 
 impl Default for Phase0WasmtimeConfig {
@@ -78,6 +107,9 @@ impl Default for Phase0WasmtimeConfig {
             retained_log_maximum_bytes: 512 * 1024,
             epoch_deadline_ticks: 1,
             epoch_tick_interval_millis: 5,
+            instance_allocator: Phase0InstanceAllocator::OnDemand,
+            copy_on_write_images: true,
+            pooling_maximum_instances: 1,
         }
     }
 }
@@ -98,7 +130,9 @@ impl Phase0WasmtimeConfig {
             || self.retained_log_maximum_entries == 0
             || self.retained_log_maximum_bytes == 0
             || self.epoch_deadline_ticks == 0
-            || self.epoch_tick_interval_millis == 0;
+            || self.epoch_tick_interval_millis == 0
+            || matches!(self.instance_allocator, Phase0InstanceAllocator::Pooling)
+                && self.pooling_maximum_instances == 0;
         if invalid {
             return Err(platform_error(
                 PlatformErrorCode::InvalidArgument,
@@ -116,7 +150,7 @@ impl Phase0WasmtimeConfig {
              max-fuel={};wasm-stack={};async-stack={};cache-entries={};\
              cache-bytes={};invocation-log-entries={};invocation-log-bytes={};\
              retained-log-entries={};retained-log-bytes={};epoch-ticks={};\
-             epoch-tick-ms={};target={};cpu={}",
+             epoch-tick-ms={};allocator={};cow={};pooling-max-instances={};target={};cpu={}",
             self.maximum_component_bytes,
             self.maximum_memory_bytes,
             self.maximum_fuel,
@@ -130,6 +164,9 @@ impl Phase0WasmtimeConfig {
             self.retained_log_maximum_bytes,
             self.epoch_deadline_ticks,
             self.epoch_tick_interval_millis,
+            self.instance_allocator.name(),
+            self.copy_on_write_images,
+            self.pooling_maximum_instances,
             self.target_triple,
             self.cpu_feature_set,
         );
@@ -194,8 +231,12 @@ impl Phase0WasmtimeEngineFactory {
         engine_config.epoch_interruption(true);
         engine_config.max_wasm_stack(config.maximum_wasm_stack_bytes);
         engine_config.async_stack_size(config.async_stack_bytes);
+        engine_config.memory_init_cow(config.copy_on_write_images);
         engine_config.wasm_backtrace_details(WasmBacktraceDetails::Disable);
         engine_config.wasm_backtrace_max_frames(None);
+        if matches!(config.instance_allocator, Phase0InstanceAllocator::Pooling) {
+            configure_bounded_pooling_allocator(&mut engine_config, &config)?;
+        }
 
         let engine = Engine::new(&engine_config).map_err(|error| {
             platform_error(
@@ -242,6 +283,24 @@ impl Phase0WasmtimeEngineFactory {
             "async-stack-bytes".to_owned(),
             config.async_stack_bytes.to_string(),
         );
+        configuration.insert(
+            "instance-allocation-strategy".to_owned(),
+            config.instance_allocator.name().to_owned(),
+        );
+        configuration.insert(
+            "copy-on-write-images".to_owned(),
+            config.copy_on_write_images.to_string(),
+        );
+        if matches!(config.instance_allocator, Phase0InstanceAllocator::Pooling) {
+            configuration.insert(
+                "pooling-maximum-instances".to_owned(),
+                config.pooling_maximum_instances.to_string(),
+            );
+            configuration.insert(
+                "pooling-linear-memory-keep-resident-bytes".to_owned(),
+                "0".to_owned(),
+            );
+        }
         configuration.insert("ambient-wasi-authority".to_owned(), "none".to_owned());
         configuration.insert("configuration-digest".to_owned(), configuration_digest);
 
@@ -250,8 +309,11 @@ impl Phase0WasmtimeEngineFactory {
             wasmtime_version: WASMTIME_VERSION.to_owned(),
             target_triple: config.target_triple.clone(),
             cpu_feature_set: config.cpu_feature_set.clone(),
-            pooling_allocator: false,
-            copy_on_write_images: false,
+            pooling_allocator: matches!(
+                config.instance_allocator,
+                Phase0InstanceAllocator::Pooling
+            ),
+            copy_on_write_images: config.copy_on_write_images,
             async_support: true,
             fuel_enabled: true,
             epoch_interruption_enabled: true,
@@ -297,6 +359,68 @@ impl Phase0WasmtimeEngineFactory {
             self.log_sink.clone(),
         )
     }
+}
+
+fn configure_bounded_pooling_allocator(
+    engine_config: &mut Config,
+    config: &Phase0WasmtimeConfig,
+) -> Result<(), PlatformError> {
+    let maximum_memory_bytes = usize::try_from(config.maximum_memory_bytes).map_err(|_| {
+        platform_error(
+            PlatformErrorCode::InvalidArgument,
+            "Phase 0 pooling memory limit does not fit the host address size",
+            false,
+        )
+    })?;
+    let total_core_instances =
+        config
+            .pooling_maximum_instances
+            .checked_mul(4)
+            .ok_or_else(|| {
+                platform_error(
+                    PlatformErrorCode::InvalidArgument,
+                    "Phase 0 pooling core-instance capacity overflowed",
+                    false,
+                )
+            })?;
+    let total_memories_and_tables =
+        config
+            .pooling_maximum_instances
+            .checked_mul(2)
+            .ok_or_else(|| {
+                platform_error(
+                    PlatformErrorCode::InvalidArgument,
+                    "Phase 0 pooling memory/table capacity overflowed",
+                    false,
+                )
+            })?;
+
+    // The experiment must retain only resources needed by the fixed cell
+    // capacity. In particular, do not inherit Wasmtime's broad defaults or
+    // retain warm linear memory after a store drops.
+    let mut pooling = PoolingAllocationConfig::new();
+    pooling
+        .total_component_instances(config.pooling_maximum_instances)
+        .total_core_instances(total_core_instances)
+        .total_memories(total_memories_and_tables)
+        .total_tables(total_memories_and_tables)
+        .total_stacks(config.pooling_maximum_instances)
+        .max_component_instance_size(PHASE0_POOLING_MAX_COMPONENT_INSTANCE_BYTES)
+        .max_core_instance_size(PHASE0_POOLING_MAX_CORE_INSTANCE_BYTES)
+        .max_core_instances_per_component(4)
+        .max_memories_per_component(2)
+        .max_tables_per_component(2)
+        .max_memory_size(maximum_memory_bytes)
+        .max_unused_warm_slots(0)
+        .decommit_batch_size(1)
+        .async_stack_keep_resident(0)
+        .linear_memory_keep_resident(0)
+        .table_keep_resident(0);
+    engine_config.memory_reservation(config.maximum_memory_bytes);
+    engine_config.memory_reservation_for_growth(0);
+    engine_config.memory_guard_size(0);
+    engine_config.allocation_strategy(pooling);
+    Ok(())
 }
 
 impl WasmtimeEngineFactory for Phase0WasmtimeEngineFactory {
@@ -1215,4 +1339,56 @@ fn error_with_detail<const N: usize>(
 
 fn bounded_error(error: &wasmtime::Error) -> String {
     bounded_text(&error.to_string(), MAX_DIAGNOSTIC_BYTES)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Phase0InstanceAllocator, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory};
+    use crate::WasmtimeEngineFactory as _;
+
+    #[test]
+    fn profiles_explicit_bounded_allocator_and_cow_experiments() {
+        let on_demand = Phase0WasmtimeConfig::default();
+        let on_demand_factory =
+            Phase0WasmtimeEngineFactory::new(on_demand.clone()).expect("default factory builds");
+        assert!(!on_demand_factory.profile().pooling_allocator);
+        assert!(on_demand_factory.profile().copy_on_write_images);
+        assert_eq!(
+            on_demand_factory
+                .profile()
+                .configuration
+                .get("instance-allocation-strategy")
+                .map(String::as_str),
+            Some("on_demand")
+        );
+
+        let pooling = Phase0WasmtimeConfig {
+            instance_allocator: Phase0InstanceAllocator::Pooling,
+            copy_on_write_images: false,
+            pooling_maximum_instances: 2,
+            ..on_demand
+        };
+        let pooling_factory =
+            Phase0WasmtimeEngineFactory::new(pooling).expect("bounded pooling factory builds");
+        assert!(pooling_factory.profile().pooling_allocator);
+        assert!(!pooling_factory.profile().copy_on_write_images);
+        assert_eq!(
+            pooling_factory
+                .profile()
+                .configuration
+                .get("pooling-linear-memory-keep-resident-bytes")
+                .map(String::as_str),
+            Some("0")
+        );
+    }
+
+    #[test]
+    fn rejects_an_unbounded_pooling_experiment() {
+        let config = Phase0WasmtimeConfig {
+            instance_allocator: Phase0InstanceAllocator::Pooling,
+            pooling_maximum_instances: 0,
+            ..Phase0WasmtimeConfig::default()
+        };
+        assert!(Phase0WasmtimeEngineFactory::new(config).is_err());
+    }
 }

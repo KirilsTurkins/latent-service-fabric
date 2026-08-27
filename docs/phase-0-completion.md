@@ -76,6 +76,37 @@ production conclusion: it requires the second comparable set above for
 confirmation. Shared hosted CI may run deterministic correctness smoke
 coverage, but must not fail on these microbenchmark bands.
 
+## Execution hot-path profiling and optimization handoff
+
+Issue 40 adds a separate native-Linux `perf` plus Heaptrack evidence workflow:
+[the profiling handoff](phase-0-hot-path-profiling.md). It profiles the real
+shared Phase 0 composition across cold preparation, first and warm activation,
+failure containment/recovery, cleanup, and at-capacity/bounded-queue
+contention. Every profile retains a passing full baseline document, exact
+command, raw tool data, and symbolized CPU/allocation reports; an incomplete
+tool artifact or a failed, missing, duplicate, or unexpected hard invariant is
+invalid rather than silently omitted.
+
+The bounded matrix measures fixed worker/cell ratios, bounded preparation reuse
+versus cold preparation, on-demand versus pooling allocation, and COW
+initialized-memory alternatives. The default remains the existing fixed
+2-worker/2-cell, on-demand, COW-enabled configuration with one bounded prepared
+component and fresh invocation-owned stores, host state, import tables,
+instances, limiters, and activation contexts. Pooling, when profiled, is capped
+to the fixed cell capacity and retains zero linear memory after a store drops.
+No runtime optimization is adopted from a faster single/small set: adoption
+requires at least seven comparable runs, issue-38 calibrated-noise clearance or
+an explicit architectural benefit, bounded fixed/peak memory, and every hard
+invariant passing. The current decision record retains the Phase 0 default,
+defers scheduler ratios to #8, Wasmtime policy/cache/value work to #9,
+lifecycle-envelope changes to #11, and rejects store/instance reuse and
+untrusted AOT/cache/snapshot/native-execution shortcuts in Phase 0.
+
+This handoff is optimization evidence only; it does not establish production
+SLOs or cross-platform claims. Issue 39 must still execute its three independent
+native-Linux 100k-activation soak processes against this final configuration
+before the Phase 0 completion gate can close.
+
 ## Remaining limitations
 
 This evidence demonstrates only the Phase 0 spike under its documented

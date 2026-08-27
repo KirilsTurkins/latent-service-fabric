@@ -5,6 +5,25 @@ enum BenchmarkMode {
     Full,
 }
 
+/// The profile harness can compare only these explicit engine configurations.
+/// Normal baseline runs retain on-demand allocation and Wasmtime's COW memory
+/// initialization enabled.
+#[derive(Debug, Clone, Copy, ValueEnum, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum WasmtimeAllocator {
+    OnDemand,
+    Pooling,
+}
+
+impl From<WasmtimeAllocator> for Phase0InstanceAllocator {
+    fn from(value: WasmtimeAllocator) -> Self {
+        match value {
+            WasmtimeAllocator::OnDemand => Self::OnDemand,
+            WasmtimeAllocator::Pooling => Self::Pooling,
+        }
+    }
+}
+
 #[derive(Debug, Parser)]
 #[command(
     name = "phase0-baseline",
@@ -95,6 +114,14 @@ struct Cli {
     /// Allowed steady-state file-descriptor range.
     #[arg(long, default_value_t = DEFAULT_FD_GROWTH_ALLOWANCE)]
     fd_growth_allowance: u64,
+
+    /// Wasmtime allocator experiment. On-demand is the Phase 0 default.
+    #[arg(long, value_enum, default_value_t = WasmtimeAllocator::OnDemand)]
+    wasmtime_allocator: WasmtimeAllocator,
+
+    /// Explicitly configure initialized-memory COW for profile comparisons.
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
+    wasmtime_copy_on_write_images: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -115,6 +142,8 @@ struct EffectiveConfig {
     maximum_overshoot_ms: u64,
     rss_growth_allowance_bytes: u64,
     fd_growth_allowance: u64,
+    wasmtime_allocator: WasmtimeAllocator,
+    wasmtime_copy_on_write_images: bool,
 }
 
 impl EffectiveConfig {
@@ -143,6 +172,8 @@ impl EffectiveConfig {
             maximum_overshoot_ms: cli.maximum_overshoot_ms,
             rss_growth_allowance_bytes: cli.rss_growth_allowance_bytes,
             fd_growth_allowance: cli.fd_growth_allowance,
+            wasmtime_allocator: cli.wasmtime_allocator,
+            wasmtime_copy_on_write_images: cli.wasmtime_copy_on_write_images,
         };
         if config.pool_capacity == 0
             || config.pool_queue_capacity == 0

@@ -28,8 +28,8 @@ use latent_manifest::CapsuleManifest;
 use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner};
 use latent_scheduler::{CellClass, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
-    CapturedLog, Phase0WasmtimeBackend, PreparedCacheSnapshot, RuntimeResourceSnapshot,
-    ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    CapturedLog, Phase0InstanceAllocator, Phase0WasmtimeBackend, PreparedCacheSnapshot,
+    RuntimeResourceSnapshot, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
 };
 use serde::Serialize;
 use serde_json::Value;
@@ -782,6 +782,9 @@ async fn prepare_composition(
             retained_log_maximum_bytes: config.log_max_bytes,
             requested_memory_bytes: config.memory_bytes,
             requested_fuel: config.fuel,
+            wasmtime_instance_allocator: Phase0InstanceAllocator::OnDemand,
+            wasmtime_copy_on_write_images: true,
+            wasmtime_pooling_maximum_instances: config.pool_capacity,
         })
         .await
         {

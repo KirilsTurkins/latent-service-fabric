@@ -55,3 +55,26 @@ The archive contains:
 The evidence is observational. Its comparison bands are Phase 1
 regression-detection aids, not production SLOs, capacity guarantees, or
 cross-machine claims.
+
+## Native-Linux hot-path profiles
+
+Issue 40 adds a separate manual CPU/allocation profiling archive. It is not
+shared CI and does not replace the correctness baseline or the seven-run
+calibration. From a clean native-Linux worktree with the documented open-source
+`perf` and `heaptrack` tools, publish the measured source tree and run:
+
+~~~bash
+tools/run_phase0_hot_path_profiles.sh \
+  --published-source-commit <reachable-commit-sha> \
+  --published-source-tree <reachable-tree-sha> \
+  benchmarks/phase0/profiling/native-linux-YYYY-MM-DD
+~~~
+
+The archive retains symbolized CPU reports, Heaptrack allocation/copy reports,
+raw profile data, exact commands, every matching Phase 0 raw baseline, a
+bounded worker/cell and Wasmtime allocator/COW experiment matrix, and a
+machine-readable aggregate. It refuses failed or incomplete hard-invariant
+evidence and uses the issue-38 noise bands only as an adoption gate; a faster
+single or small candidate set is not a Phase 0 optimization decision. See
+[the profiling handoff](../../docs/phase-0-hot-path-profiling.md) for the
+guardrails, decisions, and Phase 1 ownership.

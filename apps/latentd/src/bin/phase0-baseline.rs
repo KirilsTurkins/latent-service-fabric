@@ -50,8 +50,8 @@ use latent_manifest::CapsuleManifest;
 use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner};
 use latent_scheduler::{CellClass, CellLease, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
-    Phase0InvocationTiming, Phase0WasmtimeBackend, PreparedCacheSnapshot, RuntimeResourceSnapshot,
-    ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    Phase0InstanceAllocator, Phase0InvocationTiming, Phase0WasmtimeBackend, PreparedCacheSnapshot,
+    RuntimeResourceSnapshot, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
 };
 use latentd::phase0_composition::{
     self, Phase0InvocationConfig, Phase0PreparationConfig, Phase0RuntimeConfig,
