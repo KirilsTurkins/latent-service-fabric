@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-27** for the Phase 0 executable contract, native-Linux variance calibration, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-27** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -110,6 +110,52 @@ direct sample is reported as not observed at profiler resolution, not as a
 zero-cost result. The aggregation test is deterministic and may run in CI; the
 host-sensitive profile command may not. See [docs/phase-0-hot-path-profiling.md](docs/phase-0-hot-path-profiling.md)
 for the evidence interpretation, adoption rule, and Phase 1 handoff.
+
+## Native-Linux long-running resource soak
+
+The issue 39 resource plateau probe is also explicit heavyweight work, not a
+shared CI job. It must run only after issue 40 has finalized the pre-Phase-1
+configuration, from a clean native Linux host or VM and a durable source
+commit/tree:
+
+```bash
+tools/run_phase0_resource_soak.sh \
+  --published-source-commit <reachable-final-commit> \
+  --published-source-tree <reachable-final-tree> \
+  --final-configuration-commit <reachable-final-commit> \
+  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+```
+
+It rejects WSL, containers, unavailable process probes, fixture/toolchain
+failure, dirty or mismatched source trees, missing raw batch samples, and a
+pre-final/test-only invocation. It preserves at least three full raw processes,
+each with 1,000 warm-ups excluded from analysis, 100,000 measured fresh-store
+activations, all failure/recovery paths, and frequent real capacity/queue
+saturation. Its aggregate revalidates every hard check and every batch's
+logical-resource baseline, reports rolling ranges/final deltas/Theil-Sen late
+slopes/peaks and explicit release/shutdown state, rejects both measured-window
+and release-to-shutdown FD growth, and for new archives verifies that the final
+measured FD count stays within a post-warm-up baseline while release/shutdown
+return within a pre-runtime baseline. It reconciles raw process environment
+against before/after host observations and applies #38's calibrated RSS band
+for RSS/PSS/private material-growth triage only after CPU, memory, kernel,
+virtualization, toolchain, allocator, fixture, and relevant configuration
+identity—including prepared-cache enablement, Wasmtime allocator mode, and
+initialized-memory COW—are proved matched. A mismatch or missing identity is
+inconclusive, not a reason to raise an allowance.
+
+The retained final-configuration raw result is
+[`native-linux-2026-08-27-6250b978`](benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md):
+three complete 100,000-activation processes from durable source commit
+`6250b9782ffc4174676d2d72bd023dbfc38c39d7`. Its raw hard invariants,
+release/shutdown topology, and retained measured-window/release-to-shutdown FD
+checks pass. Its PSS peak remains retained for audit, but strict revalidation
+marks the comparison **inconclusive**: #38 lacks explicit prepared-cache,
+Wasmtime allocator, and COW provenance; historical host records omit VM
+detection and allocator provenance; and raw documents predate the pre-runtime
+and post-warm-up descriptor baselines plus raw virtualization kind. The updated
+runner and calibration helper record the missing fields; #39 remains open
+pending a fresh matching calibration and three-process archive.
 
 ## CI jobs
 

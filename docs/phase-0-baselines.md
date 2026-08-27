@@ -44,6 +44,12 @@ virtualization, allocator, CPU frequency/power-policy where exposed, and
 background-load observations. It does not change CPU policy, pin frequency, or
 discard a run because its performance values are inconvenient.
 
+For a calibration used to assess the selected issue-40 ordinary configuration,
+the helper explicitly passes and records a prepared cache, `on-demand`
+Wasmtime allocation, and initialized-memory COW enabled. Those values are part
+of the comparison identity; an older calibration that does not record them is
+not interchangeable by assumption.
+
 Every archived run must use the same source commit, fixture digest, Rust/Cargo
 and Wasmtime versions, target, build profile, configuration, CPU, logical CPU
 count, memory, and kernel. Any failed hard check, malformed output, missing
@@ -76,6 +82,85 @@ condition is resolved. These are regression-detection aids only, not
 production SLOs or cross-machine claims.
 Shared hosted CI must never fail on these fragile microbenchmark bands; it may
 continue to run only the deterministic correctness smoke profile.
+
+## Native-Linux long-running resource plateau soak
+
+Issue 39 provides a separate heavy command for proving a bounded steady-state
+under retained fresh-store activation work. It is not part of the pull-request
+smoke profile and must be run only after issue 40 selects the final pre-Phase-1
+configuration:
+
+```bash
+tools/run_phase0_resource_soak.sh \
+  --published-source-commit <reachable-final-commit> \
+  --published-source-tree <reachable-final-tree> \
+  --final-configuration-commit <reachable-final-commit> \
+  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+```
+
+The command requires a clean native Linux host or VM and refuses WSL,
+containers, unavailable `/proc` probes, unavailable validation fixtures or
+toolchain, source-tree mismatch, and an existing output directory. It starts
+at least three independent processes. A normal run cannot lower its workload:
+each process has at least 1,000 warm-up activations excluded from growth
+analysis and 100,000 normal measured fresh-store activations. Every measured
+batch contains success, declared-domain-error, trap, timeout, cancellation,
+memory-pressure, and immediately following cause-specific recovery work. Both
+real at-capacity and real bounded-queue activation batches run at least every
+ten measured batches.
+
+The Rust probe samples each completed batch and fails immediately if topology
+or any logical resource fails to return to baseline: active/available/
+quarantined cells and queue depth; cancellation registrations and running
+invocations; live stores, host states, component instances, temporary buffers,
+and cancellation probes; log and prepared-cache entries/bytes; and the bounded
+backend timing-store occupancy. It records RSS, VM, PSS and private mappings
+where `/proc/self/smaps_rollup` exposes them, plus process/child/thread/FD and
+open/listening socket counts. Allocator-internal statistics are deliberately
+reported as unsupported until a safe allocator-specific probe is configured.
+
+`aggregate.json` retains every raw file hash, schema, exact final source/tree,
+component digest, command profile, run count, host provenance, interval method,
+limits, unsupported probes, rolling ranges, peaks, final-window deltas,
+Theil-Sen late slopes, post-release state, and shutdown state. New raw runs
+also retain pre-runtime and post-warm-up process snapshots: the final measured
+FD count must not exceed the post-warm-up baseline, and post-release/post-shutdown FDs
+must not exceed that pre-runtime baseline. It validates terminal
+process/child/thread/socket topology, and uses issue 38's RSS advisory noise
+band only when CPU, memory, kernel, virtualization, toolchain, allocator,
+fixture, and relevant execution configuration—including prepared-cache
+enablement, Wasmtime allocator mode, and initialized-memory COW—are proved
+matched. A missing or mismatched identity produces an explicit inconclusive
+comparison. A material
+late-window growth or topology result remains failed and must identify a
+retaining subsystem using heap/allocator/process tooling or a focused issue;
+the noise allowance must not be raised to clear it. Robust cross-run
+peak/delta outliers are separately retained as diagnostic variability; they
+become a failure only when the same metric breaches its calibrated
+late-window material-growth rule.
+
+The retained post-issue-40 raw archive is
+[`native-linux-2026-08-27-6250b978`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md),
+measured from durable source commit
+`6250b9782ffc4174676d2d72bd023dbfc38c39d7` and tree
+`65ba341221ea89e107a3e0e3c4b0aed7e26efd9b`. Its three complete processes
+pass all hard invariants, explicit release/shutdown topology, and its retained
+measured-window/release-to-shutdown FD checks. Strict applicability
+revalidation deliberately leaves its RSS/PSS/private/VM comparison
+**inconclusive**: the issue-38 calibration does not retain prepared-cache,
+Wasmtime allocator, or COW configuration, while the historical soak host
+captures omit VM and allocator provenance. Its raw results also predate the
+serialized pre-runtime and post-warm-up descriptor baselines plus raw
+virtualization kind, so a complete FD lifecycle cannot be independently
+revalidated. The runner now records all of those fields and the calibration helper invokes the selected
+ordinary cache/on-demand/COW configuration explicitly; #39 remains open until
+a fresh matching calibration and three-process archive can make the calibrated
+plateau claim.
+
+If the aggregate reports material growth, rerun the same command with
+`--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after
+collecting heap/allocator/process evidence. Those values document diagnosis;
+they do not turn a growing run into a pass or loosen the calibrated allowance.
 
 ## Exact issue-23 executable path
 

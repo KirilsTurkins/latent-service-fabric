@@ -28,6 +28,9 @@ on:
       - "tools/tests/test_aggregate_phase0_calibration.py"
       - "tools/tests/test_aggregate_phase0_hot_path_profiles.py"
       - "tools/tests/test_reassemble_phase0_hot_path_profile_archive.py"
+      - "tools/run_phase0_resource_soak.sh"
+      - "tools/aggregate_phase0_resource_soak.py"
+      - "tools/tests/test_aggregate_phase0_resource_soak.py"
       - "tools/validate_contracts.sh"
       - "Cargo.lock"
       - "Cargo.toml"
@@ -69,14 +72,15 @@ jobs:
         run: cargo fmt --all --check
       - name: Check complete workspace
         run: cargo check --workspace --all-targets --all-features --locked
-      - name: Compile benchmark with strict Clippy
-        run: cargo clippy -p latentd --bin phase0-baseline --all-features --locked --no-deps -- -D warnings
+      - name: Compile benchmark harnesses with strict Clippy
+        run: cargo clippy -p latentd --bin phase0-baseline --bin phase0-soak --all-features --locked --no-deps -- -D warnings
       - name: Test Phase 0 aggregation rules
         run: >-
           python -m unittest
           tools.tests.test_aggregate_phase0_calibration
           tools.tests.test_aggregate_phase0_hot_path_profiles
           tools.tests.test_reassemble_phase0_hot_path_profile_archive
+          tools.tests.test_aggregate_phase0_resource_soak
       - name: Run deterministic Phase 0 baseline smoke
         run: tools/run_phase0_baselines.sh smoke "${RUNNER_TEMP}/phase0-baseline"
       - name: Upload raw measurements and report
