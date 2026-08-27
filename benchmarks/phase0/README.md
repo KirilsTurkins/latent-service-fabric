@@ -127,7 +127,13 @@ subsystem or focused follow-up issue is recorded. Record that diagnosis in the
 same archive with `--retaining-subsystem <name>` and/or
 `--followup-issue <URL-or-number>`.
 
-No final #39 archive is checked in yet because issue 40 is still the required
-configuration-finalization dependency. The command requires an explicit final
-configuration commit precisely so a pre-final run cannot be presented as the
-acceptance result.
+The accepted final-config evidence is
+[native-linux-2026-08-27-6250b978](soak/native-linux-2026-08-27-6250b978/README.md).
+It retains all three machine-readable raw process series losslessly in a
+checksummed 49 KiB zstd archive, alongside the aggregate, concise report,
+host observations, command statuses, and raw-file hashes, without duplicating
+earlier attempts. All calibrated late-window RSS/PSS/private/VM checks,
+resource-cleanup invariants, descriptor checks, and topology checks pass. Its
+retained run-03 PSS peak is a robust cross-run outlier but remains within the
+calibrated late-window bound, so it is reported as variability rather than
+treated as a sustained leak.

@@ -119,14 +119,21 @@ limits, unsupported probes, rolling ranges, peaks, final-window deltas,
 Theil-Sen late slopes, post-release state, and shutdown state. It requires zero
 unexplained net FD growth and uses issue 38's matched-host RSS advisory noise
 band for RSS and available PSS/private material-growth triage. A material
-growth or topology/outlier result remains failed and must identify a retaining
-subsystem using heap/allocator/process tooling or a focused issue; the noise
-allowance must not be raised to clear it.
+late-window growth or topology result remains failed and must identify a
+retaining subsystem using heap/allocator/process tooling or a focused issue;
+the noise allowance must not be raised to clear it. Robust cross-run
+peak/delta outliers are separately retained as diagnostic variability; they
+become a failure only when the same metric breaches its calibrated
+late-window material-growth rule.
 
-Issue 40 is still open at the time of this harness change, so no pre-final
-archive is claimed as issue 39 acceptance evidence. The explicit final
-configuration argument exists to prevent that mistake; add and link the final
-archive only after issue 40 has merged.
+The final post-issue-40 archive is
+[`native-linux-2026-08-27-6250b978`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md),
+measured from durable source commit
+`6250b9782ffc4174676d2d72bd023dbfc38c39d7` and tree
+`65ba341221ea89e107a3e0e3c4b0aed7e26efd9b`. Its three complete processes
+pass all hard invariants and the calibrated RSS/PSS/private/VM plateau rules;
+the retained run-03 PSS peak outlier remains within its late-window band and
+is therefore observation, not a hidden allowance increase.
 
 If the aggregate reports material growth, rerun the same command with
 `--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after

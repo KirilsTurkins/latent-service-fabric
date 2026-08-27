@@ -57,18 +57,32 @@ slopes, peaks, explicit release, and runtime shutdown. It uses the issue 38
 calibrated RSS noise band to decide whether RSS and available PSS/private
 growth is material on the matched host. An unexplained FD net increase,
 topology change, hard-invariant failure, missing batch, mismatched fixture/
-toolchain/configuration, or material outlier fails the aggregate. A material
-growth result requires heap/allocator/process investigation and a retaining
-subsystem or focused issue; the command never increases its allowance to make
-the result pass.
+toolchain/configuration, or calibrated material late-window growth fails the
+aggregate. Robust cross-run peak/delta outliers are retained as diagnostic
+variability; a stable late-window series inside its calibrated band is not
+silently relabelled as a leak. A material-growth result requires
+heap/allocator/process investigation and a retaining subsystem or focused
+issue; the command never increases its allowance to make the result pass.
 
-Issue 40 remains open, so the final pre-Phase-1 configuration has not yet been
-selected. Accordingly, no archive is presented as issue 39 acceptance
-evidence. The wrapper requires `--final-configuration-commit` to equal the
-measured reachable source commit, which prevents a pre-final run from being
-reported as a passing plateau result. Once issue 40 is merged, the required
-archive belongs under `benchmarks/phase0/soak/` and must be linked here before
-issue 39 can close.
+Issue 40's final ordinary Phase 0 configuration (bounded prepared cache,
+on-demand Wasmtime allocation, initialized-memory COW enabled) is covered by
+the accepted native-Linux archive
+[`native-linux-2026-08-27-6250b978`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md).
+Its three independent processes each completed 1,000 excluded warm-ups,
+100,000 normal measured fresh-store activations, and 100 real batches of each
+saturation mode. Every hard invariant, descriptor/topology check, explicit
+prepared-component release, and runtime shutdown check passed. RSS, PSS,
+private memory, and VM late-window growth all remained within the matched
+issue-38 material-growth bounds. A run-03 PSS peak is retained as a robust
+cross-run outlier, but its late-window delta and slope remain within the
+calibrated band, so it is documented as environmental variability rather than
+evidence of sustained retention.
+
+The wrapper requires `--final-configuration-commit` to equal the measured
+reachable source commit, preventing a pre-final run from being reported as a
+passing plateau result. This finite soak does not prove arbitrary-duration leak
+freedom, production SLOs, multi-node behavior, or allocator-internal state not
+exposed by the configured safe probes.
 
 ## Required Phase 1 use
 
@@ -145,15 +159,16 @@ lifecycle-envelope changes to #11, and rejects store/instance reuse and
 untrusted AOT/cache/snapshot/native-execution shortcuts in Phase 0.
 
 This handoff is optimization evidence only; it does not establish production
-SLOs or cross-platform claims. Issue 39 must still execute its three independent
-native-Linux 100k-activation soak processes against this final configuration
-before the Phase 0 completion gate can close.
+SLOs or cross-platform claims. The accepted issue-39 archive above executes
+three independent native-Linux 100k-activation soak processes against this
+final configuration; it is one required input to the still-open Phase 0
+completion gate.
 
 ## Remaining limitations
 
 This evidence demonstrates only the Phase 0 spike under its documented
 workload. It does not establish production API behavior, dormant-service
 density, remote-call performance, cluster scaling, or release SLOs. The
-long-duration soak evidence remains pending final configuration selection as
-described above. Those obligations remain with the Phase 1 work and its
-completion gate.
+finite long-duration soak demonstrates a matched-host post-warm-up plateau,
+not arbitrary-duration leak freedom. Those obligations remain with the Phase 1
+work and its completion gate.

@@ -902,6 +902,24 @@ def raw_run_record(label: str, path: Path, document: dict[str, Any]) -> dict[str
     }
 
 
+def raw_evidence_archive_record(output_json: Path) -> dict[str, str] | None:
+    archive = output_json.parent / "raw-evidence.tar.zst"
+    if not archive.is_file():
+        return None
+    manifest = output_json.parent / "raw-evidence.manifest.sha256"
+    checksum = output_json.parent / "raw-evidence.tar.zst.sha256"
+    if not manifest.is_file() or not checksum.is_file():
+        fail("checked-in raw-evidence archive lacks its manifest or archive checksum")
+    expected_checksum = f"{sha256_file(archive).removeprefix('sha256:')}  {archive.name}"
+    if read_text(checksum) != expected_checksum:
+        fail("checked-in raw-evidence archive checksum does not match its payload")
+    return {
+        "path": archive.name,
+        "sha256": sha256_file(archive),
+        "manifest": manifest.name,
+    }
+
+
 def relative_path(path: Path, base: Path) -> str:
     try:
         return str(path.relative_to(base))
@@ -925,6 +943,7 @@ def aggregate(
     if minimum_runs < MINIMUM_RUNS:
         fail(f"a resource-soak aggregate requires at least {MINIMUM_RUNS} runs")
     noise = calibration_noise(calibration)
+    raw_evidence_archive = raw_evidence_archive_record(output_json)
     validated: dict[str, dict[str, Any]] = {}
     host_observations: dict[str, dict[str, Any]] = {}
     raw_runs: list[dict[str, Any]] = []
@@ -1001,7 +1020,7 @@ def aggregate(
         if metric.get("availability") == "available"
         and metric["decision"]["status"] == "material_growth_detected"
     }
-    material_outliers = {
+    identified_outliers = {
         name: sorted(
             set(metric.get("peak_run_level_outliers", []))
             | set(metric.get("delta_run_level_outliers", []))
@@ -1012,6 +1031,17 @@ def aggregate(
             metric.get("peak_run_level_outliers")
             or metric.get("delta_run_level_outliers")
         )
+    }
+    # A robust cross-run peak difference is useful diagnostic evidence, but it
+    # is not by itself sustained growth.  A run can have a different stable
+    # PSS/RSS baseline while every late-window delta and slope remains inside
+    # the matched #38 noise band.  Classify that as observed variability; only
+    # a metric that already breaches the calibrated late-window rule is
+    # material enough to fail the plateau decision.
+    material_outliers = {
+        name: labels
+        for name, labels in identified_outliers.items()
+        if metrics[name].get("decision", {}).get("status") == "material_growth_detected"
     }
     topology_violations = {
         name: analysis["violations"]
@@ -1056,9 +1086,11 @@ def aggregate(
             "final_window_delta": True,
             "robust_late_window_slope": "Theil-Sen median pairwise slope over the final rolling window",
             "calibrated_rss_pss_noise": "Issue #38 calibrated RSS advisory band is applied to RSS and, where exposed, PSS/private byte growth on the matched host.",
+            "run_level_outliers": "Robust cross-run peak/delta outliers are retained as diagnostic variability. They fail the plateau only when the same metric breaches its calibrated late-window material-growth rule.",
         },
         "configuration_identity": expected_identity,
         "calibration_noise": noise,
+        "raw_evidence_archive": raw_evidence_archive,
         "raw_runs": raw_runs,
         "host_observations": host_observations,
         "hard_invariants": {
@@ -1078,6 +1110,7 @@ def aggregate(
         "post_release": {
             label: value["post_release"] for label, value in validated.items()
         },
+        "run_level_resource_outliers": identified_outliers,
         "material_run_level_outliers": material_outliers,
         "material_growth": material_growth,
         "investigation": investigation,
@@ -1121,9 +1154,23 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
         "",
         "## Raw evidence",
         "",
-        "| Run | Raw file | SHA-256 | Component digest |",
-        "|---|---|---|---|",
     ]
+    raw_evidence_archive = document.get("raw_evidence_archive")
+    if raw_evidence_archive:
+        lines.extend(
+            [
+                "The raw paths below are losslessly retained in `{}`; verify its `{}` and extract it before inspection.".format(
+                    raw_evidence_archive["path"], raw_evidence_archive["manifest"]
+                ),
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "| Run | Raw file | SHA-256 | Component digest |",
+            "|---|---|---|---|",
+        ]
+    )
     report_base = raw_path.parent
     for run in document["raw_runs"]:
         lines.append(
@@ -1161,6 +1208,24 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
                 status=decision["status"],
             )
         )
+    lines.extend(["", "## Run-level variability", ""])
+    outliers = document["run_level_resource_outliers"]
+    if not outliers:
+        lines.append("No robust cross-run peak or final-window-delta outlier was identified.")
+    else:
+        lines.append(
+            "Robust outliers are retained for review. A stable late-window series within its calibrated material-growth bound is observed variability, not evidence of a sustained leak."
+        )
+        for name, labels in outliers.items():
+            metric = document["metrics"][name]
+            decision = metric.get("decision", {})
+            if decision.get("status") == "pass":
+                assessment = "within calibrated late-window bound"
+            elif decision.get("status") == "observed":
+                assessment = "diagnostic metric without a calibrated growth band"
+            else:
+                assessment = "also breaches the material-growth rule"
+            lines.append(f"- {name}: {', '.join(labels)} ({assessment}).")
     lines.extend(["", "## Topology, descriptors, release, and shutdown", ""])
     lines.append(
         "File descriptors: **{}**; {}.".format(

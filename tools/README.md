@@ -14,3 +14,12 @@ attribution, experiment matrix, provenance, and issue-38 comparability.
 the checked-in raw-evidence fragments for a published profile archive. Its
 test reassembles the checked-in zstd stream, extracts it, and validates the
 raw SHA-256 manifest.
+
+`run_phase0_resource_soak.sh` is the manual native-Linux plateau command for
+issue 39. It requires an explicit durable final source commit/tree and refuses
+WSL, containers, dirty or mismatched source, unavailable probes, fixture or
+toolchain failures, and incomplete process output. Its paired
+`aggregate_phase0_resource_soak.py` revalidates all raw samples and hard
+invariants, records calibrated late-window resource decisions and diagnostic
+outliers, and never turns a missing run or material sustained growth into a
+pass. The command is intentionally excluded from shared CI.

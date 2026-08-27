@@ -138,6 +138,14 @@ RSS/PSS/private material-growth triage, and treats any unexplained FD net
 increase or material growth as failed investigation work rather than an excuse
 to raise an allowance.
 
+The accepted final-configuration result is
+[`native-linux-2026-08-27-6250b978`](benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md):
+three complete 100,000-activation processes from durable source commit
+`6250b9782ffc4174676d2d72bd023dbfc38c39d7`. Its PSS peak outlier is retained
+for audit, while its late-window delta and slope remain within the matched
+issue-38 material-growth band; it is diagnostic variability, not a hidden
+allowance increase or a sustained-leak finding.
+
 ## CI jobs
 
 The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.

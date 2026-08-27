@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -19,6 +21,13 @@ CALIBRATION = (
     / "calibration"
     / "native-linux-2026-08-27-reachable-source"
     / "aggregate.json"
+)
+CHECKED_IN_SOAK = (
+    ROOT
+    / "benchmarks"
+    / "phase0"
+    / "soak"
+    / "native-linux-2026-08-27-6250b978"
 )
 SOURCE_COMMIT = "a" * 40
 SOURCE_TREE = "b" * 40
@@ -307,6 +316,83 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             report = (archive / "SOAK.md").read_text(encoding="utf-8")
             self.assertIn("#38 calibrated RSS noise band", report)
             self.assertIn("## Conclusion", report)
+
+    def test_checked_in_resource_soak_archive_is_lossless(self) -> None:
+        self.assertIsNotNone(shutil.which("zstd"), "zstd is required for evidence integrity")
+        archive = CHECKED_IN_SOAK / "raw-evidence.tar.zst"
+        declared_checksum = (CHECKED_IN_SOAK / "raw-evidence.tar.zst.sha256").read_text(
+            encoding="utf-8"
+        )
+        observed_checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
+        self.assertEqual(declared_checksum, f"{observed_checksum}  raw-evidence.tar.zst\n")
+        aggregate = json.loads((CHECKED_IN_SOAK / "aggregate.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            aggregate["raw_evidence_archive"],
+            {
+                "manifest": "raw-evidence.manifest.sha256",
+                "path": "raw-evidence.tar.zst",
+                "sha256": f"sha256:{observed_checksum}",
+            },
+        )
+        self.assertIn(
+            "losslessly retained in `raw-evidence.tar.zst`",
+            (CHECKED_IN_SOAK / "SOAK.md").read_text(encoding="utf-8"),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            extracted = Path(directory)
+            integrity = subprocess.run(
+                ["zstd", "--test", str(archive)], text=True, capture_output=True, check=False
+            )
+            self.assertEqual(integrity.returncode, 0, integrity.stderr)
+            extraction = subprocess.run(
+                [
+                    "tar",
+                    "--use-compress-program=zstd",
+                    "-xf",
+                    str(archive),
+                    "-C",
+                    str(extracted),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(extraction.returncode, 0, extraction.stderr)
+            self.assertEqual(
+                (extracted / "raw-evidence.manifest.sha256").read_text(encoding="utf-8"),
+                (CHECKED_IN_SOAK / "raw-evidence.manifest.sha256").read_text(encoding="utf-8"),
+            )
+            manifest = subprocess.run(
+                ["sha256sum", "--check", "raw-evidence.manifest.sha256"],
+                cwd=extracted,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(manifest.returncode, 0, manifest.stderr)
+
+    def test_retains_without_failing_a_stable_within_band_peak_outlier(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            raw = archive / "runs" / "run-03" / "raw.json"
+            document = json.loads(raw.read_text(encoding="utf-8"))
+            first_measured = next(
+                sample
+                for sample in document["resource_samples"]
+                if sample["phase"] == "measured"
+            )
+            first_measured["process"]["pss_bytes"] += 4_000_000
+            raw.write_text(json.dumps(document), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
+            self.assertEqual(aggregate["status"], "pass")
+            self.assertEqual(
+                aggregate["run_level_resource_outliers"]["pss_bytes"], ["run-03"]
+            )
+            self.assertEqual(aggregate["material_run_level_outliers"], {})
+            report = (archive / "SOAK.md").read_text(encoding="utf-8")
+            self.assertIn("within calibrated late-window bound", report)
 
     def test_rejects_missing_canonical_hard_invariant(self) -> None:
         temporary, archive = self.make_archive()
