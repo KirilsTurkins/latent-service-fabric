@@ -28,3 +28,12 @@ virtualization, toolchain, allocator, fixture, and configuration identity—
 including prepared-cache enablement, Wasmtime allocator mode, and initialized-
 memory COW—are recorded as matched; otherwise the result is explicitly
 inconclusive. The command is intentionally excluded from shared CI.
+
+`run_phase0_gate.sh` is the clean-checkout Phase 0 sequence. It combines the
+repository and tool tests, real executable spike/containment proof, a fresh
+baseline, and `validate_phase0_gate.py`. The validator emits a
+`latent.phase0.gate.v2` receipt that checks the baseline's exact hard-check and
+scenario set, the calibration, profiling guardrails/decisions, and the
+checksummed soak archive. Its full mode returns non-zero unless the receipt is
+authorized; smoke mode records a receipt without making an authorization
+claim.

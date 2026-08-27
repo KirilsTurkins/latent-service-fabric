@@ -4,7 +4,7 @@ Latent Service Fabric (LSF) is an interface-first research and engineering proje
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Most of this repository remains an architecture and API scaffold. Phase 0 additionally contains a narrow, explicitly non-production executable spike for one local echo capsule; it does not imply Phase 1 API compatibility or production readiness.
+> Most of this repository remains an architecture and API scaffold. Phase 0 contains a narrow, explicitly non-production executable spike for one local echo capsule. Its completion gate is currently blocked on conclusive matched native-Linux soak evidence, so it does not authorize Phase 1 API compatibility or production readiness.
 
 ## Core invariant
 
@@ -37,8 +37,8 @@ rfcs/                  Future design proposals
 research/              Experimental tracks kept outside the production core
 docs/                  Architecture, protocol, operations, and security documentation
 tests/                 Conformance, isolation, chaos, and leak-test specifications
-benchmarks/            Benchmark definitions for validating LSF claims
-tools/                 Pinned validation, generation, and compile-smoke tooling
+benchmarks/            Benchmark definitions and checked-in Phase 0 evidence
+tools/                 Pinned validation, generation, spike, benchmark, and gate tooling
 ```
 
 ## Intended binaries
@@ -49,22 +49,28 @@ tools/                 Pinned validation, generation, and compile-smoke tooling
 
 The `latentd` spike has no management API, public invocation listener, persistent catalog, deployment surface, or production operations contract.
 
-## First implementation milestone
+## Phase 0 result
 
-The first vertical slice will:
+The Phase 0 spike proves a deliberately narrow local feasibility slice:
 
-1. load one signed or locally trusted capsule,
-2. resolve one route,
-3. admit one invocation,
-4. lease one generic execution cell,
-5. invoke one WIT export,
-6. return one result,
-7. drop all activation-owned state, and
-8. prove that registering dormant services does not change process, thread, socket, or cell counts.
+1. build one Rust echo Component Model guest through generated WIT bindings;
+2. load and invoke it through real Wasmtime Component Model bindings;
+3. lease and reclaim one generic execution cell with a bounded queue;
+4. contain declared domain errors, trap, timeout, cancellation, and memory
+   pressure failures; and
+5. record bounded activation-owned state and fixed runtime topology for the
+   measured lifecycle.
 
-The Phase 0 spike currently proves the local component preparation, cell lease, contained echo invocation, cleanup, and machine-readable result portions of that slice. Routing, admission, trust, and standalone APIs remain later work.
+It does **not** prove routing, admission, deployment management, production
+trust/security, durable state/effects, remote invocation, cluster operation,
+production SLOs, or the 100,000 dormant-service invariant. The retained
+resource soak is incomplete, so Phase 0 is not yet complete. See
+[`docs/phase-0-completion.md`](docs/phase-0-completion.md) for its evidence
+ledger, gate receipt, and Phase 1 handoff.
 
-See [`docs/architecture/overview.md`](docs/architecture/overview.md), [`docs/api-surface.md`](docs/api-surface.md), and [`docs/testing/invariants.md`](docs/testing/invariants.md).
+See [`docs/architecture/overview.md`](docs/architecture/overview.md) and
+[`docs/testing/invariants.md`](docs/testing/invariants.md) for the proven
+boundary and future invariants.
 
 ## Build and validation
 
@@ -84,6 +90,19 @@ make phase0-spike-demo
 ```
 
 The command validates contracts, builds the real guest and runtime, exercises success and containment failures only through the `latentd` executable path, includes a single-process trap-to-success recovery proof, and finishes with one successful echo result. See [`docs/phase-0-spike.md`](docs/phase-0-spike.md) for the CLI, JSON schema, exit codes, cleanup proof, and limitations.
+
+Run the full Phase 0 completion sequence with:
+
+```bash
+make phase0-gate
+```
+
+It runs the complete clean-checkout validation, executable spike, and fresh
+baseline sequence, then writes a machine-readable receipt under
+`target/phase0-gate/`. It currently exits non-zero by design because the
+retained native-Linux soak does not yet authorize Phase 1. Use
+`make phase0-gate-smoke` for the deterministic CI-sized sequence; it records
+the same receipt without presenting smoke coverage as authorization.
 
 Generated bindings, parsed WIT output, Protobuf descriptors, and SDK compiler artifacts are isolated under Cargo `OUT_DIR` or `target/contracts/`; handwritten contract sources are never overwritten. See [`VALIDATION.md`](VALIDATION.md) for the checks performed.
 

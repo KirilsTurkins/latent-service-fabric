@@ -153,9 +153,9 @@ captures omit VM and allocator provenance. Its raw results also predate the
 serialized pre-runtime and post-warm-up descriptor baselines plus raw
 virtualization kind, so a complete FD lifecycle cannot be independently
 revalidated. The runner now records all of those fields and the calibration helper invokes the selected
-ordinary cache/on-demand/COW configuration explicitly; #39 remains open until
-a fresh matching calibration and three-process archive can make the calibrated
-plateau claim.
+ordinary cache/on-demand/COW configuration explicitly. The Phase 0 completion
+gate remains blocked until a fresh matching calibration and three-process
+archive can make the calibrated plateau claim.
 
 If the aggregate reports material growth, rerun the same command with
 `--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after

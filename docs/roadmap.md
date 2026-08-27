@@ -1,8 +1,18 @@
 # Engineering roadmap
 
-## Phase 0: executable spike
+## Phase 0: executable spike — completion gate blocked
 
-Repository contracts, one Rust echo capsule, one fixed cell pool, Wasmtime component loading, timeout/trap containment, and baseline measurements.
+Repository contracts, one Rust echo capsule, one fixed cell pool, Wasmtime
+component loading, timeout/trap containment, baseline measurements, native
+Linux calibration, hot-path profiling, and a long-running resource soak are
+implemented. The Phase 0 gate is **not complete**: the retained soak aggregate
+is `inconclusive` because its calibration identity and descriptor-lifecycle
+evidence are incomplete. See [the completion gate](phase-0-completion.md).
+
+Phase 0 becomes complete only after a fresh matched native-Linux calibration
+and three-process soak produce an `authorized` gate receipt. Until then, Phase
+1 issue #2 remains dependent on the gate; no roadmap item may treat issue
+closure alone as an authorization.
 
 ## Phase 1: single-node stateless fabric
 

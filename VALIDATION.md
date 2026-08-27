@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-27** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-27** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, fail-closed completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -14,6 +14,25 @@ make validate
 ```
 
 The command is intentionally non-mutating for authoritative sources. Formatting is checked with `cargo fmt --all --check`; generated bindings, descriptors, and capsule artifacts are written below `target/` or Cargo `OUT_DIR`.
+
+## Phase 0 completion sequence
+
+The clean-checkout Phase 0 sequence is:
+
+```bash
+make phase0-gate
+```
+
+It runs `make validate`, repository-tool tests, the real executable spike and
+containment suite, and a new full executable baseline. It then writes a
+machine-readable `latent.phase0.gate.v2` receipt below `target/phase0-gate/`
+after validating the fresh baseline against the retained native-Linux
+calibration, profile, and soak evidence. A full command fails if the receipt
+is not `authorized`; it never reports an incomplete archive as a pass.
+
+`make phase0-gate-smoke` runs the same code/contract/executable sequence with
+the deterministic smoke baseline. It records the receipt for CI but does not
+turn a smoke run into Phase 1 authorization.
 
 ## What is validated
 
@@ -33,6 +52,7 @@ The command is intentionally non-mutating for authoritative sources. Formatting 
 - SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.8 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
 - Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
 - Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
+- The Phase 0 gate receipt rejects omitted, duplicate, unexpected, or failed baseline checks; missing required terminal scenarios; a dirty executable shutdown/topology result; altered soak archive bytes; weakened optimization guardrails; and incomplete resource evidence represented as an authorization.
 
 ## Echo fixture commands
 
@@ -154,12 +174,13 @@ marks the comparison **inconclusive**: #38 lacks explicit prepared-cache,
 Wasmtime allocator, and COW provenance; historical host records omit VM
 detection and allocator provenance; and raw documents predate the pre-runtime
 and post-warm-up descriptor baselines plus raw virtualization kind. The updated
-runner and calibration helper record the missing fields; #39 remains open
-pending a fresh matching calibration and three-process archive.
+runner and calibration helper record the missing fields. The Phase 0 gate
+remains blocked pending a fresh matching calibration and three-process archive,
+regardless of the external issue state.
 
 ## CI jobs
 
-The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.
+The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. The Issue 25 workflow runs `make phase0-gate-smoke` from a clean checkout and uploads the fresh baseline plus receipt. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.
 
 After a successful contracts job, the workflow prints `build.json` and `sha256.txt` and uploads the generated component, capsule metadata, extracted interface, build receipt, and digest as `phase-0-echo-capsule-${GITHUB_SHA}` for 14 days. This retained artifact is reproducibility evidence for the locally trusted fixture; it is not a signed or distributable release artifact.
 
@@ -169,4 +190,11 @@ Contract and capsule validation starts compiler and validator commands only. It 
 
 ## Scope
 
-Passing this baseline establishes source consistency, guest behavior, component-interface validity, fixed cell-pool accounting, and same-boundary build reproducibility. It does not establish runtime invocation correctness, performance, Wasmtime isolation, cross-platform byte identity, wire compatibility of future generated clients, or the complete zero-idle-allocation invariant under execution. Those require the remaining Phase 0 vertical slice and the conformance and benchmark suites described under `tests/` and `benchmarks/`.
+Passing the executable baseline establishes source consistency, guest behavior,
+component-interface validity, fixed cell-pool accounting, real Wasmtime
+invocation/containment, and same-boundary build reproducibility. It does not
+by itself authorize Phase 1: the receipt also requires conclusive retained
+calibration, profiling, and long-running resource evidence. It never
+establishes production APIs, cross-platform byte identity, generic dispatch,
+production security, dormant-service density, cluster behavior, or production
+SLOs.

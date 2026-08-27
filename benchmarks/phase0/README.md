@@ -151,6 +151,6 @@ prepared-cache, Wasmtime allocator, and COW settings; the historical soak host
 observations lack VM-detection and allocator provenance; and raw documents
 predate the pre-runtime and post-warm-up FD baselines plus raw virtualization kind. The runner
 now records all of those fields, and the calibration helper passes the selected
-cache/on-demand/COW configuration explicitly; #39 remains open until a fresh
-matching calibration and three-process archive can apply the #38 late-window
-bands without inference.
+cache/on-demand/COW configuration explicitly. The Phase 0 completion gate
+remains blocked until a fresh matching calibration and three-process archive
+can apply the #38 late-window bands without inference.

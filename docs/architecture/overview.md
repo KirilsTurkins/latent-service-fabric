@@ -14,6 +14,31 @@ A deployed but inactive service owns no process, operating-system thread, listen
 
 Artifact storage, contract indexes, route indexes, policy metadata, and bounded cache entries are permitted to grow with registered service count. Execution allocation is not.
 
+## Phase 0 evidence boundary
+
+Phase 0 implements one deliberately narrow local composition. Its evidence
+shows that the project can build a real Rust echo Component Model guest with
+generated WIT bindings; load and invoke it through real Wasmtime Component
+Model host bindings; lease a fixed generic cell; create fresh
+activation-owned stores and host state; contain the tested failure paths; and
+affirmatively reclaim measured activation resources.
+
+The configured runtime workers, process count, listeners/sockets, and cell
+capacity remain fixed through the measured lifecycle. Wasmtime may create one
+bounded epoch-interruption helper thread after preparation; that is fixed
+node/runtime infrastructure, not a per-service thread.
+
+This is not yet a completed Phase 0 authorization. The retained native-Linux
+resource-soak aggregate is inconclusive because it lacks a fully matched
+calibration identity and descriptor lifecycle. The fail-closed status,
+evidence paths, and required replacement measurement are recorded in
+[`../phase-0-completion.md`](../phase-0-completion.md).
+
+Phase 0 did not prove dormant registration at 100,000 services, route or
+admission behavior, persistent management/deployment, production
+trust/security, generic dispatch, durable state/effects, remote transport,
+cluster behavior, or production telemetry/SLOs.
+
 ## Service model
 
 ```text
@@ -41,6 +66,10 @@ Stores desired state, validates releases, compiles bindings and routes, evaluate
 
 Receives triggers and direct calls, resolves exact revisions from a local snapshot, performs admission, schedules activations, materializes code, binds capabilities, executes guest code, commits state, persists effect intents, and returns results.
 
+These plane descriptions are target architecture unless a linked
+implementation document says otherwise. Phase 0 implements only the local
+component preparation, execution, containment, and reclamation slice.
+
 ## Physical topology
 
 ```text
@@ -56,7 +85,7 @@ Ingress ─────────────► latentd nodes ◄────
                          └── telemetry collector
 ```
 
-Standalone mode embeds the control plane into one `latentd` process and uses local storage. Production mode separates the clustered control plane from data-plane nodes.
+Standalone mode is intended to embed the control plane into one `latentd` process and use local storage. Production mode is intended to separate the clustered control plane from data-plane nodes. Neither topology is a Phase 0 product surface.
 
 ## Fixed process model
 
@@ -71,7 +100,7 @@ latentd supervisor
 └── optional native compatibility host
 ```
 
-The count is configured by node policy, not by deployed service count.
+The count is configured by node policy, not by deployed service count. Phase 0 uses one process and a fixed in-process cell pool; stronger trust-class process isolation remains later work.
 
 ## Technology direction
 
@@ -83,4 +112,4 @@ The count is configured by node policy, not by deployed service count.
 - A transport abstraction suitable for WIT-native remote invocation.
 - Explicit state transactions and durable effect intents.
 
-These are recorded in ADRs and remain replaceable behind the Rust trait boundaries where explicitly stated.
+These are recorded in ADRs and remain replaceable behind the Rust trait boundaries where explicitly stated. Phase 1 must apply the retain/harden/generalize/rewrite/delete handoff in [`../phase-0-completion.md`](../phase-0-completion.md).
