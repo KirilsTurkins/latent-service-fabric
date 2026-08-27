@@ -26,25 +26,29 @@ const DELAYED_ECHO_PREFIX: &str = "__latent_test_delayed_echo:";
 const LOG_MESSAGE: &str = "containment fixture invocation";
 const MEMORY_CHUNK_BYTES: usize = 64 * 1024;
 const CONTROLLED_DELAY_ITERATIONS: u64 = 2_000_000;
+// The mixed-containment test must observe this invocation while it is active.
+// Keep this separate from the ordinary delayed echo fixture so its benchmark
+// workload remains unchanged.
+const CONTROLLED_TRAP_DELAY_ITERATIONS: u64 = 50_000_000;
 
 struct ContainmentCapsule;
 
 impl Guest for ContainmentCapsule {
     fn echo(message: String) -> Result<String, EchoError> {
         if let Some(delayed_message) = message.strip_prefix(DELAYED_ECHO_PREFIX) {
-            controlled_delay();
+            controlled_delay(CONTROLLED_DELAY_ITERATIONS);
             return normal_echo(delayed_message.to_owned());
         }
 
         match message.as_str() {
             TRAP_MODE => panic!("controlled containment fixture trap"),
             DELAYED_TRAP_MODE => {
-                controlled_delay();
+                controlled_delay(CONTROLLED_TRAP_DELAY_ITERATIONS);
                 panic!("controlled delayed containment fixture trap");
             }
             INFINITE_MODE => infinite_guest_loop(),
             MEMORY_MODE => {
-                controlled_delay();
+                controlled_delay(CONTROLLED_DELAY_ITERATIONS);
                 exhaust_guest_memory();
             }
             _ => normal_echo(message),
@@ -85,9 +89,9 @@ fn normal_echo(message: String) -> Result<String, EchoError> {
 }
 
 #[inline(never)]
-fn controlled_delay() {
+fn controlled_delay(iterations: u64) {
     let mut counter = 0_u64;
-    while counter < CONTROLLED_DELAY_ITERATIONS {
+    while counter < iterations {
         counter = counter.wrapping_add(1);
         std::hint::black_box(counter);
     }

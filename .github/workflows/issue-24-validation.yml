@@ -13,10 +13,15 @@ on:
       - "crates/latent-wasmtime/**"
       - "benchmarks/phase0/**"
       - "docs/phase-0-baselines.md"
+      - "docs/phase-0-completion.md"
+      - "VALIDATION.md"
       - "examples/echo-contract/**"
       - "tools/toolchain-smoke/**"
       - "tools/build_echo_capsule.py"
       - "tools/run_phase0_baselines.sh"
+      - "tools/run_phase0_calibration.sh"
+      - "tools/aggregate_phase0_calibration.py"
+      - "tools/tests/test_aggregate_phase0_calibration.py"
       - "tools/validate_contracts.sh"
       - "Cargo.lock"
       - "Cargo.toml"
@@ -58,6 +63,8 @@ jobs:
         run: cargo check --workspace --all-targets --all-features --locked
       - name: Compile benchmark with strict Clippy
         run: cargo clippy -p latentd --bin phase0-baseline --all-features --locked --no-deps -- -D warnings
+      - name: Test calibration aggregation rules
+        run: python -m unittest tools.tests.test_aggregate_phase0_calibration
       - name: Run deterministic Phase 0 baseline smoke
         run: tools/run_phase0_baselines.sh smoke "${RUNNER_TEMP}/phase0-baseline"
       - name: Upload raw measurements and report

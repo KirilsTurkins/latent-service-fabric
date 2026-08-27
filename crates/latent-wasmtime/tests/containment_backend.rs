@@ -865,7 +865,10 @@ fn assert_deadline_tolerance(
 async fn wait_for_runtime_active(backend: &Phase0WasmtimeBackend, minimum: u64) {
     tokio::time::timeout(Duration::from_secs(2), async {
         while backend.resource_snapshot().active_invocations < minimum {
-            tokio::task::yield_now().await;
+            // Give the spawned blocking guest invocation a scheduling window;
+            // a yield-only polling loop can otherwise monopolize an executor
+            // worker while the parallel test suite is under load.
+            tokio::time::sleep(Duration::from_millis(1)).await;
         }
     })
     .await
