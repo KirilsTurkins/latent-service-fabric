@@ -35,6 +35,16 @@ data cannot be misreported as zero allocation. It rejects a profile that lacks
 either tool's raw/report output, has a source-identity mismatch, a
 missing/duplicate/unexpected hard check, or one failed hard check.
 
+The accepted native-Linux reference is
+[native-linux-2026-08-27-35a9944](../benchmarks/phase0/profiling/native-linux-2026-08-27-35a9944/README.md).
+It records durable source commit `35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad`
+and tree `316357dce997c33b25d230a84adbcf11dffc1097`. Its compact aggregate
+and concise report are directly checked in; its complete raw profile tree is
+losslessly retained with checksums in reassemblable `raw-evidence.tar.zst`
+fragments. The Heaptrack
+leak-only reports retain the observed 2.82 KiB process-exit residue rather
+than claiming it is zero or an unproven per-activation leak.
+
 The workload set is intentionally biased toward each path while leaving the
 real composition intact:
 

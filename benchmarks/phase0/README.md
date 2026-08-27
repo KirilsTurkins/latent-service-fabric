@@ -78,3 +78,11 @@ evidence and uses the issue-38 noise bands only as an adoption gate; a faster
 single or small candidate set is not a Phase 0 optimization decision. See
 [the profiling handoff](../../docs/phase-0-hot-path-profiling.md) for the
 guardrails, decisions, and Phase 1 ownership.
+
+The accepted native-Linux archive is
+[native-linux-2026-08-27-35a9944](profiling/native-linux-2026-08-27-35a9944/README.md).
+Its `aggregate.json` and `PROFILE.md` are directly readable; its complete raw
+profile tree is losslessly retained as checksummed `raw-evidence.tar.zst`
+fragments for practical Git storage. The archive identifies durable source commit
+`35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad` and tree
+`316357dce997c33b25d230a84adbcf11dffc1097`.

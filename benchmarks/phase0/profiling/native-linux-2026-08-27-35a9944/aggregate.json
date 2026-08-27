@@ -1,0 +1,2474 @@
+{
+  "attribution": {
+    "WIT lifting, lowering, and payload copies": {
+      "allocation_match_count": 12,
+      "allocation_matches": [
+        "_RINvNtCsiGVXDq5aNPw_8wasmtime7compile25build_component_artifactsNtNtB2_7runtime14MmapVecWrapperEB4_",
+        "_RNCNvMNtNtCsiGVXDq5aNPw_8wasmtime7compile7runtimeNtNtB6_12code_builder11CodeBuilder17compile_component0B8_",
+        "_RNvYNCNvMNtNtCsiGVXDq5aNPw_8wasmtime7compile7runtimeNtNtB9_12code_builder11CodeBuilder17compile_component0INtNtNtCs4NRVxsYgnAr_4core3ops8function6FnOnceTRNtNtBb_6engine6EngineRShINtNtB1N_6option6OptionB2N_EIB2R_ReERNtB7_15CustomAlignmentEE9call_onceBb_",
+        "_RINvMNtNtCsiGVXDq5aNPw_8wasmtime7compile7runtimeNtNtB5_12code_builder11CodeBuilder14compile_cachedNtNtNtCs2QWTOIJGW6M_16wasmtime_environ9component9artifacts18ComponentArtifactsNtB3_15CustomAlignmentEB7_",
+        "_RNvMNtNtCsiGVXDq5aNPw_8wasmtime7compile7runtimeNtNtB4_12code_builder11CodeBuilder17compile_component",
+        "_RINvMNtNtNtCsiGVXDq5aNPw_8wasmtime7runtime9component9componentNtB3_9Component3newRINtNtCscdodAO9FK5_5alloc3vec3VechEECs5FpN0LtpUZU_15latent_wasmtime",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wasmtime-47.0.3/src/runtime/component/component.rs:171",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RINvNtCsiGVXDq5aNPw_8wasmtime7compile25build_component_artifactsNtNtB2_7runtime14MmapVecWrapperEB4_",
+        "_RNCNvMNtNtCsiGVXDq5aNPw_8wasmtime7compile7runtimeNtNtB6_12code_builder11CodeBuilder17compile_component0B8_",
+        "_RNvYNCNvMNtNtCsiGVXDq5aNPw_8wasmtime7compile7runtimeNtNtB9_12code_builder11CodeBuilder17compile_component0INtNtNtCs4NRVxsYgnAr_4core3ops8function6FnOnceTRNtNtBb_6engine6EngineRShINtNtB1N_6option6OptionB2N_EIB2R_ReERNtB7_15CustomAlignmentEE9call_onceBb_",
+        "_RINvMNtNtCsiGVXDq5aNPw_8wasmtime7compile7runtimeNtNtB5_12code_builder11CodeBuilder14compile_cachedNtNtNtCs2QWTOIJGW6M_16wasmtime_environ9component9artifacts18ComponentArtifactsNtB3_15CustomAlignmentEB7_"
+      ],
+      "interpretation": "Symbolized reports are retained verbatim; an empty matcher is a review item, not evidence of zero cost or allocation.",
+      "patterns": [
+        "call_echo",
+        "component",
+        "memcpy",
+        "copy_from_slice",
+        "into_bytes"
+      ],
+      "perf_match_count": 10,
+      "perf_matches": [
+        "0.15%  phase0-baseline  phase0-baseline    [.] <alloc::collections::btree::map::IntoIter<wasmtime::runtime::component::concurrent::QualifiedThreadId, wasmtime::runtime::component::concurrent::WaitMode>>::dying_next                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 -      -",
+        "---dying_next<wasmtime::runtime::component::concurrent::QualifiedThreadId, wasmtime::runtime::component::concurrent::WaitMode, alloc::alloc::Global> (inlined)",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <wasmtime::runtime::component::concurrent::tls::set::ResetTls as core::ops::drop::Drop>::drop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <wasmtime::runtime::component::store::ComponentStoreData>::drop_fibers_and_futures                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <wasmtime::runtime::component::func::typed::WasmList<latent_wasmtime::bindings::generated::latent::log::log::Field> as wasmtime::runtime::component::func::typed::Lift>::linear_lift_from_flat                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          -      -",
+        "with<wasmtime::runtime::store::StoreOpaque, core::result::Result<(), wasmtime_internal_core::error::error::Error>, wasmtime::runtime::fiber::{impl#6}::with_blocking::{closure_env#0}<core::result::Result<(), wasmtime_internal_core::error::error::Error>, wasmtime::runtime::component::concurrent::{impl#15}::suspend::{closure_env#0}>> (inlined)",
+        "with_blocking<core::result::Result<(), wasmtime_internal_core::error::error::Error>, wasmtime::runtime::component::concurrent::{impl#15}::suspend::{closure_env#0}> (inlined)",
+        "new<wasmtime::runtime::component::concurrent::GuestThread> (inlined)",
+        "push<wasmtime::runtime::component::concurrent::GuestThread> (inlined)",
+        "push<wasmtime::runtime::component::concurrent::GuestThread> (inlined)"
+      ]
+    },
+    "Wasmtime engine and component preparation": {
+      "allocation_match_count": 12,
+      "allocation_matches": [
+        "Debuggee command was: /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline --capsule /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json --executable-harness-probe /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json --parent-launch-unix-micros 1787830407806190 --output-json /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/allocation/raw-results.json --output-report /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/allocation/BASELINE.md --mode full --warm-samples 1 --sequence-repetitions 1 --throughput-batches 1 --pool-iterations 1 --runtime-workers 2 --pool-capacity 2 --pool-queue-capacity 4 --coordination-timeout-ms 15000 --wasmtime-allocator on-demand --wasmtime-copy-on-write-images true",
+        "_RNvMs0_NtNtCs7zJMXzYdpwO_9regalloc23ion10liverangesINtNtB7_15data_structures3EnvINtNtNtCs1F6T7sCHDt6_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB1n_3isa3x645lower4isle14generated_code5MInstEE21add_liverange_to_pregB1n_",
+        "_RNvMs0_NtNtCs7zJMXzYdpwO_9regalloc23ion10liverangesINtNtB7_15data_structures3EnvINtNtNtCs1F6T7sCHDt6_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB1n_3isa3x645lower4isle14generated_code5MInstEE16build_liverangesB1n_",
+        "_RNvMNtCs7zJMXzYdpwO_9regalloc23ionINtNtB2_15data_structures3EnvINtNtNtCs1F6T7sCHDt6_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB16_3isa3x645lower4isle14generated_code5MInstEE4initB16_",
+        "_RINvNtCs7zJMXzYdpwO_9regalloc23ion3runINtNtNtCs1F6T7sCHDt6_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtBH_3isa3x645lower4isle14generated_code5MInstEEBH_",
+        "_RINvCs7zJMXzYdpwO_9regalloc212run_with_ctxINtNtNtCs1F6T7sCHDt6_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtBL_3isa3x645lower4isle14generated_code5MInstEEBL_",
+        "_RINvCs7zJMXzYdpwO_9regalloc23runINtNtNtCs1F6T7sCHDt6_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtBB_3isa3x645lower4isle14generated_code5MInstEEBB_",
+        "_RINvNtNtCs1F6T7sCHDt6_17cranelift_codegen8machinst7compile7compileNtNtNtB6_3isa3x6410X64BackendEB6_",
+        "_RNvMNtNtCs1F6T7sCHDt6_17cranelift_codegen3isa3x64NtB2_10X64Backend13compile_vcode",
+        "_RNvXs_NtNtCs1F6T7sCHDt6_17cranelift_codegen3isa3x64NtB4_10X64BackendNtB6_9TargetIsa16compile_function",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cranelift-codegen-0.134.3/src/isa/x64/mod.rs:83",
+        "_RNvMNtCs1F6T7sCHDt6_17cranelift_codegen7contextNtB2_7Context15compile_stencil"
+      ],
+      "interpretation": "Symbolized reports are retained verbatim; an empty matcher is a review item, not evidence of zero cost or allocation.",
+      "patterns": [
+        "prepare_inner",
+        "component::component",
+        "wasmtime",
+        "cranelift"
+      ],
+      "perf_match_count": 12,
+      "perf_matches": [
+        "0.15%  phase0-baseline  phase0-baseline    [.] <alloc::boxed::Box<wasmtime::runtime::fiber::make_fiber_unchecked<wasmtime::runtime::store::StoreInner<latent_wasmtime::host::HostState>, <wasmtime::runtime::store::context::StoreContextMut<latent_wasmtime::host::HostState>>::run_on_worker::{closure#0}::{closure#0}>::{closure#0}> as core::ops::function::FnOnce<(core::result::Result<core::ptr::non_null::NonNull<core::task::wake::Context>, wasmtime_internal_core::error::error::Error>, &mut wasmtime_internal_fiber::Suspend<core::result::Result<core::ptr::non_null::NonNull<core::task::wake::Context>, wasmtime_internal_core::error::error::Error>, wasmtime::runtime::fiber::StoreFiberYield, core::result::Result<(), wasmtime_internal_core::error::error::Error>>)>>::call_once  -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <wasmtime::runtime::vm::instance::allocator::on_demand::OnDemandInstanceAllocator as wasmtime::runtime::vm::instance::allocator::InstanceAllocator>::allocate_table::{closure#0}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <alloc::collections::btree::map::IntoIter<wasmtime::runtime::component::concurrent::QualifiedThreadId, wasmtime::runtime::component::concurrent::WaitMode>>::dying_next                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 -      -",
+        "---dying_next<wasmtime::runtime::component::concurrent::QualifiedThreadId, wasmtime::runtime::component::concurrent::WaitMode, alloc::alloc::Global> (inlined)",
+        "0.15%  phase0-baseline  phase0-baseline    [.] wasmtime::runtime::fiber::resume_fiber                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <alloc::vec::Vec<latent_wasmtime::host::CapturedLog> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<latent_wasmtime::host::CapturedLog, core::iter::adapters::cloned::Cloned<alloc::collections::vec_deque::iter::Iter<latent_wasmtime::host::CapturedLog>>>>::from_iter                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <latent_wasmtime::backend::InvocationTimingStore>::insert                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <wasmtime::runtime::fiber::resume_fiber::Restore as core::ops::drop::Drop>::drop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] core::ptr::drop_glue::<wasmtime_internal_core::slab::Entry<wasmtime::runtime::module::registry::LoadedCode>>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <alloc::collections::btree::map::IntoIter<(wasmtime_environ::graphs::scc::Scc, wasmtime_environ::graphs::scc::Scc), alloc::collections::btree::set_val::SetValZST>>::dying_next                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         -      -",
+        "wasmtime_internal_fiber::stackswitch::x86_64::wasmtime_fiber_start",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <wasmtime::runtime::component::concurrent::tls::set::ResetTls as core::ops::drop::Drop>::drop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           -      -"
+      ]
+    },
+    "activation envelope and metadata handling": {
+      "allocation_match_count": 12,
+      "allocation_matches": [
+        "_RNvMsi_NtNtNtCscdodAO9FK5_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7zJMXzYdpwO_9regalloc23ion15data_structures12LiveRangeKeyNtB18_14LiveRangeIndexE6insertCs1F6T7sCHDt6_17cranelift_codegen",
+        "_RINvNvXs0_NtNtNtCscdodAO9FK5_5alloc11collections5btree3mapINtB8_8BTreeMappppENtNtCs4NRVxsYgnAr_4core5clone5Clone5clone13clone_subtreeNtNtBe_6string6StringB27_NtNtBe_5alloc6GlobalECs5FpN0LtpUZU_15latent_wasmtime",
+        "_RINvNvXs0_NtNtNtCscdodAO9FK5_5alloc11collections5btree3mapINtB8_8BTreeMappppENtNtCs4NRVxsYgnAr_4core5clone5Clone5clone13clone_subtreeNtNtBe_6string6StringB27_NtNtBe_5alloc6GlobalECs5FpN0LtpUZU_15latent_wasmtime",
+        "_RNvXs0_NtNtNtCscdodAO9FK5_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringB16_ENtNtCs4NRVxsYgnAr_4core5clone5Clone5cloneCs5FpN0LtpUZU_15latent_wasmtime",
+        "_RNvMs0_NtNtCs2QWTOIJGW6M_16wasmtime_environ11collections9btree_mapINtB5_11TryBTreeMapjTjINtNtCscdodAO9FK5_5alloc4sync3ArcNtNtNtCsiGVXDq5aNPw_8wasmtime7runtime11code_memory10CodeMemoryEEE6insertB21_",
+        "_RNvMs0_NtNtCs2QWTOIJGW6M_16wasmtime_environ11collections9btree_mapINtB5_11TryBTreeMapjTjINtNtCscdodAO9FK5_5alloc4sync3ArcNtNtNtCsiGVXDq5aNPw_8wasmtime7runtime11code_memory10CodeMemoryEEE6insertB21_",
+        "_RNvMsi_NtNtNtCscdodAO9FK5_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7zJMXzYdpwO_9regalloc23ion15data_structures12LiveRangeKeyNtB18_14LiveRangeIndexE6insertCs1F6T7sCHDt6_17cranelift_codegen",
+        "_RINvNvXs0_NtNtNtCscdodAO9FK5_5alloc11collections5btree3mapINtB8_8BTreeMappppENtNtCs4NRVxsYgnAr_4core5clone5Clone5clone13clone_subtreeNtNtBe_6string6StringB27_NtNtBe_5alloc6GlobalECs5FpN0LtpUZU_15latent_wasmtime",
+        "_RINvNvXs0_NtNtNtCscdodAO9FK5_5alloc11collections5btree3mapINtB8_8BTreeMappppENtNtCs4NRVxsYgnAr_4core5clone5Clone5clone13clone_subtreeNtNtBe_6string6StringB27_NtNtBe_5alloc6GlobalECs5FpN0LtpUZU_15latent_wasmtime",
+        "_RNvXs0_NtNtNtCscdodAO9FK5_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringB16_ENtNtCs4NRVxsYgnAr_4core5clone5Clone5cloneCs5FpN0LtpUZU_15latent_wasmtime",
+        "_RNvMs0_NtNtCs2QWTOIJGW6M_16wasmtime_environ11collections9btree_mapINtB5_11TryBTreeMapjTjINtNtCscdodAO9FK5_5alloc4sync3ArcNtNtNtCsiGVXDq5aNPw_8wasmtime7runtime11code_memory10CodeMemoryEEE6insertB21_",
+        "_RNvMs0_NtNtCs2QWTOIJGW6M_16wasmtime_environ11collections9btree_mapINtB5_11TryBTreeMapjTjINtNtCscdodAO9FK5_5alloc4sync3ArcNtNtNtCsiGVXDq5aNPw_8wasmtime7runtime11code_memory10CodeMemoryEEE6insertB21_"
+      ],
+      "interpretation": "Symbolized reports are retained verbatim; an empty matcher is a review item, not evidence of zero cost or allocation.",
+      "patterns": [
+        "phase0_activation_envelope",
+        "activationenvelope",
+        "metadata",
+        "btreemap"
+      ],
+      "perf_match_count": 1,
+      "perf_matches": [
+        "0.78%  latentd-phase0-  phase0-baseline    [.] <alloc::collections::btree::map::BTreeMap<u32, alloc::collections::btree::set_val::SetValZST> as core::ops::drop::Drop>::drop                                                                                                        -      -"
+      ]
+    },
+    "capsule parsing and digest validation": {
+      "allocation_match_count": 12,
+      "allocation_matches": [
+        "Debuggee command was: /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline --capsule /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json --executable-harness-probe /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json --parent-launch-unix-micros 1787830407806190 --output-json /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/allocation/raw-results.json --output-report /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/allocation/BASELINE.md --mode full --warm-samples 1 --sequence-repetitions 1 --throughput-batches 1 --pool-iterations 1 --runtime-workers 2 --pool-capacity 2 --pool-queue-capacity 4 --coordination-timeout-ms 15000 --wasmtime-allocator on-demand --wasmtime-copy-on-write-images true",
+        "_RINvXsh_NtCshykCIL76VOC_10serde_json2deINtB6_6MapKeyNtNtB8_4read9SliceReadENtNtCsckD0Poo7Ql8_10serde_core2de12Deserializer15deserialize_anyNtNtNtB8_5value2de13KeyClassifierECskDWNPoeI29g_15phase0_baseline",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.150/src/lib.rs:0",
+        "_RINvXsh_NtCshykCIL76VOC_10serde_json2deINtB6_6MapKeyNtNtB8_4read9SliceReadENtNtCsckD0Poo7Ql8_10serde_core2de12Deserializer15deserialize_strNtNtNtB8_5value2de13KeyClassifierECskDWNPoeI29g_15phase0_baseline",
+        "_RINvXsk_NtNtCshykCIL76VOC_10serde_json5value2deNtB6_13KeyClassifierNtNtCsckD0Poo7Ql8_10serde_core2de15DeserializeSeed11deserializeINtNtBa_2de6MapKeyNtNtBa_4read9SliceReadEECskDWNPoeI29g_15phase0_baseline",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.150/src/value/de.rs:1346",
+        "_RINvXs9_NtCshykCIL76VOC_10serde_json2deINtB6_9MapAccessNtNtB8_4read9SliceReadENtNtCsckD0Poo7Ql8_10serde_core2de9MapAccess13next_key_seedNtNtNtB8_5value2de13KeyClassifierECskDWNPoeI29g_15phase0_baseline",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.150/src/de.rs:2021",
+        "_RINvXNvXNtNtCshykCIL76VOC_10serde_json5value2deNtB8_5ValueNtNtCsckD0Poo7Ql8_10serde_core2de11Deserialize11deserializeNtB3_12ValueVisitorNtBW_7Visitor9visit_mapINtNtBa_2de9MapAccessNtNtBa_4read9SliceReadEECskDWNPoeI29g_15phase0_baseline",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.150/src/value/de.rs:125",
+        "_RINvXs5_NtCshykCIL76VOC_10serde_json2deQINtB6_12DeserializerNtNtB8_4read9SliceReadENtNtCsckD0Poo7Ql8_10serde_core2de12Deserializer15deserialize_anyNtNvXNtNtB8_5value2deNtB2s_5ValueNtB1l_11Deserialize11deserialize12ValueVisitorECskDWNPoeI29g_15phase0_baseline",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_json-1.0.150/src/de.rs:1447"
+      ],
+      "interpretation": "Symbolized reports are retained verbatim; an empty matcher is a review item, not evidence of zero cost or allocation.",
+      "patterns": [
+        "load_phase0_artifact",
+        "sha256",
+        "serde_json",
+        "capsule"
+      ],
+      "perf_match_count": 1,
+      "perf_matches": [
+        "0.14%  phase0-baseline  phase0-baseline    [.] serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::PrettyFormatter>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       -      -"
+      ]
+    },
+    "host context and log calls": {
+      "allocation_match_count": 12,
+      "allocation_matches": [
+        "_RNvMNtCs1F6T7sCHDt6_17cranelift_codegen7contextNtB2_7Context15compile_stencil",
+        "at src/context.rs:139",
+        "_RNvMNtCs1F6T7sCHDt6_17cranelift_codegen7contextNtB2_7Context7compile",
+        "at src/context.rs:216",
+        "_RINvMNtNtNtCslk6jsWxn8lP_5tokio7runtime7context8blockingNtB3_19BlockingRegionGuard8block_onNCNvCskDWNPoeI29g_15phase0_baseline9run_async0EB1v_",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.53.1/src/runtime/context/blocking.rs:66",
+        "_RINvNtNtNtCslk6jsWxn8lP_5tokio7runtime7context7runtime13enter_runtimeNCINvMNtNtB6_9scheduler12multi_threadNtB1b_11MultiThread8block_onNCNvCskDWNPoeI29g_15phase0_baseline9run_async0E0INtNtCs4NRVxsYgnAr_4core6result6ResultNtB2c_14AsyncRunResultNtB2c_10BenchErrorEEB2c_",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.53.1/src/runtime/context/runtime.rs:65",
+        "_RNvMNtCs1F6T7sCHDt6_17cranelift_codegen7contextNtB2_7Context15compile_stencil",
+        "at src/context.rs:139",
+        "_RNvMNtCs1F6T7sCHDt6_17cranelift_codegen7contextNtB2_7Context7compile",
+        "at src/context.rs:216"
+      ],
+      "interpretation": "Symbolized reports are retained verbatim; an empty matcher is a review item, not evidence of zero cost or allocation.",
+      "patterns": [
+        "host",
+        "context",
+        "log"
+      ],
+      "perf_match_count": 12,
+      "perf_matches": [
+        "0.15%  phase0-baseline  phase0-baseline    [.] <alloc::boxed::Box<wasmtime::runtime::fiber::make_fiber_unchecked<wasmtime::runtime::store::StoreInner<latent_wasmtime::host::HostState>, <wasmtime::runtime::store::context::StoreContextMut<latent_wasmtime::host::HostState>>::run_on_worker::{closure#0}::{closure#0}>::{closure#0}> as core::ops::function::FnOnce<(core::result::Result<core::ptr::non_null::NonNull<core::task::wake::Context>, wasmtime_internal_core::error::error::Error>, &mut wasmtime_internal_fiber::Suspend<core::result::Result<core::ptr::non_null::NonNull<core::task::wake::Context>, wasmtime_internal_core::error::error::Error>, wasmtime::runtime::fiber::StoreFiberYield, core::result::Result<(), wasmtime_internal_core::error::error::Error>>)>>::call_once  -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <alloc::vec::Vec<latent_wasmtime::host::CapturedLog> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<latent_wasmtime::host::CapturedLog, core::iter::adapters::cloned::Cloned<alloc::collections::vec_deque::iter::Iter<latent_wasmtime::host::CapturedLog>>>>::from_iter                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <wasmtime::runtime::component::func::typed::WasmList<latent_wasmtime::bindings::generated::latent::log::log::Field> as wasmtime::runtime::component::func::typed::Lift>::linear_lift_from_flat                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          -      -",
+        "drop_glue<wasmtime::runtime::fiber::{impl#4}::with::ResetBlockingContext<wasmtime::runtime::store::StoreOpaque>> (inlined)",
+        "{async_fn#0}<latent_wasmtime::host::HostState> (inlined)",
+        "{async_fn#0}<latent_wasmtime::host::HostState> (inlined)",
+        "{async_fn#0}<latent_wasmtime::host::HostState, &mut wasmtime::runtime::store::context::StoreContextMut<latent_wasmtime::host::HostState>> (inlined)",
+        "{async_fn#0}<latent_wasmtime::host::HostState, &mut wasmtime::runtime::store::context::StoreContextMut<latent_wasmtime::host::HostState>> (inlined)",
+        "{async_fn#0}<latent_wasmtime::host::HostState, &mut wasmtime::runtime::store::Store<latent_wasmtime::host::HostState>> (inlined)",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <core::iter::adapters::map::Map<core::slice::iter::Iter<phase0_baseline::ActivationSample>, phase0_baseline::run_async::{closure#0}::{closure#6}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<phase0_baseline::TopologySnapshot, <alloc::vec::Vec<phase0_baseline::TopologySnapshot>>::extend_trusted<core::iter::adapters::map::Map<core::slice::iter::Iter<phase0_baseline::ActivationSample>, phase0_baseline::run_async::{closure#0}::{closure#6}>>::{closure#0}>::{closure#0}>                                                                                                                                                                                                   -      -",
+        "1.66%  phase0-baseline  phase0-baseline    [.] <wasmtime::runtime::store::context::StoreContextMut<latent_wasmtime::host::HostState>>::run_on_worker::{closure#0}                                                                                                      -      -",
+        "---{async_fn#0}<latent_wasmtime::host::HostState> (inlined)"
+      ]
+    },
+    "pool/queue coordination and runtime scheduling": {
+      "allocation_match_count": 12,
+      "allocation_matches": [
+        "_RNCINvMs2_NtNtCslk6jsWxn8lP_5tokio7runtime4parkNtB8_16CachedParkThread8block_onNCNvCskDWNPoeI29g_15phase0_baseline9run_async0E0B1j_",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.53.1/src/runtime/park.rs:284",
+        "_RINvNtNtCslk6jsWxn8lP_5tokio4task4coop11with_budgetINtNtNtCs4NRVxsYgnAr_4core4task4poll4PollINtNtBU_6result6ResultNtCskDWNPoeI29g_15phase0_baseline14AsyncRunResultNtB1Q_10BenchErrorEENCINvMs2_NtNtB6_7runtime4parkNtB34_16CachedParkThread8block_onNCNvB1Q_9run_async0E0EB1Q_",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.53.1/src/task/coop/mod.rs:167",
+        "_RINvNtNtCslk6jsWxn8lP_5tokio4task4coop6budgetINtNtNtCs4NRVxsYgnAr_4core4task4poll4PollINtNtBO_6result6ResultNtCskDWNPoeI29g_15phase0_baseline14AsyncRunResultNtB1K_10BenchErrorEENCINvMs2_NtNtB6_7runtime4parkNtB2Y_16CachedParkThread8block_onNCNvB1K_9run_async0E0EB1K_",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.53.1/src/task/coop/mod.rs:133",
+        "_RINvMs2_NtNtCslk6jsWxn8lP_5tokio7runtime4parkNtB6_16CachedParkThread8block_onNCNvCskDWNPoeI29g_15phase0_baseline9run_async0EB1h_",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.53.1/src/runtime/park.rs:284",
+        "_RINvMNtNtNtCslk6jsWxn8lP_5tokio7runtime7context8blockingNtB3_19BlockingRegionGuard8block_onNCNvCskDWNPoeI29g_15phase0_baseline9run_async0EB1v_",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.53.1/src/runtime/context/blocking.rs:66",
+        "_RNCINvMNtNtNtCslk6jsWxn8lP_5tokio7runtime9scheduler12multi_threadNtB5_11MultiThread8block_onNCNvCskDWNPoeI29g_15phase0_baseline9run_async0E0B1w_",
+        "at /home/slirik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.53.1/src/runtime/scheduler/multi_thread/mod.rs:92"
+      ],
+      "interpretation": "Symbolized reports are retained verbatim; an empty matcher is a review item, not evidence of zero cost or allocation.",
+      "patterns": [
+        "fixedcellpool",
+        "acquire",
+        "tokio",
+        "scheduler"
+      ],
+      "perf_match_count": 9,
+      "perf_matches": [
+        "9.11%  phase0-baseline  phase0-baseline    [.] <latent_scheduler::fixed_pool::state::PoolInner>::observations         -      -",
+        "ne<latent_scheduler::CellClass, latent_scheduler::CellClass> (inlined)",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <latent_scheduler::fixed_pool::FixedCellPool as latent_scheduler::CellPool>::release                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    -      -",
+        "1.73%  phase0-baseline  phase0-baseline    [.] <alloc::sync::Arc<tokio::sync::watch::Shared<bool>>>::drop_slow                                                                                                                                                      -      -",
+        "1.36%  latentd-phase0-  phase0-baseline    [.] <tokio::runtime::time::Driver>::park_internal                                                                                                                                                                                        -      -",
+        "0.69%  latentd-phase0-  phase0-baseline    [.] <tokio::runtime::scheduler::multi_thread::worker::Context>::park_internal                                                                                                                                                            -      -",
+        "0.66%  latentd-phase0-  phase0-baseline    [.] <tokio::runtime::task::state::State>::transition_to_notified_by_val                                                                                                                                                                  -      -",
+        "0.64%  latentd-phase0-  phase0-baseline    [.] <tokio::runtime::task::state::State>::transition_to_idle                                                                                                                                                                             -      -",
+        "0.24%  latentd-phase0-  phase0-baseline    [.] <tokio::runtime::scheduler::multi_thread::worker::Context>::run                                                                                                                                                                      -      -"
+      ]
+    },
+    "resource reclamation and cell disposition": {
+      "allocation_match_count": 12,
+      "allocation_matches": [
+        "Debuggee command was: /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline --capsule /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json --executable-harness-probe /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json --parent-launch-unix-micros 1787830407806190 --output-json /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/allocation/raw-results.json --output-report /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/allocation/BASELINE.md --mode full --warm-samples 1 --sequence-repetitions 1 --throughput-batches 1 --pool-iterations 1 --runtime-workers 2 --pool-capacity 2 --pool-queue-capacity 4 --coordination-timeout-ms 15000 --wasmtime-allocator on-demand --wasmtime-copy-on-write-images true",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+        "in /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline"
+      ],
+      "interpretation": "Symbolized reports are retained verbatim; an empty matcher is a review item, not evidence of zero cost or allocation.",
+      "patterns": [
+        "reclamation",
+        "dealloc",
+        "drop",
+        "madvise",
+        "release"
+      ],
+      "perf_match_count": 12,
+      "perf_matches": [
+        "drop (inlined)",
+        "drop_glue<std::os::fd::owned::OwnedFd> (inlined)",
+        "drop_glue<std::sys::fd::unix::FileDesc> (inlined)",
+        "drop_glue<std::sys::fs::unix::File> (inlined)",
+        "drop_glue<std::fs::File> (inlined)",
+        "0.15%  phase0-baseline  phase0-baseline    [.] <latent_node::activation_runner::RegistrationGuard as core::ops::drop::Drop>::drop                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      -      -",
+        "dealloc_nonnull (inlined)",
+        "deallocate_impl_runtime (inlined)",
+        "deallocate_impl (inlined)",
+        "deallocate (inlined)",
+        "deallocate<alloc::alloc::Global> (inlined)",
+        "drop<u8, alloc::alloc::Global> (inlined)"
+      ]
+    },
+    "result mapping and diagnostics": {
+      "allocation_match_count": 12,
+      "allocation_matches": [
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline",
+        "_RNvXs_NtNtCs4NRVxsYgnAr_4core6future6futureINtNtB8_3pin3PinINtNtCscdodAO9FK5_5alloc5boxed3BoxDNtB4_6Futurep6OutputINtNtB8_6result6ResultNtCs5fECuYHfLbH_15latent_executor17PreparedComponentNtNtCsfBS5C3O8aDQ_11latent_core5error13PlatformErrorENtNtB8_6marker4SendEL_EEB1u_4pollCskDWNPoeI29g_15phase0_baseline"
+      ],
+      "interpretation": "Symbolized reports are retained verbatim; an empty matcher is a review item, not evidence of zero cost or allocation.",
+      "patterns": [
+        "classify",
+        "guestoutcome",
+        "platformerror",
+        "diagnostic"
+      ],
+      "perf_match_count": 0,
+      "perf_matches": []
+    },
+    "store, limiter, host state, instance, and import construction": {
+      "allocation_match_count": 12,
+      "allocation_matches": [
+        "_RNCINvMNtNtCsiGVXDq5aNPw_8wasmtime7runtime8instanceNtB5_8Instance11new_startedNtNtCs5FpN0LtpUZU_15latent_wasmtime4host9HostStateE0B1i_",
+        "_RNCINvMs_NtNtNtCsiGVXDq5aNPw_8wasmtime7runtime9component8instanceNtB7_12Instantiator3runNtNtCs5FpN0LtpUZU_15latent_wasmtime4host9HostStateE0B1s_",
+        "_RNCINvMs1_NtNtNtCsiGVXDq5aNPw_8wasmtime7runtime9component8instanceINtB8_11InstancePreNtNtCs5FpN0LtpUZU_15latent_wasmtime4host9HostStateE12__instantiateQINtNtNtBc_5store7context15StoreContextMutB1l_EE0B1p_",
+        "_RNCINvMs1_NtNtNtCsiGVXDq5aNPw_8wasmtime7runtime9component8instanceINtB8_11InstancePreNtNtCs5FpN0LtpUZU_15latent_wasmtime4host9HostStateE17instantiate_asyncQINtNtNtBc_5store7context15StoreContextMutB1l_EE0B1p_",
+        "_RNCINvMs0_NtNtCs5FpN0LtpUZU_15latent_wasmtime8bindings9generatedINtB8_10ServicePreNtNtBc_4host9HostStateE17instantiate_asyncQINtNtNtCsiGVXDq5aNPw_8wasmtime7runtime5store5StoreB1i_EE0Bc_",
+        "_RNCNvMs_NtCs5FpN0LtpUZU_15latent_wasmtime8bindingsINtB6_10ServicePreNtNtB8_4host9HostStateE17instantiate_async0B8_",
+        "_RNCINvMs1_NtNtNtCsiGVXDq5aNPw_8wasmtime7runtime9component8instanceINtB8_11InstancePreNtNtCs5FpN0LtpUZU_15latent_wasmtime4host9HostStateE12__instantiateQINtNtNtBc_5store7context15StoreContextMutB1l_EE0B1p_",
+        "_RNCINvMs1_NtNtNtCsiGVXDq5aNPw_8wasmtime7runtime9component8instanceINtB8_11InstancePreNtNtCs5FpN0LtpUZU_15latent_wasmtime4host9HostStateE17instantiate_asyncQINtNtNtBc_5store7context15StoreContextMutB1l_EE0B1p_",
+        "_RNCINvMs0_NtNtCs5FpN0LtpUZU_15latent_wasmtime8bindings9generatedINtB8_10ServicePreNtNtBc_4host9HostStateE17instantiate_asyncQINtNtNtCsiGVXDq5aNPw_8wasmtime7runtime5store5StoreB1i_EE0Bc_",
+        "_RNCNvMs_NtCs5FpN0LtpUZU_15latent_wasmtime8bindingsINtB6_10ServicePreNtNtB8_4host9HostStateE17instantiate_async0B8_",
+        "_RNCINvMNtNtCsiGVXDq5aNPw_8wasmtime7runtime8instanceNtB5_8Instance11new_startedNtNtCs5FpN0LtpUZU_15latent_wasmtime4host9HostStateE0B1i_",
+        "_RNCINvMs_NtNtNtCsiGVXDq5aNPw_8wasmtime7runtime9component8instanceNtB7_12Instantiator3runNtNtCs5FpN0LtpUZU_15latent_wasmtime4host9HostStateE0B1s_"
+      ],
+      "interpretation": "Symbolized reports are retained verbatim; an empty matcher is a review item, not evidence of zero cost or allocation.",
+      "patterns": [
+        "instantiate_async",
+        "wasmtime::store",
+        "hoststate",
+        "linker"
+      ],
+      "perf_match_count": 8,
+      "perf_matches": [
+        "0.15%  phase0-baseline  phase0-baseline    [.] <alloc::boxed::Box<wasmtime::runtime::fiber::make_fiber_unchecked<wasmtime::runtime::store::StoreInner<latent_wasmtime::host::HostState>, <wasmtime::runtime::store::context::StoreContextMut<latent_wasmtime::host::HostState>>::run_on_worker::{closure#0}::{closure#0}>::{closure#0}> as core::ops::function::FnOnce<(core::result::Result<core::ptr::non_null::NonNull<core::task::wake::Context>, wasmtime_internal_core::error::error::Error>, &mut wasmtime_internal_fiber::Suspend<core::result::Result<core::ptr::non_null::NonNull<core::task::wake::Context>, wasmtime_internal_core::error::error::Error>, wasmtime::runtime::fiber::StoreFiberYield, core::result::Result<(), wasmtime_internal_core::error::error::Error>>)>>::call_once  -      -",
+        "{async_fn#0}<latent_wasmtime::host::HostState> (inlined)",
+        "{async_fn#0}<latent_wasmtime::host::HostState> (inlined)",
+        "{async_fn#0}<latent_wasmtime::host::HostState, &mut wasmtime::runtime::store::context::StoreContextMut<latent_wasmtime::host::HostState>> (inlined)",
+        "{async_fn#0}<latent_wasmtime::host::HostState, &mut wasmtime::runtime::store::context::StoreContextMut<latent_wasmtime::host::HostState>> (inlined)",
+        "{async_fn#0}<latent_wasmtime::host::HostState, &mut wasmtime::runtime::store::Store<latent_wasmtime::host::HostState>> (inlined)",
+        "1.66%  phase0-baseline  phase0-baseline    [.] <wasmtime::runtime::store::context::StoreContextMut<latent_wasmtime::host::HostState>>::run_on_worker::{closure#0}                                                                                                      -      -",
+        "---{async_fn#0}<latent_wasmtime::host::HostState> (inlined)"
+      ]
+    }
+  },
+  "calibration_reference": {
+    "adoption_rule": "No candidate is eligible for Phase 0 adoption with fewer than 7 comparable runs, regardless of a faster median.",
+    "path": "../../calibration/native-linux-2026-08-27-reachable-source/aggregate.json",
+    "sha256": "sha256:fdd04733f02f2c062c77c76158b6b369d3f2b9ad40ac7929b6425ea68d53594c"
+  },
+  "candidates": {
+    "on-demand-cow-disabled": {
+      "calibration_comparison": {
+        "at_capacity_activations_per_second": {
+          "advisory_noise_band": 97.85134749459779,
+          "candidate_median": 440.7875404055245,
+          "direction": "decrease_is_regression",
+          "reference_median": 652.3423166306519,
+          "status": "outside_advisory_band"
+        },
+        "bounded_queue_activations_per_second": {
+          "advisory_noise_band": 163.7256685464799,
+          "candidate_median": 849.2569002123142,
+          "direction": "decrease_is_regression",
+          "reference_median": 1091.5044569765328,
+          "status": "outside_advisory_band"
+        },
+        "component_preparation_micros": {
+          "advisory_noise_band": 4921.3,
+          "candidate_median": 50081.0,
+          "direction": "increase_is_regression",
+          "reference_median": 49213.0,
+          "status": "inside_advisory_band"
+        },
+        "peak_rss_bytes": {
+          "advisory_noise_band": 1771520.0,
+          "candidate_median": 19652608.0,
+          "direction": "increase_is_regression",
+          "reference_median": 17715200.0,
+          "status": "outside_advisory_band"
+        },
+        "peak_virtual_memory_bytes": {
+          "advisory_noise_band": 23130521.6,
+          "candidate_median": 233193472.0,
+          "direction": "increase_is_regression",
+          "reference_median": 231305216.0,
+          "status": "inside_advisory_band"
+        },
+        "post_invocation_cleanup_p50_micros": {
+          "advisory_noise_band": 10.0,
+          "candidate_median": 28.0,
+          "direction": "increase_is_regression",
+          "reference_median": 29.0,
+          "status": "inside_advisory_band"
+        },
+        "warm_echo_p50_micros": {
+          "advisory_noise_band": 33.0,
+          "candidate_median": 115.0,
+          "direction": "increase_is_regression",
+          "reference_median": 146.5,
+          "status": "inside_advisory_band"
+        }
+      },
+      "configuration": {
+        "cancel_after_ms": 5,
+        "coordination_timeout_ms": 15000,
+        "fd_growth_allowance": 2,
+        "fuel": 1000000000000,
+        "maximum_overshoot_ms": 500,
+        "memory_bytes": 16777216,
+        "memory_pressure_bytes": 4194304,
+        "mode": "full",
+        "pool_capacity": 2,
+        "pool_iterations": 2000,
+        "pool_queue_capacity": 4,
+        "rss_growth_allowance_bytes": 67108864,
+        "runtime_workers": 2,
+        "sequence_repetitions": 10,
+        "throughput_batches": 24,
+        "timeout_ms": 25,
+        "warm_samples": 40,
+        "wasmtime_allocator": "on_demand",
+        "wasmtime_copy_on_write_images": false
+      },
+      "hard_invariants": "all canonical Phase 0 baseline checks passed in every retained run",
+      "metrics_per_run": [
+        {
+          "at_capacity_activations_per_second": 386.35833125397426,
+          "bounded_queue_activations_per_second": 807.5234265910735,
+          "component_preparation_micros": 57330.0,
+          "peak_file_descriptors": 4.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19652608.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 233189376.0,
+          "post_invocation_cleanup_p50_micros": 32.0,
+          "warm_echo_p50_micros": 174.0
+        },
+        {
+          "at_capacity_activations_per_second": 459.9375251528334,
+          "bounded_queue_activations_per_second": 849.2569002123142,
+          "component_preparation_micros": 49393.0,
+          "peak_file_descriptors": 4.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19521536.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 233193472.0,
+          "post_invocation_cleanup_p50_micros": 28.0,
+          "warm_echo_p50_micros": 109.0
+        },
+        {
+          "at_capacity_activations_per_second": 440.7875404055245,
+          "bounded_queue_activations_per_second": 849.4522802484648,
+          "component_preparation_micros": 50081.0,
+          "peak_file_descriptors": 4.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19660800.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 233193472.0,
+          "post_invocation_cleanup_p50_micros": 27.0,
+          "warm_echo_p50_micros": 115.0
+        }
+      ],
+      "name": "on-demand-cow-disabled",
+      "raw_runs": [
+        {
+          "path": "candidates/on-demand-cow-disabled/run-01/raw-results.json",
+          "sha256": "sha256:32bf0146c228454989468cc4e6e57af0ac0d6536965b5d1958382ccbbaafc1fa",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/on-demand-cow-disabled/run-02/raw-results.json",
+          "sha256": "sha256:1aea3db1026d6474487af73791fff5ceb88e632aba8781a03aaf8e6819c64820",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/on-demand-cow-disabled/run-03/raw-results.json",
+          "sha256": "sha256:bf9a36cb639e9d455d2efdf1ee14b6aac503fec14095d24d54c0607cea659494",
+          "status": "pass"
+        }
+      ],
+      "representatives": {
+        "at_capacity_activations_per_second": 440.7875404055245,
+        "bounded_queue_activations_per_second": 849.2569002123142,
+        "component_preparation_micros": 50081.0,
+        "peak_file_descriptors": 4.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19652608.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 233193472.0,
+        "post_invocation_cleanup_p50_micros": 28.0,
+        "warm_echo_p50_micros": 115.0
+      },
+      "run_count": 3
+    },
+    "pooling-cow-disabled": {
+      "calibration_comparison": {
+        "at_capacity_activations_per_second": {
+          "advisory_noise_band": 97.85134749459779,
+          "candidate_median": 446.56978583257353,
+          "direction": "decrease_is_regression",
+          "reference_median": 652.3423166306519,
+          "status": "outside_advisory_band"
+        },
+        "bounded_queue_activations_per_second": {
+          "advisory_noise_band": 163.7256685464799,
+          "candidate_median": 845.4921762616328,
+          "direction": "decrease_is_regression",
+          "reference_median": 1091.5044569765328,
+          "status": "outside_advisory_band"
+        },
+        "component_preparation_micros": {
+          "advisory_noise_band": 4921.3,
+          "candidate_median": 57320.0,
+          "direction": "increase_is_regression",
+          "reference_median": 49213.0,
+          "status": "outside_advisory_band"
+        },
+        "peak_rss_bytes": {
+          "advisory_noise_band": 1771520.0,
+          "candidate_median": 19873792.0,
+          "direction": "increase_is_regression",
+          "reference_median": 17715200.0,
+          "status": "outside_advisory_band"
+        },
+        "peak_virtual_memory_bytes": {
+          "advisory_noise_band": 23130521.6,
+          "candidate_median": 372817920.0,
+          "direction": "increase_is_regression",
+          "reference_median": 231305216.0,
+          "status": "outside_advisory_band"
+        },
+        "post_invocation_cleanup_p50_micros": {
+          "advisory_noise_band": 10.0,
+          "candidate_median": 18.0,
+          "direction": "increase_is_regression",
+          "reference_median": 29.0,
+          "status": "inside_advisory_band"
+        },
+        "warm_echo_p50_micros": {
+          "advisory_noise_band": 33.0,
+          "candidate_median": 101.0,
+          "direction": "increase_is_regression",
+          "reference_median": 146.5,
+          "status": "inside_advisory_band"
+        }
+      },
+      "configuration": {
+        "cancel_after_ms": 5,
+        "coordination_timeout_ms": 15000,
+        "fd_growth_allowance": 2,
+        "fuel": 1000000000000,
+        "maximum_overshoot_ms": 500,
+        "memory_bytes": 16777216,
+        "memory_pressure_bytes": 4194304,
+        "mode": "full",
+        "pool_capacity": 2,
+        "pool_iterations": 2000,
+        "pool_queue_capacity": 4,
+        "rss_growth_allowance_bytes": 67108864,
+        "runtime_workers": 2,
+        "sequence_repetitions": 10,
+        "throughput_batches": 24,
+        "timeout_ms": 25,
+        "warm_samples": 40,
+        "wasmtime_allocator": "pooling",
+        "wasmtime_copy_on_write_images": false
+      },
+      "hard_invariants": "all canonical Phase 0 baseline checks passed in every retained run",
+      "metrics_per_run": [
+        {
+          "at_capacity_activations_per_second": 446.56978583257353,
+          "bounded_queue_activations_per_second": 828.4479832469408,
+          "component_preparation_micros": 57959.0,
+          "peak_file_descriptors": 4.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19709952.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 372813824.0,
+          "post_invocation_cleanup_p50_micros": 18.0,
+          "warm_echo_p50_micros": 101.0
+        },
+        {
+          "at_capacity_activations_per_second": 443.3606739082243,
+          "bounded_queue_activations_per_second": 848.0415540361478,
+          "component_preparation_micros": 56781.0,
+          "peak_file_descriptors": 4.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19980288.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 372817920.0,
+          "post_invocation_cleanup_p50_micros": 18.0,
+          "warm_echo_p50_micros": 94.0
+        },
+        {
+          "at_capacity_activations_per_second": 458.45272206303724,
+          "bounded_queue_activations_per_second": 845.4921762616328,
+          "component_preparation_micros": 57320.0,
+          "peak_file_descriptors": 4.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19873792.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 372817920.0,
+          "post_invocation_cleanup_p50_micros": 19.0,
+          "warm_echo_p50_micros": 118.0
+        }
+      ],
+      "name": "pooling-cow-disabled",
+      "raw_runs": [
+        {
+          "path": "candidates/pooling-cow-disabled/run-01/raw-results.json",
+          "sha256": "sha256:fb87d7c819ee3ef6099d7992671b1cd6bb39b2a9ad87d0472cc19f4d97964493",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/pooling-cow-disabled/run-02/raw-results.json",
+          "sha256": "sha256:fed91162576f9316c148bca04dde97afb7df8ab5d825156ed327d01918fc90ea",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/pooling-cow-disabled/run-03/raw-results.json",
+          "sha256": "sha256:d2d5943b26096135f5fe85c0b09b408909eefa4ab1557487ba1ceb654c2dbe82",
+          "status": "pass"
+        }
+      ],
+      "representatives": {
+        "at_capacity_activations_per_second": 446.56978583257353,
+        "bounded_queue_activations_per_second": 845.4921762616328,
+        "component_preparation_micros": 57320.0,
+        "peak_file_descriptors": 4.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19873792.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 372817920.0,
+        "post_invocation_cleanup_p50_micros": 18.0,
+        "warm_echo_p50_micros": 101.0
+      },
+      "run_count": 3
+    },
+    "pooling-cow-enabled": {
+      "calibration_comparison": {
+        "at_capacity_activations_per_second": {
+          "advisory_noise_band": 97.85134749459779,
+          "candidate_median": 456.3865594158252,
+          "direction": "decrease_is_regression",
+          "reference_median": 652.3423166306519,
+          "status": "outside_advisory_band"
+        },
+        "bounded_queue_activations_per_second": {
+          "advisory_noise_band": 163.7256685464799,
+          "candidate_median": 843.4567669833534,
+          "direction": "decrease_is_regression",
+          "reference_median": 1091.5044569765328,
+          "status": "outside_advisory_band"
+        },
+        "component_preparation_micros": {
+          "advisory_noise_band": 4921.3,
+          "candidate_median": 56933.0,
+          "direction": "increase_is_regression",
+          "reference_median": 49213.0,
+          "status": "outside_advisory_band"
+        },
+        "peak_rss_bytes": {
+          "advisory_noise_band": 1771520.0,
+          "candidate_median": 19947520.0,
+          "direction": "increase_is_regression",
+          "reference_median": 17715200.0,
+          "status": "outside_advisory_band"
+        },
+        "peak_virtual_memory_bytes": {
+          "advisory_noise_band": 23130521.6,
+          "candidate_median": 372822016.0,
+          "direction": "increase_is_regression",
+          "reference_median": 231305216.0,
+          "status": "outside_advisory_band"
+        },
+        "post_invocation_cleanup_p50_micros": {
+          "advisory_noise_band": 10.0,
+          "candidate_median": 19.0,
+          "direction": "increase_is_regression",
+          "reference_median": 29.0,
+          "status": "inside_advisory_band"
+        },
+        "warm_echo_p50_micros": {
+          "advisory_noise_band": 33.0,
+          "candidate_median": 114.0,
+          "direction": "increase_is_regression",
+          "reference_median": 146.5,
+          "status": "inside_advisory_band"
+        }
+      },
+      "configuration": {
+        "cancel_after_ms": 5,
+        "coordination_timeout_ms": 15000,
+        "fd_growth_allowance": 2,
+        "fuel": 1000000000000,
+        "maximum_overshoot_ms": 500,
+        "memory_bytes": 16777216,
+        "memory_pressure_bytes": 4194304,
+        "mode": "full",
+        "pool_capacity": 2,
+        "pool_iterations": 2000,
+        "pool_queue_capacity": 4,
+        "rss_growth_allowance_bytes": 67108864,
+        "runtime_workers": 2,
+        "sequence_repetitions": 10,
+        "throughput_batches": 24,
+        "timeout_ms": 25,
+        "warm_samples": 40,
+        "wasmtime_allocator": "pooling",
+        "wasmtime_copy_on_write_images": true
+      },
+      "hard_invariants": "all canonical Phase 0 baseline checks passed in every retained run",
+      "metrics_per_run": [
+        {
+          "at_capacity_activations_per_second": 456.3865594158252,
+          "bounded_queue_activations_per_second": 843.4567669833534,
+          "component_preparation_micros": 56933.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 20226048.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 372822016.0,
+          "post_invocation_cleanup_p50_micros": 20.0,
+          "warm_echo_p50_micros": 114.0
+        },
+        {
+          "at_capacity_activations_per_second": 447.53158360915575,
+          "bounded_queue_activations_per_second": 834.458500176743,
+          "component_preparation_micros": 57182.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19947520.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 372826112.0,
+          "post_invocation_cleanup_p50_micros": 19.0,
+          "warm_echo_p50_micros": 103.0
+        },
+        {
+          "at_capacity_activations_per_second": 477.6357032688193,
+          "bounded_queue_activations_per_second": 849.4172054173941,
+          "component_preparation_micros": 56642.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19619840.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 372817920.0,
+          "post_invocation_cleanup_p50_micros": 19.0,
+          "warm_echo_p50_micros": 117.0
+        }
+      ],
+      "name": "pooling-cow-enabled",
+      "raw_runs": [
+        {
+          "path": "candidates/pooling-cow-enabled/run-01/raw-results.json",
+          "sha256": "sha256:8138c51e3dbc261ae68138dcb1f884b4c84bd6bec610e35d2d54a3769fe6e62f",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/pooling-cow-enabled/run-02/raw-results.json",
+          "sha256": "sha256:b843d5323eab065967bdbd8c5f7c225f4f2c0065b77a86961271a2e0f2b3f942",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/pooling-cow-enabled/run-03/raw-results.json",
+          "sha256": "sha256:4fdd2c5a424c05876f07ee050ab710f0b241fa50c6a6016bd729883b943d119f",
+          "status": "pass"
+        }
+      ],
+      "representatives": {
+        "at_capacity_activations_per_second": 456.3865594158252,
+        "bounded_queue_activations_per_second": 843.4567669833534,
+        "component_preparation_micros": 56933.0,
+        "peak_file_descriptors": 5.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19947520.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 372822016.0,
+        "post_invocation_cleanup_p50_micros": 19.0,
+        "warm_echo_p50_micros": 114.0
+      },
+      "run_count": 3
+    },
+    "worker-cell-1w-1c": {
+      "calibration_comparison": {
+        "at_capacity_activations_per_second": {
+          "advisory_noise_band": 97.85134749459779,
+          "candidate_median": 233.21122134660047,
+          "direction": "decrease_is_regression",
+          "reference_median": 652.3423166306519,
+          "status": "outside_advisory_band"
+        },
+        "bounded_queue_activations_per_second": {
+          "advisory_noise_band": 163.7256685464799,
+          "candidate_median": 518.315991344123,
+          "direction": "decrease_is_regression",
+          "reference_median": 1091.5044569765328,
+          "status": "outside_advisory_band"
+        },
+        "component_preparation_micros": {
+          "advisory_noise_band": 4921.3,
+          "candidate_median": 49700.0,
+          "direction": "increase_is_regression",
+          "reference_median": 49213.0,
+          "status": "inside_advisory_band"
+        },
+        "peak_rss_bytes": {
+          "advisory_noise_band": 1771520.0,
+          "candidate_median": 19374080.0,
+          "direction": "increase_is_regression",
+          "reference_median": 17715200.0,
+          "status": "inside_advisory_band"
+        },
+        "peak_virtual_memory_bytes": {
+          "advisory_noise_band": 23130521.6,
+          "candidate_median": 163704832.0,
+          "direction": "increase_is_regression",
+          "reference_median": 231305216.0,
+          "status": "inside_advisory_band"
+        },
+        "post_invocation_cleanup_p50_micros": {
+          "advisory_noise_band": 10.0,
+          "candidate_median": 24.0,
+          "direction": "increase_is_regression",
+          "reference_median": 29.0,
+          "status": "inside_advisory_band"
+        },
+        "warm_echo_p50_micros": {
+          "advisory_noise_band": 33.0,
+          "candidate_median": 130.0,
+          "direction": "increase_is_regression",
+          "reference_median": 146.5,
+          "status": "inside_advisory_band"
+        }
+      },
+      "configuration": {
+        "cancel_after_ms": 5,
+        "coordination_timeout_ms": 15000,
+        "fd_growth_allowance": 2,
+        "fuel": 1000000000000,
+        "maximum_overshoot_ms": 500,
+        "memory_bytes": 16777216,
+        "memory_pressure_bytes": 4194304,
+        "mode": "full",
+        "pool_capacity": 1,
+        "pool_iterations": 2000,
+        "pool_queue_capacity": 4,
+        "rss_growth_allowance_bytes": 67108864,
+        "runtime_workers": 1,
+        "sequence_repetitions": 10,
+        "throughput_batches": 24,
+        "timeout_ms": 25,
+        "warm_samples": 40,
+        "wasmtime_allocator": "on_demand",
+        "wasmtime_copy_on_write_images": true
+      },
+      "hard_invariants": "all canonical Phase 0 baseline checks passed in every retained run",
+      "metrics_per_run": [
+        {
+          "at_capacity_activations_per_second": 230.0966405890474,
+          "bounded_queue_activations_per_second": 518.315991344123,
+          "component_preparation_micros": 49700.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19410944.0,
+          "peak_threads": 3.0,
+          "peak_virtual_memory_bytes": 163700736.0,
+          "post_invocation_cleanup_p50_micros": 26.0,
+          "warm_echo_p50_micros": 130.0
+        },
+        {
+          "at_capacity_activations_per_second": 242.20405691795338,
+          "bounded_queue_activations_per_second": 518.085501377244,
+          "component_preparation_micros": 49920.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19374080.0,
+          "peak_threads": 3.0,
+          "peak_virtual_memory_bytes": 163704832.0,
+          "post_invocation_cleanup_p50_micros": 21.0,
+          "warm_echo_p50_micros": 123.0
+        },
+        {
+          "at_capacity_activations_per_second": 233.21122134660047,
+          "bounded_queue_activations_per_second": 531.3755097883798,
+          "component_preparation_micros": 48973.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19316736.0,
+          "peak_threads": 3.0,
+          "peak_virtual_memory_bytes": 163708928.0,
+          "post_invocation_cleanup_p50_micros": 24.0,
+          "warm_echo_p50_micros": 142.0
+        }
+      ],
+      "name": "worker-cell-1w-1c",
+      "raw_runs": [
+        {
+          "path": "candidates/worker-cell-1w-1c/run-01/raw-results.json",
+          "sha256": "sha256:ab7688030a61573675be6b0ed0dab26b7b65406995b90ccff0ed793ab36d78e2",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/worker-cell-1w-1c/run-02/raw-results.json",
+          "sha256": "sha256:20ee64628579711670a85779095e903fac4101138a7d22cd54c6816c0488564b",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/worker-cell-1w-1c/run-03/raw-results.json",
+          "sha256": "sha256:bfc1bc19478cdb40fca66e103a338a02a25f1320c687349b1d2409650c39d2b8",
+          "status": "pass"
+        }
+      ],
+      "representatives": {
+        "at_capacity_activations_per_second": 233.21122134660047,
+        "bounded_queue_activations_per_second": 518.315991344123,
+        "component_preparation_micros": 49700.0,
+        "peak_file_descriptors": 5.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19374080.0,
+        "peak_threads": 3.0,
+        "peak_virtual_memory_bytes": 163704832.0,
+        "post_invocation_cleanup_p50_micros": 24.0,
+        "warm_echo_p50_micros": 130.0
+      },
+      "run_count": 3
+    },
+    "worker-cell-2w-2c": {
+      "calibration_comparison": {
+        "at_capacity_activations_per_second": {
+          "advisory_noise_band": 97.85134749459779,
+          "candidate_median": 454.27873786223995,
+          "direction": "decrease_is_regression",
+          "reference_median": 652.3423166306519,
+          "status": "outside_advisory_band"
+        },
+        "bounded_queue_activations_per_second": {
+          "advisory_noise_band": 163.7256685464799,
+          "candidate_median": 837.7207015910876,
+          "direction": "decrease_is_regression",
+          "reference_median": 1091.5044569765328,
+          "status": "outside_advisory_band"
+        },
+        "component_preparation_micros": {
+          "advisory_noise_band": 4921.3,
+          "candidate_median": 49548.0,
+          "direction": "increase_is_regression",
+          "reference_median": 49213.0,
+          "status": "inside_advisory_band"
+        },
+        "peak_rss_bytes": {
+          "advisory_noise_band": 1771520.0,
+          "candidate_median": 19378176.0,
+          "direction": "increase_is_regression",
+          "reference_median": 17715200.0,
+          "status": "inside_advisory_band"
+        },
+        "peak_virtual_memory_bytes": {
+          "advisory_noise_band": 23130521.6,
+          "candidate_median": 233193472.0,
+          "direction": "increase_is_regression",
+          "reference_median": 231305216.0,
+          "status": "inside_advisory_band"
+        },
+        "post_invocation_cleanup_p50_micros": {
+          "advisory_noise_band": 10.0,
+          "candidate_median": 28.0,
+          "direction": "increase_is_regression",
+          "reference_median": 29.0,
+          "status": "inside_advisory_band"
+        },
+        "warm_echo_p50_micros": {
+          "advisory_noise_band": 33.0,
+          "candidate_median": 130.0,
+          "direction": "increase_is_regression",
+          "reference_median": 146.5,
+          "status": "inside_advisory_band"
+        }
+      },
+      "configuration": {
+        "cancel_after_ms": 5,
+        "coordination_timeout_ms": 15000,
+        "fd_growth_allowance": 2,
+        "fuel": 1000000000000,
+        "maximum_overshoot_ms": 500,
+        "memory_bytes": 16777216,
+        "memory_pressure_bytes": 4194304,
+        "mode": "full",
+        "pool_capacity": 2,
+        "pool_iterations": 2000,
+        "pool_queue_capacity": 4,
+        "rss_growth_allowance_bytes": 67108864,
+        "runtime_workers": 2,
+        "sequence_repetitions": 10,
+        "throughput_batches": 24,
+        "timeout_ms": 25,
+        "warm_samples": 40,
+        "wasmtime_allocator": "on_demand",
+        "wasmtime_copy_on_write_images": true
+      },
+      "hard_invariants": "all canonical Phase 0 baseline checks passed in every retained run",
+      "metrics_per_run": [
+        {
+          "at_capacity_activations_per_second": 446.6695203886025,
+          "bounded_queue_activations_per_second": 832.2208159231583,
+          "component_preparation_micros": 49548.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19378176.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 233193472.0,
+          "post_invocation_cleanup_p50_micros": 29.0,
+          "warm_echo_p50_micros": 143.0
+        },
+        {
+          "at_capacity_activations_per_second": 470.4867577581306,
+          "bounded_queue_activations_per_second": 837.7207015910876,
+          "component_preparation_micros": 51161.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19546112.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 233197568.0,
+          "post_invocation_cleanup_p50_micros": 28.0,
+          "warm_echo_p50_micros": 130.0
+        },
+        {
+          "at_capacity_activations_per_second": 454.27873786223995,
+          "bounded_queue_activations_per_second": 845.2489962668169,
+          "component_preparation_micros": 49292.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19369984.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 233189376.0,
+          "post_invocation_cleanup_p50_micros": 28.0,
+          "warm_echo_p50_micros": 122.0
+        }
+      ],
+      "name": "worker-cell-2w-2c",
+      "raw_runs": [
+        {
+          "path": "candidates/worker-cell-2w-2c/run-01/raw-results.json",
+          "sha256": "sha256:f61b46eb5f585ac85d5cdde11faba9801f5a6add9250f50bd09bf042d76c70f1",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/worker-cell-2w-2c/run-02/raw-results.json",
+          "sha256": "sha256:ebae88540ceb6881fb394cedad610722258f7ae0f8b23776d23a019c2008ff14",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/worker-cell-2w-2c/run-03/raw-results.json",
+          "sha256": "sha256:a2755fff51f96a9943e10ec68f078decdfc2a06db09312ef7ad64d285d252392",
+          "status": "pass"
+        }
+      ],
+      "representatives": {
+        "at_capacity_activations_per_second": 454.27873786223995,
+        "bounded_queue_activations_per_second": 837.7207015910876,
+        "component_preparation_micros": 49548.0,
+        "peak_file_descriptors": 5.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19378176.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 233193472.0,
+        "post_invocation_cleanup_p50_micros": 28.0,
+        "warm_echo_p50_micros": 130.0
+      },
+      "run_count": 3
+    },
+    "worker-cell-2w-4c": {
+      "calibration_comparison": {
+        "at_capacity_activations_per_second": {
+          "advisory_noise_band": 97.85134749459779,
+          "candidate_median": 698.3189426287344,
+          "direction": "decrease_is_regression",
+          "reference_median": 652.3423166306519,
+          "status": "inside_advisory_band"
+        },
+        "bounded_queue_activations_per_second": {
+          "advisory_noise_band": 163.7256685464799,
+          "candidate_median": 957.7062934272418,
+          "direction": "decrease_is_regression",
+          "reference_median": 1091.5044569765328,
+          "status": "inside_advisory_band"
+        },
+        "component_preparation_micros": {
+          "advisory_noise_band": 4921.3,
+          "candidate_median": 49823.0,
+          "direction": "increase_is_regression",
+          "reference_median": 49213.0,
+          "status": "inside_advisory_band"
+        },
+        "peak_rss_bytes": {
+          "advisory_noise_band": 1771520.0,
+          "candidate_median": 19775488.0,
+          "direction": "increase_is_regression",
+          "reference_median": 17715200.0,
+          "status": "outside_advisory_band"
+        },
+        "peak_virtual_memory_bytes": {
+          "advisory_noise_band": 23130521.6,
+          "candidate_median": 233193472.0,
+          "direction": "increase_is_regression",
+          "reference_median": 231305216.0,
+          "status": "inside_advisory_band"
+        },
+        "post_invocation_cleanup_p50_micros": {
+          "advisory_noise_band": 10.0,
+          "candidate_median": 26.0,
+          "direction": "increase_is_regression",
+          "reference_median": 29.0,
+          "status": "inside_advisory_band"
+        },
+        "warm_echo_p50_micros": {
+          "advisory_noise_band": 33.0,
+          "candidate_median": 130.0,
+          "direction": "increase_is_regression",
+          "reference_median": 146.5,
+          "status": "inside_advisory_band"
+        }
+      },
+      "configuration": {
+        "cancel_after_ms": 5,
+        "coordination_timeout_ms": 15000,
+        "fd_growth_allowance": 2,
+        "fuel": 1000000000000,
+        "maximum_overshoot_ms": 500,
+        "memory_bytes": 16777216,
+        "memory_pressure_bytes": 4194304,
+        "mode": "full",
+        "pool_capacity": 4,
+        "pool_iterations": 2000,
+        "pool_queue_capacity": 4,
+        "rss_growth_allowance_bytes": 67108864,
+        "runtime_workers": 2,
+        "sequence_repetitions": 10,
+        "throughput_batches": 24,
+        "timeout_ms": 25,
+        "warm_samples": 40,
+        "wasmtime_allocator": "on_demand",
+        "wasmtime_copy_on_write_images": true
+      },
+      "hard_invariants": "all canonical Phase 0 baseline checks passed in every retained run",
+      "metrics_per_run": [
+        {
+          "at_capacity_activations_per_second": 698.3189426287344,
+          "bounded_queue_activations_per_second": 947.0631178107058,
+          "component_preparation_micros": 57639.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19595264.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 233193472.0,
+          "post_invocation_cleanup_p50_micros": 25.0,
+          "warm_echo_p50_micros": 174.0
+        },
+        {
+          "at_capacity_activations_per_second": 682.0458533743508,
+          "bounded_queue_activations_per_second": 971.8271362481398,
+          "component_preparation_micros": 49823.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19775488.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 233193472.0,
+          "post_invocation_cleanup_p50_micros": 27.0,
+          "warm_echo_p50_micros": 130.0
+        },
+        {
+          "at_capacity_activations_per_second": 704.8665159035507,
+          "bounded_queue_activations_per_second": 957.7062934272418,
+          "component_preparation_micros": 49161.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19841024.0,
+          "peak_threads": 4.0,
+          "peak_virtual_memory_bytes": 233189376.0,
+          "post_invocation_cleanup_p50_micros": 26.0,
+          "warm_echo_p50_micros": 124.0
+        }
+      ],
+      "name": "worker-cell-2w-4c",
+      "raw_runs": [
+        {
+          "path": "candidates/worker-cell-2w-4c/run-01/raw-results.json",
+          "sha256": "sha256:930f26b36786d280602477bb45a740720b1fb69442f99658f4707ccd4dc11a40",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/worker-cell-2w-4c/run-02/raw-results.json",
+          "sha256": "sha256:b2432c21760c269e7196ecb3b6aec6c33a7b3d878ca6f5b5371d73e5a485aa52",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/worker-cell-2w-4c/run-03/raw-results.json",
+          "sha256": "sha256:99f5b4ef9e12dd2de6c01a5f4b142fe888a3c40788c16686f15d2be255ff5702",
+          "status": "pass"
+        }
+      ],
+      "representatives": {
+        "at_capacity_activations_per_second": 698.3189426287344,
+        "bounded_queue_activations_per_second": 957.7062934272418,
+        "component_preparation_micros": 49823.0,
+        "peak_file_descriptors": 5.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19775488.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 233193472.0,
+        "post_invocation_cleanup_p50_micros": 26.0,
+        "warm_echo_p50_micros": 130.0
+      },
+      "run_count": 3
+    },
+    "worker-cell-4w-2c": {
+      "calibration_comparison": {
+        "at_capacity_activations_per_second": {
+          "advisory_noise_band": 97.85134749459779,
+          "candidate_median": 385.0905765126839,
+          "direction": "decrease_is_regression",
+          "reference_median": 652.3423166306519,
+          "status": "outside_advisory_band"
+        },
+        "bounded_queue_activations_per_second": {
+          "advisory_noise_band": 163.7256685464799,
+          "candidate_median": 782.744825186989,
+          "direction": "decrease_is_regression",
+          "reference_median": 1091.5044569765328,
+          "status": "outside_advisory_band"
+        },
+        "component_preparation_micros": {
+          "advisory_noise_band": 4921.3,
+          "candidate_median": 49799.0,
+          "direction": "increase_is_regression",
+          "reference_median": 49213.0,
+          "status": "inside_advisory_band"
+        },
+        "peak_rss_bytes": {
+          "advisory_noise_band": 1771520.0,
+          "candidate_median": 19816448.0,
+          "direction": "increase_is_regression",
+          "reference_median": 17715200.0,
+          "status": "outside_advisory_band"
+        },
+        "peak_virtual_memory_bytes": {
+          "advisory_noise_band": 23130521.6,
+          "candidate_median": 372174848.0,
+          "direction": "increase_is_regression",
+          "reference_median": 231305216.0,
+          "status": "outside_advisory_band"
+        },
+        "post_invocation_cleanup_p50_micros": {
+          "advisory_noise_band": 10.0,
+          "candidate_median": 28.0,
+          "direction": "increase_is_regression",
+          "reference_median": 29.0,
+          "status": "inside_advisory_band"
+        },
+        "warm_echo_p50_micros": {
+          "advisory_noise_band": 33.0,
+          "candidate_median": 145.0,
+          "direction": "increase_is_regression",
+          "reference_median": 146.5,
+          "status": "inside_advisory_band"
+        }
+      },
+      "configuration": {
+        "cancel_after_ms": 5,
+        "coordination_timeout_ms": 15000,
+        "fd_growth_allowance": 2,
+        "fuel": 1000000000000,
+        "maximum_overshoot_ms": 500,
+        "memory_bytes": 16777216,
+        "memory_pressure_bytes": 4194304,
+        "mode": "full",
+        "pool_capacity": 2,
+        "pool_iterations": 2000,
+        "pool_queue_capacity": 4,
+        "rss_growth_allowance_bytes": 67108864,
+        "runtime_workers": 4,
+        "sequence_repetitions": 10,
+        "throughput_batches": 24,
+        "timeout_ms": 25,
+        "warm_samples": 40,
+        "wasmtime_allocator": "on_demand",
+        "wasmtime_copy_on_write_images": true
+      },
+      "hard_invariants": "all canonical Phase 0 baseline checks passed in every retained run",
+      "metrics_per_run": [
+        {
+          "at_capacity_activations_per_second": 356.18878005342833,
+          "bounded_queue_activations_per_second": 782.744825186989,
+          "component_preparation_micros": 49841.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19816448.0,
+          "peak_threads": 6.0,
+          "peak_virtual_memory_bytes": 372174848.0,
+          "post_invocation_cleanup_p50_micros": 28.0,
+          "warm_echo_p50_micros": 145.0
+        },
+        {
+          "at_capacity_activations_per_second": 397.9868498511695,
+          "bounded_queue_activations_per_second": 792.4497152133836,
+          "component_preparation_micros": 49799.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 19705856.0,
+          "peak_threads": 6.0,
+          "peak_virtual_memory_bytes": 372174848.0,
+          "post_invocation_cleanup_p50_micros": 29.0,
+          "warm_echo_p50_micros": 118.0
+        },
+        {
+          "at_capacity_activations_per_second": 385.0905765126839,
+          "bounded_queue_activations_per_second": 757.8349077704391,
+          "component_preparation_micros": 49694.0,
+          "peak_file_descriptors": 5.0,
+          "peak_listening_sockets": 0.0,
+          "peak_open_sockets": 0.0,
+          "peak_rss_bytes": 20033536.0,
+          "peak_threads": 6.0,
+          "peak_virtual_memory_bytes": 372174848.0,
+          "post_invocation_cleanup_p50_micros": 27.0,
+          "warm_echo_p50_micros": 168.0
+        }
+      ],
+      "name": "worker-cell-4w-2c",
+      "raw_runs": [
+        {
+          "path": "candidates/worker-cell-4w-2c/run-01/raw-results.json",
+          "sha256": "sha256:ec5ab957e4b583c1e044f1aebb24f067a6a81500cbaec35b1982c97bfdc33bfe",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/worker-cell-4w-2c/run-02/raw-results.json",
+          "sha256": "sha256:3c51f8425ae8087aad1fa6f6afd05e2783aa35c268e8798548a9ce341e4ae7b4",
+          "status": "pass"
+        },
+        {
+          "path": "candidates/worker-cell-4w-2c/run-03/raw-results.json",
+          "sha256": "sha256:cf07c3207f5271a9511c4982cef22d04d80cad61bea8b97cf76f12e347fef010",
+          "status": "pass"
+        }
+      ],
+      "representatives": {
+        "at_capacity_activations_per_second": 385.0905765126839,
+        "bounded_queue_activations_per_second": 782.744825186989,
+        "component_preparation_micros": 49799.0,
+        "peak_file_descriptors": 5.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19816448.0,
+        "peak_threads": 6.0,
+        "peak_virtual_memory_bytes": 372174848.0,
+        "post_invocation_cleanup_p50_micros": 28.0,
+        "warm_echo_p50_micros": 145.0
+      },
+      "run_count": 3
+    }
+  },
+  "cross_platform_claim": false,
+  "decisions": [
+    {
+      "candidate": "fixed 2-worker/2-cell on-demand configuration",
+      "decision": "adopt now",
+      "handoff": "#39 runs the final 3x100k resource soak against this configuration.",
+      "rationale": "It preserves the measured fixed topology and fresh-store isolation; this archive introduces no runtime behavior change.",
+      "scope": "retain existing Phase 0 configuration"
+    },
+    {
+      "candidate": "bounded preparation/cache reuse versus cold preparation",
+      "decision": "adopt now",
+      "handoff": "#9 generalizes the cache key, policy, eviction, and multi-component compatibility proof.",
+      "rationale": "The cache is node-owned, bounded, and stores prepared immutable state only; stores and instances remain fresh per activation.",
+      "scope": "retain existing bounded one-entry prepared-component cache"
+    },
+    {
+      "candidate": "worker/cell capacity ratios",
+      "decision": "carry as configurable Phase 1 experiment",
+      "handoff": "#8 owns configuration, fairness, and fixed multi-class capacity policy.",
+      "rationale": "The matrix measures fixed ratios without selecting a universal winner. Only 3 matched candidate runs are retained; Phase 0 requires at least 7 comparable runs before a faster result can justify adoption.",
+      "scope": "#8"
+    },
+    {
+      "candidate": "Wasmtime pooling allocator",
+      "decision": "defer",
+      "handoff": "#9 must provide generalized pooling limits, density evidence, and a reset/isolation proof before any production choice.",
+      "rationale": "The experiment has an explicit fixed upper bound and no retained linear-memory allowance, but it changes node-fixed mapping and reset behavior. Only 3 matched candidate runs are retained; Phase 0 requires at least 7 comparable runs before a faster result can justify adoption.",
+      "scope": "#9"
+    },
+    {
+      "candidate": "copy-on-write initialized memory",
+      "decision": "carry as configurable Phase 1 experiment",
+      "handoff": "#9 owns target-aware Wasmtime policy and must retain a safe non-COW fallback.",
+      "rationale": "Linux support is profiled explicitly, but its parallel-memory tradeoff is workload-dependent. Only 3 matched candidate runs are retained; Phase 0 requires at least 7 comparable runs before a faster result can justify adoption.",
+      "scope": "#9"
+    },
+    {
+      "candidate": "avoidable activation-path allocations and payload copies",
+      "decision": "defer",
+      "handoff": "#9 owns canonical value mapping; #11 owns activation-envelope/lifecycle ownership and cleanup.",
+      "rationale": "Heaptrack evidence and source-attribution maps identify the current boundaries, but removing copies before the Phase 1 generic value codec and lifecycle shapes exist risks changing contracts or attribution.",
+      "scope": "#9 and #11"
+    },
+    {
+      "candidate": "store/instance reuse, persistent AOT artifacts, compiler caches, snapshots, and native execution",
+      "decision": "reject",
+      "handoff": "Trusted AOT supply-chain work is Phase 2; fresh stores and instances remain mandatory in #9.",
+      "rationale": "These candidates require a new reset/isolation or provenance proof and are forbidden from silently entering Phase 0.",
+      "scope": "Phase 2 or later"
+    }
+  ],
+  "generated_at_utc": "2026-08-27T11:49:44+00:00",
+  "guardrails": {
+    "bounded_node_owned_state": true,
+    "cleanup_proof_before_cell_reuse": true,
+    "fixed_node_topology": true,
+    "fresh_store_per_invocation": true,
+    "native_execution": false,
+    "persistent_aot_or_compiler_cache": false,
+    "resident_resource_formula": "fixed runtime + active activations + bounded shared preparation state",
+    "store_or_instance_reuse": false
+  },
+  "hard_invariants": {
+    "canonical_names": [
+      "activation_owned_state_returns_to_baseline_after_every_sample",
+      "all_scenarios_return_expected_terminal_outcomes",
+      "configured_runtime_workers_observed_before_and_after_loading",
+      "explicit_release_clears_prepared_cache",
+      "failure_does_not_degrade_the_next_cause_specific_echo",
+      "file_descriptors_have_no_unbounded_monotonic_growth",
+      "fixed_pool_queue_saturation_is_bounded",
+      "fixed_pool_returns_to_configured_idle_state",
+      "linux_process_resource_probe_supported",
+      "post_release_backend_and_pool_are_clean",
+      "prepared_cache_bounded_after_prepare",
+      "real_activation_throughput_reaches_bounded_queue_saturation",
+      "real_activation_throughput_reaches_pool_capacity",
+      "real_issue23_executable_failure_and_recovery_probe_passed",
+      "real_issue23_executable_probe_passed",
+      "rss_has_no_unbounded_monotonic_growth",
+      "runtime_shutdown_returns_thread_count_to_process_baseline",
+      "timeout_and_cancellation_overshoot_are_bounded",
+      "topology_constant_across_component_loading_and_repeated_invocations"
+    ],
+    "rule": "Every profiled and matrix baseline has this exact set once and every check passed."
+  },
+  "host_observation": {
+    "path": "host-before.json",
+    "sha256": "sha256:803aff9704fc46a717aa269177bb9b833610e0a7778d449ae7d6d8d0f5eaa1ec"
+  },
+  "observational_only": true,
+  "production_slo": false,
+  "profiles": [
+    {
+      "allocation": {
+        "allocation_calls": 64321,
+        "command": {
+          "command": [
+            "heaptrack",
+            "--record-only",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/allocation/heaptrack.gz",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830407806190",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/allocation/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/allocation/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "1",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "heaptrack"
+        },
+        "data": "profiles/cold-preparation/allocation/heaptrack.gz.zst",
+        "data_sha256": "sha256:9d6641a09cf5db4eed35f2d8b97920cf34922f852949dd79a08b6477f6525e2c",
+        "leak_report": "profiles/cold-preparation/allocation/heaptrack-leaks.txt",
+        "leak_report_sha256": "sha256:f5c50cc3c490f93f497a6007b0b623fd2f7ffe090b49ecd16d46eb67d7bf29c1",
+        "process_exit_leaked_memory": "2.82K",
+        "raw_results": "profiles/cold-preparation/allocation/raw-results.json",
+        "raw_results_sha256": "sha256:a987a56016f2e09944c1b945a40f5e944101d89eb3cb4d276ed04d0c1d6bd4b8",
+        "report": "profiles/cold-preparation/allocation/heaptrack-report.txt",
+        "report_sha256": "sha256:431262559a0032d6234ea235e6edb6fbce76569dd27b1de0e5ad5c16ec2fc737",
+        "runtime": "1.15s.",
+        "temporary_allocation_calls": 12883
+      },
+      "metrics": {
+        "at_capacity_activations_per_second": 363.3720930232558,
+        "bounded_queue_activations_per_second": 731.6180953542251,
+        "component_preparation_micros": 48555.0,
+        "peak_file_descriptors": 6.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19243008.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 233193472.0,
+        "post_invocation_cleanup_p50_micros": 30.0,
+        "warm_echo_p50_micros": 191.0
+      },
+      "perf": {
+        "command": {
+          "command": [
+            "perf",
+            "record",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/perf/perf.data",
+            "--freq",
+            "99",
+            "--call-graph",
+            "dwarf",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830405611231",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/perf/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cold-preparation/perf/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "1",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "perf"
+        },
+        "data": "profiles/cold-preparation/perf/perf.data",
+        "data_sha256": "sha256:4a1510e41f36bc36f3cb5877c406cc9cb687c5b93053e5c3c1f1e19690815387",
+        "raw_results": "profiles/cold-preparation/perf/raw-results.json",
+        "raw_results_sha256": "sha256:9cfc0e4e63d346099f4d22aea382e2eaa27d1132ce44750bc6a6df5d0b80c03f",
+        "report": "profiles/cold-preparation/perf/perf-report.txt",
+        "report_sha256": "sha256:84420a7879f5992e856e243177683de5d797d6fc64ad19998d85a75162b2d7a1"
+      },
+      "top_cpu_samples": [
+        {
+          "command": "phase0-baseline",
+          "percent": 33.35,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] vma_merge_new_range"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 21.33,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] established_get_first"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 8.74,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] mutex_lock"
+        },
+        {
+          "command": "rustc",
+          "percent": 8.73,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] kernel_init_pages"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 8.71,
+          "shared_object": "[JIT] tid 163850",
+          "symbol": "[.] 0x00007f217ea6a3d7"
+        }
+      ],
+      "workload": "cold-preparation"
+    },
+    {
+      "allocation": {
+        "allocation_calls": 64260,
+        "command": {
+          "command": [
+            "heaptrack",
+            "--record-only",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/first-activation/allocation/heaptrack.gz",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830411371477",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/first-activation/allocation/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/first-activation/allocation/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "1",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "heaptrack"
+        },
+        "data": "profiles/first-activation/allocation/heaptrack.gz.zst",
+        "data_sha256": "sha256:e3ba406d70322d6c2362430103185a46ab2de60a41a375b790edb1ae0eb35add",
+        "leak_report": "profiles/first-activation/allocation/heaptrack-leaks.txt",
+        "leak_report_sha256": "sha256:23f188365e8a0093161250883c24e9d795f2c97ce7f55f6b05398f8d52e86378",
+        "process_exit_leaked_memory": "2.82K",
+        "raw_results": "profiles/first-activation/allocation/raw-results.json",
+        "raw_results_sha256": "sha256:28a9ef3f555eba4ed132db600e4b70896ec2c31ad7385e52af07c002fdcc8788",
+        "report": "profiles/first-activation/allocation/heaptrack-report.txt",
+        "report_sha256": "sha256:e59d6281a73963c0b38b7752593f1867c81826394298c4fa7148305256a725e5",
+        "runtime": "1.13s.",
+        "temporary_allocation_calls": 12819
+      },
+      "metrics": {
+        "at_capacity_activations_per_second": 370.23324694557573,
+        "bounded_queue_activations_per_second": 803.2128514056225,
+        "component_preparation_micros": 66329.0,
+        "peak_file_descriptors": 6.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19533824.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 233197568.0,
+        "post_invocation_cleanup_p50_micros": 41.0,
+        "warm_echo_p50_micros": 195.0
+      },
+      "perf": {
+        "command": {
+          "command": [
+            "perf",
+            "record",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/first-activation/perf/perf.data",
+            "--freq",
+            "99",
+            "--call-graph",
+            "dwarf",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830409240708",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/first-activation/perf/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/first-activation/perf/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "1",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "perf"
+        },
+        "data": "profiles/first-activation/perf/perf.data",
+        "data_sha256": "sha256:7a42039797db918efe9582e95a839c04a76aebf1d9add0893906f626d8347e9f",
+        "raw_results": "profiles/first-activation/perf/raw-results.json",
+        "raw_results_sha256": "sha256:8b8aa85d4a0b889394d7dccfba72066ef2ca0be7716f393fb728ca98d7cf44c0",
+        "report": "profiles/first-activation/perf/perf-report.txt",
+        "report_sha256": "sha256:1f397872e0457f04bf1a53622050168b5ca49c566513815e1749f929b0dea245"
+      },
+      "top_cpu_samples": [
+        {
+          "command": "phase0-baseline",
+          "percent": 54.02,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] established_get_first"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 9.11,
+          "shared_object": "phase0-baseline",
+          "symbol": "[.] <latent_scheduler::fixed_pool::state::PoolInner>::observations"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 9.06,
+          "shared_object": "[JIT] tid 163923",
+          "symbol": "[.] 0x00007f877e22e3d3"
+        },
+        {
+          "command": "latentd-phase0-",
+          "percent": 9.05,
+          "shared_object": "[JIT] tid 163923",
+          "symbol": "[.] 0x00007f877e22e182"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 8.99,
+          "shared_object": "[JIT] tid 163923",
+          "symbol": "[.] 0x00007f877e22e3f9"
+        }
+      ],
+      "workload": "first-activation"
+    },
+    {
+      "allocation": {
+        "allocation_calls": 1843914,
+        "command": {
+          "command": [
+            "heaptrack",
+            "--record-only",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/warm-execution/allocation/heaptrack.gz",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830425237783",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/warm-execution/allocation/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/warm-execution/allocation/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "4000",
+            "--sequence-repetitions",
+            "1",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "heaptrack"
+        },
+        "data": "profiles/warm-execution/allocation/heaptrack.gz.zst",
+        "data_sha256": "sha256:e3f1bf2c858ef6ea6793820843946aef1e8a66cd8e6de74dc3dc19fa9c4b8334",
+        "leak_report": "profiles/warm-execution/allocation/heaptrack-leaks.txt",
+        "leak_report_sha256": "sha256:2b0b1c0ec456069f24c2cc499e43f73cf5c710f5c8236a55765c70cb11999865",
+        "process_exit_leaked_memory": "2.82K",
+        "raw_results": "profiles/warm-execution/allocation/raw-results.json",
+        "raw_results_sha256": "sha256:a548e4a444041df6318b0378ce3da3585f8e94e0d4dc1e5506ed86c766854c52",
+        "report": "profiles/warm-execution/allocation/heaptrack-report.txt",
+        "report_sha256": "sha256:88e714dbb060c4960b1f6d65362f74600ecdfdd0b2ff5365f808010bb797e20e",
+        "runtime": "9.01s.",
+        "temporary_allocation_calls": 576751
+      },
+      "metrics": {
+        "at_capacity_activations_per_second": 414.25020712510354,
+        "bounded_queue_activations_per_second": 763.3587786259542,
+        "component_preparation_micros": 52552.0,
+        "peak_file_descriptors": 6.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 25587712.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 239673344.0,
+        "post_invocation_cleanup_p50_micros": 21.0,
+        "warm_echo_p50_micros": 138.0
+      },
+      "perf": {
+        "command": {
+          "command": [
+            "perf",
+            "record",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/warm-execution/perf/perf.data",
+            "--freq",
+            "99",
+            "--call-graph",
+            "dwarf",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830412783356",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/warm-execution/perf/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/warm-execution/perf/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "4000",
+            "--sequence-repetitions",
+            "1",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "perf"
+        },
+        "data": "profiles/warm-execution/perf/perf.data",
+        "data_sha256": "sha256:b6947bff95ed957c447ad944a1cc127175a9fab39dd14552f52543334855f5d7",
+        "raw_results": "profiles/warm-execution/perf/raw-results.json",
+        "raw_results_sha256": "sha256:96c8b2a71115d31980d6b821f987d5b39aa6c322248ce6dc2835ba7bccc84f03",
+        "report": "profiles/warm-execution/perf/perf-report.txt",
+        "report_sha256": "sha256:196ad5b1f13e189bb9f8127361e327d4a791d4bba00101f0d252d30d0fe450c5"
+      },
+      "top_cpu_samples": [
+        {
+          "command": "phase0-baseline",
+          "percent": 75.11,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] established_get_first"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 2.99,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] listening_get_first"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 0.9,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] format_decode"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 0.9,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] vsnprintf"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 0.75,
+          "shared_object": "phase0-baseline",
+          "symbol": "[.] <core::str::iter::SplitWhitespace as core::iter::traits::iterator::Iterator>::next"
+        }
+      ],
+      "workload": "warm-execution"
+    },
+    {
+      "allocation": {
+        "allocation_calls": 105251,
+        "command": {
+          "command": [
+            "heaptrack",
+            "--record-only",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/failure-containment/allocation/heaptrack.gz",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830439282266",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/failure-containment/allocation/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/failure-containment/allocation/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "10",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "heaptrack"
+        },
+        "data": "profiles/failure-containment/allocation/heaptrack.gz.zst",
+        "data_sha256": "sha256:cd08a55ef350bf8bd800560e9dc87c6222f6e5f28a06d1f4960b91b611a5ad68",
+        "leak_report": "profiles/failure-containment/allocation/heaptrack-leaks.txt",
+        "leak_report_sha256": "sha256:4d6828af41eb57d9fc1ebe91c4a9df15efc87cd629fefb677d464db6c30b9242",
+        "process_exit_leaked_memory": "2.82K",
+        "raw_results": "profiles/failure-containment/allocation/raw-results.json",
+        "raw_results_sha256": "sha256:04d9d56a45a214153a8bfd780fc09ed4c9e805e0dd17fc3d99c575c35449987a",
+        "report": "profiles/failure-containment/allocation/heaptrack-report.txt",
+        "report_sha256": "sha256:6be529003b359cc6ced65456c1ab4d02ab88208bc5319de0f602d2c41f19ff9e",
+        "runtime": "1.67s.",
+        "temporary_allocation_calls": 26783
+      },
+      "metrics": {
+        "at_capacity_activations_per_second": 442.0866489832007,
+        "bounded_queue_activations_per_second": 783.0853563038371,
+        "component_preparation_micros": 48868.0,
+        "peak_file_descriptors": 6.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19558400.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 233193472.0,
+        "post_invocation_cleanup_p50_micros": 26.0,
+        "warm_echo_p50_micros": 245.0
+      },
+      "perf": {
+        "command": {
+          "command": [
+            "perf",
+            "record",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/failure-containment/perf/perf.data",
+            "--freq",
+            "99",
+            "--call-graph",
+            "dwarf",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830435126992",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/failure-containment/perf/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/failure-containment/perf/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "10",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "perf"
+        },
+        "data": "profiles/failure-containment/perf/perf.data",
+        "data_sha256": "sha256:40758aa2fc95375a69772bedc2b870eaae223728e34b8053a5f1b1a3863f02da",
+        "raw_results": "profiles/failure-containment/perf/raw-results.json",
+        "raw_results_sha256": "sha256:89422c1f6c9bee8d270d1df58ba443424abc759571a85b620f1f1959490476c8",
+        "report": "profiles/failure-containment/perf/perf-report.txt",
+        "report_sha256": "sha256:b3b319c1816675fb50973c046ee41ef469d16b48a6278aef76cbcbe2b72ba332"
+      },
+      "top_cpu_samples": [
+        {
+          "command": "phase0-baseline",
+          "percent": 19.48,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] established_get_first"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 13.82,
+          "shared_object": "[JIT] tid 164081",
+          "symbol": "[.] 0x00007f3021fb83d3"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 12.11,
+          "shared_object": "[JIT] tid 164081",
+          "symbol": "[.] 0x00007f3021fb83d7"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 10.37,
+          "shared_object": "[JIT] tid 164081",
+          "symbol": "[.] 0x00007f3021fb83b6"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 8.14,
+          "shared_object": "[JIT] tid 164081",
+          "symbol": "[.] 0x00007f3021fb83f9"
+        }
+      ],
+      "workload": "failure-containment"
+    },
+    {
+      "allocation": {
+        "allocation_calls": 105250,
+        "command": {
+          "command": [
+            "heaptrack",
+            "--record-only",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cleanup/allocation/heaptrack.gz",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830443337750",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cleanup/allocation/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cleanup/allocation/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "10",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "heaptrack"
+        },
+        "data": "profiles/cleanup/allocation/heaptrack.gz.zst",
+        "data_sha256": "sha256:63d1884fc23580f19701c663019c196ec9e21f58ce1a553df55e6b744d9e708a",
+        "leak_report": "profiles/cleanup/allocation/heaptrack-leaks.txt",
+        "leak_report_sha256": "sha256:e25a427e02b320b49419f7a4f843da176070fbd5930d58840babe6453a980a8e",
+        "process_exit_leaked_memory": "2.82K",
+        "raw_results": "profiles/cleanup/allocation/raw-results.json",
+        "raw_results_sha256": "sha256:89ee487947c8523d92e54662f948bc46d06ce6983702a17c6f43e9088e92aa93",
+        "report": "profiles/cleanup/allocation/heaptrack-report.txt",
+        "report_sha256": "sha256:0c79e2ba6e30a7e9428fe72b2ccc31a09247807cd937a1ce2d9926ac3c979e9e",
+        "runtime": "1.66s.",
+        "temporary_allocation_calls": 26783
+      },
+      "metrics": {
+        "at_capacity_activations_per_second": 411.3533525298231,
+        "bounded_queue_activations_per_second": 765.8922644881287,
+        "component_preparation_micros": 49401.0,
+        "peak_file_descriptors": 6.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 19558400.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 233193472.0,
+        "post_invocation_cleanup_p50_micros": 25.0,
+        "warm_echo_p50_micros": 234.0
+      },
+      "perf": {
+        "command": {
+          "command": [
+            "perf",
+            "record",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cleanup/perf/perf.data",
+            "--freq",
+            "99",
+            "--call-graph",
+            "dwarf",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830441239338",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cleanup/perf/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/cleanup/perf/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "10",
+            "--throughput-batches",
+            "1",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "perf"
+        },
+        "data": "profiles/cleanup/perf/perf.data",
+        "data_sha256": "sha256:7472cd9f936dbcc131ccab506a9c703eb39416fb70d5d19b2bcf418f463fe354",
+        "raw_results": "profiles/cleanup/perf/raw-results.json",
+        "raw_results_sha256": "sha256:f2636e82a894b8db185c0b0908767c76d2213a2f6db1aee7b1144a833be627c7",
+        "report": "profiles/cleanup/perf/perf-report.txt",
+        "report_sha256": "sha256:473acf29439a1f68eb78305fe7e53b8fad3c36df09a054ca41e92bdf3b76b9e3"
+      },
+      "top_cpu_samples": [
+        {
+          "command": "phase0-baseline",
+          "percent": 24.87,
+          "shared_object": "[JIT] tid 164155",
+          "symbol": "[.] 0x00007fdd38a663f9"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 18.26,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] established_get_first"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 13.26,
+          "shared_object": "[JIT] tid 164155",
+          "symbol": "[.] 0x00007fdd38a663d3"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 5.52,
+          "shared_object": "phase0-baseline",
+          "symbol": "[.] <cranelift_entity::map::SecondaryMap<cranelift_codegen::ir::entities::UserExternalNameRef, cranelift_entity::packed_option::PackedOption<cranelift_codegen::ir::entities::UserExternalNameRef>>>::resize_for_index_mut"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 4.98,
+          "shared_object": "[JIT] tid 164155",
+          "symbol": "[.] 0x00007fdd38a663d0"
+        }
+      ],
+      "workload": "cleanup"
+    },
+    {
+      "allocation": {
+        "allocation_calls": 292828,
+        "command": {
+          "command": [
+            "heaptrack",
+            "--record-only",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/contention/allocation/heaptrack.gz",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830448524831",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/contention/allocation/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/contention/allocation/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "1",
+            "--throughput-batches",
+            "96",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "heaptrack"
+        },
+        "data": "profiles/contention/allocation/heaptrack.gz.zst",
+        "data_sha256": "sha256:b27a6a19ca2a88578acef429cc4c53c9aba8fd38afdbcef4ac458d248292ee38",
+        "leak_report": "profiles/contention/allocation/heaptrack-leaks.txt",
+        "leak_report_sha256": "sha256:d36fe11ed121256e9203b627de09da844f56701ac7ddb489aecba89e17857faf",
+        "process_exit_leaked_memory": "2.82K",
+        "raw_results": "profiles/contention/allocation/raw-results.json",
+        "raw_results_sha256": "sha256:a8c5b991cba74668e7471d93ce3de092e809d9f8931c2555885357fd4a573b3f",
+        "report": "profiles/contention/allocation/heaptrack-report.txt",
+        "report_sha256": "sha256:f9fc07e1afed9b4520134ac667aa0c126b847a78c0b26e93d87bca2d43d4e2dd",
+        "runtime": "2.42s.",
+        "temporary_allocation_calls": 45722
+      },
+      "metrics": {
+        "at_capacity_activations_per_second": 459.81415844429546,
+        "bounded_queue_activations_per_second": 831.3967754507007,
+        "component_preparation_micros": 50284.0,
+        "peak_file_descriptors": 6.0,
+        "peak_listening_sockets": 0.0,
+        "peak_open_sockets": 0.0,
+        "peak_rss_bytes": 20164608.0,
+        "peak_threads": 4.0,
+        "peak_virtual_memory_bytes": 233906176.0,
+        "post_invocation_cleanup_p50_micros": 36.0,
+        "warm_echo_p50_micros": 122.0
+      },
+      "perf": {
+        "command": {
+          "command": [
+            "perf",
+            "record",
+            "--output",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/contention/perf/perf.data",
+            "--freq",
+            "99",
+            "--call-graph",
+            "dwarf",
+            "--",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/release/phase0-baseline",
+            "--capsule",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/staged-containment/capsule.json",
+            "--executable-harness-probe",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-work/phase0-baseline/smoke/executable-harness-probe.json",
+            "--parent-launch-unix-micros",
+            "1787830445283636",
+            "--output-json",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/contention/perf/raw-results.json",
+            "--output-report",
+            "/home/slirik/IdeaProjects/latent-service-fabric/target/phase0-hot-path-profiles-native-linux-2026-08-27-35a9944/profiles/contention/perf/BASELINE.md",
+            "--mode",
+            "full",
+            "--warm-samples",
+            "1",
+            "--sequence-repetitions",
+            "1",
+            "--throughput-batches",
+            "96",
+            "--pool-iterations",
+            "1",
+            "--runtime-workers",
+            "2",
+            "--pool-capacity",
+            "2",
+            "--pool-queue-capacity",
+            "4",
+            "--coordination-timeout-ms",
+            "15000",
+            "--wasmtime-allocator",
+            "on-demand",
+            "--wasmtime-copy-on-write-images",
+            "true"
+          ],
+          "execution_commit": "cd95d0563d15c9c631f799e02fd7b090643c9f0f",
+          "execution_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "schema_version": "latent.phase0.hot-path.command.v1",
+          "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+          "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+          "tool": "perf"
+        },
+        "data": "profiles/contention/perf/perf.data",
+        "data_sha256": "sha256:66792c7e2c3504770a2efa9cf5bb3bfaf059dac39ac2cf614e033cfef357cc40",
+        "raw_results": "profiles/contention/perf/raw-results.json",
+        "raw_results_sha256": "sha256:8e2c1bce2ee0462e75cbc8ab07d70ee53984f15680579e0bc9aa2379fadf0d9c",
+        "report": "profiles/contention/perf/perf-report.txt",
+        "report_sha256": "sha256:a550145d181e26cd485efafbdfaf02182dc81b5f5c1aaeb4bf27a38076140560"
+      },
+      "top_cpu_samples": [
+        {
+          "command": "latentd-phase0-",
+          "percent": 15.42,
+          "shared_object": "[JIT] tid 164230",
+          "symbol": "[.] 0x00007f436408a153"
+        },
+        {
+          "command": "latentd-phase0-",
+          "percent": 11.99,
+          "shared_object": "[JIT] tid 164230",
+          "symbol": "[.] 0x00007f436408a1a1"
+        },
+        {
+          "command": "phase0-baseline",
+          "percent": 10.34,
+          "shared_object": "[kernel.kallsyms]",
+          "symbol": "[k] established_get_first"
+        },
+        {
+          "command": "latentd-phase0-",
+          "percent": 3.96,
+          "shared_object": "[JIT] tid 164230",
+          "symbol": "[.] 0x00007f436408a182"
+        },
+        {
+          "command": "latentd-phase0-",
+          "percent": 3.85,
+          "shared_object": "[vdso]",
+          "symbol": "[.] 0x00000000000009cc"
+        }
+      ],
+      "workload": "contention"
+    }
+  ],
+  "schema_version": "latent.phase0.hot-path.aggregate.v1",
+  "source_commit": "35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad",
+  "source_tree": "316357dce997c33b25d230a84adbcf11dffc1097",
+  "status": "pass"
+}

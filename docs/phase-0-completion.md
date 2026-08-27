@@ -87,6 +87,16 @@ command, raw tool data, and symbolized CPU/allocation reports; an incomplete
 tool artifact or a failed, missing, duplicate, or unexpected hard invariant is
 invalid rather than silently omitted.
 
+The accepted native-Linux archive is
+[native-linux-2026-08-27-35a9944](../benchmarks/phase0/profiling/native-linux-2026-08-27-35a9944/README.md),
+captured from durable source commit `35a9944f134098d4ea3e1f3859b9e9bf80d9a3ad`
+and tree `316357dce997c33b25d230a84adbcf11dffc1097`. It retains a compact
+machine-readable aggregate and concise report alongside a lossless,
+checksummed archive of every raw CPU/allocation trace and full-process run.
+The six Heaptrack reports each record 2.82 KiB of process-exit TLS/JIT/CLI
+residue; this is retained for review, while every activation cleanup,
+resource-reclamation, and runtime-thread invariant passes.
+
 The bounded matrix measures fixed worker/cell ratios, bounded preparation reuse
 versus cold preparation, on-demand versus pooling allocation, and COW
 initialized-memory alternatives. The default remains the existing fixed

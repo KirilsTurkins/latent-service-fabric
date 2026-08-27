@@ -67,7 +67,11 @@ def baseline(
 
 def make_profile(root: Path, name: str, document: dict[str, object]) -> None:
     for tool, report in (
-        ("perf", "Overhead  Symbol\n  50.00% phase0_activation_envelope\n"),
+        (
+            "perf",
+            "Overhead  Command  Shared Object  Symbol\n"
+            "  50.00%  phase0-baseline  phase0-baseline  phase0_activation_envelope\n",
+        ),
         (
             "allocation",
             "heaptrack: call_echo memcpy FixedCellPool\n"
@@ -210,6 +214,19 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             self.assertEqual(aggregate["status"], "pass")
             self.assertEqual(len(aggregate["profiles"]), 6)
             self.assertEqual(len(aggregate["candidates"]), 7)
+            self.assertEqual(aggregate["host_observation"]["path"], "host.json")
+            first_profile = aggregate["profiles"][0]
+            self.assertEqual(
+                first_profile["perf"]["report"],
+                "profiles/cold-preparation/perf/perf-report.txt",
+            )
+            self.assertNotIn("report_text", first_profile["perf"])
+            self.assertNotIn("report_text", first_profile["allocation"])
+            self.assertNotIn("leak_report_text", first_profile["allocation"])
+            self.assertEqual(first_profile["top_cpu_samples"][0]["percent"], 50.0)
+            self.assertEqual(
+                first_profile["metrics"]["component_preparation_micros"], 100.0
+            )
             self.assertIn("Wasmtime pooling allocator", (temporary / "PROFILE.md").read_text())
 
     def test_aggregate_rejects_missing_hard_check_in_profile(self) -> None:

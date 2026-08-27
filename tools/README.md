@@ -7,3 +7,5 @@ for issue 40. It requires a clean, durably published source tree plus `perf`,
 `heaptrack`, and `heaptrack_print`; it is deliberately not shared CI.
 `aggregate_phase0_hot_path_profiles.py` validates the retained raw tool output,
 baseline invariant set, experiment matrix, and issue-38 comparison context.
+`reassemble_phase0_hot_path_profile_archive.py` verifies and losslessly joins
+the checked-in raw-evidence fragments for a published profile archive.

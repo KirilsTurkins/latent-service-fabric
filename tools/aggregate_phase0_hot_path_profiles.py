@@ -178,6 +178,11 @@ def sha256_file(path: Path) -> str:
     return f"sha256:{digest.hexdigest()}"
 
 
+def archive_path(path: Path, archive_root: Path) -> str:
+    """Return a stable, portable path from the checked-in archive root."""
+    return os.path.relpath(path.resolve(), start=archive_root.resolve())
+
+
 def load_json(path: Path, label: str) -> dict[str, Any]:
     if not path.is_file():
         fail(f"{label} is missing: {path}")
@@ -390,20 +395,58 @@ def require_heaptrack_data(directory: Path, label: str) -> Path:
     return candidates[0]
 
 
-def heaptrack_summary(report: str, label: str) -> tuple[int, str]:
+def heaptrack_summary(report: str, label: str) -> dict[str, Any]:
     allocation_match = re.search(r"calls to allocation functions:\s*(\d+)", report)
     if allocation_match is None or int(allocation_match.group(1)) == 0:
         fail(f"{label} does not contain non-zero Heaptrack allocation evidence")
     leak_match = re.search(r"total memory leaked:\s*([^\r\n]+)", report)
     if leak_match is None:
         fail(f"{label} does not report its Heaptrack process-exit leak total")
-    return int(allocation_match.group(1)), leak_match.group(1).strip()
+    temporary_match = re.search(r"temporary memory allocations:\s*(\d+)", report)
+    runtime_match = re.search(r"total runtime:\s*([^\r\n]+)", report)
+    return {
+        "allocation_calls": int(allocation_match.group(1)),
+        "temporary_allocation_calls": (
+            int(temporary_match.group(1)) if temporary_match is not None else None
+        ),
+        "runtime": runtime_match.group(1).strip() if runtime_match is not None else None,
+        "process_exit_leaked_memory": leak_match.group(1).strip(),
+    }
+
+
+def perf_top_samples(report: str, limit: int = 5) -> list[dict[str, Any]]:
+    """Extract the leading sampled symbols from `perf report --stdio`.
+
+    The raw report remains authoritative. This compact index makes it clear
+    when a dominant sample comes from required baseline observation overhead
+    rather than a production activation-path function.
+    """
+    samples: list[dict[str, Any]] = []
+    for line in report.splitlines():
+        fields = re.split(r"\s{2,}", line.strip())
+        if len(fields) < 4:
+            continue
+        percentage = re.fullmatch(r"(\d+(?:\.\d+)?)%", fields[0])
+        if percentage is None:
+            continue
+        samples.append(
+            {
+                "percent": float(percentage.group(1)),
+                "command": fields[1],
+                "shared_object": fields[2],
+                "symbol": fields[3],
+            }
+        )
+        if len(samples) == limit:
+            break
+    return samples
 
 
 def load_profile(
     profiles_directory: Path,
     name: str,
     expected_checks: set[str] | None,
+    archive_root: Path,
 ) -> tuple[dict[str, Any], set[str], dict[str, Any]]:
     root = profiles_directory / name
     perf_root = root / "perf"
@@ -433,9 +476,7 @@ def load_profile(
     allocation_leak_report = require_text(
         allocation_root / "heaptrack-leaks.txt", f"{name} allocation leak report"
     )
-    allocation_calls, leaked_memory = heaptrack_summary(
-        allocation_report, f"{name} allocation report"
-    )
+    allocation_summary = heaptrack_summary(allocation_report, f"{name} allocation report")
     perf_data = perf_root / "perf.data"
     allocation_data = require_heaptrack_data(allocation_root, f"{name} raw Heaptrack data")
     if not perf_data.is_file():
@@ -443,30 +484,37 @@ def load_profile(
     return (
         {
             "workload": name,
+            "metrics": candidate_metrics(perf_document),
+            "top_cpu_samples": perf_top_samples(perf_report),
             "perf": {
                 "command": perf_command,
-                "raw_results": str(perf_root / "raw-results.json"),
+                "raw_results": archive_path(perf_root / "raw-results.json", archive_root),
                 "raw_results_sha256": sha256_file(perf_root / "raw-results.json"),
-                "data": str(perf_data),
+                "data": archive_path(perf_data, archive_root),
                 "data_sha256": sha256_file(perf_data),
-                "report": str(perf_root / "perf-report.txt"),
+                "report": archive_path(perf_root / "perf-report.txt", archive_root),
                 "report_sha256": sha256_file(perf_root / "perf-report.txt"),
                 "report_text": perf_report,
             },
             "allocation": {
                 "command": allocation_command,
-                "raw_results": str(allocation_root / "raw-results.json"),
+                "raw_results": archive_path(
+                    allocation_root / "raw-results.json", archive_root
+                ),
                 "raw_results_sha256": sha256_file(allocation_root / "raw-results.json"),
-                "data": str(allocation_data),
+                "data": archive_path(allocation_data, archive_root),
                 "data_sha256": sha256_file(allocation_data),
-                "report": str(allocation_root / "heaptrack-report.txt"),
+                "report": archive_path(
+                    allocation_root / "heaptrack-report.txt", archive_root
+                ),
                 "report_sha256": sha256_file(allocation_root / "heaptrack-report.txt"),
                 "report_text": allocation_report,
-                "leak_report": str(allocation_root / "heaptrack-leaks.txt"),
+                "leak_report": archive_path(
+                    allocation_root / "heaptrack-leaks.txt", archive_root
+                ),
                 "leak_report_sha256": sha256_file(allocation_root / "heaptrack-leaks.txt"),
                 "leak_report_text": allocation_leak_report,
-                "allocation_calls": allocation_calls,
-                "process_exit_leaked_memory": leaked_memory,
+                **allocation_summary,
             },
         },
         expected_checks,
@@ -491,6 +539,7 @@ def load_candidate(
     candidates_directory: Path,
     name: str,
     expected_checks: set[str],
+    archive_root: Path,
 ) -> dict[str, Any]:
     root = candidates_directory / name
     runs = sorted(path for path in root.glob("run-*/raw-results.json") if path.is_file())
@@ -513,7 +562,7 @@ def load_candidate(
         "run_count": len(documents),
         "raw_runs": [
             {
-                "path": str(path),
+                "path": archive_path(path, archive_root),
                 "sha256": sha256_file(path),
                 "status": document["status"],
             }
@@ -523,6 +572,25 @@ def load_candidate(
         "metrics_per_run": metric_samples,
         "representatives": representatives,
         "hard_invariants": "all canonical Phase 0 baseline checks passed in every retained run",
+    }
+
+
+def archive_profile_record(profile: dict[str, Any]) -> dict[str, Any]:
+    """Keep reports as raw evidence without duplicating multi-megabyte text.
+
+    Attribution is calculated from the complete reports before this conversion.
+    The compact aggregate then links to their retained paths and checksums.
+    """
+    return {
+        **profile,
+        "perf": {
+            key: value for key, value in profile["perf"].items() if key != "report_text"
+        },
+        "allocation": {
+            key: value
+            for key, value in profile["allocation"].items()
+            if key not in {"report_text", "leak_report_text"}
+        },
     }
 
 
@@ -663,22 +731,41 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
         "",
         "## Profile coverage",
         "",
-        "| Workload | CPU profile | Allocation/copy evidence | Process-exit Heaptrack total |",
-        "| --- | --- | --- | ---: |",
+        "| Workload | CPU profile | Allocation/copy evidence | Prep (us) | Warm P50 (us) | Cleanup P50 (us) | Allocation calls | Process-exit Heaptrack total | Top sampled CPU |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for profile in aggregate["profiles"]:
+        metrics = profile["metrics"]
         lines.append(
-            "| {workload} | `{perf}` | `{allocation}` | {leaked} |".format(
+            "| {workload} | `{perf}` | `{allocation}` | {preparation} | {warm} | {cleanup} | {allocation_calls} | {leaked} | {top_cpu} |".format(
                 workload=profile["workload"],
                 perf=profile["perf"]["report"],
                 allocation=profile["allocation"]["report"],
+                preparation=display_number(metrics.get("component_preparation_micros")),
+                warm=display_number(metrics.get("warm_echo_p50_micros")),
+                cleanup=display_number(metrics.get("post_invocation_cleanup_p50_micros")),
+                allocation_calls=display_number(profile["allocation"]["allocation_calls"]),
                 leaked=profile["allocation"]["process_exit_leaked_memory"],
+                top_cpu=top_cpu_sample(profile),
             )
         )
     lines.extend(
         [
             "",
             "Each profile invokes the real shared Phase 0 composition and retains a passing baseline raw document beside both the symbolized `perf` and `heaptrack` artifacts. Heaptrack allocation-call totals and a dedicated process-exit leak report are mandatory, so an unreadable compressed trace cannot be mistaken for zero allocations. The baseline's hard topology, containment, recovery, cleanup, and reclamation checks are binary prerequisites; profiling never converts them into tolerances.",
+            "",
+            "## Principal contributors and interpretation",
+            "",
+            "The retained reports quantify component preparation at {preparation_range} us, warm activation P50 at {warm_range} us, and post-invocation cleanup P50 at {cleanup_range} us across these profile processes. Wasmtime/Cranelift preparation, store/instance construction, WIT lifting/copies, host/context work, result mapping, reclamation, and pool/runtime scheduling are indexed in the aggregate attribution map with the matching raw symbol lines.".format(
+                preparation_range=profile_metric_range(
+                    aggregate["profiles"], "component_preparation_micros"
+                ),
+                warm_range=profile_metric_range(aggregate["profiles"], "warm_echo_p50_micros"),
+                cleanup_range=profile_metric_range(
+                    aggregate["profiles"], "post_invocation_cleanup_p50_micros"),
+            ),
+            "",
+            "The top sampled CPU entry is shown for each workload so benchmark-observer cost is explicit. Full Phase 0 proof intentionally scans Linux process resources (including socket state); those samples can dominate a long warm process and are not silently reclassified as production activation cost. They remain in the profile because the hard resource/topology proof remains mandatory, and no optimization decision is based on removing that proof.",
             "",
             "## Experiment matrix",
             "",
@@ -748,9 +835,36 @@ def display_number(value: Any) -> str:
     return f"{value:.3f}" if isinstance(value, float) else str(value)
 
 
+def profile_metric_range(profiles: Iterable[dict[str, Any]], metric: str) -> str:
+    values = [
+        value
+        for profile in profiles
+        for value in [profile.get("metrics", {}).get(metric)]
+        if isinstance(value, (int, float))
+    ]
+    if not values:
+        return "n/a"
+    return f"{display_number(min(values))}-{display_number(max(values))}"
+
+
+def top_cpu_sample(profile: dict[str, Any]) -> str:
+    samples = profile.get("top_cpu_samples")
+    if not isinstance(samples, list) or not samples:
+        return "n/a"
+    first = samples[0]
+    if not isinstance(first, dict):
+        return "n/a"
+    percentage = first.get("percent")
+    symbol = first.get("symbol")
+    if not isinstance(percentage, (int, float)) or not isinstance(symbol, str):
+        return "n/a"
+    return f"{percentage:.2f}% {symbol}"
+
+
 def aggregate(arguments: argparse.Namespace) -> None:
     profiles_directory = arguments.profiles_directory.resolve()
     candidates_directory = arguments.candidates_directory.resolve()
+    archive_root = arguments.output_json.parent.resolve()
     host = load_json(arguments.host_observation, "hot-path host observation")
     if host.get("schema_version") != HOST_SCHEMA:
         fail("hot-path host observation schema is not recognized")
@@ -766,13 +880,15 @@ def aggregate(arguments: argparse.Namespace) -> None:
     expected_checks: set[str] | None = None
     profiles: list[dict[str, Any]] = []
     for name in PROFILE_WORKLOADS:
-        record, expected_checks, _ = load_profile(profiles_directory, name, expected_checks)
+        record, expected_checks, _ = load_profile(
+            profiles_directory, name, expected_checks, archive_root
+        )
         profiles.append(record)
     assert expected_checks is not None
 
     candidates: dict[str, dict[str, Any]] = {}
     for name in CANDIDATE_EXPECTATIONS:
-        candidate = load_candidate(candidates_directory, name, expected_checks)
+        candidate = load_candidate(candidates_directory, name, expected_checks, archive_root)
         candidate["calibration_comparison"] = comparison_to_calibration(candidate, calibration)
         candidates[name] = candidate
 
@@ -786,11 +902,11 @@ def aggregate(arguments: argparse.Namespace) -> None:
         "source_commit": arguments.source_commit,
         "source_tree": arguments.source_tree,
         "host_observation": {
-            "path": str(arguments.host_observation),
+            "path": archive_path(arguments.host_observation, archive_root),
             "sha256": sha256_file(arguments.host_observation),
         },
         "calibration_reference": {
-            "path": str(arguments.calibration_aggregate),
+            "path": archive_path(arguments.calibration_aggregate, archive_root),
             "sha256": sha256_file(arguments.calibration_aggregate),
             "adoption_rule": (
                 f"No candidate is eligible for Phase 0 adoption with fewer than {MINIMUM_ADOPTION_RUNS} "
@@ -801,7 +917,7 @@ def aggregate(arguments: argparse.Namespace) -> None:
             "canonical_names": sorted(expected_checks),
             "rule": "Every profiled and matrix baseline has this exact set once and every check passed.",
         },
-        "profiles": profiles,
+        "profiles": [archive_profile_record(profile) for profile in profiles],
         "attribution": attribution(profiles),
         "candidates": candidates,
         "decisions": decision_records(candidates),
