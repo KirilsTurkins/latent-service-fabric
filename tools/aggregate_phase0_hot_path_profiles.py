@@ -26,20 +26,22 @@ from typing import Any, Iterable, NoReturn
 
 
 BASELINE_SCHEMA = "latent.phase0.baseline.v2"
-TARGETED_PROFILE_SCHEMA = "latent.phase0.targeted-profile.v1"
+TARGETED_PROFILE_SCHEMA = "latent.phase0.targeted-profile.v2"
 HOST_SCHEMA = "latent.phase0.hot-path.host-observation.v1"
-PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v1"
-HEAPTRACK_ATTRIBUTION_SCHEMA = "latent.phase0.hot-path.heaptrack-attribution.v1"
+PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v2"
+HEAPTRACK_ATTRIBUTION_SCHEMA = "latent.phase0.hot-path.heaptrack-attribution.v2"
 MINIMUM_ADOPTION_RUNS = 7
 MINIMUM_EXPERIMENT_RUNS = 3
 
 PROFILE_WORKLOADS = (
     "cold-preparation",
+    "prepared-cache-reuse",
     "first-activation",
     "warm-execution",
     "failure-containment",
     "cleanup",
-    "contention",
+    "at-capacity-contention",
+    "queued-contention",
 )
 
 # These are intentionally asserted from the raw targeted document instead of
@@ -50,6 +52,10 @@ PROFILE_WORKLOAD_REQUIREMENTS: dict[str, dict[str, Any]] = {
     "cold-preparation": {
         "semantics": "capsule validation, engine construction, and first prepared-component creation only",
         "scenarios": frozenset(),
+    },
+    "prepared-cache-reuse": {
+        "semantics": "one cold prepared component followed by one same-key bounded-cache reuse probe; no activation, failure sequence, pool probe, or throughput",
+        "scenarios": frozenset({"prepared_cache_reuse"}),
     },
     "first-activation": {
         "semantics": "one first echo after preparation; no warm loop, mixed failures, pool probe, or throughput",
@@ -81,11 +87,13 @@ PROFILE_WORKLOAD_REQUIREMENTS: dict[str, dict[str, Any]] = {
         "semantics": "successful activations followed by per-activation resource reclamation, cell disposition, and explicit prepared release",
         "scenarios": frozenset({"cleanup_echo"}),
     },
-    "contention": {
-        "semantics": "real at-capacity and bounded-queue activation batches; no pool microprobe or mixed failure sequence",
-        "scenarios": frozenset(
-            {"throughput_at_capacity", "throughput_bounded_queue_saturation"}
-        ),
+    "at-capacity-contention": {
+        "semantics": "real at-capacity activation batches only; no bounded-queue batch, pool microprobe, or mixed failure sequence",
+        "scenarios": frozenset({"throughput_at_capacity"}),
+    },
+    "queued-contention": {
+        "semantics": "real bounded-queue saturation batches only; no at-capacity batch, pool microprobe, or mixed failure sequence",
+        "scenarios": frozenset({"throughput_bounded_queue_saturation"}),
     },
 }
 
@@ -161,35 +169,29 @@ METRIC_TO_CALIBRATION = {
 ATTRIBUTION_RULES: dict[str, tuple[str, ...]] = {
     "capsule parsing and digest validation": (
         "load_phase0_artifact",
-        "sha256",
-        "serde_json",
-        "capsule",
+        "validate_requested_budget",
+        "sha256_digest",
+        "capsuledocument",
     ),
-    "Wasmtime engine and component preparation": (
-        "prepare_inner",
-        "wasmtime",
-        "cranelift",
-    ),
-    "store, limiter, host state, instance, and import construction": (
-        "instantiate_async",
-        "wasmtime::store",
-        "hoststate",
-        "linker",
+    # This category intentionally precedes the broad Wasmtime preparation
+    # category.  It never matches the word "component" on its own: that
+    # previously attributed Cranelift compilation frames to WIT conversion.
+    "WIT lifting, lowering, and payload copies": (
+        "wasmtime::component::func",
+        "wasmtime::component::values",
+        "canonical_abi",
+        "canon_lift",
+        "canon_lower",
+        "memcpy",
+        "memmove",
+        "copy_from_slice",
+        "bytes::bytes",
     ),
     "activation envelope and metadata handling": (
         "phase0_activation_envelope",
         "activationenvelope",
-        "metadata",
-        "btreemap",
-    ),
-    "WIT lifting, lowering, and payload copies": (
-        "call_echo",
-        "canonical",
-        "canon",
-        "memcpy",
-        "memmove",
-        "copy_from_slice",
-        "into_bytes",
+        "activation_id",
+        "invocationtarget",
     ),
     "host context and log calls": (
         "activationhostcontext",
@@ -206,13 +208,29 @@ ATTRIBUTION_RULES: dict[str, tuple[str, ...]] = {
         "activation_resource_reclamation",
         "cell_disposition",
         "temporary_buffer",
-        "prepared_component_released",
+        "reusable_proof",
+        "phase0wasmtimebackend::release",
     ),
     "pool/queue coordination and runtime scheduling": (
         "fixedcellpool",
         "timingcellpool",
-        "tokio",
-        "scheduler",
+        "throughputsaturationgate",
+        "run_throughput_mode",
+        "tokio::runtime",
+    ),
+    "store, limiter, host state, instance, and import construction": (
+        "instantiate_async",
+        "wasmtime::store",
+        "hoststate",
+        "linker::",
+        "resource_limiter",
+    ),
+    "Wasmtime engine and component preparation": (
+        "phase0wasmtimeenginefactory",
+        "phase0wasmtimebackend::prepare",
+        "prepare_inner",
+        "cranelift::",
+        "wasmtime::engine",
     ),
 }
 
@@ -416,6 +434,8 @@ def verify_command_identity(
     source_commit: str,
     source_tree: str,
     published_source_ref: str,
+    published_source_ref_head: str,
+    expected_execution_commit: str | None = None,
 ) -> list[str]:
     if command.get("schema_version") != "latent.phase0.hot-path.command.v1":
         fail(f"{label} has an unrecognized command schema")
@@ -423,6 +443,7 @@ def verify_command_identity(
         ("source_commit", source_commit),
         ("source_tree", source_tree),
         ("published_source_ref", published_source_ref),
+        ("published_source_ref_head", published_source_ref_head),
         ("execution_tree", source_tree),
     ):
         if command.get(key) != expected:
@@ -441,6 +462,11 @@ def verify_command_identity(
             fail(f"{label} has no valid {key}")
     if not isinstance(execution_commit, str) or not re.fullmatch(r"[0-9a-f]{40}", execution_commit):
         fail(f"{label} has no valid execution commit")
+    if expected_execution_commit is not None and execution_commit != expected_execution_commit:
+        fail(
+            f"{label} execution commit differs from the full-invariant proof: "
+            f"expected {expected_execution_commit!r}, observed {execution_commit!r}"
+        )
     if not isinstance(ref_head, str) or not re.fullmatch(r"[0-9a-f]{40}", ref_head):
         fail(f"{label} has no verified durable ref head")
     return command_arguments(command, label)
@@ -481,6 +507,50 @@ def verify_targeted_profile_document(
         fail(f"{label} does not retain its full-mode effective configuration")
     if config.get("profile_workload") != workload:
         fail(f"{label} config does not declare its exact profile workload")
+    # A targeted profiler must not quietly carry the complete two-mode
+    # throughput record.  The two contention paths have distinct raw objects
+    # and the preparation-cache path has an explicit same-key control.
+    if document.get("activation_throughput") is not None:
+        fail(f"{label} contains a full throughput result instead of one selective boundary")
+    cache_probe = document.get("preparation_cache_reuse")
+    if workload == "prepared-cache-reuse":
+        if not isinstance(cache_probe, dict):
+            fail(f"{label} has no explicit same-key prepared-cache probe")
+        if (
+            cache_probe.get("cache_enabled") is not True
+            or cache_probe.get("status") != "cache_hit"
+            or not isinstance(cache_probe.get("first_prepare_micros"), int)
+            or not isinstance(cache_probe.get("second_prepare_micros"), int)
+            or cache_probe.get("same_prepared_handle") is not True
+            or cache_probe.get("cache_entries_after_probe") != 1
+        ):
+            fail(f"{label} has an invalid prepared-cache reuse observation")
+    elif cache_probe is not None:
+        fail(f"{label} unexpectedly contains a prepared-cache reuse observation")
+
+    contention = document.get("targeted_contention")
+    expected_mode = {
+        "at-capacity-contention": ("at_capacity", 0),
+        "queued-contention": ("bounded_queue_saturation", None),
+    }.get(workload)
+    if expected_mode is None:
+        if contention is not None:
+            fail(f"{label} unexpectedly contains a contention observation")
+    else:
+        if not isinstance(contention, dict) or not isinstance(contention.get("mode"), dict):
+            fail(f"{label} has no distinct targeted contention observation")
+        mode = contention["mode"]
+        if mode.get("mode") != expected_mode[0]:
+            fail(f"{label} records the wrong targeted contention mode")
+        if not isinstance(mode.get("maximum_observed_active_leases"), int) or mode.get(
+            "maximum_observed_active_leases"
+        ) != config.get("pool_capacity"):
+            fail(f"{label} does not prove the configured active contention state")
+        if expected_mode[1] is not None:
+            if mode.get("maximum_observed_queue_depth") != expected_mode[1]:
+                fail(f"{label} does not isolate the at-capacity queue state")
+        elif mode.get("maximum_observed_queue_depth") != config.get("pool_queue_capacity"):
+            fail(f"{label} does not isolate the bounded-queue saturation state")
     check_names(document, label, None)
 
 
@@ -860,6 +930,7 @@ def load_full_invariant_proof(
     source_commit: str,
     source_tree: str,
     published_source_ref: str,
+    published_source_ref_head: str,
 ) -> tuple[dict[str, Any], set[str], dict[str, Any]]:
     document = load_json(raw_path, "full-invariant proof baseline")
     expected_checks = verify_baseline(document, "full-invariant proof baseline", None)
@@ -871,6 +942,7 @@ def load_full_invariant_proof(
         source_commit,
         source_tree,
         published_source_ref,
+        published_source_ref_head,
     )
     if command_option(arguments, "--profile-workload") is not None:
         fail("full-invariant proof command must not use a selective profile workload")
@@ -892,6 +964,17 @@ def load_full_invariant_proof(
         config.get(key) != expected for key, expected in expected_config.items()
     ):
         fail("full-invariant proof configuration is not the fixed default Phase 0 topology")
+    cache_probe = document.get("preparation_cache_reuse")
+    if (
+        not isinstance(cache_probe, dict)
+        or cache_probe.get("cache_enabled") is not True
+        or cache_probe.get("status") != "cache_hit"
+        or not isinstance(cache_probe.get("first_prepare_micros"), int)
+        or not isinstance(cache_probe.get("second_prepare_micros"), int)
+        or cache_probe.get("same_prepared_handle") is not True
+        or cache_probe.get("cache_entries_after_probe") != 1
+    ):
+        fail("full-invariant proof lacks a passing same-key prepared-cache reuse control")
     return (
         document,
         expected_checks,
@@ -900,6 +983,14 @@ def load_full_invariant_proof(
             "raw_results_sha256": sha256_file(raw_path),
             "command": archive_path(command_path, archive_root),
             "command_sha256": sha256_file(command_path),
+            "command_identity": {
+                "source_commit": command["source_commit"],
+                "source_tree": command["source_tree"],
+                "published_source_ref": command["published_source_ref"],
+                "published_source_ref_head": command["published_source_ref_head"],
+                "execution_commit": command["execution_commit"],
+                "execution_tree": command["execution_tree"],
+            },
             "configuration": document.get("config"),
         },
     )
@@ -913,6 +1004,8 @@ def load_profile(
     source_commit: str,
     source_tree: str,
     published_source_ref: str,
+    published_source_ref_head: str,
+    full_command_identity: dict[str, Any],
 ) -> dict[str, Any]:
     root = profiles_directory / name
     perf_root = root / "perf"
@@ -942,6 +1035,8 @@ def load_profile(
             source_commit,
             source_tree,
             published_source_ref,
+            published_source_ref_head,
+            full_command_identity["execution_commit"],
         )
         if command_option(arguments, "--profile-workload") != name:
             fail(f"{name} {label} command does not declare its exact profile workload")
@@ -1042,6 +1137,46 @@ def validate_candidate_config(name: str, document: dict[str, Any]) -> None:
             )
 
 
+def validate_candidate_cache_reuse(
+    name: str, run_name: str, document: dict[str, Any]
+) -> dict[str, Any]:
+    probe = document.get("preparation_cache_reuse")
+    if not isinstance(probe, dict):
+        fail(f"candidate {name} {run_name} lacks an explicit prepared-cache reuse control")
+    enabled = CANDIDATE_EXPECTATIONS[name]["prepared_cache_enabled"]
+    if probe.get("cache_enabled") is not enabled:
+        fail(f"candidate {name} {run_name} cache control does not match its configuration")
+    first_prepare = probe.get("first_prepare_micros")
+    entries = probe.get("cache_entries_after_probe")
+    if not isinstance(first_prepare, int) or first_prepare < 0 or not isinstance(entries, int):
+        fail(f"candidate {name} {run_name} has invalid cache-control timing or entry count")
+    if enabled:
+        second_prepare = probe.get("second_prepare_micros")
+        if (
+            probe.get("status") != "cache_hit"
+            or not isinstance(second_prepare, int)
+            or second_prepare < 0
+            or probe.get("same_prepared_handle") is not True
+            or entries != 1
+        ):
+            fail(f"candidate {name} {run_name} lacks a passing same-key cache-hit observation")
+    elif (
+        probe.get("status") != "disabled_cold_control"
+        or probe.get("second_prepare_micros") is not None
+        or probe.get("same_prepared_handle") is not None
+        or entries != 0
+    ):
+        fail(f"candidate {name} {run_name} lacks a valid disabled-cache cold control")
+    return {
+        "cache_enabled": enabled,
+        "status": probe["status"],
+        "first_prepare_micros": float(first_prepare),
+        "second_prepare_micros": _number(probe.get("second_prepare_micros")),
+        "same_prepared_handle": probe.get("same_prepared_handle"),
+        "cache_entries_after_probe": entries,
+    }
+
+
 REQUIRED_CANDIDATE_METRICS = (
     "component_preparation_micros",
     "warm_echo_p50_micros",
@@ -1081,6 +1216,8 @@ def load_candidate(
     source_commit: str,
     source_tree: str,
     published_source_ref: str,
+    published_source_ref_head: str,
+    full_command_identity: dict[str, Any],
     required_run_count: int,
 ) -> dict[str, Any]:
     root = candidates_directory / name
@@ -1094,6 +1231,7 @@ def load_candidate(
         )
     documents: list[dict[str, Any]] = []
     metric_samples: list[dict[str, float | None]] = []
+    cache_reuse_controls: list[dict[str, Any]] = []
     for path in runs:
         document = load_json(path, f"candidate {name} baseline")
         verify_baseline(document, f"candidate {name} {path.parent.name}", expected_checks)
@@ -1106,6 +1244,8 @@ def load_candidate(
             source_commit,
             source_tree,
             published_source_ref,
+            published_source_ref_head,
+            full_command_identity["execution_commit"],
         )
         if command.get("tool") != "phase0-baseline":
             fail(f"candidate {name} {path.parent.name} did not record phase0-baseline provenance")
@@ -1118,6 +1258,9 @@ def load_candidate(
                 f"candidate {name} {path.parent.name} changes calibrated coordination polling"
             )
         documents.append(document)
+        cache_reuse_controls.append(
+            validate_candidate_cache_reuse(name, path.parent.name, document)
+        )
         metric_samples.append(validate_candidate_metrics(name, path.parent.name, document))
     representatives = {
         metric: median(sample.get(metric) for sample in metric_samples)
@@ -1141,6 +1284,21 @@ def load_candidate(
         "configuration": first["config"],
         "metrics_per_run": metric_samples,
         "representatives": representatives,
+        "prepared_cache_reuse_control": {
+            "cache_enabled": cache_reuse_controls[0]["cache_enabled"],
+            "status": cache_reuse_controls[0]["status"],
+            "first_prepare_micros": median(
+                control["first_prepare_micros"] for control in cache_reuse_controls
+            ),
+            "second_prepare_micros": median(
+                control["second_prepare_micros"] for control in cache_reuse_controls
+            ),
+            "same_prepared_handle": cache_reuse_controls[0]["same_prepared_handle"],
+            "cache_entries_after_probe": cache_reuse_controls[0][
+                "cache_entries_after_probe"
+            ],
+            "per_run": cache_reuse_controls,
+        },
         "hard_invariants": {
             "status": "pass",
             "rule": "all canonical Phase 0 baseline checks passed exactly once in every retained run",
@@ -1294,8 +1452,8 @@ def decision_records(candidates: dict[str, dict[str, Any]]) -> list[dict[str, An
     return [
         {
             "candidate": "fixed 2-worker/2-cell on-demand configuration",
-            "decision": "adopt now",
-            "scope": "retain existing Phase 0 configuration",
+            "decision": "retain existing default; no new adoption",
+            "scope": "existing Phase 0 configuration",
             "rationale": "It preserves the measured fixed topology and fresh-store isolation; this archive introduces no runtime behavior change.",
             "handoff": "#39 runs the final 3x100k resource soak against this configuration.",
         },
@@ -1420,8 +1578,8 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
         [
             "## Experiment matrix",
             "",
-            "| Candidate | Runs | Prep us | Warm P50 us | At-cap/s | Queued/s | Fixed RSS | Prep Δ RSS | Peak RSS | Fixed VM | Peak VM | Post-release Δ RSS | Topology / containment | #38 result |",
-            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+            "| Candidate | Runs | Prep us | Warm P50 us | At-cap/s | Queued/s | Fixed RSS | Prep Δ RSS | Peak RSS | Fixed VM | Prep Δ VM | Peak VM | Post-release Δ RSS / VM | Peak threads / sockets | Cache control | Topology / containment | #38 result |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- |",
         ]
     )
     for candidate in aggregate["candidates"].values():
@@ -1433,7 +1591,7 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
             if isinstance(value, dict)
         )
         lines.append(
-            "| {name} | {runs} | {prep} | {warm} | {at_capacity} | {queued} | {fixed_rss} | {prep_delta} | {peak_rss} | {fixed_vm} | {peak_vm} | {release_delta} | {topology} | {status} |".format(
+            "| {name} | {runs} | {prep} | {warm} | {at_capacity} | {queued} | {fixed_rss} | {prep_delta} | {peak_rss} | {fixed_vm} | {prep_delta_vm} | {peak_vm} | {release_delta} / {release_delta_vm} | {threads} / {sockets} | {cache_control} | {topology} | {status} |".format(
                 name=candidate["name"],
                 runs=candidate["run_count"],
                 prep=display_number(metrics.get("component_preparation_micros")),
@@ -1444,8 +1602,25 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
                 prep_delta=display_number(metrics.get("prepared_state_rss_delta_bytes")),
                 peak_rss=display_number(metrics.get("peak_rss_bytes")),
                 fixed_vm=display_number(metrics.get("fixed_runtime_virtual_memory_bytes")),
+                prep_delta_vm=display_number(
+                    metrics.get("prepared_state_virtual_memory_delta_bytes")
+                ),
                 peak_vm=display_number(metrics.get("peak_virtual_memory_bytes")),
                 release_delta=display_number(metrics.get("post_release_rss_delta_bytes")),
+                release_delta_vm=display_number(
+                    metrics.get("post_release_virtual_memory_delta_bytes")
+                ),
+                threads=display_number(metrics.get("peak_threads")),
+                sockets="{open}/{listening}".format(
+                    open=display_number(metrics.get("peak_open_sockets")),
+                    listening=display_number(metrics.get("peak_listening_sockets")),
+                ),
+                cache_control="{status}; second={second}".format(
+                    status=candidate["prepared_cache_reuse_control"]["status"],
+                    second=display_number(
+                        candidate["prepared_cache_reuse_control"]["second_prepare_micros"]
+                    ),
+                ),
                 topology="{workers}w/{cells}c; hard invariants pass".format(
                     workers=candidate["topology"]["runtime_workers"],
                     cells=candidate["topology"]["pool_capacity"],
@@ -1455,6 +1630,8 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
         )
     lines.extend(
         [
+            "",
+            "Fixed RSS/VM is the post-runtime, pre-component baseline. Preparation and post-release deltas are measured against that same baseline; peak values scan every retained process snapshot. `Cache control` is a direct same-key second prepare when enabled, or the explicitly non-reusable disabled-cache control. Every row retains the actual throughput values and complete canonical containment/reclamation checks in `aggregate.json`.",
             "",
             f"Each candidate retains per-run command provenance and host/toolchain context in `aggregate.json`. No new runtime optimization is adopted unless it has at least {MINIMUM_ADOPTION_RUNS} materially comparable independent full runs, passes every hard invariant, has stable environment/outlier evidence, and stays within documented fixed/peak-memory costs. A mismatched source, configuration, method, environment, or run count is **inconclusive**, never an inside/outside-band result.",
             "",
@@ -1551,7 +1728,11 @@ def aggregate(arguments: argparse.Namespace) -> None:
         arguments.source_commit,
         arguments.source_tree,
         arguments.published_source_ref,
+        ref_head,
     )
+    full_command_identity = full_invariant_proof.get("command_identity")
+    if not isinstance(full_command_identity, dict):
+        fail("full-invariant proof has no command execution identity")
     profiles: list[dict[str, Any]] = []
     for name in PROFILE_WORKLOADS:
         record = load_profile(
@@ -1562,6 +1743,8 @@ def aggregate(arguments: argparse.Namespace) -> None:
             arguments.source_commit,
             arguments.source_tree,
             arguments.published_source_ref,
+            ref_head,
+            full_command_identity,
         )
         profiles.append(record)
     semantics = [profile["scenario_semantics"] for profile in profiles]
@@ -1581,6 +1764,8 @@ def aggregate(arguments: argparse.Namespace) -> None:
             arguments.source_commit,
             arguments.source_tree,
             arguments.published_source_ref,
+            ref_head,
+            full_command_identity,
             arguments.required_candidate_runs,
         )
         candidate["calibration_comparison"] = comparison_to_calibration(
@@ -1610,6 +1795,7 @@ def aggregate(arguments: argparse.Namespace) -> None:
         "source_provenance": {
             "published_source_ref": arguments.published_source_ref,
             "published_source_ref_head": ref_head,
+            "execution_identity": full_command_identity,
             "rule": "The runner fetched the durable ref, verified that the supplied commit exists, resolves to source_tree, and is reachable from the ref before execution.",
         },
         "host_observation": {

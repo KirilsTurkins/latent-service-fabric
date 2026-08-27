@@ -417,7 +417,7 @@ run_candidate() {
 }
 
 # One complete full-profile proof establishes all canonical invariants. The
-# six tool runs below are deliberately scenario-selective and each declares a
+# eight tool runs below are deliberately scenario-selective and each declares a
 # different `--profile-workload` boundary in its retained command document.
 run_full_invariant_proof
 
@@ -425,11 +425,13 @@ run_full_invariant_proof
 # the full process. Profiler-only polling is explicit and does not affect any
 # unprofiled candidate throughput interval.
 run_profile cold-preparation 1 1 1 1
+run_profile prepared-cache-reuse 1 1 1 1
 run_profile first-activation 1 1 1 1
 run_profile warm-execution 1000 1 1 1
 run_profile failure-containment 1 4 1 1
 run_profile cleanup 128 1 1 1
-run_profile contention 1 1 48 1
+run_profile at-capacity-contention 1 1 48 1
+run_profile queued-contention 1 1 48 1
 
 # Each candidate is a separate process with the same fixture, toolchain,
 # budgets, queue limit, and full Phase 0 checks. Three runs are evidence for a

@@ -107,6 +107,7 @@ fn run(cli: Cli, process_entry: Instant) -> Result<bool, BenchError> {
         artifact: result.artifact,
         config: config.clone(),
         executable_harness: result.executable_harness,
+        preparation_cache_reuse: result.preparation_cache_reuse,
         timings: TimingReport {
             process_launch_to_runtime_ready_micros,
             rust_entry_to_runtime_ready_micros,
@@ -230,6 +231,7 @@ fn run_targeted_profile(
         environment: environment_report(),
         artifact: result.artifact,
         config: config.clone(),
+        preparation_cache_reuse: result.preparation_cache_reuse,
         timings: TimingReport {
             process_launch_to_runtime_ready_micros,
             rust_entry_to_runtime_ready_micros,
@@ -241,6 +243,7 @@ fn run_targeted_profile(
             distributions: result.distributions,
         },
         activation_throughput: result.activation_throughput,
+        targeted_contention: result.targeted_contention,
         activation_samples: result.activation_samples,
         process_snapshots: result.process_snapshots,
         topology_snapshots: result.topology_snapshots,
@@ -265,6 +268,65 @@ fn run_targeted_profile(
         }))?
     );
     Ok(all_passed)
+}
+
+fn targeted_runner<'a>(
+    runner: &'a Option<Arc<Phase0ActivationRunner>>,
+    workload: ProfileWorkload,
+) -> Result<&'a Arc<Phase0ActivationRunner>, BenchError> {
+    runner.as_ref().ok_or_else(|| {
+        BenchError::new(format!(
+            "targeted workload {} unexpectedly has no activation runner",
+            workload.name()
+        ))
+    })
+}
+
+/// Measures a single same-key cache observation without conflating it with an
+/// activation.  Cache-disabled runs intentionally do not call `prepare`
+/// twice: the backend correctly rejects concurrent runner-scoped preparation,
+/// so their valid control is an explicit no-reuse state rather than a fake hit.
+async fn observe_prepared_cache_reuse(
+    backend: &Arc<Phase0WasmtimeBackend>,
+    artifact: &CapsuleArtifact,
+    preparation_key: &PreparationKey,
+    first_prepared: &PreparedComponent,
+    first_prepare_micros: u64,
+    cache_enabled: bool,
+) -> Result<PreparedCacheReuseReport, BenchError> {
+    if !cache_enabled {
+        let snapshot = backend.cache_snapshot();
+        return Ok(PreparedCacheReuseReport {
+            cache_enabled: false,
+            first_prepare_micros,
+            second_prepare_micros: None,
+            same_prepared_handle: None,
+            cache_entries_after_probe: snapshot.entries,
+            status: "disabled_cold_control".to_owned(),
+        });
+    }
+
+    let second_started = Instant::now();
+    let second_prepared = backend
+        .prepare(artifact, preparation_key)
+        .await
+        .map_err(platform_error)?;
+    let second_prepare_micros = duration_micros(second_started.elapsed());
+    let snapshot = backend.cache_snapshot();
+    let same_prepared_handle = first_prepared.opaque_handle == second_prepared.opaque_handle;
+    let status = if same_prepared_handle && snapshot.entries == 1 {
+        "cache_hit"
+    } else {
+        "cache_probe_failed"
+    };
+    Ok(PreparedCacheReuseReport {
+        cache_enabled: true,
+        first_prepare_micros,
+        second_prepare_micros: Some(second_prepare_micros),
+        same_prepared_handle: Some(same_prepared_handle),
+        cache_entries_after_probe: snapshot.entries,
+        status: status.to_owned(),
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -301,6 +363,7 @@ async fn run_targeted_async(
     let latentd::phase0_composition::Phase0PreparedBackend {
         loaded,
         backend,
+        preparation_key,
         prepared,
         cache_after_prepare,
         timings: preparation_timings,
@@ -316,12 +379,25 @@ async fn run_targeted_async(
         Arc::clone(&backend),
         timings.clone(),
     ));
-    let runner = phase0_composition::create_phase0_activation_runner(
-        pool_for_runner,
-        backend_for_runner,
-        prepared.clone(),
-    )
-    .map_err(platform_error)?;
+    // Preparation-only and same-key cache-reuse profiles deliberately stop
+    // before runner construction.  That makes their profiler boundary
+    // different from first activation rather than merely changing an output
+    // directory around a full process.
+    let runner = if matches!(
+        workload,
+        ProfileWorkload::ColdPreparation | ProfileWorkload::PreparedCacheReuse
+    ) {
+        None
+    } else {
+        Some(
+            phase0_composition::create_phase0_activation_runner(
+                pool_for_runner,
+                backend_for_runner,
+                prepared.clone(),
+            )
+            .map_err(platform_error)?,
+        )
+    };
     let first_invocation_ready_micros = elapsed_micros(process_entry);
     let prepared_process = observe_process("after_component_preparation", process_entry);
     let after_component_preparation = TopologySnapshot {
@@ -332,10 +408,28 @@ async fn run_targeted_async(
     };
 
     let mut samples = Vec::new();
-    let mut activation_throughput = None;
+    let activation_throughput = None;
+    let mut targeted_contention = None;
+    let preparation_cache_reuse = if workload == ProfileWorkload::PreparedCacheReuse {
+        Some(
+            observe_prepared_cache_reuse(
+                &backend,
+                &loaded.artifact,
+                &preparation_key,
+                &prepared,
+                preparation_timings.component_preparation_micros,
+                config.prepared_cache_enabled,
+            )
+            .await?,
+        )
+    } else {
+        None
+    };
     match workload {
         ProfileWorkload::ColdPreparation => {}
+        ProfileWorkload::PreparedCacheReuse => {}
         ProfileWorkload::FirstActivation => {
+            let runner = targeted_runner(&runner, workload)?;
             samples.push(
                 invoke_case(
                     &loaded.artifact.manifest,
@@ -360,6 +454,7 @@ async fn run_targeted_async(
             );
         }
         ProfileWorkload::WarmExecution => {
+            let runner = targeted_runner(&runner, workload)?;
             for iteration in 0..config.warm_samples {
                 samples.push(
                     invoke_case(
@@ -386,6 +481,7 @@ async fn run_targeted_async(
             }
         }
         ProfileWorkload::FailureContainment => {
+            let runner = targeted_runner(&runner, workload)?;
             for iteration in 0..config.sequence_repetitions {
                 append_mixed_sequence(
                     config,
@@ -403,6 +499,7 @@ async fn run_targeted_async(
             }
         }
         ProfileWorkload::Cleanup => {
+            let runner = targeted_runner(&runner, workload)?;
             for iteration in 0..config.warm_samples {
                 samples.push(
                     invoke_case(
@@ -428,31 +525,39 @@ async fn run_targeted_async(
                 );
             }
         }
-        ProfileWorkload::Contention => {
-            activation_throughput = Some(
-                run_activation_throughput(
+        ProfileWorkload::AtCapacityContention | ProfileWorkload::QueuedContention => {
+            let runner = targeted_runner(&runner, workload)?;
+            let mode = workload
+                .contention_mode()
+                .ok_or_else(|| BenchError::new("contention workload has no throughput mode"))?;
+            targeted_contention = Some(TargetedContentionReport {
+                mode: run_throughput_mode(
                     config,
                     &loaded.artifact.manifest,
                     &pool,
                     &backend,
-                    &runner,
+                    runner,
                     &timings,
                     &throughput_saturation_gate,
                     &workers,
                     process_entry,
+                    mode,
                     &mut samples,
                 )
                 .await?,
-            );
+            });
         }
     }
 
-    let selected_scenarios = samples
+    let mut selected_scenarios = samples
         .iter()
         .map(|sample| sample.scenario.clone())
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect::<Vec<_>>();
+    if preparation_cache_reuse.is_some() {
+        selected_scenarios = vec!["prepared_cache_reuse".to_owned()];
+    }
     let expected_outcomes_pass = samples.iter().all(|sample| {
         sample.outcome.name == sample.expected_outcome && sample.contract_result_valid
     });
@@ -477,17 +582,32 @@ async fn run_targeted_async(
         ProfileWorkload::FailureContainment => cause_specific_failure_recovery_is_healthy(&samples),
         _ => true,
     };
-    let contention_pass = activation_throughput.as_ref().is_none_or(|throughput| {
-        throughput.at_capacity.maximum_observed_active_leases == config.pool_capacity
-            && throughput.at_capacity.maximum_observed_queue_depth == 0
-            && throughput
-                .bounded_queue_saturation
-                .maximum_observed_active_leases
-                == config.pool_capacity
-            && throughput
-                .bounded_queue_saturation
-                .maximum_observed_queue_depth
-                == config.pool_queue_capacity
+    let contention_pass = targeted_contention.as_ref().is_none_or(|contention| match workload {
+        ProfileWorkload::AtCapacityContention => {
+            contention.mode.mode == ThroughputMode::AtCapacity.name()
+                && contention.mode.maximum_observed_active_leases == config.pool_capacity
+                && contention.mode.maximum_observed_queue_depth == 0
+        }
+        ProfileWorkload::QueuedContention => {
+            contention.mode.mode == ThroughputMode::BoundedQueueSaturation.name()
+                && contention.mode.maximum_observed_active_leases == config.pool_capacity
+                && contention.mode.maximum_observed_queue_depth == config.pool_queue_capacity
+                && contention.mode.queued_acquire_wait_micros.is_some()
+        }
+        _ => true,
+    });
+    let cache_reuse_pass = preparation_cache_reuse.as_ref().is_none_or(|probe| {
+        if probe.cache_enabled {
+            probe.status == "cache_hit"
+                && probe.second_prepare_micros.is_some()
+                && probe.same_prepared_handle == Some(true)
+                && probe.cache_entries_after_probe == 1
+        } else {
+            probe.status == "disabled_cold_control"
+                && probe.second_prepare_micros.is_none()
+                && probe.same_prepared_handle.is_none()
+                && probe.cache_entries_after_probe == 0
+        }
     });
 
     let release_started = Instant::now();
@@ -545,15 +665,30 @@ async fn run_targeted_async(
         Check {
             name: "targeted_profile_contention_state_pass".to_owned(),
             passed: contention_pass,
-            expected: "contention profile proves configured at-capacity and bounded-queue states".to_owned(),
-            observed: activation_throughput.as_ref().map_or_else(
+            expected: "selected contention profile proves only its configured pool state".to_owned(),
+            observed: targeted_contention.as_ref().map_or_else(
                 || "not selected".to_owned(),
-                |throughput| format!(
-                    "at_capacity=({}, {}), queued=({}, {})",
-                    throughput.at_capacity.maximum_observed_active_leases,
-                    throughput.at_capacity.maximum_observed_queue_depth,
-                    throughput.bounded_queue_saturation.maximum_observed_active_leases,
-                    throughput.bounded_queue_saturation.maximum_observed_queue_depth,
+                |contention| format!(
+                    "mode={}, active={}, queued={}",
+                    contention.mode.mode,
+                    contention.mode.maximum_observed_active_leases,
+                    contention.mode.maximum_observed_queue_depth,
+                ),
+            ),
+        },
+        Check {
+            name: "targeted_profile_prepared_cache_reuse_pass".to_owned(),
+            passed: cache_reuse_pass,
+            expected: "same-key reuse is directly observed when enabled; disabled control retains no reusable cache entry".to_owned(),
+            observed: preparation_cache_reuse.as_ref().map_or_else(
+                || "not selected".to_owned(),
+                |probe| format!(
+                    "enabled={}, status={}, second_prepare_micros={:?}, same_handle={:?}, entries={}",
+                    probe.cache_enabled,
+                    probe.status,
+                    probe.second_prepare_micros,
+                    probe.same_prepared_handle,
+                    probe.cache_entries_after_probe,
                 ),
             ),
         },
@@ -615,7 +750,9 @@ async fn run_targeted_async(
         preparation_micros: preparation_timings.component_preparation_micros,
         first_invocation_ready_micros,
         prepared_release_micros,
+        preparation_cache_reuse,
         activation_throughput,
+        targeted_contention,
         activation_samples: samples,
         process_snapshots,
         topology_snapshots,
@@ -663,6 +800,7 @@ async fn run_async(
     let latentd::phase0_composition::Phase0PreparedBackend {
         loaded,
         backend,
+        preparation_key,
         prepared,
         cache_after_prepare,
         timings: preparation_timings,
@@ -670,6 +808,15 @@ async fn run_async(
     let validation_micros = preparation_timings.capsule_validation_and_load_micros;
     let engine_micros = preparation_timings.wasmtime_engine_construction_micros;
     let preparation_micros = preparation_timings.component_preparation_micros;
+    let preparation_cache_reuse = observe_prepared_cache_reuse(
+        &backend,
+        &loaded.artifact,
+        &preparation_key,
+        &prepared,
+        preparation_micros,
+        config.prepared_cache_enabled,
+    )
+    .await?;
 
     let timings = PhaseTimingRecorder::default();
     let throughput_saturation_gate = ThroughputSaturationGate::new();
@@ -764,6 +911,30 @@ async fn run_async(
             cache_after_prepare.source_bytes,
             cache_after_prepare.maximum_entries,
             cache_after_prepare.maximum_source_bytes
+        ),
+    });
+    checks.push(Check {
+        name: "prepared_cache_reuse_probe_matches_configuration".to_owned(),
+        passed: if preparation_cache_reuse.cache_enabled {
+            preparation_cache_reuse.status == "cache_hit"
+                && preparation_cache_reuse.second_prepare_micros.is_some()
+                && preparation_cache_reuse.same_prepared_handle == Some(true)
+                && preparation_cache_reuse.cache_entries_after_probe == 1
+        } else {
+            preparation_cache_reuse.status == "disabled_cold_control"
+                && preparation_cache_reuse.second_prepare_micros.is_none()
+                && preparation_cache_reuse.same_prepared_handle.is_none()
+                && preparation_cache_reuse.cache_entries_after_probe == 0
+        },
+        expected: "enabled cache has a direct same-key handle hit; disabled control has no reusable cache entry".to_owned(),
+        observed: format!(
+            "enabled={}, status={}, first_prepare_micros={}, second_prepare_micros={:?}, same_handle={:?}, entries={}",
+            preparation_cache_reuse.cache_enabled,
+            preparation_cache_reuse.status,
+            preparation_cache_reuse.first_prepare_micros,
+            preparation_cache_reuse.second_prepare_micros,
+            preparation_cache_reuse.same_prepared_handle,
+            preparation_cache_reuse.cache_entries_after_probe,
         ),
     });
 
@@ -1157,6 +1328,7 @@ async fn run_async(
         preparation_micros,
         first_invocation_ready_micros,
         prepared_release_micros,
+        preparation_cache_reuse,
         pool_probe,
         activation_throughput,
         activation_samples: samples,

@@ -798,6 +798,7 @@ async fn prepare_composition(
         prepared,
         cache_after_prepare,
         timings: _,
+        ..
     } = prepared_backend;
 
     let backend_for_runner: Arc<dyn ExecutionBackend> = backend.clone();

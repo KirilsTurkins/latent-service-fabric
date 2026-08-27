@@ -74,6 +74,29 @@ fn render_targeted_profile_report(
         "Copy bytes claimed",
         &document.payload_flow.copy_bytes_claimed.to_string(),
     );
+    if let Some(cache_reuse) = &document.preparation_cache_reuse {
+        report_row(
+            &mut report,
+            "Cache-reuse probe status",
+            &cache_reuse.status,
+        );
+        report_row(
+            &mut report,
+            "Same-key second preparation (microseconds)",
+            &cache_reuse
+                .second_prepare_micros
+                .map_or_else(|| "not run for disabled-cache control".to_owned(), |value| {
+                    value.to_string()
+                }),
+        );
+        report_row(
+            &mut report,
+            "Same prepared handle",
+            &cache_reuse
+                .same_prepared_handle
+                .map_or_else(|| "not applicable".to_owned(), |value| value.to_string()),
+        );
+    }
     if let Some(throughput) = &document.activation_throughput {
         report_row(
             &mut report,
@@ -86,6 +109,22 @@ fn render_targeted_profile_report(
             &format!(
                 "{:.3}",
                 throughput.bounded_queue_saturation.activations_per_second
+            ),
+        );
+    }
+    if let Some(contention) = &document.targeted_contention {
+        report_row(
+            &mut report,
+            &format!("{} activations/second", contention.mode.mode),
+            &format!("{:.3}", contention.mode.activations_per_second),
+        );
+        report_row(
+            &mut report,
+            &format!("{} observed active/queued", contention.mode.mode),
+            &format!(
+                "{}/{}",
+                contention.mode.maximum_observed_active_leases,
+                contention.mode.maximum_observed_queue_depth
             ),
         );
     }
@@ -333,6 +372,55 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
             .timings
             .prepared_component_release_micros
             .to_string(),
+    );
+    report.push('\n');
+
+    let _ = writeln!(report, "## Prepared-cache reuse control\n");
+    let _ = writeln!(report, "| Metric | Value |");
+    let _ = writeln!(report, "|---|---:|");
+    report_row(
+        &mut report,
+        "Cache enabled",
+        &document.preparation_cache_reuse.cache_enabled.to_string(),
+    );
+    report_row(
+        &mut report,
+        "First preparation (microseconds)",
+        &document
+            .preparation_cache_reuse
+            .first_prepare_micros
+            .to_string(),
+    );
+    report_row(
+        &mut report,
+        "Same-key second preparation (microseconds)",
+        &document
+            .preparation_cache_reuse
+            .second_prepare_micros
+            .map_or_else(|| "not run for disabled-cache control".to_owned(), |value| {
+                value.to_string()
+            }),
+    );
+    report_row(
+        &mut report,
+        "Same prepared handle",
+        &document
+            .preparation_cache_reuse
+            .same_prepared_handle
+            .map_or_else(|| "not applicable".to_owned(), |value| value.to_string()),
+    );
+    report_row(
+        &mut report,
+        "Cache entries after probe",
+        &document
+            .preparation_cache_reuse
+            .cache_entries_after_probe
+            .to_string(),
+    );
+    report_row(
+        &mut report,
+        "Probe status",
+        &document.preparation_cache_reuse.status,
     );
     report.push('\n');
 

@@ -12,22 +12,26 @@ enum BenchmarkMode {
 #[serde(rename_all = "kebab-case")]
 enum ProfileWorkload {
     ColdPreparation,
+    PreparedCacheReuse,
     FirstActivation,
     WarmExecution,
     FailureContainment,
     Cleanup,
-    Contention,
+    AtCapacityContention,
+    QueuedContention,
 }
 
 impl ProfileWorkload {
     const fn name(self) -> &'static str {
         match self {
             Self::ColdPreparation => "cold-preparation",
+            Self::PreparedCacheReuse => "prepared-cache-reuse",
             Self::FirstActivation => "first-activation",
             Self::WarmExecution => "warm-execution",
             Self::FailureContainment => "failure-containment",
             Self::Cleanup => "cleanup",
-            Self::Contention => "contention",
+            Self::AtCapacityContention => "at-capacity-contention",
+            Self::QueuedContention => "queued-contention",
         }
     }
 
@@ -35,6 +39,9 @@ impl ProfileWorkload {
         match self {
             Self::ColdPreparation => {
                 "capsule validation, engine construction, and first prepared-component creation only"
+            }
+            Self::PreparedCacheReuse => {
+                "one cold prepared component followed by one same-key bounded-cache reuse probe; no activation, failure sequence, pool probe, or throughput"
             }
             Self::FirstActivation => {
                 "one first echo after preparation; no warm loop, mixed failures, pool probe, or throughput"
@@ -48,9 +55,20 @@ impl ProfileWorkload {
             Self::Cleanup => {
                 "successful activations followed by per-activation resource reclamation, cell disposition, and explicit prepared release"
             }
-            Self::Contention => {
-                "real at-capacity and bounded-queue activation batches; no pool microprobe or mixed failure sequence"
+            Self::AtCapacityContention => {
+                "real at-capacity activation batches only; no bounded-queue batch, pool microprobe, or mixed failure sequence"
             }
+            Self::QueuedContention => {
+                "real bounded-queue saturation batches only; no at-capacity batch, pool microprobe, or mixed failure sequence"
+            }
+        }
+    }
+
+    const fn contention_mode(self) -> Option<ThroughputMode> {
+        match self {
+            Self::AtCapacityContention => Some(ThroughputMode::AtCapacity),
+            Self::QueuedContention => Some(ThroughputMode::BoundedQueueSaturation),
+            _ => None,
         }
     }
 }
@@ -493,6 +511,23 @@ struct ActivationThroughputReport {
     bounded_queue_saturation: ThroughputModeReport,
 }
 
+/// A direct same-key preparation probe. This is the only evidence labelled as
+/// cache reuse: ordinary phase timing remains the first cold prepare.
+#[derive(Debug, Clone, Serialize)]
+struct PreparedCacheReuseReport {
+    cache_enabled: bool,
+    first_prepare_micros: u64,
+    second_prepare_micros: Option<u64>,
+    same_prepared_handle: Option<bool>,
+    cache_entries_after_probe: usize,
+    status: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct TargetedContentionReport {
+    mode: ThroughputModeReport,
+}
+
 #[derive(Debug, Clone, Serialize)]
 struct EnvironmentReport {
     operating_system: String,
@@ -583,6 +618,7 @@ struct BaselineDocument {
     artifact: ArtifactReport,
     config: EffectiveConfig,
     executable_harness: ExecutableHarnessProbeReport,
+    preparation_cache_reuse: PreparedCacheReuseReport,
     timings: TimingReport,
     pool_probe: PoolProbeReport,
     activation_throughput: ActivationThroughputReport,
@@ -609,8 +645,10 @@ struct TargetedProfileDocument {
     environment: EnvironmentReport,
     artifact: ArtifactReport,
     config: EffectiveConfig,
+    preparation_cache_reuse: Option<PreparedCacheReuseReport>,
     timings: TimingReport,
     activation_throughput: Option<ActivationThroughputReport>,
+    targeted_contention: Option<TargetedContentionReport>,
     activation_samples: Vec<ActivationSample>,
     process_snapshots: Vec<ProcessSnapshot>,
     topology_snapshots: Vec<TopologySnapshot>,
@@ -671,6 +709,7 @@ struct AsyncRunResult {
     preparation_micros: u64,
     first_invocation_ready_micros: u64,
     prepared_release_micros: u64,
+    preparation_cache_reuse: PreparedCacheReuseReport,
     pool_probe: PoolProbeReport,
     activation_throughput: ActivationThroughputReport,
     activation_samples: Vec<ActivationSample>,
@@ -687,7 +726,9 @@ struct TargetedAsyncRunResult {
     preparation_micros: u64,
     first_invocation_ready_micros: u64,
     prepared_release_micros: u64,
+    preparation_cache_reuse: Option<PreparedCacheReuseReport>,
     activation_throughput: Option<ActivationThroughputReport>,
+    targeted_contention: Option<TargetedContentionReport>,
     activation_samples: Vec<ActivationSample>,
     process_snapshots: Vec<ProcessSnapshot>,
     topology_snapshots: Vec<TopologySnapshot>,

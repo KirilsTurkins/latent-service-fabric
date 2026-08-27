@@ -20,7 +20,7 @@ use latent_core::{
     Metadata, NodeId, PlatformError, PlatformErrorCode, PrincipalKind, ReleaseDigest,
     ResourceBudget, ServiceId, SpanId, TenantId, TraceId,
 };
-use latent_executor::{BoundImport, ExecutionBackend, PreparedComponent};
+use latent_executor::{BoundImport, ExecutionBackend, PreparationKey, PreparedComponent};
 use latent_manifest::{
     CapsuleManifest, ContractExport, ContractImport, ExecutionBackendKind, ExecutionRequirements,
     ObjectMetadata, StateModel, ThreadingModel,
@@ -187,6 +187,10 @@ pub struct Phase0LoadedArtifact {
 pub struct Phase0PreparedBackend {
     pub loaded: Phase0LoadedArtifact,
     pub backend: Arc<Phase0WasmtimeBackend>,
+    /// The exact key used for the first preparation.  Keeping it with the
+    /// prepared result lets the benchmark make a narrow same-key reuse probe
+    /// instead of inferring cache behaviour from an unrelated phase total.
+    pub preparation_key: PreparationKey,
     pub prepared: PreparedComponent,
     pub cache_after_prepare: PreparedCacheSnapshot,
     pub timings: Phase0PreparationTimings,
@@ -245,6 +249,7 @@ pub async fn prepare_phase0_backend(
     Ok(Phase0PreparedBackend {
         loaded,
         backend,
+        preparation_key,
         prepared,
         cache_after_prepare,
         timings: Phase0PreparationTimings {

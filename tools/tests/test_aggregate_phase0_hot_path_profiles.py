@@ -17,15 +17,18 @@ SOURCE_REF_HEAD = "c" * 40
 
 WORKLOAD_SEMANTICS = {
     "cold-preparation": "capsule validation, engine construction, and first prepared-component creation only",
+    "prepared-cache-reuse": "one cold prepared component followed by one same-key bounded-cache reuse probe; no activation, failure sequence, pool probe, or throughput",
     "first-activation": "one first echo after preparation; no warm loop, mixed failures, pool probe, or throughput",
     "warm-execution": "repeated successful warm echoes after one preparation; no failure sequence, pool probe, or throughput",
     "failure-containment": "trap, timeout, cancellation, and memory-pressure failures with immediate cause-specific recovery",
     "cleanup": "successful activations followed by per-activation resource reclamation, cell disposition, and explicit prepared release",
-    "contention": "real at-capacity and bounded-queue activation batches; no pool microprobe or mixed failure sequence",
+    "at-capacity-contention": "real at-capacity activation batches only; no bounded-queue batch, pool microprobe, or mixed failure sequence",
+    "queued-contention": "real bounded-queue saturation batches only; no at-capacity batch, pool microprobe, or mixed failure sequence",
 }
 
 WORKLOAD_SCENARIOS = {
     "cold-preparation": [],
+    "prepared-cache-reuse": ["prepared_cache_reuse"],
     "first-activation": ["retained_first_echo"],
     "warm-execution": ["warm_echo"],
     "failure-containment": [
@@ -42,7 +45,8 @@ WORKLOAD_SCENARIOS = {
         "recovery_after_memory_pressure",
     ],
     "cleanup": ["cleanup_echo"],
-    "contention": ["throughput_at_capacity", "throughput_bounded_queue_saturation"],
+    "at-capacity-contention": ["throughput_at_capacity"],
+    "queued-contention": ["throughput_bounded_queue_saturation"],
 }
 
 
@@ -139,11 +143,14 @@ def snapshots() -> list[dict[str, object]]:
 
 
 def baseline(**kwargs: object) -> dict[str, object]:
+    check_set = kwargs.pop("checks", checks())
+    config = configuration(**kwargs)
+    cache_enabled = config["prepared_cache_enabled"]
     return {
         "schema_version": "latent.phase0.baseline.v2",
         "status": "pass",
-        "checks": kwargs.pop("checks", checks()),
-        "config": configuration(**kwargs),
+        "checks": check_set,
+        "config": config,
         "environment": environment(),
         "timings": {
             "component_preparation_micros": 100,
@@ -156,6 +163,14 @@ def baseline(**kwargs: object) -> dict[str, object]:
             "at_capacity": {"activations_per_second": 1000},
             "bounded_queue_saturation": {"activations_per_second": 800},
         },
+        "preparation_cache_reuse": {
+            "cache_enabled": cache_enabled,
+            "first_prepare_micros": 100,
+            "second_prepare_micros": 2 if cache_enabled else None,
+            "same_prepared_handle": True if cache_enabled else None,
+            "cache_entries_after_probe": 1 if cache_enabled else 0,
+            "status": "cache_hit" if cache_enabled else "disabled_cold_control",
+        },
         "process_snapshots": snapshots(),
     }
 
@@ -164,11 +179,36 @@ def targeted(name: str) -> dict[str, object]:
     document = baseline(profile_workload=name, poll_interval=1)
     document.update(
         {
-            "schema_version": "latent.phase0.targeted-profile.v1",
+            "schema_version": "latent.phase0.targeted-profile.v2",
             "profile_workload": name,
             "workload_semantics": WORKLOAD_SEMANTICS[name],
             "full_invariant_proof_required": True,
             "selected_scenarios": WORKLOAD_SCENARIOS[name],
+            "activation_throughput": None,
+            "preparation_cache_reuse": (
+                document["preparation_cache_reuse"]
+                if name == "prepared-cache-reuse"
+                else None
+            ),
+            "targeted_contention": (
+                {
+                    "mode": {
+                        "mode": "at_capacity",
+                        "maximum_observed_active_leases": 2,
+                        "maximum_observed_queue_depth": 0,
+                    }
+                }
+                if name == "at-capacity-contention"
+                else {
+                    "mode": {
+                        "mode": "bounded_queue_saturation",
+                        "maximum_observed_active_leases": 2,
+                        "maximum_observed_queue_depth": 4,
+                    }
+                }
+                if name == "queued-contention"
+                else None
+            ),
             "payload_flow": {
                 "input_bytes_submitted_to_typed_call": 100,
                 "output_bytes_returned_from_typed_call": 100,
@@ -406,7 +446,7 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             result = self.run_aggregate(temporary)
             self.assertEqual(result.returncode, 0, result.stderr)
             aggregate = json.loads((temporary / "aggregate.json").read_text(encoding="utf-8"))
-            self.assertEqual(len(aggregate["profiles"]), 6)
+            self.assertEqual(len(aggregate["profiles"]), 8)
             self.assertEqual(len(aggregate["candidates"]), 8)
             envelope = aggregate["profiles"][0]["contributor_attribution"]["categories"][
                 "activation envelope and metadata handling"
@@ -449,6 +489,37 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("does not declare its exact profile workload", result.stderr)
 
+    def test_rejects_profile_with_the_wrong_distinct_contention_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            profiles, _, _, _, _ = archive
+            path = (
+                profiles
+                / "at-capacity-contention"
+                / "perf"
+                / "raw-results.json"
+            )
+            document = json.loads(path.read_text(encoding="utf-8"))
+            document["targeted_contention"]["mode"]["mode"] = "bounded_queue_saturation"
+            write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("wrong targeted contention mode", result.stderr)
+
+    def test_rejects_command_with_execution_identity_different_from_full_proof(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            profiles, _, _, _, _ = archive
+            path = profiles / "warm-execution" / "allocation" / "command.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            document["execution_commit"] = "e" * 40
+            write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("execution commit differs", result.stderr)
+
     def test_rejects_duplicate_targeted_semantics(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             temporary = Path(directory)
@@ -480,6 +551,19 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             result = self.run_aggregate(temporary, archive)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("lacks required fixed/peak-memory", result.stderr)
+
+    def test_rejects_candidate_without_a_direct_cache_reuse_control(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            _, _, candidates, _, _ = archive
+            path = candidates / "worker-cell-2w-2c" / "run-01" / "raw-results.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            del document["preparation_cache_reuse"]
+            write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("lacks an explicit prepared-cache reuse control", result.stderr)
 
     def test_rejects_one_run_experiment_matrix(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -513,7 +597,7 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             profiles, _, _, _, _ = archive
             path = (
                 profiles
-                / "contention"
+                / "queued-contention"
                 / "allocation"
                 / "heaptrack-contributors.json"
             )
