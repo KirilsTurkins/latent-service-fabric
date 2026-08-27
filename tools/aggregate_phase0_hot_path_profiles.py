@@ -29,6 +29,7 @@ BASELINE_SCHEMA = "latent.phase0.baseline.v2"
 TARGETED_PROFILE_SCHEMA = "latent.phase0.targeted-profile.v1"
 HOST_SCHEMA = "latent.phase0.hot-path.host-observation.v1"
 PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v1"
+HEAPTRACK_ATTRIBUTION_SCHEMA = "latent.phase0.hot-path.heaptrack-attribution.v1"
 MINIMUM_ADOPTION_RUNS = 7
 MINIMUM_EXPERIMENT_RUNS = 3
 
@@ -670,19 +671,140 @@ def contributor_category(text: str) -> str:
 
 def add_contributor_sample(entry: dict[str, Any], sample: str) -> None:
     samples = entry["sample_symbols_or_stacks"]
-    if len(samples) < 3 and sample not in samples:
-        samples.append(sample)
+    compact_sample = sample if len(sample) <= 512 else f"{sample[:509]}..."
+    if len(samples) < 3 and compact_sample not in samples:
+        samples.append(compact_sample)
+
+
+def contributor_categories() -> tuple[str, ...]:
+    return tuple(ATTRIBUTION_RULES) + ("unmatched_or_unknown",)
+
+
+def empty_allocation_contributors() -> dict[str, dict[str, Any]]:
+    return {
+        category: {
+            "allocation_calls": 0,
+            "allocation_peak_bytes": 0,
+            "sample_symbols_or_stacks": [],
+        }
+        for category in contributor_categories()
+    }
+
+
+def summarize_heaptrack_contributors(
+    allocation_folded: Path,
+    peak_folded: Path,
+    raw_heaptrack_data: Path,
+    output: Path,
+) -> None:
+    """Write a compact, auditable classification of transient folded stacks.
+
+    Heaptrack's folded output repeats deep demangled Rust stacks and is vastly
+    larger than the compressed Heaptrack trace from which it can be regenerated.
+    The retained raw trace, its checksum, normal Heaptrack report, and this
+    complete category total keep the evidence inspectable without checking in
+    hundreds of megabytes of mechanically regenerated text.
+    """
+    allocation_calls = parse_folded_stacks(
+        allocation_folded, "Heaptrack allocation folded stacks"
+    )
+    allocation_peak_bytes = parse_folded_stacks(
+        peak_folded, "Heaptrack peak-byte folded stacks"
+    )
+    categories = empty_allocation_contributors()
+    for stack, value in allocation_calls:
+        category = contributor_category(stack)
+        categories[category]["allocation_calls"] += value
+        add_contributor_sample(categories[category], stack)
+    for stack, value in allocation_peak_bytes:
+        category = contributor_category(stack)
+        categories[category]["allocation_peak_bytes"] += value
+        add_contributor_sample(categories[category], stack)
+    allocation_call_total = sum(value for _, value in allocation_calls)
+    allocation_peak_total = sum(value for _, value in allocation_peak_bytes)
+    write_json(
+        output,
+        {
+            "schema_version": HEAPTRACK_ATTRIBUTION_SCHEMA,
+            "raw_heaptrack_sha256": sha256_file(raw_heaptrack_data),
+            "measurement": (
+                "Heaptrack --flamegraph-cost-type allocations and peak folded stacks; "
+                "disjoint first-match category classification"
+            ),
+            "categories": categories,
+            "totals": {
+                "allocation_calls": allocation_call_total,
+                "allocation_peak_bytes": allocation_peak_total,
+            },
+        },
+    )
+
+
+def load_heaptrack_contributors(
+    path: Path, raw_heaptrack_data: Path, expected_allocation_calls: int, label: str
+) -> dict[str, Any]:
+    document = load_json(path, f"{label} compact Heaptrack attribution")
+    if document.get("schema_version") != HEAPTRACK_ATTRIBUTION_SCHEMA:
+        fail(f"{label} compact Heaptrack attribution has an unexpected schema")
+    if document.get("raw_heaptrack_sha256") != sha256_file(raw_heaptrack_data):
+        fail(f"{label} compact Heaptrack attribution is not bound to its raw trace")
+    categories = document.get("categories")
+    if not isinstance(categories, dict) or set(categories) != set(contributor_categories()):
+        fail(f"{label} compact Heaptrack attribution has a different category set")
+    allocation_call_total = 0
+    allocation_peak_total = 0
+    normalized: dict[str, dict[str, Any]] = {}
+    for category in contributor_categories():
+        value = categories.get(category)
+        if not isinstance(value, dict):
+            fail(f"{label} compact Heaptrack attribution has an invalid {category} category")
+        calls = value.get("allocation_calls")
+        peak_bytes = value.get("allocation_peak_bytes")
+        samples = value.get("sample_symbols_or_stacks")
+        if (
+            not isinstance(calls, int)
+            or calls < 0
+            or not isinstance(peak_bytes, int)
+            or peak_bytes < 0
+            or not isinstance(samples, list)
+            or len(samples) > 3
+            or not all(isinstance(sample, str) and len(sample) <= 512 for sample in samples)
+        ):
+            fail(f"{label} compact Heaptrack attribution has invalid {category} values")
+        normalized[category] = {
+            "allocation_calls": calls,
+            "allocation_peak_bytes": peak_bytes,
+            "sample_symbols_or_stacks": samples,
+        }
+        allocation_call_total += calls
+        allocation_peak_total += peak_bytes
+    totals = document.get("totals")
+    if not isinstance(totals, dict):
+        fail(f"{label} compact Heaptrack attribution has no totals")
+    if totals.get("allocation_calls") != allocation_call_total or totals.get(
+        "allocation_peak_bytes"
+    ) != allocation_peak_total:
+        fail(f"{label} compact Heaptrack attribution totals do not match its categories")
+    if allocation_call_total != expected_allocation_calls:
+        fail(
+            f"{label} compact Heaptrack allocation total {allocation_call_total} does not equal "
+            f"Heaptrack summary {expected_allocation_calls}"
+        )
+    return {
+        "categories": normalized,
+        "totals": {
+            "allocation_calls": allocation_call_total,
+            "allocation_peak_bytes": allocation_peak_total,
+        },
+    }
 
 
 def quantitative_attribution(
     self_perf_report: str,
     inclusive_perf_report: str,
-    allocation_calls: list[tuple[str, int]],
-    allocation_peak_bytes: list[tuple[str, int]],
-    expected_allocation_calls: int,
-    label: str,
+    heaptrack_contributors: dict[str, Any],
 ) -> dict[str, Any]:
-    categories = tuple(ATTRIBUTION_RULES) + ("unmatched_or_unknown",)
+    categories = contributor_categories()
     values: dict[str, dict[str, Any]] = {
         category: {
             "cpu_self_percent": 0.0,
@@ -703,20 +825,12 @@ def quantitative_attribution(
         category = contributor_category(f"{row['shared_object']} {row['symbol']}")
         values[category]["cpu_inclusive_percent"] += row["percent"]
         add_contributor_sample(values[category], row["symbol"])
-    folded_total = sum(value for _, value in allocation_calls)
-    if folded_total != expected_allocation_calls:
-        fail(
-            f"{label} allocation folded-stack total {folded_total} does not equal "
-            f"Heaptrack summary {expected_allocation_calls}"
-        )
-    for stack, value in allocation_calls:
-        category = contributor_category(stack)
-        values[category]["allocation_calls"] += value
-        add_contributor_sample(values[category], stack)
-    for stack, value in allocation_peak_bytes:
-        category = contributor_category(stack)
-        values[category]["allocation_peak_bytes"] += value
-        add_contributor_sample(values[category], stack)
+    for category in categories:
+        allocation = heaptrack_contributors["categories"][category]
+        values[category]["allocation_calls"] = allocation["allocation_calls"]
+        values[category]["allocation_peak_bytes"] = allocation["allocation_peak_bytes"]
+        for sample in allocation["sample_symbols_or_stacks"]:
+            add_contributor_sample(values[category], sample)
     for entry in values.values():
         entry["cpu_self_percent"] = round(entry["cpu_self_percent"], 4)
         entry["cpu_inclusive_percent"] = round(entry["cpu_inclusive_percent"], 4)
@@ -732,8 +846,10 @@ def quantitative_attribution(
             "cpu_reported_inclusive_percent": round(
                 sum(row["percent"] for row in inclusive_perf_rows), 4
             ),
-            "allocation_calls": folded_total,
-            "allocation_peak_bytes": sum(value for _, value in allocation_peak_bytes),
+            "allocation_calls": heaptrack_contributors["totals"]["allocation_calls"],
+            "allocation_peak_bytes": heaptrack_contributors["totals"][
+                "allocation_peak_bytes"
+            ],
         },
     }
 
@@ -845,17 +961,19 @@ def load_profile(
     allocation_summary = heaptrack_summary(allocation_report, f"{name} allocation report")
     perf_data = perf_root / "perf.data"
     allocation_data = require_heaptrack_data(allocation_root, f"{name} raw Heaptrack data")
-    allocation_folded = allocation_root / "heaptrack-allocations.folded"
-    peak_folded = allocation_root / "heaptrack-peak-bytes.folded"
+    compact_heaptrack_attribution = allocation_root / "heaptrack-contributors.json"
     if not perf_data.is_file():
         fail(f"{name} raw perf data is missing: {perf_data}")
+    heaptrack_contributors = load_heaptrack_contributors(
+        compact_heaptrack_attribution,
+        allocation_data,
+        allocation_summary["allocation_calls"],
+        name,
+    )
     contributors = quantitative_attribution(
         perf_report,
         perf_inclusive_report,
-        parse_folded_stacks(allocation_folded, f"{name} Heaptrack allocation folded stacks"),
-        parse_folded_stacks(peak_folded, f"{name} Heaptrack peak-byte folded stacks"),
-        allocation_summary["allocation_calls"],
-        name,
+        heaptrack_contributors,
     )
     return (
         {
@@ -901,10 +1019,10 @@ def load_profile(
                 ),
                 "leak_report_sha256": sha256_file(allocation_root / "heaptrack-leaks.txt"),
                 "leak_report_text": allocation_leak_report,
-                "allocation_folded": archive_path(allocation_folded, archive_root),
-                "allocation_folded_sha256": sha256_file(allocation_folded),
-                "peak_bytes_folded": archive_path(peak_folded, archive_root),
-                "peak_bytes_folded_sha256": sha256_file(peak_folded),
+                "compact_contributors": archive_path(
+                    compact_heaptrack_attribution, archive_root
+                ),
+                "compact_contributors_sha256": sha256_file(compact_heaptrack_attribution),
                 **allocation_summary,
             },
         }
@@ -1541,6 +1659,14 @@ def parser() -> argparse.ArgumentParser:
     capture.add_argument("--published-source-ref", required=True)
     capture.add_argument("--published-source-ref-head", required=True)
     capture.add_argument("--repository-root", type=Path, required=True)
+    summarize = subcommands.add_parser(
+        "summarize-heaptrack",
+        help="compact transient Heaptrack folded stacks into auditable category totals",
+    )
+    summarize.add_argument("--allocation-folded", type=Path, required=True)
+    summarize.add_argument("--peak-folded", type=Path, required=True)
+    summarize.add_argument("--raw-heaptrack-data", type=Path, required=True)
+    summarize.add_argument("--output", type=Path, required=True)
     summary = subcommands.add_parser("aggregate", help="validate and summarize one profile archive")
     summary.add_argument("--profiles-directory", type=Path, required=True)
     summary.add_argument("--full-invariant-proof", type=Path, required=True)
@@ -1567,6 +1693,13 @@ def main() -> int:
                 arguments.published_source_ref,
                 arguments.published_source_ref_head,
                 arguments.repository_root.resolve(),
+            )
+        elif arguments.command == "summarize-heaptrack":
+            summarize_heaptrack_contributors(
+                arguments.allocation_folded,
+                arguments.peak_folded,
+                arguments.raw_heaptrack_data,
+                arguments.output,
             )
         else:
             aggregate(arguments)

@@ -346,18 +346,27 @@ run_profile() {
     fi
     heaptrack_print "$allocation_data" >"$allocation_root/heaptrack-report.txt" \
         2>"$allocation_root/heaptrack-print.stderr.log"
-    # Folded stacks retain one quantitative, disjointly classifiable record per
-    # allocation site.  The aggregate sums allocation calls and peak bytes by
-    # a narrow first-match category and reports the unmatched bucket instead
-    # of treating broad text hits as attribution.
+    # Heaptrack's folded output repeats deep demangled stacks and is far larger
+    # than the compressed raw trace from which it can be regenerated. Keep it
+    # outside the checked-in output, compact it into category totals bound to
+    # the raw-trace checksum, and retain the raw trace plus normal reports.
+    local folded_root
+    folded_root="$(mktemp -d "$TARGET_ROOT/heaptrack-folded.${workload}.XXXXXX")"
+    local allocation_folded="$folded_root/allocations.folded"
+    local peak_folded="$folded_root/peak-bytes.folded"
     heaptrack_print --file "$allocation_data" --flamegraph-cost-type allocations \
-        --print-flamegraph "$allocation_root/heaptrack-allocations.folded" \
-        >"$allocation_root/heaptrack-allocations.stdout.log" \
+        --print-flamegraph "$allocation_folded" \
+        >/dev/null \
         2>"$allocation_root/heaptrack-allocations.stderr.log"
     heaptrack_print --file "$allocation_data" --flamegraph-cost-type peak \
-        --print-flamegraph "$allocation_root/heaptrack-peak-bytes.folded" \
-        >"$allocation_root/heaptrack-peak-bytes.stdout.log" \
+        --print-flamegraph "$peak_folded" \
+        >/dev/null \
         2>"$allocation_root/heaptrack-peak-bytes.stderr.log"
+    "$PYTHON" tools/aggregate_phase0_hot_path_profiles.py summarize-heaptrack \
+        --allocation-folded "$allocation_folded" \
+        --peak-folded "$peak_folded" \
+        --raw-heaptrack-data "$allocation_data" \
+        --output "$allocation_root/heaptrack-contributors.json"
     heaptrack_print --file "$allocation_data" --print-allocators=0 --print-peaks=0 \
         --print-temporary=0 --print-leaks=1 --peak-limit 20 --sub-peak-limit 5 \
         >"$allocation_root/heaptrack-leaks.txt" 2>"$allocation_root/heaptrack-leaks.stderr.log"

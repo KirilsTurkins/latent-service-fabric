@@ -252,6 +252,26 @@ def make_profile(root: Path, name: str) -> None:
             (directory / "heaptrack-peak-bytes.folded").write_text(
                 "phase0_activation_envelope; 100\n", encoding="utf-8"
             )
+            summary = subprocess.run(
+                [
+                    sys.executable,
+                    str(AGGREGATOR),
+                    "summarize-heaptrack",
+                    "--allocation-folded",
+                    str(directory / "heaptrack-allocations.folded"),
+                    "--peak-folded",
+                    str(directory / "heaptrack-peak-bytes.folded"),
+                    "--raw-heaptrack-data",
+                    str(directory / "heaptrack.gz.zst"),
+                    "--output",
+                    str(directory / "heaptrack-contributors.json"),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            if summary.returncode != 0:
+                raise RuntimeError(summary.stderr)
 
 
 def make_candidate(root: Path, name: str, expectation: dict[str, object]) -> None:
@@ -485,6 +505,24 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             result = self.run_aggregate(temporary, archive)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("non-zero Heaptrack allocation evidence", result.stderr)
+
+    def test_rejects_compact_allocation_totals_not_bound_to_raw_heaptrack(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            profiles, _, _, _, _ = archive
+            path = (
+                profiles
+                / "contention"
+                / "allocation"
+                / "heaptrack-contributors.json"
+            )
+            document = json.loads(path.read_text(encoding="utf-8"))
+            document["raw_heaptrack_sha256"] = "sha256:" + "0" * 64
+            write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("not bound to its raw trace", result.stderr)
 
 
 if __name__ == "__main__":

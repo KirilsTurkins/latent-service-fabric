@@ -36,8 +36,11 @@ exact executable parity probe (regenerating it for each worker/cell topology),
 then invokes the same shared Phase 0 composition for every measurement. It
 preserves `perf.data`, a symbolized
 `perf report --stdio`, Heaptrack's native compressed raw filename, normal and
-leak-only `heaptrack_print` output, folded Heaptrack allocation-call and
-peak-byte stacks, exact commands, raw results, and Markdown reports. The aggregate requires a nonzero Heaptrack
+leak-only `heaptrack_print` output, a compact checksum-bound Heaptrack
+allocation-call/peak-byte attribution summary, exact commands, raw results,
+and Markdown reports. The complete folded stacks are regenerated transiently
+from the retained raw Heaptrack trace rather than checked in as hundreds of
+megabytes of repetitive demangled text. The aggregate requires a nonzero Heaptrack
 allocation-call total and a process-exit leak total, so unreadable compressed
 data cannot be misreported as zero allocation. It rejects a profile that lacks
 either tool's raw/report output, has a source-identity mismatch, a
