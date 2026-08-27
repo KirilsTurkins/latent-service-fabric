@@ -4,7 +4,7 @@ async fn queue_race_prefers_cancellation_then_deadline_over_cell_grant() {
     let id = ActivationId("queue-cancel-deadline-grant".to_owned());
     let (pool, grant) = QueuePool::new(true);
     let (backend, _) = Backend::new(success_report(consumption()));
-    let runner = runner(pool.clone(), backend);
+    let runner = make_runner(pool.clone(), backend);
     let task = spawn(runner.clone(), envelope(id.clone(), Some(deadline)));
 
     grant.entered("grant reached queue barrier").await;
@@ -28,7 +28,7 @@ async fn queue_race_prefers_cancellation_then_deadline_over_cell_grant() {
     let id = ActivationId("queue-deadline-grant".to_owned());
     let (pool, grant) = QueuePool::new(false);
     let (backend, _) = Backend::new(success_report(consumption()));
-    let runner = runner(pool.clone(), backend);
+    let runner = make_runner(pool.clone(), backend);
     let task = spawn(runner, envelope(id, Some(deadline)));
 
     grant.entered("grant reached deadline barrier").await;
@@ -43,7 +43,11 @@ async fn queue_race_prefers_cancellation_then_deadline_over_cell_grant() {
         "activation.deadline-exceeded",
         &BudgetConsumption::default(),
     );
-    assert_eq!(pool.cancel_calls.load(Ordering::Acquire), 1);
+    // Either the deadline branch cancels the still-waiting acquisition, or the
+    // grant wins the scheduler poll and the runner releases that lease after
+    // its post-grant deadline check. Both paths preserve deadline precedence;
+    // only the former needs a queue-cancellation call.
+    assert!(pool.cancel_calls.load(Ordering::Acquire) <= 1);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -52,7 +56,7 @@ async fn cancellation_and_deadline_override_guest_completion_at_handoff() {
     let deadline = now().saturating_add(250);
     let id = ActivationId("handoff-cancellation".to_owned());
     let (backend, gate) = Backend::new(success_report(used.clone()));
-    let runner = runner(Pool::immediate(), backend);
+    let runner = make_runner(Pool::immediate(), backend);
     let task = spawn(runner.clone(), envelope(id.clone(), Some(deadline)));
 
     gate.entered("backend reached cancellation handoff").await;
@@ -73,7 +77,7 @@ async fn cancellation_and_deadline_override_guest_completion_at_handoff() {
     let used = consumption();
     let deadline = now().saturating_add(250);
     let (backend, gate) = Backend::new(success_report(used.clone()));
-    let runner = runner(Pool::immediate(), backend);
+    let runner = make_runner(Pool::immediate(), backend);
     let task = spawn(
         runner,
         envelope(ActivationId("handoff-deadline".to_owned()), Some(deadline)),
@@ -97,7 +101,7 @@ async fn cancellation_is_linearizable_against_registration_removal() {
     let id = ActivationId("registration-removal".to_owned());
     let (backend, handoff) = Backend::new(success_report(used.clone()));
     let (pool, release) = Pool::release(false);
-    let runner = runner(pool.clone(), backend);
+    let runner = make_runner(pool.clone(), backend);
     let task = spawn(runner.clone(), envelope(id.clone(), Some(now() + 10_000)));
 
     handoff.entered("backend reached result handoff").await;
@@ -132,7 +136,7 @@ async fn release_failure_overrides_guest_result_and_preserves_consumption() {
     }));
     let (backend, handoff) = Backend::new(report);
     let (pool, release) = Pool::release(true);
-    let runner = runner(pool.clone(), backend);
+    let runner = make_runner(pool.clone(), backend);
     let task = spawn(
         runner.clone(),
         envelope(ActivationId("release-failure".to_owned()), Some(now() + 10_000)),
@@ -162,7 +166,7 @@ async fn quarantine_failure_overrides_guest_result_and_preserves_consumption() {
     );
     let (backend, handoff) = Backend::new(report);
     let (pool, quarantine) = Pool::quarantine(true);
-    let runner = runner(pool.clone(), backend);
+    let runner = make_runner(pool.clone(), backend);
     let task = spawn(
         runner.clone(),
         envelope(

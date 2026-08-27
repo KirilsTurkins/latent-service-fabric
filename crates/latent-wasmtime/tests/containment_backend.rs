@@ -523,7 +523,8 @@ fn now_unix_millis() -> u64 {
 }
 
 const DELAYED_TRAP_MODE: &str = "__latent_test_delayed_trap";
-const DELAYED_ECHO_PREFIX: &str = "__latent_test_delayed_echo:";
+const DELAYED_MEMORY_MODE: &str = "__latent_test_delayed_memory";
+const MIXED_DELAYED_ECHO_PREFIX: &str = "__latent_test_mixed_delayed_echo:";
 const DEADLINE_CI_SCHEDULING_ALLOWANCE_MILLIS: u64 = 500;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
@@ -617,7 +618,7 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
             runner
                 .invoke(activation_envelope(
                     failure_id,
-                    MEMORY_MODE,
+                    DELAYED_MEMORY_MODE,
                     budget(MAXIMUM_FUEL, granted_memory, None),
                 ))
                 .await
@@ -704,7 +705,7 @@ fn spawn_mixed_healthy(
         .map(|index| {
             let activation_id = ActivationId(format!("mixed-{suite}-healthy-{index}"));
             let expected = format!("{suite}-healthy-output-{index}");
-            let input = format!("{DELAYED_ECHO_PREFIX}{expected}");
+            let input = format!("{MIXED_DELAYED_ECHO_PREFIX}{expected}");
             let runner = Arc::clone(runner);
             let task_activation_id = activation_id.clone();
             let task = tokio::spawn(async move {
@@ -865,7 +866,10 @@ fn assert_deadline_tolerance(
 async fn wait_for_runtime_active(backend: &Phase0WasmtimeBackend, minimum: u64) {
     tokio::time::timeout(Duration::from_secs(2), async {
         while backend.resource_snapshot().active_invocations < minimum {
-            tokio::task::yield_now().await;
+            // Give the spawned blocking guest invocation a scheduling window;
+            // a yield-only polling loop can otherwise monopolize an executor
+            // worker while the parallel test suite is under load.
+            tokio::time::sleep(Duration::from_millis(1)).await;
         }
     })
     .await

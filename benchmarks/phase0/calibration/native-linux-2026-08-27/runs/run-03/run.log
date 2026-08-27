@@ -1,0 +1,293 @@
+Phase 0 native-Linux calibration full-profile output for run-03.
+validated repository: 313 source files
+warning: binary placeholder has behavior: apps/latentd/src/main.rs
+...................
+----------------------------------------------------------------------
+Ran 19 tests in 0.806s
+
+OK
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
++ rustc --version
++ wasm-tools --version
++ cargo build --locked --release --target wasm32-unknown-unknown --package latent-toolchain-smoke --example echo-capsule --target-dir /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsule-build/echo-a --message-format json-render-diagnostics
+   Compiling proc-macro2 v1.0.107
+   Compiling serde_core v1.0.229
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.24
+   Compiling foldhash v0.2.0
+   Compiling hashbrown v0.17.1
+   Compiling equivalent v1.0.2
+   Compiling semver v1.0.28
+   Compiling bitflags v2.13.1
+   Compiling anyhow v1.0.104
+   Compiling zmij v1.0.23
+   Compiling serde_json v1.0.150
+   Compiling serde v1.0.229
+   Compiling syn v3.0.4
+   Compiling itoa v1.0.18
+   Compiling prettyplease v0.2.37
+   Compiling memchr v2.8.3
+   Compiling leb128fmt v0.1.0
+   Compiling id-arena v2.3.0
+   Compiling log v0.4.34
+   Compiling syn v2.0.119
+   Compiling heck v0.5.0
+   Compiling wit-bindgen-rust v0.60.0
+   Compiling wit-bindgen-rust-macro v0.60.0
+   Compiling indexmap v2.14.0
+   Compiling wasmparser v0.254.0
+   Compiling serde_derive v1.0.229
+   Compiling macro-string v0.2.0
+   Compiling wit-bindgen v0.60.0
+   Compiling latent-toolchain-smoke v0.1.0-alpha.0 (/home/slirik/IdeaProjects/latent-service-fabric/tools/toolchain-smoke)
+   Compiling wit-parser v0.254.0
+   Compiling wasm-encoder v0.254.0
+   Compiling wasm-metadata v0.254.0
+   Compiling wit-bindgen-core v0.60.0
+   Compiling wit-component v0.254.0
+    Finished `release` profile [optimized] target(s) in 15.19s
++ wasm-tools component new /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsule-build/echo-a/wasm32-unknown-unknown/release/examples/echo_capsule.wasm -o /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsule-build/echo-a/componentized/echo-capsule.wasm
++ cargo build --locked --release --target wasm32-unknown-unknown --package latent-toolchain-smoke --example echo-capsule --target-dir /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsule-build/echo-b --message-format json-render-diagnostics
+   Compiling serde_core v1.0.229
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling foldhash v0.2.0
+   Compiling hashbrown v0.17.1
+   Compiling equivalent v1.0.2
+   Compiling semver v1.0.28
+   Compiling bitflags v2.13.1
+   Compiling anyhow v1.0.104
+   Compiling zmij v1.0.23
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.150
+   Compiling syn v3.0.4
+   Compiling memchr v2.8.3
+   Compiling prettyplease v0.2.37
+   Compiling itoa v1.0.18
+   Compiling leb128fmt v0.1.0
+   Compiling id-arena v2.3.0
+   Compiling log v0.4.34
+   Compiling syn v2.0.119
+   Compiling heck v0.5.0
+   Compiling wit-bindgen-rust v0.60.0
+   Compiling wit-bindgen-rust-macro v0.60.0
+   Compiling wit-bindgen v0.60.0
+   Compiling indexmap v2.14.0
+   Compiling wasmparser v0.254.0
+   Compiling serde_derive v1.0.229
+   Compiling macro-string v0.2.0
+   Compiling latent-toolchain-smoke v0.1.0-alpha.0 (/home/slirik/IdeaProjects/latent-service-fabric/tools/toolchain-smoke)
+   Compiling wasm-encoder v0.254.0
+   Compiling wit-parser v0.254.0
+   Compiling wasm-metadata v0.254.0
+   Compiling wit-bindgen-core v0.60.0
+   Compiling wit-component v0.254.0
+    Finished `release` profile [optimized] target(s) in 15.33s
++ wasm-tools component new /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsule-build/echo-b/wasm32-unknown-unknown/release/examples/echo_capsule.wasm -o /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsule-build/echo-b/componentized/echo-capsule.wasm
++ wasm-tools validate /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsules/.echo-output-tzegqlh_/echo-capsule.wasm
++ wasm-tools component wit /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsules/.echo-output-tzegqlh_/echo-capsule.wasm --out-dir /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsules/.echo-output-tzegqlh_/interface
++ wasm-tools component wit /home/slirik/IdeaProjects/latent-service-fabric/target/phase0-calibration-work/capsules/.echo-output-tzegqlh_/echo-capsule.wasm --json
+{"artifact": "target/phase0-calibration-work/capsules/echo/echo-capsule.wasm", "capsule": "target/phase0-calibration-work/capsules/echo/capsule.json", "digest": "sha256:c0239a7c3223867231efe0bc0a7de04761b6ad47d132622c5320d5ef2c708f7c", "reproducibilityVerified": true}
+    Finished `release` profile [optimized] target(s) in 0.08s
+    Finished `release` profile [optimized] target(s) in 0.08s
+warning: type `PoolInner` is more private than the item `FixedCellPool::inner`
+  --> crates/latent-scheduler/src/fixed_pool/mod.rs:52:5
+   |
+52 |     pub(super) inner: Arc<PoolInner>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ field `FixedCellPool::inner` is reachable at visibility `pub(crate)`
+   |
+note: but type `PoolInner` is only usable at visibility `pub(in crate::fixed_pool)`
+  --> crates/latent-scheduler/src/fixed_pool/state.rs:14:1
+   |
+14 | pub(super) struct PoolInner {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `LeaseIdentity` is more private than the item `fixed_pool::<impl CellLease>::managed`
+   --> crates/latent-scheduler/src/fixed_pool/mod.rs:302:5
+    |
+302 | /     pub(super) fn managed(
+303 | |         identity: types::LeaseIdentity,
+304 | |         owner: std::sync::Weak<PoolInner>,
+305 | |     ) -> Self {
+    | |_____________^ associated function `fixed_pool::<impl CellLease>::managed` is reachable at visibility `pub(crate)`
+    |
+note: but type `LeaseIdentity` is only usable at visibility `pub(in crate::fixed_pool)`
+   --> crates/latent-scheduler/src/fixed_pool/types.rs:84:1
+    |
+ 84 | pub(super) struct LeaseIdentity {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: type `PoolInner` is more private than the item `fixed_pool::<impl CellLease>::managed`
+   --> crates/latent-scheduler/src/fixed_pool/mod.rs:302:5
+    |
+302 | /     pub(super) fn managed(
+303 | |         identity: types::LeaseIdentity,
+304 | |         owner: std::sync::Weak<PoolInner>,
+305 | |     ) -> Self {
+    | |_____________^ associated function `fixed_pool::<impl CellLease>::managed` is reachable at visibility `pub(crate)`
+    |
+note: but type `PoolInner` is only usable at visibility `pub(in crate::fixed_pool)`
+   --> crates/latent-scheduler/src/fixed_pool/state.rs:14:1
+    |
+ 14 | pub(super) struct PoolInner {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `latent-scheduler` (lib) generated 3 warnings
+warning: method `kind` is never used
+   --> crates/latent-wasmtime/src/containment.rs:154:19
+    |
+115 | impl StopControl {
+    | ---------------- method in this implementation
+...
+154 |     pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {
+    |                   ^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `latent-wasmtime` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running tests/echo_backend.rs (target/phase0-calibration-work/debug/deps/echo_backend-470aa8c6a6660a94)
+
+running 3 tests
+test oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel ... ok
+test invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_boundary ... ok
+test prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instance ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.59s
+
+warning: type `PoolInner` is more private than the item `FixedCellPool::inner`
+  --> crates/latent-scheduler/src/fixed_pool/mod.rs:52:5
+   |
+52 |     pub(super) inner: Arc<PoolInner>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ field `FixedCellPool::inner` is reachable at visibility `pub(crate)`
+   |
+note: but type `PoolInner` is only usable at visibility `pub(in crate::fixed_pool)`
+  --> crates/latent-scheduler/src/fixed_pool/state.rs:14:1
+   |
+14 | pub(super) struct PoolInner {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `LeaseIdentity` is more private than the item `fixed_pool::<impl CellLease>::managed`
+   --> crates/latent-scheduler/src/fixed_pool/mod.rs:302:5
+    |
+302 | /     pub(super) fn managed(
+303 | |         identity: types::LeaseIdentity,
+304 | |         owner: std::sync::Weak<PoolInner>,
+305 | |     ) -> Self {
+    | |_____________^ associated function `fixed_pool::<impl CellLease>::managed` is reachable at visibility `pub(crate)`
+    |
+note: but type `LeaseIdentity` is only usable at visibility `pub(in crate::fixed_pool)`
+   --> crates/latent-scheduler/src/fixed_pool/types.rs:84:1
+    |
+ 84 | pub(super) struct LeaseIdentity {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: type `PoolInner` is more private than the item `fixed_pool::<impl CellLease>::managed`
+   --> crates/latent-scheduler/src/fixed_pool/mod.rs:302:5
+    |
+302 | /     pub(super) fn managed(
+303 | |         identity: types::LeaseIdentity,
+304 | |         owner: std::sync::Weak<PoolInner>,
+305 | |     ) -> Self {
+    | |_____________^ associated function `fixed_pool::<impl CellLease>::managed` is reachable at visibility `pub(crate)`
+    |
+note: but type `PoolInner` is only usable at visibility `pub(in crate::fixed_pool)`
+   --> crates/latent-scheduler/src/fixed_pool/state.rs:14:1
+    |
+ 14 | pub(super) struct PoolInner {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `latent-scheduler` (lib) generated 3 warnings
+warning: method `kind` is never used
+   --> crates/latent-wasmtime/src/containment.rs:154:19
+    |
+115 | impl StopControl {
+    | ---------------- method in this implementation
+...
+154 |     pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {
+    |                   ^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `latent-wasmtime` (lib) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running tests/containment_backend.rs (target/phase0-calibration-work/debug/deps/containment_backend-e0ab1acdf4d7a13e)
+
+running 4 tests
+test memory_pressure_stays_within_the_grant_while_healthy_activations_complete ... ok
+test contains_real_component_failures_and_reclaims_every_invocation_resource ... ok
+test healthy_activations_remain_correct_while_another_activation_traps ... ok
+test healthy_activations_remain_correct_while_an_infinite_activation_times_out ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.51s
+
+warning: type `PoolInner` is more private than the item `FixedCellPool::inner`
+  --> crates/latent-scheduler/src/fixed_pool/mod.rs:52:5
+   |
+52 |     pub(super) inner: Arc<PoolInner>,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ field `FixedCellPool::inner` is reachable at visibility `pub(crate)`
+   |
+note: but type `PoolInner` is only usable at visibility `pub(in crate::fixed_pool)`
+  --> crates/latent-scheduler/src/fixed_pool/state.rs:14:1
+   |
+14 | pub(super) struct PoolInner {
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `LeaseIdentity` is more private than the item `fixed_pool::<impl CellLease>::managed`
+   --> crates/latent-scheduler/src/fixed_pool/mod.rs:302:5
+    |
+302 | /     pub(super) fn managed(
+303 | |         identity: types::LeaseIdentity,
+304 | |         owner: std::sync::Weak<PoolInner>,
+305 | |     ) -> Self {
+    | |_____________^ associated function `fixed_pool::<impl CellLease>::managed` is reachable at visibility `pub(crate)`
+    |
+note: but type `LeaseIdentity` is only usable at visibility `pub(in crate::fixed_pool)`
+   --> crates/latent-scheduler/src/fixed_pool/types.rs:84:1
+    |
+ 84 | pub(super) struct LeaseIdentity {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: type `PoolInner` is more private than the item `fixed_pool::<impl CellLease>::managed`
+   --> crates/latent-scheduler/src/fixed_pool/mod.rs:302:5
+    |
+302 | /     pub(super) fn managed(
+303 | |         identity: types::LeaseIdentity,
+304 | |         owner: std::sync::Weak<PoolInner>,
+305 | |     ) -> Self {
+    | |_____________^ associated function `fixed_pool::<impl CellLease>::managed` is reachable at visibility `pub(crate)`
+    |
+note: but type `PoolInner` is only usable at visibility `pub(in crate::fixed_pool)`
+   --> crates/latent-scheduler/src/fixed_pool/state.rs:14:1
+    |
+ 14 | pub(super) struct PoolInner {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `latent-scheduler` (lib) generated 3 warnings
+warning: method `kind` is never used
+   --> crates/latent-wasmtime/src/containment.rs:154:19
+    |
+115 | impl StopControl {
+    | ---------------- method in this implementation
+...
+154 |     pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {
+    |                   ^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `latent-wasmtime` (lib) generated 1 warning
+warning: linker stderr: ignoring deprecated linker optimization setting '1'
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `latentd` (bin "latentd") generated 1 warning
+warning: `latentd` (bin "phase0-baseline") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized] target(s) in 0.10s
+{"raw_results":"/home/slirik/IdeaProjects/latent-service-fabric/benchmarks/phase0/calibration/native-linux-2026-08-27/runs/run-03/raw-results.json","report":"/home/slirik/IdeaProjects/latent-service-fabric/benchmarks/phase0/calibration/native-linux-2026-08-27/runs/run-03/BASELINE.md","schema_version":"latent.phase0.baseline.v2","status":"pass"}

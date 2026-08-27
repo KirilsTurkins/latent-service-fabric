@@ -18,6 +18,65 @@ tools/run_phase0_baselines.sh full benchmarks/phase0
 
 Both commands run `tools/validate_contracts.sh` first. Missing Rust Wasm targets, `wasm-tools`, Buf, validator dependencies, generated capsules, or containment fixtures therefore fail the command rather than silently skipping measurements.
 
+## Native-Linux variance calibration
+
+The original checked-in full-profile result is a historical WSL2 observation.
+The Phase 1 comparison reference is the seven-run native-Linux calibration in
+[benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source).
+The earlier [native-linux-2026-08-27](../benchmarks/phase0/calibration/native-linux-2026-08-27)
+archive remains as superseded audit evidence only: its recorded commit was not
+published and is not a Phase 1 comparison source.
+
+Create a new archive only from a clean worktree on one stable native-Linux host
+or VM:
+
+~~~bash
+tools/run_phase0_calibration.sh benchmarks/phase0/calibration/native-linux-YYYY-MM-DD
+~~~
+
+The calibration wrapper refuses WSL and detected containers, requires a new
+output directory, fixes every run to one source tree, and invokes the complete
+full-profile command seven times. If its source commit is published from a
+different local commit object, the wrapper requires the reachable published
+commit and its Git tree, then rejects any execution worktree that does not have
+that exact tree. It captures before/after
+virtualization, allocator, CPU frequency/power-policy where exposed, and
+background-load observations. It does not change CPU policy, pin frequency, or
+discard a run because its performance values are inconvenient.
+
+Every archived run must use the same source commit, fixture digest, Rust/Cargo
+and Wasmtime versions, target, build profile, configuration, CPU, logical CPU
+count, memory, and kernel. Any failed hard check, malformed output, missing
+run, or mismatch invalidates the aggregate. Correctness, topology, capacity,
+containment, cleanup, and reclamation checks remain binary; aggregation never
+turns them into statistical tolerances.
+
+The first validated full-profile result defines the canonical hard-invariant
+name set. Every later run must contain exactly that set once and pass every
+member. Duplicate, missing, or unexpected check names invalidate the aggregate
+instead of being silently omitted from its summary.
+
+The aggregate includes minimum, median, maximum, median absolute deviation
+(MAD), coefficient of variation (CV) where meaningful, samples, runs, and
+run-level outlier flags for startup/preparation, cold/warm activation,
+acquire/queue/release, timeout/cancellation overshoot, trap/recovery, cleanup,
+throughput, RSS, virtual memory, threads, sockets, and file descriptors. It
+also retains every raw full-profile document beneath its runs directory.
+
+For Phase 1, compare the median of at least seven comparable candidate runs
+with each metric's checked-in advisory noise band. A deterioration outside its
+band is a regression candidate and needs a confirming second set; repeated
+outside-band deterioration confirms the regression. An inside-band candidate
+with at least seven valid comparable runs, stable environment, all hard
+invariants passing, and no material run-level outlier is terminally **no
+detectable regression** (or statistically indistinguishable). Insufficient
+samples, environment instability/mismatch, material run-level noise/outliers,
+or failed invariants are inconclusive and must be rerun after the invalid
+condition is resolved. These are regression-detection aids only, not
+production SLOs or cross-machine claims.
+Shared hosted CI must never fail on these fragile microbenchmark bands; it may
+continue to run only the deterministic correctness smoke profile.
+
 ## Exact issue-23 executable path
 
 Before retained measurements begin, the runner repeatedly launches:
@@ -107,7 +166,11 @@ Every completed activation must return active leases, waiters, cancellation regi
 
 ## Checked-in evidence
 
-`benchmarks/phase0/raw-results.json` and `benchmarks/phase0/BASELINE.md` are generated from the same full-profile run. The branch workflow runs the deterministic smoke gate first, then regenerates and commits those full-profile files to the PR branch. The evidence commit uses `[skip ci]` to avoid a workflow loop.
+The original top-level baseline files remain historical WSL2 evidence. The
+native-Linux aggregate and raw archive are separate reference evidence; do not
+replace either with measurements from a materially different environment.
+
+`benchmarks/phase0/raw-results.json` and `benchmarks/phase0/BASELINE.md` are generated from the same historical full-profile run. The native-Linux calibration archive is the Phase 1 comparison reference.
 
 Reference files must not be replaced with measurements from a materially different CPU, memory size, OS/kernel, Rust/Wasmtime toolchain, target, build profile, fixture digest, pool topology, budget, threshold, or sample configuration without documenting the new environment and reason.
 

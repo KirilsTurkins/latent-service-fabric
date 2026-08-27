@@ -1,4 +1,4 @@
-fn runner<P>(pool: Arc<P>, backend: Arc<Backend>) -> Arc<Phase0ActivationRunner>
+fn make_runner<P>(pool: Arc<P>, backend: Arc<Backend>) -> Arc<Phase0ActivationRunner>
 where
     P: CellPool + 'static,
 {

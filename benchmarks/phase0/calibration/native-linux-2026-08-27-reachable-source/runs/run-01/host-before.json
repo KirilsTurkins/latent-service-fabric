@@ -1,0 +1,52 @@
+{
+  "allocator": {
+    "ld_preload": "unset",
+    "malloc_conf": "unset",
+    "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+    "source_global_allocator_lookup": "completed",
+    "source_global_allocator_matches": []
+  },
+  "architecture": "x86_64",
+  "background_load": {
+    "load_average": {
+      "available": true,
+      "fifteen_minutes": 1.41,
+      "five_minutes": 1.58,
+      "one_minute": 0.6,
+      "runnable_tasks": 1,
+      "total_tasks": 1320
+    },
+    "memory_available_bytes": 10983124992,
+    "memory_free_bytes": 446672896,
+    "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+    "swap_free_bytes": 7384084480
+  },
+  "captured_at_utc": "2026-08-27T08:43:55+00:00",
+  "cpu_frequency_policy": {
+    "cpus_with_cpufreq_sysfs": 0,
+    "current_frequency_khz_range": null,
+    "notes": "Read-only Linux cpufreq observations. The command does not pin governors or frequencies.",
+    "observed": {}
+  },
+  "kernel": "Linux 7.1.5-201.fc44.x86_64 #1 SMP PREEMPT_DYNAMIC Tue Jul 28 14:16:30 UTC 2026 x86_64 GNU/Linux",
+  "native_linux_reference": true,
+  "operating_system": "linux",
+  "phase": "before",
+  "run_index": 1,
+  "schema_version": "latent.phase0.calibration.host-observation.v1",
+  "source_commit": "49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3",
+  "source_identity": {
+    "execution_commit": "a60ece26669856f48115d7f1127bdab361341f1d",
+    "execution_tree": "88e8875b7be7e46b4702c15d5c8c2f26c1e4a037",
+    "published_commit": "49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3",
+    "published_tree": "88e8875b7be7e46b4702c15d5c8c2f26c1e4a037",
+    "rule": "The local execution worktree must have the exact Git tree of the reachable published source commit before a calibration run starts.",
+    "tree_identity_verified": true
+  },
+  "virtualization": {
+    "systemd_detect_virt": "none",
+    "systemd_detect_virt_container": "none",
+    "systemd_detect_virt_vm": "none",
+    "wsl_detected": false
+  }
+}

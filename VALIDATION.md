@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-19** for the Phase 0 executable contract, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-27** for the Phase 0 executable contract, native-Linux variance calibration, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -59,6 +59,31 @@ cargo test -p latent-scheduler --all-targets --locked
 ```
 
 The pool itself creates no runtime, operating-system thread, listener, socket, connection, component instance, store, or memory. Queued acquisition and deadline timers execute on the caller-provided shared Tokio runtime.
+
+## Native-Linux Phase 0 calibration
+
+The deterministic smoke profile and normal validation suite protect correctness.
+The native-Linux calibration is a heavier explicit benchmark command and is not
+part of normal shared CI:
+
+~~~bash
+tools/run_phase0_calibration.sh benchmarks/phase0/calibration/native-linux-YYYY-MM-DD
+~~~
+
+It runs the complete Phase 0 full profile at least seven times from one clean
+source tree and retains raw output, invariant results, host provenance, and an
+aggregate report. When a reachable published commit is supplied, the runner
+verifies that the local execution tree is byte-for-byte the same Git tree and
+records both identities. A missing fixture, failed hard invariant, missing or
+unexpected invariant name, or duplicate invariant name invalidates the
+calibration; it is never filtered based on timing or resource values.
+
+Phase 1 comparisons use the checked-in
+[aggregate.json](benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json)
+and its documented per-metric advisory bands. Hosted CI must not treat those
+microbenchmark bands as a pass/fail gate. See
+[docs/phase-0-baselines.md](docs/phase-0-baselines.md) for comparison and rerun
+rules.
 
 ## CI jobs
 
