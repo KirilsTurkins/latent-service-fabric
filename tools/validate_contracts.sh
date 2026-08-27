@@ -64,4 +64,5 @@ LSF_OVERSIZED_LOG_COMPONENT="${OVERSIZED_LOG_COMPONENT}" \
     cargo test -p latent-wasmtime --test echo_backend --locked -- --ignored --nocapture
 
 LSF_CONTAINMENT_COMPONENT="${CONTAINMENT_COMPONENT}" \
-    cargo test -p latent-wasmtime --test containment_backend --locked -- --ignored --nocapture
+    cargo test -p latent-wasmtime --test containment_backend --locked -- \
+        --ignored --nocapture --test-threads=1
