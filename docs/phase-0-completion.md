@@ -14,14 +14,21 @@ native-Linux variance reference.
 
 Issue 38 establishes the calibration reference:
 
-- [CALIBRATION.md](../benchmarks/phase0/calibration/native-linux-2026-08-27/CALIBRATION.md)
+- [CALIBRATION.md](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/CALIBRATION.md)
   is the concise seven-run report;
-- [aggregate.json](../benchmarks/phase0/calibration/native-linux-2026-08-27/aggregate.json)
+- [aggregate.json](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json)
   contains dispersion statistics, outlier findings, environment/configuration,
   advisory bands, and the hard-invariant summary;
-- [runs/](../benchmarks/phase0/calibration/native-linux-2026-08-27/runs)
+- [runs/](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/runs)
   retains every individual full-profile raw result, per-run report, host
   observation, and command status.
+
+The reference was rerun from the durable published commit
+[`49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3`](https://github.com/KirilsTurkins/latent-service-fabric/commit/49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3).
+Its aggregate and every host observation record that commit's Git tree
+`88e8875b7be7e46b4702c15d5c8c2f26c1e4a037`, the local execution commit, and
+verified tree equality. The prior native-Linux archive remains unchanged as
+superseded audit evidence because its SHA was not reachable.
 
 The calibration invokes the existing full profile without weakening fixture
 validation or hard topology, capacity, containment, cleanup, and reclamation

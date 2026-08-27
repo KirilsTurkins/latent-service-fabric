@@ -22,7 +22,10 @@ Both commands run `tools/validate_contracts.sh` first. Missing Rust Wasm targets
 
 The original checked-in full-profile result is a historical WSL2 observation.
 The Phase 1 comparison reference is the seven-run native-Linux calibration in
-[benchmarks/phase0/calibration/native-linux-2026-08-27](../benchmarks/phase0/calibration/native-linux-2026-08-27).
+[benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source).
+The earlier [native-linux-2026-08-27](../benchmarks/phase0/calibration/native-linux-2026-08-27)
+archive remains as superseded audit evidence only: its recorded commit was not
+published and is not a Phase 1 comparison source.
 
 Create a new archive only from a clean worktree on one stable native-Linux host
 or VM:

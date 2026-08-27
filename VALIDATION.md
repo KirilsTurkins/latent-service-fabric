@@ -79,7 +79,7 @@ unexpected invariant name, or duplicate invariant name invalidates the
 calibration; it is never filtered based on timing or resource values.
 
 Phase 1 comparisons use the checked-in
-[aggregate.json](benchmarks/phase0/calibration/native-linux-2026-08-27/aggregate.json)
+[aggregate.json](benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json)
 and its documented per-metric advisory bands. Hosted CI must not treat those
 microbenchmark bands as a pass/fail gate. See
 [docs/phase-0-baselines.md](docs/phase-0-baselines.md) for comparison and rerun

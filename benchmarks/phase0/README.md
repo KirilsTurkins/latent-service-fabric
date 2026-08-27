@@ -4,10 +4,13 @@ raw-results.json and BASELINE.md are the original full-profile observation.
 They remain useful as historical evidence, but their WSL2 environment means
 they are not the Phase 1 variance reference.
 
-The native-Linux reference is retained under
-benchmarks/phase0/calibration/native-linux-2026-08-27. Its CALIBRATION.md and
-aggregate.json describe seven independent full-profile processes and link every
-individual raw run.
+The authoritative native-Linux reference is retained under
+benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source. Its
+CALIBRATION.md and aggregate.json describe seven independent full-profile
+processes, link every individual raw run, and retain published/execution
+Git-tree provenance. The earlier
+native-linux-2026-08-27 archive is retained unchanged as superseded audit
+evidence because its recorded source commit was not reachable.
 
 Generate a new reference only from a clean worktree on a stable native-Linux
 host or VM:
