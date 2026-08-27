@@ -206,6 +206,9 @@ def capture_host_observation(
     phase: str,
     run_index: int,
     source_commit: str,
+    source_tree: str,
+    execution_commit: str,
+    execution_tree: str,
     repository_root: Path,
 ) -> None:
     kernel = run_command(["uname", "-srvmo"])
@@ -229,6 +232,17 @@ def capture_host_observation(
         "phase": phase,
         "run_index": run_index,
         "source_commit": source_commit,
+        "source_identity": {
+            "published_commit": source_commit,
+            "published_tree": source_tree,
+            "execution_commit": execution_commit,
+            "execution_tree": execution_tree,
+            "tree_identity_verified": execution_tree == source_tree,
+            "rule": (
+                "The local execution worktree must have the exact Git tree of the "
+                "reachable published source commit before a calibration run starts."
+            ),
+        },
         "operating_system": platform.system().lower(),
         "architecture": platform.machine(),
         "kernel": kernel,
@@ -298,9 +312,31 @@ def relative_path(path: Path, base: Path) -> str:
         return str(path)
 
 
+def hard_invariant_names(document: dict[str, Any], run_label: str) -> set[str]:
+    checks = document.get("checks")
+    if not isinstance(checks, list) or not checks:
+        fail(f"{run_label} has no hard invariant checks")
+    names: set[str] = set()
+    failures: list[str] = []
+    for index, check in enumerate(checks, start=1):
+        if not isinstance(check, dict):
+            fail(f"{run_label} has a malformed hard invariant at position {index}")
+        name = check.get("name")
+        if not isinstance(name, str) or not name.strip():
+            fail(f"{run_label} has an unnamed hard invariant at position {index}")
+        if name in names:
+            fail(f"{run_label} has a duplicate hard invariant: {name}")
+        names.add(name)
+        if check.get("passed") is not True:
+            failures.append(name)
+    if failures:
+        fail(f"{run_label} has failed hard invariants: {', '.join(failures)}")
+    return names
+
+
 def validate_baseline(
     document: dict[str, Any], source_commit: str, run_label: str
-) -> None:
+) -> set[str]:
     if document.get("schema_version") != BASELINE_SCHEMA:
         fail(f"{run_label} has an unexpected baseline schema")
     if document.get("status") != "pass":
@@ -314,16 +350,7 @@ def validate_baseline(
         fail(f"{run_label} is a WSL result and cannot be the calibration reference")
     if value_at(document, "environment.repository_commit") != source_commit:
         fail(f"{run_label} did not use source commit {source_commit}")
-    checks = document.get("checks")
-    if not isinstance(checks, list) or not checks:
-        fail(f"{run_label} has no hard invariant checks")
-    failures = [
-        str(check.get("name", "unnamed"))
-        for check in checks
-        if not isinstance(check, dict) or check.get("passed") is not True
-    ]
-    if failures:
-        fail(f"{run_label} has failed hard invariants: {', '.join(failures)}")
+    check_names = hard_invariant_names(document, run_label)
     samples = value_at(document, "executable_harness.samples")
     if not isinstance(samples, list) or len(samples) < 3:
         fail(f"{run_label} lacks independent executable cold samples")
@@ -333,6 +360,7 @@ def validate_baseline(
     }
     if scenarios != {"trap", "timeout", "trap_then_recovery"}:
         fail(f"{run_label} has incomplete executable failure/recovery evidence")
+    return check_names
 
 
 def median(values: list[float]) -> float:
@@ -439,9 +467,14 @@ def comparison_band(
             f"median, {absolute_floor:g} {unit})"
         ),
         "candidate_regression_rule": rule,
+        "no_detectable_regression_rule": (
+            "A candidate inside this advisory noise band has no detectable regression "
+            "when it has at least seven valid comparable runs, a stable environment, "
+            "all hard invariants passing, and no material run-level outlier."
+        ),
         "inconclusive_rule": (
-            "A candidate inside the advisory noise band, with a material run-level "
-            "outlier, or with fewer than seven comparable runs must be rerun."
+            "Insufficient samples, environment instability, or a material run-level "
+            "outlier is inconclusive and must be rerun."
         ),
         "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
     }
@@ -866,6 +899,53 @@ def host_comparability_identity(observation: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def validate_source_identity(
+    observation: dict[str, Any],
+    *,
+    run: str,
+    phase: str,
+    source_commit: str,
+    source_tree: str,
+) -> dict[str, Any]:
+    source_identity = observation.get("source_identity")
+    if not isinstance(source_identity, dict):
+        fail(f"{run} host observation lacks source-tree provenance ({phase})")
+    required = (
+        "published_commit",
+        "published_tree",
+        "execution_commit",
+        "execution_tree",
+        "tree_identity_verified",
+    )
+    missing = [field for field in required if field not in source_identity]
+    if missing:
+        fail(
+            f"{run} host observation has incomplete source-tree provenance "
+            f"({phase}): {', '.join(missing)}"
+        )
+    if source_identity["published_commit"] != source_commit:
+        fail(f"{run} host observation does not match the published source commit")
+    if source_identity["published_tree"] != source_tree:
+        fail(f"{run} host observation does not match the published source tree")
+    if source_identity["execution_tree"] != source_tree:
+        fail(
+            f"{run} execution worktree does not match the published source tree "
+            f"({phase})"
+        )
+    if source_identity["tree_identity_verified"] is not True:
+        fail(f"{run} did not verify published and execution tree identity ({phase})")
+    execution_commit = source_identity["execution_commit"]
+    if not isinstance(execution_commit, str) or not execution_commit:
+        fail(f"{run} host observation has no execution commit ({phase})")
+    return {
+        "published_commit": source_commit,
+        "published_tree": source_tree,
+        "execution_commit": execution_commit,
+        "execution_tree": source_tree,
+        "tree_identity_verified": True,
+    }
+
+
 def host_summary(
     observations: list[tuple[str, dict[str, Any], dict[str, Any], Path, Path]],
     calibration_root: Path,
@@ -912,7 +992,7 @@ def host_summary(
 
 
 def build_aggregate(
-    runs_directory: Path, source_commit: str, minimum_runs: int
+    runs_directory: Path, source_commit: str, source_tree: str, minimum_runs: int
 ) -> dict[str, Any]:
     run_dirs = sorted(
         path
@@ -925,9 +1005,11 @@ def build_aggregate(
     collector = MetricCollector()
     identities: list[tuple[str, dict[str, Any]]] = []
     host_identities: list[tuple[str, dict[str, Any]]] = []
+    source_identities: list[tuple[str, dict[str, Any]]] = []
     raw_runs: list[dict[str, Any]] = []
     observations: list[tuple[str, dict[str, Any], dict[str, Any], Path, Path]] = []
-    checks: set[str] = set()
+    expected_check_names: set[str] | None = None
+    expected_check_run: str | None = None
     for run_dir in run_dirs:
         run = run_dir.name
         raw_path = run_dir / "raw-results.json"
@@ -939,14 +1021,34 @@ def build_aggregate(
         before = load_json(before_path)
         after = load_json(after_path)
         execution = load_json(execution_path)
-        validate_baseline(document, source_commit, run)
+        check_names = validate_baseline(document, source_commit, run)
+        if expected_check_names is None:
+            expected_check_names = check_names
+            expected_check_run = run
+        elif check_names != expected_check_names:
+            missing_checks = sorted(expected_check_names - check_names)
+            unexpected_checks = sorted(check_names - expected_check_names)
+            differences: list[str] = []
+            if missing_checks:
+                differences.append(f"missing: {', '.join(missing_checks)}")
+            if unexpected_checks:
+                differences.append(f"unexpected: {', '.join(unexpected_checks)}")
+            fail(
+                f"{run} hard invariant set differs from canonical {expected_check_run} "
+                f"set ({'; '.join(differences)})"
+            )
         if (
             execution.get("schema_version")
             != "latent.phase0.calibration.execution-status.v1"
             or execution.get("source_commit") != source_commit
+            or execution.get("source_tree") != source_tree
+            or execution.get("execution_tree") != source_tree
+            or not isinstance(execution.get("execution_commit"), str)
+            or not execution.get("execution_commit")
             or execution.get("exit_code") != 0
         ):
             fail(f"{run} did not complete the full-profile command successfully")
+        before_source_identity: dict[str, Any] | None = None
         for phase, observation in (("before", before), ("after", after)):
             if observation.get("schema_version") != HOST_OBSERVATION_SCHEMA:
                 fail(f"{run} has an unexpected host observation schema ({phase})")
@@ -954,13 +1056,26 @@ def build_aggregate(
                 fail(f"{run} host observation does not match the source commit")
             if observation.get("native_linux_reference") is not True:
                 fail(f"{run} is not a native-Linux reference environment")
+            observed_source_identity = validate_source_identity(
+                observation,
+                run=run,
+                phase=phase,
+                source_commit=source_commit,
+                source_tree=source_tree,
+            )
+            if before_source_identity is None:
+                before_source_identity = observed_source_identity
+            elif stable_json(observed_source_identity) != stable_json(
+                before_source_identity
+            ):
+                fail(f"{run} changed source provenance during its full-profile process")
+        if before_source_identity is None:
+            fail(f"{run} has no host source provenance")
+        if execution["execution_commit"] != before_source_identity["execution_commit"]:
+            fail(f"{run} execution status does not match host source provenance")
         identities.append((run, identity(document)))
         host_identities.append((run, host_comparability_identity(before)))
-        checks.update(
-            str(check.get("name", "unnamed"))
-            for check in document.get("checks", [])
-            if isinstance(check, dict)
-        )
+        source_identities.append((run, before_source_identity))
         add_metrics(collector, document, run)
         raw_runs.append(
             {
@@ -997,6 +1112,19 @@ def build_aggregate(
             "all runs must retain the same virtualization, allocator, and static "
             f"CPU frequency/power policy; inconsistent: {', '.join(inconsistent_hosts)}"
         )
+    reference_source_identity = source_identities[0][1]
+    inconsistent_source_identities = [
+        run
+        for run, run_identity in source_identities
+        if stable_json(run_identity) != stable_json(reference_source_identity)
+    ]
+    if inconsistent_source_identities:
+        fail(
+            "all runs must retain the same published and execution source provenance; "
+            f"inconsistent: {', '.join(inconsistent_source_identities)}"
+        )
+    if expected_check_names is None:
+        fail("no hard invariant set was available to validate")
     metrics = collector.render()
     return {
         "schema_version": CALIBRATION_SCHEMA,
@@ -1008,11 +1136,26 @@ def build_aggregate(
         "run_count": len(run_dirs),
         "minimum_required_run_count": minimum_runs,
         "source_commit": source_commit,
+        "source_tree": source_tree,
+        "source_provenance": {
+            **reference_source_identity,
+            "rule": (
+                "The published commit must remain reachable, and every local execution "
+                "worktree must exactly match its recorded Git tree."
+            ),
+        },
         "reference_identity": reference_identity,
         "raw_runs": raw_runs,
         "hard_invariants": {
             "all_runs_passed": True,
-            "checks_passed_in_every_run": sorted(checks),
+            "checks_passed_in_every_run": sorted(expected_check_names),
+            "canonical_check_set_derived_from": expected_check_run,
+            "check_set_rule": (
+                "The first validated run defines the canonical hard-invariant name set. "
+                "Every later run must contain exactly that set once, with every check "
+                "passing; duplicates, omissions, and unexpected checks invalidate "
+                "calibration."
+            ),
             "performance_runs_excluded": 0,
             "rule": (
                 "A failed check, missing raw run, environment mismatch, or malformed "
@@ -1038,15 +1181,24 @@ def build_aggregate(
                 "Topology, capacity, containment, cleanup, and reclamation checks remain "
                 "binary. Any failure is a failure, never a statistical tolerance."
             ),
-            "advisory_rule": (
-                "Use each metric comparison band. A deterioration beyond it is a "
-                "regression candidate; preserve all raw runs and repeat a comparable "
-                "seven-run set before calling it confirmed."
+            "no_detectable_regression_rule": (
+                "An inside-band candidate is terminally no detectable regression or "
+                "statistically indistinguishable when it has at least seven valid "
+                "comparable runs, a stable environment, all hard invariants passing, "
+                "and no material run-level outlier."
             ),
             "inconclusive_rule": (
-                "A result inside a band, with material run-level outliers or "
-                "background-load disturbance, or with fewer than seven comparable runs "
-                "is inconclusive and must be rerun."
+                "Insufficient samples, environment instability or mismatch, a material "
+                "run-level outlier, or a failed hard invariant is inconclusive and "
+                "must be rerun after the invalid condition is resolved."
+            ),
+            "regression_candidate_rule": (
+                "A deterioration beyond an advisory band is a regression candidate; "
+                "preserve all raw runs and repeat a comparable seven-run set."
+            ),
+            "confirmed_regression_rule": (
+                "Repeated outside-band deterioration in the second comparable set is "
+                "a confirmed regression."
             ),
             "shared_hosted_ci": (
                 "Hosted CI may run deterministic correctness smoke checks but must not "
@@ -1076,6 +1228,7 @@ def render_report(document: dict[str, Any], output_json: Path, output_report: Pa
     identity_data = document["reference_identity"]
     environment = identity_data["environment"]
     host = document["host_observations"]
+    source_provenance = document["source_provenance"]
     first_host_run = host["runs"][0]
     lines = [
         "# Phase 0 native-Linux calibration",
@@ -1095,6 +1248,14 @@ def render_report(document: dict[str, Any], output_json: Path, output_report: Pa
         "",
         "| Field | Value |",
         "|---|---|",
+        f"| Published source commit | {markdown_cell(source_provenance['published_commit'])} |",
+        f"| Published source Git tree | {markdown_cell(source_provenance['published_tree'])} |",
+        f"| Local execution commit | {markdown_cell(source_provenance['execution_commit'])} |",
+        f"| Local execution Git tree | {markdown_cell(source_provenance['execution_tree'])} |",
+        (
+            f"| Published/execution tree identity verified | "
+            f"{markdown_cell(source_provenance['tree_identity_verified'])} |"
+        ),
         f"| CPU | {markdown_cell(environment['cpu_model'])} |",
         f"| Logical CPUs | {markdown_cell(environment['logical_cpu_count'])} |",
         f"| Memory | {markdown_cell(environment['total_memory_bytes'])} bytes |",
@@ -1130,7 +1291,8 @@ def render_report(document: dict[str, Any], output_json: Path, output_report: Pa
             "Every run directory retains raw full-profile output, its concise report, "
             "and before/after host observations. Those observations record "
             "virtualization detection, allocator observation, frequency/power policy "
-            "where Linux exposes it, and background-load context."
+            "where Linux exposes it, background-load context, and the verified "
+            "published/execution Git-tree provenance."
         ),
         "",
         "## Hard invariant status",
@@ -1258,11 +1420,15 @@ def render_report(document: dict[str, Any], output_json: Path, output_report: Pa
         [
             "",
             (
-                "Results inside an advisory band, results with a material run-level "
-                "outlier or background-load disturbance, and results with fewer than "
-                "seven comparable runs are inconclusive and must be rerun. A "
+                "An inside-band candidate with at least seven valid comparable runs, "
+                "a stable environment, all hard invariants passing, and no material "
+                "run-level outlier is terminally **no detectable regression** (or "
+                "statistically indistinguishable). Insufficient samples, environment "
+                "instability, material outliers, or a failed invariant are inconclusive "
+                "and must be rerun after the invalid condition is resolved. A "
                 "deterioration outside a band is a regression candidate that requires "
-                "a second comparable set before confirmation."
+                "a second comparable set; repeated outside-band deterioration confirms "
+                "the regression."
             ),
             "",
             "Shared hosted CI must never fail on these microbenchmark bands; it may run "
@@ -1315,12 +1481,16 @@ def parse_arguments(arguments: list[str]) -> argparse.Namespace:
     capture.add_argument("--phase", choices=("before", "after"), required=True)
     capture.add_argument("--run-index", type=int, required=True)
     capture.add_argument("--source-commit", required=True)
+    capture.add_argument("--source-tree", required=True)
+    capture.add_argument("--execution-commit", required=True)
+    capture.add_argument("--execution-tree", required=True)
     capture.add_argument("--repository-root", type=Path, required=True)
     aggregate = commands.add_parser("aggregate", help="validate and aggregate runs")
     aggregate.add_argument("--runs-directory", type=Path, required=True)
     aggregate.add_argument("--output-json", type=Path, required=True)
     aggregate.add_argument("--output-report", type=Path, required=True)
     aggregate.add_argument("--source-commit", required=True)
+    aggregate.add_argument("--source-tree", required=True)
     aggregate.add_argument("--minimum-runs", type=int, default=MINIMUM_REFERENCE_RUNS)
     return parser.parse_args(arguments)
 
@@ -1334,6 +1504,9 @@ def main(arguments: list[str] | None = None) -> int:
                 parsed.phase,
                 parsed.run_index,
                 parsed.source_commit,
+                parsed.source_tree,
+                parsed.execution_commit,
+                parsed.execution_tree,
                 parsed.repository_root.resolve(),
             )
             return 0
@@ -1345,6 +1518,7 @@ def main(arguments: list[str] | None = None) -> int:
         aggregate = build_aggregate(
             parsed.runs_directory.resolve(),
             parsed.source_commit,
+            parsed.source_tree,
             parsed.minimum_runs,
         )
         write_aggregate(parsed.output_json, parsed.output_report, aggregate)

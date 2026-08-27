@@ -6,9 +6,11 @@ PYTHON="${PYTHON:-python3}"
 RUNS=7
 OUTPUT_DIR=""
 TARGET_ROOT="${LSF_CALIBRATION_TARGET_DIR:-${ROOT}/target/phase0-calibration-work}"
+PUBLISHED_SOURCE_COMMIT=""
+PUBLISHED_SOURCE_TREE=""
 
 usage() {
-    printf '%s\n' "usage: $0 [--runs N] [output-directory]"
+    printf '%s\n' "usage: $0 [--runs N] [--published-source-commit SHA --published-source-tree TREE] [output-directory]"
     printf '%s\n' "Runs at least seven independent native-Linux Phase 0 full profiles."
 }
 
@@ -20,6 +22,22 @@ while (( $# > 0 )); do
                 exit 2
             fi
             RUNS="$2"
+            shift 2
+            ;;
+        --published-source-commit)
+            if (( $# < 2 )); then
+                usage >&2
+                exit 2
+            fi
+            PUBLISHED_SOURCE_COMMIT="$2"
+            shift 2
+            ;;
+        --published-source-tree)
+            if (( $# < 2 )); then
+                usage >&2
+                exit 2
+            fi
+            PUBLISHED_SOURCE_TREE="$2"
             shift 2
             ;;
         --help|-h)
@@ -103,10 +121,36 @@ if (( ${#dirty_entries[@]} > 0 )); then
     printf '%s\n' "calibration requires a clean worktree so every run is from one source commit" >&2
     exit 2
 fi
-SOURCE_COMMIT="$(git rev-parse HEAD)"
+EXECUTION_COMMIT="$(git rev-parse HEAD)"
+EXECUTION_TREE="$(git rev-parse HEAD^{tree})"
+if [[ -z "$PUBLISHED_SOURCE_COMMIT" && -z "$PUBLISHED_SOURCE_TREE" ]]; then
+    PUBLISHED_SOURCE_COMMIT="$EXECUTION_COMMIT"
+    PUBLISHED_SOURCE_TREE="$EXECUTION_TREE"
+elif [[ -z "$PUBLISHED_SOURCE_COMMIT" || -z "$PUBLISHED_SOURCE_TREE" ]]; then
+    printf '%s\n' "published source commit and tree must be supplied together" >&2
+    exit 2
+fi
+if ! [[ "$PUBLISHED_SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+    printf '%s\n' "published source commit must be a 40-character lowercase Git SHA" >&2
+    exit 2
+fi
+if ! [[ "$PUBLISHED_SOURCE_TREE" =~ ^[0-9a-f]{40}$ ]]; then
+    printf '%s\n' "published source tree must be a 40-character lowercase Git tree SHA" >&2
+    exit 2
+fi
+if [[ "$EXECUTION_TREE" != "$PUBLISHED_SOURCE_TREE" ]]; then
+    printf '%s\n' "local execution tree does not match the declared published source tree" >&2
+    printf '%s\n' "execution tree: $EXECUTION_TREE" >&2
+    printf '%s\n' "published tree: $PUBLISHED_SOURCE_TREE" >&2
+    exit 2
+fi
+SOURCE_COMMIT="$PUBLISHED_SOURCE_COMMIT"
+SOURCE_TREE="$PUBLISHED_SOURCE_TREE"
 
 mkdir -p "$OUTPUT_DIR/runs"
-printf '%s\n' "Calibrating $RUNS independent full-profile processes from $SOURCE_COMMIT"
+printf '%s\n' "Calibrating $RUNS independent full-profile processes from published $SOURCE_COMMIT"
+printf '%s\n' "Published/execution tree identity: $SOURCE_TREE"
+printf '%s\n' "Local execution commit: $EXECUTION_COMMIT"
 printf '%s\n' "Raw archive: $OUTPUT_DIR"
 
 failures=0
@@ -119,6 +163,9 @@ for (( index = 1; index <= RUNS; index++ )); do
         --phase before \
         --run-index "$index" \
         --source-commit "$SOURCE_COMMIT" \
+        --source-tree "$SOURCE_TREE" \
+        --execution-commit "$EXECUTION_COMMIT" \
+        --execution-tree "$EXECUTION_TREE" \
         --repository-root "$ROOT"
 
     printf 'Phase 0 native-Linux calibration full-profile output for %s.\n' "$RUN_NAME" \
@@ -134,8 +181,11 @@ for (( index = 1; index <= RUNS; index++ )); do
         --phase after \
         --run-index "$index" \
         --source-commit "$SOURCE_COMMIT" \
+        --source-tree "$SOURCE_TREE" \
+        --execution-commit "$EXECUTION_COMMIT" \
+        --execution-tree "$EXECUTION_TREE" \
         --repository-root "$ROOT"
-    "$PYTHON" - "$RUN_DIR/execution-status.json" "$index" "$RUN_STATUS" "$SOURCE_COMMIT" <<'PY'
+    "$PYTHON" - "$RUN_DIR/execution-status.json" "$index" "$RUN_STATUS" "$SOURCE_COMMIT" "$SOURCE_TREE" "$EXECUTION_COMMIT" "$EXECUTION_TREE" <<'PY'
 from __future__ import annotations
 
 import json
@@ -150,6 +200,9 @@ path.write_text(
             "run_index": int(sys.argv[2]),
             "exit_code": int(sys.argv[3]),
             "source_commit": sys.argv[4],
+            "source_tree": sys.argv[5],
+            "execution_commit": sys.argv[6],
+            "execution_tree": sys.argv[7],
         },
         indent=2,
         sort_keys=True,
@@ -173,6 +226,7 @@ set +e
     --output-json "$OUTPUT_DIR/aggregate.json" \
     --output-report "$OUTPUT_DIR/CALIBRATION.md" \
     --source-commit "$SOURCE_COMMIT" \
+    --source-tree "$SOURCE_TREE" \
     --minimum-runs "$RUNS"
 AGGREGATE_STATUS=$?
 set -e

@@ -32,8 +32,11 @@ tools/run_phase0_calibration.sh benchmarks/phase0/calibration/native-linux-YYYY-
 ~~~
 
 The calibration wrapper refuses WSL and detected containers, requires a new
-output directory, fixes every run to the current commit, and invokes the
-complete full-profile command seven times. It captures before/after
+output directory, fixes every run to one source tree, and invokes the complete
+full-profile command seven times. If its source commit is published from a
+different local commit object, the wrapper requires the reachable published
+commit and its Git tree, then rejects any execution worktree that does not have
+that exact tree. It captures before/after
 virtualization, allocator, CPU frequency/power-policy where exposed, and
 background-load observations. It does not change CPU policy, pin frequency, or
 discard a run because its performance values are inconvenient.
@@ -45,6 +48,11 @@ run, or mismatch invalidates the aggregate. Correctness, topology, capacity,
 containment, cleanup, and reclamation checks remain binary; aggregation never
 turns them into statistical tolerances.
 
+The first validated full-profile result defines the canonical hard-invariant
+name set. Every later run must contain exactly that set once and pass every
+member. Duplicate, missing, or unexpected check names invalidate the aggregate
+instead of being silently omitted from its summary.
+
 The aggregate includes minimum, median, maximum, median absolute deviation
 (MAD), coefficient of variation (CV) where meaningful, samples, runs, and
 run-level outlier flags for startup/preparation, cold/warm activation,
@@ -54,10 +62,15 @@ also retains every raw full-profile document beneath its runs directory.
 
 For Phase 1, compare the median of at least seven comparable candidate runs
 with each metric's checked-in advisory noise band. A deterioration outside its
-band is a regression candidate and needs a confirming second set. A result
-inside its band, one with material run-level noise/outliers, or one with fewer
-than seven comparable runs is inconclusive and must be rerun. These are
-regression-detection aids only, not production SLOs or cross-machine claims.
+band is a regression candidate and needs a confirming second set; repeated
+outside-band deterioration confirms the regression. An inside-band candidate
+with at least seven valid comparable runs, stable environment, all hard
+invariants passing, and no material run-level outlier is terminally **no
+detectable regression** (or statistically indistinguishable). Insufficient
+samples, environment instability/mismatch, material run-level noise/outliers,
+or failed invariants are inconclusive and must be rerun after the invalid
+condition is resolved. These are regression-detection aids only, not
+production SLOs or cross-machine claims.
 Shared hosted CI must never fail on these fragile microbenchmark bands; it may
 continue to run only the deterministic correctness smoke profile.
 

@@ -44,10 +44,17 @@ RSS, and virtual memory, it must:
    allocator, fixture digest, and configuration;
 3. compare the median of per-run representatives with the metric-specific
    advisory band in aggregate.json;
-4. rerun an inconclusive result, including any result inside the noise band,
-   with material run-level noise/outliers, or with insufficient comparable
-   runs;
-5. preserve hard invariants as binary checks. A topology, capacity,
+4. record **no detectable regression** (or statistically indistinguishable) as
+   the terminal result for an inside-band candidate with at least seven valid
+   comparable runs, a stable environment, all hard invariants passing, and no
+   material run-level outlier;
+5. rerun an inconclusive result caused by insufficient samples, environment
+   instability/mismatch, material run-level noise/outliers, or failed hard
+   invariants after the invalid condition is resolved; and
+6. classify outside-band deterioration as a regression candidate, require a
+   second matched set, and confirm the regression only when that second set
+   also deteriorates outside the band;
+7. preserve hard invariants as binary checks. A topology, capacity,
    containment, cleanup, or reclamation failure cannot be statistically
    tolerated.
 
@@ -55,9 +62,9 @@ Bounded-cache configuration and reclamation remain strict invariant checks;
 Phase 1 must compare them against their recorded configured bounds rather than
 turning cache growth into an advisory statistical tolerance.
 
-A candidate deterioration beyond an advisory band is a regression candidate,
-not an automatic production conclusion. It requires a second comparable set
-for confirmation. Shared hosted CI may run deterministic correctness smoke
+A candidate deterioration beyond an advisory band is not an automatic
+production conclusion: it requires the second comparable set above for
+confirmation. Shared hosted CI may run deterministic correctness smoke
 coverage, but must not fail on these microbenchmark bands.
 
 ## Remaining limitations

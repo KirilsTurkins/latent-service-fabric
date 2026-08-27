@@ -71,9 +71,12 @@ tools/run_phase0_calibration.sh benchmarks/phase0/calibration/native-linux-YYYY-
 ~~~
 
 It runs the complete Phase 0 full profile at least seven times from one clean
-source commit and retains raw output, invariant results, host provenance, and
-an aggregate report. A missing fixture or a failed hard invariant invalidates
-the calibration; it is never filtered based on timing or resource values.
+source tree and retains raw output, invariant results, host provenance, and an
+aggregate report. When a reachable published commit is supplied, the runner
+verifies that the local execution tree is byte-for-byte the same Git tree and
+records both identities. A missing fixture, failed hard invariant, missing or
+unexpected invariant name, or duplicate invariant name invalidates the
+calibration; it is never filtered based on timing or resource values.
 
 Phase 1 comparisons use the checked-in
 [aggregate.json](benchmarks/phase0/calibration/native-linux-2026-08-27/aggregate.json)
