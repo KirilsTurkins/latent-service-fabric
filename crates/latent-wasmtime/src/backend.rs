@@ -189,6 +189,17 @@ pub struct PreparedCacheSnapshot {
     pub maximum_source_bytes: usize,
 }
 
+/// Bounded timing-store state exposed to long-running resource probes.
+///
+/// Timing records are diagnostic data rather than activation-owned state.  The
+/// snapshot makes their retention limit observable without exposing the timing
+/// records themselves or allowing a benchmark to depend on their internals.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct InvocationTimingStoreSnapshot {
+    pub entries: usize,
+    pub maximum_entries: usize,
+}
+
 /// Precise Phase 0 backend boundaries for one contained invocation.
 ///
 /// `host_call_micros` is intentionally a subset of `guest_call_micros`, so
@@ -582,6 +593,13 @@ impl InvocationTimingStore {
         }
         Some(timing)
     }
+
+    fn snapshot(&self) -> InvocationTimingStoreSnapshot {
+        InvocationTimingStoreSnapshot {
+            entries: self.entries.len(),
+            maximum_entries: self.maximum_entries,
+        }
+    }
 }
 
 pub struct Phase0WasmtimeBackend {
@@ -632,6 +650,12 @@ impl Phase0WasmtimeBackend {
 
     pub fn resource_snapshot(&self) -> RuntimeResourceSnapshot {
         self.resources.snapshot()
+    }
+
+    /// Returns the bounded diagnostic timing-store occupancy.
+    #[must_use]
+    pub fn invocation_timing_snapshot(&self) -> InvocationTimingStoreSnapshot {
+        self.lock_timings().snapshot()
     }
 
     pub fn log_sink(&self) -> BoundedLogSink {
@@ -1371,6 +1395,28 @@ fn sha256_digest(bytes: &[u8]) -> String {
         write!(&mut output, "{byte:02x}").expect("writing to String cannot fail");
     }
     output
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{InvocationTimingStore, Phase0InvocationTiming};
+
+    #[test]
+    fn timing_store_snapshot_reports_bounded_occupancy() {
+        let mut store = InvocationTimingStore::new(2);
+        assert_eq!(store.snapshot().entries, 0);
+        assert_eq!(store.snapshot().maximum_entries, 2);
+
+        store.insert("first".to_owned(), Phase0InvocationTiming::default());
+        store.insert("second".to_owned(), Phase0InvocationTiming::default());
+        assert_eq!(store.snapshot().entries, 2);
+
+        store.insert("third".to_owned(), Phase0InvocationTiming::default());
+        assert_eq!(store.snapshot().entries, 2);
+        assert!(store.remove("first").is_none());
+        assert!(store.remove("second").is_some());
+        assert_eq!(store.snapshot().entries, 1);
+    }
 }
 
 fn error_with_detail<const N: usize>(

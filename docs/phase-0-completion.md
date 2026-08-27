@@ -39,6 +39,37 @@ observation, CPU/frequency policy where available, and background load. Its
 statistics are observational and do not create production SLOs, capacity
 commitments, or cross-machine claims.
 
+## Long-running resource plateau and leak resistance
+
+Issue 39 now has a retained native-Linux soak harness at
+[`tools/run_phase0_resource_soak.sh`](../tools/run_phase0_resource_soak.sh).
+It is deliberately an explicit heavy command, separate from shared PR smoke
+coverage. It records at least three independent processes, each with 1,000
+excluded warm-up activations, 100,000 measured fresh-store activations, and
+frequent real at-capacity and bounded-queue batches. Every batch must return
+logical pool, runner, backend, log, cache, and timing-store state to its fixed
+baseline before its raw interval sample is kept.
+
+The companion aggregate records raw-file hashes and command/source provenance,
+native-host observations, RSS/VM/PSS/private (where exposed), process/thread/
+socket/FD topology, rolling ranges, final-window deltas, robust late-window
+slopes, peaks, explicit release, and runtime shutdown. It uses the issue 38
+calibrated RSS noise band to decide whether RSS and available PSS/private
+growth is material on the matched host. An unexplained FD net increase,
+topology change, hard-invariant failure, missing batch, mismatched fixture/
+toolchain/configuration, or material outlier fails the aggregate. A material
+growth result requires heap/allocator/process investigation and a retaining
+subsystem or focused issue; the command never increases its allowance to make
+the result pass.
+
+Issue 40 remains open, so the final pre-Phase-1 configuration has not yet been
+selected. Accordingly, no archive is presented as issue 39 acceptance
+evidence. The wrapper requires `--final-configuration-commit` to equal the
+measured reachable source commit, which prevents a pre-final run from being
+reported as a passing plateau result. Once issue 40 is merged, the required
+archive belongs under `benchmarks/phase0/soak/` and must be linked here before
+issue 39 can close.
+
 ## Required Phase 1 use
 
 Issue 16 must compare productionized results against this calibration; it must
@@ -122,6 +153,7 @@ before the Phase 0 completion gate can close.
 
 This evidence demonstrates only the Phase 0 spike under its documented
 workload. It does not establish production API behavior, dormant-service
-density, long-duration soak behavior, remote-call performance, cluster
-scaling, or release SLOs. Those obligations remain with the Phase 1 work and
-its completion gate.
+density, remote-call performance, cluster scaling, or release SLOs. The
+long-duration soak evidence remains pending final configuration selection as
+described above. Those obligations remain with the Phase 1 work and its
+completion gate.

@@ -90,3 +90,44 @@ profile tree is losslessly retained as checksummed `raw-evidence.tar.zst`
 fragments for practical Git storage. The archive identifies durable source commit
 `de2337906a4942e47611124a1c2217949abb58dc` and tree
 `0a32896faa58da7f34662cbf3be97670d6d1de4c`.
+
+## Native-Linux long-running resource soak
+
+Issue 39 adds a separate, explicit native-Linux resource-soak command. It is
+not a PR smoke workload. After issue 40 has selected and merged the final
+pre-Phase-1 configuration, run it from a clean worktree on a native Linux host
+or VM, first publishing the exact source commit or tag:
+
+~~~bash
+tools/run_phase0_resource_soak.sh \
+  --published-source-commit <reachable-final-commit> \
+  --published-source-tree <reachable-final-tree> \
+  --final-configuration-commit <reachable-final-commit> \
+  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+~~~
+
+The wrapper refuses WSL, containers, missing native `/proc` probes, missing
+toolchain or fixture inputs, a dirty worktree, a source-tree mismatch, an
+existing archive directory, and test-only output. It starts at least three
+independent processes. Each one uses the real Phase 0 composition with 1,000
+excluded warm-up activations, 100,000 normal measured fresh-store activations,
+and additional real at-capacity and bounded-queue batches every ten measured
+batches.
+
+Each archive retains `runs/run-NN/raw.json`, before/after host observations,
+command status, the raw-file hash, `aggregate.json`, and `SOAK.md`. Raw batch
+samples record RSS, VM, PSS/private mappings when exposed, process/child/thread
+and socket/FD topology, pool/runner/backend/log/cache/timing-store state, and
+post-release/shutdown evidence. The aggregate applies the #38 calibrated RSS
+noise band to RSS and (where available) PSS/private material-growth triage,
+reports rolling ranges, final-window deltas, robust late-window slopes and
+peaks, and rejects an unexplained net FD increase. A material growth result is
+not fixed by increasing the allowance: it remains failed until a retaining
+subsystem or focused follow-up issue is recorded. Record that diagnosis in the
+same archive with `--retaining-subsystem <name>` and/or
+`--followup-issue <URL-or-number>`.
+
+No final #39 archive is checked in yet because issue 40 is still the required
+configuration-finalization dependency. The command requires an explicit final
+configuration commit precisely so a pre-final run cannot be presented as the
+acceptance result.

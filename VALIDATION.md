@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-27** for the Phase 0 executable contract, native-Linux variance calibration, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-27** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -110,6 +110,33 @@ direct sample is reported as not observed at profiler resolution, not as a
 zero-cost result. The aggregation test is deterministic and may run in CI; the
 host-sensitive profile command may not. See [docs/phase-0-hot-path-profiling.md](docs/phase-0-hot-path-profiling.md)
 for the evidence interpretation, adoption rule, and Phase 1 handoff.
+
+## Native-Linux long-running resource soak
+
+The issue 39 resource plateau probe is also explicit heavyweight work, not a
+shared CI job. It must run only after issue 40 has finalized the pre-Phase-1
+configuration, from a clean native Linux host or VM and a durable source
+commit/tree:
+
+```bash
+tools/run_phase0_resource_soak.sh \
+  --published-source-commit <reachable-final-commit> \
+  --published-source-tree <reachable-final-tree> \
+  --final-configuration-commit <reachable-final-commit> \
+  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+```
+
+It rejects WSL, containers, unavailable process probes, fixture/toolchain
+failure, dirty or mismatched source trees, missing raw batch samples, and a
+pre-final/test-only invocation. It preserves at least three full raw processes,
+each with 1,000 warm-ups excluded from analysis, 100,000 measured fresh-store
+activations, all failure/recovery paths, and frequent real capacity/queue
+saturation. Its aggregate revalidates every hard check and every batch's
+logical-resource baseline, reports rolling ranges/final deltas/Theil-Sen late
+slopes/peaks and release/shutdown state, uses #38's calibrated RSS band for
+RSS/PSS/private material-growth triage, and treats any unexplained FD net
+increase or material growth as failed investigation work rather than an excuse
+to raise an allowance.
 
 ## CI jobs
 

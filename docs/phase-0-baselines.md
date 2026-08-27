@@ -77,6 +77,62 @@ production SLOs or cross-machine claims.
 Shared hosted CI must never fail on these fragile microbenchmark bands; it may
 continue to run only the deterministic correctness smoke profile.
 
+## Native-Linux long-running resource plateau soak
+
+Issue 39 provides a separate heavy command for proving a bounded steady-state
+under retained fresh-store activation work. It is not part of the pull-request
+smoke profile and must be run only after issue 40 selects the final pre-Phase-1
+configuration:
+
+```bash
+tools/run_phase0_resource_soak.sh \
+  --published-source-commit <reachable-final-commit> \
+  --published-source-tree <reachable-final-tree> \
+  --final-configuration-commit <reachable-final-commit> \
+  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+```
+
+The command requires a clean native Linux host or VM and refuses WSL,
+containers, unavailable `/proc` probes, unavailable validation fixtures or
+toolchain, source-tree mismatch, and an existing output directory. It starts
+at least three independent processes. A normal run cannot lower its workload:
+each process has at least 1,000 warm-up activations excluded from growth
+analysis and 100,000 normal measured fresh-store activations. Every measured
+batch contains success, declared-domain-error, trap, timeout, cancellation,
+memory-pressure, and immediately following cause-specific recovery work. Both
+real at-capacity and real bounded-queue activation batches run at least every
+ten measured batches.
+
+The Rust probe samples each completed batch and fails immediately if topology
+or any logical resource fails to return to baseline: active/available/
+quarantined cells and queue depth; cancellation registrations and running
+invocations; live stores, host states, component instances, temporary buffers,
+and cancellation probes; log and prepared-cache entries/bytes; and the bounded
+backend timing-store occupancy. It records RSS, VM, PSS and private mappings
+where `/proc/self/smaps_rollup` exposes them, plus process/child/thread/FD and
+open/listening socket counts. Allocator-internal statistics are deliberately
+reported as unsupported until a safe allocator-specific probe is configured.
+
+`aggregate.json` retains every raw file hash, schema, exact final source/tree,
+component digest, command profile, run count, host provenance, interval method,
+limits, unsupported probes, rolling ranges, peaks, final-window deltas,
+Theil-Sen late slopes, post-release state, and shutdown state. It requires zero
+unexplained net FD growth and uses issue 38's matched-host RSS advisory noise
+band for RSS and available PSS/private material-growth triage. A material
+growth or topology/outlier result remains failed and must identify a retaining
+subsystem using heap/allocator/process tooling or a focused issue; the noise
+allowance must not be raised to clear it.
+
+Issue 40 is still open at the time of this harness change, so no pre-final
+archive is claimed as issue 39 acceptance evidence. The explicit final
+configuration argument exists to prevent that mistake; add and link the final
+archive only after issue 40 has merged.
+
+If the aggregate reports material growth, rerun the same command with
+`--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after
+collecting heap/allocator/process evidence. Those values document diagnosis;
+they do not turn a growing run into a pass or loosen the calibrated allowance.
+
 ## Exact issue-23 executable path
 
 Before retained measurements begin, the runner repeatedly launches:
