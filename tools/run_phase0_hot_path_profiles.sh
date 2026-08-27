@@ -242,7 +242,7 @@ run_profile() {
     read_command perf_command profile_command \
         "$perf_root/raw-results.json" "$perf_root/BASELINE.md" \
         "$warm_samples" "$sequence_repetitions" "$throughput_batches" "$pool_iterations" \
-        2 2 on_demand true
+        2 2 on-demand true
     write_command_json "$perf_root/command.json" "perf" \
         perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}"
     perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}" \
@@ -254,7 +254,7 @@ run_profile() {
     read_command allocation_command profile_command \
         "$allocation_root/raw-results.json" "$allocation_root/BASELINE.md" \
         "$warm_samples" "$sequence_repetitions" "$throughput_batches" "$pool_iterations" \
-        2 2 on_demand true
+        2 2 on-demand true
     write_command_json "$allocation_root/command.json" "heaptrack" \
         heaptrack --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}"
     heaptrack --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}" \
@@ -311,11 +311,11 @@ run_profile contention 1 1 96 1
 # budgets, queue limit, and full Phase 0 checks. Three runs are evidence for a
 # trade-off decision only; the aggregate will refuse to call them an adoption
 # result until a seven-run matched set exists.
-run_candidate worker-cell-1w-1c 1 1 on_demand true
-run_candidate worker-cell-2w-2c 2 2 on_demand true
-run_candidate worker-cell-2w-4c 2 4 on_demand true
-run_candidate worker-cell-4w-2c 4 2 on_demand true
-run_candidate on-demand-cow-disabled 2 2 on_demand false
+run_candidate worker-cell-1w-1c 1 1 on-demand true
+run_candidate worker-cell-2w-2c 2 2 on-demand true
+run_candidate worker-cell-2w-4c 2 4 on-demand true
+run_candidate worker-cell-4w-2c 4 2 on-demand true
+run_candidate on-demand-cow-disabled 2 2 on-demand false
 run_candidate pooling-cow-disabled 2 2 pooling false
 run_candidate pooling-cow-enabled 2 2 pooling true
 
