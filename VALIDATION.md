@@ -134,21 +134,28 @@ activations, all failure/recovery paths, and frequent real capacity/queue
 saturation. Its aggregate revalidates every hard check and every batch's
 logical-resource baseline, reports rolling ranges/final deltas/Theil-Sen late
 slopes/peaks and explicit release/shutdown state, rejects both measured-window
-and release-to-shutdown FD growth, and applies #38's calibrated RSS band for
-RSS/PSS/private material-growth triage only after CPU, memory, kernel,
+and release-to-shutdown FD growth, and for new archives verifies that the final
+measured FD count stays within a post-warm-up baseline while release/shutdown
+return within a pre-runtime baseline. It reconciles raw process environment
+against before/after host observations and applies #38's calibrated RSS band
+for RSS/PSS/private material-growth triage only after CPU, memory, kernel,
 virtualization, toolchain, allocator, fixture, and relevant configuration
-identity are proved matched. A mismatch or missing identity is inconclusive,
-not a reason to raise an allowance.
+identity—including prepared-cache enablement, Wasmtime allocator mode, and
+initialized-memory COW—are proved matched. A mismatch or missing identity is
+inconclusive, not a reason to raise an allowance.
 
 The retained final-configuration raw result is
 [`native-linux-2026-08-27-6250b978`](benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md):
 three complete 100,000-activation processes from durable source commit
 `6250b9782ffc4174676d2d72bd023dbfc38c39d7`. Its raw hard invariants,
-release/shutdown topology, and FD checks pass. Its PSS peak remains retained
-for audit, but strict revalidation marks the #38 comparison **inconclusive**
-because the historical host records omit VM-detection and allocator provenance.
-The updated runner records both; #39 remains open pending a fresh matched
-three-process archive.
+release/shutdown topology, and retained measured-window/release-to-shutdown FD
+checks pass. Its PSS peak remains retained for audit, but strict revalidation
+marks the comparison **inconclusive**: #38 lacks explicit prepared-cache,
+Wasmtime allocator, and COW provenance; historical host records omit VM
+detection and allocator provenance; and raw documents predate the pre-runtime
+and post-warm-up descriptor baselines plus raw virtualization kind. The updated
+runner and calibration helper record the missing fields; #39 remains open
+pending a fresh matching calibration and three-process archive.
 
 ## CI jobs
 

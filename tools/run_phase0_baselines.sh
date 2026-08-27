@@ -367,6 +367,16 @@ command = [
     rss_allowance,
     "--fd-growth-allowance",
     fd_allowance,
+    # Calibration must retain the same selected ordinary Wasmtime path as the
+    # resource soak.  Keep these explicit even though they are the binary
+    # defaults so a future aggregate can prove applicability rather than infer
+    # it from an older implicit default.
+    "--prepared-cache-enabled",
+    "true",
+    "--wasmtime-allocator",
+    "on-demand",
+    "--wasmtime-copy-on-write-images",
+    "true",
 ]
 completed = subprocess.run(command, check=False)
 raise SystemExit(completed.returncode)
@@ -390,6 +400,16 @@ if document.get("status") != "pass":
         if not check.get("passed", False)
     ]
     raise SystemExit(f"Phase 0 baseline invariants failed: {failures}")
+config = document.get("config", {})
+if (
+    config.get("prepared_cache_enabled") is not True
+    or config.get("wasmtime_allocator") != "on_demand"
+    or config.get("wasmtime_copy_on_write_images") is not True
+):
+    raise SystemExit(
+        "Phase 0 calibration did not retain the selected ordinary "
+        "prepared-cache/Wasmtime allocator/COW configuration"
+    )
 if len(document.get("executable_harness", {}).get("samples", [])) < 3:
     raise SystemExit("independent issue-23 cold-start evidence is missing")
 failure_probe = document.get("executable_harness", {}).get("failure_recovery_samples", [])

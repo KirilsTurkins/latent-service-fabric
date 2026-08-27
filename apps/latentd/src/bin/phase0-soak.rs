@@ -351,6 +351,7 @@ struct NativeLinuxValidation {
     operating_system: String,
     wsl_detected: bool,
     container_kind: String,
+    virtualization_kind: String,
     proc_probe_available: bool,
 }
 
@@ -485,6 +486,8 @@ struct SoakDocument {
     environment: EnvironmentReport,
     artifact: ArtifactReport,
     config: EffectiveConfig,
+    process_before_runtime: ProcessSnapshot,
+    process_after_warmup: ProcessSnapshot,
     workload: WorkloadCounters,
     resource_samples: Vec<ResourceSample>,
     saturation_observations: Vec<SaturationObservation>,
@@ -672,6 +675,7 @@ fn run(cli: Cli) -> Result<bool, SoakError> {
         workers.clone(),
         process_entry,
         native_linux_validation,
+        process_before_runtime.clone(),
     ))?;
 
     drop(pool);
@@ -734,6 +738,7 @@ async fn run_async(
     workers: Phase0RuntimeWorkerMonitor,
     process_entry: Instant,
     native_linux_validation: NativeLinuxValidation,
+    process_before_runtime: ProcessSnapshot,
 ) -> Result<SoakDocument, SoakError> {
     let prepared_backend = phase0_composition::prepare_phase0_backend(&Phase0PreparationConfig {
         capsule: cli.capsule.clone(),
@@ -829,6 +834,12 @@ async fn run_async(
             process_entry,
         )?);
     }
+
+    // The first steady descriptor baseline is meaningful only after the
+    // excluded warm-up has exercised the prepared component and runtime.  It
+    // is retained separately from the earlier preparation checkpoint so the
+    // measured window cannot hide a descriptor introduced after preparation.
+    let process_after_warmup = observe_process(process_entry)?;
 
     let measured_batches = config.measured_activations / u64::from(config.batch_size);
     for batch in 1..=measured_batches {
@@ -1034,6 +1045,8 @@ async fn run_async(
             component_bytes: loaded.component_bytes,
         },
         config: config.clone(),
+        process_before_runtime,
+        process_after_warmup,
         workload,
         resource_samples: samples,
         saturation_observations,
@@ -1747,6 +1760,21 @@ fn validate_native_linux() -> Result<NativeLinuxValidation, SoakError> {
             container.status, container_kind
         )));
     }
+    let virtualization = Command::new("systemd-detect-virt")
+        .output()
+        .map_err(|error| {
+            SoakError::new(format!(
+                "native-Linux virtualization probe systemd-detect-virt is unavailable: {error}"
+            ))
+        })?;
+    let virtualization_kind = String::from_utf8_lossy(&virtualization.stdout)
+        .trim()
+        .to_owned();
+    if virtualization_kind.is_empty() {
+        return Err(SoakError::new(
+            "native-Linux virtualization probe returned no identifiable host or VM kind",
+        ));
+    }
     let proc_probe_available = Path::new("/proc/self/status").is_file()
         && Path::new("/proc/self/fd").is_dir()
         && Path::new("/proc/self/task").is_dir()
@@ -1761,6 +1789,7 @@ fn validate_native_linux() -> Result<NativeLinuxValidation, SoakError> {
         operating_system: "linux".to_owned(),
         wsl_detected,
         container_kind,
+        virtualization_kind,
         proc_probe_available,
     })
 }

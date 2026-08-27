@@ -18,9 +18,27 @@
       },
       "mismatches": [
         {
+          "calibration": null,
+          "field": "config.prepared_cache_enabled",
+          "reason": "missing calibration value",
+          "soak": true
+        },
+        {
+          "calibration": null,
+          "field": "config.wasmtime_instance_allocator",
+          "reason": "missing calibration value",
+          "soak": "on_demand"
+        },
+        {
+          "calibration": null,
+          "field": "config.wasmtime_copy_on_write_images",
+          "reason": "missing calibration value",
+          "soak": true
+        },
+        {
           "calibration": "none",
           "field": "host.virtualization.systemd_detect_virt_vm",
-          "reason": "missing candidate value",
+          "reason": "missing soak value",
           "soak": null
         },
         {
@@ -32,13 +50,22 @@
             "source_global_allocator_matches": []
           },
           "field": "host.allocator",
-          "reason": "missing candidate value",
+          "reason": "missing soak value",
           "soak": null
         }
       ],
-      "rule": "Apply issue #38 byte-scale advisory bands only when CPU, memory, kernel, virtualization, Rust/Cargo/Wasmtime toolchain, target, build profile, allocator observation, fixture digest, and relevant execution configuration match the calibration.",
+      "rule": "Apply issue #38 byte-scale advisory bands only when CPU, memory, kernel, virtualization, Rust/Cargo/Wasmtime toolchain, target, build profile, allocator observation, fixture digest, and relevant execution configuration\u2014including prepared-cache enablement, Wasmtime allocator mode, and initialized-memory COW\u2014match the calibration.",
       "soak_host_identity": {
         "allocator": null,
+        "host": {
+          "architecture": "x86_64",
+          "cpu_model": "AMD Ryzen 3 3200G with Radeon Vega Graphics",
+          "kernel": "Linux 7.1.5-201.fc44.x86_64 #1 SMP PREEMPT_DYNAMIC Tue Jul 28 14:16:30 UTC 2026 x86_64 GNU/Linux",
+          "logical_cpu_count": 4,
+          "operating_system": "linux",
+          "total_memory_bytes": 16699981824
+        },
+        "native_linux_reference": true,
         "virtualization": {
           "systemd_detect_virt": "none",
           "systemd_detect_virt_container": "none",
@@ -136,8 +163,75 @@
     }
   },
   "cross_machine_claim": false,
+  "evidence_completeness": {
+    "limitations": [
+      "complete descriptor lifecycle comparison is unavailable for run-01, run-02, run-03",
+      "run-01: after host VM virtualization status is absent",
+      "run-01: after host allocator provenance is absent",
+      "run-01: before host VM virtualization status is absent",
+      "run-01: before host allocator provenance is absent",
+      "run-01: post-warm-up descriptor baseline is absent",
+      "run-01: pre-runtime process baseline is absent",
+      "run-01: raw native-Linux virtualization_kind is absent",
+      "run-02: after host VM virtualization status is absent",
+      "run-02: after host allocator provenance is absent",
+      "run-02: before host VM virtualization status is absent",
+      "run-02: before host allocator provenance is absent",
+      "run-02: post-warm-up descriptor baseline is absent",
+      "run-02: pre-runtime process baseline is absent",
+      "run-02: raw native-Linux virtualization_kind is absent",
+      "run-03: after host VM virtualization status is absent",
+      "run-03: after host allocator provenance is absent",
+      "run-03: before host VM virtualization status is absent",
+      "run-03: before host allocator provenance is absent",
+      "run-03: post-warm-up descriptor baseline is absent",
+      "run-03: pre-runtime process baseline is absent",
+      "run-03: raw native-Linux virtualization_kind is absent"
+    ],
+    "rule": "A conclusive retained soak requires complete raw/host identity and descriptor-lifecycle evidence in addition to a matched calibration.",
+    "status": "incomplete"
+  },
   "failures": [],
   "file_descriptors": {
+    "lifecycle_baselines": {
+      "incomplete_runs": [
+        "run-01",
+        "run-02",
+        "run-03"
+      ],
+      "per_run": {
+        "run-01": {
+          "final_measured": 5.0,
+          "post_release": 4,
+          "post_shutdown": 4,
+          "pre_runtime": null,
+          "prepared_baseline": null,
+          "reason": "raw document predates one or more serialized pre-runtime or post-warm-up descriptor baselines",
+          "status": "incomplete"
+        },
+        "run-02": {
+          "final_measured": 5.0,
+          "post_release": 4,
+          "post_shutdown": 4,
+          "pre_runtime": null,
+          "prepared_baseline": null,
+          "reason": "raw document predates one or more serialized pre-runtime or post-warm-up descriptor baselines",
+          "status": "incomplete"
+        },
+        "run-03": {
+          "final_measured": 5.0,
+          "post_release": 4,
+          "post_shutdown": 4,
+          "pre_runtime": null,
+          "prepared_baseline": null,
+          "reason": "raw document predates one or more serialized pre-runtime or post-warm-up descriptor baselines",
+          "status": "incomplete"
+        }
+      },
+      "rule": "the final measured FD count must not exceed the post-warm-up baseline, and post-release/post-shutdown counts must not exceed the serialized pre-runtime baseline in every independent process",
+      "status": "incomplete",
+      "violations": []
+    },
     "measured_window": {
       "rule": "the final post-warm-up FD count must equal the first post-warm-up FD count in every independent process",
       "status": "pass",
@@ -185,12 +279,12 @@
       "status": "pass",
       "violations": []
     },
-    "rule": "both the measured window and explicit post-release-to-shutdown FD comparisons must have no unexplained growth",
-    "status": "pass",
+    "rule": "the measured window, post-release-to-shutdown, and complete descriptor lifecycle baseline comparisons must have no unexplained growth",
+    "status": "incomplete",
     "violations": []
   },
   "final_configuration_commit": "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
-  "generated_at_utc": "2026-08-27T18:10:02+00:00",
+  "generated_at_utc": "2026-08-27T19:37:24+00:00",
   "hard_invariants": {
     "all_runs_passed": true,
     "canonical_check_names": [
@@ -460,6 +554,80 @@
           "published_tree": "65ba341221ea89e107a3e0e3c4b0aed7e26efd9b",
           "tree_identity_verified": true
         }
+      }
+    }
+  },
+  "host_reconciliation": {
+    "all_runs_match": false,
+    "per_run": {
+      "run-01": {
+        "compared_fields": [
+          "operating_system",
+          "architecture",
+          "cpu_model",
+          "logical_cpu_count",
+          "total_memory_bytes",
+          "kernel",
+          "native_linux_validation.operating_system",
+          "native_linux_validation.wsl_detected",
+          "native_linux_validation.container_kind",
+          "native_linux_validation.virtualization_kind"
+        ],
+        "limitations": [
+          "after host VM virtualization status is absent",
+          "after host allocator provenance is absent",
+          "before host VM virtualization status is absent",
+          "before host allocator provenance is absent",
+          "raw native-Linux virtualization_kind is absent"
+        ],
+        "rule": "Every raw process environment must match both independent before/after host observations for OS, architecture, CPU, logical CPUs, memory, kernel, and native-Linux virtualization state.",
+        "status": "incomplete"
+      },
+      "run-02": {
+        "compared_fields": [
+          "operating_system",
+          "architecture",
+          "cpu_model",
+          "logical_cpu_count",
+          "total_memory_bytes",
+          "kernel",
+          "native_linux_validation.operating_system",
+          "native_linux_validation.wsl_detected",
+          "native_linux_validation.container_kind",
+          "native_linux_validation.virtualization_kind"
+        ],
+        "limitations": [
+          "after host VM virtualization status is absent",
+          "after host allocator provenance is absent",
+          "before host VM virtualization status is absent",
+          "before host allocator provenance is absent",
+          "raw native-Linux virtualization_kind is absent"
+        ],
+        "rule": "Every raw process environment must match both independent before/after host observations for OS, architecture, CPU, logical CPUs, memory, kernel, and native-Linux virtualization state.",
+        "status": "incomplete"
+      },
+      "run-03": {
+        "compared_fields": [
+          "operating_system",
+          "architecture",
+          "cpu_model",
+          "logical_cpu_count",
+          "total_memory_bytes",
+          "kernel",
+          "native_linux_validation.operating_system",
+          "native_linux_validation.wsl_detected",
+          "native_linux_validation.container_kind",
+          "native_linux_validation.virtualization_kind"
+        ],
+        "limitations": [
+          "after host VM virtualization status is absent",
+          "after host allocator provenance is absent",
+          "before host VM virtualization status is absent",
+          "before host allocator provenance is absent",
+          "raw native-Linux virtualization_kind is absent"
+        ],
+        "rule": "Every raw process environment must match both independent before/after host observations for OS, architecture, CPU, logical CPUs, memory, kernel, and native-Linux virtualization state.",
+        "status": "incomplete"
       }
     }
   },

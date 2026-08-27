@@ -1,6 +1,6 @@
 # Native-Linux Phase 0 resource-soak evidence
 
-**Status:** INCONCLUSIVE (strict #38 applicability provenance is incomplete)<br>
+**Status:** INCONCLUSIVE (strict #38 applicability and full descriptor-lifecycle provenance are incomplete)<br>
 **Issue:** #39<br>
 **Measured final configuration/source:** `6250b9782ffc4174676d2d72bd023dbfc38c39d7`<br>
 **Measured source tree:** `65ba341221ea89e107a3e0e3c4b0aed7e26efd9b`
@@ -49,9 +49,12 @@ same zstd, extraction, and manifest checks in CI; the native-Linux collection
 itself remains manual.
 
 All raw hard invariants, measured topology, explicit release, runtime shutdown,
-and both measured-window and release-to-shutdown FD checks pass. Strict
-revalidation deliberately does **not** apply issue-38's bands: the historical
-host captures omit `systemd-detect-virt --vm` and allocator provenance. The raw
-RSS/PSS/private/VM series and run-03 PSS peak remain available for diagnosis,
-but #39 stays open until a fresh three-process archive from the updated runner
-records that complete matched-host identity.
+and retained measured-window/release-to-shutdown FD checks pass. Strict
+revalidation deliberately does **not** apply issue-38's bands: that calibration
+does not record the selected prepared-cache, Wasmtime allocator, or COW
+configuration; the historical host captures omit `systemd-detect-virt --vm`
+and allocator provenance; and raw documents predate the pre-runtime and
+post-warm-up FD baselines plus raw virtualization kind. The raw RSS/PSS/private/VM series and
+run-03 PSS peak remain available for diagnosis, but #39 stays open until a
+fresh selected-configuration calibration and three-process archive from the
+updated runner record complete matched-host and descriptor-lifecycle evidence.

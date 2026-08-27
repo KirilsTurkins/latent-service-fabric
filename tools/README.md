@@ -20,8 +20,11 @@ issue 39. It requires an explicit durable final source commit/tree and refuses
 WSL, containers, dirty or mismatched source, unavailable probes, fixture or
 toolchain failures, and incomplete process output. Its paired
 `aggregate_phase0_resource_soak.py` revalidates all raw samples and hard
-invariants, terminal release/shutdown topology and FD state, and execution
-provenance. It applies calibrated late-window decisions only when CPU, memory,
-kernel, virtualization, toolchain, allocator, fixture, and configuration
-identity are recorded as matched; otherwise the result is explicitly
+invariants, reconciles each process environment against before/after host
+observations, and validates terminal release/shutdown topology plus the full
+FD lifecycle (post-warm-up, pre-runtime, release, and shutdown baselines).
+It applies calibrated late-window decisions only when CPU, memory, kernel,
+virtualization, toolchain, allocator, fixture, and configuration identity—
+including prepared-cache enablement, Wasmtime allocator mode, and initialized-
+memory COW—are recorded as matched; otherwise the result is explicitly
 inconclusive. The command is intentionally excluded from shared CI.

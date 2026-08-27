@@ -77,6 +77,17 @@ CALIBRATION_CONFIG_FIELDS = (
     "memory_pressure_bytes",
     "timeout_ms",
     "cancel_after_ms",
+    "prepared_cache_enabled",
+    "wasmtime_instance_allocator",
+    "wasmtime_copy_on_write_images",
+)
+HOST_ENVIRONMENT_FIELDS = (
+    "operating_system",
+    "architecture",
+    "cpu_model",
+    "logical_cpu_count",
+    "total_memory_bytes",
+    "kernel",
 )
 MANDATORY_SOCKET_PROBE_FAILURES = (
     "cannot read /proc/net/tcp",
@@ -95,6 +106,14 @@ LEGACY_RETAINED_STATE_LIMITS = {
     "retained_log_maximum_entries": 64,
     "retained_log_maximum_bytes": 64 * 1024,
 }
+# This immutable archive was collected before the soak binary serialized its
+# retained-state bounds and pre-runtime snapshot.  It is the only historical
+# source allowed to use the documented retained-state fallback.  Every other
+# archive must retain those values directly in raw JSON.
+KNOWN_LEGACY_SOAK_SOURCE = {
+    "published_commit": "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
+    "published_tree": "65ba341221ea89e107a3e0e3c4b0aed7e26efd9b",
+}
 
 
 class SoakError(Exception):
@@ -103,6 +122,43 @@ class SoakError(Exception):
 
 def fail(message: str) -> NoReturn:
     raise SoakError(message)
+
+
+def is_known_legacy_soak_source(identity: Any) -> bool:
+    return isinstance(identity, dict) and all(
+        identity.get(field) == value for field, value in KNOWN_LEGACY_SOAK_SOURCE.items()
+    )
+
+
+def has_recorded_retained_state_limits(config: dict[str, Any]) -> bool:
+    return all(
+        isinstance(config.get(field), int) and not isinstance(config.get(field), bool)
+        and config[field] > 0
+        for field in LEGACY_RETAINED_STATE_LIMITS
+    )
+
+
+def retained_state_limit_source(document: dict[str, Any], label: str) -> str:
+    config = document.get("config")
+    if not isinstance(config, dict):
+        fail(f"{label} config is malformed")
+    if has_recorded_retained_state_limits(config):
+        return "recorded"
+    if is_known_legacy_soak_source(document.get("source_identity")):
+        return "known_legacy"
+    missing = [
+        field
+        for field in LEGACY_RETAINED_STATE_LIMITS
+        if (
+            not isinstance(config.get(field), int)
+            or isinstance(config.get(field), bool)
+            or config[field] <= 0
+        )
+    ]
+    fail(
+        f"{label} lacks recorded retained-state numeric limits ({', '.join(missing)}); "
+        "only the known 6250b978/65ba3412 historical archive may use the legacy fallback"
+    )
 
 
 def now_utc() -> str:
@@ -470,6 +526,7 @@ def validate_shutdown(
     shutdown: Any,
     label: str,
     post_release: dict[str, Any],
+    process_before_runtime: dict[str, Any] | None,
 ) -> dict[str, Any]:
     if not isinstance(shutdown, dict) or shutdown.get("observed_runtime_workers") != 0:
         fail(f"{label} did not retain clean runtime shutdown evidence")
@@ -514,6 +571,28 @@ def validate_shutdown(
         fail(f"{label} post-shutdown thread count increased after release")
     if process["file_descriptor_count"] > release_process["file_descriptor_count"]:
         fail(f"{label} has an unexplained post-release-to-shutdown FD increase")
+    if process_before_runtime is not None:
+        baseline = validate_process_snapshot(
+            process_before_runtime, f"{label} pre-runtime"
+        )
+        baseline_fields = (
+            "process_count",
+            "child_process_count",
+            "open_socket_count",
+            "listening_socket_count",
+        )
+        changed_from_baseline = [
+            field for field in baseline_fields if process[field] != baseline[field]
+        ]
+        if changed_from_baseline:
+            fail(
+                f"{label} post-shutdown process topology differs from its pre-runtime "
+                f"baseline for {', '.join(changed_from_baseline)}"
+            )
+        if process["thread_count"] > baseline["thread_count"] + 1:
+            fail(f"{label} post-shutdown thread count exceeds its pre-runtime baseline")
+        if process["file_descriptor_count"] > baseline["file_descriptor_count"]:
+            fail(f"{label} post-shutdown FD count exceeds its pre-runtime baseline")
     return shutdown
 
 
@@ -565,7 +644,106 @@ def validate_host(
         or identity.get("tree_identity_verified") is not True
     ):
         fail(f"{label} host observation source identity does not match the archive")
+    host = document.get("host")
+    if not isinstance(host, dict):
+        fail(f"{label} {phase} host observation lacks host context")
+    for field in HOST_ENVIRONMENT_FIELDS:
+        value = host.get(field)
+        if field in ("logical_cpu_count", "total_memory_bytes"):
+            valid = isinstance(value, int) and not isinstance(value, bool) and value > 0
+        else:
+            valid = isinstance(value, str) and bool(value)
+        if not valid:
+            fail(f"{label} {phase} host observation lacks valid host.{field}")
+    virtualization = host.get("virtualization")
+    if not isinstance(virtualization, dict):
+        fail(f"{label} {phase} host observation lacks virtualization context")
+    for field, expected_type in (
+        ("systemd_detect_virt", str),
+        ("systemd_detect_virt_container", str),
+        ("wsl_detected", bool),
+    ):
+        if not isinstance(virtualization.get(field), expected_type):
+            fail(f"{label} {phase} host observation lacks virtualization.{field}")
+    if (
+        not isinstance(virtualization.get("systemd_detect_virt_vm"), str)
+        and not is_known_legacy_soak_source(identity)
+    ):
+        fail(f"{label} {phase} host observation lacks virtualization.systemd_detect_virt_vm")
+    if not isinstance(document.get("allocator"), dict) and not is_known_legacy_soak_source(identity):
+        fail(f"{label} {phase} host observation lacks allocator provenance")
     return document
+
+
+def reconcile_raw_environment_with_host(
+    document: dict[str, Any],
+    label: str,
+    before: dict[str, Any],
+    after: dict[str, Any],
+) -> dict[str, Any]:
+    """Prove that process-reported and independently captured host identity agree."""
+    environment = value_at(document, "environment")
+    native = value_at(document, "environment.native_linux_validation")
+    if not isinstance(environment, dict) or not isinstance(native, dict):
+        fail(f"{label} has malformed environment or native-Linux validation")
+    legacy = is_known_legacy_soak_source(document.get("source_identity"))
+    limitations: list[str] = []
+    compared_fields = list(HOST_ENVIRONMENT_FIELDS)
+    for phase, observation in (("before", before), ("after", after)):
+        host = observation["host"]
+        for field in HOST_ENVIRONMENT_FIELDS:
+            if environment.get(field) != host.get(field):
+                fail(
+                    f"{label} raw environment.{field} does not match {phase} "
+                    "host observation"
+                )
+        virtualization = host["virtualization"]
+        if native.get("operating_system") != host.get("operating_system"):
+            fail(
+                f"{label} raw native-Linux operating system does not match {phase} "
+                "host observation"
+            )
+        if native.get("wsl_detected") != virtualization.get("wsl_detected"):
+            fail(
+                f"{label} raw WSL status does not match {phase} host observation"
+            )
+        if native.get("container_kind") != virtualization.get("systemd_detect_virt_container"):
+            fail(
+                f"{label} raw container status does not match {phase} host observation"
+            )
+        raw_virtualization = native.get("virtualization_kind")
+        if not isinstance(raw_virtualization, str) or not raw_virtualization:
+            if not legacy:
+                fail(f"{label} raw native-Linux validation lacks virtualization_kind")
+            limitations.append("raw native-Linux virtualization_kind is absent")
+        elif raw_virtualization != virtualization.get("systemd_detect_virt"):
+            fail(
+                f"{label} raw virtualization status does not match {phase} host observation"
+            )
+        if not isinstance(virtualization.get("systemd_detect_virt_vm"), str):
+            if not legacy:
+                fail(f"{label} {phase} host observation lacks VM virtualization status")
+            limitations.append(f"{phase} host VM virtualization status is absent")
+        if not isinstance(observation.get("allocator"), dict):
+            if not legacy:
+                fail(f"{label} {phase} host observation lacks allocator provenance")
+            limitations.append(f"{phase} host allocator provenance is absent")
+    return {
+        "status": "incomplete" if limitations else "pass",
+        "rule": (
+            "Every raw process environment must match both independent before/after "
+            "host observations for OS, architecture, CPU, logical CPUs, memory, kernel, "
+            "and native-Linux virtualization state."
+        ),
+        "compared_fields": compared_fields
+        + [
+            "native_linux_validation.operating_system",
+            "native_linux_validation.wsl_detected",
+            "native_linux_validation.container_kind",
+            "native_linux_validation.virtualization_kind",
+        ],
+        "limitations": sorted(set(limitations)),
+    }
 
 
 def config_identity(document: dict[str, Any]) -> dict[str, Any]:
@@ -655,6 +833,7 @@ def validate_run(
     config = value_at(document, "config")
     if not isinstance(config, dict):
         fail(f"{label} config is malformed")
+    limits_source = retained_state_limit_source(document, label)
     if (
         config.get("prepared_cache_enabled") is not True
         or config.get("wasmtime_instance_allocator") != "on_demand"
@@ -761,6 +940,25 @@ def validate_run(
         fail(f"{label} final measured checkpoint does not retain every normal measured activation")
     if not measured_samples:
         fail(f"{label} has no post-warm-up samples")
+    process_before_runtime = document.get("process_before_runtime")
+    process_after_warmup = document.get("process_after_warmup")
+    evidence_limitations: list[str] = []
+    if process_before_runtime is None:
+        if not is_known_legacy_soak_source(identity):
+            fail(f"{label} lacks its pre-runtime process baseline")
+        evidence_limitations.append("pre-runtime process baseline is absent")
+    else:
+        process_before_runtime = validate_process_snapshot(
+            process_before_runtime, f"{label} pre-runtime"
+        )
+    if process_after_warmup is None:
+        if not is_known_legacy_soak_source(identity):
+            fail(f"{label} lacks its post-warm-up descriptor baseline")
+        evidence_limitations.append("post-warm-up descriptor baseline is absent")
+    else:
+        process_after_warmup = validate_process_snapshot(
+            process_after_warmup, f"{label} post-warm-up baseline"
+        )
     post_release = validate_sample(
         document.get("post_release"),
         f"{label} post-release sample",
@@ -770,7 +968,9 @@ def validate_run(
     )
     if post_release.get("batch_index") != expected_batches + 1:
         fail(f"{label} post-release checkpoint is not after every workload batch")
-    shutdown = validate_shutdown(document.get("post_shutdown"), label, post_release)
+    shutdown = validate_shutdown(
+        document.get("post_shutdown"), label, post_release, process_before_runtime
+    )
     saturation_observations = document.get("saturation_observations")
     if not isinstance(saturation_observations, list):
         fail(f"{label} lacks saturation observations")
@@ -820,6 +1020,10 @@ def validate_run(
         "identity": config_identity(document),
         "post_release": post_release,
         "post_shutdown": shutdown,
+        "process_before_runtime": process_before_runtime,
+        "prepared_baseline": process_after_warmup,
+        "retained_state_limit_source": limits_source,
+        "evidence_limitations": evidence_limitations,
         "execution_commit": identity["execution_commit"],
     }
 
@@ -972,6 +1176,10 @@ def soak_host_identity(host_observations: dict[str, dict[str, Any]]) -> dict[str
             allocator = observation.get("allocator")
             identities.append(
                 {
+                    "host": {
+                        field: host.get(field) for field in HOST_ENVIRONMENT_FIELDS
+                    },
+                    "native_linux_reference": observation.get("native_linux_reference"),
                     "virtualization": virtualization,
                     "allocator": allocator,
                 }
@@ -979,7 +1187,10 @@ def soak_host_identity(host_observations: dict[str, dict[str, Any]]) -> dict[str
     if not identities:
         fail("resource-soak archive has no host observations")
     if any(stable_json(identity) != stable_json(identities[0]) for identity in identities[1:]):
-        fail("resource-soak host observations do not retain one static virtualization/allocator identity")
+        fail(
+            "resource-soak host observations do not retain one static OS/CPU/memory/kernel, "
+            "virtualization, and allocator identity"
+        )
     return identities[0]
 
 
@@ -993,14 +1204,29 @@ def calibration_mismatches(
 
     def compare(path: str, reference: Any, candidate: Any) -> None:
         if reference != candidate:
+            if reference is None:
+                reason = "missing calibration value"
+            elif candidate is None:
+                reason = "missing soak value"
+            else:
+                reason = "mismatch"
             mismatches.append(
                 {
                     "field": path,
                     "calibration": reference,
                     "soak": candidate,
-                    "reason": "missing candidate value" if candidate is None else "mismatch",
+                    "reason": reason,
                 }
             )
+
+    def config_value(config: dict[str, Any], field: str) -> Any:
+        if field != "wasmtime_instance_allocator":
+            return config.get(field)
+        canonical = config.get("wasmtime_instance_allocator")
+        historical = config.get("wasmtime_allocator")
+        if canonical is not None and historical is not None and canonical != historical:
+            fail("calibration configuration records conflicting Wasmtime allocator modes")
+        return canonical if canonical is not None else historical
 
     reference_environment = reference_identity.get("environment")
     candidate_environment = candidate_identity.get("environment")
@@ -1033,8 +1259,8 @@ def calibration_mismatches(
     for field in CALIBRATION_CONFIG_FIELDS:
         compare(
             f"config.{field}",
-            reference_config.get(field),
-            candidate_config.get(field),
+            config_value(reference_config, field),
+            config_value(candidate_config, field),
         )
     reference_virtualization = reference_host.get("virtualization")
     candidate_virtualization = candidate_host.get("virtualization")
@@ -1112,7 +1338,7 @@ def calibration_noise(
         "source_tree": document.get("source_tree"),
         "applicability": {
             "status": "matched" if not mismatches else "inconclusive",
-            "rule": "Apply issue #38 byte-scale advisory bands only when CPU, memory, kernel, virtualization, Rust/Cargo/Wasmtime toolchain, target, build profile, allocator observation, fixture digest, and relevant execution configuration match the calibration.",
+            "rule": "Apply issue #38 byte-scale advisory bands only when CPU, memory, kernel, virtualization, Rust/Cargo/Wasmtime toolchain, target, build profile, allocator observation, fixture digest, and relevant execution configuration—including prepared-cache enablement, Wasmtime allocator mode, and initialized-memory COW—match the calibration.",
             "mismatches": mismatches,
             "calibration_host_identity": reference_host,
             "soak_host_identity": candidate_host,
@@ -1192,11 +1418,16 @@ def fd_growth(
     per_run_samples: dict[str, list[dict[str, Any]]],
     post_release: dict[str, dict[str, Any]],
     post_shutdown: dict[str, dict[str, Any]],
+    process_before_runtime: dict[str, dict[str, Any] | None],
+    prepared_baselines: dict[str, dict[str, Any] | None],
 ) -> dict[str, Any]:
     per_run: dict[str, dict[str, Any]] = {}
     measured_violations: list[str] = []
     terminal: dict[str, dict[str, Any]] = {}
     terminal_violations: list[str] = []
+    lifecycle: dict[str, dict[str, Any]] = {}
+    lifecycle_violations: list[str] = []
+    lifecycle_incomplete: list[str] = []
     for label, samples in per_run_samples.items():
         values = metric_values(samples, "process.file_descriptor_count")
         assert values is not None
@@ -1219,7 +1450,60 @@ def fd_growth(
         }
         if terminal_change > 0:
             terminal_violations.append(label)
-    violations = sorted(set(measured_violations) | set(terminal_violations))
+        prepared_baseline = prepared_baselines[label]
+        pre_runtime = process_before_runtime[label]
+        if prepared_baseline is None or pre_runtime is None:
+            lifecycle[label] = {
+                "pre_runtime": None,
+                "prepared_baseline": (
+                    None
+                    if prepared_baseline is None
+                    else prepared_baseline["file_descriptor_count"]
+                ),
+                "final_measured": values[-1],
+                "post_release": release_count,
+                "post_shutdown": shutdown_count,
+                "status": "incomplete",
+                "reason": (
+                    "raw document predates one or more serialized pre-runtime or "
+                    "post-warm-up descriptor baselines"
+                ),
+            }
+            lifecycle_incomplete.append(label)
+            continue
+        prepared_count = prepared_baseline["file_descriptor_count"]
+        pre_runtime_count = pre_runtime["file_descriptor_count"]
+        final_measured_delta = values[-1] - prepared_count
+        post_release_delta = release_count - pre_runtime_count
+        post_shutdown_delta = shutdown_count - pre_runtime_count
+        violated = (
+            final_measured_delta > 0
+            or post_release_delta > 0
+            or post_shutdown_delta > 0
+        )
+        lifecycle[label] = {
+            "pre_runtime": pre_runtime_count,
+            "prepared_baseline": prepared_count,
+            "final_measured": values[-1],
+            "post_release": release_count,
+            "post_shutdown": shutdown_count,
+            "final_measured_vs_prepared_delta": final_measured_delta,
+            "post_release_vs_pre_runtime_delta": post_release_delta,
+            "post_shutdown_vs_pre_runtime_delta": post_shutdown_delta,
+            "status": "unexplained_net_growth" if violated else "pass",
+        }
+        if violated:
+            lifecycle_violations.append(label)
+    violations = sorted(
+        set(measured_violations) | set(terminal_violations) | set(lifecycle_violations)
+    )
+    status = (
+        "unexplained_net_growth"
+        if violations
+        else "incomplete"
+        if lifecycle_incomplete
+        else "pass"
+    )
     return {
         "per_run": per_run,
         "measured_window": {
@@ -1233,8 +1517,28 @@ def fd_growth(
             "rule": "post-shutdown FD count must not exceed the explicit post-release count in any independent process",
             "violations": terminal_violations,
         },
-        "status": "pass" if not violations else "unexplained_net_growth",
-        "rule": "both the measured window and explicit post-release-to-shutdown FD comparisons must have no unexplained growth",
+        "lifecycle_baselines": {
+            "per_run": lifecycle,
+            "status": (
+                "unexplained_net_growth"
+                if lifecycle_violations
+                else "incomplete"
+                if lifecycle_incomplete
+                else "pass"
+            ),
+            "rule": (
+                "the final measured FD count must not exceed the post-warm-up baseline, "
+                "and post-release/post-shutdown counts must not exceed the serialized "
+                "pre-runtime baseline in every independent process"
+            ),
+            "violations": lifecycle_violations,
+            "incomplete_runs": lifecycle_incomplete,
+        },
+        "status": status,
+        "rule": (
+            "the measured window, post-release-to-shutdown, and complete descriptor "
+            "lifecycle baseline comparisons must have no unexplained growth"
+        ),
         "violations": violations,
     }
 
@@ -1330,7 +1634,9 @@ def aggregate(
     raw_evidence_archive = raw_evidence_archive_record(output_json)
     validated: dict[str, dict[str, Any]] = {}
     host_observations: dict[str, dict[str, Any]] = {}
+    host_reconciliation: dict[str, dict[str, Any]] = {}
     raw_runs: list[dict[str, Any]] = []
+    evidence_limitations: list[str] = []
     expected_identity: dict[str, Any] | None = None
     execution_commit: str | None = None
     for label, directory in run_directories(runs_directory, minimum_runs):
@@ -1362,6 +1668,7 @@ def aggregate(
             source_tree,
             execution_commit,
         )
+        reconciliation = reconcile_raw_environment_with_host(document, label, before, after)
         status = load_json(directory / "execution-status.json")
         if (
             status.get("schema_version") != "latent.phase0.resource-soak.execution-status.v1"
@@ -1375,6 +1682,13 @@ def aggregate(
             fail(f"{label} lacks a successful matching execution status")
         validated[label] = result
         host_observations[label] = {"before": before, "after": after}
+        host_reconciliation[label] = reconciliation
+        evidence_limitations.extend(
+            f"{label}: {limitation}" for limitation in result["evidence_limitations"]
+        )
+        evidence_limitations.extend(
+            f"{label}: {limitation}" for limitation in reconciliation["limitations"]
+        )
         raw_runs.append(raw_run_record(label, raw_path, document, runs_directory.parent))
     assert expected_identity is not None
     assert execution_commit is not None
@@ -1420,7 +1734,20 @@ def aggregate(
     topology = simple_topology_analysis(per_run_samples)
     post_release = {label: value["post_release"] for label, value in validated.items()}
     post_shutdown = {label: value["post_shutdown"] for label, value in validated.items()}
-    descriptors = fd_growth(per_run_samples, post_release, post_shutdown)
+    descriptors = fd_growth(
+        per_run_samples,
+        post_release,
+        post_shutdown,
+        {label: value["process_before_runtime"] for label, value in validated.items()},
+        {label: value["prepared_baseline"] for label, value in validated.items()},
+    )
+    if descriptors["status"] == "incomplete":
+        evidence_limitations.append(
+            "complete descriptor lifecycle comparison is unavailable for "
+            + ", ".join(descriptors["lifecycle_baselines"]["incomplete_runs"])
+        )
+    evidence_limitations = sorted(set(evidence_limitations))
+    evidence_complete = not evidence_limitations
     material_growth = {
         name: metric["decision"]["violations"]
         for name, metric in metrics.items()
@@ -1474,13 +1801,7 @@ def aggregate(
         }
         if not retaining_subsystem and not followup_issue:
             failures.append("retaining subsystem/focused issue not yet recorded")
-    status = (
-        "fail"
-        if failures
-        else "pass"
-        if calibration_matched
-        else "inconclusive"
-    )
+    status = "fail" if failures else "pass" if calibration_matched and evidence_complete else "inconclusive"
     document = {
         "schema_version": AGGREGATE_SCHEMA,
         "generated_at_utc": now_utc(),
@@ -1506,6 +1827,21 @@ def aggregate(
         "raw_evidence_archive": raw_evidence_archive,
         "raw_runs": raw_runs,
         "host_observations": host_observations,
+        "host_reconciliation": {
+            "all_runs_match": all(
+                reconciliation["status"] == "pass"
+                for reconciliation in host_reconciliation.values()
+            ),
+            "per_run": host_reconciliation,
+        },
+        "evidence_completeness": {
+            "status": "complete" if evidence_complete else "incomplete",
+            "rule": (
+                "A conclusive retained soak requires complete raw/host identity and "
+                "descriptor-lifecycle evidence in addition to a matched calibration."
+            ),
+            "limitations": evidence_limitations,
+        },
         "hard_invariants": {
             "canonical_check_names": sorted(EXPECTED_CHECKS),
             "all_runs_passed": True,
@@ -1558,8 +1894,21 @@ def format_bytes(value: Any) -> str:
 
 def retained_state_limits(document: dict[str, Any]) -> list[tuple[str, Any, str]]:
     config = document["configuration_identity"]["config"]
-    raw_has_limits = all(key in config for key in LEGACY_RETAINED_STATE_LIMITS)
-    source = "recorded raw config" if raw_has_limits else "fixed harness bound at the recorded execution tree (v1 raw schema did not serialize this key)"
+    raw_has_limits = has_recorded_retained_state_limits(config)
+    if raw_has_limits:
+        source = "recorded raw config"
+    else:
+        if not is_known_legacy_soak_source(
+            document["configuration_identity"]["source_identity"]
+        ):
+            fail(
+                "retained-state fallback is restricted to the known "
+                "6250b978/65ba3412 historical archive"
+            )
+        source = (
+            "fixed harness bound verified only for known historical source "
+            "6250b978/65ba3412 (v1 raw schema did not serialize this key)"
+        )
     values = {
         key: config.get(key, legacy)
         for key, legacy in LEGACY_RETAINED_STATE_LIMITS.items()
@@ -1594,6 +1943,12 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
     first_label = sorted(document["host_observations"])[0]
     first_host = document["host_observations"][first_label]["before"]
     host_context = first_host["host"]
+    allocator_context = first_host.get("allocator")
+    if allocator_context is None:
+        allocator_context = (
+            "unavailable in retained host observation; process report: "
+            f"{environment['allocator_statistics']}"
+        )
     status_label = {
         "pass": "PASS",
         "fail": "FAIL",
@@ -1635,7 +1990,7 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
             f"| Cargo | {markdown_cell(environment['cargo'])} |",
             f"| Target / build profile | `{environment['rust_target']}` / `{environment['build_profile']}` |",
             f"| Wasmtime | {markdown_cell(environment['wasmtime_version'])} |",
-            f"| Allocator observation | {markdown_cell(first_host.get('allocator', environment['allocator_statistics']))} |",
+            f"| Allocator observation | {markdown_cell(allocator_context)} |",
             f"| Fixture | `{identity['component_digest']}` ({identity['component_bytes']} bytes) |",
         ]
     )
@@ -1709,6 +2064,31 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
                     mismatch["reason"],
                 )
             )
+    completeness = document["evidence_completeness"]
+    reconciliation = document["host_reconciliation"]
+    if completeness["status"] == "complete":
+        lines.append(
+            "The raw process environment reconciles with every before/after host observation, and complete descriptor-lifecycle baselines are retained."
+        )
+    else:
+        lines.append(
+            "**INCOMPLETE retained evidence:** a future archive must retain the missing identity or descriptor-lifecycle fields before it can support a conclusive plateau claim."
+        )
+        grouped_limitations: dict[str, list[str]] = {}
+        for limitation in completeness["limitations"]:
+            label, separator, reason = limitation.partition(": ")
+            if separator and re.fullmatch(r"run-\d+", label):
+                grouped_limitations.setdefault(reason, []).append(label)
+            else:
+                grouped_limitations.setdefault(limitation, [])
+        for reason, labels in grouped_limitations.items():
+            prefix = f"{', '.join(labels)}: " if labels else ""
+            lines.append(f"- {prefix}{reason}.")
+    lines.append(
+        "Host reconciliation: **{}**.".format(
+            "PASS" if reconciliation["all_runs_match"] else "INCOMPLETE"
+        )
+    )
     lines.extend(
         [
             "",
@@ -1755,6 +2135,35 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
             document["file_descriptors"]["rule"],
         )
     )
+    lifecycle = document["file_descriptors"]["lifecycle_baselines"]
+    lines.append(
+        "Descriptor lifecycle baselines: **{}**; {}.".format(
+            lifecycle["status"].upper(), lifecycle["rule"]
+        )
+    )
+    lines.extend(
+        [
+            "",
+            "| Run | Pre-runtime FDs | Post-warm-up FDs | Final measured FDs | Post-release FDs | Post-shutdown FDs | Lifecycle status |",
+            "|---|---:|---:|---:|---:|---:|---|",
+        ]
+    )
+    for label, values in lifecycle["per_run"].items():
+        lines.append(
+            "| {label} | {pre_runtime} | {prepared} | {final} | {release} | {shutdown} | {status} |".format(
+                label=label,
+                pre_runtime=("n/a" if values["pre_runtime"] is None else values["pre_runtime"]),
+                prepared=(
+                    "n/a"
+                    if values["prepared_baseline"] is None
+                    else values["prepared_baseline"]
+                ),
+                final=values["final_measured"],
+                release=values["post_release"],
+                shutdown=values["post_shutdown"],
+                status=values["status"],
+            )
+        )
     for name, analysis in document["topology"].items():
         lines.append(f"- measured {name}: **{analysis['status'].upper()}**")
     lines.extend(
@@ -1791,7 +2200,8 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
             "- The command is explicit native-Linux soak work and intentionally does not run in shared PR smoke CI.",
             "- Every normal and saturation batch uses the real shared Phase 0 runtime, bounded fixed pool, Wasmtime backend, prepared cache, activation runner, and a fresh store per activation.",
             "- The runner fails on WSL, a container, missing required Linux process/socket probes, a dirty tree, source/tree mismatch, unavailable fixture/toolchain input, test-only output, or an existing archive destination.",
-            "- The aggregate rejects missing/duplicate hard checks, mismatched execution commit/tree or run index, missing samples, saturation-count/activation-counter disagreement, changed measured topology, measured-window FD growth, a post-release-to-shutdown FD increase, and invalid terminal process topology.",
+            "- The aggregate rejects missing/duplicate hard checks, mismatched execution commit/tree or run index, raw/host environment disagreement, missing samples, saturation-count/activation-counter disagreement, changed measured topology, measured-window FD growth, a post-release-to-shutdown FD increase, a descriptor value above its retained lifecycle baseline, and invalid terminal process topology.",
+            "- New archives must retain the selected prepared-cache, Wasmtime allocator, initialized-memory COW, retained-state-limit, raw virtualization, pre-runtime, and post-warm-up descriptor-baseline fields. The sole 6250b978/65ba3412 historical fallback is explicitly incomplete where it cannot prove a lifecycle comparison.",
             "- A material calibrated growth result must identify a retaining subsystem or focused issue; the allowance is never raised to clear a run.",
         ]
     )
@@ -1820,7 +2230,9 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
         if document["status"] == "pass":
             lines.append("All independent native-Linux processes passed every hard invariant, the full measured and terminal FD checks, and bounded topology validation; no calibrated material RSS/PSS/private/VM growth was detected for the strictly matched configuration. This is a Phase 0 plateau observation for the recorded configuration, not a production claim.")
         elif document["status"] == "inconclusive":
-            lines.append("All retained processes pass hard invariants, measured topology, terminal shutdown topology, and both FD checks, but the #38 calibration comparison is inconclusive. The raw series remains available for diagnosis; a future matched archive must record every missing identity field before it can claim a calibrated plateau.")
+            lines.append(
+                "All retained processes pass hard invariants, measured topology, and the retained terminal shutdown checks, but this archive is not a conclusive calibrated plateau. Its #38 comparison is inapplicable when final configuration provenance differs or is absent, and any incomplete raw/host or descriptor-lifecycle evidence must be replaced by a fresh fully recorded archive. The raw series remains available for diagnosis."
+            )
     return "\n".join(lines) + "\n"
 
 

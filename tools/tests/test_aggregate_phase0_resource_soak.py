@@ -129,6 +129,7 @@ def raw_document(run_index: int) -> dict[str, object]:
         "maximum_entries": 1,
         "maximum_source_bytes": 65_536,
     }
+    post_release["process"]["file_descriptor_count"] = 4
     scenario_counts = {
         "success": 100_800,
         "domain_error": 100,
@@ -171,8 +172,10 @@ def raw_document(run_index: int) -> dict[str, object]:
             "wasmtime_version": "47.0.3 (workspace pin)",
             "allocator_statistics": {"available": False, "method": "not_collected"},
             "native_linux_validation": {
+                "operating_system": "linux",
                 "wsl_detected": False,
                 "container_kind": "none",
+                "virtualization_kind": "none",
                 "proc_probe_available": True,
             },
         },
@@ -196,6 +199,13 @@ def raw_document(run_index: int) -> dict[str, object]:
             "prepared_cache_enabled": True,
             "wasmtime_instance_allocator": "on_demand",
             "wasmtime_copy_on_write_images": True,
+            "component_maximum_bytes": 64 * 1024 * 1024,
+            "prepared_cache_maximum_entries": 1,
+            "prepared_cache_maximum_bytes": 64 * 1024 * 1024,
+            "invocation_log_maximum_entries": 64,
+            "invocation_log_maximum_bytes": 64 * 1024,
+            "retained_log_maximum_entries": 64,
+            "retained_log_maximum_bytes": 64 * 1024,
             "test_mode": False,
         },
         "workload": {
@@ -229,10 +239,17 @@ def raw_document(run_index: int) -> dict[str, object]:
             for _ in range(saturation_batches)
         ],
         "post_release": post_release,
+        "process_before_runtime": {
+            **copy.deepcopy(samples[0]["process"]),
+            "offset_micros": 0,
+            "thread_count": 1,
+            "file_descriptor_count": 4,
+        },
+        "process_after_warmup": copy.deepcopy(samples[warmup_batches]["process"]),
         "post_shutdown": {
             "observed_runtime_workers": 0,
             "process": {
-                **copy.deepcopy(samples[-1]["process"]),
+                **copy.deepcopy(post_release["process"]),
                 "thread_count": 1,
             },
         },
@@ -250,6 +267,12 @@ def host_document(phase: str, run_index: int) -> dict[str, object]:
         "run_index": run_index,
         "native_linux_reference": True,
         "host": {
+            "operating_system": "linux",
+            "architecture": "x86_64",
+            "cpu_model": "test CPU",
+            "logical_cpu_count": 4,
+            "total_memory_bytes": 16_000_000_000,
+            "kernel": "Linux native-test 1.0 x86_64",
             "virtualization": {
                 "systemd_detect_virt": "none",
                 "systemd_detect_virt_container": "none",
@@ -297,6 +320,9 @@ def calibration_document() -> dict[str, object]:
                     "memory_pressure_bytes",
                     "timeout_ms",
                     "cancel_after_ms",
+                    "prepared_cache_enabled",
+                    "wasmtime_instance_allocator",
+                    "wasmtime_copy_on_write_images",
                 )
             },
             "environment": {
@@ -406,6 +432,15 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             update(document)
             path.write_text(json.dumps(document), encoding="utf-8")
 
+    @staticmethod
+    def update_all_host_documents(archive: Path, update: object) -> None:
+        for index in range(1, 4):
+            for phase in ("before", "after"):
+                path = archive / "runs" / f"run-{index:02d}" / f"host-{phase}.json"
+                document = json.loads(path.read_text(encoding="utf-8"))
+                update(document)
+                path.write_text(json.dumps(document), encoding="utf-8")
+
     def test_aggregates_three_full_soaks_and_uses_calibrated_rss_noise(self) -> None:
         temporary, archive = self.make_archive()
         with temporary:
@@ -506,6 +541,14 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                 "inconclusive",
             )
             self.assertEqual(set(revalidated_document["post_shutdown"]), {"run-01", "run-02", "run-03"})
+            self.assertEqual(revalidated_document["file_descriptors"]["status"], "incomplete")
+            self.assertEqual(
+                revalidated_document["evidence_completeness"]["status"], "incomplete"
+            )
+            self.assertIn(
+                "fixed harness bound verified only for known historical source",
+                (extracted / "revalidated-SOAK.md").read_text(encoding="utf-8"),
+            )
 
     def test_retains_without_failing_a_stable_within_band_peak_outlier(self) -> None:
         temporary, archive = self.make_archive()
@@ -594,6 +637,51 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 2)
             self.assertIn("post-release-to-shutdown FD increase", completed.stderr)
 
+    def test_rejects_equally_elevated_post_release_and_shutdown_fds(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            raw = archive / "runs" / "run-03" / "raw.json"
+            document = json.loads(raw.read_text(encoding="utf-8"))
+            document["post_release"]["process"]["file_descriptor_count"] = 5
+            document["post_shutdown"]["process"]["file_descriptor_count"] = 5
+            raw.write_text(json.dumps(document), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("post-shutdown FD count exceeds its pre-runtime baseline", completed.stderr)
+
+    def test_rejects_post_release_fd_above_pre_runtime_baseline(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            raw = archive / "runs" / "run-03" / "raw.json"
+            document = json.loads(raw.read_text(encoding="utf-8"))
+            document["post_release"]["process"]["file_descriptor_count"] = 5
+            raw.write_text(json.dumps(document), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 1, completed.stderr)
+            aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
+            self.assertEqual(aggregate["status"], "fail")
+            self.assertIn("run-03", aggregate["file_descriptors"]["violations"])
+
+    def test_rejects_missing_pre_runtime_baseline_for_new_evidence(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            self.update_all_raw_documents(
+                archive, lambda document: document.pop("process_before_runtime")
+            )
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("lacks its pre-runtime process baseline", completed.stderr)
+
+    def test_rejects_missing_post_warmup_descriptor_baseline_for_new_evidence(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            self.update_all_raw_documents(
+                archive, lambda document: document.pop("process_after_warmup")
+            )
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("lacks its post-warm-up descriptor baseline", completed.stderr)
+
     def test_rejects_altered_post_shutdown_topology(self) -> None:
         temporary, archive = self.make_archive()
         with temporary:
@@ -650,18 +738,127 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 2)
             self.assertIn("successful matching execution status", completed.stderr)
 
-    def test_marks_cpu_kernel_fixture_and_toolchain_calibration_mismatches_inconclusive(self) -> None:
+    def test_rejects_raw_environment_that_disagrees_with_host_observations(self) -> None:
         mutations = {
-            "environment.cpu_model": lambda document: document["environment"].__setitem__("cpu_model", "other CPU"),
-            "environment.kernel": lambda document: document["environment"].__setitem__("kernel", "other kernel"),
-            "artifact.component_digest": lambda document: document["artifact"].__setitem__("component_digest", "sha256:" + "d" * 64),
-            "environment.rustc": lambda document: document["environment"].__setitem__("rustc", "other rustc"),
+            "operating_system": lambda host: host.__setitem__("operating_system", "other"),
+            "architecture": lambda host: host.__setitem__("architecture", "other"),
+            "cpu_model": lambda host: host.__setitem__("cpu_model", "other CPU"),
+            "logical_cpu_count": lambda host: host.__setitem__("logical_cpu_count", 8),
+            "total_memory_bytes": lambda host: host.__setitem__("total_memory_bytes", 8_000_000_000),
+            "kernel": lambda host: host.__setitem__("kernel", "other kernel"),
+            "virtualization": lambda host: host["virtualization"].__setitem__(
+                "systemd_detect_virt", "kvm"
+            ),
         }
-        for expected_field, mutation in mutations.items():
+        for field, mutation in mutations.items():
+            with self.subTest(field=field):
+                temporary, archive = self.make_archive()
+                with temporary:
+                    self.update_all_host_documents(archive, lambda document: mutation(document["host"]))
+                    completed = self.aggregate(archive)
+                    self.assertEqual(completed.returncode, 2)
+                    if field == "virtualization":
+                        self.assertIn("raw virtualization status", completed.stderr)
+                    else:
+                        self.assertIn(f"raw environment.{field}", completed.stderr)
+
+    def test_rejects_missing_new_raw_or_host_identity_fields(self) -> None:
+        cases = {
+            "raw virtualization": (
+                lambda archive: self.update_all_raw_documents(
+                    archive,
+                    lambda document: document["environment"]["native_linux_validation"].pop(
+                        "virtualization_kind"
+                    ),
+                ),
+                "lacks virtualization_kind",
+            ),
+            "host VM virtualization": (
+                lambda archive: self.update_all_host_documents(
+                    archive,
+                    lambda document: document["host"]["virtualization"].pop(
+                        "systemd_detect_virt_vm"
+                    ),
+                ),
+                "lacks virtualization.systemd_detect_virt_vm",
+            ),
+            "host allocator": (
+                lambda archive: self.update_all_host_documents(
+                    archive, lambda document: document.pop("allocator")
+                ),
+                "lacks allocator provenance",
+            ),
+        }
+        for name, (mutate, expected) in cases.items():
+            with self.subTest(name=name):
+                temporary, archive = self.make_archive()
+                with temporary:
+                    mutate(archive)
+                    completed = self.aggregate(archive)
+                    self.assertEqual(completed.returncode, 2)
+                    self.assertIn(expected, completed.stderr)
+
+    def test_rejects_unbound_legacy_retained_state_fallback(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            self.update_all_raw_documents(
+                archive,
+                lambda document: [
+                    document["config"].pop(field)
+                    for field in (
+                        "component_maximum_bytes",
+                        "prepared_cache_maximum_entries",
+                        "prepared_cache_maximum_bytes",
+                        "invocation_log_maximum_entries",
+                        "invocation_log_maximum_bytes",
+                        "retained_log_maximum_entries",
+                        "retained_log_maximum_bytes",
+                    )
+                ],
+            )
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("only the known 6250b978/65ba3412 historical archive", completed.stderr)
+
+    def test_marks_calibration_identity_mismatches_inconclusive(self) -> None:
+        raw_mutations = {
+            "environment.cpu_model": (
+                lambda document: document["environment"].__setitem__("cpu_model", "other CPU"),
+                lambda document: document["host"].__setitem__("cpu_model", "other CPU"),
+            ),
+            "environment.kernel": (
+                lambda document: document["environment"].__setitem__("kernel", "other kernel"),
+                lambda document: document["host"].__setitem__("kernel", "other kernel"),
+            ),
+            "artifact.component_digest": (
+                lambda document: document["artifact"].__setitem__(
+                    "component_digest", "sha256:" + "d" * 64
+                ),
+                None,
+            ),
+            "environment.rustc": (
+                lambda document: document["environment"].__setitem__("rustc", "other rustc"),
+                None,
+            ),
+        }
+        calibration_mutations = {
+            "config.prepared_cache_enabled": lambda document: document["reference_identity"][
+                "config"
+            ].__setitem__("prepared_cache_enabled", False),
+            "config.wasmtime_instance_allocator": lambda document: document[
+                "reference_identity"
+            ]["config"].__setitem__("wasmtime_instance_allocator", "pooling"),
+            "config.wasmtime_copy_on_write_images": lambda document: document[
+                "reference_identity"
+            ]["config"].__setitem__("wasmtime_copy_on_write_images", False),
+        }
+        for expected_field, (raw_mutation, host_mutation) in raw_mutations.items():
             with self.subTest(expected_field=expected_field):
                 temporary, archive = self.make_archive()
                 with temporary:
-                    self.update_all_raw_documents(archive, mutation)
+                    self.update_all_raw_documents(archive, raw_mutation)
+                    if host_mutation is not None:
+                        self.update_all_host_documents(archive, host_mutation)
                     completed = self.aggregate(archive)
                     self.assertEqual(completed.returncode, 1, completed.stderr)
                     aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
@@ -671,6 +868,36 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                         for mismatch in aggregate["calibration_noise"]["applicability"]["mismatches"]
                     }
                     self.assertIn(expected_field, mismatch_fields)
+        for expected_field, mutation in calibration_mutations.items():
+            with self.subTest(expected_field=expected_field):
+                temporary, archive = self.make_archive()
+                with temporary:
+                    path = archive / "calibration.json"
+                    document = json.loads(path.read_text(encoding="utf-8"))
+                    mutation(document)
+                    path.write_text(json.dumps(document), encoding="utf-8")
+                    completed = self.aggregate(archive)
+                    self.assertEqual(completed.returncode, 1, completed.stderr)
+                    aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
+                    self.assertEqual(aggregate["status"], "inconclusive")
+                    mismatch_fields = {
+                        mismatch["field"]
+                        for mismatch in aggregate["calibration_noise"]["applicability"]["mismatches"]
+                    }
+                    self.assertIn(expected_field, mismatch_fields)
+
+    def test_accepts_the_baseline_allocator_field_name_for_new_calibration(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            path = archive / "calibration.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            config = document["reference_identity"]["config"]
+            config["wasmtime_allocator"] = config.pop("wasmtime_instance_allocator")
+            path.write_text(json.dumps(document), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
+            self.assertEqual(aggregate["calibration_noise"]["applicability"]["status"], "matched")
 
 
 if __name__ == "__main__":

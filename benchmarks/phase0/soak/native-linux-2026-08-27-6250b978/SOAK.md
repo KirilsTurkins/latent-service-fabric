@@ -2,7 +2,7 @@
 
 **Status:** INCONCLUSIVE
 **Schema:** `latent.phase0.resource-soak.aggregate.v1`
-**Generated:** 2026-08-27T18:10:02+00:00
+**Generated:** 2026-08-27T19:37:24+00:00
 **Aggregate:** `benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/aggregate.json`
 
 > Observational Phase 0 evidence only. This is not a production SLO, capacity guarantee, or cross-machine claim.
@@ -33,7 +33,7 @@ Exact retained process commands:
 | Cargo | cargo 1.97.1 (c980f4866 2026-06-30) |
 | Target / build profile | `x86_64-unknown-linux-gnu` / `release` |
 | Wasmtime | 47.0.3 (workspace pin) |
-| Allocator observation | {'available': False, 'method': 'not_collected', 'reason': 'allocator-internal statistics are optional and no allocator-specific safe probe is configured'} |
+| Allocator observation | unavailable in retained host observation; process report: {'available': False, 'method': 'not_collected', 'reason': 'allocator-internal statistics are optional and no allocator-specific safe probe is configured'} |
 | Fixture | `sha256:1eaac4fc014071b09eae665bfbe093bf453b447128d0ca720ab2ec2ae798fa3b` (27616 bytes) |
 
 ## Effective configuration, bounds, and sampling schedule
@@ -55,10 +55,10 @@ Retained-state numeric bounds:
 
 | State | Limit | Evidence source |
 |---|---|---|
-| Component input | 64.00 MiB (67108864 bytes) | fixed harness bound at the recorded execution tree (v1 raw schema did not serialize this key) |
-| Prepared cache | 1 entry; 64.00 MiB (67108864 bytes) | fixed harness bound at the recorded execution tree (v1 raw schema did not serialize this key) |
-| Invocation log | 64 entries; 64.00 KiB (65536 bytes) | fixed harness bound at the recorded execution tree (v1 raw schema did not serialize this key) |
-| Retained log | 64 entries; 64.00 KiB (65536 bytes) | fixed harness bound at the recorded execution tree (v1 raw schema did not serialize this key) |
+| Component input | 64.00 MiB (67108864 bytes) | fixed harness bound verified only for known historical source 6250b978/65ba3412 (v1 raw schema did not serialize this key) |
+| Prepared cache | 1 entry; 64.00 MiB (67108864 bytes) | fixed harness bound verified only for known historical source 6250b978/65ba3412 (v1 raw schema did not serialize this key) |
+| Invocation log | 64 entries; 64.00 KiB (65536 bytes) | fixed harness bound verified only for known historical source 6250b978/65ba3412 (v1 raw schema did not serialize this key) |
+| Retained log | 64 entries; 64.00 KiB (65536 bytes) | fixed harness bound verified only for known historical source 6250b978/65ba3412 (v1 raw schema did not serialize this key) |
 | Backend timing store | 256 entries | recorded raw snapshot |
 
 Sampling schedule:
@@ -80,8 +80,21 @@ The raw paths below are losslessly retained in `raw-evidence.tar.zst`; verify it
 ## Calibration applicability and plateau analysis
 
 **INCONCLUSIVE calibration comparison:** the issue #38 bands are not applied because the required identity is not fully matched and recorded.
-- `host.virtualization.systemd_detect_virt_vm`: calibration `none`; soak `None` (missing candidate value).
-- `host.allocator`: calibration `{'ld_preload': 'unset', 'malloc_conf': 'unset', 'observation': 'When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.', 'source_global_allocator_lookup': 'completed', 'source_global_allocator_matches': []}`; soak `None` (missing candidate value).
+- `config.prepared_cache_enabled`: calibration `None`; soak `True` (missing calibration value).
+- `config.wasmtime_instance_allocator`: calibration `None`; soak `on_demand` (missing calibration value).
+- `config.wasmtime_copy_on_write_images`: calibration `None`; soak `True` (missing calibration value).
+- `host.virtualization.systemd_detect_virt_vm`: calibration `none`; soak `None` (missing soak value).
+- `host.allocator`: calibration `{'ld_preload': 'unset', 'malloc_conf': 'unset', 'observation': 'When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.', 'source_global_allocator_lookup': 'completed', 'source_global_allocator_matches': []}`; soak `None` (missing soak value).
+**INCOMPLETE retained evidence:** a future archive must retain the missing identity or descriptor-lifecycle fields before it can support a conclusive plateau claim.
+- complete descriptor lifecycle comparison is unavailable for run-01, run-02, run-03.
+- run-01, run-02, run-03: after host VM virtualization status is absent.
+- run-01, run-02, run-03: after host allocator provenance is absent.
+- run-01, run-02, run-03: before host VM virtualization status is absent.
+- run-01, run-02, run-03: before host allocator provenance is absent.
+- run-01, run-02, run-03: post-warm-up descriptor baseline is absent.
+- run-01, run-02, run-03: pre-runtime process baseline is absent.
+- run-01, run-02, run-03: raw native-Linux virtualization_kind is absent.
+Host reconciliation: **INCOMPLETE**.
 
 The raw interval series retains rolling ranges, peak, final-window delta, and a Theil-Sen robust late-window slope per run. PSS/private use the RSS byte-scale band only when calibration applicability is matched because #38 did not collect separate PSS/private bands.
 
@@ -103,7 +116,14 @@ Robust outliers are retained for review. They are not discarded or silently rela
 
 ## Topology, descriptors, explicit release, and shutdown
 
-File descriptors: **PASS**; both the measured window and explicit post-release-to-shutdown FD comparisons must have no unexplained growth.
+File descriptors: **INCOMPLETE**; the measured window, post-release-to-shutdown, and complete descriptor lifecycle baseline comparisons must have no unexplained growth.
+Descriptor lifecycle baselines: **INCOMPLETE**; the final measured FD count must not exceed the post-warm-up baseline, and post-release/post-shutdown counts must not exceed the serialized pre-runtime baseline in every independent process.
+
+| Run | Pre-runtime FDs | Post-warm-up FDs | Final measured FDs | Post-release FDs | Post-shutdown FDs | Lifecycle status |
+|---|---:|---:|---:|---:|---:|---|
+| run-01 | n/a | n/a | 5.0 | 4 | 4 | incomplete |
+| run-02 | n/a | n/a | 5.0 | 4 | 4 | incomplete |
+| run-03 | n/a | n/a | 5.0 | 4 | 4 | incomplete |
 - measured process_count: **PASS**
 - measured child_process_count: **PASS**
 - measured thread_count: **PASS**
@@ -124,7 +144,8 @@ File descriptors: **PASS**; both the measured window and explicit post-release-t
 - The command is explicit native-Linux soak work and intentionally does not run in shared PR smoke CI.
 - Every normal and saturation batch uses the real shared Phase 0 runtime, bounded fixed pool, Wasmtime backend, prepared cache, activation runner, and a fresh store per activation.
 - The runner fails on WSL, a container, missing required Linux process/socket probes, a dirty tree, source/tree mismatch, unavailable fixture/toolchain input, test-only output, or an existing archive destination.
-- The aggregate rejects missing/duplicate hard checks, mismatched execution commit/tree or run index, missing samples, saturation-count/activation-counter disagreement, changed measured topology, measured-window FD growth, a post-release-to-shutdown FD increase, and invalid terminal process topology.
+- The aggregate rejects missing/duplicate hard checks, mismatched execution commit/tree or run index, raw/host environment disagreement, missing samples, saturation-count/activation-counter disagreement, changed measured topology, measured-window FD growth, a post-release-to-shutdown FD increase, a descriptor value above its retained lifecycle baseline, and invalid terminal process topology.
+- New archives must retain the selected prepared-cache, Wasmtime allocator, initialized-memory COW, retained-state-limit, raw virtualization, pre-runtime, and post-warm-up descriptor-baseline fields. The sole 6250b978/65ba3412 historical fallback is explicitly incomplete where it cannot prove a lifecycle comparison.
 - A material calibrated growth result must identify a retaining subsystem or focused issue; the allowance is never raised to clear a run.
 
 ## Unsupported measurements and conclusions
@@ -136,4 +157,4 @@ File descriptors: **PASS**; both the measured window and explicit post-release-t
 
 ## Conclusion
 
-All retained processes pass hard invariants, measured topology, terminal shutdown topology, and both FD checks, but the #38 calibration comparison is inconclusive. The raw series remains available for diagnosis; a future matched archive must record every missing identity field before it can claim a calibrated plateau.
+All retained processes pass hard invariants, measured topology, and the retained terminal shutdown checks, but this archive is not a conclusive calibrated plateau. Its #38 comparison is inapplicable when final configuration provenance differs or is absent, and any incomplete raw/host or descriptor-lifecycle evidence must be replaced by a fresh fully recorded archive. The raw series remains available for diagnosis.

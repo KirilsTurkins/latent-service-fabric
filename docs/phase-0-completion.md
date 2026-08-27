@@ -72,13 +72,17 @@ raw evidence in the native-Linux archive
 Its three independent processes each completed 1,000 excluded warm-ups,
 100,000 normal measured fresh-store activations, and 100 real batches of each
 saturation mode. Every hard invariant, descriptor/topology check, explicit
-prepared-component release, runtime shutdown check, and both measured-window
-and release-to-shutdown FD checks passes. Strict revalidation does not apply
-the issue-38 bands to this historical archive: its host captures lack VM
-detection and allocator provenance. The raw late-window series and run-03 PSS
-outlier remain retained for diagnosis, but the comparison is explicitly
-**inconclusive** and #39 remains open pending a fresh three-process archive
-from the updated runner.
+prepared-component release, runtime shutdown check, and retained measured-
+window/release-to-shutdown FD check passes. Strict revalidation does not apply
+the issue-38 bands to this historical archive: that calibration lacks explicit
+prepared-cache, Wasmtime allocator, and initialized-memory COW provenance,
+while the soak host captures lack VM detection and allocator provenance. The
+raw documents also predate the serialized pre-runtime and post-warm-up
+descriptor baselines plus raw virtualization kind, so the complete lifecycle
+cannot be independently revalidated. The raw late-window series and run-03 PSS outlier remain retained
+for diagnosis, but the comparison is explicitly **inconclusive** and #39
+remains open pending a fresh selected-configuration calibration and three-
+process archive from the updated runner.
 
 The wrapper requires `--final-configuration-commit` to equal the measured
 reachable source commit, preventing a pre-final run from being reported as a

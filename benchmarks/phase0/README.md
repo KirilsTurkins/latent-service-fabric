@@ -41,6 +41,11 @@ tree. Each run and aggregate retain the published commit/tree and local
 execution commit/tree, so replacing a recorded commit is never an unsupported
 text substitution.
 
+When this calibration is intended for the selected issue-40 ordinary
+configuration, the helper explicitly runs and records prepared-cache enabled,
+`on-demand` Wasmtime allocation, and initialized-memory COW enabled. A
+calibration that lacks those recorded fields cannot be assumed comparable.
+
 The archive contains:
 
 - runs/run-NN/raw-results.json and runs/run-NN/BASELINE.md for every full
@@ -118,13 +123,17 @@ Each archive retains `runs/run-NN/raw.json`, before/after host observations,
 command status, the raw-file hash, `aggregate.json`, and `SOAK.md`. Raw batch
 samples record RSS, VM, PSS/private mappings when exposed, process/child/thread
 and socket/FD topology, pool/runner/backend/log/cache/timing-store state, and
-post-release/shutdown evidence. The aggregate applies the #38 calibrated RSS
-noise band to RSS and (where available) PSS/private material-growth triage
-only after CPU, memory, kernel, virtualization, toolchain, allocator, fixture,
-and relevant configuration identity are recorded as matched. Otherwise it
-emits an explicit inconclusive result. It reports rolling ranges,
-final-window deltas, robust late-window slopes and peaks, and rejects both
-measured-window and post-release-to-shutdown FD growth. A material growth
+post-release/shutdown evidence. New raw runs also retain pre-runtime and
+post-warm-up process snapshots: final measured FDs must not exceed the
+post-warm-up baseline and post-release/post-shutdown FDs must not exceed the
+pre-runtime baseline. The
+aggregate applies the #38 calibrated RSS noise band to RSS and (where
+available) PSS/private material-growth triage only after CPU, memory, kernel,
+virtualization, toolchain, allocator, fixture, and relevant configuration
+identity—including prepared-cache enablement, Wasmtime allocator mode, and
+initialized-memory COW—are recorded as matched. Otherwise it emits an explicit
+inconclusive result. It reports rolling ranges, final-window deltas, robust
+late-window slopes and peaks. A material growth
 result is not fixed by increasing the allowance: it remains failed until a
 retaining subsystem or focused follow-up issue is recorded. Record that
 diagnosis in the same archive with `--retaining-subsystem <name>` and/or
@@ -135,9 +144,13 @@ The retained final-config raw evidence is
 It retains all three machine-readable raw process series losslessly in a
 checksummed 49 KiB zstd archive, alongside the aggregate, concise report,
 host observations, command statuses, and raw-file hashes, without duplicating
-earlier attempts. Its hard invariants, release/shutdown topology, and both FD
-comparisons pass. Strict revalidation now marks the calibration comparison
-**inconclusive**, because those historical host observations did not record
-VM-detection or allocator provenance. The runner now records both fields; #39
-remains open until a fresh matched three-process archive can apply the #38
-late-window bands without inference.
+earlier attempts. Its hard invariants, release/shutdown topology, and retained
+measured-window/release-to-shutdown FD comparisons pass. Strict revalidation
+now marks the calibration comparison **inconclusive**: #38 lacks the explicit
+prepared-cache, Wasmtime allocator, and COW settings; the historical soak host
+observations lack VM-detection and allocator provenance; and raw documents
+predate the pre-runtime and post-warm-up FD baselines plus raw virtualization kind. The runner
+now records all of those fields, and the calibration helper passes the selected
+cache/on-demand/COW configuration explicitly; #39 remains open until a fresh
+matching calibration and three-process archive can apply the #38 late-window
+bands without inference.
