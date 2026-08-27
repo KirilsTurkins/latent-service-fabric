@@ -12,6 +12,137 @@ fn write_outputs(
     Ok(())
 }
 
+fn write_targeted_profile_outputs(
+    json_path: &Path,
+    report_path: &Path,
+    document: &TargetedProfileDocument,
+) -> Result<(), BenchError> {
+    ensure_parent(json_path)?;
+    ensure_parent(report_path)?;
+    let mut raw = serde_json::to_vec_pretty(document)?;
+    raw.push(b'\n');
+    fs::write(json_path, raw)?;
+    fs::write(report_path, render_targeted_profile_report(document, json_path))?;
+    Ok(())
+}
+
+fn render_targeted_profile_report(
+    document: &TargetedProfileDocument,
+    raw_path: &Path,
+) -> String {
+    let mut report = String::new();
+    let _ = writeln!(report, "# Phase 0 targeted hot-path profile\n");
+    let _ = writeln!(
+        report,
+        "**Status:** {}",
+        if document.status == "pass" { "PASS" } else { "FAIL" }
+    );
+    let _ = writeln!(report, "**Workload:** `{}`", document.profile_workload.name());
+    let _ = writeln!(report, "**Raw results:** `{}`\n", raw_path.display());
+    let _ = writeln!(report, "## Selected boundary\n");
+    let _ = writeln!(report, "{}\n", document.workload_semantics);
+    let _ = writeln!(
+        report,
+        "A separate `--mode full` proof is required and retained beside this targeted tool profile; this document does not claim the complete invariant set.\n"
+    );
+    let _ = writeln!(report, "## Measurements\n");
+    let _ = writeln!(report, "| Metric | Value |");
+    let _ = writeln!(report, "|---|---:|");
+    report_row(
+        &mut report,
+        "Component preparation (microseconds)",
+        &document.timings.component_preparation_micros.to_string(),
+    );
+    report_row(
+        &mut report,
+        "Input bytes submitted to typed call",
+        &document
+            .payload_flow
+            .input_bytes_submitted_to_typed_call
+            .to_string(),
+    );
+    report_row(
+        &mut report,
+        "Output bytes returned from typed call",
+        &document
+            .payload_flow
+            .output_bytes_returned_from_typed_call
+            .to_string(),
+    );
+    report_row(
+        &mut report,
+        "Copy bytes claimed",
+        &document.payload_flow.copy_bytes_claimed.to_string(),
+    );
+    if let Some(cache_reuse) = &document.preparation_cache_reuse {
+        report_row(
+            &mut report,
+            "Cache-reuse probe status",
+            &cache_reuse.status,
+        );
+        report_row(
+            &mut report,
+            "Same-key second preparation (microseconds)",
+            &cache_reuse
+                .second_prepare_micros
+                .map_or_else(|| "not run for disabled-cache control".to_owned(), |value| {
+                    value.to_string()
+                }),
+        );
+        report_row(
+            &mut report,
+            "Same prepared handle",
+            &cache_reuse
+                .same_prepared_handle
+                .map_or_else(|| "not applicable".to_owned(), |value| value.to_string()),
+        );
+    }
+    if let Some(throughput) = &document.activation_throughput {
+        report_row(
+            &mut report,
+            "At-capacity activations/second",
+            &format!("{:.3}", throughput.at_capacity.activations_per_second),
+        );
+        report_row(
+            &mut report,
+            "Bounded-queue activations/second",
+            &format!(
+                "{:.3}",
+                throughput.bounded_queue_saturation.activations_per_second
+            ),
+        );
+    }
+    if let Some(contention) = &document.targeted_contention {
+        report_row(
+            &mut report,
+            &format!("{} activations/second", contention.mode.mode),
+            &format!("{:.3}", contention.mode.activations_per_second),
+        );
+        report_row(
+            &mut report,
+            &format!("{} observed active/queued", contention.mode.mode),
+            &format!(
+                "{}/{}",
+                contention.mode.maximum_observed_active_leases,
+                contention.mode.maximum_observed_queue_depth
+            ),
+        );
+    }
+    let _ = writeln!(report, "\n## Targeted checks\n");
+    let _ = writeln!(report, "| Check | Result | Observed |");
+    let _ = writeln!(report, "|---|---|---|");
+    for check in &document.checks {
+        let _ = writeln!(
+            report,
+            "| `{}` | {} | {} |",
+            check.name,
+            if check.passed { "PASS" } else { "FAIL" },
+            check.observed.replace('|', "\\|")
+        );
+    }
+    report
+}
+
 fn ensure_parent(path: &Path) -> Result<(), BenchError> {
     if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
         fs::create_dir_all(parent)?;
@@ -241,6 +372,55 @@ fn render_report(document: &BaselineDocument, raw_path: &Path) -> String {
             .timings
             .prepared_component_release_micros
             .to_string(),
+    );
+    report.push('\n');
+
+    let _ = writeln!(report, "## Prepared-cache reuse control\n");
+    let _ = writeln!(report, "| Metric | Value |");
+    let _ = writeln!(report, "|---|---:|");
+    report_row(
+        &mut report,
+        "Cache enabled",
+        &document.preparation_cache_reuse.cache_enabled.to_string(),
+    );
+    report_row(
+        &mut report,
+        "First preparation (microseconds)",
+        &document
+            .preparation_cache_reuse
+            .first_prepare_micros
+            .to_string(),
+    );
+    report_row(
+        &mut report,
+        "Same-key second preparation (microseconds)",
+        &document
+            .preparation_cache_reuse
+            .second_prepare_micros
+            .map_or_else(|| "not run for disabled-cache control".to_owned(), |value| {
+                value.to_string()
+            }),
+    );
+    report_row(
+        &mut report,
+        "Same prepared handle",
+        &document
+            .preparation_cache_reuse
+            .same_prepared_handle
+            .map_or_else(|| "not applicable".to_owned(), |value| value.to_string()),
+    );
+    report_row(
+        &mut report,
+        "Cache entries after probe",
+        &document
+            .preparation_cache_reuse
+            .cache_entries_after_probe
+            .to_string(),
+    );
+    report_row(
+        &mut report,
+        "Probe status",
+        &document.preparation_cache_reuse.status,
     );
     report.push('\n');
 

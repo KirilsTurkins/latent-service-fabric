@@ -85,6 +85,32 @@ microbenchmark bands as a pass/fail gate. See
 [docs/phase-0-baselines.md](docs/phase-0-baselines.md) for comparison and rerun
 rules.
 
+## Native-Linux Phase 0 hot-path profiling
+
+Issue 40 provides a separate, manual evidence command for symbolized CPU and
+allocation/copy profiling. It is intentionally excluded from shared CI and
+requires a clean native-Linux host or VM plus the open-source `perf`,
+`heaptrack`, and `heaptrack_print` utilities:
+
+~~~bash
+tools/run_phase0_hot_path_profiles.sh \
+  --published-source-commit <reachable-commit-sha> \
+  --published-source-tree <reachable-tree-sha> \
+  --published-source-ref <durable-branch-or-tag> \
+  benchmarks/phase0/profiling/native-linux-YYYY-MM-DD
+~~~
+
+The command refuses WSL, detected containers, unclean source, missing tools,
+source-tree mismatch, missing raw profile artifacts, and failed Phase 0 hard
+invariants. It retains the exact commands, `perf.data`, symbolized `perf`
+reports, Heaptrack data/reports, full baseline raw output, host context, and a
+bounded worker/cell, allocator, and COW experiment matrix. Heaptrack allocation
+attribution uses the leaf-nearest non-plumbing owner frame; a category with no
+direct sample is reported as not observed at profiler resolution, not as a
+zero-cost result. The aggregation test is deterministic and may run in CI; the
+host-sensitive profile command may not. See [docs/phase-0-hot-path-profiling.md](docs/phase-0-hot-path-profiling.md)
+for the evidence interpretation, adoption rule, and Phase 1 handoff.
+
 ## CI jobs
 
 The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.

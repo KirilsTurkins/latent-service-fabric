@@ -50,8 +50,8 @@ use latent_manifest::CapsuleManifest;
 use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner};
 use latent_scheduler::{CellClass, CellLease, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
-    Phase0InvocationTiming, Phase0WasmtimeBackend, PreparedCacheSnapshot, RuntimeResourceSnapshot,
-    ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    Phase0InstanceAllocator, Phase0InvocationTiming, Phase0WasmtimeBackend, PreparedCacheSnapshot,
+    RuntimeResourceSnapshot, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
 };
 use latentd::phase0_composition::{
     self, Phase0InvocationConfig, Phase0PreparationConfig, Phase0RuntimeConfig,
@@ -62,6 +62,7 @@ use serde_json::{json, Value};
 use tokio::sync::Barrier;
 
 const SCHEMA_VERSION: &str = "latent.phase0.baseline.v2";
+const TARGETED_PROFILE_SCHEMA: &str = "latent.phase0.targeted-profile.v2";
 const EXECUTABLE_PROBE_SCHEMA_VERSION: &str = "latent.phase0.executable-probe.v2";
 const SURFACE: &str = "latentd.phase0-baseline";
 const NODE_ID: &str = "phase0-baseline-node-0";
@@ -79,6 +80,7 @@ const DEFAULT_MEMORY_PRESSURE_BYTES: u64 = 4 * 1024 * 1024;
 const DEFAULT_TIMEOUT_MILLIS: u64 = 25;
 const DEFAULT_CANCELLATION_MILLIS: u64 = 5;
 const DEFAULT_MAXIMUM_TIMEOUT_OVERSHOOT_MILLIS: u64 = 500;
+const DEFAULT_COORDINATION_TIMEOUT_MILLIS: u64 = 2_000;
 const DEFAULT_RSS_GROWTH_ALLOWANCE_BYTES: u64 = 64 * 1024 * 1024;
 const DEFAULT_FD_GROWTH_ALLOWANCE: u64 = 2;
 const FIXTURE_TRAP: &str = "__latent_test_trap";

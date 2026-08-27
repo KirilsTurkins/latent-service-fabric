@@ -68,6 +68,10 @@ async fn invoke_case(
     };
     let outcome = classify_outcome(outcome);
     let contract_result_valid = outcome_matches(request.expected, request.input, &outcome);
+    let output_bytes = outcome
+        .output_utf8
+        .as_ref()
+        .and_then(|output| u64::try_from(output.len()).ok());
 
     let runner_after = runner_snapshot(&runner.snapshot());
     let pool_after = pool_snapshot(&pool.observations());
@@ -87,6 +91,8 @@ async fn invoke_case(
         scenario: request.scenario.to_owned(),
         iteration: request.iteration,
         activation_id: activation_id.0,
+        input_bytes: u64::try_from(request.input.len()).unwrap_or(u64::MAX),
+        output_bytes,
         elapsed_micros,
         timeout_or_cancel_overshoot_micros: overshoot,
         expected_outcome: request.expected.name().to_owned(),
