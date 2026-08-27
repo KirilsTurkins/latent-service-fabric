@@ -380,6 +380,26 @@ def require_text(path: Path, label: str) -> str:
     return contents
 
 
+def require_heaptrack_data(directory: Path, label: str) -> Path:
+    candidates = sorted(path for path in directory.glob("heaptrack*.gz*") if path.is_file())
+    if len(candidates) != 1:
+        fail(
+            f"{label} must retain exactly one Heaptrack compressed data file; "
+            f"found {[str(path) for path in candidates]}"
+        )
+    return candidates[0]
+
+
+def heaptrack_summary(report: str, label: str) -> tuple[int, str]:
+    allocation_match = re.search(r"calls to allocation functions:\s*(\d+)", report)
+    if allocation_match is None or int(allocation_match.group(1)) == 0:
+        fail(f"{label} does not contain non-zero Heaptrack allocation evidence")
+    leak_match = re.search(r"total memory leaked:\s*([^\r\n]+)", report)
+    if leak_match is None:
+        fail(f"{label} does not report its Heaptrack process-exit leak total")
+    return int(allocation_match.group(1)), leak_match.group(1).strip()
+
+
 def load_profile(
     profiles_directory: Path,
     name: str,
@@ -410,12 +430,16 @@ def load_profile(
     allocation_report = require_text(
         allocation_root / "heaptrack-report.txt", f"{name} allocation report"
     )
+    allocation_leak_report = require_text(
+        allocation_root / "heaptrack-leaks.txt", f"{name} allocation leak report"
+    )
+    allocation_calls, leaked_memory = heaptrack_summary(
+        allocation_report, f"{name} allocation report"
+    )
     perf_data = perf_root / "perf.data"
-    allocation_data = allocation_root / "heaptrack.gz"
+    allocation_data = require_heaptrack_data(allocation_root, f"{name} raw Heaptrack data")
     if not perf_data.is_file():
         fail(f"{name} raw perf data is missing: {perf_data}")
-    if not allocation_data.is_file():
-        fail(f"{name} raw heaptrack data is missing: {allocation_data}")
     return (
         {
             "workload": name,
@@ -438,6 +462,11 @@ def load_profile(
                 "report": str(allocation_root / "heaptrack-report.txt"),
                 "report_sha256": sha256_file(allocation_root / "heaptrack-report.txt"),
                 "report_text": allocation_report,
+                "leak_report": str(allocation_root / "heaptrack-leaks.txt"),
+                "leak_report_sha256": sha256_file(allocation_root / "heaptrack-leaks.txt"),
+                "leak_report_text": allocation_leak_report,
+                "allocation_calls": allocation_calls,
+                "process_exit_leaked_memory": leaked_memory,
             },
         },
         expected_checks,
@@ -541,6 +570,7 @@ def attribution(profile_records: Iterable[dict[str, Any]]) -> dict[str, Any]:
     for record in profile_records:
         text_by_tool["perf"].extend(record["perf"]["report_text"].splitlines())
         text_by_tool["heaptrack"].extend(record["allocation"]["report_text"].splitlines())
+        text_by_tool["heaptrack"].extend(record["allocation"]["leak_report_text"].splitlines())
     results: dict[str, Any] = {}
     for category, patterns in ATTRIBUTION_RULES.items():
         matches: dict[str, list[str]] = {}
@@ -633,17 +663,22 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
         "",
         "## Profile coverage",
         "",
-        "| Workload | CPU profile | Allocation/copy evidence |",
-        "| --- | --- | --- |",
+        "| Workload | CPU profile | Allocation/copy evidence | Process-exit Heaptrack total |",
+        "| --- | --- | --- | ---: |",
     ]
     for profile in aggregate["profiles"]:
         lines.append(
-            f"| {profile['workload']} | `{profile['perf']['report']}` | `{profile['allocation']['report']}` |"
+            "| {workload} | `{perf}` | `{allocation}` | {leaked} |".format(
+                workload=profile["workload"],
+                perf=profile["perf"]["report"],
+                allocation=profile["allocation"]["report"],
+                leaked=profile["allocation"]["process_exit_leaked_memory"],
+            )
         )
     lines.extend(
         [
             "",
-            "Each profile invokes the real shared Phase 0 composition and retains a passing baseline raw document beside both the symbolized `perf` and `heaptrack` artifacts. The baseline's hard topology, containment, recovery, cleanup, and reclamation checks are binary prerequisites; profiling never converts them into tolerances.",
+            "Each profile invokes the real shared Phase 0 composition and retains a passing baseline raw document beside both the symbolized `perf` and `heaptrack` artifacts. Heaptrack allocation-call totals and a dedicated process-exit leak report are mandatory, so an unreadable compressed trace cannot be mistaken for zero allocations. The baseline's hard topology, containment, recovery, cleanup, and reclamation checks are binary prerequisites; profiling never converts them into tolerances.",
             "",
             "## Experiment matrix",
             "",

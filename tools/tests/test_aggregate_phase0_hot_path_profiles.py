@@ -68,7 +68,12 @@ def baseline(
 def make_profile(root: Path, name: str, document: dict[str, object]) -> None:
     for tool, report in (
         ("perf", "Overhead  Symbol\n  50.00% phase0_activation_envelope\n"),
-        ("allocation", "heaptrack: call_echo memcpy FixedCellPool\n"),
+        (
+            "allocation",
+            "heaptrack: call_echo memcpy FixedCellPool\n"
+            "calls to allocation functions: 10 (10/s)\n"
+            "total memory leaked: 0B\n",
+        ),
     ):
         directory = root / name / tool
         directory.mkdir(parents=True, exist_ok=True)
@@ -84,8 +89,11 @@ def make_profile(root: Path, name: str, document: dict[str, object]) -> None:
             (directory / "perf.data").write_bytes(b"perf")
             (directory / "perf-report.txt").write_text(report, encoding="utf-8")
         else:
-            (directory / "heaptrack.gz").write_bytes(b"heaptrack")
+            (directory / "heaptrack.gz.zst").write_bytes(b"heaptrack")
             (directory / "heaptrack-report.txt").write_text(report, encoding="utf-8")
+            (directory / "heaptrack-leaks.txt").write_text(
+                "MEMORY LEAKS\ntotal memory leaked: 0B\n", encoding="utf-8"
+            )
 
 
 def make_candidate(root: Path, name: str, expectation: dict[str, object]) -> None:
@@ -160,8 +168,12 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
         write_json(calibration, {"status": "pass", "metrics": metrics})
         return profiles, candidates, host, calibration
 
-    def run_aggregate(self, temporary: Path) -> subprocess.CompletedProcess[str]:
-        profiles, candidates, host, calibration = self.build_archive(temporary)
+    def run_aggregate(
+        self,
+        temporary: Path,
+        archive: tuple[Path, Path, Path, Path] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        profiles, candidates, host, calibration = archive or self.build_archive(temporary)
         return subprocess.run(
             [
                 sys.executable,
@@ -234,6 +246,20 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             )
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("different hard-check set", result.stderr)
+
+    def test_aggregate_rejects_an_unreadable_zero_allocation_report(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            profiles, _, _, _ = archive
+            report = profiles / "warm-execution" / "allocation" / "heaptrack-report.txt"
+            report.write_text(
+                "calls to allocation functions: 0 (0/s)\ntotal memory leaked: 0B\n",
+                encoding="utf-8",
+            )
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("non-zero Heaptrack allocation evidence", result.stderr)
 
 
 if __name__ == "__main__":

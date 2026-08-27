@@ -24,13 +24,16 @@ tools/run_phase0_hot_path_profiles.sh \
 
 The wrapper builds a debuginfo-preserving release binary in an isolated target
 directory, validates and stages the real containment fixture, creates the
-existing exact executable parity probe, then invokes the same shared Phase 0
-composition for every measurement. It preserves `perf.data`, a symbolized
-`perf report --stdio`, raw Heaptrack data, `heaptrack_print` output, exact
-commands, baseline raw results, and Markdown baseline reports. The aggregate
-will reject a profile that lacks either tool's raw/report output, a source
-identity mismatch, a missing/duplicate/unexpected hard check, or one failed
-hard check.
+exact executable parity probe (regenerating it for each worker/cell topology),
+then invokes the same shared Phase 0 composition for every measurement. It
+preserves `perf.data`, a symbolized
+`perf report --stdio`, Heaptrack's native compressed raw filename, normal and
+leak-only `heaptrack_print` output, exact commands, baseline raw results, and
+Markdown baseline reports. The aggregate requires a nonzero Heaptrack
+allocation-call total and a process-exit leak total, so unreadable compressed
+data cannot be misreported as zero allocation. It rejects a profile that lacks
+either tool's raw/report output, has a source-identity mismatch, a
+missing/duplicate/unexpected hard check, or one failed hard check.
 
 The workload set is intentionally biased toward each path while leaving the
 real composition intact:

@@ -196,6 +196,7 @@ profile_command() {
     local pool_capacity="$8"
     local allocator="$9"
     local copy_on_write="${10}"
+    local executable_probe="${11}"
     local parent_launch
     parent_launch="$($PYTHON - <<'PY'
 from time import time_ns
@@ -205,7 +206,7 @@ PY
     printf '%s\0' \
         "$BASELINE" \
         --capsule "$CAPSULE" \
-        --executable-harness-probe "$EXECUTABLE_PROBE" \
+        --executable-harness-probe "$executable_probe" \
         --parent-launch-unix-micros "$parent_launch" \
         --output-json "$output_json" \
         --output-report "$output_report" \
@@ -243,7 +244,7 @@ run_profile() {
     read_command perf_command profile_command \
         "$perf_root/raw-results.json" "$perf_root/BASELINE.md" \
         "$warm_samples" "$sequence_repetitions" "$throughput_batches" "$pool_iterations" \
-        2 2 on-demand true
+        2 2 on-demand true "$EXECUTABLE_PROBE"
     write_command_json "$perf_root/command.json" "perf" \
         perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}"
     perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}" \
@@ -255,21 +256,25 @@ run_profile() {
     read_command allocation_command profile_command \
         "$allocation_root/raw-results.json" "$allocation_root/BASELINE.md" \
         "$warm_samples" "$sequence_repetitions" "$throughput_batches" "$pool_iterations" \
-        2 2 on-demand true
+        2 2 on-demand true "$EXECUTABLE_PROBE"
     write_command_json "$allocation_root/command.json" "heaptrack" \
         heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}"
     heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}" \
         >"$allocation_root/stdout.log" 2>"$allocation_root/stderr.log"
-    if [[ ! -f "$allocation_root/heaptrack.gz" ]]; then
+    local allocation_data="$allocation_root/heaptrack.gz.zst"
+    if [[ ! -f "$allocation_data" ]]; then
         mapfile -t heaptrack_outputs < <(find "$allocation_root" -maxdepth 1 -type f -name 'heaptrack*.gz*' -print)
         if (( ${#heaptrack_outputs[@]} != 1 )); then
             printf '%s\n' "heaptrack did not create exactly one raw profile for $workload" >&2
             exit 1
         fi
-        mv "${heaptrack_outputs[0]}" "$allocation_root/heaptrack.gz"
+        allocation_data="${heaptrack_outputs[0]}"
     fi
-    heaptrack_print "$allocation_root/heaptrack.gz" >"$allocation_root/heaptrack-report.txt" \
+    heaptrack_print "$allocation_data" >"$allocation_root/heaptrack-report.txt" \
         2>"$allocation_root/heaptrack-print.stderr.log"
+    heaptrack_print --file "$allocation_data" --print-allocators=0 --print-peaks=0 \
+        --print-temporary=0 --print-leaks=1 --peak-limit 20 --sub-peak-limit 5 \
+        >"$allocation_root/heaptrack-leaks.txt" 2>"$allocation_root/heaptrack-leaks.stderr.log"
 }
 
 run_candidate() {
@@ -280,10 +285,27 @@ run_candidate() {
     local copy_on_write="$5"
     local root="$OUTPUT_DIR/candidates/$candidate"
     mkdir -p "$root"
+    local candidate_probe="$root/executable-harness-probe.json"
+    local shared_probe="$TARGET_ROOT/phase0-baseline/smoke/executable-harness-probe.json"
+    # The exact issue-23 executable probe includes worker and cell capacity in
+    # its parity contract. Regenerate it for each topology instead of weakening
+    # that contract or comparing a candidate against an incompatible probe.
+    GITHUB_SHA="$PUBLISHED_SOURCE_COMMIT" \
+        LSF_BASELINE_POOL_CAPACITY="$pool_capacity" \
+        LSF_BASELINE_RUNTIME_WORKERS="$runtime_workers" \
+        CARGO_TARGET_DIR="$TARGET_ROOT" \
+        CARGO_PROFILE_RELEASE_DEBUG=1 \
+        CARGO_PROFILE_RELEASE_STRIP=none \
+        tools/run_phase0_baselines.sh smoke "$root/parity-bootstrap" >"$root/parity-bootstrap.log" 2>&1
+    [[ -f "$shared_probe" ]] || {
+        printf '%s\n' "candidate parity bootstrap did not produce its executable probe: $shared_probe" >&2
+        exit 1
+    }
+    cp "$shared_probe" "$candidate_probe"
     local -a template
     read_command template profile_command \
         "RAW_RESULTS.json" "BASELINE.md" 40 10 24 2000 \
-        "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write"
+        "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$candidate_probe"
     write_command_json "$root/command-template.json" "phase0-baseline" "${template[@]}"
     for (( run = 1; run <= CANDIDATE_RUNS; run++ )); do
         printf -v run_name 'run-%02d' "$run"
@@ -292,7 +314,7 @@ run_candidate() {
         local -a command
         read_command command profile_command \
             "$run_root/raw-results.json" "$run_root/BASELINE.md" 40 10 24 2000 \
-            "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write"
+            "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$candidate_probe"
         write_command_json "$run_root/command.json" "phase0-baseline" "${command[@]}"
         "${command[@]}" >"$run_root/stdout.log" 2>"$run_root/stderr.log"
     done
