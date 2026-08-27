@@ -185,7 +185,10 @@ async fn wait_for_queue_depth(
                 snapshot.queue_depth
             )));
         }
-        tokio::task::yield_now().await;
+        // Allocation profilers amplify scheduler contention. Poll at a small
+        // bounded interval so the activation tasks can establish the same
+        // hard saturation invariant without a spin-yield race.
+        tokio::time::sleep(Duration::from_millis(1)).await;
     }
 }
 
@@ -212,7 +215,10 @@ async fn wait_for_activation_saturation(
                 expected_queue
             )));
         }
-        tokio::task::yield_now().await;
+        // Allocation profilers amplify scheduler contention. Poll at a small
+        // bounded interval so the activation tasks can establish the same
+        // hard saturation invariant without a spin-yield race.
+        tokio::time::sleep(Duration::from_millis(1)).await;
     }
 }
 
