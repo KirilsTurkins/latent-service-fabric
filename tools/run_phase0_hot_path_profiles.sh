@@ -9,11 +9,13 @@ OUTPUT_DIR=""
 TARGET_ROOT="${LSF_HOT_PATH_TARGET_DIR:-${ROOT}/target/phase0-hot-path-work}"
 PUBLISHED_SOURCE_COMMIT=""
 PUBLISHED_SOURCE_TREE=""
+PUBLISHED_SOURCE_REF=""
 CANDIDATE_RUNS=3
 PERF_FREQUENCY=999
+MINIMUM_EXPERIMENT_RUNS=3
 
 usage() {
-    printf '%s\n' "usage: $0 --published-source-commit SHA --published-source-tree TREE [--candidate-runs N] [--perf-frequency HZ] [output-directory]"
+    printf '%s\n' "usage: $0 --published-source-commit SHA --published-source-tree TREE --published-source-ref REF [--candidate-runs N] [--perf-frequency HZ] [output-directory]"
     printf '%s\n' "Records native-Linux perf + heaptrack evidence and a bounded Phase 0 experiment matrix."
 }
 
@@ -27,6 +29,11 @@ while (( $# > 0 )); do
         --published-source-tree)
             (( $# >= 2 )) || { usage >&2; exit 2; }
             PUBLISHED_SOURCE_TREE="$2"
+            shift 2
+            ;;
+        --published-source-ref)
+            (( $# >= 2 )) || { usage >&2; exit 2; }
+            PUBLISHED_SOURCE_REF="$2"
             shift 2
             ;;
         --candidate-runs)
@@ -64,16 +71,16 @@ if [[ -e "$OUTPUT_DIR" ]]; then
     printf '%s\n' "profile output directory must be new: $OUTPUT_DIR" >&2
     exit 2
 fi
-if ! [[ "$CANDIDATE_RUNS" =~ ^[0-9]+$ ]] || (( CANDIDATE_RUNS == 0 )); then
-    printf '%s\n' "--candidate-runs must be a positive integer" >&2
+if ! [[ "$CANDIDATE_RUNS" =~ ^[0-9]+$ ]] || (( CANDIDATE_RUNS < MINIMUM_EXPERIMENT_RUNS )); then
+    printf '%s\n' "--candidate-runs must be at least $MINIMUM_EXPERIMENT_RUNS" >&2
     exit 2
 fi
 if ! [[ "$PERF_FREQUENCY" =~ ^[0-9]+$ ]] || (( PERF_FREQUENCY == 0 )); then
     printf '%s\n' "--perf-frequency must be a positive integer" >&2
     exit 2
 fi
-if ! [[ "$PUBLISHED_SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$PUBLISHED_SOURCE_TREE" =~ ^[0-9a-f]{40}$ ]]; then
-    printf '%s\n' "a durable 40-character published source commit and tree are required" >&2
+if ! [[ "$PUBLISHED_SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$PUBLISHED_SOURCE_TREE" =~ ^[0-9a-f]{40}$ ]] || [[ -z "$PUBLISHED_SOURCE_REF" ]]; then
+    printf '%s\n' "a durable source commit, tree, and branch or tag ref are required" >&2
     exit 2
 fi
 
@@ -117,18 +124,61 @@ if [[ "$EXECUTION_TREE" != "$PUBLISHED_SOURCE_TREE" ]]; then
     exit 2
 fi
 
+# Resolve the durable ref before collecting evidence.  A tree hash alone is
+# insufficient: the exact supplied commit must exist, resolve to that tree,
+# and be reachable from an advertised branch or tag.  Ordinarily this refreshes
+# `origin`; an already-present origin-tracking ref is accepted only when the
+# fetch transport is unavailable (for example an offline rerun of an already
+# fetched source).  The recorded ref head makes that fallback auditable.
+if [[ "$PUBLISHED_SOURCE_REF" == refs/* ]]; then
+    SOURCE_REF_SPEC="$PUBLISHED_SOURCE_REF"
+else
+    SOURCE_REF_SPEC="refs/heads/$PUBLISHED_SOURCE_REF"
+fi
+if [[ "$SOURCE_REF_SPEC" == refs/heads/* ]]; then
+    CACHED_SOURCE_REF="refs/remotes/origin/${SOURCE_REF_SPEC#refs/heads/}"
+else
+    CACHED_SOURCE_REF="$SOURCE_REF_SPEC"
+fi
+if git fetch --quiet origin "$SOURCE_REF_SPEC"; then
+    PUBLISHED_REF_HEAD="$(git rev-parse FETCH_HEAD)"
+elif [[ "$PUBLISHED_SOURCE_REF" == refs/tags/* ]] \
+    && git fetch --quiet origin "$PUBLISHED_SOURCE_REF"; then
+    PUBLISHED_REF_HEAD="$(git rev-parse FETCH_HEAD)"
+elif git show-ref --verify --quiet "$CACHED_SOURCE_REF"; then
+    PUBLISHED_REF_HEAD="$(git rev-parse "$CACHED_SOURCE_REF")"
+    printf '%s\n' "unable to refresh origin; using cached origin ref $CACHED_SOURCE_REF" >&2
+else
+    printf '%s\n' "cannot fetch durable published source ref and no cached origin ref exists: $PUBLISHED_SOURCE_REF" >&2
+    exit 2
+fi
+if ! git cat-file -e "$PUBLISHED_SOURCE_COMMIT^{commit}"; then
+    printf '%s\n' "declared published source commit does not exist after fetching $PUBLISHED_SOURCE_REF" >&2
+    exit 2
+fi
+if [[ "$(git rev-parse "$PUBLISHED_SOURCE_COMMIT^{tree}")" != "$PUBLISHED_SOURCE_TREE" ]]; then
+    printf '%s\n' "declared published source commit does not resolve to the declared tree" >&2
+    exit 2
+fi
+if ! git merge-base --is-ancestor "$PUBLISHED_SOURCE_COMMIT" "$PUBLISHED_REF_HEAD"; then
+    printf '%s\n' "declared published source commit is not reachable from $PUBLISHED_SOURCE_REF" >&2
+    exit 2
+fi
+
 if [[ "$TARGET_ROOT" != /* ]]; then
     TARGET_ROOT="${ROOT}/${TARGET_ROOT}"
 fi
 mkdir -p "$OUTPUT_DIR" "$TARGET_ROOT"
 
-printf '%s\n' "Profiling published source $PUBLISHED_SOURCE_COMMIT (tree $PUBLISHED_SOURCE_TREE)"
+printf '%s\n' "Profiling published source $PUBLISHED_SOURCE_COMMIT (tree $PUBLISHED_SOURCE_TREE, ref $PUBLISHED_SOURCE_REF)"
 printf '%s\n' "Candidate repetitions: $CANDIDATE_RUNS; perf frequency: $PERF_FREQUENCY Hz"
 
 "$PYTHON" tools/aggregate_phase0_hot_path_profiles.py capture-host \
     --output "$OUTPUT_DIR/host-before.json" \
     --source-commit "$PUBLISHED_SOURCE_COMMIT" \
     --source-tree "$PUBLISHED_SOURCE_TREE" \
+    --published-source-ref "$PUBLISHED_SOURCE_REF" \
+    --published-source-ref-head "$PUBLISHED_REF_HEAD" \
     --repository-root "$ROOT"
 
 # A smoke run builds verified real fixtures and the parity probe through the
@@ -157,7 +207,7 @@ write_command_json() {
     local destination="$1"
     local tool="$2"
     shift 2
-    "$PYTHON" - "$destination" "$tool" "$PUBLISHED_SOURCE_COMMIT" "$PUBLISHED_SOURCE_TREE" "$EXECUTION_COMMIT" "$EXECUTION_TREE" "$@" <<'PY'
+    "$PYTHON" - "$destination" "$tool" "$PUBLISHED_SOURCE_COMMIT" "$PUBLISHED_SOURCE_TREE" "$PUBLISHED_SOURCE_REF" "$PUBLISHED_REF_HEAD" "$EXECUTION_COMMIT" "$EXECUTION_TREE" "$@" <<'PY'
 from __future__ import annotations
 
 import json
@@ -172,9 +222,11 @@ path.write_text(
             "tool": sys.argv[2],
             "source_commit": sys.argv[3],
             "source_tree": sys.argv[4],
-            "execution_commit": sys.argv[5],
-            "execution_tree": sys.argv[6],
-            "command": sys.argv[7:],
+            "published_source_ref": sys.argv[5],
+            "published_source_ref_head": sys.argv[6],
+            "execution_commit": sys.argv[7],
+            "execution_tree": sys.argv[8],
+            "command": sys.argv[9:],
         },
         indent=2,
         sort_keys=True,
@@ -185,7 +237,7 @@ path.write_text(
 PY
 }
 
-profile_command() {
+phase0_command() {
     local output_json="$1"
     local output_report="$2"
     local warm_samples="$3"
@@ -196,7 +248,10 @@ profile_command() {
     local pool_capacity="$8"
     local allocator="$9"
     local copy_on_write="${10}"
-    local executable_probe="${11}"
+    local cache_enabled="${11}"
+    local executable_probe="${12}"
+    local coordination_poll_interval_ms="${13}"
+    local profile_workload="${14}"
     local parent_launch
     parent_launch="$($PYTHON - <<'PY'
 from time import time_ns
@@ -219,14 +274,30 @@ PY
         --pool-capacity "$pool_capacity" \
         --pool-queue-capacity 4 \
         --coordination-timeout-ms 15000 \
+        --coordination-poll-interval-ms "$coordination_poll_interval_ms" \
         --wasmtime-allocator "$allocator" \
-        --wasmtime-copy-on-write-images "$copy_on_write"
+        --wasmtime-copy-on-write-images "$copy_on_write" \
+        --prepared-cache-enabled "$cache_enabled"
+    if [[ -n "$profile_workload" ]]; then
+        printf '%s\0' --profile-workload "$profile_workload"
+    fi
 }
 
 read_command() {
     local -n destination="$1"
     shift
     mapfile -d '' -t destination < <("$@")
+}
+
+run_full_invariant_proof() {
+    local root="$OUTPUT_DIR/full-invariant-proof"
+    mkdir -p "$root"
+    local -a command
+    read_command command phase0_command \
+        "$root/raw-results.json" "$root/BASELINE.md" \
+        40 10 24 2000 2 2 on-demand true true "$EXECUTABLE_PROBE" 0 ""
+    write_command_json "$root/command.json" "phase0-baseline-full-invariant-proof" "${command[@]}"
+    "${command[@]}" >"$root/stdout.log" 2>"$root/stderr.log"
 }
 
 run_profile() {
@@ -241,22 +312,25 @@ run_profile() {
     mkdir -p "$perf_root" "$allocation_root"
 
     local -a perf_command
-    read_command perf_command profile_command \
+    read_command perf_command phase0_command \
         "$perf_root/raw-results.json" "$perf_root/BASELINE.md" \
         "$warm_samples" "$sequence_repetitions" "$throughput_batches" "$pool_iterations" \
-        2 2 on-demand true "$EXECUTABLE_PROBE"
+        2 2 on-demand true true "$EXECUTABLE_PROBE" 1 "$workload"
     write_command_json "$perf_root/command.json" "perf" \
         perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}"
     perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}" \
         >"$perf_root/stdout.log" 2>"$perf_root/stderr.log"
     perf report --stdio --no-children --percent-limit 0.1 --sort comm,dso,symbol \
         --input "$perf_root/perf.data" >"$perf_root/perf-report.txt" 2>"$perf_root/perf-report.stderr.log"
+    perf report --stdio --percent-limit 0.1 --sort comm,dso,symbol \
+        --input "$perf_root/perf.data" >"$perf_root/perf-inclusive-report.txt" \
+        2>"$perf_root/perf-inclusive-report.stderr.log"
 
     local -a allocation_command
-    read_command allocation_command profile_command \
+    read_command allocation_command phase0_command \
         "$allocation_root/raw-results.json" "$allocation_root/BASELINE.md" \
         "$warm_samples" "$sequence_repetitions" "$throughput_batches" "$pool_iterations" \
-        2 2 on-demand true "$EXECUTABLE_PROBE"
+        2 2 on-demand true true "$EXECUTABLE_PROBE" 1 "$workload"
     write_command_json "$allocation_root/command.json" "heaptrack" \
         heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}"
     heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}" \
@@ -272,6 +346,18 @@ run_profile() {
     fi
     heaptrack_print "$allocation_data" >"$allocation_root/heaptrack-report.txt" \
         2>"$allocation_root/heaptrack-print.stderr.log"
+    # Folded stacks retain one quantitative, disjointly classifiable record per
+    # allocation site.  The aggregate sums allocation calls and peak bytes by
+    # a narrow first-match category and reports the unmatched bucket instead
+    # of treating broad text hits as attribution.
+    heaptrack_print --file "$allocation_data" --flamegraph-cost-type allocations \
+        --print-flamegraph "$allocation_root/heaptrack-allocations.folded" \
+        >"$allocation_root/heaptrack-allocations.stdout.log" \
+        2>"$allocation_root/heaptrack-allocations.stderr.log"
+    heaptrack_print --file "$allocation_data" --flamegraph-cost-type peak \
+        --print-flamegraph "$allocation_root/heaptrack-peak-bytes.folded" \
+        >"$allocation_root/heaptrack-peak-bytes.stdout.log" \
+        2>"$allocation_root/heaptrack-peak-bytes.stderr.log"
     heaptrack_print --file "$allocation_data" --print-allocators=0 --print-peaks=0 \
         --print-temporary=0 --print-leaks=1 --peak-limit 20 --sub-peak-limit 5 \
         >"$allocation_root/heaptrack-leaks.txt" 2>"$allocation_root/heaptrack-leaks.stderr.log"
@@ -283,6 +369,7 @@ run_candidate() {
     local pool_capacity="$3"
     local allocator="$4"
     local copy_on_write="$5"
+    local cache_enabled="$6"
     local root="$OUTPUT_DIR/candidates/$candidate"
     mkdir -p "$root"
     local candidate_probe="$root/executable-harness-probe.json"
@@ -303,52 +390,61 @@ run_candidate() {
     }
     cp "$shared_probe" "$candidate_probe"
     local -a template
-    read_command template profile_command \
+    read_command template phase0_command \
         "RAW_RESULTS.json" "BASELINE.md" 40 10 24 2000 \
-        "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$candidate_probe"
+        "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$cache_enabled" "$candidate_probe" 0 ""
     write_command_json "$root/command-template.json" "phase0-baseline" "${template[@]}"
     for (( run = 1; run <= CANDIDATE_RUNS; run++ )); do
         printf -v run_name 'run-%02d' "$run"
         local run_root="$root/$run_name"
         mkdir -p "$run_root"
         local -a command
-        read_command command profile_command \
+        read_command command phase0_command \
             "$run_root/raw-results.json" "$run_root/BASELINE.md" 40 10 24 2000 \
-            "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$candidate_probe"
+            "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$cache_enabled" "$candidate_probe" 0 ""
         write_command_json "$run_root/command.json" "phase0-baseline" "${command[@]}"
         "${command[@]}" >"$run_root/stdout.log" 2>"$run_root/stderr.log"
     done
 }
 
-# Configurations bias each profile toward the named hot path without replacing
-# its shared composition with a synthetic benchmark. Every process still runs
-# all Phase 0 hard checks.
+# One complete full-profile proof establishes all canonical invariants. The
+# six tool runs below are deliberately scenario-selective and each declares a
+# different `--profile-workload` boundary in its retained command document.
+run_full_invariant_proof
+
+# These are distinct real-composition paths, not differently named copies of
+# the full process. Profiler-only polling is explicit and does not affect any
+# unprofiled candidate throughput interval.
 run_profile cold-preparation 1 1 1 1
 run_profile first-activation 1 1 1 1
-run_profile warm-execution 4000 1 1 1
-run_profile failure-containment 1 10 1 1
-run_profile cleanup 1 10 1 1
-run_profile contention 1 1 96 1
+run_profile warm-execution 1000 1 1 1
+run_profile failure-containment 1 4 1 1
+run_profile cleanup 128 1 1 1
+run_profile contention 1 1 48 1
 
 # Each candidate is a separate process with the same fixture, toolchain,
 # budgets, queue limit, and full Phase 0 checks. Three runs are evidence for a
 # trade-off decision only; the aggregate will refuse to call them an adoption
 # result until a seven-run matched set exists.
-run_candidate worker-cell-1w-1c 1 1 on-demand true
-run_candidate worker-cell-2w-2c 2 2 on-demand true
-run_candidate worker-cell-2w-4c 2 4 on-demand true
-run_candidate worker-cell-4w-2c 4 2 on-demand true
-run_candidate on-demand-cow-disabled 2 2 on-demand false
-run_candidate pooling-cow-disabled 2 2 pooling false
-run_candidate pooling-cow-enabled 2 2 pooling true
+run_candidate worker-cell-1w-1c 1 1 on-demand true true
+run_candidate worker-cell-2w-2c 2 2 on-demand true true
+run_candidate worker-cell-2w-4c 2 4 on-demand true true
+run_candidate worker-cell-4w-2c 4 2 on-demand true true
+run_candidate on-demand-cow-disabled 2 2 on-demand false true
+run_candidate pooling-cow-disabled 2 2 pooling false true
+run_candidate pooling-cow-enabled 2 2 pooling true true
+run_candidate prepared-cache-disabled 2 2 on-demand true false
 
 "$PYTHON" tools/aggregate_phase0_hot_path_profiles.py aggregate \
     --profiles-directory "$OUTPUT_DIR/profiles" \
+    --full-invariant-proof "$OUTPUT_DIR/full-invariant-proof/raw-results.json" \
     --candidates-directory "$OUTPUT_DIR/candidates" \
     --host-observation "$OUTPUT_DIR/host-before.json" \
     --calibration-aggregate "$ROOT/benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json" \
     --source-commit "$PUBLISHED_SOURCE_COMMIT" \
     --source-tree "$PUBLISHED_SOURCE_TREE" \
+    --published-source-ref "$PUBLISHED_SOURCE_REF" \
+    --required-candidate-runs "$CANDIDATE_RUNS" \
     --output-json "$OUTPUT_DIR/aggregate.json" \
     --output-report "$OUTPUT_DIR/PROFILE.md"
 

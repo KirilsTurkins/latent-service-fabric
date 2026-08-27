@@ -776,6 +776,7 @@ async fn prepare_composition(
             component_maximum_bytes: config.component_max_bytes,
             prepared_cache_maximum_entries: config.prepared_cache_entries,
             prepared_cache_maximum_bytes: config.prepared_cache_bytes,
+            prepared_cache_enabled: true,
             invocation_log_maximum_entries: config.log_max_entries,
             invocation_log_maximum_bytes: config.log_max_bytes,
             retained_log_maximum_entries: config.log_max_entries,

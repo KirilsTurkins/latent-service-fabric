@@ -1,5 +1,8 @@
 fn run(cli: Cli, process_entry: Instant) -> Result<bool, BenchError> {
     let config = EffectiveConfig::from_cli(&cli)?;
+    if let Some(workload) = config.profile_workload {
+        return run_targeted_profile(cli, config, workload, process_entry);
+    }
     let initial_snapshot = observe_process("process_entry", process_entry);
 
     let shared_runtime = phase0_composition::construct_runtime_composition(&Phase0RuntimeConfig {
@@ -137,6 +140,492 @@ fn run(cli: Cli, process_entry: Instant) -> Result<bool, BenchError> {
     Ok(all_passed)
 }
 
+/// Runs one profiler boundary without performing the unrelated full-baseline
+/// phases.  The wrapper that invokes this mode retains a separate full run for
+/// the same source/configuration, so targeted sampling cannot weaken a hard
+/// invariant claim.
+fn run_targeted_profile(
+    cli: Cli,
+    config: EffectiveConfig,
+    workload: ProfileWorkload,
+    process_entry: Instant,
+) -> Result<bool, BenchError> {
+    let initial_snapshot = observe_process("process_entry", process_entry);
+    let shared_runtime = phase0_composition::construct_runtime_composition(&Phase0RuntimeConfig {
+        node_id: NodeId(NODE_ID.to_owned()),
+        pool_capacity: config.pool_capacity,
+        pool_queue_capacity: config.pool_queue_capacity,
+        runtime_workers: config.runtime_workers,
+    })
+    .map_err(platform_error)?;
+    let latentd::phase0_composition::Phase0RuntimeComposition {
+        runtime,
+        pool,
+        workers,
+    } = shared_runtime;
+    runtime
+        .block_on(phase0_composition::wait_for_runtime_workers(
+            &workers,
+            config.runtime_workers,
+        ))
+        .map_err(platform_error)?;
+    let rust_entry_to_runtime_ready_micros = elapsed_micros(process_entry);
+    let process_launch_to_runtime_ready_micros = now_unix_micros()
+        .saturating_sub(cli.parent_launch_unix_micros);
+    let runtime_ready_snapshot = observe_process("before_component_load", process_entry);
+    let before_component_load = TopologySnapshot {
+        label: "before_component_load".to_owned(),
+        observed_runtime_workers: workers.active_workers(),
+        process: runtime_ready_snapshot.clone(),
+        pool: pool_snapshot(&pool.observations()),
+    };
+
+    let mut result = runtime.block_on(run_targeted_async(
+        &cli,
+        &config,
+        workload,
+        Arc::clone(&pool),
+        workers.clone(),
+        before_component_load,
+        process_entry,
+    ))?;
+    result.process_snapshots.insert(0, runtime_ready_snapshot.clone());
+    result.process_snapshots.insert(0, initial_snapshot.clone());
+
+    drop(pool);
+    drop(runtime);
+    std::thread::sleep(Duration::from_millis(25));
+    let final_snapshot = observe_process("runtime_stopped", process_entry);
+    let final_thread_pass = match (initial_snapshot.thread_count, final_snapshot.thread_count) {
+        (Some(initial), Some(final_count)) => final_count <= initial.saturating_add(1),
+        _ => false,
+    };
+    result.checks.push(Check {
+        name: "targeted_profile_runtime_shutdown_returns_to_process_baseline".to_owned(),
+        passed: final_thread_pass && workers.active_workers() == 0,
+        expected: format!(
+            "observed Tokio workers=0 and at most {} OS threads",
+            initial_snapshot.thread_count.unwrap_or(0).saturating_add(1)
+        ),
+        observed: format!(
+            "observed_workers={}, os_threads={}",
+            workers.active_workers(),
+            final_snapshot
+                .thread_count
+                .map_or_else(|| "unsupported".to_owned(), |value| value.to_string())
+        ),
+    });
+    result.process_snapshots.push(final_snapshot);
+
+    let all_passed = result.checks.iter().all(|check| check.passed);
+    let status = if all_passed { "pass" } else { "fail" }.to_owned();
+    let document = TargetedProfileDocument {
+        schema_version: TARGETED_PROFILE_SCHEMA,
+        generated_at_unix_millis: now_unix_millis(),
+        status,
+        observational_only: true,
+        profile_workload: workload,
+        workload_semantics: workload.semantics().to_owned(),
+        full_invariant_proof_required: true,
+        environment: environment_report(),
+        artifact: result.artifact,
+        config: config.clone(),
+        timings: TimingReport {
+            process_launch_to_runtime_ready_micros,
+            rust_entry_to_runtime_ready_micros,
+            capsule_validation_and_load_micros: result.validation_micros,
+            wasmtime_engine_construction_micros: result.engine_micros,
+            component_preparation_micros: result.preparation_micros,
+            rust_entry_to_first_invocation_ready_micros: result.first_invocation_ready_micros,
+            prepared_component_release_micros: result.prepared_release_micros,
+            distributions: result.distributions,
+        },
+        activation_throughput: result.activation_throughput,
+        activation_samples: result.activation_samples,
+        process_snapshots: result.process_snapshots,
+        topology_snapshots: result.topology_snapshots,
+        selected_scenarios: result.selected_scenarios,
+        payload_flow: result.payload_flow,
+        checks: result.checks,
+        limitations: vec![
+            "This is a scenario-selective profiler document. Its adjacent full baseline proof, not this reduced check set, establishes the complete Phase 0 invariant set.".to_owned(),
+            "Payload-flow byte counters record bytes passed into and returned from the typed call. They do not claim every byte was copied; copy attribution requires narrow profiler symbols.".to_owned(),
+            "A nonzero coordination polling interval is profiler-only methodology and is not comparable to the calibrated throughput interval.".to_owned(),
+        ],
+    };
+    write_targeted_profile_outputs(&cli.output_json, &cli.output_report, &document)?;
+    println!(
+        "{}",
+        serde_json::to_string(&json!({
+            "schema_version": TARGETED_PROFILE_SCHEMA,
+            "status": document.status,
+            "profile_workload": workload.name(),
+            "raw_results": cli.output_json,
+            "report": cli.output_report,
+        }))?
+    );
+    Ok(all_passed)
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_targeted_async(
+    cli: &Cli,
+    config: &EffectiveConfig,
+    workload: ProfileWorkload,
+    pool: Arc<FixedCellPool>,
+    workers: RuntimeWorkerMonitor,
+    before_component_load: TopologySnapshot,
+    process_entry: Instant,
+) -> Result<TargetedAsyncRunResult, BenchError> {
+    let prepared_backend = phase0_composition::prepare_phase0_backend(
+        &Phase0PreparationConfig {
+            capsule: cli.capsule.clone(),
+            component: None,
+            component_maximum_bytes: COMPONENT_MAXIMUM_BYTES,
+            prepared_cache_maximum_entries: PREPARED_CACHE_MAXIMUM_ENTRIES,
+            prepared_cache_maximum_bytes: PREPARED_CACHE_MAXIMUM_BYTES,
+            prepared_cache_enabled: config.prepared_cache_enabled,
+            invocation_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
+            invocation_log_maximum_bytes: LOG_MAXIMUM_BYTES,
+            retained_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
+            retained_log_maximum_bytes: LOG_MAXIMUM_BYTES,
+            requested_memory_bytes: config.memory_bytes.max(config.memory_pressure_bytes),
+            requested_fuel: config.fuel,
+            wasmtime_instance_allocator: config.wasmtime_allocator.into(),
+            wasmtime_copy_on_write_images: config.wasmtime_copy_on_write_images,
+            wasmtime_pooling_maximum_instances: config.pool_capacity,
+        },
+    )
+    .await
+    .map_err(platform_error)?;
+    let latentd::phase0_composition::Phase0PreparedBackend {
+        loaded,
+        backend,
+        prepared,
+        cache_after_prepare,
+        timings: preparation_timings,
+    } = prepared_backend;
+    let timings = PhaseTimingRecorder::default();
+    let throughput_saturation_gate = ThroughputSaturationGate::new();
+    let pool_for_runner: Arc<dyn CellPool> = Arc::new(TimingCellPool::new(
+        Arc::clone(&pool),
+        timings.clone(),
+        throughput_saturation_gate.clone(),
+    ));
+    let backend_for_runner: Arc<dyn ExecutionBackend> = Arc::new(TimingExecutionBackend::new(
+        Arc::clone(&backend),
+        timings.clone(),
+    ));
+    let runner = phase0_composition::create_phase0_activation_runner(
+        pool_for_runner,
+        backend_for_runner,
+        prepared.clone(),
+    )
+    .map_err(platform_error)?;
+    let first_invocation_ready_micros = elapsed_micros(process_entry);
+    let prepared_process = observe_process("after_component_preparation", process_entry);
+    let after_component_preparation = TopologySnapshot {
+        label: "after_component_preparation".to_owned(),
+        observed_runtime_workers: workers.active_workers(),
+        process: prepared_process.clone(),
+        pool: pool_snapshot(&pool.observations()),
+    };
+
+    let mut samples = Vec::new();
+    let mut activation_throughput = None;
+    match workload {
+        ProfileWorkload::ColdPreparation => {}
+        ProfileWorkload::FirstActivation => {
+            samples.push(
+                invoke_case(
+                    &loaded.artifact.manifest,
+                    &pool,
+                    &backend,
+                    &runner,
+                    &timings,
+                    &workers,
+                    process_entry,
+                    InvocationRequest {
+                        scenario: "retained_first_echo",
+                        iteration: 0,
+                        input: "phase0 targeted first echo",
+                        expected: ExpectedOutcome::Success,
+                        memory_bytes: config.memory_bytes,
+                        fuel: config.fuel,
+                        timeout_ms: 1_000,
+                        cancel_after_ms: None,
+                    },
+                )
+                .await?,
+            );
+        }
+        ProfileWorkload::WarmExecution => {
+            for iteration in 0..config.warm_samples {
+                samples.push(
+                    invoke_case(
+                        &loaded.artifact.manifest,
+                        &pool,
+                        &backend,
+                        &runner,
+                        &timings,
+                        &workers,
+                        process_entry,
+                        InvocationRequest {
+                            scenario: "warm_echo",
+                            iteration,
+                            input: "phase0 targeted warm echo",
+                            expected: ExpectedOutcome::Success,
+                            memory_bytes: config.memory_bytes,
+                            fuel: config.fuel,
+                            timeout_ms: 1_000,
+                            cancel_after_ms: None,
+                        },
+                    )
+                    .await?,
+                );
+            }
+        }
+        ProfileWorkload::FailureContainment => {
+            for iteration in 0..config.sequence_repetitions {
+                append_mixed_sequence(
+                    config,
+                    &loaded.artifact.manifest,
+                    &pool,
+                    &backend,
+                    &runner,
+                    &timings,
+                    &workers,
+                    process_entry,
+                    iteration,
+                    &mut samples,
+                )
+                .await?;
+            }
+        }
+        ProfileWorkload::Cleanup => {
+            for iteration in 0..config.warm_samples {
+                samples.push(
+                    invoke_case(
+                        &loaded.artifact.manifest,
+                        &pool,
+                        &backend,
+                        &runner,
+                        &timings,
+                        &workers,
+                        process_entry,
+                        InvocationRequest {
+                            scenario: "cleanup_echo",
+                            iteration,
+                            input: "phase0 targeted cleanup echo",
+                            expected: ExpectedOutcome::Success,
+                            memory_bytes: config.memory_bytes,
+                            fuel: config.fuel,
+                            timeout_ms: 1_000,
+                            cancel_after_ms: None,
+                        },
+                    )
+                    .await?,
+                );
+            }
+        }
+        ProfileWorkload::Contention => {
+            activation_throughput = Some(
+                run_activation_throughput(
+                    config,
+                    &loaded.artifact.manifest,
+                    &pool,
+                    &backend,
+                    &runner,
+                    &timings,
+                    &throughput_saturation_gate,
+                    &workers,
+                    process_entry,
+                    &mut samples,
+                )
+                .await?,
+            );
+        }
+    }
+
+    let selected_scenarios = samples
+        .iter()
+        .map(|sample| sample.scenario.clone())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let expected_outcomes_pass = samples.iter().all(|sample| {
+        sample.outcome.name == sample.expected_outcome && sample.contract_result_valid
+    });
+    let expected_cache = |snapshot: &CacheSnapshotReport| {
+        if config.prepared_cache_enabled {
+            snapshot.entries == 1 && snapshot.source_bytes == cache_after_prepare.source_bytes
+        } else {
+            snapshot.entries == 0 && snapshot.source_bytes == 0
+        }
+    };
+    let per_activation_clean = samples.iter().all(|sample| {
+        pool_is_clean(&sample.pool_after, config.pool_capacity)
+            && sample.runner_after.active_cancellation_registrations == 0
+            && sample.runner_after.running_invocations == 0
+            && sample.runner_after.quarantined_cells == 0
+            && sample.runner_after.disposition_failures == 0
+            && resources_are_reclaimed(&sample.backend_resources_after)
+            && sample.retained_log_entries_after_clear == 0
+            && expected_cache(&sample.prepared_cache_after)
+    });
+    let failure_recovery_pass = match workload {
+        ProfileWorkload::FailureContainment => cause_specific_failure_recovery_is_healthy(&samples),
+        _ => true,
+    };
+    let contention_pass = activation_throughput.as_ref().is_none_or(|throughput| {
+        throughput.at_capacity.maximum_observed_active_leases == config.pool_capacity
+            && throughput.at_capacity.maximum_observed_queue_depth == 0
+            && throughput
+                .bounded_queue_saturation
+                .maximum_observed_active_leases
+                == config.pool_capacity
+            && throughput
+                .bounded_queue_saturation
+                .maximum_observed_queue_depth
+                == config.pool_queue_capacity
+    });
+
+    let release_started = Instant::now();
+    backend.release(prepared).await.map_err(platform_error)?;
+    let prepared_release_micros = duration_micros(release_started.elapsed());
+    backend.log_sink().clear();
+    let cache_after_release = backend.cache_snapshot();
+    let resources_after_release = backend.resource_snapshot();
+    let pool_after_release = pool_snapshot(&pool.observations());
+    let post_release = observe_process("prepared_component_released", process_entry);
+    let mut topology_snapshots = vec![before_component_load, after_component_preparation];
+    topology_snapshots.extend(samples.iter().map(|sample| TopologySnapshot {
+        label: sample.process_after.label.clone(),
+        observed_runtime_workers: sample.observed_runtime_workers_after,
+        process: sample.process_after.clone(),
+        pool: sample.pool_after.clone(),
+    }));
+    topology_snapshots.push(TopologySnapshot {
+        label: "prepared_component_released".to_owned(),
+        observed_runtime_workers: workers.active_workers(),
+        process: post_release.clone(),
+        pool: pool_after_release.clone(),
+    });
+    let topology_pass = topology_is_constant(
+        &topology_snapshots[0],
+        &topology_snapshots[1],
+        &topology_snapshots[2..],
+        config,
+    );
+    let mut checks = vec![
+        Check {
+            name: "targeted_profile_selected_semantics".to_owned(),
+            passed: true,
+            expected: workload.semantics().to_owned(),
+            observed: format!("workload={}, scenarios={selected_scenarios:?}", workload.name()),
+        },
+        Check {
+            name: "targeted_profile_selected_outcomes_pass".to_owned(),
+            passed: expected_outcomes_pass,
+            expected: "every selected activation returns its requested outcome".to_owned(),
+            observed: outcome_summary(&samples),
+        },
+        Check {
+            name: "targeted_profile_reclaims_selected_activation_state".to_owned(),
+            passed: per_activation_clean,
+            expected: "selected activation state, logs, resources, and pool lease return to baseline".to_owned(),
+            observed: format!("{} selected samples", samples.len()),
+        },
+        Check {
+            name: "targeted_profile_failure_recovery_pass".to_owned(),
+            passed: failure_recovery_pass,
+            expected: "failure profile has immediate healthy cause-specific recovery".to_owned(),
+            observed: if failure_recovery_pass { "passed".to_owned() } else { "failed".to_owned() },
+        },
+        Check {
+            name: "targeted_profile_contention_state_pass".to_owned(),
+            passed: contention_pass,
+            expected: "contention profile proves configured at-capacity and bounded-queue states".to_owned(),
+            observed: activation_throughput.as_ref().map_or_else(
+                || "not selected".to_owned(),
+                |throughput| format!(
+                    "at_capacity=({}, {}), queued=({}, {})",
+                    throughput.at_capacity.maximum_observed_active_leases,
+                    throughput.at_capacity.maximum_observed_queue_depth,
+                    throughput.bounded_queue_saturation.maximum_observed_active_leases,
+                    throughput.bounded_queue_saturation.maximum_observed_queue_depth,
+                ),
+            ),
+        },
+        Check {
+            name: "targeted_profile_topology_is_constant".to_owned(),
+            passed: topology_pass,
+            expected: "fixed process/socket/worker/cell topology across selected workload".to_owned(),
+            observed: topology_snapshot_range(&topology_snapshots),
+        },
+        Check {
+            name: "targeted_profile_release_clears_prepared_state".to_owned(),
+            passed: cache_after_release.entries == 0
+                && cache_after_release.source_bytes == 0
+                && resources_are_reclaimed(&runtime_resources(&resources_after_release))
+                && pool_is_clean(&pool_after_release, config.pool_capacity),
+            expected: "no reusable cache entry, backend resource, or pool lease remains after release".to_owned(),
+            observed: format!(
+                "cache={cache_after_release:?}, backend={:?}, pool={pool_after_release:?}",
+                runtime_resources(&resources_after_release)
+            ),
+        },
+    ];
+    if workload == ProfileWorkload::ColdPreparation {
+        checks.push(Check {
+            name: "targeted_profile_cold_preparation_has_no_activation".to_owned(),
+            passed: samples.is_empty(),
+            expected: "zero activation samples; profile boundary stops after preparation".to_owned(),
+            observed: samples.len().to_string(),
+        });
+    }
+
+    let mut distributions = BTreeMap::new();
+    for scenario in &selected_scenarios {
+        insert_scenario_distribution(&mut distributions, &samples, scenario);
+    }
+    insert_phase_distributions(&mut distributions, &samples);
+    let payload_flow = PayloadFlowReport {
+        input_bytes_submitted_to_typed_call: samples
+            .iter()
+            .fold(0_u64, |total, sample| total.saturating_add(sample.input_bytes)),
+        output_bytes_returned_from_typed_call: samples.iter().fold(0_u64, |total, sample| {
+            total.saturating_add(sample.output_bytes.unwrap_or(0))
+        }),
+        copy_bytes_claimed: 0,
+    };
+    let mut process_snapshots = Vec::with_capacity(samples.len().saturating_add(2));
+    process_snapshots.push(prepared_process);
+    process_snapshots.extend(samples.iter().map(|sample| sample.process_after.clone()));
+    process_snapshots.push(post_release);
+    Ok(TargetedAsyncRunResult {
+        artifact: ArtifactReport {
+            capsule_path: cli.capsule.display().to_string(),
+            component_path: loaded.component_path.display().to_string(),
+            component_digest: loaded.artifact.manifest.component_digest.0,
+            component_bytes: loaded.component_bytes,
+        },
+        validation_micros: preparation_timings.capsule_validation_and_load_micros,
+        engine_micros: preparation_timings.wasmtime_engine_construction_micros,
+        preparation_micros: preparation_timings.component_preparation_micros,
+        first_invocation_ready_micros,
+        prepared_release_micros,
+        activation_throughput,
+        activation_samples: samples,
+        process_snapshots,
+        topology_snapshots,
+        selected_scenarios,
+        payload_flow,
+        checks,
+        distributions,
+    })
+}
+
 async fn run_async(
     cli: &Cli,
     config: &EffectiveConfig,
@@ -157,6 +646,7 @@ async fn run_async(
             component_maximum_bytes: COMPONENT_MAXIMUM_BYTES,
             prepared_cache_maximum_entries: PREPARED_CACHE_MAXIMUM_ENTRIES,
             prepared_cache_maximum_bytes: PREPARED_CACHE_MAXIMUM_BYTES,
+            prepared_cache_enabled: config.prepared_cache_enabled,
             invocation_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
             invocation_log_maximum_bytes: LOG_MAXIMUM_BYTES,
             retained_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
@@ -256,10 +746,18 @@ async fn run_async(
     });
     checks.push(Check {
         name: "prepared_cache_bounded_after_prepare".to_owned(),
-        passed: cache_after_prepare.entries == 1
-            && cache_after_prepare.source_bytes <= cache_after_prepare.maximum_source_bytes
-            && cache_after_prepare.entries <= cache_after_prepare.maximum_entries,
-        expected: "one retained entry within configured entry and byte limits".to_owned(),
+        passed: if config.prepared_cache_enabled {
+            cache_after_prepare.entries == 1
+                && cache_after_prepare.source_bytes <= cache_after_prepare.maximum_source_bytes
+                && cache_after_prepare.entries <= cache_after_prepare.maximum_entries
+        } else {
+            cache_after_prepare.entries == 0 && cache_after_prepare.source_bytes == 0
+        },
+        expected: if config.prepared_cache_enabled {
+            "one retained entry within configured entry and byte limits".to_owned()
+        } else {
+            "cache-disabled run retains no reusable prepared-cache entry".to_owned()
+        },
         observed: format!(
             "entries={}, source_bytes={}, maximum_entries={}, maximum_source_bytes={}",
             cache_after_prepare.entries,
@@ -443,8 +941,13 @@ async fn run_async(
             && sample.runner_after.disposition_failures == 0
             && resources_are_reclaimed(&sample.backend_resources_after)
             && sample.retained_log_entries_after_clear == 0
-            && sample.prepared_cache_after.entries == 1
-            && sample.prepared_cache_after.source_bytes == cache_after_prepare.source_bytes
+            && if config.prepared_cache_enabled {
+                sample.prepared_cache_after.entries == 1
+                    && sample.prepared_cache_after.source_bytes == cache_after_prepare.source_bytes
+            } else {
+                sample.prepared_cache_after.entries == 0
+                    && sample.prepared_cache_after.source_bytes == 0
+            }
     });
     checks.push(Check {
         name: "activation_owned_state_returns_to_baseline_after_every_sample".to_owned(),

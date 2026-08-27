@@ -68,6 +68,7 @@ async fn run_pool_probe(
         &pool,
         config.pool_queue_capacity,
         config.coordination_timeout_ms,
+        config.coordination_poll_interval_ms,
     )
     .await?;
     let maximum_observed_queue_depth = pool.observations().queue_depth;
@@ -172,6 +173,7 @@ async fn wait_for_queue_depth(
     pool: &FixedCellPool,
     expected: u32,
     timeout_ms: u64,
+    poll_interval_ms: u64,
 ) -> Result<(), BenchError> {
     let deadline = tokio::time::Instant::now() + Duration::from_millis(timeout_ms);
     loop {
@@ -185,10 +187,7 @@ async fn wait_for_queue_depth(
                 snapshot.queue_depth
             )));
         }
-        // Allocation profilers amplify scheduler contention. Poll at a small
-        // bounded interval so the activation tasks can establish the same
-        // hard saturation invariant without a spin-yield race.
-        tokio::time::sleep(Duration::from_millis(1)).await;
+        await_coordination_poll(poll_interval_ms).await;
     }
 }
 
@@ -198,6 +197,7 @@ async fn wait_for_activation_saturation(
     expected_active: u32,
     expected_queue: u32,
     timeout_ms: u64,
+    poll_interval_ms: u64,
 ) -> Result<(), BenchError> {
     let deadline = tokio::time::Instant::now() + Duration::from_millis(timeout_ms);
     loop {
@@ -215,10 +215,20 @@ async fn wait_for_activation_saturation(
                 expected_queue
             )));
         }
-        // Allocation profilers amplify scheduler contention. Poll at a small
-        // bounded interval so the activation tasks can establish the same
-        // hard saturation invariant without a spin-yield race.
-        tokio::time::sleep(Duration::from_millis(1)).await;
+        await_coordination_poll(poll_interval_ms).await;
+    }
+}
+
+/// The calibrated unprofiled path deliberately keeps the original cooperative
+/// polling behavior.  A profiler-only command may opt into a small sleep to
+/// prevent instrumentation from starving the tasks whose real saturation
+/// state is being observed; that different method is recorded in raw config
+/// and never compared to the #38 throughput band.
+async fn await_coordination_poll(poll_interval_ms: u64) {
+    if poll_interval_ms == 0 {
+        tokio::task::yield_now().await;
+    } else {
+        tokio::time::sleep(Duration::from_millis(poll_interval_ms)).await;
     }
 }
 
@@ -364,6 +374,7 @@ async fn run_throughput_mode(
             ));
             let expected_output = format!("throughput-{mode_name}-{batch}-{slot}");
             let input = format!("{FIXTURE_DELAYED_ECHO_PREFIX}{expected_output}");
+            let input_bytes = u64::try_from(input.len()).unwrap_or(u64::MAX);
             let deadline = now_unix_millis().saturating_add(10_000);
             let envelope = phase0_composition::phase0_activation_envelope(
                 manifest,
@@ -394,6 +405,7 @@ async fn run_throughput_mode(
                 Ok::<_, BenchError>((
                     activation_id,
                     expected_output,
+                    input_bytes,
                     elapsed_micros,
                     phase_timings,
                     classify_outcome(outcome),
@@ -408,6 +420,7 @@ async fn run_throughput_mode(
             config.pool_capacity,
             expected_queue_depth,
             config.coordination_timeout_ms,
+            config.coordination_poll_interval_ms,
         )
         .await;
         // Always release real leases, including when the proof fails, before
@@ -445,7 +458,9 @@ async fn run_throughput_mode(
             process_entry,
         );
 
-        for (activation_id, expected_output, elapsed_micros, phase_timings, outcome) in completed {
+        for (activation_id, expected_output, input_bytes, elapsed_micros, phase_timings, outcome) in
+            completed
+        {
             activation_latencies.push(elapsed_micros);
             acquire_waits.push(phase_timings.acquire_or_queue_wait_micros);
             if phase_timings.acquisition_queued {
@@ -457,6 +472,11 @@ async fn run_throughput_mode(
                 scenario: format!("throughput_{mode_name}"),
                 iteration: u32::try_from(samples.len()).unwrap_or(u32::MAX),
                 activation_id: activation_id.0,
+                input_bytes,
+                output_bytes: outcome
+                    .output_utf8
+                    .as_ref()
+                    .and_then(|output| u64::try_from(output.len()).ok()),
                 elapsed_micros,
                 timeout_or_cancel_overshoot_micros: None,
                 expected_outcome: "success".to_owned(),

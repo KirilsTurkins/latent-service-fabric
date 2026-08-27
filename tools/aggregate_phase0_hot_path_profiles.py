@@ -26,9 +26,11 @@ from typing import Any, Iterable, NoReturn
 
 
 BASELINE_SCHEMA = "latent.phase0.baseline.v2"
+TARGETED_PROFILE_SCHEMA = "latent.phase0.targeted-profile.v1"
 HOST_SCHEMA = "latent.phase0.hot-path.host-observation.v1"
 PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v1"
 MINIMUM_ADOPTION_RUNS = 7
+MINIMUM_EXPERIMENT_RUNS = 3
 
 PROFILE_WORKLOADS = (
     "cold-preparation",
@@ -39,48 +41,109 @@ PROFILE_WORKLOADS = (
     "contention",
 )
 
+# These are intentionally asserted from the raw targeted document instead of
+# trusting six differently named directories.  They map one-to-one to the
+# `ProfileWorkload` branches in `phase0-baseline` and make a broad full-process
+# run or a relabelled profile invalid evidence.
+PROFILE_WORKLOAD_REQUIREMENTS: dict[str, dict[str, Any]] = {
+    "cold-preparation": {
+        "semantics": "capsule validation, engine construction, and first prepared-component creation only",
+        "scenarios": frozenset(),
+    },
+    "first-activation": {
+        "semantics": "one first echo after preparation; no warm loop, mixed failures, pool probe, or throughput",
+        "scenarios": frozenset({"retained_first_echo"}),
+    },
+    "warm-execution": {
+        "semantics": "repeated successful warm echoes after one preparation; no failure sequence, pool probe, or throughput",
+        "scenarios": frozenset({"warm_echo"}),
+    },
+    "failure-containment": {
+        "semantics": "trap, timeout, cancellation, and memory-pressure failures with immediate cause-specific recovery",
+        "scenarios": frozenset(
+            {
+                "sequence_echo",
+                "domain_error",
+                "recovery_after_domain_error",
+                "trap",
+                "recovery_after_trap",
+                "timeout",
+                "recovery_after_timeout",
+                "cancellation",
+                "recovery_after_cancellation",
+                "memory_pressure",
+                "recovery_after_memory_pressure",
+            }
+        ),
+    },
+    "cleanup": {
+        "semantics": "successful activations followed by per-activation resource reclamation, cell disposition, and explicit prepared release",
+        "scenarios": frozenset({"cleanup_echo"}),
+    },
+    "contention": {
+        "semantics": "real at-capacity and bounded-queue activation batches; no pool microprobe or mixed failure sequence",
+        "scenarios": frozenset(
+            {"throughput_at_capacity", "throughput_bounded_queue_saturation"}
+        ),
+    },
+}
+
 CANDIDATE_EXPECTATIONS: dict[str, dict[str, Any]] = {
     "worker-cell-1w-1c": {
         "runtime_workers": 1,
         "pool_capacity": 1,
         "wasmtime_allocator": "on_demand",
         "wasmtime_copy_on_write_images": True,
+        "prepared_cache_enabled": True,
     },
     "worker-cell-2w-2c": {
         "runtime_workers": 2,
         "pool_capacity": 2,
         "wasmtime_allocator": "on_demand",
         "wasmtime_copy_on_write_images": True,
+        "prepared_cache_enabled": True,
     },
     "worker-cell-2w-4c": {
         "runtime_workers": 2,
         "pool_capacity": 4,
         "wasmtime_allocator": "on_demand",
         "wasmtime_copy_on_write_images": True,
+        "prepared_cache_enabled": True,
     },
     "worker-cell-4w-2c": {
         "runtime_workers": 4,
         "pool_capacity": 2,
         "wasmtime_allocator": "on_demand",
         "wasmtime_copy_on_write_images": True,
+        "prepared_cache_enabled": True,
     },
     "on-demand-cow-disabled": {
         "runtime_workers": 2,
         "pool_capacity": 2,
         "wasmtime_allocator": "on_demand",
         "wasmtime_copy_on_write_images": False,
+        "prepared_cache_enabled": True,
     },
     "pooling-cow-disabled": {
         "runtime_workers": 2,
         "pool_capacity": 2,
         "wasmtime_allocator": "pooling",
         "wasmtime_copy_on_write_images": False,
+        "prepared_cache_enabled": True,
     },
     "pooling-cow-enabled": {
         "runtime_workers": 2,
         "pool_capacity": 2,
         "wasmtime_allocator": "pooling",
         "wasmtime_copy_on_write_images": True,
+        "prepared_cache_enabled": True,
+    },
+    "prepared-cache-disabled": {
+        "runtime_workers": 2,
+        "pool_capacity": 2,
+        "wasmtime_allocator": "on_demand",
+        "wasmtime_copy_on_write_images": True,
+        "prepared_cache_enabled": False,
     },
 }
 
@@ -103,7 +166,6 @@ ATTRIBUTION_RULES: dict[str, tuple[str, ...]] = {
     ),
     "Wasmtime engine and component preparation": (
         "prepare_inner",
-        "component::component",
         "wasmtime",
         "cranelift",
     ),
@@ -121,32 +183,33 @@ ATTRIBUTION_RULES: dict[str, tuple[str, ...]] = {
     ),
     "WIT lifting, lowering, and payload copies": (
         "call_echo",
-        "component",
+        "canonical",
+        "canon",
         "memcpy",
+        "memmove",
         "copy_from_slice",
         "into_bytes",
     ),
     "host context and log calls": (
-        "host",
-        "context",
-        "log",
+        "activationhostcontext",
+        "hostcall",
+        "boundedlogsink",
     ),
     "result mapping and diagnostics": (
-        "classify",
+        "classify_outcome",
         "guestoutcome",
         "platformerror",
         "diagnostic",
     ),
     "resource reclamation and cell disposition": (
-        "reclamation",
-        "dealloc",
-        "drop",
-        "madvise",
-        "release",
+        "activation_resource_reclamation",
+        "cell_disposition",
+        "temporary_buffer",
+        "prepared_component_released",
     ),
     "pool/queue coordination and runtime scheduling": (
         "fixedcellpool",
-        "acquire",
+        "timingcellpool",
         "tokio",
         "scheduler",
     ),
@@ -229,7 +292,14 @@ def parse_meminfo() -> dict[str, int]:
     return values
 
 
-def capture_host(output: Path, source_commit: str, source_tree: str, repository_root: Path) -> None:
+def capture_host(
+    output: Path,
+    source_commit: str,
+    source_tree: str,
+    source_ref: str,
+    source_ref_head: str,
+    repository_root: Path,
+) -> None:
     kernel_text = "\n".join(
         filter(
             None,
@@ -251,6 +321,8 @@ def capture_host(output: Path, source_commit: str, source_tree: str, repository_
         "captured_at_utc": now_utc(),
         "source_commit": source_commit,
         "source_tree": source_tree,
+        "published_source_ref": source_ref,
+        "published_source_ref_head": source_ref_head,
         "operating_system": platform.system().lower(),
         "architecture": platform.machine(),
         "kernel": command_output(["uname", "-srvmo"]),
@@ -320,6 +392,97 @@ def verify_baseline(document: dict[str, Any], label: str, expected_checks: set[s
     return check_names(document, label, expected_checks)
 
 
+def command_arguments(command: dict[str, Any], label: str) -> list[str]:
+    arguments = command.get("command")
+    if not isinstance(arguments, list) or not all(isinstance(value, str) for value in arguments):
+        fail(f"{label} must retain the exact command array")
+    if not any(Path(value).name == "phase0-baseline" for value in arguments):
+        fail(f"{label} did not invoke phase0-baseline")
+    return arguments
+
+
+def command_option(arguments: list[str], name: str) -> str | None:
+    try:
+        index = arguments.index(name)
+    except ValueError:
+        return None
+    return arguments[index + 1] if index + 1 < len(arguments) else None
+
+
+def verify_command_identity(
+    command: dict[str, Any],
+    label: str,
+    source_commit: str,
+    source_tree: str,
+    published_source_ref: str,
+) -> list[str]:
+    if command.get("schema_version") != "latent.phase0.hot-path.command.v1":
+        fail(f"{label} has an unrecognized command schema")
+    for key, expected in (
+        ("source_commit", source_commit),
+        ("source_tree", source_tree),
+        ("published_source_ref", published_source_ref),
+        ("execution_tree", source_tree),
+    ):
+        if command.get(key) != expected:
+            fail(
+                f"{label} source identity mismatch for {key}: "
+                f"expected {expected!r}, observed {command.get(key)!r}"
+            )
+    execution_commit = command.get("execution_commit")
+    ref_head = command.get("published_source_ref_head")
+    for key, value in (
+        ("source_commit", command.get("source_commit")),
+        ("source_tree", command.get("source_tree")),
+        ("execution_tree", command.get("execution_tree")),
+    ):
+        if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{40}", value):
+            fail(f"{label} has no valid {key}")
+    if not isinstance(execution_commit, str) or not re.fullmatch(r"[0-9a-f]{40}", execution_commit):
+        fail(f"{label} has no valid execution commit")
+    if not isinstance(ref_head, str) or not re.fullmatch(r"[0-9a-f]{40}", ref_head):
+        fail(f"{label} has no verified durable ref head")
+    return command_arguments(command, label)
+
+
+def verify_targeted_profile_document(
+    document: dict[str, Any], label: str, workload: str
+) -> None:
+    if document.get("schema_version") != TARGETED_PROFILE_SCHEMA:
+        fail(f"{label} has unexpected targeted-profile schema")
+    if document.get("status") != "pass":
+        fail(f"{label} is not a passing targeted profile")
+    if document.get("profile_workload") != workload:
+        fail(
+            f"{label} workload mismatch: expected {workload!r}, "
+            f"observed {document.get('profile_workload')!r}"
+        )
+    if document.get("full_invariant_proof_required") is not True:
+        fail(f"{label} does not require its separate full-invariant proof")
+    requirement = PROFILE_WORKLOAD_REQUIREMENTS[workload]
+    semantics = document.get("workload_semantics")
+    if semantics != requirement["semantics"]:
+        fail(f"{label} does not declare the canonical {workload} semantics")
+    selected_scenarios = document.get("selected_scenarios")
+    if not isinstance(selected_scenarios, list) or not all(
+        isinstance(scenario, str) for scenario in selected_scenarios
+    ):
+        fail(f"{label} has no valid selected-scenarios list")
+    if len(selected_scenarios) != len(set(selected_scenarios)):
+        fail(f"{label} repeats selected scenarios")
+    if set(selected_scenarios) != requirement["scenarios"]:
+        fail(
+            f"{label} selected scenarios do not match the canonical {workload} boundary; "
+            f"expected={sorted(requirement['scenarios'])}, observed={sorted(selected_scenarios)}"
+        )
+    config = document.get("config")
+    if not isinstance(config, dict) or config.get("mode") != "full":
+        fail(f"{label} does not retain its full-mode effective configuration")
+    if config.get("profile_workload") != workload:
+        fail(f"{label} config does not declare its exact profile workload")
+    check_names(document, label, None)
+
+
 def distribution_value(document: dict[str, Any], name: str, field: str = "p50") -> float | None:
     value = document.get("timings", {}).get("distributions", {}).get(name)
     if not isinstance(value, dict):
@@ -335,6 +498,23 @@ def maximum_process_value(document: dict[str, Any], field: str) -> float | None:
         if isinstance(snapshot, dict) and isinstance(snapshot.get(field), (int, float))
     ]
     return float(max(values)) if values else None
+
+
+def process_value_at_label(document: dict[str, Any], label: str, field: str) -> float | None:
+    for snapshot in document.get("process_snapshots", []):
+        if not isinstance(snapshot, dict) or snapshot.get("label") != label:
+            continue
+        value = snapshot.get(field)
+        return float(value) if isinstance(value, (int, float)) else None
+    return None
+
+
+def process_delta(
+    document: dict[str, Any], before_label: str, after_label: str, field: str
+) -> float | None:
+    before = process_value_at_label(document, before_label, field)
+    after = process_value_at_label(document, after_label, field)
+    return None if before is None or after is None else after - before
 
 
 def candidate_metrics(document: dict[str, Any]) -> dict[str, float | None]:
@@ -361,6 +541,30 @@ def candidate_metrics(document: dict[str, Any]) -> dict[str, float | None]:
         "peak_threads": maximum_process_value(document, "thread_count"),
         "peak_open_sockets": maximum_process_value(document, "open_socket_count"),
         "peak_listening_sockets": maximum_process_value(document, "listening_socket_count"),
+        "fixed_runtime_rss_bytes": process_value_at_label(
+            document, "before_component_load", "rss_bytes"
+        ),
+        "fixed_runtime_virtual_memory_bytes": process_value_at_label(
+            document, "before_component_load", "virtual_memory_bytes"
+        ),
+        "prepared_state_rss_delta_bytes": process_delta(
+            document, "before_component_load", "after_component_preparation", "rss_bytes"
+        ),
+        "prepared_state_virtual_memory_delta_bytes": process_delta(
+            document,
+            "before_component_load",
+            "after_component_preparation",
+            "virtual_memory_bytes",
+        ),
+        "post_release_rss_delta_bytes": process_delta(
+            document, "before_component_load", "prepared_component_released", "rss_bytes"
+        ),
+        "post_release_virtual_memory_delta_bytes": process_delta(
+            document,
+            "before_component_load",
+            "prepared_component_released",
+            "virtual_memory_bytes",
+        ),
     }
 
 
@@ -414,13 +618,8 @@ def heaptrack_summary(report: str, label: str) -> dict[str, Any]:
     }
 
 
-def perf_top_samples(report: str, limit: int = 5) -> list[dict[str, Any]]:
-    """Extract the leading sampled symbols from `perf report --stdio`.
-
-    The raw report remains authoritative. This compact index makes it clear
-    when a dominant sample comes from required baseline observation overhead
-    rather than a production activation-path function.
-    """
+def perf_samples(report: str) -> list[dict[str, Any]]:
+    """Parse every no-children `perf report` row as CPU self percentage."""
     samples: list[dict[str, Any]] = []
     for line in report.splitlines():
         fields = re.split(r"\s{2,}", line.strip())
@@ -437,39 +636,206 @@ def perf_top_samples(report: str, limit: int = 5) -> list[dict[str, Any]]:
                 "symbol": fields[3],
             }
         )
-        if len(samples) == limit:
-            break
     return samples
+
+
+def perf_top_samples(report: str, limit: int = 5) -> list[dict[str, Any]]:
+    return perf_samples(report)[:limit]
+
+
+def parse_folded_stacks(path: Path, label: str) -> list[tuple[str, int]]:
+    contents = require_text(path, label)
+    records: list[tuple[str, int]] = []
+    for line_number, line in enumerate(contents.splitlines(), start=1):
+        try:
+            stack, raw_value = line.rsplit(" ", 1)
+            value = int(raw_value)
+        except ValueError:
+            fail(f"{label} has an invalid folded-stack line {line_number}")
+        if not stack or value < 0:
+            fail(f"{label} has an invalid folded-stack value at line {line_number}")
+        records.append((stack, value))
+    if not records:
+        fail(f"{label} has no folded allocation-stack records")
+    return records
+
+
+def contributor_category(text: str) -> str:
+    normalized = text.lower()
+    for category, patterns in ATTRIBUTION_RULES.items():
+        if any(pattern in normalized for pattern in patterns):
+            return category
+    return "unmatched_or_unknown"
+
+
+def add_contributor_sample(entry: dict[str, Any], sample: str) -> None:
+    samples = entry["sample_symbols_or_stacks"]
+    if len(samples) < 3 and sample not in samples:
+        samples.append(sample)
+
+
+def quantitative_attribution(
+    self_perf_report: str,
+    inclusive_perf_report: str,
+    allocation_calls: list[tuple[str, int]],
+    allocation_peak_bytes: list[tuple[str, int]],
+    expected_allocation_calls: int,
+    label: str,
+) -> dict[str, Any]:
+    categories = tuple(ATTRIBUTION_RULES) + ("unmatched_or_unknown",)
+    values: dict[str, dict[str, Any]] = {
+        category: {
+            "cpu_self_percent": 0.0,
+            "cpu_inclusive_percent": 0.0,
+            "allocation_calls": 0,
+            "allocation_peak_bytes": 0,
+            "sample_symbols_or_stacks": [],
+        }
+        for category in categories
+    }
+    self_perf_rows = perf_samples(self_perf_report)
+    inclusive_perf_rows = perf_samples(inclusive_perf_report)
+    for row in self_perf_rows:
+        category = contributor_category(f"{row['shared_object']} {row['symbol']}")
+        values[category]["cpu_self_percent"] += row["percent"]
+        add_contributor_sample(values[category], row["symbol"])
+    for row in inclusive_perf_rows:
+        category = contributor_category(f"{row['shared_object']} {row['symbol']}")
+        values[category]["cpu_inclusive_percent"] += row["percent"]
+        add_contributor_sample(values[category], row["symbol"])
+    folded_total = sum(value for _, value in allocation_calls)
+    if folded_total != expected_allocation_calls:
+        fail(
+            f"{label} allocation folded-stack total {folded_total} does not equal "
+            f"Heaptrack summary {expected_allocation_calls}"
+        )
+    for stack, value in allocation_calls:
+        category = contributor_category(stack)
+        values[category]["allocation_calls"] += value
+        add_contributor_sample(values[category], stack)
+    for stack, value in allocation_peak_bytes:
+        category = contributor_category(stack)
+        values[category]["allocation_peak_bytes"] += value
+        add_contributor_sample(values[category], stack)
+    for entry in values.values():
+        entry["cpu_self_percent"] = round(entry["cpu_self_percent"], 4)
+        entry["cpu_inclusive_percent"] = round(entry["cpu_inclusive_percent"], 4)
+    return {
+        "cpu_measurement": "perf report --no-children self samples and perf report inclusive samples; inclusive category totals may overlap and need not sum to 100%",
+        "allocation_measurement": "Heaptrack folded allocation-call and peak-byte stack costs; categories are disjoint first-match classifications",
+        "unmatched_bucket": "unmatched_or_unknown",
+        "categories": values,
+        "totals": {
+            "cpu_reported_self_percent": round(
+                sum(row["percent"] for row in self_perf_rows), 4
+            ),
+            "cpu_reported_inclusive_percent": round(
+                sum(row["percent"] for row in inclusive_perf_rows), 4
+            ),
+            "allocation_calls": folded_total,
+            "allocation_peak_bytes": sum(value for _, value in allocation_peak_bytes),
+        },
+    }
+
+
+def load_full_invariant_proof(
+    raw_path: Path,
+    archive_root: Path,
+    source_commit: str,
+    source_tree: str,
+    published_source_ref: str,
+) -> tuple[dict[str, Any], set[str], dict[str, Any]]:
+    document = load_json(raw_path, "full-invariant proof baseline")
+    expected_checks = verify_baseline(document, "full-invariant proof baseline", None)
+    command_path = raw_path.parent / "command.json"
+    command = load_json(command_path, "full-invariant proof command")
+    arguments = verify_command_identity(
+        command,
+        "full-invariant proof command",
+        source_commit,
+        source_tree,
+        published_source_ref,
+    )
+    if command_option(arguments, "--profile-workload") is not None:
+        fail("full-invariant proof command must not use a selective profile workload")
+    if command_option(arguments, "--mode") != "full":
+        fail("full-invariant proof command must retain full mode")
+    if command_option(arguments, "--coordination-poll-interval-ms") != "0":
+        fail("full-invariant proof command must retain calibrated cooperative polling")
+    config = document.get("config")
+    expected_config = {
+        "profile_workload": None,
+        "runtime_workers": 2,
+        "pool_capacity": 2,
+        "wasmtime_allocator": "on_demand",
+        "wasmtime_copy_on_write_images": True,
+        "prepared_cache_enabled": True,
+        "coordination_poll_interval_ms": 0,
+    }
+    if not isinstance(config, dict) or any(
+        config.get(key) != expected for key, expected in expected_config.items()
+    ):
+        fail("full-invariant proof configuration is not the fixed default Phase 0 topology")
+    return (
+        document,
+        expected_checks,
+        {
+            "raw_results": archive_path(raw_path, archive_root),
+            "raw_results_sha256": sha256_file(raw_path),
+            "command": archive_path(command_path, archive_root),
+            "command_sha256": sha256_file(command_path),
+            "configuration": document.get("config"),
+        },
+    )
 
 
 def load_profile(
     profiles_directory: Path,
     name: str,
-    expected_checks: set[str] | None,
+    full_invariant_proof: dict[str, Any],
     archive_root: Path,
-) -> tuple[dict[str, Any], set[str], dict[str, Any]]:
+    source_commit: str,
+    source_tree: str,
+    published_source_ref: str,
+) -> dict[str, Any]:
     root = profiles_directory / name
     perf_root = root / "perf"
     allocation_root = root / "allocation"
-    perf_document = load_json(perf_root / "raw-results.json", f"{name} perf baseline")
-    expected_checks = verify_baseline(perf_document, f"{name} perf baseline", expected_checks)
+    perf_document = load_json(perf_root / "raw-results.json", f"{name} perf targeted profile")
+    verify_targeted_profile_document(perf_document, f"{name} perf targeted profile", name)
     allocation_document = load_json(
-        allocation_root / "raw-results.json", f"{name} allocation baseline"
+        allocation_root / "raw-results.json", f"{name} allocation targeted profile"
     )
-    verify_baseline(allocation_document, f"{name} allocation baseline", expected_checks)
+    verify_targeted_profile_document(
+        allocation_document, f"{name} allocation targeted profile", name
+    )
 
     perf_command = load_json(perf_root / "command.json", f"{name} perf command")
     allocation_command = load_json(
         allocation_root / "command.json", f"{name} allocation command"
     )
-    for label, command in (("perf", perf_command), ("allocation", allocation_command)):
-        arguments = command.get("command")
-        if not isinstance(arguments, list) or not all(isinstance(value, str) for value in arguments):
-            fail(f"{name} {label} command must retain the exact command array")
-        if "phase0-baseline" not in " ".join(arguments):
-            fail(f"{name} {label} command did not invoke phase0-baseline")
+    for label, command, tool in (
+        ("perf", perf_command, "perf"),
+        ("allocation", allocation_command, "heaptrack"),
+    ):
+        if command.get("tool") != tool:
+            fail(f"{name} {label} command records the wrong profiling tool")
+        arguments = verify_command_identity(
+            command,
+            f"{name} {label} command",
+            source_commit,
+            source_tree,
+            published_source_ref,
+        )
+        if command_option(arguments, "--profile-workload") != name:
+            fail(f"{name} {label} command does not declare its exact profile workload")
+        if command_option(arguments, "--coordination-poll-interval-ms") != "1":
+            fail(f"{name} {label} command does not record profiler-only polling")
 
     perf_report = require_text(perf_root / "perf-report.txt", f"{name} symbolized CPU report")
+    perf_inclusive_report = require_text(
+        perf_root / "perf-inclusive-report.txt", f"{name} inclusive CPU report"
+    )
     allocation_report = require_text(
         allocation_root / "heaptrack-report.txt", f"{name} allocation report"
     )
@@ -479,13 +845,28 @@ def load_profile(
     allocation_summary = heaptrack_summary(allocation_report, f"{name} allocation report")
     perf_data = perf_root / "perf.data"
     allocation_data = require_heaptrack_data(allocation_root, f"{name} raw Heaptrack data")
+    allocation_folded = allocation_root / "heaptrack-allocations.folded"
+    peak_folded = allocation_root / "heaptrack-peak-bytes.folded"
     if not perf_data.is_file():
         fail(f"{name} raw perf data is missing: {perf_data}")
+    contributors = quantitative_attribution(
+        perf_report,
+        perf_inclusive_report,
+        parse_folded_stacks(allocation_folded, f"{name} Heaptrack allocation folded stacks"),
+        parse_folded_stacks(peak_folded, f"{name} Heaptrack peak-byte folded stacks"),
+        allocation_summary["allocation_calls"],
+        name,
+    )
     return (
         {
             "workload": name,
             "metrics": candidate_metrics(perf_document),
             "top_cpu_samples": perf_top_samples(perf_report),
+            "scenario_semantics": perf_document["workload_semantics"],
+            "selected_scenarios": perf_document.get("selected_scenarios", []),
+            "payload_flow": perf_document.get("payload_flow"),
+            "full_invariant_proof": full_invariant_proof,
+            "contributor_attribution": contributors,
             "perf": {
                 "command": perf_command,
                 "raw_results": archive_path(perf_root / "raw-results.json", archive_root),
@@ -494,6 +875,12 @@ def load_profile(
                 "data_sha256": sha256_file(perf_data),
                 "report": archive_path(perf_root / "perf-report.txt", archive_root),
                 "report_sha256": sha256_file(perf_root / "perf-report.txt"),
+                "inclusive_report": archive_path(
+                    perf_root / "perf-inclusive-report.txt", archive_root
+                ),
+                "inclusive_report_sha256": sha256_file(
+                    perf_root / "perf-inclusive-report.txt"
+                ),
                 "report_text": perf_report,
             },
             "allocation": {
@@ -514,11 +901,13 @@ def load_profile(
                 ),
                 "leak_report_sha256": sha256_file(allocation_root / "heaptrack-leaks.txt"),
                 "leak_report_text": allocation_leak_report,
+                "allocation_folded": archive_path(allocation_folded, archive_root),
+                "allocation_folded_sha256": sha256_file(allocation_folded),
+                "peak_bytes_folded": archive_path(peak_folded, archive_root),
+                "peak_bytes_folded_sha256": sha256_file(peak_folded),
                 **allocation_summary,
             },
-        },
-        expected_checks,
-        perf_document,
+        }
     )
 
 
@@ -535,23 +924,83 @@ def validate_candidate_config(name: str, document: dict[str, Any]) -> None:
             )
 
 
+REQUIRED_CANDIDATE_METRICS = (
+    "component_preparation_micros",
+    "warm_echo_p50_micros",
+    "post_invocation_cleanup_p50_micros",
+    "at_capacity_activations_per_second",
+    "bounded_queue_activations_per_second",
+    "fixed_runtime_rss_bytes",
+    "fixed_runtime_virtual_memory_bytes",
+    "prepared_state_rss_delta_bytes",
+    "prepared_state_virtual_memory_delta_bytes",
+    "peak_rss_bytes",
+    "peak_virtual_memory_bytes",
+    "post_release_rss_delta_bytes",
+    "post_release_virtual_memory_delta_bytes",
+    "peak_threads",
+    "peak_open_sockets",
+    "peak_listening_sockets",
+)
+
+
+def validate_candidate_metrics(name: str, run_name: str, document: dict[str, Any]) -> dict[str, float | None]:
+    metrics = candidate_metrics(document)
+    missing = [metric for metric in REQUIRED_CANDIDATE_METRICS if metrics.get(metric) is None]
+    if missing:
+        fail(
+            f"candidate {name} {run_name} lacks required fixed/peak-memory, latency, "
+            f"throughput, topology, or reclamation metrics: {', '.join(missing)}"
+        )
+    return metrics
+
+
 def load_candidate(
     candidates_directory: Path,
     name: str,
     expected_checks: set[str],
     archive_root: Path,
+    source_commit: str,
+    source_tree: str,
+    published_source_ref: str,
+    required_run_count: int,
 ) -> dict[str, Any]:
     root = candidates_directory / name
     runs = sorted(path for path in root.glob("run-*/raw-results.json") if path.is_file())
-    if not runs:
-        fail(f"candidate {name} has no retained run documents")
+    expected_names = [f"run-{index:02d}" for index in range(1, required_run_count + 1)]
+    observed_names = [path.parent.name for path in runs]
+    if observed_names != expected_names:
+        fail(
+            f"candidate {name} must retain exactly {required_run_count} consecutively named runs; "
+            f"expected={expected_names}, observed={observed_names}"
+        )
     documents: list[dict[str, Any]] = []
+    metric_samples: list[dict[str, float | None]] = []
     for path in runs:
         document = load_json(path, f"candidate {name} baseline")
         verify_baseline(document, f"candidate {name} {path.parent.name}", expected_checks)
         validate_candidate_config(name, document)
+        command_path = path.parent / "command.json"
+        command = load_json(command_path, f"candidate {name} {path.parent.name} command")
+        arguments = verify_command_identity(
+            command,
+            f"candidate {name} {path.parent.name} command",
+            source_commit,
+            source_tree,
+            published_source_ref,
+        )
+        if command.get("tool") != "phase0-baseline":
+            fail(f"candidate {name} {path.parent.name} did not record phase0-baseline provenance")
+        if command_option(arguments, "--profile-workload") is not None:
+            fail(f"candidate {name} {path.parent.name} must be a full baseline, not targeted")
+        if command_option(arguments, "--mode") != "full":
+            fail(f"candidate {name} {path.parent.name} must retain full baseline mode")
+        if command_option(arguments, "--coordination-poll-interval-ms") != "0":
+            fail(
+                f"candidate {name} {path.parent.name} changes calibrated coordination polling"
+            )
         documents.append(document)
-    metric_samples = [candidate_metrics(document) for document in documents]
+        metric_samples.append(validate_candidate_metrics(name, path.parent.name, document))
     representatives = {
         metric: median(sample.get(metric) for sample in metric_samples)
         for metric in metric_samples[0]
@@ -565,13 +1014,28 @@ def load_candidate(
                 "path": archive_path(path, archive_root),
                 "sha256": sha256_file(path),
                 "status": document["status"],
+                "command": archive_path(path.parent / "command.json", archive_root),
+                "command_sha256": sha256_file(path.parent / "command.json"),
+                "environment": document.get("environment"),
             }
             for path, document in zip(runs, documents, strict=True)
         ],
         "configuration": first["config"],
         "metrics_per_run": metric_samples,
         "representatives": representatives,
-        "hard_invariants": "all canonical Phase 0 baseline checks passed in every retained run",
+        "hard_invariants": {
+            "status": "pass",
+            "rule": "all canonical Phase 0 baseline checks passed exactly once in every retained run",
+            "containment_and_reclamation": "validated by the complete canonical check set",
+        },
+        "topology": {
+            "runtime_workers": first["config"].get("runtime_workers"),
+            "pool_capacity": first["config"].get("pool_capacity"),
+            "pool_queue_capacity": first["config"].get("pool_queue_capacity"),
+            "peak_threads": representatives.get("peak_threads"),
+            "peak_open_sockets": representatives.get("peak_open_sockets"),
+            "peak_listening_sockets": representatives.get("peak_listening_sockets"),
+        },
     }
 
 
@@ -594,16 +1058,66 @@ def archive_profile_record(profile: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def calibration_comparability(
+    candidate: dict[str, Any], calibration: dict[str, Any], source_commit: str, source_tree: str
+) -> list[str]:
+    reasons: list[str] = []
+    if calibration.get("source_commit") != source_commit:
+        reasons.append("source_commit differs from the #38 calibration")
+    if calibration.get("source_tree") != source_tree:
+        reasons.append("source_tree differs from the #38 calibration")
+    minimum_runs = calibration.get("minimum_required_run_count", MINIMUM_ADOPTION_RUNS)
+    if not isinstance(minimum_runs, int) or minimum_runs < MINIMUM_ADOPTION_RUNS:
+        minimum_runs = MINIMUM_ADOPTION_RUNS
+    if candidate["run_count"] < minimum_runs:
+        reasons.append(
+            f"only {candidate['run_count']} retained full runs; #38 requires at least {minimum_runs}"
+        )
+    reference_identity = calibration.get("reference_identity")
+    reference_config = (
+        reference_identity.get("config") if isinstance(reference_identity, dict) else None
+    )
+    if not isinstance(reference_config, dict):
+        reasons.append("#38 calibration lacks a reference configuration")
+    else:
+        for key, reference_value in reference_config.items():
+            if candidate["configuration"].get(key) != reference_value:
+                reasons.append(f"configuration differs for {key}")
+        if candidate["configuration"].get("coordination_poll_interval_ms") != 0:
+            reasons.append("candidate changes calibrated cooperative coordination polling")
+        if candidate["configuration"].get("prepared_cache_enabled") is not True:
+            reasons.append("candidate changes calibrated bounded prepared-cache methodology")
+    reference_environment = (
+        reference_identity.get("environment") if isinstance(reference_identity, dict) else None
+    )
+    candidate_environment = candidate["raw_runs"][0].get("environment")
+    if isinstance(reference_environment, dict) and isinstance(candidate_environment, dict):
+        for key in ("architecture", "kernel", "rustc", "cargo", "rust_target", "build_profile", "wasmtime_version"):
+            if candidate_environment.get(key) != reference_environment.get(key):
+                reasons.append(f"environment differs for {key}")
+    else:
+        reasons.append("candidate or calibration lacks comparable environment context")
+    return reasons
+
+
 def comparison_to_calibration(
-    candidate: dict[str, Any], calibration: dict[str, Any]
+    candidate: dict[str, Any], calibration: dict[str, Any], source_commit: str, source_tree: str
 ) -> dict[str, Any]:
     metrics = calibration.get("metrics")
     if not isinstance(metrics, dict):
         fail("calibration aggregate lacks metrics")
+    reasons = calibration_comparability(candidate, calibration, source_commit, source_tree)
     comparisons: dict[str, Any] = {}
     for metric, calibration_metric in METRIC_TO_CALIBRATION.items():
         candidate_value = candidate["representatives"].get(metric)
         reference = metrics.get(calibration_metric)
+        if reasons:
+            comparisons[metric] = {
+                "status": "inconclusive",
+                "candidate_median": candidate_value,
+                "reasons": reasons,
+            }
+            continue
         if candidate_value is None or not isinstance(reference, dict):
             comparisons[metric] = {"status": "not_available"}
             continue
@@ -634,33 +1148,22 @@ def comparison_to_calibration(
 
 
 def attribution(profile_records: Iterable[dict[str, Any]]) -> dict[str, Any]:
-    text_by_tool: dict[str, list[str]] = {"perf": [], "heaptrack": []}
-    for record in profile_records:
-        text_by_tool["perf"].extend(record["perf"]["report_text"].splitlines())
-        text_by_tool["heaptrack"].extend(record["allocation"]["report_text"].splitlines())
-        text_by_tool["heaptrack"].extend(record["allocation"]["leak_report_text"].splitlines())
-    results: dict[str, Any] = {}
-    for category, patterns in ATTRIBUTION_RULES.items():
-        matches: dict[str, list[str]] = {}
-        for tool, lines in text_by_tool.items():
-            selected = [
-                line.strip()
-                for line in lines
-                if any(pattern in line.lower() for pattern in patterns)
-            ]
-            matches[tool] = selected[:12]
-        results[category] = {
-            "patterns": list(patterns),
-            "perf_matches": matches["perf"],
-            "allocation_matches": matches["heaptrack"],
-            "perf_match_count": len(matches["perf"]),
-            "allocation_match_count": len(matches["heaptrack"]),
-            "interpretation": (
-                "Symbolized reports are retained verbatim; an empty matcher is a review item, "
-                "not evidence of zero cost or allocation."
-            ),
+    return {
+        "method": "Per-workload quantitative attribution is retained in profiles[*].contributor_attribution. Categories are disjoint and include unmatched_or_unknown.",
+        "categories": {
+            category: {"narrow_patterns": list(patterns)}
+            for category, patterns in ATTRIBUTION_RULES.items()
         }
-    return results
+        | {
+            "unmatched_or_unknown": {
+                "narrow_patterns": [],
+                "meaning": "No category matched; it is quantified rather than silently dropped.",
+            }
+        },
+        "workloads": {
+            record["workload"]: record["contributor_attribution"] for record in profile_records
+        },
+    }
 
 
 def decision_records(candidates: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
@@ -680,9 +1183,9 @@ def decision_records(candidates: dict[str, dict[str, Any]]) -> list[dict[str, An
         },
         {
             "candidate": "bounded preparation/cache reuse versus cold preparation",
-            "decision": "adopt now",
-            "scope": "retain existing bounded one-entry prepared-component cache",
-            "rationale": "The cache is node-owned, bounded, and stores prepared immutable state only; stores and instances remain fresh per activation.",
+            "decision": "retain existing setting; no new adoption",
+            "scope": "bounded one-entry prepared-component cache and explicit cache-disabled control",
+            "rationale": f"The matrix includes a cache-disabled control and the targeted cold-preparation profile, but {no_adoption_reason} The existing bounded immutable cache is retained without claiming a new measured adoption.",
             "handoff": "#9 generalizes the cache key, policy, eviction, and multi-component compatibility proof.",
         },
         {
@@ -731,46 +1234,76 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
         "",
         "## Profile coverage",
         "",
-        "| Workload | CPU profile | Allocation/copy evidence | Prep (us) | Warm P50 (us) | Cleanup P50 (us) | Allocation calls | Process-exit Heaptrack total | Top sampled CPU |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| Workload | Distinct scenario boundary | CPU profile | Allocation evidence | Full-invariant proof | Allocation calls | Payload in/out bytes |",
+        "| --- | --- | --- | --- | --- | ---: | ---: |",
     ]
     for profile in aggregate["profiles"]:
-        metrics = profile["metrics"]
+        payload = profile.get("payload_flow") or {}
         lines.append(
-            "| {workload} | `{perf}` | `{allocation}` | {preparation} | {warm} | {cleanup} | {allocation_calls} | {leaked} | {top_cpu} |".format(
+            "| {workload} | {semantics} | `{perf}` | `{allocation}` | `{proof}` | {allocation_calls} | {payload_in}/{payload_out} |".format(
                 workload=profile["workload"],
+                semantics=profile["scenario_semantics"].replace("|", "\\|"),
                 perf=profile["perf"]["report"],
                 allocation=profile["allocation"]["report"],
-                preparation=display_number(metrics.get("component_preparation_micros")),
-                warm=display_number(metrics.get("warm_echo_p50_micros")),
-                cleanup=display_number(metrics.get("post_invocation_cleanup_p50_micros")),
+                proof=profile["full_invariant_proof"]["raw_results"],
                 allocation_calls=display_number(profile["allocation"]["allocation_calls"]),
-                leaked=profile["allocation"]["process_exit_leaked_memory"],
-                top_cpu=top_cpu_sample(profile),
+                payload_in=display_number(payload.get("input_bytes_submitted_to_typed_call")),
+                payload_out=display_number(payload.get("output_bytes_returned_from_typed_call")),
             )
         )
     lines.extend(
         [
             "",
-            "Each profile invokes the real shared Phase 0 composition and retains a passing baseline raw document beside both the symbolized `perf` and `heaptrack` artifacts. Heaptrack allocation-call totals and a dedicated process-exit leak report are mandatory, so an unreadable compressed trace cannot be mistaken for zero allocations. The baseline's hard topology, containment, recovery, cleanup, and reclamation checks are binary prerequisites; profiling never converts them into tolerances.",
+            "Each `perf` and Heaptrack process invokes one named real-composition path only. The retained full-invariant proof is a separate unprofiled full baseline and is the sole source for the canonical topology, containment, recovery, cleanup, and reclamation assertion. The aggregate rejects a missing targeted workload, duplicate semantics, a missing proof, or a command that omits `--profile-workload`.",
             "",
-            "## Principal contributors and interpretation",
+            "## Quantified contributors by workload",
             "",
-            "The retained reports quantify component preparation at {preparation_range} us, warm activation P50 at {warm_range} us, and post-invocation cleanup P50 at {cleanup_range} us across these profile processes. Wasmtime/Cranelift preparation, store/instance construction, WIT lifting/copies, host/context work, result mapping, reclamation, and pool/runtime scheduling are indexed in the aggregate attribution map with the matching raw symbol lines.".format(
-                preparation_range=profile_metric_range(
-                    aggregate["profiles"], "component_preparation_micros"
+        ]
+    )
+    for profile in aggregate["profiles"]:
+        attribution_record = profile["contributor_attribution"]
+        lines.extend(
+            [
+                f"### {profile['workload']}",
+                "",
+                "CPU self is `perf report --no-children`; CPU inclusive is `perf report` with children. Inclusive values can overlap and need not sum to 100%. Heaptrack values are disjoint folded-stack allocation calls and peak bytes; `unmatched_or_unknown` is deliberately retained.",
+                "",
+                "| Contributor | CPU self % | CPU inclusive % | Allocation calls | Allocation peak bytes |",
+                "| --- | ---: | ---: | ---: | ---: |",
+            ]
+        )
+        for category, value in attribution_record["categories"].items():
+            lines.append(
+                "| {category} | {cpu} | {inclusive_cpu} | {calls} | {peak} |".format(
+                    category=category,
+                    cpu=display_number(value["cpu_self_percent"]),
+                    inclusive_cpu=display_number(value["cpu_inclusive_percent"]),
+                    calls=display_number(value["allocation_calls"]),
+                    peak=display_number(value["allocation_peak_bytes"]),
+                )
+            )
+        totals = attribution_record["totals"]
+        lines.extend(
+            [
+                "",
+                "Folded totals: CPU self {cpu}% and inclusive {inclusive_cpu}%, allocation calls {calls}, allocation peak bytes {peak}; process-exit Heaptrack residue `{leaked}`. Payload flow is {input_bytes} bytes submitted and {output_bytes} bytes returned; it is not labelled as copied bytes without a narrow WIT/copy symbol.".format(
+                    cpu=display_number(totals["cpu_reported_self_percent"]),
+                    inclusive_cpu=display_number(totals["cpu_reported_inclusive_percent"]),
+                    calls=display_number(totals["allocation_calls"]),
+                    peak=display_number(totals["allocation_peak_bytes"]),
+                    leaked=profile["allocation"]["process_exit_leaked_memory"],
+                    input_bytes=display_number((profile.get("payload_flow") or {}).get("input_bytes_submitted_to_typed_call")),
+                    output_bytes=display_number((profile.get("payload_flow") or {}).get("output_bytes_returned_from_typed_call")),
                 ),
-                warm_range=profile_metric_range(aggregate["profiles"], "warm_echo_p50_micros"),
-                cleanup_range=profile_metric_range(
-                    aggregate["profiles"], "post_invocation_cleanup_p50_micros"),
-            ),
-            "",
-            "The top sampled CPU entry is shown for each workload so benchmark-observer cost is explicit. Full Phase 0 proof intentionally scans Linux process resources (including socket state); those samples can dominate a long warm process and are not silently reclassified as production activation cost. They remain in the profile because the hard resource/topology proof remains mandatory, and no optimization decision is based on removing that proof.",
-            "",
+                "",
+            ]
+        )
+    lines.extend(
+        [
             "## Experiment matrix",
             "",
-            "| Candidate | Runs | Preparation median (us) | Warm P50 (us) | Peak RSS (bytes) | Result |",
-            "| --- | ---: | ---: | ---: | ---: | --- |",
+            "| Candidate | Runs | Prep us | Warm P50 us | At-cap/s | Queued/s | Fixed RSS | Prep Δ RSS | Peak RSS | Fixed VM | Peak VM | Post-release Δ RSS | Topology / containment | #38 result |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
         ]
     )
     for candidate in aggregate["candidates"].values():
@@ -782,19 +1315,30 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
             if isinstance(value, dict)
         )
         lines.append(
-            "| {name} | {runs} | {prep} | {warm} | {rss} | {status} |".format(
+            "| {name} | {runs} | {prep} | {warm} | {at_capacity} | {queued} | {fixed_rss} | {prep_delta} | {peak_rss} | {fixed_vm} | {peak_vm} | {release_delta} | {topology} | {status} |".format(
                 name=candidate["name"],
                 runs=candidate["run_count"],
                 prep=display_number(metrics.get("component_preparation_micros")),
                 warm=display_number(metrics.get("warm_echo_p50_micros")),
-                rss=display_number(metrics.get("peak_rss_bytes")),
+                at_capacity=display_number(metrics.get("at_capacity_activations_per_second")),
+                queued=display_number(metrics.get("bounded_queue_activations_per_second")),
+                fixed_rss=display_number(metrics.get("fixed_runtime_rss_bytes")),
+                prep_delta=display_number(metrics.get("prepared_state_rss_delta_bytes")),
+                peak_rss=display_number(metrics.get("peak_rss_bytes")),
+                fixed_vm=display_number(metrics.get("fixed_runtime_virtual_memory_bytes")),
+                peak_vm=display_number(metrics.get("peak_virtual_memory_bytes")),
+                release_delta=display_number(metrics.get("post_release_rss_delta_bytes")),
+                topology="{workers}w/{cells}c; hard invariants pass".format(
+                    workers=candidate["topology"]["runtime_workers"],
+                    cells=candidate["topology"]["pool_capacity"],
+                ),
                 status=", ".join(statuses) or "not_available",
             )
         )
     lines.extend(
         [
             "",
-            f"No new runtime optimization is adopted from this matrix unless it has at least {MINIMUM_ADOPTION_RUNS} comparable runs, passes every hard invariant, stays within documented fixed/peak-memory costs, and clears the #38 calibrated noise envelope. This archive does not meet the run-count threshold for adoption, so it records decisions without promoting a faster single or small-set result.",
+            f"Each candidate retains per-run command provenance and host/toolchain context in `aggregate.json`. No new runtime optimization is adopted unless it has at least {MINIMUM_ADOPTION_RUNS} materially comparable independent full runs, passes every hard invariant, has stable environment/outlier evidence, and stays within documented fixed/peak-memory costs. A mismatched source, configuration, method, environment, or run count is **inconclusive**, never an inside/outside-band result.",
             "",
             "## Decisions and Phase 1 handoff",
             "",
@@ -811,10 +1355,6 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
         )
     lines.extend(
         [
-            "## Attribution map",
-            "",
-            "The machine-readable aggregate records matching symbol lines from both tools for capsule/digest validation, Wasmtime preparation, store/instance construction, envelope/metadata work, WIT lifting/lowering/copies, host calls, result mapping, reclamation, and pool/runtime coordination. An empty automatic match is explicitly a review item, not an assertion of zero cost.",
-            "",
             "## Guardrails",
             "",
             "The final Phase 0 configuration remains: fixed node-owned workers and cells; bounded queues, caches, logs, diagnostics, and timing history; a fresh store, limiter, host state, activation context, import table, and instance for every invocation; affirmative cleanup before cell reuse; and no per-service process, thread, listener, connection, runtime instance, or persistent guest memory. Persistent AOT artifacts, provenance-sensitive compiler caches, snapshots, store/instance reuse, shared mutable guest instances, and native execution were not enabled.",
@@ -872,24 +1412,72 @@ def aggregate(arguments: argparse.Namespace) -> None:
         fail("hot-path profiles are not from a supported native-Linux host")
     if host.get("source_commit") != arguments.source_commit or host.get("source_tree") != arguments.source_tree:
         fail("host observation source identity does not match aggregate arguments")
+    if host.get("published_source_ref") != arguments.published_source_ref:
+        fail("host observation durable source ref does not match aggregate arguments")
+    ref_head = host.get("published_source_ref_head")
+    if not isinstance(ref_head, str) or not re.fullmatch(r"[0-9a-f]{40}", ref_head):
+        fail("host observation lacks a verified durable source-ref head")
 
     calibration = load_json(arguments.calibration_aggregate, "Phase 0 calibration aggregate")
     if calibration.get("status") != "pass":
         fail("Phase 0 calibration aggregate is not passing")
 
-    expected_checks: set[str] | None = None
+    if arguments.required_candidate_runs < MINIMUM_EXPERIMENT_RUNS:
+        fail(
+            f"required candidate run count must be at least {MINIMUM_EXPERIMENT_RUNS} "
+            "for a bounded experiment matrix"
+        )
+    _, expected_checks, full_invariant_proof = load_full_invariant_proof(
+        arguments.full_invariant_proof,
+        archive_root,
+        arguments.source_commit,
+        arguments.source_tree,
+        arguments.published_source_ref,
+    )
     profiles: list[dict[str, Any]] = []
     for name in PROFILE_WORKLOADS:
-        record, expected_checks, _ = load_profile(
-            profiles_directory, name, expected_checks, archive_root
+        record = load_profile(
+            profiles_directory,
+            name,
+            full_invariant_proof,
+            archive_root,
+            arguments.source_commit,
+            arguments.source_tree,
+            arguments.published_source_ref,
         )
         profiles.append(record)
-    assert expected_checks is not None
+    semantics = [profile["scenario_semantics"] for profile in profiles]
+    if len(set(semantics)) != len(semantics):
+        fail("targeted profiles do not have distinct scenario semantics")
+    scenario_sets = [tuple(profile["selected_scenarios"]) for profile in profiles]
+    if len(set(scenario_sets)) != len(scenario_sets):
+        fail("targeted profiles do not have distinct selected scenario sets")
 
     candidates: dict[str, dict[str, Any]] = {}
     for name in CANDIDATE_EXPECTATIONS:
-        candidate = load_candidate(candidates_directory, name, expected_checks, archive_root)
-        candidate["calibration_comparison"] = comparison_to_calibration(candidate, calibration)
+        candidate = load_candidate(
+            candidates_directory,
+            name,
+            expected_checks,
+            archive_root,
+            arguments.source_commit,
+            arguments.source_tree,
+            arguments.published_source_ref,
+            arguments.required_candidate_runs,
+        )
+        candidate["calibration_comparison"] = comparison_to_calibration(
+            candidate, calibration, arguments.source_commit, arguments.source_tree
+        )
+        candidate["calibration_comparison_eligibility"] = {
+            "status": "comparable"
+            if not calibration_comparability(
+                candidate, calibration, arguments.source_commit, arguments.source_tree
+            )
+            else "inconclusive",
+            "reasons": calibration_comparability(
+                candidate, calibration, arguments.source_commit, arguments.source_tree
+            ),
+        }
         candidates[name] = candidate
 
     aggregate_document = {
@@ -901,6 +1489,11 @@ def aggregate(arguments: argparse.Namespace) -> None:
         "cross_platform_claim": False,
         "source_commit": arguments.source_commit,
         "source_tree": arguments.source_tree,
+        "source_provenance": {
+            "published_source_ref": arguments.published_source_ref,
+            "published_source_ref_head": ref_head,
+            "rule": "The runner fetched the durable ref, verified that the supplied commit exists, resolves to source_tree, and is reachable from the ref before execution.",
+        },
         "host_observation": {
             "path": archive_path(arguments.host_observation, archive_root),
             "sha256": sha256_file(arguments.host_observation),
@@ -912,10 +1505,12 @@ def aggregate(arguments: argparse.Namespace) -> None:
                 f"No candidate is eligible for Phase 0 adoption with fewer than {MINIMUM_ADOPTION_RUNS} "
                 "comparable runs, regardless of a faster median."
             ),
+            "comparison_rule": "Only materially equivalent source, benchmark methodology, environment, configuration, and at least seven full runs may receive an inside/outside advisory-band result; every other result is inconclusive.",
         },
         "hard_invariants": {
             "canonical_names": sorted(expected_checks),
-            "rule": "Every profiled and matrix baseline has this exact set once and every check passed.",
+            "full_invariant_proof": full_invariant_proof,
+            "rule": "The separate full-invariant proof and every matrix baseline contain this exact set once and every check passed. Targeted profiler documents have their own reduced, workload-specific checks and cannot substitute for it.",
         },
         "profiles": [archive_profile_record(profile) for profile in profiles],
         "attribution": attribution(profiles),
@@ -943,14 +1538,19 @@ def parser() -> argparse.ArgumentParser:
     capture.add_argument("--output", type=Path, required=True)
     capture.add_argument("--source-commit", required=True)
     capture.add_argument("--source-tree", required=True)
+    capture.add_argument("--published-source-ref", required=True)
+    capture.add_argument("--published-source-ref-head", required=True)
     capture.add_argument("--repository-root", type=Path, required=True)
     summary = subcommands.add_parser("aggregate", help="validate and summarize one profile archive")
     summary.add_argument("--profiles-directory", type=Path, required=True)
+    summary.add_argument("--full-invariant-proof", type=Path, required=True)
     summary.add_argument("--candidates-directory", type=Path, required=True)
     summary.add_argument("--host-observation", type=Path, required=True)
     summary.add_argument("--calibration-aggregate", type=Path, required=True)
     summary.add_argument("--source-commit", required=True)
     summary.add_argument("--source-tree", required=True)
+    summary.add_argument("--published-source-ref", required=True)
+    summary.add_argument("--required-candidate-runs", type=int, required=True)
     summary.add_argument("--output-json", type=Path, required=True)
     summary.add_argument("--output-report", type=Path, required=True)
     return result
@@ -964,6 +1564,8 @@ def main() -> int:
                 arguments.output,
                 arguments.source_commit,
                 arguments.source_tree,
+                arguments.published_source_ref,
+                arguments.published_source_ref_head,
                 arguments.repository_root.resolve(),
             )
         else:

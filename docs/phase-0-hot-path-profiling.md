@@ -19,8 +19,16 @@ First publish the exact source tree under a durable branch or tag, then run:
 tools/run_phase0_hot_path_profiles.sh \
   --published-source-commit <reachable-commit-sha> \
   --published-source-tree <reachable-tree-sha> \
+  --published-source-ref <durable-branch-or-tag> \
   benchmarks/phase0/profiling/native-linux-YYYY-MM-DD
 ```
+
+Before it runs, the wrapper refreshes the supplied durable branch or tag (or,
+when offline, explicitly records use of an existing `origin` tracking ref) and
+rejects the run unless the supplied commit exists, resolves to the supplied
+tree, and is reachable from that ref. It then verifies that the local execution
+tree is identical to the published tree. Every raw command and host observation
+retains the published ref/head plus source and execution identities.
 
 The wrapper builds a debuginfo-preserving release binary in an isolated target
 directory, validates and stages the real containment fixture, creates the
@@ -28,12 +36,13 @@ exact executable parity probe (regenerating it for each worker/cell topology),
 then invokes the same shared Phase 0 composition for every measurement. It
 preserves `perf.data`, a symbolized
 `perf report --stdio`, Heaptrack's native compressed raw filename, normal and
-leak-only `heaptrack_print` output, exact commands, baseline raw results, and
-Markdown baseline reports. The aggregate requires a nonzero Heaptrack
+leak-only `heaptrack_print` output, folded Heaptrack allocation-call and
+peak-byte stacks, exact commands, raw results, and Markdown reports. The aggregate requires a nonzero Heaptrack
 allocation-call total and a process-exit leak total, so unreadable compressed
 data cannot be misreported as zero allocation. It rejects a profile that lacks
 either tool's raw/report output, has a source-identity mismatch, a
-missing/duplicate/unexpected hard check, or one failed hard check.
+missing/duplicate/unexpected hard check in the complete proof, or one failed
+hard check.
 
 The accepted native-Linux reference is
 [native-linux-2026-08-27-35a9944](../benchmarks/phase0/profiling/native-linux-2026-08-27-35a9944/README.md).
@@ -45,8 +54,12 @@ fragments. The Heaptrack
 leak-only reports retain the observed 2.82 KiB process-exit residue rather
 than claiming it is zero or an unproven per-activation leak.
 
-The workload set is intentionally biased toward each path while leaving the
-real composition intact:
+The workload set is scenario-selective while leaving the real composition
+intact. A separate uninstrumented `--mode full` proof retains the complete
+canonical invariant set. The CPU and Heaptrack runs execute only the named
+boundary, and the validator rejects a missing `--profile-workload`, duplicated
+scenario semantics, or a targeted document used as a substitute for the full
+proof:
 
 - cold preparation;
 - first activation after preparation;
@@ -55,13 +68,20 @@ real composition intact:
 - post-invocation cleanup and cell disposition; and
 - at-capacity plus bounded-queue contention.
 
-The profile aggregation retains the raw Phase 0 timing boundaries and maps
-symbolized CPU/allocation evidence to capsule parsing/digest validation,
+The profile aggregation retains per-workload quantitative attribution. It
+reports both `perf report --no-children` CPU self percentage and inclusive CPU
+percentage, plus Heaptrack folded allocation calls and peak bytes for every
+required contributor category and a mandatory `unmatched_or_unknown` bucket.
+The categories are narrow and
+disjoint: in particular, WIT/payload attribution uses WIT/canonical/copy
+symbols rather than the generic word `component`. It also records actual input
+and output payload-flow byte counters without calling those bytes copied unless
+a narrow copy/WIT symbol supports that claim. The reports cover capsule parsing/digest validation,
 Wasmtime engine/component preparation, store/limiter/host-state/instance/import
 construction, envelope/metadata work, WIT lifting/lowering and payload copies,
 host context/log calls, result/diagnostic mapping, reclamation/disposition, and
-pool/queue/runtime coordination. Automatic symbol matching is an index into
-the retained reports; an unmatched category is never misreported as zero cost.
+pool/queue/runtime coordination. An unmatched category is never misreported as
+zero cost.
 
 ## Explicit experiment boundary
 
@@ -75,6 +95,9 @@ The profile binary exposes only bounded experimental alternatives:
 - 1/1, 2/2, 2/4, and 4/2 worker/cell ratios, exercised with tiny warm echoes
   and CPU-bound delayed-echo contention;
 - default bounded preparation reuse versus independent cold preparation;
+- an explicit cache-disabled, runner-scoped-no-reuse control alongside the
+  bounded cache, so cold preparation is not inferred from phases in a cached
+  process;
 - on-demand allocation with COW disabled;
 - pooling allocation with COW disabled or enabled; and
 - the source-level allocation/copy boundaries surfaced by Heaptrack.
@@ -93,11 +116,21 @@ instances, or native execution.
 ## Decision rule
 
 Every candidate run records cold/warm latency, at-capacity and queued
-throughput, process RSS/VM/FD/thread/socket peaks, and the complete Phase 0
-containment and reclamation proof. The aggregate reads the issue-38 native
-Linux calibration band for matching metrics, but it refuses to call any
-candidate adopted from fewer than seven comparable independent runs. A faster
-single or small candidate set is an observation only.
+throughput, fixed runtime RSS/VM, preparation and post-release deltas, peak
+RSS/VM/FD/thread/socket values, topology, per-run command/environment
+provenance, and the complete Phase 0 containment and reclamation proof. The
+unprofiled candidates retain the calibrated cooperative `yield_now()`
+coordination method; only targeted profiler runs may record a one-millisecond
+poll interval. The experiment matrix rejects fewer than three independently
+retained full runs for each candidate; that minimum is still insufficient for
+a Phase 0 adoption claim.
+
+The aggregate reads the issue-38 native-Linux calibration only after it proves
+material equivalence of source, methodology, environment, fixture/configuration
+and run count. A mismatched source/method/environment/configuration or fewer
+than seven independent full runs is explicitly **inconclusive** and cannot be
+labelled inside or outside the advisory band. A faster single or small set is
+an observation only.
 
 A candidate may be adopted in Phase 0 only if it exceeds the calibrated noise
 envelope (or has a separately documented architectural benefit), passes every
@@ -135,3 +168,12 @@ SLOs, generic application performance, cross-machine performance, long-duration
 leak freedom, catalog density, remote-call performance, or cluster scaling.
 Issue 39 remains the required native-Linux 3x100k-activation plateau proof for
 the final configuration.
+
+## Archive integrity in CI
+
+The native profiles remain a manual process; profiling tools are not installed
+in shared CI. The deterministic Phase 0 workflow nevertheless runs the
+reassembler unit tests and verifies the checked-in archive end-to-end: it joins
+all fragments, checks the zstd stream, extracts it, and verifies the extracted
+SHA-256 manifest. This protects the raw evidence transport without turning
+machine-specific performance bands into CI gates.

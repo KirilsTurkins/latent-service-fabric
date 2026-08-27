@@ -155,6 +155,9 @@ pub struct Phase0PreparationConfig {
     pub component_maximum_bytes: usize,
     pub prepared_cache_maximum_entries: usize,
     pub prepared_cache_maximum_bytes: usize,
+    /// The ordinary Phase 0 path uses a bounded node-owned cache.  The
+    /// profiling harness alone may disable reuse to compare a cold prepare.
+    pub prepared_cache_enabled: bool,
     pub invocation_log_maximum_entries: usize,
     pub invocation_log_maximum_bytes: usize,
     pub retained_log_maximum_entries: usize,
@@ -214,6 +217,7 @@ pub async fn prepare_phase0_backend(
         maximum_fuel: declared.cpu_fuel,
         prepared_cache_maximum_entries: config.prepared_cache_maximum_entries,
         prepared_cache_maximum_source_bytes: config.prepared_cache_maximum_bytes,
+        prepared_cache_enabled: config.prepared_cache_enabled,
         invocation_log_maximum_entries: config.invocation_log_maximum_entries,
         invocation_log_maximum_bytes: config.invocation_log_maximum_bytes,
         retained_log_maximum_entries: config.retained_log_maximum_entries,

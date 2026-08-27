@@ -62,6 +62,7 @@ use serde_json::{json, Value};
 use tokio::sync::Barrier;
 
 const SCHEMA_VERSION: &str = "latent.phase0.baseline.v2";
+const TARGETED_PROFILE_SCHEMA: &str = "latent.phase0.targeted-profile.v1";
 const EXECUTABLE_PROBE_SCHEMA_VERSION: &str = "latent.phase0.executable-probe.v2";
 const SURFACE: &str = "latentd.phase0-baseline";
 const NODE_ID: &str = "phase0-baseline-node-0";

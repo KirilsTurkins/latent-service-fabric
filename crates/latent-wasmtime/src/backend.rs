@@ -73,6 +73,11 @@ pub struct Phase0WasmtimeConfig {
     pub async_stack_bytes: usize,
     pub prepared_cache_maximum_entries: usize,
     pub prepared_cache_maximum_source_bytes: usize,
+    /// When false, preparation remains usable by its current runner but is
+    /// deliberately not reusable by a later `prepare` call.  This is a
+    /// bounded profiling control for comparing a cold prepare with cache reuse;
+    /// normal Phase 0 execution always leaves it enabled.
+    pub prepared_cache_enabled: bool,
     pub invocation_log_maximum_entries: usize,
     pub invocation_log_maximum_bytes: usize,
     pub retained_log_maximum_entries: usize,
@@ -101,6 +106,7 @@ impl Default for Phase0WasmtimeConfig {
             async_stack_bytes: 2 * 1024 * 1024,
             prepared_cache_maximum_entries: 8,
             prepared_cache_maximum_source_bytes: 64 * 1024 * 1024,
+            prepared_cache_enabled: true,
             invocation_log_maximum_entries: 8,
             invocation_log_maximum_bytes: 16 * 1024,
             retained_log_maximum_entries: 256,
@@ -147,7 +153,7 @@ impl Phase0WasmtimeConfig {
         let material = format!(
             "component-model=1;component-model-async=1;fuel=1;epoch=1;aggregate-memory=1;\
              hostcall-fuel=v2-echo-world-max-transfer;max-component={};max-memory={};\
-             max-fuel={};wasm-stack={};async-stack={};cache-entries={};\
+             max-fuel={};wasm-stack={};async-stack={};cache-enabled={};cache-entries={};\
              cache-bytes={};invocation-log-entries={};invocation-log-bytes={};\
              retained-log-entries={};retained-log-bytes={};epoch-ticks={};\
              epoch-tick-ms={};allocator={};cow={};pooling-max-instances={};target={};cpu={}",
@@ -156,6 +162,7 @@ impl Phase0WasmtimeConfig {
             self.maximum_fuel,
             self.maximum_wasm_stack_bytes,
             self.async_stack_bytes,
+            self.prepared_cache_enabled,
             self.prepared_cache_maximum_entries,
             self.prepared_cache_maximum_source_bytes,
             self.invocation_log_maximum_entries,
@@ -582,6 +589,10 @@ pub struct Phase0WasmtimeBackend {
     profile: WasmtimeEngineProfile,
     config: Phase0WasmtimeConfig,
     cache: Mutex<PreparedCache>,
+    /// A single runner-scoped prepared runtime used only by the explicit
+    /// cache-disabled measurement.  It is not consulted by `prepare` for
+    /// reuse and is removed by `release`, so it cannot become node cache.
+    uncached_prepared: Mutex<Option<(String, Arc<PreparedRuntime>)>>,
     log_sink: BoundedLogSink,
     resources: RuntimeResourceCounters,
     timings: Mutex<InvocationTimingStore>,
@@ -601,6 +612,7 @@ impl Phase0WasmtimeBackend {
                 config.prepared_cache_maximum_entries,
                 config.prepared_cache_maximum_source_bytes,
             )),
+            uncached_prepared: Mutex::new(None),
             config,
             log_sink,
             resources: RuntimeResourceCounters::default(),
@@ -672,7 +684,7 @@ impl Phase0WasmtimeBackend {
             ));
         }
         let handle = prepared_handle(key, &component_digest);
-        if self.lock_cache().get(&handle).is_some() {
+        if self.config.prepared_cache_enabled && self.lock_cache().get(&handle).is_some() {
             return Ok(self.prepared_descriptor(key.clone(), handle, component_digest));
         }
 
@@ -725,8 +737,20 @@ impl Phase0WasmtimeBackend {
             pre,
             declared_budget: artifact.manifest.execution.resource_budget_ceiling.clone(),
         });
-        self.lock_cache()
-            .insert(handle.clone(), artifact.component_bytes.len(), runtime)?;
+        if self.config.prepared_cache_enabled {
+            self.lock_cache()
+                .insert(handle.clone(), artifact.component_bytes.len(), runtime)?;
+        } else {
+            let mut uncached = self.lock_uncached_prepared();
+            if uncached.is_some() {
+                return Err(platform_error(
+                    PlatformErrorCode::StateConflict,
+                    "cache-disabled preparation is still owned by an active runner",
+                    true,
+                ));
+            }
+            *uncached = Some((handle.clone(), runtime));
+        }
         Ok(self.prepared_descriptor(key.clone(), handle, component_digest))
     }
 
@@ -781,8 +805,7 @@ impl Phase0WasmtimeBackend {
         }
 
         let runtime = self
-            .lock_cache()
-            .get(&request.prepared.opaque_handle)
+            .prepared_runtime(&request.prepared.opaque_handle)
             .ok_or_else(|| {
                 platform_error(
                     PlatformErrorCode::NotFound,
@@ -1192,7 +1215,15 @@ impl Phase0WasmtimeBackend {
         );
         metadata.insert("exports".to_owned(), ECHO_EXPORT.to_owned());
         metadata.insert("component-digest".to_owned(), component_digest);
-        metadata.insert("cache".to_owned(), "bounded-node-owned".to_owned());
+        metadata.insert(
+            "cache".to_owned(),
+            if self.config.prepared_cache_enabled {
+                "bounded-node-owned"
+            } else {
+                "runner-scoped-no-reuse"
+            }
+            .to_owned(),
+        );
         metadata.insert(
             "resident-state".to_owned(),
             "compiled-component,linker,typed-indices".to_owned(),
@@ -1210,6 +1241,22 @@ impl Phase0WasmtimeBackend {
         self.cache
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn lock_uncached_prepared(&self) -> MutexGuard<'_, Option<(String, Arc<PreparedRuntime>)>> {
+        self.uncached_prepared
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn prepared_runtime(&self, handle: &str) -> Option<Arc<PreparedRuntime>> {
+        if self.config.prepared_cache_enabled {
+            self.lock_cache().get(handle)
+        } else {
+            self.lock_uncached_prepared()
+                .as_ref()
+                .and_then(|(candidate, runtime)| (candidate == handle).then(|| Arc::clone(runtime)))
+        }
     }
 
     fn lock_timings(&self) -> MutexGuard<'_, InvocationTimingStore> {
@@ -1268,7 +1315,17 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
                     false,
                 ));
             }
-            self.lock_cache().remove(&prepared.opaque_handle);
+            if self.config.prepared_cache_enabled {
+                self.lock_cache().remove(&prepared.opaque_handle);
+            } else {
+                let mut uncached = self.lock_uncached_prepared();
+                if uncached
+                    .as_ref()
+                    .is_some_and(|(handle, _)| handle == &prepared.opaque_handle)
+                {
+                    *uncached = None;
+                }
+            }
             Ok(())
         })
     }

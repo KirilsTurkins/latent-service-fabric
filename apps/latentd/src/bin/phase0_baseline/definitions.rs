@@ -5,6 +5,56 @@ enum BenchmarkMode {
     Full,
 }
 
+/// A deliberately narrow profiler boundary.  These runs are not substitutes
+/// for a complete Phase 0 baseline: the profiling wrapper retains an adjacent
+/// full-invariant proof for every targeted workload.
+#[derive(Debug, Clone, Copy, ValueEnum, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+enum ProfileWorkload {
+    ColdPreparation,
+    FirstActivation,
+    WarmExecution,
+    FailureContainment,
+    Cleanup,
+    Contention,
+}
+
+impl ProfileWorkload {
+    const fn name(self) -> &'static str {
+        match self {
+            Self::ColdPreparation => "cold-preparation",
+            Self::FirstActivation => "first-activation",
+            Self::WarmExecution => "warm-execution",
+            Self::FailureContainment => "failure-containment",
+            Self::Cleanup => "cleanup",
+            Self::Contention => "contention",
+        }
+    }
+
+    const fn semantics(self) -> &'static str {
+        match self {
+            Self::ColdPreparation => {
+                "capsule validation, engine construction, and first prepared-component creation only"
+            }
+            Self::FirstActivation => {
+                "one first echo after preparation; no warm loop, mixed failures, pool probe, or throughput"
+            }
+            Self::WarmExecution => {
+                "repeated successful warm echoes after one preparation; no failure sequence, pool probe, or throughput"
+            }
+            Self::FailureContainment => {
+                "trap, timeout, cancellation, and memory-pressure failures with immediate cause-specific recovery"
+            }
+            Self::Cleanup => {
+                "successful activations followed by per-activation resource reclamation, cell disposition, and explicit prepared release"
+            }
+            Self::Contention => {
+                "real at-capacity and bounded-queue activation batches; no pool microprobe or mixed failure sequence"
+            }
+        }
+    }
+}
+
 /// The profile harness can compare only these explicit engine configurations.
 /// Normal baseline runs retain on-demand allocation and Wasmtime's COW memory
 /// initialization enabled.
@@ -54,6 +104,12 @@ struct Cli {
     /// Deterministic smoke profile or heavier local profile.
     #[arg(long, value_enum, default_value_t = BenchmarkMode::Full)]
     mode: BenchmarkMode,
+
+    /// Execute only one named real-composition path for CPU/allocation
+    /// profiling. A profiling wrapper must retain a separate `--mode full`
+    /// proof run for the same topology and source tree.
+    #[arg(long, value_enum)]
+    profile_workload: Option<ProfileWorkload>,
 
     /// Fixed generic execution-cell capacity.
     #[arg(long, default_value_t = 2)]
@@ -113,6 +169,12 @@ struct Cli {
     #[arg(long, default_value_t = DEFAULT_COORDINATION_TIMEOUT_MILLIS)]
     coordination_timeout_ms: u64,
 
+    /// Polling interval used only to let heavy profiler instrumentation make
+    /// progress while proving a real saturation state. Zero retains the
+    /// calibrated cooperative `yield_now()` timing methodology.
+    #[arg(long, default_value_t = 0)]
+    coordination_poll_interval_ms: u64,
+
     /// Allowed steady-state RSS range before fixed-capacity growth fails.
     #[arg(long, default_value_t = DEFAULT_RSS_GROWTH_ALLOWANCE_BYTES)]
     rss_growth_allowance_bytes: u64,
@@ -128,11 +190,18 @@ struct Cli {
     /// Explicitly configure initialized-memory COW for profile comparisons.
     #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
     wasmtime_copy_on_write_images: bool,
+
+    /// Keep one bounded immutable prepared component by default. `false` is a
+    /// measured cache-disabled experiment only; it never changes the default
+    /// Phase 0 execution path.
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
+    prepared_cache_enabled: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
 struct EffectiveConfig {
     mode: BenchmarkMode,
+    profile_workload: Option<ProfileWorkload>,
     pool_capacity: u32,
     pool_queue_capacity: u32,
     runtime_workers: usize,
@@ -147,10 +216,12 @@ struct EffectiveConfig {
     cancel_after_ms: u64,
     maximum_overshoot_ms: u64,
     coordination_timeout_ms: u64,
+    coordination_poll_interval_ms: u64,
     rss_growth_allowance_bytes: u64,
     fd_growth_allowance: u64,
     wasmtime_allocator: WasmtimeAllocator,
     wasmtime_copy_on_write_images: bool,
+    prepared_cache_enabled: bool,
 }
 
 impl EffectiveConfig {
@@ -162,6 +233,7 @@ impl EffectiveConfig {
             };
         let config = Self {
             mode: cli.mode,
+            profile_workload: cli.profile_workload,
             pool_capacity: cli.pool_capacity,
             pool_queue_capacity: cli.pool_queue_capacity,
             runtime_workers: cli.runtime_workers,
@@ -178,10 +250,12 @@ impl EffectiveConfig {
             cancel_after_ms: cli.cancel_after_ms,
             maximum_overshoot_ms: cli.maximum_overshoot_ms,
             coordination_timeout_ms: cli.coordination_timeout_ms,
+            coordination_poll_interval_ms: cli.coordination_poll_interval_ms,
             rss_growth_allowance_bytes: cli.rss_growth_allowance_bytes,
             fd_growth_allowance: cli.fd_growth_allowance,
             wasmtime_allocator: cli.wasmtime_allocator,
             wasmtime_copy_on_write_images: cli.wasmtime_copy_on_write_images,
+            prepared_cache_enabled: cli.prepared_cache_enabled,
         };
         if config.pool_capacity == 0
             || config.pool_queue_capacity == 0
@@ -348,6 +422,11 @@ struct ActivationSample {
     scenario: String,
     iteration: u32,
     activation_id: String,
+    /// Bytes submitted to the typed Component Model echo call. This is a
+    /// payload-flow counter, not a claim that every byte was copied.
+    input_bytes: u64,
+    /// Bytes returned from the typed call when it completed successfully.
+    output_bytes: Option<u64>,
     elapsed_micros: u64,
     timeout_or_cancel_overshoot_micros: Option<u64>,
     expected_outcome: String,
@@ -515,6 +594,41 @@ struct BaselineDocument {
     conclusions: Vec<String>,
 }
 
+/// A deliberately selective profile document. It uses the real shared
+/// composition, but does not pretend that its small check set is a replacement
+/// for the adjacent complete baseline proof retained by the profiling tool.
+#[derive(Debug, Serialize)]
+struct TargetedProfileDocument {
+    schema_version: &'static str,
+    generated_at_unix_millis: u64,
+    status: String,
+    observational_only: bool,
+    profile_workload: ProfileWorkload,
+    workload_semantics: String,
+    full_invariant_proof_required: bool,
+    environment: EnvironmentReport,
+    artifact: ArtifactReport,
+    config: EffectiveConfig,
+    timings: TimingReport,
+    activation_throughput: Option<ActivationThroughputReport>,
+    activation_samples: Vec<ActivationSample>,
+    process_snapshots: Vec<ProcessSnapshot>,
+    topology_snapshots: Vec<TopologySnapshot>,
+    selected_scenarios: Vec<String>,
+    payload_flow: PayloadFlowReport,
+    checks: Vec<Check>,
+    limitations: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct PayloadFlowReport {
+    input_bytes_submitted_to_typed_call: u64,
+    output_bytes_returned_from_typed_call: u64,
+    /// No byte value is labelled as copied unless the native profiler's narrow
+    /// copy/WIT symbol classification supports that claim.
+    copy_bytes_claimed: u64,
+}
+
 #[derive(Debug, Clone, Copy)]
 enum ExpectedOutcome {
     Success,
@@ -562,6 +676,23 @@ struct AsyncRunResult {
     activation_samples: Vec<ActivationSample>,
     process_snapshots: Vec<ProcessSnapshot>,
     topology_snapshots: Vec<TopologySnapshot>,
+    checks: Vec<Check>,
+    distributions: BTreeMap<String, Distribution>,
+}
+
+struct TargetedAsyncRunResult {
+    artifact: ArtifactReport,
+    validation_micros: u64,
+    engine_micros: u64,
+    preparation_micros: u64,
+    first_invocation_ready_micros: u64,
+    prepared_release_micros: u64,
+    activation_throughput: Option<ActivationThroughputReport>,
+    activation_samples: Vec<ActivationSample>,
+    process_snapshots: Vec<ProcessSnapshot>,
+    topology_snapshots: Vec<TopologySnapshot>,
+    selected_scenarios: Vec<String>,
+    payload_flow: PayloadFlowReport,
     checks: Vec<Check>,
     distributions: BTreeMap<String, Distribution>,
 }
