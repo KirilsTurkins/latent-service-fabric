@@ -119,21 +119,25 @@ command status, the raw-file hash, `aggregate.json`, and `SOAK.md`. Raw batch
 samples record RSS, VM, PSS/private mappings when exposed, process/child/thread
 and socket/FD topology, pool/runner/backend/log/cache/timing-store state, and
 post-release/shutdown evidence. The aggregate applies the #38 calibrated RSS
-noise band to RSS and (where available) PSS/private material-growth triage,
-reports rolling ranges, final-window deltas, robust late-window slopes and
-peaks, and rejects an unexplained net FD increase. A material growth result is
-not fixed by increasing the allowance: it remains failed until a retaining
-subsystem or focused follow-up issue is recorded. Record that diagnosis in the
-same archive with `--retaining-subsystem <name>` and/or
+noise band to RSS and (where available) PSS/private material-growth triage
+only after CPU, memory, kernel, virtualization, toolchain, allocator, fixture,
+and relevant configuration identity are recorded as matched. Otherwise it
+emits an explicit inconclusive result. It reports rolling ranges,
+final-window deltas, robust late-window slopes and peaks, and rejects both
+measured-window and post-release-to-shutdown FD growth. A material growth
+result is not fixed by increasing the allowance: it remains failed until a
+retaining subsystem or focused follow-up issue is recorded. Record that
+diagnosis in the same archive with `--retaining-subsystem <name>` and/or
 `--followup-issue <URL-or-number>`.
 
-The accepted final-config evidence is
+The retained final-config raw evidence is
 [native-linux-2026-08-27-6250b978](soak/native-linux-2026-08-27-6250b978/README.md).
 It retains all three machine-readable raw process series losslessly in a
 checksummed 49 KiB zstd archive, alongside the aggregate, concise report,
 host observations, command statuses, and raw-file hashes, without duplicating
-earlier attempts. All calibrated late-window RSS/PSS/private/VM checks,
-resource-cleanup invariants, descriptor checks, and topology checks pass. Its
-retained run-03 PSS peak is a robust cross-run outlier but remains within the
-calibrated late-window bound, so it is reported as variability rather than
-treated as a sustained leak.
+earlier attempts. Its hard invariants, release/shutdown topology, and both FD
+comparisons pass. Strict revalidation now marks the calibration comparison
+**inconclusive**, because those historical host observations did not record
+VM-detection or allocator provenance. The runner now records both fields; #39
+remains open until a fresh matched three-process archive can apply the #38
+late-window bands without inference.

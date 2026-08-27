@@ -53,30 +53,32 @@ baseline before its raw interval sample is kept.
 The companion aggregate records raw-file hashes and command/source provenance,
 native-host observations, RSS/VM/PSS/private (where exposed), process/thread/
 socket/FD topology, rolling ranges, final-window deltas, robust late-window
-slopes, peaks, explicit release, and runtime shutdown. It uses the issue 38
-calibrated RSS noise band to decide whether RSS and available PSS/private
-growth is material on the matched host. An unexplained FD net increase,
-topology change, hard-invariant failure, missing batch, mismatched fixture/
-toolchain/configuration, or calibrated material late-window growth fails the
-aggregate. Robust cross-run peak/delta outliers are retained as diagnostic
+slopes, peaks, explicit release, and runtime shutdown. It applies the issue 38
+calibrated RSS noise band only after CPU, memory, kernel, virtualization,
+toolchain, allocator, fixture, and relevant configuration identity are proved
+matched; a missing or mismatched identity is inconclusive. An unexplained
+measured-window or release-to-shutdown FD increase, terminal topology change,
+hard-invariant failure, missing batch, or calibrated material late-window
+growth fails the aggregate. Robust cross-run peak/delta outliers are retained as diagnostic
 variability; a stable late-window series inside its calibrated band is not
 silently relabelled as a leak. A material-growth result requires
 heap/allocator/process investigation and a retaining subsystem or focused
 issue; the command never increases its allowance to make the result pass.
 
 Issue 40's final ordinary Phase 0 configuration (bounded prepared cache,
-on-demand Wasmtime allocation, initialized-memory COW enabled) is covered by
-the accepted native-Linux archive
+on-demand Wasmtime allocation, initialized-memory COW enabled) has retained
+raw evidence in the native-Linux archive
 [`native-linux-2026-08-27-6250b978`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md).
 Its three independent processes each completed 1,000 excluded warm-ups,
 100,000 normal measured fresh-store activations, and 100 real batches of each
 saturation mode. Every hard invariant, descriptor/topology check, explicit
-prepared-component release, and runtime shutdown check passed. RSS, PSS,
-private memory, and VM late-window growth all remained within the matched
-issue-38 material-growth bounds. A run-03 PSS peak is retained as a robust
-cross-run outlier, but its late-window delta and slope remain within the
-calibrated band, so it is documented as environmental variability rather than
-evidence of sustained retention.
+prepared-component release, runtime shutdown check, and both measured-window
+and release-to-shutdown FD checks passes. Strict revalidation does not apply
+the issue-38 bands to this historical archive: its host captures lack VM
+detection and allocator provenance. The raw late-window series and run-03 PSS
+outlier remain retained for diagnosis, but the comparison is explicitly
+**inconclusive** and #39 remains open pending a fresh three-process archive
+from the updated runner.
 
 The wrapper requires `--final-configuration-commit` to equal the measured
 reachable source commit, preventing a pre-final run from being reported as a
@@ -159,16 +161,18 @@ lifecycle-envelope changes to #11, and rejects store/instance reuse and
 untrusted AOT/cache/snapshot/native-execution shortcuts in Phase 0.
 
 This handoff is optimization evidence only; it does not establish production
-SLOs or cross-platform claims. The accepted issue-39 archive above executes
+SLOs or cross-platform claims. The retained issue-39 archive above executes
 three independent native-Linux 100k-activation soak processes against this
-final configuration; it is one required input to the still-open Phase 0
-completion gate.
+final configuration, but its strict #38 comparison is inconclusive until a
+fresh complete-provenance archive is collected; #39 remains one required input
+to the still-open Phase 0 completion gate.
 
 ## Remaining limitations
 
 This evidence demonstrates only the Phase 0 spike under its documented
 workload. It does not establish production API behavior, dormant-service
 density, remote-call performance, cluster scaling, or release SLOs. The
-finite long-duration soak demonstrates a matched-host post-warm-up plateau,
-not arbitrary-duration leak freedom. Those obligations remain with the Phase 1
-work and its completion gate.
+finite long-duration soak can demonstrate only a fully recorded matched-host
+post-warm-up plateau, not arbitrary-duration leak freedom. The current
+historical archive is not yet such a matched comparison; those obligations
+remain with the Phase 1 work and its completion gate.

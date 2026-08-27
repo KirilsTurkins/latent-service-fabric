@@ -20,6 +20,8 @@ issue 39. It requires an explicit durable final source commit/tree and refuses
 WSL, containers, dirty or mismatched source, unavailable probes, fixture or
 toolchain failures, and incomplete process output. Its paired
 `aggregate_phase0_resource_soak.py` revalidates all raw samples and hard
-invariants, records calibrated late-window resource decisions and diagnostic
-outliers, and never turns a missing run or material sustained growth into a
-pass. The command is intentionally excluded from shared CI.
+invariants, terminal release/shutdown topology and FD state, and execution
+provenance. It applies calibrated late-window decisions only when CPU, memory,
+kernel, virtualization, toolchain, allocator, fixture, and configuration
+identity are recorded as matched; otherwise the result is explicitly
+inconclusive. The command is intentionally excluded from shared CI.

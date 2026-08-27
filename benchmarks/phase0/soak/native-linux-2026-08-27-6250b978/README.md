@@ -1,11 +1,11 @@
 # Native-Linux Phase 0 resource-soak evidence
 
-**Status:** PASS<br>
+**Status:** INCONCLUSIVE (strict #38 applicability provenance is incomplete)<br>
 **Issue:** #39<br>
 **Measured final configuration/source:** `6250b9782ffc4174676d2d72bd023dbfc38c39d7`<br>
 **Measured source tree:** `65ba341221ea89e107a3e0e3c4b0aed7e26efd9b`
 
-This is the final native-Linux resource-plateau observation for the ordinary
+This is a retained native-Linux resource-plateau observation for the ordinary
 Phase 0 configuration: one bounded prepared component cache, on-demand
 Wasmtime allocation, and initialized-memory COW enabled. It is observational
 evidence, not a production SLO, capacity guarantee, cross-platform claim, or
@@ -22,8 +22,9 @@ Contents:
 
 - [`SOAK.md`](SOAK.md) is the concise plateau report.
 - [`aggregate.json`](aggregate.json) is the machine-readable aggregate,
-  including calibrated late-window decisions, raw-file hashes, host context,
-  configuration identity, and all robust run-level outliers.
+  including calibration applicability, raw-file hashes, host context,
+  configuration identity, explicit release/shutdown snapshots, and all robust
+  run-level outliers.
 - [`raw-evidence.tar.zst`](raw-evidence.tar.zst) losslessly retains the raw
   batch samples, exact command statuses, and before/after host observations
   for all three completed processes. Its 49 KiB compressed payload replaces
@@ -47,8 +48,10 @@ extracted tree. The deterministic resource-soak aggregation test performs the
 same zstd, extraction, and manifest checks in CI; the native-Linux collection
 itself remains manual.
 
-RSS, PSS, private memory, and virtual memory all pass the matched issue-38
-late-window material-growth rules. The aggregate retains a robust run-03 PSS
-peak outlier, but its final-window delta and Theil-Sen slope remain within the
-calibrated band; it is therefore reported as diagnostic environmental
-variability rather than concealed or treated as sustained retention.
+All raw hard invariants, measured topology, explicit release, runtime shutdown,
+and both measured-window and release-to-shutdown FD checks pass. Strict
+revalidation deliberately does **not** apply issue-38's bands: the historical
+host captures omit `systemd-detect-virt --vm` and allocator provenance. The raw
+RSS/PSS/private/VM series and run-03 PSS peak remain available for diagnosis,
+but #39 stays open until a fresh three-process archive from the updated runner
+records that complete matched-host identity.

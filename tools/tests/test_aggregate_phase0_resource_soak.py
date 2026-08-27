@@ -113,9 +113,12 @@ def raw_document(run_index: int) -> dict[str, object]:
         samples.append(sample(index, phase, run_index * 100))
     for value in samples:
         index = int(value["batch_index"])
-        value["normal_measured_activations_completed"] = min(
-            max(0, index - warmup_batches) * 1_000,
-            100_000,
+        normal_completed = min(max(0, index - warmup_batches) * 1_000, 100_000)
+        value["normal_measured_activations_completed"] = normal_completed
+        value["total_activation_count"] = (
+            1_000 + normal_completed + (normal_completed // 10_000) * 8
+            if index
+            else 0
         )
     post_release = copy.deepcopy(samples[-1])
     post_release["phase"] = "post_release"
@@ -185,6 +188,11 @@ def raw_document(run_index: int) -> dict[str, object]:
             "pool_capacity": 2,
             "pool_queue_capacity": 4,
             "runtime_workers": 2,
+            "fuel": 1_000_000_000_000,
+            "memory_bytes": 16 * 1024 * 1024,
+            "memory_pressure_bytes": 4 * 1024 * 1024,
+            "timeout_ms": 25,
+            "cancel_after_ms": 5,
             "prepared_cache_enabled": True,
             "wasmtime_instance_allocator": "on_demand",
             "wasmtime_copy_on_write_images": True,
@@ -221,7 +229,13 @@ def raw_document(run_index: int) -> dict[str, object]:
             for _ in range(saturation_batches)
         ],
         "post_release": post_release,
-        "post_shutdown": {"observed_runtime_workers": 0, "process": samples[-1]["process"]},
+        "post_shutdown": {
+            "observed_runtime_workers": 0,
+            "process": {
+                **copy.deepcopy(samples[-1]["process"]),
+                "thread_count": 1,
+            },
+        },
         "checks": [
             {"name": name, "passed": True, "expected": "test", "observed": "test"}
             for name in sorted(CHECKS)
@@ -229,17 +243,94 @@ def raw_document(run_index: int) -> dict[str, object]:
     }
 
 
-def host_document(phase: str) -> dict[str, object]:
+def host_document(phase: str, run_index: int) -> dict[str, object]:
     return {
         "schema_version": "latent.phase0.resource-soak.host-observation.v1",
         "phase": phase,
+        "run_index": run_index,
         "native_linux_reference": True,
+        "host": {
+            "virtualization": {
+                "systemd_detect_virt": "none",
+                "systemd_detect_virt_container": "none",
+                "systemd_detect_virt_vm": "none",
+                "wsl_detected": False,
+            }
+        },
+        "allocator": {
+            "source_global_allocator_lookup": "completed",
+            "source_global_allocator_matches": [],
+            "ld_preload": "unset",
+            "malloc_conf": "unset",
+            "observation": "test allocator",
+        },
         "source_identity": {
             "published_commit": SOURCE_COMMIT,
             "published_tree": SOURCE_TREE,
             "execution_commit": SOURCE_COMMIT,
             "execution_tree": SOURCE_TREE,
             "tree_identity_verified": True,
+        },
+    }
+
+
+def calibration_document() -> dict[str, object]:
+    raw = raw_document(1)
+    environment = raw["environment"]
+    config = raw["config"]
+    host = host_document("before", 1)
+    return {
+        "schema_version": "latent.phase0.calibration.v1",
+        "status": "pass",
+        "source_commit": SOURCE_COMMIT,
+        "source_tree": SOURCE_TREE,
+        "reference_identity": {
+            "artifact": raw["artifact"],
+            "config": {
+                key: config[key]
+                for key in (
+                    "pool_capacity",
+                    "pool_queue_capacity",
+                    "runtime_workers",
+                    "fuel",
+                    "memory_bytes",
+                    "memory_pressure_bytes",
+                    "timeout_ms",
+                    "cancel_after_ms",
+                )
+            },
+            "environment": {
+                key: environment[key]
+                for key in (
+                    "operating_system",
+                    "architecture",
+                    "cpu_model",
+                    "logical_cpu_count",
+                    "total_memory_bytes",
+                    "kernel",
+                    "rustc",
+                    "cargo",
+                    "rust_target",
+                    "build_profile",
+                    "wasmtime_version",
+                )
+            },
+        },
+        "host_observations": {
+            "runs": [
+                {
+                    "virtualization": host["host"]["virtualization"],
+                    "allocator": host["allocator"],
+                }
+            ]
+        },
+        "metrics": {
+            "process_peak_rss_bytes": {
+                "comparison": {"advisory_noise_band": 1_000_000, "reference_median": 17_000_000}
+            },
+            "process_peak_virtual_memory_bytes": {
+                "comparison": {"advisory_noise_band": 1_000_000, "reference_median": 231_000_000}
+            },
         },
     }
 
@@ -254,6 +345,9 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
     def make_archive(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temporary = tempfile.TemporaryDirectory()
         archive = Path(temporary.name)
+        (archive / "calibration.json").write_text(
+            json.dumps(calibration_document()), encoding="utf-8"
+        )
         for index in range(1, 4):
             run = archive / "runs" / f"run-{index:02d}"
             run.mkdir(parents=True)
@@ -262,15 +356,17 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             )
             for phase in ("before", "after"):
                 (run / f"host-{phase}.json").write_text(
-                    json.dumps(host_document(phase)), encoding="utf-8"
+                    json.dumps(host_document(phase, index)), encoding="utf-8"
                 )
             (run / "execution-status.json").write_text(
                 json.dumps(
                     {
                         "schema_version": "latent.phase0.resource-soak.execution-status.v1",
+                        "run_index": index,
                         "exit_code": 0,
                         "source_commit": SOURCE_COMMIT,
                         "source_tree": SOURCE_TREE,
+                        "execution_commit": SOURCE_COMMIT,
                         "execution_tree": SOURCE_TREE,
                     }
                 ),
@@ -295,12 +391,20 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                 "--source-tree",
                 SOURCE_TREE,
                 "--calibration",
-                str(CALIBRATION),
+                str(archive / "calibration.json"),
             ],
             check=False,
             text=True,
             capture_output=True,
         )
+
+    @staticmethod
+    def update_all_raw_documents(archive: Path, update: object) -> None:
+        for index in range(1, 4):
+            path = archive / "runs" / f"run-{index:02d}" / "raw.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            update(document)
+            path.write_text(json.dumps(document), encoding="utf-8")
 
     def test_aggregates_three_full_soaks_and_uses_calibrated_rss_noise(self) -> None:
         temporary, archive = self.make_archive()
@@ -314,7 +418,7 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             self.assertEqual(aggregate["file_descriptors"]["status"], "pass")
             self.assertEqual(len(aggregate["raw_runs"]), 3)
             report = (archive / "SOAK.md").read_text(encoding="utf-8")
-            self.assertIn("#38 calibrated RSS noise band", report)
+            self.assertIn("issue #38 host/configuration identity is strictly matched", report)
             self.assertIn("## Conclusion", report)
 
     def test_checked_in_resource_soak_archive_is_lossless(self) -> None:
@@ -370,6 +474,38 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(manifest.returncode, 0, manifest.stderr)
+            revalidated = subprocess.run(
+                [
+                    sys.executable,
+                    str(AGGREGATOR),
+                    "aggregate",
+                    "--runs-directory",
+                    str(extracted / "runs"),
+                    "--output-json",
+                    str(extracted / "revalidated-aggregate.json"),
+                    "--output-report",
+                    str(extracted / "revalidated-SOAK.md"),
+                    "--source-commit",
+                    "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
+                    "--source-tree",
+                    "65ba341221ea89e107a3e0e3c4b0aed7e26efd9b",
+                    "--calibration",
+                    str(CALIBRATION),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(revalidated.returncode, 1, revalidated.stderr)
+            revalidated_document = json.loads(
+                (extracted / "revalidated-aggregate.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(revalidated_document["status"], "inconclusive")
+            self.assertEqual(
+                revalidated_document["calibration_noise"]["applicability"]["status"],
+                "inconclusive",
+            )
+            self.assertEqual(set(revalidated_document["post_shutdown"]), {"run-01", "run-02", "run-03"})
 
     def test_retains_without_failing_a_stable_within_band_peak_outlier(self) -> None:
         temporary, archive = self.make_archive()
@@ -446,6 +582,95 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             self.assertEqual(aggregate["status"], "fail")
             self.assertIn("run-03", aggregate["file_descriptors"]["violations"])
             self.assertTrue((archive / "SOAK.md").is_file())
+
+    def test_rejects_a_post_shutdown_fd_leak(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            raw = archive / "runs" / "run-03" / "raw.json"
+            document = json.loads(raw.read_text(encoding="utf-8"))
+            document["post_shutdown"]["process"]["file_descriptor_count"] = 6
+            raw.write_text(json.dumps(document), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("post-release-to-shutdown FD increase", completed.stderr)
+
+    def test_rejects_altered_post_shutdown_topology(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            raw = archive / "runs" / "run-03" / "raw.json"
+            document = json.loads(raw.read_text(encoding="utf-8"))
+            document["post_shutdown"]["process"]["open_socket_count"] = 1
+            raw.write_text(json.dumps(document), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("post-shutdown process topology differs", completed.stderr)
+
+    def test_rejects_an_unavailable_listening_socket_probe(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            raw = archive / "runs" / "run-03" / "raw.json"
+            document = json.loads(raw.read_text(encoding="utf-8"))
+            document["resource_samples"][0]["process"]["probe_notes"].append(
+                "cannot read /proc/net/tcp: permission denied"
+            )
+            raw.write_text(json.dumps(document), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("unavailable mandatory listening-socket probe", completed.stderr)
+
+    def test_rejects_unreconciled_saturation_observations(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            raw = archive / "runs" / "run-03" / "raw.json"
+            document = json.loads(raw.read_text(encoding="utf-8"))
+            document["saturation_observations"].pop()
+            raw.write_text(json.dumps(document), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("does not retain every declared bounded_queue_saturation observation", completed.stderr)
+
+    def test_rejects_host_and_status_execution_provenance_mismatches(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            host = archive / "runs" / "run-03" / "host-before.json"
+            host_document_data = json.loads(host.read_text(encoding="utf-8"))
+            host_document_data["source_identity"]["execution_commit"] = "d" * 40
+            host.write_text(json.dumps(host_document_data), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("host observation source identity", completed.stderr)
+
+        temporary, archive = self.make_archive()
+        with temporary:
+            status = archive / "runs" / "run-03" / "execution-status.json"
+            status_document = json.loads(status.read_text(encoding="utf-8"))
+            status_document["run_index"] = 2
+            status.write_text(json.dumps(status_document), encoding="utf-8")
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("successful matching execution status", completed.stderr)
+
+    def test_marks_cpu_kernel_fixture_and_toolchain_calibration_mismatches_inconclusive(self) -> None:
+        mutations = {
+            "environment.cpu_model": lambda document: document["environment"].__setitem__("cpu_model", "other CPU"),
+            "environment.kernel": lambda document: document["environment"].__setitem__("kernel", "other kernel"),
+            "artifact.component_digest": lambda document: document["artifact"].__setitem__("component_digest", "sha256:" + "d" * 64),
+            "environment.rustc": lambda document: document["environment"].__setitem__("rustc", "other rustc"),
+        }
+        for expected_field, mutation in mutations.items():
+            with self.subTest(expected_field=expected_field):
+                temporary, archive = self.make_archive()
+                with temporary:
+                    self.update_all_raw_documents(archive, mutation)
+                    completed = self.aggregate(archive)
+                    self.assertEqual(completed.returncode, 1, completed.stderr)
+                    aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
+                    self.assertEqual(aggregate["status"], "inconclusive")
+                    mismatch_fields = {
+                        mismatch["field"]
+                        for mismatch in aggregate["calibration_noise"]["applicability"]["mismatches"]
+                    }
+                    self.assertIn(expected_field, mismatch_fields)
 
 
 if __name__ == "__main__":

@@ -133,18 +133,22 @@ each with 1,000 warm-ups excluded from analysis, 100,000 measured fresh-store
 activations, all failure/recovery paths, and frequent real capacity/queue
 saturation. Its aggregate revalidates every hard check and every batch's
 logical-resource baseline, reports rolling ranges/final deltas/Theil-Sen late
-slopes/peaks and release/shutdown state, uses #38's calibrated RSS band for
-RSS/PSS/private material-growth triage, and treats any unexplained FD net
-increase or material growth as failed investigation work rather than an excuse
-to raise an allowance.
+slopes/peaks and explicit release/shutdown state, rejects both measured-window
+and release-to-shutdown FD growth, and applies #38's calibrated RSS band for
+RSS/PSS/private material-growth triage only after CPU, memory, kernel,
+virtualization, toolchain, allocator, fixture, and relevant configuration
+identity are proved matched. A mismatch or missing identity is inconclusive,
+not a reason to raise an allowance.
 
-The accepted final-configuration result is
+The retained final-configuration raw result is
 [`native-linux-2026-08-27-6250b978`](benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md):
 three complete 100,000-activation processes from durable source commit
-`6250b9782ffc4174676d2d72bd023dbfc38c39d7`. Its PSS peak outlier is retained
-for audit, while its late-window delta and slope remain within the matched
-issue-38 material-growth band; it is diagnostic variability, not a hidden
-allowance increase or a sustained-leak finding.
+`6250b9782ffc4174676d2d72bd023dbfc38c39d7`. Its raw hard invariants,
+release/shutdown topology, and FD checks pass. Its PSS peak remains retained
+for audit, but strict revalidation marks the #38 comparison **inconclusive**
+because the historical host records omit VM-detection and allocator provenance.
+The updated runner records both; #39 remains open pending a fresh matched
+three-process archive.
 
 ## CI jobs
 

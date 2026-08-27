@@ -117,8 +117,11 @@ reported as unsupported until a safe allocator-specific probe is configured.
 component digest, command profile, run count, host provenance, interval method,
 limits, unsupported probes, rolling ranges, peaks, final-window deltas,
 Theil-Sen late slopes, post-release state, and shutdown state. It requires zero
-unexplained net FD growth and uses issue 38's matched-host RSS advisory noise
-band for RSS and available PSS/private material-growth triage. A material
+unexplained measured-window and post-release-to-shutdown FD growth, validates
+terminal process/child/thread/socket topology, and uses issue 38's RSS advisory
+noise band only when CPU, memory, kernel, virtualization, toolchain, allocator,
+fixture, and relevant execution configuration are proved matched. A missing or
+mismatched identity produces an explicit inconclusive comparison. A material
 late-window growth or topology result remains failed and must identify a
 retaining subsystem using heap/allocator/process tooling or a focused issue;
 the noise allowance must not be raised to clear it. Robust cross-run
@@ -126,14 +129,17 @@ peak/delta outliers are separately retained as diagnostic variability; they
 become a failure only when the same metric breaches its calibrated
 late-window material-growth rule.
 
-The final post-issue-40 archive is
+The retained post-issue-40 raw archive is
 [`native-linux-2026-08-27-6250b978`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md),
 measured from durable source commit
 `6250b9782ffc4174676d2d72bd023dbfc38c39d7` and tree
 `65ba341221ea89e107a3e0e3c4b0aed7e26efd9b`. Its three complete processes
-pass all hard invariants and the calibrated RSS/PSS/private/VM plateau rules;
-the retained run-03 PSS peak outlier remains within its late-window band and
-is therefore observation, not a hidden allowance increase.
+pass all hard invariants, explicit release/shutdown topology, and both FD
+checks. Strict applicability revalidation deliberately leaves its
+RSS/PSS/private/VM comparison **inconclusive**: the historical host captures
+do not include VM-detection and allocator provenance required to prove a #38
+match. The runner now records those fields; #39 remains open until a fresh
+three-process archive can make the calibrated plateau claim.
 
 If the aggregate reports material growth, rerun the same command with
 `--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after

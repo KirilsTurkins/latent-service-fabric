@@ -183,6 +183,13 @@ struct EffectiveConfig {
     memory_pressure_bytes: u64,
     timeout_ms: u64,
     cancel_after_ms: u64,
+    component_maximum_bytes: usize,
+    prepared_cache_maximum_entries: usize,
+    prepared_cache_maximum_bytes: usize,
+    invocation_log_maximum_entries: usize,
+    invocation_log_maximum_bytes: usize,
+    retained_log_maximum_entries: usize,
+    retained_log_maximum_bytes: usize,
     prepared_cache_enabled: bool,
     wasmtime_instance_allocator: String,
     wasmtime_copy_on_write_images: bool,
@@ -204,6 +211,13 @@ impl EffectiveConfig {
             memory_pressure_bytes: cli.memory_pressure_bytes,
             timeout_ms: cli.timeout_ms,
             cancel_after_ms: cli.cancel_after_ms,
+            component_maximum_bytes: COMPONENT_MAXIMUM_BYTES,
+            prepared_cache_maximum_entries: PREPARED_CACHE_MAXIMUM_ENTRIES,
+            prepared_cache_maximum_bytes: PREPARED_CACHE_MAXIMUM_BYTES,
+            invocation_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
+            invocation_log_maximum_bytes: LOG_MAXIMUM_BYTES,
+            retained_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
+            retained_log_maximum_bytes: LOG_MAXIMUM_BYTES,
             prepared_cache_enabled: FINAL_PREPARED_CACHE_ENABLED,
             wasmtime_instance_allocator: Phase0InstanceAllocator::OnDemand.name().to_owned(),
             wasmtime_copy_on_write_images: FINAL_WASMTIME_COPY_ON_WRITE_IMAGES,
@@ -664,9 +678,12 @@ fn run(cli: Cli) -> Result<bool, SoakError> {
     drop(runtime);
     std::thread::sleep(Duration::from_millis(25));
     let shutdown_process = observe_process(process_entry)?;
+    let post_release_file_descriptors = document.post_release.process.file_descriptor_count;
     let shutdown_pass = workers.active_workers() == 0
         && shutdown_process.process_count == process_before_runtime.process_count
         && shutdown_process.child_process_count == process_before_runtime.child_process_count
+        && shutdown_process.file_descriptor_count <= process_before_runtime.file_descriptor_count
+        && shutdown_process.file_descriptor_count <= post_release_file_descriptors
         && shutdown_process.open_socket_count == process_before_runtime.open_socket_count
         && shutdown_process.listening_socket_count == process_before_runtime.listening_socket_count
         && shutdown_process.thread_count <= process_before_runtime.thread_count.saturating_add(1);
@@ -677,13 +694,15 @@ fn run(cli: Cli) -> Result<bool, SoakError> {
     document.checks.push(Check {
         name: "runtime_shutdown_returns_to_process_baseline".to_owned(),
         passed: shutdown_pass,
-        expected: "no runtime workers, original process/socket topology, and no more than one residual OS thread".to_owned(),
+        expected: "no runtime workers, original process/socket topology, no post-release file-descriptor increase, and no more than one residual OS thread".to_owned(),
         observed: format!(
-            "workers={}, processes={}, children={}, threads={}, sockets={}, listeners={}",
+            "workers={}, processes={}, children={}, threads={}, file_descriptors={}, post_release_file_descriptors={}, sockets={}, listeners={}",
             workers.active_workers(),
             shutdown_process.process_count,
             shutdown_process.child_process_count,
             shutdown_process.thread_count,
+            shutdown_process.file_descriptor_count,
+            post_release_file_descriptors,
             shutdown_process.open_socket_count,
             shutdown_process.listening_socket_count
         ),
@@ -719,16 +738,16 @@ async fn run_async(
     let prepared_backend = phase0_composition::prepare_phase0_backend(&Phase0PreparationConfig {
         capsule: cli.capsule.clone(),
         component: None,
-        component_maximum_bytes: COMPONENT_MAXIMUM_BYTES,
-        prepared_cache_maximum_entries: PREPARED_CACHE_MAXIMUM_ENTRIES,
-        prepared_cache_maximum_bytes: PREPARED_CACHE_MAXIMUM_BYTES,
+        component_maximum_bytes: config.component_maximum_bytes,
+        prepared_cache_maximum_entries: config.prepared_cache_maximum_entries,
+        prepared_cache_maximum_bytes: config.prepared_cache_maximum_bytes,
         // The soak measures the final ordinary Phase 0 configuration selected
         // after issue #40, never an allocator, COW, or cache experiment.
         prepared_cache_enabled: config.prepared_cache_enabled,
-        invocation_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
-        invocation_log_maximum_bytes: LOG_MAXIMUM_BYTES,
-        retained_log_maximum_entries: LOG_MAXIMUM_ENTRIES,
-        retained_log_maximum_bytes: LOG_MAXIMUM_BYTES,
+        invocation_log_maximum_entries: config.invocation_log_maximum_entries,
+        invocation_log_maximum_bytes: config.invocation_log_maximum_bytes,
+        retained_log_maximum_entries: config.retained_log_maximum_entries,
+        retained_log_maximum_bytes: config.retained_log_maximum_bytes,
         requested_memory_bytes: config.memory_bytes.max(config.memory_pressure_bytes),
         requested_fuel: config.fuel,
         wasmtime_instance_allocator: Phase0InstanceAllocator::OnDemand,
@@ -1730,7 +1749,9 @@ fn validate_native_linux() -> Result<NativeLinuxValidation, SoakError> {
     }
     let proc_probe_available = Path::new("/proc/self/status").is_file()
         && Path::new("/proc/self/fd").is_dir()
-        && Path::new("/proc/self/task").is_dir();
+        && Path::new("/proc/self/task").is_dir()
+        && Path::new("/proc/net/tcp").is_file()
+        && Path::new("/proc/net/tcp6").is_file();
     if !proc_probe_available {
         return Err(SoakError::new(
             "required native-Linux /proc resource probes are unavailable",
@@ -1791,7 +1812,7 @@ fn observe_process(process_entry: Instant) -> Result<ProcessSnapshot, SoakError>
         thread_count,
         file_descriptor_count,
         open_socket_count: u64::try_from(socket_inodes.len()).unwrap_or(u64::MAX),
-        listening_socket_count: count_listening_sockets(&socket_inodes, &mut notes),
+        listening_socket_count: count_listening_sockets(&socket_inodes)?,
         rss_bytes,
         virtual_memory_bytes,
         pss_bytes,
@@ -1845,22 +1866,23 @@ fn parse_kib_field(contents: &str, prefix: &str) -> Option<u64> {
     })
 }
 
-fn count_listening_sockets(socket_inodes: &BTreeSet<String>, notes: &mut Vec<String>) -> u64 {
+fn count_listening_sockets(socket_inodes: &BTreeSet<String>) -> Result<u64, SoakError> {
     let mut listening = BTreeSet::new();
     for path in ["/proc/net/tcp", "/proc/net/tcp6"] {
-        match fs::read_to_string(path) {
-            Ok(table) => {
-                for line in table.lines().skip(1) {
-                    let fields = line.split_whitespace().collect::<Vec<_>>();
-                    if fields.len() > 9 && fields[3] == "0A" && socket_inodes.contains(fields[9]) {
-                        listening.insert(fields[9].to_owned());
-                    }
-                }
+        let table = fs::read_to_string(path).map_err(|error| {
+            SoakError::new(format!(
+                "cannot read required listening-socket probe {path}: {error}"
+            ))
+        })?;
+        for line in table.lines().skip(1) {
+            let fields = line.split_whitespace().collect::<Vec<_>>();
+            if fields.len() > 9 && fields[3] == "0A" && socket_inodes.contains(fields[9]) {
+                listening.insert(fields[9].to_owned());
             }
-            Err(error) => notes.push(format!("cannot read {path}: {error}")),
         }
     }
-    u64::try_from(listening.len()).unwrap_or(u64::MAX)
+    u64::try_from(listening.len())
+        .map_err(|_| SoakError::new("listening socket count does not fit u64"))
 }
 
 fn environment_report(native_linux_validation: NativeLinuxValidation) -> EnvironmentReport {

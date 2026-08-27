@@ -1,15 +1,62 @@
 {
   "calibration_noise": {
+    "applicability": {
+      "calibration_host_identity": {
+        "allocator": {
+          "ld_preload": "unset",
+          "malloc_conf": "unset",
+          "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+          "source_global_allocator_lookup": "completed",
+          "source_global_allocator_matches": []
+        },
+        "virtualization": {
+          "systemd_detect_virt": "none",
+          "systemd_detect_virt_container": "none",
+          "systemd_detect_virt_vm": "none",
+          "wsl_detected": false
+        }
+      },
+      "mismatches": [
+        {
+          "calibration": "none",
+          "field": "host.virtualization.systemd_detect_virt_vm",
+          "reason": "missing candidate value",
+          "soak": null
+        },
+        {
+          "calibration": {
+            "ld_preload": "unset",
+            "malloc_conf": "unset",
+            "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+            "source_global_allocator_lookup": "completed",
+            "source_global_allocator_matches": []
+          },
+          "field": "host.allocator",
+          "reason": "missing candidate value",
+          "soak": null
+        }
+      ],
+      "rule": "Apply issue #38 byte-scale advisory bands only when CPU, memory, kernel, virtualization, Rust/Cargo/Wasmtime toolchain, target, build profile, allocator observation, fixture digest, and relevant execution configuration match the calibration.",
+      "soak_host_identity": {
+        "allocator": null,
+        "virtualization": {
+          "systemd_detect_virt": "none",
+          "systemd_detect_virt_container": "none",
+          "wsl_detected": false
+        }
+      },
+      "status": "inconclusive"
+    },
     "path": "benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json",
     "private_bytes": {
       "advisory_noise_band": 1771520.0,
-      "mapping": "Private mappings have no Phase 0 calibration metric; the same byte-scale RSS noise band is used conservatively only for material-growth triage on the matched host.",
+      "mapping": "Private mappings have no Phase 0 calibration metric; the same byte-scale RSS noise band is used conservatively only for material-growth triage on a proven matched host.",
       "reference_median": 17715200.0,
       "source_metric": "process_peak_rss_bytes"
     },
     "pss_bytes": {
       "advisory_noise_band": 1771520.0,
-      "mapping": "PSS has no Phase 0 calibration metric; the same byte-scale RSS noise band is used conservatively only for material-growth triage on the matched host.",
+      "mapping": "PSS has no Phase 0 calibration metric; the same byte-scale RSS noise band is used conservatively only for material-growth triage on a proven matched host.",
       "reference_median": 17715200.0,
       "source_metric": "process_peak_rss_bytes"
     },
@@ -28,7 +75,7 @@
     }
   },
   "comparison_method": {
-    "calibrated_rss_pss_noise": "Issue #38 calibrated RSS advisory band is applied to RSS and, where exposed, PSS/private byte growth on the matched host.",
+    "calibrated_rss_pss_noise": "Issue #38 calibrated RSS advisory band is applied to RSS and, where exposed, PSS/private byte growth only after strict calibration applicability verification.",
     "final_window_delta": true,
     "post_warmup_only": true,
     "robust_late_window_slope": "Theil-Sen median pairwise slope over the final rolling window",
@@ -79,11 +126,23 @@
       "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
       "total_memory_bytes": 16699981824,
       "wasmtime_version": "47.0.3 (workspace pin)"
+    },
+    "source_identity": {
+      "execution_commit": "e8fcc441ca96a0f4e66793733a334a6bd4b4eeac",
+      "execution_tree": "65ba341221ea89e107a3e0e3c4b0aed7e26efd9b",
+      "final_configuration_commit": "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
+      "published_commit": "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
+      "published_tree": "65ba341221ea89e107a3e0e3c4b0aed7e26efd9b"
     }
   },
   "cross_machine_claim": false,
   "failures": [],
   "file_descriptors": {
+    "measured_window": {
+      "rule": "the final post-warm-up FD count must equal the first post-warm-up FD count in every independent process",
+      "status": "pass",
+      "violations": []
+    },
     "per_run": {
       "run-01": {
         "final": 5.0,
@@ -104,12 +163,34 @@
         "peak": 5.0
       }
     },
-    "rule": "the final post-warm-up FD count must equal the first post-warm-up FD count in every independent process",
+    "post_release_to_shutdown": {
+      "per_run": {
+        "run-01": {
+          "net_growth": 0,
+          "post_release": 4,
+          "post_shutdown": 4
+        },
+        "run-02": {
+          "net_growth": 0,
+          "post_release": 4,
+          "post_shutdown": 4
+        },
+        "run-03": {
+          "net_growth": 0,
+          "post_release": 4,
+          "post_shutdown": 4
+        }
+      },
+      "rule": "post-shutdown FD count must not exceed the explicit post-release count in any independent process",
+      "status": "pass",
+      "violations": []
+    },
+    "rule": "both the measured window and explicit post-release-to-shutdown FD comparisons must have no unexplained growth",
     "status": "pass",
     "violations": []
   },
   "final_configuration_commit": "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
-  "generated_at_utc": "2026-08-27T17:01:21+00:00",
+  "generated_at_utc": "2026-08-27T18:10:02+00:00",
   "hard_invariants": {
     "all_runs_passed": true,
     "canonical_check_names": [
@@ -3662,16 +3743,9 @@
     "private_bytes": {
       "availability": "available",
       "decision": {
-        "calibration": {
-          "advisory_noise_band": 1771520.0,
-          "mapping": "Private mappings have no Phase 0 calibration metric; the same byte-scale RSS noise band is used conservatively only for material-growth triage on the matched host.",
-          "reference_median": 17715200.0,
-          "source_metric": "process_peak_rss_bytes"
-        },
-        "late_window_slope_limit_per_sample": 73813.33333333333,
-        "material_growth_limit": 1771520.0,
-        "rule": "final-window positive delta must not exceed the matched Phase 0 calibrated noise band and the robust late-window slope must not exceed that band per late-window interval",
-        "status": "pass",
+        "material_growth_limit": null,
+        "rule": "No calibrated material-growth band is defined for this metric; retain rolling ranges and final-window slope for diagnosis.",
+        "status": "observed",
         "violations": []
       },
       "delta_run_level_outliers": [],
@@ -4760,16 +4834,9 @@
     "pss_bytes": {
       "availability": "available",
       "decision": {
-        "calibration": {
-          "advisory_noise_band": 1771520.0,
-          "mapping": "PSS has no Phase 0 calibration metric; the same byte-scale RSS noise band is used conservatively only for material-growth triage on the matched host.",
-          "reference_median": 17715200.0,
-          "source_metric": "process_peak_rss_bytes"
-        },
-        "late_window_slope_limit_per_sample": 73813.33333333333,
-        "material_growth_limit": 1771520.0,
-        "rule": "final-window positive delta must not exceed the matched Phase 0 calibrated noise band and the robust late-window slope must not exceed that band per late-window interval",
-        "status": "pass",
+        "material_growth_limit": null,
+        "rule": "No calibrated material-growth band is defined for this metric; retain rolling ranges and final-window slope for diagnosis.",
+        "status": "observed",
         "violations": []
       },
       "delta_run_level_outliers": [
@@ -6951,15 +7018,9 @@
     "rss_bytes": {
       "availability": "available",
       "decision": {
-        "calibration": {
-          "advisory_noise_band": 1771520.0,
-          "reference_median": 17715200.0,
-          "source_metric": "process_peak_rss_bytes"
-        },
-        "late_window_slope_limit_per_sample": 73813.33333333333,
-        "material_growth_limit": 1771520.0,
-        "rule": "final-window positive delta must not exceed the matched Phase 0 calibrated noise band and the robust late-window slope must not exceed that band per late-window interval",
-        "status": "pass",
+        "material_growth_limit": null,
+        "rule": "No calibrated material-growth band is defined for this metric; retain rolling ranges and final-window slope for diagnosis.",
+        "status": "observed",
         "violations": []
       },
       "delta_run_level_outliers": [],
@@ -8048,15 +8109,9 @@
     "virtual_memory_bytes": {
       "availability": "available",
       "decision": {
-        "calibration": {
-          "advisory_noise_band": 23130521.6,
-          "reference_median": 231305216.0,
-          "source_metric": "process_peak_virtual_memory_bytes"
-        },
-        "late_window_slope_limit_per_sample": 963771.7333333334,
-        "material_growth_limit": 23130521.6,
-        "rule": "final-window positive delta must not exceed the matched Phase 0 calibrated noise band and the robust late-window slope must not exceed that band per late-window interval",
-        "status": "pass",
+        "material_growth_limit": null,
+        "rule": "No calibrated material-growth band is defined for this metric; retain rolling ranges and final-window slope for diagnosis.",
+        "status": "observed",
         "violations": []
       },
       "delta_run_level_outliers": [],
@@ -9327,6 +9382,65 @@
       "total_activation_count": 101800
     }
   },
+  "post_shutdown": {
+    "run-01": {
+      "observed_runtime_workers": 0,
+      "process": {
+        "child_process_count": 0,
+        "file_descriptor_count": 4,
+        "listening_socket_count": 0,
+        "offset_micros": 47799004,
+        "open_socket_count": 0,
+        "private_bytes": 15228928,
+        "probe_notes": [
+          "listening_socket_count covers process-owned TCP/TCP6 LISTEN inodes; open_socket_count covers every process-owned socket descriptor"
+        ],
+        "process_count": 1,
+        "pss_bytes": 15399936,
+        "rss_bytes": 17838080,
+        "thread_count": 1,
+        "virtual_memory_bytes": 231100416
+      }
+    },
+    "run-02": {
+      "observed_runtime_workers": 0,
+      "process": {
+        "child_process_count": 0,
+        "file_descriptor_count": 4,
+        "listening_socket_count": 0,
+        "offset_micros": 47485282,
+        "open_socket_count": 0,
+        "private_bytes": 15302656,
+        "probe_notes": [
+          "listening_socket_count covers process-owned TCP/TCP6 LISTEN inodes; open_socket_count covers every process-owned socket descriptor"
+        ],
+        "process_count": 1,
+        "pss_bytes": 15498240,
+        "rss_bytes": 18128896,
+        "thread_count": 1,
+        "virtual_memory_bytes": 231100416
+      }
+    },
+    "run-03": {
+      "observed_runtime_workers": 0,
+      "process": {
+        "child_process_count": 0,
+        "file_descriptor_count": 4,
+        "listening_socket_count": 0,
+        "offset_micros": 48219974,
+        "open_socket_count": 0,
+        "private_bytes": 15532032,
+        "probe_notes": [
+          "listening_socket_count covers process-owned TCP/TCP6 LISTEN inodes; open_socket_count covers every process-owned socket descriptor"
+        ],
+        "process_count": 1,
+        "pss_bytes": 15715328,
+        "rss_bytes": 18292736,
+        "thread_count": 1,
+        "virtual_memory_bytes": 231100416
+      }
+    }
+  },
   "production_slo": false,
   "raw_evidence_archive": {
     "manifest": "raw-evidence.manifest.sha256",
@@ -9360,7 +9474,7 @@
       ],
       "command_profile": "native_linux_resource_soak",
       "label": "run-01",
-      "raw_json": "benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/runs/run-01/raw.json",
+      "raw_json": "runs/run-01/raw.json",
       "run_index": 1,
       "schema_version": "latent.phase0.resource-soak.run.v1",
       "sha256": "sha256:ddc02b0cf61896b4a4a80249cb92add139abef392ba31993619f989b7ab6d130",
@@ -9399,7 +9513,7 @@
       ],
       "command_profile": "native_linux_resource_soak",
       "label": "run-02",
-      "raw_json": "benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/runs/run-02/raw.json",
+      "raw_json": "runs/run-02/raw.json",
       "run_index": 2,
       "schema_version": "latent.phase0.resource-soak.run.v1",
       "sha256": "sha256:0b7bad4ae32094637d9d8313cb3f8baa20c4b96fc7ac7b0ea9a3eef7dfd4c3f3",
@@ -9438,7 +9552,7 @@
       ],
       "command_profile": "native_linux_resource_soak",
       "label": "run-03",
-      "raw_json": "benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/runs/run-03/raw.json",
+      "raw_json": "runs/run-03/raw.json",
       "run_index": 3,
       "schema_version": "latent.phase0.resource-soak.run.v1",
       "sha256": "sha256:4f58c8941db0179bc837d95a38e96cbb9d11defbff92e704387e35f68a521fd9",
@@ -9461,7 +9575,7 @@
   "schema_version": "latent.phase0.resource-soak.aggregate.v1",
   "source_commit": "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
   "source_tree": "65ba341221ea89e107a3e0e3c4b0aed7e26efd9b",
-  "status": "pass",
+  "status": "inconclusive",
   "topology": {
     "child_process_count": {
       "per_run": {
