@@ -18,7 +18,7 @@ case "${MODE}" in
         ;;
 esac
 
-for command in cargo python3 wasm-tools buf make zstd; do
+for command in cargo git python3 wasm-tools buf make zstd; do
     if ! command -v "${command}" >/dev/null 2>&1; then
         echo "required Phase 0 gate command is unavailable: ${command}" >&2
         exit 69
@@ -41,6 +41,7 @@ else
 fi
 
 cd "${ROOT}"
+export GITHUB_SHA="$(git rev-parse HEAD)"
 
 echo "==> Phase 0 gate: repository contracts, builds, and tests"
 make validate
@@ -66,7 +67,23 @@ if ! python3 tools/validate_phase0_gate.py "${validator_args[@]}"; then
     exit 1
 fi
 
-echo "==> Phase 0 gate PASS"
+AUTHORIZATION_STATUS="$(python3 - "${OUTPUT_DIR}/gate-summary.json" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+receipt = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(receipt["authorization_status"].upper())
+PY
+)"
+if [[ "${MODE}" == "smoke" ]]; then
+    echo "==> Phase 0 smoke validation: PASS"
+else
+    echo "==> Phase 0 completion validation: PASS"
+fi
+echo "==> Phase 1 authorization: ${AUTHORIZATION_STATUS}"
 echo "    baseline: ${OUTPUT_DIR}/baseline/raw-results.json"
 echo "    report:   ${OUTPUT_DIR}/baseline/BASELINE.md"
 echo "    receipt:  ${OUTPUT_DIR}/gate-summary.json"

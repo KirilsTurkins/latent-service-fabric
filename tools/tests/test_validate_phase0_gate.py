@@ -1,256 +1,151 @@
 from __future__ import annotations
 
-import copy
-import hashlib
+import io
+import json
 from pathlib import Path
+import shutil
+import tarfile
 import tempfile
 import unittest
 
+from tools.phase0_evidence import (
+    EvidenceValidationError,
+    extract_tar_stream,
+    verify_calibration_evidence,
+    verify_profile_evidence,
+    verify_resource_soak_evidence,
+)
 from tools.validate_phase0_gate import (
-    BASELINE_SCHEMA,
-    CALIBRATION_SCHEMA,
-    PROFILE_SCHEMA,
-    REQUIRED_CHECKS,
-    REQUIRED_DECISION_CANDIDATES,
-    REQUIRED_PROFILE_GUARDRAILS,
-    REQUIRED_PROFILE_WORKLOADS,
-    REQUIRED_SCENARIO_OUTCOMES,
-    SOAK_SCHEMA,
     GateValidationError,
     build_gate_receipt,
+    validate_profiling,
 )
 
 
-def passing_baseline() -> dict:
-    return {
-        "schema_version": BASELINE_SCHEMA,
-        "status": "pass",
-        "production_ready": False,
-        "phase1_api_compatible": False,
-        "config": {"mode": "smoke", "pool_capacity": 2, "pool_queue_capacity": 4, "runtime_workers": 2},
-        "checks": [{"name": name, "passed": True} for name in sorted(REQUIRED_CHECKS)],
-        "activation_samples": [
-            {"scenario": scenario, "outcome": {"name": outcome}}
-            for scenario, outcome in sorted(REQUIRED_SCENARIO_OUTCOMES)
-        ],
-        "executable_harness": {
-            "samples": [
-                {"shutdown_clean": True, "topology_unchanged": True},
-                {"shutdown_clean": True, "topology_unchanged": True},
-                {"shutdown_clean": True, "topology_unchanged": True},
-            ],
-            "failure_recovery_samples": [
-                {
-                    "scenario": scenario,
-                    "expected_outcome": outcome,
-                    "raw_result": {
-                        "outcome": outcome,
-                        "shutdown": {"clean": True},
-                        "topology": {"unchanged": True},
-                    },
-                }
-                for scenario, outcome in (
-                    ("trap", "trap"),
-                    ("timeout", "timeout"),
-                    ("trap_then_recovery", "success"),
-                )
-            ],
-        },
-        "activation_throughput": {
-            "at_capacity": {
-                "maximum_observed_active_leases": 2,
-                "maximum_observed_queue_depth": 0,
-            },
-            "bounded_queue_saturation": {
-                "maximum_observed_active_leases": 2,
-                "maximum_observed_queue_depth": 4,
-                "queued_acquire_wait_micros": {"samples": 1},
-            },
-        },
-    }
+REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+CALIBRATION = REPOSITORY_ROOT / "benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json"
+PROFILE = REPOSITORY_ROOT / "benchmarks/phase0/profiling/native-linux-2026-08-27-de2337906/aggregate.json"
+SOAK = REPOSITORY_ROOT / "benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/aggregate.json"
 
 
-def passing_calibration() -> dict:
-    return {
-        "schema_version": CALIBRATION_SCHEMA,
-        "status": "pass",
-        "observational_only": True,
-        "production_slo": False,
-        "cross_machine_claim": False,
-        "minimum_required_run_count": 7,
-        "run_count": 7,
-        "raw_runs": [{"run": f"run-{index:02d}", "status": "pass"} for index in range(1, 8)],
-        "hard_invariants": {
-            "all_runs_passed": True,
-            "performance_runs_excluded": 0,
-            "checks_passed_in_every_run": sorted(REQUIRED_CHECKS),
-        },
-        "source_provenance": {"tree_identity_verified": True},
-        "source_commit": "calibration-commit",
-        "source_tree": "calibration-tree",
-    }
+def tar_bytes(members: list[tuple[str, bytes, str]]) -> io.BytesIO:
+    stream = io.BytesIO()
+    with tarfile.open(fileobj=stream, mode="w") as archive:
+        for name, contents, kind in members:
+            info = tarfile.TarInfo(name)
+            if kind == "file":
+                info.size = len(contents)
+                archive.addfile(info, io.BytesIO(contents))
+            elif kind == "symlink":
+                info.type = tarfile.SYMTYPE
+                info.linkname = "outside"
+                archive.addfile(info)
+            else:
+                raise AssertionError(f"unknown member kind {kind}")
+    stream.seek(0)
+    return stream
 
 
-def passing_profile() -> dict:
-    return {
-        "schema_version": PROFILE_SCHEMA,
-        "status": "pass",
-        "observational_only": True,
-        "production_slo": False,
-        "cross_platform_claim": False,
-        "guardrails": dict(REQUIRED_PROFILE_GUARDRAILS),
-        "profiles": [{"workload": workload} for workload in sorted(REQUIRED_PROFILE_WORKLOADS)],
-        "decisions": [
-            {
-                "candidate": candidate,
-                "decision": "defer",
-                "rationale": "requires Phase 1 evidence",
-                "handoff": "#9",
-            }
-            for candidate in sorted(REQUIRED_DECISION_CANDIDATES)
-        ],
-        "hard_invariants": {
-            "canonical_names": sorted(REQUIRED_CHECKS),
-            "full_invariant_proof": {"raw_results": "full-invariant-proof/raw-results.json"},
-        },
-        "source_commit": "profile-commit",
-        "source_tree": "profile-tree",
-    }
+class Phase0GateEvidenceTests(unittest.TestCase):
+    def test_checked_in_calibration_is_regenerated_from_raw_runs(self) -> None:
+        document = verify_calibration_evidence(CALIBRATION)
+        self.assertEqual(document["status"], "pass")
+        self.assertGreaterEqual(document["run_count"], 7)
+        self.assertGreater(len(document["metrics"]), 0)
 
+    def test_safe_extractor_rejects_path_traversal_and_links(self) -> None:
+        for name, contents, kind, expected in (
+            ("../outside.json", b"bad", "file", "traversal"),
+            ("C:/outside.json", b"bad", "file", "drive-qualified"),
+            ("runs/run-01/raw.json", b"bad", "symlink", "prohibited link"),
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary_directory:
+                destination = Path(temporary_directory) / "extract"
+                with self.assertRaisesRegex(EvidenceValidationError, expected):
+                    extract_tar_stream(tar_bytes([(name, contents, kind)]), destination, "test archive")
 
-def passing_soak(directory: Path) -> dict:
-    archive = directory / "raw-evidence.tar.zst"
-    archive.write_bytes(b"retained raw soak evidence")
-    (directory / "raw-evidence.manifest.sha256").write_text("manifest\n", encoding="utf-8")
-    labels = ["run-01", "run-02", "run-03"]
-    return {
-        "schema_version": SOAK_SCHEMA,
-        "status": "pass",
-        "observational_only": True,
-        "production_slo": False,
-        "cross_machine_claim": False,
-        "minimum_required_run_count": 3,
-        "run_count": 3,
-        "hard_invariants": {"all_runs_passed": True},
-        "raw_runs": [
-            {
-                "label": label,
-                "schema_version": "latent.phase0.resource-soak.run.v1",
-                "source_identity": {"tree_identity_verified": True},
-            }
-            for label in labels
-        ],
-        "workload": {
-            label: {
-                "warmup_activations": 1_000,
-                "normal_measured_activations": 100_000,
-                "saturation_batch_counts": {"at_capacity": 100, "bounded_queue_saturation": 100},
-            }
-            for label in labels
-        },
-        "raw_evidence_archive": {
-            "path": archive.name,
-            "manifest": "raw-evidence.manifest.sha256",
-            "sha256": "sha256:" + hashlib.sha256(archive.read_bytes()).hexdigest(),
-        },
-        "evidence_completeness": {"status": "pass"},
-        "calibration_noise": {"applicability": {"status": "pass"}},
-        "file_descriptors": {"status": "pass"},
-        "source_commit": "soak-commit",
-        "source_tree": "soak-tree",
-    }
-
-
-class Phase0GateValidationTests(unittest.TestCase):
-    def build_receipt(self, soak: dict, soak_path: Path) -> dict:
-        return build_gate_receipt(
-            passing_baseline(),
-            "baseline.json",
-            passing_calibration(),
-            "calibration.json",
-            passing_profile(),
-            "profiling.json",
-            soak,
-            soak_path,
-        )
-
-    def test_complete_evidence_authorizes_phase1_without_promoting_the_spike(self) -> None:
+    def test_safe_extractor_rejects_duplicate_normalized_paths(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            directory = Path(temporary_directory)
-            receipt = self.build_receipt(passing_soak(directory), directory / "aggregate.json")
+            destination = Path(temporary_directory) / "extract"
+            archive = tar_bytes(
+                [
+                    ("runs/run-01/raw.json", b"first", "file"),
+                    ("./runs/run-01/raw.json", b"second", "file"),
+                ]
+            )
+            with self.assertRaisesRegex(EvidenceValidationError, "duplicate path"):
+                extract_tar_stream(archive, destination, "test archive")
 
-        self.assertEqual(receipt["status"], "pass")
-        self.assertEqual(receipt["authorization_status"], "authorized")
-        self.assertEqual(receipt["baseline"]["required_checks_passed"], len(REQUIRED_CHECKS))
-        self.assertFalse(receipt["production_ready"])
-        self.assertFalse(receipt["phase1_api_compatible"])
-
-    def test_missing_or_duplicate_baseline_checks_fail_closed(self) -> None:
+    def test_arbitrary_archive_bytes_cannot_substitute_for_raw_soak_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            directory = Path(temporary_directory)
-            baseline = passing_baseline()
-            baseline["checks"].pop()
-            with self.assertRaisesRegex(GateValidationError, "baseline hard checks"):
-                build_gate_receipt(
-                    baseline,
-                    "baseline.json",
-                    passing_calibration(),
-                    "calibration.json",
-                    passing_profile(),
-                    "profiling.json",
-                    passing_soak(directory),
-                    directory / "aggregate.json",
-                )
+            root = Path(temporary_directory)
+            (root / "raw-evidence.tar.zst").write_bytes(b"synthetic evidence")
+            (root / "raw-evidence.tar.zst.sha256").write_text(
+                "00" * 32 + "  raw-evidence.tar.zst\n", encoding="utf-8"
+            )
+            (root / "raw-evidence.manifest.sha256").write_text(
+                "00" * 32 + "  runs/run-01/raw.json\n", encoding="utf-8"
+            )
+            (root / "aggregate.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": "latent.phase0.resource-soak.aggregate.v1",
+                        "raw_evidence_archive": {
+                            "path": "raw-evidence.tar.zst",
+                            "manifest": "raw-evidence.manifest.sha256",
+                            "sha256": "sha256:" + "00" * 32,
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "README.md").write_text("evidence", encoding="utf-8")
+            (root / "SOAK.md").write_text("evidence", encoding="utf-8")
+            with self.assertRaises(EvidenceValidationError):
+                verify_resource_soak_evidence(root / "aggregate.json", CALIBRATION)
 
-            baseline = passing_baseline()
-            baseline["checks"].append(copy.deepcopy(baseline["checks"][0]))
-            with self.assertRaisesRegex(GateValidationError, "baseline hard checks"):
-                build_gate_receipt(
-                    baseline,
-                    "baseline.json",
-                    passing_calibration(),
-                    "calibration.json",
-                    passing_profile(),
-                    "profiling.json",
-                    passing_soak(directory),
-                    directory / "aggregate.json",
-                )
-
-    def test_incomplete_soak_is_a_blocker_not_a_passing_receipt(self) -> None:
+    def test_passing_summary_fields_cannot_authorize_without_raw_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            directory = Path(temporary_directory)
-            soak = passing_soak(directory)
-            soak["status"] = "inconclusive"
-            soak["evidence_completeness"]["status"] = "incomplete"
-            soak["calibration_noise"]["applicability"]["status"] = "inconclusive"
-            soak["file_descriptors"]["status"] = "incomplete"
-            receipt = self.build_receipt(soak, directory / "aggregate.json")
+            root = Path(temporary_directory)
+            calibration = root / "calibration.json"
+            profile = root / "profile.json"
+            soak = root / "soak.json"
+            calibration.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "latent.phase0.calibration.v1",
+                        "status": "pass",
+                        "minimum_required_run_count": 7,
+                        "raw_runs": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            profile.write_text(
+                json.dumps({"schema_version": "latent.phase0.hot-path.aggregate.v3", "status": "pass"}),
+                encoding="utf-8",
+            )
+            soak.write_text(
+                json.dumps({"schema_version": "latent.phase0.resource-soak.aggregate.v1", "status": "pass"}),
+                encoding="utf-8",
+            )
+            with self.assertRaises(GateValidationError):
+                build_gate_receipt({}, "placeholder-baseline.json", calibration, profile, soak)
 
-        self.assertEqual(receipt["status"], "blocked")
-        self.assertEqual(receipt["authorization_status"], "blocked")
-        self.assertEqual(len(receipt["blockers"]), 4)
+    def test_profile_decisions_are_not_free_form_strings(self) -> None:
+        document = json.loads(PROFILE.read_text(encoding="utf-8"))
+        document["decisions"][0]["decision"] = "whatever seems reasonable"
+        with self.assertRaisesRegex(GateValidationError, "not permitted"):
+            validate_profiling(document, str(PROFILE))
 
-    def test_missing_guardrail_or_changed_archive_fails_closed(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            directory = Path(temporary_directory)
-            profile = passing_profile()
-            profile["guardrails"]["fresh_store_per_invocation"] = False
-            with self.assertRaisesRegex(GateValidationError, "fresh_store_per_invocation"):
-                build_gate_receipt(
-                    passing_baseline(),
-                    "baseline.json",
-                    passing_calibration(),
-                    "calibration.json",
-                    profile,
-                    "profiling.json",
-                    passing_soak(directory),
-                    directory / "aggregate.json",
-                )
-
-            soak = passing_soak(directory)
-            (directory / "raw-evidence.tar.zst").write_bytes(b"modified evidence")
-            with self.assertRaisesRegex(GateValidationError, "archive digest"):
-                self.build_receipt(soak, directory / "aggregate.json")
+    @unittest.skipUnless(shutil.which("zstd"), "zstd is required for archive integration verification")
+    def test_checked_in_profile_and_soak_archives_are_verified_and_regenerated(self) -> None:
+        calibration = verify_calibration_evidence(CALIBRATION)
+        profile = verify_profile_evidence(PROFILE, CALIBRATION)
+        soak = verify_resource_soak_evidence(SOAK, CALIBRATION)
+        self.assertEqual(calibration["status"], "pass")
+        self.assertEqual(profile["status"], "pass")
+        self.assertEqual(soak["status"], "inconclusive")
 
 
 if __name__ == "__main__":

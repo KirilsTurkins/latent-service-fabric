@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-27** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, fail-closed completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-28** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, independently regenerated fail-closed completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -25,14 +25,16 @@ make phase0-gate
 
 It runs `make validate`, repository-tool tests, the real executable spike and
 containment suite, and a new full executable baseline. It then writes a
-machine-readable `latent.phase0.gate.v2` receipt below `target/phase0-gate/`
-after validating the fresh baseline against the retained native-Linux
-calibration, profile, and soak evidence. A full command fails if the receipt
-is not `authorized`; it never reports an incomplete archive as a pass.
+machine-readable `latent.phase0.gate.v3` receipt below `target/phase0-gate/`
+after independently rebuilding the retained calibration, profile, and soak
+aggregates from their raw artifacts and validating the fresh baseline against
+them. A full command fails if the receipt is not `authorized`; it never reports
+an incomplete or synthetic archive as a pass.
 
 `make phase0-gate-smoke` runs the same code/contract/executable sequence with
 the deterministic smoke baseline. It records the receipt for CI but does not
-turn a smoke run into Phase 1 authorization.
+turn a smoke run into Phase 1 authorization; its output reports smoke
+validation and authorization as separate states.
 
 ## What is validated
 
@@ -52,7 +54,7 @@ turn a smoke run into Phase 1 authorization.
 - SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.8 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
 - Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
 - Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
-- The Phase 0 gate receipt rejects omitted, duplicate, unexpected, or failed baseline checks; missing required terminal scenarios; a dirty executable shutdown/topology result; altered soak archive bytes; weakened optimization guardrails; and incomplete resource evidence represented as an authorization.
+- The Phase 0 gate receipt rejects omitted, duplicate, unexpected, or failed baseline checks; missing required terminal scenarios; a dirty executable shutdown/topology result; malformed, unsafe, incomplete, or altered raw archives; unverified calibration/profile measurements; weakened optimization guardrails; free-form optimization decisions; stale execution evidence; and incomplete resource evidence represented as an authorization.
 
 ## Echo fixture commands
 

@@ -4,30 +4,6 @@ on:
   pull_request:
     branches:
       - development
-    paths:
-      - ".github/workflows/issue-25-validation.yml"
-      - "Makefile"
-      - "README.md"
-      - "VALIDATION.md"
-      - "apps/latentd/**"
-      - "benchmarks/phase0/**"
-      - "crates/latent-activation/**"
-      - "crates/latent-executor/**"
-      - "crates/latent-node/**"
-      - "crates/latent-scheduler/**"
-      - "crates/latent-wasmtime/**"
-      - "docs/architecture/overview.md"
-      - "docs/development/toolchain.md"
-      - "docs/phase-0-baselines.md"
-      - "docs/phase-0-completion.md"
-      - "docs/phase-0-hot-path-profiling.md"
-      - "docs/phase-0-spike.md"
-      - "docs/roadmap.md"
-      - "docs/testing/invariants.md"
-      - "examples/echo-contract/**"
-      - "tools/**"
-      - "Cargo.lock"
-      - "Cargo.toml"
   workflow_dispatch:
 
 permissions:
@@ -40,6 +16,10 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The gate independently resolves every retained source commit/tree.
+          # A shallow checkout cannot establish that evidence applicability.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: 3.13.5

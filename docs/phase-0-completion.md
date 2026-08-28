@@ -9,10 +9,11 @@ structurally valid and passes its hard runtime checks, but its aggregate status
 is `inconclusive`; it cannot establish the required calibrated post-warm-up
 plateau.
 
-The GitHub state of issue #39 is not itself evidence: its checked-in aggregate
-and raw-evidence checksum remain the authority for this gate. Do not mark
-Phase 0 complete, or start Phase 1 as though it were complete, merely because
-an issue was closed while its retained evidence is incomplete.
+Issue #39 remains open until a fresh matching native-Linux run replaces this
+incomplete archive. The GitHub state is not itself evidence: the checked-in raw
+artifacts and regenerated aggregate remain the authority for this gate. Do not
+mark Phase 0 complete, or start Phase 1 as though it were complete, merely
+because an issue is closed while its retained evidence is incomplete.
 
 ## One clean-checkout command sequence
 
@@ -33,8 +34,10 @@ The command creates a new directory beneath `target/phase0-gate/`, then:
 2. runs the real `latentd phase0-spike` executable E2E and containment suite;
 3. runs a fresh full executable baseline, including the real Wasmtime path,
    capacity/queue saturation, recovery, cleanup, and topology probes; and
-4. writes `gate-summary.json`, which validates that fresh baseline together
-   with the retained calibration, profile, and soak evidence.
+4. writes `gate-summary.json`, which rebuilds the calibration, profile, and
+   soak aggregates from their retained raw inputs; verifies archive manifests,
+   hashes, paths, and file sets; then compares the regenerated results with
+   the checked-in aggregates before evaluating the fresh baseline.
 
 `make phase0-gate` returns non-zero whenever the final receipt is not
 `authorized`; it still writes the receipt so the specific blocker is
@@ -43,8 +46,9 @@ soak has an incomplete calibration/descriptor-lifecycle comparison.
 
 CI uses `make phase0-gate-smoke`. It runs the same contract, executable, and
 baseline path with smaller deterministic sample counts and records the receipt,
-but does not claim Phase 1 authorization. The smoke job prevents a code
-regression from being mistaken for a missing long-running native-Linux run.
+but does not claim Phase 1 authorization. Its output explicitly distinguishes
+`Phase 0 smoke validation: PASS` from `Phase 1 authorization: BLOCKED` so a
+correctness smoke result cannot be mistaken for completion.
 
 ## Evidence ledger
 
@@ -57,10 +61,14 @@ regression from being mistaken for a missing long-running native-Linux run.
 
 ## Recorded environment, configuration, and observations
 
-The JSON aggregates above are the machine-readable record of exact commands,
-host observations, source/tree identities, fixture digests, configuration,
-raw-file hashes, raw/aggregate results, and limitations. The concise report is
-intentionally a map to that evidence rather than a replacement for it.
+The JSON aggregates above are cached conclusions, not trust roots. The gate
+validates the underlying raw runs, host observations, execution-status records,
+fixture/configuration/toolchain identities, profile artifacts, manifests, and
+hashes; it then regenerates each aggregate with the repository aggregation
+logic. The receipt also retains the current commit/tree and a canonical hash of
+the execution-relevant Git entries. Every evidence set must have that same
+canonical identity; documentation-only differences remain visible through the
+recorded commit/tree but cannot hide an execution-affecting change.
 
 - The #24 full profile is a historical WSL2/Linux x86_64 observation with a
   two-cell fixed pool, four-waiter bounded queue, two configured runtime
@@ -127,11 +135,12 @@ proves that:
   and return admitted work to a clean baseline.
 
 The exact checks, scenarios, executable samples, and raw observations are
-validated by [`tools/validate_phase0_gate.py`](../tools/validate_phase0_gate.py).
-The validator rejects missing, duplicate, unexpected, or failed hard checks;
-missing terminal scenarios; an altered raw-evidence archive; weakened
-fresh-store/fixed-topology guardrails; and incomplete evidence presented as an
-authorization.
+validated by [`tools/validate_phase0_gate.py`](../tools/validate_phase0_gate.py)
+and [`tools/phase0_evidence.py`](../tools/phase0_evidence.py). The verifier
+rejects malformed or synthetic archives, missing/additional/duplicate archive
+paths, links, traversal attempts, changed raw artifacts, unverified profile
+measurements, weakened guardrails, free-form optimization decisions, source
+identity drift, and incomplete evidence presented as an authorization.
 
 ## Required work to authorize Phase 1
 

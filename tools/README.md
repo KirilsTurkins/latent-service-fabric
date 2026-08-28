@@ -32,8 +32,11 @@ inconclusive. The command is intentionally excluded from shared CI.
 `run_phase0_gate.sh` is the clean-checkout Phase 0 sequence. It combines the
 repository and tool tests, real executable spike/containment proof, a fresh
 baseline, and `validate_phase0_gate.py`. The validator emits a
-`latent.phase0.gate.v2` receipt that checks the baseline's exact hard-check and
-scenario set, the calibration, profiling guardrails/decisions, and the
-checksummed soak archive. Its full mode returns non-zero unless the receipt is
-authorized; smoke mode records a receipt without making an authorization
-claim.
+`latent.phase0.gate.v3` receipt. Before it accepts an aggregate, it validates
+the raw calibration tree or zstd archive, checks every manifest entry and raw
+artifact, rejects links/traversal/extra files, and regenerates the aggregate
+with the existing aggregation logic. It also binds calibration, profiling, and
+soak evidence to a canonical execution-relevant Git-tree identity for the
+current clean checkout. Its full mode returns non-zero unless the receipt is
+authorized; smoke mode records a receipt and prints its validation result and
+Phase 1 authorization state separately.
