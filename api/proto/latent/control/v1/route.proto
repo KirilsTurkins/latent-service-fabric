@@ -13,6 +13,8 @@ message ServiceRoute {
   string route_id = 1;
   string service = 2;
   repeated RevisionRoute revisions = 3;
+  // Route lookup keys are tenant-qualified; service alone is never global.
+  string tenant = 4;
 }
 
 message BindingRoute {
@@ -23,6 +25,8 @@ message BindingRoute {
   string provider_contract = 5;
   string mode = 6;
   string policy_digest = 7;
+  string consumer_tenant = 8;
+  string provider_tenant = 9;
 }
 
 message RouteSnapshot {
@@ -48,6 +52,9 @@ message WatchRouteSnapshotsRequest {
 }
 
 service RouteService {
+  // Phase 1 standalone: supported for current/retained local snapshots.
   rpc GetRouteSnapshot(GetRouteSnapshotRequest) returns (GetRouteSnapshotResponse);
+  // Phase 2+ cluster control-plane operation. A Phase 1 standalone adapter
+  // must return an explicit unimplemented response.
   rpc WatchRouteSnapshots(WatchRouteSnapshotsRequest) returns (stream RouteSnapshot);
 }

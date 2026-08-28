@@ -23,9 +23,7 @@
     clippy::type_complexity
 )]
 
-#[cfg(target_os = "linux")]
-use std::collections::BTreeSet;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::error::Error;
 use std::fmt::{self, Write as _};
 use std::fs;

@@ -1,0 +1,36 @@
+{
+  "generation": 7,
+  "generatedAtUnixMillis": 1735689600000,
+  "services": [
+    {
+      "routeId": "examples:echo",
+      "tenant": "examples",
+      "service": "echo",
+      "revisions": [
+        {
+          "revisionId": "examples-echo-r1",
+          "releaseDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "weight": 10000,
+          "attributes": {}
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "bindingId": "examples:gateway-to-echo",
+      "consumerTenant": "examples",
+      "consumerService": "gateway",
+      "importedContract": "examples:echo/api@0.1.0",
+      "providerTenant": "examples",
+      "providerService": "echo",
+      "providerContract": "examples:echo/api@0.1.0",
+      "mode": "auto",
+      "policyDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    }
+  ],
+  "policyDigests": [
+    "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+  ],
+  "snapshotDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333"
+}

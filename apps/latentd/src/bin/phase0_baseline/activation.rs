@@ -136,6 +136,12 @@ fn classify_outcome(outcome: ActivationOutcome) -> OutcomeReport {
             output_utf8: Some(String::from_utf8_lossy(&success.output).into_owned()),
             consumption: consumption_report(&success.consumption),
         },
+        ActivationOutcome::DeclaredError { error, consumption } => OutcomeReport {
+            name: "domain_error".to_owned(),
+            error_code: Some(error.code),
+            output_utf8: Some(String::from_utf8_lossy(&error.payload).into_owned()),
+            consumption: consumption_report(&consumption),
+        },
         ActivationOutcome::Failed {
             error,
             consumption,

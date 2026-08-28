@@ -39,7 +39,8 @@ SCHEMA_EXAMPLES: dict[str, tuple[str, ...]] = {
     "capsule-manifest.schema.json": ("examples/**/capsule.json",),
     "deployment.schema.json": ("examples/**/deployment.json",),
     "policy.schema.json": ("examples/policies/*.json",),
-    "route-snapshot.schema.json": (),
+    "release-publish.schema.json": ("examples/**/publish-release.json",),
+    "route-snapshot.schema.json": ("examples/route-snapshot.json",),
     "trigger.schema.json": ("examples/**/*trigger.json",),
 }
 
@@ -90,7 +91,7 @@ def validate_json(root: Path = ROOT) -> None:
         try:
             json.loads(path.read_text(encoding="utf-8"))
         except Exception as exc:  # noqa: BLE001 - validator must report every parser failure
-            fail(f"invalid JSON {path.relative_to(root)}: {exc}")
+            fail(f"invalid JSON {path.relative_to(root).as_posix()}: {exc}")
 
 
 def validate_toml(root: Path = ROOT) -> None:

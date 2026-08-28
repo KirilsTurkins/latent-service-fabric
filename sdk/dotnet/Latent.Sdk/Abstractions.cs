@@ -3,7 +3,7 @@ namespace Latent.Sdk;
 public sealed record ResourceBudget(
     ulong CpuFuel,
     ulong MemoryBytes,
-    ulong? WallDeadlineUnixMillis,
+    ulong? WallTimeLimitMillis,
     uint ChildCalls,
     uint OutboundRequests,
     ulong StateReadBytes,
@@ -62,17 +62,90 @@ public sealed record PlatformFailure(
     string Code,
     string Message,
     bool Retryable,
-    IReadOnlyDictionary<string, string> Details);
+    IReadOnlyList<ErrorDetail> Details);
+
+public sealed record ErrorDetail(
+    string Kind,
+    IReadOnlyDictionary<string, string> Fields);
+
+public sealed record DeclaredError(
+    string Code,
+    string Message,
+    ReadOnlyMemory<byte> Payload,
+    string MediaType,
+    IReadOnlyDictionary<string, string> Metadata);
+
+public sealed record InvocationReceipt(
+    string ActivationId,
+    string RevisionId,
+    string ReleaseDigest,
+    ulong RouteGeneration,
+    BudgetConsumption Consumption);
+
+public abstract record InvocationOutcome
+{
+    private InvocationOutcome() { }
+
+    public sealed record Succeeded(InvokeResponse Response) : InvocationOutcome;
+
+    public sealed record DeclaredFailure(
+        InvocationReceipt Receipt,
+        DeclaredError Error) : InvocationOutcome;
+
+    public sealed record PlatformFailure(
+        InvocationReceipt Receipt,
+        global::Latent.Sdk.PlatformFailure Error) : InvocationOutcome;
+}
+
+public enum CancelDisposition
+{
+    Accepted,
+    AlreadyTerminal,
+    NotFound,
+}
+
+public sealed record CancelResponse(
+    CancelDisposition Disposition,
+    string? TerminalState);
+
+public abstract record RetainedInvocationOutcome
+{
+    private RetainedInvocationOutcome() { }
+
+    public sealed record Succeeded(
+        string? CommittedStateVersion,
+        IReadOnlyList<string> EffectIds,
+        IReadOnlyDictionary<string, string> Metadata) : RetainedInvocationOutcome;
+
+    public sealed record DeclaredFailure(DeclaredError Error) : RetainedInvocationOutcome;
+
+    public sealed record PlatformFailure(
+        global::Latent.Sdk.PlatformFailure Error) : RetainedInvocationOutcome;
+}
+
+public sealed record ActivationStatus(
+    string ActivationId,
+    string Phase,
+    string? TerminalState,
+    RetainedInvocationOutcome? TerminalOutcome,
+    BudgetConsumption? FinalConsumption,
+    ulong LastUpdatedUnixMillis,
+    ulong? TerminalAtUnixMillis,
+    IReadOnlyDictionary<string, string> Metadata);
 
 public interface ILatentClient
 {
-    ValueTask<InvokeResponse> InvokeAsync(
+    ValueTask<InvocationOutcome> InvokeAsync(
         InvokeRequest request,
         CancellationToken cancellationToken = default);
 
-    ValueTask CancelAsync(
+    ValueTask<CancelResponse> CancelAsync(
         string activationId,
         string reason,
+        CancellationToken cancellationToken = default);
+
+    ValueTask<ActivationStatus> GetActivationAsync(
+        string activationId,
         CancellationToken cancellationToken = default);
 }
 

@@ -3,9 +3,10 @@
 #![forbid(unsafe_code)]
 
 use latent_core::{
-    ActivationId, BoxFuture, BudgetConsumption, ContractId, FunctionId, IdempotencyKey,
-    InvocationPrincipal, Metadata, Payload, PlatformError, ReleaseDigest, ResourceBudget,
-    RevisionId, RouteGeneration, ServiceId, TenantId, TraceId,
+    ActivationId, ActivationPhase, ActivationTerminalState, BoxFuture, BudgetConsumption,
+    CancelDisposition, ContractId, DeclaredError, FunctionId, IdempotencyKey, InvocationPrincipal,
+    Metadata, Payload, PlatformError, ReleaseDigest, ResourceBudget, RevisionId, RouteGeneration,
+    ServiceId, TenantId, TraceId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -48,6 +49,74 @@ pub struct InvokeResponse {
     pub metadata: Metadata,
 }
 
+/// Common receipt fields returned for every terminal invocation outcome.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InvocationReceipt {
+    pub activation_id: ActivationId,
+    pub revision_id: RevisionId,
+    pub release_digest: ReleaseDigest,
+    pub route_generation: RouteGeneration,
+    pub consumption: BudgetConsumption,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeclaredInvocationError {
+    pub receipt: InvocationReceipt,
+    pub error: DeclaredError,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlatformInvocationFailure {
+    pub receipt: InvocationReceipt,
+    pub error: PlatformError,
+}
+
+/// Wire-visible invocation results. Platform failures are values here rather
+/// than transport errors so callers cannot confuse them with declared guest
+/// errors or a failed RPC transport.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InvocationOutcome {
+    Succeeded(InvokeResponse),
+    DeclaredError(DeclaredInvocationError),
+    PlatformFailure(PlatformInvocationFailure),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CancelResponse {
+    pub disposition: CancelDisposition,
+    pub terminal_state: Option<ActivationTerminalState>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RetainedInvocationOutcome {
+    Succeeded {
+        committed_state_version: Option<String>,
+        effect_ids: Vec<String>,
+        metadata: Metadata,
+    },
+    DeclaredError(DeclaredError),
+    PlatformFailure(PlatformError),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ActivationStatus {
+    pub activation_id: ActivationId,
+    pub phase: ActivationPhase,
+    pub terminal_state: Option<ActivationTerminalState>,
+    pub terminal_outcome: Option<RetainedInvocationOutcome>,
+    pub final_consumption: Option<BudgetConsumption>,
+    pub last_updated_unix_millis: u64,
+    pub terminal_at_unix_millis: Option<u64>,
+    pub metadata: Metadata,
+}
+
+/// Failure to send, receive, authenticate, or decode an RPC response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClientTransportError {
+    pub message: String,
+    pub retryable: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GuestInvocationContext {
     pub activation_id: ActivationId,
@@ -64,13 +133,18 @@ pub trait LatentClient: Send + Sync {
     fn invoke<'a>(
         &'a self,
         request: InvokeRequest,
-    ) -> BoxFuture<'a, Result<InvokeResponse, PlatformError>>;
+    ) -> BoxFuture<'a, Result<InvocationOutcome, ClientTransportError>>;
 
     fn cancel<'a>(
         &'a self,
         activation_id: &'a ActivationId,
         reason: &'a str,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    ) -> BoxFuture<'a, Result<CancelResponse, ClientTransportError>>;
+
+    fn get_activation<'a>(
+        &'a self,
+        activation_id: &'a ActivationId,
+    ) -> BoxFuture<'a, Result<ActivationStatus, ClientTransportError>>;
 }
 
 pub trait GuestContext: Send + Sync {

@@ -4,8 +4,8 @@
 
 use latent_core::{
     ActivationId, ActivationPhase, ActivationTerminalState, BoxFuture, BudgetConsumption,
-    IdempotencyKey, InvocationPrincipal, Metadata, Payload, PlatformError, ResourceBudget, SpanId,
-    TraceId,
+    CancelDisposition, DeclaredError, IdempotencyKey, InvocationPrincipal, Metadata, Payload,
+    PlatformError, ResourceBudget, SpanId, TraceId,
 };
 use latent_routing::{InvocationTarget, ResolvedRevision};
 
@@ -49,11 +49,39 @@ pub struct ActivationSuccess {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ActivationOutcome {
     Succeeded(ActivationSuccess),
+    DeclaredError {
+        error: DeclaredError,
+        consumption: BudgetConsumption,
+    },
     Failed {
         terminal_state: ActivationTerminalState,
         error: PlatformError,
         consumption: BudgetConsumption,
     },
+}
+
+/// The terminal result retained for `GetActivation` and CLI diagnostics.
+///
+/// A status record must retain an outcome classification and finalized resource
+/// consumption for every terminal activation; it must not collapse a declared
+/// component error into a platform failure.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RetainedActivationOutcome {
+    Succeeded,
+    DeclaredError(DeclaredError),
+    PlatformFailure(PlatformError),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ActivationStatus {
+    pub activation_id: ActivationId,
+    pub phase: ActivationPhase,
+    pub terminal_state: Option<ActivationTerminalState>,
+    pub terminal_outcome: Option<RetainedActivationOutcome>,
+    pub final_consumption: Option<BudgetConsumption>,
+    pub last_updated_unix_millis: u64,
+    pub terminal_at_unix_millis: Option<u64>,
+    pub metadata: Metadata,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -72,7 +100,7 @@ pub trait ActivationManager: Send + Sync {
         &'a self,
         activation_id: &'a ActivationId,
         reason: &'a str,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    ) -> BoxFuture<'a, Result<CancelDisposition, PlatformError>>;
 }
 
 pub trait ActivationJournal: Send + Sync {

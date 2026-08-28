@@ -481,7 +481,7 @@ fn parse_capsule_manifest(document: &Value) -> CapsuleManifest {
             resource_budget_ceiling: ResourceBudget {
                 cpu_fuel: required_u64(limits, "/cpuFuel"),
                 memory_bytes: required_u64(limits, "/memoryBytes"),
-                wall_deadline_unix_millis: optional_u64(limits, "/wallDeadlineUnixMillis"),
+                wall_time_limit_millis: optional_u64(limits, "/wallTimeLimitMillis"),
                 child_calls: required_u32(limits, "/childCalls"),
                 outbound_requests: required_u32(limits, "/outboundRequests"),
                 state_read_bytes: required_u64(limits, "/stateReadBytes"),

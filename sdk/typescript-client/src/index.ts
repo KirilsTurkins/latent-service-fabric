@@ -1,7 +1,8 @@
 export interface ResourceBudget {
   readonly cpuFuel: bigint;
   readonly memoryBytes: bigint;
-  readonly wallDeadlineUnixMillis?: bigint;
+  /** Relative to admission; undefined adds no ceiling and 0n grants no time. */
+  readonly wallTimeLimitMillis?: bigint;
   readonly childCalls: number;
   readonly outboundRequests: number;
   readonly stateReadBytes: bigint;
@@ -67,12 +68,75 @@ export interface PlatformFailure {
   readonly code: string;
   readonly message: string;
   readonly retryable: boolean;
-  readonly details: Readonly<Record<string, string>>;
+  readonly details: readonly ErrorDetail[];
+}
+
+export interface ErrorDetail {
+  readonly kind: string;
+  readonly fields: Readonly<Record<string, string>>;
+}
+
+export interface DeclaredError {
+  readonly code: string;
+  readonly message: string;
+  readonly payload: Uint8Array;
+  readonly mediaType: string;
+  readonly metadata: Readonly<Record<string, string>>;
+}
+
+export interface InvocationReceipt {
+  readonly activationId: string;
+  readonly revisionId: string;
+  readonly releaseDigest: string;
+  readonly routeGeneration: bigint;
+  readonly consumption: BudgetConsumption;
+}
+
+export type InvocationOutcome =
+  | { readonly kind: "success"; readonly response: InvokeResponse }
+  | {
+      readonly kind: "declared-error";
+      readonly receipt: InvocationReceipt;
+      readonly error: DeclaredError;
+    }
+  | {
+      readonly kind: "platform-failure";
+      readonly receipt: InvocationReceipt;
+      readonly error: PlatformFailure;
+    };
+
+export type CancelDisposition = "accepted" | "already-terminal" | "not-found";
+
+export interface CancelResponse {
+  readonly disposition: CancelDisposition;
+  readonly terminalState?: string;
+}
+
+export type RetainedInvocationOutcome =
+  | {
+      readonly kind: "success";
+      readonly committedStateVersion?: string;
+      readonly effectIds: readonly string[];
+      readonly metadata: Readonly<Record<string, string>>;
+    }
+  | { readonly kind: "declared-error"; readonly error: DeclaredError }
+  | { readonly kind: "platform-failure"; readonly error: PlatformFailure };
+
+export interface ActivationStatus {
+  readonly activationId: string;
+  readonly phase: string;
+  readonly terminalState?: string;
+  readonly terminalOutcome?: RetainedInvocationOutcome;
+  readonly finalConsumption?: BudgetConsumption;
+  readonly lastUpdatedUnixMillis: bigint;
+  readonly terminalAtUnixMillis?: bigint;
+  readonly metadata: Readonly<Record<string, string>>;
 }
 
 export interface LatentClient {
-  invoke(request: InvokeRequest): Promise<InvokeResponse>;
-  cancel(activationId: string, reason: string): Promise<void>;
+  invoke(request: InvokeRequest): Promise<InvocationOutcome>;
+  cancel(activationId: string, reason: string): Promise<CancelResponse>;
+  getActivation(activationId: string): Promise<ActivationStatus>;
 }
 
 export interface GuestContext {

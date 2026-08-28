@@ -874,10 +874,7 @@ impl Phase0WasmtimeBackend {
         let cancellation_guard = cancellation_probe
             .as_ref()
             .map(|_| self.resources.cancellation_probe());
-        let deadline = monotonic_deadline(earliest_deadline(
-            request.activation.deadline_unix_millis,
-            request.budget.wall_deadline_unix_millis,
-        ))?;
+        let deadline = monotonic_deadline(request.activation.deadline_unix_millis)?;
         let stop = Arc::new(StopControl::new(deadline, cancellation_probe));
         if let Some(kind) = stop.observe() {
             return Ok(interrupted_outcome(
@@ -1355,14 +1352,6 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
     }
 }
 
-fn earliest_deadline(first: Option<u64>, second: Option<u64>) -> Option<u64> {
-    match (first, second) {
-        (Some(first), Some(second)) => Some(first.min(second)),
-        (Some(value), None) | (None, Some(value)) => Some(value),
-        (None, None) => None,
-    }
-}
-
 fn elapsed_micros(started: Instant) -> u64 {
     u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX)
 }
@@ -1398,7 +1387,7 @@ fn sha256_digest(bytes: &[u8]) -> String {
 }
 
 #[cfg(test)]
-mod tests {
+mod timing_tests {
     use super::{InvocationTimingStore, Phase0InvocationTiming};
 
     #[test]

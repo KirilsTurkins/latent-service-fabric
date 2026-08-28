@@ -1483,6 +1483,9 @@ fn outcome_matches(expected: ExpectedOutcome, input: &str, outcome: &ActivationO
             success.output_media_type == ECHO_DOMAIN_ERROR_MEDIA_TYPE
                 && String::from_utf8_lossy(&success.output).contains("empty-message")
         }
+        (ExpectedOutcome::DomainError, ActivationOutcome::DeclaredError { error, .. }) => {
+            error.code == "empty-message"
+        }
         (ExpectedOutcome::Trap, ActivationOutcome::Failed { error, .. }) => {
             error.code == PlatformErrorCode::GuestTrap
         }

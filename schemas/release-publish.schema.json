@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1alpha1/release-publish.schema.json",
+  "title": "LSF locally trusted release publish request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "apiVersion",
+    "kind",
+    "release",
+    "artifact"
+  ],
+  "properties": {
+    "apiVersion": {
+      "const": "latent.dev/v1alpha1"
+    },
+    "kind": {
+      "const": "ReleasePublish"
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "digest",
+        "service",
+        "semanticVersion",
+        "world"
+      ],
+      "properties": {
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$"
+        },
+        "service": {
+          "type": "string",
+          "minLength": 1
+        },
+        "semanticVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "world": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capsuleManifestJson",
+        "componentBase64",
+        "componentDigest",
+        "componentMediaType"
+      ],
+      "properties": {
+        "capsuleManifestJson": {
+          "type": "string",
+          "minLength": 2
+        },
+        "componentBase64": {
+          "type": "string",
+          "minLength": 1
+        },
+        "componentDigest": {
+          "type": "string",
+          "pattern": "^sha256:[a-fA-F0-9]{64}$"
+        },
+        "componentMediaType": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

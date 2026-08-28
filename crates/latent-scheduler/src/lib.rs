@@ -171,6 +171,24 @@ pub trait CellPool: Send + Sync {
         budget: &'a ResourceBudget,
     ) -> BoxFuture<'a, Result<CellLease, PlatformError>>;
 
+    /// Acquires a cell using the already-resolved invocation deadline.
+    ///
+    /// New implementations that queue work must override this method so a
+    /// caller's absolute deadline is observed while waiting.  The default
+    /// preserves the original seam for independent Phase 0 implementations;
+    /// the activation runner still checks the deadline before and after that
+    /// call, but such an implementation cannot provide precise queued expiry.
+    fn acquire_with_deadline<'a>(
+        &'a self,
+        activation_id: &'a ActivationId,
+        tenant: &'a TenantId,
+        class: CellClass,
+        budget: &'a ResourceBudget,
+        _deadline_unix_millis: Option<u64>,
+    ) -> BoxFuture<'a, Result<CellLease, PlatformError>> {
+        self.acquire(activation_id, tenant, class, budget)
+    }
+
     fn release<'a>(&'a self, lease: CellLease) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn capacity(&self, class: CellClass) -> u32;

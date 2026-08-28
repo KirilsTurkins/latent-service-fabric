@@ -20,8 +20,8 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use clap::{error::ErrorKind, Args, Parser, Subcommand};
 use latent_activation::{ActivationManager, ActivationOutcome};
 use latent_core::{
-    ActivationId, ActivationTerminalState, BudgetConsumption, ErrorDetail, Metadata, NodeId,
-    PlatformError, PlatformErrorCode,
+    ActivationId, ActivationTerminalState, BudgetConsumption, CancelDisposition, ErrorDetail,
+    Metadata, NodeId, PlatformError, PlatformErrorCode,
 };
 use latent_executor::{ExecutionBackend, PreparedComponent};
 use latent_manifest::CapsuleManifest;
@@ -1161,14 +1161,20 @@ async fn invoke_prepared(
             biased;
             outcome = &mut invocation => outcome,
             () = tokio::time::sleep(Duration::from_millis(cancel_after_ms)) => {
-                if let Err(error) = runner
+                match runner
                     .cancel(&config.activation_id, "phase0-spike explicit cancellation")
                     .await
                 {
-                    eprintln!(
-                        "explicit cancellation raced with completion: {}",
-                        bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES)
-                    );
+                    Ok(CancelDisposition::Accepted) => {}
+                    Ok(CancelDisposition::AlreadyTerminal(_)) | Ok(CancelDisposition::NotFound) => {
+                        eprintln!("explicit cancellation raced with completion");
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "explicit cancellation could not be sent: {}",
+                            bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES)
+                        );
+                    }
                 }
                 invocation.await
             }
@@ -1755,6 +1761,20 @@ fn classify_activation_outcome(
             None,
             consumption_report(&success.consumption),
             EXIT_SUCCESS,
+        ),
+        ActivationOutcome::DeclaredError { error, consumption } => (
+            "domain_error".to_owned(),
+            Some("completed".to_owned()),
+            Some(output_report(error.payload, error.media_type)),
+            Some(ErrorReport {
+                kind: "domain".to_owned(),
+                code: error.code,
+                message: error.message,
+                retryable: false,
+                details: Vec::new(),
+            }),
+            consumption_report(&consumption),
+            EXIT_DOMAIN_ERROR,
         ),
         ActivationOutcome::Failed {
             terminal_state,
