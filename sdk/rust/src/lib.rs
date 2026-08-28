@@ -5,9 +5,11 @@
 use latent_core::{
     ActivationId, ActivationPhase, ActivationTerminalState, BoxFuture, BudgetConsumption,
     CancelDisposition, ContractId, DeclaredError, FunctionId, IdempotencyKey, InvocationPrincipal,
-    Metadata, Payload, PlatformError, ReleaseDigest, ResourceBudget, RevisionId, RouteGeneration,
-    ServiceId, TenantId, TraceId,
+    Metadata, Payload, ReleaseDigest, ResourceBudget, RevisionId, RouteGeneration, ServiceId,
+    TenantId, TraceId,
 };
+
+pub use latent_core::{ErrorDetail, PlatformError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationTarget {
@@ -81,10 +83,37 @@ pub enum InvocationOutcome {
     PlatformFailure(PlatformInvocationFailure),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CancelResponse {
-    pub disposition: CancelDisposition,
-    pub terminal_state: Option<ActivationTerminalState>,
+/// A cancellation result normalized from the wire representation.
+///
+/// The Protobuf response carries an enum plus an optional terminal-state
+/// field. The SDK deliberately exposes a closed Rust enum instead, so an
+/// already-terminal result has exactly one terminal state and accepted or
+/// not-found results cannot carry a contradictory one.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CancelResponse {
+    Accepted,
+    AlreadyTerminal(ActivationTerminalState),
+    NotFound,
+}
+
+impl From<CancelDisposition> for CancelResponse {
+    fn from(disposition: CancelDisposition) -> Self {
+        match disposition {
+            CancelDisposition::Accepted => Self::Accepted,
+            CancelDisposition::AlreadyTerminal(state) => Self::AlreadyTerminal(state),
+            CancelDisposition::NotFound => Self::NotFound,
+        }
+    }
+}
+
+impl From<CancelResponse> for CancelDisposition {
+    fn from(response: CancelResponse) -> Self {
+        match response {
+            CancelResponse::Accepted => Self::Accepted,
+            CancelResponse::AlreadyTerminal(state) => Self::AlreadyTerminal(state),
+            CancelResponse::NotFound => Self::NotFound,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -155,4 +184,25 @@ pub trait ContractCodec<T>: Send + Sync {
     fn media_type(&self) -> &str;
     fn encode(&self, value: &T) -> Result<Vec<u8>, PlatformError>;
     fn decode(&self, bytes: &[u8]) -> Result<T, PlatformError>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cancellation_response_has_one_canonical_terminal_state() {
+        let response = CancelResponse::from(CancelDisposition::AlreadyTerminal(
+            ActivationTerminalState::Completed,
+        ));
+
+        assert_eq!(
+            response,
+            CancelResponse::AlreadyTerminal(ActivationTerminalState::Completed)
+        );
+        assert_eq!(
+            CancelDisposition::from(response),
+            CancelDisposition::AlreadyTerminal(ActivationTerminalState::Completed)
+        );
+    }
 }

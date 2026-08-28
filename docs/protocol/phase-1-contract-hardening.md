@@ -72,10 +72,21 @@ an ordered list of `{ kind, fields }` details; a map-only transport shape is
 not permitted because it loses both the detail kind and repeated detail
 boundaries.
 
+The Rust execution boundary mirrors that distinction before an activation is
+mapped: GuestOutcome has separate Returned, DeclaredError, Trapped, and
+Interrupted variants. A backend must convert a typed guest/domain result to
+DeclaredError at that boundary. The activation runner must not infer a
+declared error from payload bytes, media types, or a service-specific
+convention.
+
 Cancellation returns an explicit disposition: `accepted`, `already-terminal`,
 or `not-found`. Only malformed requests and transport/platform failures use an
 RPC failure path. `GetActivation` retains its terminal state, typed terminal
 outcome, final consumption, and terminal timestamp when known.
+
+For a retained success, the summary carries committed_state_version,
+effect_ids, and metadata; the Rust domain summary, Protobuf
+ActivationSuccessSummary, and every SDK retain the same three fields.
 
 ## Local release publication
 
@@ -134,10 +145,12 @@ clients exist:
 | `CancelResponse.accepted` boolean field 1 | enum disposition field 2 | Field 1 and its name are reserved. |
 | unscoped route services/bindings | required tenant fields | Schema fixtures and descriptor contract tests require the fields. |
 
-`api/proto/phase1-field-contract.json` is a checked-in descriptor contract.
-`tools/tests/test_phase1_contracts.py` verifies the reserved field numbers,
-names, and replacement fields directly from the authoritative `.proto` files.
-This is in addition to Buf descriptor validation.
+api/proto/phase1-descriptor-contract.json is a normalized, checked-in
+FileDescriptorSet golden. tools/validate_contracts.sh builds the authoritative
+descriptor with Buf and tools/validate_phase1_descriptor.py compares field
+types, cardinality, oneof membership, enum values, service signatures, and
+reservations with that golden. tools/tests/test_phase1_contracts.py exercises
+the validator's drift detection and the cross-SDK surface requirements.
 
 ## Integration boundary
 

@@ -599,6 +599,7 @@ fn execution_result_consumption(
 ) -> BudgetConsumption {
     match outcome {
         Ok(GuestOutcome::Returned { consumption, .. })
+        | Ok(GuestOutcome::DeclaredError { consumption, .. })
         | Ok(GuestOutcome::Trapped { consumption, .. })
         | Ok(GuestOutcome::Interrupted { consumption, .. }) => consumption.clone(),
         Err(_) => BudgetConsumption::default(),
@@ -628,6 +629,9 @@ fn map_execution_outcome(
                 effect_ids: Vec::new(),
                 metadata,
             })
+        }
+        Ok(GuestOutcome::DeclaredError { error, consumption }) => {
+            ActivationOutcome::DeclaredError { error, consumption }
         }
         Ok(GuestOutcome::Trapped { trap, consumption }) => {
             let mut fields = Metadata::new();
@@ -922,5 +926,35 @@ mod tests {
             "released",
         );
         assert_eq!(early, running);
+    }
+
+    #[test]
+    fn typed_declared_guest_error_never_maps_to_success() {
+        let declared = latent_core::DeclaredError {
+            code: "guest.invalid-input".to_owned(),
+            message: "the guest rejected the supplied value".to_owned(),
+            payload: br#"{"field":"name"}"#.to_vec(),
+            media_type: "application/json".to_owned(),
+            metadata: Metadata::from([("field".to_owned(), "name".to_owned())]),
+        };
+        let consumption = BudgetConsumption {
+            cpu_fuel: 17,
+            ..BudgetConsumption::default()
+        };
+
+        assert_eq!(
+            map_execution_outcome(
+                Ok(GuestOutcome::DeclaredError {
+                    error: declared.clone(),
+                    consumption: consumption.clone(),
+                }),
+                "cell-declared-error",
+                "released",
+            ),
+            ActivationOutcome::DeclaredError {
+                error: declared,
+                consumption,
+            }
+        );
     }
 }

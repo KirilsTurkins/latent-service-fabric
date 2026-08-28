@@ -41,7 +41,6 @@ use latent_node::Phase0ActivationRunner;
 use latent_scheduler::{CellClass, CellLease, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
     Phase0InstanceAllocator, Phase0WasmtimeBackend, PreparedCacheSnapshot, RuntimeResourceSnapshot,
-    ECHO_DOMAIN_ERROR_MEDIA_TYPE,
 };
 use latentd::phase0_composition::{
     self, Phase0InvocationConfig, Phase0PreparationConfig, Phase0RuntimeConfig,
@@ -1477,11 +1476,6 @@ fn outcome_matches(expected: ExpectedOutcome, input: &str, outcome: &ActivationO
     match (expected, outcome) {
         (ExpectedOutcome::Success, ActivationOutcome::Succeeded(success)) => {
             String::from_utf8_lossy(&success.output) == input
-                && success.output_media_type != ECHO_DOMAIN_ERROR_MEDIA_TYPE
-        }
-        (ExpectedOutcome::DomainError, ActivationOutcome::Succeeded(success)) => {
-            success.output_media_type == ECHO_DOMAIN_ERROR_MEDIA_TYPE
-                && String::from_utf8_lossy(&success.output).contains("empty-message")
         }
         (ExpectedOutcome::DomainError, ActivationOutcome::DeclaredError { error, .. }) => {
             error.code == "empty-message"

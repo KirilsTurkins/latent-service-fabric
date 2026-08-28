@@ -5,8 +5,8 @@ use std::time::{Duration, Instant};
 
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
-    ActivationId, BoxFuture, BudgetConsumption, ErrorDetail, Metadata, PlatformError,
-    PlatformErrorCode, ReleaseDigest, ResourceBudget,
+    ActivationId, BoxFuture, BudgetConsumption, DeclaredError, ErrorDetail, Metadata,
+    PlatformError, PlatformErrorCode, ReleaseDigest, ResourceBudget,
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
@@ -1026,16 +1026,22 @@ impl Phase0WasmtimeBackend {
                 consumption,
             }),
             Ok(Err(bindings::exports::examples::echo::api::EchoError::EmptyMessage)) => {
-                Ok(GuestOutcome::Returned {
-                    output: EMPTY_MESSAGE_OUTPUT.to_vec(),
-                    output_media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
+                Ok(GuestOutcome::DeclaredError {
+                    error: echo_declared_error(
+                        "empty-message",
+                        "the echo message must not be empty",
+                        EMPTY_MESSAGE_OUTPUT,
+                    ),
                     consumption,
                 })
             }
             Ok(Err(bindings::exports::examples::echo::api::EchoError::MessageTooLarge)) => {
-                Ok(GuestOutcome::Returned {
-                    output: MESSAGE_TOO_LARGE_OUTPUT.to_vec(),
-                    output_media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
+                Ok(GuestOutcome::DeclaredError {
+                    error: echo_declared_error(
+                        "message-too-large",
+                        "the echo message exceeds the declared byte limit",
+                        MESSAGE_TOO_LARGE_OUTPUT,
+                    ),
                     consumption,
                 })
             }
@@ -1356,6 +1362,16 @@ fn elapsed_micros(started: Instant) -> u64 {
     u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX)
 }
 
+fn echo_declared_error(code: &str, message: &str, payload: &[u8]) -> DeclaredError {
+    DeclaredError {
+        code: code.to_owned(),
+        message: message.to_owned(),
+        payload: payload.to_vec(),
+        media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
+        metadata: Metadata::new(),
+    }
+}
+
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
     let message = error.to_string().to_ascii_lowercase();
     message.contains("aggregate linear-memory budget exceeded")
@@ -1435,7 +1451,10 @@ fn bounded_error(error: &wasmtime::Error) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{Phase0InstanceAllocator, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory};
+    use super::{
+        echo_declared_error, Phase0InstanceAllocator, Phase0WasmtimeConfig,
+        Phase0WasmtimeEngineFactory, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    };
     use crate::WasmtimeEngineFactory as _;
 
     #[test]
@@ -1482,5 +1501,18 @@ mod tests {
             ..Phase0WasmtimeConfig::default()
         };
         assert!(Phase0WasmtimeEngineFactory::new(config).is_err());
+    }
+
+    #[test]
+    fn typed_echo_error_keeps_code_payload_and_media_type_out_of_success() {
+        let error = echo_declared_error(
+            "empty-message",
+            "the echo message must not be empty",
+            br#"{"error":"empty-message"}"#,
+        );
+
+        assert_eq!(error.code, "empty-message");
+        assert_eq!(error.payload, br#"{"error":"empty-message"}"#);
+        assert_eq!(error.media_type, ECHO_DOMAIN_ERROR_MEDIA_TYPE);
     }
 }

@@ -111,25 +111,6 @@ async fn invoke_case(
 
 fn classify_outcome(outcome: ActivationOutcome) -> OutcomeReport {
     match outcome {
-        ActivationOutcome::Succeeded(success)
-            if success.output_media_type == ECHO_DOMAIN_ERROR_MEDIA_TYPE =>
-        {
-            let error_code = serde_json::from_slice::<Value>(&success.output)
-                .ok()
-                .and_then(|document| {
-                    document
-                        .get("error")
-                        .and_then(Value::as_str)
-                        .map(str::to_owned)
-                })
-                .unwrap_or_else(|| "declared-domain-error".to_owned());
-            OutcomeReport {
-                name: "domain_error".to_owned(),
-                error_code: Some(error_code),
-                output_utf8: Some(String::from_utf8_lossy(&success.output).into_owned()),
-                consumption: consumption_report(&success.consumption),
-            }
-        }
         ActivationOutcome::Succeeded(success) => OutcomeReport {
             name: "success".to_owned(),
             error_code: None,

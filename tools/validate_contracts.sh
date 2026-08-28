@@ -36,6 +36,9 @@ done < <(find "${ROOT}/examples" -type d -name wit | sort)
 
 buf lint api/proto
 buf build api/proto --as-file-descriptor-set -o "${OUTPUT}/proto/latent-api.bin"
+buf build api/proto --as-file-descriptor-set --exclude-source-info \
+    -o "${OUTPUT}/proto/latent-api.json"
+python3 tools/validate_phase1_descriptor.py "${OUTPUT}/proto/latent-api.json"
 
 cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked

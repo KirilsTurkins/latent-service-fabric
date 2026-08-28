@@ -1,0 +1,4725 @@
+{
+  "file": [
+    {
+      "dependency": [
+        "latent/control/v1/common.proto"
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "subject",
+              "label": "LABEL_OPTIONAL",
+              "name": "subject",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "actorType",
+              "label": "LABEL_OPTIONAL",
+              "name": "actor_type",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditActor.AttributesEntry"
+            }
+          ],
+          "name": "AuditActor",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_tenant"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "actor",
+              "label": "LABEL_OPTIONAL",
+              "name": "actor",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditActor"
+            },
+            {
+              "jsonName": "action",
+              "label": "LABEL_OPTIONAL",
+              "name": "action",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "resource",
+              "label": "LABEL_OPTIONAL",
+              "name": "resource",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "outcome",
+              "label": "LABEL_OPTIONAL",
+              "name": "outcome",
+              "number": 5,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "occurredAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "occurred_at_unix_millis",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 7,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 8,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditEvent.AttributesEntry"
+            }
+          ],
+          "name": "AuditEvent",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_reason"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "actor",
+              "label": "LABEL_OPTIONAL",
+              "name": "actor",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "action",
+              "label": "LABEL_OPTIONAL",
+              "name": "action",
+              "number": 3,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "resourcePrefix",
+              "label": "LABEL_OPTIONAL",
+              "name": "resource_prefix",
+              "number": 4,
+              "oneofIndex": 3,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "fromUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "from_unix_millis",
+              "number": 5,
+              "oneofIndex": 4,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "toUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "to_unix_millis",
+              "number": 6,
+              "oneofIndex": 5,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 7,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "QueryAuditRequest",
+          "oneofDecl": [
+            {
+              "name": "_tenant"
+            },
+            {
+              "name": "_actor"
+            },
+            {
+              "name": "_action"
+            },
+            {
+              "name": "_resource_prefix"
+            },
+            {
+              "name": "_from_unix_millis"
+            },
+            {
+              "name": "_to_unix_millis"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "events",
+              "label": "LABEL_REPEATED",
+              "name": "events",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditEvent"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            }
+          ],
+          "name": "QueryAuditResponse"
+        }
+      ],
+      "name": "latent/control/v1/audit.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.QueryAuditRequest",
+              "name": "QueryAudit",
+              "outputType": ".latent.control.v1.QueryAuditResponse"
+            }
+          ],
+          "name": "AuditService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "dependency": [
+        "latent/control/v1/common.proto"
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "contract",
+              "label": "LABEL_OPTIONAL",
+              "name": "contract",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "route",
+              "label": "LABEL_OPTIONAL",
+              "name": "route",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "BindingEndpoint",
+          "oneofDecl": [
+            {
+              "name": "_route"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "metadata",
+              "label": "LABEL_OPTIONAL",
+              "name": "metadata",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ObjectMetadata"
+            },
+            {
+              "jsonName": "consumer",
+              "label": "LABEL_OPTIONAL",
+              "name": "consumer",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.BindingEndpoint"
+            },
+            {
+              "jsonName": "provider",
+              "label": "LABEL_OPTIONAL",
+              "name": "provider",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.BindingEndpoint"
+            },
+            {
+              "jsonName": "mode",
+              "label": "LABEL_OPTIONAL",
+              "name": "mode",
+              "number": 5,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "Binding"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "binding",
+              "label": "LABEL_OPTIONAL",
+              "name": "binding",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Binding"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ApplyBindingRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "binding",
+              "label": "LABEL_OPTIONAL",
+              "name": "binding",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Binding"
+            },
+            {
+              "jsonName": "warnings",
+              "label": "LABEL_REPEATED",
+              "name": "warnings",
+              "number": 2,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "ApplyBindingResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetBindingRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "binding",
+              "label": "LABEL_OPTIONAL",
+              "name": "binding",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Binding"
+            }
+          ],
+          "name": "GetBindingResponse",
+          "oneofDecl": [
+            {
+              "name": "_binding"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "consumerService",
+              "label": "LABEL_OPTIONAL",
+              "name": "consumer_service",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "providerService",
+              "label": "LABEL_OPTIONAL",
+              "name": "provider_service",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "ListBindingsRequest",
+          "oneofDecl": [
+            {
+              "name": "_consumer_service"
+            },
+            {
+              "name": "_provider_service"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "bindings",
+              "label": "LABEL_REPEATED",
+              "name": "bindings",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Binding"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            }
+          ],
+          "name": "ListBindingsResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "DeleteBindingRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "bindings",
+              "label": "LABEL_REPEATED",
+              "name": "bindings",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Binding"
+            }
+          ],
+          "name": "ValidateBindingGraphRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "valid",
+              "label": "LABEL_OPTIONAL",
+              "name": "valid",
+              "number": 1,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "errors",
+              "label": "LABEL_REPEATED",
+              "name": "errors",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "warnings",
+              "label": "LABEL_REPEATED",
+              "name": "warnings",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "graphDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "graph_digest",
+              "number": 4,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "ValidateBindingGraphResponse"
+        }
+      ],
+      "name": "latent/control/v1/binding.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.ApplyBindingRequest",
+              "name": "ApplyBinding",
+              "outputType": ".latent.control.v1.ApplyBindingResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.GetBindingRequest",
+              "name": "GetBinding",
+              "outputType": ".latent.control.v1.GetBindingResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ListBindingsRequest",
+              "name": "ListBindings",
+              "outputType": ".latent.control.v1.ListBindingsResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.DeleteBindingRequest",
+              "name": "DeleteBinding",
+              "outputType": ".latent.control.v1.Empty"
+            },
+            {
+              "inputType": ".latent.control.v1.ValidateBindingGraphRequest",
+              "name": "ValidateBindingGraph",
+              "outputType": ".latent.control.v1.ValidateBindingGraphResponse"
+            }
+          ],
+          "name": "BindingService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "dependency": [
+        "latent/control/v1/common.proto"
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "contract",
+              "label": "LABEL_OPTIONAL",
+              "name": "contract",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "provider",
+              "label": "LABEL_OPTIONAL",
+              "name": "provider",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "operations",
+              "label": "LABEL_REPEATED",
+              "name": "operations",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CapabilityDescriptor.AttributesEntry"
+            }
+          ],
+          "name": "CapabilityDescriptor",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "contractPrefix",
+              "label": "LABEL_OPTIONAL",
+              "name": "contract_prefix",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "provider",
+              "label": "LABEL_OPTIONAL",
+              "name": "provider",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "ListCapabilitiesRequest",
+          "oneofDecl": [
+            {
+              "name": "_contract_prefix"
+            },
+            {
+              "name": "_provider"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "capabilities",
+              "label": "LABEL_REPEATED",
+              "name": "capabilities",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CapabilityDescriptor"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            }
+          ],
+          "name": "ListCapabilitiesResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "deploymentId",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "capabilityId",
+              "label": "LABEL_OPTIONAL",
+              "name": "capability_id",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "principal",
+              "label": "LABEL_OPTIONAL",
+              "name": "principal",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ExplainCapabilityGrantRequest.AttributesEntry"
+            }
+          ],
+          "name": "ExplainCapabilityGrantRequest",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "allowed",
+              "label": "LABEL_OPTIONAL",
+              "name": "allowed",
+              "number": 1,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "reasons",
+              "label": "LABEL_REPEATED",
+              "name": "reasons",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "obligations",
+              "label": "LABEL_REPEATED",
+              "name": "obligations",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ExplainCapabilityGrantResponse.ObligationsEntry"
+            },
+            {
+              "jsonName": "policyDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy_digest",
+              "number": 4,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "ExplainCapabilityGrantResponse",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "ObligationsEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        }
+      ],
+      "name": "latent/control/v1/capability.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.ListCapabilitiesRequest",
+              "name": "ListCapabilities",
+              "outputType": ".latent.control.v1.ListCapabilitiesResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ExplainCapabilityGrantRequest",
+              "name": "ExplainCapabilityGrant",
+              "outputType": ".latent.control.v1.ExplainCapabilityGrantResponse"
+            }
+          ],
+          "name": "CapabilityService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "cpuFuel",
+              "label": "LABEL_OPTIONAL",
+              "name": "cpu_fuel",
+              "number": 1,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "memoryBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "memory_bytes",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "childCalls",
+              "label": "LABEL_OPTIONAL",
+              "name": "child_calls",
+              "number": 4,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "outboundRequests",
+              "label": "LABEL_OPTIONAL",
+              "name": "outbound_requests",
+              "number": 5,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "stateReadBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_read_bytes",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "stateWriteBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_write_bytes",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "blobReadBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "blob_read_bytes",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "blobWriteBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "blob_write_bytes",
+              "number": 9,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "logBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "log_bytes",
+              "number": 10,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "effectCount",
+              "label": "LABEL_OPTIONAL",
+              "name": "effect_count",
+              "number": 11,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "wallTimeLimitMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "wall_time_limit_millis",
+              "number": 12,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ResourceBudget",
+          "oneofDecl": [
+            {
+              "name": "_wall_time_limit_millis"
+            }
+          ],
+          "reservedName": [
+            "wall_deadline_unix_millis"
+          ],
+          "reservedRange": [
+            {
+              "end": 4,
+              "start": 3
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "fields",
+              "label": "LABEL_REPEATED",
+              "name": "fields",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ErrorDetail.FieldsEntry"
+            }
+          ],
+          "name": "ErrorDetail",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "FieldsEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "code",
+              "label": "LABEL_OPTIONAL",
+              "name": "code",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "message",
+              "label": "LABEL_OPTIONAL",
+              "name": "message",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "retryable",
+              "label": "LABEL_OPTIONAL",
+              "name": "retryable",
+              "number": 3,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "detailItems",
+              "label": "LABEL_REPEATED",
+              "name": "detail_items",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ErrorDetail"
+            }
+          ],
+          "name": "PlatformError",
+          "reservedName": [
+            "details"
+          ],
+          "reservedRange": [
+            {
+              "end": 5,
+              "start": 4
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "name",
+              "label": "LABEL_OPTIONAL",
+              "name": "name",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "namespace",
+              "label": "LABEL_OPTIONAL",
+              "name": "namespace",
+              "number": 3,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "labels",
+              "label": "LABEL_REPEATED",
+              "name": "labels",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ObjectMetadata.LabelsEntry"
+            },
+            {
+              "jsonName": "annotations",
+              "label": "LABEL_REPEATED",
+              "name": "annotations",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ObjectMetadata.AnnotationsEntry"
+            }
+          ],
+          "name": "ObjectMetadata",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "LabelsEntry",
+              "options": {
+                "mapEntry": true
+              }
+            },
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AnnotationsEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_tenant"
+            },
+            {
+              "name": "_namespace"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "pageSize",
+              "label": "LABEL_OPTIONAL",
+              "name": "page_size",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "pageToken",
+              "label": "LABEL_OPTIONAL",
+              "name": "page_token",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "PageRequest",
+          "oneofDecl": [
+            {
+              "name": "_page_token"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "nextPageToken",
+              "label": "LABEL_OPTIONAL",
+              "name": "next_page_token",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "PageResponse",
+          "oneofDecl": [
+            {
+              "name": "_next_page_token"
+            }
+          ]
+        },
+        {
+          "name": "Empty"
+        }
+      ],
+      "name": "latent/control/v1/common.proto",
+      "package": "latent.control.v1",
+      "syntax": "proto3"
+    },
+    {
+      "dependency": [
+        "latent/control/v1/common.proto"
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "name",
+              "label": "LABEL_OPTIONAL",
+              "name": "name",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "asynchronous",
+              "label": "LABEL_OPTIONAL",
+              "name": "asynchronous",
+              "number": 3,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "signature",
+              "label": "LABEL_OPTIONAL",
+              "name": "signature",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "documentation",
+              "label": "LABEL_OPTIONAL",
+              "name": "documentation",
+              "number": 5,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 6,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.FunctionDescriptor.AttributesEntry"
+            }
+          ],
+          "name": "FunctionDescriptor",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_documentation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "functions",
+              "label": "LABEL_REPEATED",
+              "name": "functions",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.FunctionDescriptor"
+            },
+            {
+              "jsonName": "documentation",
+              "label": "LABEL_OPTIONAL",
+              "name": "documentation",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "digest",
+              "label": "LABEL_OPTIONAL",
+              "name": "digest",
+              "number": 4,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "InterfaceDescriptor",
+          "oneofDecl": [
+            {
+              "name": "_documentation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "packageName",
+              "label": "LABEL_OPTIONAL",
+              "name": "package_name",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "semanticVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "semantic_version",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "interfaces",
+              "label": "LABEL_REPEATED",
+              "name": "interfaces",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.InterfaceDescriptor"
+            },
+            {
+              "jsonName": "dependencies",
+              "label": "LABEL_REPEATED",
+              "name": "dependencies",
+              "number": 5,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "digest",
+              "label": "LABEL_OPTIONAL",
+              "name": "digest",
+              "number": 6,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "ContractDescriptor"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetContractRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "contract",
+              "label": "LABEL_OPTIONAL",
+              "name": "contract",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ContractDescriptor"
+            }
+          ],
+          "name": "GetContractResponse",
+          "oneofDecl": [
+            {
+              "name": "_contract"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "packagePrefix",
+              "label": "LABEL_OPTIONAL",
+              "name": "package_prefix",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "ListContractsRequest",
+          "oneofDecl": [
+            {
+              "name": "_package_prefix"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "contracts",
+              "label": "LABEL_REPEATED",
+              "name": "contracts",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ContractDescriptor"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            }
+          ],
+          "name": "ListContractsResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "consumerContractId",
+              "label": "LABEL_OPTIONAL",
+              "name": "consumer_contract_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "providerContractId",
+              "label": "LABEL_OPTIONAL",
+              "name": "provider_contract_id",
+              "number": 2,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "CompareContractsRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "path",
+              "label": "LABEL_OPTIONAL",
+              "name": "path",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "code",
+              "label": "LABEL_OPTIONAL",
+              "name": "code",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "message",
+              "label": "LABEL_OPTIONAL",
+              "name": "message",
+              "number": 3,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "CompatibilityIssue"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "compatibilityLevel",
+              "label": "LABEL_OPTIONAL",
+              "name": "compatibility_level",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "issues",
+              "label": "LABEL_REPEATED",
+              "name": "issues",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CompatibilityIssue"
+            }
+          ],
+          "name": "CompareContractsResponse"
+        }
+      ],
+      "name": "latent/control/v1/contract.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.GetContractRequest",
+              "name": "GetContract",
+              "outputType": ".latent.control.v1.GetContractResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ListContractsRequest",
+              "name": "ListContracts",
+              "outputType": ".latent.control.v1.ListContractsResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.CompareContractsRequest",
+              "name": "CompareContracts",
+              "outputType": ".latent.control.v1.CompareContractsResponse"
+            }
+          ],
+          "name": "ContractService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "dependency": [
+        "latent/control/v1/common.proto"
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "capability",
+              "label": "LABEL_OPTIONAL",
+              "name": "capability",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "policy",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "operations",
+              "label": "LABEL_REPEATED",
+              "name": "operations",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "constraints",
+              "label": "LABEL_REPEATED",
+              "name": "constraints",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CapabilityGrant.ConstraintsEntry"
+            }
+          ],
+          "name": "CapabilityGrant",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "ConstraintsEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "minimumCachedCopies",
+              "label": "LABEL_OPTIONAL",
+              "name": "minimum_cached_copies",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "minimumZones",
+              "label": "LABEL_OPTIONAL",
+              "name": "minimum_zones",
+              "number": 2,
+              "type": "TYPE_UINT32"
+            }
+          ],
+          "name": "AvailabilityPolicy"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "trustClass",
+              "label": "LABEL_OPTIONAL",
+              "name": "trust_class",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "architectures",
+              "label": "LABEL_REPEATED",
+              "name": "architectures",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "regions",
+              "label": "LABEL_REPEATED",
+              "name": "regions",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "zones",
+              "label": "LABEL_REPEATED",
+              "name": "zones",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "requiredFeatures",
+              "label": "LABEL_REPEATED",
+              "name": "required_features",
+              "number": 5,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "PlacementPolicy"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "metadata",
+              "label": "LABEL_OPTIONAL",
+              "name": "metadata",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ObjectMetadata"
+            },
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "releaseDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "release_digest",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "routeWeight",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_weight",
+              "number": 5,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "grants",
+              "label": "LABEL_REPEATED",
+              "name": "grants",
+              "number": 6,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CapabilityGrant"
+            },
+            {
+              "jsonName": "resources",
+              "label": "LABEL_OPTIONAL",
+              "name": "resources",
+              "number": 7,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ResourceBudget"
+            },
+            {
+              "jsonName": "availability",
+              "label": "LABEL_OPTIONAL",
+              "name": "availability",
+              "number": 8,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AvailabilityPolicy"
+            },
+            {
+              "jsonName": "placement",
+              "label": "LABEL_OPTIONAL",
+              "name": "placement",
+              "number": 9,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PlacementPolicy"
+            },
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 10,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "Deployment"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "deployment",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Deployment"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ApplyDeploymentRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "deployment",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Deployment"
+            },
+            {
+              "jsonName": "warnings",
+              "label": "LABEL_REPEATED",
+              "name": "warnings",
+              "number": 2,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "ApplyDeploymentResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetDeploymentRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "deployment",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Deployment"
+            }
+          ],
+          "name": "GetDeploymentResponse",
+          "oneofDecl": [
+            {
+              "name": "_deployment"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "ListDeploymentsRequest",
+          "oneofDecl": [
+            {
+              "name": "_service"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "deployments",
+              "label": "LABEL_REPEATED",
+              "name": "deployments",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Deployment"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            }
+          ],
+          "name": "ListDeploymentsResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "DeleteDeploymentRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "afterGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "after_generation",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "WatchDeploymentRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "deployment",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Deployment"
+            },
+            {
+              "jsonName": "occurredAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "occurred_at_unix_millis",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "DeploymentEvent"
+        }
+      ],
+      "name": "latent/control/v1/deployment.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.ApplyDeploymentRequest",
+              "name": "ApplyDeployment",
+              "outputType": ".latent.control.v1.ApplyDeploymentResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.GetDeploymentRequest",
+              "name": "GetDeployment",
+              "outputType": ".latent.control.v1.GetDeploymentResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ListDeploymentsRequest",
+              "name": "ListDeployments",
+              "outputType": ".latent.control.v1.ListDeploymentsResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.DeleteDeploymentRequest",
+              "name": "DeleteDeployment",
+              "outputType": ".latent.control.v1.Empty"
+            },
+            {
+              "inputType": ".latent.control.v1.WatchDeploymentRequest",
+              "name": "WatchDeployment",
+              "outputType": ".latent.control.v1.DeploymentEvent",
+              "serverStreaming": true
+            }
+          ],
+          "name": "DeploymentService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "dependency": [
+        "latent/control/v1/common.proto"
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "class",
+              "label": "LABEL_OPTIONAL",
+              "name": "class",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "total",
+              "label": "LABEL_OPTIONAL",
+              "name": "total",
+              "number": 2,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "available",
+              "label": "LABEL_OPTIONAL",
+              "name": "available",
+              "number": 3,
+              "type": "TYPE_UINT32"
+            }
+          ],
+          "name": "CellCapacity"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "key",
+              "label": "LABEL_OPTIONAL",
+              "name": "key",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "releaseDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "release_digest",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "tier",
+              "label": "LABEL_OPTIONAL",
+              "name": "tier",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "sizeBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "size_bytes",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "lastAccessUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "last_access_unix_millis",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "CacheEntry"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "architecture",
+              "label": "LABEL_OPTIONAL",
+              "name": "architecture",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "operatingSystem",
+              "label": "LABEL_OPTIONAL",
+              "name": "operating_system",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "cpuFeatures",
+              "label": "LABEL_REPEATED",
+              "name": "cpu_features",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "trustClasses",
+              "label": "LABEL_REPEATED",
+              "name": "trust_classes",
+              "number": 5,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "region",
+              "label": "LABEL_OPTIONAL",
+              "name": "region",
+              "number": 6,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "zone",
+              "label": "LABEL_OPTIONAL",
+              "name": "zone",
+              "number": 7,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "endpoint",
+              "label": "LABEL_OPTIONAL",
+              "name": "endpoint",
+              "number": 8,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "identity",
+              "label": "LABEL_OPTIONAL",
+              "name": "identity",
+              "number": 9,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 10,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeDescriptor.AttributesEntry"
+            }
+          ],
+          "name": "NodeDescriptor",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_region"
+            },
+            {
+              "name": "_zone"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "node",
+              "label": "LABEL_OPTIONAL",
+              "name": "node",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeDescriptor"
+            },
+            {
+              "jsonName": "cellCapacity",
+              "label": "LABEL_REPEATED",
+              "name": "cell_capacity",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CellCapacity"
+            },
+            {
+              "jsonName": "memoryPressureMilli",
+              "label": "LABEL_OPTIONAL",
+              "name": "memory_pressure_milli",
+              "number": 3,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "queueDepth",
+              "label": "LABEL_OPTIONAL",
+              "name": "queue_depth",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "routeGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_generation",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "cacheEntries",
+              "label": "LABEL_REPEATED",
+              "name": "cache_entries",
+              "number": 6,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CacheEntry"
+            },
+            {
+              "jsonName": "observedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "observed_at_unix_millis",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "NodeInventory"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "node",
+              "label": "LABEL_OPTIONAL",
+              "name": "node",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeDescriptor"
+            }
+          ],
+          "name": "RegisterNodeRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "acceptedRouteGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "accepted_route_generation",
+              "number": 1,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "heartbeatIntervalMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "heartbeat_interval_millis",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "RegisterNodeResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "inventory",
+              "label": "LABEL_OPTIONAL",
+              "name": "inventory",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeInventory"
+            }
+          ],
+          "name": "ReportInventoryRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "nodeId",
+              "label": "LABEL_OPTIONAL",
+              "name": "node_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "observedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "observed_at_unix_millis",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "healthy",
+              "label": "LABEL_OPTIONAL",
+              "name": "healthy",
+              "number": 4,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.HeartbeatRequest.AttributesEntry"
+            }
+          ],
+          "name": "HeartbeatRequest",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "nodeId",
+              "label": "LABEL_OPTIONAL",
+              "name": "node_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetNodeRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "inventory",
+              "label": "LABEL_OPTIONAL",
+              "name": "inventory",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeInventory"
+            }
+          ],
+          "name": "GetNodeResponse",
+          "oneofDecl": [
+            {
+              "name": "_inventory"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "trustClass",
+              "label": "LABEL_OPTIONAL",
+              "name": "trust_class",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "region",
+              "label": "LABEL_OPTIONAL",
+              "name": "region",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "zone",
+              "label": "LABEL_OPTIONAL",
+              "name": "zone",
+              "number": 3,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "ListNodesRequest",
+          "oneofDecl": [
+            {
+              "name": "_trust_class"
+            },
+            {
+              "name": "_region"
+            },
+            {
+              "name": "_zone"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "nodes",
+              "label": "LABEL_REPEATED",
+              "name": "nodes",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeInventory"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            }
+          ],
+          "name": "ListNodesResponse"
+        }
+      ],
+      "name": "latent/control/v1/node.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.RegisterNodeRequest",
+              "name": "RegisterNode",
+              "outputType": ".latent.control.v1.RegisterNodeResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ReportInventoryRequest",
+              "name": "ReportInventory",
+              "outputType": ".latent.control.v1.Empty"
+            },
+            {
+              "inputType": ".latent.control.v1.HeartbeatRequest",
+              "name": "Heartbeat",
+              "outputType": ".latent.control.v1.Empty"
+            },
+            {
+              "inputType": ".latent.control.v1.GetNodeRequest",
+              "name": "GetNode",
+              "outputType": ".latent.control.v1.GetNodeResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ListNodesRequest",
+              "name": "ListNodes",
+              "outputType": ".latent.control.v1.ListNodesResponse"
+            }
+          ],
+          "name": "NodeService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "dependency": [
+        "latent/control/v1/common.proto"
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "metadata",
+              "label": "LABEL_OPTIONAL",
+              "name": "metadata",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ObjectMetadata"
+            },
+            {
+              "jsonName": "document",
+              "label": "LABEL_OPTIONAL",
+              "name": "document",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "Policy"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "policy",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Policy"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ApplyPolicyRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "policy",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Policy"
+            }
+          ],
+          "name": "ApplyPolicyResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetPolicyRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "policy",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Policy"
+            }
+          ],
+          "name": "GetPolicyResponse",
+          "oneofDecl": [
+            {
+              "name": "_policy"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "policyId",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "action",
+              "label": "LABEL_OPTIONAL",
+              "name": "action",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "subject",
+              "label": "LABEL_OPTIONAL",
+              "name": "subject",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "resource",
+              "label": "LABEL_OPTIONAL",
+              "name": "resource",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.EvaluatePolicyRequest.AttributesEntry"
+            }
+          ],
+          "name": "EvaluatePolicyRequest",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "code",
+              "label": "LABEL_OPTIONAL",
+              "name": "code",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "message",
+              "label": "LABEL_OPTIONAL",
+              "name": "message",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PolicyReason.AttributesEntry"
+            }
+          ],
+          "name": "PolicyReason",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "decision",
+              "label": "LABEL_OPTIONAL",
+              "name": "decision",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "reasons",
+              "label": "LABEL_REPEATED",
+              "name": "reasons",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PolicyReason"
+            },
+            {
+              "jsonName": "obligations",
+              "label": "LABEL_REPEATED",
+              "name": "obligations",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.EvaluatePolicyResponse.ObligationsEntry"
+            },
+            {
+              "jsonName": "policyVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy_version",
+              "number": 4,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "EvaluatePolicyResponse",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "ObligationsEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "DeletePolicyRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            }
+          ]
+        }
+      ],
+      "name": "latent/control/v1/policy.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.ApplyPolicyRequest",
+              "name": "ApplyPolicy",
+              "outputType": ".latent.control.v1.ApplyPolicyResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.GetPolicyRequest",
+              "name": "GetPolicy",
+              "outputType": ".latent.control.v1.GetPolicyResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.EvaluatePolicyRequest",
+              "name": "EvaluatePolicy",
+              "outputType": ".latent.control.v1.EvaluatePolicyResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.DeletePolicyRequest",
+              "name": "DeletePolicy",
+              "outputType": ".latent.control.v1.Empty"
+            }
+          ],
+          "name": "PolicyService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "dependency": [
+        "latent/control/v1/common.proto"
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "digest",
+              "label": "LABEL_OPTIONAL",
+              "name": "digest",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "artifactReference",
+              "label": "LABEL_OPTIONAL",
+              "name": "artifact_reference",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "semanticVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "semantic_version",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "world",
+              "label": "LABEL_OPTIONAL",
+              "name": "world",
+              "number": 5,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "publisher",
+              "label": "LABEL_OPTIONAL",
+              "name": "publisher",
+              "number": 6,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "mediaType",
+              "label": "LABEL_OPTIONAL",
+              "name": "media_type",
+              "number": 7,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "sizeBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "size_bytes",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "createdAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "created_at_unix_millis",
+              "number": 9,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "admitted",
+              "label": "LABEL_OPTIONAL",
+              "name": "admitted",
+              "number": 10,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "annotations",
+              "label": "LABEL_REPEATED",
+              "name": "annotations",
+              "number": 11,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseDescriptor.AnnotationsEntry"
+            }
+          ],
+          "name": "ReleaseDescriptor",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AnnotationsEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "capsuleManifestJson",
+              "label": "LABEL_OPTIONAL",
+              "name": "capsule_manifest_json",
+              "number": 1,
+              "type": "TYPE_BYTES"
+            },
+            {
+              "jsonName": "componentBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "component_bytes",
+              "number": 2,
+              "type": "TYPE_BYTES"
+            },
+            {
+              "jsonName": "componentDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "component_digest",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "componentMediaType",
+              "label": "LABEL_OPTIONAL",
+              "name": "component_media_type",
+              "number": 4,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "CapsuleArtifactUpload"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "release",
+              "label": "LABEL_OPTIONAL",
+              "name": "release",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseDescriptor"
+            },
+            {
+              "jsonName": "artifact",
+              "label": "LABEL_OPTIONAL",
+              "name": "artifact",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CapsuleArtifactUpload"
+            }
+          ],
+          "name": "PublishReleaseRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "release",
+              "label": "LABEL_OPTIONAL",
+              "name": "release",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseDescriptor"
+            },
+            {
+              "jsonName": "admissionWarnings",
+              "label": "LABEL_REPEATED",
+              "name": "admission_warnings",
+              "number": 2,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "PublishReleaseResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "digest",
+              "label": "LABEL_OPTIONAL",
+              "name": "digest",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetReleaseRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "release",
+              "label": "LABEL_OPTIONAL",
+              "name": "release",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseDescriptor"
+            }
+          ],
+          "name": "GetReleaseResponse",
+          "oneofDecl": [
+            {
+              "name": "_release"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "ListReleasesRequest",
+          "oneofDecl": [
+            {
+              "name": "_service"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "releases",
+              "label": "LABEL_REPEATED",
+              "name": "releases",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseDescriptor"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            }
+          ],
+          "name": "ListReleasesResponse"
+        }
+      ],
+      "name": "latent/control/v1/release.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.PublishReleaseRequest",
+              "name": "PublishRelease",
+              "outputType": ".latent.control.v1.PublishReleaseResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.GetReleaseRequest",
+              "name": "GetRelease",
+              "outputType": ".latent.control.v1.GetReleaseResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ListReleasesRequest",
+              "name": "ListReleases",
+              "outputType": ".latent.control.v1.ListReleasesResponse"
+            }
+          ],
+          "name": "ReleaseService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "revisionId",
+              "label": "LABEL_OPTIONAL",
+              "name": "revision_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "releaseDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "release_digest",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "weight",
+              "label": "LABEL_OPTIONAL",
+              "name": "weight",
+              "number": 3,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RevisionRoute.AttributesEntry"
+            }
+          ],
+          "name": "RevisionRoute",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "routeId",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "revisions",
+              "label": "LABEL_REPEATED",
+              "name": "revisions",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RevisionRoute"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 4,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "ServiceRoute"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "bindingId",
+              "label": "LABEL_OPTIONAL",
+              "name": "binding_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "consumerService",
+              "label": "LABEL_OPTIONAL",
+              "name": "consumer_service",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "importedContract",
+              "label": "LABEL_OPTIONAL",
+              "name": "imported_contract",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "providerService",
+              "label": "LABEL_OPTIONAL",
+              "name": "provider_service",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "providerContract",
+              "label": "LABEL_OPTIONAL",
+              "name": "provider_contract",
+              "number": 5,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "mode",
+              "label": "LABEL_OPTIONAL",
+              "name": "mode",
+              "number": 6,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "policyDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy_digest",
+              "number": 7,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "consumerTenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "consumer_tenant",
+              "number": 8,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "providerTenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "provider_tenant",
+              "number": 9,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "BindingRoute"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 1,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "generatedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "generated_at_unix_millis",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "services",
+              "label": "LABEL_REPEATED",
+              "name": "services",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ServiceRoute"
+            },
+            {
+              "jsonName": "bindings",
+              "label": "LABEL_REPEATED",
+              "name": "bindings",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.BindingRoute"
+            },
+            {
+              "jsonName": "policyDigests",
+              "label": "LABEL_REPEATED",
+              "name": "policy_digests",
+              "number": 5,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "snapshotDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "snapshot_digest",
+              "number": 6,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "RouteSnapshot"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "GetRouteSnapshotRequest",
+          "oneofDecl": [
+            {
+              "name": "_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "snapshot",
+              "label": "LABEL_OPTIONAL",
+              "name": "snapshot",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RouteSnapshot"
+            }
+          ],
+          "name": "GetRouteSnapshotResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "afterGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "after_generation",
+              "number": 1,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "nodeId",
+              "label": "LABEL_OPTIONAL",
+              "name": "node_id",
+              "number": 2,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "WatchRouteSnapshotsRequest"
+        }
+      ],
+      "name": "latent/control/v1/route.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.GetRouteSnapshotRequest",
+              "name": "GetRouteSnapshot",
+              "outputType": ".latent.control.v1.GetRouteSnapshotResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.WatchRouteSnapshotsRequest",
+              "name": "WatchRouteSnapshots",
+              "outputType": ".latent.control.v1.RouteSnapshot",
+              "serverStreaming": true
+            }
+          ],
+          "name": "RouteService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "dependency": [
+        "latent/control/v1/common.proto"
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "contract",
+              "label": "LABEL_OPTIONAL",
+              "name": "contract",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "function",
+              "label": "LABEL_OPTIONAL",
+              "name": "function",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "route",
+              "label": "LABEL_OPTIONAL",
+              "name": "route",
+              "number": 4,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "TriggerTarget",
+          "oneofDecl": [
+            {
+              "name": "_route"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "metadata",
+              "label": "LABEL_OPTIONAL",
+              "name": "metadata",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ObjectMetadata"
+            },
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "target",
+              "label": "LABEL_OPTIONAL",
+              "name": "target",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.TriggerTarget"
+            },
+            {
+              "jsonName": "configuration",
+              "label": "LABEL_REPEATED",
+              "name": "configuration",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Trigger.ConfigurationEntry"
+            },
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "Trigger",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "ConfigurationEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "trigger",
+              "label": "LABEL_OPTIONAL",
+              "name": "trigger",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Trigger"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ApplyTriggerRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "trigger",
+              "label": "LABEL_OPTIONAL",
+              "name": "trigger",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Trigger"
+            },
+            {
+              "jsonName": "warnings",
+              "label": "LABEL_REPEATED",
+              "name": "warnings",
+              "number": 2,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "ApplyTriggerResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetTriggerRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "trigger",
+              "label": "LABEL_OPTIONAL",
+              "name": "trigger",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Trigger"
+            }
+          ],
+          "name": "GetTriggerResponse",
+          "oneofDecl": [
+            {
+              "name": "_trigger"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "targetService",
+              "label": "LABEL_OPTIONAL",
+              "name": "target_service",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "ListTriggersRequest",
+          "oneofDecl": [
+            {
+              "name": "_kind"
+            },
+            {
+              "name": "_target_service"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "triggers",
+              "label": "LABEL_REPEATED",
+              "name": "triggers",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Trigger"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            }
+          ],
+          "name": "ListTriggersResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "DeleteTriggerRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            }
+          ]
+        }
+      ],
+      "name": "latent/control/v1/trigger.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.ApplyTriggerRequest",
+              "name": "ApplyTrigger",
+              "outputType": ".latent.control.v1.ApplyTriggerResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.GetTriggerRequest",
+              "name": "GetTrigger",
+              "outputType": ".latent.control.v1.GetTriggerResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ListTriggersRequest",
+              "name": "ListTriggers",
+              "outputType": ".latent.control.v1.ListTriggersResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.DeleteTriggerRequest",
+              "name": "DeleteTrigger",
+              "outputType": ".latent.control.v1.Empty"
+            }
+          ],
+          "name": "TriggerService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "enumType": [
+        {
+          "name": "CancelDisposition",
+          "value": [
+            {
+              "name": "CANCEL_DISPOSITION_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "CANCEL_DISPOSITION_ACCEPTED",
+              "number": 1
+            },
+            {
+              "name": "CANCEL_DISPOSITION_ALREADY_TERMINAL",
+              "number": 2
+            },
+            {
+              "name": "CANCEL_DISPOSITION_NOT_FOUND",
+              "number": 3
+            }
+          ]
+        }
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "contract",
+              "label": "LABEL_OPTIONAL",
+              "name": "contract",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "function",
+              "label": "LABEL_OPTIONAL",
+              "name": "function",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "route",
+              "label": "LABEL_OPTIONAL",
+              "name": "route",
+              "number": 5,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "InvocationTarget",
+          "oneofDecl": [
+            {
+              "name": "_route"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "cpuFuel",
+              "label": "LABEL_OPTIONAL",
+              "name": "cpu_fuel",
+              "number": 1,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "memoryBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "memory_bytes",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "childCalls",
+              "label": "LABEL_OPTIONAL",
+              "name": "child_calls",
+              "number": 4,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "outboundRequests",
+              "label": "LABEL_OPTIONAL",
+              "name": "outbound_requests",
+              "number": 5,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "stateReadBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_read_bytes",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "stateWriteBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_write_bytes",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "blobReadBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "blob_read_bytes",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "blobWriteBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "blob_write_bytes",
+              "number": 9,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "logBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "log_bytes",
+              "number": 10,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "effectCount",
+              "label": "LABEL_OPTIONAL",
+              "name": "effect_count",
+              "number": 11,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "wallTimeLimitMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "wall_time_limit_millis",
+              "number": 12,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ResourceBudget",
+          "oneofDecl": [
+            {
+              "name": "_wall_time_limit_millis"
+            }
+          ],
+          "reservedName": [
+            "wall_deadline_unix_millis"
+          ],
+          "reservedRange": [
+            {
+              "end": 4,
+              "start": 3
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "fields",
+              "label": "LABEL_REPEATED",
+              "name": "fields",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.ErrorDetail.FieldsEntry"
+            }
+          ],
+          "name": "ErrorDetail",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "FieldsEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "activationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "activation_id",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "parentActivationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "parent_activation_id",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "rootActivationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "root_activation_id",
+              "number": 3,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "target",
+              "label": "LABEL_OPTIONAL",
+              "name": "target",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.InvocationTarget"
+            },
+            {
+              "jsonName": "payload",
+              "label": "LABEL_OPTIONAL",
+              "name": "payload",
+              "number": 5,
+              "type": "TYPE_BYTES"
+            },
+            {
+              "jsonName": "mediaType",
+              "label": "LABEL_OPTIONAL",
+              "name": "media_type",
+              "number": 6,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "deadlineUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "deadline_unix_millis",
+              "number": 7,
+              "oneofIndex": 3,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "priority",
+              "label": "LABEL_OPTIONAL",
+              "name": "priority",
+              "number": 8,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "idempotencyKey",
+              "label": "LABEL_OPTIONAL",
+              "name": "idempotency_key",
+              "number": 9,
+              "oneofIndex": 4,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "budget",
+              "label": "LABEL_OPTIONAL",
+              "name": "budget",
+              "number": 10,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.ResourceBudget"
+            },
+            {
+              "jsonName": "metadata",
+              "label": "LABEL_REPEATED",
+              "name": "metadata",
+              "number": 11,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.InvokeRequest.MetadataEntry"
+            }
+          ],
+          "name": "InvokeRequest",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "MetadataEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_activation_id"
+            },
+            {
+              "name": "_parent_activation_id"
+            },
+            {
+              "name": "_root_activation_id"
+            },
+            {
+              "name": "_deadline_unix_millis"
+            },
+            {
+              "name": "_idempotency_key"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "code",
+              "label": "LABEL_OPTIONAL",
+              "name": "code",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "message",
+              "label": "LABEL_OPTIONAL",
+              "name": "message",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "retryable",
+              "label": "LABEL_OPTIONAL",
+              "name": "retryable",
+              "number": 3,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "detailItems",
+              "label": "LABEL_REPEATED",
+              "name": "detail_items",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.ErrorDetail"
+            }
+          ],
+          "name": "PlatformError",
+          "reservedName": [
+            "details"
+          ],
+          "reservedRange": [
+            {
+              "end": 5,
+              "start": 4
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "cpuFuel",
+              "label": "LABEL_OPTIONAL",
+              "name": "cpu_fuel",
+              "number": 1,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "peakMemoryBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "peak_memory_bytes",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "wallTimeMicros",
+              "label": "LABEL_OPTIONAL",
+              "name": "wall_time_micros",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "childCalls",
+              "label": "LABEL_OPTIONAL",
+              "name": "child_calls",
+              "number": 4,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "outboundRequests",
+              "label": "LABEL_OPTIONAL",
+              "name": "outbound_requests",
+              "number": 5,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "stateReadBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_read_bytes",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "stateWriteBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_write_bytes",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "blobReadBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "blob_read_bytes",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "blobWriteBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "blob_write_bytes",
+              "number": 9,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "logBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "log_bytes",
+              "number": 10,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "effectCount",
+              "label": "LABEL_OPTIONAL",
+              "name": "effect_count",
+              "number": 11,
+              "type": "TYPE_UINT32"
+            }
+          ],
+          "name": "BudgetConsumption"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "activationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "activation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "revisionId",
+              "label": "LABEL_OPTIONAL",
+              "name": "revision_id",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "releaseDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "release_digest",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "routeGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_generation",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "success",
+              "label": "LABEL_OPTIONAL",
+              "name": "success",
+              "number": 5,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.Success"
+            },
+            {
+              "jsonName": "declaredError",
+              "label": "LABEL_OPTIONAL",
+              "name": "declared_error",
+              "number": 8,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.DeclaredError"
+            },
+            {
+              "jsonName": "platformFailure",
+              "label": "LABEL_OPTIONAL",
+              "name": "platform_failure",
+              "number": 9,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.PlatformError"
+            },
+            {
+              "jsonName": "consumption",
+              "label": "LABEL_OPTIONAL",
+              "name": "consumption",
+              "number": 7,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.BudgetConsumption"
+            }
+          ],
+          "name": "InvokeResponse",
+          "oneofDecl": [
+            {
+              "name": "result"
+            }
+          ],
+          "reservedName": [
+            "error"
+          ],
+          "reservedRange": [
+            {
+              "end": 7,
+              "start": 6
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "payload",
+              "label": "LABEL_OPTIONAL",
+              "name": "payload",
+              "number": 1,
+              "type": "TYPE_BYTES"
+            },
+            {
+              "jsonName": "mediaType",
+              "label": "LABEL_OPTIONAL",
+              "name": "media_type",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "committedStateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "committed_state_version",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "effectIds",
+              "label": "LABEL_REPEATED",
+              "name": "effect_ids",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "metadata",
+              "label": "LABEL_REPEATED",
+              "name": "metadata",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.Success.MetadataEntry"
+            }
+          ],
+          "name": "Success",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "MetadataEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_committed_state_version"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "code",
+              "label": "LABEL_OPTIONAL",
+              "name": "code",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "message",
+              "label": "LABEL_OPTIONAL",
+              "name": "message",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "payload",
+              "label": "LABEL_OPTIONAL",
+              "name": "payload",
+              "number": 3,
+              "type": "TYPE_BYTES"
+            },
+            {
+              "jsonName": "mediaType",
+              "label": "LABEL_OPTIONAL",
+              "name": "media_type",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "metadata",
+              "label": "LABEL_REPEATED",
+              "name": "metadata",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.DeclaredError.MetadataEntry"
+            }
+          ],
+          "name": "DeclaredError",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "MetadataEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "activationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "activation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 2,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "CancelRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "disposition",
+              "label": "LABEL_OPTIONAL",
+              "name": "disposition",
+              "number": 2,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.invocation.v1.CancelDisposition"
+            },
+            {
+              "jsonName": "terminalState",
+              "label": "LABEL_OPTIONAL",
+              "name": "terminal_state",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "CancelResponse",
+          "oneofDecl": [
+            {
+              "name": "_terminal_state"
+            }
+          ],
+          "reservedName": [
+            "accepted"
+          ],
+          "reservedRange": [
+            {
+              "end": 2,
+              "start": 1
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "activationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "activation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetActivationRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "activationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "activation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "phase",
+              "label": "LABEL_OPTIONAL",
+              "name": "phase",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "terminalState",
+              "label": "LABEL_OPTIONAL",
+              "name": "terminal_state",
+              "number": 3,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "lastUpdatedUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "last_updated_unix_millis",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "metadata",
+              "label": "LABEL_REPEATED",
+              "name": "metadata",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.ActivationStatus.MetadataEntry"
+            },
+            {
+              "jsonName": "succeeded",
+              "label": "LABEL_OPTIONAL",
+              "name": "succeeded",
+              "number": 6,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.ActivationSuccessSummary"
+            },
+            {
+              "jsonName": "declaredError",
+              "label": "LABEL_OPTIONAL",
+              "name": "declared_error",
+              "number": 7,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.DeclaredError"
+            },
+            {
+              "jsonName": "platformFailure",
+              "label": "LABEL_OPTIONAL",
+              "name": "platform_failure",
+              "number": 8,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.PlatformError"
+            },
+            {
+              "jsonName": "finalConsumption",
+              "label": "LABEL_OPTIONAL",
+              "name": "final_consumption",
+              "number": 9,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.BudgetConsumption"
+            },
+            {
+              "jsonName": "terminalAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "terminal_at_unix_millis",
+              "number": 10,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ActivationStatus",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "MetadataEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "terminal_outcome"
+            },
+            {
+              "name": "_terminal_state"
+            },
+            {
+              "name": "_terminal_at_unix_millis"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "committedStateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "committed_state_version",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "effectIds",
+              "label": "LABEL_REPEATED",
+              "name": "effect_ids",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "metadata",
+              "label": "LABEL_REPEATED",
+              "name": "metadata",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.invocation.v1.ActivationSuccessSummary.MetadataEntry"
+            }
+          ],
+          "name": "ActivationSuccessSummary",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "MetadataEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_committed_state_version"
+            }
+          ]
+        }
+      ],
+      "name": "latent/invocation/v1/invocation.proto",
+      "package": "latent.invocation.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.invocation.v1.InvokeRequest",
+              "name": "Invoke",
+              "outputType": ".latent.invocation.v1.InvokeResponse"
+            },
+            {
+              "inputType": ".latent.invocation.v1.CancelRequest",
+              "name": "Cancel",
+              "outputType": ".latent.invocation.v1.CancelResponse"
+            },
+            {
+              "inputType": ".latent.invocation.v1.GetActivationRequest",
+              "name": "GetActivation",
+              "outputType": ".latent.invocation.v1.ActivationStatus"
+            }
+          ],
+          "name": "InvocationService"
+        }
+      ],
+      "syntax": "proto3"
+    }
+  ]
+}
