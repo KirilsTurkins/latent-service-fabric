@@ -2,18 +2,14 @@
 
 **Gate status: BLOCKED — Phase 1 is not yet authorized.**
 
-The Phase 0 executable spike has completed its implementation chain, but the
-completion receipt intentionally fails closed until every retained evidence
-archive is conclusive. The checked-in native-Linux resource soak is
-structurally valid and passes its hard runtime checks, but its aggregate status
-is `inconclusive`; it cannot establish the required calibrated post-warm-up
-plateau.
+Issue #39 is complete: the checked-in seven-process native-Linux calibration
+and three-process 100,000-activation soak are both independently regenerated
+from complete raw evidence and the soak aggregate is `pass`.
 
-Issue #39 remains open until a fresh matching native-Linux run replaces this
-incomplete archive. The GitHub state is not itself evidence: the checked-in raw
-artifacts and regenerated aggregate remain the authority for this gate. Do not
-mark Phase 0 complete, or start Phase 1 as though it were complete, merely
-because an issue is closed while its retained evidence is incomplete.
+The completion receipt still fails closed until it validates every retained
+archive from a clean checkout. GitHub issue state is not itself evidence, and
+closing #39 does not authorize Phase 1: the gate's raw verification and
+execution-identity checks remain the authority.
 
 ## One clean-checkout command sequence
 
@@ -41,8 +37,9 @@ The command creates a new directory beneath `target/phase0-gate/`, then:
 
 `make phase0-gate` returns non-zero whenever the final receipt is not
 `authorized`; it still writes the receipt so the specific blocker is
-reviewable. Today that final step is expected to fail because the retained
-soak has an incomplete calibration/descriptor-lifecycle comparison.
+reviewable. The fresh #39 calibration and soak no longer block this step. It remains
+non-zero until every other retained evidence source also passes its raw,
+identity, and fresh-baseline checks.
 
 CI uses `make phase0-gate-smoke`. It runs the same contract, executable, and
 baseline path with smaller deterministic sample counts and records the receipt,
@@ -55,9 +52,9 @@ correctness smoke result cannot be mistaken for completion.
 | Input | Machine-readable evidence | Gate result |
 |---|---|---|
 | #24 executable baseline | [`raw-results.json`](../benchmarks/phase0/raw-results.json) and [`BASELINE.md`](../benchmarks/phase0/BASELINE.md) | pass: 19 hard checks and all required terminal outcomes |
-| #38 native-Linux calibration | [`aggregate.json`](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json) and retained seven runs | pass: seven matched full-profile runs, fixed hard invariants, advisory comparison bands |
+| #38 native-Linux calibration | [`aggregate.json`](../benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json) and retained seven runs | pass: seven selected-configuration full-profile runs, fixed hard invariants, advisory comparison bands |
 | #40 CPU/allocation profiling | [`aggregate.json`](../benchmarks/phase0/profiling/native-linux-2026-08-27-de2337906/aggregate.json) and checksummed raw archive | pass: required workloads, guardrails, and explicit optimization decisions |
-| #39 resource soak | [`aggregate.json`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/aggregate.json), [`SOAK.md`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/SOAK.md), and checksummed raw archive | **blocked**: aggregate, calibration applicability, evidence completeness, and descriptor lifecycle are `inconclusive`/`incomplete` |
+| #39 resource soak | [`aggregate.json`](../benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/aggregate.json), [`SOAK.md`](../benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/SOAK.md), and checksummed raw archive | pass: three matched 100,000-activation processes, complete lifecycle evidence, and no calibrated material growth |
 
 ## Recorded environment, configuration, and observations
 
@@ -76,12 +73,15 @@ recorded commit/tree but cannot hide an execution-affecting change.
   343 activation samples pass all 19 hard checks; the raw document records its
   startup, cold/warm, containment/recovery, cleanup, saturation, RSS, VM, FD,
   thread, socket, and topology observations.
-- The #38 native-Linux reference retains seven full-profile runs from the
-  durable source commit `49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3` and tree
-  `88e8875b7be7e46b4702c15d5c8c2f26c1e4a037`. Its aggregate records per-metric
-  min/median/max/MAD/CV, run-level outliers, and advisory comparison bands;
-  these are regression-detection aids, never production SLOs or
-  cross-machine claims.
+- The #38 selected-configuration native-Linux reference retains seven
+  full-profile runs from durable source commit
+  `6a64f0630cee9afa080d33f376aabadac724fa72` and tree
+  `d27ff38ebbd891c5be949f54a0047522ed893d20`. It explicitly records the
+  prepared cache, on-demand Wasmtime allocator, and initialized-memory COW
+  settings. Its aggregate records per-metric min/median/max/MAD/CV, run-level
+  outliers, and advisory comparison bands; these are regression-detection
+  aids, never production SLOs or cross-machine claims.
+
 - The #40 native-Linux `perf`/Heaptrack archive comes from source commit
   `de2337906a4942e47611124a1c2217949abb58dc` and tree
   `0a32896faa58da7f34662cbf3be97670d6d1de4c`. It covers cold preparation,
@@ -90,29 +90,15 @@ recorded commit/tree but cannot hide an execution-affecting change.
   bounded-cache, on-demand allocator, COW-enabled configuration; the profile
   records explicit retain/defer/reject decisions for every candidate.
 - The #39 archive comes from final-configuration commit
-  `6250b9782ffc4174676d2d72bd023dbfc38c39d7` and tree
-  `65ba341221ea89e107a3e0e3c4b0aed7e26efd9b`. It retains three independent
-  processes, each with 1,000 excluded warm-ups, 100,000 measured activations,
-  100 at-capacity batches, 100 bounded-queue batches, sampled post-warm-up
-  resource series, release/shutdown observations, and a checksummed raw
-  archive. Its exact interval method, rolling ranges, final-window deltas,
-  late-window slopes, peaks, and unsupported probes are in `aggregate.json`
-  and `SOAK.md`.
-
-The current soak archive retains three native-Linux processes, each with 1,000
-excluded warm-ups, 100,000 measured fresh-store activations, repeated success
-and failure/recovery work, and 100 real batches of each saturation mode. Its
-logical-resource, measured-topology, explicit-release, and runtime-shutdown
-checks pass. It is nevertheless not a conclusive plateau result because:
-
-- the #38 calibration did not serialize the selected prepared-cache, Wasmtime
-  allocator, or initialized-memory COW configuration;
-- the historical soak host observations lack VM and allocator provenance; and
-- the raw soak records predate serialized pre-runtime and post-warm-up file
-  descriptor baselines.
-
-These are measurement/provenance gaps, not grounds to increase an allowance
-or reinterpret an inconclusive archive as a pass.
+  `6a64f0630cee9afa080d33f376aabadac724fa72` and tree
+  `d27ff38ebbd891c5be949f54a0047522ed893d20`. It retains three independent
+  native-Linux processes, each with 1,000 excluded warm-ups, 100,000 measured
+  fresh-store activations, 100 real batches of each saturation mode, sampled
+  post-warm-up resource series, release/shutdown observations, and a
+  checksummed raw archive. The strict aggregate is `pass`: calibration
+  applicability and evidence completeness are matched/complete, descriptor
+  lifecycle checks pass, and the retained late-window RSS/PSS/private/VM
+  series has no material calibrated growth.
 
 ## What the gate already proves
 
@@ -142,22 +128,15 @@ paths, links, traversal attempts, changed raw artifacts, unverified profile
 measurements, weakened guardrails, free-form optimization decisions, source
 identity drift, and incomplete evidence presented as an authorization.
 
-## Required work to authorize Phase 1
+## Remaining gate work
 
-1. Run a fresh seven-process native-Linux calibration from the final ordinary
-   configuration, recording prepared-cache enablement, `on_demand` Wasmtime
-   allocation, initialized-memory COW, allocator provenance, and VM
-   provenance.
-2. Run a fresh, matching three-process native-Linux soak with serialized
-   pre-runtime and post-warm-up descriptor baselines, all required raw samples,
-   and the calibrated late-window resource comparison.
-3. Preserve the raw archive/checksums and regenerate its aggregate. The result
-   must be `pass` for the aggregate, evidence completeness, calibration
-   applicability, and descriptor lifecycle; a material-growth result requires
-   a focused root-cause issue, not a raised allowance.
-4. Update the checked-in evidence paths. At that point `make phase0-gate` must
-   finish with an `authorized` receipt before the roadmap can mark Phase 0
-   complete.
+#39 no longer needs another calibration or soak. Before Phase 1 is authorized,
+run `make phase0-gate` from a clean checkout and address any receipt blocker
+without weakening its raw-evidence, archive-integrity, source-identity, or
+fresh-baseline checks. In particular, a retained profile or baseline that no
+longer has the current execution-relevant identity must be regenerated or
+otherwise proven compatible; an issue's closed state cannot substitute for
+that evidence.
 
 ## Audit and Phase 1 handoff
 
@@ -188,3 +167,4 @@ production scheduling or telemetry, performance SLOs, dormant-service density,
 multi-node operation, Kubernetes replacement, realistic workloads, or
 arbitrary-duration leak freedom. Phase 1 issue #2 remains dependent on this
 gate and must consume this evidence/handoff rather than duplicate the spike.
+

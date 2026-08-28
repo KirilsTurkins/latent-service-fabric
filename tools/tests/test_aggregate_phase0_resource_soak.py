@@ -19,7 +19,7 @@ CALIBRATION = (
     / "benchmarks"
     / "phase0"
     / "calibration"
-    / "native-linux-2026-08-27-reachable-source"
+    / "native-linux-2026-08-28-6a64f063"
     / "aggregate.json"
 )
 CHECKED_IN_SOAK = (
@@ -27,7 +27,7 @@ CHECKED_IN_SOAK = (
     / "benchmarks"
     / "phase0"
     / "soak"
-    / "native-linux-2026-08-27-6250b978"
+    / "native-linux-2026-08-28-6a64f063"
 )
 SOURCE_COMMIT = "a" * 40
 SOURCE_TREE = "b" * 40
@@ -474,7 +474,7 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             },
         )
         self.assertIn(
-            "losslessly retained in `raw-evidence.tar.zst`",
+            "**Status:** PASS",
             (CHECKED_IN_SOAK / "SOAK.md").read_text(encoding="utf-8"),
         )
         with tempfile.TemporaryDirectory() as directory:
@@ -521,9 +521,9 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                     "--output-report",
                     str(extracted / "revalidated-SOAK.md"),
                     "--source-commit",
-                    "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
+                    "6a64f0630cee9afa080d33f376aabadac724fa72",
                     "--source-tree",
-                    "65ba341221ea89e107a3e0e3c4b0aed7e26efd9b",
+                    "d27ff38ebbd891c5be949f54a0047522ed893d20",
                     "--calibration",
                     str(CALIBRATION),
                 ],
@@ -531,22 +531,22 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                 capture_output=True,
                 check=False,
             )
-            self.assertEqual(revalidated.returncode, 1, revalidated.stderr)
+            self.assertEqual(revalidated.returncode, 0, revalidated.stderr)
             revalidated_document = json.loads(
                 (extracted / "revalidated-aggregate.json").read_text(encoding="utf-8")
             )
-            self.assertEqual(revalidated_document["status"], "inconclusive")
+            self.assertEqual(revalidated_document["status"], "pass")
             self.assertEqual(
                 revalidated_document["calibration_noise"]["applicability"]["status"],
-                "inconclusive",
+                "matched",
             )
             self.assertEqual(set(revalidated_document["post_shutdown"]), {"run-01", "run-02", "run-03"})
-            self.assertEqual(revalidated_document["file_descriptors"]["status"], "incomplete")
+            self.assertEqual(revalidated_document["file_descriptors"]["status"], "pass")
             self.assertEqual(
-                revalidated_document["evidence_completeness"]["status"], "incomplete"
+                revalidated_document["evidence_completeness"]["status"], "complete"
             )
             self.assertIn(
-                "fixed harness bound verified only for known historical source",
+                "issue #38 host/configuration identity is strictly matched",
                 (extracted / "revalidated-SOAK.md").read_text(encoding="utf-8"),
             )
 

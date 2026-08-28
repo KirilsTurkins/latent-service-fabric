@@ -50,6 +50,10 @@ SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 DEFAULT_CALIBRATION = (
     REPOSITORY_ROOT
+    / "benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json"
+)
+DEFAULT_PROFILE_CALIBRATION = (
+    REPOSITORY_ROOT
     / "benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json"
 )
 DEFAULT_PROFILING = (
@@ -58,7 +62,7 @@ DEFAULT_PROFILING = (
 )
 DEFAULT_SOAK = (
     REPOSITORY_ROOT
-    / "benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/aggregate.json"
+    / "benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/aggregate.json"
 )
 
 REQUIRED_CHECKS = frozenset(
@@ -679,12 +683,14 @@ def build_gate_receipt(
     calibration_path: Path,
     profiling_path: Path,
     soak_path: Path,
+    profile_calibration_path: Path = DEFAULT_PROFILE_CALIBRATION,
 ) -> dict[str, Any]:
     """Build a receipt. Invalid evidence raises; incomplete evidence blocks."""
 
     try:
         calibration_document = verify_calibration_evidence(calibration_path)
-        profiling_document = verify_profile_evidence(profiling_path, calibration_path)
+        profile_calibration_document = verify_calibration_evidence(profile_calibration_path)
+        profiling_document = verify_profile_evidence(profiling_path, profile_calibration_path)
         soak_document = verify_resource_soak_evidence(soak_path, calibration_path)
         current_identity = current_execution_evidence_identity()
     except EvidenceValidationError as error:
@@ -692,6 +698,9 @@ def build_gate_receipt(
 
     baseline = validate_baseline(baseline_document, baseline_path, current_identity)
     calibration = validate_calibration(calibration_document, str(calibration_path))
+    profile_calibration = validate_calibration(
+        profile_calibration_document, str(profile_calibration_path)
+    )
     profiling = validate_profiling(profiling_document, str(profiling_path))
     soak, blockers = validate_resource_soak(soak_document, str(soak_path))
     evidence_identities, identity_blockers = _identity_blockers(
@@ -717,11 +726,13 @@ def build_gate_receipt(
         },
         "evidence_verification": {
             "calibration": "raw runs and host/execution records regenerated the retained aggregate",
+            "profile_calibration": "the immutable profile calibration raw archive regenerated the retained aggregate",
             "hot_path_profiling": "sharded archive, manifest, CPU/allocation artifacts, full invariant proof, and aggregate were independently verified",
             "resource_soak": "zstd archive, manifest, raw runs, host/execution records, calibration applicability, and aggregate were independently verified",
         },
         "baseline": baseline,
         "calibration": calibration,
+        "profile_calibration": profile_calibration,
         "hot_path_profiling": profiling,
         "resource_soak": soak,
         "blockers": blockers,
@@ -733,6 +744,12 @@ def main() -> int:
     parser.add_argument("baseline", type=Path, help="fresh Phase 0 baseline JSON")
     parser.add_argument("output", type=Path, help="new receipt path")
     parser.add_argument("--calibration", type=Path, default=DEFAULT_CALIBRATION)
+    parser.add_argument(
+        "--profile-calibration",
+        type=Path,
+        default=DEFAULT_PROFILE_CALIBRATION,
+        help="the immutable calibration retained with the hot-path profile archive",
+    )
     parser.add_argument("--profiling", type=Path, default=DEFAULT_PROFILING)
     parser.add_argument("--soak", type=Path, default=DEFAULT_SOAK)
     parser.add_argument(
@@ -748,6 +765,7 @@ def main() -> int:
             arguments.calibration,
             arguments.profiling,
             arguments.soak,
+            arguments.profile_calibration,
         )
         arguments.output.parent.mkdir(parents=True, exist_ok=True)
         arguments.output.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")

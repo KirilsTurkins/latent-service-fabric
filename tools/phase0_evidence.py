@@ -406,52 +406,57 @@ def _assert_directory_entries(root: Path, expected: set[str], label: str) -> Non
     )
 
 
-def _verify_calibration_layout(root: Path, retained: dict[str, Any]) -> None:
-    _assert_directory_entries(root, {"aggregate.json", "CALIBRATION.md", "runs"}, "calibration evidence root")
-    _require_regular_file(root / "aggregate.json", "calibration aggregate")
-    _require_regular_file(root / "CALIBRATION.md", "calibration report")
-    runs = _list(retained.get("raw_runs"), "calibration raw runs")
-    expected_runs: set[str] = set()
-    for record in runs:
-        run = _mapping(record, "calibration raw-run record")
-        name = _string(run.get("run"), "calibration raw-run name")
-        _require(re.fullmatch(r"run-[0-9]{2}", name) is not None, f"invalid calibration run name {name!r}")
-        _require(name not in expected_runs, f"duplicate calibration run name {name!r}")
-        expected_runs.add(name)
-    runs_root = root / "runs"
-    _assert_directory_entries(runs_root, expected_runs, "calibration run directory")
-    expected_files = {
-        "BASELINE.md",
-        "execution-status.json",
-        "host-after.json",
-        "host-before.json",
-        "raw-results.json",
+def _calibration_outer_files(root: Path) -> None:
+    expected = {
+        "aggregate.json",
+        "CALIBRATION.md",
+        "raw-evidence.manifest.sha256",
+        "raw-evidence.tar.zst",
+        "raw-evidence.tar.zst.sha256",
     }
-    for name in expected_runs:
-        run_root = runs_root / name
-        observed_files = {path.name for path in run_root.iterdir()}
-        _require(
-            observed_files in (expected_files, expected_files | {"run.log"}),
-            f"calibration {name} contains missing or additional raw files",
-        )
-        for file_name in observed_files:
-            _require_regular_file(run_root / file_name, f"calibration {name} {file_name}")
+    _assert_directory_entries(root, expected, "calibration evidence root")
+    for file_name in expected:
+        _require_regular_file(root / file_name, f"calibration evidence {file_name}")
 
 
 def verify_calibration_evidence(aggregate_path: Path) -> dict[str, Any]:
     retained = load_json(aggregate_path, "calibration aggregate")
     _require(retained.get("schema_version") == CALIBRATION_SCHEMA, "unexpected calibration schema")
     root = aggregate_path.parent.resolve()
-    _verify_calibration_layout(root, retained)
-    source_commit = _object_id(retained.get("source_commit"), "calibration source commit")
-    source_tree = _object_id(retained.get("source_tree"), "calibration source tree")
-    minimum_runs = _positive_int(retained.get("minimum_required_run_count"), "calibration minimum run count")
-    try:
-        regenerated = calibration_aggregate.build_aggregate(
-            root / "runs", source_commit, source_tree, minimum_runs
+    _calibration_outer_files(root)
+    archive_path = root / "raw-evidence.tar.zst"
+    verify_checksum_manifest(
+        root / "raw-evidence.tar.zst.sha256",
+        root,
+        expected_paths={archive_path.name},
+        label="calibration archive checksum",
+    )
+    with tempfile.TemporaryDirectory(prefix="phase0-calibration-verify-") as temporary_directory:
+        temporary_root = Path(temporary_directory)
+        extracted_root = temporary_root / "raw"
+        extracted_files = extract_zstd_tar(archive_path, extracted_root, "calibration raw-evidence archive")
+        extracted_manifest = extracted_root / "raw-evidence.manifest.sha256"
+        _require_regular_file(extracted_manifest, "calibration archived manifest")
+        _require(
+            extracted_manifest.read_bytes() == (root / "raw-evidence.manifest.sha256").read_bytes(),
+            "calibration archived manifest does not match the retained manifest",
         )
-    except calibration_aggregate.CalibrationError as error:
-        raise EvidenceValidationError(f"calibration raw evidence is invalid: {error}") from error
+        verify_extracted_manifest(
+            extracted_root,
+            extracted_manifest,
+            extracted_files,
+            allowed_extra_files={"raw-evidence.manifest.sha256"},
+            label="calibration raw-evidence manifest",
+        )
+        source_commit = _object_id(retained.get("source_commit"), "calibration source commit")
+        source_tree = _object_id(retained.get("source_tree"), "calibration source tree")
+        minimum_runs = _positive_int(retained.get("minimum_required_run_count"), "calibration minimum run count")
+        try:
+            regenerated = calibration_aggregate.build_aggregate(
+                extracted_root / "runs", source_commit, source_tree, minimum_runs
+            )
+        except calibration_aggregate.CalibrationError as error:
+            raise EvidenceValidationError(f"calibration raw evidence is invalid: {error}") from error
     assert_regenerated_aggregate(retained, regenerated, "calibration")
     return regenerated
 

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import io
+import hashlib
 import json
 from pathlib import Path
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import unittest
@@ -23,9 +25,10 @@ from tools.validate_phase0_gate import (
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-CALIBRATION = REPOSITORY_ROOT / "benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json"
+CALIBRATION = REPOSITORY_ROOT / "benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json"
+PROFILE_CALIBRATION = REPOSITORY_ROOT / "benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json"
 PROFILE = REPOSITORY_ROOT / "benchmarks/phase0/profiling/native-linux-2026-08-27-de2337906/aggregate.json"
-SOAK = REPOSITORY_ROOT / "benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/aggregate.json"
+SOAK = REPOSITORY_ROOT / "benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/aggregate.json"
 
 
 def tar_bytes(members: list[tuple[str, bytes, str]]) -> io.BytesIO:
@@ -52,6 +55,36 @@ class Phase0GateEvidenceTests(unittest.TestCase):
         self.assertEqual(document["status"], "pass")
         self.assertGreaterEqual(document["run_count"], 7)
         self.assertGreater(len(document["metrics"]), 0)
+
+    @unittest.skipUnless(shutil.which("zstd"), "zstd is required for archive integration verification")
+    def test_checked_in_calibration_archive_is_lossless(self) -> None:
+        archive = CALIBRATION.parent / "raw-evidence.tar.zst"
+        manifest = CALIBRATION.parent / "raw-evidence.manifest.sha256"
+        self.assertEqual(
+            (CALIBRATION.parent / "raw-evidence.tar.zst.sha256").read_text(encoding="utf-8"),
+            f"{hashlib.sha256(archive.read_bytes()).hexdigest()}  raw-evidence.tar.zst\n",
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            extracted = Path(temporary_directory)
+            result = subprocess.run(
+                ["tar", "--use-compress-program=zstd", "-xf", str(archive), "-C", str(extracted)],
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                (extracted / "raw-evidence.manifest.sha256").read_bytes(),
+                manifest.read_bytes(),
+            )
+            checks = subprocess.run(
+                ["sha256sum", "--check", "raw-evidence.manifest.sha256"],
+                cwd=extracted,
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(checks.returncode, 0, checks.stderr)
 
     def test_safe_extractor_rejects_path_traversal_and_links(self) -> None:
         for name, contents, kind, expected in (
@@ -141,11 +174,13 @@ class Phase0GateEvidenceTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("zstd"), "zstd is required for archive integration verification")
     def test_checked_in_profile_and_soak_archives_are_verified_and_regenerated(self) -> None:
         calibration = verify_calibration_evidence(CALIBRATION)
-        profile = verify_profile_evidence(PROFILE, CALIBRATION)
+        profile_calibration = verify_calibration_evidence(PROFILE_CALIBRATION)
+        profile = verify_profile_evidence(PROFILE, PROFILE_CALIBRATION)
         soak = verify_resource_soak_evidence(SOAK, CALIBRATION)
         self.assertEqual(calibration["status"], "pass")
+        self.assertEqual(profile_calibration["status"], "pass")
         self.assertEqual(profile["status"], "pass")
-        self.assertEqual(soak["status"], "inconclusive")
+        self.assertEqual(soak["status"], "pass")
 
 
 if __name__ == "__main__":

@@ -21,11 +21,14 @@ Both commands run `tools/validate_contracts.sh` first. Missing Rust Wasm targets
 ## Native-Linux variance calibration
 
 The original checked-in full-profile result is a historical WSL2 observation.
-The Phase 1 comparison reference is the seven-run native-Linux calibration in
-[benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source).
-The earlier [native-linux-2026-08-27](../benchmarks/phase0/calibration/native-linux-2026-08-27)
-archive remains as superseded audit evidence only: its recorded commit was not
-published and is not a Phase 1 comparison source.
+The selected-configuration Phase 1 comparison reference is the seven-run
+native-Linux calibration in
+[benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063](../benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063).
+It records the published commit/tree, the execution commit/tree, and the
+explicit prepared-cache/on-demand/COW configuration used by the final soak.
+The older reachable calibration remains only as the immutable comparison input
+for the separately retained issue-40 profile archive; the duplicate unreachable
+archive was removed.
 
 Create a new archive only from a clean worktree on one stable native-Linux host
 or VM:
@@ -95,6 +98,7 @@ tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
   --final-configuration-commit <reachable-final-commit> \
+  --calibration benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json \
   benchmarks/phase0/soak/native-linux-YYYY-MM-DD
 ```
 
@@ -140,22 +144,14 @@ become a failure only when the same metric breaches its calibrated
 late-window material-growth rule.
 
 The retained post-issue-40 raw archive is
-[`native-linux-2026-08-27-6250b978`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md),
-measured from durable source commit
-`6250b9782ffc4174676d2d72bd023dbfc38c39d7` and tree
-`65ba341221ea89e107a3e0e3c4b0aed7e26efd9b`. Its three complete processes
-pass all hard invariants, explicit release/shutdown topology, and its retained
-measured-window/release-to-shutdown FD checks. Strict applicability
-revalidation deliberately leaves its RSS/PSS/private/VM comparison
-**inconclusive**: the issue-38 calibration does not retain prepared-cache,
-Wasmtime allocator, or COW configuration, while the historical soak host
-captures omit VM and allocator provenance. Its raw results also predate the
-serialized pre-runtime and post-warm-up descriptor baselines plus raw
-virtualization kind, so a complete FD lifecycle cannot be independently
-revalidated. The runner now records all of those fields and the calibration helper invokes the selected
-ordinary cache/on-demand/COW configuration explicitly. The Phase 0 completion
-gate remains blocked until a fresh matching calibration and three-process
-archive can make the calibrated plateau claim.
+[`native-linux-2026-08-28-6a64f063`](../benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/README.md), measured from
+durable source commit `6a64f0630cee9afa080d33f376aabadac724fa72` and tree
+`d27ff38ebbd891c5be949f54a0047522ed893d20`. Its three complete processes
+pass all hard invariants, raw/host reconciliation, explicit release/shutdown
+topology, the complete descriptor lifecycle, and calibrated late-window
+RSS/PSS/private/VM analysis. The raw archive is losslessly checksummed and the
+aggregate applies the matching seven-process calibration without inference.
+Issue #39 is complete for this recorded configuration.
 
 If the aggregate reports material growth, rerun the same command with
 `--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after
