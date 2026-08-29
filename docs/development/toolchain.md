@@ -29,13 +29,13 @@ Rust dependency resolution is frozen by the committed root `Cargo.lock`.
 | `zstd` | system utility | Lossless verification of checked-in Phase 0 raw-evidence archives during repository/gate tests |
 | Go / Node / TypeScript / .NET | 1.23.2 / 22.16.0 / 5.8.3 / 8.0.423 | Cross-language interface compilation |
 | Eclipse Temurin JDK | 21.0.11+10 | Exact Java compiler and runtime distribution (`setup-java` selector `21.0.11+10.0.LTS`) |
-| Zig / Clang / C target | 0.16.0 / 21.1.8 / `x86_64-linux-gnu` | Exact bundled C frontend for the C11 header smoke test |
+| Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Exact bundled C frontend for the C11 header smoke test |
 
 Workspace dependencies are exact requirements in the root `Cargo.toml`. Phase 0 targets consume them with `workspace = true` rather than selecting independent versions. Cargo ignores SemVer build metadata in dependency requirements, so the TOML requirement is deliberately written as `=1.1.4`; the resolved package recorded in `Cargo.lock` may display `1.1.4+spec-1.1.0`.
 
 ## Reproducibility boundary
 
-CI uses the explicit `ubuntu-24.04` hosted-runner label instead of `ubuntu-latest`. Language and contract compilers are installed at the exact versions above and `tools/check_tool_versions.py` verifies the installed binaries before the SDK surfaces compile. The C check does not use the runner-provided `cc`; it uses Zig 0.16.0's bundled Clang 21.1.8 frontend with the explicit `x86_64-linux-gnu` target and C11 mode. Runner-provided shell and filesystem utilities remain outside the compiler identity boundary.
+CI uses the explicit `ubuntu-24.04` hosted-runner label instead of `ubuntu-latest`. Language and contract compilers are installed at the exact versions above and `tools/check_tool_versions.py` verifies the installed binaries before the SDK surfaces compile. The C check does not use the runner-provided `cc`; it uses Zig 0.16.0's bundled Clang 21.1.0 frontend with the explicit `x86_64-linux-gnu` target and C11 mode. Runner-provided shell and filesystem utilities remain outside the compiler identity boundary.
 
 TypeScript is pinned by both `package.json` and `package-lock.json`. The SDK validation installs with `npm ci` and then verifies the local compiler version against `tools/toolchain.toml`; the CI workflow therefore does not duplicate the TypeScript version as an unrelated literal.
 
