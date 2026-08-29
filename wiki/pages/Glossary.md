@@ -12,6 +12,7 @@
 | Execution identity | Canonical identity of source/fixture/tooling inputs relevant to measured execution. |
 | Fresh store | Invocation-owned Wasmtime state that is discarded after an activation. |
 | Gate | The fail-closed validation that decides whether evidence authorizes the next handoff. |
+| Handoff | The explicit evidence-backed boundary at which a completed phase may authorize later work. |
 | Native-Linux evidence | Calibration, profile, or soak data gathered on an accepted clean Linux host/VM. |
 | Platform error | An infrastructure or execution failure outside a service’s declared domain result. |
 | Prepared component | Bounded node-owned state ready for invocation; distinct from a leased cell/store. |
@@ -20,4 +21,5 @@
 | Revision | Release plus deployment configuration. |
 | Route | A rule selecting a revision for new work. |
 | Soak | Long-running repeated-work evidence used to study bounded resource behavior. |
+| Smoke validation | A smaller deterministic validation path whose success is distinct from Phase 1 authorization. |
 | WIT | WebAssembly Interface Types; the capsule-facing contract authority. |

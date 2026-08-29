@@ -18,6 +18,9 @@ measurements, calibration, profiling, and resource-soak evidence.
 `make phase0-gate` produces that receipt, Phase 1 remains blocked. A closed
 issue, passing raw aggregate, or smoke result is not authorization.
 
+Use the [Phase 0 runbook](Phase-0-Runbook) to distinguish ordinary validation,
+smoke validation, the full gate, and native-Linux evidence collection.
+
 ## Phase 1 — single-node stateless fabric
 
 Planned: standalone node, local release catalog and route table, admission and

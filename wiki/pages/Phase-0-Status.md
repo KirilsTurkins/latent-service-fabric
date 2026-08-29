@@ -53,6 +53,9 @@ It emits `target/phase0-gate/.../gate-summary.json` even when blocked. That
 receipt contains the exact blockers. The command returns success only when
 authorization is genuine.
 
+For command selection and a safe response to a blocked result, use the
+[Phase 0 runbook](Phase-0-Runbook).
+
 ## Read the receipt, not just the exit code
 
 For a handoff decision, inspect all of the following together:

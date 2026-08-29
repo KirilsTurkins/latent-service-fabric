@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from contextlib import redirect_stdout
 import importlib.util
+import io
 import json
 from pathlib import Path, PurePosixPath
 import tempfile
@@ -22,7 +24,9 @@ def write_valid_source(root: Path) -> None:
     (root / "Home.md").write_text(
         f"{marker}\n# Home\n\n![Flow](assets/flow.svg)\n", encoding="utf-8"
     )
-    (root / "_Sidebar.md").write_text(f"{marker}\n# Navigation\n", encoding="utf-8")
+    (root / "_Sidebar.md").write_text(
+        f"{marker}\n# Navigation\n\n[[Home]]\n[[Phase-0-Status|Status]]\n", encoding="utf-8"
+    )
     (root / "_Footer.md").write_text(f"{marker}\n# Footer\n", encoding="utf-8")
     (root / "Phase-0-Status.md").write_text(f"{marker}\n# Status\n", encoding="utf-8")
     (assets / "flow.svg").write_text(
@@ -39,7 +43,7 @@ class WikiPublisherTests(unittest.TestCase):
         source = Path(__file__).resolve().parents[2] / "wiki" / "pages"
         files = wiki.validate_source(source)
         self.assertEqual(wiki.validate_phase0_status_alignment(source), "blocked")
-        self.assertEqual(len(files), 28)
+        self.assertEqual(len(files), 29)
         self.assertIn(PurePosixPath("assets/activation-lifecycle.svg"), files)
         self.assertIn(PurePosixPath("assets/contract-boundaries.svg"), files)
         self.assertIn(PurePosixPath("assets/phase0-activation-flow.svg"), files)
@@ -72,6 +76,29 @@ class WikiPublisherTests(unittest.TestCase):
             with self.assertRaisesRegex(wiki.WikiError, "does not match"):
                 wiki._assert_wiki_remote(Path("/tmp/wiki"), expected)
 
+    def test_supplied_wiki_checkout_must_have_the_selected_branch(self) -> None:
+        with patch.object(wiki, "_run", return_value="master\n"):
+            wiki._assert_wiki_branch(Path("/tmp/wiki"), "master")
+        with patch.object(wiki, "_run", return_value="old-state\n"):
+            with self.assertRaisesRegex(wiki.WikiError, "must have 'master' checked out"):
+                wiki._assert_wiki_branch(Path("/tmp/wiki"), "master")
+
+    def test_a_supplied_wiki_checkout_requires_apply_mode(self) -> None:
+        arguments = wiki.parse_arguments(["--wiki-directory", "/tmp/wiki"])
+        with redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(wiki.WikiError, "only supported with --apply"):
+                wiki._publish(arguments)
+
+    def test_apply_rejects_a_custom_source_directory(self) -> None:
+        arguments = wiki.parse_arguments(["--apply", "--source", "custom-source"])
+        with (
+            patch.object(wiki, "validate_source", return_value=[]),
+            patch.object(wiki, "validate_phase0_status_alignment", return_value="blocked"),
+            redirect_stdout(io.StringIO()),
+        ):
+            with self.assertRaisesRegex(wiki.WikiError, "only accepts the checked-in"):
+                wiki._publish(arguments)
+
     def test_validate_source_rejects_mermaid(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "source"
@@ -91,6 +118,16 @@ class WikiPublisherTests(unittest.TestCase):
                 f"{wiki.MANAGED_MARKER}\n[Missing](Not-A-Page)\n", encoding="utf-8"
             )
             with self.assertRaisesRegex(wiki.WikiError, "does not exist in managed source"):
+                wiki.validate_source(source)
+
+    def test_validate_source_rejects_an_orphaned_page(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "_Sidebar.md").write_text(
+                f"{wiki.MANAGED_MARKER}\n[[Home]]\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "missing from the sidebar"):
                 wiki.validate_source(source)
 
     def test_validate_source_rejects_a_missing_development_repository_link(self) -> None:
@@ -122,6 +159,16 @@ class WikiPublisherTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(wiki.WikiError, "event handler"):
+                wiki.validate_source(source)
+
+    def test_validate_source_rejects_an_image_without_alt_text(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "Home.md").write_text(
+                f"{wiki.MANAGED_MARKER}\n![](assets/flow.svg)\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "descriptive alt text"):
                 wiki.validate_source(source)
 
     def test_synchronize_replaces_only_known_managed_files(self) -> None:

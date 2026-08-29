@@ -24,6 +24,12 @@ No. `make phase0-gate-smoke` validates a smaller deterministic path and
 reports authorization separately. Only `make phase0-gate` can require an
 authorized receipt.
 
+## What should I do when the full gate is blocked?
+
+Keep the receipt and follow the [Phase 0 runbook](Phase-0-Runbook). A blocker
+is reviewable evidence of the exact condition that still needs correction; do
+not replace it with issue closure, a renamed aggregate, or a smoke result.
+
 ## Can WSL create new Phase 0 calibration, profiling, or soak evidence?
 
 No. WSL can be useful for development and gate validation, but the native

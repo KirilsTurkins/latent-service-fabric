@@ -33,6 +33,11 @@ python3 tools/update_wiki.py --apply
 Use normal Git credential management or an SSH remote. Do not embed an access
 token in a command line, source file, or commit.
 
+Planning always uses an isolated temporary Wiki clone. An existing local Wiki
+checkout may be supplied only to the explicit apply operation, and it must be
+clean, on the selected branch, and pointed at the selected credential-free
+Wiki remote.
+
 `wiki/legacy-managed-files.txt` is a finite inventory of pages and assets
 published by the retired workflow. It permits this refresh to remove known
 obsolete material without deleting Wiki pages outside LSF's managed set.

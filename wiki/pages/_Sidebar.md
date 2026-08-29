@@ -5,6 +5,7 @@
 - [[Getting-Started|Getting started]]
 - [[Core-Concepts|Core concepts]]
 - [[Phase-0-Status|Phase 0 status]]
+- [[Phase-0-Runbook|Phase 0 runbook]]
 - [[FAQ]]
 - [[Glossary]]
 

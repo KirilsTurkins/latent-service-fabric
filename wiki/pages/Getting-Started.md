@@ -79,5 +79,6 @@ See [Testing and benchmarks](Testing-and-Benchmarks) before attempting them.
 
 - [Core concepts](Core-Concepts)
 - [Phase 0 status](Phase-0-Status)
+- [Phase 0 runbook](Phase-0-Runbook)
 - [Capsule development](Capsule-Development)
 - [Development workflow](Development-Workflow)

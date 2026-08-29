@@ -57,6 +57,8 @@ production security posture, production SLO, or dormant-service-density proof.
 
 - [Phase 0 status](Phase-0-Status) — current evidence boundary and the only
   route to Phase 1 authorization.
+- [Phase 0 runbook](Phase-0-Runbook) — choose the correct validation and
+  evidence path without confusing a local check with a handoff.
 - [Getting started](Getting-Started) — validate the repository and run the
   local spike.
 - [Architecture](Architecture) — distinguish the implemented spike from the

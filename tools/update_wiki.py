@@ -30,7 +30,7 @@ MANAGED_MARKER = "<!-- LSF-WIKI-MANAGED -->"
 MANIFEST_SCHEMA = "latent-service-fabric.wiki-manifest.v1"
 REQUIRED_PAGES = frozenset({"Home.md", "_Sidebar.md", "_Footer.md", "Phase-0-Status.md"})
 ALLOWED_SUFFIXES = frozenset({".md", ".svg", ".png", ".jpg", ".jpeg", ".webp"})
-IMAGE_LINK = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
+IMAGE_LINK = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
 WIKI_LINK = re.compile(r"\[\[([^]|#]+)(?:#[^]|]*)?(?:\|[^]]*)?\]\]")
 PHASE0_STATUS_MARKER = re.compile(r"<!-- LSF-PHASE0-GATE: (blocked|authorized) -->")
@@ -96,7 +96,9 @@ def _source_path(source: Path, relative: PurePosixPath) -> Path:
 
 def _validate_image_links(source: Path, relative: PurePosixPath, document: str) -> None:
     for match in IMAGE_LINK.finditer(document):
-        target = match.group(1).strip()
+        if not match.group(1).strip():
+            raise WikiError(f"image link in {relative} must have descriptive alt text")
+        target = match.group(2).strip()
         if target.startswith(("https://", "http://", "#")):
             continue
         target = target.split("#", maxsplit=1)[0].split("?", maxsplit=1)[0]
@@ -162,6 +164,26 @@ def _validate_markdown_links(
             raise WikiError(f"Wiki link in {relative} does not exist in managed source: {match.group(0)!r}")
 
 
+def _validate_sidebar_navigation(source: Path, managed_files: set[str]) -> None:
+    sidebar = source / "_Sidebar.md"
+    document = sidebar.read_text(encoding="utf-8")
+    navigation_targets: set[str] = set()
+    for match in WIKI_LINK.finditer(document):
+        target = PurePosixPath(match.group(1).strip())
+        if not target.suffix:
+            target = target.with_suffix(".md")
+        navigation_targets.add(target.as_posix())
+
+    navigable_pages = {
+        path
+        for path in managed_files
+        if path.endswith(".md") and PurePosixPath(path).name not in {"_Sidebar.md", "_Footer.md"}
+    }
+    missing = sorted(navigable_pages - navigation_targets)
+    if missing:
+        raise WikiError(f"managed Wiki pages are missing from the sidebar: {', '.join(missing)}")
+
+
 def _svg_element_name(element: ElementTree.Element) -> str:
     return element.tag.rsplit("}", maxsplit=1)[-1].lower()
 
@@ -224,6 +246,7 @@ def validate_source(source: Path = DEFAULT_SOURCE) -> list[PurePosixPath]:
         elif relative.suffix.lower() == ".svg":
             document = path.read_text(encoding="utf-8")
             _validate_svg(relative, document)
+    _validate_sidebar_navigation(source, names)
     return files
 
 
@@ -429,9 +452,18 @@ def _assert_wiki_remote(wiki_directory: Path, expected_remote: str) -> None:
         )
 
 
+def _assert_wiki_branch(wiki_directory: Path, expected_branch: str) -> None:
+    current_branch = _run(["git", "branch", "--show-current"], cwd=wiki_directory).strip()
+    if current_branch != expected_branch:
+        raise WikiError(
+            f"--wiki-directory must have {expected_branch!r} checked out, found {current_branch or 'detached HEAD'!r}"
+        )
+
+
 def _checkout_wiki(remote: str, branch: str, destination: Path) -> None:
     _run(["git", "clone", "--quiet", remote, str(destination)])
     _run(["git", "switch", branch], cwd=destination)
+    _assert_wiki_branch(destination, branch)
     _assert_clean_worktree(destination, "Wiki checkout")
 
 
@@ -443,12 +475,13 @@ def _staged_changes(wiki_directory: Path) -> str:
 def _publish(arguments: argparse.Namespace) -> int:
     source = arguments.source.resolve()
     files = validate_source(source)
-    if source == DEFAULT_SOURCE.resolve():
-        phase0_status = validate_phase0_status_alignment(source)
-    else:
-        phase0_status = "not checked for a non-default source"
+    phase0_status = validate_phase0_status_alignment(source)
     print(f"validated {len(files)} managed Wiki files in {source}")
     print(f"Phase 0 status alignment: {phase0_status}")
+    if arguments.wiki_directory is not None and not arguments.apply:
+        raise WikiError("--wiki-directory is only supported with --apply; --plan always uses a temporary clone")
+    if arguments.apply and source != DEFAULT_SOURCE.resolve():
+        raise WikiError("--apply only accepts the checked-in wiki/pages source")
     if not arguments.plan and not arguments.apply:
         print("local check complete; no Wiki checkout, commit, or push was attempted")
         return 0
@@ -470,6 +503,7 @@ def _publish(arguments: argparse.Namespace) -> int:
         if not (wiki_directory / ".git").exists():
             raise WikiError(f"--wiki-directory is not a Git checkout: {wiki_directory}")
         _assert_wiki_remote(wiki_directory, remote)
+        _assert_wiki_branch(wiki_directory, arguments.branch)
         _assert_clean_worktree(wiki_directory, "Wiki checkout")
 
     try:
@@ -521,7 +555,7 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--wiki-directory",
         type=Path,
-        help="existing clean local Wiki checkout; defaults to a temporary clone",
+        help="existing clean local Wiki checkout for --apply; otherwise a temporary clone is used",
     )
     parser.add_argument("--message", default="docs(wiki): refresh Phase 0 documentation")
     parser.add_argument("--author-name", default="LSF Wiki publisher")
