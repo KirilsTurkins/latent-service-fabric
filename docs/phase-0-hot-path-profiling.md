@@ -149,20 +149,20 @@ than seven independent full runs is explicitly **inconclusive** and cannot be
 labelled inside or outside the advisory band. A faster single or small set is
 an observation only.
 
-A candidate may be adopted in Phase 0 only if it exceeds the calibrated noise
-envelope (or has a separately documented architectural benefit), passes every
-hard invariant, has bounded fixed/peak memory with no hidden topology change,
-and does not take configuration/API ownership from Phase 1. Any adopted runtime
-change requires a regenerated full Phase 0 reference and an auditable
-comparison with the prior reference. The initial issue-40 archive deliberately
-does not adopt a new runtime optimization; it records evidence and keeps the
-measured default configuration for the required issue-39 soak.
+During Phase 0, a candidate could be adopted only if it exceeded the calibrated
+noise envelope (or had a separately documented architectural benefit), passed
+every hard invariant, had bounded fixed/peak memory with no hidden topology
+change, and did not take configuration/API ownership from Phase 1. Any adopted
+runtime change required a regenerated full Phase 0 reference and an auditable
+comparison with the prior reference. The issue-40 archive deliberately adopted
+no new runtime optimization; it records evidence and keeps the measured default
+configuration that issue #39 subsequently soaked.
 
 ## Decisions and ownership
 
 | Candidate | Decision | Owner / rationale |
 | --- | --- | --- |
-| Existing fixed 2-worker/2-cell, on-demand/COW configuration | Retain existing default; no new adoption | It is the bounded Phase 0 reference; issue 39 will soak it after this work lands. |
+| Existing fixed 2-worker/2-cell, on-demand/COW configuration | Retain existing default; no new adoption | It is the bounded Phase 0 reference; issue #39 soaked it in the retained evidence. |
 | One-entry bounded prepared-component cache | Retain existing setting; no new adoption | Immutable node-owned preparation state only; issue 9 owns general cache compatibility and eviction. |
 | Worker/cell ratios | Carry as configurable Phase 1 experiment | Issue 8 owns fixed multi-class capacity, fairness, and scheduler policy. |
 | Pooling allocator | Defer | Issue 9 must supply generalized bounded limits, density measurements, and reset/isolation proof. |

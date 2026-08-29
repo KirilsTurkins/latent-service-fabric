@@ -1,8 +1,9 @@
 # Test invariants
 
-This document separates the Phase 0 invariants exercised by the executable
-spike from target invariants that remain Phase 1 or later work. The current
-completion receipt is deliberately fail-closed and not yet authorized; see
+This document separates the completed Phase 0 invariants exercised by the
+executable spike from target invariants that remain Phase 1 or later work. The
+recorded completion receipt is authorized for its bounded local scope; future
+revalidation remains deliberately fail-closed. See
 [`../phase-0-completion.md`](../phase-0-completion.md).
 
 ## Phase 0 exercised subset
@@ -37,10 +38,10 @@ The retained three-process resource soak passes its hard logical-resource and
 terminal-topology checks and proves a calibrated plateau for the recorded
 native-Linux configuration: its seven-process calibration is matched and its
 descriptor-lifecycle evidence is complete. Issue #39 therefore needs no
-additional calibration or soak rerun. This single-host observational result
-does not authorize Phase 0 or Phase 1; a clean-checkout `make phase0-gate`
-run must still produce an authorized receipt with every remaining identity,
-archive, profile, and fresh-baseline blocker resolved.
+additional calibration or soak rerun. This single-host observational result is
+one input to the completed Phase 0 authorization; it does not establish
+production behavior or Phase 1 completion. A clean-checkout
+`make phase0-gate` remains required after execution-affecting changes.
 
 ## Dormant-service scaling — not yet proven
 

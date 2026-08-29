@@ -1,10 +1,11 @@
 # Phase 0 toolchain baseline
 
-The Phase 0 baseline makes the interface scaffold executable, builds the first
-Rust-authored echo Component Model fixture, and supports a narrow local
-Wasmtime spike. It does not implement a production service runtime. Exact
-project-selected versions live in [`tools/toolchain.toml`](../../tools/toolchain.toml);
-Rust dependency resolution is frozen by the committed root `Cargo.lock`.
+The completed Phase 0 baseline made the interface scaffold executable, built
+the first Rust-authored echo Component Model fixture, and established a narrow
+local Wasmtime feasibility spike. It does not implement a production service
+runtime. Exact project-selected versions live in
+[`tools/toolchain.toml`](../../tools/toolchain.toml); Rust dependency resolution
+is frozen by the committed root `Cargo.lock`.
 
 ## Selected versions
 
@@ -16,7 +17,7 @@ Rust dependency resolution is frozen by the committed root `Cargo.lock`.
 | Rust component-core target | `wasm32-unknown-unknown` | Build a self-contained core module before explicit Component Model wrapping |
 | Wasmtime | 47.0.3 | Host-side Component Model engine, generated bindings, and Phase 0 echo execution |
 | `wit-bindgen` | 0.60.0 | Guest-side Rust bindings and canonical ABI exports generated from WIT |
-| Tokio | 1.53.1 | Selected async runtime for later Phase 0 implementation work |
+| Tokio | 1.53.1 | Selected async runtime for the completed Phase 0 spike and Phase 1 runtime work |
 | Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
 | TOML | 1.1.4 | Configuration parsing and serialization; the published crate carries `+spec-1.1.0` build metadata |
 | BLAKE3 | 1.8.5 | Runtime cache keys and prepared-component identity |

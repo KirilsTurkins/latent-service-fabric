@@ -1,21 +1,21 @@
 # Engineering roadmap
 
-## Phase 0: executable spike — completion gate blocked
+## Phase 0: executable spike — complete and authorized
 
 Repository contracts, one Rust echo capsule, one fixed cell pool, Wasmtime
 component loading, timeout/trap containment, baseline measurements, native
 Linux calibration, hot-path profiling, and a long-running resource soak are
-implemented. Issue #39 is complete for the recorded configuration: its fresh
-seven-process native-Linux calibration and three-process resource soak are
-matched and pass with complete descriptor-lifecycle evidence. No additional
-#39 calibration or soak rerun is currently required. See
-[the completion gate](phase-0-completion.md).
+implemented and accepted by the merged clean-checkout completion gate. The
+recorded seven-process native-Linux calibration and three-process resource soak
+are matched and pass with complete descriptor-lifecycle evidence. See
+[the completion gate](phase-0-completion.md) for the authoritative receipt and
+handoff.
 
-That evidence does not by itself authorize Phase 0 or Phase 1. A clean-checkout
-`make phase0-gate` run must produce an `authorized` receipt with every
-remaining identity, archive, profile, and fresh-baseline blocker resolved.
-Until then, Phase 1 issue #2 remains dependent on the gate; no roadmap item
-may treat issue closure or a single-host observational result as authorization.
+The authorization permits Phase 1 work for the recorded local feasibility
+scope. It is not a production claim: Phase 1 must still add the public API,
+multi-service, security, state, scheduling, telemetry, and cluster capabilities
+outside the spike. Re-run `make phase0-gate` after execution-affecting changes;
+it remains fail-closed when the retained evidence no longer applies.
 
 ## Phase 1: single-node stateless fabric
 
