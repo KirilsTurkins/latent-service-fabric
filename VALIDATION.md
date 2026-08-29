@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-28** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, independently regenerated fail-closed completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-29** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, retained authorized completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -30,6 +30,12 @@ after independently rebuilding the retained calibration, profile, and soak
 aggregates from their raw artifacts and validating the fresh baseline against
 them. A full command fails if the receipt is not `authorized`; it never reports
 an incomplete or synthetic archive as a pass.
+
+The retained [native-Linux full receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
+was produced from a separate clean checkout with exit code 0. It records
+`authorization_status: "authorized"`, `phase1_authorized: true`, and no
+blockers. This gate authorization does not assert production readiness or Phase
+1 API compatibility.
 
 `make phase0-gate-smoke` runs the same code/contract/executable sequence with
 the deterministic smoke baseline. It records the receipt for CI but does not
