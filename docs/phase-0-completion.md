@@ -165,17 +165,30 @@ paths, links, traversal attempts, changed raw artifacts, unverified profile
 measurements, weakened guardrails, free-form optimization decisions, source
 identity drift, and incomplete evidence presented as an authorization.
 
-## Remaining gate work
+## When a full run blocks
 
 #39's retained calibration and soak pass for their recorded configuration; the
 closed issue does not waive the completion gate. Before Phase 1 is authorized,
 run `make phase0-gate` from a clean checkout and address every receipt blocker
 without weakening its raw-evidence, archive-integrity, source-identity, or
-fresh-baseline checks. A retained profile, calibration, or soak whose
-execution-relevant identity differs from the current checkout must be
-regenerated; documentation-only changes are excluded from that identity but
-remain visible in the receipt. An issue's closed state cannot substitute for
-this evidence.
+fresh-baseline checks.
+
+1. If the run writes `gate-summary.json`, preserve it and read its `blockers`
+   array. Do not edit an aggregate, archive, or receipt to clear a blocker: the
+   verifier regenerates and compares those inputs.
+2. If the run fails before a receipt exists, use the failing command or
+   verifier diagnostic to correct the cause, then rerun from a clean checkout.
+   A pre-receipt failure is not authorization or evidence that the receipt
+   would pass.
+3. If the blocker is execution-identity drift, regenerate the required native
+   Linux evidence chain for the current executable configuration. A retained
+   profile, calibration, or soak with a different execution-relevant identity
+   cannot authorize the new tree.
+4. Re-run the full gate from a clean checkout after the evidence and fresh
+   baseline agree. Documentation-only changes are excluded from the execution
+   identity but remain visible in the receipt.
+
+An issue's closed state cannot substitute for this evidence.
 
 ## Audit and Phase 1 handoff
 
