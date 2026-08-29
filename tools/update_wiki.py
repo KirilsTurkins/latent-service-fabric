@@ -32,7 +32,8 @@ REQUIRED_PAGES = frozenset({"Home.md", "_Sidebar.md", "_Footer.md", "Phase-0-Sta
 ALLOWED_SUFFIXES = frozenset({".md", ".svg", ".png", ".jpg", ".jpeg", ".webp"})
 IMAGE_LINK = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
-WIKI_LINK = re.compile(r"\[\[([^]|#]+)(?:#[^]|]*)?(?:\|[^]]*)?\]\]")
+WIKI_LINK = re.compile(r"\[\[([^]|#]+)(?:#[^|\]]*)?(?:\|[^\]]*)?\]\]")
+UNSAFE_MARKDOWN_HTML = re.compile(r"<\s*/?\s*(?:script|iframe|object|embed|img)\b", re.IGNORECASE)
 PHASE0_STATUS_MARKER = re.compile(r"<!-- LSF-PHASE0-GATE: (blocked|authorized) -->")
 PHASE0_STATUS_PAGES = ("Home.md", "Phase-0-Status.md", "Roadmap.md")
 
@@ -94,12 +95,17 @@ def _source_path(source: Path, relative: PurePosixPath) -> Path:
     return source.joinpath(*relative.parts)
 
 
-def _validate_image_links(source: Path, relative: PurePosixPath, document: str) -> None:
+def _validate_image_links(
+    source: Path, relative: PurePosixPath, document: str
+) -> set[PurePosixPath]:
+    referenced_assets: set[PurePosixPath] = set()
     for match in IMAGE_LINK.finditer(document):
         if not match.group(1).strip():
             raise WikiError(f"image link in {relative} must have descriptive alt text")
         target = match.group(2).strip()
-        if target.startswith(("https://", "http://", "#")):
+        if target.startswith(("https://", "http://")):
+            raise WikiError(f"remote image link is not permitted in {relative}: {target!r}")
+        if target.startswith("#"):
             continue
         target = target.split("#", maxsplit=1)[0].split("?", maxsplit=1)[0]
         candidate = PurePosixPath(target)
@@ -108,6 +114,25 @@ def _validate_image_links(source: Path, relative: PurePosixPath, document: str) 
         resolved = _source_path(source, PurePosixPath(relative.parent, candidate))
         if not resolved.is_file():
             raise WikiError(f"image link in {relative} does not exist in Wiki source: {target!r}")
+        referenced_assets.add(PurePosixPath(relative.parent, candidate))
+    return referenced_assets
+
+
+def _validate_page_structure(relative: PurePosixPath, document: str) -> None:
+    if relative.name in {"_Sidebar.md", "_Footer.md"}:
+        return
+    content_lines = document.splitlines()[1:]
+    first_content = next(
+        (line for line in content_lines if line.strip() and not line.strip().startswith("<!--")),
+        "",
+    )
+    if not first_content.startswith("# "):
+        raise WikiError(f"managed Wiki page must begin with an H1 heading: {relative}")
+
+
+def _validate_markdown_safety(relative: PurePosixPath, document: str) -> None:
+    if UNSAFE_MARKDOWN_HTML.search(document):
+        raise WikiError(f"managed Wiki page contains an unsafe HTML element: {relative}")
 
 
 def _validate_markdown_links(
@@ -123,6 +148,8 @@ def _validate_markdown_links(
         if target.startswith("#"):
             continue
         parsed = urlsplit(target)
+        if parsed.scheme.lower() in {"data", "javascript", "vbscript"}:
+            raise WikiError(f"Wiki link in {relative} uses an unsafe URI scheme: {target!r}")
         if parsed.scheme in {"http", "https"}:
             parts = parsed.path.split("/")
             if (
@@ -231,22 +258,32 @@ def validate_source(source: Path = DEFAULT_SOURCE) -> list[PurePosixPath]:
     if missing:
         raise WikiError(f"required managed Wiki pages are missing: {', '.join(missing)}")
 
+    referenced_assets: set[PurePosixPath] = set()
     for relative in files:
         path = _source_path(source, relative)
         if relative.suffix.lower() == ".md":
             document = path.read_text(encoding="utf-8")
             if not document.startswith(MANAGED_MARKER):
                 raise WikiError(f"managed Markdown page is missing its marker: {relative}")
+            _validate_page_structure(relative, document)
+            _validate_markdown_safety(relative, document)
             if "```mermaid" in document.lower():
                 raise WikiError(f"Mermaid is not permitted in managed Wiki pages: {relative}")
             if "/blob/release/" in document or "/tree/release/" in document:
                 raise WikiError(f"managed Wiki page links the obsolete release branch: {relative}")
-            _validate_image_links(source, relative, document)
+            referenced_assets.update(_validate_image_links(source, relative, document))
             _validate_markdown_links(source, relative, document, names)
         elif relative.suffix.lower() == ".svg":
             document = path.read_text(encoding="utf-8")
             _validate_svg(relative, document)
     _validate_sidebar_navigation(source, names)
+    managed_assets = {path for path in files if path.suffix.lower() != ".md"}
+    unreferenced_assets = sorted(managed_assets - referenced_assets, key=str)
+    if unreferenced_assets:
+        raise WikiError(
+            "managed Wiki assets are not referenced by a Markdown page: "
+            + ", ".join(str(path) for path in unreferenced_assets)
+        )
     return files
 
 

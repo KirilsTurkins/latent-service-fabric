@@ -12,6 +12,13 @@ No. The repository has a narrow Phase 0 local spike. It does not provide the
 Phase 1 public node, management, routing, deployment, or production-security
 surface.
 
+## Can work on a later phase begin while Phase 0 is still blocked?
+
+Yes, where the relevant issue and maintainers allow focused design or
+feature-branch work. That is not Phase 1 authorization: dependency status,
+merge readiness, and closure still require the specified Phase 0 handoff and
+the later issue’s own acceptance criteria.
+
 ## Is Phase 0 complete because issue #25 is closed?
 
 No. The authoritative condition is a clean-checkout full-gate receipt with

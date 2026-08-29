@@ -29,6 +29,11 @@ The resource soak is a single-host observational plateau for its recorded
 configuration. It is not a production SLO, cross-machine comparison, or proof
 of arbitrary-duration leak freedom.
 
+Browse the retained [Phase 0 evidence directory](https://github.com/KirilsTurkins/latent-service-fabric/tree/development/benchmarks/phase0)
+alongside the [completion-gate document](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-0-completion.md).
+Artifact names, checksums, and execution identity are part of the evidence;
+do not assume that the newest-looking directory is automatically applicable.
+
 ## Evidence has a compatibility boundary
 
 The gate compares raw evidence and regenerated aggregates with the source,

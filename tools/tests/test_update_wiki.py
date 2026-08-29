@@ -52,6 +52,18 @@ class WikiPublisherTests(unittest.TestCase):
         self.assertIn(PurePosixPath("assets/resource-ownership.svg"), files)
         self.assertIn(PurePosixPath("assets/roadmap-phases.svg"), files)
 
+    def test_phase0_status_marker_must_match_the_authoritative_document(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            source.mkdir()
+            for name in wiki.PHASE0_STATUS_PAGES:
+                (source / name).write_text(
+                    f"{wiki.MANAGED_MARKER}\n<!-- LSF-PHASE0-GATE: authorized -->\n# Page\n",
+                    encoding="utf-8",
+                )
+            with self.assertRaisesRegex(wiki.WikiError, "must be exactly 'blocked'"):
+                wiki.validate_phase0_status_alignment(source)
+
     def test_safe_relative_path_rejects_unsafe_paths(self) -> None:
         for value in ("", "../outside.md", "..\\outside.md", "/absolute.md", "C:/outside.md", ".git/config"):
             with self.subTest(value=value):
@@ -105,7 +117,7 @@ class WikiPublisherTests(unittest.TestCase):
             write_valid_source(source)
             self.assertEqual(len(wiki.validate_source(source)), 5)
             (source / "Home.md").write_text(
-                f"{wiki.MANAGED_MARKER}\n```mermaid\ngraph TD\n```\n", encoding="utf-8"
+                f"{wiki.MANAGED_MARKER}\n# Home\n\n```mermaid\ngraph TD\n```\n", encoding="utf-8"
             )
             with self.assertRaisesRegex(wiki.WikiError, "Mermaid"):
                 wiki.validate_source(source)
@@ -115,7 +127,7 @@ class WikiPublisherTests(unittest.TestCase):
             source = Path(directory) / "source"
             write_valid_source(source)
             (source / "Home.md").write_text(
-                f"{wiki.MANAGED_MARKER}\n[Missing](Not-A-Page)\n", encoding="utf-8"
+                f"{wiki.MANAGED_MARKER}\n# Home\n\n[Missing](Not-A-Page)\n", encoding="utf-8"
             )
             with self.assertRaisesRegex(wiki.WikiError, "does not exist in managed source"):
                 wiki.validate_source(source)
@@ -136,7 +148,7 @@ class WikiPublisherTests(unittest.TestCase):
             write_valid_source(source)
             (source / "Home.md").write_text(
                 (
-                    f"{wiki.MANAGED_MARKER}\n"
+                    f"{wiki.MANAGED_MARKER}\n# Home\n\n"
                     "[Missing repository file]"
                     "(https://github.com/KirilsTurkins/latent-service-fabric/"
                     "blob/development/not-a-real-file.md)\n"
@@ -166,9 +178,62 @@ class WikiPublisherTests(unittest.TestCase):
             source = Path(directory) / "source"
             write_valid_source(source)
             (source / "Home.md").write_text(
-                f"{wiki.MANAGED_MARKER}\n![](assets/flow.svg)\n", encoding="utf-8"
+                f"{wiki.MANAGED_MARKER}\n# Home\n\n![](assets/flow.svg)\n", encoding="utf-8"
             )
             with self.assertRaisesRegex(wiki.WikiError, "descriptive alt text"):
+                wiki.validate_source(source)
+
+    def test_validate_source_rejects_a_remote_image(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "Home.md").write_text(
+                f"{wiki.MANAGED_MARKER}\n# Home\n\n![Remote](https://example.invalid/flow.svg)\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "remote image link"):
+                wiki.validate_source(source)
+
+    def test_validate_source_rejects_an_unreferenced_asset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "assets" / "orphan.svg").write_text(
+                (
+                    '<svg viewBox="0 0 1 1" role="img" aria-labelledby="title description">'
+                    '<title id="title">orphan</title><desc id="description">orphan asset</desc></svg>'
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "assets are not referenced"):
+                wiki.validate_source(source)
+
+    def test_validate_source_requires_an_h1_for_a_public_page(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "Home.md").write_text(
+                f"{wiki.MANAGED_MARKER}\n## Home\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "begin with an H1"):
+                wiki.validate_source(source)
+
+    def test_validate_source_rejects_unsafe_markdown_content(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "Home.md").write_text(
+                f"{wiki.MANAGED_MARKER}\n# Home\n\n<script>alert(1)</script>\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "unsafe HTML"):
+                wiki.validate_source(source)
+
+            (source / "Home.md").write_text(
+                f"{wiki.MANAGED_MARKER}\n# Home\n\n[Unsafe](javascript:alert(1))\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "unsafe URI scheme"):
                 wiki.validate_source(source)
 
     def test_synchronize_replaces_only_known_managed_files(self) -> None:

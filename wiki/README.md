@@ -10,7 +10,7 @@ publisher replaces those pages and the listed legacy managed files while leaving
 unrecognized Wiki pages alone.
 
 The three prominent Phase 0 pages also carry a gate-status marker. Before a
-default-source publication, the publisher compares those markers with
+publication attempt, the publisher compares those markers with
 `docs/phase-0-completion.md` and refuses a mismatch. Update the Wiki only after
 the authoritative document and actual receipt justify the new state.
 

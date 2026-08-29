@@ -71,6 +71,15 @@ production security posture, production SLO, or dormant-service-density proof.
   the native-Linux evidence boundary.
 - [Roadmap](Roadmap) — Phase 0 through research promotion candidates.
 
+## Choose a reading route
+
+| If you want to… | Start here | Then continue with |
+|---|---|---|
+| Run and validate the local spike | [Getting started](Getting-Started) | [Phase 0 runbook](Phase-0-Runbook) and [Testing and benchmarks](Testing-and-Benchmarks) |
+| Understand the execution model | [Core concepts](Core-Concepts) | [Architecture](Architecture), [Activation lifecycle](Activation-Lifecycle), and [Execution cells](Execution-Cells) |
+| Evaluate Phase 0 handoff readiness | [Phase 0 status](Phase-0-Status) | [Phase 0 runbook](Phase-0-Runbook), then the authoritative receipt and evidence ledger |
+| Plan a later capability | [Roadmap](Roadmap) | The relevant target-architecture page and linked repository authority |
+
 ## Canonical sources
 
 | Topic | Repository authority |

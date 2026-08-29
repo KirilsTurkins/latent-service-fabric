@@ -21,6 +21,14 @@ issue, passing raw aggregate, or smoke result is not authorization.
 Use the [Phase 0 runbook](Phase-0-Runbook) to distinguish ordinary validation,
 smoke validation, the full gate, and native-Linux evidence collection.
 
+## Planning work is not an authorization claim
+
+Design, review, and clearly scoped feature-branch work for a later issue can
+begin when it is useful. That work must remain explicit about its dependency
+state: it cannot be represented as a merged Phase 1 capability, a satisfied
+handoff, or a substitute for the required Phase 0 evidence. The linked issue
+and repository authority determine when work is ready to merge or close.
+
 ## Phase 1 — single-node stateless fabric
 
 Planned: standalone node, local release catalog and route table, admission and

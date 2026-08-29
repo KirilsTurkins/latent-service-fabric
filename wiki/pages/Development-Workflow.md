@@ -50,6 +50,11 @@ development-branch repository reference before it can stage a change. It also
 refuses a publication whose prominent Phase 0 status conflicts with the
 authoritative completion document.
 
+When adding a page, keep it self-contained, start it with the managed marker
+and an H1 heading, add it to the sidebar, and use only checked-in accessible
+assets with descriptive alt text. The local checks reject orphaned pages,
+unreferenced assets, remote images, and unsafe embedded content.
+
 ## Contribution discipline
 
 An implementation change should identify its affected contracts, compatibility

@@ -15,7 +15,8 @@ replaceable Rust seams, executable evidence, and future architecture.
 | `examples/` | Echo fixture and other contract/declarative examples. |
 | `benchmarks/phase0/` | Baseline, calibration, profile, and soak evidence. |
 | `docs/` | Architecture, development, protocol, operational, testing, and Phase 0 evidence documentation. |
-| `tools/` | Validation, component build, spike, evidence aggregation, and gate tooling. |
+| `wiki/` | Managed GitHub Wiki pages, accessible SVG diagrams, and the local publication guide. |
+| `tools/` | Validation, component build, spike, evidence aggregation, gate, and local Wiki-publisher tooling. |
 | `adr/` | Accepted architecture decisions. |
 | `rfcs/` | Proposals that require design review. |
 | `research/` | Experimental tracks not promoted into the baseline. |
