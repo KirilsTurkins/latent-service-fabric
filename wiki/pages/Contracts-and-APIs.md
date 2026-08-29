@@ -13,6 +13,8 @@ authoritative layer.
 | Rust traits | Internal subsystem seams | Separate pool, execution, artifact, routing, policy, and other boundaries. |
 | SDKs | Language-facing projections | Rust, Go, TypeScript, Java, .NET, and C surfaces are compiled/checked. |
 
+![Contract authorities and boundaries](assets/contract-boundaries.svg)
+
 ## WIT in the Phase 0 spike
 
 The echo guest has a WIT export and imports the context and logging
@@ -22,6 +24,13 @@ Wasmtime.
 
 That proves one real typed guest/host boundary. It does not make the
 spike-specific JSON command output a stable future SDK or invocation API.
+
+## Compatibility posture
+
+Contract source and runtime behavior advance together. A generated descriptor,
+schema, or SDK build can prove that a surface remains internally consistent;
+it cannot prove that a public node implements the surface. Phase 1 work must
+preserve field, outcome, error-detail, and lifecycle semantics end to end.
 
 ## Error separation
 

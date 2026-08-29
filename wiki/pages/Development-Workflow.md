@@ -45,6 +45,11 @@ checked-in [Wiki source guide](https://github.com/KirilsTurkins/latent-service-f
 defines a validate-only command, a local diff plan, and an explicit publish
 step. The publisher preserves pages outside LSF’s managed set.
 
+The publisher validates every internal Wiki link, local image, and
+development-branch repository reference before it can stage a change. It also
+refuses a publication whose prominent Phase 0 status conflicts with the
+authoritative completion document.
+
 ## Contribution discipline
 
 An implementation change should identify its affected contracts, compatibility

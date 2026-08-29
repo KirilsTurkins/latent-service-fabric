@@ -14,6 +14,15 @@ socket, heap, or connection pool for every idle service.
 The Wiki explains the project. The [`development` branch](https://github.com/KirilsTurkins/latent-service-fabric/tree/development)
 is authoritative for code, contracts, evidence, and delivery status.
 
+## How to read this Wiki
+
+| Label | Meaning |
+|---|---|
+| **Implemented Phase 0** | A narrow local capability exercised by the checked-in executable spike. |
+| **Recorded evidence** | A bounded observation for a specific fixture, configuration, environment, and source identity. |
+| **Planned architecture** | A design direction or checked contract surface that still needs phase-specific runtime work and proof. |
+| **Authorized handoff** | A claim made only by the full completion receipt when it explicitly authorizes the next phase. |
+
 ## The core resource rule
 
 ```text

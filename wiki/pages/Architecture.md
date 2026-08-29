@@ -19,6 +19,8 @@ local capsule manifest + Component Model binary
 `latentd phase0-spike` is finite and local. It has no daemon listener, public
 RPC surface, release catalog, route snapshot, or persistent state path.
 
+![Phase 0 scope boundary](assets/phase0-scope-boundary.svg)
+
 ## Target planes
 
 The following are architectural direction, not Phase 0 runtime features:

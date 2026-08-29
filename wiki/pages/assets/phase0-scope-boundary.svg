@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 740" role="img" aria-labelledby="title description">
+  <title id="title">Phase 0 implemented feasibility slice and later fabric scope</title>
+  <desc id="description">The left side shows the implemented local Phase 0 echo composition and evidence boundary. The right side lists later fabric capabilities that must not be inferred from the spike.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#11211f"/>
+      <stop offset="1" stop-color="#19344b"/>
+    </linearGradient>
+    <linearGradient id="implemented" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#065f46"/>
+      <stop offset="1" stop-color="#0e7490"/>
+    </linearGradient>
+    <linearGradient id="planned" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3f3f46"/>
+      <stop offset="1" stop-color="#334155"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#99f6e4"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".42"/>
+    </filter>
+    <style>
+      .heading { fill: #f8fafc; font: 700 34px system-ui, sans-serif; letter-spacing: -.4px; }
+      .subheading { fill: #bae6fd; font: 400 19px system-ui, sans-serif; }
+      .eyebrow { fill: #5eead4; font: 700 14px system-ui, sans-serif; letter-spacing: 1.8px; }
+      .panel-label { fill: #d1fae5; font: 700 14px system-ui, sans-serif; letter-spacing: 1.2px; }
+      .panel-label-muted { fill: #cbd5e1; font: 700 14px system-ui, sans-serif; letter-spacing: 1.2px; }
+      .panel-title { fill: #fff; font: 700 27px system-ui, sans-serif; }
+      .item { fill: #ecfeff; font: 600 18px system-ui, sans-serif; }
+      .item-muted { fill: #e2e8f0; font: 600 18px system-ui, sans-serif; }
+      .copy { fill: #dbeafe; font: 400 16px system-ui, sans-serif; }
+      .warning { fill: #fed7aa; font: 700 17px system-ui, sans-serif; }
+      .footer { fill: #cbd5e1; font: 400 16px system-ui, sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="740" rx="28" fill="url(#background)"/>
+  <text x="72" y="82" class="eyebrow">Evidence boundary, not a product claim</text>
+  <text x="72" y="126" class="heading">Phase 0 is a narrow local feasibility slice inside a much larger planned fabric.</text>
+  <text x="72" y="159" class="subheading">Implementation and evidence are deliberately specific; future capabilities need their own contracts, runtime work, and proof.</text>
+
+  <g filter="url(#shadow)">
+    <rect x="72" y="218" width="578" height="386" rx="28" fill="url(#implemented)" stroke="#5eead4" stroke-width="2"/>
+    <rect x="790" y="218" width="578" height="386" rx="28" fill="url(#planned)" stroke="#94a3b8" stroke-width="2"/>
+  </g>
+
+  <text x="106" y="263" class="panel-label">IMPLEMENTED IN THE SPIKE</text>
+  <text x="106" y="307" class="panel-title">One local echo composition</text>
+  <rect x="106" y="338" width="510" height="44" rx="13" fill="#075985" fill-opacity=".58"/>
+  <text x="130" y="367" class="item">Generated WIT guest and real Wasmtime Component Model host</text>
+  <rect x="106" y="396" width="510" height="44" rx="13" fill="#075985" fill-opacity=".58"/>
+  <text x="130" y="425" class="item">Fixed generic cell pool, bounded cache, fresh invocation state</text>
+  <rect x="106" y="454" width="510" height="44" rx="13" fill="#075985" fill-opacity=".58"/>
+  <text x="130" y="483" class="item">Containment, recovery, cleanup proof, release or quarantine</text>
+  <rect x="106" y="512" width="510" height="44" rx="13" fill="#075985" fill-opacity=".58"/>
+  <text x="130" y="541" class="item">Baseline, calibration, profile, and resource-soak evidence</text>
+
+  <text x="824" y="263" class="panel-label-muted">NOT ESTABLISHED BY PHASE 0</text>
+  <text x="824" y="307" class="panel-title">Later fabric responsibilities</text>
+  <rect x="824" y="338" width="510" height="44" rx="13" fill="#475569" fill-opacity=".6"/>
+  <text x="848" y="367" class="item-muted">Public node, management listener, release catalog, route table</text>
+  <rect x="824" y="396" width="510" height="44" rx="13" fill="#475569" fill-opacity=".6"/>
+  <text x="848" y="425" class="item-muted">Generic multi-service invocation, policy, capabilities, telemetry</text>
+  <rect x="824" y="454" width="510" height="44" rx="13" fill="#475569" fill-opacity=".6"/>
+  <text x="848" y="483" class="item-muted">Persistent state/effects, deployment lifecycle, supply chain</text>
+  <rect x="824" y="512" width="510" height="44" rx="13" fill="#475569" fill-opacity=".6"/>
+  <text x="848" y="541" class="item-muted">Cluster operation, production security, SLOs, density proof</text>
+
+  <path d="M 678 412 H 760" stroke="#99f6e4" stroke-width="6" fill="none" marker-end="url(#arrow)"/>
+  <text x="672" y="378" class="warning">DO NOT</text>
+  <text x="670" y="447" class="warning">INFER</text>
+
+  <rect x="72" y="648" width="1296" height="44" rx="16" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+  <text x="100" y="677" class="footer">The completion receipt authorizes only the Phase 0 handoff when its own evidence conditions are satisfied; it does not automatically promote later scopes.</text>
+</svg>

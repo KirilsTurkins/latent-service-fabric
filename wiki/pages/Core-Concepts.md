@@ -28,6 +28,8 @@ Invocation → temporary activation → generic leased execution cell
 An idle service must not obtain its own worker, listener, process, thread,
 connection pool, or Wasmtime store merely because it is registered.
 
+![Node and activation resource ownership](assets/resource-ownership.svg)
+
 ## Phase 0 versus target architecture
 
 Phase 0 proves one local execution slice: a trusted echo capsule is prepared,

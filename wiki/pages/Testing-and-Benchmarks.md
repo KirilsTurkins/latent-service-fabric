@@ -29,6 +29,13 @@ The resource soak is a single-host observational plateau for its recorded
 configuration. It is not a production SLO, cross-machine comparison, or proof
 of arbitrary-duration leak freedom.
 
+## Evidence has a compatibility boundary
+
+The gate compares raw evidence and regenerated aggregates with the source,
+fixture, configuration, and toolchain identity that produced them. A renamed
+summary, copied archive, or changed execution path cannot turn old evidence
+into a result for a newer implementation.
+
 ## Native-Linux boundary
 
 New calibration, `perf`/Heaptrack profiling, and soak evidence must be

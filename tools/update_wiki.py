@@ -19,6 +19,7 @@ import sys
 import tempfile
 from urllib.parse import urlsplit
 from collections.abc import Iterable, Sequence
+import xml.etree.ElementTree as ElementTree
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +31,8 @@ MANIFEST_SCHEMA = "latent-service-fabric.wiki-manifest.v1"
 REQUIRED_PAGES = frozenset({"Home.md", "_Sidebar.md", "_Footer.md", "Phase-0-Status.md"})
 ALLOWED_SUFFIXES = frozenset({".md", ".svg", ".png", ".jpg", ".jpeg", ".webp"})
 IMAGE_LINK = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
+MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]*\]\(([^)]+)\)")
+WIKI_LINK = re.compile(r"\[\[([^]|#]+)(?:#[^]|]*)?(?:\|[^]]*)?\]\]")
 PHASE0_STATUS_MARKER = re.compile(r"<!-- LSF-PHASE0-GATE: (blocked|authorized) -->")
 PHASE0_STATUS_PAGES = ("Home.md", "Phase-0-Status.md", "Roadmap.md")
 
@@ -105,6 +108,98 @@ def _validate_image_links(source: Path, relative: PurePosixPath, document: str) 
             raise WikiError(f"image link in {relative} does not exist in Wiki source: {target!r}")
 
 
+def _validate_markdown_links(
+    source: Path,
+    relative: PurePosixPath,
+    document: str,
+    managed_files: set[str],
+) -> None:
+    """Check local Wiki links and development-branch repository references."""
+
+    for match in MARKDOWN_LINK.finditer(document):
+        target = match.group(1).strip()
+        if target.startswith("#"):
+            continue
+        parsed = urlsplit(target)
+        if parsed.scheme in {"http", "https"}:
+            parts = parsed.path.split("/")
+            if (
+                parsed.netloc == "github.com"
+                and len(parts) >= 6
+                and parts[1:3] == ["KirilsTurkins", "latent-service-fabric"]
+                and parts[3] in {"blob", "tree"}
+                and parts[4] == "development"
+            ):
+                repository_path = "/".join(parts[5:])
+                _safe_relative_path(repository_path)
+                candidate = ROOT.joinpath(*PurePosixPath(repository_path).parts)
+                exists = candidate.is_file() if parts[3] == "blob" else candidate.is_dir()
+                if not exists:
+                    raise WikiError(
+                        f"repository link in {relative} does not exist on development: {target!r}"
+                    )
+            continue
+        if parsed.scheme or target.startswith("//"):
+            continue
+        wiki_target = parsed.path
+        if not wiki_target:
+            continue
+        candidate = PurePosixPath(wiki_target)
+        if candidate.is_absolute() or ".." in candidate.parts:
+            raise WikiError(f"Wiki link in {relative} escapes the managed source: {target!r}")
+        relative_target = PurePosixPath(relative.parent, candidate)
+        if not relative_target.suffix:
+            relative_target = relative_target.with_suffix(".md")
+        if relative_target.as_posix() not in managed_files:
+            raise WikiError(f"Wiki link in {relative} does not exist in managed source: {target!r}")
+    for match in WIKI_LINK.finditer(document):
+        wiki_target = PurePosixPath(match.group(1).strip())
+        if wiki_target.is_absolute() or ".." in wiki_target.parts:
+            raise WikiError(f"Wiki link in {relative} escapes the managed source: {match.group(0)!r}")
+        if not wiki_target.suffix:
+            wiki_target = wiki_target.with_suffix(".md")
+        if wiki_target.as_posix() not in managed_files:
+            raise WikiError(f"Wiki link in {relative} does not exist in managed source: {match.group(0)!r}")
+
+
+def _svg_element_name(element: ElementTree.Element) -> str:
+    return element.tag.rsplit("}", maxsplit=1)[-1].lower()
+
+
+def _validate_svg(relative: PurePosixPath, document: str) -> None:
+    try:
+        root = ElementTree.fromstring(document)
+    except ElementTree.ParseError as error:
+        raise WikiError(f"SVG is not well-formed XML: {relative}: {error}") from error
+    if _svg_element_name(root) != "svg":
+        raise WikiError(f"SVG document has no svg root: {relative}")
+    if root.get("viewBox") is None or root.get("role") != "img":
+        raise WikiError(f"SVG is missing basic accessible structure: {relative}")
+
+    title = next((element for element in root if _svg_element_name(element) == "title"), None)
+    description = next((element for element in root if _svg_element_name(element) == "desc"), None)
+    labelled_by = set(root.get("aria-labelledby", "").split())
+    if (
+        title is None
+        or description is None
+        or not title.get("id")
+        or not description.get("id")
+        or not {title.get("id"), description.get("id")}.issubset(labelled_by)
+    ):
+        raise WikiError(f"SVG must expose title and description through aria-labelledby: {relative}")
+
+    for element in root.iter():
+        element_name = _svg_element_name(element)
+        if element_name in {"script", "foreignobject", "image"}:
+            raise WikiError(f"SVG contains active or embedded content: {relative}")
+        for attribute, value in element.attrib.items():
+            attribute_name = attribute.rsplit("}", maxsplit=1)[-1].lower()
+            if attribute_name.startswith("on"):
+                raise WikiError(f"SVG contains an event handler: {relative}")
+            if attribute_name == "href" and value.strip().lower().startswith("javascript:"):
+                raise WikiError(f"SVG contains a JavaScript href: {relative}")
+
+
 def validate_source(source: Path = DEFAULT_SOURCE) -> list[PurePosixPath]:
     """Validate source pages/assets without cloning or mutating the Wiki."""
 
@@ -125,12 +220,10 @@ def validate_source(source: Path = DEFAULT_SOURCE) -> list[PurePosixPath]:
             if "/blob/release/" in document or "/tree/release/" in document:
                 raise WikiError(f"managed Wiki page links the obsolete release branch: {relative}")
             _validate_image_links(source, relative, document)
+            _validate_markdown_links(source, relative, document, names)
         elif relative.suffix.lower() == ".svg":
             document = path.read_text(encoding="utf-8")
-            if "<svg" not in document or "viewBox=" not in document or "role=\"img\"" not in document:
-                raise WikiError(f"SVG is missing basic accessible structure: {relative}")
-            if "<script" in document.lower() or "<foreignobject" in document.lower():
-                raise WikiError(f"SVG contains active or unsupported content: {relative}")
+            _validate_svg(relative, document)
     return files
 
 

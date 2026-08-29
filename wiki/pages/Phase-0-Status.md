@@ -53,6 +53,17 @@ It emits `target/phase0-gate/.../gate-summary.json` even when blocked. That
 receipt contains the exact blockers. The command returns success only when
 authorization is genuine.
 
+## Read the receipt, not just the exit code
+
+For a handoff decision, inspect all of the following together:
+
+| Receipt field | Required interpretation |
+|---|---|
+| **authorization status** | Must be authorized; a passing sub-check is not enough. |
+| **Phase 1 authorized** | Must be true; it is the unambiguous machine-facing handoff signal. |
+| **blockers** | Must be empty; each entry explains why a result remains fail-closed. |
+| **source and execution identity** | Must match the evidence path or be supported by an explicit compatibility rule. |
+
 ## Evidence rules
 
 - New reference calibration, profiling, and soak evidence must be gathered on

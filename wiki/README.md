@@ -16,8 +16,8 @@ the authoritative document and actual receipt justify the new state.
 
 ## Local publication protocol
 
-From a clean checkout with Python 3.13 or newer and Git credentials capable of
-pushing to the repository Wiki:
+From a clean checkout of the development branch, with Python 3.13 or newer
+and Git credentials capable of pushing to the repository Wiki:
 
 ```bash
 # Validate only; this does not clone, commit, or contact the Wiki.
@@ -40,3 +40,14 @@ obsolete material without deleting Wiki pages outside LSF's managed set.
 The Wiki is explanatory and non-normative. The `development` branch of the
 main repository remains the authority for code, contracts, evidence, roadmap
 state, and authorization status.
+
+## Source conventions
+
+- Write every managed page as a self-contained explanation of what is
+  implemented, what is recorded evidence, and what remains planned.
+- Keep diagrams as checked-in, accessible SVGs with a title, description, and
+  view box. Do not rely on Mermaid rendering or remote image assets.
+- Use valid Wiki links for managed pages and development-branch links for
+  repository authorities. The local validator checks both before publication.
+- Treat the Phase 0 markers as a safety boundary: update them only when the
+  authoritative completion document and receipt genuinely support the change.

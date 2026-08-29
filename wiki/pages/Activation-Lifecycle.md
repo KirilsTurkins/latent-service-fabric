@@ -18,6 +18,8 @@ the Wasmtime backend.
 7. Release the cell only when cleanup is reusable; otherwise quarantine it.
 8. Remove the cancellation registration and report the terminal outcome.
 
+![Activation lifecycle and cleanup boundary](assets/activation-lifecycle.svg)
+
 ## Precedence and containment
 
 The Phase 0 runner makes outcome races deterministic:

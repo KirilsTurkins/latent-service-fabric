@@ -26,7 +26,11 @@ def write_valid_source(root: Path) -> None:
     (root / "_Footer.md").write_text(f"{marker}\n# Footer\n", encoding="utf-8")
     (root / "Phase-0-Status.md").write_text(f"{marker}\n# Status\n", encoding="utf-8")
     (assets / "flow.svg").write_text(
-        '<svg viewBox="0 0 1 1" role="img"><title>flow</title></svg>', encoding="utf-8"
+        (
+            '<svg viewBox="0 0 1 1" role="img" aria-labelledby="title description">'
+            '<title id="title">flow</title><desc id="description">test flow</desc></svg>'
+        ),
+        encoding="utf-8",
     )
 
 
@@ -35,9 +39,13 @@ class WikiPublisherTests(unittest.TestCase):
         source = Path(__file__).resolve().parents[2] / "wiki" / "pages"
         files = wiki.validate_source(source)
         self.assertEqual(wiki.validate_phase0_status_alignment(source), "blocked")
-        self.assertEqual(len(files), 24)
+        self.assertEqual(len(files), 28)
+        self.assertIn(PurePosixPath("assets/activation-lifecycle.svg"), files)
+        self.assertIn(PurePosixPath("assets/contract-boundaries.svg"), files)
         self.assertIn(PurePosixPath("assets/phase0-activation-flow.svg"), files)
         self.assertIn(PurePosixPath("assets/phase0-evidence-gate.svg"), files)
+        self.assertIn(PurePosixPath("assets/phase0-scope-boundary.svg"), files)
+        self.assertIn(PurePosixPath("assets/resource-ownership.svg"), files)
         self.assertIn(PurePosixPath("assets/roadmap-phases.svg"), files)
 
     def test_safe_relative_path_rejects_unsafe_paths(self) -> None:
@@ -73,6 +81,47 @@ class WikiPublisherTests(unittest.TestCase):
                 f"{wiki.MANAGED_MARKER}\n```mermaid\ngraph TD\n```\n", encoding="utf-8"
             )
             with self.assertRaisesRegex(wiki.WikiError, "Mermaid"):
+                wiki.validate_source(source)
+
+    def test_validate_source_rejects_a_missing_wiki_page(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "Home.md").write_text(
+                f"{wiki.MANAGED_MARKER}\n[Missing](Not-A-Page)\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "does not exist in managed source"):
+                wiki.validate_source(source)
+
+    def test_validate_source_rejects_a_missing_development_repository_link(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "Home.md").write_text(
+                (
+                    f"{wiki.MANAGED_MARKER}\n"
+                    "[Missing repository file]"
+                    "(https://github.com/KirilsTurkins/latent-service-fabric/"
+                    "blob/development/not-a-real-file.md)\n"
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "does not exist on development"):
+                wiki.validate_source(source)
+
+    def test_validate_source_rejects_active_svg_content(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "assets" / "flow.svg").write_text(
+                (
+                    '<svg viewBox="0 0 1 1" role="img" aria-labelledby="title description" '
+                    'onload="alert(1)"><title id="title">flow</title>'
+                    '<desc id="description">test flow</desc></svg>'
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "event handler"):
                 wiki.validate_source(source)
 
     def test_synchronize_replaces_only_known_managed_files(self) -> None:
