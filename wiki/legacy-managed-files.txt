@@ -1,0 +1,26 @@
+# Files published by the retired docs/wiki workflow. The local publisher may
+# replace or remove these paths, but it preserves any unlisted Wiki content.
+Activation-Lifecycle.md
+Architecture.md
+Capsule-Development.md
+Contracts-and-APIs.md
+Core-Concepts.md
+Deployment-and-Routing.md
+Design-Governance.md
+Development-Workflow.md
+Execution-Cells.md
+FAQ.md
+Getting-Started.md
+Glossary.md
+Home.md
+Repository-Map.md
+Roadmap.md
+Security-and-Isolation.md
+State-and-Effects.md
+Testing-and-Benchmarks.md
+_Footer.md
+_Sidebar.md
+assets/architecture-at-a-glance.gif
+assets/architecture-at-a-glance.svg
+assets/system-decomposition.gif
+assets/system-decomposition.svg
