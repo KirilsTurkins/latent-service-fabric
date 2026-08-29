@@ -101,7 +101,7 @@ unexpected invariant name, or duplicate invariant name invalidates the
 calibration; it is never filtered based on timing or resource values.
 
 Phase 1 comparisons use the checked-in
-[aggregate.json](benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json)
+[aggregate.json](benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json)
 and its documented per-metric advisory bands. Hosted CI must not treat those
 microbenchmark bands as a pass/fail gate. See
 [docs/phase-0-baselines.md](docs/phase-0-baselines.md) for comparison and rerun
@@ -149,7 +149,7 @@ tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
   --final-configuration-commit <reachable-final-commit> \
-  --calibration benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json \
+  --calibration benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json \
   benchmarks/phase0/soak/native-linux-YYYY-MM-DD
 ```
 
@@ -172,13 +172,15 @@ initialized-memory COW—are proved matched. A mismatch or missing identity is
 inconclusive, not a reason to raise an allowance.
 
 The retained final-configuration raw result is
-[`native-linux-2026-08-28-6a64f063`](benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/README.md):
+[`native-linux-2026-08-29-a724a5e3`](benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/README.md):
 three complete 100,000-activation processes from durable source commit
-`6a64f0630cee9afa080d33f376aabadac724fa72`. Its raw hard invariants,
+`a724a5e35234175f1001d1983e4411296ffa6b78` and tree
+`c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`. Its raw hard invariants,
 raw/host identity reconciliation, descriptor lifecycle, release/shutdown
 topology, and matched-calibration late-window analysis pass. The lossless zstd
 archive and its per-file manifest retain all raw process evidence without
-duplicating earlier attempts; #39 is complete for the recorded configuration.
+duplicating earlier attempts. The package is evidence input; authorization is
+decided only by a fresh full Phase 0 gate receipt.
 
 ## CI jobs
 

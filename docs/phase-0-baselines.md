@@ -23,12 +23,11 @@ Both commands run `tools/validate_contracts.sh` first. Missing Rust Wasm targets
 The original checked-in full-profile result is a historical WSL2 observation.
 The selected-configuration Phase 1 comparison reference is the seven-run
 native-Linux calibration in
-[benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063](../benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063).
+[benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3](../benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3).
 It records the published commit/tree, the execution commit/tree, and the
 explicit prepared-cache/on-demand/COW configuration used by the final soak.
-The older reachable calibration remains only as the immutable comparison input
-for the separately retained issue-40 profile archive; the duplicate unreachable
-archive was removed.
+Older calibration archives remain immutable historical evidence; the current
+profile and soak packages use this fresh reference.
 
 Create a new archive only from a clean worktree on one stable native-Linux host
 or VM:
@@ -98,7 +97,7 @@ tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
   --final-configuration-commit <reachable-final-commit> \
-  --calibration benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json \
+  --calibration benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json \
   benchmarks/phase0/soak/native-linux-YYYY-MM-DD
 ```
 
@@ -144,14 +143,14 @@ become a failure only when the same metric breaches its calibrated
 late-window material-growth rule.
 
 The retained post-issue-40 raw archive is
-[`native-linux-2026-08-28-6a64f063`](../benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/README.md), measured from
-durable source commit `6a64f0630cee9afa080d33f376aabadac724fa72` and tree
-`d27ff38ebbd891c5be949f54a0047522ed893d20`. Its three complete processes
+[`native-linux-2026-08-29-a724a5e3`](../benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/README.md), measured from
+durable source commit `a724a5e35234175f1001d1983e4411296ffa6b78` and tree
+`c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`. Its three complete processes
 pass all hard invariants, raw/host reconciliation, explicit release/shutdown
 topology, the complete descriptor lifecycle, and calibrated late-window
 RSS/PSS/private/VM analysis. The raw archive is losslessly checksummed and the
-aggregate applies the matching seven-process calibration without inference.
-Issue #39 is complete for this recorded configuration.
+aggregate applies the matching seven-process calibration without inference. It
+is evidence input for the full gate, not an authorization decision by itself.
 
 If the aggregate reports material growth, rerun the same command with
 `--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after

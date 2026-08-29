@@ -59,15 +59,15 @@ either tool's raw/report output, has a source-identity mismatch, a
 missing/duplicate/unexpected hard check in the complete proof, or one failed
 hard check.
 
-The accepted native-Linux reference is
-[native-linux-2026-08-27-de2337906](../benchmarks/phase0/profiling/native-linux-2026-08-27-de2337906/README.md).
-It records durable source commit `de2337906a4942e47611124a1c2217949abb58dc`
-and tree `0a32896faa58da7f34662cbf3be97670d6d1de4c`. Its compact aggregate
+The current native-Linux reference is
+[native-linux-2026-08-29-a724a5e3](../benchmarks/phase0/profiling/native-linux-2026-08-29-a724a5e3/README.md).
+It records durable source commit `a724a5e35234175f1001d1983e4411296ffa6b78`
+and tree `c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`. Its compact aggregate
 and concise report are directly checked in; its complete raw profile tree is
 losslessly retained with checksums in reassemblable `raw-evidence.tar.zst`
 fragments. The Heaptrack
-leak-only reports retain the observed 2.82 KiB process-exit residue rather
-than claiming it is zero or an unproven per-activation leak.
+leak-only reports retain the observed process-exit residues rather than
+claiming they are zero or an unproven per-activation leak.
 
 The workload set is scenario-selective while leaving the real composition
 intact. A separate uninstrumented `--mode full` proof retains the complete

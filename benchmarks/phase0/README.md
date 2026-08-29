@@ -4,15 +4,15 @@ raw-results.json and BASELINE.md are the original full-profile observation.
 They remain useful as historical evidence, but their WSL2 environment means
 they are not the Phase 1 variance reference.
 
-The authoritative native-Linux reference for the selected ordinary Phase 0
+The fresh native-Linux reference for the selected ordinary Phase 0
 configuration is retained under
-benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063. Its CALIBRATION.md and
+benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3. Its CALIBRATION.md and
 aggregate.json describe seven independent full-profile processes, link every
 individual raw run, and retain published/execution Git-tree provenance. It
 explicitly records prepared-cache enablement, `on_demand` Wasmtime allocation,
-and initialized-memory COW. The duplicate unreachable calibration archive was
-removed; the historical reachable reference remains only where the retained
-issue-40 profile archive needs its original comparison input.
+and initialized-memory COW. Historical calibration archives remain retained as
+historical evidence; the current profiling and soak packages use this fresh
+reference.
 
 Generate a new reference only from a clean worktree on a stable native-Linux
 host or VM:
@@ -99,13 +99,13 @@ single or small candidate set is not a Phase 0 optimization decision. See
 [the profiling handoff](../../docs/phase-0-hot-path-profiling.md) for the
 guardrails, decisions, and Phase 1 ownership.
 
-The accepted native-Linux archive is
-[native-linux-2026-08-27-de2337906](profiling/native-linux-2026-08-27-de2337906/README.md).
+The current native-Linux archive is
+[native-linux-2026-08-29-a724a5e3](profiling/native-linux-2026-08-29-a724a5e3/README.md).
 Its `aggregate.json` and `PROFILE.md` are directly readable; its complete raw
 profile tree is losslessly retained as checksummed `raw-evidence.tar.zst`
 fragments for practical Git storage. The archive identifies durable source commit
-`de2337906a4942e47611124a1c2217949abb58dc` and tree
-`0a32896faa58da7f34662cbf3be97670d6d1de4c`.
+`a724a5e35234175f1001d1983e4411296ffa6b78` and tree
+`c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`.
 
 ## Native-Linux long-running resource soak
 
@@ -119,7 +119,7 @@ tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
   --final-configuration-commit <reachable-final-commit> \
-  --calibration benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json \
+  --calibration benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json \
   benchmarks/phase0/soak/native-linux-YYYY-MM-DD
 ~~~
 
@@ -152,12 +152,11 @@ diagnosis in the same archive with `--retaining-subsystem <name>` and/or
 `--followup-issue <URL-or-number>`.
 
 The retained final-config raw evidence is
-[native-linux-2026-08-28-6a64f063](soak/native-linux-2026-08-28-6a64f063/README.md). It retains all three machine-readable
-raw process series losslessly in a checksummed 52 KiB zstd archive, alongside
+[native-linux-2026-08-29-a724a5e3](soak/native-linux-2026-08-29-a724a5e3/README.md). It retains all three machine-readable
+raw process series losslessly in a checksummed zstd archive, alongside
 the aggregate, concise report, host observations, command statuses, and
 raw-file hashes, without duplicating earlier attempts. Its hard invariants,
 full descriptor lifecycle, release/shutdown topology, and calibrated
 late-window RSS/PSS/private/VM analysis pass against the matching seven-process
-calibration. Issue #39 is therefore complete for the recorded local
-configuration; this remains observational evidence rather than a production or
-arbitrary-duration claim.
+calibration. This remains observational evidence rather than a production or
+arbitrary-duration claim, and it does not by itself authorize Phase 1.

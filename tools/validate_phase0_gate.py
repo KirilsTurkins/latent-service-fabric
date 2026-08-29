@@ -50,19 +50,19 @@ SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 DEFAULT_CALIBRATION = (
     REPOSITORY_ROOT
-    / "benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json"
+    / "benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json"
 )
 DEFAULT_PROFILE_CALIBRATION = (
     REPOSITORY_ROOT
-    / "benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json"
+    / "benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json"
 )
 DEFAULT_PROFILING = (
     REPOSITORY_ROOT
-    / "benchmarks/phase0/profiling/native-linux-2026-08-27-de2337906/aggregate.json"
+    / "benchmarks/phase0/profiling/native-linux-2026-08-29-a724a5e3/aggregate.json"
 )
 DEFAULT_SOAK = (
     REPOSITORY_ROOT
-    / "benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/aggregate.json"
+    / "benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/aggregate.json"
 )
 
 REQUIRED_CHECKS = frozenset(
