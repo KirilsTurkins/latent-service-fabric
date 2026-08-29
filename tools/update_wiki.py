@@ -36,6 +36,9 @@ WIKI_LINK = re.compile(r"\[\[([^]|#]+)(?:#[^|\]]*)?(?:\|[^\]]*)?\]\]")
 UNSAFE_MARKDOWN_HTML = re.compile(r"<\s*/?\s*(?:script|iframe|object|embed|img)\b", re.IGNORECASE)
 PHASE0_STATUS_MARKER = re.compile(r"<!-- LSF-PHASE0-GATE: (blocked|authorized) -->")
 PHASE0_STATUS_PAGES = ("Home.md", "Phase-0-Status.md", "Roadmap.md")
+SVG_UNSAFE_ELEMENTS = frozenset({"embed", "foreignobject", "iframe", "image", "object", "script"})
+SVG_NONLOCAL_URL = re.compile(r"url\(\s*['\"]?\s*(?!#)", re.IGNORECASE)
+SVG_CSS_IMPORT = re.compile(r"@import\b", re.IGNORECASE)
 
 
 class WikiError(RuntimeError):
@@ -222,7 +225,7 @@ def _validate_svg(relative: PurePosixPath, document: str) -> None:
         raise WikiError(f"SVG is not well-formed XML: {relative}: {error}") from error
     if _svg_element_name(root) != "svg":
         raise WikiError(f"SVG document has no svg root: {relative}")
-    if root.get("viewBox") is None or root.get("role") != "img":
+    if not root.get("viewBox", "").strip() or root.get("role") != "img":
         raise WikiError(f"SVG is missing basic accessible structure: {relative}")
 
     title = next((element for element in root if _svg_element_name(element) == "title"), None)
@@ -233,20 +236,42 @@ def _validate_svg(relative: PurePosixPath, document: str) -> None:
         or description is None
         or not title.get("id")
         or not description.get("id")
+        or not (title.text or "").strip()
+        or not (description.text or "").strip()
         or not {title.get("id"), description.get("id")}.issubset(labelled_by)
     ):
         raise WikiError(f"SVG must expose title and description through aria-labelledby: {relative}")
 
+    identifiers = {element.get("id") for element in root.iter() if element.get("id")}
+    if not labelled_by.issubset(identifiers):
+        raise WikiError(f"SVG aria-labelledby references an unknown ID: {relative}")
+
     for element in root.iter():
         element_name = _svg_element_name(element)
-        if element_name in {"script", "foreignobject", "image"}:
+        if element_name in SVG_UNSAFE_ELEMENTS:
             raise WikiError(f"SVG contains active or embedded content: {relative}")
         for attribute, value in element.attrib.items():
             attribute_name = attribute.rsplit("}", maxsplit=1)[-1].lower()
             if attribute_name.startswith("on"):
                 raise WikiError(f"SVG contains an event handler: {relative}")
-            if attribute_name == "href" and value.strip().lower().startswith("javascript:"):
-                raise WikiError(f"SVG contains a JavaScript href: {relative}")
+            if (
+                attribute_name in {"href", "src"}
+                and value.strip()
+                and not value.strip().startswith("#")
+            ):
+                raise WikiError(f"SVG contains a non-local reference: {relative}")
+            if SVG_NONLOCAL_URL.search(value):
+                raise WikiError(f"SVG contains a non-local URL reference: {relative}")
+
+    style_text = "\n".join(
+        "".join(element.itertext())
+        for element in root.iter()
+        if _svg_element_name(element) == "style"
+    )
+    if SVG_NONLOCAL_URL.search(style_text):
+        raise WikiError(f"SVG contains a non-local CSS URL: {relative}")
+    if SVG_CSS_IMPORT.search(style_text):
+        raise WikiError(f"SVG contains an external CSS import: {relative}")
 
 
 def validate_source(source: Path = DEFAULT_SOURCE) -> list[PurePosixPath]:

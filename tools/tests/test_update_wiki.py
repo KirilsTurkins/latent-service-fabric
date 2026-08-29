@@ -173,6 +173,35 @@ class WikiPublisherTests(unittest.TestCase):
             with self.assertRaisesRegex(wiki.WikiError, "event handler"):
                 wiki.validate_source(source)
 
+    def test_validate_source_rejects_nonlocal_svg_references(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "assets" / "flow.svg").write_text(
+                (
+                    '<svg viewBox="0 0 1 1" role="img" aria-labelledby="title description">'
+                    '<title id="title">flow</title><desc id="description">test flow</desc>'
+                    '<use href="https://example.invalid/external.svg#shape"/></svg>'
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "non-local reference"):
+                wiki.validate_source(source)
+
+    def test_validate_source_requires_nonempty_svg_labels(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "source"
+            write_valid_source(source)
+            (source / "assets" / "flow.svg").write_text(
+                (
+                    '<svg viewBox="0 0 1 1" role="img" aria-labelledby="title description">'
+                    '<title id="title">flow</title><desc id="description"></desc></svg>'
+                ),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(wiki.WikiError, "title and description"):
+                wiki.validate_source(source)
+
     def test_validate_source_rejects_an_image_without_alt_text(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "source"

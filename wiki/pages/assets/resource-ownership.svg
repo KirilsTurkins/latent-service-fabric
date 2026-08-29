@@ -1,76 +1,73 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="title description">
-  <title id="title">Node-owned and activation-owned resource boundary</title>
-  <desc id="description">Node-owned resources are fixed or bounded. Invocation-specific Wasmtime state, capability context, and temporary data exist only while an activation has an affine cell lease and are dropped before reuse.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="wiki-resource-title wiki-resource-description">
+  <title id="wiki-resource-title">Node-owned and activation-owned resource boundary</title>
+  <desc id="wiki-resource-description">Node-owned resources are fixed or bounded. Invocation-specific state exists only while an activation owns an affine cell lease and is discarded before the cell is reused or quarantined.</desc>
   <defs>
-    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1f172b"/>
-      <stop offset="1" stop-color="#193247"/>
+    <linearGradient id="wiki-resource-background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b102d"/>
+      <stop offset="1" stop-color="#1e3a5f"/>
     </linearGradient>
-    <linearGradient id="node" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="wiki-resource-node" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#312e81"/>
-      <stop offset="1" stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#4338ca"/>
     </linearGradient>
-    <linearGradient id="activation" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0f766e"/>
-      <stop offset="1" stop-color="#0891b2"/>
+    <linearGradient id="wiki-resource-activation" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e40af"/>
+      <stop offset="1" stop-color="#2563eb"/>
     </linearGradient>
-    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
-      <path d="M 1 1 L 11 6 L 1 11 z" fill="#c4b5fd"/>
+    <marker id="wiki-resource-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#bfdbfe"/>
     </marker>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".4"/>
+    <filter id="wiki-resource-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#09090b" flood-opacity=".38"/>
     </filter>
     <style>
-      .heading { fill: #f8fafc; font: 700 34px system-ui, sans-serif; letter-spacing: -.4px; }
-      .subheading { fill: #c4b5fd; font: 400 19px system-ui, sans-serif; }
-      .eyebrow { fill: #a5b4fc; font: 700 14px system-ui, sans-serif; letter-spacing: 1.8px; }
-      .panel-title { fill: #fff; font: 700 24px system-ui, sans-serif; }
-      .item { fill: #eef2ff; font: 600 18px system-ui, sans-serif; }
-      .copy { fill: #dbeafe; font: 400 15px system-ui, sans-serif; }
-      .rule { fill: #f8fafc; font: 700 23px system-ui, sans-serif; }
-      .small { fill: #cbd5e1; font: 400 16px system-ui, sans-serif; }
-      .pill { fill: #eef2ff; font: 700 14px system-ui, sans-serif; letter-spacing: .6px; }
+      .heading { font: 700 34px system-ui, sans-serif; fill: #faf5ff; }
+      .subheading { font: 400 18px system-ui, sans-serif; fill: #ddd6fe; }
+      .card-title { font: 700 23px system-ui, sans-serif; fill: #f8fafc; }
+      .item { font: 600 16px system-ui, sans-serif; fill: #eef2ff; }
+      .copy { font: 400 15px system-ui, sans-serif; fill: #e0e7ff; }
+      .label { font: 700 14px system-ui, sans-serif; fill: #e0e7ff; letter-spacing: .7px; }
+      .note { font: 600 16px system-ui, sans-serif; fill: #cbd5e1; }
     </style>
   </defs>
 
-  <rect width="1440" height="760" rx="28" fill="url(#background)"/>
-  <text x="72" y="82" class="eyebrow">LSF resource model</text>
-  <text x="72" y="126" class="heading">Logical services stay dormant; execution state belongs to a bounded activation.</text>
-  <text x="72" y="159" class="subheading">The key boundary is ownership, lifetime, and a positive cleanup proof — not merely a memory measurement.</text>
+  <rect width="1440" height="760" rx="34" fill="url(#wiki-resource-background)"/>
+  <text x="74" y="88" class="heading">Dormant services keep identity; activation state is temporary</text>
+  <text x="74" y="122" class="subheading">The boundary is ownership, lifetime, and positive cleanup proof - not merely a memory measurement.</text>
 
-  <g filter="url(#shadow)">
-    <rect x="72" y="216" width="590" height="372" rx="28" fill="url(#node)" stroke="#a5b4fc" stroke-width="2"/>
-    <rect x="778" y="216" width="590" height="372" rx="28" fill="url(#activation)" stroke="#5eead4" stroke-width="2"/>
+  <g filter="url(#wiki-resource-shadow)">
+    <rect x="74" y="194" width="562" height="364" rx="28" fill="url(#wiki-resource-node)" stroke="#a5b4fc" stroke-width="2"/>
+    <rect x="804" y="194" width="562" height="364" rx="28" fill="url(#wiki-resource-activation)" stroke="#93c5fd" stroke-width="2"/>
   </g>
 
-  <rect x="102" y="244" width="184" height="32" rx="16" fill="#4338ca"/>
-  <text x="124" y="266" class="pill">NODE-OWNED</text>
-  <text x="102" y="318" class="panel-title">Fixed or explicitly bounded</text>
-  <rect x="102" y="346" width="530" height="46" rx="13" fill="#1e3a8a" fill-opacity=".68"/>
-  <text x="126" y="376" class="item">Configured runtime workers and process topology</text>
-  <rect x="102" y="406" width="530" height="46" rx="13" fill="#1e3a8a" fill-opacity=".68"/>
-  <text x="126" y="436" class="item">Cell capacity and bounded FIFO queue</text>
-  <rect x="102" y="466" width="530" height="46" rx="13" fill="#1e3a8a" fill-opacity=".68"/>
-  <text x="126" y="496" class="item">Prepared component cache and bounded logs</text>
-  <text x="102" y="550" class="copy">Idle cells retain stable IDs and reuse generations — never a service,</text>
-  <text x="102" y="573" class="copy">tenant, capsule instance, store, listener, connection, or OS thread.</text>
+  <rect x="110" y="226" width="170" height="32" rx="16" fill="#4338ca"/>
+  <text x="132" y="248" class="label">NODE-OWNED</text>
+  <text x="110" y="300" class="card-title">Fixed or explicitly bounded</text>
+  <rect x="110" y="326" width="490" height="42" rx="13" fill="#312e81" fill-opacity=".75"/>
+  <text x="132" y="353" class="item">configured workers and process topology</text>
+  <rect x="110" y="380" width="490" height="42" rx="13" fill="#312e81" fill-opacity=".75"/>
+  <text x="132" y="407" class="item">cell capacity and bounded FIFO queue</text>
+  <rect x="110" y="434" width="490" height="42" rx="13" fill="#312e81" fill-opacity=".75"/>
+  <text x="132" y="461" class="item">prepared component cache and bounded logs</text>
+  <text x="110" y="510" class="copy">No idle service owns a process, listener, socket,</text>
+  <text x="110" y="533" class="copy">heap, thread, connection pool, or activation state.</text>
 
-  <rect x="808" y="244" width="246" height="32" rx="16" fill="#0f766e"/>
-  <text x="830" y="266" class="pill">ACTIVATION-OWNED</text>
-  <text x="808" y="318" class="panel-title">Created after admission; discarded at termination</text>
-  <rect x="808" y="346" width="530" height="46" rx="13" fill="#0f5f69" fill-opacity=".72"/>
-  <text x="832" y="376" class="item">Affine lease, deadline, cancellation registration</text>
-  <rect x="808" y="406" width="530" height="46" rx="13" fill="#0f5f69" fill-opacity=".72"/>
-  <text x="832" y="436" class="item">Fresh Wasmtime store, instance, and host state</text>
-  <rect x="808" y="466" width="530" height="46" rx="13" fill="#0f5f69" fill-opacity=".72"/>
-  <text x="832" y="496" class="item">Input, buffers, capability context, result metadata</text>
-  <text x="808" y="550" class="copy">All of this must be dropped before a cell can return to reusable capacity.</text>
+  <rect x="840" y="226" width="220" height="32" rx="16" fill="#1d4ed8"/>
+  <text x="862" y="248" class="label">ACTIVATION-OWNED</text>
+  <text x="840" y="300" class="card-title">Fresh for each invocation</text>
+  <rect x="840" y="326" width="490" height="42" rx="13" fill="#1e40af" fill-opacity=".78"/>
+  <text x="862" y="353" class="item">affine lease, deadline, cancellation probe</text>
+  <rect x="840" y="380" width="490" height="42" rx="13" fill="#1e40af" fill-opacity=".78"/>
+  <text x="862" y="407" class="item">fresh store, host state, and guest instance</text>
+  <rect x="840" y="434" width="490" height="42" rx="13" fill="#1e40af" fill-opacity=".78"/>
+  <text x="862" y="461" class="item">input, buffers, and capability context</text>
+  <text x="840" y="510" class="copy">This state is dropped before a cell returns to</text>
+  <text x="840" y="533" class="copy">reusable capacity or is quarantined.</text>
 
-  <path d="M 662 404 H 752" stroke="#c4b5fd" stroke-width="6" fill="none" marker-end="url(#arrow)"/>
-  <text x="676" y="375" class="pill">LEASE</text>
-  <text x="683" y="435" class="small">temporary</text>
+  <path d="M 638 376 H 794" stroke="#bfdbfe" stroke-width="6" marker-end="url(#wiki-resource-arrow)"/>
+  <text x="686" y="348" class="label">LEASE</text>
+  <text x="676" y="414" class="note">temporary</text>
 
-  <rect x="72" y="628" width="1296" height="72" rx="20" fill="#111827" stroke="#64748b" stroke-width="2"/>
-  <text x="104" y="661" class="rule">resident resources = fixed node runtime + active activations + bounded shared caches</text>
-  <text x="104" y="684" class="small">A dormant service retains identity, artifact metadata, policy, and routing information — not a reserved process or execution cell.</text>
+  <rect x="74" y="618" width="1292" height="64" rx="20" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+  <text x="104" y="656" class="note">Resource rule: resident resources are fixed node runtime, active activations, and bounded shared caches.</text>
 </svg>

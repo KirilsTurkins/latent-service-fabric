@@ -50,8 +50,15 @@ state, and authorization status.
 
 - Write every managed page as a self-contained explanation of what is
   implemented, what is recorded evidence, and what remains planned.
-- Keep diagrams as checked-in, accessible SVGs with a title, description, and
-  view box. Do not rely on Mermaid rendering or remote image assets.
+- Keep diagrams as checked-in, accessible SVGs with a title, description,
+  `role="img"`, a view box, filename-scoped internal IDs, and only local
+  references. Do not rely on raster screenshots, Mermaid rendering, remote
+  image assets, scripts, or external fonts/styles.
+- Use the project-wide visual language: a 1440 x 760 purple-to-blue canvas,
+  system-ui text, 24 px rounded cards, blue/purple factual or execution cards,
+  amber blockers, green only for verified conditional success, and slate for
+  excluded or later scope. The canonical detailed reference is
+  `docs/svg-style.md` on the development source branch.
 - Use valid Wiki links for managed pages and development-branch links for
   repository authorities. The local validator checks both before publication.
 - Treat the Phase 0 markers as a safety boundary: update them only when the

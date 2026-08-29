@@ -1,77 +1,72 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 780" role="img" aria-labelledby="title description">
-  <title id="title">Latent Service Fabric contract authorities and Phase 0 boundary</title>
-  <desc id="description">WIT defines capsule-facing contracts, Protobuf and JSON Schema define planned platform contracts, Rust traits are internal seams, and SDKs project public contracts. Phase 0 exercises a WIT Component Model path but does not make the checked-in platform contracts live APIs.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="wiki-contract-title wiki-contract-description">
+  <title id="wiki-contract-title">Contract authorities and the Phase 0 boundary</title>
+  <desc id="wiki-contract-description">WIT defines capsule-facing contracts, Protobuf and JSON Schema define planned platform contracts, and Rust seams with SDKs project implementation surfaces. Phase 0 exercises a WIT Component Model path but does not make platform contracts live APIs.</desc>
   <defs>
-    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#161c35"/>
-      <stop offset="1" stop-color="#24344c"/>
+    <linearGradient id="wiki-contract-background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b102d"/>
+      <stop offset="1" stop-color="#1e3a5f"/>
     </linearGradient>
-    <linearGradient id="wit" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="wiki-contract-wit" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#7c3aed"/>
-      <stop offset="1" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#4338ca"/>
     </linearGradient>
-    <linearGradient id="platform" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0369a1"/>
-      <stop offset="1" stop-color="#0f766e"/>
+    <linearGradient id="wiki-contract-platform" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e40af"/>
+      <stop offset="1" stop-color="#2563eb"/>
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".42"/>
+    <filter id="wiki-contract-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#09090b" flood-opacity=".38"/>
     </filter>
     <style>
-      .heading { fill: #f8fafc; font: 700 34px system-ui, sans-serif; letter-spacing: -.4px; }
-      .subheading { fill: #c7d2fe; font: 400 19px system-ui, sans-serif; }
-      .eyebrow { fill: #a5b4fc; font: 700 14px system-ui, sans-serif; letter-spacing: 1.8px; }
-      .overline { fill: #e0e7ff; font: 700 14px system-ui, sans-serif; letter-spacing: 1.3px; }
-      .title { fill: #fff; font: 700 23px system-ui, sans-serif; }
-      .copy { fill: #e0f2fe; font: 400 16px system-ui, sans-serif; }
-      .label { fill: #cbd5e1; font: 600 15px system-ui, sans-serif; }
-      .note { fill: #cbd5e1; font: 400 16px system-ui, sans-serif; }
-      .phase0 { fill: #dcfce7; font: 700 16px system-ui, sans-serif; }
-      .future { fill: #fed7aa; font: 700 16px system-ui, sans-serif; }
+      .heading { font: 700 34px system-ui, sans-serif; fill: #faf5ff; }
+      .subheading { font: 400 18px system-ui, sans-serif; fill: #ddd6fe; }
+      .overline { font: 700 14px system-ui, sans-serif; fill: #e0e7ff; letter-spacing: 1px; }
+      .card-title { font: 700 22px system-ui, sans-serif; fill: #f8fafc; }
+      .copy { font: 400 15px system-ui, sans-serif; fill: #e0e7ff; }
+      .label { font: 700 15px system-ui, sans-serif; fill: #fde68a; }
+      .note { font: 400 16px system-ui, sans-serif; fill: #cbd5e1; }
+      .rule { font: 700 21px system-ui, sans-serif; fill: #f8fafc; }
     </style>
   </defs>
 
-  <rect width="1440" height="780" rx="28" fill="url(#background)"/>
-  <text x="72" y="82" class="eyebrow">Interface-first architecture</text>
-  <text x="72" y="126" class="heading">Each contract has an authority; implementation surfaces must not blur it.</text>
-  <text x="72" y="159" class="subheading">The Phase 0 echo path proves one real WIT Component Model boundary, not a live public platform service.</text>
+  <rect width="1440" height="760" rx="34" fill="url(#wiki-contract-background)"/>
+  <text x="74" y="88" class="heading">Each contract has an authority; implementation must not blur it</text>
+  <text x="74" y="122" class="subheading">The Phase 0 echo path proves one real WIT Component Model boundary, not a live public platform service.</text>
 
-  <g filter="url(#shadow)">
-    <rect x="72" y="222" width="380" height="332" rx="28" fill="url(#wit)" stroke="#c4b5fd" stroke-width="2"/>
-    <rect x="530" y="222" width="380" height="332" rx="28" fill="url(#platform)" stroke="#67e8f9" stroke-width="2"/>
-    <rect x="988" y="222" width="380" height="332" rx="28" fill="#334155" stroke="#94a3b8" stroke-width="2"/>
+  <g filter="url(#wiki-contract-shadow)">
+    <rect x="74" y="196" width="360" height="340" rx="24" fill="url(#wiki-contract-wit)" stroke="#c4b5fd" stroke-width="2"/>
+    <rect x="540" y="196" width="360" height="340" rx="24" fill="url(#wiki-contract-platform)" stroke="#93c5fd" stroke-width="2"/>
+    <rect x="1006" y="196" width="360" height="340" rx="24" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
   </g>
 
-  <text x="102" y="264" class="overline">CAPSULE-FACING AUTHORITY</text>
-  <text x="102" y="307" class="title">WIT packages</text>
-  <text x="102" y="342" class="copy">Guest exports and platform imports:</text>
-  <text x="102" y="366" class="copy">types, capability handles, and</text>
-  <text x="102" y="390" class="copy">declared domain-error variants.</text>
-  <rect x="102" y="432" width="320" height="78" rx="16" fill="#312e81" fill-opacity=".66"/>
-  <text x="124" y="463" class="phase0">PHASE 0: exercised by the real</text>
-  <text x="124" y="488" class="phase0">Rust echo Component Model guest.</text>
+  <text x="106" y="238" class="overline">CAPSULE-FACING AUTHORITY</text>
+  <text x="106" y="282" class="card-title">WIT packages</text>
+  <text x="106" y="320" class="copy">guest exports and platform imports</text>
+  <text x="106" y="346" class="copy">types and capability handles</text>
+  <text x="106" y="372" class="copy">declared domain-error variants</text>
+  <rect x="106" y="422" width="296" height="72" rx="16" fill="#312e81" fill-opacity=".72"/>
+  <text x="128" y="454" class="label">PHASE 0 EXERCISES</text>
+  <text x="128" y="478" class="copy">the real Rust echo guest path.</text>
 
-  <text x="560" y="264" class="overline">PLATFORM CONTRACT AUTHORITY</text>
-  <text x="560" y="307" class="title">Protobuf + JSON Schema</text>
-  <text x="560" y="342" class="copy">Control/data-plane RPCs and</text>
-  <text x="560" y="366" class="copy">declarative resources: releases,</text>
-  <text x="560" y="390" class="copy">routes, policies, and bindings.</text>
-  <rect x="560" y="432" width="320" height="78" rx="16" fill="#164e63" fill-opacity=".7"/>
-  <text x="582" y="463" class="future">CHECKED CONTRACT SOURCES;</text>
-  <text x="582" y="488" class="future">not a Phase 0 public runtime API.</text>
+  <text x="572" y="238" class="overline">PLATFORM CONTRACT AUTHORITY</text>
+  <text x="572" y="282" class="card-title">Protobuf + JSON Schema</text>
+  <text x="572" y="320" class="copy">RPC shapes and declarative resources</text>
+  <text x="572" y="346" class="copy">releases, routes, policies, bindings</text>
+  <text x="572" y="372" class="copy">checked sources, not a runtime API</text>
+  <rect x="572" y="422" width="296" height="72" rx="16" fill="#1e3a8a" fill-opacity=".76"/>
+  <text x="594" y="454" class="label">PHASE 0 DOES NOT</text>
+  <text x="594" y="478" class="copy">instantiate a public platform node.</text>
 
-  <text x="1018" y="264" class="overline">IMPLEMENTATION / PROJECTION</text>
-  <text x="1018" y="307" class="title">Rust seams + SDKs</text>
-  <text x="1018" y="342" class="copy">Rust traits keep internal systems</text>
-  <text x="1018" y="366" class="copy">replaceable. SDKs project stable</text>
-  <text x="1018" y="390" class="copy">external contracts into languages.</text>
-  <rect x="1018" y="432" width="320" height="78" rx="16" fill="#1e293b" fill-opacity=".72"/>
-  <text x="1040" y="463" class="label">Compiling an SDK verifies a surface;</text>
-  <text x="1040" y="488" class="label">it does not instantiate a node.</text>
+  <text x="1038" y="238" class="overline">IMPLEMENTATION / PROJECTION</text>
+  <text x="1038" y="282" class="card-title">Rust seams + SDKs</text>
+  <text x="1038" y="320" class="copy">traits keep internal systems replaceable</text>
+  <text x="1038" y="346" class="copy">SDKs project stable surface shapes</text>
+  <text x="1038" y="372" class="copy">language bindings are not a node</text>
+  <rect x="1038" y="422" width="296" height="72" rx="16" fill="#1e293b" fill-opacity=".78"/>
+  <text x="1060" y="454" class="label">COMPILATION PROVES</text>
+  <text x="1060" y="478" class="copy">a surface, not live service behavior.</text>
 
-  <text x="72" y="590" class="note">These are parallel authorities. Any adapter between them must be explicit and preserve the contract’s outcome and error semantics.</text>
-
-  <rect x="72" y="622" width="1296" height="86" rx="22" fill="#111827" stroke="#64748b" stroke-width="2"/>
-  <text x="104" y="659" class="title">Preserve error separation across every boundary.</text>
-  <text x="104" y="687" class="note">A service-declared domain error is a contract result. Trap, deadline, cancellation, exhaustion, invalid input, and cleanup failure are platform errors.</text>
+  <rect x="74" y="598" width="1292" height="84" rx="22" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+  <text x="106" y="636" class="rule">Preserve error separation across every boundary.</text>
+  <text x="106" y="664" class="note">A declared domain error is a contract result; trap, deadline, cancellation, exhaustion, invalid input, and cleanup failure are platform errors.</text>
 </svg>

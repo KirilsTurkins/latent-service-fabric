@@ -1,88 +1,87 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="title description">
-  <title id="title">Phase 0 executable activation flow</title>
-  <desc id="description">A local echo capsule is prepared, admitted to a bounded generic cell pool, invoked in a fresh Wasmtime store, mapped to a terminal outcome, and cleaned up before the cell can be reused.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="wiki-activation-flow-title wiki-activation-flow-description">
+  <title id="wiki-activation-flow-title">Phase 0 executable activation flow</title>
+  <desc id="wiki-activation-flow-description">A local echo capsule is prepared, admitted to a bounded generic cell pool, invoked in fresh Wasmtime state, mapped to a terminal outcome, and cleaned up before the cell is reused or quarantined.</desc>
   <defs>
-    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#071525"/>
-      <stop offset="1" stop-color="#12354b"/>
+    <linearGradient id="wiki-activation-flow-background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b102d"/>
+      <stop offset="1" stop-color="#1e3a5f"/>
     </linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#5eead4"/>
-      <stop offset="1" stop-color="#60a5fa"/>
+    <linearGradient id="wiki-activation-flow-evidence" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#2563eb"/>
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".38"/>
-    </filter>
-    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 1 1 L 11 6 L 1 11 z" fill="#7dd3fc"/>
+    <marker id="wiki-activation-flow-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#bfdbfe"/>
     </marker>
+    <filter id="wiki-activation-flow-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#09090b" flood-opacity=".38"/>
+    </filter>
     <style>
-      .heading { font: 700 34px system-ui, sans-serif; fill: #f8fafc; }
-      .subheading { font: 400 18px system-ui, sans-serif; fill: #cbd5e1; }
-      .box-title { font: 700 20px system-ui, sans-serif; fill: #eff6ff; }
-      .box-copy { font: 400 15px system-ui, sans-serif; fill: #cbd5e1; }
-      .note { font: 600 16px system-ui, sans-serif; fill: #d1fae5; }
-      .step { font: 700 15px system-ui, sans-serif; fill: #082f49; }
+      .heading { font: 700 34px system-ui, sans-serif; fill: #faf5ff; }
+      .subheading { font: 400 18px system-ui, sans-serif; fill: #ddd6fe; }
+      .step { font: 700 14px system-ui, sans-serif; fill: #312e81; }
+      .box-title { font: 700 20px system-ui, sans-serif; fill: #f8fafc; }
+      .box-copy { font: 400 15px system-ui, sans-serif; fill: #e0e7ff; }
+      .note { font: 600 16px system-ui, sans-serif; fill: #c4b5fd; }
+      .warning { font: 700 16px system-ui, sans-serif; fill: #fde68a; }
     </style>
   </defs>
-  <rect width="1440" height="760" rx="34" fill="url(#background)"/>
+
+  <rect width="1440" height="760" rx="34" fill="url(#wiki-activation-flow-background)"/>
   <text x="74" y="88" class="heading">Phase 0: one local Component Model activation</text>
-  <text x="74" y="122" class="subheading">A deliberately narrow feasibility path — not a public service listener or Phase 1 API.</text>
+  <text x="74" y="122" class="subheading">A deliberately narrow feasibility path, not a public service listener or Phase 1 API.</text>
 
-  <g filter="url(#shadow)">
-    <rect x="70" y="204" width="210" height="190" rx="22" fill="#143752" stroke="#67e8f9" stroke-width="2"/>
-    <circle cx="104" cy="240" r="20" fill="url(#accent)"/>
-    <text x="99" y="246" class="step">1</text>
-    <text x="104" y="286" class="box-title">Echo capsule</text>
-    <text x="104" y="316" class="box-copy">WIT-generated Rust</text>
-    <text x="104" y="340" class="box-copy">component + digest</text>
-    <text x="104" y="364" class="box-copy">validated locally</text>
-
-    <rect x="335" y="204" width="210" height="190" rx="22" fill="#143752" stroke="#67e8f9" stroke-width="2"/>
-    <circle cx="369" cy="240" r="20" fill="url(#accent)"/>
-    <text x="364" y="246" class="step">2</text>
-    <text x="369" y="286" class="box-title">Preparation</text>
-    <text x="369" y="316" class="box-copy">bounded Wasmtime</text>
-    <text x="369" y="340" class="box-copy">engine + cache</text>
-    <text x="369" y="364" class="box-copy">before a cell lease</text>
-
-    <rect x="600" y="204" width="210" height="190" rx="22" fill="#143752" stroke="#67e8f9" stroke-width="2"/>
-    <circle cx="634" cy="240" r="20" fill="url(#accent)"/>
-    <text x="629" y="246" class="step">3</text>
-    <text x="634" y="286" class="box-title">Fixed cell pool</text>
-    <text x="634" y="316" class="box-copy">affine lease</text>
-    <text x="634" y="340" class="box-copy">fixed capacity +</text>
-    <text x="634" y="364" class="box-copy">bounded FIFO queue</text>
-
-    <rect x="865" y="204" width="210" height="190" rx="22" fill="#143752" stroke="#67e8f9" stroke-width="2"/>
-    <circle cx="899" cy="240" r="20" fill="url(#accent)"/>
-    <text x="894" y="246" class="step">4</text>
-    <text x="899" y="286" class="box-title">Fresh invocation</text>
-    <text x="899" y="316" class="box-copy">store, host state,</text>
-    <text x="899" y="340" class="box-copy">limits, deadline,</text>
-    <text x="899" y="364" class="box-copy">cancellation probe</text>
-
-    <rect x="1130" y="204" width="240" height="190" rx="22" fill="#143752" stroke="#67e8f9" stroke-width="2"/>
-    <circle cx="1164" cy="240" r="20" fill="url(#accent)"/>
-    <text x="1159" y="246" class="step">5</text>
-    <text x="1164" y="286" class="box-title">Terminal result</text>
-    <text x="1164" y="316" class="box-copy">success • domain error</text>
-    <text x="1164" y="340" class="box-copy">trap • timeout • cancel</text>
-    <text x="1164" y="364" class="box-copy">resource exhaustion</text>
+  <g filter="url(#wiki-activation-flow-shadow)">
+    <rect x="74" y="204" width="222" height="176" rx="22" fill="url(#wiki-activation-flow-evidence)" stroke="#c4b5fd" stroke-width="2"/>
+    <rect x="330" y="204" width="222" height="176" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <rect x="586" y="204" width="222" height="176" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <rect x="842" y="204" width="222" height="176" rx="22" fill="#1e40af" stroke="#93c5fd" stroke-width="2"/>
+    <rect x="1098" y="204" width="222" height="176" rx="22" fill="#1e40af" stroke="#93c5fd" stroke-width="2"/>
   </g>
 
-  <path d="M 282 300 H 330" stroke="#7dd3fc" stroke-width="5" marker-end="url(#arrow)"/>
-  <path d="M 547 300 H 595" stroke="#7dd3fc" stroke-width="5" marker-end="url(#arrow)"/>
-  <path d="M 812 300 H 860" stroke="#7dd3fc" stroke-width="5" marker-end="url(#arrow)"/>
-  <path d="M 1077 300 H 1125" stroke="#7dd3fc" stroke-width="5" marker-end="url(#arrow)"/>
+  <circle cx="108" cy="238" r="19" fill="#c4b5fd"/>
+  <text x="103" y="243" class="step">1</text>
+  <text x="106" y="282" class="box-title">Echo capsule</text>
+  <text x="106" y="312" class="box-copy">WIT-generated Rust</text>
+  <text x="106" y="336" class="box-copy">component + digest</text>
 
-  <g filter="url(#shadow)">
-    <rect x="190" y="494" width="1060" height="128" rx="24" fill="#0f2d41" stroke="#34d399" stroke-width="2"/>
-    <text x="238" y="542" class="box-title">Cleanup proof before reuse</text>
-    <text x="238" y="574" class="box-copy">Drop the instance, store, host state, temporary buffers, and cancellation probe; publish bounded logs; then release only when cleanup is reusable — otherwise quarantine.</text>
-    <text x="238" y="604" class="note">Measured topology: fixed runtime workers, one process, no listener/socket, fixed cell capacity.</text>
+  <circle cx="364" cy="238" r="19" fill="#c4b5fd"/>
+  <text x="359" y="243" class="step">2</text>
+  <text x="362" y="282" class="box-title">Prepare</text>
+  <text x="362" y="312" class="box-copy">bounded Wasmtime</text>
+  <text x="362" y="336" class="box-copy">engine + cache</text>
+
+  <circle cx="620" cy="238" r="19" fill="#c4b5fd"/>
+  <text x="615" y="243" class="step">3</text>
+  <text x="618" y="282" class="box-title">Lease a cell</text>
+  <text x="618" y="312" class="box-copy">fixed capacity + FIFO</text>
+  <text x="618" y="336" class="box-copy">one affine owner</text>
+
+  <circle cx="876" cy="238" r="19" fill="#bfdbfe"/>
+  <text x="871" y="243" class="step">4</text>
+  <text x="874" y="282" class="box-title">Fresh state</text>
+  <text x="874" y="312" class="box-copy">store + host state</text>
+  <text x="874" y="336" class="box-copy">limits + cancellation</text>
+
+  <circle cx="1132" cy="238" r="19" fill="#bfdbfe"/>
+  <text x="1127" y="243" class="step">5</text>
+  <text x="1130" y="282" class="box-title">Terminal result</text>
+  <text x="1130" y="312" class="box-copy">success or</text>
+  <text x="1130" y="336" class="box-copy">declared error</text>
+  <text x="1130" y="360" class="box-copy">trap, timeout, or cancel</text>
+
+  <path d="M 298 292 H 320" stroke="#bfdbfe" stroke-width="5" marker-end="url(#wiki-activation-flow-arrow)"/>
+  <path d="M 554 292 H 576" stroke="#bfdbfe" stroke-width="5" marker-end="url(#wiki-activation-flow-arrow)"/>
+  <path d="M 810 292 H 832" stroke="#bfdbfe" stroke-width="5" marker-end="url(#wiki-activation-flow-arrow)"/>
+  <path d="M 1066 292 H 1088" stroke="#bfdbfe" stroke-width="5" marker-end="url(#wiki-activation-flow-arrow)"/>
+
+  <g filter="url(#wiki-activation-flow-shadow)">
+    <rect x="190" y="482" width="1060" height="128" rx="24" fill="#1e40af" stroke="#93c5fd" stroke-width="2"/>
   </g>
-  <path d="M 1250 394 C 1250 450 1175 458 1120 492" fill="none" stroke="#86efac" stroke-width="4" marker-end="url(#arrow)"/>
-  <text x="1120" y="452" class="subheading">all terminal paths</text>
-  <text x="74" y="700" class="subheading">Scope: local trusted fixture • observational evidence • no production SLO or dormant-service-density claim</text>
+  <text x="238" y="530" class="box-title">Cleanup proof before reuse</text>
+  <text x="238" y="562" class="box-copy">Drop the instance, store, host state, temporary buffers, and cancellation probe; publish bounded logs.</text>
+  <text x="238" y="588" class="warning">Release only after reusable cleanup is proved; otherwise quarantine the cell.</text>
+  <path d="M 1208 382 C 1208 430 1152 446 1098 476" fill="none" stroke="#bfdbfe" stroke-width="4" marker-end="url(#wiki-activation-flow-arrow)"/>
+  <text x="1088" y="438" class="note">all terminal paths</text>
+  <text x="74" y="690" class="subheading">Scope: local trusted fixture, observational evidence, and no production SLO or dormant-service-density claim.</text>
 </svg>
