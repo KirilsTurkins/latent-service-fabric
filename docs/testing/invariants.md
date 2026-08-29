@@ -2,7 +2,7 @@
 
 This document separates the Phase 0 invariants exercised by the executable
 spike from target invariants that remain Phase 1 or later work. The current
-completion receipt is deliberately **blocked**, not authorized; see
+completion receipt is deliberately fail-closed and not yet authorized; see
 [`../phase-0-completion.md`](../phase-0-completion.md).
 
 ## Phase 0 exercised subset
@@ -34,9 +34,13 @@ after preparation. The invariant is fixed configured/node runtime topology,
 not byte-for-byte constancy of raw OS thread count while an engine runs.
 
 The retained three-process resource soak passes its hard logical-resource and
-terminal-topology checks but does not currently prove a conclusive calibrated
-resource plateau. A completed gate requires replacement evidence with matching
-calibration and complete descriptor-lifecycle fields.
+terminal-topology checks and proves a calibrated plateau for the recorded
+native-Linux configuration: its seven-process calibration is matched and its
+descriptor-lifecycle evidence is complete. Issue #39 therefore needs no
+additional calibration or soak rerun. This single-host observational result
+does not authorize Phase 0 or Phase 1; a clean-checkout `make phase0-gate`
+run must still produce an authorized receipt with every remaining identity,
+archive, profile, and fresh-baseline blocker resolved.
 
 ## Dormant-service scaling — not yet proven
 
@@ -55,10 +59,12 @@ bounded-cache baseline. File descriptors, handles, timers, provider leases,
 and temporary blobs must remain bounded.
 
 Phase 0 proves activation-owned cleanup for its finite local Wasmtime
-composition and records a long-running soak. It does not yet have the matched,
-fully recorded native-Linux plateau proof required to authorize Phase 1. Provider
-leases, state/effect resources, production telemetry, and new Phase 1
-subsystems require their own reclamation tests.
+composition and records a matched, fully documented native-Linux plateau for
+the selected configuration. It does not prove arbitrary-duration leak freedom,
+production SLOs, a capacity guarantee, or Phase 1 API behavior, and it does
+not itself authorize Phase 1. Provider leases, state/effect resources,
+production telemetry, and new Phase 1 subsystems require their own reclamation
+tests.
 
 ## Isolation — target invariants
 

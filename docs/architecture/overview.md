@@ -28,10 +28,14 @@ capacity remain fixed through the measured lifecycle. Wasmtime may create one
 bounded epoch-interruption helper thread after preparation; that is fixed
 node/runtime infrastructure, not a per-service thread.
 
-This is not yet a completed Phase 0 authorization. The retained native-Linux
-resource-soak aggregate is inconclusive because it lacks a fully matched
-calibration identity and descriptor lifecycle. The fail-closed status,
-evidence paths, and required replacement measurement are recorded in
+This is not yet a completed Phase 0 authorization. Issue #39 is complete for
+the recorded configuration: the retained native-Linux resource soak has a
+matched calibration identity and complete descriptor-lifecycle evidence, so no
+additional calibration or soak rerun is currently required. The evidence is
+still observational and single-host. A clean-checkout `make phase0-gate` run
+must produce an authorized receipt after resolving every remaining identity,
+archive, profile, and fresh-baseline blocker; its fail-closed status and
+evidence paths are recorded in
 [`../phase-0-completion.md`](../phase-0-completion.md).
 
 Phase 0 did not prove dormant registration at 100,000 services, route or

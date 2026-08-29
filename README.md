@@ -4,7 +4,7 @@ Latent Service Fabric (LSF) is an interface-first research and engineering proje
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Most of this repository remains an architecture and API scaffold. Phase 0 contains a narrow, explicitly non-production executable spike for one local echo capsule. Its completion gate is currently blocked on conclusive matched native-Linux soak evidence, so it does not authorize Phase 1 API compatibility or production readiness.
+> Most of this repository remains an architecture and API scaffold. Phase 0 contains a narrow, explicitly non-production executable spike for one local echo capsule. Issue #39 is complete for its recorded native-Linux configuration, but Phase 1 remains blocked until a clean-checkout `make phase0-gate` run produces an authorized receipt with every remaining identity, archive, profile, and fresh-baseline blocker resolved. It does not authorize Phase 1 API compatibility or production readiness.
 
 ## Core invariant
 
@@ -63,8 +63,10 @@ The Phase 0 spike proves a deliberately narrow local feasibility slice:
 
 It does **not** prove routing, admission, deployment management, production
 trust/security, durable state/effects, remote invocation, cluster operation,
-production SLOs, or the 100,000 dormant-service invariant. The retained
-resource soak is incomplete, so Phase 0 is not yet complete. See
+production SLOs, arbitrary-duration leak freedom, or the 100,000 dormant-service
+invariant. The retained matched resource soak completes Issue #39 for the
+recorded configuration; it is single-host observational evidence, not Phase 0
+or Phase 1 authorization. See
 [`docs/phase-0-completion.md`](docs/phase-0-completion.md) for its evidence
 ledger, gate receipt, and Phase 1 handoff.
 
@@ -99,10 +101,12 @@ make phase0-gate
 
 It runs the complete clean-checkout validation, executable spike, and fresh
 baseline sequence, then writes a machine-readable receipt under
-`target/phase0-gate/`. It currently exits non-zero by design because the
-retained native-Linux soak does not yet authorize Phase 1. Use
-`make phase0-gate-smoke` for the deterministic CI-sized sequence; it records
-the same receipt without presenting smoke coverage as authorization.
+`target/phase0-gate/`. The completed matched #39 calibration and soak no
+longer require another rerun. Phase 1 remains blocked unless that full receipt
+is authorized and every other identity, archive, profile, and fresh-baseline
+blocker is resolved. Use `make phase0-gate-smoke` for the deterministic
+CI-sized sequence; it records the same receipt without presenting smoke
+coverage as authorization.
 
 Generated bindings, parsed WIT output, Protobuf descriptors, and SDK compiler artifacts are isolated under Cargo `OUT_DIR` or `target/contracts/`; handwritten contract sources are never overwritten. See [`VALIDATION.md`](VALIDATION.md) for the checks performed.
 
