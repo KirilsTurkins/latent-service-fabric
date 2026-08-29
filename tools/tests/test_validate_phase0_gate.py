@@ -20,6 +20,7 @@ from tools.phase0_evidence import (
 from tools.validate_phase0_gate import (
     GateValidationError,
     build_gate_receipt,
+    validate_calibration,
     validate_profiling,
 )
 
@@ -55,6 +56,11 @@ class Phase0GateEvidenceTests(unittest.TestCase):
         self.assertEqual(document["status"], "pass")
         self.assertGreaterEqual(document["run_count"], 7)
         self.assertGreater(len(document["metrics"]), 0)
+
+    def test_gate_accepts_the_retained_calibration_hard_check_set(self) -> None:
+        document = verify_calibration_evidence(CALIBRATION)
+        receipt = validate_calibration(document, str(CALIBRATION))
+        self.assertEqual(receipt["status"], "pass")
 
     @unittest.skipUnless(shutil.which("zstd"), "zstd is required for archive integration verification")
     def test_checked_in_calibration_archive_is_lossless(self) -> None:

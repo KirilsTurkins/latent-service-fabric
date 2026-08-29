@@ -72,6 +72,7 @@ REQUIRED_CHECKS = frozenset(
         "linux_process_resource_probe_supported",
         "configured_runtime_workers_observed_before_and_after_loading",
         "prepared_cache_bounded_after_prepare",
+        "prepared_cache_reuse_probe_matches_configuration",
         "fixed_pool_queue_saturation_is_bounded",
         "fixed_pool_returns_to_configured_idle_state",
         "real_activation_throughput_reaches_pool_capacity",
