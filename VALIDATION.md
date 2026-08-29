@@ -40,6 +40,16 @@ the deterministic smoke baseline. It records the receipt for CI but does not
 turn a smoke run into Phase 1 authorization; its output reports smoke
 validation and authorization as separate states.
 
+| Command | Baseline | Successful exit establishes | Authorizes Phase 1? |
+| --- | --- | --- | --- |
+| `make phase0-gate` | full | A current full receipt is `authorized`. | Yes, and only if the receipt says `authorized`. |
+| `make phase0-gate-smoke` | deterministic smoke | Deterministic validation coverage completed. | No; a `blocked` receipt can accompany a successful smoke run. |
+
+The full gate evaluates clean-worktree status with
+`git status --porcelain --untracked-files=all`. Its own output below the root
+`target/` directory is ignored; other untracked files can block authorization.
+Run it from an isolated clone or worktree when local build output is present.
+
 ## What is validated
 
 - The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph. Adding Tokio to `latent-scheduler` changes only that workspace package's dependency list; existing registry checksums remain byte-for-byte unchanged.

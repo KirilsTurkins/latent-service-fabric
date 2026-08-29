@@ -16,6 +16,11 @@ execution identity and fresh baseline. Until then, Phase 1 issue #2 remains
 dependent on the gate; no roadmap item may treat issue closure or a single-host
 observational result as authorization.
 
+The dependency is an authorization and integration boundary, not a ban on
+design, scaffolding, or isolated branch work for later phases. That work must
+not claim that Phase 1 is authorized or ready to merge before the gate issues
+its full receipt.
+
 ## Phase 1: single-node stateless fabric
 
 Standalone node, local release catalog, route table, scheduler, activation envelopes, resource budgets, context/log/clock capabilities, generic invocation API, CLI flow, and telemetry.

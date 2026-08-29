@@ -37,10 +37,11 @@ The retained three-process resource soak passes its hard logical-resource and
 terminal-topology checks and proves a calibrated plateau for the recorded
 native-Linux configuration: its seven-process calibration is matched and its
 descriptor-lifecycle evidence is complete. Issue #39 therefore needs no
-additional calibration or soak rerun. This single-host observational result
-does not authorize Phase 0 or Phase 1: a clean-checkout `make phase0-gate` run
-must still produce an authorized receipt for the current execution identity and
-fresh baseline.
+additional rerun merely to establish its recorded result. This single-host
+observational result does not authorize Phase 0 or Phase 1: a clean-checkout
+`make phase0-gate` run must still produce an authorized receipt for the current
+execution identity and fresh baseline. Evidence must be regenerated when that
+identity no longer matches the recorded configuration.
 
 ## Dormant-service scaling — not yet proven
 
