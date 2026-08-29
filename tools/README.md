@@ -1,6 +1,11 @@
 # Repository tools
 
-`validate_repository.py` uses only the Python standard library. It validates JSON/TOML syntax, Cargo workspace membership and path dependencies, Protobuf imports, WIT package declarations, required schemas/docs, nonempty files, and the interface-only binary policy.
+`validate_repository.py` uses the Python standard library plus the pinned
+`jsonschema` dependency. It validates JSON/TOML syntax, accessible local-only
+source-controlled SVGs, Cargo workspace membership and path dependencies,
+Protobuf imports, WIT package declarations, required schemas/docs, nonempty
+files, and the interface-only binary policy. The visual rules for those SVGs
+are in [`../docs/svg-style.md`](../docs/svg-style.md).
 
 `run_phase0_hot_path_profiles.sh` is the manual native-Linux evidence command
 for issue 40. It requires a clean source tree, a durable published branch/tag

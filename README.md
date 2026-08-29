@@ -70,6 +70,8 @@ The Phase 0 spike proves a deliberately narrow local feasibility slice:
 5. record bounded activation-owned state and fixed runtime topology for the
    measured lifecycle.
 
+![Phase 0 scope boundary: one local component moves through preparation, a fixed cell pool, and fresh activation state; public APIs, routing, durable state, and clustering remain outside the measured evidence.](docs/assets/phase0-scope-boundary.svg)
+
 It does **not** prove routing, admission, deployment management, production
 trust/security, durable state/effects, remote invocation, cluster operation,
 production SLOs, arbitrary-duration leak freedom, or the 100,000
@@ -81,7 +83,8 @@ ledger, gate receipt, and Phase 1 handoff.
 
 See [`docs/architecture/overview.md`](docs/architecture/overview.md) and
 [`docs/testing/invariants.md`](docs/testing/invariants.md) for the proven
-boundary and future invariants.
+boundary and future invariants. Documentation SVGs follow the shared
+[`SVG convention`](docs/svg-style.md).
 
 ## Build and validation
 

@@ -21,6 +21,8 @@ authorization and future revalidation.
 | CI smoke sequence | validation only | A smoke pass exercises deterministic coverage; it never authorizes Phase 1. |
 | Production readiness and public API compatibility | not claimed | Neither is a Phase 0 outcome. |
 
+![Phase 0 completion-gate decision flow: current execution identity, retained raw evidence, and a fresh baseline reach a full gate that either records blockers or emits an authorized receipt.](assets/phase0-gate-decision.svg)
+
 Some reports inside the retained evidence archives use the historical tense
 appropriate to their measurement runs. They are immutable evidence, not the
 current status source; this document and the machine receipt are authoritative
