@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-28** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, independently regenerated fail-closed completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-29** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, fail-closed completion-gate verifier, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -30,6 +30,10 @@ after independently rebuilding the retained calibration, profile, and soak
 aggregates from their raw artifacts and validating the fresh baseline against
 them. A full command fails if the receipt is not `authorized`; it never reports
 an incomplete or synthetic archive as a pass.
+
+The retained #39 calibration and soak pass for their recorded configuration,
+but no authorized full receipt exists for the current execution identity. Issue
+closure is not a substitute for that receipt.
 
 `make phase0-gate-smoke` runs the same code/contract/executable sequence with
 the deterministic smoke baseline. It records the receipt for CI but does not
@@ -136,8 +140,8 @@ for the evidence interpretation, adoption rule, and Phase 1 handoff.
 ## Native-Linux long-running resource soak
 
 The issue 39 resource plateau probe is also explicit heavyweight work, not a
-shared CI job. It must run only after issue 40 has finalized the pre-Phase-1
-configuration, from a clean native Linux host or VM and a durable source
+shared CI job. A replacement or revalidation run must use the final Phase 0
+configuration from a clean native Linux host or VM and a durable source
 commit/tree:
 
 ```bash
@@ -178,7 +182,7 @@ duplicating earlier attempts; #39 is complete for the recorded configuration.
 
 ## CI jobs
 
-The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. The Issue 25 workflow runs `make phase0-gate-smoke` from a clean checkout and uploads the fresh baseline plus receipt. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.
+The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. The Issue 25 workflow runs `make phase0-gate-smoke` from a clean checkout and uploads the fresh baseline plus receipt. A completed validation failure is evidence that the executable interface baseline needs investigation; a job that fails before its steps run (for example, runner or account infrastructure) is not source-validation evidence and must be rerun.
 
 After a successful contracts job, the workflow prints `build.json` and `sha256.txt` and uploads the generated component, capsule metadata, extracted interface, build receipt, and digest as `phase-0-echo-capsule-${GITHUB_SHA}` for 14 days. This retained artifact is reproducibility evidence for the locally trusted fixture; it is not a signed or distributable release artifact.
 
@@ -191,8 +195,8 @@ Contract and capsule validation starts compiler and validator commands only. It 
 Passing the executable baseline establishes source consistency, guest behavior,
 component-interface validity, fixed cell-pool accounting, real Wasmtime
 invocation/containment, and same-boundary build reproducibility. It does not
-by itself authorize Phase 1: the receipt also requires conclusive retained
-calibration, profiling, and long-running resource evidence. It never
-establishes production APIs, cross-platform byte identity, generic dispatch,
-production security, dormant-service density, cluster behavior, or production
-SLOs.
+by itself authorize Phase 1: the receipt also requires verified retained
+calibration, profiling, and long-running resource evidence with the current
+execution identity and a matching fresh baseline. It never establishes
+production APIs, cross-platform byte identity, generic dispatch, production
+security, dormant-service density, cluster behavior, or production SLOs.

@@ -100,10 +100,10 @@ fragments for practical Git storage. The archive identifies durable source commi
 
 ## Native-Linux long-running resource soak
 
-Issue 39 adds a separate, explicit native-Linux resource-soak command. It is
-not a PR smoke workload. After issue 40 has selected and merged the final
-pre-Phase-1 configuration, run it from a clean worktree on a native Linux host
-or VM, first publishing the exact source commit or tag:
+Issue #39 has a retained, explicit native-Linux resource-soak result. It is not
+a PR smoke workload. A replacement or revalidation run must use the final
+Phase 0 configuration from a clean worktree on a native Linux host or VM, with
+the exact source commit or tag published first:
 
 ~~~bash
 tools/run_phase0_resource_soak.sh \
@@ -152,3 +152,7 @@ late-window RSS/PSS/private/VM analysis pass against the matching seven-process
 calibration. Issue #39 is therefore complete for the recorded local
 configuration; this remains observational evidence rather than a production or
 arbitrary-duration claim.
+
+The retained soak is a passing completion-gate input, not an authorization
+receipt. It must still match the current execution identity and fresh baseline
+before Phase 1 can be authorized.

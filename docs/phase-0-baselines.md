@@ -88,10 +88,10 @@ continue to run only the deterministic correctness smoke profile.
 
 ## Native-Linux long-running resource plateau soak
 
-Issue 39 provides a separate heavy command for proving a bounded steady-state
-under retained fresh-store activation work. It is not part of the pull-request
-smoke profile and must be run only after issue 40 selects the final pre-Phase-1
-configuration:
+Issue #39 has retained a separate heavy native-Linux proof of bounded
+steady-state under fresh-store activation work. It is not part of the
+pull-request smoke profile. A replacement or revalidation run must use the
+final Phase 0 configuration:
 
 ```bash
 tools/run_phase0_resource_soak.sh \
@@ -152,6 +152,10 @@ topology, the complete descriptor lifecycle, and calibrated late-window
 RSS/PSS/private/VM analysis. The raw archive is losslessly checksummed and the
 aggregate applies the matching seven-process calibration without inference.
 Issue #39 is complete for this recorded configuration.
+
+This retained result is an input to the completion gate, not an authorization
+receipt. A current clean checkout must still satisfy the gate's exact
+execution-identity and fresh-baseline checks before Phase 1 is authorized.
 
 If the aggregate reports material growth, rerun the same command with
 `--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after

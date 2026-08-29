@@ -28,12 +28,13 @@ capacity remain fixed through the measured lifecycle. Wasmtime may create one
 bounded epoch-interruption helper thread after preparation; that is fixed
 node/runtime infrastructure, not a per-service thread.
 
-Phase 0 is complete and authorized for this bounded local feasibility scope.
 The retained native-Linux resource soak has a matched calibration identity and
-complete descriptor-lifecycle evidence. The evidence remains observational and
-single-host; it does not establish a production capability. The completed
-clean-checkout gate receipt and its fail-closed revalidation requirements are
-recorded in
+complete descriptor-lifecycle evidence for its recorded configuration. This is
+not a completed Phase 0 authorization: the evidence remains observational and
+single-host, and does not establish a production capability. A clean-checkout
+`make phase0-gate` run must produce an authorized receipt for the current
+execution identity before Phase 1 is authorized. Its fail-closed requirements
+are recorded in
 [`../phase-0-completion.md`](../phase-0-completion.md).
 
 Phase 0 did not prove dormant registration at 100,000 services, route or

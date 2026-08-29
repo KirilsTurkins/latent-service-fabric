@@ -1,16 +1,16 @@
 # Phase 0 completion gate
 
-**Gate status: AUTHORIZED — Phase 0 is complete and Phase 1 work may begin.**
+**Gate status: BLOCKED — Phase 1 is not yet authorized.**
 
 Issue #39 is complete: the checked-in seven-process native-Linux calibration
 and three-process 100,000-activation soak are both independently regenerated
 from complete raw evidence and the soak aggregate is `pass`.
 
-The merged clean-checkout receipt verified every retained archive, raw
-measurement, source identity, and fresh-baseline requirement before issuing
-authorization. GitHub issue state is not itself evidence: the gate's raw
-verification and execution-identity checks remain the authority for both the
-recorded authorization and future revalidation.
+The completion gate fails closed until a clean-checkout receipt validates every
+retained archive, raw measurement, source identity, and fresh-baseline
+requirement. GitHub issue state is not itself evidence: the gate's raw
+verification and execution-identity checks remain the authority for
+authorization and future revalidation.
 
 ## One clean-checkout command sequence
 
@@ -38,15 +38,14 @@ The command creates a new directory beneath `target/phase0-gate/`, then:
 
 `make phase0-gate` returns non-zero whenever the final receipt is not
 `authorized`; it still writes the receipt so the specific blocker is
-reviewable. The recorded full receipt is authorized. Future runs remain
-fail-closed until every retained evidence source passes its raw, identity, and
-fresh-baseline checks.
+reviewable. The passing #39 calibration and soak do not remove the raw,
+identity, and fresh-baseline checks for every retained evidence source.
 
 CI uses `make phase0-gate-smoke`. It runs the same contract, executable, and
 baseline path with smaller deterministic sample counts and records the receipt,
 but does not claim Phase 1 authorization. Its output explicitly distinguishes
-`Phase 0 smoke validation: PASS` from the smoke run's authorization status,
-so a correctness smoke result cannot be mistaken for the completed full gate.
+`Phase 0 smoke validation: PASS` from `Phase 1 authorization: BLOCKED`, so a
+correctness smoke result cannot be mistaken for a completed full gate.
 
 ## Evidence ledger
 
@@ -129,16 +128,17 @@ paths, links, traversal attempts, changed raw artifacts, unverified profile
 measurements, weakened guardrails, free-form optimization decisions, source
 identity drift, and incomplete evidence presented as an authorization.
 
-## Revalidation requirements
+## Remaining gate work
 
-#39 no longer needs another calibration or soak, and the full gate has
-authorized the Phase 1 handoff. Later execution-affecting changes must still
-run `make phase0-gate` from a clean checkout and address any receipt blocker
+#39's retained calibration and soak pass for their recorded configuration; the
+closed issue does not waive the completion gate. Before Phase 1 is authorized,
+run `make phase0-gate` from a clean checkout and address every receipt blocker
 without weakening its raw-evidence, archive-integrity, source-identity, or
-fresh-baseline checks. In particular, a retained profile or baseline that no
-longer has the current execution-relevant identity must be regenerated or
-otherwise proven compatible; an issue's closed state cannot substitute for
-that evidence.
+fresh-baseline checks. A retained profile, calibration, or soak whose
+execution-relevant identity differs from the current checkout must be
+regenerated; documentation-only changes are excluded from that identity but
+remain visible in the receipt. An issue's closed state cannot substitute for
+this evidence.
 
 ## Audit and Phase 1 handoff
 
@@ -162,10 +162,10 @@ reuse plus untrusted AOT/cache/snapshot/native-execution shortcuts in Phase 0.
 
 ## Explicit limits
 
-The authorized Phase 0 gate establishes only a local feasibility and
-measurement boundary. It does not establish production security, stable public
+Even an authorized Phase 0 gate would establish only a local feasibility and
+measurement boundary. It would not establish production security, stable public
 APIs, generic multi-service dispatch, persistent deployment management,
 production scheduling or telemetry, performance SLOs, dormant-service density,
 multi-node operation, Kubernetes replacement, realistic workloads, or
-arbitrary-duration leak freedom. Phase 1 issue #2 must consume this
-evidence/handoff rather than duplicate the spike.
+arbitrary-duration leak freedom. Phase 1 issue #2 remains dependent on this
+gate and must consume this evidence/handoff rather than duplicate the spike.

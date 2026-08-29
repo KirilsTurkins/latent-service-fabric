@@ -1,9 +1,9 @@
 # Phase 0 toolchain baseline
 
-The completed Phase 0 baseline made the interface scaffold executable, built
-the first Rust-authored echo Component Model fixture, and established a narrow
-local Wasmtime feasibility spike. It does not implement a production service
-runtime. Exact project-selected versions live in
+The Phase 0 baseline makes the interface scaffold executable, builds the first
+Rust-authored echo Component Model fixture, and establishes a narrow local
+Wasmtime feasibility spike. It does not implement a production service runtime.
+Exact project-selected versions live in
 [`tools/toolchain.toml`](../../tools/toolchain.toml); Rust dependency resolution
 is frozen by the committed root `Cargo.lock`.
 
@@ -17,7 +17,7 @@ is frozen by the committed root `Cargo.lock`.
 | Rust component-core target | `wasm32-unknown-unknown` | Build a self-contained core module before explicit Component Model wrapping |
 | Wasmtime | 47.0.3 | Host-side Component Model engine, generated bindings, and Phase 0 echo execution |
 | `wit-bindgen` | 0.60.0 | Guest-side Rust bindings and canonical ABI exports generated from WIT |
-| Tokio | 1.53.1 | Selected async runtime for the completed Phase 0 spike and Phase 1 runtime work |
+| Tokio | 1.53.1 | Selected async runtime for the Phase 0 spike and Phase 1 runtime work |
 | Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
 | TOML | 1.1.4 | Configuration parsing and serialization; the published crate carries `+spec-1.1.0` build metadata |
 | BLAKE3 | 1.8.5 | Runtime cache keys and prepared-component identity |
@@ -75,10 +75,12 @@ make phase0-gate
 ```
 
 It requires `zstd` for archive-integrity tests and returns non-zero until the
-receipt is `authorized`. The current retained resource soak is inconclusive, so
-that final non-zero result is expected; see
-[`../phase-0-completion.md`](../phase-0-completion.md) for the replacement
-measurement required to authorize Phase 1.
+receipt is `authorized`. The retained #39 resource soak is a passing input for
+its recorded configuration, but there is no authorized full receipt for the
+current execution identity. Until a clean checkout supplies one, the final
+non-zero result is expected; see
+[`../phase-0-completion.md`](../phase-0-completion.md) for the required
+evidence and revalidation boundary.
 
 `tools/validate_contracts.sh` compiles the generated echo and oversized-log bindings for `wasm32-wasip2`, builds each authority-free core for `wasm32-unknown-unknown`, wraps each core with `wasm-tools component new`, requires byte-identical echo output across two clean builds, validates both components, extracts the echo interface, rejects any import/export drift, emits generated capsule metadata with the actual SHA-256 digest, and executes the oversized canonical-ABI host-call-fuel regression through the Wasmtime backend.
 

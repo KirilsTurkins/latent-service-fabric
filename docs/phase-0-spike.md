@@ -1,9 +1,11 @@
 # Phase 0 executable spike
 
 `latentd phase0-spike invoke-once` is the finite composition root retained
-from the completed Phase 0 vertical slice. It is a local validation and CI
-surface. It is **not production-ready**, does not expose a daemon listener,
-and is **not compatible with the Phase 1 management or public invocation APIs**.
+from the Phase 0 vertical slice. It is a local validation and CI surface. It is
+**not production-ready**, does not expose a daemon listener, and is **not
+compatible with the Phase 1 management or public invocation APIs**. Completing
+the spike is separate from authorizing Phase 1; see
+[`phase-0-completion.md`](phase-0-completion.md).
 
 ## One-command demonstration
 

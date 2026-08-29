@@ -183,8 +183,9 @@ affirmative-cleanup proof.
 Profiles are finite and machine-specific. They do not establish production
 SLOs, generic application performance, cross-machine performance, long-duration
 leak freedom, catalog density, remote-call performance, or cluster scaling.
-Issue 39 remains the required native-Linux 3x100k-activation plateau proof for
-the final configuration.
+Issue #39's retained native-Linux 3x100k-activation plateau proof passes for
+its final recorded configuration. It does not authorize Phase 1, and any
+execution-affecting change requires new evidence through the completion gate.
 
 ## Archive integrity in CI
 
