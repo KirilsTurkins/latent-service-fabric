@@ -65,44 +65,45 @@ class ReassembleHotPathArchiveTests(unittest.TestCase):
             for directory in (ROOT / "benchmarks" / "phase0" / "profiling").glob("native-linux-*")
             if (directory / "raw-evidence.parts.json").is_file()
         )
-        self.assertEqual(len(archive_roots), 1, archive_roots)
+        self.assertGreaterEqual(len(archive_roots), 1, archive_roots)
         self.assertIsNotNone(shutil.which("zstd"), "zstd is required for evidence integrity")
-        archive_root = archive_roots[0]
-        with tempfile.TemporaryDirectory() as directory:
-            temporary = Path(directory)
-            archive = temporary / "raw-evidence.tar.zst"
-            reassembled = subprocess.run(
-                [
-                    sys.executable,
-                    str(REASSEMBLER),
-                    "--archive-directory",
-                    str(archive_root),
-                    "--output",
-                    str(archive),
-                ],
-                text=True,
-                capture_output=True,
-                check=False,
-            )
-            self.assertEqual(reassembled.returncode, 0, reassembled.stderr)
-            integrity = subprocess.run(
-                ["zstd", "--test", str(archive)], text=True, capture_output=True, check=False
-            )
-            self.assertEqual(integrity.returncode, 0, integrity.stderr)
-            extracted = temporary / "extracted"
-            extracted.mkdir()
-            extraction = subprocess.run(
-                ["tar", "--use-compress-program=zstd", "-xf", str(archive), "-C", str(extracted)],
-                text=True,
-                capture_output=True,
-                check=False,
-            )
-            self.assertEqual(extraction.returncode, 0, extraction.stderr)
-            manifest = subprocess.run(
-                ["sha256sum", "--check", "raw-evidence.manifest.sha256"],
-                cwd=extracted,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
-            self.assertEqual(manifest.returncode, 0, manifest.stderr)
+        for archive_root in archive_roots:
+            with self.subTest(archive_root=archive_root.name):
+                with tempfile.TemporaryDirectory() as directory:
+                    temporary = Path(directory)
+                    archive = temporary / "raw-evidence.tar.zst"
+                    reassembled = subprocess.run(
+                        [
+                            sys.executable,
+                            str(REASSEMBLER),
+                            "--archive-directory",
+                            str(archive_root),
+                            "--output",
+                            str(archive),
+                        ],
+                        text=True,
+                        capture_output=True,
+                        check=False,
+                    )
+                    self.assertEqual(reassembled.returncode, 0, reassembled.stderr)
+                    integrity = subprocess.run(
+                        ["zstd", "--test", str(archive)], text=True, capture_output=True, check=False
+                    )
+                    self.assertEqual(integrity.returncode, 0, integrity.stderr)
+                    extracted = temporary / "extracted"
+                    extracted.mkdir()
+                    extraction = subprocess.run(
+                        ["tar", "--use-compress-program=zstd", "-xf", str(archive), "-C", str(extracted)],
+                        text=True,
+                        capture_output=True,
+                        check=False,
+                    )
+                    self.assertEqual(extraction.returncode, 0, extraction.stderr)
+                    manifest = subprocess.run(
+                        ["sha256sum", "--check", "raw-evidence.manifest.sha256"],
+                        cwd=extracted,
+                        text=True,
+                        capture_output=True,
+                        check=False,
+                    )
+                    self.assertEqual(manifest.returncode, 0, manifest.stderr)
