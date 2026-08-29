@@ -1,6 +1,10 @@
 # Phase 0 toolchain baseline
 
-The Phase 0 baseline makes the interface scaffold executable and builds the first Rust-authored echo component fixture without implementing a service runtime. Exact project-selected versions live in [`tools/toolchain.toml`](../../tools/toolchain.toml); Rust dependency resolution is frozen by the committed root `Cargo.lock`.
+The Phase 0 baseline makes the interface scaffold executable, builds the first
+Rust-authored echo Component Model fixture, and supports a narrow local
+Wasmtime spike. It does not implement a production service runtime. Exact
+project-selected versions live in [`tools/toolchain.toml`](../../tools/toolchain.toml);
+Rust dependency resolution is frozen by the committed root `Cargo.lock`.
 
 ## Selected versions
 
@@ -22,6 +26,7 @@ The Phase 0 baseline makes the interface scaffold executable and builds the firs
 | `wasm-tools` | 1.254.0 | WIT parsing, component validation, explicit componentization, and interface extraction |
 | Buf | 1.72.0 | Protobuf linting and descriptor-set generation |
 | Python / `jsonschema` | 3.13.5 / 4.26.0 | Repository, generated capsule, and Draft 2020-12 schema validation |
+| `zstd` | system utility | Lossless verification of checked-in Phase 0 raw-evidence archives during repository/gate tests |
 | Go / Node / TypeScript / .NET | 1.23.2 / 22.16.0 / 5.8.3 / 8.0.423 | Cross-language interface compilation |
 | Eclipse Temurin JDK | 21.0.11+10 | Exact Java compiler and runtime distribution (`setup-java` selector `21.0.11+10.0.LTS`) |
 | Zig / Clang / C target | 0.16.0 / 21.1.8 / `x86_64-linux-gnu` | Exact bundled C frontend for the C11 header smoke test |
@@ -59,6 +64,20 @@ cargo test --workspace --all-targets --all-features --locked
 tools/validate_contracts.sh
 tools/validate_sdks.sh
 ```
+
+The complete executable Phase 0 gate adds repository-tool tests, the real
+`latentd phase0-spike` containment path, a fresh full baseline, and the
+retained-evidence receipt:
+
+```bash
+make phase0-gate
+```
+
+It requires `zstd` for archive-integrity tests and returns non-zero until the
+receipt is `authorized`. The current retained resource soak is inconclusive, so
+that final non-zero result is expected; see
+[`../phase-0-completion.md`](../phase-0-completion.md) for the replacement
+measurement required to authorize Phase 1.
 
 `tools/validate_contracts.sh` compiles the generated echo and oversized-log bindings for `wasm32-wasip2`, builds each authority-free core for `wasm32-unknown-unknown`, wraps each core with `wasm-tools component new`, requires byte-identical echo output across two clean builds, validates both components, extracts the echo interface, rejects any import/export drift, emits generated capsule metadata with the actual SHA-256 digest, and executes the oversized canonical-ABI host-call-fuel regression through the Wasmtime backend.
 

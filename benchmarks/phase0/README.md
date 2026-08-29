@@ -4,13 +4,15 @@ raw-results.json and BASELINE.md are the original full-profile observation.
 They remain useful as historical evidence, but their WSL2 environment means
 they are not the Phase 1 variance reference.
 
-The authoritative native-Linux reference is retained under
-benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source. Its
-CALIBRATION.md and aggregate.json describe seven independent full-profile
-processes, link every individual raw run, and retain published/execution
-Git-tree provenance. The earlier
-native-linux-2026-08-27 archive is retained unchanged as superseded audit
-evidence because its recorded source commit was not reachable.
+The authoritative native-Linux reference for the selected ordinary Phase 0
+configuration is retained under
+benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063. Its CALIBRATION.md and
+aggregate.json describe seven independent full-profile processes, link every
+individual raw run, and retain published/execution Git-tree provenance. It
+explicitly records prepared-cache enablement, `on_demand` Wasmtime allocation,
+and initialized-memory COW. The duplicate unreachable calibration archive was
+removed; the historical reachable reference remains only where the retained
+issue-40 profile archive needs its original comparison input.
 
 Generate a new reference only from a clean worktree on a stable native-Linux
 host or VM:
@@ -108,6 +110,7 @@ tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
   --final-configuration-commit <reachable-final-commit> \
+  --calibration benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json \
   benchmarks/phase0/soak/native-linux-YYYY-MM-DD
 ~~~
 
@@ -140,17 +143,12 @@ diagnosis in the same archive with `--retaining-subsystem <name>` and/or
 `--followup-issue <URL-or-number>`.
 
 The retained final-config raw evidence is
-[native-linux-2026-08-27-6250b978](soak/native-linux-2026-08-27-6250b978/README.md).
-It retains all three machine-readable raw process series losslessly in a
-checksummed 49 KiB zstd archive, alongside the aggregate, concise report,
-host observations, command statuses, and raw-file hashes, without duplicating
-earlier attempts. Its hard invariants, release/shutdown topology, and retained
-measured-window/release-to-shutdown FD comparisons pass. Strict revalidation
-now marks the calibration comparison **inconclusive**: #38 lacks the explicit
-prepared-cache, Wasmtime allocator, and COW settings; the historical soak host
-observations lack VM-detection and allocator provenance; and raw documents
-predate the pre-runtime and post-warm-up FD baselines plus raw virtualization kind. The runner
-now records all of those fields, and the calibration helper passes the selected
-cache/on-demand/COW configuration explicitly; #39 remains open until a fresh
-matching calibration and three-process archive can apply the #38 late-window
-bands without inference.
+[native-linux-2026-08-28-6a64f063](soak/native-linux-2026-08-28-6a64f063/README.md). It retains all three machine-readable
+raw process series losslessly in a checksummed 52 KiB zstd archive, alongside
+the aggregate, concise report, host observations, command statuses, and
+raw-file hashes, without duplicating earlier attempts. Its hard invariants,
+full descriptor lifecycle, release/shutdown topology, and calibrated
+late-window RSS/PSS/private/VM analysis pass against the matching seven-process
+calibration. Issue #39 is therefore complete for the recorded local
+configuration; this remains observational evidence rather than a production or
+arbitrary-duration claim.

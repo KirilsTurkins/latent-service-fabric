@@ -1,182 +1,170 @@
-# Phase 0 completion report
+# Phase 0 completion gate
 
-**Gate status:** Open. This report consolidates evidence for the Phase 0 gate;
-it does not authorize Phase 1 until every dependency of issue 25 is complete.
+**Gate status: BLOCKED — Phase 1 is not yet authorized.**
 
-## Calibrated performance and resource reference
+Issue #39 is complete: the checked-in seven-process native-Linux calibration
+and three-process 100,000-activation soak are both independently regenerated
+from complete raw evidence and the soak aggregate is `pass`.
 
-The initial issue-24 full-profile files
-[benchmarks/phase0/raw-results.json](../benchmarks/phase0/raw-results.json)
-and
-[benchmarks/phase0/BASELINE.md](../benchmarks/phase0/BASELINE.md)
-are retained as historical WSL2 observations. They are not used as the
-native-Linux variance reference.
+The completion receipt still fails closed until it validates every retained
+archive from a clean checkout. GitHub issue state is not itself evidence, and
+closing #39 does not authorize Phase 1: the gate's raw verification and
+execution-identity checks remain the authority.
 
-Issue 38 establishes the calibration reference:
+## One clean-checkout command sequence
 
-- [CALIBRATION.md](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/CALIBRATION.md)
-  is the concise seven-run report;
-- [aggregate.json](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json)
-  contains dispersion statistics, outlier findings, environment/configuration,
-  advisory bands, and the hard-invariant summary;
-- [runs/](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/runs)
-  retains every individual full-profile raw result, per-run report, host
-  observation, and command status.
+After installing the pinned prerequisites in
+[`development/toolchain.md`](development/toolchain.md), run:
 
-The reference was rerun from the durable published commit
-[`49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3`](https://github.com/KirilsTurkins/latent-service-fabric/commit/49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3).
-That exact source revision is retained independently on
-[`benchmark/phase0-calibration-source-2026-08-27`](https://github.com/KirilsTurkins/latent-service-fabric/tree/benchmark/phase0-calibration-source-2026-08-27).
-Its aggregate and every host observation record that commit's Git tree
-`88e8875b7be7e46b4702c15d5c8c2f26c1e4a037`, the local execution commit, and
-verified tree equality. The prior native-Linux archive remains unchanged as
-superseded audit evidence because its SHA was not reachable.
+```bash
+python3.13 -m venv .venv
+. .venv/bin/activate
+python -m pip install --requirement tools/requirements.lock
+make phase0-gate
+```
 
-The calibration invokes the existing full profile without weakening fixture
-validation or hard topology, capacity, containment, cleanup, and reclamation
-checks. It records the native-Linux environment, virtualization, allocator
-observation, CPU/frequency policy where available, and background load. Its
-statistics are observational and do not create production SLOs, capacity
-commitments, or cross-machine claims.
+The command creates a new directory beneath `target/phase0-gate/`, then:
 
-## Long-running resource plateau and leak resistance
+1. runs repository formatting, builds, Clippy, Rust tests, contract/component
+   validation, SDK checks, and repository-tool tests;
+2. runs the real `latentd phase0-spike` executable E2E and containment suite;
+3. runs a fresh full executable baseline, including the real Wasmtime path,
+   capacity/queue saturation, recovery, cleanup, and topology probes; and
+4. writes `gate-summary.json`, which rebuilds the calibration, profile, and
+   soak aggregates from their retained raw inputs; verifies archive manifests,
+   hashes, paths, and file sets; then compares the regenerated results with
+   the checked-in aggregates before evaluating the fresh baseline.
 
-Issue 39 now has a retained native-Linux soak harness at
-[`tools/run_phase0_resource_soak.sh`](../tools/run_phase0_resource_soak.sh).
-It is deliberately an explicit heavy command, separate from shared PR smoke
-coverage. It records at least three independent processes, each with 1,000
-excluded warm-up activations, 100,000 measured fresh-store activations, and
-frequent real at-capacity and bounded-queue batches. Every batch must return
-logical pool, runner, backend, log, cache, and timing-store state to its fixed
-baseline before its raw interval sample is kept.
+`make phase0-gate` returns non-zero whenever the final receipt is not
+`authorized`; it still writes the receipt so the specific blocker is
+reviewable. The fresh #39 calibration and soak no longer block this step. It remains
+non-zero until every other retained evidence source also passes its raw,
+identity, and fresh-baseline checks.
 
-The companion aggregate records raw-file hashes and command/source provenance,
-native-host observations, RSS/VM/PSS/private (where exposed), process/thread/
-socket/FD topology, rolling ranges, final-window deltas, robust late-window
-slopes, peaks, explicit release, and runtime shutdown. It applies the issue 38
-calibrated RSS noise band only after CPU, memory, kernel, virtualization,
-toolchain, allocator, fixture, and relevant configuration identity are proved
-matched; a missing or mismatched identity is inconclusive. An unexplained
-measured-window or release-to-shutdown FD increase, terminal topology change,
-hard-invariant failure, missing batch, or calibrated material late-window
-growth fails the aggregate. Robust cross-run peak/delta outliers are retained as diagnostic
-variability; a stable late-window series inside its calibrated band is not
-silently relabelled as a leak. A material-growth result requires
-heap/allocator/process investigation and a retaining subsystem or focused
-issue; the command never increases its allowance to make the result pass.
+CI uses `make phase0-gate-smoke`. It runs the same contract, executable, and
+baseline path with smaller deterministic sample counts and records the receipt,
+but does not claim Phase 1 authorization. Its output explicitly distinguishes
+`Phase 0 smoke validation: PASS` from `Phase 1 authorization: BLOCKED` so a
+correctness smoke result cannot be mistaken for completion.
 
-Issue 40's final ordinary Phase 0 configuration (bounded prepared cache,
-on-demand Wasmtime allocation, initialized-memory COW enabled) has retained
-raw evidence in the native-Linux archive
-[`native-linux-2026-08-27-6250b978`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md).
-Its three independent processes each completed 1,000 excluded warm-ups,
-100,000 normal measured fresh-store activations, and 100 real batches of each
-saturation mode. Every hard invariant, descriptor/topology check, explicit
-prepared-component release, runtime shutdown check, and retained measured-
-window/release-to-shutdown FD check passes. Strict revalidation does not apply
-the issue-38 bands to this historical archive: that calibration lacks explicit
-prepared-cache, Wasmtime allocator, and initialized-memory COW provenance,
-while the soak host captures lack VM detection and allocator provenance. The
-raw documents also predate the serialized pre-runtime and post-warm-up
-descriptor baselines plus raw virtualization kind, so the complete lifecycle
-cannot be independently revalidated. The raw late-window series and run-03 PSS outlier remain retained
-for diagnosis, but the comparison is explicitly **inconclusive** and #39
-remains open pending a fresh selected-configuration calibration and three-
-process archive from the updated runner.
+## Evidence ledger
 
-The wrapper requires `--final-configuration-commit` to equal the measured
-reachable source commit, preventing a pre-final run from being reported as a
-passing plateau result. This finite soak does not prove arbitrary-duration leak
-freedom, production SLOs, multi-node behavior, or allocator-internal state not
-exposed by the configured safe probes.
+| Input | Machine-readable evidence | Gate result |
+|---|---|---|
+| #24 executable baseline | [`raw-results.json`](../benchmarks/phase0/raw-results.json) and [`BASELINE.md`](../benchmarks/phase0/BASELINE.md) | pass: 19 hard checks and all required terminal outcomes |
+| #38 native-Linux calibration | [`aggregate.json`](../benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json) and retained seven runs | pass: seven selected-configuration full-profile runs, fixed hard invariants, advisory comparison bands |
+| #40 CPU/allocation profiling | [`aggregate.json`](../benchmarks/phase0/profiling/native-linux-2026-08-27-de2337906/aggregate.json) and checksummed raw archive | pass: required workloads, guardrails, and explicit optimization decisions |
+| #39 resource soak | [`aggregate.json`](../benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/aggregate.json), [`SOAK.md`](../benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/SOAK.md), and checksummed raw archive | pass: three matched 100,000-activation processes, complete lifecycle evidence, and no calibrated material growth |
 
-## Required Phase 1 use
+## Recorded environment, configuration, and observations
 
-Issue 16 must compare productionized results against this calibration; it must
-not reset the performance/resource reference after productionization. For
-startup, preparation, cold/warm activation, cleanup, queueing, throughput,
-RSS, and virtual memory, it must:
+The JSON aggregates above are cached conclusions, not trust roots. The gate
+validates the underlying raw runs, host observations, execution-status records,
+fixture/configuration/toolchain identities, profile artifacts, manifests, and
+hashes; it then regenerates each aggregate with the repository aggregation
+logic. The receipt also retains the current commit/tree and a canonical hash of
+the execution-relevant Git entries. Every evidence set must have that same
+canonical identity; documentation-only differences remain visible through the
+recorded commit/tree but cannot hide an execution-affecting change.
 
-1. retain at least seven independent full-profile candidate runs and their raw
-   provenance;
-2. establish material equivalence of CPU, logical CPU count, memory, kernel,
-   virtualization, Rust/Cargo/Wasmtime versions, target, build profile,
-   allocator, fixture digest, and configuration;
-3. compare the median of per-run representatives with the metric-specific
-   advisory band in aggregate.json;
-4. record **no detectable regression** (or statistically indistinguishable) as
-   the terminal result for an inside-band candidate with at least seven valid
-   comparable runs, a stable environment, all hard invariants passing, and no
-   material run-level outlier;
-5. rerun an inconclusive result caused by insufficient samples, environment
-   instability/mismatch, material run-level noise/outliers, or failed hard
-   invariants after the invalid condition is resolved; and
-6. classify outside-band deterioration as a regression candidate, require a
-   second matched set, and confirm the regression only when that second set
-   also deteriorates outside the band;
-7. preserve hard invariants as binary checks. A topology, capacity,
-   containment, cleanup, or reclamation failure cannot be statistically
-   tolerated.
+- The #24 full profile is a historical WSL2/Linux x86_64 observation with a
+  two-cell fixed pool, four-waiter bounded queue, two configured runtime
+  workers, one bounded prepared component, and fresh invocation stores. Its
+  343 activation samples pass all 19 hard checks; the raw document records its
+  startup, cold/warm, containment/recovery, cleanup, saturation, RSS, VM, FD,
+  thread, socket, and topology observations.
+- The #38 selected-configuration native-Linux reference retains seven
+  full-profile runs from durable source commit
+  `6a64f0630cee9afa080d33f376aabadac724fa72` and tree
+  `d27ff38ebbd891c5be949f54a0047522ed893d20`. It explicitly records the
+  prepared cache, on-demand Wasmtime allocator, and initialized-memory COW
+  settings. Its aggregate records per-metric min/median/max/MAD/CV, run-level
+  outliers, and advisory comparison bands; these are regression-detection
+  aids, never production SLOs or cross-machine claims.
 
-Bounded-cache configuration and reclamation remain strict invariant checks;
-Phase 1 must compare them against their recorded configured bounds rather than
-turning cache growth into an advisory statistical tolerance.
+- The #40 native-Linux `perf`/Heaptrack archive comes from source commit
+  `de2337906a4942e47611124a1c2217949abb58dc` and tree
+  `0a32896faa58da7f34662cbf3be97670d6d1de4c`. It covers cold preparation,
+  prepared-cache reuse, first/warm execution, failure containment, cleanup,
+  and both contention modes. The default remains the fixed 2-worker/2-cell,
+  bounded-cache, on-demand allocator, COW-enabled configuration; the profile
+  records explicit retain/defer/reject decisions for every candidate.
+- The #39 archive comes from final-configuration commit
+  `6a64f0630cee9afa080d33f376aabadac724fa72` and tree
+  `d27ff38ebbd891c5be949f54a0047522ed893d20`. It retains three independent
+  native-Linux processes, each with 1,000 excluded warm-ups, 100,000 measured
+  fresh-store activations, 100 real batches of each saturation mode, sampled
+  post-warm-up resource series, release/shutdown observations, and a
+  checksummed raw archive. The strict aggregate is `pass`: calibration
+  applicability and evidence completeness are matched/complete, descriptor
+  lifecycle checks pass, and the retained late-window RSS/PSS/private/VM
+  series has no material calibrated growth.
 
-A candidate deterioration beyond an advisory band is not an automatic
-production conclusion: it requires the second comparable set above for
-confirmation. Shared hosted CI may run deterministic correctness smoke
-coverage, but must not fail on these microbenchmark bands.
+## What the gate already proves
 
-## Execution hot-path profiling and optimization handoff
+For the recorded local component and native-Linux environments, the evidence
+proves that:
 
-Issue 40 adds a separate native-Linux `perf` plus Heaptrack evidence workflow:
-[the profiling handoff](phase-0-hot-path-profiling.md). It profiles the real
-shared Phase 0 composition across cold preparation, direct prepared-cache
-reuse, first and warm activation, failure containment/recovery, cleanup, and
-separate at-capacity and bounded-queue contention paths. Every profile retains
-a passing full baseline document, exact command, raw tool data, and symbolized
-CPU/allocation reports; an incomplete tool artifact or a failed, missing,
-duplicate, or unexpected hard invariant is invalid rather than silently
-omitted.
+- generated WIT guest and host bindings build a real Rust echo Component Model
+  guest and invoke it through Wasmtime;
+- echo success and declared domain errors cross the real typed boundary;
+- invalid component input is rejected by the executable/containment validation
+  path before an activation can remain leased;
+- trap, timeout, explicit cancellation, and memory-pressure failures remain
+  activation-local and are followed by successful cause-specific recovery;
+- every measured terminal path returns its cell or reports quarantine, with no
+  active lease, waiter, store, cancellation registration, activation host
+  state, temporary buffer, or unbounded history retained;
+- configured runtime workers, process count, listeners/sockets, and cell
+  capacity remain fixed throughout the measured spike lifecycle; and
+- real at-capacity and bounded-queue workloads reach their configured bounds
+  and return admitted work to a clean baseline.
 
-The accepted native-Linux archive is
-[native-linux-2026-08-27-de2337906](../benchmarks/phase0/profiling/native-linux-2026-08-27-de2337906/README.md),
-captured from durable source commit `de2337906a4942e47611124a1c2217949abb58dc`
-and tree `0a32896faa58da7f34662cbf3be97670d6d1de4c`. It retains a compact
-machine-readable aggregate and concise report alongside a lossless,
-checksummed archive of every raw CPU/allocation trace and full-process run.
-The eight Heaptrack reports each record 2.82 KiB of process-exit TLS/JIT/CLI
-residue; this is retained for review, while every activation cleanup,
-resource-reclamation, and runtime-thread invariant passes.
+The exact checks, scenarios, executable samples, and raw observations are
+validated by [`tools/validate_phase0_gate.py`](../tools/validate_phase0_gate.py)
+and [`tools/phase0_evidence.py`](../tools/phase0_evidence.py). The verifier
+rejects malformed or synthetic archives, missing/additional/duplicate archive
+paths, links, traversal attempts, changed raw artifacts, unverified profile
+measurements, weakened guardrails, free-form optimization decisions, source
+identity drift, and incomplete evidence presented as an authorization.
 
-The bounded matrix measures fixed worker/cell ratios, bounded preparation reuse
-versus cold preparation, on-demand versus pooling allocation, and COW
-initialized-memory alternatives. The default remains the existing fixed
-2-worker/2-cell, on-demand, COW-enabled configuration with one bounded prepared
-component and fresh invocation-owned stores, host state, import tables,
-instances, limiters, and activation contexts. Pooling, when profiled, is capped
-to the fixed cell capacity and retains zero linear memory after a store drops.
-No runtime optimization is adopted from a faster single/small set: adoption
-requires at least seven comparable runs, issue-38 calibrated-noise clearance or
-an explicit architectural benefit, bounded fixed/peak memory, and every hard
-invariant passing. The current decision record retains the Phase 0 default,
-defers scheduler ratios to #8, Wasmtime policy/cache/value work to #9,
-lifecycle-envelope changes to #11, and rejects store/instance reuse and
-untrusted AOT/cache/snapshot/native-execution shortcuts in Phase 0.
+## Remaining gate work
 
-This handoff is optimization evidence only; it does not establish production
-SLOs or cross-platform claims. The retained issue-39 archive above executes
-three independent native-Linux 100k-activation soak processes against this
-final configuration, but its strict #38 comparison is inconclusive until a
-fresh complete-provenance archive is collected; #39 remains one required input
-to the still-open Phase 0 completion gate.
+#39 no longer needs another calibration or soak. Before Phase 1 is authorized,
+run `make phase0-gate` from a clean checkout and address any receipt blocker
+without weakening its raw-evidence, archive-integrity, source-identity, or
+fresh-baseline checks. In particular, a retained profile or baseline that no
+longer has the current execution-relevant identity must be regenerated or
+otherwise proven compatible; an issue's closed state cannot substitute for
+that evidence.
 
-## Remaining limitations
+## Audit and Phase 1 handoff
 
-This evidence demonstrates only the Phase 0 spike under its documented
-workload. It does not establish production API behavior, dormant-service
-density, remote-call performance, cluster scaling, or release SLOs. The
-finite long-duration soak can demonstrate only a fully recorded matched-host
-post-warm-up plateau, not arbitrary-duration leak freedom. The current
-historical archive is not yet such a matched comparison; those obligations
-remain with the Phase 1 work and its completion gate.
+| Classification | Phase 0 asset | Phase 1 action |
+|---|---|---|
+| Retain | WIT authority, generated bindings, reproducible echo fixture | Keep as the maintained integration fixture and contract-generation foundation. |
+| Retain | `ExecutionBackend`, `CellPool`, affine `CellLease`, fixed-capacity accounting | Preserve the seams and invariants while adding production implementations. |
+| Retain | Machine-readable baseline, calibration, profile, and soak schemas | Keep as regression evidence; do not replace like-for-like comparison rules with SLO claims. |
+| Harden | Wasmtime limits, fresh-store cleanup, interruption, bounded logging | Turn spike constants into explicit policy/configuration and telemetry without weakening cleanup proof. |
+| Harden | One-entry prepared-component cache | Generalize to a bounded cache keyed by artifact, trust, and engine compatibility. |
+| Generalize | `Phase0ActivationRunner` and `phase0_composition` | Add routing, admission, release resolution, budgets, and generic invocation without retaining echo-specific dispatch. |
+| Rewrite | `latentd phase0-spike` JSON/exit-code surface | Treat it as a harness, not a public compatibility promise; replace it with Phase 1 CLI/RPC surfaces. |
+| Delete after replacement | Test-only trap/infinite-loop/memory-pressure controls and benchmark-only entry points | Remove them from product dispatch when equivalent Phase 1 containment tests exist. |
+
+Phase 1 must retain fresh invocation-owned stores, host state, import tables,
+instances, limiters, and activation contexts; fixed node topology; bounded
+state; activation-local failure containment; and affirmative cleanup proof.
+The profile decision record defers worker/cell policy and Wasmtime/cache/value
+work to #8 and #9, lifecycle-envelope work to #11, and rejects store/instance
+reuse plus untrusted AOT/cache/snapshot/native-execution shortcuts in Phase 0.
+
+## Explicit limits
+
+Even an authorized Phase 0 gate would establish only a local feasibility and
+measurement boundary. It would not establish production security, stable public
+APIs, generic multi-service dispatch, persistent deployment management,
+production scheduling or telemetry, performance SLOs, dormant-service density,
+multi-node operation, Kubernetes replacement, realistic workloads, or
+arbitrary-duration leak freedom. Phase 1 issue #2 remains dependent on this
+gate and must consume this evidence/handoff rather than duplicate the spike.
+

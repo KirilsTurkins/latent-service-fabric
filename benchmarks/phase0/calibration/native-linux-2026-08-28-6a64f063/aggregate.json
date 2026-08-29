@@ -1,0 +1,2611 @@
+{
+  "comparison_method": {
+    "applicability": "Compare only a candidate with at least seven independent full-profile runs whose CPU, logical CPU count, memory, kernel, virtualization, Rust/Cargo/Wasmtime versions, target, build profile, allocator, fixture digest, and configuration are materially equivalent.",
+    "confirmed_regression_rule": "Repeated outside-band deterioration in the second comparable set is a confirmed regression.",
+    "hard_invariant_rule": "Topology, capacity, containment, cleanup, and reclamation checks remain binary. Any failure is a failure, never a statistical tolerance.",
+    "inconclusive_rule": "Insufficient samples, environment instability or mismatch, a material run-level outlier, or a failed hard invariant is inconclusive and must be rerun after the invalid condition is resolved.",
+    "no_detectable_regression_rule": "An inside-band candidate is terminally no detectable regression or statistically indistinguishable when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+    "not_a_cross_machine_claim": true,
+    "not_a_production_slo": true,
+    "regression_candidate_rule": "A deterioration beyond an advisory band is a regression candidate; preserve all raw runs and repeat a comparable seven-run set.",
+    "shared_hosted_ci": "Hosted CI may run deterministic correctness smoke checks but must not fail on these microbenchmark bands."
+  },
+  "cross_machine_claim": false,
+  "generated_at_utc": "2026-08-28T15:14:52+00:00",
+  "hard_invariants": {
+    "all_runs_passed": true,
+    "canonical_check_set_derived_from": "run-01",
+    "check_set_rule": "The first validated run defines the canonical hard-invariant name set. Every later run must contain exactly that set once, with every check passing; duplicates, omissions, and unexpected checks invalidate calibration.",
+    "checks_passed_in_every_run": [
+      "activation_owned_state_returns_to_baseline_after_every_sample",
+      "all_scenarios_return_expected_terminal_outcomes",
+      "configured_runtime_workers_observed_before_and_after_loading",
+      "explicit_release_clears_prepared_cache",
+      "failure_does_not_degrade_the_next_cause_specific_echo",
+      "file_descriptors_have_no_unbounded_monotonic_growth",
+      "fixed_pool_queue_saturation_is_bounded",
+      "fixed_pool_returns_to_configured_idle_state",
+      "linux_process_resource_probe_supported",
+      "post_release_backend_and_pool_are_clean",
+      "prepared_cache_bounded_after_prepare",
+      "prepared_cache_reuse_probe_matches_configuration",
+      "real_activation_throughput_reaches_bounded_queue_saturation",
+      "real_activation_throughput_reaches_pool_capacity",
+      "real_issue23_executable_failure_and_recovery_probe_passed",
+      "real_issue23_executable_probe_passed",
+      "rss_has_no_unbounded_monotonic_growth",
+      "runtime_shutdown_returns_thread_count_to_process_baseline",
+      "timeout_and_cancellation_overshoot_are_bounded",
+      "topology_constant_across_component_loading_and_repeated_invocations"
+    ],
+    "performance_runs_excluded": 0,
+    "rule": "A failed check, missing raw run, environment mismatch, or malformed probe invalidates calibration. Timing, throughput, and resource values never cause a run to be discarded."
+  },
+  "host_observations": {
+    "available_memory_bytes_range": {
+      "maximum": 10769154048.0,
+      "minimum": 10428973056.0
+    },
+    "native_linux_reference": true,
+    "one_minute_load_range": {
+      "maximum": 10.34,
+      "minimum": 2.8
+    },
+    "runs": [
+      {
+        "after": "runs/run-01/host-after.json",
+        "allocator": {
+          "ld_preload": "unset",
+          "malloc_conf": "unset",
+          "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+          "source_global_allocator_lookup": "completed",
+          "source_global_allocator_matches": []
+        },
+        "background_load": {
+          "after": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.94,
+              "five_minutes": 5.85,
+              "one_minute": 4.45,
+              "runnable_tasks": 1,
+              "total_tasks": 1366
+            },
+            "memory_available_bytes": 10754891776,
+            "memory_free_bytes": 2654105600,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5404143616
+          },
+          "before": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.89,
+              "five_minutes": 7.72,
+              "one_minute": 10.34,
+              "runnable_tasks": 1,
+              "total_tasks": 1390
+            },
+            "memory_available_bytes": 10428973056,
+            "memory_free_bytes": 3624718336,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5371523072
+          }
+        },
+        "before": "runs/run-01/host-before.json",
+        "cpu_frequency_policy": {
+          "cpus_with_cpufreq_sysfs": 0,
+          "current_frequency_khz_range": null,
+          "notes": "Read-only Linux cpufreq observations. The command does not pin governors or frequencies.",
+          "observed": {}
+        },
+        "run": "run-01",
+        "virtualization": {
+          "systemd_detect_virt": "none",
+          "systemd_detect_virt_container": "none",
+          "systemd_detect_virt_vm": "none",
+          "wsl_detected": false
+        }
+      },
+      {
+        "after": "runs/run-02/host-after.json",
+        "allocator": {
+          "ld_preload": "unset",
+          "malloc_conf": "unset",
+          "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+          "source_global_allocator_lookup": "completed",
+          "source_global_allocator_matches": []
+        },
+        "background_load": {
+          "after": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.85,
+              "five_minutes": 5.44,
+              "one_minute": 3.72,
+              "runnable_tasks": 1,
+              "total_tasks": 1365
+            },
+            "memory_available_bytes": 10700509184,
+            "memory_free_bytes": 2557972480,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5405954048
+          },
+          "before": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.94,
+              "five_minutes": 5.85,
+              "one_minute": 4.45,
+              "runnable_tasks": 1,
+              "total_tasks": 1366
+            },
+            "memory_available_bytes": 10755235840,
+            "memory_free_bytes": 2654441472,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5404143616
+          }
+        },
+        "before": "runs/run-02/host-before.json",
+        "cpu_frequency_policy": {
+          "cpus_with_cpufreq_sysfs": 0,
+          "current_frequency_khz_range": null,
+          "notes": "Read-only Linux cpufreq observations. The command does not pin governors or frequencies.",
+          "observed": {}
+        },
+        "run": "run-02",
+        "virtualization": {
+          "systemd_detect_virt": "none",
+          "systemd_detect_virt_container": "none",
+          "systemd_detect_virt_vm": "none",
+          "wsl_detected": false
+        }
+      },
+      {
+        "after": "runs/run-03/host-after.json",
+        "allocator": {
+          "ld_preload": "unset",
+          "malloc_conf": "unset",
+          "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+          "source_global_allocator_lookup": "completed",
+          "source_global_allocator_matches": []
+        },
+        "background_load": {
+          "after": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.77,
+              "five_minutes": 5.09,
+              "one_minute": 3.57,
+              "runnable_tasks": 1,
+              "total_tasks": 1361
+            },
+            "memory_available_bytes": 10765819904,
+            "memory_free_bytes": 2613350400,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5406674944
+          },
+          "before": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.85,
+              "five_minutes": 5.44,
+              "one_minute": 3.72,
+              "runnable_tasks": 3,
+              "total_tasks": 1365
+            },
+            "memory_available_bytes": 10708574208,
+            "memory_free_bytes": 2566029312,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5406064640
+          }
+        },
+        "before": "runs/run-03/host-before.json",
+        "cpu_frequency_policy": {
+          "cpus_with_cpufreq_sysfs": 0,
+          "current_frequency_khz_range": null,
+          "notes": "Read-only Linux cpufreq observations. The command does not pin governors or frequencies.",
+          "observed": {}
+        },
+        "run": "run-03",
+        "virtualization": {
+          "systemd_detect_virt": "none",
+          "systemd_detect_virt_container": "none",
+          "systemd_detect_virt_vm": "none",
+          "wsl_detected": false
+        }
+      },
+      {
+        "after": "runs/run-04/host-after.json",
+        "allocator": {
+          "ld_preload": "unset",
+          "malloc_conf": "unset",
+          "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+          "source_global_allocator_lookup": "completed",
+          "source_global_allocator_matches": []
+        },
+        "background_load": {
+          "after": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.67,
+              "five_minutes": 4.76,
+              "one_minute": 3.25,
+              "runnable_tasks": 1,
+              "total_tasks": 1363
+            },
+            "memory_available_bytes": 10746515456,
+            "memory_free_bytes": 2586099712,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5408030720
+          },
+          "before": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.77,
+              "five_minutes": 5.09,
+              "one_minute": 3.57,
+              "runnable_tasks": 2,
+              "total_tasks": 1361
+            },
+            "memory_available_bytes": 10769154048,
+            "memory_free_bytes": 2616496128,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5406679040
+          }
+        },
+        "before": "runs/run-04/host-before.json",
+        "cpu_frequency_policy": {
+          "cpus_with_cpufreq_sysfs": 0,
+          "current_frequency_khz_range": null,
+          "notes": "Read-only Linux cpufreq observations. The command does not pin governors or frequencies.",
+          "observed": {}
+        },
+        "run": "run-04",
+        "virtualization": {
+          "systemd_detect_virt": "none",
+          "systemd_detect_virt_container": "none",
+          "systemd_detect_virt_vm": "none",
+          "wsl_detected": false
+        }
+      },
+      {
+        "after": "runs/run-05/host-after.json",
+        "allocator": {
+          "ld_preload": "unset",
+          "malloc_conf": "unset",
+          "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+          "source_global_allocator_lookup": "completed",
+          "source_global_allocator_matches": []
+        },
+        "background_load": {
+          "after": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.55,
+              "five_minutes": 4.37,
+              "one_minute": 2.8,
+              "runnable_tasks": 1,
+              "total_tasks": 1353
+            },
+            "memory_available_bytes": 10673602560,
+            "memory_free_bytes": 2509053952,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5418553344
+          },
+          "before": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.67,
+              "five_minutes": 4.76,
+              "one_minute": 3.25,
+              "runnable_tasks": 1,
+              "total_tasks": 1363
+            },
+            "memory_available_bytes": 10750771200,
+            "memory_free_bytes": 2590265344,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5408030720
+          }
+        },
+        "before": "runs/run-05/host-before.json",
+        "cpu_frequency_policy": {
+          "cpus_with_cpufreq_sysfs": 0,
+          "current_frequency_khz_range": null,
+          "notes": "Read-only Linux cpufreq observations. The command does not pin governors or frequencies.",
+          "observed": {}
+        },
+        "run": "run-05",
+        "virtualization": {
+          "systemd_detect_virt": "none",
+          "systemd_detect_virt_container": "none",
+          "systemd_detect_virt_vm": "none",
+          "wsl_detected": false
+        }
+      },
+      {
+        "after": "runs/run-06/host-after.json",
+        "allocator": {
+          "ld_preload": "unset",
+          "malloc_conf": "unset",
+          "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+          "source_global_allocator_lookup": "completed",
+          "source_global_allocator_matches": []
+        },
+        "background_load": {
+          "after": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.5,
+              "five_minutes": 4.28,
+              "one_minute": 3.5,
+              "runnable_tasks": 1,
+              "total_tasks": 1353
+            },
+            "memory_available_bytes": 10689196032,
+            "memory_free_bytes": 2517643264,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5420957696
+          },
+          "before": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.55,
+              "five_minutes": 4.37,
+              "one_minute": 2.8,
+              "runnable_tasks": 2,
+              "total_tasks": 1353
+            },
+            "memory_available_bytes": 10682257408,
+            "memory_free_bytes": 2517712896,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5418553344
+          }
+        },
+        "before": "runs/run-06/host-before.json",
+        "cpu_frequency_policy": {
+          "cpus_with_cpufreq_sysfs": 0,
+          "current_frequency_khz_range": null,
+          "notes": "Read-only Linux cpufreq observations. The command does not pin governors or frequencies.",
+          "observed": {}
+        },
+        "run": "run-06",
+        "virtualization": {
+          "systemd_detect_virt": "none",
+          "systemd_detect_virt_container": "none",
+          "systemd_detect_virt_vm": "none",
+          "wsl_detected": false
+        }
+      },
+      {
+        "after": "runs/run-07/host-after.json",
+        "allocator": {
+          "ld_preload": "unset",
+          "malloc_conf": "unset",
+          "observation": "When no source global allocator is found and LD_PRELOAD is unset, Rust uses its standard allocator backed by the platform allocator.",
+          "source_global_allocator_lookup": "completed",
+          "source_global_allocator_matches": []
+        },
+        "background_load": {
+          "after": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.44,
+              "five_minutes": 4.15,
+              "one_minute": 3.5,
+              "runnable_tasks": 2,
+              "total_tasks": 1353
+            },
+            "memory_available_bytes": 10722893824,
+            "memory_free_bytes": 2544685056,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5421568000
+          },
+          "before": {
+            "load_average": {
+              "available": true,
+              "fifteen_minutes": 4.5,
+              "five_minutes": 4.28,
+              "one_minute": 3.5,
+              "runnable_tasks": 3,
+              "total_tasks": 1353
+            },
+            "memory_available_bytes": 10686058496,
+            "memory_free_bytes": 2514321408,
+            "notes": "Load average, runnable tasks, and memory availability are captured before and after every full-profile process. No run is excluded based on this context.",
+            "swap_free_bytes": 5420957696
+          }
+        },
+        "before": "runs/run-07/host-before.json",
+        "cpu_frequency_policy": {
+          "cpus_with_cpufreq_sysfs": 0,
+          "current_frequency_khz_range": null,
+          "notes": "Read-only Linux cpufreq observations. The command does not pin governors or frequencies.",
+          "observed": {}
+        },
+        "run": "run-07",
+        "virtualization": {
+          "systemd_detect_virt": "none",
+          "systemd_detect_virt_container": "none",
+          "systemd_detect_virt_vm": "none",
+          "wsl_detected": false
+        }
+      }
+    ]
+  },
+  "material_run_level_outliers": {
+    "activation_acquire_or_queue_wait_micros": [
+      {
+        "median": 4.0,
+        "reason": "deviates from a zero-MAD run-level median",
+        "run": "run-01",
+        "value": 5.0
+      },
+      {
+        "median": 4.0,
+        "reason": "deviates from a zero-MAD run-level median",
+        "run": "run-02",
+        "value": 5.0
+      },
+      {
+        "median": 4.0,
+        "reason": "deviates from a zero-MAD run-level median",
+        "run": "run-06",
+        "value": 5.0
+      }
+    ],
+    "at_capacity_activations_per_second": [
+      {
+        "median": 668.6354265336826,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 6.289526643287128,
+        "run": "run-07",
+        "value": 647.4587245063127
+      }
+    ],
+    "bounded_queue_saturation_activations_per_second": [
+      {
+        "median": 1079.7435609042852,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 6.126915048592127,
+        "run": "run-01",
+        "value": 1019.0073170386515
+      },
+      {
+        "median": 1079.7435609042852,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 3.6873534291843835,
+        "run": "run-02",
+        "value": 1116.2963766880107
+      }
+    ],
+    "cold_activation_elapsed_micros": [
+      {
+        "median": 213.5,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 3.597284050541841,
+        "run": "run-04",
+        "value": 221.5
+      }
+    ],
+    "component_preparation_micros": [
+      {
+        "median": 49119.0,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 8.382221041434327,
+        "run": "run-06",
+        "value": 52375.0
+      }
+    ],
+    "fixed_pool_queued_wait_p50_micros": [
+      {
+        "median": 35.0,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 4.721435316336167,
+        "run": "run-03",
+        "value": 42.0
+      },
+      {
+        "median": 35.0,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 5.395926075812762,
+        "run": "run-06",
+        "value": 27.0
+      }
+    ],
+    "prepared_component_release_micros": [
+      {
+        "median": 79.0,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 10.791852151625523,
+        "run": "run-05",
+        "value": 111.0
+      }
+    ],
+    "process_launch_to_ready_to_invoke_micros": [
+      {
+        "median": 55854.0,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 6.257047773591133,
+        "run": "run-06",
+        "value": 59676.0
+      }
+    ],
+    "process_launch_to_runtime_ready_micros": [
+      {
+        "median": 3872.0,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 5.178348411465473,
+        "run": "run-03",
+        "value": 4110.0
+      },
+      {
+        "median": 3872.0,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 5.635261506594779,
+        "run": "run-05",
+        "value": 4131.0
+      }
+    ],
+    "process_peak_virtual_memory_bytes": [
+      {
+        "median": 231780352.0,
+        "reason": "deviates from a zero-MAD run-level median",
+        "run": "run-02",
+        "value": 231784448.0
+      },
+      {
+        "median": 231780352.0,
+        "reason": "deviates from a zero-MAD run-level median",
+        "run": "run-04",
+        "value": 231788544.0
+      },
+      {
+        "median": 231780352.0,
+        "reason": "deviates from a zero-MAD run-level median",
+        "run": "run-05",
+        "value": 231784448.0
+      }
+    ],
+    "recovery_after_domain_error_elapsed_micros": [
+      {
+        "median": 124.5,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 12.140833670578713,
+        "run": "run-06",
+        "value": 187.5
+      }
+    ],
+    "recovery_after_trap_elapsed_micros": [
+      {
+        "median": 124.0,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 11.177275442755006,
+        "run": "run-02",
+        "value": 182.0
+      },
+      {
+        "median": 124.0,
+        "reason": "run-level robust z-score exceeds 3.5",
+        "robust_z": 14.067950126226128,
+        "run": "run-06",
+        "value": 197.0
+      }
+    ]
+  },
+  "metrics": {
+    "activation_acquire_or_queue_wait_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 4.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Queueing and release",
+      "label": "Activation acquire or queue wait",
+      "per_run_representatives": {
+        "run-01": 5.0,
+        "run-02": 5.0,
+        "run-03": 4.0,
+        "run-04": 4.0,
+        "run-05": 4.0,
+        "run-06": 5.0,
+        "run-07": 4.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 4.0,
+          "reason": "deviates from a zero-MAD run-level median",
+          "run": "run-01",
+          "value": 5.0
+        },
+        {
+          "median": 4.0,
+          "reason": "deviates from a zero-MAD run-level median",
+          "run": "run-02",
+          "value": 5.0
+        },
+        {
+          "median": 4.0,
+          "reason": "deviates from a zero-MAD run-level median",
+          "run": "run-06",
+          "value": 5.0
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 12.069862537980455,
+        "maximum": 5.0,
+        "mean": 4.428571428571429,
+        "median": 4.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 4.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 171.70608333310543,
+        "maximum": 4327.0,
+        "mean": 546.2349021241149,
+        "median": 4.0,
+        "median_absolute_deviation": 2.0,
+        "minimum": 0.0,
+        "sample_count": 2401
+      },
+      "unit": "microseconds"
+    },
+    "activation_cell_disposition_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 3.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Queueing and release",
+      "label": "Activation cell release or quarantine disposition",
+      "per_run_representatives": {
+        "run-01": 3.0,
+        "run-02": 3.0,
+        "run-03": 3.0,
+        "run-04": 3.0,
+        "run-05": 3.0,
+        "run-06": 3.0,
+        "run-07": 3.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.0,
+        "maximum": 3.0,
+        "mean": 3.0,
+        "median": 3.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 3.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 56.318778480006856,
+        "maximum": 23.0,
+        "mean": 3.4423157017909203,
+        "median": 3.0,
+        "median_absolute_deviation": 1.0,
+        "minimum": 1.0,
+        "sample_count": 2401
+      },
+      "unit": "microseconds"
+    },
+    "activation_queued_acquire_wait_micros": {
+      "comparison": {
+        "advisory_noise_band": 240.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 2400.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Queueing and release",
+      "label": "Queued activation acquire wait",
+      "per_run_representatives": {
+        "run-01": 2418.5,
+        "run-02": 2400.0,
+        "run-03": 2431.0,
+        "run-04": 2376.0,
+        "run-05": 2409.0,
+        "run-06": 2400.0,
+        "run-07": 2396.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.7290043834668554,
+        "maximum": 2431.0,
+        "mean": 2404.3571428571427,
+        "median": 2400.0,
+        "median_absolute_deviation": 9.0,
+        "minimum": 2376.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 32.6505758114299,
+        "maximum": 4327.0,
+        "mean": 2013.1661073825503,
+        "median": 2406.5,
+        "median_absolute_deviation": 282.0,
+        "minimum": 1162.0,
+        "sample_count": 596
+      },
+      "unit": "microseconds"
+    },
+    "activation_resource_reclamation_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 25.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Post-invocation cleanup",
+      "label": "Activation-resource reclamation",
+      "per_run_representatives": {
+        "run-01": 26.0,
+        "run-02": 24.0,
+        "run-03": 26.0,
+        "run-04": 23.0,
+        "run-05": 25.0,
+        "run-06": 25.0,
+        "run-07": 25.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 4.300755616981542,
+        "maximum": 26.0,
+        "mean": 24.857142857142858,
+        "median": 25.0,
+        "median_absolute_deviation": 1.0,
+        "minimum": 23.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 104.89002978217763,
+        "maximum": 881.0,
+        "mean": 32.63265306122449,
+        "median": 25.0,
+        "median_absolute_deviation": 6.0,
+        "minimum": 14.0,
+        "sample_count": 2401
+      },
+      "unit": "microseconds"
+    },
+    "at_capacity_activations_per_second": {
+      "comparison": {
+        "advisory_noise_band": 100.29531398005238,
+        "candidate_regression_rule": "candidate median < reference median - advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "decrease_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 15% x absolute reference median, 1 activations_per_second)",
+        "reference_median": 668.6354265336826
+      },
+      "direction": "decrease_is_regression",
+      "group": "Activation throughput",
+      "label": "At-capacity activation throughput",
+      "per_run_representatives": {
+        "run-01": 657.6693841200247,
+        "run-02": 676.8475823850416,
+        "run-03": 669.5307705183284,
+        "run-04": 668.6354265336826,
+        "run-05": 670.9064225312741,
+        "run-06": 668.4212725069975,
+        "run-07": 647.4587245063127
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 668.6354265336826,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 6.289526643287128,
+          "run": "run-07",
+          "value": 647.4587245063127
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 1.4761499601626231,
+        "maximum": 676.8475823850416,
+        "mean": 665.638511871666,
+        "median": 668.6354265336826,
+        "median_absolute_deviation": 2.2709959975915126,
+        "minimum": 647.4587245063127,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 1.4761499601626231,
+        "maximum": 676.8475823850416,
+        "mean": 665.638511871666,
+        "median": 668.6354265336826,
+        "median_absolute_deviation": 2.2709959975915126,
+        "minimum": 647.4587245063127,
+        "sample_count": 7
+      },
+      "unit": "activations_per_second"
+    },
+    "bounded_queue_saturation_activations_per_second": {
+      "comparison": {
+        "advisory_noise_band": 161.96153413564278,
+        "candidate_regression_rule": "candidate median < reference median - advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "decrease_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 15% x absolute reference median, 1 activations_per_second)",
+        "reference_median": 1079.7435609042852
+      },
+      "direction": "decrease_is_regression",
+      "group": "Activation throughput",
+      "label": "Bounded-queue-saturation activation throughput",
+      "per_run_representatives": {
+        "run-01": 1019.0073170386515,
+        "run-02": 1116.2963766880107,
+        "run-03": 1085.7435835570166,
+        "run-04": 1073.057319145131,
+        "run-05": 1079.7435609042852,
+        "run-06": 1092.0507803612868,
+        "run-07": 1077.4975120283143
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 1079.7435609042852,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 6.126915048592127,
+          "run": "run-01",
+          "value": 1019.0073170386515
+        },
+        {
+          "median": 1079.7435609042852,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 3.6873534291843835,
+          "run": "run-02",
+          "value": 1116.2963766880107
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 2.7399542504137537,
+        "maximum": 1116.2963766880107,
+        "mean": 1077.6280642460995,
+        "median": 1079.7435609042852,
+        "median_absolute_deviation": 6.6862417591542,
+        "minimum": 1019.0073170386515,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 2.7399542504137537,
+        "maximum": 1116.2963766880107,
+        "mean": 1077.6280642460995,
+        "median": 1079.7435609042852,
+        "median_absolute_deviation": 6.6862417591542,
+        "minimum": 1019.0073170386515,
+        "sample_count": 7
+      },
+      "unit": "activations_per_second"
+    },
+    "cancellation_overshoot_micros": {
+      "comparison": {
+        "advisory_noise_band": 235.9,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 2359.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Containment and recovery",
+      "label": "Cancellation interruption overshoot",
+      "per_run_representatives": {
+        "run-01": 2386.0,
+        "run-02": 2389.0,
+        "run-03": 2357.0,
+        "run-04": 2299.0,
+        "run-05": 2359.0,
+        "run-06": 2329.5,
+        "run-07": 2387.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 1.4361505197578581,
+        "maximum": 2389.0,
+        "mean": 2358.0714285714284,
+        "median": 2359.0,
+        "median_absolute_deviation": 28.0,
+        "minimum": 2299.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 13.013592039068344,
+        "maximum": 3515.0,
+        "mean": 2413.8,
+        "median": 2362.0,
+        "median_absolute_deviation": 78.0,
+        "minimum": 1474.0,
+        "sample_count": 70
+      },
+      "unit": "microseconds"
+    },
+    "capsule_validation_and_load_micros": {
+      "comparison": {
+        "advisory_noise_band": 15.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 63.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Startup and preparation",
+      "label": "Capsule validation and component load",
+      "per_run_representatives": {
+        "run-01": 59.0,
+        "run-02": 63.0,
+        "run-03": 58.0,
+        "run-04": 59.0,
+        "run-05": 73.0,
+        "run-06": 73.0,
+        "run-07": 76.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 11.90558084328004,
+        "maximum": 76.0,
+        "mean": 65.85714285714286,
+        "median": 63.0,
+        "median_absolute_deviation": 5.0,
+        "minimum": 58.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 11.90558084328004,
+        "maximum": 76.0,
+        "mean": 65.85714285714286,
+        "median": 63.0,
+        "median_absolute_deviation": 5.0,
+        "minimum": 58.0,
+        "sample_count": 7
+      },
+      "unit": "microseconds"
+    },
+    "cell_disposition_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 3.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Post-invocation cleanup",
+      "label": "Cell release or quarantine disposition",
+      "per_run_representatives": {
+        "run-01": 3.0,
+        "run-02": 3.0,
+        "run-03": 3.0,
+        "run-04": 3.0,
+        "run-05": 3.0,
+        "run-06": 3.0,
+        "run-07": 3.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.0,
+        "maximum": 3.0,
+        "mean": 3.0,
+        "median": 3.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 3.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 56.318778480006856,
+        "maximum": 23.0,
+        "mean": 3.4423157017909203,
+        "median": 3.0,
+        "median_absolute_deviation": 1.0,
+        "minimum": 1.0,
+        "sample_count": 2401
+      },
+      "unit": "microseconds"
+    },
+    "cold_activation_elapsed_micros": {
+      "comparison": {
+        "advisory_noise_band": 21.35,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 213.5
+      },
+      "direction": "increase_is_regression",
+      "group": "Cold and warm activation",
+      "label": "Cold activation inside real executable harness",
+      "per_run_representatives": {
+        "run-01": 215.0,
+        "run-02": 211.5,
+        "run-03": 213.5,
+        "run-04": 221.5,
+        "run-05": 208.0,
+        "run-06": 212.0,
+        "run-07": 213.5
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 213.5,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 3.597284050541841,
+          "run": "run-04",
+          "value": 221.5
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 1.9372989690209286,
+        "maximum": 221.5,
+        "mean": 213.57142857142858,
+        "median": 213.5,
+        "median_absolute_deviation": 1.5,
+        "minimum": 208.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 8.493378852496772,
+        "maximum": 292.0,
+        "mean": 218.1547619047619,
+        "median": 213.5,
+        "median_absolute_deviation": 6.0,
+        "minimum": 197.0,
+        "sample_count": 84
+      },
+      "unit": "microseconds"
+    },
+    "component_post_return_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 0.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Post-invocation cleanup",
+      "label": "Component canonical post-return",
+      "per_run_representatives": {
+        "run-01": 0.0,
+        "run-02": 0.0,
+        "run-03": 0.0,
+        "run-04": 0.0,
+        "run-05": 0.0,
+        "run-06": 0.0,
+        "run-07": 0.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 180.45816234189834,
+        "maximum": 17.0,
+        "mean": 0.5214493960849645,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 2401
+      },
+      "unit": "microseconds"
+    },
+    "component_preparation_micros": {
+      "comparison": {
+        "advisory_noise_band": 4911.900000000001,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 49119.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Startup and preparation",
+      "label": "Component preparation",
+      "per_run_representatives": {
+        "run-01": 49247.0,
+        "run-02": 48103.0,
+        "run-03": 49119.0,
+        "run-04": 48167.0,
+        "run-05": 49171.0,
+        "run-06": 52375.0,
+        "run-07": 48857.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 49119.0,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 8.382221041434327,
+          "run": "run-06",
+          "value": 52375.0
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 2.91887788058061,
+        "maximum": 52375.0,
+        "mean": 49291.28571428572,
+        "median": 49119.0,
+        "median_absolute_deviation": 262.0,
+        "minimum": 48103.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 2.91887788058061,
+        "maximum": 52375.0,
+        "mean": 49291.28571428572,
+        "median": 49119.0,
+        "median_absolute_deviation": 262.0,
+        "minimum": 48103.0,
+        "sample_count": 7
+      },
+      "unit": "microseconds"
+    },
+    "fixed_pool_acquire_p50_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 0.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Queueing and release",
+      "label": "Fixed-pool acquire P50",
+      "per_run_representatives": {
+        "run-01": 0.0,
+        "run-02": 0.0,
+        "run-03": 0.0,
+        "run-04": 0.0,
+        "run-05": 0.0,
+        "run-06": 0.0,
+        "run-07": 0.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "unit": "microseconds"
+    },
+    "fixed_pool_queued_wait_p50_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 35.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Queueing and release",
+      "label": "Fixed-pool queued wait P50",
+      "per_run_representatives": {
+        "run-01": 35.0,
+        "run-02": 35.0,
+        "run-03": 42.0,
+        "run-04": 36.0,
+        "run-05": 35.0,
+        "run-06": 27.0,
+        "run-07": 33.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 35.0,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 4.721435316336167,
+          "run": "run-03",
+          "value": 42.0
+        },
+        {
+          "median": 35.0,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 5.395926075812762,
+          "run": "run-06",
+          "value": 27.0
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 12.743919808396726,
+        "maximum": 42.0,
+        "mean": 34.714285714285715,
+        "median": 35.0,
+        "median_absolute_deviation": 1.0,
+        "minimum": 27.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 12.743919808396726,
+        "maximum": 42.0,
+        "mean": 34.714285714285715,
+        "median": 35.0,
+        "median_absolute_deviation": 1.0,
+        "minimum": 27.0,
+        "sample_count": 7
+      },
+      "unit": "microseconds"
+    },
+    "fixed_pool_release_p50_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 0.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Queueing and release",
+      "label": "Fixed-pool release P50",
+      "per_run_representatives": {
+        "run-01": 0.0,
+        "run-02": 0.0,
+        "run-03": 0.0,
+        "run-04": 0.0,
+        "run-05": 0.0,
+        "run-06": 0.0,
+        "run-07": 0.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "unit": "microseconds"
+    },
+    "outcome_classification_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 0.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Post-invocation cleanup",
+      "label": "Outcome classification",
+      "per_run_representatives": {
+        "run-01": 0.0,
+        "run-02": 0.0,
+        "run-03": 0.0,
+        "run-04": 0.0,
+        "run-05": 0.0,
+        "run-06": 0.0,
+        "run-07": 0.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 405.61905556814855,
+        "maximum": 2.0,
+        "mean": 0.07663473552686381,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 2401
+      },
+      "unit": "microseconds"
+    },
+    "post_invocation_cleanup_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 28.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Post-invocation cleanup",
+      "label": "Post-invocation cleanup",
+      "per_run_representatives": {
+        "run-01": 29.0,
+        "run-02": 27.0,
+        "run-03": 29.0,
+        "run-04": 26.0,
+        "run-05": 28.0,
+        "run-06": 29.0,
+        "run-07": 28.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 4.123930494211613,
+        "maximum": 29.0,
+        "mean": 28.0,
+        "median": 28.0,
+        "median_absolute_deviation": 1.0,
+        "minimum": 26.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 96.36998386513244,
+        "maximum": 890.0,
+        "mean": 36.714285714285715,
+        "median": 28.0,
+        "median_absolute_deviation": 7.0,
+        "minimum": 15.0,
+        "sample_count": 2401
+      },
+      "unit": "microseconds"
+    },
+    "prepared_component_release_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 79.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Startup and preparation",
+      "label": "Prepared-component release",
+      "per_run_representatives": {
+        "run-01": 79.0,
+        "run-02": 80.0,
+        "run-03": 78.0,
+        "run-04": 77.0,
+        "run-05": 111.0,
+        "run-06": 81.0,
+        "run-07": 75.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 79.0,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 10.791852151625523,
+          "run": "run-05",
+          "value": 111.0
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 15.064256492779963,
+        "maximum": 111.0,
+        "mean": 83.0,
+        "median": 79.0,
+        "median_absolute_deviation": 2.0,
+        "minimum": 75.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 15.064256492779963,
+        "maximum": 111.0,
+        "mean": 83.0,
+        "median": 79.0,
+        "median_absolute_deviation": 2.0,
+        "minimum": 75.0,
+        "sample_count": 7
+      },
+      "unit": "microseconds"
+    },
+    "process_launch_to_completion_real_executable_micros": {
+      "comparison": {
+        "advisory_noise_band": 5198.950000000001,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 51989.5
+      },
+      "direction": "increase_is_regression",
+      "group": "Cold and warm activation",
+      "label": "Real executable process launch to completion",
+      "per_run_representatives": {
+        "run-01": 51989.5,
+        "run-02": 52456.0,
+        "run-03": 52442.0,
+        "run-04": 51857.0,
+        "run-05": 51778.5,
+        "run-06": 52701.5,
+        "run-07": 51621.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.785830774396332,
+        "maximum": 52701.5,
+        "mean": 52120.78571428572,
+        "median": 51989.5,
+        "median_absolute_deviation": 368.5,
+        "minimum": 51621.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 1.9864689136505478,
+        "maximum": 56825.0,
+        "mean": 52352.51190476191,
+        "median": 52029.0,
+        "median_absolute_deviation": 620.0,
+        "minimum": 50903.0,
+        "sample_count": 84
+      },
+      "unit": "microseconds"
+    },
+    "process_launch_to_ready_to_invoke_micros": {
+      "comparison": {
+        "advisory_noise_band": 5585.400000000001,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 55854.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Startup and preparation",
+      "label": "Derived external process launch to ready-to-invoke",
+      "per_run_representatives": {
+        "run-01": 55763.0,
+        "run-02": 54548.0,
+        "run-03": 56266.0,
+        "run-04": 54952.0,
+        "run-05": 56226.0,
+        "run-06": 59676.0,
+        "run-07": 55854.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 55854.0,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 6.257047773591133,
+          "run": "run-06",
+          "value": 59676.0
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 2.9679204727939337,
+        "maximum": 59676.0,
+        "mean": 56183.57142857143,
+        "median": 55854.0,
+        "median_absolute_deviation": 412.0,
+        "minimum": 54548.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 2.9679204727939337,
+        "maximum": 59676.0,
+        "mean": 56183.57142857143,
+        "median": 55854.0,
+        "median_absolute_deviation": 412.0,
+        "minimum": 54548.0,
+        "sample_count": 7
+      },
+      "unit": "microseconds"
+    },
+    "process_launch_to_runtime_ready_micros": {
+      "comparison": {
+        "advisory_noise_band": 387.20000000000005,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 3872.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Startup and preparation",
+      "label": "External process launch to runtime/pool ready",
+      "per_run_representatives": {
+        "run-01": 3862.0,
+        "run-02": 3841.0,
+        "run-03": 4110.0,
+        "run-04": 3969.0,
+        "run-05": 4131.0,
+        "run-06": 3857.0,
+        "run-07": 3872.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 3872.0,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 5.178348411465473,
+          "run": "run-03",
+          "value": 4110.0
+        },
+        {
+          "median": 3872.0,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 5.635261506594779,
+          "run": "run-05",
+          "value": 4131.0
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 3.1539863467488534,
+        "maximum": 4131.0,
+        "mean": 3948.8571428571427,
+        "median": 3872.0,
+        "median_absolute_deviation": 31.0,
+        "minimum": 3841.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 3.1539863467488534,
+        "maximum": 4131.0,
+        "mean": 3948.8571428571427,
+        "median": 3872.0,
+        "median_absolute_deviation": 31.0,
+        "minimum": 3841.0,
+        "sample_count": 7
+      },
+      "unit": "microseconds"
+    },
+    "process_peak_file_descriptor_count": {
+      "comparison": null,
+      "direction": "increase_is_regression",
+      "group": "Process resources (per-run peak)",
+      "label": "Process peak file-descriptor count",
+      "per_run_representatives": {
+        "run-01": 5.0,
+        "run-02": 5.0,
+        "run-03": 5.0,
+        "run-04": 5.0,
+        "run-05": 5.0,
+        "run-06": 5.0,
+        "run-07": 5.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.0,
+        "maximum": 5.0,
+        "mean": 5.0,
+        "median": 5.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 5.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.0,
+        "maximum": 5.0,
+        "mean": 5.0,
+        "median": 5.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 5.0,
+        "sample_count": 7
+      },
+      "unit": "count"
+    },
+    "process_peak_listening_socket_count": {
+      "comparison": null,
+      "direction": "increase_is_regression",
+      "group": "Process resources (per-run peak)",
+      "label": "Process peak listening sockets",
+      "per_run_representatives": {
+        "run-01": 0.0,
+        "run-02": 0.0,
+        "run-03": 0.0,
+        "run-04": 0.0,
+        "run-05": 0.0,
+        "run-06": 0.0,
+        "run-07": 0.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "unit": "count"
+    },
+    "process_peak_open_socket_count": {
+      "comparison": null,
+      "direction": "increase_is_regression",
+      "group": "Process resources (per-run peak)",
+      "label": "Process peak open sockets",
+      "per_run_representatives": {
+        "run-01": 0.0,
+        "run-02": 0.0,
+        "run-03": 0.0,
+        "run-04": 0.0,
+        "run-05": 0.0,
+        "run-06": 0.0,
+        "run-07": 0.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "unit": "count"
+    },
+    "process_peak_rss_bytes": {
+      "comparison": {
+        "advisory_noise_band": 1819443.2000000002,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 1.04858e+06 bytes)",
+        "reference_median": 18194432.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Process resources (per-run peak)",
+      "label": "Process peak RSS",
+      "per_run_representatives": {
+        "run-01": 18059264.0,
+        "run-02": 18309120.0,
+        "run-03": 17973248.0,
+        "run-04": 18243584.0,
+        "run-05": 18137088.0,
+        "run-06": 18374656.0,
+        "run-07": 18194432.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.7706669690558703,
+        "maximum": 18374656.0,
+        "mean": 18184484.57142857,
+        "median": 18194432.0,
+        "median_absolute_deviation": 114688.0,
+        "minimum": 17973248.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.7706669690558703,
+        "maximum": 18374656.0,
+        "mean": 18184484.57142857,
+        "median": 18194432.0,
+        "median_absolute_deviation": 114688.0,
+        "minimum": 17973248.0,
+        "sample_count": 7
+      },
+      "unit": "bytes"
+    },
+    "process_peak_thread_count": {
+      "comparison": null,
+      "direction": "increase_is_regression",
+      "group": "Process resources (per-run peak)",
+      "label": "Process peak thread count",
+      "per_run_representatives": {
+        "run-01": 4.0,
+        "run-02": 4.0,
+        "run-03": 4.0,
+        "run-04": 4.0,
+        "run-05": 4.0,
+        "run-06": 4.0,
+        "run-07": 4.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.0,
+        "maximum": 4.0,
+        "mean": 4.0,
+        "median": 4.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 4.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.0,
+        "maximum": 4.0,
+        "mean": 4.0,
+        "median": 4.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 4.0,
+        "sample_count": 7
+      },
+      "unit": "count"
+    },
+    "process_peak_virtual_memory_bytes": {
+      "comparison": {
+        "advisory_noise_band": 23178035.200000003,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 1.04858e+06 bytes)",
+        "reference_median": 231780352.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Process resources (per-run peak)",
+      "label": "Process peak virtual memory",
+      "per_run_representatives": {
+        "run-01": 231780352.0,
+        "run-02": 231784448.0,
+        "run-03": 231780352.0,
+        "run-04": 231788544.0,
+        "run-05": 231784448.0,
+        "run-06": 231780352.0,
+        "run-07": 231780352.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 231780352.0,
+          "reason": "deviates from a zero-MAD run-level median",
+          "run": "run-02",
+          "value": 231784448.0
+        },
+        {
+          "median": 231780352.0,
+          "reason": "deviates from a zero-MAD run-level median",
+          "run": "run-04",
+          "value": 231788544.0
+        },
+        {
+          "median": 231780352.0,
+          "reason": "deviates from a zero-MAD run-level median",
+          "run": "run-05",
+          "value": 231784448.0
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.0013904038865894587,
+        "maximum": 231788544.0,
+        "mean": 231782692.57142857,
+        "median": 231780352.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 231780352.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 0.0013904038865894587,
+        "maximum": 231788544.0,
+        "mean": 231782692.57142857,
+        "median": 231780352.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 231780352.0,
+        "sample_count": 7
+      },
+      "unit": "bytes"
+    },
+    "recovery_after_cancellation_elapsed_micros": {
+      "comparison": {
+        "advisory_noise_band": 22.5,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 182.5
+      },
+      "direction": "increase_is_regression",
+      "group": "Containment and recovery",
+      "label": "Recovery after cancellation",
+      "per_run_representatives": {
+        "run-01": 178.5,
+        "run-02": 190.0,
+        "run-03": 193.5,
+        "run-04": 149.0,
+        "run-05": 182.5,
+        "run-06": 188.5,
+        "run-07": 159.5
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 9.477772745124813,
+        "maximum": 193.5,
+        "mean": 177.35714285714286,
+        "median": 182.5,
+        "median_absolute_deviation": 7.5,
+        "minimum": 149.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 16.924577748701118,
+        "maximum": 265.0,
+        "mean": 179.72857142857143,
+        "median": 181.0,
+        "median_absolute_deviation": 22.5,
+        "minimum": 127.0,
+        "sample_count": 70
+      },
+      "unit": "microseconds"
+    },
+    "recovery_after_domain_error_elapsed_micros": {
+      "comparison": {
+        "advisory_noise_band": 12.450000000000001,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 124.5
+      },
+      "direction": "increase_is_regression",
+      "group": "Containment and recovery",
+      "label": "Recovery after domain error",
+      "per_run_representatives": {
+        "run-01": 121.0,
+        "run-02": 124.5,
+        "run-03": 127.0,
+        "run-04": 117.0,
+        "run-05": 126.0,
+        "run-06": 187.5,
+        "run-07": 120.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 124.5,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 12.140833670578713,
+          "run": "run-06",
+          "value": 187.5
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 18.8008859817685,
+        "maximum": 187.5,
+        "mean": 131.85714285714286,
+        "median": 124.5,
+        "median_absolute_deviation": 3.5,
+        "minimum": 117.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 28.20264820171951,
+        "maximum": 253.0,
+        "mean": 148.04285714285714,
+        "median": 129.5,
+        "median_absolute_deviation": 24.5,
+        "minimum": 103.0,
+        "sample_count": 70
+      },
+      "unit": "microseconds"
+    },
+    "recovery_after_memory_pressure_elapsed_micros": {
+      "comparison": {
+        "advisory_noise_band": 27.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 172.5
+      },
+      "direction": "increase_is_regression",
+      "group": "Containment and recovery",
+      "label": "Recovery after memory pressure",
+      "per_run_representatives": {
+        "run-01": 180.5,
+        "run-02": 201.0,
+        "run-03": 171.0,
+        "run-04": 163.5,
+        "run-05": 172.5,
+        "run-06": 185.0,
+        "run-07": 152.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 9.000374705916304,
+        "maximum": 201.0,
+        "mean": 175.07142857142858,
+        "median": 172.5,
+        "median_absolute_deviation": 9.0,
+        "minimum": 152.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 18.020725115260397,
+        "maximum": 274.0,
+        "mean": 177.35714285714286,
+        "median": 177.0,
+        "median_absolute_deviation": 28.0,
+        "minimum": 140.0,
+        "sample_count": 70
+      },
+      "unit": "microseconds"
+    },
+    "recovery_after_timeout_elapsed_micros": {
+      "comparison": {
+        "advisory_noise_band": 25.5,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 182.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Containment and recovery",
+      "label": "Recovery after timeout",
+      "per_run_representatives": {
+        "run-01": 179.5,
+        "run-02": 152.5,
+        "run-03": 172.5,
+        "run-04": 190.5,
+        "run-05": 186.0,
+        "run-06": 193.0,
+        "run-07": 182.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 7.647457739847528,
+        "maximum": 193.0,
+        "mean": 179.42857142857142,
+        "median": 182.0,
+        "median_absolute_deviation": 8.5,
+        "minimum": 152.5,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 17.901033708171475,
+        "maximum": 284.0,
+        "mean": 185.28571428571428,
+        "median": 186.5,
+        "median_absolute_deviation": 27.5,
+        "minimum": 145.0,
+        "sample_count": 70
+      },
+      "unit": "microseconds"
+    },
+    "recovery_after_trap_elapsed_micros": {
+      "comparison": {
+        "advisory_noise_band": 12.4,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 124.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Containment and recovery",
+      "label": "Recovery after trap",
+      "per_run_representatives": {
+        "run-01": 124.0,
+        "run-02": 182.0,
+        "run-03": 128.5,
+        "run-04": 123.5,
+        "run-05": 122.0,
+        "run-06": 197.0,
+        "run-07": 120.5
+      },
+      "run_count": 7,
+      "run_level_outliers": [
+        {
+          "median": 124.0,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 11.177275442755006,
+          "run": "run-02",
+          "value": 182.0
+        },
+        {
+          "median": 124.0,
+          "reason": "run-level robust z-score exceeds 3.5",
+          "robust_z": 14.067950126226128,
+          "run": "run-06",
+          "value": 197.0
+        }
+      ],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 22.800718878329825,
+        "maximum": 197.0,
+        "mean": 142.5,
+        "median": 124.0,
+        "median_absolute_deviation": 3.5,
+        "minimum": 120.5,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 28.0587151417993,
+        "maximum": 262.0,
+        "mean": 151.94285714285715,
+        "median": 133.5,
+        "median_absolute_deviation": 24.5,
+        "minimum": 106.0,
+        "sample_count": 70
+      },
+      "unit": "microseconds"
+    },
+    "reusable_proof_micros": {
+      "comparison": {
+        "advisory_noise_band": 10.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 0.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Post-invocation cleanup",
+      "label": "Reusable-proof return",
+      "per_run_representatives": {
+        "run-01": 0.0,
+        "run-02": 0.0,
+        "run-03": 0.0,
+        "run-04": 0.0,
+        "run-05": 0.0,
+        "run-06": 0.0,
+        "run-07": 0.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": "undefined when the mean is zero",
+        "coefficient_of_variation_percent": null,
+        "maximum": 0.0,
+        "mean": 0.0,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 492.36695773160653,
+        "maximum": 2.0,
+        "mean": 0.04123281965847563,
+        "median": 0.0,
+        "median_absolute_deviation": 0.0,
+        "minimum": 0.0,
+        "sample_count": 2401
+      },
+      "unit": "microseconds"
+    },
+    "timeout_overshoot_micros": {
+      "comparison": {
+        "advisory_noise_band": 148.5,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 621.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Containment and recovery",
+      "label": "Timeout interruption overshoot",
+      "per_run_representatives": {
+        "run-01": 621.0,
+        "run-02": 852.5,
+        "run-03": 366.0,
+        "run-04": 582.5,
+        "run-05": 590.0,
+        "run-06": 670.5,
+        "run-07": 726.5
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 23.734687546054236,
+        "maximum": 852.5,
+        "mean": 629.8571428571429,
+        "median": 621.0,
+        "median_absolute_deviation": 49.5,
+        "minimum": 366.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 68.77327367051691,
+        "maximum": 3043.0,
+        "mean": 644.6571428571428,
+        "median": 626.5,
+        "median_absolute_deviation": 281.0,
+        "minimum": 0.0,
+        "sample_count": 70
+      },
+      "unit": "microseconds"
+    },
+    "trap_elapsed_micros": {
+      "comparison": {
+        "advisory_noise_band": 84.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 148.5
+      },
+      "direction": "increase_is_regression",
+      "group": "Containment and recovery",
+      "label": "Trap containment latency",
+      "per_run_representatives": {
+        "run-01": 148.5,
+        "run-02": 189.0,
+        "run-03": 118.5,
+        "run-04": 120.5,
+        "run-05": 169.0,
+        "run-06": 185.0,
+        "run-07": 120.5
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 20.78237442671896,
+        "maximum": 189.0,
+        "mean": 150.14285714285714,
+        "median": 148.5,
+        "median_absolute_deviation": 28.0,
+        "minimum": 118.5,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 27.915914380613117,
+        "maximum": 270.0,
+        "mean": 155.8,
+        "median": 138.5,
+        "median_absolute_deviation": 24.5,
+        "minimum": 110.0,
+        "sample_count": 70
+      },
+      "unit": "microseconds"
+    },
+    "warm_activation_elapsed_micros": {
+      "comparison": {
+        "advisory_noise_band": 42.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 139.5
+      },
+      "direction": "increase_is_regression",
+      "group": "Cold and warm activation",
+      "label": "Warm activation latency",
+      "per_run_representatives": {
+        "run-01": 120.0,
+        "run-02": 127.0,
+        "run-03": 139.5,
+        "run-04": 125.5,
+        "run-05": 148.0,
+        "run-06": 175.5,
+        "run-07": 156.5
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 13.98124068353694,
+        "maximum": 175.5,
+        "mean": 141.71428571428572,
+        "median": 139.5,
+        "median_absolute_deviation": 14.0,
+        "minimum": 120.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 28.718874369296625,
+        "maximum": 278.0,
+        "mean": 156.15,
+        "median": 154.5,
+        "median_absolute_deviation": 39.5,
+        "minimum": 100.0,
+        "sample_count": 280
+      },
+      "unit": "microseconds"
+    },
+    "wasmtime_engine_construction_micros": {
+      "comparison": {
+        "advisory_noise_band": 24.0,
+        "candidate_regression_rule": "candidate median > reference median + advisory_noise_band",
+        "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
+        "comparison_statistic": "median of per-run representative values",
+        "direction": "increase_is_regression",
+        "inconclusive_rule": "Insufficient samples, environment instability, or a material run-level outlier is inconclusive and must be rerun.",
+        "no_detectable_regression_rule": "A candidate inside this advisory noise band has no detectable regression when it has at least seven valid comparable runs, a stable environment, all hard invariants passing, and no material run-level outlier.",
+        "noise_band_formula": "max(3 x run-level MAD, 10% x absolute reference median, 10 microseconds)",
+        "reference_median": 161.0
+      },
+      "direction": "increase_is_regression",
+      "group": "Startup and preparation",
+      "label": "Wasmtime engine/backend construction",
+      "per_run_representatives": {
+        "run-01": 163.0,
+        "run-02": 161.0,
+        "run-03": 141.0,
+        "run-04": 142.0,
+        "run-05": 153.0,
+        "run-06": 169.0,
+        "run-07": 174.0
+      },
+      "run_count": 7,
+      "run_level_outliers": [],
+      "run_representatives": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 8.109547515435487,
+        "maximum": 174.0,
+        "mean": 157.57142857142858,
+        "median": 161.0,
+        "median_absolute_deviation": 8.0,
+        "minimum": 141.0,
+        "sample_count": 7
+      },
+      "samples": {
+        "coefficient_of_variation_not_meaningful_reason": null,
+        "coefficient_of_variation_percent": 8.109547515435487,
+        "maximum": 174.0,
+        "mean": 157.57142857142858,
+        "median": 161.0,
+        "median_absolute_deviation": 8.0,
+        "minimum": 141.0,
+        "sample_count": 7
+      },
+      "unit": "microseconds"
+    }
+  },
+  "minimum_required_run_count": 7,
+  "observational_only": true,
+  "production_slo": false,
+  "raw_runs": [
+    {
+      "baseline_report": "runs/run-01/BASELINE.md",
+      "execution_status": "runs/run-01/execution-status.json",
+      "generated_at_unix_millis": 1787929757880,
+      "host_after": "runs/run-01/host-after.json",
+      "host_before": "runs/run-01/host-before.json",
+      "raw_results": "runs/run-01/raw-results.json",
+      "run": "run-01",
+      "status": "pass"
+    },
+    {
+      "baseline_report": "runs/run-02/BASELINE.md",
+      "execution_status": "runs/run-02/execution-status.json",
+      "generated_at_unix_millis": 1787929813904,
+      "host_after": "runs/run-02/host-after.json",
+      "host_before": "runs/run-02/host-before.json",
+      "raw_results": "runs/run-02/raw-results.json",
+      "run": "run-02",
+      "status": "pass"
+    },
+    {
+      "baseline_report": "runs/run-03/BASELINE.md",
+      "execution_status": "runs/run-03/execution-status.json",
+      "generated_at_unix_millis": 1787929870112,
+      "host_after": "runs/run-03/host-after.json",
+      "host_before": "runs/run-03/host-before.json",
+      "raw_results": "runs/run-03/raw-results.json",
+      "run": "run-03",
+      "status": "pass"
+    },
+    {
+      "baseline_report": "runs/run-04/BASELINE.md",
+      "execution_status": "runs/run-04/execution-status.json",
+      "generated_at_unix_millis": 1787929925673,
+      "host_after": "runs/run-04/host-after.json",
+      "host_before": "runs/run-04/host-before.json",
+      "raw_results": "runs/run-04/raw-results.json",
+      "run": "run-04",
+      "status": "pass"
+    },
+    {
+      "baseline_report": "runs/run-05/BASELINE.md",
+      "execution_status": "runs/run-05/execution-status.json",
+      "generated_at_unix_millis": 1787929981085,
+      "host_after": "runs/run-05/host-after.json",
+      "host_before": "runs/run-05/host-before.json",
+      "raw_results": "runs/run-05/raw-results.json",
+      "run": "run-05",
+      "status": "pass"
+    },
+    {
+      "baseline_report": "runs/run-06/BASELINE.md",
+      "execution_status": "runs/run-06/execution-status.json",
+      "generated_at_unix_millis": 1787930036680,
+      "host_after": "runs/run-06/host-after.json",
+      "host_before": "runs/run-06/host-before.json",
+      "raw_results": "runs/run-06/raw-results.json",
+      "run": "run-06",
+      "status": "pass"
+    },
+    {
+      "baseline_report": "runs/run-07/BASELINE.md",
+      "execution_status": "runs/run-07/execution-status.json",
+      "generated_at_unix_millis": 1787930092249,
+      "host_after": "runs/run-07/host-after.json",
+      "host_before": "runs/run-07/host-before.json",
+      "raw_results": "runs/run-07/raw-results.json",
+      "run": "run-07",
+      "status": "pass"
+    }
+  ],
+  "reference_identity": {
+    "artifact": {
+      "component_bytes": 27616,
+      "component_digest": "sha256:1eaac4fc014071b09eae665bfbe093bf453b447128d0ca720ab2ec2ae798fa3b"
+    },
+    "config": {
+      "cancel_after_ms": 5,
+      "coordination_poll_interval_ms": 0,
+      "coordination_timeout_ms": 2000,
+      "fd_growth_allowance": 2,
+      "fuel": 1000000000000,
+      "maximum_overshoot_ms": 500,
+      "memory_bytes": 16777216,
+      "memory_pressure_bytes": 4194304,
+      "mode": "full",
+      "pool_capacity": 2,
+      "pool_iterations": 2000,
+      "pool_queue_capacity": 4,
+      "prepared_cache_enabled": true,
+      "profile_workload": null,
+      "rss_growth_allowance_bytes": 67108864,
+      "runtime_workers": 2,
+      "sequence_repetitions": 10,
+      "throughput_batches": 24,
+      "timeout_ms": 25,
+      "warm_samples": 40,
+      "wasmtime_allocator": "on_demand",
+      "wasmtime_copy_on_write_images": true
+    },
+    "environment": {
+      "architecture": "x86_64",
+      "build_profile": "release",
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "cpu_model": "AMD Ryzen 3 3200G with Radeon Vega Graphics",
+      "kernel": "Linux 7.1.5-201.fc44.x86_64 #1 SMP PREEMPT_DYNAMIC Tue Jul 28 14:16:30 UTC 2026 x86_64 GNU/Linux",
+      "logical_cpu_count": 4,
+      "operating_system": "linux",
+      "repository_commit": "6a64f0630cee9afa080d33f376aabadac724fa72",
+      "rust_target": "x86_64-unknown-linux-gnu",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+      "total_memory_bytes": 16699981824,
+      "wasmtime_version": "47.0.3 (workspace pin)"
+    }
+  },
+  "run_count": 7,
+  "schema_version": "latent.phase0.calibration.v1",
+  "source_commit": "6a64f0630cee9afa080d33f376aabadac724fa72",
+  "source_provenance": {
+    "execution_commit": "f5829873fb1086806fdaf2254617731e75af51ff",
+    "execution_tree": "d27ff38ebbd891c5be949f54a0047522ed893d20",
+    "published_commit": "6a64f0630cee9afa080d33f376aabadac724fa72",
+    "published_tree": "d27ff38ebbd891c5be949f54a0047522ed893d20",
+    "rule": "The published commit must remain reachable, and every local execution worktree must exactly match its recorded Git tree.",
+    "tree_identity_verified": true
+  },
+  "source_tree": "d27ff38ebbd891c5be949f54a0047522ed893d20",
+  "status": "pass"
+}

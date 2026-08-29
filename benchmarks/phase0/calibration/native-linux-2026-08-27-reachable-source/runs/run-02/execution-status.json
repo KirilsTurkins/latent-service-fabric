@@ -1,9 +1,0 @@
-{
-  "execution_commit": "a60ece26669856f48115d7f1127bdab361341f1d",
-  "execution_tree": "88e8875b7be7e46b4702c15d5c8c2f26c1e4a037",
-  "exit_code": 0,
-  "run_index": 2,
-  "schema_version": "latent.phase0.calibration.execution-status.v1",
-  "source_commit": "49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3",
-  "source_tree": "88e8875b7be7e46b4702c15d5c8c2f26c1e4a037"
-}
