@@ -6,7 +6,11 @@
 for issue 40. It requires a clean source tree, a durable published branch/tag
 whose reachable commit and tree are verified before execution (with an
 explicitly recorded `origin`-tracking-ref fallback for offline reruns), plus `perf`,
-`heaptrack`, and `heaptrack_print`; it is deliberately not shared CI.
+`heaptrack`, and `heaptrack_print`; it is deliberately not shared CI. Its
+required `--calibration-aggregate` must be a fresh external aggregate with a
+sibling `runs/` directory. The runner regenerates and compares it before
+creating profile output, so stale, relabelled, incomplete, or edited
+calibration evidence cannot be used as a profile reference.
 `aggregate_phase0_hot_path_profiles.py` validates the separate full-invariant
 proof, scenario-selective profile commands, quantitative folded-stack
 attribution, experiment matrix, provenance, and issue-38 comparability.

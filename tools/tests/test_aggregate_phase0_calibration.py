@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 AGGREGATOR = ROOT / "tools" / "aggregate_phase0_calibration.py"
+HOT_PROFILE_RUNNER = ROOT / "tools" / "run_phase0_hot_path_profiles.sh"
 REFERENCE_RAW = ROOT / "benchmarks" / "phase0" / "raw-results.json"
 
 
@@ -103,6 +104,26 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             capture_output=True,
         )
 
+    def verify(
+        self, archive: Path, source_commit: str, source_tree: str
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                sys.executable,
+                str(AGGREGATOR),
+                "verify",
+                "--aggregate",
+                str(archive / "aggregate.json"),
+                "--source-commit",
+                source_commit,
+                "--source-tree",
+                source_tree,
+            ],
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+
     def test_aggregates_seven_full_profiles_without_dropping_samples(self) -> None:
         temporary, archive, source_commit, source_tree = self.make_archive()
         with temporary:
@@ -137,6 +158,97 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             self.assertIn("hard invariant set differs", completed.stderr)
             self.assertIn("missing:", completed.stderr)
             self.assertFalse((archive / "aggregate.json").exists())
+
+    def test_verifies_a_fresh_aggregate_against_its_raw_runs(self) -> None:
+        temporary, archive, source_commit, source_tree = self.make_archive()
+        with temporary:
+            self.assertEqual(
+                self.aggregate(archive, source_commit, source_tree).returncode,
+                0,
+            )
+            completed = self.verify(archive, source_commit, source_tree)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            summary = json.loads(completed.stdout)
+            self.assertEqual(summary["status"], "pass")
+            self.assertEqual(summary["run_count"], 7)
+
+    def test_verifier_rejects_an_aggregate_relabelled_to_another_source(self) -> None:
+        temporary, archive, source_commit, source_tree = self.make_archive()
+        with temporary:
+            self.assertEqual(
+                self.aggregate(archive, source_commit, source_tree).returncode,
+                0,
+            )
+            completed = self.verify(archive, "f" * 40, source_tree)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("source commit does not match", completed.stderr)
+
+    def test_verifier_rejects_a_manually_altered_aggregate(self) -> None:
+        temporary, archive, source_commit, source_tree = self.make_archive()
+        with temporary:
+            self.assertEqual(
+                self.aggregate(archive, source_commit, source_tree).returncode,
+                0,
+            )
+            aggregate_path = archive / "aggregate.json"
+            aggregate = json.loads(aggregate_path.read_text(encoding="utf-8"))
+            aggregate["status"] = "blocked"
+            aggregate_path.write_text(json.dumps(aggregate), encoding="utf-8")
+            completed = self.verify(archive, source_commit, source_tree)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("does not match the retained raw runs", completed.stderr)
+
+    def test_verifier_rejects_a_missing_raw_run_artifact(self) -> None:
+        temporary, archive, source_commit, source_tree = self.make_archive()
+        with temporary:
+            self.assertEqual(
+                self.aggregate(archive, source_commit, source_tree).returncode,
+                0,
+            )
+            (archive / "runs/run-07/execution-status.json").unlink()
+            completed = self.verify(archive, source_commit, source_tree)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("cannot read JSON", completed.stderr)
+
+    def test_hot_profile_runner_requires_a_fresh_calibration_path(self) -> None:
+        completed = subprocess.run(
+            [
+                str(HOT_PROFILE_RUNNER),
+                "--published-source-commit",
+                "a" * 40,
+                "--published-source-tree",
+                "b" * 40,
+                "--published-source-ref",
+                "example-source",
+            ],
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("--calibration-aggregate is required", completed.stderr)
+
+    def test_hot_profile_runner_rejects_a_missing_calibration_path_before_tool_checks(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "missing-aggregate.json"
+            completed = subprocess.run(
+                [
+                    str(HOT_PROFILE_RUNNER),
+                    "--published-source-commit",
+                    "a" * 40,
+                    "--published-source-tree",
+                    "b" * 40,
+                    "--published-source-ref",
+                    "example-source",
+                    "--calibration-aggregate",
+                    str(missing),
+                ],
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("must be an existing regular file", completed.stderr)
 
 
 if __name__ == "__main__":

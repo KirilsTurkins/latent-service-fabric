@@ -75,8 +75,17 @@ tools/run_phase0_hot_path_profiles.sh \
   --published-source-commit <reachable-commit-sha> \
   --published-source-tree <reachable-tree-sha> \
   --published-source-ref <durable-branch-or-tag> \
-  benchmarks/phase0/profiling/native-linux-YYYY-MM-DD
+  --calibration-aggregate /var/tmp/phase0-evidence/calibration/aggregate.json \
+  /var/tmp/phase0-evidence/profiling
 ~~~
+
+The calibration argument is mandatory and must be a newly collected aggregate
+with its sibling `runs/` directory. Before profiling, the runner regenerates
+and compares the aggregate from those raw runs, requiring at least seven
+matched native-Linux full profiles with passed invariants and the supplied
+published commit/tree. It never substitutes the older checked-in calibration.
+Collect both directories outside the source tree, then package only verified
+evidence for retention.
 
 The archive retains symbolized CPU reports, Heaptrack allocation/copy reports,
 raw profile data, exact commands, every matching Phase 0 raw baseline, a

@@ -10,12 +10,13 @@ TARGET_ROOT="${LSF_HOT_PATH_TARGET_DIR:-${ROOT}/target/phase0-hot-path-work}"
 PUBLISHED_SOURCE_COMMIT=""
 PUBLISHED_SOURCE_TREE=""
 PUBLISHED_SOURCE_REF=""
+CALIBRATION_AGGREGATE=""
 CANDIDATE_RUNS=3
 PERF_FREQUENCY=999
 MINIMUM_EXPERIMENT_RUNS=3
 
 usage() {
-    printf '%s\n' "usage: $0 --published-source-commit SHA --published-source-tree TREE --published-source-ref REF [--candidate-runs N] [--perf-frequency HZ] [output-directory]"
+    printf '%s\n' "usage: $0 --published-source-commit SHA --published-source-tree TREE --published-source-ref REF --calibration-aggregate PATH [--candidate-runs N] [--perf-frequency HZ] [output-directory]"
     printf '%s\n' "Records native-Linux perf + heaptrack evidence and a bounded Phase 0 experiment matrix."
 }
 
@@ -34,6 +35,11 @@ while (( $# > 0 )); do
         --published-source-ref)
             (( $# >= 2 )) || { usage >&2; exit 2; }
             PUBLISHED_SOURCE_REF="$2"
+            shift 2
+            ;;
+        --calibration-aggregate)
+            (( $# >= 2 )) || { usage >&2; exit 2; }
+            CALIBRATION_AGGREGATE="$2"
             shift 2
             ;;
         --candidate-runs)
@@ -61,6 +67,18 @@ while (( $# > 0 )); do
             ;;
     esac
 done
+
+if [[ -z "$CALIBRATION_AGGREGATE" ]]; then
+    printf '%s\n' "--calibration-aggregate is required and must name a fresh calibration aggregate" >&2
+    exit 2
+fi
+if [[ "$CALIBRATION_AGGREGATE" != /* ]]; then
+    CALIBRATION_AGGREGATE="$ROOT/$CALIBRATION_AGGREGATE"
+fi
+if [[ ! -f "$CALIBRATION_AGGREGATE" || -L "$CALIBRATION_AGGREGATE" ]]; then
+    printf '%s\n' "--calibration-aggregate must be an existing regular file: $CALIBRATION_AGGREGATE" >&2
+    exit 2
+fi
 
 if [[ -z "$OUTPUT_DIR" ]]; then
     OUTPUT_DIR="${ROOT}/target/phase0-hot-path/native-linux"
@@ -164,6 +182,16 @@ if ! git merge-base --is-ancestor "$PUBLISHED_SOURCE_COMMIT" "$PUBLISHED_REF_HEA
     printf '%s\n' "declared published source commit is not reachable from $PUBLISHED_SOURCE_REF" >&2
     exit 2
 fi
+
+# The profile aggregate is only as applicable as the calibration it consumes.
+# Rebuild the supplied fresh aggregate from its retained raw runs before any
+# output directory or profiler work is created. This rejects stale, relabelled,
+# incomplete, or manually altered calibration evidence instead of falling back
+# to the historical checked-in aggregate.
+"$PYTHON" tools/aggregate_phase0_calibration.py verify \
+    --aggregate "$CALIBRATION_AGGREGATE" \
+    --source-commit "$PUBLISHED_SOURCE_COMMIT" \
+    --source-tree "$PUBLISHED_SOURCE_TREE"
 
 if [[ "$TARGET_ROOT" != /* ]]; then
     TARGET_ROOT="${ROOT}/${TARGET_ROOT}"
@@ -451,7 +479,7 @@ run_candidate prepared-cache-disabled 2 2 on-demand true false
     --full-invariant-proof "$OUTPUT_DIR/full-invariant-proof/raw-results.json" \
     --candidates-directory "$OUTPUT_DIR/candidates" \
     --host-observation "$OUTPUT_DIR/host-before.json" \
-    --calibration-aggregate "$ROOT/benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json" \
+    --calibration-aggregate "$CALIBRATION_AGGREGATE" \
     --source-commit "$PUBLISHED_SOURCE_COMMIT" \
     --source-tree "$PUBLISHED_SOURCE_TREE" \
     --published-source-ref "$PUBLISHED_SOURCE_REF" \

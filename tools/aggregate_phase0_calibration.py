@@ -26,6 +26,7 @@ from typing import Any, Iterable, NoReturn
 BASELINE_SCHEMA = "latent.phase0.baseline.v2"
 CALIBRATION_SCHEMA = "latent.phase0.calibration.v1"
 HOST_OBSERVATION_SCHEMA = "latent.phase0.calibration.host-observation.v1"
+OBJECT_ID_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 MINIMUM_REFERENCE_RUNS = 7
 ROBUST_OUTLIER_THRESHOLD = 3.5
 MAD_NORMALIZATION = 1.4826
@@ -303,6 +304,31 @@ def number_at(document: dict[str, Any], dotted_path: str) -> float:
 
 def stable_json(value: Any) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def require_regular_file(path: Path, label: str) -> None:
+    try:
+        metadata = path.lstat()
+    except OSError as error:
+        fail(f"{label} is missing: {path} ({error})")
+    if not path.is_file() or path.is_symlink():
+        fail(f"{label} must be a regular file: {path}")
+    if metadata.st_nlink != 1:
+        fail(f"{label} must not be a hard link: {path}")
+
+
+def require_directory(path: Path, label: str) -> None:
+    try:
+        path.lstat()
+    except OSError as error:
+        fail(f"{label} is missing: {path} ({error})")
+    if not path.is_dir() or path.is_symlink():
+        fail(f"{label} must be a directory: {path}")
+
+
+def require_object_id(value: str, label: str) -> None:
+    if OBJECT_ID_PATTERN.fullmatch(value) is None:
+        fail(f"{label} must be a lowercase 40-character Git object ID")
 
 
 def relative_path(path: Path, base: Path) -> str:
@@ -1210,6 +1236,82 @@ def build_aggregate(
     }
 
 
+def first_difference(expected: Any, actual: Any, path: str = "$") -> str:
+    if type(expected) is not type(actual):
+        return (
+            f"{path} type expected={type(expected).__name__} "
+            f"observed={type(actual).__name__}"
+        )
+    if isinstance(expected, dict):
+        expected_keys = set(expected)
+        actual_keys = set(actual)
+        if expected_keys != actual_keys:
+            return (
+                f"{path} keys missing={sorted(expected_keys - actual_keys)} "
+                f"extra={sorted(actual_keys - expected_keys)}"
+            )
+        for key in sorted(expected_keys):
+            difference = first_difference(expected[key], actual[key], f"{path}.{key}")
+            if difference:
+                return difference
+        return ""
+    if isinstance(expected, list):
+        if len(expected) != len(actual):
+            return f"{path} length expected={len(expected)} observed={len(actual)}"
+        for index, (expected_item, actual_item) in enumerate(zip(expected, actual)):
+            difference = first_difference(expected_item, actual_item, f"{path}[{index}]")
+            if difference:
+                return difference
+        return ""
+    if expected != actual:
+        return f"{path} expected={expected!r} observed={actual!r}"
+    return ""
+
+
+def verify_aggregate(
+    aggregate_path: Path,
+    source_commit: str,
+    source_tree: str,
+    runs_directory: Path | None = None,
+) -> dict[str, Any]:
+    """Regenerate and compare a fresh calibration aggregate without writing files."""
+
+    require_object_id(source_commit, "expected source commit")
+    require_object_id(source_tree, "expected source tree")
+    require_regular_file(aggregate_path, "calibration aggregate")
+    retained = load_json(aggregate_path)
+    if retained.get("schema_version") != CALIBRATION_SCHEMA:
+        fail("calibration aggregate has an unexpected schema")
+    if retained.get("source_commit") != source_commit:
+        fail("calibration aggregate source commit does not match the expected source")
+    if retained.get("source_tree") != source_tree:
+        fail("calibration aggregate source tree does not match the expected source")
+    minimum_runs = retained.get("minimum_required_run_count")
+    if (
+        not isinstance(minimum_runs, int)
+        or isinstance(minimum_runs, bool)
+        or minimum_runs < MINIMUM_REFERENCE_RUNS
+    ):
+        fail(
+            "calibration aggregate minimum_required_run_count must retain at least "
+            f"{MINIMUM_REFERENCE_RUNS} runs"
+        )
+    raw_runs = runs_directory if runs_directory is not None else aggregate_path.parent / "runs"
+    require_directory(raw_runs, "calibration runs directory")
+    regenerated = build_aggregate(raw_runs.resolve(), source_commit, source_tree, minimum_runs)
+    retained_comparable = dict(retained)
+    regenerated_comparable = dict(regenerated)
+    retained_comparable.pop("generated_at_utc", None)
+    regenerated_comparable.pop("generated_at_utc", None)
+    if stable_json(retained_comparable) != stable_json(regenerated_comparable):
+        difference = first_difference(regenerated_comparable, retained_comparable)
+        fail(
+            "calibration aggregate does not match the retained raw runs"
+            + (f": {difference}" if difference else "")
+        )
+    return regenerated
+
+
 def number_text(value: Any) -> str:
     if value is None:
         return "n/a"
@@ -1492,6 +1594,18 @@ def parse_arguments(arguments: list[str]) -> argparse.Namespace:
     aggregate.add_argument("--source-commit", required=True)
     aggregate.add_argument("--source-tree", required=True)
     aggregate.add_argument("--minimum-runs", type=int, default=MINIMUM_REFERENCE_RUNS)
+    verify = commands.add_parser(
+        "verify",
+        help="regenerate a retained calibration aggregate from its raw runs",
+    )
+    verify.add_argument("--aggregate", type=Path, required=True)
+    verify.add_argument(
+        "--runs-directory",
+        type=Path,
+        help="raw run directory (defaults to the aggregate sibling runs/ directory)",
+    )
+    verify.add_argument("--source-commit", required=True)
+    verify.add_argument("--source-tree", required=True)
     return parser.parse_args(arguments)
 
 
@@ -1508,6 +1622,25 @@ def main(arguments: list[str] | None = None) -> int:
                 parsed.execution_commit,
                 parsed.execution_tree,
                 parsed.repository_root.resolve(),
+            )
+            return 0
+        if parsed.command == "verify":
+            aggregate = verify_aggregate(
+                parsed.aggregate,
+                parsed.source_commit,
+                parsed.source_tree,
+                parsed.runs_directory,
+            )
+            print(
+                json.dumps(
+                    {
+                        "schema_version": CALIBRATION_SCHEMA,
+                        "status": "pass",
+                        "run_count": aggregate["run_count"],
+                        "aggregate": str(parsed.aggregate),
+                    },
+                    sort_keys=True,
+                )
             )
             return 0
         if parsed.minimum_runs < MINIMUM_REFERENCE_RUNS:

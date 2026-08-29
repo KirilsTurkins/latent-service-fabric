@@ -51,7 +51,7 @@ validation and authorization as separate states.
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
 - All six JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, binding, policy, and trigger examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interface surfaces compile or pass syntax checks.
-- SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.8 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
+- SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.0 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
 - Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
 - Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
 - The Phase 0 gate receipt rejects omitted, duplicate, unexpected, or failed baseline checks; missing required terminal scenarios; a dirty executable shutdown/topology result; malformed, unsafe, incomplete, or altered raw archives; unverified calibration/profile measurements; weakened optimization guardrails; free-form optimization decisions; stale execution evidence; and incomplete resource evidence represented as an authorization.
@@ -119,12 +119,16 @@ tools/run_phase0_hot_path_profiles.sh \
   --published-source-commit <reachable-commit-sha> \
   --published-source-tree <reachable-tree-sha> \
   --published-source-ref <durable-branch-or-tag> \
-  benchmarks/phase0/profiling/native-linux-YYYY-MM-DD
+  --calibration-aggregate /var/tmp/phase0-evidence/calibration/aggregate.json \
+  /var/tmp/phase0-evidence/profiling
 ~~~
 
 The command refuses WSL, detected containers, unclean source, missing tools,
-source-tree mismatch, missing raw profile artifacts, and failed Phase 0 hard
-invariants. It retains the exact commands, `perf.data`, symbolized `perf`
+source-tree mismatch, a stale or malformed calibration, missing raw profile
+artifacts, and failed Phase 0 hard invariants. The calibration must be a fresh
+seven-or-more-run native-Linux aggregate whose sibling raw runs regenerate the
+same record for the declared published commit/tree; the runner has no fallback
+to the historical checked-in aggregate. It retains the exact commands, `perf.data`, symbolized `perf`
 reports, Heaptrack data/reports, full baseline raw output, host context, and a
 bounded worker/cell, allocator, and COW experiment matrix. Heaptrack allocation
 attribution uses the leaf-nearest non-plumbing owner frame; a category with no

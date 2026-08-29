@@ -20,7 +20,8 @@ tools/run_phase0_hot_path_profiles.sh \
   --published-source-commit <reachable-commit-sha> \
   --published-source-tree <reachable-tree-sha> \
   --published-source-ref <durable-branch-or-tag> \
-  benchmarks/phase0/profiling/native-linux-YYYY-MM-DD
+  --calibration-aggregate /var/tmp/phase0-evidence/calibration/aggregate.json \
+  /var/tmp/phase0-evidence/profiling
 ```
 
 Before it runs, the wrapper refreshes the supplied durable branch or tag (or,
@@ -32,6 +33,14 @@ retains the published ref/head plus source and execution identities. The
 aggregate also requires every full, targeted, and candidate baseline document
 to retain complete per-run host/toolchain context and rejects a mismatch with
 the captured native-Linux host or full-invariant proof.
+
+`--calibration-aggregate` is required; there is no fallback to a historical
+checked-in calibration. Before creating profiling output, the wrapper
+regenerates that aggregate from its sibling `runs/` directory and accepts it
+only when every retained native-Linux full-profile run, hard invariant,
+provenance record, configuration identity, metric comparison, source commit,
+and source tree matches the supplied published source. Keep both calibration
+and profiling output outside the source tree while collecting evidence.
 
 The wrapper builds a debuginfo-preserving release binary in an isolated target
 directory, validates and stages the real containment fixture, creates the
@@ -142,12 +151,12 @@ poll interval. The experiment matrix rejects fewer than three independently
 retained full runs for each candidate; that minimum is still insufficient for
 a Phase 0 adoption claim.
 
-The aggregate reads the issue-38 native-Linux calibration only after it proves
-material equivalence of source, methodology, environment, fixture/configuration
-and run count. A mismatched source/method/environment/configuration or fewer
-than seven independent full runs is explicitly **inconclusive** and cannot be
-labelled inside or outside the advisory band. A faster single or small set is
-an observation only.
+The aggregate reads the supplied fresh native-Linux calibration only after it
+proves material equivalence of source, methodology, environment,
+fixture/configuration and run count. A mismatched source/method/environment/
+configuration or fewer than seven independent full runs is explicitly
+**inconclusive** and cannot be labelled inside or outside the advisory band. A
+faster single or small set is an observation only.
 
 A candidate may be adopted in Phase 0 only if it exceeds the calibrated noise
 envelope (or has a separately documented architectural benefit), passes every
