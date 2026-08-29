@@ -31,5 +31,6 @@ The large baseline result is retained losslessly as
 checked by `baseline/raw-results.json.sha256`.  The other gate output files are
 copied verbatim.  `receipt.manifest.sha256` checks every retained receipt file.
 
-This authorization does not change the receipt's separate `production_ready`
-or `phase1_api_compatible` fields, which remain `false`.
+The receipt's `phase1_api_compatible` field remains `false`. It says only that
+the spike's local CLI is not a promised external Phase 1 API contract; Phase 1
+retains and builds on the measured runtime and invariants.

@@ -13,8 +13,9 @@ is `authorized`, has `phase1_authorized: true`, and has no blockers. See
 The underlying measurements remain single-host observational evidence. Neither
 an issue closure nor such an observation alone authorizes Phase 1; the full
 receipt did so only after validating the matched raw archives, identity,
-profiling, and fresh-baseline checks. This authorization does not claim
-production readiness or stable Phase 1 APIs.
+profiling, and fresh-baseline checks. Phase 1 builds on the retained runtime
+and invariants; its public API and product surfaces evolve beyond the
+spike-only harness.
 
 ## Phase 1: single-node stateless fabric
 

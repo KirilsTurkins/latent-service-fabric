@@ -34,8 +34,9 @@ an incomplete or synthetic archive as a pass.
 The retained [native-Linux full receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
 was produced from a separate clean checkout with exit code 0. It records
 `authorization_status: "authorized"`, `phase1_authorized: true`, and no
-blockers. This gate authorization does not assert production readiness or Phase
-1 API compatibility.
+blockers. Phase 1 builds on the runtime and invariants validated by this gate.
+The receipt's `phase1_api_compatible: false` means only that the spike CLI is
+not the prescribed Phase 1 public API.
 
 `make phase0-gate-smoke` runs the same code/contract/executable sequence with
 the deterministic smoke baseline. It records the receipt for CI but does not

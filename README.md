@@ -4,7 +4,7 @@ Latent Service Fabric (LSF) is an interface-first research and engineering proje
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Most of this repository remains an architecture and API scaffold. Phase 0 contains a narrow, explicitly non-production executable spike for one local echo capsule. Its clean-checkout full gate is authorized by the retained [native-Linux receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json), so Phase 1 work may begin. The receipt does not establish Phase 1 API compatibility or production readiness.
+> Most of this repository remains an architecture and API scaffold. Phase 0 contains a narrow, explicitly non-production executable spike for one local echo capsule. Its clean-checkout full gate is authorized by the retained [native-Linux receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json), so Phase 1 work may begin. Phase 1 builds on the runtime and invariants proven here; the spike CLI is a harness, not the eventual public API contract.
 
 ## Core invariant
 
