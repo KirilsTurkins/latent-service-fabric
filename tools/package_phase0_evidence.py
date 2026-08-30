@@ -40,9 +40,11 @@ except ImportError:  # pragma: no cover - exercised by the command-line entrypoi
 
 OBJECT_ID_LENGTH = 40
 PROFILE_PART_SCHEMA = "latent.phase0.hot-path.raw-evidence.parts.v1"
+PORTABLE_PART_SCHEMA = "latent.phase0.raw-evidence.parts.v1"
 # Keep each Base64-encoded fragment below the GitHub connector's retained
 # payload limit while preserving a lossless byte-for-byte zstd stream.
-DEFAULT_PROFILE_PART_BYTES = 716_800
+MAX_TRANSPORT_PART_BYTES = 716_800
+DEFAULT_PROFILE_PART_BYTES = MAX_TRANSPORT_PART_BYTES
 COPY_CHUNK_BYTES = 1024 * 1024
 
 CALIBRATION_INPUT_ENTRIES = {"aggregate.json", "CALIBRATION.md", "collector", "runs"}
@@ -370,12 +372,34 @@ def write_archive_checksum(stage: Path, archive: Path) -> None:
     )
 
 
-def split_profile_archive(stage: Path, archive: Path, part_bytes: int) -> None:
+def ensure_archive_checksum(stage: Path, archive: Path) -> None:
+    checksum = stage / "raw-evidence.tar.zst.sha256"
+    expected = (
+        f"{sha256_file(archive).removeprefix('sha256:')}  raw-evidence.tar.zst\n"
+    )
+    if checksum.exists() or checksum.is_symlink():
+        require_regular_file(checksum, "raw evidence archive checksum")
+        try:
+            observed = checksum.read_text(encoding="utf-8")
+        except OSError as error:
+            fail(f"cannot read raw evidence archive checksum: {error}")
+        if observed != expected:
+            fail("raw evidence archive checksum does not match the archive before splitting")
+        return
+    write_new_text(checksum, expected, "raw evidence archive checksum")
+
+
+def split_raw_evidence_archive(
+    stage: Path,
+    archive: Path,
+    part_bytes: int,
+    schema_version: str,
+) -> None:
     if part_bytes <= 0:
-        fail("profile part size must be a positive number of bytes")
-    if part_bytes > DEFAULT_PROFILE_PART_BYTES:
+        fail("raw-evidence part size must be a positive number of bytes")
+    if part_bytes > MAX_TRANSPORT_PART_BYTES:
         fail(
-            "profile part size exceeds the 716800-byte retained transport limit; "
+            "raw-evidence part size exceeds the 716800-byte retained transport limit; "
             "use the default or a smaller value"
         )
     archive_size = archive.stat().st_size
@@ -407,7 +431,7 @@ def split_profile_archive(stage: Path, archive: Path, part_bytes: int) -> None:
         parts_manifest,
         json.dumps(
             {
-                "schema_version": PROFILE_PART_SCHEMA,
+                "schema_version": schema_version,
                 "archive": "raw-evidence.tar.zst",
                 "archive_bytes": archive_size,
                 "archive_sha256": archive_digest,
@@ -417,7 +441,7 @@ def split_profile_archive(stage: Path, archive: Path, part_bytes: int) -> None:
             sort_keys=True,
         )
         + "\n",
-        "profile fragment manifest",
+        "raw-evidence fragment manifest",
     )
     checksum_paths = [parts_manifest, *(stage / part["path"] for part in parts)]
     lines = [
@@ -427,13 +451,22 @@ def split_profile_archive(stage: Path, archive: Path, part_bytes: int) -> None:
     write_new_text(
         stage / "raw-evidence.parts.sha256",
         "".join(lines),
-        "profile fragment checksum manifest",
+        "raw-evidence fragment checksum manifest",
     )
-    write_archive_checksum(stage, archive)
+    ensure_archive_checksum(stage, archive)
     try:
         archive.unlink()
     except OSError as error:
-        fail(f"cannot remove staging profile raw archive: {error}")
+        fail(f"cannot remove staging raw-evidence archive: {error}")
+
+
+def split_profile_archive(stage: Path, archive: Path, part_bytes: int) -> None:
+    split_raw_evidence_archive(
+        stage,
+        archive,
+        part_bytes,
+        PROFILE_PART_SCHEMA,
+    )
 
 
 def write_readme(stage: Path, title: str, aggregate: dict[str, Any]) -> None:
@@ -529,6 +562,12 @@ def package_calibration(arguments: argparse.Namespace) -> None:
         write_archive_checksum(stage, archive)
         remove_staged_entry(stage / "runs")
         remove_staged_entry(stage / "collector")
+        split_raw_evidence_archive(
+            stage,
+            archive,
+            MAX_TRANSPORT_PART_BYTES,
+            PORTABLE_PART_SCHEMA,
+        )
         try:
             phase0_evidence.verify_calibration_evidence(stage / "aggregate.json")
         except phase0_evidence.EvidenceValidationError as error:
@@ -681,6 +720,12 @@ def package_soak(arguments: argparse.Namespace) -> None:
         write_readme(stage, "Phase 0 native-Linux resource-soak evidence", aggregate)
         remove_staged_entry(stage / "runs")
         remove_staged_entry(stage / "collector")
+        split_raw_evidence_archive(
+            stage,
+            archive,
+            MAX_TRANSPORT_PART_BYTES,
+            PORTABLE_PART_SCHEMA,
+        )
         try:
             phase0_evidence.verify_resource_soak_evidence(stage / "aggregate.json", calibration_path)
         except phase0_evidence.EvidenceValidationError as error:

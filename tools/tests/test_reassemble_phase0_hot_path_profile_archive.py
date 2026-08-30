@@ -12,6 +12,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REASSEMBLER = ROOT / "tools" / "reassemble_phase0_hot_path_profile_archive.py"
+PROFILE_SCHEMA = "latent.phase0.hot-path.raw-evidence.parts.v1"
+PORTABLE_SCHEMA = "latent.phase0.raw-evidence.parts.v1"
+MAX_PART_BYTES = 716_800
 
 
 def checksum(value: bytes) -> str:
@@ -19,7 +22,7 @@ def checksum(value: bytes) -> str:
 
 
 class ReassembleHotPathArchiveTests(unittest.TestCase):
-    def test_reassembles_verified_parts_without_overwriting_output(self) -> None:
+    def assert_reassembles_schema(self, schema: str) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             archive_directory = root / "archive"
@@ -34,7 +37,7 @@ class ReassembleHotPathArchiveTests(unittest.TestCase):
             (archive_directory / "raw-evidence.parts.json").write_text(
                 json.dumps(
                     {
-                        "schema_version": "latent.phase0.hot-path.raw-evidence.parts.v1",
+                        "schema_version": schema,
                         "archive": "raw-evidence.tar.zst",
                         "archive_bytes": len(source),
                         "archive_sha256": checksum(source),
@@ -58,6 +61,56 @@ class ReassembleHotPathArchiveTests(unittest.TestCase):
             retry = subprocess.run(command, text=True, capture_output=True, check=False)
             self.assertNotEqual(retry.returncode, 0)
             self.assertIn("refusing to overwrite", retry.stderr)
+
+    def test_reassembles_verified_profile_parts_without_overwriting_output(self) -> None:
+        self.assert_reassembles_schema(PROFILE_SCHEMA)
+
+    def test_reassembles_verified_portable_parts(self) -> None:
+        self.assert_reassembles_schema(PORTABLE_SCHEMA)
+
+    def test_rejects_a_fragment_above_the_connector_transport_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive_directory = root / "archive"
+            archive_directory.mkdir()
+            source = b"x" * (MAX_PART_BYTES + 1)
+            part_name = "raw-evidence.tar.zst.part-001"
+            (archive_directory / part_name).write_bytes(source)
+            (archive_directory / "raw-evidence.parts.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": PORTABLE_SCHEMA,
+                        "archive": "raw-evidence.tar.zst",
+                        "archive_bytes": len(source),
+                        "archive_sha256": checksum(source),
+                        "parts": [
+                            {
+                                "path": part_name,
+                                "bytes": len(source),
+                                "sha256": checksum(source),
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(REASSEMBLER),
+                    "--archive-directory",
+                    str(archive_directory),
+                    "--output",
+                    str(root / "reassembled.tar.zst"),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("fragment metadata is invalid", result.stderr)
 
     def test_checked_in_zstd_archive_and_manifest_are_valid(self) -> None:
         archive_roots = sorted(

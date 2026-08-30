@@ -417,7 +417,118 @@ def _assert_directory_entries(root: Path, expected: set[str], label: str) -> Non
     )
 
 
-def _calibration_outer_files(root: Path) -> None:
+def _sharded_raw_evidence_outer_files(
+    root: Path,
+    retained_files: set[str],
+    label: str,
+    allowed_schemas: frozenset[str],
+) -> tuple[dict[str, Any], set[str]]:
+    parts_manifest = load_json(root / "raw-evidence.parts.json", f"{label} fragment manifest")
+    _require(
+        parts_manifest.get("schema_version") in allowed_schemas,
+        f"{label} fragment manifest has an unexpected schema",
+    )
+    archive_name = _safe_relative_path(
+        _string(parts_manifest.get("archive"), f"{label} archive name"),
+        f"{label} archive name",
+    )
+    _require(
+        "/" not in archive_name and archive_name == "raw-evidence.tar.zst",
+        f"{label} archive name is unexpected",
+    )
+    _positive_int(parts_manifest.get("archive_bytes"), f"{label} archive size")
+    archive_digest = _string(
+        parts_manifest.get("archive_sha256"), f"{label} archive digest"
+    )
+    _require(
+        archive_digest.startswith("sha256:")
+        and SHA256_PATTERN.fullmatch(archive_digest[7:]) is not None,
+        f"{label} archive digest is malformed",
+    )
+
+    part_names: set[str] = set()
+    parts = _list(parts_manifest.get("parts"), f"{label} fragment manifest parts")
+    for entry in parts:
+        item = _mapping(entry, f"{label} fragment")
+        name = _safe_relative_path(
+            _string(item.get("path"), f"{label} fragment path"),
+            f"{label} fragment path",
+        )
+        _require("/" not in name, f"{label} fragment must be a local filename")
+        _require(name not in part_names, f"duplicate {label} fragment {name!r}")
+        part_bytes = _positive_int(item.get("bytes"), f"{label} fragment {name} bytes")
+        _require(
+            part_bytes <= profile_reassembly.MAX_PART_BYTES,
+            f"{label} fragment {name} exceeds the retained transport limit",
+        )
+        digest = _string(item.get("sha256"), f"{label} fragment {name} checksum")
+        _require(
+            digest.startswith("sha256:")
+            and SHA256_PATTERN.fullmatch(digest[7:]) is not None,
+            f"{label} fragment {name} checksum is malformed",
+        )
+        part_names.add(name)
+    _require(part_names, f"{label} fragment manifest has no parts")
+
+    expected = retained_files | {
+        "raw-evidence.parts.json",
+        "raw-evidence.parts.sha256",
+        "raw-evidence.tar.zst.sha256",
+        *part_names,
+    }
+    _assert_directory_entries(root, expected, f"{label} evidence root")
+    for file_name in expected:
+        _require_regular_file(root / file_name, f"{label} evidence {file_name}")
+    verify_checksum_manifest(
+        root / "raw-evidence.parts.sha256",
+        root,
+        expected_paths={"raw-evidence.parts.json", *part_names},
+        label=f"{label} fragment checksum manifest",
+    )
+    return parts_manifest, part_names
+
+
+def _materialize_raw_evidence_archive(
+    root: Path,
+    temporary_root: Path,
+    sharded: bool,
+    label: str,
+) -> Path:
+    archive_name = "raw-evidence.tar.zst"
+    if sharded:
+        archive_path = temporary_root / archive_name
+        try:
+            profile_reassembly.reassemble(root, archive_path)
+        except profile_reassembly.ReassemblyError as error:
+            raise EvidenceValidationError(
+                f"{label} archive fragments are invalid: {error}"
+            ) from error
+        checksum_root = temporary_root
+    else:
+        archive_path = root / archive_name
+        checksum_root = root
+    verify_checksum_manifest(
+        root / "raw-evidence.tar.zst.sha256",
+        checksum_root,
+        expected_paths={archive_name},
+        label=f"{label} archive checksum",
+    )
+    return archive_path
+
+
+def _calibration_outer_files(root: Path) -> bool:
+    if (root / "raw-evidence.parts.json").is_file():
+        _sharded_raw_evidence_outer_files(
+            root,
+            {
+                "aggregate.json",
+                "CALIBRATION.md",
+                "raw-evidence.manifest.sha256",
+            },
+            "calibration",
+            frozenset({profile_reassembly.PORTABLE_SCHEMA}),
+        )
+        return True
     expected = {
         "aggregate.json",
         "CALIBRATION.md",
@@ -428,6 +539,7 @@ def _calibration_outer_files(root: Path) -> None:
     _assert_directory_entries(root, expected, "calibration evidence root")
     for file_name in expected:
         _require_regular_file(root / file_name, f"calibration evidence {file_name}")
+    return False
 
 
 def verify_calibration_evidence(aggregate_path: Path) -> dict[str, Any]:
@@ -438,16 +550,15 @@ def verify_calibration_evidence(aggregate_path: Path) -> dict[str, Any]:
         "unexpected calibration schema",
     )
     root = aggregate_path.parent.resolve()
-    _calibration_outer_files(root)
-    archive_path = root / "raw-evidence.tar.zst"
-    verify_checksum_manifest(
-        root / "raw-evidence.tar.zst.sha256",
-        root,
-        expected_paths={archive_path.name},
-        label="calibration archive checksum",
-    )
+    sharded = _calibration_outer_files(root)
     with tempfile.TemporaryDirectory(prefix="phase0-calibration-verify-") as temporary_directory:
         temporary_root = Path(temporary_directory)
+        archive_path = _materialize_raw_evidence_archive(
+            root,
+            temporary_root,
+            sharded,
+            "calibration",
+        )
         extracted_root = temporary_root / "raw"
         extracted_files = extract_zstd_tar(archive_path, extracted_root, "calibration raw-evidence archive")
         extracted_manifest = extracted_root / "raw-evidence.manifest.sha256"
@@ -486,33 +597,23 @@ def verify_calibration_evidence(aggregate_path: Path) -> dict[str, Any]:
 
 
 def _profile_outer_files(root: Path) -> tuple[dict[str, Any], set[str]]:
-    parts_manifest = load_json(root / "raw-evidence.parts.json", "profile fragment manifest")
-    parts = _list(parts_manifest.get("parts"), "profile fragment manifest parts")
-    part_names: set[str] = set()
-    for entry in parts:
-        item = _mapping(entry, "profile fragment")
-        name = _safe_relative_path(_string(item.get("path"), "profile fragment path"), "profile fragment path")
-        _require("/" not in name, "profile fragment must be a local filename")
-        _require(name not in part_names, f"duplicate profile fragment {name!r}")
-        _positive_int(item.get("bytes"), f"profile fragment {name} bytes")
-        digest = _string(item.get("sha256"), f"profile fragment {name} checksum")
-        _require(digest.startswith("sha256:") and SHA256_PATTERN.fullmatch(digest[7:]) is not None, f"profile fragment {name} checksum is malformed")
-        part_names.add(name)
-    _require(part_names, "profile fragment manifest has no parts")
-    expected = {
-        "README.md",
-        "PROFILE.md",
-        "aggregate.json",
-        "host-before.json",
-        "raw-evidence.manifest.sha256",
-        "raw-evidence.parts.json",
-        "raw-evidence.parts.sha256",
-        "raw-evidence.tar.zst.sha256",
-    } | part_names
-    _assert_directory_entries(root, expected, "profile evidence root")
-    for file_name in expected:
-        _require_regular_file(root / file_name, f"profile evidence {file_name}")
-    return parts_manifest, part_names
+    return _sharded_raw_evidence_outer_files(
+        root,
+        {
+            "README.md",
+            "PROFILE.md",
+            "aggregate.json",
+            "host-before.json",
+            "raw-evidence.manifest.sha256",
+        },
+        "profile",
+        frozenset(
+            {
+                profile_reassembly.PROFILE_SCHEMA,
+                profile_reassembly.PORTABLE_SCHEMA,
+            }
+        ),
+    )
 
 
 def _profile_required_candidate_runs(document: dict[str, Any]) -> tuple[int, int]:
@@ -655,7 +756,20 @@ def verify_profile_evidence(aggregate_path: Path, calibration_path: Path) -> dic
     return regenerated
 
 
-def _soak_outer_files(root: Path) -> None:
+def _soak_outer_files(root: Path) -> bool:
+    if (root / "raw-evidence.parts.json").is_file():
+        _sharded_raw_evidence_outer_files(
+            root,
+            {
+                "README.md",
+                "SOAK.md",
+                "aggregate.json",
+                "raw-evidence.manifest.sha256",
+            },
+            "resource-soak",
+            frozenset({profile_reassembly.PORTABLE_SCHEMA}),
+        )
+        return True
     expected = {
         "README.md",
         "SOAK.md",
@@ -667,29 +781,29 @@ def _soak_outer_files(root: Path) -> None:
     _assert_directory_entries(root, expected, "resource-soak evidence root")
     for file_name in expected:
         _require_regular_file(root / file_name, f"resource-soak evidence {file_name}")
+    return False
 
 
 def verify_resource_soak_evidence(aggregate_path: Path, calibration_path: Path) -> dict[str, Any]:
     retained = load_json(aggregate_path, "resource-soak aggregate")
     _require(retained.get("schema_version") == SOAK_SCHEMA, "unexpected resource-soak schema")
     root = aggregate_path.parent.resolve()
-    _soak_outer_files(root)
-    archive_path = root / "raw-evidence.tar.zst"
-    verify_checksum_manifest(
-        root / "raw-evidence.tar.zst.sha256",
-        root,
-        expected_paths={archive_path.name},
-        label="resource-soak archive checksum",
-    )
+    sharded = _soak_outer_files(root)
     raw_archive = _mapping(retained.get("raw_evidence_archive"), "resource-soak raw archive")
-    _require(raw_archive.get("path") == archive_path.name, "resource-soak aggregate points at an unexpected archive")
+    _require(raw_archive.get("path") == "raw-evidence.tar.zst", "resource-soak aggregate points at an unexpected archive")
     _require(raw_archive.get("manifest") == "raw-evidence.manifest.sha256", "resource-soak aggregate points at an unexpected manifest")
-    _require(
-        raw_archive.get("sha256") == sha256_file(archive_path),
-        "resource-soak aggregate archive digest does not match its payload",
-    )
     with tempfile.TemporaryDirectory(prefix="phase0-soak-verify-") as temporary_directory:
         temporary_root = Path(temporary_directory)
+        archive_path = _materialize_raw_evidence_archive(
+            root,
+            temporary_root,
+            sharded,
+            "resource-soak",
+        )
+        _require(
+            raw_archive.get("sha256") == sha256_file(archive_path),
+            "resource-soak aggregate archive digest does not match its payload",
+        )
         extracted_root = temporary_root / "raw"
         extracted_files = extract_zstd_tar(archive_path, extracted_root, "resource-soak raw-evidence archive")
         extracted_manifest = extracted_root / "raw-evidence.manifest.sha256"

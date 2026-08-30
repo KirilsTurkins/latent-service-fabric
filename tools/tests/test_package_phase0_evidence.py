@@ -50,6 +50,21 @@ def extract_zstd_archive(archive: Path, destination: Path) -> None:
     (destination / "raw-evidence.manifest.sha256").unlink()
 
 
+def reassemble_sharded_archive(package: Path, output: Path) -> None:
+    result = run(
+        [
+            sys.executable,
+            str(REASSEMBLER),
+            "--archive-directory",
+            str(package),
+            "--output",
+            str(output),
+        ]
+    )
+    if result.returncode != 0:
+        raise AssertionError(result.stderr)
+
+
 def add_retained_collector(directory: Path, executable: str) -> Path:
     collector = directory / "collector"
     collector.mkdir(exist_ok=True)
@@ -197,6 +212,43 @@ class PackagePhase0EvidenceTests(unittest.TestCase):
             self.assertEqual(verified["raw_evidence_archive"]["path"], "raw-evidence.tar.zst")
             self.assertEqual(verified["source_commit"], source_commit)
 
+    def test_sharded_historical_calibration_remains_integrity_verifiable(self) -> None:
+        source_commit, _ = source_identity(CALIBRATION_ROOT / "aggregate.json")
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "calibration"
+            shutil.copytree(CALIBRATION_ROOT, package)
+            packager.split_raw_evidence_archive(
+                package,
+                package / "raw-evidence.tar.zst",
+                1024,
+                packager.PORTABLE_PART_SCHEMA,
+            )
+
+            verified = verify_calibration_evidence(package / "aggregate.json")
+
+            self.assertEqual(verified["source_commit"], source_commit)
+            self.assertFalse((package / "raw-evidence.tar.zst").exists())
+
+    def test_sharded_historical_soak_remains_integrity_verifiable(self) -> None:
+        source_commit, _ = source_identity(SOAK_ROOT / "aggregate.json")
+        calibration = CALIBRATION_ROOT / "aggregate.json"
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory) / "soak"
+            shutil.copytree(SOAK_ROOT, package)
+            packager.split_raw_evidence_archive(
+                package,
+                package / "raw-evidence.tar.zst",
+                1024,
+                packager.PORTABLE_PART_SCHEMA,
+            )
+
+            verified = verify_resource_soak_evidence(
+                package / "aggregate.json", calibration
+            )
+
+            self.assertEqual(verified["source_commit"], source_commit)
+            self.assertFalse((package / "raw-evidence.tar.zst").exists())
+
     def test_refuses_to_overwrite_an_existing_destination(self) -> None:
         source_commit, source_tree = source_identity(CALIBRATION_ROOT / "aggregate.json")
         with tempfile.TemporaryDirectory() as directory:
@@ -295,14 +347,29 @@ class PackagePhase0EvidenceTests(unittest.TestCase):
                     )
                 )
 
+            archive = temporary / "calibration.tar.zst"
+            reassemble_sharded_archive(package, archive)
             extracted = temporary / "extracted"
-            extract_zstd_archive(package / "raw-evidence.tar.zst", extracted)
+            extract_zstd_archive(archive, extracted)
             self.assertEqual(
                 (extracted / "collector" / "phase0-baseline").read_bytes(),
                 b"retained phase0-baseline\n",
             )
             self.assertTrue((extracted / "runs" / "run-01.json").is_file())
             self.assertFalse((package / "collector").exists())
+            parts = json.loads(
+                (package / "raw-evidence.parts.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                parts["schema_version"], packager.PORTABLE_PART_SCHEMA
+            )
+            self.assertTrue(
+                all(
+                    part["bytes"] <= packager.MAX_TRANSPORT_PART_BYTES
+                    for part in parts["parts"]
+                )
+            )
+            self.assertFalse((package / "raw-evidence.tar.zst").exists())
 
     def test_profile_raw_archive_manifest_retains_the_native_collector(self) -> None:
         source_commit = "1" * 40
@@ -417,14 +484,29 @@ class PackagePhase0EvidenceTests(unittest.TestCase):
                     )
                 )
 
+            archive = temporary / "soak.tar.zst"
+            reassemble_sharded_archive(package, archive)
             extracted = temporary / "extracted"
-            extract_zstd_archive(package / "raw-evidence.tar.zst", extracted)
+            extract_zstd_archive(archive, extracted)
             self.assertEqual(
                 (extracted / "collector" / "phase0-soak").read_bytes(),
                 b"retained phase0-soak\n",
             )
             self.assertTrue((extracted / "runs" / "run-01.json").is_file())
             self.assertFalse((package / "collector").exists())
+            parts = json.loads(
+                (package / "raw-evidence.parts.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                parts["schema_version"], packager.PORTABLE_PART_SCHEMA
+            )
+            self.assertTrue(
+                all(
+                    part["bytes"] <= packager.MAX_TRANSPORT_PART_BYTES
+                    for part in parts["parts"]
+                )
+            )
+            self.assertFalse((package / "raw-evidence.tar.zst").exists())
 
     def test_packaging_input_contract_names_each_retained_collector_directory(self) -> None:
         self.assertEqual(
