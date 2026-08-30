@@ -8,7 +8,8 @@ promise.
 ## Reference method
 
 Run the profile set only from a clean worktree on a stable native-Linux host or
-VM. The command rejects WSL and detected containers, requires `perf`,
+VM. The command rejects WSL and any host for which
+`systemd-detect-virt --container` does not report `none`, requires `perf`,
 `heaptrack`, and `heaptrack_print`, and fails if fixture validation or a Phase
 0 hard invariant fails. These are open-source local tools; neither is required
 for normal builds or pull-request CI.
@@ -20,18 +21,35 @@ tools/run_phase0_hot_path_profiles.sh \
   --published-source-commit <reachable-commit-sha> \
   --published-source-tree <reachable-tree-sha> \
   --published-source-ref <durable-branch-or-tag> \
-  benchmarks/phase0/profiling/native-linux-YYYY-MM-DD
+  --calibration-aggregate /var/tmp/phase0-evidence/calibration/aggregate.json \
+  --reference-candidate-runs 7 \
+  /var/tmp/phase0-evidence/profiling
 ```
 
 Before it runs, the wrapper refreshes the supplied durable branch or tag (or,
 when offline, explicitly records use of an existing `origin` tracking ref) and
 rejects the run unless the supplied commit exists, resolves to the supplied
-tree, and is reachable from that ref. It then verifies that the local execution
-tree is identical to the published tree. Every raw command and host observation
-retains the published ref/head plus source and execution identities. The
+tree, and is reachable from that ref. It then requires the local execution
+HEAD to equal that published commit and its tree to match exactly. Every raw
+command and host observation retains the published ref/head plus source and
+execution identities. The
 aggregate also requires every full, targeted, and candidate baseline document
 to retain complete per-run host/toolchain context and rejects a mismatch with
 the captured native-Linux host or full-invariant proof.
+
+`--calibration-aggregate` is required; there is no fallback to a historical
+checked-in calibration. Before creating profiling output, the wrapper
+regenerates that aggregate from its sibling `runs/` directory and accepts it
+only when every retained native-Linux full-profile run, hard invariant,
+provenance record, configuration identity, metric comparison, source commit,
+and source tree matches the supplied published source. Keep both calibration
+and profiling output outside the source tree while collecting evidence. The
+profiling archive path is mandatory and must be fresh and absolute; the
+collector also creates a separate fresh external Cargo target directory
+(the profile-output path with a `.build` suffix unless
+`LSF_HOT_PATH_TARGET_DIR` supplies another
+absolute external path). It never uses or reuses the checkout's `target/`
+directory.
 
 The wrapper builds a debuginfo-preserving release binary in an isolated target
 directory, validates and stages the real containment fixture, creates the
@@ -50,15 +68,16 @@ either tool's raw/report output, has a source-identity mismatch, a
 missing/duplicate/unexpected hard check in the complete proof, or one failed
 hard check.
 
-The accepted native-Linux reference is
-[native-linux-2026-08-27-de2337906](../benchmarks/phase0/profiling/native-linux-2026-08-27-de2337906/README.md).
-It records durable source commit `de2337906a4942e47611124a1c2217949abb58dc`
-and tree `0a32896faa58da7f34662cbf3be97670d6d1de4c`. Its compact aggregate
-and concise report are directly checked in; its complete raw profile tree is
-losslessly retained with checksums in reassemblable `raw-evidence.tar.zst`
-fragments. The Heaptrack
-leak-only reports retain the observed 2.82 KiB process-exit residue rather
-than claiming it is zero or an unproven per-activation leak.
+The retained
+[`native-linux-2026-08-30-52ac4754`](../benchmarks/phase0/profiling/native-linux-2026-08-30-52ac4754/README.md)
+archive is the current v5 authorizing input. It contains the full capsule and
+component identities, exact default-reference matching, durable source
+identity, all eight workloads and candidates, seven explicit decisions, and a
+complete invariant proof. The gate reassembled and regenerated the package
+before authorizing it. The August 29 v3 archive predates those rules and
+remains preserved only for historical and archive-regression checks. Both raw
+profile trees are retained losslessly with checksums in reassemblable
+`raw-evidence.tar.zst` fragments.
 
 The workload set is scenario-selective while leaving the real composition
 intact. A separate uninstrumented `--mode full` proof retains the complete
@@ -135,34 +154,39 @@ instances, or native execution.
 Every candidate run records cold/warm latency, at-capacity and queued
 throughput, fixed runtime RSS/VM, preparation and post-release deltas, peak
 RSS/VM/FD/thread/socket values, topology, per-run command/environment
-provenance, and the complete Phase 0 containment and reclamation proof. The
-unprofiled candidates retain the calibrated cooperative `yield_now()`
-coordination method; only targeted profiler runs may record a one-millisecond
-poll interval. The experiment matrix rejects fewer than three independently
-retained full runs for each candidate; that minimum is still insufficient for
-a Phase 0 adoption claim.
+provenance, the capsule-manifest and component identities, and the complete
+Phase 0 containment and reclamation proof. The unprofiled candidates retain
+the calibrated cooperative `yield_now()` coordination method; only targeted
+profiler runs may record a one-millisecond poll interval.
 
-The aggregate reads the issue-38 native-Linux calibration only after it proves
-material equivalence of source, methodology, environment, fixture/configuration
-and run count. A mismatched source/method/environment/configuration or fewer
-than seven independent full runs is explicitly **inconclusive** and cannot be
-labelled inside or outside the advisory band. A faster single or small set is
-an observation only.
+The aggregate captures before/after host observations around every full,
+perf, Heaptrack, and candidate process. Each pair must retain the same static
+virtualization, allocator, and CPU-policy identity and match the wrapper host.
+It then requires the full proof to match the supplied fresh calibration's
+source, component and capsule identities, runtime configuration, complete
+environment, and static host context. The seven-run fixed
+`worker-cell-2w-2c` candidate must meet that same identity exactly and is the
+only record that receives an inside/outside advisory-band result. Any mismatch
+in that reference path rejects the aggregate. Deliberately different
+topologies, allocator modes, COW settings, or cache settings retain at least
+three observations as explicit Phase 1 experiments with no Phase 0
+calibration calculation; they are not relabelled as comparable evidence.
 
-During Phase 0, a candidate could be adopted only if it exceeded the calibrated
-noise envelope (or had a separately documented architectural benefit), passed
-every hard invariant, had bounded fixed/peak memory with no hidden topology
-change, and did not take configuration/API ownership from Phase 1. Any adopted
-runtime change required a regenerated full Phase 0 reference and an auditable
-comparison with the prior reference. The issue-40 archive deliberately adopted
-no new runtime optimization; it records evidence and keeps the measured default
-configuration that issue #39 subsequently soaked.
+A candidate may be adopted in Phase 0 only if it exceeds the calibrated noise
+envelope (or has a separately documented architectural benefit), passes every
+hard invariant, has bounded fixed/peak memory with no hidden topology change,
+and does not take configuration/API ownership from Phase 1. Any adopted runtime
+change requires a regenerated full Phase 0 reference and an auditable
+comparison with the prior reference. The retained August 30 issue-40 archive
+deliberately does not adopt a new runtime optimization; it records evidence
+and keeps the measured default configuration used by the completed issue-39
+soak.
 
 ## Decisions and ownership
 
 | Candidate | Decision | Owner / rationale |
 | --- | --- | --- |
-| Existing fixed 2-worker/2-cell, on-demand/COW configuration | Retain existing default; no new adoption | It is the bounded Phase 0 reference; issue #39 soaked it in the retained evidence. |
+| Existing fixed 2-worker/2-cell, on-demand/COW configuration | Retain existing default; no new adoption | It is the bounded Phase 0 reference; the retained issue-39 soak validates this exact configuration. |
 | One-entry bounded prepared-component cache | Retain existing setting; no new adoption | Immutable node-owned preparation state only; issue 9 owns general cache compatibility and eviction. |
 | Worker/cell ratios | Carry as configurable Phase 1 experiment | Issue 8 owns fixed multi-class capacity, fairness, and scheduler policy. |
 | Pooling allocator | Defer | Issue 9 must supply generalized bounded limits, density measurements, and reset/isolation proof. |
@@ -183,9 +207,8 @@ affirmative-cleanup proof.
 Profiles are finite and machine-specific. They do not establish production
 SLOs, generic application performance, cross-machine performance, long-duration
 leak freedom, catalog density, remote-call performance, or cluster scaling.
-Issue #39's retained native-Linux 3x100k-activation plateau proof passes for
-its final recorded configuration. It does not authorize Phase 1, and any
-execution-affecting change requires new evidence through the completion gate.
+The retained August 30 issue-39 package supplies the required finite
+native-Linux 3x100k-activation plateau proof for the final configuration.
 
 ## Archive integrity in CI
 

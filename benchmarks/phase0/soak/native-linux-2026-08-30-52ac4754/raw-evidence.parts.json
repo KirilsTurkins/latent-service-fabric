@@ -1,0 +1,198 @@
+{
+  "archive": "raw-evidence.tar.zst",
+  "archive_bytes": 26796010,
+  "archive_sha256": "sha256:c9f555fdaa13850127461946749662b2f9ae12936dc135f901f85fc187fb4d47",
+  "parts": [
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-001",
+      "sha256": "sha256:35df02c44ef45e7e042e823dc33839126c823b633fc49d828b33bb67be039417"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-002",
+      "sha256": "sha256:99b4b5a4c5079ebb8276016254dcbc75de9ffa89ddd2f8cca5c84a2463b9f82c"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-003",
+      "sha256": "sha256:7cdd307a981f5dbae4db623b813cd0d5006f30b26f7f2d93acb21797db5de706"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-004",
+      "sha256": "sha256:c4265e59bc23fcd501c77f38dfe7351adb32297e7b58427ec864e61cb1955f1f"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-005",
+      "sha256": "sha256:4190481fd4d1fc5c78c791b9218c7116d81f17651e105b5193d67647aeff7d6b"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-006",
+      "sha256": "sha256:e078964e74adb5d4e7330b4ed4eea50dd4579681664ce7bebbce1e3ecf6e447d"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-007",
+      "sha256": "sha256:448f1090bfd74e5659ae36ea1322ad54228d5c633cc0ffbd81e42c814f2a3260"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-008",
+      "sha256": "sha256:c3b9fb66bb0e5a04a902fb5e2b7d87629dd064f9933fcc5119fb2587446e2233"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-009",
+      "sha256": "sha256:8707d8ab5c8cf230587689751df9c0f5d7b7b3f5746c042a457f0c88497d3ae5"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-010",
+      "sha256": "sha256:b475c850ad7eddbb06970fdc71b63fe6d182a90674f0270cd7e0409eba2b72e5"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-011",
+      "sha256": "sha256:71c227bde020485f37422e9f1f67ea05bfc1497151e5903acc9bf1c5382a137e"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-012",
+      "sha256": "sha256:fa663927894b6a212a6e4955907203189262cea4e94184aecb23adbe16630bf7"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-013",
+      "sha256": "sha256:810b2c454d13e4deaabe2ed338979dd5734aaff43df0f641046c37eaae288699"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-014",
+      "sha256": "sha256:b33bcebc57be17fc04388728ca87d11fac038bc333a96ccfc3577dbf325e4983"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-015",
+      "sha256": "sha256:f800f369c9cccc01b32884dd54500339f8b526e87026a9da544d4722d230e55b"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-016",
+      "sha256": "sha256:cae8aa0a7aaf8e7cfba3558b113f6fe1e4372275a38862b6a9cba206e64a18aa"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-017",
+      "sha256": "sha256:b71710a7215e3b0e95ef8a10a9e5904e7b32df944d87c0e9721fa016a7bed0a9"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-018",
+      "sha256": "sha256:8a539713475cd4eeaac4632b64e7b2aacd37b87ac60f128a1f17dcaa646d273c"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-019",
+      "sha256": "sha256:81184ab3e63c598b65a8f830ab096c3e5b3763b3d2041853e281ab6dcd72bd55"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-020",
+      "sha256": "sha256:d5bf8ac710774331892d05eb21c711f93385da99204b0f35553d032ada9e823e"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-021",
+      "sha256": "sha256:56b1054ddb11a1c1419166ae22b8f2c29e593d2604bd814e3bc067f99702941a"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-022",
+      "sha256": "sha256:dd79feaba8b61b7eb1fd566436e32ead5a73cb0b59df5670746d29b1f57518c9"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-023",
+      "sha256": "sha256:aed09e095a28c1fb137bf7bd76ff279692ba839bf3bb480295d3dd7df0528637"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-024",
+      "sha256": "sha256:dfa612fe82b87f5b42b1e7b5b143bd33f402cfb37a5498e4fdfa9b44070ce83d"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-025",
+      "sha256": "sha256:da4c2c11944cf03788640f481e5a05312fc9adfbddf388ac4ab3312982b02dee"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-026",
+      "sha256": "sha256:d7ab3705e9c86145f37d6386faccdd3dfd0135914653ac8e646eb5dad6780648"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-027",
+      "sha256": "sha256:5356577f88cfa1cdcd62c5f36cf1eb5ddabd9fc168950817e10e5630abbb1585"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-028",
+      "sha256": "sha256:cb8b04f8695fab1a9094ee40f83e48518aaa86fce84a3df57837578057af8815"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-029",
+      "sha256": "sha256:82850b441f158775eb2d36f6835e3ee1800ceb0e59061c2c4ddb0d100bd547f1"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-030",
+      "sha256": "sha256:e5030f67a12d5309f931029841536cf9b55a11b8301a5a1164e3187c2894a146"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-031",
+      "sha256": "sha256:b188e9542b620b99679f55570dcdf63d8ef4af4f8f9bf1e3e0d49d71c6bf50fc"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-032",
+      "sha256": "sha256:4b40758c85fb41a3f91052279ee23864f82d6687861f531e8125b22ed19edaaf"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-033",
+      "sha256": "sha256:8b6479783d4cefd6bdb0b92f452ec0736a7be6d99caf738668184b770c0f5b13"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-034",
+      "sha256": "sha256:8017925ccd94a5e0d42de09c2118e8f5cbc88d3ad705818afb922e8d19702617"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-035",
+      "sha256": "sha256:09236f92136bcad591036f5afcad80d1c3078c0d696f068a4ee8fdcbed1380dd"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-036",
+      "sha256": "sha256:27f54c83b91ca29de66827f479fb730aff1a7aaebb97db09d8ca6a7815605a56"
+    },
+    {
+      "bytes": 716800,
+      "path": "raw-evidence.tar.zst.part-037",
+      "sha256": "sha256:111ffde00f41fbd19304389a0f4283a5679d12efbb9fb1b33232e19aa98512e3"
+    },
+    {
+      "bytes": 274410,
+      "path": "raw-evidence.tar.zst.part-038",
+      "sha256": "sha256:b81b4a3c223de6aaf71cad6093870d4f326cb46ccb7f059bac10625ce845c2c1"
+    }
+  ],
+  "schema_version": "latent.phase0.raw-evidence.parts.v1"
+}

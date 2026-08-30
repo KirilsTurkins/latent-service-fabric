@@ -1398,7 +1398,7 @@ fn sha256_digest(bytes: &[u8]) -> String {
 }
 
 #[cfg(test)]
-mod tests {
+mod timing_store_tests {
     use super::{InvocationTimingStore, Phase0InvocationTiming};
 
     #[test]

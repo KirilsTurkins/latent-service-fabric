@@ -7,13 +7,7 @@ processes, sockets, threads, heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Phase 0 has a narrow, non-production executable spike and passing retained
-> #39 resource-soak evidence for its recorded native-Linux configuration. Its
-> completion gate is **blocked**: Phase 1 is not authorized until a clean
-> checkout produces an `authorized` `make phase0-gate` receipt for the current
-> execution identity. Most repository surfaces remain architecture and API
-> scaffolding; the spike does not establish Phase 1 API compatibility or
-> production readiness.
+> Most of this repository remains an architecture and API scaffold. Phase 0 contains a narrow executable spike for one local echo capsule. The retained August 30 native-Linux full-gate receipt authorizes Phase 1 from the verified Phase 0 execution evidence. That authorization is not a production-readiness or Phase 1 API-compatibility claim.
 
 ## Core invariant
 
@@ -74,12 +68,12 @@ The Phase 0 spike proves a deliberately narrow local feasibility slice:
 
 It does **not** prove routing, admission, deployment management, production
 trust/security, durable state/effects, remote invocation, cluster operation,
-production SLOs, arbitrary-duration leak freedom, or the 100,000
-dormant-service invariant. The retained matched resource soak completes issue
-#39 for its recorded configuration; it is single-host observational evidence,
-not Phase 0 or Phase 1 authorization. See
+production SLOs, arbitrary-duration leak freedom, or the 100,000 dormant-service
+invariant. The retained matched resource soak is current, single-host
+observational evidence and participates in the authorized full-gate receipt;
+the authorization does not extend the conclusions beyond this boundary. See
 [`docs/phase-0-completion.md`](docs/phase-0-completion.md) for its evidence
-ledger, gate receipt, and Phase 1 handoff.
+ledger, current authorization status, and Phase 1 handoff.
 
 See [`docs/architecture/overview.md`](docs/architecture/overview.md) and
 [`docs/testing/invariants.md`](docs/testing/invariants.md) for the proven
@@ -113,11 +107,12 @@ make phase0-gate
 
 It runs the complete clean-checkout validation, executable spike, and fresh
 baseline sequence, then writes a machine-readable receipt under
-`target/phase0-gate/`. The retained #39 calibration and soak pass for their
-recorded configuration, but they must also match the current execution identity
-and fresh baseline. Phase 1 remains blocked unless the full receipt is
-`authorized`. Use `make phase0-gate-smoke` for the deterministic CI-sized
-sequence; it records a receipt without presenting smoke coverage as
+`target/phase0-gate/`. The retained [August 30 receipt](benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+records the current `pass` / `authorized` result and its checked execution
+identity. The [August 29 receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
+remains immutable historical evidence.
+Use `make phase0-gate-smoke` for the deterministic CI-sized sequence; it
+records the same receipt format without presenting smoke coverage as
 authorization.
 
 Generated bindings, parsed WIT output, Protobuf descriptors, and SDK compiler artifacts are isolated under Cargo `OUT_DIR` or `target/contracts/`; handwritten contract sources are never overwritten. See [`VALIDATION.md`](VALIDATION.md) for the checks performed.

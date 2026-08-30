@@ -546,7 +546,10 @@ struct EnvironmentReport {
 
 #[derive(Debug, Clone, Serialize)]
 struct ArtifactReport {
+    collector: latentd::phase0_collector::NativeCollectorIdentity,
     capsule_path: String,
+    capsule_digest: String,
+    capsule_bytes: u64,
     component_path: String,
     component_digest: String,
     component_bytes: u64,

@@ -21,6 +21,10 @@
 #[doc(hidden)]
 pub mod phase0_composition;
 
+/// Native collector and build identity shared by Phase 0 evidence binaries.
+#[doc(hidden)]
+pub mod phase0_collector;
+
 #[path = "lib.rs"]
 mod spike;
 

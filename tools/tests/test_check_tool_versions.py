@@ -24,10 +24,10 @@ class VersionParsingTests(unittest.TestCase):
         self.assertEqual(
             versions.extract(
                 r"^clang version (\d+\.\d+\.\d+)",
-                "clang version 21.1.8 (Zig 0.16.0)",
+                "clang version 21.1.0 (Zig 0.16.0)",
                 "Zig C frontend",
             ),
-            "21.1.8",
+            "21.1.0",
         )
 
     def test_parses_temurin_runtime_version(self) -> None:

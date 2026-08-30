@@ -28,13 +28,13 @@ capacity remain fixed through the measured lifecycle. Wasmtime may create one
 bounded epoch-interruption helper thread after preparation; that is fixed
 node/runtime infrastructure, not a per-service thread.
 
-The retained native-Linux resource soak has a matched calibration identity and
-complete descriptor-lifecycle evidence for its recorded configuration. This is
-not a completed Phase 0 authorization: the evidence remains observational and
-single-host, and does not establish a production capability. A clean-checkout
-`make phase0-gate` run must produce an authorized receipt for the current
-execution identity before Phase 1 is authorized. Its fail-closed requirements
-are recorded in
+The retained August 30 native-Linux resource soak has a matched calibration
+identity and complete descriptor-lifecycle evidence. The full gate
+independently regenerated it with the matching profile and calibration,
+validated a fresh baseline, and authorized Phase 1 for the common canonical
+execution identity. The measurements remain observational and single-host;
+authorization does not imply production readiness or Phase 1 API
+compatibility. Their boundaries and the handoff are recorded in
 [`../phase-0-completion.md`](../phase-0-completion.md).
 
 ![Activation resource lifecycle: prepared components and fixed cells are bounded node-owned resources; every invocation creates fresh activation state and ends by releasing or quarantining its cell.](../assets/phase0-resource-lifecycle.svg)

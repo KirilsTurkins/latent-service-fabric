@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify and reassemble a sharded Phase 0 hot-path evidence archive."""
+"""Verify and reassemble a sharded Phase 0 raw-evidence archive."""
 
 from __future__ import annotations
 
@@ -11,7 +11,10 @@ from pathlib import Path
 from typing import Any
 
 
-SCHEMA = "latent.phase0.hot-path.raw-evidence.parts.v1"
+PROFILE_SCHEMA = "latent.phase0.hot-path.raw-evidence.parts.v1"
+PORTABLE_SCHEMA = "latent.phase0.raw-evidence.parts.v1"
+SUPPORTED_SCHEMAS = frozenset({PROFILE_SCHEMA, PORTABLE_SCHEMA})
+MAX_PART_BYTES = 716_800
 CHUNK_BYTES = 1024 * 1024
 
 
@@ -35,7 +38,10 @@ def load_manifest(archive_directory: Path) -> dict[str, Any]:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise ReassemblyError(f"cannot read fragment manifest {manifest_path}: {error}") from error
-    if not isinstance(manifest, dict) or manifest.get("schema_version") != SCHEMA:
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schema_version") not in SUPPORTED_SCHEMAS
+    ):
         raise ReassemblyError(f"fragment manifest has unexpected schema: {manifest_path}")
     if not isinstance(manifest.get("archive"), str) or not isinstance(
         manifest.get("archive_sha256"), str
@@ -57,7 +63,13 @@ def validated_part_path(archive_directory: Path, part: Any) -> tuple[Path, int, 
     checksum = part.get("sha256")
     if not isinstance(name, str) or Path(name).name != name:
         raise ReassemblyError(f"fragment path is not a local filename: {name!r}")
-    if not isinstance(size, int) or size < 0 or not isinstance(checksum, str):
+    if (
+        not isinstance(size, int)
+        or isinstance(size, bool)
+        or size <= 0
+        or size > MAX_PART_BYTES
+        or not isinstance(checksum, str)
+    ):
         raise ReassemblyError(f"fragment metadata is invalid: {name!r}")
     path = archive_directory / name
     observed_size, observed_checksum = sha256_file(path)
@@ -78,6 +90,9 @@ def reassemble(archive_directory: Path, output: Path) -> None:
         raise ReassemblyError(f"refusing to overwrite existing output: {output}")
 
     parts = [validated_part_path(archive_directory, part) for part in manifest["parts"]]
+    part_paths = [path for path, _, _ in parts]
+    if len(part_paths) != len(set(part_paths)):
+        raise ReassemblyError("fragment manifest contains duplicate part paths")
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("xb") as destination:
         for path, _, _ in parts:
@@ -105,7 +120,7 @@ def main() -> int:
     try:
         reassemble(arguments.archive_directory.resolve(), arguments.output)
     except ReassemblyError as error:
-        print(f"phase0 hot-path archive reassembly failed: {error}", file=sys.stderr)
+        print(f"phase0 archive reassembly failed: {error}", file=sys.stderr)
         return 2
     return 0
 
