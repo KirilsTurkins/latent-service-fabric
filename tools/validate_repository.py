@@ -95,7 +95,7 @@ def validate_json(root: Path = ROOT) -> None:
         try:
             json.loads(path.read_text(encoding="utf-8"))
         except Exception as exc:  # noqa: BLE001 - validator must report every parser failure
-            fail(f"invalid JSON {path.relative_to(root)}: {exc}")
+            fail(f"invalid JSON {path.relative_to(root).as_posix()}: {exc}")
 
 
 def validate_toml(root: Path = ROOT) -> None:
@@ -103,7 +103,7 @@ def validate_toml(root: Path = ROOT) -> None:
         try:
             tomllib.loads(path.read_text(encoding="utf-8"))
         except Exception as exc:  # noqa: BLE001 - validator must report every parser failure
-            fail(f"invalid TOML {path.relative_to(root)}: {exc}")
+            fail(f"invalid TOML {path.relative_to(root).as_posix()}: {exc}")
 
 
 def _xml_local_name(name: str) -> str:
