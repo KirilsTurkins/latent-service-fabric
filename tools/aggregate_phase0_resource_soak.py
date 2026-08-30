@@ -25,11 +25,31 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, NoReturn
 
+try:  # Support both ``python -m tools...`` and direct script execution.
+    from . import aggregate_phase0_calibration as calibration_aggregate
+    from .phase0_collector_identity import (
+        CollectorIdentityError,
+        require_native_collector_identity,
+        verify_retained_native_collector,
+    )
+except ImportError:  # pragma: no cover - exercised by direct CLI invocation.
+    import aggregate_phase0_calibration as calibration_aggregate
+    from phase0_collector_identity import (  # type: ignore[no-redef]
+        CollectorIdentityError,
+        require_native_collector_identity,
+        verify_retained_native_collector,
+    )
+
 
 RUN_SCHEMA = "latent.phase0.resource-soak.run.v1"
 HOST_SCHEMA = "latent.phase0.resource-soak.host-observation.v1"
 AGGREGATE_SCHEMA = "latent.phase0.resource-soak.aggregate.v1"
-CALIBRATION_SCHEMA = "latent.phase0.calibration.v1"
+SOURCE_PROVENANCE_SCHEMA = "latent.phase0.resource-soak.source-provenance.v1"
+LEGACY_CALIBRATION_SCHEMA = "latent.phase0.calibration.v1"
+CALIBRATION_SCHEMA = "latent.phase0.calibration.v2"
+SUPPORTED_CALIBRATION_SCHEMAS = frozenset(
+    {LEGACY_CALIBRATION_SCHEMA, CALIBRATION_SCHEMA}
+)
 MINIMUM_RUNS = 3
 ROBUST_OUTLIER_THRESHOLD = 3.5
 EXPECTED_CHECKS = {
@@ -94,6 +114,7 @@ MANDATORY_SOCKET_PROBE_FAILURES = (
     "listening socket probe unavailable",
     "required listening-socket probe",
 )
+DURABLE_SOURCE_REF_PATTERN = re.compile(r"^refs/(?:heads|tags)/")
 # The first archive predates these fields in EffectiveConfig. They are fixed
 # harness bounds at its execution tree and are labelled as such in the report;
 # newly captured raw documents retain them directly in config.
@@ -114,6 +135,26 @@ KNOWN_LEGACY_SOAK_SOURCE = {
     "published_commit": "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
     "published_tree": "65ba341221ea89e107a3e0e3c4b0aed7e26efd9b",
 }
+# These immutable pre-provenance archives remain independently revalidatable,
+# but they can never pass the current authorization gate.  Any other source
+# record is newly collected evidence and must retain the durable origin-ref
+# receipt emitted by the runner before measurement.
+KNOWN_PRE_PROVENANCE_SOAK_SOURCES = frozenset(
+    {
+        (
+            "6250b9782ffc4174676d2d72bd023dbfc38c39d7",
+            "65ba341221ea89e107a3e0e3c4b0aed7e26efd9b",
+        ),
+        (
+            "6a64f0630cee9afa080d33f376aabadac724fa72",
+            "d27ff38ebbd891c5be949f54a0047522ed893d20",
+        ),
+        (
+            "a724a5e35234175f1001d1983e4411296ffa6b78",
+            "c06ace2ae0f503495fa5bf87710ae5fc74c7ef50",
+        ),
+    }
+)
 
 
 class SoakError(Exception):
@@ -127,6 +168,17 @@ def fail(message: str) -> NoReturn:
 def is_known_legacy_soak_source(identity: Any) -> bool:
     return isinstance(identity, dict) and all(
         identity.get(field) == value for field, value in KNOWN_LEGACY_SOAK_SOURCE.items()
+    )
+
+
+def is_pre_provenance_soak_source(identity: Any) -> bool:
+    return (
+        isinstance(identity, dict)
+        and (
+            identity.get("published_commit"),
+            identity.get("published_tree"),
+        )
+        in KNOWN_PRE_PROVENANCE_SOAK_SOURCES
     )
 
 
@@ -272,6 +324,8 @@ def capture_host_observation(
     source_tree: str,
     execution_commit: str,
     execution_tree: str,
+    published_source_ref: str | None = None,
+    published_source_ref_head: str | None = None,
 ) -> None:
     kernel_text = "\n".join(
         filter(
@@ -286,18 +340,31 @@ def capture_host_observation(
     virtualization = command_output(["systemd-detect-virt"])
     virtual_machine = command_output(["systemd-detect-virt", "--vm"])
     memory = parse_meminfo()
+    source_identity: dict[str, Any] = {
+        "published_commit": source_commit,
+        "published_tree": source_tree,
+        "execution_commit": execution_commit,
+        "execution_tree": execution_tree,
+        "tree_identity_verified": execution_tree == source_tree,
+    }
+    if published_source_ref is not None or published_source_ref_head is not None:
+        if published_source_ref is None or published_source_ref_head is None:
+            fail("host capture requires both durable published source ref and ref head")
+        source_identity.update(
+            {
+                "published_source_ref": published_source_ref,
+                "published_source_ref_head": published_source_ref_head,
+                "published_commit_reachable_from_ref": True,
+                "execution_commit_matches_published": execution_commit == source_commit,
+            }
+        )
+        durable_source_provenance(source_identity, "host capture")
     payload = {
         "schema_version": HOST_SCHEMA,
         "captured_at_utc": now_utc(),
         "phase": phase,
         "run_index": run_index,
-        "source_identity": {
-            "published_commit": source_commit,
-            "published_tree": source_tree,
-            "execution_commit": execution_commit,
-            "execution_tree": execution_tree,
-            "tree_identity_verified": execution_tree == source_tree,
-        },
+        "source_identity": source_identity,
         "native_linux_reference": (
             platform.system() == "Linux"
             and "microsoft" not in kernel_text
@@ -319,6 +386,7 @@ def capture_host_observation(
             },
         },
         "allocator": allocator_observation(Path.cwd()),
+        "cpu_frequency_policy": calibration_aggregate.cpu_frequency_policy(),
         "background_load": {
             "load_average": parse_loadavg(),
             "memory_available_bytes": memory.get("MemAvailable"),
@@ -386,6 +454,65 @@ def sha256_file(path: Path) -> str:
 
 def valid_object_id(value: Any) -> bool:
     return isinstance(value, str) and bool(re.fullmatch(r"[0-9a-f]{40}", value))
+
+
+def valid_durable_source_ref(value: Any) -> bool:
+    """Accept the durable branch/tag namespace and Git-safe ref characters."""
+
+    if not isinstance(value, str) or DURABLE_SOURCE_REF_PATTERN.match(value) is None:
+        return False
+    suffix = value.removeprefix("refs/heads/")
+    if suffix == value:
+        suffix = value.removeprefix("refs/tags/")
+    return bool(
+        suffix
+        and not suffix.startswith(("/", "."))
+        and not suffix.endswith(("/", "."))
+        and suffix != "@"
+        and ".." not in suffix
+        and "//" not in suffix
+        and "@{" not in suffix
+        and not any(character.isspace() or character in "~^:?*[\\" for character in suffix)
+    )
+
+
+def durable_source_provenance(
+    identity: dict[str, Any], label: str
+) -> dict[str, str] | None:
+    """Return the origin-ref receipt for new evidence, preserving old archives.
+
+    Historical archives predate durable-ref recording and are retained
+    verbatim. Any newly recorded provenance must be complete and internally
+    consistent; a partial ref receipt is invalid evidence rather than a
+    calibration caveat.
+    """
+
+    fields = (
+        "published_source_ref",
+        "published_source_ref_head",
+        "published_commit_reachable_from_ref",
+        "execution_commit_matches_published",
+    )
+    present = [field in identity for field in fields]
+    if not any(present):
+        return None
+    if not all(present):
+        fail(f"{label} has incomplete durable source provenance")
+    source_ref = identity.get("published_source_ref")
+    source_ref_head = identity.get("published_source_ref_head")
+    if (
+        not valid_durable_source_ref(source_ref)
+        or not valid_object_id(source_ref_head)
+        or identity.get("published_commit_reachable_from_ref") is not True
+        or identity.get("execution_commit_matches_published") is not True
+    ):
+        fail(f"{label} has malformed durable source provenance")
+    return {
+        "published_source_ref": source_ref,
+        "published_source_ref_head": source_ref_head,
+        "published_commit_reachable_from_ref": True,
+        "execution_commit_matches_published": True,
+    }
 
 
 def hard_checks(document: dict[str, Any], label: str) -> set[str]:
@@ -624,6 +751,7 @@ def validate_host(
     source_commit: str,
     source_tree: str,
     execution_commit: str,
+    expected_provenance: dict[str, str] | None,
 ) -> dict[str, Any]:
     if document.get("schema_version") != HOST_SCHEMA:
         fail(f"{label} {phase} host observation has an unexpected schema")
@@ -644,6 +772,11 @@ def validate_host(
         or identity.get("tree_identity_verified") is not True
     ):
         fail(f"{label} host observation source identity does not match the archive")
+    observed_provenance = durable_source_provenance(
+        identity, f"{label} {phase} host observation"
+    )
+    if observed_provenance != expected_provenance:
+        fail(f"{label} {phase} host observation durable source provenance does not match the raw run")
     host = document.get("host")
     if not isinstance(host, dict):
         fail(f"{label} {phase} host observation lacks host context")
@@ -672,7 +805,27 @@ def validate_host(
         fail(f"{label} {phase} host observation lacks virtualization.systemd_detect_virt_vm")
     if not isinstance(document.get("allocator"), dict) and not is_known_legacy_soak_source(identity):
         fail(f"{label} {phase} host observation lacks allocator provenance")
+    if expected_provenance is not None:
+        static_host_identity(document, f"{label} {phase} host observation")
     return document
+
+
+def static_host_identity(document: dict[str, Any], label: str) -> dict[str, Any]:
+    """Reuse calibration's exact static virtualization/allocator/policy identity."""
+
+    host = document.get("host")
+    if not isinstance(host, dict):
+        fail(f"{label} lacks host context")
+    try:
+        return calibration_aggregate.host_comparability_identity(
+            {
+                "virtualization": host.get("virtualization"),
+                "allocator": document.get("allocator"),
+                "cpu_frequency_policy": document.get("cpu_frequency_policy"),
+            }
+        )
+    except calibration_aggregate.CalibrationError as error:
+        fail(f"{label} has invalid static host identity: {error}")
 
 
 def reconcile_raw_environment_with_host(
@@ -752,7 +905,13 @@ def config_identity(document: dict[str, Any]) -> dict[str, Any]:
     environment = value_at(document, "environment")
     if not isinstance(config, dict) or not isinstance(artifact, dict) or not isinstance(environment, dict):
         fail("soak raw document has malformed configuration identity")
-    return {
+    source_identity = value_at(document, "source_identity")
+    if not isinstance(source_identity, dict):
+        fail("soak raw document has malformed source identity")
+    provenance = durable_source_provenance(source_identity, "soak raw document")
+    if provenance is None and not is_pre_provenance_soak_source(source_identity):
+        fail("new soak raw document lacks durable source provenance")
+    identity = {
         "source_identity": {
             key: value_at(document, f"source_identity.{key}")
             for key in (
@@ -785,6 +944,32 @@ def config_identity(document: dict[str, Any]) -> dict[str, Any]:
             )
         },
     }
+    if provenance is not None:
+        identity["source_identity"].update(provenance)
+        try:
+            identity["collector"] = require_native_collector_identity(
+                artifact.get("collector"),
+                "resource-soak native collector identity",
+                "phase0-soak",
+            )
+        except CollectorIdentityError as error:
+            fail(str(error))
+    capsule_digest = artifact.get("capsule_digest")
+    capsule_bytes = artifact.get("capsule_bytes")
+    if capsule_digest is not None or capsule_bytes is not None:
+        if (
+            not isinstance(capsule_digest, str)
+            or re.fullmatch(r"sha256:[0-9a-f]{64}", capsule_digest) is None
+            or not isinstance(capsule_bytes, int)
+            or isinstance(capsule_bytes, bool)
+            or capsule_bytes <= 0
+        ):
+            fail("soak raw document has an invalid capsule identity")
+        identity["capsule_digest"] = capsule_digest
+        identity["capsule_bytes"] = capsule_bytes
+    elif provenance is not None:
+        fail("new soak raw document lacks its capsule identity")
+    return identity
 
 
 def validate_run(
@@ -810,6 +995,9 @@ def validate_run(
     identity = document.get("source_identity")
     if not isinstance(identity, dict):
         fail(f"{label} lacks source identity")
+    provenance = durable_source_provenance(identity, f"{label} raw source identity")
+    if provenance is None and not is_pre_provenance_soak_source(identity):
+        fail(f"{label} lacks durable source provenance for newly collected evidence")
     if (
         identity.get("published_commit") != source_commit
         or identity.get("published_tree") != source_tree
@@ -819,6 +1007,8 @@ def validate_run(
         or identity.get("final_configuration_commit") != source_commit
     ):
         fail(f"{label} source/final-configuration identity does not match the archive")
+    if provenance is not None and identity.get("execution_commit") != source_commit:
+        fail(f"{label} execution commit differs from the published source commit")
     hard_checks(document, label)
     environment = document.get("environment")
     if not isinstance(environment, dict) or environment.get("operating_system") != "linux":
@@ -1025,6 +1215,7 @@ def validate_run(
         "retained_state_limit_source": limits_source,
         "evidence_limitations": evidence_limitations,
         "execution_commit": identity["execution_commit"],
+        "source_provenance": provenance,
     }
 
 
@@ -1148,6 +1339,11 @@ def calibration_host_identity(document: dict[str, Any]) -> dict[str, Any]:
     runs = host_observations.get("runs")
     if not isinstance(runs, list) or not runs:
         fail("calibration aggregate has no host-observation runs")
+    policy_presence = [
+        isinstance(run, dict) and "cpu_frequency_policy" in run for run in runs
+    ]
+    if any(policy_presence) and not all(policy_presence):
+        fail("calibration host observations inconsistently retain CPU frequency/power-policy evidence")
     identities: list[dict[str, Any]] = []
     for index, run in enumerate(runs, start=1):
         if not isinstance(run, dict):
@@ -1156,14 +1352,29 @@ def calibration_host_identity(document: dict[str, Any]) -> dict[str, Any]:
         allocator = run.get("allocator")
         if not isinstance(virtualization, dict) or not isinstance(allocator, dict):
             fail(f"calibration host observation {index} lacks virtualization or allocator evidence")
-        identities.append({"virtualization": virtualization, "allocator": allocator})
+        identity = {"virtualization": virtualization, "allocator": allocator}
+        if policy_presence[index - 1]:
+            try:
+                identity = calibration_aggregate.host_comparability_identity(
+                    {
+                        **identity,
+                        "cpu_frequency_policy": run.get("cpu_frequency_policy"),
+                    }
+                )
+            except calibration_aggregate.CalibrationError as error:
+                fail(f"calibration host observation {index} has invalid static identity: {error}")
+        identities.append(identity)
     if any(stable_json(identity) != stable_json(identities[0]) for identity in identities[1:]):
-        fail("calibration host observations do not retain one static virtualization/allocator identity")
+        fail(
+            "calibration host observations do not retain one static virtualization/allocator"
+            "/CPU-frequency-policy identity"
+        )
     return identities[0]
 
 
 def soak_host_identity(host_observations: dict[str, dict[str, Any]]) -> dict[str, Any]:
     identities: list[dict[str, Any]] = []
+    policy_presence: list[bool] = []
     for label, phases in sorted(host_observations.items()):
         for phase in ("before", "after"):
             observation = phases[phase]
@@ -1174,22 +1385,29 @@ def soak_host_identity(host_observations: dict[str, dict[str, Any]]) -> dict[str
             if not isinstance(virtualization, dict):
                 fail(f"{label} {phase} host observation lacks virtualization context")
             allocator = observation.get("allocator")
-            identities.append(
-                {
-                    "host": {
-                        field: host.get(field) for field in HOST_ENVIRONMENT_FIELDS
-                    },
-                    "native_linux_reference": observation.get("native_linux_reference"),
-                    "virtualization": virtualization,
-                    "allocator": allocator,
-                }
-            )
+            identity = {
+                "host": {field: host.get(field) for field in HOST_ENVIRONMENT_FIELDS},
+                "native_linux_reference": observation.get("native_linux_reference"),
+                "virtualization": virtualization,
+                "allocator": allocator,
+            }
+            has_policy = "cpu_frequency_policy" in observation
+            policy_presence.append(has_policy)
+            if has_policy:
+                identity["cpu_frequency_policy"] = static_host_identity(
+                    observation, f"{label} {phase} host observation"
+                )["cpu_frequency_policy"]
+            identities.append(identity)
     if not identities:
         fail("resource-soak archive has no host observations")
+    if any(policy_presence) and not all(policy_presence):
+        fail(
+            "resource-soak host observations inconsistently retain CPU frequency/power-policy evidence"
+        )
     if any(stable_json(identity) != stable_json(identities[0]) for identity in identities[1:]):
         fail(
             "resource-soak host observations do not retain one static OS/CPU/memory/kernel, "
-            "virtualization, and allocator identity"
+            "virtualization, allocator, and CPU frequency/power-policy identity"
         )
     return identities[0]
 
@@ -1231,6 +1449,8 @@ def calibration_mismatches(
     reference_environment = reference_identity.get("environment")
     candidate_environment = candidate_identity.get("environment")
     reference_artifact = reference_identity.get("artifact")
+    reference_collector = reference_identity.get("collector")
+    candidate_collector = candidate_identity.get("collector")
     candidate_config = candidate_identity.get("config")
     reference_config = reference_identity.get("config")
     if not all(
@@ -1256,11 +1476,26 @@ def calibration_mismatches(
             reference_artifact.get(field),
             candidate_identity.get(field),
         )
+    for field in ("capsule_digest", "capsule_bytes"):
+        if field in reference_artifact or field in candidate_identity:
+            compare(
+                f"artifact.{field}",
+                reference_artifact.get(field),
+                candidate_identity.get(field),
+            )
     for field in CALIBRATION_CONFIG_FIELDS:
         compare(
             f"config.{field}",
             config_value(reference_config, field),
             config_value(candidate_config, field),
+        )
+    if reference_collector is not None or candidate_collector is not None:
+        if not isinstance(reference_collector, dict) or not isinstance(candidate_collector, dict):
+            fail("calibration or soak comparison identity lacks native collector build identity")
+        compare(
+            "collector.build_configuration",
+            reference_collector.get("build_configuration"),
+            candidate_collector.get("build_configuration"),
         )
     reference_virtualization = reference_host.get("virtualization")
     candidate_virtualization = candidate_host.get("virtualization")
@@ -1290,6 +1525,20 @@ def calibration_mismatches(
                 candidate_virtualization.get(field),
             )
     compare("host.allocator", reference_allocator, candidate_allocator)
+    candidate_source_identity = candidate_identity.get("source_identity")
+    candidate_has_durable_provenance = (
+        isinstance(candidate_source_identity, dict)
+        and durable_source_provenance(
+            candidate_source_identity, "soak calibration comparison"
+        )
+        is not None
+    )
+    if candidate_has_durable_provenance:
+        compare(
+            "host.cpu_frequency_policy",
+            reference_host.get("cpu_frequency_policy"),
+            candidate_host.get("cpu_frequency_policy"),
+        )
     return mismatches
 
 
@@ -1299,13 +1548,32 @@ def calibration_noise(
     candidate_host: dict[str, Any],
 ) -> dict[str, Any]:
     document = load_json(calibration)
-    if document.get("schema_version") != CALIBRATION_SCHEMA or document.get("status") != "pass":
+    if (
+        document.get("schema_version") not in SUPPORTED_CALIBRATION_SCHEMAS
+        or document.get("status") != "pass"
+    ):
         fail(f"calibration evidence is not a passing Phase 0 calibration: {calibration}")
     metrics = document.get("metrics")
     reference_identity = document.get("reference_identity")
     if not isinstance(metrics, dict) or not isinstance(reference_identity, dict):
         fail("calibration aggregate lacks metrics or reference identity")
+    candidate_source_identity = candidate_identity.get("source_identity")
+    candidate_has_durable_provenance = (
+        isinstance(candidate_source_identity, dict)
+        and durable_source_provenance(
+            candidate_source_identity, "soak calibration comparison"
+        )
+        is not None
+    )
     reference_host = calibration_host_identity(document)
+    if not candidate_has_durable_provenance:
+        # Preserve the immutable v1 aggregate identity for historical raw
+        # packages. New durable evidence below requires the full static CPU
+        # policy comparison.
+        reference_host = {
+            "virtualization": reference_host.get("virtualization"),
+            "allocator": reference_host.get("allocator"),
+        }
     mismatches = calibration_mismatches(
         reference_identity,
         candidate_identity,
@@ -1337,7 +1605,7 @@ def calibration_noise(
         "source_commit": document.get("source_commit"),
         "source_tree": document.get("source_tree"),
         "applicability": {
-            "status": "matched" if not mismatches else "inconclusive",
+            "status": "matched" if not mismatches else "not_applicable_for_phase0_calibration",
             "rule": "Apply issue #38 byte-scale advisory bands only when CPU, memory, kernel, virtualization, Rust/Cargo/Wasmtime toolchain, target, build profile, allocator observation, fixture digest, and relevant execution configuration—including prepared-cache enablement, Wasmtime allocator mode, and initialized-memory COW—match the calibration.",
             "mismatches": mismatches,
             "calibration_host_identity": reference_host,
@@ -1575,6 +1843,16 @@ def raw_run_record(
     document: dict[str, Any],
     archive_root: Path,
 ) -> dict[str, Any]:
+    artifact = {
+        "component_digest": document["artifact"]["component_digest"],
+        "component_bytes": document["artifact"]["component_bytes"],
+    }
+    if "capsule_digest" in document["artifact"] or "capsule_bytes" in document["artifact"]:
+        artifact["capsule_digest"] = document["artifact"].get("capsule_digest")
+        artifact["capsule_bytes"] = document["artifact"].get("capsule_bytes")
+    collector = document["artifact"].get("collector")
+    if collector is not None:
+        artifact["collector"] = collector
     return {
         "label": label,
         "raw_json": relative_path(path, archive_root),
@@ -1584,10 +1862,7 @@ def raw_run_record(
         "command_profile": document["profile"],
         "command": document["command"],
         "source_identity": document["source_identity"],
-        "artifact": {
-            "component_digest": document["artifact"]["component_digest"],
-            "component_bytes": document["artifact"]["component_bytes"],
-        },
+        "artifact": artifact,
     }
 
 
@@ -1639,6 +1914,7 @@ def aggregate(
     evidence_limitations: list[str] = []
     expected_identity: dict[str, Any] | None = None
     execution_commit: str | None = None
+    source_provenance: dict[str, str] | None = None
     for label, directory in run_directories(runs_directory, minimum_runs):
         raw_path = directory / "raw.json"
         document = load_json(raw_path)
@@ -1647,11 +1923,16 @@ def aggregate(
         if expected_identity is None:
             expected_identity = identity
             execution_commit = result["execution_commit"]
+            source_provenance = result["source_provenance"]
         elif stable_json(identity) != stable_json(expected_identity):
             fail(f"{label} differs in source fixture, toolchain, host, or soak configuration")
         elif result["execution_commit"] != execution_commit:
             fail(f"{label} differs in execution-commit provenance")
+        elif result["source_provenance"] != source_provenance:
+            fail(f"{label} differs in durable source provenance")
         assert execution_commit is not None
+        if source_provenance is not None and execution_commit != source_commit:
+            fail(f"{label} execution commit differs from the published source commit")
         before = validate_host(
             load_json(directory / "host-before.json"),
             label,
@@ -1659,6 +1940,7 @@ def aggregate(
             source_commit,
             source_tree,
             execution_commit,
+            result["source_provenance"],
         )
         after = validate_host(
             load_json(directory / "host-after.json"),
@@ -1667,6 +1949,7 @@ def aggregate(
             source_commit,
             source_tree,
             execution_commit,
+            result["source_provenance"],
         )
         reconciliation = reconcile_raw_environment_with_host(document, label, before, after)
         status = load_json(directory / "execution-status.json")
@@ -1676,6 +1959,22 @@ def aggregate(
             or status.get("run_index") != int(label.removeprefix("run-"))
             or status.get("source_commit") != source_commit
             or status.get("source_tree") != source_tree
+            or status.get("published_source_ref") != (
+                None if result["source_provenance"] is None else result["source_provenance"]["published_source_ref"]
+            )
+            or status.get("published_source_ref_head") != (
+                None if result["source_provenance"] is None else result["source_provenance"]["published_source_ref_head"]
+            )
+            or status.get("published_commit_reachable_from_ref") != (
+                None
+                if result["source_provenance"] is None
+                else result["source_provenance"]["published_commit_reachable_from_ref"]
+            )
+            or status.get("execution_commit_matches_published") != (
+                None
+                if result["source_provenance"] is None
+                else result["source_provenance"]["execution_commit_matches_published"]
+            )
             or status.get("execution_commit") != execution_commit
             or status.get("execution_tree") != source_tree
         ):
@@ -1692,6 +1991,16 @@ def aggregate(
         raw_runs.append(raw_run_record(label, raw_path, document, runs_directory.parent))
     assert expected_identity is not None
     assert execution_commit is not None
+    if source_provenance is not None:
+        try:
+            verify_retained_native_collector(
+                runs_directory.parent,
+                expected_identity["collector"],
+                "resource-soak native collector",
+                "phase0-soak",
+            )
+        except CollectorIdentityError as error:
+            fail(str(error))
     host_identity = soak_host_identity(host_observations)
     noise = calibration_noise(calibration, expected_identity, host_identity)
     calibration_matched = noise["applicability"]["status"] == "matched"
@@ -1801,7 +2110,14 @@ def aggregate(
         }
         if not retaining_subsystem and not followup_issue:
             failures.append("retaining subsystem/focused issue not yet recorded")
-    status = "fail" if failures else "pass" if calibration_matched and evidence_complete else "inconclusive"
+    if failures:
+        status = "fail"
+    elif not calibration_matched:
+        status = "not_applicable_for_phase0_calibration"
+    elif not evidence_complete:
+        status = "incomplete_evidence"
+    else:
+        status = "pass"
     document = {
         "schema_version": AGGREGATE_SCHEMA,
         "generated_at_utc": now_utc(),
@@ -1869,6 +2185,20 @@ def aggregate(
             if metric.get("availability") == "unsupported"
         },
     }
+    if source_provenance is not None:
+        document["source_provenance"] = {
+            "schema_version": SOURCE_PROVENANCE_SCHEMA,
+            "published_commit": source_commit,
+            "published_tree": source_tree,
+            **source_provenance,
+            "execution_commit": execution_commit,
+            "execution_tree": source_tree,
+            "tree_identity_verified": True,
+            "rule": (
+                "The published source commit was resolved from the recorded durable origin "
+                "branch or tag before any measured process began."
+            ),
+        }
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_report.parent.mkdir(parents=True, exist_ok=True)
     output_json.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -1952,7 +2282,8 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
     status_label = {
         "pass": "PASS",
         "fail": "FAIL",
-        "inconclusive": "INCONCLUSIVE",
+        "not_applicable_for_phase0_calibration": "NOT APPLICABLE FOR PHASE 0 CALIBRATION",
+        "incomplete_evidence": "INCOMPLETE EVIDENCE",
     }.get(document["status"], document["status"].upper())
     lines = [
         "# Phase 0 native-Linux resource plateau soak",
@@ -2054,7 +2385,7 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
     if applicability["status"] == "matched":
         lines.append("The issue #38 host/configuration identity is strictly matched, so its byte-scale advisory bands are applied to RSS, VM, and available PSS/private metrics.")
     else:
-        lines.append("**INCONCLUSIVE calibration comparison:** the issue #38 bands are not applied because the required identity is not fully matched and recorded.")
+        lines.append("**Calibration is not applicable:** the issue #38 bands are not applied because the required identity is not fully matched and recorded. This archive cannot authorize Phase 0.")
         for mismatch in applicability["mismatches"]:
             lines.append(
                 "- `{}`: calibration `{}`; soak `{}` ({}).".format(
@@ -2211,7 +2542,7 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
             "- Allocator-internal statistics are unsupported until a safe allocator-specific probe is configured.",
             "- This finite single-host process evidence does not prove arbitrary-duration leak freedom, multi-node behavior, cluster scaling, 100,000-service density, state throughput, remote-call latency, networking, autoscaling, or call-graph fusion.",
             "- It is not a production SLO, release promise, capacity guarantee, competitive-performance result, cross-machine result, or cross-platform result.",
-            "- A calibration-inconclusive archive must not be used to claim that its RSS/PSS/private/VM series is inside the #38 advisory band.",
+            "- An archive without a strictly matched calibration must not be used to claim that its RSS/PSS/private/VM series is inside the #38 advisory band.",
         ]
     )
     if document["failures"]:
@@ -2229,9 +2560,13 @@ def render_report(document: dict[str, Any], raw_path: Path) -> str:
         lines.extend(["", "## Conclusion", ""])
         if document["status"] == "pass":
             lines.append("All independent native-Linux processes passed every hard invariant, the full measured and terminal FD checks, and bounded topology validation; no calibrated material RSS/PSS/private/VM growth was detected for the strictly matched configuration. This is a Phase 0 plateau observation for the recorded configuration, not a production claim.")
-        elif document["status"] == "inconclusive":
+        elif document["status"] == "not_applicable_for_phase0_calibration":
             lines.append(
-                "All retained processes pass hard invariants, measured topology, and the retained terminal shutdown checks, but this archive is not a conclusive calibrated plateau. Its #38 comparison is inapplicable when final configuration provenance differs or is absent, and any incomplete raw/host or descriptor-lifecycle evidence must be replaced by a fresh fully recorded archive. The raw series remains available for diagnosis."
+                "All retained processes pass hard invariants, measured topology, and the retained terminal shutdown checks, but the strict #38 identity does not apply. This archive is not eligible for Phase 0 authorization and must be replaced by a fresh fully matched archive."
+            )
+        elif document["status"] == "incomplete_evidence":
+            lines.append(
+                "The retained measurements are incomplete for Phase 0 authorization and must be replaced by a fresh complete archive."
             )
     return "\n".join(lines) + "\n"
 
@@ -2245,6 +2580,8 @@ def parse_arguments() -> argparse.Namespace:
     capture.add_argument("--run-index", type=int, required=True)
     capture.add_argument("--source-commit", required=True)
     capture.add_argument("--source-tree", required=True)
+    capture.add_argument("--published-source-ref")
+    capture.add_argument("--published-source-ref-head")
     capture.add_argument("--execution-commit", required=True)
     capture.add_argument("--execution-tree", required=True)
     aggregate_parser = subcommands.add_parser("aggregate")
@@ -2272,6 +2609,8 @@ def main() -> int:
                 arguments.source_tree,
                 arguments.execution_commit,
                 arguments.execution_tree,
+                arguments.published_source_ref,
+                arguments.published_source_ref_head,
             )
             return 0
         _, status = aggregate(

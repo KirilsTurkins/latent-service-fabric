@@ -42,4 +42,4 @@ int main(void) {
 }
 EOF_C
 zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
-    -fsyntax-only -I sdk/c/include "${OUTPUT}/c/header-smoke.c"
+    -I sdk/c/include "${OUTPUT}/c/header-smoke.c" -o "${OUTPUT}/c/header-smoke"

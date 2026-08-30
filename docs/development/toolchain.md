@@ -29,19 +29,27 @@ Rust dependency resolution is frozen by the committed root `Cargo.lock`.
 | `zstd` | system utility | Lossless verification of checked-in Phase 0 raw-evidence archives during repository/gate tests |
 | Go / Node / TypeScript / .NET | 1.23.2 / 22.16.0 / 5.8.3 / 8.0.423 | Cross-language interface compilation |
 | Eclipse Temurin JDK | 21.0.11+10 | Exact Java compiler and runtime distribution (`setup-java` selector `21.0.11+10.0.LTS`) |
-| Zig / Clang / C target | 0.16.0 / 21.1.8 / `x86_64-linux-gnu` | Exact bundled C frontend for the C11 header smoke test |
+| Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Exact bundled C frontend for the C11 header smoke test |
 
 Workspace dependencies are exact requirements in the root `Cargo.toml`. Phase 0 targets consume them with `workspace = true` rather than selecting independent versions. Cargo ignores SemVer build metadata in dependency requirements, so the TOML requirement is deliberately written as `=1.1.4`; the resolved package recorded in `Cargo.lock` may display `1.1.4+spec-1.1.0`.
 
 ## Reproducibility boundary
 
-CI uses the explicit `ubuntu-24.04` hosted-runner label instead of `ubuntu-latest`. Language and contract compilers are installed at the exact versions above and `tools/check_tool_versions.py` verifies the installed binaries before the SDK surfaces compile. The C check does not use the runner-provided `cc`; it uses Zig 0.16.0's bundled Clang 21.1.8 frontend with the explicit `x86_64-linux-gnu` target and C11 mode. Runner-provided shell and filesystem utilities remain outside the compiler identity boundary.
+CI uses the explicit `ubuntu-24.04` hosted-runner label instead of `ubuntu-latest`. Language and contract compilers are installed at the exact versions above and `tools/check_tool_versions.py` verifies the installed binaries before the SDK surfaces compile. The C check does not use the runner-provided `cc`; it uses Zig 0.16.0's bundled Clang 21.1.0 frontend with the explicit `x86_64-linux-gnu` target and C11 mode. Runner-provided shell and filesystem utilities remain outside the compiler identity boundary.
 
 TypeScript is pinned by both `package.json` and `package-lock.json`. The SDK validation installs with `npm ci` and then verifies the local compiler version against `tools/toolchain.toml`; the CI workflow therefore does not duplicate the TypeScript version as an unrelated literal.
 
 The echo build tool requires the active Rust and `wasm-tools` versions to equal the baseline. It removes ambient `RUSTFLAGS`, `CARGO_ENCODED_RUSTFLAGS`, and `CARGO_TARGET_DIR` from the child Cargo environment; disables incremental compilation; fixes release codegen units, debug information, stripping, locale, timezone, and `SOURCE_DATE_EPOCH`; and always uses the committed lockfile. It compiles a self-contained core for `wasm32-unknown-unknown`, wraps that core explicitly with `wasm-tools component new`, validates the resulting component, and rejects any import/export surface beyond the two declared Phase 0 host capabilities and echo export. `make echo-capsule-reproducibility` performs two isolated clean core-build-and-componentization passes and compares the complete component bytes before publishing the generated output.
 
 The Phase 0 reproducibility claim is deliberately bounded: byte identity is verified for the same checkout and source path on the same host platform with the pinned compiler, target, lockfile, and canonical release settings. Cross-platform byte identity is not claimed.
+
+The native Phase 0 collector has a separate, path-remapped release recipe. Two
+different clean checkout roots on the same host with the pinned toolchain and
+Cargo home produced the same `phase0-baseline` executable: 137,715,192 bytes,
+SHA-256 `b11f17f4b78e710b14dfc1f7fd26ecc26853307cf82bf7e12da7ae9cc376e7d3`,
+and GNU build ID `916fe8d1c0dbf55168a6bb766caab2109007a40c`. This is a
+same-host reproducibility result; cross-host and cross-platform byte identity
+are not claimed.
 
 ## Clean-checkout validation sequence
 
@@ -73,11 +81,12 @@ retained-evidence receipt:
 make phase0-gate
 ```
 
-It requires `zstd` for archive-integrity tests and returns non-zero until the
-receipt is `authorized`. The current retained resource soak is inconclusive, so
-that final non-zero result is expected; see
-[`../phase-0-completion.md`](../phase-0-completion.md) for the replacement
-measurement required to authorize Phase 1.
+It requires `zstd` for archive-integrity tests and returns non-zero whenever a
+run's receipt is not `authorized`. The retained clean-checkout native-Linux
+[August 30 receipt](../../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+records `pass`, `authorized`, and zero blockers for the current canonical
+execution identity. The August 29 receipt remains historical. See
+[`../phase-0-completion.md`](../phase-0-completion.md) for the current status.
 
 `tools/validate_contracts.sh` compiles the generated echo and oversized-log bindings for `wasm32-wasip2`, builds each authority-free core for `wasm32-unknown-unknown`, wraps each core with `wasm-tools component new`, requires byte-identical echo output across two clean builds, validates both components, extracts the echo interface, rejects any import/export drift, emits generated capsule metadata with the actual SHA-256 digest, and executes the oversized canonical-ABI host-call-fuel regression through the Wasmtime backend.
 
