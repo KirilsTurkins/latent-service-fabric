@@ -2,9 +2,10 @@
 
 This document separates the Phase 0 invariants exercised by the executable
 spike from target invariants that remain Phase 1 or later work. The retained
-clean-checkout [completion receipt](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-is historical only; fresh evidence is required before the current branch can
-authorize Phase 1. See [`../phase-0-completion.md`](../phase-0-completion.md).
+clean-checkout [completion receipt](../../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+authorizes Phase 1 for the current canonical execution identity. It does not
+claim production readiness or Phase 1 API compatibility. See
+[`../phase-0-completion.md`](../phase-0-completion.md).
 
 ## Phase 0 exercised subset
 
@@ -34,12 +35,13 @@ The Wasmtime epoch-interruption mechanism may add one bounded helper OS thread
 after preparation. The invariant is fixed configured/node runtime topology,
 not byte-for-byte constancy of raw OS thread count while an engine runs.
 
-The retained three-process resource soak passes its historical hard
+The retained August 30 three-process resource soak passes its hard
 logical-resource and terminal-topology checks and proves a calibrated plateau
 for the recorded native-Linux configuration: its seven-process calibration is
-matched and its descriptor-lifecycle evidence is complete. It is single-host
-historical evidence and does not authorize Phase 1. Fresh identity, archive,
-profile, soak, and baseline checks are required for current authorization.
+matched and its descriptor-lifecycle evidence is complete. It remains
+single-host observational evidence and does not authorize Phase 1 by itself;
+the full gate authorizes only after also verifying source identity, archive
+integrity, profiling, and a fresh baseline.
 
 ## Dormant-service scaling — not yet proven
 
@@ -61,7 +63,8 @@ Phase 0 proves activation-owned cleanup for its finite local Wasmtime
 composition and records a matched, fully documented native-Linux plateau for
 the selected configuration. It does not prove arbitrary-duration leak freedom,
 production SLOs, a capacity guarantee, or Phase 1 API behavior, and it does
-not itself authorize Phase 1. Provider leases, state/effect resources,
+not authorize Phase 1 by itself; the complete retained gate does. Provider
+leases, state/effect resources,
 production telemetry, and new Phase 1 subsystems require their own reclamation
 tests.
 

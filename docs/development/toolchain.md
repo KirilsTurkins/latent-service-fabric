@@ -43,6 +43,14 @@ The echo build tool requires the active Rust and `wasm-tools` versions to equal 
 
 The Phase 0 reproducibility claim is deliberately bounded: byte identity is verified for the same checkout and source path on the same host platform with the pinned compiler, target, lockfile, and canonical release settings. Cross-platform byte identity is not claimed.
 
+The native Phase 0 collector has a separate, path-remapped release recipe. Two
+different clean checkout roots on the same host with the pinned toolchain and
+Cargo home produced the same `phase0-baseline` executable: 137,715,192 bytes,
+SHA-256 `b11f17f4b78e710b14dfc1f7fd26ecc26853307cf82bf7e12da7ae9cc376e7d3`,
+and GNU build ID `916fe8d1c0dbf55168a6bb766caab2109007a40c`. This is a
+same-host reproducibility result; cross-host and cross-platform byte identity
+are not claimed.
+
 ## Clean-checkout validation sequence
 
 The supported reference environment is Linux or WSL. Install the versions above, then run this sequence from a clean checkout:
@@ -75,9 +83,9 @@ make phase0-gate
 
 It requires `zstd` for archive-integrity tests and returns non-zero whenever a
 run's receipt is not `authorized`. The retained clean-checkout native-Linux
-[receipt](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-is historical; verifier and measured-source changes require a fresh full gate
-before this branch can be authorized. See
+[August 30 receipt](../../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+records `pass`, `authorized`, and zero blockers for the current canonical
+execution identity. The August 29 receipt remains historical. See
 [`../phase-0-completion.md`](../phase-0-completion.md) for the current status.
 
 `tools/validate_contracts.sh` compiles the generated echo and oversized-log bindings for `wasm32-wasip2`, builds each authority-free core for `wasm32-unknown-unknown`, wraps each core with `wasm-tools component new`, requires byte-identical echo output across two clean builds, validates both components, extracts the echo interface, rejects any import/export drift, emits generated capsule metadata with the actual SHA-256 digest, and executes the oversized canonical-ABI host-call-fuel regression through the Wasmtime backend.

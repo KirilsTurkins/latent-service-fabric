@@ -4,7 +4,7 @@ Latent Service Fabric (LSF) is an interface-first research and engineering proje
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Most of this repository remains an architecture and API scaffold. Phase 0 contains a narrow executable spike for one local echo capsule. The retained August 29 native-Linux receipt is historical evidence only: verifier and measured-source changes require fresh evidence before this branch can authorize Phase 1. Phase 1 builds on the runtime and invariants established by Phase 0; authorization is pending a fresh native-Linux `make phase0-gate` receipt.
+> Most of this repository remains an architecture and API scaffold. Phase 0 contains a narrow executable spike for one local echo capsule. The retained August 30 native-Linux full-gate receipt authorizes Phase 1 from the verified Phase 0 execution evidence. That authorization is not a production-readiness or Phase 1 API-compatibility claim.
 
 ## Core invariant
 
@@ -64,8 +64,9 @@ The Phase 0 spike proves a deliberately narrow local feasibility slice:
 It does **not** prove routing, admission, deployment management, production
 trust/security, durable state/effects, remote invocation, cluster operation,
 production SLOs, arbitrary-duration leak freedom, or the 100,000 dormant-service
-invariant. The retained matched resource soak is single-host historical
-evidence and cannot authorize the current tree. See
+invariant. The retained matched resource soak is current, single-host
+observational evidence and participates in the authorized full-gate receipt;
+the authorization does not extend the conclusions beyond this boundary. See
 [`docs/phase-0-completion.md`](docs/phase-0-completion.md) for its evidence
 ledger, current authorization status, and Phase 1 handoff.
 
@@ -100,8 +101,10 @@ make phase0-gate
 
 It runs the complete clean-checkout validation, executable spike, and fresh
 baseline sequence, then writes a machine-readable receipt under
-`target/phase0-gate/`. The retained [August 29 receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-is historical and cannot authorize this branch after the verifier changes.
+`target/phase0-gate/`. The retained [August 30 receipt](benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+records the current `pass` / `authorized` result and its checked execution
+identity. The [August 29 receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
+remains immutable historical evidence.
 Use `make phase0-gate-smoke` for the deterministic CI-sized sequence; it
 records the same receipt format without presenting smoke coverage as
 authorization.

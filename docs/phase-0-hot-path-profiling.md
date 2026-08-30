@@ -69,14 +69,15 @@ missing/duplicate/unexpected hard check in the complete proof, or one failed
 hard check.
 
 The retained
-[native-linux-2026-08-29-a724a5e3](../benchmarks/phase0/profiling/native-linux-2026-08-29-a724a5e3/README.md)
-archive is historical evidence. Its v3 aggregate predates the v5
-measurement-identity rules, so it is preserved for archive-regression checks
-but is not eligible for the current gate. A new package must contain the full
-capsule-manifest and component identities, exact default-reference matching,
-and the fresh source identity before it can be considered by the gate. The
-complete raw profile tree remains losslessly retained with checksums in
-reassemblable `raw-evidence.tar.zst` fragments.
+[`native-linux-2026-08-30-52ac4754`](../benchmarks/phase0/profiling/native-linux-2026-08-30-52ac4754/README.md)
+archive is the current v5 authorizing input. It contains the full capsule and
+component identities, exact default-reference matching, durable source
+identity, all eight workloads and candidates, seven explicit decisions, and a
+complete invariant proof. The gate reassembled and regenerated the package
+before authorizing it. The August 29 v3 archive predates those rules and
+remains preserved only for historical and archive-regression checks. Both raw
+profile trees are retained losslessly with checksums in reassemblable
+`raw-evidence.tar.zst` fragments.
 
 The workload set is scenario-selective while leaving the real composition
 intact. A separate uninstrumented `--mode full` proof retains the complete
@@ -176,15 +177,16 @@ envelope (or has a separately documented architectural benefit), passes every
 hard invariant, has bounded fixed/peak memory with no hidden topology change,
 and does not take configuration/API ownership from Phase 1. Any adopted runtime
 change requires a regenerated full Phase 0 reference and an auditable
-comparison with the prior reference. The initial issue-40 archive deliberately
-does not adopt a new runtime optimization; it records evidence and keeps the
-measured default configuration for the required issue-39 soak.
+comparison with the prior reference. The retained August 30 issue-40 archive
+deliberately does not adopt a new runtime optimization; it records evidence
+and keeps the measured default configuration used by the completed issue-39
+soak.
 
 ## Decisions and ownership
 
 | Candidate | Decision | Owner / rationale |
 | --- | --- | --- |
-| Existing fixed 2-worker/2-cell, on-demand/COW configuration | Retain existing default; no new adoption | It is the bounded Phase 0 reference; issue 39 will soak it after this work lands. |
+| Existing fixed 2-worker/2-cell, on-demand/COW configuration | Retain existing default; no new adoption | It is the bounded Phase 0 reference; the retained issue-39 soak validates this exact configuration. |
 | One-entry bounded prepared-component cache | Retain existing setting; no new adoption | Immutable node-owned preparation state only; issue 9 owns general cache compatibility and eviction. |
 | Worker/cell ratios | Carry as configurable Phase 1 experiment | Issue 8 owns fixed multi-class capacity, fairness, and scheduler policy. |
 | Pooling allocator | Defer | Issue 9 must supply generalized bounded limits, density measurements, and reset/isolation proof. |
@@ -205,8 +207,8 @@ affirmative-cleanup proof.
 Profiles are finite and machine-specific. They do not establish production
 SLOs, generic application performance, cross-machine performance, long-duration
 leak freedom, catalog density, remote-call performance, or cluster scaling.
-Issue 39 remains the required native-Linux 3x100k-activation plateau proof for
-the final configuration.
+The retained August 30 issue-39 package supplies the required finite
+native-Linux 3x100k-activation plateau proof for the final configuration.
 
 ## Archive integrity in CI
 

@@ -28,11 +28,13 @@ capacity remain fixed through the measured lifecycle. Wasmtime may create one
 bounded epoch-interruption helper thread after preparation; that is fixed
 node/runtime infrastructure, not a per-service thread.
 
-The retained native-Linux resource soak has a matched calibration identity and
-complete descriptor-lifecycle evidence for its historical source tree. Verifier
-and measured-source changes require fresh evidence before the current branch
-can authorize Phase 1. The measurements remain observational and single-host;
-their boundaries and the Phase 1 handoff are recorded in
+The retained August 30 native-Linux resource soak has a matched calibration
+identity and complete descriptor-lifecycle evidence. The full gate
+independently regenerated it with the matching profile and calibration,
+validated a fresh baseline, and authorized Phase 1 for the common canonical
+execution identity. The measurements remain observational and single-host;
+authorization does not imply production readiness or Phase 1 API
+compatibility. Their boundaries and the handoff are recorded in
 [`../phase-0-completion.md`](../phase-0-completion.md).
 
 Phase 0 did not prove dormant registration at 100,000 services, route or

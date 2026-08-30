@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-30** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, historical completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-30** for the authorized Phase 0 executable contract, native-Linux variance calibration, profiling and resource-soak evidence, full completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -31,12 +31,14 @@ aggregates from their raw artifacts and validating the fresh baseline against
 them. A full command fails if the receipt is not `authorized`; it never reports
 an incomplete or synthetic archive as a pass.
 
-The retained [August 29 native-Linux receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-records the result of a prior clean checkout. It is immutable historical
-evidence, not authorization for this branch: the verifier and measured source
-have changed, so fresh calibration, profile, soak, and a clean-checkout full
-gate receipt are required. Phase 1 builds on the runtime and invariants
-established by Phase 0 once that fresh receipt is authorized.
+The retained [August 30 native-Linux receipt](benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+records the fresh clean-checkout result: `pass`, `authorized`, and zero
+blockers. It independently regenerates the current calibration, profile, and
+soak inputs and binds them to the fresh baseline through one canonical
+execution-evidence identity. Phase 1 is authorized to build on those runtime
+invariants. The receipt remains explicitly non-production and non-Phase-1-API
+compatible; the [August 29 receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
+is preserved as historical evidence only.
 
 `make phase0-gate-smoke` runs the same code/contract/executable sequence with
 the deterministic smoke baseline. It records the receipt for CI but does not
@@ -112,10 +114,10 @@ fixture, failed hard invariant, missing or unexpected invariant name, or
 duplicate invariant name invalidates the calibration; it is never filtered
 based on timing or resource values.
 
-The checked-in [August 29 aggregate](benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json)
-is historical and cannot be used as the current branch's comparison reference
-or authorization input. Hosted CI must not treat microbenchmark bands as a
-pass/fail gate. See
+The checked-in [August 30 aggregate](benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754/aggregate.json)
+is the seven-run calibration input verified by the authorized receipt. The
+August 29 aggregate remains historical. Hosted CI must not treat either
+package's machine-specific microbenchmark bands as a pass/fail gate. See
 [docs/phase-0-baselines.md](docs/phase-0-baselines.md) for comparison and rerun
 rules.
 
@@ -148,6 +150,13 @@ direct sample is reported as not observed at profiler resolution, not as a
 zero-cost result. The aggregation test is deterministic and may run in CI; the
 host-sensitive profile command may not. See [docs/phase-0-hot-path-profiling.md](docs/phase-0-hot-path-profiling.md)
 for the evidence interpretation, adoption rule, and Phase 1 handoff.
+
+The retained August 30
+[`native-linux-2026-08-30-52ac4754`](benchmarks/phase0/profiling/native-linux-2026-08-30-52ac4754/README.md)
+package is the v5 profile input verified by the authorized receipt. It covers
+all eight required workloads and candidates, retains the complete invariant
+proof, and makes no production or cross-machine performance claim. The August
+29 package remains historical archive-regression evidence.
 
 ## Native-Linux long-running resource soak
 
@@ -185,17 +194,18 @@ initialized-memory COW—are proved matched. A mismatch or missing identity
 blocks the comparison and authorization; it is never a reason to raise an
 allowance.
 
-The retained August 29 final-configuration raw result is
-[`native-linux-2026-08-29-a724a5e3`](benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/README.md):
+The authorizing August 30 final-configuration raw result is
+[`native-linux-2026-08-30-52ac4754`](benchmarks/phase0/soak/native-linux-2026-08-30-52ac4754/README.md):
 three complete 100,000-activation processes from durable source commit
-`a724a5e35234175f1001d1983e4411296ffa6b78` and tree
-`c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`. Its raw hard invariants,
+`52ac47542a05c0a1263f78a14c04a5c2e6b761f3` and tree
+`cac3ececdbd0b5734691c30c0283fccff169a5f5`. Its raw hard invariants,
 raw/host identity reconciliation, descriptor lifecycle, release/shutdown
 topology, and matched-calibration late-window analysis pass. The lossless zstd
 archive and its per-file manifest retain all raw process evidence without
-duplicating earlier attempts. It is historical and cannot authorize the
-current branch; authorization is decided only by a fresh full Phase 0 gate
-receipt.
+duplicating earlier attempts. The package is evidence input, not an
+authorization decision by itself; the retained full Phase 0 receipt verifies
+it together with every other required input. The August 29 result remains
+historical.
 
 ## CI jobs
 
@@ -211,9 +221,10 @@ Contract and capsule validation starts compiler and validator commands only. It 
 
 Passing the executable baseline establishes source consistency, guest behavior,
 component-interface validity, fixed cell-pool accounting, real Wasmtime
-invocation/containment, and same-boundary build reproducibility. It does not
-by itself authorize Phase 1: the receipt also requires conclusive retained
-calibration, profiling, and long-running resource evidence. It never
+invocation/containment, and same-boundary build reproducibility. A baseline
+does not by itself authorize Phase 1: the retained August 30 full receipt also
+verified conclusive calibration, profiling, and long-running resource evidence
+and therefore authorized the handoff. It never
 establishes production APIs, cross-platform byte identity, generic dispatch,
 production security, dormant-service density, cluster behavior, or production
 SLOs.

@@ -21,13 +21,13 @@ Both commands run `tools/validate_contracts.sh` first. Missing Rust Wasm targets
 ## Native-Linux variance calibration
 
 The original checked-in full-profile result is a historical WSL2 observation.
-The retained August 29 selected-configuration calibration is the seven-run
-native-Linux archive in
-[benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3](../benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3).
-It records its historical published commit/tree and the explicit
-prepared-cache/on-demand/COW configuration used by the historical soak. All
-August 29 calibration, profile, and soak packages are immutable historical
-evidence and cannot authorize the current source tree.
+The current selected-configuration calibration is the seven-run native-Linux
+archive in
+[`benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754`](../benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754/CALIBRATION.md).
+It records its published commit/tree and the explicit
+prepared-cache/on-demand/COW configuration used by the matching profile and
+soak. The August 30 packages were verified together by the authorized full
+gate; all August 29 packages remain immutable historical evidence.
 
 Create a new archive only from a clean worktree on one stable native-Linux host
 or VM:
@@ -147,14 +147,15 @@ become a failure only when the same metric breaches its calibrated
 late-window material-growth rule.
 
 The retained post-issue-40 raw archive is
-[`native-linux-2026-08-29-a724a5e3`](../benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/README.md), measured from
-durable source commit `a724a5e35234175f1001d1983e4411296ffa6b78` and tree
-`c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`. Its three complete processes
+[`native-linux-2026-08-30-52ac4754`](../benchmarks/phase0/soak/native-linux-2026-08-30-52ac4754/README.md), measured from
+durable source commit `52ac47542a05c0a1263f78a14c04a5c2e6b761f3`
+and tree `cac3ececdbd0b5734691c30c0283fccff169a5f5`. Its three complete processes
 pass all hard invariants, raw/host reconciliation, explicit release/shutdown
 topology, the complete descriptor lifecycle, and calibrated late-window
 RSS/PSS/private/VM analysis. The raw archive is losslessly checksummed and the
 aggregate applies the matching seven-process calibration without inference. It
-is evidence input for the full gate, not an authorization decision by itself.
+is evidence input for the authorized full gate, not an authorization decision
+by itself.
 
 If the aggregate reports material growth, rerun the same command with
 `--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after
@@ -251,10 +252,14 @@ Every completed activation must return active leases, waiters, cancellation regi
 ## Checked-in evidence
 
 The original top-level baseline files remain historical WSL2 evidence. The
-native-Linux aggregate and raw archive are separate reference evidence; do not
-replace either with measurements from a materially different environment.
+August 30 native-Linux calibration, profiling, soak, and full-gate receipt are
+the current checked reference evidence; do not replace them with measurements
+from a materially different environment.
 
-`benchmarks/phase0/raw-results.json` and `benchmarks/phase0/BASELINE.md` are generated from the same historical full-profile run. The native-Linux calibration archive is the Phase 1 comparison reference.
+`benchmarks/phase0/raw-results.json` and `benchmarks/phase0/BASELINE.md` are
+generated from the same historical full-profile run. The August 30
+native-Linux calibration archive is the Phase 1 comparison reference, and the
+fresh authorizing baseline is retained with the August 30 gate receipt.
 
 Reference files must not be replaced with measurements from a materially different CPU, memory size, OS/kernel, Rust/Wasmtime toolchain, target, build profile, fixture digest, pool topology, budget, threshold, or sample configuration without documenting the new environment and reason.
 
