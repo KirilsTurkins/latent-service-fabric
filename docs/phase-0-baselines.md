@@ -158,8 +158,9 @@ is evidence input for the authorized full gate, not an authorization decision
 by itself.
 
 This retained result is an input to the completion gate, not an authorization
-receipt. A current clean checkout must still satisfy the gate's exact
-execution-identity and fresh-baseline checks before Phase 1 is authorized.
+receipt. The authorizing clean checkout satisfied the gate's exact
+execution-identity and fresh-baseline checks; any later execution-affecting
+change must satisfy them again before it can retain authorization.
 
 If the aggregate reports material growth, rerun the same command with
 `--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after
