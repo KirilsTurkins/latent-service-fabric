@@ -619,6 +619,11 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
                 "#!/usr/bin/env bash\nprintf '%s\\n' none\n",
             )
             environment = dict(os.environ)
+            # A real calibration run executes this regression suite from
+            # inside its already-created external build directory.  Keep that
+            # outer runner setting from changing which precondition this
+            # isolated fake-runner test exercises.
+            environment.pop("LSF_CALIBRATION_TARGET_DIR", None)
             environment["PATH"] = f"{bin_directory}:{environment['PATH']}"
             environment["PYTHON"] = sys.executable
             output = root / "evidence"

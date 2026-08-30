@@ -173,6 +173,10 @@ class HotPathProfileRunnerTests(unittest.TestCase):
             "#!/usr/bin/env bash\nprintf '%s\\n' none\n",
         )
         environment = dict(os.environ)
+        # The production profiler runs repository validation after creating
+        # its external target.  Fake-runner provenance tests must derive their
+        # own fresh target instead of inheriting that outer path.
+        environment.pop("LSF_HOT_PATH_TARGET_DIR", None)
         environment["PATH"] = f"{bin_directory}:{environment['PATH']}"
         environment["PYTHON"] = sys.executable
         return source, environment
