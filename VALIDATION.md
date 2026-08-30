@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-29** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, retained authorized completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-30** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, historical completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -31,12 +31,12 @@ aggregates from their raw artifacts and validating the fresh baseline against
 them. A full command fails if the receipt is not `authorized`; it never reports
 an incomplete or synthetic archive as a pass.
 
-The retained [native-Linux full receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-was produced from a separate clean checkout with exit code 0. It records
-`authorization_status: "authorized"`, `phase1_authorized: true`, and no
-blockers. Phase 1 builds on the runtime and invariants validated by this gate.
-The receipt's `phase1_api_compatible: false` means only that the spike CLI is
-not the prescribed Phase 1 public API.
+The retained [August 29 native-Linux receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
+records the result of a prior clean checkout. It is immutable historical
+evidence, not authorization for this branch: the verifier and measured source
+have changed, so fresh calibration, profile, soak, and a clean-checkout full
+gate receipt are required. Phase 1 builds on the runtime and invariants
+established by Phase 0 once that fresh receipt is authorized.
 
 `make phase0-gate-smoke` runs the same code/contract/executable sequence with
 the deterministic smoke baseline. It records the receipt for CI but does not
@@ -96,21 +96,26 @@ The native-Linux calibration is a heavier explicit benchmark command and is not
 part of normal shared CI:
 
 ~~~bash
-tools/run_phase0_calibration.sh benchmarks/phase0/calibration/native-linux-YYYY-MM-DD
+tools/run_phase0_calibration.sh \
+  --published-source-commit <reachable-commit-sha> \
+  --published-source-tree <reachable-tree-sha> \
+  --published-source-ref <durable-branch-or-tag> \
+  /var/tmp/phase0-evidence/calibration
 ~~~
 
-It runs the complete Phase 0 full profile at least seven times from one clean
-source tree and retains raw output, invariant results, host provenance, and an
-aggregate report. When a reachable published commit is supplied, the runner
-verifies that the local execution tree is byte-for-byte the same Git tree and
-records both identities. A missing fixture, failed hard invariant, missing or
-unexpected invariant name, or duplicate invariant name invalidates the
-calibration; it is never filtered based on timing or resource values.
+It runs the complete Phase 0 full profile at least seven times from one clean,
+pushed source commit/tree and retains raw output outside the source tree,
+invariant results, host provenance, and an aggregate report. The runner
+requires a durable remote ref, verifies commit/tree reachability from that
+ref, and records both the declared ref and resolved ref head. A missing
+fixture, failed hard invariant, missing or unexpected invariant name, or
+duplicate invariant name invalidates the calibration; it is never filtered
+based on timing or resource values.
 
-Phase 1 comparisons use the checked-in
-[aggregate.json](benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json)
-and its documented per-metric advisory bands. Hosted CI must not treat those
-microbenchmark bands as a pass/fail gate. See
+The checked-in [August 29 aggregate](benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json)
+is historical and cannot be used as the current branch's comparison reference
+or authorization input. Hosted CI must not treat microbenchmark bands as a
+pass/fail gate. See
 [docs/phase-0-baselines.md](docs/phase-0-baselines.md) for comparison and rerun
 rules.
 
@@ -155,9 +160,10 @@ commit/tree:
 tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
+  --published-source-ref <durable-branch-or-tag> \
   --final-configuration-commit <reachable-final-commit> \
-  --calibration benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json \
-  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+  --calibration /var/tmp/phase0-evidence/calibration/aggregate.json \
+  /var/tmp/phase0-evidence/soak
 ```
 
 It rejects WSL, containers, unavailable process probes, fixture/toolchain
@@ -175,10 +181,11 @@ against before/after host observations and applies #38's calibrated RSS band
 for RSS/PSS/private material-growth triage only after CPU, memory, kernel,
 virtualization, toolchain, allocator, fixture, and relevant configuration
 identity—including prepared-cache enablement, Wasmtime allocator mode, and
-initialized-memory COW—are proved matched. A mismatch or missing identity is
-inconclusive, not a reason to raise an allowance.
+initialized-memory COW—are proved matched. A mismatch or missing identity
+blocks the comparison and authorization; it is never a reason to raise an
+allowance.
 
-The retained final-configuration raw result is
+The retained August 29 final-configuration raw result is
 [`native-linux-2026-08-29-a724a5e3`](benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/README.md):
 three complete 100,000-activation processes from durable source commit
 `a724a5e35234175f1001d1983e4411296ffa6b78` and tree
@@ -186,8 +193,9 @@ three complete 100,000-activation processes from durable source commit
 raw/host identity reconciliation, descriptor lifecycle, release/shutdown
 topology, and matched-calibration late-window analysis pass. The lossless zstd
 archive and its per-file manifest retain all raw process evidence without
-duplicating earlier attempts. The package is evidence input; authorization is
-decided only by a fresh full Phase 0 gate receipt.
+duplicating earlier attempts. It is historical and cannot authorize the
+current branch; authorization is decided only by a fresh full Phase 0 gate
+receipt.
 
 ## CI jobs
 

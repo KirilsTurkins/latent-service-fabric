@@ -1,22 +1,25 @@
 # Phase 0 completion gate
 
-**Gate status: AUTHORIZED — the retained full receipt authorizes Phase 1 work.**
+**Gate status: PENDING — Phase 1 is not authorized for the current branch.**
 
-A separate clean native-Linux checkout ran `make phase0-gate` at commit
+The retained August 29 receipt records a prior clean native-Linux checkout that ran `make phase0-gate` at commit
 `54d02679aff757d4bf25d16e088b32d45682cb7f` (tree
 `b77e4efa1cd46628efcbfebed6e3b0c05feade28`) and exited 0. Its retained
 [gate summary](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-records `status: "pass"`, `authorization_status: "authorized"`,
-`phase1_authorized: true`, and an empty `blockers` array.
+records its historical `status: "pass"`, `authorization_status: "authorized"`,
+`phase1_authorized: true`, and an empty `blockers` array. It cannot authorize
+the current branch because both the verifier and the measured execution tree
+have changed. Fresh native-Linux calibration, profiling, soak, and a separate
+clean-checkout full-gate receipt are required.
 
-The measured calibration, profiling, and soak inputs all came from commit
+The historical measured calibration, profiling, and soak inputs all came from commit
 `a724a5e35234175f1001d1983e4411296ffa6b78` (tree
 `c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`). Their canonical
-execution-relevant identity is
+execution-relevant identity was
 `sha256:d9ec14a46695eb2afedc07b70b114686163f82a0cfc216f65c521c541ad44191`,
-which the receipt verifies against its clean checkout. GitHub issue state is
-not evidence; the receipt's raw verification, identity comparison, and fresh
-baseline remain the authority.
+which that receipt verified against its clean checkout. GitHub issue state is
+not evidence. Only a new receipt with raw verification, identity comparison,
+and a fresh baseline can establish current authorization.
 
 ## One clean-checkout command sequence
 
@@ -44,9 +47,8 @@ The command creates a new directory beneath `target/phase0-gate/`, then:
 
 `make phase0-gate` returns non-zero whenever a final receipt is not
 `authorized`; it still writes the receipt so the specific blocker is
-reviewable. The retained full run passed every raw-evidence, identity, profile,
-and fresh-baseline check. A future execution-relevant change must satisfy the
-same fail-closed checks with applicable evidence.
+reviewable. The retained full run is historical. The current branch must
+satisfy the same fail-closed checks with newly collected applicable evidence.
 
 CI uses `make phase0-gate-smoke`. It runs the same contract, executable, and
 baseline path with smaller deterministic sample counts and records the receipt,
@@ -54,15 +56,15 @@ but does not claim Phase 1 authorization. Its output explicitly distinguishes
 `Phase 0 smoke validation: PASS` from `Phase 1 authorization: BLOCKED` so a
 correctness smoke result cannot be mistaken for completion.
 
-## Evidence ledger
+## Historical evidence ledger — not eligible for current authorization
 
 | Input | Machine-readable evidence | Gate result |
 |---|---|---|
-| Fresh full baseline | [receipt baseline](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/baseline/BASELINE.md), compressed raw result, and checksums | pass: 20 required hard checks and all required terminal outcomes |
-| Native-Linux calibration | [`aggregate.json`](../benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json) and checksummed raw archive | pass: seven full-profile runs with fixed hard invariants and advisory comparison bands |
-| CPU/allocation profiling | [`aggregate.json`](../benchmarks/phase0/profiling/native-linux-2026-08-29-a724a5e3/aggregate.json) and checksummed sharded raw archive | pass: eight workloads, guardrails, and seven explicit optimization decisions |
-| Resource soak | [`aggregate.json`](../benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/aggregate.json), [`SOAK.md`](../benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/SOAK.md), and checksummed raw archive | pass: three matched 100,000-activation processes, complete lifecycle evidence, and no calibrated material growth |
-| Completion receipt | [`gate-summary.json`](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json) and [receipt manifest](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/receipt.manifest.sha256) | pass: authorized with no blockers |
+| Fresh full baseline | [receipt baseline](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/baseline/BASELINE.md), compressed raw result, and checksums | historical pass: 20 required hard checks and all required terminal outcomes |
+| Native-Linux calibration | [`aggregate.json`](../benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json) and checksummed raw archive | historical pass: seven full-profile runs with fixed hard invariants and advisory comparison bands |
+| CPU/allocation profiling | [`aggregate.json`](../benchmarks/phase0/profiling/native-linux-2026-08-29-a724a5e3/aggregate.json) and checksummed sharded raw archive | historical pass: eight workloads, guardrails, and seven explicit optimization decisions |
+| Resource soak | [`aggregate.json`](../benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/aggregate.json), [`SOAK.md`](../benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/SOAK.md), and checksummed raw archive | historical pass: three matched 100,000-activation processes, complete lifecycle evidence, and no calibrated material growth |
+| Completion receipt | [`gate-summary.json`](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json) and [receipt manifest](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/receipt.manifest.sha256) | historical result; not eligible to authorize this branch |
 
 ## Recorded environment, configuration, and observations
 
@@ -75,7 +77,7 @@ the execution-relevant Git entries. Every evidence set must have that same
 canonical identity; documentation-only differences remain visible through the
 recorded commit/tree but cannot hide an execution-affecting change.
 
-- The fresh calibration, `perf`/Heaptrack archive, and soak were measured on
+- The historical calibration, `perf`/Heaptrack archive, and soak were measured on
   one native-Linux host from the same execution-relevant tree at
   `a724a5e3…` / `c06ace2a…`. The retained commit/tree changes are auditable,
   while the canonical identity is the strict applicability comparison.
@@ -89,7 +91,7 @@ recorded commit/tree but cannot hide an execution-affecting change.
   release/shutdown observations. Its strict aggregate reports matched
   calibration applicability, complete evidence, and passed descriptor
   lifecycle checks.
-- The fresh full baseline ran at `54d02679…` / `b77e4efa…` against those
+- The historical full baseline ran at `54d02679…` / `b77e4efa…` against those
   retained inputs and passed all 20 required checks. The receipt's raw result
   is compressed losslessly and checked alongside the complete receipt manifest.
 
@@ -123,13 +125,11 @@ identity drift, and incomplete evidence presented as an authorization.
 
 ## Gate completion and audit handoff
 
-The full receipt and raw evidence are retained in the repository, including
-archive manifests, checksums, reports, aggregates, and the losslessly
-compressed fresh-baseline result. No execution-relevant source changed after
-the evidence was measured; documentation and receipt retention are separately
-visible but excluded from the canonical execution identity. A later
-execution-relevant change invalidates applicability until fresh evidence and a
-new authorized receipt establish it again.
+The full receipt and raw evidence are retained in the repository as immutable
+historical artifacts, including archive manifests, checksums, reports,
+aggregates, and the losslessly compressed baseline result. The current
+execution-relevant source and verifier have changed. Fresh evidence and a new
+authorized receipt are required before this branch can establish authorization.
 
 ## Audit and Phase 1 handoff
 
@@ -153,7 +153,7 @@ reuse plus untrusted AOT/cache/snapshot/native-execution shortcuts in Phase 0.
 
 ## Explicit limits
 
-The authorized Phase 0 gate establishes only a local feasibility and
+An authorized Phase 0 gate establishes only a local feasibility and
 measurement boundary. It does not establish production security, stable public
 APIs, generic multi-service dispatch, persistent deployment management,
 production scheduling or telemetry, performance SLOs, dormant-service density,

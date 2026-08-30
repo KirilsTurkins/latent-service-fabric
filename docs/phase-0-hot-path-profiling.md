@@ -29,9 +29,10 @@ tools/run_phase0_hot_path_profiles.sh \
 Before it runs, the wrapper refreshes the supplied durable branch or tag (or,
 when offline, explicitly records use of an existing `origin` tracking ref) and
 rejects the run unless the supplied commit exists, resolves to the supplied
-tree, and is reachable from that ref. It then verifies that the local execution
-tree is identical to the published tree. Every raw command and host observation
-retains the published ref/head plus source and execution identities. The
+tree, and is reachable from that ref. It then requires the local execution
+HEAD to equal that published commit and its tree to match exactly. Every raw
+command and host observation retains the published ref/head plus source and
+execution identities. The
 aggregate also requires every full, targeted, and candidate baseline document
 to retain complete per-run host/toolchain context and rejects a mismatch with
 the captured native-Linux host or full-invariant proof.
@@ -42,7 +43,13 @@ regenerates that aggregate from its sibling `runs/` directory and accepts it
 only when every retained native-Linux full-profile run, hard invariant,
 provenance record, configuration identity, metric comparison, source commit,
 and source tree matches the supplied published source. Keep both calibration
-and profiling output outside the source tree while collecting evidence.
+and profiling output outside the source tree while collecting evidence. The
+profiling archive path is mandatory and must be fresh and absolute; the
+collector also creates a separate fresh external Cargo target directory
+(the profile-output path with a `.build` suffix unless
+`LSF_HOT_PATH_TARGET_DIR` supplies another
+absolute external path). It never uses or reuses the checkout's `target/`
+directory.
 
 The wrapper builds a debuginfo-preserving release binary in an isolated target
 directory, validates and stages the real containment fixture, creates the

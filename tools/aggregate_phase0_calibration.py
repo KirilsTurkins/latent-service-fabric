@@ -22,10 +22,31 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, NoReturn
 
+try:  # Support both ``python -m tools...`` and direct script execution.
+    from .phase0_collector_identity import (
+        CollectorIdentityError,
+        require_native_collector_identity,
+        verify_retained_native_collector,
+    )
+except ImportError:  # pragma: no cover - exercised by direct CLI invocation.
+    from phase0_collector_identity import (  # type: ignore[no-redef]
+        CollectorIdentityError,
+        require_native_collector_identity,
+        verify_retained_native_collector,
+    )
+
 
 BASELINE_SCHEMA = "latent.phase0.baseline.v2"
-CALIBRATION_SCHEMA = "latent.phase0.calibration.v1"
-HOST_OBSERVATION_SCHEMA = "latent.phase0.calibration.host-observation.v1"
+# Version 1 calibration archives predate durable published-ref provenance.  We
+# preserve their raw integrity through an explicit historical verifier, but
+# they can never satisfy the current authorization schema.
+LEGACY_CALIBRATION_SCHEMA = "latent.phase0.calibration.v1"
+CALIBRATION_SCHEMA = "latent.phase0.calibration.v2"
+LEGACY_HOST_OBSERVATION_SCHEMA = "latent.phase0.calibration.host-observation.v1"
+HOST_OBSERVATION_SCHEMA = "latent.phase0.calibration.host-observation.v2"
+LEGACY_EXECUTION_STATUS_SCHEMA = "latent.phase0.calibration.execution-status.v1"
+EXECUTION_STATUS_SCHEMA = "latent.phase0.calibration.execution-status.v2"
+SOURCE_PROVENANCE_SCHEMA = "latent.phase0.calibration.source-provenance.v1"
 OBJECT_ID_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 NON_MEANINGFUL_CPU_MODEL_PATTERN = re.compile(
@@ -213,6 +234,8 @@ def capture_host_observation(
     run_index: int,
     source_commit: str,
     source_tree: str,
+    published_source_ref: str,
+    published_source_ref_head: str,
     execution_commit: str,
     execution_tree: str,
     repository_root: Path,
@@ -241,12 +264,17 @@ def capture_host_observation(
         "source_identity": {
             "published_commit": source_commit,
             "published_tree": source_tree,
+            "published_source_ref": published_source_ref,
+            "published_source_ref_head": published_source_ref_head,
+            "published_commit_reachable_from_ref": True,
             "execution_commit": execution_commit,
             "execution_tree": execution_tree,
+            "execution_commit_matches_published": execution_commit == source_commit,
             "tree_identity_verified": execution_tree == source_tree,
             "rule": (
-                "The local execution worktree must have the exact Git tree of the "
-                "reachable published source commit before a calibration run starts."
+                "The local execution HEAD must equal the declared published commit, "
+                "have its exact Git tree, and be reachable from the recorded durable "
+                "branch or tag before a calibration run starts."
             ),
         },
         "operating_system": platform.system().lower(),
@@ -468,7 +496,12 @@ def outliers(representatives: dict[str, float]) -> list[dict[str, Any]]:
 
 
 def comparison_band(
-    unit: str, direction: str, run_summary: dict[str, Any], advisory: bool
+    unit: str,
+    direction: str,
+    run_summary: dict[str, Any],
+    advisory: bool,
+    *,
+    legacy_terminology: bool,
 ) -> dict[str, Any] | None:
     if not advisory:
         return None
@@ -488,7 +521,7 @@ def comparison_band(
         if direction == "increase_is_regression"
         else "candidate median < reference median - advisory_noise_band"
     )
-    return {
+    result = {
         "comparison_statistic": "median of per-run representative values",
         "direction": direction,
         "reference_median": reference,
@@ -503,17 +536,25 @@ def comparison_band(
             "when it has at least seven valid comparable runs, a stable environment, "
             "all hard invariants passing, and no material run-level outlier."
         ),
-        "inconclusive_rule": (
-            "Insufficient samples, environment instability, or a material run-level "
-            "outlier is inconclusive and must be rerun."
-        ),
         "ci_enforcement": "never a shared-hosted-CI pass/fail threshold",
     }
+    if legacy_terminology:
+        result["inconclusive_rule"] = (
+            "Insufficient samples, environment instability, or a material run-level "
+            "outlier is inconclusive and must be rerun."
+        )
+    else:
+        result["rerun_required_rule"] = (
+            "Insufficient samples, environment instability, or a material run-level "
+            "outlier invalidates the comparison and requires a fresh rerun."
+        )
+    return result
 
 
 class MetricCollector:
-    def __init__(self) -> None:
+    def __init__(self, *, legacy_terminology: bool) -> None:
         self.metrics: dict[str, dict[str, Any]] = {}
+        self.legacy_terminology = legacy_terminology
 
     def add(
         self,
@@ -574,6 +615,7 @@ class MetricCollector:
                     metric["direction"],
                     run_summary,
                     bool(metric["advisory"]),
+                    legacy_terminology=self.legacy_terminology,
                 ),
             }
         return rendered
@@ -877,7 +919,9 @@ def add_metrics(collector: MetricCollector, document: dict[str, Any], run: str) 
         )
 
 
-def identity(document: dict[str, Any]) -> dict[str, Any]:
+def identity(
+    document: dict[str, Any], *, require_collector: bool = True
+) -> dict[str, Any]:
     environment = value_at(document, "environment")
     artifact = value_at(document, "artifact")
     config = value_at(document, "config")
@@ -925,7 +969,7 @@ def identity(document: dict[str, Any]) -> dict[str, Any]:
         artifact_identity["capsule_bytes"] = capsule_bytes
     if not config:
         fail("baseline identity configuration must not be empty")
-    return {
+    result = {
         "environment": {
             field: environment[field]
             for field in (
@@ -946,6 +990,16 @@ def identity(document: dict[str, Any]) -> dict[str, Any]:
         "artifact": artifact_identity,
         "config": config,
     }
+    if require_collector:
+        try:
+            result["collector"] = require_native_collector_identity(
+                artifact.get("collector"),
+                "baseline native collector identity",
+                "phase0-baseline",
+            )
+        except CollectorIdentityError as error:
+            fail(str(error))
+    return result
 
 
 def host_comparability_identity(observation: dict[str, Any]) -> dict[str, Any]:
@@ -1022,6 +1076,7 @@ def validate_source_identity(
     phase: str,
     source_commit: str,
     source_tree: str,
+    require_durable_provenance: bool,
 ) -> dict[str, Any]:
     source_identity = observation.get("source_identity")
     if not isinstance(source_identity, dict):
@@ -1053,13 +1108,85 @@ def validate_source_identity(
     execution_commit = source_identity["execution_commit"]
     if not isinstance(execution_commit, str) or not execution_commit:
         fail(f"{run} host observation has no execution commit ({phase})")
-    return {
+    identity = {
         "published_commit": source_commit,
         "published_tree": source_tree,
         "execution_commit": execution_commit,
         "execution_tree": source_tree,
         "tree_identity_verified": True,
     }
+    if not require_durable_provenance:
+        return identity
+
+    required_durable = (
+        "published_source_ref",
+        "published_source_ref_head",
+        "published_commit_reachable_from_ref",
+        "execution_commit_matches_published",
+    )
+    missing_durable = [field for field in required_durable if field not in source_identity]
+    if missing_durable:
+        fail(
+            f"{run} host observation lacks durable published-source provenance "
+            f"({phase}): {', '.join(missing_durable)}"
+        )
+    published_ref = source_identity["published_source_ref"]
+    if not isinstance(published_ref, str) or not published_ref.strip():
+        fail(f"{run} host observation has no durable published source ref ({phase})")
+    ref_head = source_identity["published_source_ref_head"]
+    if not isinstance(ref_head, str):
+        fail(f"{run} host observation has an invalid durable source-ref head ({phase})")
+    require_object_id(ref_head, f"{run} durable source-ref head ({phase})")
+    if source_identity["published_commit_reachable_from_ref"] is not True:
+        fail(f"{run} did not verify published commit reachability from its durable ref ({phase})")
+    if source_identity["execution_commit_matches_published"] is not True:
+        fail(f"{run} did not verify execution HEAD equals the published commit ({phase})")
+    if execution_commit != source_commit:
+        fail(f"{run} execution HEAD does not equal the published source commit ({phase})")
+    identity.update(
+        {
+            "published_source_ref": published_ref,
+            "published_source_ref_head": ref_head,
+            "published_commit_reachable_from_ref": True,
+            "execution_commit_matches_published": True,
+        }
+    )
+    return identity
+
+
+def validate_execution_status(
+    execution: dict[str, Any],
+    *,
+    run: str,
+    source_commit: str,
+    source_tree: str,
+    source_identity: dict[str, Any],
+    require_durable_provenance: bool,
+) -> None:
+    expected_schema = (
+        EXECUTION_STATUS_SCHEMA
+        if require_durable_provenance
+        else LEGACY_EXECUTION_STATUS_SCHEMA
+    )
+    if (
+        execution.get("schema_version") != expected_schema
+        or execution.get("source_commit") != source_commit
+        or execution.get("source_tree") != source_tree
+        or execution.get("execution_tree") != source_tree
+        or execution.get("execution_commit") != source_identity["execution_commit"]
+        or execution.get("exit_code") != 0
+    ):
+        fail(f"{run} did not complete the full-profile command successfully")
+    if not require_durable_provenance:
+        return
+    for field in (
+        "published_source_ref",
+        "published_source_ref_head",
+        "published_commit_reachable_from_ref",
+        "execution_commit_matches_published",
+    ):
+        if execution.get(field) != source_identity[field]:
+            fail(f"{run} execution status does not match durable host source provenance")
 
 
 def host_summary(
@@ -1108,8 +1235,31 @@ def host_summary(
 
 
 def build_aggregate(
-    runs_directory: Path, source_commit: str, source_tree: str, minimum_runs: int
+    runs_directory: Path,
+    source_commit: str,
+    source_tree: str,
+    minimum_runs: int,
+    *,
+    allow_historical_legacy_provenance: bool = False,
 ) -> dict[str, Any]:
+    """Build a calibration aggregate from raw runs.
+
+    The default is the authorization-capable v2 format.  The explicit legacy
+    mode exists solely to preserve and inspect immutable v1 archives; it is
+    intentionally not exposed by the collector or command-line verifier.
+    """
+
+    require_durable_provenance = not allow_historical_legacy_provenance
+    expected_host_schema = (
+        HOST_OBSERVATION_SCHEMA
+        if require_durable_provenance
+        else LEGACY_HOST_OBSERVATION_SCHEMA
+    )
+    aggregate_schema = (
+        CALIBRATION_SCHEMA
+        if require_durable_provenance
+        else LEGACY_CALIBRATION_SCHEMA
+    )
     run_dirs = sorted(
         path
         for path in runs_directory.iterdir()
@@ -1118,7 +1268,9 @@ def build_aggregate(
     if len(run_dirs) < minimum_runs:
         fail(f"expected at least {minimum_runs} full-profile runs, found {len(run_dirs)}")
     calibration_root = runs_directory.parent
-    collector = MetricCollector()
+    collector = MetricCollector(
+        legacy_terminology=allow_historical_legacy_provenance
+    )
     identities: list[tuple[str, dict[str, Any]]] = []
     host_identities: list[tuple[str, dict[str, Any]]] = []
     source_identities: list[tuple[str, dict[str, Any]]] = []
@@ -1153,20 +1305,9 @@ def build_aggregate(
                 f"{run} hard invariant set differs from canonical {expected_check_run} "
                 f"set ({'; '.join(differences)})"
             )
-        if (
-            execution.get("schema_version")
-            != "latent.phase0.calibration.execution-status.v1"
-            or execution.get("source_commit") != source_commit
-            or execution.get("source_tree") != source_tree
-            or execution.get("execution_tree") != source_tree
-            or not isinstance(execution.get("execution_commit"), str)
-            or not execution.get("execution_commit")
-            or execution.get("exit_code") != 0
-        ):
-            fail(f"{run} did not complete the full-profile command successfully")
         before_source_identity: dict[str, Any] | None = None
         for phase, observation in (("before", before), ("after", after)):
-            if observation.get("schema_version") != HOST_OBSERVATION_SCHEMA:
+            if observation.get("schema_version") != expected_host_schema:
                 fail(f"{run} has an unexpected host observation schema ({phase})")
             if observation.get("source_commit") != source_commit:
                 fail(f"{run} host observation does not match the source commit")
@@ -1178,6 +1319,7 @@ def build_aggregate(
                 phase=phase,
                 source_commit=source_commit,
                 source_tree=source_tree,
+                require_durable_provenance=require_durable_provenance,
             )
             if before_source_identity is None:
                 before_source_identity = observed_source_identity
@@ -1187,8 +1329,14 @@ def build_aggregate(
                 fail(f"{run} changed source provenance during its full-profile process")
         if before_source_identity is None:
             fail(f"{run} has no host source provenance")
-        if execution["execution_commit"] != before_source_identity["execution_commit"]:
-            fail(f"{run} execution status does not match host source provenance")
+        validate_execution_status(
+            execution,
+            run=run,
+            source_commit=source_commit,
+            source_tree=source_tree,
+            source_identity=before_source_identity,
+            require_durable_provenance=require_durable_provenance,
+        )
         before_host_identity = host_comparability_identity(before)
         after_host_identity = host_comparability_identity(after)
         if stable_json(after_host_identity) != stable_json(before_host_identity):
@@ -1196,22 +1344,26 @@ def build_aggregate(
                 f"{run} changed static host comparability identity during its "
                 "full-profile process"
             )
-        identities.append((run, identity(document)))
+        run_identity = identity(
+            document, require_collector=require_durable_provenance
+        )
+        identities.append((run, run_identity))
         host_identities.append((run, before_host_identity))
         source_identities.append((run, before_source_identity))
         add_metrics(collector, document, run)
-        raw_runs.append(
-            {
-                "run": run,
-                "raw_results": relative_path(raw_path, calibration_root),
-                "baseline_report": relative_path(report_path, calibration_root),
-                "host_before": relative_path(before_path, calibration_root),
-                "host_after": relative_path(after_path, calibration_root),
-                "execution_status": relative_path(execution_path, calibration_root),
-                "status": document["status"],
-                "generated_at_unix_millis": document.get("generated_at_unix_millis"),
-            }
-        )
+        raw_run = {
+            "run": run,
+            "raw_results": relative_path(raw_path, calibration_root),
+            "baseline_report": relative_path(report_path, calibration_root),
+            "host_before": relative_path(before_path, calibration_root),
+            "host_after": relative_path(after_path, calibration_root),
+            "execution_status": relative_path(execution_path, calibration_root),
+            "status": document["status"],
+            "generated_at_unix_millis": document.get("generated_at_unix_millis"),
+        }
+        if require_durable_provenance:
+            raw_run["collector_identity"] = run_identity["collector"]
+        raw_runs.append(raw_run)
         observations.append((run, before, after, before_path, after_path))
     reference_identity = identities[0][1]
     inconsistent = [
@@ -1224,6 +1376,16 @@ def build_aggregate(
             "every run must retain the same environment, toolchain, fixture digest, "
             f"configuration, and build profile; inconsistent: {', '.join(inconsistent)}"
         )
+    if require_durable_provenance:
+        try:
+            verify_retained_native_collector(
+                calibration_root,
+                reference_identity["collector"],
+                "calibration native collector",
+                "phase0-baseline",
+            )
+        except CollectorIdentityError as error:
+            fail(str(error))
     reference_host_identity = host_identities[0][1]
     inconsistent_hosts = [
         run
@@ -1249,8 +1411,52 @@ def build_aggregate(
     if expected_check_names is None:
         fail("no hard invariant set was available to validate")
     metrics = collector.render()
+    comparison_method = {
+        "applicability": (
+            "Compare only a candidate with at least seven independent full-profile "
+            "runs whose CPU, logical CPU count, memory, kernel, virtualization, "
+            "Rust/Cargo/Wasmtime versions, target, build profile, allocator, "
+            "fixture digest, and configuration are materially equivalent."
+        ),
+        "hard_invariant_rule": (
+            "Topology, capacity, containment, cleanup, and reclamation checks remain "
+            "binary. Any failure is a failure, never a statistical tolerance."
+        ),
+        "no_detectable_regression_rule": (
+            "An inside-band candidate is terminally no detectable regression or "
+            "statistically indistinguishable when it has at least seven valid "
+            "comparable runs, a stable environment, all hard invariants passing, "
+            "and no material run-level outlier."
+        ),
+        "regression_candidate_rule": (
+            "A deterioration beyond an advisory band is a regression candidate; "
+            "preserve all raw runs and repeat a comparable seven-run set."
+        ),
+        "confirmed_regression_rule": (
+            "Repeated outside-band deterioration in the second comparable set is "
+            "a confirmed regression."
+        ),
+        "shared_hosted_ci": (
+            "Hosted CI may run deterministic correctness smoke checks but must not "
+            "fail on these microbenchmark bands."
+        ),
+        "not_a_production_slo": True,
+        "not_a_cross_machine_claim": True,
+    }
+    if allow_historical_legacy_provenance:
+        comparison_method["inconclusive_rule"] = (
+            "Insufficient samples, environment instability or mismatch, a material "
+            "run-level outlier, or a failed hard invariant is inconclusive and "
+            "must be rerun after the invalid condition is resolved."
+        )
+    else:
+        comparison_method["rerun_required_rule"] = (
+            "Insufficient samples, environment instability or mismatch, a material "
+            "run-level outlier, or a failed hard invariant invalidates the comparison "
+            "and requires a fresh rerun after the invalid condition is resolved."
+        )
     return {
-        "schema_version": CALIBRATION_SCHEMA,
+        "schema_version": aggregate_schema,
         "status": "pass",
         "generated_at_utc": now_utc(),
         "observational_only": True,
@@ -1262,8 +1468,17 @@ def build_aggregate(
         "source_tree": source_tree,
         "source_provenance": {
             **reference_source_identity,
+            **(
+                {"schema_version": SOURCE_PROVENANCE_SCHEMA}
+                if require_durable_provenance
+                else {}
+            ),
             "rule": (
-                "The published commit must remain reachable, and every local execution "
+                "The collector resolved the durable branch or tag, verified the "
+                "published commit is reachable from its recorded head, and measured "
+                "only a clean worktree whose HEAD exactly equals that commit."
+                if require_durable_provenance
+                else "The published commit must remain reachable, and every local execution "
                 "worktree must exactly match its recorded Git tree."
             ),
         },
@@ -1293,43 +1508,7 @@ def build_aggregate(
             for name, metric in metrics.items()
             if metric["run_level_outliers"]
         },
-        "comparison_method": {
-            "applicability": (
-                "Compare only a candidate with at least seven independent full-profile "
-                "runs whose CPU, logical CPU count, memory, kernel, virtualization, "
-                "Rust/Cargo/Wasmtime versions, target, build profile, allocator, "
-                "fixture digest, and configuration are materially equivalent."
-            ),
-            "hard_invariant_rule": (
-                "Topology, capacity, containment, cleanup, and reclamation checks remain "
-                "binary. Any failure is a failure, never a statistical tolerance."
-            ),
-            "no_detectable_regression_rule": (
-                "An inside-band candidate is terminally no detectable regression or "
-                "statistically indistinguishable when it has at least seven valid "
-                "comparable runs, a stable environment, all hard invariants passing, "
-                "and no material run-level outlier."
-            ),
-            "inconclusive_rule": (
-                "Insufficient samples, environment instability or mismatch, a material "
-                "run-level outlier, or a failed hard invariant is inconclusive and "
-                "must be rerun after the invalid condition is resolved."
-            ),
-            "regression_candidate_rule": (
-                "A deterioration beyond an advisory band is a regression candidate; "
-                "preserve all raw runs and repeat a comparable seven-run set."
-            ),
-            "confirmed_regression_rule": (
-                "Repeated outside-band deterioration in the second comparable set is "
-                "a confirmed regression."
-            ),
-            "shared_hosted_ci": (
-                "Hosted CI may run deterministic correctness smoke checks but must not "
-                "fail on these microbenchmark bands."
-            ),
-            "not_a_production_slo": True,
-            "not_a_cross_machine_claim": True,
-        },
+        "comparison_method": comparison_method,
     }
 
 
@@ -1365,19 +1544,26 @@ def first_difference(expected: Any, actual: Any, path: str = "$") -> str:
     return ""
 
 
-def verify_aggregate(
+def _verify_aggregate(
     aggregate_path: Path,
     source_commit: str,
     source_tree: str,
     runs_directory: Path | None = None,
+    *,
+    allow_historical_legacy_provenance: bool,
 ) -> dict[str, Any]:
-    """Regenerate and compare a fresh calibration aggregate without writing files."""
+    """Regenerate and compare a retained calibration aggregate without writing."""
 
     require_object_id(source_commit, "expected source commit")
     require_object_id(source_tree, "expected source tree")
     require_regular_file(aggregate_path, "calibration aggregate")
     retained = load_json(aggregate_path)
-    if retained.get("schema_version") != CALIBRATION_SCHEMA:
+    expected_schema = (
+        LEGACY_CALIBRATION_SCHEMA
+        if allow_historical_legacy_provenance
+        else CALIBRATION_SCHEMA
+    )
+    if retained.get("schema_version") != expected_schema:
         fail("calibration aggregate has an unexpected schema")
     if retained.get("source_commit") != source_commit:
         fail("calibration aggregate source commit does not match the expected source")
@@ -1395,7 +1581,13 @@ def verify_aggregate(
         )
     raw_runs = runs_directory if runs_directory is not None else aggregate_path.parent / "runs"
     require_directory(raw_runs, "calibration runs directory")
-    regenerated = build_aggregate(raw_runs.resolve(), source_commit, source_tree, minimum_runs)
+    regenerated = build_aggregate(
+        raw_runs.resolve(),
+        source_commit,
+        source_tree,
+        minimum_runs,
+        allow_historical_legacy_provenance=allow_historical_legacy_provenance,
+    )
     retained_comparable = dict(retained)
     regenerated_comparable = dict(regenerated)
     retained_comparable.pop("generated_at_utc", None)
@@ -1407,6 +1599,40 @@ def verify_aggregate(
             + (f": {difference}" if difference else "")
         )
     return regenerated
+
+
+def verify_aggregate(
+    aggregate_path: Path,
+    source_commit: str,
+    source_tree: str,
+    runs_directory: Path | None = None,
+) -> dict[str, Any]:
+    """Verify an authorization-capable v2 calibration aggregate."""
+
+    return _verify_aggregate(
+        aggregate_path,
+        source_commit,
+        source_tree,
+        runs_directory,
+        allow_historical_legacy_provenance=False,
+    )
+
+
+def verify_historical_aggregate(
+    aggregate_path: Path,
+    source_commit: str,
+    source_tree: str,
+    runs_directory: Path | None = None,
+) -> dict[str, Any]:
+    """Verify immutable v1 raw archives without making them gate-eligible."""
+
+    return _verify_aggregate(
+        aggregate_path,
+        source_commit,
+        source_tree,
+        runs_directory,
+        allow_historical_legacy_provenance=True,
+    )
 
 
 def number_text(value: Any) -> str:
@@ -1449,8 +1675,28 @@ def render_report(document: dict[str, Any], output_json: Path, output_report: Pa
         "|---|---|",
         f"| Published source commit | {markdown_cell(source_provenance['published_commit'])} |",
         f"| Published source Git tree | {markdown_cell(source_provenance['published_tree'])} |",
+        *(
+            [
+                f"| Durable published source ref | "
+                f"{markdown_cell(source_provenance['published_source_ref'])} |",
+                f"| Resolved durable ref head | "
+                f"{markdown_cell(source_provenance['published_source_ref_head'])} |",
+                f"| Published commit reachable from ref | "
+                f"{markdown_cell(source_provenance['published_commit_reachable_from_ref'])} |",
+            ]
+            if source_provenance.get("schema_version") == SOURCE_PROVENANCE_SCHEMA
+            else []
+        ),
         f"| Local execution commit | {markdown_cell(source_provenance['execution_commit'])} |",
         f"| Local execution Git tree | {markdown_cell(source_provenance['execution_tree'])} |",
+        *(
+            [
+                f"| Execution HEAD equals published commit | "
+                f"{markdown_cell(source_provenance['execution_commit_matches_published'])} |"
+            ]
+            if source_provenance.get("schema_version") == SOURCE_PROVENANCE_SCHEMA
+            else []
+        ),
         (
             f"| Published/execution tree identity verified | "
             f"{markdown_cell(source_provenance['tree_identity_verified'])} |"
@@ -1623,11 +1869,21 @@ def render_report(document: dict[str, Any], output_json: Path, output_report: Pa
                 "a stable environment, all hard invariants passing, and no material "
                 "run-level outlier is terminally **no detectable regression** (or "
                 "statistically indistinguishable). Insufficient samples, environment "
-                "instability, material outliers, or a failed invariant are inconclusive "
-                "and must be rerun after the invalid condition is resolved. A "
-                "deterioration outside a band is a regression candidate that requires "
-                "a second comparable set; repeated outside-band deterioration confirms "
-                "the regression."
+                "instability, material outliers, or a failed invariant invalidate the "
+                "comparison and require a fresh rerun after the invalid condition is "
+                "resolved. A deterioration outside a band is a regression candidate "
+                "that requires a second comparable set; repeated outside-band "
+                "deterioration confirms the regression."
+                if document["schema_version"] == CALIBRATION_SCHEMA
+                else "An inside-band candidate with at least seven valid comparable "
+                "runs, a stable environment, all hard invariants passing, and no "
+                "material run-level outlier is terminally **no detectable regression** "
+                "(or statistically indistinguishable). Insufficient samples, "
+                "environment instability, material outliers, or a failed invariant are "
+                "inconclusive and must be rerun after the invalid condition is "
+                "resolved. A deterioration outside a band is a regression candidate "
+                "that requires a second comparable set; repeated outside-band "
+                "deterioration confirms the regression."
             ),
             "",
             "Shared hosted CI must never fail on these microbenchmark bands; it may run "
@@ -1681,6 +1937,8 @@ def parse_arguments(arguments: list[str]) -> argparse.Namespace:
     capture.add_argument("--run-index", type=int, required=True)
     capture.add_argument("--source-commit", required=True)
     capture.add_argument("--source-tree", required=True)
+    capture.add_argument("--published-source-ref", required=True)
+    capture.add_argument("--published-source-ref-head", required=True)
     capture.add_argument("--execution-commit", required=True)
     capture.add_argument("--execution-tree", required=True)
     capture.add_argument("--repository-root", type=Path, required=True)
@@ -1716,6 +1974,8 @@ def main(arguments: list[str] | None = None) -> int:
                 parsed.run_index,
                 parsed.source_commit,
                 parsed.source_tree,
+                parsed.published_source_ref,
+                parsed.published_source_ref_head,
                 parsed.execution_commit,
                 parsed.execution_tree,
                 parsed.repository_root.resolve(),

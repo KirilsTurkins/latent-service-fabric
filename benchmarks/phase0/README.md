@@ -4,21 +4,25 @@ raw-results.json and BASELINE.md are the original full-profile observation.
 They remain useful as historical evidence, but their WSL2 environment means
 they are not the Phase 1 variance reference.
 
-The fresh native-Linux reference for the selected ordinary Phase 0
+The August 29 native-Linux reference for the selected ordinary Phase 0
 configuration is retained under
 benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3. Its CALIBRATION.md and
 aggregate.json describe seven independent full-profile processes, link every
 individual raw run, and retain published/execution Git-tree provenance. It
 explicitly records prepared-cache enablement, `on_demand` Wasmtime allocation,
 and initialized-memory COW. Historical calibration archives remain retained as
-historical evidence; the current profiling and soak packages use this fresh
-reference.
+historical evidence. The August 29 calibration, profiling, and soak packages
+are all historical and cannot authorize the current execution tree.
 
 Generate a new reference only from a clean worktree on a stable native-Linux
 host or VM:
 
 ~~~bash
-tools/run_phase0_calibration.sh benchmarks/phase0/calibration/native-linux-YYYY-MM-DD
+tools/run_phase0_calibration.sh \
+  --published-source-commit <reachable-commit-sha> \
+  --published-source-tree <reachable-tree-sha> \
+  --published-source-ref <durable-branch-or-tag> \
+  /var/tmp/phase0-evidence/calibration
 ~~~
 
 The command refuses WSL and detected containers, requires a fresh output
@@ -27,21 +31,20 @@ and invokes tools/run_phase0_baselines.sh full seven times. Each invocation
 still validates contracts and fixtures and still treats all containment,
 topology, capacity, reclamation, and resource checks as pass/fail.
 
-For an evidence archive that will be published from a different local Git
-commit object, first publish a durable branch or tag, then give the wrapper its
-reachable commit and tree IDs:
+First publish a durable branch or tag, then give the wrapper its reachable
+commit, tree, and ref IDs:
 
 ~~~bash
 tools/run_phase0_calibration.sh \
   --published-source-commit <reachable-commit-sha> \
   --published-source-tree <reachable-tree-sha> \
-  benchmarks/phase0/calibration/native-linux-YYYY-MM-DD
+  --published-source-ref <durable-branch-or-tag> \
+  /var/tmp/phase0-evidence/calibration
 ~~~
 
-The wrapper rejects a local worktree whose Git tree differs from that published
-tree. Each run and aggregate retain the published commit/tree and local
-execution commit/tree, so replacing a recorded commit is never an unsupported
-text substitution.
+The wrapper requires the checked-out commit to be the published commit, rejects
+a local worktree whose Git tree differs from that published tree, and records
+the durable ref plus its resolved head in every run and aggregate.
 
 When this calibration is intended for the selected issue-40 ordinary
 configuration, the helper explicitly runs and records prepared-cache enabled,
@@ -99,13 +102,14 @@ single or small candidate set is not a Phase 0 optimization decision. See
 [the profiling handoff](../../docs/phase-0-hot-path-profiling.md) for the
 guardrails, decisions, and Phase 1 ownership.
 
-The current native-Linux archive is
+The historical August 29 native-Linux archive is
 [native-linux-2026-08-29-a724a5e3](profiling/native-linux-2026-08-29-a724a5e3/README.md).
 Its `aggregate.json` and `PROFILE.md` are directly readable; its complete raw
 profile tree is losslessly retained as checksummed `raw-evidence.tar.zst`
 fragments for practical Git storage. The archive identifies durable source commit
 `a724a5e35234175f1001d1983e4411296ffa6b78` and tree
-`c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`.
+`c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`. It cannot authorize the current
+source tree.
 
 ## Native-Linux long-running resource soak
 
@@ -118,9 +122,10 @@ or VM, first publishing the exact source commit or tag:
 tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
+  --published-source-ref <durable-branch-or-tag> \
   --final-configuration-commit <reachable-final-commit> \
-  --calibration benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json \
-  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+  --calibration /var/tmp/phase0-evidence/calibration/aggregate.json \
+  /var/tmp/phase0-evidence/soak
 ~~~
 
 The wrapper refuses WSL, containers, missing native `/proc` probes, missing
@@ -143,20 +148,19 @@ aggregate applies the #38 calibrated RSS noise band to RSS and (where
 available) PSS/private material-growth triage only after CPU, memory, kernel,
 virtualization, toolchain, allocator, fixture, and relevant configuration
 identity—including prepared-cache enablement, Wasmtime allocator mode, and
-initialized-memory COW—are recorded as matched. Otherwise it emits an explicit
-inconclusive result. It reports rolling ranges, final-window deltas, robust
+initialized-memory COW—are recorded as matched. Otherwise it blocks the
+calibrated comparison and authorization. It reports rolling ranges, final-window deltas, robust
 late-window slopes and peaks. A material growth
 result is not fixed by increasing the allowance: it remains failed until a
 retaining subsystem or focused follow-up issue is recorded. Record that
 diagnosis in the same archive with `--retaining-subsystem <name>` and/or
 `--followup-issue <URL-or-number>`.
 
-The retained final-config raw evidence is
+The retained August 29 final-config raw evidence is
 [native-linux-2026-08-29-a724a5e3](soak/native-linux-2026-08-29-a724a5e3/README.md). It retains all three machine-readable
 raw process series losslessly in a checksummed zstd archive, alongside
 the aggregate, concise report, host observations, command statuses, and
 raw-file hashes, without duplicating earlier attempts. Its hard invariants,
 full descriptor lifecycle, release/shutdown topology, and calibrated
 late-window RSS/PSS/private/VM analysis pass against the matching seven-process
-calibration. This remains observational evidence rather than a production or
-arbitrary-duration claim, and it does not by itself authorize Phase 1.
+calibration. It is historical evidence and cannot authorize the current branch.

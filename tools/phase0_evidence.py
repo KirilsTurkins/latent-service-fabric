@@ -40,7 +40,13 @@ SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 OBJECT_ID_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 CHECKSUM_LINE_PATTERN = re.compile(r"^([0-9a-f]{64})  (.+)$")
 
-CALIBRATION_SCHEMA = "latent.phase0.calibration.v1"
+# The current calibration schema carries durable pushed-ref provenance.  The
+# legacy schema is accepted only by the archive-integrity verifier below so
+# immutable historical packages remain inspectable; gate-facing validation
+# imports CALIBRATION_SCHEMA and rejects it.
+CALIBRATION_SCHEMA = calibration_aggregate.CALIBRATION_SCHEMA
+LEGACY_CALIBRATION_SCHEMA = calibration_aggregate.LEGACY_CALIBRATION_SCHEMA
+CALIBRATION_SOURCE_PROVENANCE_SCHEMA = calibration_aggregate.SOURCE_PROVENANCE_SCHEMA
 PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v5"
 SOAK_SCHEMA = "latent.phase0.resource-soak.aggregate.v1"
 EXECUTION_IDENTITY_SCHEMA = "latent.phase0.execution-evidence.v1"
@@ -54,6 +60,7 @@ EXECUTION_RELEVANT_PATHS = (
     ".cargo",
     "Cargo.lock",
     "Cargo.toml",
+    "rust-toolchain.toml",
     "api",
     "apps/latentd",
     "crates",
@@ -64,11 +71,15 @@ EXECUTION_RELEVANT_PATHS = (
     "tools/aggregate_phase0_hot_path_profiles.py",
     "tools/aggregate_phase0_resource_soak.py",
     "tools/build_echo_capsule.py",
+    "tools/phase0_build_environment.sh",
+    "tools/phase0_collector_identity.py",
     "tools/run_phase0_baselines.sh",
     "tools/run_phase0_calibration.sh",
     "tools/run_phase0_hot_path_profiles.sh",
     "tools/run_phase0_resource_soak.sh",
     "tools/run_phase0_spike.sh",
+    "tools/toolchain-smoke",
+    "tools/toolchain.toml",
     "tools/validate_contracts.sh",
 )
 
@@ -421,7 +432,11 @@ def _calibration_outer_files(root: Path) -> None:
 
 def verify_calibration_evidence(aggregate_path: Path) -> dict[str, Any]:
     retained = load_json(aggregate_path, "calibration aggregate")
-    _require(retained.get("schema_version") == CALIBRATION_SCHEMA, "unexpected calibration schema")
+    schema_version = retained.get("schema_version")
+    _require(
+        schema_version in {CALIBRATION_SCHEMA, LEGACY_CALIBRATION_SCHEMA},
+        "unexpected calibration schema",
+    )
     root = aggregate_path.parent.resolve()
     _calibration_outer_files(root)
     archive_path = root / "raw-evidence.tar.zst"
@@ -453,7 +468,16 @@ def verify_calibration_evidence(aggregate_path: Path) -> dict[str, Any]:
         minimum_runs = _positive_int(retained.get("minimum_required_run_count"), "calibration minimum run count")
         try:
             regenerated = calibration_aggregate.build_aggregate(
-                extracted_root / "runs", source_commit, source_tree, minimum_runs
+                extracted_root / "runs",
+                source_commit,
+                source_tree,
+                minimum_runs,
+                # Preserve historical v1 package integrity without treating it
+                # as current authorization evidence.  validate_phase0_gate
+                # accepts only CALIBRATION_SCHEMA (v2).
+                allow_historical_legacy_provenance=(
+                    schema_version == LEGACY_CALIBRATION_SCHEMA
+                ),
             )
         except calibration_aggregate.CalibrationError as error:
             raise EvidenceValidationError(f"calibration raw evidence is invalid: {error}") from error

@@ -3,7 +3,8 @@
 This document separates the Phase 0 invariants exercised by the executable
 spike from target invariants that remain Phase 1 or later work. The retained
 clean-checkout [completion receipt](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-is authorized for Phase 1 work; see [`../phase-0-completion.md`](../phase-0-completion.md).
+is historical only; fresh evidence is required before the current branch can
+authorize Phase 1. See [`../phase-0-completion.md`](../phase-0-completion.md).
 
 ## Phase 0 exercised subset
 
@@ -33,14 +34,12 @@ The Wasmtime epoch-interruption mechanism may add one bounded helper OS thread
 after preparation. The invariant is fixed configured/node runtime topology,
 not byte-for-byte constancy of raw OS thread count while an engine runs.
 
-The retained three-process resource soak passes its hard logical-resource and
-terminal-topology checks and proves a calibrated plateau for the recorded
-native-Linux configuration: its seven-process calibration is matched and its
-descriptor-lifecycle evidence is complete. The soak alone remains a
-single-host observational result and does not authorize Phase 1. The separate
-clean-checkout full gate has now produced the required
-[authorized receipt](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-after its identity, archive, profile, and fresh-baseline checks passed.
+The retained three-process resource soak passes its historical hard
+logical-resource and terminal-topology checks and proves a calibrated plateau
+for the recorded native-Linux configuration: its seven-process calibration is
+matched and its descriptor-lifecycle evidence is complete. It is single-host
+historical evidence and does not authorize Phase 1. Fresh identity, archive,
+profile, soak, and baseline checks are required for current authorization.
 
 ## Dormant-service scaling — not yet proven
 

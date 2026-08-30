@@ -29,11 +29,11 @@ bounded epoch-interruption helper thread after preparation; that is fixed
 node/runtime infrastructure, not a per-service thread.
 
 The retained native-Linux resource soak has a matched calibration identity and
-complete descriptor-lifecycle evidence. A separate clean checkout completed
-`make phase0-gate` with an [authorized receipt](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json),
-so the narrow Phase 0 gate authorizes Phase 1 work. The measurements remain
-observational and single-host; their boundaries and the Phase 1 handoff are
-recorded in [`../phase-0-completion.md`](../phase-0-completion.md).
+complete descriptor-lifecycle evidence for its historical source tree. Verifier
+and measured-source changes require fresh evidence before the current branch
+can authorize Phase 1. The measurements remain observational and single-host;
+their boundaries and the Phase 1 handoff are recorded in
+[`../phase-0-completion.md`](../phase-0-completion.md).
 
 Phase 0 did not prove dormant registration at 100,000 services, route or
 admission behavior, persistent management/deployment, production

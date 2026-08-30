@@ -1264,7 +1264,7 @@ fn spike_result_from_activation(
         schema_version: RESULT_SCHEMA_VERSION,
         surface,
         production_ready: false,
-        phase1_api_compatible: true,
+        phase1_api_compatible: false,
         activation_id: activation.activation_id.clone(),
         outcome: activation.outcome.clone(),
         terminal_state: activation.terminal_state.clone(),
@@ -1849,7 +1849,7 @@ fn preflight_failure_with_preparation(
             schema_version: RESULT_SCHEMA_VERSION,
             surface: config.surface,
             production_ready: false,
-            phase1_api_compatible: true,
+            phase1_api_compatible: false,
             activation_id: config.activation_id.0.clone(),
             outcome: if internal {
                 "internal_spike_failure".to_owned()
@@ -1934,7 +1934,7 @@ fn platform_uninitialized_report_for_surface(
             schema_version: RESULT_SCHEMA_VERSION,
             surface,
             production_ready: false,
-            phase1_api_compatible: true,
+            phase1_api_compatible: false,
             activation_id: activation_id.to_owned(),
             outcome: outcome.to_owned(),
             terminal_state: Some("rejected".to_owned()),

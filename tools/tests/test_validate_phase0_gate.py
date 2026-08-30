@@ -11,7 +11,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from tools.phase0_collector_identity import EXPECTED_RELEASE_BUILD_CONFIGURATION
 from tools.phase0_evidence import (
+    CALIBRATION_SCHEMA,
+    CALIBRATION_SOURCE_PROVENANCE_SCHEMA,
     EvidenceValidationError,
     PROFILE_SCHEMA,
     _profile_required_candidate_runs,
@@ -22,9 +25,20 @@ from tools.phase0_evidence import (
 )
 from tools.validate_phase0_gate import (
     GateValidationError,
+    PROFILE_SOURCE_PROVENANCE_SCHEMA,
+    REQUIRED_CHECKS,
+    REQUIRED_DECISION_CANDIDATES,
+    REQUIRED_PROFILE_GUARDRAILS,
+    REQUIRED_PROFILE_WORKLOADS,
+    _baseline_authorization_blockers,
+    _baseline_soak_blockers,
+    _collector_blockers,
+    _identity_blockers,
+    _require_baseline_workload_profile,
     build_gate_receipt,
     validate_calibration,
     validate_profiling,
+    validate_resource_soak,
 )
 
 
@@ -42,6 +56,23 @@ HISTORICAL_PROFILE = (
 HISTORICAL_SOAK = (
     REPOSITORY_ROOT / "benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/aggregate.json"
 )
+
+CURRENT_SOAK_CAPSULE_DIGEST = "sha256:" + "c" * 64
+CURRENT_SOAK_CAPSULE_BYTES = 123
+PROFILE_SOURCE_COMMIT = "a" * 40
+PROFILE_SOURCE_TREE = "b" * 40
+PROFILE_SOURCE_REF = "refs/heads/fix/phase0-gate-validation"
+PROFILE_SOURCE_REF_HEAD = "c" * 40
+
+
+def collector_identity(name: str, digest_character: str = "1") -> dict[str, object]:
+    return {
+        "schema_version": "latent.phase0.native-collector.v1",
+        "collector": name,
+        "executable_digest": "sha256:" + digest_character * 64,
+        "executable_bytes": 100,
+        "build_configuration": dict(EXPECTED_RELEASE_BUILD_CONFIGURATION),
+    }
 
 
 def tar_bytes(members: list[tuple[str, bytes, str]]) -> io.BytesIO:
@@ -62,7 +93,311 @@ def tar_bytes(members: list[tuple[str, bytes, str]]) -> io.BytesIO:
     return stream
 
 
+def current_schema_profile() -> dict[str, object]:
+    """Build the smallest complete v5 profile receipt accepted by the gate."""
+
+    digest = "sha256:" + "d" * 64
+    measurement_identity = {
+        "schema_version": "latent.phase0.measurement-identity.v1",
+        "artifact": {
+            "component_digest": "sha256:" + "e" * 64,
+            "component_bytes": 1,
+            "capsule_digest": "sha256:" + "f" * 64,
+            "capsule_bytes": 1,
+        },
+        "configuration": {"pool_capacity": 2},
+    }
+    host_observations = {
+        "before": "host-before.json",
+        "before_sha256": digest,
+        "after": "host-after.json",
+        "after_sha256": digest,
+        "static_identity": {
+            "virtualization": {},
+            "allocator": {},
+            "cpu_frequency_policy": {},
+        },
+    }
+    collector = collector_identity("phase0-baseline")
+
+    def profile_artifact(fields: tuple[str, ...]) -> dict[str, object]:
+        artifact: dict[str, object] = {
+            "measurement_identity": json.loads(json.dumps(measurement_identity)),
+            "host_observations": json.loads(json.dumps(host_observations)),
+        }
+        for field in fields:
+            artifact[field] = f"{field}.data"
+            artifact[f"{field}_sha256"] = digest
+        return artifact
+
+    profiles = []
+    for workload in sorted(REQUIRED_PROFILE_WORKLOADS):
+        profiles.append(
+            {
+                "workload": workload,
+                "scenario_semantics": f"selective {workload} boundary",
+                "selected_scenarios": [],
+                "collector_identity": json.loads(json.dumps(collector)),
+                "composition_identity": json.loads(json.dumps(measurement_identity)),
+                "perf": profile_artifact(("data", "report", "inclusive_report")),
+                "allocation": profile_artifact(
+                    ("data", "report", "leak_report", "compact_contributors")
+                ),
+                "contributor_attribution": {
+                    "categories": {
+                        "runtime": {
+                            "allocation_calls": 1,
+                            "allocation_peak_bytes": 1,
+                            "cpu_self_percent": 1.0,
+                            "cpu_inclusive_percent": 1.0,
+                        }
+                    },
+                    "totals": {"allocation_calls": 1, "allocation_peak_bytes": 1},
+                },
+            }
+        )
+
+    raw_runs = [
+        {
+            "measurement_identity": json.loads(json.dumps(measurement_identity)),
+            "collector_identity": json.loads(json.dumps(collector)),
+            "host_observations": json.loads(json.dumps(host_observations)),
+        }
+        for _ in range(7)
+    ]
+    provenance = {
+        "schema_version": PROFILE_SOURCE_PROVENANCE_SCHEMA,
+        "published_commit": PROFILE_SOURCE_COMMIT,
+        "published_tree": PROFILE_SOURCE_TREE,
+        "published_source_ref": PROFILE_SOURCE_REF,
+        "published_source_ref_head": PROFILE_SOURCE_REF_HEAD,
+        "published_commit_reachable_from_ref": True,
+        "execution_commit": PROFILE_SOURCE_COMMIT,
+        "execution_tree": PROFILE_SOURCE_TREE,
+        "execution_commit_matches_published": True,
+        "tree_identity_verified": True,
+    }
+    return {
+        "schema_version": PROFILE_SCHEMA,
+        "status": "pass",
+        "observational_only": True,
+        "production_slo": False,
+        "cross_platform_claim": False,
+        "source_commit": PROFILE_SOURCE_COMMIT,
+        "source_tree": PROFILE_SOURCE_TREE,
+        "source_provenance": provenance,
+        "collector_identity": json.loads(json.dumps(collector)),
+        "guardrails": dict(REQUIRED_PROFILE_GUARDRAILS),
+        "profiles": profiles,
+        "hard_invariants": {
+            "canonical_names": sorted(REQUIRED_CHECKS),
+            "full_invariant_proof": {
+                "raw_results": "full-invariant-proof/raw-results.json",
+                "raw_results_sha256": digest,
+                "command": "full-invariant-proof/command.json",
+                "command_sha256": digest,
+                "command_identity": {
+                    "source_commit": PROFILE_SOURCE_COMMIT,
+                    "source_tree": PROFILE_SOURCE_TREE,
+                    "published_source_ref": PROFILE_SOURCE_REF,
+                    "published_source_ref_head": PROFILE_SOURCE_REF_HEAD,
+                    "execution_commit": PROFILE_SOURCE_COMMIT,
+                    "execution_tree": PROFILE_SOURCE_TREE,
+                },
+                "measurement_identity": json.loads(json.dumps(measurement_identity)),
+                "composition_identity": json.loads(json.dumps(measurement_identity)),
+                "host_observations": json.loads(json.dumps(host_observations)),
+                "collector_identity": json.loads(json.dumps(collector)),
+            },
+        },
+        "candidates": {
+            "worker-cell-2w-2c": {
+                "run_count": 7,
+                "measurement_identity": json.loads(json.dumps(measurement_identity)),
+                "collector_identity": json.loads(json.dumps(collector)),
+                "raw_runs": raw_runs,
+                "representatives": {
+                    "warm_echo_p50_micros": 1,
+                    "at_capacity_activations_per_second": 1,
+                    "fixed_runtime_rss_bytes": 1,
+                    "peak_rss_bytes": 1,
+                    "post_release_rss_delta_bytes": 0,
+                    "peak_threads": 1,
+                    "peak_open_sockets": 0,
+                    "peak_listening_sockets": 0,
+                },
+                "calibration_comparison_eligibility": {
+                    "status": "reference_equivalent"
+                },
+                "calibration_comparison": {
+                    "warm_echo_p50_micros": {"status": "inside_advisory_band"}
+                },
+            }
+        },
+        "decisions": [
+            {
+                "candidate": candidate,
+                "decision": "defer",
+                "rationale": "bounded experiment only",
+                "handoff": "retain for Phase 1",
+            }
+            for candidate in sorted(REQUIRED_DECISION_CANDIDATES)
+        ],
+    }
+
+
 class Phase0GateEvidenceTests(unittest.TestCase):
+    def test_smoke_baseline_can_pass_validation_but_never_authorize(self) -> None:
+        self.assertEqual(_baseline_authorization_blockers({"profile": "full"}), [])
+        self.assertEqual(
+            _baseline_authorization_blockers({"profile": "smoke"}),
+            [
+                "fresh baseline profile is 'smoke'; Phase 1 authorization "
+                "requires 'full'"
+            ],
+        )
+
+    def test_smoke_workload_cannot_be_relabelled_as_a_full_baseline(self) -> None:
+        smoke_sized = {
+            "mode": "full",
+            "warm_samples": 5,
+            "sequence_repetitions": 2,
+            "throughput_batches": 2,
+            "pool_iterations": 32,
+        }
+        with self.assertRaisesRegex(
+            GateValidationError, "full baseline warm_samples must be at least 40"
+        ):
+            _require_baseline_workload_profile(smoke_sized, 12)
+
+        full_sized = {
+            "mode": "full",
+            "warm_samples": 40,
+            "sequence_repetitions": 10,
+            "throughput_batches": 24,
+            "pool_iterations": 2_000,
+        }
+        with self.assertRaisesRegex(
+            GateValidationError,
+            "full baseline executable harness must retain at least 12",
+        ):
+            _require_baseline_workload_profile(full_sized, 3)
+        self.assertEqual(_require_baseline_workload_profile(full_sized, 12), "full")
+
+    def test_baseline_and_soak_require_the_same_canonical_measurement_identity(self) -> None:
+        toolchain = {
+            "rustc": "rustc",
+            "cargo": "cargo",
+            "rust_target": "x86_64-unknown-linux-gnu",
+            "build_profile": "release",
+            "wasmtime_version": "wasmtime",
+        }
+        measurement_identity = {
+            "schema_version": "latent.phase0.measurement-identity.v1",
+            "artifact": {
+                "component_digest": "sha256:" + "a" * 64,
+                "component_bytes": 1,
+                "capsule_digest": "sha256:" + "b" * 64,
+                "capsule_bytes": 2,
+            },
+            "configuration": {
+                "pool_capacity": 2,
+                "fuel": 100,
+            },
+        }
+        baseline = {
+            "measurement_identity": measurement_identity,
+            "toolchain": toolchain,
+        }
+        soak = {
+            "measurement_identity": json.loads(json.dumps(measurement_identity)),
+            "configuration": {"environment": toolchain},
+        }
+        self.assertEqual(_baseline_soak_blockers(baseline, soak), [])
+
+        soak["measurement_identity"]["artifact"]["capsule_digest"] = (
+            "sha256:" + "c" * 64
+        )
+        self.assertEqual(
+            _baseline_soak_blockers(baseline, soak),
+            [
+                "fresh baseline canonical measurement identity does not match "
+                "the final resource soak"
+            ],
+        )
+
+        soak["measurement_identity"] = json.loads(json.dumps(measurement_identity))
+        soak["measurement_identity"]["configuration"]["fuel"] = 101
+        self.assertEqual(
+            _baseline_soak_blockers(baseline, soak),
+            [
+                "fresh baseline canonical measurement identity does not match "
+                "the final resource soak"
+            ],
+        )
+
+    def current_schema_soak(self) -> dict[str, object]:
+        """Upgrade an immutable archive only in memory for gate-schema tests."""
+
+        document = json.loads(HISTORICAL_SOAK.read_text(encoding="utf-8"))
+        source_commit = document["source_commit"]
+        source_tree = document["source_tree"]
+        provenance = {
+            "schema_version": "latent.phase0.resource-soak.source-provenance.v1",
+            "published_commit": source_commit,
+            "published_tree": source_tree,
+            "published_source_ref": "refs/heads/fix/phase0-gate-validation",
+            "published_source_ref_head": source_commit,
+            "published_commit_reachable_from_ref": True,
+            "execution_commit": source_commit,
+            "execution_tree": source_tree,
+            "execution_commit_matches_published": True,
+            "tree_identity_verified": True,
+        }
+        document["source_provenance"] = provenance
+        configuration = document["configuration_identity"]
+        configuration["collector"] = collector_identity("phase0-soak", "2")
+        configuration["capsule_digest"] = CURRENT_SOAK_CAPSULE_DIGEST
+        configuration["capsule_bytes"] = CURRENT_SOAK_CAPSULE_BYTES
+        configuration["source_identity"].update(
+            {
+                "published_commit": source_commit,
+                "published_tree": source_tree,
+                "published_source_ref": provenance["published_source_ref"],
+                "published_source_ref_head": provenance["published_source_ref_head"],
+                "published_commit_reachable_from_ref": True,
+                "execution_commit": source_commit,
+                "execution_tree": source_tree,
+                "execution_commit_matches_published": True,
+                "tree_identity_verified": True,
+                "final_configuration_commit": source_commit,
+            }
+        )
+        for run in document["raw_runs"]:
+            source_identity = run["source_identity"]
+            source_identity.update(
+                {
+                    "published_commit": source_commit,
+                    "published_tree": source_tree,
+                    "published_source_ref": provenance["published_source_ref"],
+                    "published_source_ref_head": provenance["published_source_ref_head"],
+                    "published_commit_reachable_from_ref": True,
+                    "execution_commit": source_commit,
+                    "execution_tree": source_tree,
+                    "execution_commit_matches_published": True,
+                    "tree_identity_verified": True,
+                    "final_configuration_commit": source_commit,
+                }
+            )
+            run["artifact"].update(
+                {
+                    "capsule_digest": CURRENT_SOAK_CAPSULE_DIGEST,
+                    "capsule_bytes": CURRENT_SOAK_CAPSULE_BYTES,
+                    "collector": collector_identity("phase0-soak", "2"),
+                }
+            )
+        return document
+
     def test_profile_reverification_preserves_reference_and_experiment_run_counts(self) -> None:
         document = {
             "candidates": {
@@ -85,15 +420,153 @@ class Phase0GateEvidenceTests(unittest.TestCase):
         self.assertGreaterEqual(document["run_count"], 7)
         self.assertGreater(len(document["metrics"]), 0)
 
-    def test_historical_calibration_fixture_is_not_gate_eligible_without_capsule_identity(self) -> None:
+    def test_historical_calibration_fixture_is_integrity_verifiable_but_non_authorizing(self) -> None:
         document = verify_calibration_evidence(HISTORICAL_CALIBRATION)
-        with self.assertRaisesRegex(GateValidationError, "calibration capsule digest"):
+        self.assertNotEqual(document["schema_version"], CALIBRATION_SCHEMA)
+        with self.assertRaisesRegex(GateValidationError, "unexpected calibration schema"):
             validate_calibration(document, str(HISTORICAL_CALIBRATION))
 
+    def test_current_calibration_schema_requires_durable_ref_provenance(self) -> None:
+        document = verify_calibration_evidence(HISTORICAL_CALIBRATION)
+        document = json.loads(json.dumps(document))
+        document["schema_version"] = CALIBRATION_SCHEMA
+        document["comparison_method"]["rerun_required_rule"] = (
+            "Invalid comparison inputs require a fresh rerun."
+        )
+        document["comparison_method"].pop("inconclusive_rule")
+        for metric in document["metrics"].values():
+            comparison = metric.get("comparison")
+            if comparison is not None:
+                comparison["rerun_required_rule"] = (
+                    "Invalid comparison inputs require a fresh rerun."
+                )
+                comparison.pop("inconclusive_rule")
         document["reference_identity"]["artifact"]["capsule_digest"] = "sha256:" + "a" * 64
         document["reference_identity"]["artifact"]["capsule_bytes"] = 1
+        document["reference_identity"]["collector"] = collector_identity(
+            "phase0-baseline"
+        )
+        for run in document["raw_runs"]:
+            run["collector_identity"] = collector_identity("phase0-baseline")
+        with self.assertRaisesRegex(
+            GateValidationError, "lacks the durable-ref schema"
+        ):
+            validate_calibration(document, str(HISTORICAL_CALIBRATION))
+
+        source_commit = document["source_commit"]
+        source_tree = document["source_tree"]
+        document["source_provenance"].update(
+            {
+                "schema_version": CALIBRATION_SOURCE_PROVENANCE_SCHEMA,
+                "published_source_ref": "fix/phase0-gate-validation",
+                "published_source_ref_head": source_commit,
+                "published_commit_reachable_from_ref": True,
+                "execution_commit": source_commit,
+                "execution_tree": source_tree,
+                "execution_commit_matches_published": True,
+                "tree_identity_verified": True,
+            }
+        )
         receipt = validate_calibration(document, str(HISTORICAL_CALIBRATION))
         self.assertEqual(receipt["status"], "pass")
+
+    def test_current_schema_soak_requires_durable_provenance_and_capsule_identity(self) -> None:
+        document = self.current_schema_soak()
+        receipt, blockers = validate_resource_soak(document, "soak.json")
+        self.assertEqual(receipt["status"], "pass")
+        self.assertEqual(blockers, [])
+        self.assertEqual(
+            receipt["configuration"]["artifact"]["capsule_digest"],
+            CURRENT_SOAK_CAPSULE_DIGEST,
+        )
+        self.assertEqual(
+            receipt["source_provenance"]["published_source_ref"],
+            "refs/heads/fix/phase0-gate-validation",
+        )
+
+        missing_provenance = self.current_schema_soak()
+        del missing_provenance["source_provenance"]
+        with self.assertRaisesRegex(GateValidationError, "resource-soak source provenance"):
+            validate_resource_soak(missing_provenance, "soak.json")
+
+        missing_capsule = self.current_schema_soak()
+        del missing_capsule["configuration_identity"]["capsule_digest"]
+        with self.assertRaisesRegex(GateValidationError, "resource-soak capsule digest"):
+            validate_resource_soak(missing_capsule, "soak.json")
+
+    def test_current_schema_soak_rejects_mismatched_raw_capsule_and_ref_provenance(self) -> None:
+        capsule_mismatch = self.current_schema_soak()
+        capsule_mismatch["raw_runs"][0]["artifact"]["capsule_digest"] = "sha256:" + "d" * 64
+        with self.assertRaisesRegex(
+            GateValidationError, "raw-run artifact capsule_digest differs"
+        ):
+            validate_resource_soak(capsule_mismatch, "soak.json")
+
+        ref_mismatch = self.current_schema_soak()
+        ref_mismatch["raw_runs"][0]["source_identity"]["published_source_ref_head"] = "d" * 40
+        with self.assertRaisesRegex(
+            GateValidationError, "durable source provenance differs from the aggregate"
+        ):
+            validate_resource_soak(ref_mismatch, "soak.json")
+
+    def test_identity_blockers_compare_canonical_measurement_and_source_provenance(self) -> None:
+        source_commit = "a" * 40
+        source_tree = "b" * 40
+        canonical = {
+            "schema_version": "latent.phase0.measurement-identity.v1",
+            "artifact": {
+                "component_digest": "sha256:" + "e" * 64,
+                "component_bytes": 1,
+                "capsule_digest": "sha256:" + "f" * 64,
+                "capsule_bytes": 1,
+            },
+            "configuration": {"pool_capacity": 2},
+        }
+        different_capsule = json.loads(json.dumps(canonical))
+        different_capsule["artifact"]["capsule_digest"] = "sha256:" + "0" * 64
+        provenance = {
+            "published_commit": source_commit,
+            "published_tree": source_tree,
+            "published_source_ref": "refs/heads/fix/phase0-gate-validation",
+            "published_source_ref_head": source_commit,
+            "published_commit_reachable_from_ref": True,
+            "execution_commit": source_commit,
+            "execution_tree": source_tree,
+            "execution_commit_matches_published": True,
+            "tree_identity_verified": True,
+        }
+        evidence = {
+            "calibration": {
+                "source_commit": source_commit,
+                "source_tree": source_tree,
+                "measurement_identity": canonical,
+            },
+            "resource soak": {
+                "source_commit": source_commit,
+                "source_tree": source_tree,
+                "source_provenance": provenance,
+                "measurement_identity": different_capsule,
+            },
+        }
+        current = {"sha256": "sha256:" + "1" * 64, "worktree_clean": True}
+        execution_identity = {
+            "sha256": current["sha256"],
+            "commit": source_commit,
+            "tree": source_tree,
+        }
+        with patch(
+            "tools.validate_phase0_gate.execution_evidence_identity",
+            return_value=execution_identity,
+        ):
+            identities, blockers = _identity_blockers(current, evidence)
+        self.assertIn(
+            "resource soak canonical measurement identity does not match calibration",
+            blockers,
+        )
+        self.assertEqual(
+            identities["resource soak"]["source_provenance"]["execution_commit"],
+            source_commit,
+        )
 
     @unittest.skipUnless(shutil.which("zstd"), "zstd is required for archive integration verification")
     def test_checked_in_calibration_archive_is_lossless(self) -> None:
@@ -212,7 +685,57 @@ class Phase0GateEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(GateValidationError, "unexpected hot-path profile schema"):
             validate_profiling(document, str(HISTORICAL_PROFILE))
 
-    def test_checksums_validated_profile_calibration_with_different_identity_blocks_gate(self) -> None:
+    def test_profile_receipt_propagates_validated_durable_source_provenance(self) -> None:
+        document = current_schema_profile()
+        receipt = validate_profiling(document, "profiling.json")
+        self.assertEqual(
+            receipt["source_provenance"]["published_source_ref"],
+            PROFILE_SOURCE_REF,
+        )
+        self.assertEqual(
+            receipt["source_provenance"]["execution_commit"],
+            PROFILE_SOURCE_COMMIT,
+        )
+
+        execution_identity = {
+            "sha256": "sha256:" + "1" * 64,
+            "commit": PROFILE_SOURCE_COMMIT,
+            "tree": PROFILE_SOURCE_TREE,
+        }
+        current = {**execution_identity, "worktree_clean": True}
+        with patch(
+            "tools.validate_phase0_gate.execution_evidence_identity",
+            return_value=execution_identity,
+        ):
+            identities, blockers = _identity_blockers(
+                current, {"hot-path profiling": receipt}
+            )
+        self.assertEqual(blockers, [])
+        self.assertEqual(
+            identities["hot-path profiling"]["source_provenance"]["execution_commit"],
+            PROFILE_SOURCE_COMMIT,
+        )
+
+    def test_profile_rejects_mismatched_execution_provenance_and_full_proof(self) -> None:
+        provenance_mismatch = current_schema_profile()
+        provenance_mismatch["source_provenance"]["execution_commit"] = "d" * 40
+        with self.assertRaisesRegex(
+            GateValidationError,
+            "execution commit does not equal the published source commit",
+        ):
+            validate_profiling(provenance_mismatch, "profiling.json")
+
+        proof_mismatch = current_schema_profile()
+        proof_mismatch["hard_invariants"]["full_invariant_proof"]["command_identity"][
+            "execution_commit"
+        ] = "d" * 40
+        with self.assertRaisesRegex(
+            GateValidationError,
+            "full-invariant command identity differs for execution_commit",
+        ):
+            validate_profiling(proof_mismatch, "profiling.json")
+
+    def test_fully_current_receipt_authorizes_and_stale_profile_calibration_blocks_gate(self) -> None:
         """A separately verified profile calibration must still match the current tree.
 
         The verifier stubs deliberately represent already checksummed and
@@ -253,22 +776,50 @@ class Phase0GateEvidenceTests(unittest.TestCase):
             "wasmtime_version": "wasmtime",
         }
         baseline_receipt = {
+            "profile": "full",
             "fixture": {"component_digest": "sha256:" + "e" * 64},
             "configuration": configuration,
             "toolchain": toolchain,
+            "measurement_identity": {
+                "schema_version": "latent.phase0.measurement-identity.v1",
+                "artifact": {
+                    "component_digest": "sha256:" + "e" * 64,
+                    "component_bytes": 1,
+                    "capsule_digest": "sha256:" + "f" * 64,
+                    "capsule_bytes": 2,
+                },
+                "configuration": configuration,
+            },
+            "collector_identity": collector_identity("phase0-baseline"),
         }
         soak_receipt = {
             "source_commit": current_commit,
             "source_tree": current_tree,
+            "measurement_identity": json.loads(
+                json.dumps(baseline_receipt["measurement_identity"])
+            ),
             "configuration": {
                 "artifact": {"component_digest": "sha256:" + "e" * 64, "component_bytes": 1},
                 "config": configuration,
                 "environment": toolchain,
             },
+            "collector_identity": collector_identity("phase0-soak", "2"),
         }
-        calibration_receipt = {"source_commit": current_commit, "source_tree": current_tree}
-        profile_calibration_receipt = {"source_commit": stale_commit, "source_tree": stale_tree}
-        profiling_receipt = {"source_commit": current_commit, "source_tree": current_tree}
+        calibration_receipt = {
+            "source_commit": current_commit,
+            "source_tree": current_tree,
+            "collector_identity": collector_identity("phase0-baseline"),
+        }
+        profile_calibration_receipt = {
+            "source_commit": current_commit,
+            "source_tree": current_tree,
+            "collector_identity": collector_identity("phase0-baseline"),
+        }
+        profiling_receipt = {
+            "source_commit": current_commit,
+            "source_tree": current_tree,
+            "collector_identity": collector_identity("phase0-baseline"),
+        }
         current_identity = {
             "sha256": current_digest,
             "worktree_clean": True,
@@ -332,6 +883,21 @@ class Phase0GateEvidenceTests(unittest.TestCase):
                 side_effect=evidence_identity,
             ),
         ):
+            authorized = build_gate_receipt(
+                {},
+                "baseline.json",
+                calibration_path,
+                profiling_path,
+                soak_path,
+                profile_calibration_path,
+            )
+            self.assertEqual(authorized["authorization_status"], "authorized")
+            self.assertTrue(authorized["phase1_authorized"])
+            self.assertEqual(authorized["blockers"], [])
+            self.assertFalse(authorized["phase1_api_compatible"])
+
+            profile_calibration_receipt["source_commit"] = stale_commit
+            profile_calibration_receipt["source_tree"] = stale_tree
             receipt = build_gate_receipt(
                 {},
                 "baseline.json",
@@ -341,7 +907,8 @@ class Phase0GateEvidenceTests(unittest.TestCase):
                 profile_calibration_path,
             )
 
-        verify_profile.assert_called_once_with(profiling_path, profile_calibration_path)
+        self.assertEqual(verify_profile.call_count, 2)
+        verify_profile.assert_called_with(profiling_path, profile_calibration_path)
         self.assertEqual(receipt["authorization_status"], "blocked")
         self.assertFalse(receipt["phase1_authorized"])
         self.assertEqual(

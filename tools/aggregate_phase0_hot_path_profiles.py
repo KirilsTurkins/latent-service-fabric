@@ -26,14 +26,27 @@ from typing import Any, Iterable, NoReturn
 
 try:  # Support both ``python tools/...`` and package-style imports.
     from . import aggregate_phase0_calibration as calibration_aggregate
+    from .phase0_collector_identity import (
+        CollectorIdentityError,
+        require_native_collector_identity,
+        same_identity as same_collector_identity,
+        verify_retained_native_collector,
+    )
 except ImportError:  # pragma: no cover - exercised by the command-line entrypoint.
     import aggregate_phase0_calibration as calibration_aggregate
+    from phase0_collector_identity import (  # type: ignore[no-redef]
+        CollectorIdentityError,
+        require_native_collector_identity,
+        same_identity as same_collector_identity,
+        verify_retained_native_collector,
+    )
 
 
 BASELINE_SCHEMA = "latent.phase0.baseline.v2"
 TARGETED_PROFILE_SCHEMA = "latent.phase0.targeted-profile.v2"
 HOST_SCHEMA = "latent.phase0.hot-path.host-observation.v2"
 PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v5"
+SOURCE_PROVENANCE_SCHEMA = "latent.phase0.hot-path.source-provenance.v1"
 HEAPTRACK_ATTRIBUTION_SCHEMA = "latent.phase0.hot-path.heaptrack-attribution.v3"
 MEASUREMENT_IDENTITY_SCHEMA = "latent.phase0.measurement-identity.v1"
 MINIMUM_ADOPTION_RUNS = 7
@@ -466,6 +479,18 @@ def require_measurement_identity(
     }
 
 
+def require_document_collector(document: dict[str, Any], label: str) -> dict[str, Any]:
+    artifact = document.get("artifact")
+    if not isinstance(artifact, dict):
+        fail(f"{label} has no artifact identity")
+    try:
+        return require_native_collector_identity(
+            artifact.get("collector"), f"{label} native collector", "phase0-baseline"
+        )
+    except CollectorIdentityError as error:
+        fail(str(error))
+
+
 def require_identity_match(
     expected: dict[str, Any], observed: dict[str, Any], label: str
 ) -> None:
@@ -784,9 +809,45 @@ def command_arguments(command: dict[str, Any], label: str) -> list[str]:
     arguments = command.get("command")
     if not isinstance(arguments, list) or not all(isinstance(value, str) for value in arguments):
         fail(f"{label} must retain the exact command array")
-    if not any(Path(value).name == "phase0-baseline" for value in arguments):
+    tool = command.get("tool")
+    collector_arguments = arguments
+    if tool == "perf":
+        separator = arguments.index("--") if arguments.count("--") == 1 else -1
+        wrapper = arguments[:separator] if separator >= 0 else arguments
+        if (
+            len(arguments) < 10
+            or Path(arguments[0]).name != "perf"
+            or arguments[1] != "record"
+            or separator != 8
+            or wrapper[2] != "--output"
+            or not wrapper[3]
+            or wrapper[4] != "--freq"
+            or not wrapper[5].isdigit()
+            or int(wrapper[5]) <= 0
+            or wrapper[6:8] != ["--call-graph", "dwarf"]
+        ):
+            fail(f"{label} does not retain the supported perf record wrapper")
+        collector_arguments = arguments[separator + 1 :]
+    elif tool == "heaptrack":
+        separator = arguments.index("--") if arguments.count("--") == 1 else -1
+        wrapper = arguments[:separator] if separator >= 0 else arguments
+        if (
+            len(arguments) < 6
+            or Path(arguments[0]).name != "heaptrack"
+            or separator != 4
+            or wrapper[1:3] != ["--record-only", "--output"]
+            or not wrapper[3]
+        ):
+            fail(f"{label} does not retain the supported Heaptrack wrapper")
+        collector_arguments = arguments[separator + 1 :]
+    elif tool not in {"phase0-baseline", "phase0-baseline-full-invariant-proof"}:
+        fail(f"{label} records an unsupported command tool")
+    if (
+        not collector_arguments
+        or Path(collector_arguments[0]).name != "phase0-baseline"
+    ):
         fail(f"{label} did not invoke phase0-baseline")
-    return arguments
+    return collector_arguments
 
 
 def command_option(arguments: list[str], name: str) -> str | None:
@@ -1371,6 +1432,11 @@ def load_full_invariant_proof(
         published_source_ref,
         published_source_ref_head,
     )
+    if command["execution_commit"] != source_commit:
+        fail(
+            "full-invariant proof command execution commit does not equal "
+            "the published source commit"
+        )
     if command_option(arguments, "--profile-workload") is not None:
         fail("full-invariant proof command must not use a selective profile workload")
     if command_option(arguments, "--mode") != "full":
@@ -1386,6 +1452,7 @@ def load_full_invariant_proof(
     composition_identity = require_measurement_identity(
         document, "full-invariant proof", exclude_sampling=True
     )
+    collector_identity = require_document_collector(document, "full-invariant proof")
     cache_probe = document.get("preparation_cache_reuse")
     if (
         not isinstance(cache_probe, dict)
@@ -1416,6 +1483,7 @@ def load_full_invariant_proof(
             "configuration": config,
             "measurement_identity": measurement_identity,
             "composition_identity": composition_identity,
+            "collector_identity": collector_identity,
         },
     )
 
@@ -1478,6 +1546,19 @@ def load_profile(
     allocation_exact_identity = require_measurement_identity(
         allocation_document, f"{name} allocation targeted profile", exclude_sampling=False
     )
+    perf_collector = require_document_collector(
+        perf_document, f"{name} perf targeted profile"
+    )
+    allocation_collector = require_document_collector(
+        allocation_document, f"{name} allocation targeted profile"
+    )
+    full_collector = full_invariant_proof.get("collector_identity")
+    if (
+        not isinstance(full_collector, dict)
+        or not same_collector_identity(perf_collector, allocation_collector)
+        or not same_collector_identity(perf_collector, full_collector)
+    ):
+        fail(f"{name} targeted profile native collector differs from the full proof")
     require_identity_match(
         perf_exact_identity,
         allocation_exact_identity,
@@ -1556,6 +1637,7 @@ def load_profile(
             "payload_flow": perf_document.get("payload_flow"),
             "per_run_environment": perf_document["environment"],
             "composition_identity": perf_composition_identity,
+            "collector_identity": perf_collector,
             "full_invariant_proof": full_invariant_proof,
             "contributor_attribution": contributors,
             "perf": {
@@ -1693,6 +1775,7 @@ def load_candidate(
     published_source_ref: str,
     published_source_ref_head: str,
     full_command_identity: dict[str, Any],
+    expected_collector_identity: dict[str, Any],
     expected_environment: dict[str, Any],
     expected_host_identity: dict[str, Any],
     required_run_count: int,
@@ -1708,6 +1791,7 @@ def load_candidate(
         )
     documents: list[dict[str, Any]] = []
     identities: list[dict[str, Any]] = []
+    collector_identities: list[dict[str, Any]] = []
     host_records: list[dict[str, Any]] = []
     metric_samples: list[dict[str, float | None]] = []
     cache_reuse_controls: list[dict[str, Any]] = []
@@ -1761,6 +1845,11 @@ def load_candidate(
                 exclude_sampling=False,
             )
         )
+        collector_identities.append(
+            require_document_collector(
+                document, f"candidate {name} {path.parent.name}"
+            )
+        )
         host_records.append(process_host_record)
         cache_reuse_controls.append(
             validate_candidate_cache_reuse(name, path.parent.name, document)
@@ -1772,12 +1861,20 @@ def load_candidate(
     }
     first = documents[0]
     first_identity = identities[0]
+    first_collector = collector_identities[0]
     for path, identity in zip(runs[1:], identities[1:], strict=True):
         require_identity_match(
             first_identity,
             identity,
             f"candidate {name} {path.parent.name}/run-01",
         )
+    if not same_collector_identity(first_collector, expected_collector_identity):
+        fail(f"candidate {name} native collector differs from the full proof")
+    for path, collector_identity in zip(runs[1:], collector_identities[1:], strict=True):
+        if not same_collector_identity(first_collector, collector_identity):
+            fail(
+                f"candidate {name} {path.parent.name}/run-01 native collector identity mismatch"
+            )
     return {
         "name": name,
         "run_count": len(documents),
@@ -1790,14 +1887,21 @@ def load_candidate(
                 "command_sha256": sha256_file(path.parent / "command.json"),
                 "environment": document.get("environment"),
                 "measurement_identity": identity,
+                "collector_identity": collector_identity,
                 "host_observations": host_record,
             }
-            for path, document, identity, host_record in zip(
-                runs, documents, identities, host_records, strict=True
+            for path, document, identity, collector_identity, host_record in zip(
+                runs,
+                documents,
+                identities,
+                collector_identities,
+                host_records,
+                strict=True,
             )
         ],
         "configuration": first["config"],
         "measurement_identity": first_identity,
+        "collector_identity": first_collector,
         "metrics_per_run": metric_samples,
         "representatives": representatives,
         "prepared_cache_reuse_control": {
@@ -2013,6 +2117,18 @@ def calibration_mismatches(
                 "measurement identity differs: "
                 + first_difference(reference_identity, candidate_identity)
             )
+
+    reference_identity = calibration.get("reference_identity")
+    reference_collector = (
+        reference_identity.get("collector")
+        if isinstance(reference_identity, dict)
+        else None
+    )
+    candidate_collector = candidate.get("collector_identity")
+    if not isinstance(reference_collector, dict) or not isinstance(candidate_collector, dict):
+        mismatches.append("native collector identity is missing")
+    elif not same_collector_identity(reference_collector, candidate_collector):
+        mismatches.append("phase0-baseline native collector identity differs")
 
     raw_runs = candidate.get("raw_runs")
     first_run = raw_runs[0] if isinstance(raw_runs, list) and raw_runs else None
@@ -2478,10 +2594,23 @@ def aggregate(arguments: argparse.Namespace) -> None:
     full_measurement_identity = full_invariant_proof.get("measurement_identity")
     if not isinstance(full_measurement_identity, dict):
         fail("full-invariant proof has no exact measurement identity")
+    full_collector_identity = full_invariant_proof.get("collector_identity")
+    if not isinstance(full_collector_identity, dict):
+        fail("full-invariant proof has no native collector identity")
+    try:
+        verify_retained_native_collector(
+            archive_root,
+            full_collector_identity,
+            "hot-path profile native collector",
+            "phase0-baseline",
+        )
+    except CollectorIdentityError as error:
+        fail(str(error))
     require_calibration_match(
         {
             "run_count": 1,
             "measurement_identity": full_measurement_identity,
+            "collector_identity": full_collector_identity,
             "raw_runs": [{"environment": expected_environment}],
         },
         calibration,
@@ -2531,6 +2660,7 @@ def aggregate(arguments: argparse.Namespace) -> None:
             arguments.published_source_ref,
             ref_head,
             full_command_identity,
+            full_invariant_proof["collector_identity"],
             expected_environment,
             host_identity,
             required_run_count,
@@ -2564,10 +2694,18 @@ def aggregate(arguments: argparse.Namespace) -> None:
         "cross_platform_claim": False,
         "source_commit": arguments.source_commit,
         "source_tree": arguments.source_tree,
+        "collector_identity": full_collector_identity,
         "source_provenance": {
+            "schema_version": SOURCE_PROVENANCE_SCHEMA,
+            "published_commit": arguments.source_commit,
+            "published_tree": arguments.source_tree,
             "published_source_ref": arguments.published_source_ref,
             "published_source_ref_head": ref_head,
-            "execution_identity": full_command_identity,
+            "published_commit_reachable_from_ref": True,
+            "execution_commit": full_command_identity["execution_commit"],
+            "execution_tree": full_command_identity["execution_tree"],
+            "execution_commit_matches_published": True,
+            "tree_identity_verified": True,
             "rule": "The runner fetched the durable ref, verified that the supplied commit exists, resolves to source_tree, and is reachable from the ref before execution.",
         },
         "host_observation": {

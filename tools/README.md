@@ -11,7 +11,11 @@ explicitly recorded `origin`-tracking-ref fallback for offline reruns), plus `pe
 required `--calibration-aggregate` must be a fresh external aggregate with a
 sibling `runs/` directory. The runner regenerates and compares it before
 creating profile output, so stale, relabelled, incomplete, or edited
-calibration evidence cannot be used as a profile reference.
+calibration evidence cannot be used as a profile reference. Its profile output
+path is mandatory, absolute, fresh, and outside the checkout; its Cargo build
+directory is likewise fresh and external (by default a sibling
+`<profile-output>.build` path), so the repository `target/` directory is never
+used or reused for evidence collection.
 `aggregate_phase0_hot_path_profiles.py` validates the separate full-invariant
 proof, scenario-selective profile commands, quantitative folded-stack
 attribution, the capsule/component and runtime measurement identity, experiment
@@ -60,9 +64,10 @@ into JSON. The final gate still owns source-identity and authorization
 decisions.
 
 `run_phase0_resource_soak.sh` is the manual native-Linux plateau command for
-issue 39. It requires an explicit durable final source commit/tree and refuses
-WSL, containers, dirty or mismatched source, unavailable probes, fixture or
-toolchain failures, and incomplete process output. Its paired
+issue 39. It requires an explicit durable final source commit/tree/ref and
+fresh external evidence/build paths; it refuses WSL, containers, dirty or
+mismatched source, unavailable probes, fixture or toolchain failures, and
+incomplete process output. Its paired
 `aggregate_phase0_resource_soak.py` revalidates all raw samples and hard
 invariants, reconciles each process environment against before/after host
 observations, and validates terminal release/shutdown topology plus the full

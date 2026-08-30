@@ -21,27 +21,30 @@ Both commands run `tools/validate_contracts.sh` first. Missing Rust Wasm targets
 ## Native-Linux variance calibration
 
 The original checked-in full-profile result is a historical WSL2 observation.
-The selected-configuration Phase 1 comparison reference is the seven-run
-native-Linux calibration in
+The retained August 29 selected-configuration calibration is the seven-run
+native-Linux archive in
 [benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3](../benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3).
-It records the published commit/tree, the execution commit/tree, and the
-explicit prepared-cache/on-demand/COW configuration used by the final soak.
-Older calibration archives remain immutable historical evidence; the current
-profile and soak packages use this fresh reference.
+It records its historical published commit/tree and the explicit
+prepared-cache/on-demand/COW configuration used by the historical soak. All
+August 29 calibration, profile, and soak packages are immutable historical
+evidence and cannot authorize the current source tree.
 
 Create a new archive only from a clean worktree on one stable native-Linux host
 or VM:
 
 ~~~bash
-tools/run_phase0_calibration.sh benchmarks/phase0/calibration/native-linux-YYYY-MM-DD
+tools/run_phase0_calibration.sh \
+  --published-source-commit <reachable-commit-sha> \
+  --published-source-tree <reachable-tree-sha> \
+  --published-source-ref <durable-branch-or-tag> \
+  /var/tmp/phase0-evidence/calibration
 ~~~
 
-The calibration wrapper refuses WSL and detected containers, requires a new
-output directory, fixes every run to one source tree, and invokes the complete
-full-profile command seven times. If its source commit is published from a
-different local commit object, the wrapper requires the reachable published
-commit and its Git tree, then rejects any execution worktree that does not have
-that exact tree. It captures before/after
+The calibration wrapper refuses WSL and detected containers, requires fresh
+external output/build directories, requires a durable published commit/tree/ref,
+and invokes the complete full-profile command seven times. It rejects an
+execution checkout whose HEAD is not that exact published commit or whose tree
+does not match. It captures before/after
 virtualization, allocator, CPU frequency/power-policy where exposed, and
 background-load observations. It does not change CPU policy, pin frequency, or
 discard a run because its performance values are inconvenient.
@@ -79,7 +82,7 @@ with at least seven valid comparable runs, stable environment, all hard
 invariants passing, and no material run-level outlier is terminally **no
 detectable regression** (or statistically indistinguishable). Insufficient
 samples, environment instability/mismatch, material run-level noise/outliers,
-or failed invariants are inconclusive and must be rerun after the invalid
+or failed invariants invalidate the comparison and require a rerun after the
 condition is resolved. These are regression-detection aids only, not
 production SLOs or cross-machine claims.
 Shared hosted CI must never fail on these fragile microbenchmark bands; it may
@@ -96,9 +99,10 @@ configuration:
 tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
+  --published-source-ref <durable-branch-or-tag> \
   --final-configuration-commit <reachable-final-commit> \
-  --calibration benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json \
-  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+  --calibration /var/tmp/phase0-evidence/calibration/aggregate.json \
+  /var/tmp/phase0-evidence/soak
 ```
 
 The command requires a clean native Linux host or VM and refuses WSL,
@@ -133,8 +137,8 @@ process/child/thread/socket topology, and uses issue 38's RSS advisory noise
 band only when CPU, memory, kernel, virtualization, toolchain, allocator,
 fixture, and relevant execution configuration—including prepared-cache
 enablement, Wasmtime allocator mode, and initialized-memory COW—are proved
-matched. A missing or mismatched identity produces an explicit inconclusive
-comparison. A material
+matched. A missing or mismatched identity blocks the calibrated comparison and
+authorization. A material
 late-window growth or topology result remains failed and must identify a
 retaining subsystem using heap/allocator/process tooling or a focused issue;
 the noise allowance must not be raised to clear it. Robust cross-run

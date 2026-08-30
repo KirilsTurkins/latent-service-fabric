@@ -76,9 +76,9 @@ make phase0-gate
 It requires `zstd` for archive-integrity tests and returns non-zero whenever a
 run's receipt is not `authorized`. The retained clean-checkout native-Linux
 [receipt](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
-completed with exit code 0 and is authorized; see
-[`../phase-0-completion.md`](../phase-0-completion.md) for its evidence and
-the still-explicit non-production boundary.
+is historical; verifier and measured-source changes require a fresh full gate
+before this branch can be authorized. See
+[`../phase-0-completion.md`](../phase-0-completion.md) for the current status.
 
 `tools/validate_contracts.sh` compiles the generated echo and oversized-log bindings for `wasm32-wasip2`, builds each authority-free core for `wasm32-unknown-unknown`, wraps each core with `wasm-tools component new`, requires byte-identical echo output across two clean builds, validates both components, extracts the echo interface, rejects any import/export drift, emits generated capsule metadata with the actual SHA-256 digest, and executes the oversized canonical-ABI host-call-fuel regression through the Wasmtime backend.
 

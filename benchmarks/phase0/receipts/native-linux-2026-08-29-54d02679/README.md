@@ -1,6 +1,6 @@
-# Native Linux Phase 0 authorization receipt (2026-08-29)
+# Historical Native Linux Phase 0 receipt (2026-08-29)
 
-This directory retains the full receipt emitted by a separate clean checkout of
+This directory retains an immutable historical receipt emitted by a separate clean checkout of
 `fix/phase0-gate-validation` at commit
 `54d02679aff757d4bf25d16e088b32d45682cb7f` (tree
 `b77e4efa1cd46628efcbfebed6e3b0c05feade28`).  The command was:
@@ -9,9 +9,11 @@ This directory retains the full receipt emitted by a separate clean checkout of
 make phase0-gate
 ```
 
-It completed with exit code 0 on a native Linux host.  `gate-summary.json`
-records `status: "pass"`, `authorization_status: "authorized"`,
-`phase1_authorized: true`, and an empty `blockers` array.
+It completed with exit code 0 on a native Linux host. `gate-summary.json`
+records its historical `status: "pass"`, `authorization_status: "authorized"`,
+`phase1_authorized: true`, and an empty `blockers` array. Do not edit the
+receipt or its manifest: later verifier and measured-source changes mean this
+historical record cannot authorize the current branch.
 
 The fresh calibration, hot-path profiling, and resource-soak evidence was
 measured at commit `a724a5e35234175f1001d1983e4411296ffa6b78` (tree
@@ -31,6 +33,6 @@ The large baseline result is retained losslessly as
 checked by `baseline/raw-results.json.sha256`.  The other gate output files are
 copied verbatim.  `receipt.manifest.sha256` checks every retained receipt file.
 
-The receipt's `phase1_api_compatible` field remains `false`. It says only that
-the spike's local CLI is not a promised external Phase 1 API contract; Phase 1
-retains and builds on the measured runtime and invariants.
+The receipt fields describe only that historical run. Phase 1 builds on the
+retained Phase 0 runtime and invariants; current authorization requires a new
+full receipt from the current clean, pushed source tree.

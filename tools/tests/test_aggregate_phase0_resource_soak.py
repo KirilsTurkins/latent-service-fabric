@@ -3,12 +3,15 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+from tools.phase0_collector_identity import EXPECTED_RELEASE_BUILD_CONFIGURATION
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +34,28 @@ CHECKED_IN_SOAK = (
 )
 SOURCE_COMMIT = "a" * 40
 SOURCE_TREE = "b" * 40
+SOURCE_REF = "refs/heads/test-source"
+SOURCE_REF_HEAD = "d" * 40
+CAPSULE_DIGEST = "sha256:" + "e" * 64
+CAPSULE_BYTES = 321
+SOAK_COLLECTOR_BYTES = b"phase0-soak-test-collector\n"
+BASELINE_COLLECTOR_BYTES = b"phase0-baseline-test-collector\n"
+
+
+def collector_identity(name: str, payload: bytes) -> dict[str, object]:
+    return {
+        "schema_version": "latent.phase0.native-collector.v1",
+        "collector": name,
+        "executable_digest": f"sha256:{hashlib.sha256(payload).hexdigest()}",
+        "executable_bytes": len(payload),
+        "build_configuration": dict(EXPECTED_RELEASE_BUILD_CONFIGURATION),
+    }
+
+
+SOAK_COLLECTOR = collector_identity("phase0-soak", SOAK_COLLECTOR_BYTES)
+BASELINE_COLLECTOR = collector_identity(
+    "phase0-baseline", BASELINE_COLLECTOR_BYTES
+)
 CHECKS = {
     "native_linux_process_resource_probes_are_available",
     "prepared_cache_is_fixed_and_bounded",
@@ -153,8 +178,12 @@ def raw_document(run_index: int) -> dict[str, object]:
         "source_identity": {
             "published_commit": SOURCE_COMMIT,
             "published_tree": SOURCE_TREE,
+            "published_source_ref": SOURCE_REF,
+            "published_source_ref_head": SOURCE_REF_HEAD,
+            "published_commit_reachable_from_ref": True,
             "execution_commit": SOURCE_COMMIT,
             "execution_tree": SOURCE_TREE,
+            "execution_commit_matches_published": True,
             "tree_identity_verified": True,
             "final_configuration_commit": SOURCE_COMMIT,
         },
@@ -182,6 +211,9 @@ def raw_document(run_index: int) -> dict[str, object]:
         "artifact": {
             "component_digest": "sha256:" + "c" * 64,
             "component_bytes": 100,
+            "capsule_digest": CAPSULE_DIGEST,
+            "capsule_bytes": CAPSULE_BYTES,
+            "collector": copy.deepcopy(SOAK_COLLECTOR),
         },
         "config": {
             "warmup_activations": 1_000,
@@ -290,9 +322,22 @@ def host_document(phase: str, run_index: int) -> dict[str, object]:
         "source_identity": {
             "published_commit": SOURCE_COMMIT,
             "published_tree": SOURCE_TREE,
+            "published_source_ref": SOURCE_REF,
+            "published_source_ref_head": SOURCE_REF_HEAD,
+            "published_commit_reachable_from_ref": True,
             "execution_commit": SOURCE_COMMIT,
             "execution_tree": SOURCE_TREE,
+            "execution_commit_matches_published": True,
             "tree_identity_verified": True,
+        },
+        "cpu_frequency_policy": {
+            "cpus_with_cpufreq_sysfs": 1,
+            "observed": {
+                "scaling_driver": ["test-cpufreq"],
+                "scaling_governor": ["performance"],
+                "scaling_max_freq": ["3500000"],
+                "scaling_min_freq": ["1200000"],
+            },
         },
     }
 
@@ -308,7 +353,12 @@ def calibration_document() -> dict[str, object]:
         "source_commit": SOURCE_COMMIT,
         "source_tree": SOURCE_TREE,
         "reference_identity": {
-            "artifact": raw["artifact"],
+            "artifact": {
+                key: value
+                for key, value in raw["artifact"].items()
+                if key != "collector"
+            },
+            "collector": copy.deepcopy(BASELINE_COLLECTOR),
             "config": {
                 key: config[key]
                 for key in (
@@ -347,6 +397,7 @@ def calibration_document() -> dict[str, object]:
                 {
                     "virtualization": host["host"]["virtualization"],
                     "allocator": host["allocator"],
+                    "cpu_frequency_policy": host["cpu_frequency_policy"],
                 }
             ]
         },
@@ -367,6 +418,222 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
         self.assertIn(
             'CARGO_TARGET_DIR="$TARGET_ROOT" tools/validate_contracts.sh', runner
         )
+        self.assertIn('TARGET_ROOT="${OUTPUT_DIR}.build"', runner)
+
+    def test_runner_requires_explicit_calibration_and_durable_ref_before_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output_without_calibration = root / "without-calibration"
+            missing_calibration = subprocess.run(
+                [
+                    str(RUNNER),
+                    "--final-configuration-commit",
+                    "a" * 40,
+                    "--published-source-commit",
+                    "a" * 40,
+                    "--published-source-tree",
+                    "b" * 40,
+                    "--published-source-ref",
+                    "development",
+                    str(output_without_calibration),
+                ],
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(missing_calibration.returncode, 2)
+            self.assertIn("--calibration is required", missing_calibration.stderr)
+            self.assertFalse(output_without_calibration.exists())
+
+            calibration = root / "calibration.json"
+            calibration.write_text("{}\n", encoding="utf-8")
+            output_without_ref = root / "without-ref"
+            missing_ref = subprocess.run(
+                [
+                    str(RUNNER),
+                    "--final-configuration-commit",
+                    "a" * 40,
+                    "--published-source-commit",
+                    "a" * 40,
+                    "--published-source-tree",
+                    "b" * 40,
+                    "--calibration",
+                    str(calibration),
+                    str(output_without_ref),
+                ],
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(missing_ref.returncode, 2)
+            self.assertIn("durable published source commit, tree, and branch or tag ref", missing_ref.stderr)
+            self.assertFalse(output_without_ref.exists())
+
+    def test_runner_requires_fresh_external_nonoverlapping_output_and_build_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            calibration = root / "calibration.json"
+            calibration.write_text("{}\n", encoding="utf-8")
+
+            def arguments(output: str | Path) -> list[str]:
+                return [
+                    str(RUNNER),
+                    "--final-configuration-commit",
+                    "a" * 40,
+                    "--published-source-commit",
+                    "a" * 40,
+                    "--published-source-tree",
+                    "b" * 40,
+                    "--published-source-ref",
+                    "development",
+                    "--calibration",
+                    str(calibration),
+                    str(output),
+                ]
+
+            relative_output = subprocess.run(
+                arguments("relative-output"), check=False, text=True, capture_output=True
+            )
+            self.assertEqual(relative_output.returncode, 2)
+            self.assertIn("must be an absolute path outside the source tree", relative_output.stderr)
+
+            in_tree_output = subprocess.run(
+                arguments(ROOT / "target" / "phase0-soak-test-output"),
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(in_tree_output.returncode, 2)
+            self.assertIn("must be outside the source tree", in_tree_output.stderr)
+
+            output = root / "evidence"
+            existing_target = root / "existing-build"
+            existing_target.mkdir()
+            environment = dict(os.environ)
+            environment["LSF_RESOURCE_SOAK_TARGET_DIR"] = str(existing_target)
+            reused_target = subprocess.run(
+                arguments(output),
+                check=False,
+                text=True,
+                capture_output=True,
+                env=environment,
+            )
+            self.assertEqual(reused_target.returncode, 2)
+            self.assertIn("build output must not already exist", reused_target.stderr)
+            self.assertFalse(output.exists())
+
+            overlapping_output = root / "overlapping-evidence"
+            environment["LSF_RESOURCE_SOAK_TARGET_DIR"] = str(
+                overlapping_output / "build"
+            )
+            overlapping_paths = subprocess.run(
+                arguments(overlapping_output),
+                check=False,
+                text=True,
+                capture_output=True,
+                env=environment,
+            )
+            self.assertEqual(overlapping_paths.returncode, 2)
+            self.assertIn("output and build paths must not overlap", overlapping_paths.stderr)
+            self.assertFalse(overlapping_output.exists())
+
+    def test_runner_rejects_a_local_commit_not_reachable_from_origin_ref(self) -> None:
+        """A local branch alone must never satisfy the durable-ref requirement."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            source = workspace / "source"
+            tools = source / "tools"
+            tools.mkdir(parents=True)
+            copied_runner = tools / "run_phase0_resource_soak.sh"
+            shutil.copy2(RUNNER, copied_runner)
+            shutil.copy2(
+                ROOT / "tools" / "phase0_build_environment.sh",
+                tools / "phase0_build_environment.sh",
+            )
+            copied_runner.chmod(0o755)
+
+            def git(*arguments: str) -> str:
+                completed = subprocess.run(
+                    ["git", "-C", str(source), *arguments],
+                    check=False,
+                    text=True,
+                    capture_output=True,
+                )
+                self.assertEqual(
+                    completed.returncode,
+                    0,
+                    f"git {' '.join(arguments)} failed: {completed.stderr}",
+                )
+                return completed.stdout.strip()
+
+            git("init")
+            git("config", "user.email", "phase0-test@example.invalid")
+            git("config", "user.name", "Phase 0 Test")
+            git(
+                "add",
+                "tools/run_phase0_resource_soak.sh",
+                "tools/phase0_build_environment.sh",
+            )
+            git("commit", "-m", "published base")
+
+            origin = workspace / "origin.git"
+            created_origin = subprocess.run(
+                ["git", "init", "--bare", str(origin)],
+                check=False,
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(created_origin.returncode, 0, created_origin.stderr)
+            git("remote", "add", "origin", str(origin))
+            git("push", "origin", "HEAD:refs/heads/development")
+
+            (source / "local-only.txt").write_text("not pushed\n", encoding="utf-8")
+            git("add", "local-only.txt")
+            git("commit", "-m", "local only")
+            local_commit = git("rev-parse", "HEAD")
+            local_tree = git("rev-parse", "HEAD^{tree}")
+
+            calibration = workspace / "fresh-calibration.json"
+            calibration.write_text("{}\n", encoding="utf-8")
+            output = workspace / "evidence"
+            target_root = workspace / "build"
+            fake_bin = workspace / "bin"
+            fake_bin.mkdir()
+            fake_cargo = fake_bin / "cargo"
+            fake_cargo.write_text("#!/usr/bin/env sh\nexit 0\n", encoding="utf-8")
+            fake_cargo.chmod(0o755)
+            environment = dict(os.environ)
+            environment["LSF_RESOURCE_SOAK_TARGET_DIR"] = str(target_root)
+            environment["PATH"] = f"{fake_bin}{os.pathsep}{environment.get('PATH', '')}"
+            completed = subprocess.run(
+                [
+                    str(copied_runner),
+                    "--final-configuration-commit",
+                    local_commit,
+                    "--published-source-commit",
+                    local_commit,
+                    "--published-source-tree",
+                    local_tree,
+                    "--published-source-ref",
+                    "development",
+                    "--calibration",
+                    str(calibration),
+                    str(output),
+                ],
+                cwd=source,
+                check=False,
+                text=True,
+                capture_output=True,
+                env=environment,
+            )
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn(
+                "declared published source commit is not reachable from development",
+                completed.stderr,
+            )
+            self.assertFalse(output.exists())
+            self.assertFalse(target_root.exists())
 
     def make_archive(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temporary = tempfile.TemporaryDirectory()
@@ -374,6 +641,9 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
         (archive / "calibration.json").write_text(
             json.dumps(calibration_document()), encoding="utf-8"
         )
+        collector = archive / "collector" / "phase0-soak"
+        collector.parent.mkdir(parents=True)
+        collector.write_bytes(SOAK_COLLECTOR_BYTES)
         for index in range(1, 4):
             run = archive / "runs" / f"run-{index:02d}"
             run.mkdir(parents=True)
@@ -392,8 +662,12 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                         "exit_code": 0,
                         "source_commit": SOURCE_COMMIT,
                         "source_tree": SOURCE_TREE,
+                        "published_source_ref": SOURCE_REF,
+                        "published_source_ref_head": SOURCE_REF_HEAD,
+                        "published_commit_reachable_from_ref": True,
                         "execution_commit": SOURCE_COMMIT,
                         "execution_tree": SOURCE_TREE,
+                        "execution_commit_matches_published": True,
                     }
                 ),
                 encoding="utf-8",
@@ -452,9 +726,34 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             self.assertEqual(aggregate["metrics"]["rss_bytes"]["decision"]["status"], "pass")
             self.assertEqual(aggregate["file_descriptors"]["status"], "pass")
             self.assertEqual(len(aggregate["raw_runs"]), 3)
+            self.assertNotIn("inconclusive", json.dumps(aggregate).lower())
             report = (archive / "SOAK.md").read_text(encoding="utf-8")
             self.assertIn("issue #38 host/configuration identity is strictly matched", report)
             self.assertIn("## Conclusion", report)
+
+    def test_rejects_cross_run_native_collector_identity_drift(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            path = archive / "runs" / "run-02" / "raw.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            document["artifact"]["collector"]["executable_digest"] = (
+                "sha256:" + "f" * 64
+            )
+            path.write_text(json.dumps(document), encoding="utf-8")
+            completed = self.aggregate(archive)
+
+            self.assertEqual(completed.returncode, 2, completed.stderr)
+            self.assertIn("differs in source fixture", completed.stderr)
+
+    def test_rejects_tampered_retained_native_collector_bytes(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            retained = archive / "collector" / "phase0-soak"
+            retained.write_bytes(b"X" * len(SOAK_COLLECTOR_BYTES))
+            completed = self.aggregate(archive)
+
+            self.assertEqual(completed.returncode, 2, completed.stderr)
+            self.assertIn("retained executable digest does not match", completed.stderr)
 
     def test_checked_in_resource_soak_archive_is_lossless(self) -> None:
         self.assertIsNotNone(shutil.which("zstd"), "zstd is required for evidence integrity")
@@ -788,6 +1087,24 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                 ),
                 "lacks allocator provenance",
             ),
+            "raw durable source provenance": (
+                lambda archive: self.update_all_raw_documents(
+                    archive,
+                    lambda document: document["source_identity"].pop(
+                        "published_source_ref_head"
+                    ),
+                ),
+                "incomplete durable source provenance",
+            ),
+            "host durable source provenance": (
+                lambda archive: self.update_all_host_documents(
+                    archive,
+                    lambda document: document["source_identity"].pop(
+                        "published_source_ref_head"
+                    ),
+                ),
+                "incomplete durable source provenance",
+            ),
         }
         for name, (mutate, expected) in cases.items():
             with self.subTest(name=name):
@@ -797,6 +1114,25 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                     completed = self.aggregate(archive)
                     self.assertEqual(completed.returncode, 2)
                     self.assertIn(expected, completed.stderr)
+
+    def test_rejects_new_evidence_that_omits_the_entire_durable_ref_receipt(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            self.update_all_raw_documents(
+                archive,
+                lambda document: [
+                    document["source_identity"].pop(field)
+                    for field in (
+                        "published_source_ref",
+                        "published_source_ref_head",
+                        "published_commit_reachable_from_ref",
+                        "execution_commit_matches_published",
+                    )
+                ],
+            )
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("lacks durable source provenance for newly collected evidence", completed.stderr)
 
     def test_rejects_unbound_legacy_retained_state_fallback(self) -> None:
         temporary, archive = self.make_archive()
@@ -820,7 +1156,7 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 2)
             self.assertIn("only the known 6250b978/65ba3412 historical archive", completed.stderr)
 
-    def test_marks_calibration_identity_mismatches_inconclusive(self) -> None:
+    def test_rejects_calibration_identity_mismatches_as_not_applicable(self) -> None:
         raw_mutations = {
             "environment.cpu_model": (
                 lambda document: document["environment"].__setitem__("cpu_model", "other CPU"),
@@ -862,7 +1198,13 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                     completed = self.aggregate(archive)
                     self.assertEqual(completed.returncode, 1, completed.stderr)
                     aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
-                    self.assertEqual(aggregate["status"], "inconclusive")
+                    self.assertEqual(
+                        aggregate["status"], "not_applicable_for_phase0_calibration"
+                    )
+                    self.assertEqual(
+                        aggregate["calibration_noise"]["applicability"]["status"],
+                        "not_applicable_for_phase0_calibration",
+                    )
                     mismatch_fields = {
                         mismatch["field"]
                         for mismatch in aggregate["calibration_noise"]["applicability"]["mismatches"]
@@ -879,13 +1221,78 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                     completed = self.aggregate(archive)
                     self.assertEqual(completed.returncode, 1, completed.stderr)
                     aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
-                    self.assertEqual(aggregate["status"], "inconclusive")
+                    self.assertEqual(
+                        aggregate["status"], "not_applicable_for_phase0_calibration"
+                    )
+                    self.assertEqual(
+                        aggregate["calibration_noise"]["applicability"]["status"],
+                        "not_applicable_for_phase0_calibration",
+                    )
                     mismatch_fields = {
                         mismatch["field"]
                         for mismatch in aggregate["calibration_noise"]["applicability"]["mismatches"]
                     }
                     self.assertIn(expected_field, mismatch_fields)
 
+    def test_rejects_a_capsule_identity_mismatch_as_not_applicable(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            self.update_all_raw_documents(
+                archive,
+                lambda document: document["artifact"].__setitem__(
+                    "capsule_digest", "sha256:" + "f" * 64
+                ),
+            )
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 1, completed.stderr)
+            aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
+            self.assertEqual(aggregate["status"], "not_applicable_for_phase0_calibration")
+            self.assertEqual(
+                aggregate["calibration_noise"]["applicability"]["status"],
+                "not_applicable_for_phase0_calibration",
+            )
+            mismatch_fields = {
+                mismatch["field"]
+                for mismatch in aggregate["calibration_noise"]["applicability"]["mismatches"]
+            }
+            self.assertIn("artifact.capsule_digest", mismatch_fields)
+            self.assertNotIn("inconclusive", json.dumps(aggregate).lower())
+
+    def test_rejects_a_cpu_frequency_policy_mismatch_as_not_applicable(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            self.update_all_host_documents(
+                archive,
+                lambda document: document["cpu_frequency_policy"]["observed"].__setitem__(
+                    "scaling_governor", ["powersave"]
+                ),
+            )
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 1, completed.stderr)
+            aggregate = json.loads((archive / "aggregate.json").read_text(encoding="utf-8"))
+            self.assertEqual(aggregate["status"], "not_applicable_for_phase0_calibration")
+            mismatch_fields = {
+                mismatch["field"]
+                for mismatch in aggregate["calibration_noise"]["applicability"]["mismatches"]
+            }
+            self.assertIn("host.cpu_frequency_policy", mismatch_fields)
+            self.assertNotIn("inconclusive", json.dumps(aggregate).lower())
+
+    def test_rejects_a_new_evidence_execution_commit_mismatch(self) -> None:
+        temporary, archive = self.make_archive()
+        with temporary:
+            self.update_all_raw_documents(
+                archive,
+                lambda document: document["source_identity"].__setitem__(
+                    "execution_commit", "c" * 40
+                ),
+            )
+            completed = self.aggregate(archive)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn(
+                "execution commit differs from the published source commit",
+                completed.stderr,
+            )
     def test_accepts_the_baseline_allocator_field_name_for_new_calibration(self) -> None:
         temporary, archive = self.make_archive()
         with temporary:

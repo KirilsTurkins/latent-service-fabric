@@ -102,7 +102,7 @@ fn run(cli: Cli, process_entry: Instant) -> Result<bool, BenchError> {
         status,
         observational_only: true,
         production_ready: false,
-        phase1_api_compatible: true,
+        phase1_api_compatible: false,
         environment,
         artifact: result.artifact,
         config: config.clone(),
@@ -339,6 +339,8 @@ async fn run_targeted_async(
     before_component_load: TopologySnapshot,
     process_entry: Instant,
 ) -> Result<TargetedAsyncRunResult, BenchError> {
+    let collector = latentd::phase0_collector::native_collector_identity("phase0-baseline")
+        .map_err(BenchError::new)?;
     let (capsule_path, capsule_digest, capsule_bytes) = capsule_identity(&cli.capsule)?;
     let prepared_backend = phase0_composition::prepare_phase0_backend(
         &Phase0PreparationConfig {
@@ -740,6 +742,7 @@ async fn run_targeted_async(
     process_snapshots.push(post_release);
     Ok(TargetedAsyncRunResult {
         artifact: ArtifactReport {
+            collector,
             capsule_path,
             capsule_digest,
             capsule_bytes,
@@ -773,6 +776,8 @@ async fn run_async(
     before_component_load: TopologySnapshot,
     process_entry: Instant,
 ) -> Result<AsyncRunResult, BenchError> {
+    let collector = latentd::phase0_collector::native_collector_identity("phase0-baseline")
+        .map_err(BenchError::new)?;
     let (capsule_path, capsule_digest, capsule_bytes) = capsule_identity(&cli.capsule)?;
     let executable_harness = load_executable_harness_probe(&cli.executable_harness_probe, config)?;
 
@@ -1317,6 +1322,7 @@ async fn run_async(
 
     Ok(AsyncRunResult {
         artifact: ArtifactReport {
+            collector,
             capsule_path,
             capsule_digest,
             capsule_bytes,

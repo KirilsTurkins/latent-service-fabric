@@ -45,7 +45,7 @@ PROFILE_PART_SCHEMA = "latent.phase0.hot-path.raw-evidence.parts.v1"
 DEFAULT_PROFILE_PART_BYTES = 716_800
 COPY_CHUNK_BYTES = 1024 * 1024
 
-CALIBRATION_INPUT_ENTRIES = {"aggregate.json", "CALIBRATION.md", "runs"}
+CALIBRATION_INPUT_ENTRIES = {"aggregate.json", "CALIBRATION.md", "collector", "runs"}
 PROFILE_INPUT_ENTRIES = {
     "aggregate.json",
     "PROFILE.md",
@@ -55,8 +55,9 @@ PROFILE_INPUT_ENTRIES = {
     "full-invariant-proof",
     "profiles",
     "candidates",
+    "collector",
 }
-SOAK_INPUT_ENTRIES = {"aggregate.json", "SOAK.md", "runs"}
+SOAK_INPUT_ENTRIES = {"aggregate.json", "SOAK.md", "collector", "runs"}
 
 
 class PackagingError(ValueError):
@@ -273,7 +274,12 @@ def verify_packaged_calibration(calibration_path: Path) -> dict[str, Any]:
     try:
         calibration = phase0_evidence.verify_calibration_evidence(calibration_path)
     except phase0_evidence.EvidenceValidationError as error:
-        fail(f"calibration package is not gate-ready: {error}")
+        fail(f"calibration package is not integrity-verifiable: {error}")
+    if calibration.get("schema_version") != phase0_evidence.CALIBRATION_SCHEMA:
+        fail(
+            "calibration package is historical integrity-only evidence and cannot "
+            "be used to package current gate evidence"
+        )
     return calibration
 
 
@@ -513,12 +519,16 @@ def package_calibration(arguments: argparse.Namespace) -> None:
             calibration_aggregate.verify_aggregate(stage / "aggregate.json", source_commit, source_tree)
         except calibration_aggregate.CalibrationError as error:
             fail(f"calibration collector output is not a verified raw aggregate: {error}")
-        raw_files = regular_files(stage / "runs", "calibration raw runs")
+        raw_files = [
+            *regular_files(stage / "collector", "calibration retained collector"),
+            *regular_files(stage / "runs", "calibration raw runs"),
+        ]
         manifest = write_manifest(stage, raw_files)
         archive = stage / "raw-evidence.tar.zst"
         create_zstd_tar(stage, [*raw_files, manifest], archive)
         write_archive_checksum(stage, archive)
         remove_staged_entry(stage / "runs")
+        remove_staged_entry(stage / "collector")
         try:
             phase0_evidence.verify_calibration_evidence(stage / "aggregate.json")
         except phase0_evidence.EvidenceValidationError as error:
@@ -549,7 +559,7 @@ def package_profile(arguments: argparse.Namespace) -> None:
         create_zstd_tar(stage, [*raw_files, manifest], archive)
         split_profile_archive(stage, archive, arguments.profile_part_bytes)
         write_readme(stage, "Phase 0 native-Linux hot-path profile evidence", aggregate)
-        for name in ("bootstrap.log", "bootstrap", "full-invariant-proof", "profiles", "candidates"):
+        for name in ("bootstrap.log", "bootstrap", "collector", "full-invariant-proof", "profiles", "candidates"):
             remove_staged_entry(stage / name)
         try:
             phase0_evidence.verify_profile_evidence(stage / "aggregate.json", calibration_path)
@@ -649,7 +659,10 @@ def package_soak(arguments: argparse.Namespace) -> None:
             )
         except phase0_evidence.EvidenceValidationError as error:
             fail(str(error))
-        raw_files = regular_files(stage / "runs", "resource-soak raw runs")
+        raw_files = [
+            *regular_files(stage / "collector", "resource-soak retained collector"),
+            *regular_files(stage / "runs", "resource-soak raw runs"),
+        ]
         manifest = write_manifest(stage, raw_files)
         archive = stage / "raw-evidence.tar.zst"
         create_zstd_tar(stage, [*raw_files, manifest], archive)
@@ -667,6 +680,7 @@ def package_soak(arguments: argparse.Namespace) -> None:
         )
         write_readme(stage, "Phase 0 native-Linux resource-soak evidence", aggregate)
         remove_staged_entry(stage / "runs")
+        remove_staged_entry(stage / "collector")
         try:
             phase0_evidence.verify_resource_soak_evidence(stage / "aggregate.json", calibration_path)
         except phase0_evidence.EvidenceValidationError as error:

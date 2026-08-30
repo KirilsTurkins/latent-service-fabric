@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -8,18 +9,21 @@ import unittest
 from pathlib import Path
 
 from tools import aggregate_phase0_hot_path_profiles as profile_aggregate
+from tools.phase0_collector_identity import EXPECTED_RELEASE_BUILD_CONFIGURATION
 
 
 ROOT = Path(__file__).resolve().parents[2]
 AGGREGATOR = ROOT / "tools" / "aggregate_phase0_hot_path_profiles.py"
 SOURCE_COMMIT = "a" * 40
 SOURCE_TREE = "b" * 40
-SOURCE_REF = "benchmark/phase0-test-source"
+SOURCE_REF = "refs/heads/benchmark/phase0-test-source"
 SOURCE_REF_HEAD = "c" * 40
 COMPONENT_DIGEST = "sha256:" + "e" * 64
 COMPONENT_BYTES = 27_616
 CAPSULE_DIGEST = "sha256:" + "f" * 64
 CAPSULE_BYTES = 1_024
+COLLECTOR_CONTENT = b"synthetic phase0-baseline native collector\n"
+COLLECTOR_DIGEST = "sha256:" + hashlib.sha256(COLLECTOR_CONTENT).hexdigest()
 
 WORKLOAD_SEMANTICS = {
     "cold-preparation": "capsule validation, engine construction, and first prepared-component creation only",
@@ -61,6 +65,16 @@ def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+def collector_identity() -> dict[str, object]:
+    return {
+        "schema_version": "latent.phase0.native-collector.v1",
+        "collector": "phase0-baseline",
+        "executable_digest": COLLECTOR_DIGEST,
+        "executable_bytes": len(COLLECTOR_CONTENT),
+        "build_configuration": dict(EXPECTED_RELEASE_BUILD_CONFIGURATION),
+    }
+
+
 def environment() -> dict[str, object]:
     return {
         "operating_system": "linux",
@@ -74,7 +88,7 @@ def environment() -> dict[str, object]:
         "rust_target": "x86_64-unknown-linux-gnu",
         "build_profile": "release",
         "wasmtime_version": "47.0.3 (workspace pin)",
-        "repository_commit": "d" * 40,
+        "repository_commit": SOURCE_COMMIT,
     }
 
 
@@ -207,6 +221,7 @@ def baseline(**kwargs: object) -> dict[str, object]:
             "component_bytes": COMPONENT_BYTES,
             "capsule_digest": CAPSULE_DIGEST,
             "capsule_bytes": CAPSULE_BYTES,
+            "collector": collector_identity(),
         },
     )
     config = configuration(**kwargs)
@@ -287,10 +302,7 @@ def targeted(name: str) -> dict[str, object]:
 
 
 def command(tool: str, *, workload: str | None, poll_interval: int) -> dict[str, object]:
-    arguments = [
-        tool,
-        "record",
-        "--",
+    collector_arguments = [
         "/tmp/phase0-baseline",
         "--mode",
         "full",
@@ -298,7 +310,31 @@ def command(tool: str, *, workload: str | None, poll_interval: int) -> dict[str,
         str(poll_interval),
     ]
     if workload is not None:
-        arguments.extend(["--profile-workload", workload])
+        collector_arguments.extend(["--profile-workload", workload])
+    if tool == "perf":
+        arguments = [
+            "perf",
+            "record",
+            "--output",
+            "/tmp/perf.data",
+            "--freq",
+            "999",
+            "--call-graph",
+            "dwarf",
+            "--",
+            *collector_arguments,
+        ]
+    elif tool == "heaptrack":
+        arguments = [
+            "heaptrack",
+            "--record-only",
+            "--output",
+            "/tmp/heaptrack.gz",
+            "--",
+            *collector_arguments,
+        ]
+    else:
+        arguments = collector_arguments
     return {
         "schema_version": "latent.phase0.hot-path.command.v1",
         "tool": tool,
@@ -306,7 +342,7 @@ def command(tool: str, *, workload: str | None, poll_interval: int) -> dict[str,
         "source_tree": SOURCE_TREE,
         "published_source_ref": SOURCE_REF,
         "published_source_ref_head": SOURCE_REF_HEAD,
-        "execution_commit": "d" * 40,
+        "execution_commit": SOURCE_COMMIT,
         "execution_tree": SOURCE_TREE,
         "command": arguments,
     }
@@ -411,6 +447,9 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
         )
 
     def build_archive(self, temporary: Path) -> tuple[Path, Path, Path, Path, Path]:
+        collector = temporary / "collector" / "phase0-baseline"
+        collector.parent.mkdir(parents=True)
+        collector.write_bytes(COLLECTOR_CONTENT)
         profiles = temporary / "profiles"
         candidates = temporary / "candidates"
         proof = temporary / "full-invariant-proof"
@@ -487,6 +526,7 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
                 "source_tree": SOURCE_TREE,
                 "minimum_required_run_count": 7,
                 "reference_identity": {
+                    "collector": collector_identity(),
                     "artifact": {
                         "component_digest": COMPONENT_DIGEST,
                         "component_bytes": COMPONENT_BYTES,
@@ -551,6 +591,26 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             aggregate = json.loads((temporary / "aggregate.json").read_text(encoding="utf-8"))
             self.assertEqual(len(aggregate["profiles"]), 8)
             self.assertEqual(len(aggregate["candidates"]), 8)
+            self.assertEqual(
+                aggregate["source_provenance"],
+                {
+                    "schema_version": "latent.phase0.hot-path.source-provenance.v1",
+                    "published_commit": SOURCE_COMMIT,
+                    "published_tree": SOURCE_TREE,
+                    "published_source_ref": SOURCE_REF,
+                    "published_source_ref_head": SOURCE_REF_HEAD,
+                    "published_commit_reachable_from_ref": True,
+                    "execution_commit": SOURCE_COMMIT,
+                    "execution_tree": SOURCE_TREE,
+                    "execution_commit_matches_published": True,
+                    "tree_identity_verified": True,
+                    "rule": (
+                        "The runner fetched the durable ref, verified that the supplied "
+                        "commit exists, resolves to source_tree, and is reachable from "
+                        "the ref before execution."
+                    ),
+                },
+            )
             envelope = aggregate["profiles"][0]["contributor_attribution"]["categories"][
                 "activation envelope and metadata handling"
             ]
@@ -594,6 +654,7 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
                     "component_bytes": COMPONENT_BYTES,
                     "capsule_digest": CAPSULE_DIGEST,
                     "capsule_bytes": CAPSULE_BYTES,
+                    "collector": collector_identity(),
                 }
                 write_json(path, document)
             result = self.run_aggregate(temporary, archive)
@@ -708,6 +769,24 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("does not declare its exact profile workload", result.stderr)
 
+    def test_rejects_a_phase0_baseline_decoy_outside_the_profiled_child_position(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            profiles, _, _, _, _ = archive
+            command_path = profiles / "cold-preparation" / "perf" / "command.json"
+            document = json.loads(command_path.read_text(encoding="utf-8"))
+            arguments = document["command"]
+            separator = arguments.index("--")
+            arguments[separator + 1] = "/tmp/not-the-native-collector"
+            arguments.append("/tmp/phase0-baseline")
+            write_json(command_path, document)
+
+            result = self.run_aggregate(temporary, archive)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("did not invoke phase0-baseline", result.stderr)
+
     def test_rejects_profile_with_the_wrong_distinct_contention_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             temporary = Path(directory)
@@ -738,6 +817,23 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             result = self.run_aggregate(temporary, archive)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("execution commit differs", result.stderr)
+
+    def test_rejects_full_proof_executed_at_a_different_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            _, proof, _, _, _ = archive
+            path = proof.parent / "command.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            document["execution_commit"] = "d" * 40
+            write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(
+                "full-invariant proof command execution commit does not equal "
+                "the published source commit",
+                result.stderr,
+            )
 
     def test_rejects_command_with_published_source_identity_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
