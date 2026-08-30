@@ -1232,9 +1232,22 @@ def validate_resource_soak(document: dict[str, Any], soak_path: str) -> tuple[di
         _require(saturation.get("at_capacity", 0) >= 100 and saturation.get("bounded_queue_saturation", 0) >= 100, f"resource-soak {label} has incomplete saturation coverage")
 
     configuration = _mapping(document.get("configuration_identity"), "resource-soak configuration identity")
-    configuration_source_identity = _mapping(
-        configuration.get("source_identity"), "resource-soak configuration source identity"
+    configuration_source_identity = dict(
+        _mapping(
+            configuration.get("source_identity"),
+            "resource-soak configuration source identity",
+        )
     )
+    # The soak aggregator derives this configuration summary from the raw runs,
+    # but its projection predates tree_identity_verified and omits only that
+    # duplicate field. At this point the aggregate and every retained raw run
+    # have already supplied and passed the strict tree proof, so inherit the
+    # verified value only when the derived field is absent. Explicit false or
+    # null values still flow into the strict validator and fail closed.
+    if "tree_identity_verified" not in configuration_source_identity:
+        configuration_source_identity["tree_identity_verified"] = source_provenance[
+            "tree_identity_verified"
+        ]
     configuration_provenance = _soak_durable_source_provenance(
         configuration_source_identity,
         "resource-soak configuration source provenance",
@@ -1303,6 +1316,7 @@ def validate_resource_soak(document: dict[str, Any], soak_path: str) -> tuple[di
     if file_descriptors.get("status") != "pass":
         blockers.append(f"resource-soak file-descriptor lifecycle evidence is {file_descriptors.get('status')!r}")
     receipt_configuration = dict(configuration)
+    receipt_configuration["source_identity"] = configuration_source_identity
     receipt_configuration["artifact"] = {
         "component_digest": artifact["component_digest"],
         "component_bytes": artifact["component_bytes"],

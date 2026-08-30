@@ -369,7 +369,6 @@ class Phase0GateEvidenceTests(unittest.TestCase):
                 "execution_commit": source_commit,
                 "execution_tree": source_tree,
                 "execution_commit_matches_published": True,
-                "tree_identity_verified": True,
                 "final_configuration_commit": source_commit,
             }
         )
@@ -472,9 +471,17 @@ class Phase0GateEvidenceTests(unittest.TestCase):
 
     def test_current_schema_soak_requires_durable_provenance_and_capsule_identity(self) -> None:
         document = self.current_schema_soak()
+        self.assertNotIn(
+            "tree_identity_verified",
+            document["configuration_identity"]["source_identity"],
+        )
         receipt, blockers = validate_resource_soak(document, "soak.json")
         self.assertEqual(receipt["status"], "pass")
         self.assertEqual(blockers, [])
+        self.assertIs(
+            receipt["configuration"]["source_identity"]["tree_identity_verified"],
+            True,
+        )
         self.assertEqual(
             receipt["configuration"]["artifact"]["capsule_digest"],
             CURRENT_SOAK_CAPSULE_DIGEST,
@@ -493,6 +500,47 @@ class Phase0GateEvidenceTests(unittest.TestCase):
         del missing_capsule["configuration_identity"]["capsule_digest"]
         with self.assertRaisesRegex(GateValidationError, "resource-soak capsule digest"):
             validate_resource_soak(missing_capsule, "soak.json")
+
+    def test_current_schema_soak_inherits_only_the_omitted_derived_tree_proof(self) -> None:
+        for invalid in (False, None):
+            with self.subTest(configuration_tree_identity_verified=invalid):
+                document = self.current_schema_soak()
+                document["configuration_identity"]["source_identity"][
+                    "tree_identity_verified"
+                ] = invalid
+                with self.assertRaisesRegex(
+                    GateValidationError,
+                    "resource-soak configuration source provenance source tree was not verified",
+                ):
+                    validate_resource_soak(document, "soak.json")
+
+        missing_aggregate_proof = self.current_schema_soak()
+        del missing_aggregate_proof["source_provenance"]["tree_identity_verified"]
+        with self.assertRaisesRegex(
+            GateValidationError,
+            "resource-soak source provenance source tree was not verified",
+        ):
+            validate_resource_soak(missing_aggregate_proof, "soak.json")
+
+        missing_raw_proof = self.current_schema_soak()
+        del missing_raw_proof["raw_runs"][0]["source_identity"][
+            "tree_identity_verified"
+        ]
+        with self.assertRaisesRegex(
+            GateValidationError,
+            "resource-soak run-01 source provenance source tree was not verified",
+        ):
+            validate_resource_soak(missing_raw_proof, "soak.json")
+
+        missing_configuration_tree = self.current_schema_soak()
+        del missing_configuration_tree["configuration_identity"]["source_identity"][
+            "execution_tree"
+        ]
+        with self.assertRaisesRegex(
+            GateValidationError,
+            "resource-soak configuration source provenance execution tree does not equal",
+        ):
+            validate_resource_soak(missing_configuration_tree, "soak.json")
 
     def test_current_schema_soak_rejects_mismatched_raw_capsule_and_ref_provenance(self) -> None:
         capsule_mismatch = self.current_schema_soak()
