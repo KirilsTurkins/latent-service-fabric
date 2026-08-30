@@ -2,10 +2,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=phase0_build_environment.sh
+source "${ROOT}/tools/phase0_build_environment.sh"
 TARGET_ROOT="${CARGO_TARGET_DIR:-${ROOT}/target}"
 if [[ "${TARGET_ROOT}" != /* ]]; then
     TARGET_ROOT="${ROOT}/${TARGET_ROOT}"
 fi
+
+phase0_reject_inherited_build_overrides
 INPUT="${LSF_SPIKE_INPUT:-hello from the Phase 0 spike}"
 
 cd "${ROOT}"

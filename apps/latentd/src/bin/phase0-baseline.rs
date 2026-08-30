@@ -59,6 +59,7 @@ use latentd::phase0_composition::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use sha2::{Digest as _, Sha256};
 use tokio::sync::Barrier;
 
 const SCHEMA_VERSION: &str = "latent.phase0.baseline.v2";

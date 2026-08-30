@@ -48,6 +48,7 @@ use latentd::phase0_composition::{
     Phase0RuntimeWorkerMonitor,
 };
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use tokio::sync::Barrier;
 
 const SCHEMA_VERSION: &str = "latent.phase0.resource-soak.run.v1";
@@ -101,6 +102,14 @@ struct Cli {
     /// Git tree for the reachable source commit.
     #[arg(long)]
     source_tree: String,
+
+    /// Durable origin branch or tag that contained the published source commit.
+    #[arg(long)]
+    published_source_ref: String,
+
+    /// Head of the durable origin branch or tag resolved before collection.
+    #[arg(long)]
+    published_source_ref_head: String,
 
     /// Local commit from which this process was executed.
     #[arg(long)]
@@ -260,11 +269,22 @@ impl EffectiveConfig {
         }
         if !valid_git_object_id(&cli.source_commit)
             || !valid_git_object_id(&cli.source_tree)
+            || !valid_git_object_id(&cli.published_source_ref_head)
             || !valid_git_object_id(&cli.execution_commit)
             || !valid_git_object_id(&cli.execution_tree)
         {
             return Err(SoakError::new(
-                "source and execution commit/tree identifiers must be 40-character lowercase Git object IDs",
+                "source, durable-ref head, and execution commit/tree identifiers must be 40-character lowercase Git object IDs",
+            ));
+        }
+        if !valid_published_source_ref(&cli.published_source_ref) {
+            return Err(SoakError::new(
+                "published source ref must be a non-empty refs/heads/* or refs/tags/* name",
+            ));
+        }
+        if cli.execution_commit != cli.source_commit {
+            return Err(SoakError::new(
+                "execution commit does not match the declared published source commit",
             ));
         }
         if cli.execution_tree != cli.source_tree {
@@ -316,8 +336,12 @@ impl From<serde_json::Error> for SoakError {
 struct SourceIdentity {
     published_commit: String,
     published_tree: String,
+    published_source_ref: String,
+    published_source_ref_head: String,
+    published_commit_reachable_from_ref: bool,
     execution_commit: String,
     execution_tree: String,
+    execution_commit_matches_published: bool,
     tree_identity_verified: bool,
     final_configuration_commit: Option<String>,
 }
@@ -357,7 +381,10 @@ struct NativeLinuxValidation {
 
 #[derive(Debug, Clone, Serialize)]
 struct ArtifactReport {
+    collector: latentd::phase0_collector::NativeCollectorIdentity,
     capsule_path: String,
+    capsule_digest: String,
+    capsule_bytes: u64,
     component_path: String,
     component_digest: String,
     component_bytes: u64,
@@ -740,6 +767,9 @@ async fn run_async(
     native_linux_validation: NativeLinuxValidation,
     process_before_runtime: ProcessSnapshot,
 ) -> Result<SoakDocument, SoakError> {
+    let collector = latentd::phase0_collector::native_collector_identity("phase0-soak")
+        .map_err(SoakError::new)?;
+    let (capsule_path, capsule_digest, capsule_bytes) = capsule_identity(&cli.capsule)?;
     let prepared_backend = phase0_composition::prepare_phase0_backend(&Phase0PreparationConfig {
         capsule: cli.capsule.clone(),
         component: None,
@@ -962,8 +992,12 @@ async fn run_async(
     let source_identity = SourceIdentity {
         published_commit: cli.source_commit.clone(),
         published_tree: cli.source_tree.clone(),
+        published_source_ref: cli.published_source_ref.clone(),
+        published_source_ref_head: cli.published_source_ref_head.clone(),
+        published_commit_reachable_from_ref: true,
         execution_commit: cli.execution_commit.clone(),
         execution_tree: cli.execution_tree.clone(),
+        execution_commit_matches_published: cli.execution_commit == cli.source_commit,
         tree_identity_verified: cli.execution_tree == cli.source_tree,
         final_configuration_commit: cli.final_configuration_commit.clone(),
     };
@@ -1039,7 +1073,10 @@ async fn run_async(
         source_identity,
         environment,
         artifact: ArtifactReport {
-            capsule_path: cli.capsule.display().to_string(),
+            collector,
+            capsule_path,
+            capsule_digest,
+            capsule_bytes,
             component_path: loaded.component_path.display().to_string(),
             component_digest: loaded.artifact.manifest.component_digest.0,
             component_bytes: loaded.component_bytes,
@@ -2032,6 +2069,44 @@ fn valid_git_object_id(value: &str) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+fn valid_published_source_ref(value: &str) -> bool {
+    let prefix = if value.starts_with("refs/heads/") {
+        "refs/heads/"
+    } else if value.starts_with("refs/tags/") {
+        "refs/tags/"
+    } else {
+        return false;
+    };
+    value.len() > prefix.len() && !value.chars().any(char::is_whitespace)
+}
+
+fn capsule_identity(capsule: &Path) -> Result<(String, String, u64), SoakError> {
+    let manifest_path = if capsule.is_dir() {
+        capsule.join("capsule.json")
+    } else {
+        capsule.to_path_buf()
+    };
+    let bytes = fs::read(&manifest_path).map_err(|error| {
+        SoakError::new(format!(
+            "failed to read capsule manifest for fixture identity ({}): {error}",
+            manifest_path.display()
+        ))
+    })?;
+    let byte_count = u64::try_from(bytes.len())
+        .map_err(|_| SoakError::new("capsule manifest is too large to record"))?;
+    if byte_count == 0 {
+        return Err(SoakError::new(
+            "capsule manifest is empty and cannot identify the measured fixture",
+        ));
+    }
+    let digest = Sha256::digest(&bytes);
+    Ok((
+        manifest_path.display().to_string(),
+        format!("sha256:{digest:x}"),
+        byte_count,
+    ))
 }
 
 fn write_document(path: &Path, document: &SoakDocument) -> Result<(), SoakError> {

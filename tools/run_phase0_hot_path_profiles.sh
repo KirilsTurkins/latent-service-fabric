@@ -3,19 +3,29 @@
 # matrix. This is a manual evidence command, never shared pull-request CI.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# shellcheck source=phase0_build_environment.sh
+source "${ROOT}/tools/phase0_build_environment.sh"
 PYTHON="${PYTHON:-python3}"
 OUTPUT_DIR=""
-TARGET_ROOT="${LSF_HOT_PATH_TARGET_DIR:-${ROOT}/target/phase0-hot-path-work}"
+# Evidence collection must never borrow the checkout's default target
+# directory.  The final target path is derived from the required external
+# archive path below, unless the caller supplies another fresh external path.
+TARGET_ROOT="${LSF_HOT_PATH_TARGET_DIR:-}"
 PUBLISHED_SOURCE_COMMIT=""
 PUBLISHED_SOURCE_TREE=""
 PUBLISHED_SOURCE_REF=""
+CALIBRATION_AGGREGATE=""
 CANDIDATE_RUNS=3
+REFERENCE_CANDIDATE_RUNS=7
 PERF_FREQUENCY=999
 MINIMUM_EXPERIMENT_RUNS=3
+MINIMUM_REFERENCE_RUNS=7
+
+phase0_reject_inherited_build_overrides
 
 usage() {
-    printf '%s\n' "usage: $0 --published-source-commit SHA --published-source-tree TREE --published-source-ref REF [--candidate-runs N] [--perf-frequency HZ] [output-directory]"
+    printf '%s\n' "usage: $0 --published-source-commit SHA --published-source-tree TREE --published-source-ref REF --calibration-aggregate PATH [--candidate-runs N] [--reference-candidate-runs N] [--perf-frequency HZ] [output-directory]"
     printf '%s\n' "Records native-Linux perf + heaptrack evidence and a bounded Phase 0 experiment matrix."
 }
 
@@ -36,9 +46,19 @@ while (( $# > 0 )); do
             PUBLISHED_SOURCE_REF="$2"
             shift 2
             ;;
+        --calibration-aggregate)
+            (( $# >= 2 )) || { usage >&2; exit 2; }
+            CALIBRATION_AGGREGATE="$2"
+            shift 2
+            ;;
         --candidate-runs)
             (( $# >= 2 )) || { usage >&2; exit 2; }
             CANDIDATE_RUNS="$2"
+            shift 2
+            ;;
+        --reference-candidate-runs)
+            (( $# >= 2 )) || { usage >&2; exit 2; }
+            REFERENCE_CANDIDATE_RUNS="$2"
             shift 2
             ;;
         --perf-frequency)
@@ -62,17 +82,24 @@ while (( $# > 0 )); do
     esac
 done
 
-if [[ -z "$OUTPUT_DIR" ]]; then
-    OUTPUT_DIR="${ROOT}/target/phase0-hot-path/native-linux"
-elif [[ "$OUTPUT_DIR" != /* ]]; then
-    OUTPUT_DIR="${ROOT}/${OUTPUT_DIR}"
-fi
-if [[ -e "$OUTPUT_DIR" ]]; then
-    printf '%s\n' "profile output directory must be new: $OUTPUT_DIR" >&2
+if [[ -z "$CALIBRATION_AGGREGATE" ]]; then
+    printf '%s\n' "--calibration-aggregate is required and must name a fresh calibration aggregate" >&2
     exit 2
 fi
+if [[ "$CALIBRATION_AGGREGATE" != /* ]]; then
+    CALIBRATION_AGGREGATE="$ROOT/$CALIBRATION_AGGREGATE"
+fi
+if [[ ! -f "$CALIBRATION_AGGREGATE" || -L "$CALIBRATION_AGGREGATE" ]]; then
+    printf '%s\n' "--calibration-aggregate must be an existing regular file: $CALIBRATION_AGGREGATE" >&2
+    exit 2
+fi
+
 if ! [[ "$CANDIDATE_RUNS" =~ ^[0-9]+$ ]] || (( CANDIDATE_RUNS < MINIMUM_EXPERIMENT_RUNS )); then
     printf '%s\n' "--candidate-runs must be at least $MINIMUM_EXPERIMENT_RUNS" >&2
+    exit 2
+fi
+if ! [[ "$REFERENCE_CANDIDATE_RUNS" =~ ^[0-9]+$ ]] || (( REFERENCE_CANDIDATE_RUNS < MINIMUM_REFERENCE_RUNS )); then
+    printf '%s\n' "--reference-candidate-runs must be at least $MINIMUM_REFERENCE_RUNS" >&2
     exit 2
 fi
 if ! [[ "$PERF_FREQUENCY" =~ ^[0-9]+$ ]] || (( PERF_FREQUENCY == 0 )); then
@@ -83,8 +110,79 @@ if ! [[ "$PUBLISHED_SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$PUBLISHED_SOUR
     printf '%s\n' "a durable source commit, tree, and branch or tag ref are required" >&2
     exit 2
 fi
+if [[ -z "$OUTPUT_DIR" ]]; then
+    printf '%s\n' "profile output directory must be supplied as a fresh absolute path outside the source tree" >&2
+    exit 2
+fi
+if [[ "$OUTPUT_DIR" != /* ]]; then
+    printf '%s\n' "profile output directory must be an absolute path outside the source tree: $OUTPUT_DIR" >&2
+    exit 2
+fi
+if ! command -v "$PYTHON" >/dev/null 2>&1; then
+    printf '%s\n' "required command is unavailable: $PYTHON" >&2
+    exit 2
+fi
 
-for command in git "$PYTHON" cargo perf heaptrack heaptrack_print uname; do
+# Resolve lexical paths before containment checks, including a non-existent
+# final path component.  This prevents a symlinked external-looking path from
+# depositing evidence or build output back into the checkout.
+canonical_path() {
+    "$PYTHON" - "$1" <<'PY'
+from pathlib import Path
+import sys
+
+print(Path(sys.argv[1]).resolve(strict=False))
+PY
+}
+
+OUTPUT_DIR="$(canonical_path "$OUTPUT_DIR")"
+case "$OUTPUT_DIR" in
+    "$ROOT"|"$ROOT"/*)
+        printf '%s\n' "profile output directory must be outside the source tree: $OUTPUT_DIR" >&2
+        exit 2
+        ;;
+esac
+if [[ -e "$OUTPUT_DIR" || -L "$OUTPUT_DIR" ]]; then
+    printf '%s\n' "profile output directory must not already exist: $OUTPUT_DIR" >&2
+    printf '%s\n' "choose a fresh external archive path; profile evidence is never overwritten or reused" >&2
+    exit 2
+fi
+
+if [[ -z "$TARGET_ROOT" ]]; then
+    TARGET_ROOT="${OUTPUT_DIR}.build"
+elif [[ "$TARGET_ROOT" != /* ]]; then
+    printf '%s\n' "LSF_HOT_PATH_TARGET_DIR must be an absolute path outside the source tree: $TARGET_ROOT" >&2
+    exit 2
+fi
+TARGET_ROOT="$(canonical_path "$TARGET_ROOT")"
+case "$TARGET_ROOT" in
+    "$ROOT"|"$ROOT"/*)
+        printf '%s\n' "hot-path profile build output must be outside the source tree: $TARGET_ROOT" >&2
+        exit 2
+        ;;
+esac
+if [[ -e "$TARGET_ROOT" || -L "$TARGET_ROOT" ]]; then
+    printf '%s\n' "hot-path profile build output directory must not already exist: $TARGET_ROOT" >&2
+    printf '%s\n' "choose a fresh external build path; collector build products are never reused or overwritten" >&2
+    exit 2
+fi
+# Keep raw evidence and Cargo's mutable incremental output disjoint.  Even an
+# external nested target would otherwise make it too easy to package build
+# products as evidence by accident.
+case "$TARGET_ROOT" in
+    "$OUTPUT_DIR"|"$OUTPUT_DIR"/*)
+        printf '%s\n' "hot-path profile build output must not overlap the evidence output directory" >&2
+        exit 2
+        ;;
+esac
+case "$OUTPUT_DIR" in
+    "$TARGET_ROOT"|"$TARGET_ROOT"/*)
+        printf '%s\n' "hot-path profile build output must not overlap the evidence output directory" >&2
+        exit 2
+        ;;
+esac
+
+for command in git "$PYTHON" cargo perf heaptrack heaptrack_print uname systemd-detect-virt; do
     command -v "$command" >/dev/null 2>&1 || {
         printf '%s\n' "required command is unavailable: $command" >&2
         exit 2
@@ -102,12 +200,10 @@ if {
     printf '%s\n' "WSL is historical-only and cannot produce Phase 0 profile evidence" >&2
     exit 2
 fi
-if command -v systemd-detect-virt >/dev/null 2>&1; then
-    CONTAINER_KIND="$(systemd-detect-virt --container 2>/dev/null || true)"
-    if [[ -n "$CONTAINER_KIND" && "$CONTAINER_KIND" != "none" ]]; then
-        printf '%s\n' "a container cannot produce the native-Linux profile reference: $CONTAINER_KIND" >&2
-        exit 2
-    fi
+CONTAINER_KIND="$(systemd-detect-virt --container 2>/dev/null || true)"
+if [[ "$CONTAINER_KIND" != "none" ]]; then
+    printf '%s\n' "native-Linux profiles require systemd-detect-virt --container to report none: ${CONTAINER_KIND:-unavailable}" >&2
+    exit 2
 fi
 
 cd "$ROOT"
@@ -117,6 +213,12 @@ if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
 fi
 EXECUTION_COMMIT="$(git rev-parse HEAD)"
 EXECUTION_TREE="$(git rev-parse HEAD^{tree})"
+if [[ "$EXECUTION_COMMIT" != "$PUBLISHED_SOURCE_COMMIT" ]]; then
+    printf '%s\n' "local execution HEAD does not equal the declared published source commit" >&2
+    printf '%s\n' "execution commit: $EXECUTION_COMMIT" >&2
+    printf '%s\n' "published commit: $PUBLISHED_SOURCE_COMMIT" >&2
+    exit 2
+fi
 if [[ "$EXECUTION_TREE" != "$PUBLISHED_SOURCE_TREE" ]]; then
     printf '%s\n' "local execution tree does not match the declared published source tree" >&2
     printf '%s\n' "execution tree: $EXECUTION_TREE" >&2
@@ -124,33 +226,41 @@ if [[ "$EXECUTION_TREE" != "$PUBLISHED_SOURCE_TREE" ]]; then
     exit 2
 fi
 
-# Resolve the durable ref before collecting evidence.  A tree hash alone is
+# Resolve the durable ref before collecting evidence. A tree hash alone is
 # insufficient: the exact supplied commit must exist, resolve to that tree,
-# and be reachable from an advertised branch or tag.  Ordinarily this refreshes
-# `origin`; an already-present origin-tracking ref is accepted only when the
-# fetch transport is unavailable (for example an offline rerun of an already
-# fetched source).  The recorded ref head makes that fallback auditable.
-if [[ "$PUBLISHED_SOURCE_REF" == refs/* ]]; then
+# and be reachable from an advertised branch or tag. Record the canonical
+# refs/heads/... or refs/tags/... spelling in every retained artifact so an
+# equivalent shorthand cannot blur provenance.
+if [[ "$PUBLISHED_SOURCE_REF" == refs/heads/* || "$PUBLISHED_SOURCE_REF" == refs/tags/* ]]; then
     SOURCE_REF_SPEC="$PUBLISHED_SOURCE_REF"
+elif [[ "$PUBLISHED_SOURCE_REF" == refs/* ]]; then
+    printf '%s\n' "published source ref must name a durable branch or tag: $PUBLISHED_SOURCE_REF" >&2
+    exit 2
 else
     SOURCE_REF_SPEC="refs/heads/$PUBLISHED_SOURCE_REF"
 fi
+if ! git check-ref-format "$SOURCE_REF_SPEC"; then
+    printf '%s\n' "published source ref is not a valid Git ref: $PUBLISHED_SOURCE_REF" >&2
+    exit 2
+fi
+PUBLISHED_SOURCE_REF="$SOURCE_REF_SPEC"
 if [[ "$SOURCE_REF_SPEC" == refs/heads/* ]]; then
     CACHED_SOURCE_REF="refs/remotes/origin/${SOURCE_REF_SPEC#refs/heads/}"
+    if git fetch --quiet origin "$SOURCE_REF_SPEC"; then
+        PUBLISHED_REF_HEAD="$(git rev-parse --verify FETCH_HEAD^{commit})"
+    elif git show-ref --verify --quiet "$CACHED_SOURCE_REF"; then
+        PUBLISHED_REF_HEAD="$(git rev-parse --verify "${CACHED_SOURCE_REF}^{commit}")"
+        printf '%s\n' "unable to refresh origin; using cached origin ref $CACHED_SOURCE_REF" >&2
+    else
+        printf '%s\n' "cannot fetch durable published source branch and no cached origin ref exists: $PUBLISHED_SOURCE_REF" >&2
+        exit 2
+    fi
 else
-    CACHED_SOURCE_REF="$SOURCE_REF_SPEC"
-fi
-if git fetch --quiet origin "$SOURCE_REF_SPEC"; then
-    PUBLISHED_REF_HEAD="$(git rev-parse FETCH_HEAD)"
-elif [[ "$PUBLISHED_SOURCE_REF" == refs/tags/* ]] \
-    && git fetch --quiet origin "$PUBLISHED_SOURCE_REF"; then
-    PUBLISHED_REF_HEAD="$(git rev-parse FETCH_HEAD)"
-elif git show-ref --verify --quiet "$CACHED_SOURCE_REF"; then
-    PUBLISHED_REF_HEAD="$(git rev-parse "$CACHED_SOURCE_REF")"
-    printf '%s\n' "unable to refresh origin; using cached origin ref $CACHED_SOURCE_REF" >&2
-else
-    printf '%s\n' "cannot fetch durable published source ref and no cached origin ref exists: $PUBLISHED_SOURCE_REF" >&2
-    exit 2
+    if ! git fetch --quiet origin "$SOURCE_REF_SPEC"; then
+        printf '%s\n' "cannot fetch durable published source tag from origin: $PUBLISHED_SOURCE_REF" >&2
+        exit 2
+    fi
+    PUBLISHED_REF_HEAD="$(git rev-parse --verify FETCH_HEAD^{commit})"
 fi
 if ! git cat-file -e "$PUBLISHED_SOURCE_COMMIT^{commit}"; then
     printf '%s\n' "declared published source commit does not exist after fetching $PUBLISHED_SOURCE_REF" >&2
@@ -165,21 +275,46 @@ if ! git merge-base --is-ancestor "$PUBLISHED_SOURCE_COMMIT" "$PUBLISHED_REF_HEA
     exit 2
 fi
 
-if [[ "$TARGET_ROOT" != /* ]]; then
-    TARGET_ROOT="${ROOT}/${TARGET_ROOT}"
+# The profile aggregate is only as applicable as the calibration it consumes.
+# Rebuild the supplied fresh aggregate from its retained raw runs before any
+# output directory or profiler work is created. This rejects stale, relabelled,
+# incomplete, or manually altered calibration evidence instead of falling back
+# to the historical checked-in aggregate.
+"$PYTHON" tools/aggregate_phase0_calibration.py verify \
+    --aggregate "$CALIBRATION_AGGREGATE" \
+    --source-commit "$PUBLISHED_SOURCE_COMMIT" \
+    --source-tree "$PUBLISHED_SOURCE_TREE"
+
+# Do not permit a post-check race to silently reuse a collector workspace.
+# Parent directories are ordinary external staging paths; the two final
+# directories must each be newly created by this invocation.
+mkdir -p -- "$(dirname -- "$OUTPUT_DIR")" "$(dirname -- "$TARGET_ROOT")"
+if ! mkdir -- "$OUTPUT_DIR"; then
+    printf '%s\n' "profile output directory could not be created fresh: $OUTPUT_DIR" >&2
+    exit 2
 fi
-mkdir -p "$OUTPUT_DIR" "$TARGET_ROOT"
+if ! mkdir -- "$TARGET_ROOT"; then
+    printf '%s\n' "hot-path profile build output directory could not be created fresh: $TARGET_ROOT" >&2
+    exit 2
+fi
 
 printf '%s\n' "Profiling published source $PUBLISHED_SOURCE_COMMIT (tree $PUBLISHED_SOURCE_TREE, ref $PUBLISHED_SOURCE_REF)"
-printf '%s\n' "Candidate repetitions: $CANDIDATE_RUNS; perf frequency: $PERF_FREQUENCY Hz"
+printf '%s\n' "Experiment repetitions: $CANDIDATE_RUNS; reference repetitions: $REFERENCE_CANDIDATE_RUNS; perf frequency: $PERF_FREQUENCY Hz"
 
-"$PYTHON" tools/aggregate_phase0_hot_path_profiles.py capture-host \
-    --output "$OUTPUT_DIR/host-before.json" \
-    --source-commit "$PUBLISHED_SOURCE_COMMIT" \
-    --source-tree "$PUBLISHED_SOURCE_TREE" \
-    --published-source-ref "$PUBLISHED_SOURCE_REF" \
-    --published-source-ref-head "$PUBLISHED_REF_HEAD" \
-    --repository-root "$ROOT"
+capture_measurement_host() {
+    local output="$1"
+    "$PYTHON" tools/aggregate_phase0_hot_path_profiles.py capture-host \
+        --output "$output" \
+        --source-commit "$PUBLISHED_SOURCE_COMMIT" \
+        --source-tree "$PUBLISHED_SOURCE_TREE" \
+        --published-source-ref "$PUBLISHED_SOURCE_REF" \
+        --published-source-ref-head "$PUBLISHED_REF_HEAD" \
+        --repository-root "$ROOT"
+}
+
+# Keep a wrapper-level observation for a concise archive overview, then bind
+# every measured process to its own before/after observations below.
+capture_measurement_host "$OUTPUT_DIR/host-before.json"
 
 # A smoke run builds verified real fixtures and the parity probe through the
 # exact executable path. It is intentionally outside perf/heaptrack samples:
@@ -189,11 +324,10 @@ BOOTSTRAP_DIR="$OUTPUT_DIR/bootstrap"
 printf '%s\n' "Building verified profiling fixture and executable parity probe"
 GITHUB_SHA="$PUBLISHED_SOURCE_COMMIT" \
     CARGO_TARGET_DIR="$TARGET_ROOT" \
-    CARGO_PROFILE_RELEASE_DEBUG=1 \
-    CARGO_PROFILE_RELEASE_STRIP=none \
+    LSF_PHASE0_RETAIN_COLLECTOR_PATH="$OUTPUT_DIR/collector/phase0-baseline" \
     tools/run_phase0_baselines.sh smoke "$BOOTSTRAP_DIR" >"$OUTPUT_DIR/bootstrap.log" 2>&1
 
-BASELINE="$TARGET_ROOT/release/phase0-baseline"
+BASELINE="$OUTPUT_DIR/collector/phase0-baseline"
 CAPSULE="$TARGET_ROOT/phase0-baseline/staged-containment/capsule.json"
 EXECUTABLE_PROBE="$TARGET_ROOT/phase0-baseline/smoke/executable-harness-probe.json"
 for required in "$BASELINE" "$CAPSULE" "$EXECUTABLE_PROBE"; do
@@ -273,7 +407,7 @@ PY
         --runtime-workers "$runtime_workers" \
         --pool-capacity "$pool_capacity" \
         --pool-queue-capacity 4 \
-        --coordination-timeout-ms 15000 \
+        --coordination-timeout-ms 2000 \
         --coordination-poll-interval-ms "$coordination_poll_interval_ms" \
         --wasmtime-allocator "$allocator" \
         --wasmtime-copy-on-write-images "$copy_on_write" \
@@ -297,7 +431,9 @@ run_full_invariant_proof() {
         "$root/raw-results.json" "$root/BASELINE.md" \
         40 10 24 2000 2 2 on-demand true true "$EXECUTABLE_PROBE" 0 ""
     write_command_json "$root/command.json" "phase0-baseline-full-invariant-proof" "${command[@]}"
+    capture_measurement_host "$root/host-before.json"
     "${command[@]}" >"$root/stdout.log" 2>"$root/stderr.log"
+    capture_measurement_host "$root/host-after.json"
 }
 
 run_profile() {
@@ -318,8 +454,10 @@ run_profile() {
         2 2 on-demand true true "$EXECUTABLE_PROBE" 1 "$workload"
     write_command_json "$perf_root/command.json" "perf" \
         perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}"
+    capture_measurement_host "$perf_root/host-before.json"
     perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}" \
         >"$perf_root/stdout.log" 2>"$perf_root/stderr.log"
+    capture_measurement_host "$perf_root/host-after.json"
     perf report --stdio --no-children --percent-limit 0.1 --sort comm,dso,symbol \
         --input "$perf_root/perf.data" >"$perf_root/perf-report.txt" 2>"$perf_root/perf-report.stderr.log"
     perf report --stdio --percent-limit 0.1 --sort comm,dso,symbol \
@@ -333,8 +471,10 @@ run_profile() {
         2 2 on-demand true true "$EXECUTABLE_PROBE" 1 "$workload"
     write_command_json "$allocation_root/command.json" "heaptrack" \
         heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}"
+    capture_measurement_host "$allocation_root/host-before.json"
     heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}" \
         >"$allocation_root/stdout.log" 2>"$allocation_root/stderr.log"
+    capture_measurement_host "$allocation_root/host-after.json"
     local allocation_data="$allocation_root/heaptrack.gz.zst"
     if [[ ! -f "$allocation_data" ]]; then
         mapfile -t heaptrack_outputs < <(find "$allocation_root" -maxdepth 1 -type f -name 'heaptrack*.gz*' -print)
@@ -379,6 +519,7 @@ run_candidate() {
     local allocator="$4"
     local copy_on_write="$5"
     local cache_enabled="$6"
+    local run_count="$7"
     local root="$OUTPUT_DIR/candidates/$candidate"
     mkdir -p "$root"
     local candidate_probe="$root/executable-harness-probe.json"
@@ -390,8 +531,7 @@ run_candidate() {
         LSF_BASELINE_POOL_CAPACITY="$pool_capacity" \
         LSF_BASELINE_RUNTIME_WORKERS="$runtime_workers" \
         CARGO_TARGET_DIR="$TARGET_ROOT" \
-        CARGO_PROFILE_RELEASE_DEBUG=1 \
-        CARGO_PROFILE_RELEASE_STRIP=none \
+        LSF_PHASE0_RETAIN_COLLECTOR_PATH="$OUTPUT_DIR/collector/phase0-baseline" \
         tools/run_phase0_baselines.sh smoke "$root/parity-bootstrap" >"$root/parity-bootstrap.log" 2>&1
     [[ -f "$shared_probe" ]] || {
         printf '%s\n' "candidate parity bootstrap did not produce its executable probe: $shared_probe" >&2
@@ -403,7 +543,7 @@ run_candidate() {
         "RAW_RESULTS.json" "BASELINE.md" 40 10 24 2000 \
         "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$cache_enabled" "$candidate_probe" 0 ""
     write_command_json "$root/command-template.json" "phase0-baseline" "${template[@]}"
-    for (( run = 1; run <= CANDIDATE_RUNS; run++ )); do
+    for (( run = 1; run <= run_count; run++ )); do
         printf -v run_name 'run-%02d' "$run"
         local run_root="$root/$run_name"
         mkdir -p "$run_root"
@@ -412,7 +552,9 @@ run_candidate() {
             "$run_root/raw-results.json" "$run_root/BASELINE.md" 40 10 24 2000 \
             "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$cache_enabled" "$candidate_probe" 0 ""
         write_command_json "$run_root/command.json" "phase0-baseline" "${command[@]}"
+        capture_measurement_host "$run_root/host-before.json"
         "${command[@]}" >"$run_root/stdout.log" 2>"$run_root/stderr.log"
+        capture_measurement_host "$run_root/host-after.json"
     done
 }
 
@@ -433,29 +575,30 @@ run_profile cleanup 128 1 1 1
 run_profile at-capacity-contention 1 1 48 1
 run_profile queued-contention 1 1 48 1
 
-# Each candidate is a separate process with the same fixture, toolchain,
-# budgets, queue limit, and full Phase 0 checks. Three runs are evidence for a
-# trade-off decision only; the aggregate will refuse to call them an adoption
-# result until a seven-run matched set exists.
-run_candidate worker-cell-1w-1c 1 1 on-demand true true
-run_candidate worker-cell-2w-2c 2 2 on-demand true true
-run_candidate worker-cell-2w-4c 2 4 on-demand true true
-run_candidate worker-cell-4w-2c 4 2 on-demand true true
-run_candidate on-demand-cow-disabled 2 2 on-demand false true
-run_candidate pooling-cow-disabled 2 2 pooling false true
-run_candidate pooling-cow-enabled 2 2 pooling true true
-run_candidate prepared-cache-disabled 2 2 on-demand true false
+# The fixed default is the only calibration-reference candidate: it retains a
+# complete seven-run matched set. The deliberately different configurations
+# remain bounded Phase 1 experiments with three retained observations each;
+# they are never presented as comparisons against the default calibration.
+run_candidate worker-cell-1w-1c 1 1 on-demand true true "$CANDIDATE_RUNS"
+run_candidate worker-cell-2w-2c 2 2 on-demand true true "$REFERENCE_CANDIDATE_RUNS"
+run_candidate worker-cell-2w-4c 2 4 on-demand true true "$CANDIDATE_RUNS"
+run_candidate worker-cell-4w-2c 4 2 on-demand true true "$CANDIDATE_RUNS"
+run_candidate on-demand-cow-disabled 2 2 on-demand false true "$CANDIDATE_RUNS"
+run_candidate pooling-cow-disabled 2 2 pooling false true "$CANDIDATE_RUNS"
+run_candidate pooling-cow-enabled 2 2 pooling true true "$CANDIDATE_RUNS"
+run_candidate prepared-cache-disabled 2 2 on-demand true false "$CANDIDATE_RUNS"
 
 "$PYTHON" tools/aggregate_phase0_hot_path_profiles.py aggregate \
     --profiles-directory "$OUTPUT_DIR/profiles" \
     --full-invariant-proof "$OUTPUT_DIR/full-invariant-proof/raw-results.json" \
     --candidates-directory "$OUTPUT_DIR/candidates" \
     --host-observation "$OUTPUT_DIR/host-before.json" \
-    --calibration-aggregate "$ROOT/benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json" \
+    --calibration-aggregate "$CALIBRATION_AGGREGATE" \
     --source-commit "$PUBLISHED_SOURCE_COMMIT" \
     --source-tree "$PUBLISHED_SOURCE_TREE" \
     --published-source-ref "$PUBLISHED_SOURCE_REF" \
     --required-candidate-runs "$CANDIDATE_RUNS" \
+    --required-reference-candidate-runs "$REFERENCE_CANDIDATE_RUNS" \
     --output-json "$OUTPUT_DIR/aggregate.json" \
     --output-report "$OUTPUT_DIR/PROFILE.md"
 

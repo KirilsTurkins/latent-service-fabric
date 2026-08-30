@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-28** for the Phase 0 executable contract, native-Linux variance calibration and resource-soak harness, independently regenerated fail-closed completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-08-30** for the authorized Phase 0 executable contract, native-Linux variance calibration, profiling and resource-soak evidence, full completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
 
 ## Entry point
 
@@ -31,6 +31,15 @@ aggregates from their raw artifacts and validating the fresh baseline against
 them. A full command fails if the receipt is not `authorized`; it never reports
 an incomplete or synthetic archive as a pass.
 
+The retained [August 30 native-Linux receipt](benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+records the fresh clean-checkout result: `pass`, `authorized`, and zero
+blockers. It independently regenerates the current calibration, profile, and
+soak inputs and binds them to the fresh baseline through one canonical
+execution-evidence identity. Phase 1 is authorized to build on those runtime
+invariants. The receipt remains explicitly non-production and non-Phase-1-API
+compatible; the [August 29 receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
+is preserved as historical evidence only.
+
 `make phase0-gate-smoke` runs the same code/contract/executable sequence with
 the deterministic smoke baseline. It records the receipt for CI but does not
 turn a smoke run into Phase 1 authorization; its output reports smoke
@@ -51,7 +60,7 @@ validation and authorization as separate states.
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
 - All six JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, binding, policy, and trigger examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interface surfaces compile or pass syntax checks.
-- SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.8 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
+- SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.0 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
 - Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
 - Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
 - The Phase 0 gate receipt rejects omitted, duplicate, unexpected, or failed baseline checks; missing required terminal scenarios; a dirty executable shutdown/topology result; malformed, unsafe, incomplete, or altered raw archives; unverified calibration/profile measurements; weakened optimization guardrails; free-form optimization decisions; stale execution evidence; and incomplete resource evidence represented as an authorization.
@@ -89,21 +98,26 @@ The native-Linux calibration is a heavier explicit benchmark command and is not
 part of normal shared CI:
 
 ~~~bash
-tools/run_phase0_calibration.sh benchmarks/phase0/calibration/native-linux-YYYY-MM-DD
+tools/run_phase0_calibration.sh \
+  --published-source-commit <reachable-commit-sha> \
+  --published-source-tree <reachable-tree-sha> \
+  --published-source-ref <durable-branch-or-tag> \
+  /var/tmp/phase0-evidence/calibration
 ~~~
 
-It runs the complete Phase 0 full profile at least seven times from one clean
-source tree and retains raw output, invariant results, host provenance, and an
-aggregate report. When a reachable published commit is supplied, the runner
-verifies that the local execution tree is byte-for-byte the same Git tree and
-records both identities. A missing fixture, failed hard invariant, missing or
-unexpected invariant name, or duplicate invariant name invalidates the
-calibration; it is never filtered based on timing or resource values.
+It runs the complete Phase 0 full profile at least seven times from one clean,
+pushed source commit/tree and retains raw output outside the source tree,
+invariant results, host provenance, and an aggregate report. The runner
+requires a durable remote ref, verifies commit/tree reachability from that
+ref, and records both the declared ref and resolved ref head. A missing
+fixture, failed hard invariant, missing or unexpected invariant name, or
+duplicate invariant name invalidates the calibration; it is never filtered
+based on timing or resource values.
 
-Phase 1 comparisons use the checked-in
-[aggregate.json](benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json)
-and its documented per-metric advisory bands. Hosted CI must not treat those
-microbenchmark bands as a pass/fail gate. See
+The checked-in [August 30 aggregate](benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754/aggregate.json)
+is the seven-run calibration input verified by the authorized receipt. The
+August 29 aggregate remains historical. Hosted CI must not treat either
+package's machine-specific microbenchmark bands as a pass/fail gate. See
 [docs/phase-0-baselines.md](docs/phase-0-baselines.md) for comparison and rerun
 rules.
 
@@ -119,12 +133,16 @@ tools/run_phase0_hot_path_profiles.sh \
   --published-source-commit <reachable-commit-sha> \
   --published-source-tree <reachable-tree-sha> \
   --published-source-ref <durable-branch-or-tag> \
-  benchmarks/phase0/profiling/native-linux-YYYY-MM-DD
+  --calibration-aggregate /var/tmp/phase0-evidence/calibration/aggregate.json \
+  /var/tmp/phase0-evidence/profiling
 ~~~
 
 The command refuses WSL, detected containers, unclean source, missing tools,
-source-tree mismatch, missing raw profile artifacts, and failed Phase 0 hard
-invariants. It retains the exact commands, `perf.data`, symbolized `perf`
+source-tree mismatch, a stale or malformed calibration, missing raw profile
+artifacts, and failed Phase 0 hard invariants. The calibration must be a fresh
+seven-or-more-run native-Linux aggregate whose sibling raw runs regenerate the
+same record for the declared published commit/tree; the runner has no fallback
+to the historical checked-in aggregate. It retains the exact commands, `perf.data`, symbolized `perf`
 reports, Heaptrack data/reports, full baseline raw output, host context, and a
 bounded worker/cell, allocator, and COW experiment matrix. Heaptrack allocation
 attribution uses the leaf-nearest non-plumbing owner frame; a category with no
@@ -132,6 +150,13 @@ direct sample is reported as not observed at profiler resolution, not as a
 zero-cost result. The aggregation test is deterministic and may run in CI; the
 host-sensitive profile command may not. See [docs/phase-0-hot-path-profiling.md](docs/phase-0-hot-path-profiling.md)
 for the evidence interpretation, adoption rule, and Phase 1 handoff.
+
+The retained August 30
+[`native-linux-2026-08-30-52ac4754`](benchmarks/phase0/profiling/native-linux-2026-08-30-52ac4754/README.md)
+package is the v5 profile input verified by the authorized receipt. It covers
+all eight required workloads and candidates, retains the complete invariant
+proof, and makes no production or cross-machine performance claim. The August
+29 package remains historical archive-regression evidence.
 
 ## Native-Linux long-running resource soak
 
@@ -144,9 +169,10 @@ commit/tree:
 tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
+  --published-source-ref <durable-branch-or-tag> \
   --final-configuration-commit <reachable-final-commit> \
-  --calibration benchmarks/phase0/calibration/native-linux-2026-08-28-6a64f063/aggregate.json \
-  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+  --calibration /var/tmp/phase0-evidence/calibration/aggregate.json \
+  /var/tmp/phase0-evidence/soak
 ```
 
 It rejects WSL, containers, unavailable process probes, fixture/toolchain
@@ -164,17 +190,22 @@ against before/after host observations and applies #38's calibrated RSS band
 for RSS/PSS/private material-growth triage only after CPU, memory, kernel,
 virtualization, toolchain, allocator, fixture, and relevant configuration
 identity—including prepared-cache enablement, Wasmtime allocator mode, and
-initialized-memory COW—are proved matched. A mismatch or missing identity is
-inconclusive, not a reason to raise an allowance.
+initialized-memory COW—are proved matched. A mismatch or missing identity
+blocks the comparison and authorization; it is never a reason to raise an
+allowance.
 
-The retained final-configuration raw result is
-[`native-linux-2026-08-28-6a64f063`](benchmarks/phase0/soak/native-linux-2026-08-28-6a64f063/README.md):
+The authorizing August 30 final-configuration raw result is
+[`native-linux-2026-08-30-52ac4754`](benchmarks/phase0/soak/native-linux-2026-08-30-52ac4754/README.md):
 three complete 100,000-activation processes from durable source commit
-`6a64f0630cee9afa080d33f376aabadac724fa72`. Its raw hard invariants,
+`52ac47542a05c0a1263f78a14c04a5c2e6b761f3` and tree
+`cac3ececdbd0b5734691c30c0283fccff169a5f5`. Its raw hard invariants,
 raw/host identity reconciliation, descriptor lifecycle, release/shutdown
 topology, and matched-calibration late-window analysis pass. The lossless zstd
 archive and its per-file manifest retain all raw process evidence without
-duplicating earlier attempts; #39 is complete for the recorded configuration.
+duplicating earlier attempts. The package is evidence input, not an
+authorization decision by itself; the retained full Phase 0 receipt verifies
+it together with every other required input. The August 29 result remains
+historical.
 
 ## CI jobs
 
@@ -190,9 +221,10 @@ Contract and capsule validation starts compiler and validator commands only. It 
 
 Passing the executable baseline establishes source consistency, guest behavior,
 component-interface validity, fixed cell-pool accounting, real Wasmtime
-invocation/containment, and same-boundary build reproducibility. It does not
-by itself authorize Phase 1: the receipt also requires conclusive retained
-calibration, profiling, and long-running resource evidence. It never
+invocation/containment, and same-boundary build reproducibility. A baseline
+does not by itself authorize Phase 1: the retained August 30 full receipt also
+verified conclusive calibration, profiling, and long-running resource evidence
+and therefore authorized the handoff. It never
 establishes production APIs, cross-platform byte identity, generic dispatch,
 production security, dormant-service density, cluster behavior, or production
 SLOs.
