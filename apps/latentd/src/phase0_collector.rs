@@ -8,7 +8,7 @@ use serde::Serialize;
 use sha2::{Digest as _, Sha256};
 
 const COLLECTOR_SCHEMA: &str = "latent.phase0.native-collector.v1";
-const BUILD_SCHEMA: &str = "latent.phase0.native-release-build.v1";
+const BUILD_SCHEMA: &str = "latent.phase0.native-release-build.v2";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct NativeCollectorIdentity {
@@ -32,6 +32,9 @@ pub struct NativeCollectorBuildConfiguration {
     pub incremental: bool,
     pub codegen_units: u16,
     pub strip: &'static str,
+    pub path_remap_policy: &'static str,
+    pub linker_build_id: &'static str,
+    pub promoted_local_symbols: &'static str,
 }
 
 /// Hash the executable that is actually collecting this raw evidence and bind
@@ -100,10 +103,28 @@ fn native_build_configuration() -> Result<NativeCollectorBuildConfiguration, Str
             incremental: true,
             codegen_units: 256,
             strip: "none",
+            path_remap_policy: "none",
+            linker_build_id: "unspecified",
+            promoted_local_symbols: "module-hash",
         });
     }
 
     let expected = [
+        (
+            "PHASE0_NATIVE_RELEASE_PATH_REMAP",
+            "source-target-cargo-home-v1",
+            option_env!("PHASE0_NATIVE_RELEASE_PATH_REMAP"),
+        ),
+        (
+            "PHASE0_NATIVE_RELEASE_LINKER_BUILD_ID",
+            "sha1",
+            option_env!("PHASE0_NATIVE_RELEASE_LINKER_BUILD_ID"),
+        ),
+        (
+            "PHASE0_NATIVE_RELEASE_PROMOTED_LOCALS",
+            "source-filename",
+            option_env!("PHASE0_NATIVE_RELEASE_PROMOTED_LOCALS"),
+        ),
         (
             "CARGO_PROFILE_RELEASE_OPT_LEVEL",
             "3",
@@ -170,6 +191,9 @@ fn native_build_configuration() -> Result<NativeCollectorBuildConfiguration, Str
         incremental: false,
         codegen_units: 16,
         strip: "none",
+        path_remap_policy: "source-target-cargo-home-v1",
+        linker_build_id: "sha1",
+        promoted_local_symbols: "source-filename",
     })
 }
 

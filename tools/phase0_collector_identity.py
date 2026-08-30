@@ -12,7 +12,7 @@ from typing import Any
 
 
 COLLECTOR_SCHEMA = "latent.phase0.native-collector.v1"
-BUILD_CONFIGURATION_SCHEMA = "latent.phase0.native-release-build.v1"
+BUILD_CONFIGURATION_SCHEMA = "latent.phase0.native-release-build.v2"
 EXPECTED_RELEASE_BUILD_CONFIGURATION: dict[str, Any] = {
     "schema_version": BUILD_CONFIGURATION_SCHEMA,
     "cargo_profile": "release",
@@ -25,6 +25,9 @@ EXPECTED_RELEASE_BUILD_CONFIGURATION: dict[str, Any] = {
     "incremental": False,
     "codegen_units": 16,
     "strip": "none",
+    "path_remap_policy": "source-target-cargo-home-v1",
+    "linker_build_id": "sha1",
+    "promoted_local_symbols": "source-filename",
 }
 COLLECTOR_FIELDS = {
     "schema_version",

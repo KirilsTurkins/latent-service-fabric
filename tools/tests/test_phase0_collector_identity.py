@@ -39,6 +39,9 @@ class Phase0CollectorIdentityTests(unittest.TestCase):
             (("build_configuration", "debug_info"), 0),
             (("build_configuration", "debug_info"), True),
             (("build_configuration", "incremental"), True),
+            (("build_configuration", "path_remap_policy"), "none"),
+            (("build_configuration", "linker_build_id"), "none"),
+            (("build_configuration", "promoted_local_symbols"), "module-hash"),
         ):
             with self.subTest(path=path):
                 identity = copy.deepcopy(self.identity())

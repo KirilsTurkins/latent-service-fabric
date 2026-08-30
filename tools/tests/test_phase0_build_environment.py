@@ -58,6 +58,9 @@ class Phase0BuildEnvironmentTests(unittest.TestCase):
             "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS",
             "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER",
             "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER",
+            "PHASE0_NATIVE_RELEASE_PATH_REMAP",
+            "PHASE0_NATIVE_RELEASE_LINKER_BUILD_ID",
+            "PHASE0_NATIVE_RELEASE_PROMOTED_LOCALS",
             "CC",
             "CXX",
             "AR",
@@ -89,6 +92,9 @@ class Phase0BuildEnvironmentTests(unittest.TestCase):
 
     def test_release_cargo_exports_the_committed_recipe(self) -> None:
         expected = {
+            "PHASE0_NATIVE_RELEASE_PATH_REMAP": "source-target-cargo-home-v1",
+            "PHASE0_NATIVE_RELEASE_LINKER_BUILD_ID": "sha1",
+            "PHASE0_NATIVE_RELEASE_PROMOTED_LOCALS": "source-filename",
             "CARGO_INCREMENTAL": "0",
             "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16",
             "CARGO_PROFILE_RELEASE_DEBUG": "1",
@@ -102,6 +108,7 @@ class Phase0BuildEnvironmentTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as directory:
             temporary = Path(directory)
+            cargo_home = temporary / "cargo-home"
             fake_cargo = temporary / "cargo"
             fake_cargo.write_text(
                 "#!/usr/bin/env bash\n"
@@ -111,6 +118,7 @@ class Phase0BuildEnvironmentTests(unittest.TestCase):
             )
             fake_cargo.chmod(0o755)
             environment = clean_environment(
+                CARGO_HOME=str(cargo_home),
                 CARGO_TARGET_DIR="/tmp/phase0-target",
                 PATH=f"{temporary}:{os.environ.get('PATH', '/usr/bin:/bin')}",
             )
@@ -129,6 +137,31 @@ class Phase0BuildEnvironmentTests(unittest.TestCase):
         for name, value in expected.items():
             self.assertEqual(observed.get(name), value, name)
         self.assertEqual(observed.get("CARGO_TARGET_DIR"), "/tmp/phase0-target")
+        mappings = [
+            (str(ROOT.resolve()), "/phase0/source"),
+            (str(cargo_home.resolve()), "/phase0/cargo-home"),
+            ("/tmp/phase0-target", "/phase0/target"),
+        ]
+        mappings.sort(key=lambda item: len(item[0]))
+        expected_rustflags: list[str] = []
+        for physical, canonical in mappings:
+            expected_rustflags.extend(
+                ["--remap-path-prefix", f"{physical}={canonical}"]
+            )
+        expected_rustflags.extend(
+            [
+                "--remap-path-scope",
+                "all",
+                "-C",
+                "llvm-args=--use-source-filename-for-promoted-locals",
+                "-C",
+                "link-arg=-Wl,--build-id=sha1",
+            ]
+        )
+        self.assertEqual(
+            observed.get("CARGO_ENCODED_RUSTFLAGS", "").split("\x1f"),
+            expected_rustflags,
+        )
         self.assertEqual(
             [
                 line.removeprefix("PHASE0_ARG=")
@@ -137,6 +170,22 @@ class Phase0BuildEnvironmentTests(unittest.TestCase):
             ],
             ["build", "--release", "--locked"],
         )
+
+    def test_release_rustflags_puts_nested_target_after_source_root(self) -> None:
+        target = ROOT / "target"
+        result = run_policy(
+            "phase0_release_rustflags",
+            environment=clean_environment(
+                CARGO_HOME="/opt/phase0-cargo-home",
+                CARGO_TARGET_DIR=str(target),
+            ),
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        arguments = result.stdout.split("\x1f")
+        source_mapping = f"{ROOT.resolve()}=/phase0/source"
+        target_mapping = f"{target.resolve()}=/phase0/target"
+        self.assertLess(arguments.index(source_mapping), arguments.index(target_mapping))
 
     def test_release_rejects_hidden_cargo_home_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
