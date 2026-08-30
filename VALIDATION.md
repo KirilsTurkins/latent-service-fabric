@@ -45,6 +45,16 @@ the deterministic smoke baseline. It records the receipt for CI but does not
 turn a smoke run into Phase 1 authorization; its output reports smoke
 validation and authorization as separate states.
 
+| Command | Baseline | Successful exit establishes | Authorizes Phase 1? |
+| --- | --- | --- | --- |
+| `make phase0-gate` | full | A current full receipt is `authorized`. | Yes, and only if the receipt says `authorized`. |
+| `make phase0-gate-smoke` | deterministic smoke | Deterministic validation coverage completed. | No; a `blocked` receipt can accompany a successful smoke run. |
+
+The full gate evaluates clean-worktree status with
+`git status --porcelain --untracked-files=all`. Its own output below the root
+`target/` directory is ignored; other untracked files can block authorization.
+Run it from an isolated clone or worktree when local build output is present.
+
 ## What is validated
 
 - The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph. Adding Tokio to `latent-scheduler` changes only that workspace package's dependency list; existing registry checksums remain byte-for-byte unchanged.
@@ -62,6 +72,10 @@ validation and authorization as separate states.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interface surfaces compile or pass syntax checks.
 - SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.0 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
 - Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
+- Source-controlled SVGs are parsed as accessible, local-only XML: each requires a
+  descriptive title and description, `role="img"`, a `viewBox`, and no active,
+  remote, or embedded content. The shared visual standard is
+  [docs/svg-style.md](docs/svg-style.md).
 - Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
 - The Phase 0 gate receipt rejects omitted, duplicate, unexpected, or failed baseline checks; missing required terminal scenarios; a dirty executable shutdown/topology result; malformed, unsafe, incomplete, or altered raw archives; unverified calibration/profile measurements; weakened optimization guardrails; free-form optimization decisions; stale execution evidence; and incomplete resource evidence represented as an authorization.
 
@@ -161,8 +175,8 @@ proof, and makes no production or cross-machine performance claim. The August
 ## Native-Linux long-running resource soak
 
 The issue 39 resource plateau probe is also explicit heavyweight work, not a
-shared CI job. It must run only after issue 40 has finalized the pre-Phase-1
-configuration, from a clean native Linux host or VM and a durable source
+shared CI job. A replacement or revalidation run must use the final Phase 0
+configuration from a clean native Linux host or VM and a durable source
 commit/tree:
 
 ```bash
@@ -209,7 +223,7 @@ historical.
 
 ## CI jobs
 
-The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. The Issue 25 workflow runs `make phase0-gate-smoke` from a clean checkout and uploads the fresh baseline plus receipt. A failure in any job indicates that the executable interface baseline is no longer reproducible from a clean checkout.
+The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. The Issue 25 workflow runs `make phase0-gate-smoke` from a clean checkout and uploads the fresh baseline plus receipt. A completed validation failure is evidence that the executable interface baseline needs investigation; a job that fails before its steps run (for example, runner or account infrastructure) is not source-validation evidence and must be rerun.
 
 After a successful contracts job, the workflow prints `build.json` and `sha256.txt` and uploads the generated component, capsule metadata, extracted interface, build receipt, and digest as `phase-0-echo-capsule-${GITHUB_SHA}` for 14 days. This retained artifact is reproducibility evidence for the locally trusted fixture; it is not a signed or distributable release artifact.
 

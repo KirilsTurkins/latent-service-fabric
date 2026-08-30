@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import tomllib
+import xml.etree.ElementTree as ElementTree
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -42,6 +43,10 @@ SCHEMA_EXAMPLES: dict[str, tuple[str, ...]] = {
     "route-snapshot.schema.json": (),
     "trigger.schema.json": ("examples/**/*trigger.json",),
 }
+
+SVG_UNSAFE_ELEMENTS = frozenset({"embed", "foreignObject", "iframe", "image", "object", "script"})
+SVG_NONLOCAL_URL = re.compile(r"url\(\s*['\"]?\s*(?!#)", re.IGNORECASE)
+SVG_CSS_IMPORT = re.compile(r"@import\b", re.IGNORECASE)
 
 
 def fail(message: str) -> None:
@@ -82,7 +87,7 @@ def iter_source_files(root: Path = ROOT) -> Iterator[Path]:
 
 
 def files_with_suffix(suffix: str, root: Path = ROOT) -> Iterator[Path]:
-    return (path for path in iter_source_files(root) if path.name.endswith(suffix))
+    return (path for path in iter_source_files(root) if path.suffix.lower() == suffix.lower())
 
 
 def validate_json(root: Path = ROOT) -> None:
@@ -90,7 +95,7 @@ def validate_json(root: Path = ROOT) -> None:
         try:
             json.loads(path.read_text(encoding="utf-8"))
         except Exception as exc:  # noqa: BLE001 - validator must report every parser failure
-            fail(f"invalid JSON {path.relative_to(root)}: {exc}")
+            fail(f"invalid JSON {path.relative_to(root).as_posix()}: {exc}")
 
 
 def validate_toml(root: Path = ROOT) -> None:
@@ -98,7 +103,85 @@ def validate_toml(root: Path = ROOT) -> None:
         try:
             tomllib.loads(path.read_text(encoding="utf-8"))
         except Exception as exc:  # noqa: BLE001 - validator must report every parser failure
-            fail(f"invalid TOML {path.relative_to(root)}: {exc}")
+            fail(f"invalid TOML {path.relative_to(root).as_posix()}: {exc}")
+
+
+def _xml_local_name(name: str) -> str:
+    return name.rsplit("}", maxsplit=1)[-1]
+
+
+def validate_svg(root: Path = ROOT) -> None:
+    """Enforce the project SVG safety and accessibility baseline."""
+
+    for path in files_with_suffix(".svg", root):
+        relative = path.relative_to(root)
+        try:
+            document = ElementTree.parse(path)
+        except (ElementTree.ParseError, OSError) as exc:
+            fail(f"invalid SVG {relative}: {exc}")
+            continue
+
+        svg = document.getroot()
+        if _xml_local_name(svg.tag) != "svg":
+            fail(f"SVG root must be <svg>: {relative}")
+            continue
+        for attribute in ("viewBox", "role", "aria-labelledby"):
+            if not svg.get(attribute, "").strip():
+                fail(f"SVG missing {attribute}: {relative}")
+        if svg.get("role", "").strip() and svg.get("role") != "img":
+            fail(f"SVG role must be img: {relative}")
+
+        elements = list(svg.iter())
+        identifiers = {
+            element.get("id")
+            for element in elements
+            if isinstance(element.tag, str) and element.get("id")
+        }
+        required_labels = set(svg.get("aria-labelledby", "").split())
+        if not required_labels <= identifiers:
+            missing = ", ".join(sorted(required_labels - identifiers))
+            fail(f"SVG aria-labelledby references missing ID(s) {missing}: {relative}")
+
+        for local_name in ("title", "desc"):
+            matches = [
+                element
+                for element in elements
+                if isinstance(element.tag, str) and _xml_local_name(element.tag) == local_name
+            ]
+            if not any((element.text or "").strip() for element in matches):
+                fail(f"SVG missing non-empty <{local_name}>: {relative}")
+            elif not any(
+                (element.text or "").strip() and element.get("id") in required_labels
+                for element in matches
+            ):
+                fail(f"SVG aria-labelledby must reference a non-empty <{local_name}>: {relative}")
+
+        for element in elements:
+            if not isinstance(element.tag, str):
+                continue
+            local_name = _xml_local_name(element.tag)
+            if local_name in SVG_UNSAFE_ELEMENTS:
+                fail(f"SVG contains disallowed <{local_name}>: {relative}")
+            for attribute, value in element.attrib.items():
+                attribute_name = _xml_local_name(attribute)
+                if attribute_name.lower().startswith("on"):
+                    fail(f"SVG contains event handler {attribute_name}: {relative}")
+                if (
+                    attribute_name in {"href", "src"}
+                    and (value or "").strip()
+                    and not value.strip().startswith("#")
+                ):
+                    fail(f"SVG contains non-local reference in {attribute_name}: {relative}")
+                if SVG_NONLOCAL_URL.search(value or ""):
+                    fail(f"SVG contains non-local URL reference: {relative}")
+
+        style_text = "\n".join(
+            "".join(element.itertext())
+            for element in elements
+            if isinstance(element.tag, str) and _xml_local_name(element.tag) == "style"
+        )
+        if SVG_CSS_IMPORT.search(style_text):
+            fail(f"SVG contains external CSS import: {relative}")
 
 
 def validate_workspace() -> None:
@@ -351,6 +434,7 @@ def validate_required_docs() -> None:
         "docs/architecture/overview.md",
         "docs/api-surface.md",
         "docs/development/toolchain.md",
+        "docs/svg-style.md",
         "docs/testing/invariants.md",
         "adr/0005-forbid-per-service-idle-execution-allocation.md",
     ]
@@ -368,6 +452,7 @@ def validate_nonempty_files() -> None:
 def main() -> int:
     validate_json()
     validate_toml()
+    validate_svg()
     validate_workspace()
     validate_toolchain_baseline()
     validate_proto()

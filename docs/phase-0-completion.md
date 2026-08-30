@@ -28,7 +28,43 @@ auditable. GitHub issue state is not evidence. The August 29 receipt and its
 `a724a5e3…` evidence remain immutable historical records, but they are not the
 source of the current authorization.
 
-## One clean-checkout command sequence
+The gate remains fail-closed for every future full run: it validates retained
+archives, raw measurements, source identity, and a fresh baseline before it can
+write an authorized receipt.
+
+## Status at a glance
+
+| Scope | Current status | What it means |
+|---|---|---|
+| Retained #39 calibration and resource soak | pass | The recorded native-Linux configuration has complete, verified plateau evidence. |
+| Full Phase 0 completion gate | authorized | The retained August 30 clean native-Linux receipt is `pass` / `authorized` with no blockers for this canonical execution identity. |
+| CI smoke sequence | validation only | A smoke pass exercises deterministic coverage; it never authorizes Phase 1. |
+| Production readiness and public API compatibility | not claimed | Neither is a Phase 0 outcome. |
+
+![Phase 0 completion-gate decision flow: current execution identity, retained raw evidence, and a fresh baseline reach a full gate that either records blockers or emits an authorized receipt.](assets/phase0-gate-decision.svg)
+
+Some reports inside the retained evidence archives use the historical tense
+appropriate to their measurement runs. They are immutable evidence, not the
+current status source; this document and the machine receipt are authoritative
+for authorization.
+
+## Run the full gate
+
+Run the full gate from a clean Linux or WSL checkout. WSL is sufficient to
+verify retained evidence and produce a receipt. It is **not** sufficient to
+collect replacement calibration, profiling, or soak evidence: those wrappers
+require a clean native-Linux host or VM and reject WSL and containers.
+
+Before running the gate, confirm that Git sees no tracked or untracked user
+changes:
+
+```bash
+git status --porcelain --untracked-files=all
+```
+
+The gate creates its own ignored output under `target/phase0-gate/`. Other
+untracked output can block authorization, so use an isolated clean clone or
+worktree when in doubt.
 
 After installing the pinned prerequisites in
 [`development/toolchain.md`](development/toolchain.md), run:
@@ -57,11 +93,18 @@ The command creates a new directory beneath `target/phase0-gate/`, then:
 reviewable. The retained August 30 full run satisfied those fail-closed checks
 with applicable evidence and a fresh baseline.
 
-CI uses `make phase0-gate-smoke`. It runs the same contract, executable, and
-baseline path with smaller deterministic sample counts and records the receipt,
-but does not claim Phase 1 authorization. Its output explicitly distinguishes
-`Phase 0 smoke validation: PASS` from `Phase 1 authorization: BLOCKED` so a
-correctness smoke result cannot be mistaken for completion.
+## Interpret the result
+
+| Command | Baseline | Exit zero means | Phase 1 authorization |
+|---|---|---|---|
+| `make phase0-gate` | full | The full receipt is `authorized`. | Required and granted only by this result. |
+| `make phase0-gate-smoke` | deterministic smoke | The smoke validation completed. | Never granted; its receipt may remain `blocked`. |
+
+The smoke output explicitly distinguishes `Phase 0 smoke validation: PASS`
+from `Phase 1 authorization: BLOCKED`, so deterministic correctness coverage
+cannot be mistaken for a completed full gate. When a full run blocks, inspect
+the retained `gate-summary.json` and address its `blockers`; GitHub issue state
+does not override them.
 
 ## Current authorization evidence ledger
 
@@ -155,6 +198,14 @@ losslessly compressed baseline result. Together they establish the current
 authorization. Any future execution-relevant change invalidates applicability
 and requires fresh evidence plus a new authorized receipt; documentation-only
 changes must preserve the recorded canonical execution identity.
+
+### If a future full run blocks
+
+Preserve its `gate-summary.json` and resolve the recorded blockers rather than
+editing an aggregate, archive, or receipt. A verifier failure before a receipt
+exists is not evidence that it would pass. If the blocker is execution-identity
+drift, regenerate the required native-Linux evidence chain for the changed
+execution path, then rerun the full gate from a clean checkout.
 
 ## Audit and Phase 1 handoff
 

@@ -1,6 +1,9 @@
 # Latent Service Fabric
 
-Latent Service Fabric (LSF) is an interface-first research and engineering project for executing independently deployable service capsules without assigning persistent processes, sockets, threads, heaps, or connection pools to idle services.
+Latent Service Fabric (LSF) is a component-native execution-fabric engineering
+project. Its Phase 0 spike establishes a bounded local feasibility proof for
+executing independently deployable service capsules without assigning persistent
+processes, sockets, threads, heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
@@ -61,6 +64,8 @@ The Phase 0 spike proves a deliberately narrow local feasibility slice:
 5. record bounded activation-owned state and fixed runtime topology for the
    measured lifecycle.
 
+![Phase 0 scope boundary: one local component moves through preparation, a fixed cell pool, and fresh activation state; public APIs, routing, durable state, and clustering remain outside the measured evidence.](docs/assets/phase0-scope-boundary.svg)
+
 It does **not** prove routing, admission, deployment management, production
 trust/security, durable state/effects, remote invocation, cluster operation,
 production SLOs, arbitrary-duration leak freedom, or the 100,000 dormant-service
@@ -72,7 +77,8 @@ ledger, current authorization status, and Phase 1 handoff.
 
 See [`docs/architecture/overview.md`](docs/architecture/overview.md) and
 [`docs/testing/invariants.md`](docs/testing/invariants.md) for the proven
-boundary and future invariants.
+boundary and future invariants. Documentation SVGs follow the shared
+[`SVG convention`](docs/svg-style.md).
 
 ## Build and validation
 
@@ -93,7 +99,7 @@ make phase0-spike-demo
 
 The command validates contracts, builds the real guest and runtime, exercises success and containment failures only through the `latentd` executable path, includes a single-process trap-to-success recovery proof, and finishes with one successful echo result. See [`docs/phase-0-spike.md`](docs/phase-0-spike.md) for the CLI, JSON schema, exit codes, cleanup proof, and limitations.
 
-Run the full Phase 0 completion sequence with:
+Run the full Phase 0 completion gate with:
 
 ```bash
 make phase0-gate

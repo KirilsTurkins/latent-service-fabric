@@ -1,10 +1,11 @@
 # Phase 0 toolchain baseline
 
 The Phase 0 baseline makes the interface scaffold executable, builds the first
-Rust-authored echo Component Model fixture, and supports a narrow local
-Wasmtime spike. It does not implement a production service runtime. Exact
-project-selected versions live in [`tools/toolchain.toml`](../../tools/toolchain.toml);
-Rust dependency resolution is frozen by the committed root `Cargo.lock`.
+Rust-authored echo Component Model fixture, and establishes a narrow local
+Wasmtime feasibility spike. It does not implement a production service runtime.
+Exact project-selected versions live in
+[`tools/toolchain.toml`](../../tools/toolchain.toml); Rust dependency resolution
+is frozen by the committed root `Cargo.lock`.
 
 ## Selected versions
 
@@ -16,7 +17,7 @@ Rust dependency resolution is frozen by the committed root `Cargo.lock`.
 | Rust component-core target | `wasm32-unknown-unknown` | Build a self-contained core module before explicit Component Model wrapping |
 | Wasmtime | 47.0.3 | Host-side Component Model engine, generated bindings, and Phase 0 echo execution |
 | `wit-bindgen` | 0.60.0 | Guest-side Rust bindings and canonical ABI exports generated from WIT |
-| Tokio | 1.53.1 | Selected async runtime for later Phase 0 implementation work |
+| Tokio | 1.53.1 | Selected async runtime for the Phase 0 spike and Phase 1 runtime work |
 | Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
 | TOML | 1.1.4 | Configuration parsing and serialization; the published crate carries `+spec-1.1.0` build metadata |
 | BLAKE3 | 1.8.5 | Runtime cache keys and prepared-component identity |
@@ -61,6 +62,25 @@ python3.13 -m venv .venv
 python -m pip install --requirement tools/requirements.lock
 make validate
 ```
+
+### Linux and WSL boundary
+
+Linux or WSL may run `make validate`, `make phase0-gate-smoke`, and the full
+`make phase0-gate` receipt validation. Only a clean native-Linux host or VM may
+create replacement calibration, profiling, or resource-soak evidence: the
+evidence wrappers deliberately reject WSL and containers because those
+measurements establish a host-specific native-Linux reference.
+
+For a full authorization attempt, inspect the same cleanliness condition the
+gate enforces before starting:
+
+```bash
+git status --porcelain --untracked-files=all
+```
+
+Use an isolated clone or worktree if this prints anything. The gate's own root
+`target/phase0-gate/` output is ignored; unrelated untracked files are not and
+can block the receipt.
 
 `make validate` executes, in order through its prerequisites:
 

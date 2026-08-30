@@ -37,6 +37,8 @@ authorization does not imply production readiness or Phase 1 API
 compatibility. Their boundaries and the handoff are recorded in
 [`../phase-0-completion.md`](../phase-0-completion.md).
 
+![Activation resource lifecycle: prepared components and fixed cells are bounded node-owned resources; every invocation creates fresh activation state and ends by releasing or quarantining its cell.](../assets/phase0-resource-lifecycle.svg)
+
 Phase 0 did not prove dormant registration at 100,000 services, route or
 admission behavior, persistent management/deployment, production
 trust/security, generic dispatch, durable state/effects, remote transport,
