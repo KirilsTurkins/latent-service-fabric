@@ -31,6 +31,7 @@ from tools.validate_phase0_gate import (
     REQUIRED_PROFILE_GUARDRAILS,
     REQUIRED_PROFILE_WORKLOADS,
     _baseline_authorization_blockers,
+    _baseline_source_identity,
     _baseline_soak_blockers,
     _collector_blockers,
     _identity_blockers,
@@ -91,6 +92,69 @@ def tar_bytes(members: list[tuple[str, bytes, str]]) -> io.BytesIO:
                 raise AssertionError(f"unknown member kind {kind}")
     stream.seek(0)
     return stream
+
+
+class BaselineSourceIdentityTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.current = {
+            "commit": "a" * 40,
+            "tree": "b" * 40,
+            "sha256": "sha256:" + "1" * 64,
+        }
+
+    @patch("tools.validate_phase0_gate.execution_evidence_identity_for_commit")
+    def test_different_commit_with_same_canonical_identity_passes(
+        self, identity_for_commit: object
+    ) -> None:
+        source_commit = "c" * 40
+        source_tree = "d" * 40
+        identity_for_commit.return_value = {
+            "commit": source_commit,
+            "tree": source_tree,
+            "sha256": self.current["sha256"],
+        }
+
+        identity = _baseline_source_identity(source_commit, self.current)
+
+        self.assertEqual(identity["commit"], source_commit)
+        self.assertEqual(identity["tree"], source_tree)
+        identity_for_commit.assert_called_once_with(source_commit)
+
+    @patch("tools.validate_phase0_gate.execution_evidence_identity_for_commit")
+    def test_exact_current_commit_still_passes(self, identity_for_commit: object) -> None:
+        identity_for_commit.return_value = dict(self.current)
+
+        identity = _baseline_source_identity(self.current["commit"], self.current)
+
+        self.assertEqual(identity, self.current)
+
+    @patch("tools.validate_phase0_gate.execution_evidence_identity_for_commit")
+    def test_canonical_identity_mismatch_fails(self, identity_for_commit: object) -> None:
+        identity_for_commit.return_value = {
+            "commit": "c" * 40,
+            "tree": "d" * 40,
+            "sha256": "sha256:" + "2" * 64,
+        }
+
+        with self.assertRaisesRegex(
+            GateValidationError, "execution evidence identity does not match"
+        ):
+            _baseline_source_identity("c" * 40, self.current)
+
+    @patch("tools.validate_phase0_gate.execution_evidence_identity_for_commit")
+    def test_resolution_failure_is_controlled(self, identity_for_commit: object) -> None:
+        identity_for_commit.side_effect = EvidenceValidationError("missing commit")
+
+        with self.assertRaisesRegex(
+            GateValidationError, "cannot bind fresh baseline.*missing commit"
+        ):
+            _baseline_source_identity("c" * 40, self.current)
+
+    def test_malformed_commit_fails_before_resolution(self) -> None:
+        with self.assertRaisesRegex(
+            GateValidationError, "lowercase 40-character Git object ID"
+        ):
+            _baseline_source_identity("invalid", self.current)
 
 
 def current_schema_profile() -> dict[str, object]:

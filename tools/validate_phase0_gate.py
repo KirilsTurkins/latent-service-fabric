@@ -32,6 +32,7 @@ try:  # Support both ``python tools/...`` and package-style unit-test imports.
         SOAK_SCHEMA,
         current_execution_evidence_identity,
         execution_evidence_identity,
+        execution_evidence_identity_for_commit,
         verify_calibration_evidence,
         verify_profile_evidence,
         verify_resource_soak_evidence,
@@ -51,6 +52,7 @@ except ImportError:  # pragma: no cover - exercised by the command-line entrypoi
         SOAK_SCHEMA,
         current_execution_evidence_identity,
         execution_evidence_identity,
+        execution_evidence_identity_for_commit,
         verify_calibration_evidence,
         verify_profile_evidence,
         verify_resource_soak_evidence,
@@ -275,6 +277,24 @@ def _git_object_id(value: Any, label: str) -> str:
         f"{label} must be a lowercase 40-character Git object ID",
     )
     return object_id
+
+
+def _baseline_source_identity(
+    value: Any, current_identity: dict[str, Any]
+) -> dict[str, Any]:
+    source_commit = _git_object_id(value, "baseline environment repository commit")
+    try:
+        source_identity = execution_evidence_identity_for_commit(source_commit)
+    except EvidenceValidationError as error:
+        raise GateValidationError(
+            f"cannot bind fresh baseline to its Git source: {error}"
+        ) from error
+    _require(
+        source_identity["sha256"] == current_identity["sha256"],
+        "fresh baseline execution evidence identity does not match the current "
+        "executable implementation",
+    )
+    return source_identity
 
 
 def _durable_source_ref(value: Any, label: str) -> str:
@@ -661,9 +681,8 @@ def validate_baseline(
     _require(config.get("wasmtime_copy_on_write_images") is True, "baseline must retain initialized-memory COW")
 
     environment = _mapping(document.get("environment"), "baseline environment")
-    _require(
-        environment.get("repository_commit") == current_identity["commit"],
-        "fresh baseline source commit does not match the current executable implementation",
+    source_identity = _baseline_source_identity(
+        environment.get("repository_commit"), current_identity
     )
     for field in REQUIRED_TOOLCHAIN_FIELDS:
         _string(environment.get(field), f"baseline environment {field}")
@@ -691,8 +710,8 @@ def validate_baseline(
         "required_checks_passed": len(REQUIRED_CHECKS),
         "observed_terminal_outcomes": sorted(REQUIRED_TERMINAL_OUTCOMES),
         "executable_e2e": "passed",
-        "source_commit": environment["repository_commit"],
-        "source_tree": current_identity["tree"],
+        "source_commit": source_identity["commit"],
+        "source_tree": source_identity["tree"],
         "fixture": dict(measurement_identity["artifact"]),
         "configuration": dict(measurement_identity["configuration"]),
         "measurement_identity": measurement_identity,

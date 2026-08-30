@@ -63,6 +63,57 @@ class Phase0ExecutionEvidenceIdentityTests(unittest.TestCase):
                         self.assertNotEqual(previous["sha256"], current["sha256"])
                         previous = current
 
+    def test_commit_identity_resolves_the_commits_actual_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            (root / "Cargo.toml").write_text("[workspace]\n", encoding="utf-8")
+            self.git(root, "init", "--quiet")
+            self.git(root, "config", "user.name", "Phase 0 test")
+            self.git(root, "config", "user.email", "phase0@example.invalid")
+            commit, tree = self.commit(root, "initial execution input")
+
+            with mock.patch.object(phase0_evidence, "REPOSITORY_ROOT", root):
+                identity = phase0_evidence.execution_evidence_identity_for_commit(
+                    commit
+                )
+
+            self.assertEqual(identity["commit"], commit)
+            self.assertEqual(identity["tree"], tree)
+
+    def test_commit_identity_rejects_tree_tag_and_missing_objects(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            (root / "Cargo.toml").write_text("[workspace]\n", encoding="utf-8")
+            self.git(root, "init", "--quiet")
+            self.git(root, "config", "user.name", "Phase 0 test")
+            self.git(root, "config", "user.email", "phase0@example.invalid")
+            commit, tree = self.commit(root, "initial execution input")
+            self.git(root, "tag", "-a", "evidence-tag", "-m", "evidence tag")
+            tag = self.git(root, "rev-parse", "evidence-tag")
+
+            with mock.patch.object(phase0_evidence, "REPOSITORY_ROOT", root):
+                with self.assertRaises(phase0_evidence.EvidenceValidationError):
+                    phase0_evidence.execution_evidence_identity(tree, tree)
+                with self.assertRaisesRegex(
+                    phase0_evidence.EvidenceValidationError, "not itself a commit"
+                ):
+                    phase0_evidence.execution_evidence_identity(tag, tree)
+                with self.assertRaises(phase0_evidence.EvidenceValidationError):
+                    phase0_evidence.execution_evidence_identity_for_commit(tree)
+                with self.assertRaisesRegex(
+                    phase0_evidence.EvidenceValidationError, "not itself a commit"
+                ):
+                    phase0_evidence.execution_evidence_identity_for_commit(tag)
+                with self.assertRaises(phase0_evidence.EvidenceValidationError):
+                    phase0_evidence.execution_evidence_identity_for_commit("f" * 40)
+                with self.assertRaisesRegex(
+                    phase0_evidence.EvidenceValidationError,
+                    "lowercase Git object ID",
+                ):
+                    phase0_evidence.execution_evidence_identity_for_commit("invalid")
+
+            self.assertNotEqual(tag, commit)
+
 
 if __name__ == "__main__":
     unittest.main()

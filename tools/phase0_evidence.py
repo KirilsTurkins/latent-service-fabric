@@ -878,6 +878,17 @@ def _git(arguments: list[str], label: str) -> str:
 def execution_evidence_identity(commit: str, tree: str) -> dict[str, Any]:
     commit = _object_id(commit, "execution-evidence commit")
     tree = _object_id(tree, "execution-evidence tree")
+    resolved_commit = _git(
+        ["rev-parse", f"{commit}^{{commit}}"], f"commit object {commit}"
+    ).strip()
+    _require(
+        OBJECT_ID_PATTERN.fullmatch(resolved_commit) is not None,
+        f"Git returned an invalid object ID for commit {commit}",
+    )
+    _require(
+        resolved_commit == commit,
+        f"execution-evidence object {commit} is not itself a commit",
+    )
     actual_tree = _git(["rev-parse", f"{commit}^{{tree}}"], f"commit {commit}").strip()
     _require(actual_tree == tree, f"execution-evidence commit {commit} does not resolve to tree {tree}")
     try:
@@ -930,6 +941,29 @@ def execution_evidence_identity(commit: str, tree: str) -> dict[str, Any]:
         "entry_count": len(entries),
         "sha256": f"sha256:{hashlib.sha256(canonical).hexdigest()}",
     }
+
+
+def execution_evidence_identity_for_commit(commit: str) -> dict[str, Any]:
+    """Resolve a commit object and compute its canonical execution identity."""
+
+    commit = _object_id(commit, "execution-evidence commit")
+    resolved_commit = _git(
+        ["rev-parse", f"{commit}^{{commit}}"], f"commit object {commit}"
+    ).strip()
+    _require(
+        OBJECT_ID_PATTERN.fullmatch(resolved_commit) is not None,
+        f"Git returned an invalid object ID for commit {commit}",
+    )
+    _require(
+        resolved_commit == commit,
+        f"execution-evidence object {commit} is not itself a commit",
+    )
+    tree = _git(["rev-parse", f"{commit}^{{tree}}"], f"tree for commit {commit}").strip()
+    _require(
+        OBJECT_ID_PATTERN.fullmatch(tree) is not None,
+        f"Git returned an invalid tree ID for commit {commit}",
+    )
+    return execution_evidence_identity(commit, tree)
 
 
 def current_execution_evidence_identity() -> dict[str, Any]:
