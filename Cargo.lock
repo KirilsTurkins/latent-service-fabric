@@ -647,11 +647,11 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "latent"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 
 [[package]]
 name = "latent-activation"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
  "latent-routing",
@@ -659,7 +659,7 @@ dependencies = [
 
 [[package]]
 name = "latent-admission"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
  "latent-routing",
@@ -667,7 +667,7 @@ dependencies = [
 
 [[package]]
 name = "latent-artifacts"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-contracts",
  "latent-core",
@@ -676,28 +676,28 @@ dependencies = [
 
 [[package]]
 name = "latent-audit"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-blobs"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-capabilities"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-commit"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
  "latent-effects",
@@ -706,18 +706,18 @@ dependencies = [
 
 [[package]]
 name = "latent-contracts"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-control"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 
 [[package]]
 name = "latent-control-store"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-artifacts",
  "latent-audit",
@@ -730,18 +730,18 @@ dependencies = [
 
 [[package]]
 name = "latent-core"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 
 [[package]]
 name = "latent-effects"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-executor"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-artifacts",
@@ -750,14 +750,14 @@ dependencies = [
 
 [[package]]
 name = "latent-identity"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-ingress"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -767,14 +767,14 @@ dependencies = [
 
 [[package]]
 name = "latent-manifest"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-node"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-artifacts",
@@ -787,7 +787,7 @@ dependencies = [
 
 [[package]]
 name = "latent-oci"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-artifacts",
  "latent-core",
@@ -795,7 +795,7 @@ dependencies = [
 
 [[package]]
 name = "latent-policy"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
  "latent-manifest",
@@ -803,7 +803,7 @@ dependencies = [
 
 [[package]]
 name = "latent-routing"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
  "latent-manifest",
@@ -811,7 +811,7 @@ dependencies = [
 
 [[package]]
 name = "latent-scheduler"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -820,28 +820,28 @@ dependencies = [
 
 [[package]]
 name = "latent-sdk"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-signing"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-state"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
 ]
 
 [[package]]
 name = "latent-telemetry"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "latent-testkit"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -861,7 +861,7 @@ dependencies = [
 
 [[package]]
 name = "latent-toolchain-smoke"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "blake3",
  "clap",
@@ -876,7 +876,7 @@ dependencies = [
 
 [[package]]
 name = "latent-triggers"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -885,7 +885,7 @@ dependencies = [
 
 [[package]]
 name = "latent-wasmtime"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "blake3",
  "latent-activation",
@@ -904,7 +904,7 @@ dependencies = [
 
 [[package]]
 name = "latent-wire"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -912,7 +912,7 @@ dependencies = [
 
 [[package]]
 name = "latent-workflows"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
  "latent-effects",
@@ -921,7 +921,7 @@ dependencies = [
 
 [[package]]
 name = "latent-wrpc"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
@@ -930,7 +930,7 @@ dependencies = [
 
 [[package]]
 name = "latentd"
-version = "0.1.0-alpha.0"
+version = "0.1.0-alpha.1"
 dependencies = [
  "clap",
  "latent-activation",
