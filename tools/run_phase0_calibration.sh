@@ -80,7 +80,7 @@ if [[ "$TARGET_ROOT" != /* ]]; then
     TARGET_ROOT="${ROOT}/${TARGET_ROOT}"
 fi
 
-for command in git "$PYTHON" cargo uname; do
+for command in git "$PYTHON" cargo uname systemd-detect-virt; do
     if ! command -v "$command" >/dev/null 2>&1; then
         printf '%s\n' "required command is unavailable: $command" >&2
         exit 2
@@ -99,12 +99,10 @@ if {
     printf '%s\n' "WSL results are historical-only and cannot be the calibration reference" >&2
     exit 2
 fi
-if command -v systemd-detect-virt >/dev/null 2>&1; then
-    CONTAINER_KIND="$(systemd-detect-virt --container 2>/dev/null || true)"
-    if [[ -n "$CONTAINER_KIND" && "$CONTAINER_KIND" != "none" ]]; then
-        printf '%s\n' "a container environment cannot be the native-Linux reference: $CONTAINER_KIND" >&2
-        exit 2
-    fi
+CONTAINER_KIND="$(systemd-detect-virt --container 2>/dev/null || true)"
+if [[ "$CONTAINER_KIND" != "none" ]]; then
+    printf '%s\n' "native-Linux calibration requires systemd-detect-virt --container to report none: ${CONTAINER_KIND:-unavailable}" >&2
+    exit 2
 fi
 
 cd "$ROOT"
@@ -172,6 +170,7 @@ for (( index = 1; index <= RUNS; index++ )); do
         >"$RUN_DIR/run.log"
     set +e
     GITHUB_SHA="$SOURCE_COMMIT" CARGO_TARGET_DIR="$TARGET_ROOT" \
+        CARGO_PROFILE_RELEASE_DEBUG=1 CARGO_PROFILE_RELEASE_STRIP=none \
         tools/run_phase0_baselines.sh full "$RUN_DIR" >>"$RUN_DIR/run.log" 2>&1
     RUN_STATUS=$?
     set -e

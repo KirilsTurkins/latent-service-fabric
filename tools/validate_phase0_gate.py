@@ -47,6 +47,8 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 BASELINE_SCHEMA = "latent.phase0.baseline.v2"
 GATE_SCHEMA = "latent.phase0.gate.v3"
 SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
+MEASUREMENT_IDENTITY_SCHEMA = "latent.phase0.measurement-identity.v1"
+REFERENCE_PROFILE_CANDIDATE = "worker-cell-2w-2c"
 
 DEFAULT_CALIBRATION = (
     REPOSITORY_ROOT
@@ -230,6 +232,40 @@ def _valid_digest(value: Any, label: str) -> str:
     return digest
 
 
+def _measurement_identity(value: Any, label: str) -> dict[str, Any]:
+    identity = _mapping(value, label)
+    _require(
+        identity.get("schema_version") == MEASUREMENT_IDENTITY_SCHEMA,
+        f"{label} has an unexpected schema",
+    )
+    artifact = _mapping(identity.get("artifact"), f"{label} artifact")
+    _valid_digest(artifact.get("component_digest"), f"{label} component digest")
+    _positive_int(artifact.get("component_bytes"), f"{label} component bytes")
+    _valid_digest(artifact.get("capsule_digest"), f"{label} capsule digest")
+    _positive_int(artifact.get("capsule_bytes"), f"{label} capsule bytes")
+    configuration = _mapping(identity.get("configuration"), f"{label} configuration")
+    _require(configuration, f"{label} has no invariant-relevant configuration")
+    return identity
+
+
+def _same_json(left: Any, right: Any) -> bool:
+    return json.dumps(left, sort_keys=True, separators=(",", ":")) == json.dumps(
+        right, sort_keys=True, separators=(",", ":")
+    )
+
+
+def _profile_host_observations(value: Any, label: str) -> dict[str, Any]:
+    observations = _mapping(value, label)
+    for field in ("before", "after"):
+        _string(observations.get(field), f"{label} {field} path")
+        _valid_digest(observations.get(f"{field}_sha256"), f"{label} {field} checksum")
+    identity = _mapping(observations.get("static_identity"), f"{label} static identity")
+    _mapping(identity.get("virtualization"), f"{label} virtualization identity")
+    _mapping(identity.get("allocator"), f"{label} allocator identity")
+    _mapping(identity.get("cpu_frequency_policy"), f"{label} CPU policy identity")
+    return observations
+
+
 def validate_baseline(
     document: dict[str, Any], baseline_path: str, current_identity: dict[str, Any]
 ) -> dict[str, Any]:
@@ -240,8 +276,8 @@ def validate_baseline(
     _require(document.get("observational_only") is True, "baseline must remain observational")
     _require(document.get("production_ready") is False, "baseline must remain explicitly non-production")
     _require(
-        document.get("phase1_api_compatible") is False,
-        "baseline must remain explicitly non-Phase-1-compatible",
+        document.get("phase1_api_compatible") is True,
+        "baseline must retain the Phase 1-compatible API foundation",
     )
 
     checks = _list(document.get("checks"), "baseline checks")
@@ -354,7 +390,7 @@ def validate_baseline(
         },
         "toolchain": {field: environment[field] for field in REQUIRED_TOOLCHAIN_FIELDS},
         "production_ready": False,
-        "phase1_api_compatible": False,
+        "phase1_api_compatible": True,
     }
 
 
@@ -416,6 +452,8 @@ def validate_calibration(document: dict[str, Any], calibration_path: str) -> dic
     artifact = _mapping(reference_identity.get("artifact"), "calibration reference artifact")
     _valid_digest(artifact.get("component_digest"), "calibration component digest")
     _positive_int(artifact.get("component_bytes"), "calibration component bytes")
+    _valid_digest(artifact.get("capsule_digest"), "calibration capsule digest")
+    _positive_int(artifact.get("capsule_bytes"), "calibration capsule bytes")
     _mapping(reference_identity.get("config"), "calibration reference configuration")
     environment = _mapping(reference_identity.get("environment"), "calibration reference environment")
     for field in REQUIRED_TOOLCHAIN_FIELDS:
@@ -481,8 +519,29 @@ def validate_profiling(document: dict[str, Any], profiling_path: str) -> dict[st
         workload_names.append(workload)
         _string(record.get("scenario_semantics"), f"profile {workload} scenario semantics")
         _list(record.get("selected_scenarios"), f"profile {workload} selected scenarios")
+        composition_identity = _measurement_identity(
+            record.get("composition_identity"), f"profile {workload} composition identity"
+        )
         perf = _mapping(record.get("perf"), f"profile {workload} CPU artifact")
         allocation = _mapping(record.get("allocation"), f"profile {workload} allocation artifact")
+        perf_identity = _measurement_identity(
+            perf.get("measurement_identity"), f"profile {workload} CPU measurement identity"
+        )
+        allocation_identity = _measurement_identity(
+            allocation.get("measurement_identity"),
+            f"profile {workload} allocation measurement identity",
+        )
+        _require(
+            _same_json(perf_identity, allocation_identity),
+            f"profile {workload} CPU/allocation measurement identities differ",
+        )
+        _profile_host_observations(
+            perf.get("host_observations"), f"profile {workload} CPU host observations"
+        )
+        _profile_host_observations(
+            allocation.get("host_observations"),
+            f"profile {workload} allocation host observations",
+        )
         for artifact, fields in ((perf, ("data", "report", "inclusive_report")), (allocation, ("data", "report", "leak_report", "compact_contributors"))):
             for field in fields:
                 _string(artifact.get(field), f"profile {workload} artifact {field}")
@@ -510,12 +569,51 @@ def validate_profiling(document: dict[str, Any], profiling_path: str) -> dict[st
     _valid_digest(full_proof.get("raw_results_sha256"), "profiling full-invariant raw results checksum")
     _string(full_proof.get("command"), "profiling full-invariant command path")
     _valid_digest(full_proof.get("command_sha256"), "profiling full-invariant command checksum")
+    full_measurement_identity = _measurement_identity(
+        full_proof.get("measurement_identity"), "profiling full-invariant measurement identity"
+    )
+    _profile_host_observations(
+        full_proof.get("host_observations"), "profiling full-invariant host observations"
+    )
+    full_composition_identity = _measurement_identity(
+        full_proof.get("composition_identity"), "profiling full-invariant composition identity"
+    )
+    for profile in profiles:
+        record = _mapping(profile, "profile workload")
+        workload = _string(record.get("workload"), "profile workload name")
+        profile_composition_identity = _measurement_identity(
+            record.get("composition_identity"), f"profile {workload} composition identity"
+        )
+        _require(
+            _same_json(profile_composition_identity, full_composition_identity),
+            f"profile {workload} composition identity differs from the full-invariant proof",
+        )
 
     candidates = _mapping(document.get("candidates"), "profiling candidates")
     _require(candidates, "profiling has no candidate measurements")
     for name, candidate in candidates.items():
         candidate_document = _mapping(candidate, f"profiling candidate {name}")
-        _positive_int(candidate_document.get("run_count"), f"profiling candidate {name} run count")
+        run_count = _positive_int(candidate_document.get("run_count"), f"profiling candidate {name} run count")
+        candidate_identity = _measurement_identity(
+            candidate_document.get("measurement_identity"),
+            f"profiling candidate {name} measurement identity",
+        )
+        raw_runs = _list(candidate_document.get("raw_runs"), f"profiling candidate {name} raw runs")
+        _require(len(raw_runs) == run_count, f"profiling candidate {name} raw-run count is invalid")
+        for raw_run in raw_runs:
+            raw_run_document = _mapping(raw_run, f"profiling candidate {name} raw run")
+            raw_identity = _measurement_identity(
+                raw_run_document.get("measurement_identity"),
+                f"profiling candidate {name} raw-run measurement identity",
+            )
+            _require(
+                _same_json(raw_identity, candidate_identity),
+                f"profiling candidate {name} raw-run measurement identity differs",
+            )
+            _profile_host_observations(
+                raw_run_document.get("host_observations"),
+                f"profiling candidate {name} raw-run host observations",
+            )
         metrics = _mapping(candidate_document.get("representatives"), f"profiling candidate {name} representatives")
         for metric in (
             "warm_echo_p50_micros",
@@ -528,6 +626,56 @@ def validate_profiling(document: dict[str, Any], profiling_path: str) -> dict[st
             "peak_listening_sockets",
         ):
             _number(metrics.get(metric), f"profiling candidate {name} {metric}")
+        if name == REFERENCE_PROFILE_CANDIDATE:
+            _require(
+                run_count >= 7,
+                "reference-equivalent profiling candidate must retain at least seven runs",
+            )
+            _require(
+                _same_json(candidate_identity, full_measurement_identity),
+                "reference-equivalent profiling candidate identity differs from the full-invariant proof",
+            )
+            eligibility = _mapping(
+                candidate_document.get("calibration_comparison_eligibility"),
+                "reference candidate calibration eligibility",
+            )
+            _require(
+                eligibility.get("status") == "reference_equivalent",
+                "reference candidate is not calibration reference-equivalent",
+            )
+            comparisons = _mapping(
+                candidate_document.get("calibration_comparison"),
+                "reference candidate calibration comparison",
+            )
+            _require(comparisons, "reference candidate has no calibration comparison")
+            for metric, comparison in comparisons.items():
+                comparison_document = _mapping(
+                    comparison, f"reference candidate comparison {metric}"
+                )
+                _require(
+                    comparison_document.get("status")
+                    in {"inside_advisory_band", "outside_advisory_band"},
+                    f"reference candidate comparison {metric} is not decisive",
+                )
+        else:
+            scope = _mapping(
+                candidate_document.get("phase0_calibration"),
+                f"profiling candidate {name} Phase 0 calibration scope",
+            )
+            _require(
+                scope.get("status") == "not_applicable_for_phase0_calibration",
+                f"profiling candidate {name} has an invalid Phase 0 calibration scope",
+            )
+            _require(
+                "calibration_comparison" not in candidate_document
+                and "calibration_comparison_eligibility" not in candidate_document,
+                f"profiling candidate {name} must not publish a Phase 0 calibration comparison",
+            )
+
+    _require(
+        REFERENCE_PROFILE_CANDIDATE in candidates,
+        "profiling has no reference-equivalent default candidate",
+    )
 
     decisions = _list(document.get("decisions"), "optimization decisions")
     decision_candidates: list[str] = []
@@ -706,7 +854,12 @@ def build_gate_receipt(
     soak, blockers = validate_resource_soak(soak_document, str(soak_path))
     evidence_identities, identity_blockers = _identity_blockers(
         current_identity,
-        {"calibration": calibration, "hot-path profiling": profiling, "resource soak": soak},
+        {
+            "calibration": calibration,
+            "profile calibration": profile_calibration,
+            "hot-path profiling": profiling,
+            "resource soak": soak,
+        },
     )
     blockers.extend(identity_blockers)
     blockers.extend(_baseline_soak_blockers(baseline, soak))
@@ -718,7 +871,7 @@ def build_gate_receipt(
         "authorization_status": authorization_status,
         "phase1_authorized": authorization_status == "authorized",
         "production_ready": False,
-        "phase1_api_compatible": False,
+        "phase1_api_compatible": True,
         "current_repository": current_identity,
         "execution_evidence": {
             "comparison_rule": "Every retained evidence source must have the exact canonical execution-relevant tree identity of the current clean checkout. Git commit/tree are retained separately so documentation-only differences remain auditable without permitting execution-affecting drift.",

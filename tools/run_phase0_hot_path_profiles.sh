@@ -12,11 +12,13 @@ PUBLISHED_SOURCE_TREE=""
 PUBLISHED_SOURCE_REF=""
 CALIBRATION_AGGREGATE=""
 CANDIDATE_RUNS=3
+REFERENCE_CANDIDATE_RUNS=7
 PERF_FREQUENCY=999
 MINIMUM_EXPERIMENT_RUNS=3
+MINIMUM_REFERENCE_RUNS=7
 
 usage() {
-    printf '%s\n' "usage: $0 --published-source-commit SHA --published-source-tree TREE --published-source-ref REF --calibration-aggregate PATH [--candidate-runs N] [--perf-frequency HZ] [output-directory]"
+    printf '%s\n' "usage: $0 --published-source-commit SHA --published-source-tree TREE --published-source-ref REF --calibration-aggregate PATH [--candidate-runs N] [--reference-candidate-runs N] [--perf-frequency HZ] [output-directory]"
     printf '%s\n' "Records native-Linux perf + heaptrack evidence and a bounded Phase 0 experiment matrix."
 }
 
@@ -45,6 +47,11 @@ while (( $# > 0 )); do
         --candidate-runs)
             (( $# >= 2 )) || { usage >&2; exit 2; }
             CANDIDATE_RUNS="$2"
+            shift 2
+            ;;
+        --reference-candidate-runs)
+            (( $# >= 2 )) || { usage >&2; exit 2; }
+            REFERENCE_CANDIDATE_RUNS="$2"
             shift 2
             ;;
         --perf-frequency)
@@ -93,6 +100,10 @@ if ! [[ "$CANDIDATE_RUNS" =~ ^[0-9]+$ ]] || (( CANDIDATE_RUNS < MINIMUM_EXPERIME
     printf '%s\n' "--candidate-runs must be at least $MINIMUM_EXPERIMENT_RUNS" >&2
     exit 2
 fi
+if ! [[ "$REFERENCE_CANDIDATE_RUNS" =~ ^[0-9]+$ ]] || (( REFERENCE_CANDIDATE_RUNS < MINIMUM_REFERENCE_RUNS )); then
+    printf '%s\n' "--reference-candidate-runs must be at least $MINIMUM_REFERENCE_RUNS" >&2
+    exit 2
+fi
 if ! [[ "$PERF_FREQUENCY" =~ ^[0-9]+$ ]] || (( PERF_FREQUENCY == 0 )); then
     printf '%s\n' "--perf-frequency must be a positive integer" >&2
     exit 2
@@ -102,7 +113,7 @@ if ! [[ "$PUBLISHED_SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || ! [[ "$PUBLISHED_SOUR
     exit 2
 fi
 
-for command in git "$PYTHON" cargo perf heaptrack heaptrack_print uname; do
+for command in git "$PYTHON" cargo perf heaptrack heaptrack_print uname systemd-detect-virt; do
     command -v "$command" >/dev/null 2>&1 || {
         printf '%s\n' "required command is unavailable: $command" >&2
         exit 2
@@ -120,12 +131,10 @@ if {
     printf '%s\n' "WSL is historical-only and cannot produce Phase 0 profile evidence" >&2
     exit 2
 fi
-if command -v systemd-detect-virt >/dev/null 2>&1; then
-    CONTAINER_KIND="$(systemd-detect-virt --container 2>/dev/null || true)"
-    if [[ -n "$CONTAINER_KIND" && "$CONTAINER_KIND" != "none" ]]; then
-        printf '%s\n' "a container cannot produce the native-Linux profile reference: $CONTAINER_KIND" >&2
-        exit 2
-    fi
+CONTAINER_KIND="$(systemd-detect-virt --container 2>/dev/null || true)"
+if [[ "$CONTAINER_KIND" != "none" ]]; then
+    printf '%s\n' "native-Linux profiles require systemd-detect-virt --container to report none: ${CONTAINER_KIND:-unavailable}" >&2
+    exit 2
 fi
 
 cd "$ROOT"
@@ -199,15 +208,22 @@ fi
 mkdir -p "$OUTPUT_DIR" "$TARGET_ROOT"
 
 printf '%s\n' "Profiling published source $PUBLISHED_SOURCE_COMMIT (tree $PUBLISHED_SOURCE_TREE, ref $PUBLISHED_SOURCE_REF)"
-printf '%s\n' "Candidate repetitions: $CANDIDATE_RUNS; perf frequency: $PERF_FREQUENCY Hz"
+printf '%s\n' "Experiment repetitions: $CANDIDATE_RUNS; reference repetitions: $REFERENCE_CANDIDATE_RUNS; perf frequency: $PERF_FREQUENCY Hz"
 
-"$PYTHON" tools/aggregate_phase0_hot_path_profiles.py capture-host \
-    --output "$OUTPUT_DIR/host-before.json" \
-    --source-commit "$PUBLISHED_SOURCE_COMMIT" \
-    --source-tree "$PUBLISHED_SOURCE_TREE" \
-    --published-source-ref "$PUBLISHED_SOURCE_REF" \
-    --published-source-ref-head "$PUBLISHED_REF_HEAD" \
-    --repository-root "$ROOT"
+capture_measurement_host() {
+    local output="$1"
+    "$PYTHON" tools/aggregate_phase0_hot_path_profiles.py capture-host \
+        --output "$output" \
+        --source-commit "$PUBLISHED_SOURCE_COMMIT" \
+        --source-tree "$PUBLISHED_SOURCE_TREE" \
+        --published-source-ref "$PUBLISHED_SOURCE_REF" \
+        --published-source-ref-head "$PUBLISHED_REF_HEAD" \
+        --repository-root "$ROOT"
+}
+
+# Keep a wrapper-level observation for a concise archive overview, then bind
+# every measured process to its own before/after observations below.
+capture_measurement_host "$OUTPUT_DIR/host-before.json"
 
 # A smoke run builds verified real fixtures and the parity probe through the
 # exact executable path. It is intentionally outside perf/heaptrack samples:
@@ -301,7 +317,7 @@ PY
         --runtime-workers "$runtime_workers" \
         --pool-capacity "$pool_capacity" \
         --pool-queue-capacity 4 \
-        --coordination-timeout-ms 15000 \
+        --coordination-timeout-ms 2000 \
         --coordination-poll-interval-ms "$coordination_poll_interval_ms" \
         --wasmtime-allocator "$allocator" \
         --wasmtime-copy-on-write-images "$copy_on_write" \
@@ -325,7 +341,9 @@ run_full_invariant_proof() {
         "$root/raw-results.json" "$root/BASELINE.md" \
         40 10 24 2000 2 2 on-demand true true "$EXECUTABLE_PROBE" 0 ""
     write_command_json "$root/command.json" "phase0-baseline-full-invariant-proof" "${command[@]}"
+    capture_measurement_host "$root/host-before.json"
     "${command[@]}" >"$root/stdout.log" 2>"$root/stderr.log"
+    capture_measurement_host "$root/host-after.json"
 }
 
 run_profile() {
@@ -346,8 +364,10 @@ run_profile() {
         2 2 on-demand true true "$EXECUTABLE_PROBE" 1 "$workload"
     write_command_json "$perf_root/command.json" "perf" \
         perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}"
+    capture_measurement_host "$perf_root/host-before.json"
     perf record --output "$perf_root/perf.data" --freq "$PERF_FREQUENCY" --call-graph dwarf -- "${perf_command[@]}" \
         >"$perf_root/stdout.log" 2>"$perf_root/stderr.log"
+    capture_measurement_host "$perf_root/host-after.json"
     perf report --stdio --no-children --percent-limit 0.1 --sort comm,dso,symbol \
         --input "$perf_root/perf.data" >"$perf_root/perf-report.txt" 2>"$perf_root/perf-report.stderr.log"
     perf report --stdio --percent-limit 0.1 --sort comm,dso,symbol \
@@ -361,8 +381,10 @@ run_profile() {
         2 2 on-demand true true "$EXECUTABLE_PROBE" 1 "$workload"
     write_command_json "$allocation_root/command.json" "heaptrack" \
         heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}"
+    capture_measurement_host "$allocation_root/host-before.json"
     heaptrack --record-only --output "$allocation_root/heaptrack.gz" -- "${allocation_command[@]}" \
         >"$allocation_root/stdout.log" 2>"$allocation_root/stderr.log"
+    capture_measurement_host "$allocation_root/host-after.json"
     local allocation_data="$allocation_root/heaptrack.gz.zst"
     if [[ ! -f "$allocation_data" ]]; then
         mapfile -t heaptrack_outputs < <(find "$allocation_root" -maxdepth 1 -type f -name 'heaptrack*.gz*' -print)
@@ -407,6 +429,7 @@ run_candidate() {
     local allocator="$4"
     local copy_on_write="$5"
     local cache_enabled="$6"
+    local run_count="$7"
     local root="$OUTPUT_DIR/candidates/$candidate"
     mkdir -p "$root"
     local candidate_probe="$root/executable-harness-probe.json"
@@ -431,7 +454,7 @@ run_candidate() {
         "RAW_RESULTS.json" "BASELINE.md" 40 10 24 2000 \
         "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$cache_enabled" "$candidate_probe" 0 ""
     write_command_json "$root/command-template.json" "phase0-baseline" "${template[@]}"
-    for (( run = 1; run <= CANDIDATE_RUNS; run++ )); do
+    for (( run = 1; run <= run_count; run++ )); do
         printf -v run_name 'run-%02d' "$run"
         local run_root="$root/$run_name"
         mkdir -p "$run_root"
@@ -440,7 +463,9 @@ run_candidate() {
             "$run_root/raw-results.json" "$run_root/BASELINE.md" 40 10 24 2000 \
             "$runtime_workers" "$pool_capacity" "$allocator" "$copy_on_write" "$cache_enabled" "$candidate_probe" 0 ""
         write_command_json "$run_root/command.json" "phase0-baseline" "${command[@]}"
+        capture_measurement_host "$run_root/host-before.json"
         "${command[@]}" >"$run_root/stdout.log" 2>"$run_root/stderr.log"
+        capture_measurement_host "$run_root/host-after.json"
     done
 }
 
@@ -461,18 +486,18 @@ run_profile cleanup 128 1 1 1
 run_profile at-capacity-contention 1 1 48 1
 run_profile queued-contention 1 1 48 1
 
-# Each candidate is a separate process with the same fixture, toolchain,
-# budgets, queue limit, and full Phase 0 checks. Three runs are evidence for a
-# trade-off decision only; the aggregate will refuse to call them an adoption
-# result until a seven-run matched set exists.
-run_candidate worker-cell-1w-1c 1 1 on-demand true true
-run_candidate worker-cell-2w-2c 2 2 on-demand true true
-run_candidate worker-cell-2w-4c 2 4 on-demand true true
-run_candidate worker-cell-4w-2c 4 2 on-demand true true
-run_candidate on-demand-cow-disabled 2 2 on-demand false true
-run_candidate pooling-cow-disabled 2 2 pooling false true
-run_candidate pooling-cow-enabled 2 2 pooling true true
-run_candidate prepared-cache-disabled 2 2 on-demand true false
+# The fixed default is the only calibration-reference candidate: it retains a
+# complete seven-run matched set. The deliberately different configurations
+# remain bounded Phase 1 experiments with three retained observations each;
+# they are never presented as comparisons against the default calibration.
+run_candidate worker-cell-1w-1c 1 1 on-demand true true "$CANDIDATE_RUNS"
+run_candidate worker-cell-2w-2c 2 2 on-demand true true "$REFERENCE_CANDIDATE_RUNS"
+run_candidate worker-cell-2w-4c 2 4 on-demand true true "$CANDIDATE_RUNS"
+run_candidate worker-cell-4w-2c 4 2 on-demand true true "$CANDIDATE_RUNS"
+run_candidate on-demand-cow-disabled 2 2 on-demand false true "$CANDIDATE_RUNS"
+run_candidate pooling-cow-disabled 2 2 pooling false true "$CANDIDATE_RUNS"
+run_candidate pooling-cow-enabled 2 2 pooling true true "$CANDIDATE_RUNS"
+run_candidate prepared-cache-disabled 2 2 on-demand true false "$CANDIDATE_RUNS"
 
 "$PYTHON" tools/aggregate_phase0_hot_path_profiles.py aggregate \
     --profiles-directory "$OUTPUT_DIR/profiles" \
@@ -484,6 +509,7 @@ run_candidate prepared-cache-disabled 2 2 on-demand true false
     --source-tree "$PUBLISHED_SOURCE_TREE" \
     --published-source-ref "$PUBLISHED_SOURCE_REF" \
     --required-candidate-runs "$CANDIDATE_RUNS" \
+    --required-reference-candidate-runs "$REFERENCE_CANDIDATE_RUNS" \
     --output-json "$OUTPUT_DIR/aggregate.json" \
     --output-report "$OUTPUT_DIR/PROFILE.md"
 

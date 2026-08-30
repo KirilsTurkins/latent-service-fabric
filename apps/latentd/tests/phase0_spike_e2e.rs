@@ -323,7 +323,7 @@ fn assert_exit(output: &Output, expected: i32) {
 fn assert_fixed_and_clean(document: &Value, workers: u64, capacity: u64, activation_count: usize) {
     assert_eq!(document["schema_version"], "latent.phase0.spike.result.v1");
     assert_eq!(document["production_ready"], false);
-    assert_eq!(document["phase1_api_compatible"], false);
+    assert_eq!(document["phase1_api_compatible"], true);
     assert_eq!(document["topology"]["runtime_workers"], workers);
     assert_eq!(document["topology"]["pool_capacity"], capacity);
     assert_eq!(document["topology"]["listener_socket_count"], 0);

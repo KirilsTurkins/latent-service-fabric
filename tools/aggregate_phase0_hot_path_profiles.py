@@ -24,14 +24,21 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, NoReturn
 
+try:  # Support both ``python tools/...`` and package-style imports.
+    from . import aggregate_phase0_calibration as calibration_aggregate
+except ImportError:  # pragma: no cover - exercised by the command-line entrypoint.
+    import aggregate_phase0_calibration as calibration_aggregate
+
 
 BASELINE_SCHEMA = "latent.phase0.baseline.v2"
 TARGETED_PROFILE_SCHEMA = "latent.phase0.targeted-profile.v2"
-HOST_SCHEMA = "latent.phase0.hot-path.host-observation.v1"
-PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v3"
+HOST_SCHEMA = "latent.phase0.hot-path.host-observation.v2"
+PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v5"
 HEAPTRACK_ATTRIBUTION_SCHEMA = "latent.phase0.hot-path.heaptrack-attribution.v3"
+MEASUREMENT_IDENTITY_SCHEMA = "latent.phase0.measurement-identity.v1"
 MINIMUM_ADOPTION_RUNS = 7
 MINIMUM_EXPERIMENT_RUNS = 3
+REFERENCE_CANDIDATE = "worker-cell-2w-2c"
 
 # Every retained process has its own baseline document.  These fields make the
 # machine/toolchain context in each document auditable rather than relying only
@@ -50,6 +57,46 @@ RUN_ENVIRONMENT_FIELDS = (
     "wasmtime_version",
     "repository_commit",
 )
+
+# A selective profiler intentionally changes only its workload boundary,
+# profiler-friendly cooperative polling, and the number of samples it takes at
+# that boundary.  Every other effective configuration field is part of the
+# real Phase 0 composition and must agree with the full proof.
+PROFILE_SAMPLING_CONFIGURATION_FIELDS = frozenset(
+    {
+        "profile_workload",
+        "coordination_poll_interval_ms",
+        "warm_samples",
+        "sequence_repetitions",
+        "throughput_batches",
+        "pool_iterations",
+    }
+)
+
+DEFAULT_FULL_CONFIGURATION: dict[str, Any] = {
+    "mode": "full",
+    "profile_workload": None,
+    "pool_capacity": 2,
+    "pool_queue_capacity": 4,
+    "runtime_workers": 2,
+    "warm_samples": 40,
+    "sequence_repetitions": 10,
+    "throughput_batches": 24,
+    "pool_iterations": 2_000,
+    "fuel": 1_000_000_000_000,
+    "memory_bytes": 16 * 1024 * 1024,
+    "memory_pressure_bytes": 4 * 1024 * 1024,
+    "timeout_ms": 25,
+    "cancel_after_ms": 5,
+    "maximum_overshoot_ms": 500,
+    "coordination_timeout_ms": 2_000,
+    "coordination_poll_interval_ms": 0,
+    "rss_growth_allowance_bytes": 64 * 1024 * 1024,
+    "fd_growth_allowance": 2,
+    "wasmtime_allocator": "on_demand",
+    "wasmtime_copy_on_write_images": True,
+    "prepared_cache_enabled": True,
+}
 
 PROFILE_WORKLOADS = (
     "cold-preparation",
@@ -336,6 +383,122 @@ def fail(message: str) -> NoReturn:
     raise HotPathError(message)
 
 
+def stable_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def first_difference(expected: Any, actual: Any, path: str = "$") -> str:
+    """Return one compact, deterministic identity difference for diagnostics."""
+    if type(expected) is not type(actual):
+        return (
+            f"{path} type expected={type(expected).__name__} "
+            f"observed={type(actual).__name__}"
+        )
+    if isinstance(expected, dict):
+        expected_keys = set(expected)
+        actual_keys = set(actual)
+        if expected_keys != actual_keys:
+            return (
+                f"{path} keys missing={sorted(expected_keys - actual_keys)} "
+                f"extra={sorted(actual_keys - expected_keys)}"
+            )
+        for key in sorted(expected):
+            difference = first_difference(expected[key], actual[key], f"{path}.{key}")
+            if difference:
+                return difference
+        return ""
+    if isinstance(expected, list):
+        if len(expected) != len(actual):
+            return f"{path} length expected={len(expected)} observed={len(actual)}"
+        for index, (expected_value, actual_value) in enumerate(zip(expected, actual, strict=True)):
+            difference = first_difference(expected_value, actual_value, f"{path}[{index}]")
+            if difference:
+                return difference
+        return ""
+    return "" if expected == actual else f"{path} expected={expected!r} observed={actual!r}"
+
+
+def require_measurement_identity(
+    document: dict[str, Any], label: str, *, exclude_sampling: bool
+) -> dict[str, Any]:
+    """Derive the artifact and effective-composition identity from one raw run.
+
+    This is intentionally derived from the raw baseline/targeted document, not
+    supplied by a caller.  That prevents a report from pairing a CPU trace,
+    Heaptrack trace, or full proof collected from different artifacts or
+    runtime configurations.
+    """
+    artifact = document.get("artifact")
+    if not isinstance(artifact, dict):
+        fail(f"{label} has no artifact identity")
+    component_digest = artifact.get("component_digest")
+    component_bytes = artifact.get("component_bytes")
+    capsule_digest = artifact.get("capsule_digest")
+    capsule_bytes = artifact.get("capsule_bytes")
+    if not isinstance(component_digest, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", component_digest) is None:
+        fail(f"{label} has an invalid artifact component digest")
+    if not isinstance(component_bytes, int) or isinstance(component_bytes, bool) or component_bytes <= 0:
+        fail(f"{label} has an invalid artifact component byte count")
+    if not isinstance(capsule_digest, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", capsule_digest) is None:
+        fail(f"{label} has an invalid artifact capsule digest")
+    if not isinstance(capsule_bytes, int) or isinstance(capsule_bytes, bool) or capsule_bytes <= 0:
+        fail(f"{label} has an invalid artifact capsule byte count")
+
+    configuration = document.get("config")
+    if not isinstance(configuration, dict):
+        fail(f"{label} has no effective configuration")
+    identity_configuration = {
+        key: value
+        for key, value in configuration.items()
+        if not exclude_sampling or key not in PROFILE_SAMPLING_CONFIGURATION_FIELDS
+    }
+    if not identity_configuration:
+        fail(f"{label} has no invariant-relevant configuration")
+    return {
+        "schema_version": MEASUREMENT_IDENTITY_SCHEMA,
+        "artifact": {
+            "component_digest": component_digest,
+            "component_bytes": component_bytes,
+            "capsule_digest": capsule_digest,
+            "capsule_bytes": capsule_bytes,
+        },
+        "configuration": identity_configuration,
+    }
+
+
+def require_identity_match(
+    expected: dict[str, Any], observed: dict[str, Any], label: str
+) -> None:
+    if stable_json(expected) != stable_json(observed):
+        fail(f"{label} measurement identity mismatch: {first_difference(expected, observed)}")
+
+
+def require_host_identity_match(
+    expected: dict[str, Any], observed: dict[str, Any], label: str
+) -> None:
+    if stable_json(expected) != stable_json(observed):
+        fail(f"{label} static host identity mismatch: {first_difference(expected, observed)}")
+
+
+def require_exact_configuration(
+    actual: Any, expected: dict[str, Any], label: str
+) -> dict[str, Any]:
+    if not isinstance(actual, dict):
+        fail(f"{label} has no effective configuration")
+    if stable_json(actual) != stable_json(expected):
+        fail(
+            f"{label} configuration is not the fixed Phase 0 composition: "
+            f"{first_difference(expected, actual)}"
+        )
+    return actual
+
+
+def candidate_configuration(name: str) -> dict[str, Any]:
+    configuration = dict(DEFAULT_FULL_CONFIGURATION)
+    configuration.update(CANDIDATE_EXPECTATIONS[name])
+    return configuration
+
+
 def now_utc() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat()
 
@@ -404,6 +567,27 @@ def parse_meminfo() -> dict[str, int]:
     return values
 
 
+def cpu_model_from_proc_cpuinfo(contents: str | None) -> str:
+    if contents is None:
+        return "unknown"
+    for line in contents.splitlines():
+        for prefix in ("model name\t: ", "Hardware\t: "):
+            if line.startswith(prefix):
+                return line.removeprefix(prefix)
+    return "unknown"
+
+
+def cpu_model() -> str:
+    return cpu_model_from_proc_cpuinfo(read_text(Path("/proc/cpuinfo")))
+
+
+def logical_cpu_count() -> int | None:
+    try:
+        return len(os.sched_getaffinity(0))
+    except (AttributeError, OSError):
+        return os.cpu_count()
+
+
 def capture_host(
     output: Path,
     source_commit: str,
@@ -420,6 +604,7 @@ def capture_host(
     ).lower()
     container = command_output(["systemd-detect-virt", "--container"])
     virtualization = command_output(["systemd-detect-virt"])
+    virtual_machine = command_output(["systemd-detect-virt", "--vm"])
     tools = {
         "perf": command_output(["perf", "--version"]),
         "heaptrack": command_output(["heaptrack", "--version"]),
@@ -428,6 +613,7 @@ def capture_host(
         "rustc": command_output(["rustc", "--version"]),
         "cargo": command_output(["cargo", "--version"]),
     }
+    memory = parse_meminfo()
     payload = {
         "schema_version": HOST_SCHEMA,
         "captured_at_utc": now_utc(),
@@ -442,27 +628,26 @@ def capture_host(
             platform.system() == "Linux"
             and "microsoft" not in kernel_text
             and "wsl" not in kernel_text
-            and container in ("none", "unavailable")
+            and container == "none"
         ),
         "virtualization": {
             "systemd_detect_virt": virtualization,
             "systemd_detect_virt_container": container,
+            "systemd_detect_virt_vm": virtual_machine,
             "wsl_detected": "microsoft" in kernel_text or "wsl" in kernel_text,
         },
         "machine": {
-            "logical_cpu_count": os.cpu_count(),
-            "memory": parse_meminfo(),
+            "cpu_model": cpu_model(),
+            "logical_cpu_count": logical_cpu_count(),
+            "total_memory_bytes": memory.get("MemTotal"),
+            "memory": memory,
         },
         "tools": tools,
-        "allocator": {
-            "ld_preload": "set (value intentionally not recorded)"
-            if os.environ.get("LD_PRELOAD")
-            else "unset",
-            "malloc_conf": "set (value intentionally not recorded)"
-            if os.environ.get("MALLOC_CONF")
-            else "unset",
-            "evidence_tool": "heaptrack (open-source symbolized allocation profiler)",
-        },
+        # Reuse the calibration collector's exact static-host observations so
+        # a profile cannot become calibration-comparable on a different CPU,
+        # virtualization layer, allocator, or frequency/power policy.
+        "cpu_frequency_policy": calibration_aggregate.cpu_frequency_policy(),
+        "allocator": calibration_aggregate.allocator_observation(repository_root),
         "repository_root": str(repository_root),
     }
     write_json(output, payload)
@@ -504,6 +689,43 @@ def verify_baseline(document: dict[str, Any], label: str, expected_checks: set[s
     return check_names(document, label, expected_checks)
 
 
+def host_runtime_identity(host: dict[str, Any], label: str) -> dict[str, Any]:
+    """Return the process-visible machine identity captured beside a run."""
+    strings = ("operating_system", "architecture", "kernel")
+    identity: dict[str, Any] = {}
+    for field in strings:
+        value = host.get(field)
+        if not isinstance(value, str) or not value.strip():
+            fail(f"{label} has no usable {field}")
+        identity[field] = value
+    machine = host.get("machine")
+    if not isinstance(machine, dict):
+        fail(f"{label} has no machine identity")
+    cpu_model = machine.get("cpu_model")
+    if (
+        not isinstance(cpu_model, str)
+        or not cpu_model.strip()
+        or calibration_aggregate.NON_MEANINGFUL_CPU_MODEL_PATTERN.match(
+            cpu_model.strip()
+        )
+    ):
+        fail(f"{label} has no usable CPU model")
+    logical_cpus = machine.get("logical_cpu_count")
+    if not isinstance(logical_cpus, int) or isinstance(logical_cpus, bool) or logical_cpus <= 0:
+        fail(f"{label} has an invalid logical CPU count")
+    total_memory = machine.get("total_memory_bytes")
+    if not isinstance(total_memory, int) or isinstance(total_memory, bool) or total_memory <= 0:
+        fail(f"{label} host observation has an invalid total memory value")
+    identity.update(
+        {
+            "cpu_model": cpu_model,
+            "logical_cpu_count": logical_cpus,
+            "total_memory_bytes": total_memory,
+        }
+    )
+    return identity
+
+
 def verify_run_environment(
     document: dict[str, Any],
     label: str,
@@ -518,12 +740,32 @@ def verify_run_environment(
     missing = [field for field in RUN_ENVIRONMENT_FIELDS if field not in environment]
     if missing:
         fail(f"{label} lacks per-run environment fields: {', '.join(missing)}")
+    for field in (
+        "operating_system",
+        "architecture",
+        "kernel",
+        "cpu_model",
+        "rustc",
+        "cargo",
+        "rust_target",
+        "build_profile",
+        "wasmtime_version",
+    ):
+        if not isinstance(environment.get(field), str) or not environment[field].strip():
+            fail(f"{label} has an incomplete per-run environment field: {field}")
+    for field in ("logical_cpu_count", "total_memory_bytes"):
+        value = environment.get(field)
+        if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+            fail(f"{label} has an invalid per-run environment field: {field}")
+    repository_commit = environment.get("repository_commit")
+    if not isinstance(repository_commit, str) or re.fullmatch(r"[0-9a-f]{40}", repository_commit) is None:
+        fail(f"{label} has an invalid per-run environment field: repository_commit")
     if environment.get("repository_commit") != execution_commit:
         fail(
             f"{label} repository commit does not match the verified execution commit"
         )
-    for field in ("operating_system", "architecture", "kernel"):
-        if environment.get(field) != host.get(field):
+    for field, host_value in host_runtime_identity(host, label).items():
+        if environment.get(field) != host_value:
             fail(f"{label} per-run environment differs from host observation: {field}")
     tools = host.get("tools")
     if not isinstance(tools, dict):
@@ -1135,20 +1377,15 @@ def load_full_invariant_proof(
         fail("full-invariant proof command must retain full mode")
     if command_option(arguments, "--coordination-poll-interval-ms") != "0":
         fail("full-invariant proof command must retain calibrated cooperative polling")
-    config = document.get("config")
-    expected_config = {
-        "profile_workload": None,
-        "runtime_workers": 2,
-        "pool_capacity": 2,
-        "wasmtime_allocator": "on_demand",
-        "wasmtime_copy_on_write_images": True,
-        "prepared_cache_enabled": True,
-        "coordination_poll_interval_ms": 0,
-    }
-    if not isinstance(config, dict) or any(
-        config.get(key) != expected for key, expected in expected_config.items()
-    ):
-        fail("full-invariant proof configuration is not the fixed default Phase 0 topology")
+    config = require_exact_configuration(
+        document.get("config"), DEFAULT_FULL_CONFIGURATION, "full-invariant proof"
+    )
+    measurement_identity = require_measurement_identity(
+        document, "full-invariant proof", exclude_sampling=False
+    )
+    composition_identity = require_measurement_identity(
+        document, "full-invariant proof", exclude_sampling=True
+    )
     cache_probe = document.get("preparation_cache_reuse")
     if (
         not isinstance(cache_probe, dict)
@@ -1176,7 +1413,9 @@ def load_full_invariant_proof(
                 "execution_commit": command["execution_commit"],
                 "execution_tree": command["execution_tree"],
             },
-            "configuration": document.get("config"),
+            "configuration": config,
+            "measurement_identity": measurement_identity,
+            "composition_identity": composition_identity,
         },
     )
 
@@ -1192,7 +1431,7 @@ def load_profile(
     published_source_ref_head: str,
     full_command_identity: dict[str, Any],
     expected_environment: dict[str, Any],
-    host: dict[str, Any],
+    expected_host_identity: dict[str, Any],
 ) -> dict[str, Any]:
     root = profiles_directory / name
     perf_root = root / "perf"
@@ -1205,17 +1444,56 @@ def load_profile(
     verify_targeted_profile_document(
         allocation_document, f"{name} allocation targeted profile", name
     )
-    for label, document in (
-        ("perf", perf_document),
-        ("allocation", allocation_document),
+    process_host_records: dict[str, dict[str, Any]] = {}
+    for label, document, process_root in (
+        ("perf", perf_document, perf_root),
+        ("allocation", allocation_document, allocation_root),
     ):
+        process_host, process_host_record = host_observation_record(
+            process_root,
+            f"{name} {label} targeted profile",
+            archive_root,
+            source_commit,
+            source_tree,
+            published_source_ref,
+            published_source_ref_head,
+            expected_host_identity,
+        )
         verify_run_environment(
             document,
             f"{name} {label} targeted profile",
-            host,
+            process_host,
             expected_environment,
             full_command_identity["execution_commit"],
         )
+        process_host_records[label] = process_host_record
+
+    # The perf and Heaptrack processes deliberately differ only by the
+    # profiler executable. They must otherwise be byte-for-byte the same
+    # effective run. A targeted workload may differ from the full proof only
+    # in the explicitly excluded sampling/workload/poll fields.
+    perf_exact_identity = require_measurement_identity(
+        perf_document, f"{name} perf targeted profile", exclude_sampling=False
+    )
+    allocation_exact_identity = require_measurement_identity(
+        allocation_document, f"{name} allocation targeted profile", exclude_sampling=False
+    )
+    require_identity_match(
+        perf_exact_identity,
+        allocation_exact_identity,
+        f"{name} perf/allocation",
+    )
+    perf_composition_identity = require_measurement_identity(
+        perf_document, f"{name} perf targeted profile", exclude_sampling=True
+    )
+    full_measurement_identity = full_invariant_proof.get("composition_identity")
+    if not isinstance(full_measurement_identity, dict):
+        fail("full-invariant proof has no canonical composition identity")
+    require_identity_match(
+        full_measurement_identity,
+        perf_composition_identity,
+        f"{name} targeted profile/full-invariant proof",
+    )
 
     perf_command = load_json(perf_root / "command.json", f"{name} perf command")
     allocation_command = load_json(
@@ -1277,9 +1555,12 @@ def load_profile(
             "selected_scenarios": perf_document.get("selected_scenarios", []),
             "payload_flow": perf_document.get("payload_flow"),
             "per_run_environment": perf_document["environment"],
+            "composition_identity": perf_composition_identity,
             "full_invariant_proof": full_invariant_proof,
             "contributor_attribution": contributors,
             "perf": {
+                "measurement_identity": perf_exact_identity,
+                "host_observations": process_host_records["perf"],
                 "command": perf_command,
                 "raw_results": archive_path(perf_root / "raw-results.json", archive_root),
                 "raw_results_sha256": sha256_file(perf_root / "raw-results.json"),
@@ -1296,6 +1577,8 @@ def load_profile(
                 "report_text": perf_report,
             },
             "allocation": {
+                "measurement_identity": allocation_exact_identity,
+                "host_observations": process_host_records["allocation"],
                 "command": allocation_command,
                 "raw_results": archive_path(
                     allocation_root / "raw-results.json", archive_root
@@ -1324,16 +1607,9 @@ def load_profile(
 
 
 def validate_candidate_config(name: str, document: dict[str, Any]) -> None:
-    expected = CANDIDATE_EXPECTATIONS[name]
-    config = document.get("config")
-    if not isinstance(config, dict):
-        fail(f"candidate {name} has no effective configuration")
-    for key, expected_value in expected.items():
-        if config.get(key) != expected_value:
-            fail(
-                f"candidate {name} configuration mismatch for {key}: "
-                f"expected {expected_value!r}, observed {config.get(key)!r}"
-            )
+    require_exact_configuration(
+        document.get("config"), candidate_configuration(name), f"candidate {name}"
+    )
 
 
 def validate_candidate_cache_reuse(
@@ -1418,7 +1694,7 @@ def load_candidate(
     published_source_ref_head: str,
     full_command_identity: dict[str, Any],
     expected_environment: dict[str, Any],
-    host: dict[str, Any],
+    expected_host_identity: dict[str, Any],
     required_run_count: int,
 ) -> dict[str, Any]:
     root = candidates_directory / name
@@ -1431,15 +1707,27 @@ def load_candidate(
             f"expected={expected_names}, observed={observed_names}"
         )
     documents: list[dict[str, Any]] = []
+    identities: list[dict[str, Any]] = []
+    host_records: list[dict[str, Any]] = []
     metric_samples: list[dict[str, float | None]] = []
     cache_reuse_controls: list[dict[str, Any]] = []
     for path in runs:
         document = load_json(path, f"candidate {name} baseline")
         verify_baseline(document, f"candidate {name} {path.parent.name}", expected_checks)
+        process_host, process_host_record = host_observation_record(
+            path.parent,
+            f"candidate {name} {path.parent.name}",
+            archive_root,
+            source_commit,
+            source_tree,
+            published_source_ref,
+            published_source_ref_head,
+            expected_host_identity,
+        )
         verify_run_environment(
             document,
             f"candidate {name} {path.parent.name}",
-            host,
+            process_host,
             expected_environment,
             full_command_identity["execution_commit"],
         )
@@ -1466,6 +1754,14 @@ def load_candidate(
                 f"candidate {name} {path.parent.name} changes calibrated coordination polling"
             )
         documents.append(document)
+        identities.append(
+            require_measurement_identity(
+                document,
+                f"candidate {name} {path.parent.name}",
+                exclude_sampling=False,
+            )
+        )
+        host_records.append(process_host_record)
         cache_reuse_controls.append(
             validate_candidate_cache_reuse(name, path.parent.name, document)
         )
@@ -1475,6 +1771,13 @@ def load_candidate(
         for metric in metric_samples[0]
     }
     first = documents[0]
+    first_identity = identities[0]
+    for path, identity in zip(runs[1:], identities[1:], strict=True):
+        require_identity_match(
+            first_identity,
+            identity,
+            f"candidate {name} {path.parent.name}/run-01",
+        )
     return {
         "name": name,
         "run_count": len(documents),
@@ -1486,10 +1789,15 @@ def load_candidate(
                 "command": archive_path(path.parent / "command.json", archive_root),
                 "command_sha256": sha256_file(path.parent / "command.json"),
                 "environment": document.get("environment"),
+                "measurement_identity": identity,
+                "host_observations": host_record,
             }
-            for path, document in zip(runs, documents, strict=True)
+            for path, document, identity, host_record in zip(
+                runs, documents, identities, host_records, strict=True
+            )
         ],
         "configuration": first["config"],
+        "measurement_identity": first_identity,
         "metrics_per_run": metric_samples,
         "representatives": representatives,
         "prepared_cache_reuse_control": {
@@ -1542,85 +1850,234 @@ def archive_profile_record(profile: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def calibration_comparability(
-    candidate: dict[str, Any], calibration: dict[str, Any], source_commit: str, source_tree: str
+def calibration_measurement_identity(calibration: dict[str, Any]) -> dict[str, Any]:
+    reference_identity = calibration.get("reference_identity")
+    if not isinstance(reference_identity, dict):
+        fail("#38 calibration lacks a reference measurement identity")
+    return require_measurement_identity(
+        {
+            "artifact": reference_identity.get("artifact"),
+            "config": reference_identity.get("config"),
+        },
+        "#38 calibration reference",
+        exclude_sampling=False,
+    )
+
+
+def calibration_environment(calibration: dict[str, Any]) -> dict[str, Any]:
+    reference_identity = calibration.get("reference_identity")
+    environment = reference_identity.get("environment") if isinstance(reference_identity, dict) else None
+    if not isinstance(environment, dict):
+        fail("#38 calibration lacks a reference environment")
+    missing = [field for field in RUN_ENVIRONMENT_FIELDS if field not in environment]
+    if missing:
+        fail(f"#38 calibration lacks reference environment fields: {', '.join(missing)}")
+    return {field: environment[field] for field in RUN_ENVIRONMENT_FIELDS}
+
+
+def calibration_host_identity(calibration: dict[str, Any]) -> dict[str, Any]:
+    observations = calibration.get("host_observations")
+    runs = observations.get("runs") if isinstance(observations, dict) else None
+    if not isinstance(runs, list) or not runs:
+        fail("#38 calibration lacks host-comparability observations")
+    first = runs[0]
+    if not isinstance(first, dict):
+        fail("#38 calibration has a malformed host-comparability observation")
+    # Normalize through the same helper used for the profile observation. In
+    # particular, the calibration archive retains current CPU frequency for
+    # auditability, but that instantaneous value is deliberately not a
+    # comparability field.
+    try:
+        return calibration_aggregate.host_comparability_identity(first)
+    except calibration_aggregate.CalibrationError as error:
+        fail(f"#38 calibration has incomplete host-comparability context: {error}")
+
+
+def profile_host_identity(host: dict[str, Any]) -> dict[str, Any]:
+    try:
+        return calibration_aggregate.host_comparability_identity(host)
+    except calibration_aggregate.CalibrationError as error:
+        fail(f"hot-path host observation lacks complete comparability context: {error}")
+
+
+def validate_profile_host_observation(
+    host: dict[str, Any],
+    label: str,
+    source_commit: str,
+    source_tree: str,
+    published_source_ref: str,
+    published_source_ref_head: str,
+) -> dict[str, Any]:
+    if host.get("schema_version") != HOST_SCHEMA:
+        fail(f"{label} has an unexpected host observation schema")
+    if host.get("native_linux_reference") is not True:
+        fail(f"{label} is not from a supported native-Linux host")
+    for field, expected in (
+        ("source_commit", source_commit),
+        ("source_tree", source_tree),
+        ("published_source_ref", published_source_ref),
+        ("published_source_ref_head", published_source_ref_head),
+    ):
+        if host.get(field) != expected:
+            fail(f"{label} source identity does not match the profile aggregate: {field}")
+    host_runtime_identity(host, label)
+    tools = host.get("tools")
+    if not isinstance(tools, dict):
+        fail(f"{label} lacks tool context")
+    for tool in ("rustc", "cargo"):
+        value = tools.get(tool)
+        if not isinstance(value, str) or not value.strip():
+            fail(f"{label} has no usable {tool} tool context")
+    return profile_host_identity(host)
+
+
+def host_observation_record(
+    root: Path,
+    label: str,
+    archive_root: Path,
+    source_commit: str,
+    source_tree: str,
+    published_source_ref: str,
+    published_source_ref_head: str,
+    expected_host_identity: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Bind a measured process to stable before/after host observations."""
+    before_path = root / "host-before.json"
+    after_path = root / "host-after.json"
+    before = load_json(before_path, f"{label} host-before observation")
+    after = load_json(after_path, f"{label} host-after observation")
+    before_identity = validate_profile_host_observation(
+        before,
+        f"{label} host-before observation",
+        source_commit,
+        source_tree,
+        published_source_ref,
+        published_source_ref_head,
+    )
+    after_identity = validate_profile_host_observation(
+        after,
+        f"{label} host-after observation",
+        source_commit,
+        source_tree,
+        published_source_ref,
+        published_source_ref_head,
+    )
+    require_host_identity_match(
+        before_identity,
+        after_identity,
+        f"{label} host-before/host-after",
+    )
+    require_host_identity_match(
+        expected_host_identity,
+        before_identity,
+        f"{label} host/wrapper",
+    )
+    return before, {
+        "before": archive_path(before_path, archive_root),
+        "before_sha256": sha256_file(before_path),
+        "after": archive_path(after_path, archive_root),
+        "after_sha256": sha256_file(after_path),
+        "static_identity": before_identity,
+    }
+
+
+def calibration_mismatches(
+    candidate: dict[str, Any],
+    calibration: dict[str, Any],
+    source_commit: str,
+    source_tree: str,
+    host_identity: dict[str, Any],
+    *,
+    require_minimum_runs: bool = True,
 ) -> list[str]:
-    reasons: list[str] = []
+    mismatches: list[str] = []
     if calibration.get("source_commit") != source_commit:
-        reasons.append("source_commit differs from the #38 calibration")
+        mismatches.append("source_commit differs from the #38 calibration")
     if calibration.get("source_tree") != source_tree:
-        reasons.append("source_tree differs from the #38 calibration")
+        mismatches.append("source_tree differs from the #38 calibration")
     minimum_runs = calibration.get("minimum_required_run_count", MINIMUM_ADOPTION_RUNS)
     if not isinstance(minimum_runs, int) or minimum_runs < MINIMUM_ADOPTION_RUNS:
         minimum_runs = MINIMUM_ADOPTION_RUNS
-    if candidate["run_count"] < minimum_runs:
-        reasons.append(
+    if require_minimum_runs and candidate["run_count"] < minimum_runs:
+        mismatches.append(
             f"only {candidate['run_count']} retained full runs; #38 requires at least {minimum_runs}"
         )
-    reference_identity = calibration.get("reference_identity")
-    reference_config = (
-        reference_identity.get("config") if isinstance(reference_identity, dict) else None
-    )
-    if not isinstance(reference_config, dict):
-        reasons.append("#38 calibration lacks a reference configuration")
+
+    candidate_identity = candidate.get("measurement_identity")
+    if not isinstance(candidate_identity, dict):
+        mismatches.append("candidate lacks a canonical measurement identity")
     else:
-        for key, reference_value in reference_config.items():
-            if candidate["configuration"].get(key) != reference_value:
-                reasons.append(f"configuration differs for {key}")
-        if candidate["configuration"].get("coordination_poll_interval_ms") != 0:
-            reasons.append("candidate changes calibrated cooperative coordination polling")
-        if candidate["configuration"].get("prepared_cache_enabled") is not True:
-            reasons.append("candidate changes calibrated bounded prepared-cache methodology")
-    reference_environment = (
-        reference_identity.get("environment") if isinstance(reference_identity, dict) else None
-    )
-    candidate_environment = candidate["raw_runs"][0].get("environment")
-    if isinstance(reference_environment, dict) and isinstance(candidate_environment, dict):
-        for key in ("architecture", "kernel", "rustc", "cargo", "rust_target", "build_profile", "wasmtime_version"):
-            if candidate_environment.get(key) != reference_environment.get(key):
-                reasons.append(f"environment differs for {key}")
+        reference_identity = calibration_measurement_identity(calibration)
+        if stable_json(candidate_identity) != stable_json(reference_identity):
+            mismatches.append(
+                "measurement identity differs: "
+                + first_difference(reference_identity, candidate_identity)
+            )
+
+    raw_runs = candidate.get("raw_runs")
+    first_run = raw_runs[0] if isinstance(raw_runs, list) and raw_runs else None
+    candidate_environment = first_run.get("environment") if isinstance(first_run, dict) else None
+    if not isinstance(candidate_environment, dict):
+        mismatches.append("candidate lacks per-run environment context")
     else:
-        reasons.append("candidate or calibration lacks comparable environment context")
-    return reasons
+        reference_environment = calibration_environment(calibration)
+        for field in RUN_ENVIRONMENT_FIELDS:
+            if candidate_environment.get(field) != reference_environment.get(field):
+                mismatches.append(f"environment differs for {field}")
+    reference_host = calibration_host_identity(calibration)
+    if stable_json(host_identity) != stable_json(reference_host):
+        mismatches.append(
+            "host identity differs: " + first_difference(reference_host, host_identity)
+        )
+    return mismatches
 
 
-def comparison_to_calibration(
-    candidate: dict[str, Any], calibration: dict[str, Any], source_commit: str, source_tree: str
-) -> dict[str, Any]:
+def require_calibration_match(
+    candidate: dict[str, Any],
+    calibration: dict[str, Any],
+    source_commit: str,
+    source_tree: str,
+    host_identity: dict[str, Any],
+    label: str,
+    *,
+    require_minimum_runs: bool = True,
+) -> None:
+    mismatches = calibration_mismatches(
+        candidate,
+        calibration,
+        source_commit,
+        source_tree,
+        host_identity,
+        require_minimum_runs=require_minimum_runs,
+    )
+    if mismatches:
+        fail(f"{label} is not reference-equivalent to the #38 calibration: {'; '.join(mismatches)}")
+
+
+def comparison_to_calibration(candidate: dict[str, Any], calibration: dict[str, Any]) -> dict[str, Any]:
     metrics = calibration.get("metrics")
     if not isinstance(metrics, dict):
         fail("calibration aggregate lacks metrics")
-    reasons = calibration_comparability(candidate, calibration, source_commit, source_tree)
     comparisons: dict[str, Any] = {}
     for metric, calibration_metric in METRIC_TO_CALIBRATION.items():
         candidate_value = candidate["representatives"].get(metric)
         reference = metrics.get(calibration_metric)
-        if reasons:
-            comparisons[metric] = {
-                "status": "inconclusive",
-                "candidate_median": candidate_value,
-                "reasons": reasons,
-            }
-            continue
         if candidate_value is None or not isinstance(reference, dict):
-            comparisons[metric] = {"status": "not_available"}
-            continue
+            fail(f"reference-equivalent candidate lacks calibration metric {metric}")
         comparison = reference.get("comparison")
         if not isinstance(comparison, dict):
-            comparisons[metric] = {"status": "not_available"}
-            continue
+            fail(f"#38 calibration lacks comparison data for {calibration_metric}")
         reference_median = comparison.get("reference_median")
         noise_band = comparison.get("advisory_noise_band")
         if not isinstance(reference_median, (int, float)) or not isinstance(noise_band, (int, float)):
-            comparisons[metric] = {"status": "not_available"}
-            continue
+            fail(f"#38 calibration has malformed comparison data for {calibration_metric}")
         direction = reference.get("direction")
         if direction == "increase_is_regression":
             outside = candidate_value > float(reference_median) + float(noise_band)
         elif direction == "decrease_is_regression":
             outside = candidate_value < float(reference_median) - float(noise_band)
         else:
-            outside = False
+            fail(f"#38 calibration has no valid comparison direction for {calibration_metric}")
         comparisons[metric] = {
             "status": "outside_advisory_band" if outside else "inside_advisory_band",
             "candidate_median": candidate_value,
@@ -1629,6 +2086,23 @@ def comparison_to_calibration(
             "direction": direction,
         }
     return comparisons
+
+
+def phase1_experiment_scope(name: str) -> dict[str, Any]:
+    expected = candidate_configuration(name)
+    deltas = {
+        key: value
+        for key, value in expected.items()
+        if value != DEFAULT_FULL_CONFIGURATION.get(key)
+    }
+    return {
+        "status": "not_applicable_for_phase0_calibration",
+        "reason": (
+            "This is an intentionally different Phase 1 experiment, not a "
+            "comparison against the fixed Phase 0 reference configuration."
+        ),
+        "intentional_configuration_delta": deltas,
+    }
 
 
 def attribution(profile_records: Iterable[dict[str, Any]]) -> dict[str, Any]:
@@ -1664,46 +2138,47 @@ def attribution(profile_records: Iterable[dict[str, Any]]) -> dict[str, Any]:
 
 
 def decision_records(candidates: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
-    baseline = candidates["worker-cell-2w-2c"]
+    baseline = candidates[REFERENCE_CANDIDATE]
     run_count = baseline["run_count"]
-    no_adoption_reason = (
-        f"Only {run_count} matched candidate runs are retained; Phase 0 requires at least "
-        f"{MINIMUM_ADOPTION_RUNS} comparable runs before a faster result can justify adoption."
+    reference_reason = (
+        f"The {run_count}-run default candidate is reference-equivalent to the "
+        "calibration and confirms the already selected Phase 0 configuration; it "
+        "does not introduce a new runtime behavior."
     )
     return [
         {
             "candidate": "fixed 2-worker/2-cell on-demand configuration",
             "decision": "retain existing default; no new adoption",
             "scope": "existing Phase 0 configuration",
-            "rationale": "It preserves the measured fixed topology and fresh-store isolation; this archive introduces no runtime behavior change.",
+            "rationale": "It preserves the measured fixed topology and fresh-store isolation. " + reference_reason,
             "handoff": "#39 runs the final 3x100k resource soak against this configuration.",
         },
         {
             "candidate": "bounded preparation/cache reuse versus cold preparation",
             "decision": "retain existing setting; no new adoption",
             "scope": "bounded one-entry prepared-component cache and explicit cache-disabled control",
-            "rationale": f"The matrix includes a cache-disabled control and the targeted cold-preparation profile, but {no_adoption_reason} The existing bounded immutable cache is retained without claiming a new measured adoption.",
+            "rationale": "The matrix includes a cache-disabled control and the targeted cold-preparation profile. The cache-disabled variant is an explicitly separate Phase 1 experiment, so the existing bounded immutable cache remains the reference setting.",
             "handoff": "#9 generalizes the cache key, policy, eviction, and multi-component compatibility proof.",
         },
         {
             "candidate": "worker/cell capacity ratios",
             "decision": "carry as configurable Phase 1 experiment",
             "scope": "#8",
-            "rationale": f"The matrix measures fixed ratios without selecting a universal winner. {no_adoption_reason}",
+            "rationale": "The matrix retains fixed ratios as explicitly non-reference Phase 1 experiments and does not select a universal winner.",
             "handoff": "#8 owns configuration, fairness, and fixed multi-class capacity policy.",
         },
         {
             "candidate": "Wasmtime pooling allocator",
             "decision": "defer",
             "scope": "#9",
-            "rationale": f"The experiment has an explicit fixed upper bound and no retained linear-memory allowance, but it changes node-fixed mapping and reset behavior. {no_adoption_reason}",
+            "rationale": "The experiment has an explicit fixed upper bound and no retained linear-memory allowance, but it changes node-fixed mapping and reset behavior; it is not a comparison against the selected reference.",
             "handoff": "#9 must provide generalized pooling limits, density evidence, and a reset/isolation proof before any production choice.",
         },
         {
             "candidate": "copy-on-write initialized memory",
             "decision": "carry as configurable Phase 1 experiment",
             "scope": "#9",
-            "rationale": f"Linux support is profiled explicitly, but its parallel-memory tradeoff is workload-dependent. {no_adoption_reason}",
+            "rationale": "Linux support is profiled explicitly, but its parallel-memory tradeoff is workload-dependent and belongs to the explicitly separate Phase 1 experiment scope.",
             "handoff": "#9 owns target-aware Wasmtime policy and must retain a safe non-COW fallback.",
         },
         {
@@ -1821,12 +2296,20 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
     )
     for candidate in aggregate["candidates"].values():
         metrics = candidate["representatives"]
-        comparisons = candidate["calibration_comparison"]
-        statuses = sorted(
-            value.get("status", "not_available")
-            for value in comparisons.values()
-            if isinstance(value, dict)
-        )
+        comparisons = candidate.get("calibration_comparison")
+        if isinstance(comparisons, dict):
+            statuses = sorted(
+                value.get("status", "not_available")
+                for value in comparisons.values()
+                if isinstance(value, dict)
+            )
+        else:
+            scope = candidate.get("phase0_calibration")
+            statuses = [
+                scope.get("status", "not_available")
+                if isinstance(scope, dict)
+                else "not_available"
+            ]
         lines.append(
             "| {name} | {runs} | {prep} | {warm} | {at_capacity} | {queued} | {fixed_rss} | {prep_delta} | {peak_rss} | {fixed_vm} | {prep_delta_vm} | {peak_vm} | {release_delta} / {release_delta_vm} | {threads} / {sockets} | {cache_control} | {topology} | {status} |".format(
                 name=candidate["name"],
@@ -1870,7 +2353,7 @@ def write_report(path: Path, aggregate: dict[str, Any]) -> None:
             "",
             "Fixed RSS/VM is the post-runtime, pre-component baseline. Preparation and post-release deltas are measured against that same baseline; peak values scan every retained process snapshot. `Cache control` is a direct same-key second prepare when enabled, or the explicitly non-reusable disabled-cache control. Every row retains the actual throughput values and complete canonical containment/reclamation checks in `aggregate.json`.",
             "",
-            f"Each candidate retains per-run command provenance and host/toolchain context in `aggregate.json`. No new runtime optimization is adopted unless it has at least {MINIMUM_ADOPTION_RUNS} materially comparable independent full runs, passes every hard invariant, has stable environment/outlier evidence, and stays within documented fixed/peak-memory costs. A mismatched source, configuration, method, environment, or run count is **inconclusive**, never an inside/outside-band result.",
+            f"Each candidate retains per-run command provenance, complete measurement identity, and host/toolchain context in `aggregate.json`. The fixed {REFERENCE_CANDIDATE} reference candidate has at least {MINIMUM_ADOPTION_RUNS} exact-identity runs and is the only candidate eligible for an advisory-band result. Intentional alternate configurations are Phase 1 experiments and receive no Phase 0 advisory-band calculation.",
             "",
             "## Decisions and Phase 1 handoff",
             "",
@@ -1938,17 +2421,17 @@ def aggregate(arguments: argparse.Namespace) -> None:
     candidates_directory = arguments.candidates_directory.resolve()
     archive_root = arguments.output_json.parent.resolve()
     host = load_json(arguments.host_observation, "hot-path host observation")
-    if host.get("schema_version") != HOST_SCHEMA:
-        fail("hot-path host observation schema is not recognized")
-    if host.get("native_linux_reference") is not True:
-        fail("hot-path profiles are not from a supported native-Linux host")
-    if host.get("source_commit") != arguments.source_commit or host.get("source_tree") != arguments.source_tree:
-        fail("host observation source identity does not match aggregate arguments")
-    if host.get("published_source_ref") != arguments.published_source_ref:
-        fail("host observation durable source ref does not match aggregate arguments")
     ref_head = host.get("published_source_ref_head")
     if not isinstance(ref_head, str) or not re.fullmatch(r"[0-9a-f]{40}", ref_head):
         fail("host observation lacks a verified durable source-ref head")
+    host_identity = validate_profile_host_observation(
+        host,
+        "hot-path wrapper host observation",
+        arguments.source_commit,
+        arguments.source_tree,
+        arguments.published_source_ref,
+        ref_head,
+    )
 
     calibration = load_json(arguments.calibration_aggregate, "Phase 0 calibration aggregate")
     if calibration.get("status") != "pass":
@@ -1958,6 +2441,10 @@ def aggregate(arguments: argparse.Namespace) -> None:
         fail(
             f"required candidate run count must be at least {MINIMUM_EXPERIMENT_RUNS} "
             "for a bounded experiment matrix"
+        )
+    if arguments.required_reference_candidate_runs < MINIMUM_ADOPTION_RUNS:
+        fail(
+            f"required reference-candidate run count must be at least {MINIMUM_ADOPTION_RUNS}"
         )
     full_document, expected_checks, full_invariant_proof = load_full_invariant_proof(
         arguments.full_invariant_proof,
@@ -1970,12 +2457,39 @@ def aggregate(arguments: argparse.Namespace) -> None:
     full_command_identity = full_invariant_proof.get("command_identity")
     if not isinstance(full_command_identity, dict):
         fail("full-invariant proof has no command execution identity")
+    full_process_host, full_host_observations = host_observation_record(
+        arguments.full_invariant_proof.parent,
+        "full-invariant proof baseline",
+        archive_root,
+        arguments.source_commit,
+        arguments.source_tree,
+        arguments.published_source_ref,
+        ref_head,
+        host_identity,
+    )
+    full_invariant_proof["host_observations"] = full_host_observations
     expected_environment = verify_run_environment(
         full_document,
         "full-invariant proof baseline",
-        host,
+        full_process_host,
         None,
         full_command_identity["execution_commit"],
+    )
+    full_measurement_identity = full_invariant_proof.get("measurement_identity")
+    if not isinstance(full_measurement_identity, dict):
+        fail("full-invariant proof has no exact measurement identity")
+    require_calibration_match(
+        {
+            "run_count": 1,
+            "measurement_identity": full_measurement_identity,
+            "raw_runs": [{"environment": expected_environment}],
+        },
+        calibration,
+        arguments.source_commit,
+        arguments.source_tree,
+        host_identity,
+        "full-invariant proof",
+        require_minimum_runs=False,
     )
     profiles: list[dict[str, Any]] = []
     for name in PROFILE_WORKLOADS:
@@ -1990,7 +2504,7 @@ def aggregate(arguments: argparse.Namespace) -> None:
             ref_head,
             full_command_identity,
             expected_environment,
-            host,
+            host_identity,
         )
         profiles.append(record)
     semantics = [profile["scenario_semantics"] for profile in profiles]
@@ -2002,6 +2516,11 @@ def aggregate(arguments: argparse.Namespace) -> None:
 
     candidates: dict[str, dict[str, Any]] = {}
     for name in CANDIDATE_EXPECTATIONS:
+        required_run_count = (
+            arguments.required_reference_candidate_runs
+            if name == REFERENCE_CANDIDATE
+            else arguments.required_candidate_runs
+        )
         candidate = load_candidate(
             candidates_directory,
             name,
@@ -2013,22 +2532,27 @@ def aggregate(arguments: argparse.Namespace) -> None:
             ref_head,
             full_command_identity,
             expected_environment,
-            host,
-            arguments.required_candidate_runs,
+            host_identity,
+            required_run_count,
         )
-        candidate["calibration_comparison"] = comparison_to_calibration(
-            candidate, calibration, arguments.source_commit, arguments.source_tree
-        )
-        candidate["calibration_comparison_eligibility"] = {
-            "status": "comparable"
-            if not calibration_comparability(
-                candidate, calibration, arguments.source_commit, arguments.source_tree
+        if name == REFERENCE_CANDIDATE:
+            require_calibration_match(
+                candidate,
+                calibration,
+                arguments.source_commit,
+                arguments.source_tree,
+                host_identity,
+                "reference candidate",
             )
-            else "inconclusive",
-            "reasons": calibration_comparability(
-                candidate, calibration, arguments.source_commit, arguments.source_tree
-            ),
-        }
+            candidate["calibration_comparison"] = comparison_to_calibration(
+                candidate, calibration
+            )
+            candidate["calibration_comparison_eligibility"] = {
+                "status": "reference_equivalent",
+                "required_run_count": arguments.required_reference_candidate_runs,
+            }
+        else:
+            candidate["phase0_calibration"] = phase1_experiment_scope(name)
         candidates[name] = candidate
 
     aggregate_document = {
@@ -2059,10 +2583,11 @@ def aggregate(arguments: argparse.Namespace) -> None:
             "path": archive_path(arguments.calibration_aggregate, archive_root),
             "sha256": sha256_file(arguments.calibration_aggregate),
             "adoption_rule": (
-                f"No candidate is eligible for Phase 0 adoption with fewer than {MINIMUM_ADOPTION_RUNS} "
-                "comparable runs, regardless of a faster median."
+                f"Only the fixed {REFERENCE_CANDIDATE} reference candidate is eligible "
+                f"for Phase 0 advisory-band analysis, and it retains at least {MINIMUM_ADOPTION_RUNS} "
+                "exact-identity runs."
             ),
-            "comparison_rule": "Only materially equivalent source, benchmark methodology, environment, configuration, and at least seven full runs may receive an inside/outside advisory-band result; every other result is inconclusive.",
+            "comparison_rule": "Only the reference-equivalent default candidate may receive an inside/outside advisory-band result. Intentional Phase 1 configuration experiments retain raw observations without a Phase 0 calibration calculation.",
         },
         "hard_invariants": {
             "canonical_names": sorted(expected_checks),
@@ -2116,6 +2641,7 @@ def parser() -> argparse.ArgumentParser:
     summary.add_argument("--source-tree", required=True)
     summary.add_argument("--published-source-ref", required=True)
     summary.add_argument("--required-candidate-runs", type=int, required=True)
+    summary.add_argument("--required-reference-candidate-runs", type=int, default=MINIMUM_ADOPTION_RUNS)
     summary.add_argument("--output-json", type=Path, required=True)
     summary.add_argument("--output-report", type=Path, required=True)
     return result

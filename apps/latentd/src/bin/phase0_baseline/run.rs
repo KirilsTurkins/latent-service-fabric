@@ -102,7 +102,7 @@ fn run(cli: Cli, process_entry: Instant) -> Result<bool, BenchError> {
         status,
         observational_only: true,
         production_ready: false,
-        phase1_api_compatible: false,
+        phase1_api_compatible: true,
         environment,
         artifact: result.artifact,
         config: config.clone(),
@@ -339,6 +339,7 @@ async fn run_targeted_async(
     before_component_load: TopologySnapshot,
     process_entry: Instant,
 ) -> Result<TargetedAsyncRunResult, BenchError> {
+    let (capsule_path, capsule_digest, capsule_bytes) = capsule_identity(&cli.capsule)?;
     let prepared_backend = phase0_composition::prepare_phase0_backend(
         &Phase0PreparationConfig {
             capsule: cli.capsule.clone(),
@@ -739,7 +740,9 @@ async fn run_targeted_async(
     process_snapshots.push(post_release);
     Ok(TargetedAsyncRunResult {
         artifact: ArtifactReport {
-            capsule_path: cli.capsule.display().to_string(),
+            capsule_path,
+            capsule_digest,
+            capsule_bytes,
             component_path: loaded.component_path.display().to_string(),
             component_digest: loaded.artifact.manifest.component_digest.0,
             component_bytes: loaded.component_bytes,
@@ -770,10 +773,8 @@ async fn run_async(
     before_component_load: TopologySnapshot,
     process_entry: Instant,
 ) -> Result<AsyncRunResult, BenchError> {
-    let executable_harness = load_executable_harness_probe(
-        &cli.executable_harness_probe,
-        config,
-    )?;
+    let (capsule_path, capsule_digest, capsule_bytes) = capsule_identity(&cli.capsule)?;
+    let executable_harness = load_executable_harness_probe(&cli.executable_harness_probe, config)?;
 
     let prepared_backend = phase0_composition::prepare_phase0_backend(
         &Phase0PreparationConfig {
@@ -1316,7 +1317,9 @@ async fn run_async(
 
     Ok(AsyncRunResult {
         artifact: ArtifactReport {
-            capsule_path: cli.capsule.display().to_string(),
+            capsule_path,
+            capsule_digest,
+            capsule_bytes,
             component_path: loaded.component_path.display().to_string(),
             component_digest: loaded.artifact.manifest.component_digest.0,
             component_bytes: loaded.component_bytes,
@@ -1336,6 +1339,38 @@ async fn run_async(
         checks,
         distributions,
     })
+}
+
+fn capsule_identity(capsule: &Path) -> Result<(String, String, u64), BenchError> {
+    let manifest_path = if capsule.is_dir() {
+        capsule.join("capsule.json")
+    } else {
+        capsule.to_path_buf()
+    };
+    let (_, path, digest, byte_count) =
+        read_fixture_identity(&manifest_path, "capsule manifest")?;
+    Ok((path, digest, byte_count))
+}
+
+fn read_fixture_identity(
+    path: &Path,
+    fixture_name: &str,
+) -> Result<(Vec<u8>, String, String, u64), BenchError> {
+    let bytes = fs::read(path).map_err(|error| {
+        BenchError::new(format!(
+            "failed to read {fixture_name} for fixture identity ({}): {error}",
+            path.display()
+        ))
+    })?;
+    let byte_count = u64::try_from(bytes.len())
+        .map_err(|_| BenchError::new(format!("{fixture_name} is too large to record")))?;
+    if byte_count == 0 {
+        return Err(BenchError::new(format!(
+            "{fixture_name} is empty and cannot identify the measured fixture"
+        )));
+    }
+    let digest = Sha256::digest(&bytes);
+    Ok((bytes, path.display().to_string(), format!("sha256:{digest:x}"), byte_count))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1486,8 +1521,13 @@ fn load_executable_harness_probe(
     path: &Path,
     config: &EffectiveConfig,
 ) -> Result<ExecutableHarnessProbeReport, BenchError> {
-    let document: ExecutableHarnessProbeDocument =
-        serde_json::from_slice(&fs::read(path)?)?;
+    let bytes = fs::read(path).map_err(|error| {
+        BenchError::new(format!(
+            "failed to read executable harness probe {}: {error}",
+            path.display()
+        ))
+    })?;
+    let document: ExecutableHarnessProbeDocument = serde_json::from_slice(&bytes)?;
     if document.schema_version != EXECUTABLE_PROBE_SCHEMA_VERSION {
         return Err(BenchError::new(format!(
             "unexpected executable probe schema {}",

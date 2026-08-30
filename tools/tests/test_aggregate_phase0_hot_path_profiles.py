@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tools import aggregate_phase0_hot_path_profiles as profile_aggregate
+
 
 ROOT = Path(__file__).resolve().parents[2]
 AGGREGATOR = ROOT / "tools" / "aggregate_phase0_hot_path_profiles.py"
@@ -14,6 +16,10 @@ SOURCE_COMMIT = "a" * 40
 SOURCE_TREE = "b" * 40
 SOURCE_REF = "benchmark/phase0-test-source"
 SOURCE_REF_HEAD = "c" * 40
+COMPONENT_DIGEST = "sha256:" + "e" * 64
+COMPONENT_BYTES = 27_616
+CAPSULE_DIGEST = "sha256:" + "f" * 64
+CAPSULE_BYTES = 1_024
 
 WORKLOAD_SEMANTICS = {
     "cold-preparation": "capsule validation, engine construction, and first prepared-component creation only",
@@ -72,6 +78,51 @@ def environment() -> dict[str, object]:
     }
 
 
+def host_observation() -> dict[str, object]:
+    return {
+        "schema_version": "latent.phase0.hot-path.host-observation.v2",
+        "native_linux_reference": True,
+        "source_commit": SOURCE_COMMIT,
+        "source_tree": SOURCE_TREE,
+        "published_source_ref": SOURCE_REF,
+        "published_source_ref_head": SOURCE_REF_HEAD,
+        "operating_system": "linux",
+        "architecture": "x86_64",
+        "kernel": "Linux test",
+        "machine": {
+            "cpu_model": "test CPU",
+            "logical_cpu_count": 4,
+            "total_memory_bytes": 16_777_216,
+            "memory": {"MemTotal": 16_777_216},
+        },
+        "tools": {"rustc": "rustc test", "cargo": "cargo test"},
+        "virtualization": {
+            "systemd_detect_virt": "none",
+            "systemd_detect_virt_container": "none",
+            "systemd_detect_virt_vm": "none",
+            "wsl_detected": False,
+        },
+        "allocator": {
+            "source_global_allocator_lookup": "completed",
+            "source_global_allocator_matches": [],
+            "ld_preload": "unset",
+            "malloc_conf": "unset",
+            "observation": "standard allocator",
+        },
+        "cpu_frequency_policy": {
+            "cpus_with_cpufreq_sysfs": 4,
+            "observed": {"scaling_governor": ["performance"]},
+            "current_frequency_khz_range": {"minimum": 1000, "maximum": 2000},
+            "notes": "read-only",
+        },
+    }
+
+
+def write_process_host_observations(root: Path) -> None:
+    write_json(root / "host-before.json", host_observation())
+    write_json(root / "host-after.json", host_observation())
+
+
 def configuration(
     *,
     workers: int = 2,
@@ -98,7 +149,7 @@ def configuration(
         "timeout_ms": 25,
         "cancel_after_ms": 5,
         "maximum_overshoot_ms": 500,
-        "coordination_timeout_ms": 15_000,
+        "coordination_timeout_ms": 2_000,
         "coordination_poll_interval_ms": poll_interval,
         "rss_growth_allowance_bytes": 67_108_864,
         "fd_growth_allowance": 2,
@@ -149,12 +200,22 @@ def snapshots() -> list[dict[str, object]]:
 
 def baseline(**kwargs: object) -> dict[str, object]:
     check_set = kwargs.pop("checks", checks())
+    artifact = kwargs.pop(
+        "artifact",
+        {
+            "component_digest": COMPONENT_DIGEST,
+            "component_bytes": COMPONENT_BYTES,
+            "capsule_digest": CAPSULE_DIGEST,
+            "capsule_bytes": CAPSULE_BYTES,
+        },
+    )
     config = configuration(**kwargs)
     cache_enabled = config["prepared_cache_enabled"]
     return {
         "schema_version": "latent.phase0.baseline.v2",
         "status": "pass",
         "checks": check_set,
+        "artifact": artifact,
         "config": config,
         "environment": environment(),
         "timings": {
@@ -256,6 +317,7 @@ def make_full_proof(root: Path) -> None:
     proof_command = command("phase0-baseline-full-invariant-proof", workload=None, poll_interval=0)
     proof_command["command"][0] = "/tmp/phase0-baseline"  # type: ignore[index]
     write_json(root / "command.json", proof_command)
+    write_process_host_observations(root)
 
 
 def make_profile(root: Path, name: str) -> None:
@@ -279,6 +341,7 @@ def make_profile(root: Path, name: str) -> None:
             command("perf" if tool == "perf" else "heaptrack", workload=name, poll_interval=1),
         )
         write_json(directory / "raw-results.json", targeted(name))
+        write_process_host_observations(directory)
         if tool == "perf":
             (directory / "perf.data").write_bytes(b"perf")
             (directory / "perf-report.txt").write_text(report, encoding="utf-8")
@@ -321,8 +384,10 @@ def make_profile(root: Path, name: str) -> None:
                 raise RuntimeError(summary.stderr)
 
 
-def make_candidate(root: Path, name: str, expectation: dict[str, object]) -> None:
-    for index in range(1, 4):
+def make_candidate(
+    root: Path, name: str, expectation: dict[str, object], *, run_count: int
+) -> None:
+    for index in range(1, run_count + 1):
         document = baseline(
             workers=int(expectation["runtime_workers"]),
             pool=int(expectation["pool_capacity"]),
@@ -333,9 +398,18 @@ def make_candidate(root: Path, name: str, expectation: dict[str, object]) -> Non
         run = root / name / f"run-{index:02d}"
         write_json(run / "raw-results.json", document)
         write_json(run / "command.json", command("phase0-baseline", workload=None, poll_interval=0))
+        write_process_host_observations(run)
 
 
 class AggregateHotPathProfilesTests(unittest.TestCase):
+    def test_extracts_the_tab_delimited_linux_cpu_model(self) -> None:
+        self.assertEqual(
+            profile_aggregate.cpu_model_from_proc_cpuinfo(
+                "processor\t: 0\nmodel name\t: Test CPU\n"
+            ),
+            "Test CPU",
+        )
+
     def build_archive(self, temporary: Path) -> tuple[Path, Path, Path, Path, Path]:
         profiles = temporary / "profiles"
         candidates = temporary / "candidates"
@@ -364,23 +438,10 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
                     "wasmtime_copy_on_write_images": cow,
                     "prepared_cache_enabled": cache_enabled,
                 },
+                run_count=7 if name == "worker-cell-2w-2c" else 3,
             )
         host = temporary / "host.json"
-        write_json(
-            host,
-            {
-                "schema_version": "latent.phase0.hot-path.host-observation.v1",
-                "native_linux_reference": True,
-                "source_commit": SOURCE_COMMIT,
-                "source_tree": SOURCE_TREE,
-                "published_source_ref": SOURCE_REF,
-                "published_source_ref_head": SOURCE_REF_HEAD,
-                "operating_system": "linux",
-                "architecture": "x86_64",
-                "kernel": "Linux test",
-                "tools": {"rustc": "rustc test", "cargo": "cargo test"},
-            },
-        )
+        write_json(host, host_observation())
         calibration = temporary / "calibration.json"
         metrics = {}
         for name in (
@@ -397,8 +458,27 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
                 "comparison": {"reference_median": 100.0, "advisory_noise_band": 10.0},
             }
         reference_config = configuration()
-        for key in ("profile_workload", "coordination_poll_interval_ms", "prepared_cache_enabled"):
-            reference_config.pop(key)
+        host_identity = {
+            "virtualization": {
+                "systemd_detect_virt": "none",
+                "systemd_detect_virt_container": "none",
+                "systemd_detect_virt_vm": "none",
+                "wsl_detected": False,
+            },
+            "allocator": {
+                "source_global_allocator_lookup": "completed",
+                "source_global_allocator_matches": [],
+                "ld_preload": "unset",
+                "malloc_conf": "unset",
+                "observation": "standard allocator",
+            },
+            "cpu_frequency_policy": {
+                "cpus_with_cpufreq_sysfs": 4,
+                "observed": {"scaling_governor": ["performance"]},
+                "current_frequency_khz_range": {"minimum": 1000, "maximum": 2000},
+                "notes": "read-only",
+            },
+        }
         write_json(
             calibration,
             {
@@ -406,7 +486,17 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
                 "source_commit": SOURCE_COMMIT,
                 "source_tree": SOURCE_TREE,
                 "minimum_required_run_count": 7,
-                "reference_identity": {"config": reference_config, "environment": environment()},
+                "reference_identity": {
+                    "artifact": {
+                        "component_digest": COMPONENT_DIGEST,
+                        "component_bytes": COMPONENT_BYTES,
+                        "capsule_digest": CAPSULE_DIGEST,
+                        "capsule_bytes": CAPSULE_BYTES,
+                    },
+                    "config": reference_config,
+                    "environment": environment(),
+                },
+                "host_observations": {"runs": [host_identity]},
                 "metrics": metrics,
             },
         )
@@ -441,6 +531,8 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
                 SOURCE_REF,
                 "--required-candidate-runs",
                 "3",
+                "--required-reference-candidate-runs",
+                "7",
                 "--output-json",
                 str(temporary / "aggregate.json"),
                 "--output-report",
@@ -467,15 +559,126 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             self.assertEqual(envelope["cpu_self_percent"], 50.0)
             self.assertEqual(envelope["cpu_inclusive_percent"], 50.0)
             default = aggregate["candidates"]["worker-cell-2w-2c"]
-            self.assertEqual(default["calibration_comparison_eligibility"]["status"], "inconclusive")
+            self.assertEqual(default["run_count"], 7)
             self.assertEqual(
-                default["calibration_comparison"]["at_capacity_activations_per_second"]["status"],
-                "inconclusive",
+                default["calibration_comparison_eligibility"]["status"],
+                "reference_equivalent",
             )
+            self.assertIn(
+                default["calibration_comparison"]["at_capacity_activations_per_second"]["status"],
+                {"inside_advisory_band", "outside_advisory_band"},
+            )
+            variant = aggregate["candidates"]["worker-cell-2w-4c"]
+            self.assertNotIn("calibration_comparison", variant)
+            self.assertEqual(
+                variant["phase0_calibration"]["status"],
+                "not_applicable_for_phase0_calibration",
+            )
+            self.assertNotIn("inconclusive", json.dumps(aggregate, sort_keys=True))
             report = (temporary / "PROFILE.md").read_text(encoding="utf-8")
             self.assertIn("Fixed RSS", report)
             self.assertIn("not observed at profiler resolution", report)
             self.assertIn("not a measured zero-cost result", report)
+
+    def test_rejects_targeted_profile_artifact_different_from_full_proof(self) -> None:
+        """A matching perf/Heaptrack pair cannot be substituted for the proof fixture."""
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            profiles, _, _, _, _ = archive
+            for tool in ("perf", "allocation"):
+                path = profiles / "warm-execution" / tool / "raw-results.json"
+                document = json.loads(path.read_text(encoding="utf-8"))
+                document["artifact"] = {
+                    "component_digest": "sha256:" + "f" * 64,
+                    "component_bytes": COMPONENT_BYTES,
+                    "capsule_digest": CAPSULE_DIGEST,
+                    "capsule_bytes": CAPSULE_BYTES,
+                }
+                write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(
+                "warm-execution targeted profile/full-invariant proof measurement identity mismatch",
+                result.stderr,
+            )
+            self.assertIn("$.artifact.", result.stderr)
+
+    def test_rejects_targeted_profile_capsule_different_from_full_proof(self) -> None:
+        """The manifest that defines the fixture limits is also bound."""
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            profiles, _, _, _, _ = archive
+            for tool in ("perf", "allocation"):
+                path = profiles / "warm-execution" / tool / "raw-results.json"
+                document = json.loads(path.read_text(encoding="utf-8"))
+                document["artifact"]["capsule_digest"] = "sha256:" + "a" * 64
+                write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(
+                "warm-execution targeted profile/full-invariant proof measurement identity mismatch",
+                result.stderr,
+            )
+            self.assertIn("$.artifact.capsule_digest", result.stderr)
+
+    def test_rejects_perf_and_heaptrack_configuration_mismatch(self) -> None:
+        """CPU and allocation traces must use an identical effective run."""
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            profiles, _, _, _, _ = archive
+            path = profiles / "warm-execution" / "allocation" / "raw-results.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            document["config"]["runtime_workers"] = 4
+            write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(
+                "warm-execution perf/allocation measurement identity mismatch",
+                result.stderr,
+            )
+            self.assertIn("$.configuration.runtime_workers", result.stderr)
+
+    def test_rejects_candidate_runs_with_mixed_artifact_identities(self) -> None:
+        """All retained reference runs must execute the same component fixture."""
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            _, _, candidates, _, _ = archive
+            path = candidates / "worker-cell-2w-2c" / "run-02" / "raw-results.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            document["artifact"]["component_digest"] = "sha256:" + "f" * 64
+            write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(
+                "candidate worker-cell-2w-2c run-02/run-01 measurement identity mismatch",
+                result.stderr,
+            )
+            self.assertIn("$.artifact.component_digest", result.stderr)
+
+    def test_rejects_calibration_from_a_different_host_context(self) -> None:
+        """A matching kernel/toolchain is not enough for cross-machine comparison."""
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            _, _, _, _, calibration = archive
+            document = json.loads(calibration.read_text(encoding="utf-8"))
+            document["reference_identity"]["environment"]["cpu_model"] = "other CPU"
+            document["host_observations"]["runs"][0]["cpu_frequency_policy"][
+                "observed"
+            ]["scaling_governor"] = ["powersave"]
+            write_json(calibration, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(
+                "full-invariant proof is not reference-equivalent to the #38 calibration",
+                result.stderr,
+            )
+            self.assertIn("environment differs for cpu_model", result.stderr)
+            self.assertIn("host identity differs", result.stderr)
 
     def test_rejects_missing_canonical_hard_check_from_matrix_run(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -593,6 +796,77 @@ class AggregateHotPathProfilesTests(unittest.TestCase):
             result = self.run_aggregate(temporary, archive)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("per-run environment differs from host observation", result.stderr)
+
+    def test_rejects_a_process_host_different_from_the_wrapper_host(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            _, _, candidates, _, _ = archive
+            root = candidates / "worker-cell-2w-2c" / "run-01"
+            for name in ("host-before.json", "host-after.json"):
+                path = root / name
+                document = json.loads(path.read_text(encoding="utf-8"))
+                document["cpu_frequency_policy"]["observed"]["scaling_governor"] = [
+                    "powersave"
+                ]
+                write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("candidate worker-cell-2w-2c run-01 host/wrapper", result.stderr)
+
+    def test_rejects_a_process_whose_static_host_identity_changes_after_execution(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            profiles, _, _, _, _ = archive
+            path = profiles / "warm-execution" / "perf" / "host-after.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            document["allocator"]["ld_preload"] = "set (value intentionally not recorded)"
+            write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("warm-execution perf targeted profile host-before/host-after", result.stderr)
+
+    def test_rejects_an_incomplete_host_comparability_context(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            _, _, _, host, _ = archive
+            document = json.loads(host.read_text(encoding="utf-8"))
+            document["allocator"] = {}
+            write_json(host, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("hot-path host observation lacks complete comparability context", result.stderr)
+            self.assertIn("host observation allocator source lookup is not complete", result.stderr)
+
+    def test_rejects_an_unknown_wrapper_cpu_model(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            _, _, _, host, _ = archive
+            document = json.loads(host.read_text(encoding="utf-8"))
+            document["machine"]["cpu_model"] = "unknown"
+            write_json(host, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("hot-path wrapper host observation has no usable CPU model", result.stderr)
+
+    def test_rejects_an_incomplete_per_run_environment_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            temporary = Path(directory)
+            archive = self.build_archive(temporary)
+            _, _, candidates, _, _ = archive
+            path = candidates / "worker-cell-2w-2c" / "run-01" / "raw-results.json"
+            document = json.loads(path.read_text(encoding="utf-8"))
+            document["environment"]["total_memory_bytes"] = None
+            write_json(path, document)
+            result = self.run_aggregate(temporary, archive)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(
+                "candidate worker-cell-2w-2c run-01 has an invalid per-run environment field: total_memory_bytes",
+                result.stderr,
+            )
 
     def test_rejects_candidate_without_a_direct_cache_reuse_control(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

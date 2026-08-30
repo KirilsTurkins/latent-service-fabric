@@ -50,9 +50,23 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
                     "tree_identity_verified": True,
                 },
                 "native_linux_reference": True,
-                "virtualization": {"systemd_detect_virt": "none"},
-                "cpu_frequency_policy": {"observed": {}},
-                "allocator": {"ld_preload": "unset"},
+                "virtualization": {
+                    "systemd_detect_virt": "none",
+                    "systemd_detect_virt_container": "none",
+                    "systemd_detect_virt_vm": "none",
+                    "wsl_detected": False,
+                },
+                "cpu_frequency_policy": {
+                    "cpus_with_cpufreq_sysfs": 0,
+                    "observed": {},
+                },
+                "allocator": {
+                    "source_global_allocator_lookup": "completed",
+                    "source_global_allocator_matches": [],
+                    "ld_preload": "unset",
+                    "malloc_conf": "unset",
+                    "observation": "standard allocator",
+                },
                 "background_load": {
                     "load_average": {"one_minute": 0.1 + index / 100.0},
                     "memory_available_bytes": 8_000_000_000 + index,
@@ -158,6 +172,48 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             self.assertIn("hard invariant set differs", completed.stderr)
             self.assertIn("missing:", completed.stderr)
             self.assertFalse((archive / "aggregate.json").exists())
+
+    def test_rejects_a_non_meaningful_cpu_model_identity(self) -> None:
+        temporary, archive, source_commit, source_tree = self.make_archive()
+        with temporary:
+            raw_path = archive / "runs/run-01/raw-results.json"
+            original = json.loads(raw_path.read_text(encoding="utf-8"))
+            for cpu_model in ("unknown", "unavailable"):
+                with self.subTest(cpu_model=cpu_model):
+                    document = copy.deepcopy(original)
+                    document["environment"]["cpu_model"] = cpu_model
+                    raw_path.write_text(json.dumps(document), encoding="utf-8")
+                    completed = self.aggregate(archive, source_commit, source_tree)
+                    self.assertEqual(completed.returncode, 2)
+                    self.assertIn(
+                        "baseline identity environment cpu_model is not meaningful",
+                        completed.stderr,
+                    )
+
+    def test_rejects_an_incomplete_host_comparability_identity(self) -> None:
+        temporary, archive, source_commit, source_tree = self.make_archive()
+        with temporary:
+            host_path = archive / "runs/run-01/host-before.json"
+            host = json.loads(host_path.read_text(encoding="utf-8"))
+            host["allocator"] = {}
+            host_path.write_text(json.dumps(host), encoding="utf-8")
+            completed = self.aggregate(archive, source_commit, source_tree)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn("host observation allocator source lookup is not complete", completed.stderr)
+
+    def test_rejects_a_run_whose_host_identity_changes_after_execution(self) -> None:
+        temporary, archive, source_commit, source_tree = self.make_archive()
+        with temporary:
+            host_path = archive / "runs/run-01/host-after.json"
+            host = json.loads(host_path.read_text(encoding="utf-8"))
+            host["allocator"]["observation"] = "different host allocator state"
+            host_path.write_text(json.dumps(host), encoding="utf-8")
+            completed = self.aggregate(archive, source_commit, source_tree)
+            self.assertEqual(completed.returncode, 2)
+            self.assertIn(
+                "run-01 changed static host comparability identity during its full-profile process",
+                completed.stderr,
+            )
 
     def test_verifies_a_fresh_aggregate_against_its_raw_runs(self) -> None:
         temporary, archive, source_commit, source_tree = self.make_archive()

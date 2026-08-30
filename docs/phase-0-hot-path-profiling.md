@@ -8,7 +8,8 @@ promise.
 ## Reference method
 
 Run the profile set only from a clean worktree on a stable native-Linux host or
-VM. The command rejects WSL and detected containers, requires `perf`,
+VM. The command rejects WSL and any host for which
+`systemd-detect-virt --container` does not report `none`, requires `perf`,
 `heaptrack`, and `heaptrack_print`, and fails if fixture validation or a Phase
 0 hard invariant fails. These are open-source local tools; neither is required
 for normal builds or pull-request CI.
@@ -21,6 +22,7 @@ tools/run_phase0_hot_path_profiles.sh \
   --published-source-tree <reachable-tree-sha> \
   --published-source-ref <durable-branch-or-tag> \
   --calibration-aggregate /var/tmp/phase0-evidence/calibration/aggregate.json \
+  --reference-candidate-runs 7 \
   /var/tmp/phase0-evidence/profiling
 ```
 
@@ -59,15 +61,15 @@ either tool's raw/report output, has a source-identity mismatch, a
 missing/duplicate/unexpected hard check in the complete proof, or one failed
 hard check.
 
-The current native-Linux reference is
-[native-linux-2026-08-29-a724a5e3](../benchmarks/phase0/profiling/native-linux-2026-08-29-a724a5e3/README.md).
-It records durable source commit `a724a5e35234175f1001d1983e4411296ffa6b78`
-and tree `c06ace2ae0f503495fa5bf87710ae5fc74c7ef50`. Its compact aggregate
-and concise report are directly checked in; its complete raw profile tree is
-losslessly retained with checksums in reassemblable `raw-evidence.tar.zst`
-fragments. The Heaptrack
-leak-only reports retain the observed process-exit residues rather than
-claiming they are zero or an unproven per-activation leak.
+The retained
+[native-linux-2026-08-29-a724a5e3](../benchmarks/phase0/profiling/native-linux-2026-08-29-a724a5e3/README.md)
+archive is historical evidence. Its v3 aggregate predates the v5
+measurement-identity rules, so it is preserved for archive-regression checks
+but is not eligible for the current gate. A new package must contain the full
+capsule-manifest and component identities, exact default-reference matching,
+and the fresh source identity before it can be considered by the gate. The
+complete raw profile tree remains losslessly retained with checksums in
+reassemblable `raw-evidence.tar.zst` fragments.
 
 The workload set is scenario-selective while leaving the real composition
 intact. A separate uninstrumented `--mode full` proof retains the complete
@@ -144,19 +146,23 @@ instances, or native execution.
 Every candidate run records cold/warm latency, at-capacity and queued
 throughput, fixed runtime RSS/VM, preparation and post-release deltas, peak
 RSS/VM/FD/thread/socket values, topology, per-run command/environment
-provenance, and the complete Phase 0 containment and reclamation proof. The
-unprofiled candidates retain the calibrated cooperative `yield_now()`
-coordination method; only targeted profiler runs may record a one-millisecond
-poll interval. The experiment matrix rejects fewer than three independently
-retained full runs for each candidate; that minimum is still insufficient for
-a Phase 0 adoption claim.
+provenance, the capsule-manifest and component identities, and the complete
+Phase 0 containment and reclamation proof. The unprofiled candidates retain
+the calibrated cooperative `yield_now()` coordination method; only targeted
+profiler runs may record a one-millisecond poll interval.
 
-The aggregate reads the supplied fresh native-Linux calibration only after it
-proves material equivalence of source, methodology, environment,
-fixture/configuration and run count. A mismatched source/method/environment/
-configuration or fewer than seven independent full runs is explicitly
-**inconclusive** and cannot be labelled inside or outside the advisory band. A
-faster single or small set is an observation only.
+The aggregate captures before/after host observations around every full,
+perf, Heaptrack, and candidate process. Each pair must retain the same static
+virtualization, allocator, and CPU-policy identity and match the wrapper host.
+It then requires the full proof to match the supplied fresh calibration's
+source, component and capsule identities, runtime configuration, complete
+environment, and static host context. The seven-run fixed
+`worker-cell-2w-2c` candidate must meet that same identity exactly and is the
+only record that receives an inside/outside advisory-band result. Any mismatch
+in that reference path rejects the aggregate. Deliberately different
+topologies, allocator modes, COW settings, or cache settings retain at least
+three observations as explicit Phase 1 experiments with no Phase 0
+calibration calculation; they are not relabelled as comparable evidence.
 
 A candidate may be adopted in Phase 0 only if it exceeds the calibrated noise
 envelope (or has a separately documented architectural benefit), passes every

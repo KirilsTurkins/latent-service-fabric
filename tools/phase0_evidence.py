@@ -41,7 +41,7 @@ OBJECT_ID_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 CHECKSUM_LINE_PATTERN = re.compile(r"^([0-9a-f]{64})  (.+)$")
 
 CALIBRATION_SCHEMA = "latent.phase0.calibration.v1"
-PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v3"
+PROFILE_SCHEMA = "latent.phase0.hot-path.aggregate.v5"
 SOAK_SCHEMA = "latent.phase0.resource-soak.aggregate.v1"
 EXECUTION_IDENTITY_SCHEMA = "latent.phase0.execution-evidence.v1"
 
@@ -491,14 +491,49 @@ def _profile_outer_files(root: Path) -> tuple[dict[str, Any], set[str]]:
     return parts_manifest, part_names
 
 
-def _profile_required_candidate_runs(document: dict[str, Any]) -> int:
+def _profile_required_candidate_runs(document: dict[str, Any]) -> tuple[int, int]:
+    """Return the bounded-experiment and reference-candidate run counts.
+
+    The v5 profile schema intentionally retains a seven-run default reference
+    alongside three-run, explicitly non-comparable Phase 1 experiments.  Do
+    not collapse that distinction while regenerating an archive: doing so
+    would either reject valid evidence or silently weaken the reference rule.
+    """
     candidates = _mapping(document.get("candidates"), "profile candidates")
-    counts: set[int] = set()
+    reference_name = profile_aggregate.REFERENCE_CANDIDATE
+    reference_candidate = _mapping(
+        candidates.get(reference_name), f"profile reference candidate {reference_name}"
+    )
+    reference_runs = _positive_int(
+        reference_candidate.get("run_count"),
+        f"profile reference candidate {reference_name} run count",
+    )
+    _require(
+        reference_runs >= profile_aggregate.MINIMUM_ADOPTION_RUNS,
+        "profile reference candidate has too few retained runs",
+    )
+    experiment_counts: set[int] = set()
     for name, candidate in candidates.items():
         _require(isinstance(name, str) and name, "profile candidate name is invalid")
-        counts.add(_positive_int(_mapping(candidate, f"profile candidate {name}").get("run_count"), f"profile candidate {name} run count"))
-    _require(len(counts) == 1, "profile candidates do not retain one common run count")
-    return counts.pop()
+        if name == reference_name:
+            continue
+        experiment_counts.add(
+            _positive_int(
+                _mapping(candidate, f"profile candidate {name}").get("run_count"),
+                f"profile candidate {name} run count",
+            )
+        )
+    _require(experiment_counts, "profile has no bounded experiment candidates")
+    _require(
+        len(experiment_counts) == 1,
+        "profile bounded experiment candidates do not retain one common run count",
+    )
+    experiment_runs = experiment_counts.pop()
+    _require(
+        experiment_runs >= profile_aggregate.MINIMUM_EXPERIMENT_RUNS,
+        "profile bounded experiment candidates have too few retained runs",
+    )
+    return experiment_runs, reference_runs
 
 
 def verify_profile_evidence(aggregate_path: Path, calibration_path: Path) -> dict[str, Any]:
@@ -564,7 +599,7 @@ def verify_profile_evidence(aggregate_path: Path, calibration_path: Path) -> dic
                 "profile calibration reference does not match the calibration passed to the gate",
             )
             provenance = _mapping(retained.get("source_provenance"), "profile source provenance")
-            required_runs = _profile_required_candidate_runs(retained)
+            required_runs, required_reference_runs = _profile_required_candidate_runs(retained)
             regenerated_path = extracted_root / "regenerated.json"
             arguments = argparse.Namespace(
                 profiles_directory=extracted_root / "profiles",
@@ -576,6 +611,7 @@ def verify_profile_evidence(aggregate_path: Path, calibration_path: Path) -> dic
                 source_tree=_object_id(retained.get("source_tree"), "profile source tree"),
                 published_source_ref=_string(provenance.get("published_source_ref"), "profile published source ref"),
                 required_candidate_runs=required_runs,
+                required_reference_candidate_runs=required_reference_runs,
                 output_json=regenerated_path,
                 output_report=extracted_root / "regenerated.md",
             )

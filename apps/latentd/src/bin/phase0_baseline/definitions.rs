@@ -547,6 +547,8 @@ struct EnvironmentReport {
 #[derive(Debug, Clone, Serialize)]
 struct ArtifactReport {
     capsule_path: String,
+    capsule_digest: String,
+    capsule_bytes: u64,
     component_path: String,
     component_digest: String,
     component_bytes: u64,

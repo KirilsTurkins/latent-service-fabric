@@ -6,14 +6,20 @@
 for issue 40. It requires a clean source tree, a durable published branch/tag
 whose reachable commit and tree are verified before execution (with an
 explicitly recorded `origin`-tracking-ref fallback for offline reruns), plus `perf`,
-`heaptrack`, and `heaptrack_print`; it is deliberately not shared CI. Its
+`heaptrack`, `heaptrack_print`, and a native host or VM for which
+`systemd-detect-virt --container` reports `none`; it is deliberately not shared CI. Its
 required `--calibration-aggregate` must be a fresh external aggregate with a
 sibling `runs/` directory. The runner regenerates and compares it before
 creating profile output, so stale, relabelled, incomplete, or edited
 calibration evidence cannot be used as a profile reference.
 `aggregate_phase0_hot_path_profiles.py` validates the separate full-invariant
 proof, scenario-selective profile commands, quantitative folded-stack
-attribution, experiment matrix, provenance, and issue-38 comparability.
+attribution, the capsule/component and runtime measurement identity, experiment
+matrix, provenance, and issue-38 comparability. It requires one exact,
+seven-run default reference candidate; deliberately different configurations
+are retained as Phase 1 experiments without a Phase 0 band calculation.
+Every measured process has retained before/after host observations; a static
+virtualization, allocator, or CPU-policy change rejects the archive.
 `reassemble_phase0_hot_path_profile_archive.py` verifies and losslessly joins
 the checked-in raw-evidence fragments for a published profile archive. Its
 test reassembles the checked-in zstd stream, extracts it, and validates the
@@ -64,8 +70,8 @@ FD lifecycle (post-warm-up, pre-runtime, release, and shutdown baselines).
 It applies calibrated late-window decisions only when CPU, memory, kernel,
 virtualization, toolchain, allocator, fixture, and configuration identity—
 including prepared-cache enablement, Wasmtime allocator mode, and initialized-
-memory COW—are recorded as matched; otherwise the result is explicitly
-inconclusive. The command is intentionally excluded from shared CI.
+memory COW—are recorded as matched; otherwise it withholds calibrated-band
+interpretation. The command is intentionally excluded from shared CI.
 
 `run_phase0_gate.sh` is the clean-checkout Phase 0 sequence. It combines the
 repository and tool tests, real executable spike/containment proof, a fresh

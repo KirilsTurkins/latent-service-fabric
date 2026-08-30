@@ -27,6 +27,11 @@ BASELINE_SCHEMA = "latent.phase0.baseline.v2"
 CALIBRATION_SCHEMA = "latent.phase0.calibration.v1"
 HOST_OBSERVATION_SCHEMA = "latent.phase0.calibration.host-observation.v1"
 OBJECT_ID_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
+NON_MEANINGFUL_CPU_MODEL_PATTERN = re.compile(
+    r"^(?:unknown|unavailable|not[ _-]?available|n/?a|none|null|<unknown>)(?:$|[\s(:])",
+    re.IGNORECASE,
+)
 MINIMUM_REFERENCE_RUNS = 7
 ROBUST_OUTLIER_THRESHOLD = 3.5
 MAD_NORMALIZATION = 1.4826
@@ -250,7 +255,7 @@ def capture_host_observation(
         "native_linux_reference": (
             platform.system() == "Linux"
             and not wsl_detected
-            and container in ("none", "unavailable")
+            and container == "none"
         ),
         "virtualization": {
             "systemd_detect_virt": virtualization,
@@ -878,9 +883,51 @@ def identity(document: dict[str, Any]) -> dict[str, Any]:
     config = value_at(document, "config")
     if not all(isinstance(value, dict) for value in (environment, artifact, config)):
         fail("baseline identity sections must be objects")
+    string_environment_fields = (
+        "operating_system",
+        "architecture",
+        "kernel",
+        "cpu_model",
+        "rustc",
+        "cargo",
+        "rust_target",
+        "build_profile",
+        "wasmtime_version",
+        "repository_commit",
+    )
+    for field in string_environment_fields:
+        if not isinstance(environment.get(field), str) or not environment[field].strip():
+            fail(f"baseline identity environment {field} must be a non-empty string")
+    if NON_MEANINGFUL_CPU_MODEL_PATTERN.match(environment["cpu_model"].strip()):
+        fail("baseline identity environment cpu_model is not meaningful")
+    for field in ("logical_cpu_count", "total_memory_bytes"):
+        value = environment.get(field)
+        if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+            fail(f"baseline identity environment {field} must be a positive integer")
+    component_digest = artifact.get("component_digest")
+    component_bytes = artifact.get("component_bytes")
+    if not isinstance(component_digest, str) or SHA256_PATTERN.fullmatch(component_digest) is None:
+        fail("baseline identity component digest must be a SHA-256 digest")
+    if not isinstance(component_bytes, int) or isinstance(component_bytes, bool) or component_bytes <= 0:
+        fail("baseline identity component bytes must be a positive integer")
+    artifact_identity = {
+        "component_digest": component_digest,
+        "component_bytes": component_bytes,
+    }
+    capsule_digest = artifact.get("capsule_digest")
+    capsule_bytes = artifact.get("capsule_bytes")
+    if capsule_digest is not None or capsule_bytes is not None:
+        if not isinstance(capsule_digest, str) or SHA256_PATTERN.fullmatch(capsule_digest) is None:
+            fail("baseline identity capsule digest must be a SHA-256 digest")
+        if not isinstance(capsule_bytes, int) or isinstance(capsule_bytes, bool) or capsule_bytes <= 0:
+            fail("baseline identity capsule bytes must be a positive integer")
+        artifact_identity["capsule_digest"] = capsule_digest
+        artifact_identity["capsule_bytes"] = capsule_bytes
+    if not config:
+        fail("baseline identity configuration must not be empty")
     return {
         "environment": {
-            field: environment.get(field)
+            field: environment[field]
             for field in (
                 "operating_system",
                 "architecture",
@@ -896,30 +943,73 @@ def identity(document: dict[str, Any]) -> dict[str, Any]:
                 "repository_commit",
             )
         },
-        "artifact": {
-            field: artifact.get(field) for field in ("component_digest", "component_bytes")
-        },
+        "artifact": artifact_identity,
         "config": config,
     }
 
 
 def host_comparability_identity(observation: dict[str, Any]) -> dict[str, Any]:
+    virtualization = observation.get("virtualization")
+    if not isinstance(virtualization, dict):
+        fail("host observation lacks virtualization data")
+    for field in (
+        "systemd_detect_virt",
+        "systemd_detect_virt_container",
+        "systemd_detect_virt_vm",
+    ):
+        if not isinstance(virtualization.get(field), str) or not virtualization[field]:
+            fail(f"host observation virtualization {field} must be a non-empty string")
+    if virtualization.get("systemd_detect_virt_container") != "none":
+        fail("host observation is not a native Linux or VM container-none environment")
+    if not isinstance(virtualization.get("wsl_detected"), bool) or virtualization["wsl_detected"]:
+        fail("host observation has an invalid WSL observation")
+
+    allocator = observation.get("allocator")
+    if not isinstance(allocator, dict):
+        fail("host observation lacks allocator data")
+    if allocator.get("source_global_allocator_lookup") != "completed":
+        fail("host observation allocator source lookup is not complete")
+    matches = allocator.get("source_global_allocator_matches")
+    if not isinstance(matches, list) or not all(isinstance(match, str) for match in matches):
+        fail("host observation allocator source matches are malformed")
+    for field in ("ld_preload", "malloc_conf", "observation"):
+        if not isinstance(allocator.get(field), str) or not allocator[field]:
+            fail(f"host observation allocator {field} must be a non-empty string")
+
     policy = observation.get("cpu_frequency_policy")
     if not isinstance(policy, dict):
         fail("host observation lacks CPU frequency/power-policy data")
     observed = policy.get("observed")
     if not isinstance(observed, dict):
         fail("host observation has malformed CPU frequency/power-policy data")
+    cpus_with_policy = policy.get("cpus_with_cpufreq_sysfs")
+    if (
+        not isinstance(cpus_with_policy, int)
+        or isinstance(cpus_with_policy, bool)
+        or cpus_with_policy < 0
+    ):
+        fail("host observation has an invalid CPU frequency/power-policy CPU count")
+    if cpus_with_policy > 0 and not observed:
+        fail("host observation has no CPU frequency/power-policy values")
+    for field, values in observed.items():
+        if not isinstance(field, str) or not field:
+            fail("host observation has an invalid CPU frequency/power-policy field")
+        if not isinstance(values, list) or not values or not all(
+            isinstance(value, str) and value for value in values
+        ):
+            fail(f"host observation has malformed CPU frequency/power-policy values for {field}")
     static_observed = {
         field: value
         for field, value in observed.items()
         if field != "scaling_cur_freq"
     }
+    if cpus_with_policy > 0 and not static_observed:
+        fail("host observation has no static CPU frequency/power-policy values")
     return {
-        "virtualization": observation.get("virtualization"),
-        "allocator": observation.get("allocator"),
+        "virtualization": virtualization,
+        "allocator": allocator,
         "cpu_frequency_policy": {
-            "cpus_with_cpufreq_sysfs": policy.get("cpus_with_cpufreq_sysfs"),
+            "cpus_with_cpufreq_sysfs": cpus_with_policy,
             "observed": static_observed,
         },
     }
@@ -1099,8 +1189,15 @@ def build_aggregate(
             fail(f"{run} has no host source provenance")
         if execution["execution_commit"] != before_source_identity["execution_commit"]:
             fail(f"{run} execution status does not match host source provenance")
+        before_host_identity = host_comparability_identity(before)
+        after_host_identity = host_comparability_identity(after)
+        if stable_json(after_host_identity) != stable_json(before_host_identity):
+            fail(
+                f"{run} changed static host comparability identity during its "
+                "full-profile process"
+            )
         identities.append((run, identity(document)))
-        host_identities.append((run, host_comparability_identity(before)))
+        host_identities.append((run, before_host_identity))
         source_identities.append((run, before_source_identity))
         add_metrics(collector, document, run)
         raw_runs.append(

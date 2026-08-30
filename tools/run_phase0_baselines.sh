@@ -30,7 +30,12 @@ cd "${ROOT}"
 # This gate is mandatory. It verifies every checked-in contract, builds both
 # real Wasm components, and exercises the lower-level containment suite. Missing
 # targets or external tools therefore fail rather than silently skipping data.
-tools/validate_contracts.sh
+# The containment capsule is a calibration fixture, not a native-profiler
+# symbol carrier. Keep its release artifact byte-identical even when the
+# caller requests debuginfo for the native `phase0-baseline` executable.
+# The final Cargo build below still inherits those native profiling flags.
+env -u CARGO_PROFILE_RELEASE_DEBUG -u CARGO_PROFILE_RELEASE_STRIP \
+    tools/validate_contracts.sh
 
 ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json"
 CONTAINMENT_COMPONENT="${TARGET_ROOT}/capsules/containment/containment-capsule.wasm"
