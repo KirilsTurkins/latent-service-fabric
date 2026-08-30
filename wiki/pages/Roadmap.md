@@ -1,5 +1,5 @@
 <!-- LSF-WIKI-MANAGED -->
-<!-- LSF-PHASE0-GATE: blocked -->
+<!-- LSF-PHASE0-GATE: authorized -->
 # Roadmap
 
 The roadmap communicates intended sequencing. It is not a claim that a phase
@@ -14,26 +14,29 @@ Implemented: repository contracts, one Rust echo component, Wasmtime Component
 Model loading, fixed generic cells, containment/recovery tests, baseline
 measurements, calibration, profiling, and resource-soak evidence.
 
-**Gate state:** pending an authorized clean-checkout receipt. Until
-`make phase0-gate` produces that receipt, Phase 1 remains blocked. A closed
-issue, passing raw aggregate, or smoke result is not authorization.
+**Gate state:** authorized for the August 30 clean native-Linux receipt's
+canonical execution identity. The authorizing full receipt validates matched
+raw archives, execution identity, profiling, resource soak, and a fresh
+baseline together. A closed issue, passing raw aggregate, or smoke result is
+not an equivalent authorization.
 
 Use the [Phase 0 runbook](Phase-0-Runbook) to distinguish ordinary validation,
 smoke validation, the full gate, and native-Linux evidence collection.
 
-## Planning work is not an authorization claim
+## Authorization is not a completion claim
 
-Design, review, and clearly scoped feature-branch work for a later issue can
-begin when it is useful. That work must remain explicit about its dependency
-state: it cannot be represented as a merged Phase 1 capability, a satisfied
-handoff, or a substitute for the required Phase 0 evidence. The linked issue
-and repository authority determine when work is ready to merge or close.
+The receipt authorizes Phase 1 engineering work for its canonical execution
+identity. It does not represent a later capability as merged, complete, or
+production-ready, and it cannot substitute for issue-specific design, tests,
+or acceptance evidence. The linked issue and repository authority determine
+when each change is ready to merge or close.
 
-## Phase 1 — single-node stateless fabric
+## Phase 1 — single-node stateless fabric — authorized to begin
 
-Planned: standalone node, local release catalog and route table, admission and
-scheduling, activation envelopes/budgets, baseline capabilities, generic
-invocation, CLI flow, and telemetry.
+Authorized scope: standalone node, local release catalog and route table,
+admission and scheduling, activation envelopes/budgets, baseline capabilities,
+generic invocation, CLI flow, and telemetry. Individual features remain
+subject to their own issue acceptance criteria.
 
 ## Phase 2 — packaging and supply chain
 

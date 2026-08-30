@@ -42,7 +42,7 @@ class WikiPublisherTests(unittest.TestCase):
     def test_checked_in_wiki_source_validates(self) -> None:
         source = Path(__file__).resolve().parents[2] / "wiki" / "pages"
         files = wiki.validate_source(source)
-        self.assertEqual(wiki.validate_phase0_status_alignment(source), "blocked")
+        self.assertEqual(wiki.validate_phase0_status_alignment(source), "authorized")
         self.assertEqual(len(files), 29)
         self.assertIn(PurePosixPath("assets/activation-lifecycle.svg"), files)
         self.assertIn(PurePosixPath("assets/contract-boundaries.svg"), files)
@@ -58,10 +58,10 @@ class WikiPublisherTests(unittest.TestCase):
             source.mkdir()
             for name in wiki.PHASE0_STATUS_PAGES:
                 (source / name).write_text(
-                    f"{wiki.MANAGED_MARKER}\n<!-- LSF-PHASE0-GATE: authorized -->\n# Page\n",
+                    f"{wiki.MANAGED_MARKER}\n<!-- LSF-PHASE0-GATE: blocked -->\n# Page\n",
                     encoding="utf-8",
                 )
-            with self.assertRaisesRegex(wiki.WikiError, "must be exactly 'blocked'"):
+            with self.assertRaisesRegex(wiki.WikiError, "must be exactly 'authorized'"):
                 wiki.validate_phase0_status_alignment(source)
 
     def test_safe_relative_path_rejects_unsafe_paths(self) -> None:
@@ -307,7 +307,12 @@ class WikiPublisherTests(unittest.TestCase):
             destination.mkdir()
             outside.mkdir()
             write_valid_source(source)
-            (destination / "assets").symlink_to(outside, target_is_directory=True)
+            try:
+                (destination / "assets").symlink_to(outside, target_is_directory=True)
+            except OSError as error:
+                if error.winerror == 1314:
+                    self.skipTest("creating directory symlinks requires a Windows privilege")
+                raise
 
             with self.assertRaisesRegex(wiki.WikiError, "traverses a symlink"):
                 wiki.synchronize(source, destination, set(), "a" * 40)

@@ -1,11 +1,12 @@
 <!-- LSF-WIKI-MANAGED -->
-<!-- LSF-PHASE0-GATE: blocked -->
+<!-- LSF-PHASE0-GATE: authorized -->
 # Phase 0 status and evidence
 
-> **Status: completion gate pending authorization.** Phase 0 has a real local
-> executable spike and retained evidence, but Phase 1 remains blocked until a
-> fresh clean-checkout `make phase0-gate` receipt explicitly says
-> `authorized`.
+> **Status: Phase 1 authorized for the recorded canonical execution identity.**
+> The [August 30 clean native-Linux full receipt](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+> is `pass` / `authorized`, has no blockers, and explicitly records
+> `phase1_authorized: true`. It grants an engineering handoff only; it does not
+> claim production readiness or Phase 1 API compatibility.
 
 The [completion-gate document](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-0-completion.md)
 is the authoritative status record. This page explains how to read it without
@@ -34,8 +35,10 @@ nor a production readiness statement.
 | Resource soak | Independent long-running processes, lifecycle observations, and calibrated plateau analysis | Archive integrity and raw lifecycle evidence are verified and regenerated. |
 
 The retained native-Linux soak is a passing result for its recorded
-configuration. That fact does not bypass source identity, configuration,
-archive, profiling, or fresh-baseline requirements for a later checkout.
+configuration. It participates in the authorizing receipt but does not make an
+authorization decision alone; a later execution-affecting checkout must again
+satisfy source identity, configuration, archive, profiling, and fresh-baseline
+requirements.
 
 ## What `make phase0-gate` does
 
@@ -49,9 +52,9 @@ The full gate:
    manifests and aggregates, then compares their execution identity and
    configuration with the current checkout.
 
-It emits `target/phase0-gate/.../gate-summary.json` even when blocked. That
-receipt contains the exact blockers. The command returns success only when
-authorization is genuine.
+It emits `target/phase0-gate/.../gate-summary.json` even when a future run is
+blocked. That receipt contains the exact blockers. The command returns success
+only when authorization is genuine.
 
 For command selection and a safe response to a blocked result, use the
 [Phase 0 runbook](Phase-0-Runbook).
@@ -80,7 +83,7 @@ For a handoff decision, inspect all of the following together:
 
 ## Explicit non-conclusions
 
-Even an authorized Phase 0 receipt would not establish production security,
-stable public APIs, generic dispatch, multi-service density, remote calls,
-cluster operation, durable state/effects, realistic workload performance, or
+The authorized Phase 0 receipt does not establish production security, stable
+public APIs, generic dispatch, multi-service density, remote calls, cluster
+operation, durable state/effects, realistic workload performance, or
 arbitrary-duration leak freedom. Those require later phase evidence.

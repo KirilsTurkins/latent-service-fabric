@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="wiki-scope-title wiki-scope-description">
   <title id="wiki-scope-title">Phase 0 measured scope and excluded capabilities</title>
-  <desc id="wiki-scope-description">A bounded Phase 0 execution slice moves one echo component through preparation, a fixed cell pool, and fresh activation state. Public APIs, durable state, multi-service operation, and cluster behavior remain outside the measured scope.</desc>
+  <desc id="wiki-scope-description">A bounded Phase 0 execution slice moves one echo component through preparation, a fixed cell pool, and fresh activation state. The August 30 full-gate receipt authorizes Phase 1 only for this canonical execution identity; public APIs, durable state, multi-service operation, and cluster behavior remain outside the measured scope.</desc>
   <defs>
     <linearGradient id="wiki-scope-background" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#1b102d"/>
@@ -24,7 +24,7 @@
       .small { font: 600 14px system-ui, sans-serif; fill: #c4b5fd; }
       .outside-title { font: 700 21px system-ui, sans-serif; fill: #e2e8f0; }
       .outside-copy { font: 400 15px system-ui, sans-serif; fill: #cbd5e1; }
-      .warning { font: 700 16px system-ui, sans-serif; fill: #fde68a; }
+      .status { font: 700 16px system-ui, sans-serif; fill: #d1fae5; }
     </style>
   </defs>
 
@@ -73,6 +73,6 @@
     <text x="968" y="500" class="outside-copy">multi-service density &#183; security &#183; clustering &#183; SLOs</text>
   </g>
 
-  <rect x="74" y="650" width="1292" height="56" rx="16" fill="#78350f" stroke="#fbbf24" stroke-width="2"/>
-  <text x="104" y="685" class="warning">Passing retained evidence is bounded: Phase 1 handoff still requires an authorized full completion-gate receipt.</text>
+  <rect x="74" y="650" width="1292" height="56" rx="16" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+  <text x="104" y="685" class="status">Authorized: the August 30 full receipt permits Phase 1 for this canonical execution identity; execution-affecting changes require revalidation.</text>
 </svg>

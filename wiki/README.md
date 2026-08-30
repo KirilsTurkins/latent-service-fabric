@@ -14,6 +14,10 @@ publication attempt, the publisher compares those markers with
 `docs/phase-0-completion.md` and refuses a mismatch. Update the Wiki only after
 the authoritative document and actual receipt justify the new state.
 
+The checked-in source currently reflects the August 30 authorized native-Linux
+receipt. It must be changed again if a later authoritative completion document
+records a different state.
+
 ## Local publication protocol
 
 From a clean checkout of the development branch, with Python 3.13 or newer
@@ -56,8 +60,8 @@ state, and authorization status.
   image assets, scripts, or external fonts/styles.
 - Use the project-wide visual language: a 1440 x 760 purple-to-blue canvas,
   system-ui text, 24 px rounded cards, blue/purple factual or execution cards,
-  amber blockers, green only for verified conditional success, and slate for
-  excluded or later scope. The canonical detailed reference is
+  amber blockers, green only for a verified pass or authorized result, and
+  slate for excluded or later scope. The canonical detailed reference is
   `docs/svg-style.md` on the development source branch.
 - Use valid Wiki links for managed pages and development-branch links for
   repository authorities. The local validator checks both before publication.

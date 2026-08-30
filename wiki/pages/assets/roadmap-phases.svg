@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="wiki-roadmap-title wiki-roadmap-description">
   <title id="wiki-roadmap-title">Latent Service Fabric delivery roadmap</title>
-  <desc id="wiki-roadmap-description">Phase 0 is a completed executable spike whose handoff remains blocked pending an authorized receipt. Phase 1 may have isolated branch work, but integration remains dependent on that handoff. Phases 2 through 7 are later planned product and research work.</desc>
+  <desc id="wiki-roadmap-description">The August 30 clean native-Linux Phase 0 receipt authorizes Phase 1 engineering work for its canonical execution identity. This does not claim Phase 1 completion or production readiness. Phases 2 through 7 remain later planned product and research work.</desc>
   <defs>
     <linearGradient id="wiki-roadmap-background" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#1b102d"/>
@@ -17,7 +17,7 @@
       .subheading { font: 400 18px system-ui, sans-serif; fill: #ddd6fe; }
       .phase { font: 700 20px system-ui, sans-serif; fill: #f8fafc; }
       .copy { font: 400 15px system-ui, sans-serif; fill: #cbd5e1; }
-      .status { font: 700 14px system-ui, sans-serif; fill: #fde68a; }
+      .status { font: 700 14px system-ui, sans-serif; fill: #d1fae5; }
       .planned { font: 700 14px system-ui, sans-serif; fill: #c4b5fd; }
       .rule { font: 700 18px system-ui, sans-serif; fill: #e0e7ff; }
     </style>
@@ -25,10 +25,10 @@
 
   <rect width="1440" height="760" rx="34" fill="url(#wiki-roadmap-background)"/>
   <text x="74" y="88" class="heading">Delivery sequence and evidence boundary</text>
-  <text x="74" y="122" class="subheading">Phase names communicate scope; only evidence and an authorized receipt establish a handoff.</text>
+  <text x="74" y="122" class="subheading">The authorized Phase 0 handoff permits Phase 1 development; it does not claim production readiness.</text>
 
   <g filter="url(#wiki-roadmap-shadow)">
-    <rect x="74" y="204" width="224" height="198" rx="22" fill="#78350f" stroke="#fbbf24" stroke-width="3"/>
+    <rect x="74" y="204" width="224" height="198" rx="22" fill="#065f46" stroke="#34d399" stroke-width="3"/>
     <rect x="332" y="204" width="224" height="198" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
     <rect x="590" y="204" width="224" height="198" rx="22" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
     <rect x="848" y="204" width="224" height="198" rx="22" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
@@ -39,13 +39,13 @@
   <text x="102" y="282" class="copy">local echo capsule</text>
   <text x="102" y="306" class="copy">Wasmtime + fixed cells</text>
   <text x="102" y="330" class="copy">containment + evidence</text>
-  <text x="102" y="370" class="status">HANDOFF: BLOCKED</text>
+  <text x="102" y="370" class="status">HANDOFF: AUTHORIZED</text>
 
   <text x="360" y="250" class="phase">Phase 1 - Node</text>
   <text x="360" y="282" class="copy">single-node fabric</text>
   <text x="360" y="306" class="copy">generic invocation</text>
-  <text x="360" y="330" class="copy">isolated branch work</text>
-  <text x="360" y="370" class="planned">GATE DEPENDENCY</text>
+  <text x="360" y="330" class="copy">authorized development</text>
+  <text x="360" y="370" class="planned">AUTHORIZED TO BEGIN</text>
 
   <text x="618" y="250" class="phase">Phases 2-3</text>
   <text x="618" y="282" class="copy">supply chain</text>
@@ -73,5 +73,5 @@
   <rect x="184" y="492" width="1072" height="90" rx="22" fill="#1e40af" stroke="#93c5fd" stroke-width="2"/>
   <text x="228" y="530" class="rule">Cross-phase rule</text>
   <text x="228" y="560" class="copy">Preserve bounded resources, explicit authorization, pinned identities, outcome separation, reproducible validation, and evidence-based claims.</text>
-  <text x="74" y="650" class="subheading">Later work can be explicit and useful without being represented as a completed or authorized capability.</text>
+  <text x="74" y="650" class="subheading">Authorization starts Phase 1 work; it does not represent a phase or later capability as completed.</text>
 </svg>

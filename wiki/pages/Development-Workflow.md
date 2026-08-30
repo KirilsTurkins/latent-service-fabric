@@ -27,8 +27,10 @@ make phase0-gate
 ```
 
 Smoke mode is a deterministic CI-sized correctness check. Full mode is the
-completion gate and fails when the receipt is blocked. Never describe a smoke
-pass as Phase 1 authorization.
+completion gate and returns non-zero when that run's receipt is not authorized.
+The retained August 30 native-Linux full receipt is authorized for its
+canonical execution identity. Never describe a smoke pass as Phase 1
+authorization.
 
 ## Evidence changes
 

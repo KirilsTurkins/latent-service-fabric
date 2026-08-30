@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="wiki-gate-title wiki-gate-description">
   <title id="wiki-gate-title">Phase 0 full completion-gate decision flow</title>
-  <desc id="wiki-gate-description">Current execution identity, retained raw evidence, and a fresh baseline enter the full completion gate. The gate either records blockers and leaves Phase 1 blocked, or emits an authorized receipt that permits the Phase 1 handoff.</desc>
+  <desc id="wiki-gate-description">The August 30 clean native-Linux receipt took the authorized branch for its canonical execution identity. Current execution identity, retained raw evidence, and a fresh baseline enter every full completion gate; a future execution-affecting change must revalidate before it can take the authorized branch.</desc>
   <defs>
     <linearGradient id="wiki-gate-background" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#1b102d"/>
@@ -20,12 +20,13 @@
       .small { font: 600 14px system-ui, sans-serif; fill: #c4b5fd; }
       .blocked { font: 800 22px system-ui, sans-serif; fill: #fde68a; }
       .authorized { font: 800 22px system-ui, sans-serif; fill: #d1fae5; }
+      .current { font: 800 13px system-ui, sans-serif; fill: #a7f3d0; letter-spacing: .08em; }
     </style>
   </defs>
 
   <rect width="1440" height="760" rx="34" fill="url(#wiki-gate-background)"/>
   <text x="74" y="88" class="heading">The completion gate decides from evidence, not issue state</text>
-  <text x="74" y="122" class="subheading">A full receipt binds raw evidence and a fresh baseline to the current executable configuration.</text>
+  <text x="74" y="122" class="subheading">The August 30 native-Linux receipt is authorized for its canonical execution identity; execution changes must revalidate.</text>
 
   <g filter="url(#wiki-gate-shadow)">
     <rect x="74" y="184" width="310" height="132" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
@@ -62,13 +63,14 @@
 
   <g filter="url(#wiki-gate-shadow)">
     <rect x="1012" y="194" width="354" height="178" rx="24" fill="#78350f" stroke="#fbbf24" stroke-width="3"/>
-    <text x="1050" y="246" class="blocked">BLOCKED</text>
+    <text x="1050" y="246" class="blocked">IF A RUN BLOCKS</text>
     <text x="1050" y="282" class="box-copy">write the receipt and inspect</text>
     <text x="1050" y="306" class="box-copy">its `blockers` array</text>
     <text x="1050" y="338" class="small">Phase 1 handoff is not authorized.</text>
 
     <rect x="1012" y="444" width="354" height="178" rx="24" fill="#065f46" stroke="#34d399" stroke-width="3"/>
     <text x="1050" y="496" class="authorized">AUTHORIZED</text>
+    <text x="1228" y="496" class="current">CURRENT RECORD</text>
     <text x="1050" y="532" class="box-copy">full receipt has no blockers</text>
     <text x="1050" y="556" class="box-copy">for the current execution path</text>
     <text x="1050" y="588" class="small">Phase 1 handoff may proceed.</text>

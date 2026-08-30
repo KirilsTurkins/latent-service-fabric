@@ -68,6 +68,10 @@ The full command writes a receipt below `target/phase0-gate/`. Inspect
 `authorized`, `phase1_authorized` equal to `true`, and no blockers. A blocked
 receipt is useful diagnostic evidence, not a successful completion.
 
+The retained August 30 native-Linux full receipt meets those conditions for its
+canonical execution identity. A later execution-affecting checkout must earn
+its own compatible authorization through the same full-gate checks.
+
 ## Native-Linux evidence is separate
 
 Calibration, CPU/allocation profiling, and long-running soak evidence are

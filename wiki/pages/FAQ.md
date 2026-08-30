@@ -12,18 +12,18 @@ No. The repository has a narrow Phase 0 local spike. It does not provide the
 Phase 1 public node, management, routing, deployment, or production-security
 surface.
 
-## Can work on a later phase begin while Phase 0 is still blocked?
+## Can Phase 1 work begin now?
 
-Yes, where the relevant issue and maintainers allow focused design or
-feature-branch work. That is not Phase 1 authorization: dependency status,
-merge readiness, and closure still require the specified Phase 0 handoff and
-the later issue’s own acceptance criteria.
+Yes. The August 30 clean native-Linux full-gate receipt authorizes Phase 1
+engineering work for its recorded canonical execution identity. That does not
+make every Phase 1 issue merge-ready or complete: each still needs its own
+acceptance criteria, review, and evidence.
 
-## Is Phase 0 complete because issue #25 is closed?
+## Does issue #25's closure establish the Phase 0 handoff?
 
-No. The authoritative condition is a clean-checkout full-gate receipt with
-`authorization_status: "authorized"`. Administrative issue state is not a
-substitute for that evidence.
+No. The current handoff is established by the clean-checkout full-gate receipt
+with `authorization_status: "authorized"`, not by administrative issue state.
+Issue closure alone is never a substitute for that evidence.
 
 ## Does a smoke gate pass authorize Phase 1?
 

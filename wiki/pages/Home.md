@@ -1,15 +1,15 @@
 <!-- LSF-WIKI-MANAGED -->
-<!-- LSF-PHASE0-GATE: blocked -->
+<!-- LSF-PHASE0-GATE: authorized -->
 # Latent Service Fabric
 
 Latent Service Fabric (LSF) is an interface-first systems project for running
 independently deployable service capsules without reserving a process, thread,
 socket, heap, or connection pool for every idle service.
 
-> **Current status:** Phase 0 has a working local executable spike. Its
-> completion gate is still pending an **authorized** clean-checkout receipt.
-> Phase 1 is not authorized merely because an issue is closed, a benchmark
-> aggregate passes, or a smoke check succeeds.
+> **Current status:** the August 30 native-Linux full-gate receipt authorizes
+> Phase 1 for its recorded canonical execution identity. That handoff is not a
+> production-readiness or Phase 1 API-compatibility claim, and any later
+> execution-affecting change must be revalidated.
 
 The Wiki explains the project. The [`development` branch](https://github.com/KirilsTurkins/latent-service-fabric/tree/development)
 is authoritative for code, contracts, evidence, and delivery status.
@@ -55,8 +55,8 @@ production security posture, production SLO, or dormant-service-density proof.
 
 ## Start here
 
-- [Phase 0 status](Phase-0-Status) — current evidence boundary and the only
-  route to Phase 1 authorization.
+- [Phase 0 status](Phase-0-Status) — current authorization record, evidence
+  boundary, and future revalidation path.
 - [Phase 0 runbook](Phase-0-Runbook) — choose the correct validation and
   evidence path without confusing a local check with a handoff.
 - [Getting started](Getting-Started) — validate the repository and run the

@@ -12,7 +12,7 @@ it does not turn a local command into authorization by itself.
 | Check ordinary repository health | <code>make validate</code> and <code>make repository-tests</code> | Required development baseline; no Phase 1 authorization. |
 | Exercise the real local echo path | <code>make phase0-spike-demo</code> | Builds and runs the finite Wasmtime/cell-pool composition; no public service starts. |
 | Exercise the CI-sized gate path | <code>make phase0-gate-smoke</code> | A deterministic correctness check that reports smoke success and authorization separately. |
-| Seek a Phase 0 handoff decision | <code>make phase0-gate</code> | Full clean-checkout sequence; only an explicitly authorized receipt can unblock Phase 1. |
+| Verify or renew a Phase 0 handoff | <code>make phase0-gate</code> | Full clean-checkout sequence; only an explicitly authorized receipt can authorize its execution path. |
 | Create new calibration/profile/soak evidence | Native-Linux evidence commands | Heavyweight manual work on a clean native Linux host or VM only. |
 
 ## Start from a clean checkout
@@ -63,6 +63,10 @@ state:
 2. Confirm that the Phase 1 authorization flag is true.
 3. Confirm that the blockers list is empty.
 4. Review source/execution identity and the regenerated raw-evidence results.
+
+The retained August 30 native-Linux receipt meets these conditions for its
+canonical execution identity. Do not treat it as applicable after an
+execution-affecting change without a compatible full-gate result.
 
 If any condition fails, preserve the receipt and address the named blocker.
 Do not relabel an aggregate, close an issue, or use a smoke result as a

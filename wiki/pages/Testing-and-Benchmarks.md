@@ -16,7 +16,7 @@ independent raw-evidence verification.
 | `make validate` | Build/lint/test/contracts/SDK baseline | No Phase 1 authorization. |
 | `make phase0-spike-demo` | Local real echo and containment demonstration | No Phase 1 authorization. |
 | `make phase0-gate-smoke` | Deterministic CI-sized gate path | Reports authorization separately; not enough by itself. |
-| `make phase0-gate` | Full clean-checkout gate and receipt | Required for an authorized Phase 0 handoff. |
+| `make phase0-gate` | Full clean-checkout gate and receipt | The only route to an authorized Phase 0 handoff for an execution identity. |
 
 ## Recorded Phase 0 evidence
 
@@ -24,6 +24,11 @@ The repository retains a baseline, native-Linux calibration, CPU/allocation
 profile, and long-running resource soak. The gate does not trust a summary
 field alone: it checks raw artifacts, archive manifests, hashes, path safety,
 schemas, configuration, identities, and regenerated aggregates.
+
+The retained August 30 native-Linux full receipt is the current authorized
+record for its canonical execution identity. It does not make the measured
+single-host evidence a production claim or apply automatically to later
+execution-affecting changes.
 
 The resource soak is a single-host observational plateau for its recorded
 configuration. It is not a production SLO, cross-machine comparison, or proof
