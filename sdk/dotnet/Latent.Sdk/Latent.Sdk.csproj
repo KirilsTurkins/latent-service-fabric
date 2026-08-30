@@ -1,16 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Version>0.1.0-alpha.0</Version>
+    <Version>0.1.0-alpha.1</Version>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- This pre-generation contract surface mirrors schema/protobuf records.
-         Issue #2 will supply generated API documentation; do not make the SDK
-         smoke build fail solely because those generated member comments are
-         not committed yet. -->
-    <NoWarn>$(NoWarn);1591</NoWarn>
     <Description>Interface-only .NET SDK surface for Latent Service Fabric.</Description>
   </PropertyGroup>
 </Project>

@@ -2,6 +2,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=phase0_build_environment.sh
+source "${ROOT}/tools/phase0_build_environment.sh"
 TARGET_ROOT="${CARGO_TARGET_DIR:-${ROOT}/target}"
 if [[ "${TARGET_ROOT}" != /* ]]; then
     TARGET_ROOT="${ROOT}/${TARGET_ROOT}"
@@ -18,7 +20,9 @@ case "${MODE}" in
         ;;
 esac
 
-for command in cargo python3; do
+phase0_reject_inherited_build_overrides
+
+for command in cargo python3 cp cmp; do
     if ! command -v "${command}" >/dev/null 2>&1; then
         echo "required command is unavailable: ${command}" >&2
         exit 2
@@ -30,6 +34,10 @@ cd "${ROOT}"
 # This gate is mandatory. It verifies every checked-in contract, builds both
 # real Wasm components, and exercises the lower-level containment suite. Missing
 # targets or external tools therefore fail rather than silently skipping data.
+# The containment capsule is a calibration fixture, not a native-profiler
+# symbol carrier. Keep its release artifact byte-identical even when the
+# caller requests debuginfo for the native `phase0-baseline` executable.
+# The final Cargo build below uses the one explicit native collector recipe.
 tools/validate_contracts.sh
 
 ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json"
@@ -78,7 +86,20 @@ document["metadata"].setdefault("annotations", {})["latent.dev/artifact"] = comp
 PY
 
 mkdir -p "${OUTPUT_DIR}" "${TARGET_ROOT}/phase0-baseline/${MODE}"
-cargo build -p latentd --bin latentd --bin phase0-baseline --release --locked
+phase0_release_cargo build -p latentd --bin latentd --bin phase0-baseline --release --locked
+
+BUILT_COLLECTOR="${TARGET_ROOT}/release/phase0-baseline"
+COLLECTOR_BINARY="${LSF_PHASE0_RETAIN_COLLECTOR_PATH:-${OUTPUT_DIR}/collector/phase0-baseline}"
+mkdir -p "$(dirname "${COLLECTOR_BINARY}")"
+if [[ -e "${COLLECTOR_BINARY}" || -L "${COLLECTOR_BINARY}" ]]; then
+    if [[ ! -f "${COLLECTOR_BINARY}" || -L "${COLLECTOR_BINARY}" ]] \
+        || ! cmp -- "${BUILT_COLLECTOR}" "${COLLECTOR_BINARY}"; then
+        echo "retained Phase 0 baseline collector differs from the freshly built executable" >&2
+        exit 1
+    fi
+else
+    cp -- "${BUILT_COLLECTOR}" "${COLLECTOR_BINARY}"
+fi
 
 # Produce independent cold samples through the exact issue-23 executable
 # composition. The retained benchmark refuses to run when this parity probe is
@@ -311,7 +332,7 @@ PY
 # benchmark process. The child records readiness only after its configured Tokio
 # worker lifecycle hooks and fixed pool report the expected topology.
 python3 - \
-    "${TARGET_ROOT}/release/phase0-baseline" \
+    "${COLLECTOR_BINARY}" \
     "${STAGED_DIR}/capsule.json" \
     "${EXECUTABLE_PROBE}" \
     "${OUTPUT_DIR}/raw-results.json" \

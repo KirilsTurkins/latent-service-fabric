@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="phase0-scope-title phase0-scope-description">
+  <title id="phase0-scope-title">Phase 0 measured scope and excluded capabilities</title>
+  <desc id="phase0-scope-description">A bounded Phase 0 execution slice moves one echo component through preparation, a fixed cell pool, and fresh activation state. The August 30 full-gate receipt authorizes Phase 1 only for this canonical execution identity; routing, public APIs, durable state, multi-service operation, and cluster behavior remain outside the measured scope.</desc>
+  <defs>
+    <linearGradient id="phase0-scope-background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b102d"/>
+      <stop offset="1" stop-color="#1e3a5f"/>
+    </linearGradient>
+    <linearGradient id="phase0-scope-source" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <marker id="phase0-scope-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#bfdbfe"/>
+    </marker>
+    <filter id="phase0-scope-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#09090b" flood-opacity=".38"/>
+    </filter>
+    <style>
+      .heading { font: 700 34px system-ui, sans-serif; fill: #faf5ff; }
+      .subheading { font: 400 18px system-ui, sans-serif; fill: #ddd6fe; }
+      .box-title { font: 700 21px system-ui, sans-serif; fill: #f8fafc; }
+      .box-copy { font: 400 15px system-ui, sans-serif; fill: #e0e7ff; }
+      .small { font: 600 14px system-ui, sans-serif; fill: #c4b5fd; }
+      .outside-title { font: 700 21px system-ui, sans-serif; fill: #e2e8f0; }
+      .outside-copy { font: 400 15px system-ui, sans-serif; fill: #cbd5e1; }
+      .status { font: 700 16px system-ui, sans-serif; fill: #d1fae5; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="760" rx="34" fill="url(#phase0-scope-background)"/>
+  <text x="74" y="88" class="heading">Phase 0 proves a bounded local execution slice</text>
+  <text x="74" y="122" class="subheading">The measured lifecycle is real; the excluded capabilities are not implied by it.</text>
+
+  <g filter="url(#phase0-scope-shadow)">
+    <rect x="74" y="178" width="790" height="420" rx="28" fill="#1e40af" stroke="#93c5fd" stroke-width="3"/>
+    <text x="112" y="230" class="box-title">Measured Phase 0 slice</text>
+    <text x="112" y="258" class="small">one local Component Model echo capsule · fixed node resources · fresh activation state</text>
+
+    <rect x="112" y="304" width="206" height="190" rx="22" fill="url(#phase0-scope-source)" stroke="#c4b5fd" stroke-width="2"/>
+    <text x="142" y="352" class="box-title">Prepare</text>
+    <text x="142" y="386" class="box-copy">build and validate</text>
+    <text x="142" y="410" class="box-copy">one echo component</text>
+    <text x="142" y="434" class="box-copy">bounded cache key</text>
+
+    <rect x="370" y="304" width="206" height="190" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <text x="400" y="352" class="box-title">Activate</text>
+    <text x="400" y="386" class="box-copy">lease one fixed cell</text>
+    <text x="400" y="410" class="box-copy">invoke through</text>
+    <text x="400" y="434" class="box-copy">Wasmtime</text>
+    <text x="400" y="458" class="box-copy">bounded queue + budgets</text>
+
+    <rect x="628" y="304" width="198" height="190" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <text x="658" y="352" class="box-title">Reclaim</text>
+    <text x="658" y="386" class="box-copy">fresh store and host</text>
+    <text x="658" y="410" class="box-copy">state per activation</text>
+    <text x="658" y="434" class="box-copy">cleanup disposition</text>
+
+    <path d="M 320 399 H 360" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase0-scope-arrow)"/>
+    <path d="M 578 399 H 618" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase0-scope-arrow)"/>
+  </g>
+
+  <g filter="url(#phase0-scope-shadow)">
+    <rect x="930" y="178" width="436" height="420" rx="28" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+    <text x="968" y="230" class="outside-title">Outside this evidence boundary</text>
+    <text x="968" y="266" class="outside-copy">The spike does not establish these capabilities:</text>
+    <line x1="968" y1="292" x2="1328" y2="292" stroke="#64748b" stroke-width="1"/>
+    <text x="968" y="334" class="outside-title">Public platform</text>
+    <text x="968" y="360" class="outside-copy">routing · admission · generic invocation API</text>
+    <text x="968" y="404" class="outside-title">Durability and operations</text>
+    <text x="968" y="430" class="outside-copy">state/effects · telemetry · deployment management</text>
+    <text x="968" y="474" class="outside-title">Scale and trust</text>
+    <text x="968" y="500" class="outside-copy">multi-service density · security · clustering · SLOs</text>
+  </g>
+
+  <rect x="74" y="650" width="1292" height="56" rx="16" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+  <text x="104" y="685" class="status">Authorized: the August 30 full receipt permits Phase 1 for this canonical execution identity; execution-affecting changes require revalidation.</text>
+</svg>

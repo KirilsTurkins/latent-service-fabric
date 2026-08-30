@@ -1,10 +1,25 @@
 # Engineering roadmap
 
-## Phase 0: executable spike
+## Phase 0: executable spike — Phase 1 authorized
 
-Repository contracts, one Rust echo capsule, one fixed cell pool, Wasmtime component loading, timeout/trap containment, and baseline measurements.
+Repository contracts, one Rust echo capsule, one fixed cell pool, Wasmtime
+component loading, timeout/trap containment, baseline measurements, native
+Linux calibration, hot-path profiling, and a long-running resource soak are
+implemented. Fresh native-Linux calibration, profiling, and soak packages from
+commit `52ac4754…` were independently rebuilt from their raw evidence and bound
+to a fresh full baseline at `b932a935…`. The retained August 30
+[receipt](../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+records `pass`, `authorized`, and no blockers. See
+[the completion gate](phase-0-completion.md).
 
-## Phase 1: single-node stateless fabric
+The underlying measurements remain single-host observational evidence. Neither
+an issue closure nor such an observation alone authorizes Phase 1. The full
+receipt authorizes only because it validates the matched raw archives,
+execution identity, profiling, resource soak, and fresh-baseline checks
+together. Phase 1 builds on the retained runtime and invariants; Phase 0 does
+not claim production readiness or Phase 1 API compatibility.
+
+## Phase 1: single-node stateless fabric — authorized to begin
 
 Standalone node, local release catalog, route table, scheduler, activation envelopes, resource budgets, context/log/clock capabilities, generic invocation API, CLI flow, and telemetry.
 

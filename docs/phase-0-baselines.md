@@ -21,25 +21,30 @@ Both commands run `tools/validate_contracts.sh` first. Missing Rust Wasm targets
 ## Native-Linux variance calibration
 
 The original checked-in full-profile result is a historical WSL2 observation.
-The Phase 1 comparison reference is the seven-run native-Linux calibration in
-[benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source).
-The earlier [native-linux-2026-08-27](../benchmarks/phase0/calibration/native-linux-2026-08-27)
-archive remains as superseded audit evidence only: its recorded commit was not
-published and is not a Phase 1 comparison source.
+The current selected-configuration calibration is the seven-run native-Linux
+archive in
+[`benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754`](../benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754/CALIBRATION.md).
+It records its published commit/tree and the explicit
+prepared-cache/on-demand/COW configuration used by the matching profile and
+soak. The August 30 packages were verified together by the authorized full
+gate; all August 29 packages remain immutable historical evidence.
 
 Create a new archive only from a clean worktree on one stable native-Linux host
 or VM:
 
 ~~~bash
-tools/run_phase0_calibration.sh benchmarks/phase0/calibration/native-linux-YYYY-MM-DD
+tools/run_phase0_calibration.sh \
+  --published-source-commit <reachable-commit-sha> \
+  --published-source-tree <reachable-tree-sha> \
+  --published-source-ref <durable-branch-or-tag> \
+  /var/tmp/phase0-evidence/calibration
 ~~~
 
-The calibration wrapper refuses WSL and detected containers, requires a new
-output directory, fixes every run to one source tree, and invokes the complete
-full-profile command seven times. If its source commit is published from a
-different local commit object, the wrapper requires the reachable published
-commit and its Git tree, then rejects any execution worktree that does not have
-that exact tree. It captures before/after
+The calibration wrapper refuses WSL and detected containers, requires fresh
+external output/build directories, requires a durable published commit/tree/ref,
+and invokes the complete full-profile command seven times. It rejects an
+execution checkout whose HEAD is not that exact published commit or whose tree
+does not match. It captures before/after
 virtualization, allocator, CPU frequency/power-policy where exposed, and
 background-load observations. It does not change CPU policy, pin frequency, or
 discard a run because its performance values are inconvenient.
@@ -77,7 +82,7 @@ with at least seven valid comparable runs, stable environment, all hard
 invariants passing, and no material run-level outlier is terminally **no
 detectable regression** (or statistically indistinguishable). Insufficient
 samples, environment instability/mismatch, material run-level noise/outliers,
-or failed invariants are inconclusive and must be rerun after the invalid
+or failed invariants invalidate the comparison and require a rerun after the
 condition is resolved. These are regression-detection aids only, not
 production SLOs or cross-machine claims.
 Shared hosted CI must never fail on these fragile microbenchmark bands; it may
@@ -85,17 +90,19 @@ continue to run only the deterministic correctness smoke profile.
 
 ## Native-Linux long-running resource plateau soak
 
-Issue 39 provides a separate heavy command for proving a bounded steady-state
-under retained fresh-store activation work. It is not part of the pull-request
-smoke profile and must be run only after issue 40 selects the final pre-Phase-1
-configuration:
+Issue #39 has retained a separate heavy native-Linux proof of bounded
+steady-state under fresh-store activation work. It is not part of the
+pull-request smoke profile. A replacement or revalidation run must use the
+final Phase 0 configuration:
 
 ```bash
 tools/run_phase0_resource_soak.sh \
   --published-source-commit <reachable-final-commit> \
   --published-source-tree <reachable-final-tree> \
+  --published-source-ref <durable-branch-or-tag> \
   --final-configuration-commit <reachable-final-commit> \
-  benchmarks/phase0/soak/native-linux-YYYY-MM-DD
+  --calibration /var/tmp/phase0-evidence/calibration/aggregate.json \
+  /var/tmp/phase0-evidence/soak
 ```
 
 The command requires a clean native Linux host or VM and refuses WSL,
@@ -130,8 +137,8 @@ process/child/thread/socket topology, and uses issue 38's RSS advisory noise
 band only when CPU, memory, kernel, virtualization, toolchain, allocator,
 fixture, and relevant execution configuration—including prepared-cache
 enablement, Wasmtime allocator mode, and initialized-memory COW—are proved
-matched. A missing or mismatched identity produces an explicit inconclusive
-comparison. A material
+matched. A missing or mismatched identity blocks the calibrated comparison and
+authorization. A material
 late-window growth or topology result remains failed and must identify a
 retaining subsystem using heap/allocator/process tooling or a focused issue;
 the noise allowance must not be raised to clear it. Robust cross-run
@@ -140,22 +147,20 @@ become a failure only when the same metric breaches its calibrated
 late-window material-growth rule.
 
 The retained post-issue-40 raw archive is
-[`native-linux-2026-08-27-6250b978`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md),
-measured from durable source commit
-`6250b9782ffc4174676d2d72bd023dbfc38c39d7` and tree
-`65ba341221ea89e107a3e0e3c4b0aed7e26efd9b`. Its three complete processes
-pass all hard invariants, explicit release/shutdown topology, and its retained
-measured-window/release-to-shutdown FD checks. Strict applicability
-revalidation deliberately leaves its RSS/PSS/private/VM comparison
-**inconclusive**: the issue-38 calibration does not retain prepared-cache,
-Wasmtime allocator, or COW configuration, while the historical soak host
-captures omit VM and allocator provenance. Its raw results also predate the
-serialized pre-runtime and post-warm-up descriptor baselines plus raw
-virtualization kind, so a complete FD lifecycle cannot be independently
-revalidated. The runner now records all of those fields and the calibration helper invokes the selected
-ordinary cache/on-demand/COW configuration explicitly; #39 remains open until
-a fresh matching calibration and three-process archive can make the calibrated
-plateau claim.
+[`native-linux-2026-08-30-52ac4754`](../benchmarks/phase0/soak/native-linux-2026-08-30-52ac4754/README.md), measured from
+durable source commit `52ac47542a05c0a1263f78a14c04a5c2e6b761f3`
+and tree `cac3ececdbd0b5734691c30c0283fccff169a5f5`. Its three complete processes
+pass all hard invariants, raw/host reconciliation, explicit release/shutdown
+topology, the complete descriptor lifecycle, and calibrated late-window
+RSS/PSS/private/VM analysis. The raw archive is losslessly checksummed and the
+aggregate applies the matching seven-process calibration without inference. It
+is evidence input for the authorized full gate, not an authorization decision
+by itself.
+
+This retained result is an input to the completion gate, not an authorization
+receipt. The authorizing clean checkout satisfied the gate's exact
+execution-identity and fresh-baseline checks; any later execution-affecting
+change must satisfy them again before it can retain authorization.
 
 If the aggregate reports material growth, rerun the same command with
 `--retaining-subsystem <name>` and/or `--followup-issue <URL-or-number>` after
@@ -252,10 +257,14 @@ Every completed activation must return active leases, waiters, cancellation regi
 ## Checked-in evidence
 
 The original top-level baseline files remain historical WSL2 evidence. The
-native-Linux aggregate and raw archive are separate reference evidence; do not
-replace either with measurements from a materially different environment.
+August 30 native-Linux calibration, profiling, soak, and full-gate receipt are
+the current checked reference evidence; do not replace them with measurements
+from a materially different environment.
 
-`benchmarks/phase0/raw-results.json` and `benchmarks/phase0/BASELINE.md` are generated from the same historical full-profile run. The native-Linux calibration archive is the Phase 1 comparison reference.
+`benchmarks/phase0/raw-results.json` and `benchmarks/phase0/BASELINE.md` are
+generated from the same historical full-profile run. The August 30
+native-Linux calibration archive is the Phase 1 comparison reference, and the
+fresh authorizing baseline is retained with the August 30 gate receipt.
 
 Reference files must not be replaced with measurements from a materially different CPU, memory size, OS/kernel, Rust/Wasmtime toolchain, target, build profile, fixture digest, pool topology, budget, threshold, or sample configuration without documenting the new environment and reason.
 

@@ -1,182 +1,239 @@
-# Phase 0 completion report
+# Phase 0 completion gate
 
-**Gate status:** Open. This report consolidates evidence for the Phase 0 gate;
-it does not authorize Phase 1 until every dependency of issue 25 is complete.
+**Gate status: AUTHORIZED — Phase 1 is authorized for this branch's canonical execution identity.**
 
-## Calibrated performance and resource reference
+The retained August 30 [gate summary](../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
+was emitted by a separate clean native-Linux checkout at commit
+`b932a935e0a9438a4d47383f77367146fcefaee6` (tree
+`5c2b93d5bc94187ae4471f5006e43c17ad218526`). The full gate exited 0 and
+records `status: "pass"`, `authorization_status: "authorized"`,
+`phase1_authorized: true`, and an empty `blockers` array. It also records
+`production_ready: false` and `phase1_api_compatible: false`; authorization is
+a Phase 1 engineering handoff, not a product-readiness claim.
 
-The initial issue-24 full-profile files
-[benchmarks/phase0/raw-results.json](../benchmarks/phase0/raw-results.json)
-and
-[benchmarks/phase0/BASELINE.md](../benchmarks/phase0/BASELINE.md)
-are retained as historical WSL2 observations. They are not used as the
-native-Linux variance reference.
+The calibration, profiling, and soak inputs were measured from the clean,
+pushed commit `52ac47542a05c0a1263f78a14c04a5c2e6b761f3` (tree
+`cac3ececdbd0b5734691c30c0283fccff169a5f5`) and retained with the gate
+defaults at `7acf0736…`. The gate independently reassembled and regenerated
+those packages, then proved that their canonical execution-relevant identity
+exactly matched the clean gate checkout:
 
-Issue 38 establishes the calibration reference:
+```text
+sha256:84d0f64d5661e74ed1dd74e0f4421be8a3ee35740f85aa110775305fcd6e929b
+```
 
-- [CALIBRATION.md](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/CALIBRATION.md)
-  is the concise seven-run report;
-- [aggregate.json](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/aggregate.json)
-  contains dispersion statistics, outlier findings, environment/configuration,
-  advisory bands, and the hard-invariant summary;
-- [runs/](../benchmarks/phase0/calibration/native-linux-2026-08-27-reachable-source/runs)
-  retains every individual full-profile raw result, per-run report, host
-  observation, and command status.
+Documentation-only commits may retain this authorization only while that
+canonical identity remains unchanged; their distinct Git commit and tree stay
+auditable. GitHub issue state is not evidence. The August 29 receipt and its
+`a724a5e3…` evidence remain immutable historical records, but they are not the
+source of the current authorization.
 
-The reference was rerun from the durable published commit
-[`49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3`](https://github.com/KirilsTurkins/latent-service-fabric/commit/49e24fdbee1a3cde1a09fdb3bf8dcf640cc956c3).
-That exact source revision is retained independently on
-[`benchmark/phase0-calibration-source-2026-08-27`](https://github.com/KirilsTurkins/latent-service-fabric/tree/benchmark/phase0-calibration-source-2026-08-27).
-Its aggregate and every host observation record that commit's Git tree
-`88e8875b7be7e46b4702c15d5c8c2f26c1e4a037`, the local execution commit, and
-verified tree equality. The prior native-Linux archive remains unchanged as
-superseded audit evidence because its SHA was not reachable.
+The gate remains fail-closed for every future full run: it validates retained
+archives, raw measurements, source identity, and a fresh baseline before it can
+write an authorized receipt.
 
-The calibration invokes the existing full profile without weakening fixture
-validation or hard topology, capacity, containment, cleanup, and reclamation
-checks. It records the native-Linux environment, virtualization, allocator
-observation, CPU/frequency policy where available, and background load. Its
-statistics are observational and do not create production SLOs, capacity
-commitments, or cross-machine claims.
+## Status at a glance
 
-## Long-running resource plateau and leak resistance
+| Scope | Current status | What it means |
+|---|---|---|
+| Retained #39 calibration and resource soak | pass | The recorded native-Linux configuration has complete, verified plateau evidence. |
+| Full Phase 0 completion gate | authorized | The retained August 30 clean native-Linux receipt is `pass` / `authorized` with no blockers for this canonical execution identity. |
+| CI smoke sequence | validation only | A smoke pass exercises deterministic coverage; it never authorizes Phase 1. |
+| Production readiness and public API compatibility | not claimed | Neither is a Phase 0 outcome. |
 
-Issue 39 now has a retained native-Linux soak harness at
-[`tools/run_phase0_resource_soak.sh`](../tools/run_phase0_resource_soak.sh).
-It is deliberately an explicit heavy command, separate from shared PR smoke
-coverage. It records at least three independent processes, each with 1,000
-excluded warm-up activations, 100,000 measured fresh-store activations, and
-frequent real at-capacity and bounded-queue batches. Every batch must return
-logical pool, runner, backend, log, cache, and timing-store state to its fixed
-baseline before its raw interval sample is kept.
+![Phase 0 completion-gate decision flow: current execution identity, retained raw evidence, and a fresh baseline reach a full gate that either records blockers or emits an authorized receipt.](assets/phase0-gate-decision.svg)
 
-The companion aggregate records raw-file hashes and command/source provenance,
-native-host observations, RSS/VM/PSS/private (where exposed), process/thread/
-socket/FD topology, rolling ranges, final-window deltas, robust late-window
-slopes, peaks, explicit release, and runtime shutdown. It applies the issue 38
-calibrated RSS noise band only after CPU, memory, kernel, virtualization,
-toolchain, allocator, fixture, and relevant configuration identity are proved
-matched; a missing or mismatched identity is inconclusive. An unexplained
-measured-window or release-to-shutdown FD increase, terminal topology change,
-hard-invariant failure, missing batch, or calibrated material late-window
-growth fails the aggregate. Robust cross-run peak/delta outliers are retained as diagnostic
-variability; a stable late-window series inside its calibrated band is not
-silently relabelled as a leak. A material-growth result requires
-heap/allocator/process investigation and a retaining subsystem or focused
-issue; the command never increases its allowance to make the result pass.
+Some reports inside the retained evidence archives use the historical tense
+appropriate to their measurement runs. They are immutable evidence, not the
+current status source; this document and the machine receipt are authoritative
+for authorization.
 
-Issue 40's final ordinary Phase 0 configuration (bounded prepared cache,
-on-demand Wasmtime allocation, initialized-memory COW enabled) has retained
-raw evidence in the native-Linux archive
-[`native-linux-2026-08-27-6250b978`](../benchmarks/phase0/soak/native-linux-2026-08-27-6250b978/README.md).
-Its three independent processes each completed 1,000 excluded warm-ups,
-100,000 normal measured fresh-store activations, and 100 real batches of each
-saturation mode. Every hard invariant, descriptor/topology check, explicit
-prepared-component release, runtime shutdown check, and retained measured-
-window/release-to-shutdown FD check passes. Strict revalidation does not apply
-the issue-38 bands to this historical archive: that calibration lacks explicit
-prepared-cache, Wasmtime allocator, and initialized-memory COW provenance,
-while the soak host captures lack VM detection and allocator provenance. The
-raw documents also predate the serialized pre-runtime and post-warm-up
-descriptor baselines plus raw virtualization kind, so the complete lifecycle
-cannot be independently revalidated. The raw late-window series and run-03 PSS outlier remain retained
-for diagnosis, but the comparison is explicitly **inconclusive** and #39
-remains open pending a fresh selected-configuration calibration and three-
-process archive from the updated runner.
+## Run the full gate
 
-The wrapper requires `--final-configuration-commit` to equal the measured
-reachable source commit, preventing a pre-final run from being reported as a
-passing plateau result. This finite soak does not prove arbitrary-duration leak
-freedom, production SLOs, multi-node behavior, or allocator-internal state not
-exposed by the configured safe probes.
+Run the full gate from a clean Linux or WSL checkout. WSL is sufficient to
+verify retained evidence and produce a receipt. It is **not** sufficient to
+collect replacement calibration, profiling, or soak evidence: those wrappers
+require a clean native-Linux host or VM and reject WSL and containers.
 
-## Required Phase 1 use
+Before running the gate, confirm that Git sees no tracked or untracked user
+changes:
 
-Issue 16 must compare productionized results against this calibration; it must
-not reset the performance/resource reference after productionization. For
-startup, preparation, cold/warm activation, cleanup, queueing, throughput,
-RSS, and virtual memory, it must:
+```bash
+git status --porcelain --untracked-files=all
+```
 
-1. retain at least seven independent full-profile candidate runs and their raw
-   provenance;
-2. establish material equivalence of CPU, logical CPU count, memory, kernel,
-   virtualization, Rust/Cargo/Wasmtime versions, target, build profile,
-   allocator, fixture digest, and configuration;
-3. compare the median of per-run representatives with the metric-specific
-   advisory band in aggregate.json;
-4. record **no detectable regression** (or statistically indistinguishable) as
-   the terminal result for an inside-band candidate with at least seven valid
-   comparable runs, a stable environment, all hard invariants passing, and no
-   material run-level outlier;
-5. rerun an inconclusive result caused by insufficient samples, environment
-   instability/mismatch, material run-level noise/outliers, or failed hard
-   invariants after the invalid condition is resolved; and
-6. classify outside-band deterioration as a regression candidate, require a
-   second matched set, and confirm the regression only when that second set
-   also deteriorates outside the band;
-7. preserve hard invariants as binary checks. A topology, capacity,
-   containment, cleanup, or reclamation failure cannot be statistically
-   tolerated.
+The gate creates its own ignored output under `target/phase0-gate/`. Other
+untracked output can block authorization, so use an isolated clean clone or
+worktree when in doubt.
 
-Bounded-cache configuration and reclamation remain strict invariant checks;
-Phase 1 must compare them against their recorded configured bounds rather than
-turning cache growth into an advisory statistical tolerance.
+After installing the pinned prerequisites in
+[`development/toolchain.md`](development/toolchain.md), run:
 
-A candidate deterioration beyond an advisory band is not an automatic
-production conclusion: it requires the second comparable set above for
-confirmation. Shared hosted CI may run deterministic correctness smoke
-coverage, but must not fail on these microbenchmark bands.
+```bash
+python3.13 -m venv .venv
+. .venv/bin/activate
+python -m pip install --requirement tools/requirements.lock
+make phase0-gate
+```
 
-## Execution hot-path profiling and optimization handoff
+The command creates a new directory beneath `target/phase0-gate/`, then:
 
-Issue 40 adds a separate native-Linux `perf` plus Heaptrack evidence workflow:
-[the profiling handoff](phase-0-hot-path-profiling.md). It profiles the real
-shared Phase 0 composition across cold preparation, direct prepared-cache
-reuse, first and warm activation, failure containment/recovery, cleanup, and
-separate at-capacity and bounded-queue contention paths. Every profile retains
-a passing full baseline document, exact command, raw tool data, and symbolized
-CPU/allocation reports; an incomplete tool artifact or a failed, missing,
-duplicate, or unexpected hard invariant is invalid rather than silently
-omitted.
+1. runs repository formatting, builds, Clippy, Rust tests, contract/component
+   validation, SDK checks, and repository-tool tests;
+2. runs the real `latentd phase0-spike` executable E2E and containment suite;
+3. runs a fresh full executable baseline, including the real Wasmtime path,
+   capacity/queue saturation, recovery, cleanup, and topology probes; and
+4. writes `gate-summary.json`, which rebuilds the calibration, profile, and
+   soak aggregates from their retained raw inputs; verifies archive manifests,
+   hashes, paths, and file sets; then compares the regenerated results with
+   the checked-in aggregates before evaluating the fresh baseline.
 
-The accepted native-Linux archive is
-[native-linux-2026-08-27-de2337906](../benchmarks/phase0/profiling/native-linux-2026-08-27-de2337906/README.md),
-captured from durable source commit `de2337906a4942e47611124a1c2217949abb58dc`
-and tree `0a32896faa58da7f34662cbf3be97670d6d1de4c`. It retains a compact
-machine-readable aggregate and concise report alongside a lossless,
-checksummed archive of every raw CPU/allocation trace and full-process run.
-The eight Heaptrack reports each record 2.82 KiB of process-exit TLS/JIT/CLI
-residue; this is retained for review, while every activation cleanup,
-resource-reclamation, and runtime-thread invariant passes.
+`make phase0-gate` returns non-zero whenever a final receipt is not
+`authorized`; it still writes the receipt so the specific blocker is
+reviewable. The retained August 30 full run satisfied those fail-closed checks
+with applicable evidence and a fresh baseline.
 
-The bounded matrix measures fixed worker/cell ratios, bounded preparation reuse
-versus cold preparation, on-demand versus pooling allocation, and COW
-initialized-memory alternatives. The default remains the existing fixed
-2-worker/2-cell, on-demand, COW-enabled configuration with one bounded prepared
-component and fresh invocation-owned stores, host state, import tables,
-instances, limiters, and activation contexts. Pooling, when profiled, is capped
-to the fixed cell capacity and retains zero linear memory after a store drops.
-No runtime optimization is adopted from a faster single/small set: adoption
-requires at least seven comparable runs, issue-38 calibrated-noise clearance or
-an explicit architectural benefit, bounded fixed/peak memory, and every hard
-invariant passing. The current decision record retains the Phase 0 default,
-defers scheduler ratios to #8, Wasmtime policy/cache/value work to #9,
-lifecycle-envelope changes to #11, and rejects store/instance reuse and
-untrusted AOT/cache/snapshot/native-execution shortcuts in Phase 0.
+## Interpret the result
 
-This handoff is optimization evidence only; it does not establish production
-SLOs or cross-platform claims. The retained issue-39 archive above executes
-three independent native-Linux 100k-activation soak processes against this
-final configuration, but its strict #38 comparison is inconclusive until a
-fresh complete-provenance archive is collected; #39 remains one required input
-to the still-open Phase 0 completion gate.
+| Command | Baseline | Exit zero means | Phase 1 authorization |
+|---|---|---|---|
+| `make phase0-gate` | full | The full receipt is `authorized`. | Required and granted only by this result. |
+| `make phase0-gate-smoke` | deterministic smoke | The smoke validation completed. | Never granted; its receipt may remain `blocked`. |
 
-## Remaining limitations
+The smoke output explicitly distinguishes `Phase 0 smoke validation: PASS`
+from `Phase 1 authorization: BLOCKED`, so deterministic correctness coverage
+cannot be mistaken for a completed full gate. When a full run blocks, inspect
+the retained `gate-summary.json` and address its `blockers`; GitHub issue state
+does not override them.
 
-This evidence demonstrates only the Phase 0 spike under its documented
-workload. It does not establish production API behavior, dormant-service
-density, remote-call performance, cluster scaling, or release SLOs. The
-finite long-duration soak can demonstrate only a fully recorded matched-host
-post-warm-up plateau, not arbitrary-duration leak freedom. The current
-historical archive is not yet such a matched comparison; those obligations
-remain with the Phase 1 work and its completion gate.
+## Current authorization evidence ledger
+
+| Input | Machine-readable evidence | Gate result |
+|---|---|---|
+| Fresh full baseline | [receipt baseline](../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/baseline/BASELINE.md), compressed raw result, and checksums | pass: 20 required hard checks and all required terminal outcomes |
+| Native-Linux calibration | [`aggregate.json`](../benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754/aggregate.json) and checksummed 39-part raw archive | pass: seven full-profile runs with fixed hard invariants and advisory comparison bands |
+| CPU/allocation profiling | [`aggregate.json`](../benchmarks/phase0/profiling/native-linux-2026-08-30-52ac4754/aggregate.json) and checksummed 51-part raw archive | pass: eight workloads, eight candidates, full 20-check invariant proof, guardrails, and seven explicit decisions |
+| Resource soak | [`aggregate.json`](../benchmarks/phase0/soak/native-linux-2026-08-30-52ac4754/aggregate.json), [`SOAK.md`](../benchmarks/phase0/soak/native-linux-2026-08-30-52ac4754/SOAK.md), and checksummed 38-part raw archive | pass: three matched 100,000-activation processes, complete lifecycle evidence, and no calibrated material growth |
+| Completion receipt | [`gate-summary.json`](../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json) and [receipt manifest](../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/receipt.manifest.sha256) | pass / authorized; zero blockers |
+
+### Historical August 29 ledger
+
+The earlier baseline, calibration, profiling, soak, and
+[`54d02679…` receipt](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
+remain unchanged for audit and archive-regression coverage. They describe the
+older `a724a5e3…` execution identity and are not substituted for any August 30
+authorization input.
+
+| Historical input | Immutable record | Classification |
+|---|---|---|
+| Full baseline and receipt | [`native-linux-2026-08-29-54d02679`](../benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/) | historical pass; not a current input |
+| Native-Linux calibration | [`native-linux-2026-08-29-a724a5e3`](../benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/) | historical seven-run reference |
+| CPU/allocation profiling | [`native-linux-2026-08-29-a724a5e3`](../benchmarks/phase0/profiling/native-linux-2026-08-29-a724a5e3/) | historical v3 profile |
+| Resource soak | [`native-linux-2026-08-29-a724a5e3`](../benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/) | historical three-process soak |
+
+## Recorded environment, configuration, and observations
+
+The JSON aggregates above are cached conclusions, not trust roots. The gate
+validates the underlying raw runs, host observations, execution-status records,
+fixture/configuration/toolchain identities, profile artifacts, manifests, and
+hashes; it then regenerates each aggregate with the repository aggregation
+logic. The receipt also retains the current commit/tree and a canonical hash of
+the execution-relevant Git entries. Every evidence set must have that same
+canonical identity; documentation-only differences remain visible through the
+recorded commit/tree but cannot hide an execution-affecting change.
+
+- The authorizing calibration, `perf`/Heaptrack archive, and soak were measured
+  on one native-Linux host from the same execution-relevant tree at
+  `52ac4754…` / `cac3ecec…`. The retained commit/tree changes are auditable,
+  while the canonical identity is the strict applicability comparison.
+- The calibration retains seven full-profile runs. The profile covers cold
+  preparation, prepared-cache reuse, first/warm execution, failure
+  containment, cleanup, and both contention modes. Its decision ledger has
+  seven retained/deferred/rejected decisions over eight candidates.
+- The soak retains three independent native-Linux processes, each with 1,000
+  excluded warm-ups, 100,000 measured fresh-store activations, real capacity
+  and queue saturation batches, sampled post-warm-up resource series, and
+  release/shutdown observations. Its strict aggregate reports matched
+  calibration applicability, complete evidence, and passed descriptor
+  lifecycle checks.
+- The authorizing full baseline ran at `b932a935…` / `5c2b93d5…` against those
+  retained inputs and passed all 20 required checks. Its freshly built
+  collector matched the retained executable digest and size exactly. The raw
+  result is compressed losslessly and checked alongside the complete receipt
+  manifest.
+
+## What the gate already proves
+
+For the recorded local component and native-Linux environments, the evidence
+proves that:
+
+- generated WIT guest and host bindings build a real Rust echo Component Model
+  guest and invoke it through Wasmtime;
+- echo success and declared domain errors cross the real typed boundary;
+- invalid component input is rejected by the executable/containment validation
+  path before an activation can remain leased;
+- trap, timeout, explicit cancellation, and memory-pressure failures remain
+  activation-local and are followed by successful cause-specific recovery;
+- every measured terminal path returns its cell or reports quarantine, with no
+  active lease, waiter, store, cancellation registration, activation host
+  state, temporary buffer, or unbounded history retained;
+- configured runtime workers, process count, listeners/sockets, and cell
+  capacity remain fixed throughout the measured spike lifecycle; and
+- real at-capacity and bounded-queue workloads reach their configured bounds
+  and return admitted work to a clean baseline.
+
+The exact checks, scenarios, executable samples, and raw observations are
+validated by [`tools/validate_phase0_gate.py`](../tools/validate_phase0_gate.py)
+and [`tools/phase0_evidence.py`](../tools/phase0_evidence.py). The verifier
+rejects malformed or synthetic archives, missing/additional/duplicate archive
+paths, links, traversal attempts, changed raw artifacts, unverified profile
+measurements, weakened guardrails, free-form optimization decisions, source
+identity drift, and incomplete evidence presented as an authorization.
+
+## Gate completion and audit handoff
+
+The full receipt and raw evidence are retained in the repository as immutable
+artifacts, including archive manifests, checksums, reports, aggregates, and the
+losslessly compressed baseline result. Together they establish the current
+authorization. Any future execution-relevant change invalidates applicability
+and requires fresh evidence plus a new authorized receipt; documentation-only
+changes must preserve the recorded canonical execution identity.
+
+### If a future full run blocks
+
+Preserve its `gate-summary.json` and resolve the recorded blockers rather than
+editing an aggregate, archive, or receipt. A verifier failure before a receipt
+exists is not evidence that it would pass. If the blocker is execution-identity
+drift, regenerate the required native-Linux evidence chain for the changed
+execution path, then rerun the full gate from a clean checkout.
+
+## Audit and Phase 1 handoff
+
+| Classification | Phase 0 asset | Phase 1 action |
+|---|---|---|
+| Retain | WIT authority, generated bindings, reproducible echo fixture | Keep as the maintained integration fixture and contract-generation foundation. |
+| Retain | `ExecutionBackend`, `CellPool`, affine `CellLease`, fixed-capacity accounting | Preserve the seams and invariants while adding production implementations. |
+| Retain | Machine-readable baseline, calibration, profile, and soak schemas | Keep as regression evidence; do not replace like-for-like comparison rules with SLO claims. |
+| Harden | Wasmtime limits, fresh-store cleanup, interruption, bounded logging | Turn spike constants into explicit policy/configuration and telemetry without weakening cleanup proof. |
+| Harden | One-entry prepared-component cache | Generalize to a bounded cache keyed by artifact, trust, and engine compatibility. |
+| Generalize | `Phase0ActivationRunner` and `phase0_composition` | Add routing, admission, release resolution, budgets, and generic invocation without retaining echo-specific dispatch. |
+| Rewrite | `latentd phase0-spike` JSON/exit-code surface | Treat it as a harness, not a public compatibility promise; replace it with Phase 1 CLI/RPC surfaces. |
+| Delete after replacement | Test-only trap/infinite-loop/memory-pressure controls and benchmark-only entry points | Remove them from product dispatch when equivalent Phase 1 containment tests exist. |
+
+Phase 1 must retain fresh invocation-owned stores, host state, import tables,
+instances, limiters, and activation contexts; fixed node topology; bounded
+state; activation-local failure containment; and affirmative cleanup proof.
+The profile decision record defers worker/cell policy and Wasmtime/cache/value
+work to #8 and #9, lifecycle-envelope work to #11, and rejects store/instance
+reuse plus untrusted AOT/cache/snapshot/native-execution shortcuts in Phase 0.
+
+## Explicit limits
+
+An authorized Phase 0 gate establishes only a local feasibility and
+measurement boundary. It does not establish production security, stable public
+APIs, generic multi-service dispatch, persistent deployment management,
+production scheduling or telemetry, performance SLOs, dormant-service density,
+multi-node operation, Kubernetes replacement, realistic workloads, or
+arbitrary-duration leak freedom. Phase 1 issue #2's Phase 0 gate dependency is
+satisfied for this canonical execution identity; it must consume this
+evidence/handoff rather than duplicate the spike.

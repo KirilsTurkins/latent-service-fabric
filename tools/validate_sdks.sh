@@ -58,5 +58,7 @@ int main(void) {
     return outcome.declared_error == 0 || !status.has_terminal_outcome;
 }
 EOF_C
+sed -i 's/^          //' "${OUTPUT}/c/header-smoke.c"
 zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
-    -fsyntax-only -I sdk/c/include "${OUTPUT}/c/header-smoke.c"
+    -I sdk/c/include "${OUTPUT}/c/header-smoke.c" -o "${OUTPUT}/c/header-smoke"
+"${OUTPUT}/c/header-smoke"
