@@ -70,19 +70,19 @@ REFERENCE_PROFILE_CANDIDATE = "worker-cell-2w-2c"
 
 DEFAULT_CALIBRATION = (
     REPOSITORY_ROOT
-    / "benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json"
+    / "benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754/aggregate.json"
 )
 DEFAULT_PROFILE_CALIBRATION = (
     REPOSITORY_ROOT
-    / "benchmarks/phase0/calibration/native-linux-2026-08-29-a724a5e3/aggregate.json"
+    / "benchmarks/phase0/calibration/native-linux-2026-08-30-52ac4754/aggregate.json"
 )
 DEFAULT_PROFILING = (
     REPOSITORY_ROOT
-    / "benchmarks/phase0/profiling/native-linux-2026-08-29-a724a5e3/aggregate.json"
+    / "benchmarks/phase0/profiling/native-linux-2026-08-30-52ac4754/aggregate.json"
 )
 DEFAULT_SOAK = (
     REPOSITORY_ROOT
-    / "benchmarks/phase0/soak/native-linux-2026-08-29-a724a5e3/aggregate.json"
+    / "benchmarks/phase0/soak/native-linux-2026-08-30-52ac4754/aggregate.json"
 )
 
 REQUIRED_CHECKS = frozenset(
