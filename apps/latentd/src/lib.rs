@@ -1165,7 +1165,7 @@ async fn invoke_prepared(
                     .await
                 {
                     Ok(CancelDisposition::Accepted) => {}
-                    Ok(CancelDisposition::AlreadyTerminal(_)) | Ok(CancelDisposition::NotFound) => {
+                    Ok(CancelDisposition::AlreadyTerminal(_) | CancelDisposition::NotFound) => {
                         eprintln!("explicit cancellation raced with completion");
                     }
                     Err(error) => {

@@ -69,4 +69,4 @@ jobs:
       - name: Validate, build, exercise, and demonstrate the spike
         env:
           LSF_SPIKE_INPUT: issue-23 executable validation
-        run: make phase0-spike-demo
+        run: env -u CARGO_INCREMENTAL make phase0-spike-demo
