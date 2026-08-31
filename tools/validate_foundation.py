@@ -20,9 +20,22 @@ GENERATED_BINDING_OWNERS: dict[str, tuple[str, ...]] = {
         "examples/echo-contract/wit",
     ),
 }
-LEGACY_BINDING_BUILD_SCRIPTS = (
-    "crates/latent-wasmtime/build.rs",
-    "tools/toolchain-smoke/build.rs",
+LEGACY_BINDING_BUILD_SCRIPTS = ("tools/toolchain-smoke/build.rs",)
+WASMTIME_TARGET_BUILD_SCRIPT = "crates/latent-wasmtime/build.rs"
+WASMTIME_TARGET_BUILD_REQUIRED_TOKENS = (
+    'std::env::var("TARGET")',
+    "cargo:rustc-env=LATENT_WASMTIME_HOST_TARGET={target}",
+)
+WASMTIME_TARGET_BUILD_FORBIDDEN_TOKENS = (
+    "OUT_DIR",
+    "stage_echo_world",
+    "copy_wit_tree",
+    "write_bindings_invocation",
+    "echo_bindings.rs",
+    "wasmtime::component::bindgen!",
+    "examples/echo-contract/wit",
+    "wit/platform/context",
+    "wit/platform/log",
 )
 GENERATED_SOURCE_SUFFIXES = {".cs", ".go", ".java", ".rs", ".ts"}
 REQUIRED_DOCS = (
@@ -160,6 +173,27 @@ def validate_generated_contract_boundaries(root: Path = ROOT) -> None:
         for token in required_tokens:
             if token not in text:
                 fail(f"generated binding owner {relative} does not reference {token}")
+
+    wasmtime_build_script = root / WASMTIME_TARGET_BUILD_SCRIPT
+    if not wasmtime_build_script.is_file():
+        fail(
+            "Wasmtime target-export build script missing: "
+            f"{WASMTIME_TARGET_BUILD_SCRIPT}"
+        )
+    else:
+        text = wasmtime_build_script.read_text(encoding="utf-8")
+        for token in WASMTIME_TARGET_BUILD_REQUIRED_TOKENS:
+            if token not in text:
+                fail(
+                    f"Wasmtime target-export build script does not reference {token}: "
+                    f"{WASMTIME_TARGET_BUILD_SCRIPT}"
+                )
+        for token in WASMTIME_TARGET_BUILD_FORBIDDEN_TOKENS:
+            if token in text:
+                fail(
+                    "Wasmtime target-export build script must not duplicate binding "
+                    f"generation ({token}): {WASMTIME_TARGET_BUILD_SCRIPT}"
+                )
 
     for relative in LEGACY_BINDING_BUILD_SCRIPTS:
         if (root / relative).exists():

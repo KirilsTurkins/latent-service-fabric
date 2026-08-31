@@ -217,6 +217,26 @@ class GeneratedBoundaryTests(unittest.TestCase):
                 any("generated language source" in error for error in foundation.ERRORS)
             )
 
+    def test_rejects_wasmtime_build_script_binding_generation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._write_foundation(root)
+            build_script = root / foundation.WASMTIME_TARGET_BUILD_SCRIPT
+            build_script.write_text(
+                'fn main() { let _ = std::env::var("OUT_DIR"); '
+                'wasmtime::component::bindgen!(); }',
+                encoding="utf-8",
+            )
+
+            foundation.validate_generated_contract_boundaries(root)
+
+            self.assertTrue(
+                any(
+                    "must not duplicate binding generation" in error
+                    for error in foundation.ERRORS
+                )
+            )
+
     @staticmethod
     def _write_foundation(root: Path) -> None:
         proto_root = root / "api/proto"
@@ -232,6 +252,13 @@ class GeneratedBoundaryTests(unittest.TestCase):
         component.parent.mkdir(parents=True)
         component.write_text(
             "OUT_DIR wit/platform/runtime examples/echo-contract/wit", encoding="utf-8"
+        )
+        wasmtime = root / foundation.WASMTIME_TARGET_BUILD_SCRIPT
+        wasmtime.parent.mkdir(parents=True)
+        wasmtime.write_text(
+            'fn main() { let target = std::env::var("TARGET").unwrap(); '
+            'println!("cargo:rustc-env=LATENT_WASMTIME_HOST_TARGET={target}"); }',
+            encoding="utf-8",
         )
 
 
