@@ -40,19 +40,11 @@ jobs:
           python tools/validate_foundation.py
           python -m unittest discover -s tools/tests
           git diff --check
-      - name: Commit requested changes
+      - name: Commit requested code and test changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm \
-            .github/workflows/pr55-requested-changes.yml \
-            tools/apply_pr55_requested_changes.py
           git add \
-            .github/workflows/ci.yml \
-            .github/workflows/issue-22-validation.yml \
-            .github/workflows/issue-23-validation.yml \
-            .github/workflows/issue-24-validation.yml \
-            .github/workflows/issue-25-validation.yml \
             crates/latent-wasmtime/build.rs \
             tools/validate_foundation.py \
             tools/tests/phase0_test_environment.py \
