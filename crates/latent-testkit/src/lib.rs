@@ -86,10 +86,7 @@ impl std::fmt::Debug for LocalInvariantProbe {
 
 impl LocalInvariantProbe {
     #[must_use]
-    pub fn new(
-        inventory: Arc<dyn InventoryReporter>,
-        telemetry: Arc<StructuredLocalSink>,
-    ) -> Self {
+    pub fn new(inventory: Arc<dyn InventoryReporter>, telemetry: Arc<StructuredLocalSink>) -> Self {
         Self {
             inventory,
             telemetry,

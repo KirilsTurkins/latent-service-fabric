@@ -11,8 +11,8 @@ use latent_executor::{
 };
 use latent_scheduler::{CellClass, CellLease, CellPool, CellPoolSnapshot};
 use latent_telemetry::{
-    ActivationLifecycleEvent, ActivationLifecycleStage, ActivationObserver, MetricKind, MetricPoint,
-    TelemetryHandle,
+    ActivationLifecycleEvent, ActivationLifecycleStage, ActivationObserver, MetricKind,
+    MetricPoint, TelemetryHandle,
 };
 
 pub struct ObservedActivationManager<M> {
@@ -102,10 +102,8 @@ impl<P> ObservedCellPool<P> {
 
     fn emit_pool_snapshot(&self, class: CellClass, observed_at: u64) {
         let snapshot = self.inner_snapshot(class);
-        let attributes = Metadata::from([(
-            "cell_class".to_owned(),
-            cell_class_name(class).to_owned(),
-        )]);
+        let attributes =
+            Metadata::from([("cell_class".to_owned(), cell_class_name(class).to_owned())]);
         for (name, value) in [
             ("latent.cell.capacity", snapshot.capacity),
             ("latent.cell.available", snapshot.available),
@@ -160,10 +158,17 @@ where
                 )]),
             });
             self.emit_pool_snapshot(class, observed_at);
-            let result = self.inner.acquire(activation_id, tenant, class, budget).await;
+            let result = self
+                .inner
+                .acquire(activation_id, tenant, class, budget)
+                .await;
             let completed_at = now_unix_millis();
             let duration = elapsed_micros(started);
-            let result_name = if result.is_ok() { "granted" } else { "rejected" };
+            let result_name = if result.is_ok() {
+                "granted"
+            } else {
+                "rejected"
+            };
             self.observer.on_lifecycle(&ActivationLifecycleEvent {
                 activation_id: activation_id.clone(),
                 stage: ActivationLifecycleStage::Queueing,
@@ -381,10 +386,7 @@ impl<B> ObservedExecutionBackend<B> {
                 MetricKind::Counter,
                 1.0,
                 "1",
-                Metadata::from([(
-                    "kind".to_owned(),
-                    interruption_name(*kind).to_owned(),
-                )]),
+                Metadata::from([("kind".to_owned(), interruption_name(*kind).to_owned())]),
                 observed_at,
             ),
             Err(error) => emit_metric(
@@ -472,10 +474,7 @@ where
                 stage: ActivationLifecycleStage::Cleanup,
                 occurred_at_unix_millis: observed_at,
                 duration_micros: None,
-                attributes: Metadata::from([(
-                    "cleanup".to_owned(),
-                    disposition.to_owned(),
-                )]),
+                attributes: Metadata::from([("cleanup".to_owned(), disposition.to_owned())]),
             });
             emit_metric(
                 &self.telemetry,

@@ -15,14 +15,11 @@ mod pipeline;
 use latent_activation::{ActivationEnvelope, ActivationEvent, ActivationOutcome, TraceContext};
 use latent_core::{ActivationId, BoxFuture, Metadata, PlatformError};
 
-pub use local::{
-    LocalSinkConfig, LocalSinkSnapshot, StructuredLocalSink, TelemetryRecord,
-};
+pub use local::{LocalSinkConfig, LocalSinkSnapshot, StructuredLocalSink, TelemetryRecord};
 pub use observer::{
     ActivationCorrelation, ActivationLifecycleEvent, ActivationLifecycleStage,
-    ActivationOutcomeClass,
-    GuestLogObserver, GuestLogRecord, NoopActivationObserver, ObserverSnapshot,
-    SharedActivationObserver, SharedActivationObserverConfig,
+    ActivationOutcomeClass, GuestLogObserver, GuestLogRecord, NoopActivationObserver,
+    ObserverSnapshot, SharedActivationObserver, SharedActivationObserverConfig,
 };
 pub use pipeline::{
     TelemetryDropReason, TelemetryHandle, TelemetryPipelineConfig, TelemetryPipelineSnapshot,
@@ -83,16 +80,11 @@ pub struct SpanRecord {
 /// backend. The shared pipeline invokes these methods from its single worker;
 /// activation threads only call the non-blocking `TelemetryHandle` methods.
 pub trait TelemetrySink: Send + Sync {
-    fn emit_metric<'a>(
-        &'a self,
-        point: MetricPoint,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn emit_metric<'a>(&'a self, point: MetricPoint) -> BoxFuture<'a, Result<(), PlatformError>>;
 
-    fn emit_log<'a>(&'a self, record: LogRecord)
-        -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn emit_log<'a>(&'a self, record: LogRecord) -> BoxFuture<'a, Result<(), PlatformError>>;
 
-    fn emit_span<'a>(&'a self, span: SpanRecord)
-        -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn emit_span<'a>(&'a self, span: SpanRecord) -> BoxFuture<'a, Result<(), PlatformError>>;
 }
 
 /// Synchronous observer contract used by activation, scheduler, and execution

@@ -117,26 +117,17 @@ impl StructuredLocalSink {
 }
 
 impl TelemetrySink for StructuredLocalSink {
-    fn emit_metric<'a>(
-        &'a self,
-        point: MetricPoint,
-    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+    fn emit_metric<'a>(&'a self, point: MetricPoint) -> BoxFuture<'a, Result<(), PlatformError>> {
         self.push(TelemetryRecord::Metric(point));
         Box::pin(async move { Ok(()) })
     }
 
-    fn emit_log<'a>(
-        &'a self,
-        record: LogRecord,
-    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+    fn emit_log<'a>(&'a self, record: LogRecord) -> BoxFuture<'a, Result<(), PlatformError>> {
         self.push(TelemetryRecord::Log(record));
         Box::pin(async move { Ok(()) })
     }
 
-    fn emit_span<'a>(
-        &'a self,
-        span: SpanRecord,
-    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+    fn emit_span<'a>(&'a self, span: SpanRecord) -> BoxFuture<'a, Result<(), PlatformError>> {
         self.push(TelemetryRecord::Span(span));
         Box::pin(async move { Ok(()) })
     }

@@ -177,10 +177,7 @@ impl NodeInventory {
                 "cache_entries".to_owned(),
                 self.cache_summary.entries.to_string(),
             ),
-            (
-                "node_fixed_resources".to_owned(),
-                fixed_helpers.to_string(),
-            ),
+            ("node_fixed_resources".to_owned(), fixed_helpers.to_string()),
             (
                 "service_resident_resources".to_owned(),
                 service_resident.to_string(),
@@ -307,9 +304,18 @@ impl StaticMemoryPressureSource {
     }
 
     pub fn set(&self, observation: NodePressureObservation) {
-        self.memory.store(clamp_milli(observation.memory_pressure_milli), Ordering::Release);
-        self.queue.store(clamp_milli(observation.queue_pressure_milli), Ordering::Release);
-        self.cache.store(clamp_milli(observation.cache_pressure_milli), Ordering::Release);
+        self.memory.store(
+            clamp_milli(observation.memory_pressure_milli),
+            Ordering::Release,
+        );
+        self.queue.store(
+            clamp_milli(observation.queue_pressure_milli),
+            Ordering::Release,
+        );
+        self.cache.store(
+            clamp_milli(observation.cache_pressure_milli),
+            Ordering::Release,
+        );
         self.telemetry.store(
             clamp_milli(observation.telemetry_pressure_milli),
             Ordering::Release,
@@ -451,7 +457,9 @@ impl StandaloneInventoryReporter {
         topology
             .entries
             .extend(self.dynamic_topology.topology().entries);
-        topology.entries.truncate(self.config.maximum_topology_entries);
+        topology
+            .entries
+            .truncate(self.config.maximum_topology_entries);
         normalize_topology(&mut topology);
         Ok(NodeInventory {
             node: self.node.clone(),
@@ -608,6 +616,9 @@ mod tests {
         assert_eq!(health.status, HealthStatus::Unhealthy);
         assert!(!health.ready);
         assert_eq!(health.reasons.len(), MAX_HEALTH_REASONS);
-        assert!(health.reasons.iter().all(|reason| reason.len() <= MAX_REASON_BYTES));
+        assert!(health
+            .reasons
+            .iter()
+            .all(|reason| reason.len() <= MAX_REASON_BYTES));
     }
 }

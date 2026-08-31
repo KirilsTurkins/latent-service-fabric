@@ -224,7 +224,9 @@ impl SharedActivationObserver {
                 state.evicted_correlations = state.evicted_correlations.saturating_add(1);
             }
         }
-        state.insertion_order.push_back(envelope.activation_id.clone());
+        state
+            .insertion_order
+            .push_back(envelope.activation_id.clone());
         state.correlations.insert(
             envelope.activation_id.clone(),
             CorrelationState {
@@ -247,10 +249,8 @@ impl SharedActivationObserver {
             correlation
         };
 
-        let metric_attributes = Metadata::from([(
-            "stage".to_owned(),
-            event.stage.as_str().to_owned(),
-        )]);
+        let metric_attributes =
+            Metadata::from([("stage".to_owned(), event.stage.as_str().to_owned())]);
         self.emit_metric(
             "latent.activation.lifecycle.events",
             MetricKind::Counter,
@@ -286,9 +286,9 @@ impl SharedActivationObserver {
             observed_at_unix_millis: event.occurred_at_unix_millis,
         });
         let ended = event.occurred_at_unix_millis.saturating_mul(1_000_000);
-        let started = event
-            .duration_micros
-            .map_or(ended, |duration| ended.saturating_sub(duration.saturating_mul(1_000)));
+        let started = event.duration_micros.map_or(ended, |duration| {
+            ended.saturating_sub(duration.saturating_mul(1_000))
+        });
         let _ = self.telemetry.try_emit_span(SpanRecord {
             name: format!("latent.activation.{}", event.stage.as_str()),
             trace: correlation.trace,
@@ -312,12 +312,13 @@ impl SharedActivationObserver {
                 .map(|state| state.correlation)
         };
         let outcome_class = classify_outcome(outcome, &self.config.domain_error_media_types);
-        let mut outcome_attributes = Metadata::from([(
-            "outcome".to_owned(),
-            outcome_class.as_str().to_owned(),
-        )]);
+        let mut outcome_attributes =
+            Metadata::from([("outcome".to_owned(), outcome_class.as_str().to_owned())]);
         if let ActivationOutcome::Failed { error, .. } = outcome {
-            outcome_attributes.insert("error_code".to_owned(), error_code_name(error.code).to_owned());
+            outcome_attributes.insert(
+                "error_code".to_owned(),
+                error_code_name(error.code).to_owned(),
+            );
         }
         self.emit_metric(
             "latent.activation.outcomes",
@@ -361,7 +362,10 @@ impl SharedActivationObserver {
                 "terminal_state".to_owned(),
                 bounded(&format!("{terminal_state:?}"), MAX_CORRELATION_VALUE_BYTES),
             );
-            attributes.insert("error_code".to_owned(), error_code_name(error.code).to_owned());
+            attributes.insert(
+                "error_code".to_owned(),
+                error_code_name(error.code).to_owned(),
+            );
             self.lifecycle(&ActivationLifecycleEvent {
                 activation_id: activation_id.clone(),
                 stage: ActivationLifecycleStage::Failure,
@@ -613,7 +617,10 @@ fn emit_consumption_metrics(
         ("peak_memory_bytes", consumption.peak_memory_bytes as f64),
         ("wall_time_micros", consumption.wall_time_micros as f64),
         ("child_calls", f64::from(consumption.child_calls)),
-        ("outbound_requests", f64::from(consumption.outbound_requests)),
+        (
+            "outbound_requests",
+            f64::from(consumption.outbound_requests),
+        ),
         ("state_read_bytes", consumption.state_read_bytes as f64),
         ("state_write_bytes", consumption.state_write_bytes as f64),
         ("blob_read_bytes", consumption.blob_read_bytes as f64),
@@ -637,7 +644,10 @@ fn emit_consumption_metrics(
 }
 
 fn add_consumption_attributes(attributes: &mut Metadata, consumption: &BudgetConsumption) {
-    attributes.insert("consumption.cpu_fuel".to_owned(), consumption.cpu_fuel.to_string());
+    attributes.insert(
+        "consumption.cpu_fuel".to_owned(),
+        consumption.cpu_fuel.to_string(),
+    );
     attributes.insert(
         "consumption.peak_memory_bytes".to_owned(),
         consumption.peak_memory_bytes.to_string(),
@@ -646,7 +656,10 @@ fn add_consumption_attributes(attributes: &mut Metadata, consumption: &BudgetCon
         "consumption.wall_time_micros".to_owned(),
         consumption.wall_time_micros.to_string(),
     );
-    attributes.insert("consumption.log_bytes".to_owned(), consumption.log_bytes.to_string());
+    attributes.insert(
+        "consumption.log_bytes".to_owned(),
+        consumption.log_bytes.to_string(),
+    );
 }
 
 fn correlation_attributes(correlation: &ActivationCorrelation) -> Metadata {
@@ -674,7 +687,10 @@ fn correlation_attributes(correlation: &ActivationCorrelation) -> Metadata {
     attributes
 }
 
-fn lifecycle_attributes(attributes: &Metadata, config: &SharedActivationObserverConfig) -> Metadata {
+fn lifecycle_attributes(
+    attributes: &Metadata,
+    config: &SharedActivationObserverConfig,
+) -> Metadata {
     const ALLOWED: [&str; 6] = [
         "cell_class",
         "cleanup",
@@ -751,19 +767,13 @@ fn sensitive_name(name: &str) -> bool {
     .any(|marker| lower.contains(marker))
 }
 
-fn sanitized_trace(
-    trace: &TraceContext,
-    config: &SharedActivationObserverConfig,
-) -> TraceContext {
+fn sanitized_trace(trace: &TraceContext, config: &SharedActivationObserverConfig) -> TraceContext {
     TraceContext {
         trace_id: latent_core::TraceId(bounded(
             &trace.trace_id.0,
             config.maximum_field_value_bytes,
         )),
-        span_id: latent_core::SpanId(bounded(
-            &trace.span_id.0,
-            config.maximum_field_value_bytes,
-        )),
+        span_id: latent_core::SpanId(bounded(&trace.span_id.0, config.maximum_field_value_bytes)),
         trace_flags: trace.trace_flags,
         baggage: Metadata::new(),
     }
@@ -812,7 +822,10 @@ fn error_code_name(code: PlatformErrorCode) -> &'static str {
 }
 
 fn remove_from_order(order: &mut VecDeque<ActivationId>, activation_id: &ActivationId) {
-    if let Some(position) = order.iter().position(|candidate| candidate == activation_id) {
+    if let Some(position) = order
+        .iter()
+        .position(|candidate| candidate == activation_id)
+    {
         order.remove(position);
     }
 }

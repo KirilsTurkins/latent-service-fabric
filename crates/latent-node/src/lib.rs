@@ -13,13 +13,9 @@ pub use inventory::{
     CacheInventorySource, CellClassCapacity, EmptyCacheInventorySource, HealthStatus,
     InventoryReporter, MemoryPressureSource, MutableNodeHealthSource, NodeCacheSummary,
     NodeDescriptor, NodeDirectory, NodeHealthObservation, NodeHealthSource, NodeHeartbeat,
-    NodeInventory, NodePressureObservation, NodeRegistrar,
-    NodeResourceTopology, NodeTopologyEntry, NodeTopologySource, ResourceOwnership,
-    RouteGenerationSource,
-    RouteWatcher,
+    NodeInventory, NodePressureObservation, NodeRegistrar, NodeResourceTopology, NodeTopologyEntry,
+    NodeTopologySource, ResourceOwnership, RouteGenerationSource, RouteWatcher,
     StandaloneInventoryConfig, StandaloneInventoryReporter, StaticMemoryPressureSource,
     StaticRouteGenerationSource,
 };
-pub use observability::{
-    ObservedActivationManager, ObservedCellPool, ObservedExecutionBackend,
-};
+pub use observability::{ObservedActivationManager, ObservedCellPool, ObservedExecutionBackend};

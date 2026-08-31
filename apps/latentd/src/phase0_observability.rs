@@ -104,7 +104,9 @@ impl Phase0NodeObservability {
             workers: workers.clone(),
         });
         let routes = Arc::new(StaticRouteGenerationSource::new(config.route_generation));
-        let pressure = Arc::new(StaticMemoryPressureSource::new(NodePressureObservation::default()));
+        let pressure = Arc::new(StaticMemoryPressureSource::new(
+            NodePressureObservation::default(),
+        ));
         let health = Arc::new(MutableNodeHealthSource::new(NodeHealthObservation {
             status: HealthStatus::Healthy,
             ready: true,
@@ -255,11 +257,7 @@ impl NodeTopologySource for Phase0TopologySource {
                     "component-instance",
                     live_component_instances,
                 ),
-                activation_resource(
-                    "temporary-buffers",
-                    "memory-buffer",
-                    live_temporary_buffers,
-                ),
+                activation_resource("temporary-buffers", "memory-buffer", live_temporary_buffers),
                 activation_resource(
                     "cancellation-probes",
                     "cancellation-probe",
@@ -271,8 +269,7 @@ impl NodeTopologySource for Phase0TopologySource {
                     ownership: ResourceOwnership::NodeFixed,
                     configured_count: u64::try_from(self.workers.active_workers())
                         .unwrap_or(u64::MAX),
-                    active_count: u64::try_from(self.workers.active_workers())
-                        .unwrap_or(u64::MAX),
+                    active_count: u64::try_from(self.workers.active_workers()).unwrap_or(u64::MAX),
                     attributes: Metadata::new(),
                 },
             ],

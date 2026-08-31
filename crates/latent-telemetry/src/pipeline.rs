@@ -121,18 +121,9 @@ impl TelemetryHandle {
                 .saturating_sub(self.sender.capacity()),
             accepted: self.counters.accepted.load(Ordering::Relaxed),
             exported: self.counters.exported.load(Ordering::Relaxed),
-            dropped_queue_full: self
-                .counters
-                .dropped_queue_full
-                .load(Ordering::Relaxed),
-            dropped_queue_closed: self
-                .counters
-                .dropped_queue_closed
-                .load(Ordering::Relaxed),
-            dropped_invalid_record: self
-                .counters
-                .dropped_invalid_record
-                .load(Ordering::Relaxed),
+            dropped_queue_full: self.counters.dropped_queue_full.load(Ordering::Relaxed),
+            dropped_queue_closed: self.counters.dropped_queue_closed.load(Ordering::Relaxed),
+            dropped_invalid_record: self.counters.dropped_invalid_record.load(Ordering::Relaxed),
             sink_failures: self.counters.sink_failures.load(Ordering::Relaxed),
         }
     }
@@ -199,10 +190,15 @@ impl TelemetryHandle {
         self.sender
             .send(PipelineCommand::Flush(sender))
             .await
-            .map_err(|_| pipeline_error(PlatformErrorCode::Unavailable, "telemetry worker is closed"))?;
-        receiver
-            .await
-            .map_err(|_| pipeline_error(PlatformErrorCode::Unavailable, "telemetry flush was interrupted"))
+            .map_err(|_| {
+                pipeline_error(PlatformErrorCode::Unavailable, "telemetry worker is closed")
+            })?;
+        receiver.await.map_err(|_| {
+            pipeline_error(
+                PlatformErrorCode::Unavailable,
+                "telemetry flush was interrupted",
+            )
+        })
     }
 
     fn try_submit(&self, command: PipelineCommand, valid: bool) -> Result<bool, PlatformError> {
@@ -253,7 +249,10 @@ impl std::fmt::Debug for TelemetryRuntime {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
             .debug_struct("TelemetryRuntime")
-            .field("worker_finished", &self.task.as_ref().is_none_or(JoinHandle::is_finished))
+            .field(
+                "worker_finished",
+                &self.task.as_ref().is_none_or(JoinHandle::is_finished),
+            )
             .finish()
     }
 }
@@ -308,7 +307,9 @@ impl TelemetryRuntime {
         self.sender
             .send(PipelineCommand::Shutdown(sender))
             .await
-            .map_err(|_| pipeline_error(PlatformErrorCode::Unavailable, "telemetry worker is closed"))?;
+            .map_err(|_| {
+                pipeline_error(PlatformErrorCode::Unavailable, "telemetry worker is closed")
+            })?;
         receiver.await.map_err(|_| {
             pipeline_error(
                 PlatformErrorCode::Unavailable,
