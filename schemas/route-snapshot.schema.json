@@ -1,16 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://latent.dev/schemas/v1alpha1/route-snapshot.schema.json",
-  "title": "LSF Compiled Route Snapshot",
+  "$id": "https://latent-service-fabric.dev/schemas/route-snapshot.schema.json",
+  "title": "Immutable Local Route Snapshot",
+  "description": "A complete tenant-safe standalone routing generation. Readers replace this document as one unit.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "generation",
     "generatedAtUnixMillis",
+    "snapshotDigest",
     "services",
     "bindings",
-    "policyDigests",
-    "snapshotDigest"
+    "policyDigests"
   ],
   "properties": {
     "generation": {
@@ -21,134 +22,106 @@
       "type": "integer",
       "minimum": 0
     },
+    "snapshotDigest": {
+      "type": "string",
+      "pattern": "^blake3:[0-9a-f]{64}$"
+    },
     "services": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "routeId",
-          "tenant",
-          "service",
-          "revisions"
-        ],
-        "properties": {
-          "routeId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "tenant": {
-            "type": "string",
-            "minLength": 1
-          },
-          "service": {
-            "type": "string",
-            "minLength": 1
-          },
-          "revisions": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "revisionId",
-                "releaseDigest",
-                "weight",
-                "attributes"
-              ],
-              "properties": {
-                "revisionId": {
-                  "type": "string",
-                  "minLength": 1
-                },
-                "releaseDigest": {
-                  "type": "string",
-                  "pattern": "^sha256:[a-fA-F0-9]{64}$"
-                },
-                "weight": {
-                  "type": "integer",
-                  "minimum": 0,
-                  "maximum": 10000
-                },
-                "attributes": {
-                  "type": "object",
-                  "additionalProperties": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+      "items": { "$ref": "#/$defs/serviceRoute" }
     },
     "bindings": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "bindingId",
-          "consumerTenant",
-          "consumerService",
-          "importedContract",
-          "providerTenant",
-          "providerService",
-          "providerContract",
-          "mode",
-          "policyDigest"
-        ],
-        "properties": {
-          "bindingId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "consumerTenant": {
-            "type": "string",
-            "minLength": 1
-          },
-          "consumerService": {
-            "type": "string",
-            "minLength": 1
-          },
-          "importedContract": {
-            "type": "string",
-            "minLength": 1
-          },
-          "providerTenant": {
-            "type": "string",
-            "minLength": 1
-          },
-          "providerService": {
-            "type": "string",
-            "minLength": 1
-          },
-          "providerContract": {
-            "type": "string",
-            "minLength": 1
-          },
-          "mode": {
-            "type": "string",
-            "minLength": 1
-          },
-          "policyDigest": {
-            "type": "string",
-            "minLength": 1
-          }
-        }
-      }
+      "items": { "$ref": "#/$defs/bindingRoute" }
     },
     "policyDigests": {
       "type": "array",
-      "items": {
-        "type": "string",
-        "minLength": 1
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "serviceRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "tenant", "service", "route", "revisions"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "tenant": { "type": "string", "minLength": 1 },
+        "service": { "type": "string", "minLength": 1 },
+        "route": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "revisions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/revisionRoute" }
+        }
       }
     },
-    "snapshotDigest": {
-      "type": "string",
-      "minLength": 1
+    "revisionRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "release", "weight", "contracts", "attributes"],
+      "properties": {
+        "revision": { "type": "string", "minLength": 1 },
+        "release": { "type": "string", "minLength": 1 },
+        "weight": { "type": "integer", "minimum": 1, "maximum": 10000 },
+        "contracts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/routeContract" }
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "routeContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "functions"],
+      "properties": {
+        "contract": { "type": "string", "minLength": 1 },
+        "functions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "bindingRoute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "consumerTenant",
+        "consumerService",
+        "importedContract",
+        "providerTenant",
+        "providerService",
+        "providerContract",
+        "mode",
+        "policyDigest"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "consumerTenant": { "type": "string", "minLength": 1 },
+        "consumerService": { "type": "string", "minLength": 1 },
+        "importedContract": { "type": "string", "minLength": 1 },
+        "providerTenant": { "type": "string", "minLength": 1 },
+        "providerService": { "type": "string", "minLength": 1 },
+        "providerContract": { "type": "string", "minLength": 1 },
+        "mode": {
+          "enum": ["host", "inline", "isolated-local", "remote", "auto"]
+        },
+        "policyDigest": { "type": "string", "minLength": 1 }
+      }
     }
   }
 }

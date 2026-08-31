@@ -719,13 +719,19 @@ version = "0.1.0-alpha.1"
 name = "latent-control-store"
 version = "0.1.0-alpha.1"
 dependencies = [
+ "blake3",
  "latent-artifacts",
  "latent-audit",
+ "latent-contracts",
  "latent-core",
  "latent-manifest",
  "latent-node",
  "latent-policy",
  "latent-routing",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
