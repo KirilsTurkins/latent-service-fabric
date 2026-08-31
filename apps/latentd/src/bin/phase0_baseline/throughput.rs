@@ -198,12 +198,12 @@ async fn wait_for_activation_saturation(
     expected_queue: u32,
     timeout_ms: u64,
     poll_interval_ms: u64,
-) -> Result<(), BenchError> {
+) -> Result<CellPoolSnapshot, BenchError> {
     let deadline = tokio::time::Instant::now() + Duration::from_millis(timeout_ms);
     loop {
         let snapshot = pool.observations();
         if snapshot.active_leases == expected_active && snapshot.queue_depth == expected_queue {
-            return Ok(());
+            return Ok(snapshot);
         }
         if tokio::time::Instant::now() >= deadline {
             return Err(BenchError::new(format!(
@@ -437,10 +437,16 @@ async fn run_throughput_mode(
         let (batch_maximum_active, batch_maximum_queue) = monitor.await.map_err(|error| {
             BenchError::new(format!("activation throughput monitor failed: {error}"))
         })?;
-        saturation_result?;
-        maximum_observed_active_leases =
-            maximum_observed_active_leases.max(batch_maximum_active);
-        maximum_observed_queue_depth = maximum_observed_queue_depth.max(batch_maximum_queue);
+        let saturation_snapshot = saturation_result?;
+        // The coordinator captures the exact state while the gate remains closed.
+        // Merge that stable proof with the independently scheduled monitor, which
+        // can otherwise miss the interval between the proof and the gate release.
+        maximum_observed_active_leases = maximum_observed_active_leases
+            .max(batch_maximum_active)
+            .max(saturation_snapshot.active_leases);
+        maximum_observed_queue_depth = maximum_observed_queue_depth
+            .max(batch_maximum_queue)
+            .max(saturation_snapshot.queue_depth);
 
         let elapsed = duration_micros(batch_started.elapsed());
         batch_micros.push(elapsed);
