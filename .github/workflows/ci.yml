@@ -1,6 +1,10 @@
 name: CI
 
 on:
+  pull_request:
+  push:
+    branches:
+      - development
   workflow_dispatch:
 
 permissions:
@@ -20,8 +24,11 @@ jobs:
         run: cargo fmt --all --check
       - name: Check workspace
         run: cargo check --workspace --all-targets --all-features --locked
-      - name: Check generated guest bindings
+      - name: Check generated RPC and Component Model bindings
         run: |
+          cargo check -p latent-rpc --all-targets --all-features --locked
+          cargo check -p latent-component-bindings --locked
+          cargo check -p latent-component-bindings --target wasm32-wasip2 --locked
           cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
           cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
       - name: Run Clippy

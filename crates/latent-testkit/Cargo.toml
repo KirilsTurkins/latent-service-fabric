@@ -16,6 +16,7 @@ latent-activation = { path = "../latent-activation" }
 latent-executor = { path = "../latent-executor" }
 latent-node = { path = "../latent-node" }
 latent-telemetry = { path = "../latent-telemetry" }
+tokio.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

@@ -18,6 +18,8 @@
 | `latent:service` | Component-to-component invocation |
 | `latent:platform/capsule` | Aggregate platform world |
 
+Rust bindings for the aggregate runtime world and maintained echo fixture are generated into Cargo `OUT_DIR` by `latent-component-bindings`. The executable echo guest generates its canonical ABI exports in the final component crate from the same authoritative WIT.
+
 ## Protobuf services
 
 | Service | Purpose |
@@ -34,10 +36,14 @@
 | `RouteService` | Retrieve and watch immutable route snapshots |
 | `InvocationService` | Generic invocation, cancellation, and activation status |
 
+`latent-rpc` generates Rust messages, Tonic clients, Tonic server traits/wrappers, and an embedded descriptor set for every checked-in Protobuf file. It contains no listener or service implementation.
+
 ## Rust internal interfaces
 
 | Crate | Primary seams |
 |---|---|
+| `latent-rpc` | generated Protobuf messages, Tonic clients/servers, descriptor set |
+| `latent-component-bindings` | shared generated runtime/echo Component Model bindings |
 | `latent-artifacts` | `ArtifactRepository`, `ArtifactCache`, `ArtifactVerifier` |
 | `latent-contracts` | `ContractRegistry`, `CompatibilityChecker`, `BindingCompiler` |
 | `latent-policy` | `PolicyEngine`, `PolicyRepository` |
@@ -46,7 +52,7 @@
 | `latent-scheduler` | open `CellPool`, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `CellPoolSnapshot`, `ActivationScheduler`, `ClusterPlacement` |
 | `latent-activation` | `ActivationManager`, `ActivationJournal` |
 | `latent-executor` | `ExecutionBackend`, backend registry and cancellation |
-| `latent-wasmtime` | engine factory, AOT compiler/cache/validator |
+| `latent-wasmtime` | engine factory, AOT compiler/cache/validator, shared echo host bindings |
 | `latent-capabilities` | provider, broker, registry, handle model |
 | `latent-blobs` | large-value storage, leases, and transfer |
 | `latent-identity` | authentication, authorization, delegation, node identity |
@@ -62,7 +68,7 @@
 | `latent-control-store` | desired-state persistence seams |
 | `latent-telemetry` | telemetry sink and activation observer |
 | `latent-audit` | audit store and publisher |
-| `latent-testkit` | conformance suite and invariant probes |
+| `latent-testkit` | conformance suite, deterministic async/process/resource utilities, invariant probes |
 
 ## Declarative schemas
 
@@ -70,4 +76,4 @@ The JSON Schemas in `schemas/` define capsules, deployments, bindings, policies,
 
 ## Language SDKs
 
-The Rust, Go, .NET, Java, TypeScript, and C directories define client and guest context surfaces only. Transport and code generation remain open implementation choices.
+The Rust, Go, .NET, Java, TypeScript, and C directories define client and guest context surfaces. Transport-facing generated Rust is owned centrally by `latent-rpc`; cross-language transport generation remains a later implementation choice.

@@ -1,60 +1,51 @@
-# Phase 0 toolchain baseline
+# Toolchain and reproducibility baseline
 
-The Phase 0 baseline makes the interface scaffold executable, builds the first
-Rust-authored echo Component Model fixture, and establishes a narrow local
-Wasmtime feasibility spike. It does not implement a production service runtime.
-Exact project-selected versions live in
-[`tools/toolchain.toml`](../../tools/toolchain.toml); Rust dependency resolution
-is frozen by the committed root `Cargo.lock`.
+The executable build foundation uses exact project-selected versions from `tools/toolchain.toml` and the committed root `Cargo.lock`. It preserves the Phase 0 Component Model feasibility path while adding maintained Protobuf RPC generation, centralized WIT bindings, tracing dependencies, and reusable test infrastructure. It does not implement a production service runtime.
+
+See [build-foundation.md](build-foundation.md) for generation ownership, focused commands, test utilities, dependency-cycle validation, and the clean-checkout Phase 1 sequence.
 
 ## Selected versions
 
 | Area | Version | Purpose |
 | --- | ---: | --- |
-| Rust toolchain | 1.97.1 | Default formatter, compiler, Clippy, tests, and echo-component build |
+| Rust toolchain | 1.97.1 | Default formatter, compiler, Clippy, tests, code generation, and component build |
 | Rust MSRV | 1.94.1 | Oldest compiler checked for all native workspace targets |
-| Rust binding-check target | `wasm32-wasip2` | Compile generated guest bindings against the preview-2 target |
-| Rust component-core target | `wasm32-unknown-unknown` | Build a self-contained core module before explicit Component Model wrapping |
-| Wasmtime | 47.0.3 | Host-side Component Model engine, generated bindings, and Phase 0 echo execution |
-| `wit-bindgen` | 0.60.0 | Guest-side Rust bindings and canonical ABI exports generated from WIT |
-| Tokio | 1.53.1 | Selected async runtime for the Phase 0 spike and Phase 1 runtime work |
+| Rust binding-check target | `wasm32-wasip2` | Compile generated Rust guest bindings against Preview 2 |
+| Rust component-core target | `wasm32-unknown-unknown` | Build self-contained cores before explicit componentization |
+| Tokio | 1.53.1 | Async runtime dependency and explicit current-thread test runtime |
+| Prost | 0.14.4 | Generated Protobuf message implementation |
+| Tonic / `tonic-prost` | 0.14.6 / 0.14.6 | Generated RPC clients, servers, and Prost codec |
+| `tonic-prost-build` | 0.14.6 | Build-time Rust generation from every authoritative `.proto` |
+| `protoc-bin-vendored` | 3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
+| Tracing / tracing-subscriber | 0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
+| Wasmtime | 47.0.3 | Component Model host bindings and Phase 0 execution backend |
+| `wit-bindgen` | 0.60.0 | Guest bindings and canonical ABI exports generated from WIT |
 | Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
-| TOML | 1.1.4 | Configuration parsing and serialization; the published crate carries `+spec-1.1.0` build metadata |
-| BLAKE3 | 1.8.5 | Runtime cache keys and prepared-component identity |
-| SHA-256 (`sha2`) | 0.10.9 | Component digest verification against generated capsule metadata |
-| Clap | 4.6.4 | CLI surfaces |
-| `tempfile` | 3.27.0 | Test-only temporary storage |
-| `wasm-tools` | 1.254.0 | WIT parsing, component validation, explicit componentization, and interface extraction |
-| Buf | 1.72.0 | Protobuf linting and descriptor-set generation |
-| Python / `jsonschema` | 3.13.5 / 4.26.0 | Repository, generated capsule, and Draft 2020-12 schema validation |
-| `zstd` | system utility | Lossless verification of checked-in Phase 0 raw-evidence archives during repository/gate tests |
+| TOML | 1.1.4 | Configuration parsing and serialization |
+| BLAKE3 / SHA-256 | 1.8.5 / 0.10.9 | Cache/prepared identity and artifact digest verification |
+| Clap / `tempfile` | 4.6.4 / 3.27.0 | CLI surfaces and test-only temporary storage |
+| `wasm-tools` | 1.254.0 | WIT parsing, validation, componentization, and interface extraction |
+| Buf | 1.72.0 | Protobuf linting and independent descriptor-set generation |
+| Python / `jsonschema` | 3.13.5 / 4.26.0 | Repository and Draft 2020-12 schema validation |
 | Go / Node / TypeScript / .NET | 1.23.2 / 22.16.0 / 5.8.3 / 8.0.423 | Cross-language interface compilation |
-| Eclipse Temurin JDK | 21.0.11+10 | Exact Java compiler and runtime distribution (`setup-java` selector `21.0.11+10.0.LTS`) |
-| Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Exact bundled C frontend for the C11 header smoke test |
+| Eclipse Temurin JDK | 21.0.11+10 | Java SDK compilation |
+| Zig / Clang / C target | 0.16.0 / 21.1.0 / `x86_64-linux-gnu` | Pinned C11 header smoke test |
 
-Workspace dependencies are exact requirements in the root `Cargo.toml`. Phase 0 targets consume them with `workspace = true` rather than selecting independent versions. Cargo ignores SemVer build metadata in dependency requirements, so the TOML requirement is deliberately written as `=1.1.4`; the resolved package recorded in `Cargo.lock` may display `1.1.4+spec-1.1.0`.
+Workspace dependencies are exact requirements and workspace crates consume them with `workspace = true`. Cargo ignores SemVer build metadata in requirements, so TOML is pinned as `=1.1.4`; the resolved package may display `1.1.4+spec-1.1.0` in `Cargo.lock`.
 
 ## Reproducibility boundary
 
-CI uses the explicit `ubuntu-24.04` hosted-runner label instead of `ubuntu-latest`. Language and contract compilers are installed at the exact versions above and `tools/check_tool_versions.py` verifies the installed binaries before the SDK surfaces compile. The C check does not use the runner-provided `cc`; it uses Zig 0.16.0's bundled Clang 21.1.0 frontend with the explicit `x86_64-linux-gnu` target and C11 mode. Runner-provided shell and filesystem utilities remain outside the compiler identity boundary.
+CI uses `ubuntu-24.04`, not a floating runner label. Rust, contract tools, and language compilers are installed at the exact versions above. `tools/check_tool_versions.py` validates installed SDK compilers. TypeScript is pinned in both `package.json` and `package-lock.json` and installed with `npm ci`.
 
-TypeScript is pinned by both `package.json` and `package-lock.json`. The SDK validation installs with `npm ci` and then verifies the local compiler version against `tools/toolchain.toml`; the CI workflow therefore does not duplicate the TypeScript version as an unrelated literal.
+Rust Protobuf generation uses `protoc-bin-vendored`; the build does not depend on a runner or workstation `protoc`. The exhaustive `api/proto/latent-api.protos` manifest and foundation validator prevent undeclared input drift. Generated RPC and WIT source is written only to Cargo `OUT_DIR` and is recreated from authoritative inputs on each clean build.
 
-The echo build tool requires the active Rust and `wasm-tools` versions to equal the baseline. It removes ambient `RUSTFLAGS`, `CARGO_ENCODED_RUSTFLAGS`, and `CARGO_TARGET_DIR` from the child Cargo environment; disables incremental compilation; fixes release codegen units, debug information, stripping, locale, timezone, and `SOURCE_DATE_EPOCH`; and always uses the committed lockfile. It compiles a self-contained core for `wasm32-unknown-unknown`, wraps that core explicitly with `wasm-tools component new`, validates the resulting component, and rejects any import/export surface beyond the two declared Phase 0 host capabilities and echo export. `make echo-capsule-reproducibility` performs two isolated clean core-build-and-componentization passes and compares the complete component bytes before publishing the generated output.
+The echo build removes ambient Rust flags and target-directory overrides from child Cargo processes, disables incremental compilation, fixes release settings, uses the committed lockfile, builds a `wasm32-unknown-unknown` core, wraps it with the pinned `wasm-tools`, validates the result, and rejects interface drift. `make echo-capsule-reproducibility` performs two isolated clean builds and compares complete component bytes.
 
-The Phase 0 reproducibility claim is deliberately bounded: byte identity is verified for the same checkout and source path on the same host platform with the pinned compiler, target, lockfile, and canonical release settings. Cross-platform byte identity is not claimed.
+The Phase 0 reproducibility claim remains same-checkout, same-host, pinned-toolchain byte identity. Cross-platform byte identity is not claimed. The retained native collector receipt and benchmark evidence are documented in [Phase 0 completion](../phase-0-completion.md).
 
-The native Phase 0 collector has a separate, path-remapped release recipe. Two
-different clean checkout roots on the same host with the pinned toolchain and
-Cargo home produced the same `phase0-baseline` executable: 137,715,192 bytes,
-SHA-256 `b11f17f4b78e710b14dfc1f7fd26ecc26853307cf82bf7e12da7ae9cc376e7d3`,
-and GNU build ID `916fe8d1c0dbf55168a6bb766caab2109007a40c`. This is a
-same-host reproducibility result; cross-host and cross-platform byte identity
-are not claimed.
+## Clean-checkout validation
 
-## Clean-checkout validation sequence
-
-The supported reference environment is Linux or WSL. Install the versions above, then run this sequence from a clean checkout:
+The supported reference environment is Linux or WSL. Install the selected toolchains, create the Python environment, then run:
 
 ```bash
 python3.13 -m venv .venv
@@ -63,113 +54,41 @@ python -m pip install --requirement tools/requirements.lock
 make validate
 ```
 
-### Linux and WSL boundary
+`make validate` executes formatting, locked workspace checks, Clippy, tests, repository/foundation/contract validation, retained echo and containment integration, and all SDK compilation. `make phase1-foundation` runs the Rust and contract subset. A missing or stale `Cargo.lock` fails all locked commands.
 
-Linux or WSL may run `make validate`, `make phase0-gate-smoke`, and the full
-`make phase0-gate` receipt validation. Only a clean native-Linux host or VM may
-create replacement calibration, profiling, or resource-soak evidence: the
-evidence wrappers deliberately reject WSL and containers because those
-measurements establish a host-specific native-Linux reference.
-
-For a full authorization attempt, inspect the same cleanliness condition the
-gate enforces before starting:
-
-```bash
-git status --porcelain --untracked-files=all
-```
-
-Use an isolated clone or worktree if this prints anything. The gate's own root
-`target/phase0-gate/` output is ignored; unrelated untracked files are not and
-can block the receipt.
-
-`make validate` executes, in order through its prerequisites:
-
-```bash
-cargo fmt --all --check
-cargo check --workspace --all-targets --all-features --locked
-cargo clippy --workspace --all-targets --all-features --locked
-cargo test --workspace --all-targets --all-features --locked
-tools/validate_contracts.sh
-tools/validate_sdks.sh
-```
-
-The complete executable Phase 0 gate adds repository-tool tests, the real
-`latentd phase0-spike` containment path, a fresh full baseline, and the
-retained-evidence receipt:
-
-```bash
-make phase0-gate
-```
-
-It requires `zstd` for archive-integrity tests and returns non-zero whenever a
-run's receipt is not `authorized`. The retained clean-checkout native-Linux
-[August 30 receipt](../../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
-records `pass`, `authorized`, and zero blockers for the current canonical
-execution identity. The August 29 receipt remains historical. See
-[`../phase-0-completion.md`](../phase-0-completion.md) for the current status.
-
-`tools/validate_contracts.sh` compiles the generated echo and oversized-log bindings for `wasm32-wasip2`, builds each authority-free core for `wasm32-unknown-unknown`, wraps each core with `wasm-tools component new`, requires byte-identical echo output across two clean builds, validates both components, extracts the echo interface, rejects any import/export drift, emits generated capsule metadata with the actual SHA-256 digest, and executes the oversized canonical-ABI host-call-fuel regression through the Wasmtime backend.
-
-The root lockfile is authoritative. Neither local validation nor CI generates or substitutes a dependency graph; a missing or stale `Cargo.lock` causes the `--locked` commands and repository validator to fail.
-
-The MSRV check used by CI can also be reproduced explicitly:
+The MSRV check is reproducible with:
 
 ```bash
 rustup toolchain install 1.94.1 --profile minimal
 cargo +1.94.1 check --workspace --all-targets --all-features --locked
 ```
 
-The Rust toolchain file installs `rustfmt`, Clippy, `wasm32-wasip2`, and `wasm32-unknown-unknown`. Install the remaining contract tools at the selected versions, for example with `cargo install wasm-tools --version 1.254.0 --locked` and the Buf 1.72.0 release binary. Verify prerequisite resolution before validation with:
+Install the remaining contract tools at their selected versions, for example `cargo install wasm-tools --version 1.254.0 --locked` and Buf 1.72.0. The Rust toolchain file installs `rustfmt`, Clippy, `wasm32-wasip2`, and `wasm32-unknown-unknown`.
+
+## Linux and evidence boundary
+
+Linux or WSL may run `make validate`, `make phase0-gate-smoke`, and `make phase0-gate`. Only a clean native-Linux host or VM may create replacement calibration, profiling, or resource-soak evidence; those wrappers reject WSL and containers because the measurements establish a native-host reference.
+
+Before a full authorization attempt, verify:
 
 ```bash
-rustc --version
-cargo --version
-wasm-tools --version
-buf --version
-python --version
-go version
-node --version
-node sdk/typescript-client/node_modules/typescript/bin/tsc --version
-javac -version
-java -XshowSettings:properties -version
-dotnet --version
-zig version
+git status --porcelain --untracked-files=all
 ```
 
-## Echo component commands
-
-Build and validate one generated artifact:
-
-```bash
-make echo-capsule
-```
-
-Verify the documented reproducibility boundary:
-
-```bash
-make echo-capsule-reproducibility
-```
-
-The direct command accepts `CARGO`, `RUSTC`, and `WASM_TOOLS` executable overrides and an optional output directory:
-
-```bash
-python3 tools/build_echo_capsule.py --verify-reproducible
-```
+The retained August 30 Phase 0 receipt records an authorized pass for its canonical execution identity. It remains historical evidence; the build foundation does not modify the measured thresholds or results.
 
 ## Generated-output policy
 
-Handwritten Rust, WIT, Protobuf, JSON Schema, examples, and SDK files remain authoritative. Build tooling writes only to Cargo `OUT_DIR`, `target/contracts/`, or `target/capsules/`:
+Handwritten Rust, WIT, Protobuf, JSON Schema, examples, and SDK sources remain authoritative. Generated output is restricted to Cargo `OUT_DIR`, `target/contracts/`, `target/capsules/`, and SDK compiler directories:
 
-- `tools/toolchain-smoke/build.rs` stages the runtime world and its local WIT dependencies under `OUT_DIR`, then compiles host or guest bindings from that staged tree.
-- The `echo-capsule` target generates bindings directly from `examples/echo-contract/wit/echo.wit` and the checked-in context and log WIT packages. It does not copy or hand-maintain ABI types.
-- `tools/build_echo_capsule.py` writes the validated component, extracted WIT/JSON interface, computed digest, generated capsule manifest, and stable local-build receipt under `target/capsules/echo/`.
-- `tools/stage_runtime_wit.py` creates the equivalent deterministic layout for command-line contract validation.
-- `wasm-tools` JSON output, the Protobuf descriptor set, SDK compiler output, and C header smoke source are placed under `target/contracts/`.
+- `crates/latent-rpc/build.rs` generates all Protobuf messages, clients, servers, and the embedded descriptor set;
+- `crates/latent-component-bindings/build.rs` stages the aggregate runtime and echo WIT worlds and emits shared host/guest binding invocations;
+- the echo guest fixture generates canonical ABI exports in its final component crate from authoritative WIT;
+- `tools/build_echo_capsule.py` emits the validated component, extracted interface, computed digest, generated manifest, and build receipt;
+- `tools/stage_runtime_wit.py`, `wasm-tools`, and Buf emit validation artifacts under `target/contracts/`.
 
-No generated echo binary is checked in. The checked-in `examples/echo-contract/capsule.json` remains a schema-valid contract example with a placeholder digest; the generated copy replaces that digest with the artifact's actual SHA-256 value.
-
-The repository validator excludes known generated directories but continues to inspect every authoritative source file. Its traversal behavior and the echo build tool have unit tests under `tools/tests/`.
+No generated component binary or generated transport source is checked in. The foundation validator checks authority boundaries, generation ownership, exhaustive Protobuf inputs, and the absence of superseded duplicate build scripts.
 
 ## Allocation boundary
 
-The build and validation foundation compiles files and starts only compiler/validator subprocesses. It does not create a Wasmtime engine or store, an async runtime, a service process, a thread or thread pool owned by a capsule, a listener, an execution cell, or any service-owned idle resource. `latent-testkit::block_on` polls on the calling thread and creates no worker thread.
+Build and validation code starts compiler/validator subprocesses only when a command explicitly runs. Linking generated bindings creates no engine, store, listener, socket, process, service thread, execution cell, or service-owned async runtime. `latent-testkit::block_on` polls on the calling thread; `AsyncTestRuntime` is explicitly constructed for tests and uses Tokio's current-thread scheduler without a worker pool.
