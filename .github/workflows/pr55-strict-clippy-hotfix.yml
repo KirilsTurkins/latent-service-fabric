@@ -1,0 +1,62 @@
+name: PR 55 strict Clippy hotfix
+
+on:
+  push:
+    branches:
+      - fix/issue-2-build-foundation
+    paths:
+      - .github/workflows/pr55-strict-clippy-hotfix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/issue-2-build-foundation
+          fetch-depth: 0
+      - name: Refactor Phase 0 fixture path defaults
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("apps/latentd/tests/phase0_spike_e2e.rs")
+          text = path.read_text(encoding="utf-8")
+          old = '''    let echo_capsule = env::var_os("LSF_ECHO_CAPSULE")
+              .map(PathBuf::from)
+              .unwrap_or_else(|| target.join("capsules/echo/capsule.json"));
+          let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT")
+              .map(PathBuf::from)
+              .unwrap_or_else(|| target.join("capsules/containment/containment-capsule.wasm"));
+          '''
+          new = '''    let echo_capsule = env::var_os("LSF_ECHO_CAPSULE").map_or_else(
+              || target.join("capsules/echo/capsule.json"),
+              PathBuf::from,
+          );
+          let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT").map_or_else(
+              || target.join("capsules/containment/containment-capsule.wasm"),
+              PathBuf::from,
+          );
+          '''
+          if text.count(old) != 1:
+              raise SystemExit("expected Phase 0 fixture path block was not found exactly once")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt,clippy
+      - name: Validate strict latentd checks
+        run: |
+          cargo fmt --all --check
+          cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D warnings
+      - name: Commit the validated refactor
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/latentd/tests/phase0_spike_e2e.rs
+          git commit -m "fix: satisfy strict Phase 0 spike Clippy checks"
+          git push origin HEAD:fix/issue-2-build-foundation
