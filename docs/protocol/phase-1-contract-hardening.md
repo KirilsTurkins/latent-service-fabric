@@ -154,7 +154,12 @@ the validator's drift detection and the cross-SDK surface requirements.
 
 ## Integration boundary
 
-This work is intentionally developed before #25/#2 are complete, but it is a
-draft-only branch until the Phase 0 handoff is authorized. Before merge, it
-must be reconciled with the finalized Phase 0 retained/replaced classification
-and regenerated contract checks from #2.
+Phase 0 gate #25 is complete. This branch has been reconciled with the finalized
+Phase 0 retained/replaced classification, and the retained Phase 0 contract,
+containment, spike, baseline, and completion-gate workflows pass with these
+contract changes.
+
+The pull request remains draft-only until #2 finalizes the generated Rust,
+Component Model, and RPC build foundation consumed by these contracts. Before
+merge, the final #2 integration must regenerate or verify the descriptor and
+cross-layer contract checks and resolve any resulting drift.
