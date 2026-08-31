@@ -62,6 +62,7 @@ jobs:
           components: rustfmt,clippy
       - name: Validate strict latentd checks
         run: |
+          cargo fmt --all
           cargo fmt --all --check
           cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D warnings
       - name: Commit the validated refactor
