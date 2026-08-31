@@ -67,7 +67,9 @@ jobs:
         with:
           version: 1.72.0
       - name: Validate contracts, echo component, and generated bindings
-        run: tools/validate_contracts.sh
+        run: |
+          unset CARGO_INCREMENTAL
+          tools/validate_contracts.sh
       - name: Record echo capsule build evidence
         run: |
           cat target/capsules/echo/build.json
