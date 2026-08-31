@@ -26,25 +26,36 @@ jobs:
 
           path = Path("apps/latentd/tests/phase0_spike_e2e.rs")
           text = path.read_text(encoding="utf-8")
-          old = '''    let echo_capsule = env::var_os("LSF_ECHO_CAPSULE")
-              .map(PathBuf::from)
-              .unwrap_or_else(|| target.join("capsules/echo/capsule.json"));
-          let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT")
-              .map(PathBuf::from)
-              .unwrap_or_else(|| target.join("capsules/containment/containment-capsule.wasm"));
-          '''
-          new = '''    let echo_capsule = env::var_os("LSF_ECHO_CAPSULE").map_or_else(
-              || target.join("capsules/echo/capsule.json"),
-              PathBuf::from,
-          );
-          let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT").map_or_else(
-              || target.join("capsules/containment/containment-capsule.wasm"),
-              PathBuf::from,
-          );
-          '''
-          if text.count(old) != 1:
-              raise SystemExit("expected Phase 0 fixture path block was not found exactly once")
-          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          old_echo = (
+              '    let echo_capsule = env::var_os("LSF_ECHO_CAPSULE")\n'
+              '        .map(PathBuf::from)\n'
+              '        .unwrap_or_else(|| target.join("capsules/echo/capsule.json"));\n'
+          )
+          new_echo = (
+              '    let echo_capsule = env::var_os("LSF_ECHO_CAPSULE").map_or_else(\n'
+              '        || target.join("capsules/echo/capsule.json"),\n'
+              '        PathBuf::from,\n'
+              '    );\n'
+          )
+          old_containment = (
+              '    let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT")\n'
+              '        .map(PathBuf::from)\n'
+              '        .unwrap_or_else(|| target.join("capsules/containment/containment-capsule.wasm"));\n'
+          )
+          new_containment = (
+              '    let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT").map_or_else(\n'
+              '        || target.join("capsules/containment/containment-capsule.wasm"),\n'
+              '        PathBuf::from,\n'
+              '    );\n'
+          )
+          for old, new in (
+              (old_echo, new_echo),
+              (old_containment, new_containment),
+          ):
+              if text.count(old) != 1:
+                  raise SystemExit("expected Phase 0 fixture path expression was not found exactly once")
+              text = text.replace(old, new, 1)
+          path.write_text(text, encoding="utf-8")
           PY
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
