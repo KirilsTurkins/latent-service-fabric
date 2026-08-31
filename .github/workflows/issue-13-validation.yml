@@ -1,0 +1,46 @@
+name: Issue 13 implementation validation
+
+on:
+  push:
+    branches:
+      - feat/issue-13-shared-telemetry-inventory
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rust:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/issue-13-shared-telemetry-inventory
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt, clippy
+      - name: Normalize Rust and lockfile
+        run: |
+          cargo fmt --all
+          cargo generate-lockfile
+      - name: Commit deterministic normalization
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add --all
+            git commit -m "chore: normalize issue 13 implementation"
+            git push
+          fi
+      - name: Check formatting
+        run: cargo fmt --all --check
+      - name: Check workspace
+        run: cargo check --workspace --all-targets --all-features --locked
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --all-features --locked
+      - name: Run tests
+        run: cargo test --workspace --all-targets --all-features --locked
+      - name: Check MSRV
+        run: |
+          rustup toolchain install 1.94.1
+          cargo +1.94.1 check --workspace --all-targets --all-features --locked

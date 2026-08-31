@@ -17,9 +17,13 @@
     clippy::too_many_lines
 )]
 
-/// Shared internal Phase 0 composition used by the executable and baseline.
+/// Shared internal Phase 0 runtime, artifact, and activation composition.
 #[doc(hidden)]
 pub mod phase0_composition;
+
+/// Shared bounded telemetry and node inventory composition.
+#[doc(hidden)]
+pub mod phase0_observability;
 
 /// Native collector and build identity shared by Phase 0 evidence binaries.
 #[doc(hidden)]

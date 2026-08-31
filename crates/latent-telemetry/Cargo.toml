@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-telemetry."
+description = "Bounded node-owned telemetry, activation observation, and structured local export."
 
 [lints]
 workspace = true
@@ -13,3 +13,7 @@ workspace = true
 [dependencies]
 latent-core = { path = "../latent-core" }
 latent-activation = { path = "../latent-activation" }
+tokio.workspace = true
+
+[dev-dependencies]
+latent-routing = { path = "../latent-routing" }
