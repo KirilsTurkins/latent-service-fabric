@@ -1,0 +1,378 @@
+name: PR 55 requested-change applicator
+
+on:
+  push:
+    branches:
+      - fix/issue-2-build-foundation
+    paths:
+      - .github/workflows/pr55-requested-changes.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    name: Apply and validate requested changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/issue-2-build-foundation
+          fetch-depth: 0
+      - name: Apply requested changes
+        run: |
+          base64 --decode > /tmp/pr55-apply.py <<'PY'
+          ZnJvbSBfX2Z1dHVyZV9fIGltcG9ydCBhbm5vdGF0aW9ucwoKZnJvbSBwYXRobGliIGltcG9ydCBQ
+          YXRoCgpST09UID0gUGF0aC5jd2QoKQoKCmRlZiByZWFkKHJlbGF0aXZlOiBzdHIpIC0+IHN0cjoK
+          ICAgIHJldHVybiAoUk9PVCAvIHJlbGF0aXZlKS5yZWFkX3RleHQoZW5jb2Rpbmc9InV0Zi04IikK
+          CgpkZWYgd3JpdGUocmVsYXRpdmU6IHN0ciwgY29udGVudDogc3RyKSAtPiBOb25lOgogICAgcGF0
+          aCA9IFJPT1QgLyByZWxhdGl2ZQogICAgcGF0aC5wYXJlbnQubWtkaXIocGFyZW50cz1UcnVlLCBl
+          eGlzdF9vaz1UcnVlKQogICAgcGF0aC53cml0ZV90ZXh0KGNvbnRlbnQsIGVuY29kaW5nPSJ1dGYt
+          OCIpCgoKZGVmIHJlcGxhY2Vfb25jZShyZWxhdGl2ZTogc3RyLCBvbGQ6IHN0ciwgbmV3OiBzdHIp
+          IC0+IE5vbmU6CiAgICB0ZXh0ID0gcmVhZChyZWxhdGl2ZSkKICAgIGNvdW50ID0gdGV4dC5jb3Vu
+          dChvbGQpCiAgICBpZiBjb3VudCAhPSAxOgogICAgICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigKICAg
+          ICAgICAgICAgZiJleHBlY3RlZCBvbmUgb2NjdXJyZW5jZSBpbiB7cmVsYXRpdmV9LCBmb3VuZCB7
+          Y291bnR9OiB7b2xkWzoxNjBdIXJ9IgogICAgICAgICkKICAgIHdyaXRlKHJlbGF0aXZlLCB0ZXh0
+          LnJlcGxhY2Uob2xkLCBuZXcsIDEpKQoKCmRlZiByZXBsYWNlX2NvdW50KHJlbGF0aXZlOiBzdHIs
+          IG9sZDogc3RyLCBuZXc6IHN0ciwgZXhwZWN0ZWQ6IGludCkgLT4gTm9uZToKICAgIHRleHQgPSBy
+          ZWFkKHJlbGF0aXZlKQogICAgY291bnQgPSB0ZXh0LmNvdW50KG9sZCkKICAgIGlmIGNvdW50ICE9
+          IGV4cGVjdGVkOgogICAgICAgIHJhaXNlIFJ1bnRpbWVFcnJvcigKICAgICAgICAgICAgZiJleHBl
+          Y3RlZCB7ZXhwZWN0ZWR9IG9jY3VycmVuY2VzIGluIHtyZWxhdGl2ZX0sIGZvdW5kIHtjb3VudH06
+          IHtvbGRbOjE2MF0hcn0iCiAgICAgICAgKQogICAgd3JpdGUocmVsYXRpdmUsIHRleHQucmVwbGFj
+          ZShvbGQsIG5ldykpCgoKZGVmIGVkaXRfbWV0aG9kKHJlbGF0aXZlOiBzdHIsIHN0YXJ0X21hcmtl
+          cjogc3RyLCBlbmRfbWFya2VyOiBzdHIsIHRyYW5zZm9ybSkgLT4gTm9uZToKICAgIHRleHQgPSBy
+          ZWFkKHJlbGF0aXZlKQogICAgc3RhcnQgPSB0ZXh0LmluZGV4KHN0YXJ0X21hcmtlcikKICAgIGVu
+          ZCA9IHRleHQuaW5kZXgoZW5kX21hcmtlciwgc3RhcnQgKyBsZW4oc3RhcnRfbWFya2VyKSkKICAg
+          IHNlZ21lbnQgPSB0ZXh0W3N0YXJ0OmVuZF0KICAgIHVwZGF0ZWQgPSB0cmFuc2Zvcm0oc2VnbWVu
+          dCkKICAgIGlmIHVwZGF0ZWQgPT0gc2VnbWVudDoKICAgICAgICByYWlzZSBSdW50aW1lRXJyb3Io
+          ZiJtZXRob2QgZWRpdCBtYWRlIG5vIGNoYW5nZSBpbiB7cmVsYXRpdmV9OiB7c3RhcnRfbWFya2Vy
+          fSIpCiAgICB3cml0ZShyZWxhdGl2ZSwgdGV4dFs6c3RhcnRdICsgdXBkYXRlZCArIHRleHRbZW5k
+          Ol0pCgoKd3JpdGUoCiAgICAiY3JhdGVzL2xhdGVudC13YXNtdGltZS9idWlsZC5ycyIsCiAgICAi
+          IiJmbiBtYWluKCkgewogICAgbGV0IHRhcmdldCA9IHN0ZDo6ZW52Ojp2YXIoIlRBUkdFVCIpLmV4
+          cGVjdCgiVEFSR0VUIG11c3QgYmUgc2V0IGJ5IENhcmdvIik7CiAgICBwcmludGxuISgiY2FyZ286
+          cnVzdGMtZW52PUxBVEVOVF9XQVNNVElNRV9IT1NUX1RBUkdFVD17dGFyZ2V0fSIpOwp9CiIiIiwK
+          KQoKcmVwbGFjZV9vbmNlKAogICAgInRvb2xzL3ZhbGlkYXRlX2ZvdW5kYXRpb24ucHkiLAogICAg
+          KAogICAgICAgICdMRUdBQ1lfQklORElOR19CVUlMRF9TQ1JJUFRTID0gKFxuJwogICAgICAgICcg
+          ICAgImNyYXRlcy9sYXRlbnQtd2FzbXRpbWUvYnVpbGQucnMiLFxuJwogICAgICAgICcgICAgInRv
+          b2xzL3Rvb2xjaGFpbi1zbW9rZS9idWlsZC5ycyIsXG4nCiAgICAgICAgJylcbicKICAgICksCiAg
+          ICAoCiAgICAgICAgJ0xFR0FDWV9CSU5ESU5HX0JVSUxEX1NDUklQVFMgPSAoInRvb2xzL3Rvb2xj
+          aGFpbi1zbW9rZS9idWlsZC5ycyIsKVxuJwogICAgICAgICdXQVNNVElNRV9UQVJHRVRfQlVJTERf
+          U0NSSVBUID0gImNyYXRlcy9sYXRlbnQtd2FzbXRpbWUvYnVpbGQucnMiXG4nCiAgICAgICAgJ1dB
+          U01USU1FX1RBUkdFVF9CVUlMRF9SRVFVSVJFRF9UT0tFTlMgPSAoXG4nCiAgICAgICAgJyAgICBc
+          J3N0ZDo6ZW52Ojp2YXIoIlRBUkdFVCIpXCcsXG4nCiAgICAgICAgJyAgICAiY2FyZ286cnVzdGMt
+          ZW52PUxBVEVOVF9XQVNNVElNRV9IT1NUX1RBUkdFVD17dGFyZ2V0fSIsXG4nCiAgICAgICAgJylc
+          bicKICAgICAgICAnV0FTTVRJTUVfVEFSR0VUX0JVSUxEX0ZPUkJJRERFTl9UT0tFTlMgPSAoXG4n
+          CiAgICAgICAgJyAgICAiT1VUX0RJUiIsXG4nCiAgICAgICAgJyAgICAic3RhZ2VfZWNob193b3Js
+          ZCIsXG4nCiAgICAgICAgJyAgICAiY29weV93aXRfdHJlZSIsXG4nCiAgICAgICAgJyAgICAid3Jp
+          dGVfYmluZGluZ3NfaW52b2NhdGlvbiIsXG4nCiAgICAgICAgJyAgICAiZWNob19iaW5kaW5ncy5y
+          cyIsXG4nCiAgICAgICAgJyAgICAid2FzbXRpbWU6OmNvbXBvbmVudDo6YmluZGdlbiEiLFxuJwog
+          ICAgICAgICcgICAgImV4YW1wbGVzL2VjaG8tY29udHJhY3Qvd2l0IixcbicKICAgICAgICAnICAg
+          ICJ3aXQvcGxhdGZvcm0vY29udGV4dCIsXG4nCiAgICAgICAgJyAgICAid2l0L3BsYXRmb3JtL2xv
+          ZyIsXG4nCiAgICAgICAgJylcbicKICAgICksCikKcmVwbGFjZV9vbmNlKAogICAgInRvb2xzL3Zh
+          bGlkYXRlX2ZvdW5kYXRpb24ucHkiLAogICAgKAogICAgICAgICcgICAgZm9yIHJlbGF0aXZlIGlu
+          IExFR0FDWV9CSU5ESU5HX0JVSUxEX1NDUklQVFM6XG4nCiAgICAgICAgJyAgICAgICAgaWYgKHJv
+          b3QgLyByZWxhdGl2ZSkuZXhpc3RzKCk6XG4nCiAgICAgICAgJyAgICAgICAgICAgIGZhaWwoZiJs
+          ZWdhY3kgZHVwbGljYXRlZCBiaW5kaW5nIGdlbmVyYXRvciBtdXN0IGJlIHJlbW92ZWQ6IHtyZWxh
+          dGl2ZX0iKVxuJwogICAgKSwKICAgICgKICAgICAgICAnICAgIHdhc210aW1lX2J1aWxkX3Njcmlw
+          dCA9IHJvb3QgLyBXQVNNVElNRV9UQVJHRVRfQlVJTERfU0NSSVBUXG4nCiAgICAgICAgJyAgICBp
+          ZiBub3Qgd2FzbXRpbWVfYnVpbGRfc2NyaXB0LmlzX2ZpbGUoKTpcbicKICAgICAgICAnICAgICAg
+          ICBmYWlsKFxuJwogICAgICAgICcgICAgICAgICAgICAiV2FzbXRpbWUgdGFyZ2V0LWV4cG9ydCBi
+          dWlsZCBzY3JpcHQgbWlzc2luZzogIlxuJwogICAgICAgICcgICAgICAgICAgICBmIntXQVNNVElN
+          RV9UQVJHRVRfQlVJTERfU0NSSVBUfSJcbicKICAgICAgICAnICAgICAgICApXG4nCiAgICAgICAg
+          JyAgICBlbHNlOlxuJwogICAgICAgICcgICAgICAgIHRleHQgPSB3YXNtdGltZV9idWlsZF9zY3Jp
+          cHQucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOCIpXG4nCiAgICAgICAgJyAgICAgICAgZm9yIHRv
+          a2VuIGluIFdBU01USU1FX1RBUkdFVF9CVUlMRF9SRVFVSVJFRF9UT0tFTlM6XG4nCiAgICAgICAg
+          JyAgICAgICAgICAgIGlmIHRva2VuIG5vdCBpbiB0ZXh0OlxuJwogICAgICAgICcgICAgICAgICAg
+          ICAgICAgZmFpbChcbicKICAgICAgICAnICAgICAgICAgICAgICAgICAgICBmIldhc210aW1lIHRh
+          cmdldC1leHBvcnQgYnVpbGQgc2NyaXB0IGRvZXMgbm90IHJlZmVyZW5jZSB7dG9rZW59OiAiXG4n
+          CiAgICAgICAgJyAgICAgICAgICAgICAgICAgICAgZid7V0FTTVRJTUVfVEFSR0VUX0JVSUxEX1ND
+          UklQVH0iXG4nCiAgICAgICAgJyAgICAgICAgICAgICAgICApXG4nCiAgICAgICAgJyAgICAgICAg
+          Zm9yIHRva2VuIGluIFdBU01USU1FX1RBUkdFVF9CVUlMRF9GT1JCSURERU5fVE9LRU5TOlxuJwog
+          ICAgICAgICcgICAgICAgICAgICBpZiB0b2tlbiBpbiB0ZXh0OlxuJwogICAgICAgICcgICAgICAg
+          ICAgICAgICAgZmFpbChcbicKICAgICAgICAnICAgICAgICAgICAgICAgICAgICAiV2FzbXRpbWUg
+          dGFyZ2V0LWV4cG9ydCBidWlsZCBzY3JpcHQgbXVzdCBub3QgZHVwbGljYXRlIGJpbmRpbmcgIlxu
+          JwogICAgICAgICcgICAgICAgICAgICAgICAgICAgIGYiZ2VuZXJhdGlvbiAoe3Rva2VufSk6IHtX
+          QVNNVElNRV9UQVJHRVRfQlVJTERfU0NSSVBUfSJcbicKICAgICAgICAnICAgICAgICAgICAgICAg
+          IClcbicKICAgICAgICAnXG4nCiAgICAgICAgJyAgICBmb3IgcmVsYXRpdmUgaW4gTEVHQUNZX0JJ
+          TkRJTkdfQlVJTERfU0NSSVBUUzpcbicKICAgICAgICAnICAgICAgICBpZiAocm9vdCAvIHJlbGF0
+          aXZlKS5leGlzdHMoKTpcbicKICAgICAgICAnICAgICAgICAgICAgZmFpbChmImxlZ2FjeSBkdXBsaW
+          NhdGVkIGJpbmRpbmcgZ2VuZXJhdG9yIG11c3QgYmUgcmVtb3ZlZDoge3JlbGF0aXZlfSIpXG4nCi
+          AgICApLAopCgp3cml0ZSgKICAgICJ0b29scy90ZXN0cy9waGFzZTBfdGVzdF9lbnZpcm9ubWVudC5w
+          eSIsCiAgICAiIiJmcm9tIF9fZnV0dXJlX18gaW1wb3J0IGFubm90YXRpb25zCgppbXBvcnQgb3MK
+          ZnJvbSBjb2xsZWN0aW9ucy5hYmMgaW1wb3J0IE1hcHBpbmcKZnJvbSBmbm1hdGNoIGltcG9ydCBm
+          bm1hdGNoY2FzZQoKUEhBU0UwX1JFSkVDVEVEX0JVSUxEX09WRVJSSURFX1BBVFRFUk5TID0gKAog
+          ICAgIlJVU1RGTEFHUyIsCiAgICAiUlVTVERPQ0ZMQUdTIiwKICAgICJSVVNUQyIsCiAgICAiUlVT
+          VENfQk9PVFNUUkFQIiwKICAgICJSVVNUQ19XUkFQUEVSIiwKICAgICJSVVNUQ19XT1JLU1BBQ0Vf
+          V1JBUFBFUiIsCiAgICAiUlVTVFVQX1RPT0xDSEFJTiIsCiAgICAiQ0FSR09fRU5DT0RFRF9SVVNU
+          RkxBR1MiLAogICAgIkNBUkdPX0VOQ09ERURfUlVTVERPQ0ZMQUdTIiwKICAgICJDQVJHT19JTkNS
+          RU1FTlRBTCIsCiAgICAiQ0FSR09fQlVJTERfKiIsCiAgICAiQ0FSR09fUFJPRklMRV8qIiwKICAg
+          ICJDQVJHT19UQVJHRVRfKl9SVVNURkxBR1MiLAogICAgIkNBUkdPX1RBUkdFVF8qX0xJTktFUiIs
+          CiAgICAiQ0FSR09fVEFSR0VUXypfUlVOTkVSIiwKICAgICJQSEFTRT...24562 chars truncated...         text=True,
+          capture_output=True,
+          env=environment,
+      )
+      self.assertEqual(missing_ref.returncode, 2)
+      self.assertIn("durable published source commit, tree, and branch or tag ref", missing_ref.stderr)
+      self.assertFalse(output_without_ref.exists())
+
+  def test_runner_requires_fresh_external_nonoverlapping_output_and_build_paths(self) -> None:
+      with tempfile.TemporaryDirectory() as directory:
+          root = Path(directory)
+          calibration = root / "calibration.json"
+          calibration.write_text("{}\n", encoding="utf-8")
+
+          def arguments(output: str | Path) -> list[str]:
+              return [
+                  str(RUNNER),
+                  "--final-configuration-commit",
+                  "a" * 40,
+                  "--published-source-commit",
+                  "a" * 40,
+                  "--published-source-tree",
+                  "b" * 40,
+                  "--published-source-ref",
+                  "development",
+                  "--calibration",
+                  str(calibration),
+                  str(output),
+              ]
+
+          relative_output = subprocess.run(
+              arguments("relative-output"), check=False, text=True, capture_output=True
+          )
+          self.assertEqual(relative_output.returncode, 2)
+          self.assertIn("must be an absolute path outside the source tree", relative_output.stderr)
+
+          in_tree_output = subprocess.run(
+              arguments(ROOT / "target" / "phase0-soak-test-output"),
+              check=False,
+              text=True,
+              capture_output=True,
+          )
+          self.assertEqual(in_tree_output.returncode, 2)
+          self.assertIn("must be outside the source tree", in_tree_output.stderr)
+
+          output = root / "evidence"
+          existing_target = root / "existing-build"
+          existing_target.mkdir()
+          environment = dict(os.environ)
+          environment["LSF_RESOURCE_SOAK_TARGET_DIR"] = str(existing_target)
+          reused_target = subprocess.run(
+              arguments(output),
+              check=False,
+              text=True,
+              capture_output=True,
+              env=environment,
+          )
+          self.assertEqual(reused_target.returncode, 2)
+          self.assertIn("build output must not already exist", reused_target.stderr)
+          self.assertFalse(output.exists())
+
+          overlapping_output = root / "overlapping-evidence"
+          environment["LSF_RESOURCE_SOAK_TARGET_DIR"] = str(
+              overlapping_output / "build"
+          )
+          overlapping_paths = subprocess.run(
+              arguments(overlapping_output),
+              check=False,
+              text=True,
+              capture_output=True,
+              env=environment,
+          )
+          self.assertEqual(overlapping_paths.returncode, 2)
+          self.assertIn("output and build paths must not overlap", overlapping_paths.stderr)
+          self.assertFalse(overlapping_output.exists())
+
+  def test_runner_rejects_a_local_commit_not_reachable_from_origin_ref(self) -> None:
+      """A local branch alone must never satisfy the durable-ref requirement."""
+
+      with tempfile.TemporaryDirectory() as directory:
+          workspace = Path(directory)
+          source = workspace / "source"
+          tools = source / "tools"
+          tools.mkdir(parents=True)
+          copied_runner = tools / "run_phase0_resource_soak.sh"
+          shutil.copy2(RUNNER, copied_runner)
+          shutil.copy2(
+              ROOT / "tools" / "phase0_build_environment.sh",
+              tools / "phase0_build_environment.sh",
+          )
+          copied_runner.chmod(0o755)
+
+          def git(*arguments: str) -> str:
+              completed = subprocess.run(
+                  ["git", "-C", str(source), *arguments],
+                  check=False,
+                  text=True,
+                  capture_output=True,
+              )
+              self.assertEqual(
+                  completed.returncode,
+                  0,
+                  f"git {' '.join(arguments)} failed: {completed.stderr}",
+              )
+              return completed.stdout.strip()
+
+          git("init")
+          git("config", "user.email", "phase0-test@example.invalid")
+          git("config", "user.name", "Phase 0 Test")
+          git(
+              "add",
+              "tools/run_phase0_resource_soak.sh",
+              "tools/phase0_build_environment.sh",
+          )
+          git("commit", "-m", "published base")
+
+          origin = workspace / "origin.git"
+          created_origin = subprocess.run(
+              ["git", "init", "--bare", str(origin)],
+              check=False,
+              text=True,
+              capture_output=True,
+          )
+          self.assertEqual(created_origin.returncode, 0, created_origin.stderr)
+          git("remote", "add", "origin", str(origin))
+          git("push", "origin", "HEAD:refs/heads/development")
+
+          (source / "local-only.txt").write_text("not pushed\n", encoding="utf-8")
+          git("add", "local-only.txt")
+          git("commit", "-m", "local only")
+          local_commit = git("rev-parse", "HEAD")
+          local_tree = git("rev-parse", "HEAD^{tree}")
+
+          calibration = workspace / "fresh-calibration.json"
+          calibration.write_text("{}\n", encoding="utf-8")
+          output = workspace / "evidence"
+          target_root = workspace / "build"
+          fake_bin = workspace / "bin"
+          fake_bin.mkdir()
+          fake_cargo = fake_bin / "cargo"
+          fake_cargo.write_text("#!/usr/bin/env sh\nexit 0\n", encoding="utf-8")
+          fake_cargo.chmod(0o755)
+          environment = dict(os.environ)
+          environment["LSF_RESOURCE_SOAK_TARGET_DIR"] = str(target_root)
+          environment["PATH"] = f"{fake_bin}{os.pathsep}{environment.get('PATH', '')}"
+          completed = subprocess.run(
+              [
+                  str(copied_runner),
+                  "--final-configuration-commit",
+                  local_commit,
+                  "--published-source-commit",
+                  local_commit,
+                  "--published-source-tree",
+                  local_tree,
+                  "--published-source-ref",
+                  "development",
+                  "--calibration",
+                  str(calibration),
+                  str(output),
+              ],
+              cwd=source,
+              check=False,
+              text=True,
+              capture_output=True,
+              env=environment,
+          )
+          self.assertEqual(completed.returncode, 2)
+          self.assertIn(
+              "declared published source commit is not reachable from development",
+              completed.stderr,
+          )
+          self.assertFalse(output.exists())
+          self.assertFalse(target_root.exists())
+
+  def make_archive(self) -> tuple[tempfile.TemporaryDirectory[str], Path]:
+      temporary = tempfile.TemporaryDirectory()
+      archive = Path(temporary.name)
+      (archive / "calibration.json").write_text(
+          json.dumps(calibration_document()), encoding="utf-8"
+      )
+      collector = archive / "collector" / "phase0-soak"
+      collector.parent.mkdir(parents=True)
+      collector.write_bytes(SOAK_COLLECTOR_BYTES)
+      for index in range(1, 4):
+          run = archive / "runs" / f"run-{index:02d}"
+          run.mkdir(parents=True)
+          (run / "raw.json").write_text(
+              json.dumps(raw_document(index)), encoding="utf-8"
+          )
+          for phase in ("before", "after"):
+              (run / f"host-{phase}.json").write_text(
+                  json.dumps(host_document(phase, index)), encoding="utf-8"
+              )
+          (run / "execution-status.json").write_text(
+              json.dumps(
+                  {
+                      "schema_version": "latent.phase0.resource-soak.execution-status.v1",
+                      "run_index": index,
+                      "exit_code": 0,
+                      "source_commit": SOURCE_COMMIT,
+                      "source_tree": SOURCE_TREE,
+                      "published_source_ref": SOURCE_REF,
+                      "published_source_ref_head": SOURCE_REF_HEAD,
+                      "published_commit_reachable_from_ref": True,
+                      "execution_commit": SOURCE_COMMIT,
+                      "execution_tree": SOURCE_TREE,
+                      "execution_commit_matches_published": True,
+                  }
+              ),
+              encoding="utf-8",
+          )
+      return temporary, archive
+
+  def aggregate(self, archive: Path) -> subprocess.CompletedProcess[str]:
+      return subprocess.run(
+          [
+              sys.executable,
+              str(AGGREGATOR),
+              "aggregate",
+              "--runs-directory",
+              str(archive / "runs"),
+              "--output-json",
+              str(archive / "aggregate.json"),
+              "--output-report",
+              str(archive / "SOAK.md"),
+              "--source-commit",
+              SOURCE_COMMIT,
+PY
+          printf '%s  %s\n' '417c17b34e0ce492a723026e2d74daca979541f974a32d45498e3a0412da023e' /tmp/pr55-apply.py | sha256sum --check
+          python3 /tmp/pr55-apply.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+          cache: pip
+          cache-dependency-path: tools/requirements.lock
+      - name: Install Python validator dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt
+      - name: Validate the patch
+        run: |
+          unset CARGO_INCREMENTAL
+          cargo fmt --all --check
+          cargo check -p latent-wasmtime --all-targets --all-features --locked
+          python tools/validate_foundation.py
+          python -m unittest discover -s tools/tests
+          git diff --check
+      - name: Commit requested changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/workflows/ci.yml \
+            .github/workflows/issue-22-validation.yml \
+            .github/workflows/issue-23-validation.yml \
+            .github/workflows/issue-24-validation.yml \
+            .github/workflows/issue-25-validation.yml \
+            crates/latent-wasmtime/build.rs \
+            tools/validate_foundation.py \
+            tools/tests/phase0_test_environment.py \
+            tools/tests/test_phase0_test_environment.py \
+            tools/tests/test_validate_repository.py \
+            tools/tests/test_aggregate_phase0_calibration.py \
+            tools/tests/test_aggregate_phase0_resource_soak.py \
+            tools/tests/test_run_phase0_hot_path_profiles.py
+          git commit -m "fix: restore build and Phase 0 environment boundaries"
+          git push origin HEAD:fix/issue-2-build-foundation
