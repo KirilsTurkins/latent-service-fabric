@@ -101,7 +101,11 @@ fn collect_proto_files(proto_root: &Path) -> Result<BTreeSet<String>, Box<dyn Er
             if entry.file_type()?.is_dir() {
                 pending.push(path);
             } else if path.extension() == Some(OsStr::new("proto")) {
-                files.insert(path.strip_prefix(proto_root)?.to_string_lossy().replace('\\', "/"));
+                files.insert(
+                    path.strip_prefix(proto_root)?
+                        .to_string_lossy()
+                        .replace('\\', "/"),
+                );
             }
         }
     }

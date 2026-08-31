@@ -46,7 +46,11 @@ assert_server_surface!(
     CapabilityService,
     CapabilityServiceServer
 );
-assert_server_surface!(assert_contract_server, ContractService, ContractServiceServer);
+assert_server_surface!(
+    assert_contract_server,
+    ContractService,
+    ContractServiceServer
+);
 assert_server_surface!(
     assert_deployment_server,
     DeploymentService,
