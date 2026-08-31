@@ -75,7 +75,7 @@ impl CellPool for ExternalPool {
                 NodeId(NODE_ID.to_owned()),
                 class,
                 budget.clone(),
-                budget.wall_deadline_unix_millis.unwrap_or(u64::MAX),
+                u64::MAX,
                 self.lifecycle.clone(),
             ))
         };
@@ -134,7 +134,7 @@ fn budget() -> ResourceBudget {
     ResourceBudget {
         cpu_fuel: 1,
         memory_bytes: 1,
-        wall_deadline_unix_millis: None,
+        wall_time_limit_millis: None,
         child_calls: 0,
         outbound_requests: 0,
         state_read_bytes: 0,

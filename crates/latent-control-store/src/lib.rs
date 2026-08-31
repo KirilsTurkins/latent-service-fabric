@@ -2,11 +2,15 @@
 
 #![forbid(unsafe_code)]
 
+mod embedded;
+
+pub use embedded::{EmbeddedCatalogOptions, EmbeddedDeploymentCatalog, ROUTE_ANNOTATION_KEY};
+
 use latent_artifacts::ArtifactDescriptor;
 use latent_audit::AuditEvent;
 use latent_core::{
     BindingId, BoxFuture, DeploymentId, NodeId, PlatformError, PolicyId, ReleaseDigest,
-    RouteGeneration, ServiceId, TriggerId,
+    RouteGeneration, ServiceId, TenantId, TriggerId,
 };
 use latent_manifest::{BindingManifest, DeploymentManifest, PolicyManifest, TriggerManifest};
 use latent_node::{NodeDescriptor, NodeInventory};
@@ -44,6 +48,14 @@ pub trait DeploymentStore: Send + Sync {
     fn list<'a>(&'a self) -> BoxFuture<'a, Result<Vec<DeploymentManifest>, PlatformError>>;
 
     fn delete<'a>(&'a self, id: &'a DeploymentId) -> BoxFuture<'a, Result<(), PlatformError>>;
+}
+
+/// Additive tenant-filtered deployment listing for bounded standalone management callers.
+pub trait TenantDeploymentStore: DeploymentStore {
+    fn list_for_tenant<'a>(
+        &'a self,
+        tenant: &'a TenantId,
+    ) -> BoxFuture<'a, Result<Vec<DeploymentManifest>, PlatformError>>;
 }
 
 pub trait BindingStore: Send + Sync {

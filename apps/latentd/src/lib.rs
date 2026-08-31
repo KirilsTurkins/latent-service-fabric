@@ -20,8 +20,8 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use clap::{error::ErrorKind, Args, Parser, Subcommand};
 use latent_activation::{ActivationManager, ActivationOutcome};
 use latent_core::{
-    ActivationId, ActivationTerminalState, BudgetConsumption, ErrorDetail, Metadata, NodeId,
-    PlatformError, PlatformErrorCode,
+    ActivationId, ActivationTerminalState, BudgetConsumption, CancelDisposition, ErrorDetail,
+    Metadata, NodeId, PlatformError, PlatformErrorCode,
 };
 use latent_executor::{ExecutionBackend, PreparedComponent};
 use latent_manifest::CapsuleManifest;
@@ -29,10 +29,9 @@ use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner};
 use latent_scheduler::{CellClass, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
     CapturedLog, Phase0InstanceAllocator, Phase0WasmtimeBackend, PreparedCacheSnapshot,
-    RuntimeResourceSnapshot, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    RuntimeResourceSnapshot,
 };
 use serde::Serialize;
-use serde_json::Value;
 
 use crate::phase0_composition::{
     self, Phase0InvocationConfig, Phase0LoadedArtifact, Phase0PreparationConfig,
@@ -1161,14 +1160,20 @@ async fn invoke_prepared(
             biased;
             outcome = &mut invocation => outcome,
             () = tokio::time::sleep(Duration::from_millis(cancel_after_ms)) => {
-                if let Err(error) = runner
+                match runner
                     .cancel(&config.activation_id, "phase0-spike explicit cancellation")
                     .await
                 {
-                    eprintln!(
-                        "explicit cancellation raced with completion: {}",
-                        bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES)
-                    );
+                    Ok(CancelDisposition::Accepted) => {}
+                    Ok(CancelDisposition::AlreadyTerminal(_) | CancelDisposition::NotFound) => {
+                        eprintln!("explicit cancellation raced with completion");
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "explicit cancellation could not be sent: {}",
+                            bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES)
+                        );
+                    }
                 }
                 invocation.await
             }
@@ -1728,26 +1733,6 @@ fn classify_activation_outcome(
     u8,
 ) {
     match outcome {
-        ActivationOutcome::Succeeded(success)
-            if success.output_media_type == ECHO_DOMAIN_ERROR_MEDIA_TYPE =>
-        {
-            let domain_code = domain_error_code(&success.output);
-            let output = output_report(success.output, success.output_media_type);
-            (
-                "domain_error".to_owned(),
-                Some("completed".to_owned()),
-                Some(output),
-                Some(ErrorReport {
-                    kind: "domain".to_owned(),
-                    code: domain_code.clone(),
-                    message: format!("guest returned declared echo domain error: {domain_code}"),
-                    retryable: false,
-                    details: Vec::new(),
-                }),
-                consumption_report(&success.consumption),
-                EXIT_DOMAIN_ERROR,
-            )
-        }
         ActivationOutcome::Succeeded(success) => (
             "success".to_owned(),
             Some("completed".to_owned()),
@@ -1755,6 +1740,20 @@ fn classify_activation_outcome(
             None,
             consumption_report(&success.consumption),
             EXIT_SUCCESS,
+        ),
+        ActivationOutcome::DeclaredError { error, consumption } => (
+            "domain_error".to_owned(),
+            Some("completed".to_owned()),
+            Some(output_report(error.payload, error.media_type)),
+            Some(ErrorReport {
+                kind: "domain".to_owned(),
+                code: error.code,
+                message: error.message,
+                retryable: false,
+                details: Vec::new(),
+            }),
+            consumption_report(&consumption),
+            EXIT_DOMAIN_ERROR,
         ),
         ActivationOutcome::Failed {
             terminal_state,
@@ -2014,18 +2013,6 @@ fn output_report(output: Vec<u8>, media_type: String) -> OutputReport {
         utf8: String::from_utf8_lossy(&output).into_owned(),
         bytes,
     }
-}
-
-fn domain_error_code(output: &[u8]) -> String {
-    serde_json::from_slice::<Value>(output)
-        .ok()
-        .and_then(|document| {
-            document
-                .get("error")
-                .and_then(Value::as_str)
-                .map(str::to_owned)
-        })
-        .unwrap_or_else(|| "declared-domain-error".to_owned())
 }
 
 fn consumption_report(consumption: &BudgetConsumption) -> ConsumptionReport {

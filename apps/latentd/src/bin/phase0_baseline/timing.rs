@@ -314,6 +314,7 @@ fn execution_wall_time_micros(outcome: &Result<GuestOutcome, PlatformError>) -> 
     match outcome {
         Ok(
             GuestOutcome::Returned { consumption, .. }
+            | GuestOutcome::DeclaredError { consumption, .. }
             | GuestOutcome::Trapped { consumption, .. }
             | GuestOutcome::Interrupted { consumption, .. },
         ) => consumption.wall_time_micros,

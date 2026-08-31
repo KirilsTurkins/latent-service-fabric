@@ -1,0 +1,91 @@
+{
+  "generation": 7,
+  "generatedAtUnixMillis": 1788120000000,
+  "snapshotDigest": "blake3:21e36fc95778961415948d37de370a5507da209d42e8317d2cbcff7914fb394d",
+  "services": [
+    {
+      "id": "route-blake3:2ec8f3104f3f69ae754688ca1ac51a64d65e77dff1a0e29e8c5b34510aa56ec5",
+      "tenant": "examples",
+      "service": "echo",
+      "route": null,
+      "revisions": [
+        {
+          "revision": "rev-blake3:18f504a3776e2222678cf99e2a2d56e95b9534771f3c6d1cb0961069114a1818",
+          "release": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "weight": 9000,
+          "contracts": [
+            {
+              "contract": "examples.echo.v1",
+              "functions": [
+                "invoke"
+              ]
+            }
+          ],
+          "attributes": {
+            "latent.dev/deployment-id": "echo-stable",
+            "latent.dev/trust-class": "trusted"
+          }
+        },
+        {
+          "revision": "rev-blake3:ea792412353369465157507ff0b2906249fb14d6b5b810feea03e3dfaa924c3d",
+          "release": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "weight": 1000,
+          "contracts": [
+            {
+              "contract": "examples.echo.v1",
+              "functions": [
+                "invoke"
+              ]
+            }
+          ],
+          "attributes": {
+            "latent.dev/deployment-id": "echo-canary",
+            "latent.dev/trust-class": "trusted"
+          }
+        }
+      ]
+    },
+    {
+      "id": "route-blake3:3e1ff659985064ab785a66d3c8ff8aef7a7ffb611994e762403ed89f4a74f684",
+      "tenant": "examples",
+      "service": "echo",
+      "route": "preview",
+      "revisions": [
+        {
+          "revision": "rev-blake3:3333333333333333333333333333333333333333333333333333333333333333",
+          "release": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "weight": 10000,
+          "contracts": [
+            {
+              "contract": "examples.echo.v1",
+              "functions": [
+                "invoke"
+              ]
+            }
+          ],
+          "attributes": {
+            "latent.dev/deployment-id": "echo-preview",
+            "latent.dev/route": "preview",
+            "latent.dev/trust-class": "trusted"
+          }
+        }
+      ]
+    }
+  ],
+  "bindings": [
+    {
+      "id": "examples:gateway-to-echo",
+      "consumerTenant": "examples",
+      "consumerService": "gateway",
+      "importedContract": "examples.echo.v1",
+      "providerTenant": "examples",
+      "providerService": "echo",
+      "providerContract": "examples.echo.v1",
+      "mode": "auto",
+      "policyDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  ],
+  "policyDigests": [
+    "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  ]
+}

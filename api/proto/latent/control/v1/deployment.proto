@@ -82,9 +82,15 @@ message DeploymentEvent {
 }
 
 service DeploymentService {
+  // Phase 1 standalone: supported.
   rpc ApplyDeployment(ApplyDeploymentRequest) returns (ApplyDeploymentResponse);
+  // Phase 1 standalone: supported.
   rpc GetDeployment(GetDeploymentRequest) returns (GetDeploymentResponse);
+  // Phase 1 standalone: supported.
   rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  // Phase 1 standalone: supported.
   rpc DeleteDeployment(DeleteDeploymentRequest) returns (Empty);
+  // Phase 2+ control-plane watch. A Phase 1 standalone adapter must return an
+  // explicit unimplemented response.
   rpc WatchDeployment(WatchDeploymentRequest) returns (stream DeploymentEvent);
 }

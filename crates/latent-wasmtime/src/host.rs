@@ -510,7 +510,7 @@ impl context::Host for HostState {
         let value = context::ResourceBudget {
             cpu_fuel: budget.cpu_fuel,
             memory_bytes: budget.memory_bytes,
-            wall_deadline_unix_millis: budget.wall_deadline_unix_millis,
+            wall_time_limit_millis: budget.wall_time_limit_millis,
             child_calls: budget.child_calls,
             outbound_requests: budget.outbound_requests,
             state_read_bytes: budget.state_read_bytes,

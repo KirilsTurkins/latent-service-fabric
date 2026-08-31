@@ -34,6 +34,9 @@
 | `RouteService` | Retrieve and watch immutable route snapshots |
 | `InvocationService` | Generic invocation, cancellation, and activation status |
 
+Phase 1's supported standalone subset and all explicit unimplemented methods
+are defined in [Phase 1 contract hardening](protocol/phase-1-contract-hardening.md).
+
 ## Rust internal interfaces
 
 | Crate | Primary seams |

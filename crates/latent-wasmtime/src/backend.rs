@@ -5,8 +5,8 @@ use std::time::{Duration, Instant};
 
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
-    ActivationId, BoxFuture, BudgetConsumption, ErrorDetail, Metadata, PlatformError,
-    PlatformErrorCode, ReleaseDigest, ResourceBudget,
+    ActivationId, BoxFuture, BudgetConsumption, DeclaredError, ErrorDetail, Metadata,
+    PlatformError, PlatformErrorCode, ReleaseDigest, ResourceBudget,
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
@@ -874,10 +874,7 @@ impl Phase0WasmtimeBackend {
         let cancellation_guard = cancellation_probe
             .as_ref()
             .map(|_| self.resources.cancellation_probe());
-        let deadline = monotonic_deadline(earliest_deadline(
-            request.activation.deadline_unix_millis,
-            request.budget.wall_deadline_unix_millis,
-        ))?;
+        let deadline = monotonic_deadline(request.activation.deadline_unix_millis)?;
         let stop = Arc::new(StopControl::new(deadline, cancellation_probe));
         if let Some(kind) = stop.observe() {
             return Ok(interrupted_outcome(
@@ -1029,16 +1026,22 @@ impl Phase0WasmtimeBackend {
                 consumption,
             }),
             Ok(Err(bindings::exports::examples::echo::api::EchoError::EmptyMessage)) => {
-                Ok(GuestOutcome::Returned {
-                    output: EMPTY_MESSAGE_OUTPUT.to_vec(),
-                    output_media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
+                Ok(GuestOutcome::DeclaredError {
+                    error: echo_declared_error(
+                        "empty-message",
+                        "the echo message must not be empty",
+                        EMPTY_MESSAGE_OUTPUT,
+                    ),
                     consumption,
                 })
             }
             Ok(Err(bindings::exports::examples::echo::api::EchoError::MessageTooLarge)) => {
-                Ok(GuestOutcome::Returned {
-                    output: MESSAGE_TOO_LARGE_OUTPUT.to_vec(),
-                    output_media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
+                Ok(GuestOutcome::DeclaredError {
+                    error: echo_declared_error(
+                        "message-too-large",
+                        "the echo message exceeds the declared byte limit",
+                        MESSAGE_TOO_LARGE_OUTPUT,
+                    ),
                     consumption,
                 })
             }
@@ -1355,16 +1358,18 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
     }
 }
 
-fn earliest_deadline(first: Option<u64>, second: Option<u64>) -> Option<u64> {
-    match (first, second) {
-        (Some(first), Some(second)) => Some(first.min(second)),
-        (Some(value), None) | (None, Some(value)) => Some(value),
-        (None, None) => None,
-    }
-}
-
 fn elapsed_micros(started: Instant) -> u64 {
     u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX)
+}
+
+fn echo_declared_error(code: &str, message: &str, payload: &[u8]) -> DeclaredError {
+    DeclaredError {
+        code: code.to_owned(),
+        message: message.to_owned(),
+        payload: payload.to_vec(),
+        media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
+        metadata: Metadata::new(),
+    }
 }
 
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
@@ -1398,7 +1403,7 @@ fn sha256_digest(bytes: &[u8]) -> String {
 }
 
 #[cfg(test)]
-mod timing_store_tests {
+mod timing_tests {
     use super::{InvocationTimingStore, Phase0InvocationTiming};
 
     #[test]
@@ -1446,7 +1451,10 @@ fn bounded_error(error: &wasmtime::Error) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{Phase0InstanceAllocator, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory};
+    use super::{
+        echo_declared_error, Phase0InstanceAllocator, Phase0WasmtimeConfig,
+        Phase0WasmtimeEngineFactory, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    };
     use crate::WasmtimeEngineFactory as _;
 
     #[test]
@@ -1493,5 +1501,18 @@ mod tests {
             ..Phase0WasmtimeConfig::default()
         };
         assert!(Phase0WasmtimeEngineFactory::new(config).is_err());
+    }
+
+    #[test]
+    fn typed_echo_error_keeps_code_payload_and_media_type_out_of_success() {
+        let error = echo_declared_error(
+            "empty-message",
+            "the echo message must not be empty",
+            br#"{"error":"empty-message"}"#,
+        );
+
+        assert_eq!(error.code, "empty-message");
+        assert_eq!(error.payload, br#"{"error":"empty-message"}"#);
+        assert_eq!(error.media_type, ECHO_DOMAIN_ERROR_MEDIA_TYPE);
     }
 }
