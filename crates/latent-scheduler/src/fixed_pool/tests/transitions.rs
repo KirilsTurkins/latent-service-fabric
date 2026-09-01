@@ -23,10 +23,7 @@ async fn observer_reports_committed_active_and_queue_transitions() {
         .expect("owner lease");
     let active = next_transition(&mut transitions).await;
     assert_eq!(active.activation_id.0, "activation-owner");
-    assert_eq!(
-        active.kind,
-        FixedCellPoolTestTransitionKind::LeaseActivated
-    );
+    assert_eq!(active.kind, FixedCellPoolTestTransitionKind::LeaseActivated);
     assert_eq!(active.observations.active_leases, 1);
     assert_eq!(active.observations.queue_depth, 0);
 
