@@ -16,7 +16,7 @@ use state::PoolInner;
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tokio::sync::oneshot;
+use tokio::sync::{mpsc, oneshot};
 use types::{IdleCell, LeaseDisposition, PendingGrant, PoolState, Reservation, WaitRegistration};
 
 pub(crate) use types::LeaseControl;
@@ -44,6 +44,23 @@ impl FixedCellPoolConfig {
             queue_capacity,
         }
     }
+}
+
+/// One committed fixed-pool transition exposed only for deterministic harness coordination.
+#[doc(hidden)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FixedCellPoolTestTransition {
+    pub activation_id: ActivationId,
+    pub kind: FixedCellPoolTestTransitionKind,
+    pub observations: CellPoolSnapshot,
+}
+
+/// The admission boundary crossed by a [`FixedCellPoolTestTransition`].
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FixedCellPoolTestTransitionKind {
+    LeaseActivated,
+    RequestQueued,
 }
 
 /// A fixed-capacity, FIFO execution-cell pool with no capsule-owned idle state.
@@ -117,6 +134,7 @@ impl FixedCellPool {
                     next_waiter_id: 1,
                     next_lease_token: 1,
                 }),
+                test_transition_observer: Mutex::new(None),
             }),
         })
     }
@@ -125,6 +143,21 @@ impl FixedCellPool {
     #[must_use]
     pub fn observations(&self) -> CellPoolSnapshot {
         self.inner.observations(self.inner.config.class)
+    }
+
+    /// Installs the single transition stream used by deterministic benchmark and test coordination.
+    ///
+    /// Every item is sent after the corresponding active-lease or bounded-queue mutation has
+    /// committed while the pool state lock is held. Calling this method again replaces the prior
+    /// observer. Production scheduling decisions must not depend on this harness-only stream.
+    #[doc(hidden)]
+    #[must_use]
+    pub fn subscribe_test_transitions(
+        &self,
+    ) -> mpsc::UnboundedReceiver<FixedCellPoolTestTransition> {
+        let (sender, receiver) = mpsc::unbounded_channel();
+        self.inner.install_test_transition_observer(sender);
+        receiver
     }
 
     /// Cancels one queued activation. Active leases are not affected.

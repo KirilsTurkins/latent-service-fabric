@@ -4,7 +4,10 @@
 
 mod fixed_pool;
 
-pub use fixed_pool::{FixedCellPool, FixedCellPoolConfig};
+pub use fixed_pool::{
+    FixedCellPool, FixedCellPoolConfig, FixedCellPoolTestTransition,
+    FixedCellPoolTestTransitionKind,
+};
 
 use latent_activation::ActivationEnvelope;
 use latent_core::{
