@@ -1,0 +1,25 @@
+name: PR 46 isolated merge export
+
+on:
+  pull_request:
+    branches:
+      - automation/pr46-merge-base-20260903
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export authenticated repository bundle
+        run: bash tools/validate_contracts.sh
+      - name: Upload merge bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr46-merge-bundle-${{ github.sha }}
+          path: target/capsules/echo/interface/pr46-merge-helper/
+          if-no-files-found: error
+          retention-days: 1
