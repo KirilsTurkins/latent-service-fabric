@@ -7,6 +7,8 @@ members = [
     "crates/latent-core",
     "crates/latent-manifest",
     "crates/latent-contracts",
+    "crates/latent-component-bindings",
+    "crates/latent-rpc",
     "crates/latent-artifacts",
     "crates/latent-oci",
     "crates/latent-signing",
@@ -50,12 +52,19 @@ description = "Interface-first architecture scaffold for the Latent Service Fabr
 [workspace.dependencies]
 blake3 = "=1.8.5"
 clap = { version = "=4.6.4", features = ["derive"] }
+prost = "=0.14.4"
+protoc-bin-vendored = "=3.2.0"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.150"
 sha2 = "=0.10.9"
 tempfile = "=3.27.0"
 tokio = { version = "=1.53.1", features = ["macros", "rt", "sync", "time"] }
 toml = { version = "=1.1.4", default-features = false, features = ["display", "parse", "serde"] }
+tonic = "=0.14.6"
+tonic-prost = "=0.14.6"
+tonic-prost-build = "=0.14.6"
+tracing = "=0.1.44"
+tracing-subscriber = "=0.3.23"
 wasmtime = { version = "=47.0.3", default-features = false, features = ["component-model", "component-model-async", "cranelift", "pooling-allocator", "runtime", "std", "wit-parser"] }
 wit-bindgen = "=0.60.0"
 

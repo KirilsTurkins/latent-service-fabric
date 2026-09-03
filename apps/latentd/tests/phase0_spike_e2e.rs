@@ -180,11 +180,11 @@ struct Fixtures {
 fn fixture_paths(root: &Path) -> Fixtures {
     let target = target_root(root);
     let echo_capsule = env::var_os("LSF_ECHO_CAPSULE")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| target.join("capsules/echo/capsule.json"));
-    let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| target.join("capsules/containment/containment-capsule.wasm"));
+        .map_or_else(|| target.join("capsules/echo/capsule.json"), PathBuf::from);
+    let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT").map_or_else(
+        || target.join("capsules/containment/containment-capsule.wasm"),
+        PathBuf::from,
+    );
 
     if !echo_capsule.is_file() || !containment_component.is_file() {
         let status = Command::new(root.join("tools/validate_contracts.sh"))

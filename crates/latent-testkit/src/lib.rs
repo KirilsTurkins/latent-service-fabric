@@ -2,9 +2,15 @@
 
 #![forbid(unsafe_code)]
 
+pub mod async_runtime;
 pub mod deterministic;
+pub mod process;
+pub mod resources;
 
+pub use async_runtime::AsyncTestRuntime;
 pub use deterministic::{block_on, DeterministicIds, ManualClock, TempWorkspace};
+pub use process::{CapturedProcess, ProcessHarness};
+pub use resources::{CurrentProcessProbe, ProcessResources, ResourceProbe};
 
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{BoxFuture, Metadata, PlatformError};

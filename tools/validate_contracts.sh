@@ -13,6 +13,7 @@ rm -rf "${OUTPUT}"
 mkdir -p "${OUTPUT}/wit" "${OUTPUT}/proto" "${OUTPUT}/example-wit"
 
 python3 tools/validate_repository.py
+python3 tools/validate_foundation.py
 python3 -m unittest discover -s tools/tests
 
 while IFS= read -r package; do
@@ -37,6 +38,10 @@ done < <(find "${ROOT}/examples" -type d -name wit | sort)
 buf lint api/proto
 buf build api/proto --as-file-descriptor-set -o "${OUTPUT}/proto/latent-api.bin"
 
+cargo check -p latent-rpc --all-targets --all-features --locked
+cargo test -p latent-rpc --locked
+cargo check -p latent-component-bindings --locked
+cargo check -p latent-component-bindings --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --locked

@@ -9,6 +9,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tools.tests.phase0_test_environment import sanitized_phase0_environment
+
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "tools" / "run_phase0_hot_path_profiles.sh"
@@ -40,6 +42,8 @@ class HotPathProfileRunnerTests(unittest.TestCase):
         *,
         environment: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
+        if environment is None:
+            environment = sanitized_phase0_environment()
         return subprocess.run(
             self.command(calibration, output),
             check=False,
@@ -86,7 +90,7 @@ class HotPathProfileRunnerTests(unittest.TestCase):
             calibration = root / "calibration.json"
             calibration.write_text("{}\n", encoding="utf-8")
             output = root / "evidence"
-            base_environment = dict(os.environ)
+            base_environment = sanitized_phase0_environment()
 
             relative_environment = dict(base_environment)
             relative_environment["LSF_HOT_PATH_TARGET_DIR"] = "profile-build"
@@ -172,7 +176,7 @@ class HotPathProfileRunnerTests(unittest.TestCase):
             bin_directory / "systemd-detect-virt",
             "#!/usr/bin/env bash\nprintf '%s\\n' none\n",
         )
-        environment = dict(os.environ)
+        environment = sanitized_phase0_environment()
         # The production profiler runs repository validation after creating
         # its external target.  Fake-runner provenance tests must derive their
         # own fresh target instead of inheriting that outer path.

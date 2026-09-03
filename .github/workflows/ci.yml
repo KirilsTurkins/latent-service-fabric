@@ -1,6 +1,10 @@
 name: CI
 
 on:
+  pull_request:
+  push:
+    branches:
+      - development
   workflow_dispatch:
 
 permissions:
@@ -20,8 +24,11 @@ jobs:
         run: cargo fmt --all --check
       - name: Check workspace
         run: cargo check --workspace --all-targets --all-features --locked
-      - name: Check generated guest bindings
+      - name: Check generated RPC and Component Model bindings
         run: |
+          cargo check -p latent-rpc --all-targets --all-features --locked
+          cargo check -p latent-component-bindings --locked
+          cargo check -p latent-component-bindings --target wasm32-wasip2 --locked
           cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
           cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
       - name: Run Clippy
@@ -60,7 +67,9 @@ jobs:
         with:
           version: 1.72.0
       - name: Validate contracts, echo component, and generated bindings
-        run: tools/validate_contracts.sh
+        run: |
+          unset CARGO_INCREMENTAL
+          tools/validate_contracts.sh
       - name: Record echo capsule build evidence
         run: |
           cat target/capsules/echo/build.json
