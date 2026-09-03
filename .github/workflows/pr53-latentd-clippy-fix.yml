@@ -1,0 +1,93 @@
+name: PR 53 latentd strict Clippy fix
+
+on:
+  push:
+    branches:
+      - feat/issue-13-shared-telemetry-inventory
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr53-latentd-strict-clippy-fix
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    if: github.ref == 'refs/heads/feat/issue-13-shared-telemetry-inventory'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/issue-13-shared-telemetry-inventory
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt, clippy
+
+      - name: Apply strict latentd Clippy fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          lib = Path("apps/latentd/src/lib.rs")
+          text = lib.read_text(encoding="utf-8")
+
+          old = "        cache_after_prepare: _,\n        ..\n"
+          if text.count(old) != 1:
+              raise SystemExit(
+                  f"expected one unneeded wildcard pattern, found {text.count(old)}"
+              )
+          text = text.replace(old, "        ..\n", 1)
+
+          old = "#[derive(Debug, Clone, Serialize)]\nstruct InventoryPressureReport {"
+          new = (
+              "#[derive(Debug, Clone, Serialize)]\n"
+              "#[allow(clippy::struct_field_names)]\n"
+              "struct InventoryPressureReport {"
+          )
+          if text.count(old) != 1:
+              raise SystemExit(
+                  f"expected one pressure report declaration, found {text.count(old)}"
+              )
+          lib.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          observability = Path("apps/latentd/src/phase0_observability.rs")
+          text = observability.read_text(encoding="utf-8")
+          old = "active_count: if self.telemetry.is_closed() { 0 } else { 1 },"
+          new = "active_count: u64::from(!self.telemetry.is_closed()),"
+          if text.count(old) != 1:
+              raise SystemExit(
+                  f"expected one telemetry exporter active-count expression, found {text.count(old)}"
+              )
+          observability.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+          cargo fmt --all
+
+      - name: Validate latentd strict gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo check -p latentd --all-targets --all-features --locked
+          cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D warnings
+          cargo test -p latentd --all-targets --all-features --locked
+
+      - name: Commit corrected source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/workflows/pr53-latentd-clippy-fix.yml
+          git add --all
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo "strict Clippy fix produced no source change" >&2
+            exit 1
+          fi
+          git commit -m "fix: satisfy latentd strict Clippy gate"
+          git push origin HEAD:refs/heads/feat/issue-13-shared-telemetry-inventory
