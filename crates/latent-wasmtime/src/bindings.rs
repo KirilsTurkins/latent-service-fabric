@@ -1,10 +1,14 @@
-//! Generated host bindings for the Phase 0 echo world.
+//! Shared generated host bindings used by the Wasmtime backend.
 
-mod generated {
-    include!(concat!(env!("OUT_DIR"), "/echo_bindings.rs"));
-}
+use latent_component_bindings::host::echo as generated;
 
 pub use generated::{exports, latent, Service};
+
+/// Aggregate runtime-world host bindings for future generic host composition.
+pub mod runtime {
+    #[allow(unused_imports)]
+    pub use latent_component_bindings::host::runtime::*;
+}
 
 use crate::host::HostState;
 

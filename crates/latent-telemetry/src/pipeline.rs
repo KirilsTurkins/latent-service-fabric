@@ -1,3 +1,5 @@
+#![allow(clippy::cast_precision_loss)]
+
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
@@ -91,6 +93,7 @@ impl std::fmt::Debug for TelemetryHandle {
         formatter
             .debug_struct("TelemetryHandle")
             .field("snapshot", &self.snapshot())
+            .field("closed", &self.is_closed())
             .finish()
     }
 }
@@ -126,6 +129,11 @@ impl TelemetryHandle {
             dropped_invalid_record: self.counters.dropped_invalid_record.load(Ordering::Relaxed),
             sink_failures: self.counters.sink_failures.load(Ordering::Relaxed),
         }
+    }
+
+    #[must_use]
+    pub fn is_closed(&self) -> bool {
+        self.sender.is_closed()
     }
 
     #[must_use]
@@ -362,7 +370,7 @@ fn validate_metric(point: &MetricPoint, config: &TelemetryPipelineConfig) -> boo
         && point.name.len() <= config.maximum_attribute_value_bytes
         && point.unit.len() <= config.maximum_attribute_name_bytes
         && point.value.is_finite()
-        && valid_metadata(&point.attributes, config)
+        && valid_metric_metadata(&point.attributes, config)
         && metric_size(point) <= config.maximum_record_bytes
 }
 
@@ -394,6 +402,103 @@ fn valid_trace(
             && trace.span_id.0.len() <= config.maximum_attribute_value_bytes
             && valid_metadata(&trace.baggage, config)
     })
+}
+
+fn valid_metric_metadata(metadata: &Metadata, config: &TelemetryPipelineConfig) -> bool {
+    valid_metadata(metadata, config)
+        && metadata
+            .iter()
+            .all(|(name, value)| valid_metric_dimension(name, value))
+}
+
+fn valid_metric_dimension(name: &str, value: &str) -> bool {
+    match name {
+        "stage" => matches!(
+            value,
+            "receipt"
+                | "resolution"
+                | "admission"
+                | "queueing"
+                | "materialization"
+                | "execution"
+                | "cancellation"
+                | "failure"
+                | "completion"
+                | "cleanup"
+        ),
+        "outcome" => matches!(
+            value,
+            "guest_success" | "guest_domain_error" | "platform_failure"
+        ),
+        "resource" => matches!(
+            value,
+            "cpu_fuel"
+                | "memory_bytes"
+                | "wall_time_micros"
+                | "child_calls"
+                | "outbound_requests"
+                | "state_read_bytes"
+                | "state_write_bytes"
+                | "blob_read_bytes"
+                | "blob_write_bytes"
+                | "log_bytes"
+                | "effect_count"
+        ),
+        "cell_class" => matches!(
+            value,
+            "tiny" | "small" | "standard" | "large" | "extra-large"
+        ),
+        "result" => matches!(
+            value,
+            "ok" | "failed"
+                | "acquired"
+                | "rejected"
+                | "returned"
+                | "declared_error"
+                | "trapped"
+                | "cancelled"
+                | "deadline_exceeded"
+                | "fuel_exhausted"
+                | "memory_exhausted"
+                | "platform_error"
+        ),
+        "reason" => matches!(
+            value,
+            "queue_full" | "queue_closed" | "invalid_record" | "sink_failure"
+        ),
+        "kind" => matches!(
+            value,
+            "cancelled" | "deadline_exceeded" | "fuel_exhausted" | "memory_exhausted"
+        ),
+        "operation" => matches!(value, "prepare" | "release"),
+        "disposition" => matches!(value, "reusable" | "quarantine"),
+        "severity" => matches!(
+            value,
+            "trace" | "debug" | "info" | "warn" | "error" | "fatal"
+        ),
+        "error_code" => matches!(
+            value,
+            "unavailable"
+                | "deadline_exceeded"
+                | "cancelled"
+                | "resource_exhausted"
+                | "permission_denied"
+                | "unauthenticated"
+                | "invalid_argument"
+                | "not_found"
+                | "already_exists"
+                | "incompatible_contract"
+                | "state_conflict"
+                | "dependency_failed"
+                | "guest_trap"
+                | "corrupt_artifact"
+                | "route_unavailable"
+                | "admission_rejected"
+                | "internal"
+                | "unknown"
+        ),
+        _ => false,
+    }
 }
 
 fn valid_metadata(metadata: &Metadata, config: &TelemetryPipelineConfig) -> bool {
@@ -459,40 +564,130 @@ fn pipeline_error(code: PlatformErrorCode, message: &str) -> PlatformError {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    use latent_core::BoxFuture;
+    use tokio::sync::Notify;
+
     use super::*;
-    use crate::{LocalSinkConfig, StructuredLocalSink};
+
+    #[derive(Default)]
+    struct BlockingSink {
+        entered: Notify,
+        released: AtomicBool,
+        release: Notify,
+    }
+
+    impl BlockingSink {
+        async fn wait_until_entered(&self) {
+            self.entered.notified().await;
+        }
+
+        fn release_all(&self) {
+            self.released.store(true, Ordering::Release);
+            self.release.notify_waiters();
+        }
+
+        fn block<'a>(&'a self) -> BoxFuture<'a, Result<(), PlatformError>> {
+            Box::pin(async move {
+                self.entered.notify_one();
+                while !self.released.load(Ordering::Acquire) {
+                    self.release.notified().await;
+                }
+                Ok(())
+            })
+        }
+    }
+
+    impl TelemetrySink for BlockingSink {
+        fn emit_metric<'a>(
+            &'a self,
+            _point: MetricPoint,
+        ) -> BoxFuture<'a, Result<(), PlatformError>> {
+            self.block()
+        }
+
+        fn emit_log<'a>(&'a self, _record: LogRecord) -> BoxFuture<'a, Result<(), PlatformError>> {
+            self.block()
+        }
+
+        fn emit_span<'a>(&'a self, _span: SpanRecord) -> BoxFuture<'a, Result<(), PlatformError>> {
+            self.block()
+        }
+    }
+
+    fn test_metric() -> MetricPoint {
+        MetricPoint {
+            name: "latent.test".to_owned(),
+            kind: MetricKind::Counter,
+            value: 1.0,
+            unit: "1".to_owned(),
+            attributes: Metadata::new(),
+            observed_at_unix_millis: 1,
+        }
+    }
 
     #[tokio::test]
-    async fn blocked_or_full_pipeline_remains_bounded_and_reports_drops() {
-        let sink = Arc::new(
-            StructuredLocalSink::new(LocalSinkConfig {
-                maximum_entries: 8,
-                maximum_bytes: 8 * 1_024,
-            })
-            .expect("valid sink"),
-        );
+    async fn blocked_exporter_keeps_the_hot_path_bounded_and_counts_drops() {
+        let sink = Arc::new(BlockingSink::default());
+        let (handle, runtime) = TelemetryRuntime::spawn(
+            TelemetryPipelineConfig {
+                queue_capacity: 2,
+                ..TelemetryPipelineConfig::default()
+            },
+            sink.clone(),
+        )
+        .expect("valid pipeline");
+
+        assert_eq!(handle.try_emit_metric(test_metric()), Ok(true));
+        sink.wait_until_entered().await;
+        for _ in 0..256 {
+            let _ = handle.try_emit_metric(test_metric());
+        }
+
+        let blocked = handle.snapshot();
+        assert!(blocked.queue_depth <= blocked.queue_capacity);
+        assert!(blocked.dropped_queue_full > 0);
+        sink.release_all();
+        handle.flush().await.expect("flush succeeds after release");
+        runtime.shutdown().await.expect("shutdown succeeds");
+    }
+
+    #[tokio::test]
+    async fn strict_drop_mode_returns_an_error_to_the_observer_call_site() {
+        let sink = Arc::new(BlockingSink::default());
         let (handle, runtime) = TelemetryRuntime::spawn(
             TelemetryPipelineConfig {
                 queue_capacity: 1,
+                fail_on_drop: true,
                 ..TelemetryPipelineConfig::default()
             },
-            sink,
+            sink.clone(),
         )
         .expect("valid pipeline");
-        for _ in 0..128 {
-            let _ = handle.try_emit_metric(MetricPoint {
-                name: "latent.test".to_owned(),
-                kind: MetricKind::Counter,
-                value: 1.0,
-                unit: "1".to_owned(),
-                attributes: Metadata::new(),
-                observed_at_unix_millis: 1,
-            });
-        }
-        handle.flush().await.expect("flush succeeds");
-        let snapshot = handle.snapshot();
-        assert!(snapshot.queue_depth <= snapshot.queue_capacity);
-        assert!(snapshot.accepted + snapshot.dropped_queue_full >= 128);
+
+        assert_eq!(handle.try_emit_metric(test_metric()), Ok(true));
+        sink.wait_until_entered().await;
+        assert_eq!(handle.try_emit_metric(test_metric()), Ok(true));
+        let error = handle
+            .try_emit_metric(test_metric())
+            .expect_err("the full queue is strict in tests");
+        assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
+        assert_eq!(handle.snapshot().dropped_queue_full, 1);
+
+        sink.release_all();
         runtime.shutdown().await.expect("shutdown succeeds");
+    }
+
+    #[test]
+    fn arbitrary_metric_labels_are_rejected_before_queueing() {
+        let point = MetricPoint {
+            attributes: Metadata::from([("activation_id".to_owned(), "unbounded".to_owned())]),
+            ..test_metric()
+        };
+        assert!(!validate_metric(
+            &point,
+            &TelemetryPipelineConfig::default()
+        ));
     }
 }

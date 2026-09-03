@@ -12,6 +12,7 @@ import unittest
 from pathlib import Path
 
 from tools.phase0_collector_identity import EXPECTED_RELEASE_BUILD_CONFIGURATION
+from tools.tests.phase0_test_environment import sanitized_phase0_environment
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -421,6 +422,7 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
         self.assertIn('TARGET_ROOT="${OUTPUT_DIR}.build"', runner)
 
     def test_runner_requires_explicit_calibration_and_durable_ref_before_outputs(self) -> None:
+        environment = sanitized_phase0_environment()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output_without_calibration = root / "without-calibration"
@@ -440,6 +442,7 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                 check=False,
                 text=True,
                 capture_output=True,
+                env=environment,
             )
             self.assertEqual(missing_calibration.returncode, 2)
             self.assertIn("--calibration is required", missing_calibration.stderr)
@@ -464,6 +467,7 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                 check=False,
                 text=True,
                 capture_output=True,
+                env=environment,
             )
             self.assertEqual(missing_ref.returncode, 2)
             self.assertIn("durable published source commit, tree, and branch or tag ref", missing_ref.stderr)
@@ -492,7 +496,11 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                 ]
 
             relative_output = subprocess.run(
-                arguments("relative-output"), check=False, text=True, capture_output=True
+                arguments("relative-output"),
+                check=False,
+                text=True,
+                capture_output=True,
+                env=sanitized_phase0_environment(),
             )
             self.assertEqual(relative_output.returncode, 2)
             self.assertIn("must be an absolute path outside the source tree", relative_output.stderr)
@@ -502,6 +510,7 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
                 check=False,
                 text=True,
                 capture_output=True,
+                env=sanitized_phase0_environment(),
             )
             self.assertEqual(in_tree_output.returncode, 2)
             self.assertIn("must be outside the source tree", in_tree_output.stderr)
@@ -509,7 +518,7 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             output = root / "evidence"
             existing_target = root / "existing-build"
             existing_target.mkdir()
-            environment = dict(os.environ)
+            environment = sanitized_phase0_environment()
             environment["LSF_RESOURCE_SOAK_TARGET_DIR"] = str(existing_target)
             reused_target = subprocess.run(
                 arguments(output),
@@ -603,7 +612,7 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             fake_cargo = fake_bin / "cargo"
             fake_cargo.write_text("#!/usr/bin/env sh\nexit 0\n", encoding="utf-8")
             fake_cargo.chmod(0o755)
-            environment = dict(os.environ)
+            environment = sanitized_phase0_environment()
             environment["LSF_RESOURCE_SOAK_TARGET_DIR"] = str(target_root)
             environment["PATH"] = f"{fake_bin}{os.pathsep}{environment.get('PATH', '')}"
             completed = subprocess.run(

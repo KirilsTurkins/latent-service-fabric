@@ -19,3 +19,4 @@ latent-telemetry = { path = "../latent-telemetry" }
 
 [dev-dependencies]
 tempfile.workspace = true
+tokio.workspace = true

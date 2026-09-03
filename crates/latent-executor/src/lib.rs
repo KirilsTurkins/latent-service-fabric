@@ -7,8 +7,8 @@ use std::sync::Arc;
 use latent_activation::ActivationEnvelope;
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
-    ActivationId, BoxFuture, BudgetConsumption, CapabilityId, CellId, Metadata, Payload,
-    PlatformError, ReleaseDigest, ResourceBudget,
+    ActivationId, BoxFuture, BudgetConsumption, CapabilityId, CellId, DeclaredError, Metadata,
+    Payload, PlatformError, ReleaseDigest, ResourceBudget,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -74,6 +74,14 @@ pub enum GuestOutcome {
     Returned {
         output: Payload,
         output_media_type: String,
+        consumption: BudgetConsumption,
+    },
+    /// A component-declared/domain failure returned through its typed contract
+    /// result. It is intentionally distinct from successful output and from a
+    /// platform failure, so an activation runner never has to infer it from a
+    /// service-specific payload or media type.
+    DeclaredError {
+        error: DeclaredError,
         consumption: BudgetConsumption,
     },
     Trapped {

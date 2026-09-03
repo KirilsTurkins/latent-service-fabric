@@ -1,0 +1,12 @@
+latent/control/v1/audit.proto
+latent/control/v1/binding.proto
+latent/control/v1/capability.proto
+latent/control/v1/common.proto
+latent/control/v1/contract.proto
+latent/control/v1/deployment.proto
+latent/control/v1/node.proto
+latent/control/v1/policy.proto
+latent/control/v1/release.proto
+latent/control/v1/route.proto
+latent/control/v1/trigger.proto
+latent/invocation/v1/invocation.proto

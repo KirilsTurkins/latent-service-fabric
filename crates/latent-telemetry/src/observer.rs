@@ -1,3 +1,5 @@
+#![allow(clippy::cast_precision_loss, clippy::too_many_lines)]
+
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -5,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use latent_activation::{ActivationEnvelope, ActivationEvent, ActivationOutcome, TraceContext};
 use latent_core::{
     ActivationId, ActivationPhase, BudgetConsumption, Metadata, PlatformError, PlatformErrorCode,
+    ResourceBudget,
 };
 
 use crate::{
@@ -96,7 +99,7 @@ pub struct GuestLogRecord {
 }
 
 pub trait GuestLogObserver: Send + Sync {
-    fn on_guest_log(&self, record: GuestLogRecord);
+    fn on_guest_log(&self, record: GuestLogRecord) -> Result<(), PlatformError>;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -106,7 +109,12 @@ pub struct SharedActivationObserverConfig {
     pub maximum_log_fields: usize,
     pub maximum_field_name_bytes: usize,
     pub maximum_field_value_bytes: usize,
-    pub domain_error_media_types: Vec<String>,
+    /// Guest message bodies are treated as raw payload-like data and are hidden
+    /// unless an operator explicitly enables bounded body export.
+    pub export_guest_log_bodies: bool,
+    /// Guest field values are hidden by default. Only exact, explicitly
+    /// allow-listed names may export a bounded value.
+    pub allowed_guest_field_names: Vec<String>,
 }
 
 impl Default for SharedActivationObserverConfig {
@@ -117,7 +125,8 @@ impl Default for SharedActivationObserverConfig {
             maximum_log_fields: 24,
             maximum_field_name_bytes: 64,
             maximum_field_value_bytes: 256,
-            domain_error_media_types: Vec::new(),
+            export_guest_log_bodies: false,
+            allowed_guest_field_names: Vec::new(),
         }
     }
 }
@@ -134,6 +143,7 @@ pub struct ObserverSnapshot {
 #[derive(Debug, Clone)]
 struct CorrelationState {
     correlation: ActivationCorrelation,
+    granted_budget: ResourceBudget,
     last_observed_unix_millis: u64,
 }
 
@@ -164,10 +174,14 @@ impl SharedActivationObserver {
             || config.maximum_log_fields == 0
             || config.maximum_field_name_bytes == 0
             || config.maximum_field_value_bytes == 0
+            || config
+                .allowed_guest_field_names
+                .iter()
+                .any(|name| name.is_empty() || name.len() > config.maximum_field_name_bytes)
         {
             return Err(observer_error(
                 PlatformErrorCode::InvalidArgument,
-                "activation observer bounds must be non-zero",
+                "activation observer bounds and guest-field allow-list must be valid",
             ));
         }
         Ok(Self {
@@ -231,12 +245,19 @@ impl SharedActivationObserver {
             envelope.activation_id.clone(),
             CorrelationState {
                 correlation,
+                granted_budget: envelope.budget.clone(),
                 last_observed_unix_millis: observed_at,
             },
         );
     }
 
-    fn lifecycle(&self, event: &ActivationLifecycleEvent) {
+    fn unregister(&self, activation_id: &ActivationId) {
+        let mut state = self.lock_state();
+        remove_from_order(&mut state.insertion_order, activation_id);
+        state.correlations.remove(activation_id);
+    }
+
+    fn lifecycle(&self, event: &ActivationLifecycleEvent) -> Result<(), PlatformError> {
         let correlation = {
             let mut state = self.lock_state();
             let correlation = state
@@ -251,67 +272,88 @@ impl SharedActivationObserver {
 
         let metric_attributes =
             Metadata::from([("stage".to_owned(), event.stage.as_str().to_owned())]);
-        self.emit_metric(
-            "latent.activation.lifecycle.events",
-            MetricKind::Counter,
-            1.0,
-            "1",
-            metric_attributes.clone(),
-            event.occurred_at_unix_millis,
+        let mut first_error = None;
+        collect_error(
+            &mut first_error,
+            self.emit_metric(
+                "latent.activation.lifecycle.events",
+                MetricKind::Counter,
+                1.0,
+                "1",
+                metric_attributes.clone(),
+                event.occurred_at_unix_millis,
+            ),
         );
         if let Some(duration) = event.duration_micros {
-            self.emit_metric(
-                "latent.activation.lifecycle.duration",
-                MetricKind::Histogram,
-                duration as f64,
-                "us",
-                metric_attributes,
-                event.occurred_at_unix_millis,
+            collect_error(
+                &mut first_error,
+                self.emit_metric(
+                    "latent.activation.lifecycle.duration",
+                    MetricKind::Histogram,
+                    duration as f64,
+                    "us",
+                    metric_attributes,
+                    event.occurred_at_unix_millis,
+                ),
             );
         }
 
-        let Some(correlation) = correlation else {
-            return;
-        };
-        let mut attributes = correlation_attributes(&correlation);
-        attributes.insert("stage".to_owned(), event.stage.as_str().to_owned());
-        for (name, value) in lifecycle_attributes(&event.attributes, &self.config) {
-            attributes.insert(name, value);
+        if let Some(correlation) = correlation {
+            let mut attributes = correlation_attributes(&correlation);
+            attributes.insert("stage".to_owned(), event.stage.as_str().to_owned());
+            for (name, value) in lifecycle_attributes(&event.attributes, &self.config) {
+                attributes.insert(name, value);
+            }
+            collect_error(
+                &mut first_error,
+                self.telemetry
+                    .try_emit_log(LogRecord {
+                        severity: lifecycle_severity(event.stage),
+                        body: format!("activation lifecycle: {}", event.stage.as_str()),
+                        trace: Some(correlation.trace.clone()),
+                        attributes: attributes.clone(),
+                        observed_at_unix_millis: event.occurred_at_unix_millis,
+                    })
+                    .map(|_| ()),
+            );
+            let ended = event.occurred_at_unix_millis.saturating_mul(1_000_000);
+            let started = event.duration_micros.map_or(ended, |duration| {
+                ended.saturating_sub(duration.saturating_mul(1_000))
+            });
+            collect_error(
+                &mut first_error,
+                self.telemetry
+                    .try_emit_span(SpanRecord {
+                        name: format!("latent.activation.{}", event.stage.as_str()),
+                        trace: correlation.trace,
+                        parent_span_id: None,
+                        started_at_unix_nanos: started,
+                        ended_at_unix_nanos: ended,
+                        status: lifecycle_status(event.stage, &event.attributes).to_owned(),
+                        attributes,
+                    })
+                    .map(|_| ()),
+            );
         }
-        let _ = self.telemetry.try_emit_log(LogRecord {
-            severity: lifecycle_severity(event.stage),
-            body: format!("activation lifecycle: {}", event.stage.as_str()),
-            trace: Some(correlation.trace.clone()),
-            attributes: attributes.clone(),
-            observed_at_unix_millis: event.occurred_at_unix_millis,
-        });
-        let ended = event.occurred_at_unix_millis.saturating_mul(1_000_000);
-        let started = event.duration_micros.map_or(ended, |duration| {
-            ended.saturating_sub(duration.saturating_mul(1_000))
-        });
-        let _ = self.telemetry.try_emit_span(SpanRecord {
-            name: format!("latent.activation.{}", event.stage.as_str()),
-            trace: correlation.trace,
-            parent_span_id: None,
-            started_at_unix_nanos: started,
-            ended_at_unix_nanos: ended,
-            status: "ok".to_owned(),
-            attributes,
-        });
+
+        first_error.map_or(Ok(()), Err)
     }
 
-    fn finish(&self, activation_id: &ActivationId, outcome: &ActivationOutcome) {
+    fn finish(
+        &self,
+        activation_id: &ActivationId,
+        outcome: &ActivationOutcome,
+    ) -> Result<(), PlatformError> {
         let observed_at = now_unix_millis();
-        let correlation = {
+        let correlation_state = {
             let mut state = self.lock_state();
-            state.completed = state.completed.saturating_add(1);
-            remove_from_order(&mut state.insertion_order, activation_id);
-            state
-                .correlations
-                .remove(activation_id)
-                .map(|state| state.correlation)
+            let current = state.correlations.get(activation_id).cloned();
+            if current.is_some() {
+                state.completed = state.completed.saturating_add(1);
+            }
+            current
         };
-        let outcome_class = classify_outcome(outcome, &self.config.domain_error_media_types);
+        let outcome_class = classify_outcome(outcome);
         let mut outcome_attributes =
             Metadata::from([("outcome".to_owned(), outcome_class.as_str().to_owned())]);
         if let ActivationOutcome::Failed { error, .. } = outcome {
@@ -320,85 +362,148 @@ impl SharedActivationObserver {
                 error_code_name(error.code).to_owned(),
             );
         }
-        self.emit_metric(
-            "latent.activation.outcomes",
-            MetricKind::Counter,
-            1.0,
-            "1",
-            outcome_attributes.clone(),
-            observed_at,
-        );
-        emit_consumption_metrics(
-            &self.telemetry,
-            outcome_consumption(outcome),
-            outcome_class,
-            observed_at,
-        );
 
-        let Some(correlation) = correlation else {
-            return;
-        };
-        let latency_micros = observed_at
-            .saturating_sub(correlation.received_at_unix_millis)
-            .saturating_mul(1_000);
-        self.emit_metric(
-            "latent.activation.latency",
-            MetricKind::Histogram,
-            latency_micros as f64,
-            "us",
-            outcome_attributes,
-            observed_at,
+        let mut first_error = None;
+        collect_error(
+            &mut first_error,
+            self.emit_metric(
+                "latent.activation.outcomes",
+                MetricKind::Counter,
+                1.0,
+                "1",
+                outcome_attributes.clone(),
+                observed_at,
+            ),
         );
-        let mut attributes = correlation_attributes(&correlation);
-        attributes.insert("outcome".to_owned(), outcome_class.as_str().to_owned());
-        add_consumption_attributes(&mut attributes, outcome_consumption(outcome));
-        if let ActivationOutcome::Failed {
-            terminal_state,
-            error,
-            ..
-        } = outcome
-        {
-            attributes.insert(
-                "terminal_state".to_owned(),
-                bounded(&format!("{terminal_state:?}"), MAX_CORRELATION_VALUE_BYTES),
+        collect_error(
+            &mut first_error,
+            emit_consumption_metrics(
+                &self.telemetry,
+                outcome_consumption(outcome),
+                outcome_class,
+                observed_at,
+            ),
+        );
+        if let Some(state) = &correlation_state {
+            collect_error(
+                &mut first_error,
+                emit_budget_exhaustion_metrics(
+                    &self.telemetry,
+                    &state.granted_budget,
+                    outcome_consumption(outcome),
+                    outcome_class,
+                    observed_at,
+                ),
             );
-            attributes.insert(
-                "error_code".to_owned(),
-                error_code_name(error.code).to_owned(),
+        }
+
+        if !matches!(outcome_class, ActivationOutcomeClass::GuestSuccess) {
+            let mut attributes =
+                Metadata::from([("outcome".to_owned(), outcome_class.as_str().to_owned())]);
+            if let ActivationOutcome::Failed { error, .. } = outcome {
+                attributes.insert(
+                    "error_code".to_owned(),
+                    error_code_name(error.code).to_owned(),
+                );
+            }
+            collect_error(
+                &mut first_error,
+                self.lifecycle(&ActivationLifecycleEvent {
+                    activation_id: activation_id.clone(),
+                    stage: ActivationLifecycleStage::Failure,
+                    occurred_at_unix_millis: observed_at,
+                    duration_micros: None,
+                    attributes,
+                }),
             );
+        }
+
+        collect_error(
+            &mut first_error,
             self.lifecycle(&ActivationLifecycleEvent {
                 activation_id: activation_id.clone(),
-                stage: ActivationLifecycleStage::Failure,
+                stage: ActivationLifecycleStage::Completion,
                 occurred_at_unix_millis: observed_at,
                 duration_micros: None,
                 attributes: Metadata::from([(
+                    "outcome".to_owned(),
+                    outcome_class.as_str().to_owned(),
+                )]),
+            }),
+        );
+
+        if let Some(state) = correlation_state {
+            let correlation = state.correlation;
+            let latency_micros = observed_at
+                .saturating_sub(correlation.received_at_unix_millis)
+                .saturating_mul(1_000);
+            collect_error(
+                &mut first_error,
+                self.emit_metric(
+                    "latent.activation.latency",
+                    MetricKind::Histogram,
+                    latency_micros as f64,
+                    "us",
+                    outcome_attributes,
+                    observed_at,
+                ),
+            );
+            let mut attributes = correlation_attributes(&correlation);
+            attributes.insert("outcome".to_owned(), outcome_class.as_str().to_owned());
+            add_consumption_attributes(&mut attributes, outcome_consumption(outcome));
+            if let ActivationOutcome::Failed {
+                terminal_state,
+                error,
+                ..
+            } = outcome
+            {
+                attributes.insert(
+                    "terminal_state".to_owned(),
+                    bounded(&format!("{terminal_state:?}"), MAX_CORRELATION_VALUE_BYTES),
+                );
+                attributes.insert(
                     "error_code".to_owned(),
                     error_code_name(error.code).to_owned(),
-                )]),
-            });
+                );
+            }
+            collect_error(
+                &mut first_error,
+                self.telemetry
+                    .try_emit_log(LogRecord {
+                        severity: match outcome_class {
+                            ActivationOutcomeClass::GuestSuccess => LogSeverity::Info,
+                            ActivationOutcomeClass::GuestDomainError => LogSeverity::Warn,
+                            ActivationOutcomeClass::PlatformFailure => LogSeverity::Error,
+                        },
+                        body: "activation completed".to_owned(),
+                        trace: Some(correlation.trace.clone()),
+                        attributes: attributes.clone(),
+                        observed_at_unix_millis: observed_at,
+                    })
+                    .map(|_| ()),
+            );
+            collect_error(
+                &mut first_error,
+                self.telemetry
+                    .try_emit_span(SpanRecord {
+                        name: "latent.activation".to_owned(),
+                        trace: correlation.trace,
+                        parent_span_id: None,
+                        started_at_unix_nanos: correlation
+                            .received_at_unix_millis
+                            .saturating_mul(1_000_000),
+                        ended_at_unix_nanos: observed_at.saturating_mul(1_000_000),
+                        status: outcome_status(outcome_class).to_owned(),
+                        attributes,
+                    })
+                    .map(|_| ()),
+            );
         }
-        let _ = self.telemetry.try_emit_log(LogRecord {
-            severity: match outcome_class {
-                ActivationOutcomeClass::GuestSuccess => LogSeverity::Info,
-                ActivationOutcomeClass::GuestDomainError => LogSeverity::Warn,
-                ActivationOutcomeClass::PlatformFailure => LogSeverity::Error,
-            },
-            body: "activation completed".to_owned(),
-            trace: Some(correlation.trace.clone()),
-            attributes: attributes.clone(),
-            observed_at_unix_millis: observed_at,
-        });
-        let _ = self.telemetry.try_emit_span(SpanRecord {
-            name: "latent.activation".to_owned(),
-            trace: correlation.trace,
-            parent_span_id: None,
-            started_at_unix_nanos: correlation
-                .received_at_unix_millis
-                .saturating_mul(1_000_000),
-            ended_at_unix_nanos: observed_at.saturating_mul(1_000_000),
-            status: outcome_class.as_str().to_owned(),
-            attributes,
-        });
+
+        // Correlation must remain live through failure and completion emission.
+        // It is removed only after all correlated terminal records were attempted.
+        self.unregister(activation_id);
+        first_error.map_or(Ok(()), Err)
     }
 
     fn emit_metric(
@@ -409,15 +514,17 @@ impl SharedActivationObserver {
         unit: &str,
         attributes: Metadata,
         observed_at_unix_millis: u64,
-    ) {
-        let _ = self.telemetry.try_emit_metric(MetricPoint {
-            name: name.to_owned(),
-            kind,
-            value,
-            unit: unit.to_owned(),
-            attributes,
-            observed_at_unix_millis,
-        });
+    ) -> Result<(), PlatformError> {
+        self.telemetry
+            .try_emit_metric(MetricPoint {
+                name: name.to_owned(),
+                kind,
+                value,
+                unit: unit.to_owned(),
+                attributes,
+                observed_at_unix_millis,
+            })
+            .map(|_| ())
     }
 
     fn lock_state(&self) -> MutexGuard<'_, ObserverState> {
@@ -428,20 +535,33 @@ impl SharedActivationObserver {
 }
 
 impl ActivationObserver for SharedActivationObserver {
-    fn on_received(&self, envelope: &ActivationEnvelope) {
+    fn on_received(&self, envelope: &ActivationEnvelope) -> Result<(), PlatformError> {
         let observed_at = now_unix_millis();
         self.register(envelope, observed_at);
-        self.lifecycle(&ActivationLifecycleEvent {
-            activation_id: envelope.activation_id.clone(),
-            stage: ActivationLifecycleStage::Receipt,
-            occurred_at_unix_millis: observed_at,
-            duration_micros: None,
-            attributes: Metadata::new(),
-        });
-        emit_budget_grant_metrics(&self.telemetry, &envelope.budget, observed_at);
+        let mut first_error = None;
+        collect_error(
+            &mut first_error,
+            self.lifecycle(&ActivationLifecycleEvent {
+                activation_id: envelope.activation_id.clone(),
+                stage: ActivationLifecycleStage::Receipt,
+                occurred_at_unix_millis: observed_at,
+                duration_micros: None,
+                attributes: Metadata::new(),
+            }),
+        );
+        collect_error(
+            &mut first_error,
+            emit_budget_grant_metrics(&self.telemetry, &envelope.budget, observed_at),
+        );
+        if let Some(error) = first_error {
+            self.unregister(&envelope.activation_id);
+            Err(error)
+        } else {
+            Ok(())
+        }
     }
 
-    fn on_event(&self, event: &ActivationEvent) {
+    fn on_event(&self, event: &ActivationEvent) -> Result<(), PlatformError> {
         self.lifecycle(&ActivationLifecycleEvent {
             activation_id: event.activation_id.clone(),
             stage: stage_for_phase(event.phase),
@@ -451,43 +571,59 @@ impl ActivationObserver for SharedActivationObserver {
                 .get("duration_micros")
                 .and_then(|value| value.parse().ok()),
             attributes: event.attributes.clone(),
-        });
+        })
     }
 
-    fn on_lifecycle(&self, event: &ActivationLifecycleEvent) {
-        self.lifecycle(event);
+    fn on_lifecycle(&self, event: &ActivationLifecycleEvent) -> Result<(), PlatformError> {
+        self.lifecycle(event)
     }
 
-    fn on_completed(&self, envelope: &ActivationEnvelope, outcome: &ActivationOutcome) {
-        self.finish(&envelope.activation_id, outcome);
+    fn on_completed(
+        &self,
+        envelope: &ActivationEnvelope,
+        outcome: &ActivationOutcome,
+    ) -> Result<(), PlatformError> {
+        self.finish(&envelope.activation_id, outcome)
     }
 
-    fn on_finalized(&self, activation_id: &ActivationId, outcome: &ActivationOutcome) {
-        self.finish(activation_id, outcome);
+    fn on_finalized(
+        &self,
+        activation_id: &ActivationId,
+        outcome: &ActivationOutcome,
+    ) -> Result<(), PlatformError> {
+        self.finish(activation_id, outcome)
     }
 
-    fn on_cancel_requested(&self, activation_id: &ActivationId) {
+    fn on_cancel_requested(&self, activation_id: &ActivationId) -> Result<(), PlatformError> {
         let observed_at = now_unix_millis();
-        self.lifecycle(&ActivationLifecycleEvent {
-            activation_id: activation_id.clone(),
-            stage: ActivationLifecycleStage::Cancellation,
-            occurred_at_unix_millis: observed_at,
-            duration_micros: None,
-            attributes: Metadata::new(),
-        });
-        self.emit_metric(
-            "latent.activation.cancellations",
-            MetricKind::Counter,
-            1.0,
-            "1",
-            Metadata::new(),
-            observed_at,
+        let mut first_error = None;
+        collect_error(
+            &mut first_error,
+            self.lifecycle(&ActivationLifecycleEvent {
+                activation_id: activation_id.clone(),
+                stage: ActivationLifecycleStage::Cancellation,
+                occurred_at_unix_millis: observed_at,
+                duration_micros: None,
+                attributes: Metadata::new(),
+            }),
         );
+        collect_error(
+            &mut first_error,
+            self.emit_metric(
+                "latent.activation.cancellations",
+                MetricKind::Counter,
+                1.0,
+                "1",
+                Metadata::new(),
+                observed_at,
+            ),
+        );
+        first_error.map_or(Ok(()), Err)
     }
 }
 
 impl GuestLogObserver for SharedActivationObserver {
-    fn on_guest_log(&self, record: GuestLogRecord) {
+    fn on_guest_log(&self, record: GuestLogRecord) -> Result<(), PlatformError> {
         let correlation = {
             let mut state = self.lock_state();
             state.guest_logs = state.guest_logs.saturating_add(1);
@@ -497,7 +633,7 @@ impl GuestLogObserver for SharedActivationObserver {
                 .map(|state| state.correlation.clone())
         };
         let Some(correlation) = correlation else {
-            return;
+            return Ok(());
         };
         let mut attributes = correlation_attributes(&correlation);
         for (name, value) in sanitize_fields(&record.fields, &self.config) {
@@ -507,25 +643,35 @@ impl GuestLogObserver for SharedActivationObserver {
             "severity".to_owned(),
             severity_name(record.severity).to_owned(),
         );
-        let body = sanitize_body(&record.body, self.config.maximum_log_body_bytes);
-        let _ = self.telemetry.try_emit_log(LogRecord {
-            severity: record.severity,
-            body,
-            trace: Some(correlation.trace),
-            attributes,
-            observed_at_unix_millis: record.observed_at_unix_millis,
-        });
-        self.emit_metric(
-            "latent.guest.logs",
-            MetricKind::Counter,
-            1.0,
-            "1",
-            Metadata::from([(
-                "severity".to_owned(),
-                severity_name(record.severity).to_owned(),
-            )]),
-            record.observed_at_unix_millis,
+        let body = sanitize_body(&record.body, &self.config);
+        let mut first_error = None;
+        collect_error(
+            &mut first_error,
+            self.telemetry
+                .try_emit_log(LogRecord {
+                    severity: record.severity,
+                    body,
+                    trace: Some(correlation.trace),
+                    attributes,
+                    observed_at_unix_millis: record.observed_at_unix_millis,
+                })
+                .map(|_| ()),
         );
+        collect_error(
+            &mut first_error,
+            self.emit_metric(
+                "latent.guest.logs",
+                MetricKind::Counter,
+                1.0,
+                "1",
+                Metadata::from([(
+                    "severity".to_owned(),
+                    severity_name(record.severity).to_owned(),
+                )]),
+                record.observed_at_unix_millis,
+            ),
+        );
+        first_error.map_or(Ok(()), Err)
     }
 }
 
@@ -534,7 +680,9 @@ pub struct NoopActivationObserver;
 
 impl ActivationObserver for NoopActivationObserver {}
 impl GuestLogObserver for NoopActivationObserver {
-    fn on_guest_log(&self, _record: GuestLogRecord) {}
+    fn on_guest_log(&self, _record: GuestLogRecord) -> Result<(), PlatformError> {
+        Ok(())
+    }
 }
 
 fn stage_for_phase(phase: ActivationPhase) -> ActivationLifecycleStage {
@@ -553,19 +701,10 @@ fn stage_for_phase(phase: ActivationPhase) -> ActivationLifecycleStage {
     }
 }
 
-fn classify_outcome(
-    outcome: &ActivationOutcome,
-    domain_error_media_types: &[String],
-) -> ActivationOutcomeClass {
+fn classify_outcome(outcome: &ActivationOutcome) -> ActivationOutcomeClass {
     match outcome {
-        ActivationOutcome::Succeeded(success)
-            if domain_error_media_types
-                .iter()
-                .any(|media_type| media_type == &success.output_media_type) =>
-        {
-            ActivationOutcomeClass::GuestDomainError
-        }
         ActivationOutcome::Succeeded(_) => ActivationOutcomeClass::GuestSuccess,
+        ActivationOutcome::DeclaredError { .. } => ActivationOutcomeClass::GuestDomainError,
         ActivationOutcome::Failed { .. } => ActivationOutcomeClass::PlatformFailure,
     }
 }
@@ -573,16 +712,17 @@ fn classify_outcome(
 fn outcome_consumption(outcome: &ActivationOutcome) -> &BudgetConsumption {
     match outcome {
         ActivationOutcome::Succeeded(success) => &success.consumption,
-        ActivationOutcome::Failed { consumption, .. } => consumption,
+        ActivationOutcome::DeclaredError { consumption, .. }
+        | ActivationOutcome::Failed { consumption, .. } => consumption,
     }
 }
 
 fn emit_budget_grant_metrics(
     telemetry: &TelemetryHandle,
-    budget: &latent_core::ResourceBudget,
+    budget: &ResourceBudget,
     observed_at: u64,
-) {
-    let grants = [
+) -> Result<(), PlatformError> {
+    let mut grants = vec![
         ("cpu_fuel", budget.cpu_fuel as f64),
         ("memory_bytes", budget.memory_bytes as f64),
         ("child_calls", f64::from(budget.child_calls)),
@@ -594,16 +734,20 @@ fn emit_budget_grant_metrics(
         ("log_bytes", budget.log_bytes as f64),
         ("effect_count", f64::from(budget.effect_count)),
     ];
-    for (resource, value) in grants {
-        let _ = telemetry.try_emit_metric(MetricPoint {
-            name: "latent.activation.budget.granted".to_owned(),
-            kind: MetricKind::Histogram,
-            value,
-            unit: "1".to_owned(),
-            attributes: Metadata::from([("resource".to_owned(), resource.to_owned())]),
-            observed_at_unix_millis: observed_at,
-        });
+    if let Some(wall_time_limit_millis) = budget.wall_time_limit_millis {
+        grants.push((
+            "wall_time_micros",
+            wall_time_limit_millis.saturating_mul(1_000) as f64,
+        ));
     }
+    emit_resource_metrics(
+        telemetry,
+        "latent.activation.budget.granted",
+        MetricKind::Histogram,
+        &grants,
+        None,
+        observed_at,
+    )
 }
 
 fn emit_consumption_metrics(
@@ -611,10 +755,112 @@ fn emit_consumption_metrics(
     consumption: &BudgetConsumption,
     outcome: ActivationOutcomeClass,
     observed_at: u64,
-) {
-    let values = [
+) -> Result<(), PlatformError> {
+    let values = consumption_values(consumption);
+    emit_resource_metrics(
+        telemetry,
+        "latent.activation.budget.consumed",
+        MetricKind::Histogram,
+        &values,
+        Some(outcome),
+        observed_at,
+    )
+}
+
+fn emit_budget_exhaustion_metrics(
+    telemetry: &TelemetryHandle,
+    budget: &ResourceBudget,
+    consumption: &BudgetConsumption,
+    outcome: ActivationOutcomeClass,
+    observed_at: u64,
+) -> Result<(), PlatformError> {
+    let mut exhausted = vec![
+        ("cpu_fuel", reached(consumption.cpu_fuel, budget.cpu_fuel)),
+        (
+            "memory_bytes",
+            reached(consumption.peak_memory_bytes, budget.memory_bytes),
+        ),
+        (
+            "child_calls",
+            reached(
+                u64::from(consumption.child_calls),
+                u64::from(budget.child_calls),
+            ),
+        ),
+        (
+            "outbound_requests",
+            reached(
+                u64::from(consumption.outbound_requests),
+                u64::from(budget.outbound_requests),
+            ),
+        ),
+        (
+            "state_read_bytes",
+            reached(consumption.state_read_bytes, budget.state_read_bytes),
+        ),
+        (
+            "state_write_bytes",
+            reached(consumption.state_write_bytes, budget.state_write_bytes),
+        ),
+        (
+            "blob_read_bytes",
+            reached(consumption.blob_read_bytes, budget.blob_read_bytes),
+        ),
+        (
+            "blob_write_bytes",
+            reached(consumption.blob_write_bytes, budget.blob_write_bytes),
+        ),
+        (
+            "log_bytes",
+            reached(consumption.log_bytes, budget.log_bytes),
+        ),
+        (
+            "effect_count",
+            reached(
+                u64::from(consumption.effect_count),
+                u64::from(budget.effect_count),
+            ),
+        ),
+    ];
+    if let Some(limit_millis) = budget.wall_time_limit_millis {
+        exhausted.push((
+            "wall_time_micros",
+            reached(
+                consumption.wall_time_micros,
+                limit_millis.saturating_mul(1_000),
+            ),
+        ));
+    }
+
+    let mut first_error = None;
+    for (resource, _) in exhausted
+        .into_iter()
+        .filter(|(_, was_exhausted)| *was_exhausted)
+    {
+        collect_error(
+            &mut first_error,
+            telemetry
+                .try_emit_metric(MetricPoint {
+                    name: "latent.activation.budget.exhausted".to_owned(),
+                    kind: MetricKind::Counter,
+                    value: 1.0,
+                    unit: "1".to_owned(),
+                    attributes: Metadata::from([
+                        ("resource".to_owned(), resource.to_owned()),
+                        ("outcome".to_owned(), outcome.as_str().to_owned()),
+                    ]),
+                    observed_at_unix_millis: observed_at,
+                })
+                .map(|_| ()),
+        );
+    }
+    first_error.map_or(Ok(()), Err)
+}
+
+fn consumption_values(consumption: &BudgetConsumption) -> Vec<(&'static str, f64)> {
+    vec![
         ("cpu_fuel", consumption.cpu_fuel as f64),
-        ("peak_memory_bytes", consumption.peak_memory_bytes as f64),
+        ("memory_bytes", consumption.peak_memory_bytes as f64),
         ("wall_time_micros", consumption.wall_time_micros as f64),
         ("child_calls", f64::from(consumption.child_calls)),
         (
@@ -627,20 +873,42 @@ fn emit_consumption_metrics(
         ("blob_write_bytes", consumption.blob_write_bytes as f64),
         ("log_bytes", consumption.log_bytes as f64),
         ("effect_count", f64::from(consumption.effect_count)),
-    ];
+    ]
+}
+
+fn emit_resource_metrics(
+    telemetry: &TelemetryHandle,
+    name: &str,
+    kind: MetricKind,
+    values: &[(&str, f64)],
+    outcome: Option<ActivationOutcomeClass>,
+    observed_at: u64,
+) -> Result<(), PlatformError> {
+    let mut first_error = None;
     for (resource, value) in values {
-        let _ = telemetry.try_emit_metric(MetricPoint {
-            name: "latent.activation.budget.consumed".to_owned(),
-            kind: MetricKind::Histogram,
-            value,
-            unit: "1".to_owned(),
-            attributes: Metadata::from([
-                ("resource".to_owned(), resource.to_owned()),
-                ("outcome".to_owned(), outcome.as_str().to_owned()),
-            ]),
-            observed_at_unix_millis: observed_at,
-        });
+        let mut attributes = Metadata::from([("resource".to_owned(), (*resource).to_owned())]);
+        if let Some(outcome) = outcome {
+            attributes.insert("outcome".to_owned(), outcome.as_str().to_owned());
+        }
+        collect_error(
+            &mut first_error,
+            telemetry
+                .try_emit_metric(MetricPoint {
+                    name: name.to_owned(),
+                    kind,
+                    value: *value,
+                    unit: "1".to_owned(),
+                    attributes,
+                    observed_at_unix_millis: observed_at,
+                })
+                .map(|_| ()),
+        );
     }
+    first_error.map_or(Ok(()), Err)
+}
+
+fn reached(consumed: u64, granted: u64) -> bool {
+    consumed > 0 && consumed >= granted
 }
 
 fn add_consumption_attributes(attributes: &mut Metadata, consumption: &BudgetConsumption) {
@@ -691,13 +959,15 @@ fn lifecycle_attributes(
     attributes: &Metadata,
     config: &SharedActivationObserverConfig,
 ) -> Metadata {
-    const ALLOWED: [&str; 6] = [
+    const ALLOWED: [&str; 8] = [
         "cell_class",
         "cleanup",
         "duration_micros",
         "error_code",
+        "outcome",
         "result",
         "reason_code",
+        "resolution",
     ];
     attributes
         .iter()
@@ -716,55 +986,90 @@ fn sanitize_fields(fields: &Metadata, config: &SharedActivationObserverConfig) -
     fields
         .iter()
         .take(config.maximum_log_fields)
-        .map(|(name, value)| {
-            let normalized_name = bounded(name, config.maximum_field_name_bytes);
-            let normalized_value = if sensitive_name(name) {
-                REDACTED.to_owned()
+        .enumerate()
+        .map(|(index, (name, value))| {
+            let permitted = config
+                .allowed_guest_field_names
+                .iter()
+                .any(|allowed| allowed == name)
+                && !sensitive_field_name(name);
+            let normalized_name = if permitted {
+                bounded(name, config.maximum_field_name_bytes)
             } else {
+                format!("redacted_field_{index}")
+            };
+            let normalized_value = if permitted && !sensitive_text(value) {
                 bounded(value, config.maximum_field_value_bytes)
+            } else {
+                REDACTED.to_owned()
             };
             (normalized_name, normalized_value)
         })
         .collect()
 }
 
-fn sanitize_body(body: &str, maximum_bytes: usize) -> String {
-    let lower = body.to_ascii_lowercase();
-    const MARKERS: [&str; 10] = [
-        "authorization:",
-        "bearer ",
-        "password=",
-        "password:",
-        "secret=",
-        "api_key=",
-        "apikey=",
-        "private key",
-        "cookie:",
-        "session=",
+fn sensitive_field_name(name: &str) -> bool {
+    let canonical = name
+        .chars()
+        .filter(char::is_ascii_alphanumeric)
+        .flat_map(char::to_lowercase)
+        .collect::<String>();
+    const MARKERS: [&str; 14] = [
+        "authorization",
+        "credential",
+        "password",
+        "passwd",
+        "secret",
+        "token",
+        "apikey",
+        "accesskey",
+        "privatekey",
+        "cookie",
+        "session",
+        "backtrace",
+        "stacktrace",
+        "payload",
     ];
-    if MARKERS.iter().any(|marker| lower.contains(marker)) {
+    MARKERS.iter().any(|marker| canonical.contains(marker))
+}
+
+fn sanitize_body(body: &str, config: &SharedActivationObserverConfig) -> String {
+    if !config.export_guest_log_bodies || sensitive_text(body) {
         REDACTED.to_owned()
     } else {
-        bounded(body, maximum_bytes)
+        bounded(body, config.maximum_log_body_bytes)
     }
 }
 
-fn sensitive_name(name: &str) -> bool {
-    let lower = name.to_ascii_lowercase();
-    [
+fn sensitive_text(value: &str) -> bool {
+    let lower = value.to_ascii_lowercase();
+    const MARKERS: [&str; 24] = [
         "authorization",
-        "credential",
-        "cookie",
+        "bearer ",
         "password",
+        "passwd",
         "secret",
-        "token",
         "api_key",
+        "api-key",
         "apikey",
-        "private_key",
+        "access_token",
+        "access-token",
+        "refresh_token",
+        "refresh-token",
+        "private key",
+        "begin rsa",
+        "begin openssh",
+        "cookie",
         "session",
-    ]
-    .iter()
-    .any(|marker| lower.contains(marker))
+        "token=",
+        "token:",
+        "\"token\"",
+        "\"password\"",
+        "\"secret\"",
+        "backtrace",
+        "stack trace",
+    ];
+    MARKERS.iter().any(|marker| lower.contains(marker))
 }
 
 fn sanitized_trace(trace: &TraceContext, config: &SharedActivationObserverConfig) -> TraceContext {
@@ -784,6 +1089,30 @@ fn lifecycle_severity(stage: ActivationLifecycleStage) -> LogSeverity {
         ActivationLifecycleStage::Cancellation => LogSeverity::Warn,
         ActivationLifecycleStage::Failure => LogSeverity::Error,
         _ => LogSeverity::Info,
+    }
+}
+
+fn lifecycle_status(stage: ActivationLifecycleStage, attributes: &Metadata) -> &'static str {
+    match stage {
+        ActivationLifecycleStage::Failure => "error",
+        ActivationLifecycleStage::Cancellation => "cancelled",
+        ActivationLifecycleStage::Completion
+            if attributes.get("outcome").is_some_and(|outcome| {
+                outcome != ActivationOutcomeClass::GuestSuccess.as_str()
+            }) =>
+        {
+            "error"
+        }
+        _ => "ok",
+    }
+}
+
+fn outcome_status(outcome: ActivationOutcomeClass) -> &'static str {
+    match outcome {
+        ActivationOutcomeClass::GuestSuccess => "ok",
+        ActivationOutcomeClass::GuestDomainError | ActivationOutcomeClass::PlatformFailure => {
+            "error"
+        }
     }
 }
 
@@ -821,6 +1150,12 @@ fn error_code_name(code: PlatformErrorCode) -> &'static str {
     }
 }
 
+fn collect_error(first_error: &mut Option<PlatformError>, result: Result<(), PlatformError>) {
+    if first_error.is_none() {
+        *first_error = result.err();
+    }
+}
+
 fn remove_from_order(order: &mut VecDeque<ActivationId>, activation_id: &ActivationId) {
     if let Some(position) = order
         .iter()
@@ -855,5 +1190,400 @@ fn observer_error(code: PlatformErrorCode, message: &str) -> PlatformError {
         message: message.to_owned(),
         retryable: false,
         details: Vec::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_envelope(id: &str) -> ActivationEnvelope {
+        let activation_id = ActivationId(id.to_owned());
+        ActivationEnvelope {
+            activation_id: activation_id.clone(),
+            parent_activation_id: None,
+            root_activation_id: activation_id,
+            principal: latent_core::InvocationPrincipal {
+                subject: "subject".to_owned(),
+                kind: latent_core::PrincipalKind::User,
+                tenant: Some(latent_core::TenantId("tenant".to_owned())),
+                service: None,
+                claims: Metadata::new(),
+            },
+            target: latent_routing::InvocationTarget {
+                tenant: latent_core::TenantId("tenant".to_owned()),
+                service: latent_core::ServiceId("service".to_owned()),
+                contract: latent_core::ContractId("example:contract".to_owned()),
+                function: latent_core::FunctionId("invoke".to_owned()),
+                route: None,
+            },
+            resolved_revision: None,
+            deadline_unix_millis: None,
+            priority: 0,
+            trace: TraceContext {
+                trace_id: latent_core::TraceId(format!("trace-{id}")),
+                span_id: latent_core::SpanId(format!("span-{id}")),
+                trace_flags: 1,
+                baggage: Metadata::new(),
+            },
+            idempotency_key: None,
+            retry_attempt: 0,
+            budget: ResourceBudget {
+                cpu_fuel: 10,
+                memory_bytes: 1_024,
+                wall_time_limit_millis: Some(100),
+                child_calls: 0,
+                outbound_requests: 0,
+                state_read_bytes: 0,
+                state_write_bytes: 0,
+                blob_read_bytes: 0,
+                blob_write_bytes: 0,
+                log_bytes: 1_024,
+                effect_count: 0,
+            },
+            metadata: Metadata::new(),
+            input: Vec::new(),
+            input_media_type: "application/octet-stream".to_owned(),
+        }
+    }
+
+    #[test]
+    fn outcome_contract_is_three_way_without_media_type_inference() {
+        assert_eq!(
+            classify_outcome(&ActivationOutcome::DeclaredError {
+                error: latent_core::DeclaredError {
+                    code: "domain".to_owned(),
+                    message: "declared".to_owned(),
+                    payload: Vec::new(),
+                    media_type: "application/anything".to_owned(),
+                    metadata: Metadata::new(),
+                },
+                consumption: BudgetConsumption::default(),
+            }),
+            ActivationOutcomeClass::GuestDomainError
+        );
+    }
+
+    #[test]
+    fn default_guest_filter_redacts_every_body_and_field_value() {
+        let config = SharedActivationObserverConfig::default();
+        assert_eq!(sanitize_body("ordinary text", &config), REDACTED);
+        let fields = sanitize_fields(
+            &Metadata::from([
+                (
+                    "safe-looking".to_owned(),
+                    "secret under innocuous key".to_owned(),
+                ),
+                ("token".to_owned(), "abc".to_owned()),
+            ]),
+            &config,
+        );
+        assert!(fields.values().all(|value| value == REDACTED));
+        assert_eq!(
+            fields.keys().cloned().collect::<Vec<_>>(),
+            vec!["redacted_field_0".to_owned(), "redacted_field_1".to_owned()]
+        );
+    }
+
+    #[test]
+    fn explicit_body_export_still_blocks_structured_secrets_and_backtraces() {
+        let config = SharedActivationObserverConfig {
+            export_guest_log_bodies: true,
+            ..SharedActivationObserverConfig::default()
+        };
+        assert_eq!(sanitize_body(r#"{"token":"abc"}"#, &config), REDACTED);
+        assert_eq!(sanitize_body("stack trace: frame 1", &config), REDACTED);
+        assert_eq!(
+            sanitize_body("bounded diagnostic", &config),
+            "bounded diagnostic"
+        );
+    }
+
+    #[test]
+    fn cancellation_and_failure_spans_are_not_successful() {
+        assert_eq!(
+            lifecycle_status(ActivationLifecycleStage::Cancellation, &Metadata::new()),
+            "cancelled"
+        );
+        assert_eq!(
+            lifecycle_status(ActivationLifecycleStage::Failure, &Metadata::new()),
+            "error"
+        );
+    }
+
+    #[test]
+    fn every_declared_budget_dimension_can_report_exhaustion() {
+        let budget = ResourceBudget {
+            cpu_fuel: 1,
+            memory_bytes: 1,
+            wall_time_limit_millis: Some(1),
+            child_calls: 1,
+            outbound_requests: 1,
+            state_read_bytes: 1,
+            state_write_bytes: 1,
+            blob_read_bytes: 1,
+            blob_write_bytes: 1,
+            log_bytes: 1,
+            effect_count: 1,
+        };
+        let consumption = BudgetConsumption {
+            cpu_fuel: 1,
+            peak_memory_bytes: 1,
+            wall_time_micros: 1_000,
+            child_calls: 1,
+            outbound_requests: 1,
+            state_read_bytes: 1,
+            state_write_bytes: 1,
+            blob_read_bytes: 1,
+            blob_write_bytes: 1,
+            log_bytes: 1,
+            effect_count: 1,
+        };
+        let exhausted = [
+            reached(consumption.cpu_fuel, budget.cpu_fuel),
+            reached(consumption.peak_memory_bytes, budget.memory_bytes),
+            reached(
+                consumption.wall_time_micros,
+                budget.wall_time_limit_millis.unwrap_or_default() * 1_000,
+            ),
+            reached(
+                u64::from(consumption.child_calls),
+                u64::from(budget.child_calls),
+            ),
+            reached(
+                u64::from(consumption.outbound_requests),
+                u64::from(budget.outbound_requests),
+            ),
+            reached(consumption.state_read_bytes, budget.state_read_bytes),
+            reached(consumption.state_write_bytes, budget.state_write_bytes),
+            reached(consumption.blob_read_bytes, budget.blob_read_bytes),
+            reached(consumption.blob_write_bytes, budget.blob_write_bytes),
+            reached(consumption.log_bytes, budget.log_bytes),
+            reached(
+                u64::from(consumption.effect_count),
+                u64::from(budget.effect_count),
+            ),
+        ];
+        assert!(exhausted.into_iter().all(std::convert::identity));
+    }
+
+    #[tokio::test]
+    async fn all_three_terminal_outcomes_export_distinct_correlated_classes() {
+        use std::collections::BTreeSet;
+
+        use latent_activation::ActivationSuccess;
+        use latent_core::{ActivationTerminalState, DeclaredError};
+
+        use crate::{
+            LocalSinkConfig, StructuredLocalSink, TelemetryPipelineConfig, TelemetryRecord,
+            TelemetryRuntime,
+        };
+
+        let sink = Arc::new(
+            StructuredLocalSink::new(LocalSinkConfig {
+                maximum_entries: 4_096,
+                maximum_bytes: 4 * 1_024 * 1_024,
+            })
+            .expect("valid local sink"),
+        );
+        let export: Arc<dyn crate::TelemetrySink> = sink.clone();
+        let (handle, runtime) = TelemetryRuntime::spawn(
+            TelemetryPipelineConfig {
+                queue_capacity: 512,
+                ..TelemetryPipelineConfig::default()
+            },
+            export,
+        )
+        .expect("valid pipeline");
+        let observer = SharedActivationObserver::new(
+            handle.clone(),
+            SharedActivationObserverConfig::default(),
+        )
+        .expect("valid observer");
+        let cases = [
+            (
+                test_envelope("success"),
+                ActivationOutcome::Succeeded(ActivationSuccess {
+                    output: Vec::new(),
+                    output_media_type: "application/octet-stream".to_owned(),
+                    consumption: BudgetConsumption::default(),
+                    committed_state_version: None,
+                    effect_ids: Vec::new(),
+                    metadata: Metadata::new(),
+                }),
+            ),
+            (
+                test_envelope("declared"),
+                ActivationOutcome::DeclaredError {
+                    error: DeclaredError {
+                        code: "domain".to_owned(),
+                        message: "declared".to_owned(),
+                        payload: Vec::new(),
+                        media_type: "application/domain-error".to_owned(),
+                        metadata: Metadata::new(),
+                    },
+                    consumption: BudgetConsumption::default(),
+                },
+            ),
+            (
+                test_envelope("platform"),
+                ActivationOutcome::Failed {
+                    terminal_state: ActivationTerminalState::PlatformFailed,
+                    error: observer_error(PlatformErrorCode::Internal, "platform"),
+                    consumption: BudgetConsumption::default(),
+                },
+            ),
+        ];
+
+        for (envelope, outcome) in cases {
+            observer.on_received(&envelope).expect("receipt");
+            observer
+                .on_completed(&envelope, &outcome)
+                .expect("terminal observation");
+        }
+        handle.flush().await.expect("flush");
+
+        let records = sink.records();
+        let metric_classes = records
+            .iter()
+            .filter_map(|record| match record {
+                TelemetryRecord::Metric(point) if point.name == "latent.activation.outcomes" => {
+                    point.attributes.get("outcome").cloned()
+                }
+                _ => None,
+            })
+            .collect::<BTreeSet<_>>();
+        assert_eq!(
+            metric_classes,
+            BTreeSet::from([
+                "guest_success".to_owned(),
+                "guest_domain_error".to_owned(),
+                "platform_failure".to_owned(),
+            ])
+        );
+        for (activation_id, outcome) in [
+            ("success", "guest_success"),
+            ("declared", "guest_domain_error"),
+            ("platform", "platform_failure"),
+        ] {
+            assert!(records.iter().any(|record| matches!(
+                record,
+                TelemetryRecord::Log(log)
+                    if log.body == "activation completed"
+                        && log.attributes.get("activation_id").map(String::as_str)
+                            == Some(activation_id)
+                        && log.attributes.get("outcome").map(String::as_str) == Some(outcome)
+            )));
+        }
+        assert_eq!(observer.snapshot().active_correlations, 0);
+        runtime.shutdown().await.expect("shutdown");
+    }
+
+    #[tokio::test]
+    async fn failure_path_exports_every_stage_with_correlation_and_non_ok_status() {
+        use latent_core::ActivationTerminalState;
+
+        use crate::{
+            LocalSinkConfig, StructuredLocalSink, TelemetryPipelineConfig, TelemetryRecord,
+            TelemetryRuntime,
+        };
+
+        let sink = Arc::new(
+            StructuredLocalSink::new(LocalSinkConfig {
+                maximum_entries: 4_096,
+                maximum_bytes: 4 * 1_024 * 1_024,
+            })
+            .expect("valid local sink"),
+        );
+        let export: Arc<dyn crate::TelemetrySink> = sink.clone();
+        let (handle, runtime) = TelemetryRuntime::spawn(
+            TelemetryPipelineConfig {
+                queue_capacity: 512,
+                ..TelemetryPipelineConfig::default()
+            },
+            export,
+        )
+        .expect("valid pipeline");
+        let observer = SharedActivationObserver::new(
+            handle.clone(),
+            SharedActivationObserverConfig::default(),
+        )
+        .expect("valid observer");
+        let envelope = test_envelope("activation-test");
+        let activation_id = envelope.activation_id.clone();
+
+        observer.on_received(&envelope).expect("receipt");
+        for stage in [
+            ActivationLifecycleStage::Resolution,
+            ActivationLifecycleStage::Admission,
+            ActivationLifecycleStage::Queueing,
+            ActivationLifecycleStage::Materialization,
+            ActivationLifecycleStage::Execution,
+            ActivationLifecycleStage::Cancellation,
+            ActivationLifecycleStage::Cleanup,
+        ] {
+            observer
+                .on_lifecycle(&ActivationLifecycleEvent {
+                    activation_id: activation_id.clone(),
+                    stage,
+                    occurred_at_unix_millis: 2,
+                    duration_micros: Some(1),
+                    attributes: Metadata::new(),
+                })
+                .expect("lifecycle stage");
+        }
+        observer
+            .on_completed(
+                &envelope,
+                &ActivationOutcome::Failed {
+                    terminal_state: ActivationTerminalState::PlatformFailed,
+                    error: observer_error(PlatformErrorCode::Internal, "failure"),
+                    consumption: BudgetConsumption::default(),
+                },
+            )
+            .expect("completion");
+        handle.flush().await.expect("flush");
+
+        let records = sink.records();
+        for stage in [
+            ActivationLifecycleStage::Receipt,
+            ActivationLifecycleStage::Resolution,
+            ActivationLifecycleStage::Admission,
+            ActivationLifecycleStage::Queueing,
+            ActivationLifecycleStage::Materialization,
+            ActivationLifecycleStage::Execution,
+            ActivationLifecycleStage::Cancellation,
+            ActivationLifecycleStage::Failure,
+            ActivationLifecycleStage::Completion,
+            ActivationLifecycleStage::Cleanup,
+        ] {
+            assert!(
+                records.iter().any(|record| matches!(
+                    record,
+                    TelemetryRecord::Log(log)
+                        if log.attributes.get("stage").map(String::as_str) == Some(stage.as_str())
+                            && log.attributes.get("activation_id").map(String::as_str)
+                                == Some("activation-test")
+                )),
+                "missing correlated lifecycle log for {}",
+                stage.as_str()
+            );
+        }
+        assert!(records.iter().any(|record| matches!(
+            record,
+            TelemetryRecord::Span(span)
+                if span.name == "latent.activation.failure"
+                    && span.status == "error"
+                    && span.attributes.get("activation_id").map(String::as_str)
+                        == Some("activation-test")
+        )));
+        assert!(records.iter().any(|record| matches!(
+            record,
+            TelemetryRecord::Span(span)
+                if span.name == "latent.activation.cancellation"
+                    && span.status == "cancelled"
+        )));
+        assert_eq!(observer.snapshot().active_correlations, 0);
+        runtime.shutdown().await.expect("shutdown");
     }
 }

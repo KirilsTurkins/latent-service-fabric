@@ -5,8 +5,8 @@ use std::time::{Duration, Instant};
 
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
-    ActivationId, BoxFuture, BudgetConsumption, ErrorDetail, Metadata, PlatformError,
-    PlatformErrorCode, ReleaseDigest, ResourceBudget,
+    ActivationId, BoxFuture, BudgetConsumption, DeclaredError, ErrorDetail, Metadata,
+    PlatformError, PlatformErrorCode, ReleaseDigest, ResourceBudget,
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
@@ -187,6 +187,9 @@ pub struct PreparedCacheSnapshot {
     pub source_bytes: usize,
     pub maximum_entries: usize,
     pub maximum_source_bytes: usize,
+    pub hits: u64,
+    pub misses: u64,
+    pub evictions: u64,
 }
 
 /// Bounded timing-store state exposed to long-running resource probes.
@@ -464,6 +467,9 @@ struct PreparedCache {
     source_bytes: usize,
     maximum_entries: usize,
     maximum_source_bytes: usize,
+    hits: u64,
+    misses: u64,
+    evictions: u64,
 }
 
 impl PreparedCache {
@@ -475,6 +481,9 @@ impl PreparedCache {
             source_bytes: 0,
             maximum_entries,
             maximum_source_bytes,
+            hits: 0,
+            misses: 0,
+            evictions: 0,
         }
     }
 
@@ -491,6 +500,16 @@ impl PreparedCache {
         Some(entry)
     }
 
+    fn lookup_for_prepare(&mut self, handle: &str) -> Option<Arc<PreparedRuntime>> {
+        let entry = self.get(handle);
+        if entry.is_some() {
+            self.hits = self.hits.saturating_add(1);
+        } else {
+            self.misses = self.misses.saturating_add(1);
+        }
+        entry
+    }
+
     fn insert(
         &mut self,
         handle: String,
@@ -505,14 +524,16 @@ impl PreparedCache {
             ));
         }
 
-        self.remove(&handle);
+        let _ = self.remove(&handle);
         while self.entries.len() >= self.maximum_entries
             || self.source_bytes.saturating_add(source_bytes) > self.maximum_source_bytes
         {
             let Some(evicted) = self.insertion_order.pop_front() else {
                 break;
             };
-            self.remove(&evicted);
+            if self.remove(&evicted) {
+                self.evictions = self.evictions.saturating_add(1);
+            }
         }
 
         self.source_bytes = self.source_bytes.saturating_add(source_bytes);
@@ -522,8 +543,8 @@ impl PreparedCache {
         Ok(())
     }
 
-    fn remove(&mut self, handle: &str) {
-        self.entries.remove(handle);
+    fn remove(&mut self, handle: &str) -> bool {
+        let removed = self.entries.remove(handle).is_some();
         if let Some(source_bytes) = self.source_sizes.remove(handle) {
             self.source_bytes = self.source_bytes.saturating_sub(source_bytes);
         }
@@ -534,6 +555,7 @@ impl PreparedCache {
         {
             self.insertion_order.remove(position);
         }
+        removed
     }
 
     fn snapshot(&self) -> PreparedCacheSnapshot {
@@ -542,6 +564,9 @@ impl PreparedCache {
             source_bytes: self.source_bytes,
             maximum_entries: self.maximum_entries,
             maximum_source_bytes: self.maximum_source_bytes,
+            hits: self.hits,
+            misses: self.misses,
+            evictions: self.evictions,
         }
     }
 }
@@ -708,7 +733,9 @@ impl Phase0WasmtimeBackend {
             ));
         }
         let handle = prepared_handle(key, &component_digest);
-        if self.config.prepared_cache_enabled && self.lock_cache().get(&handle).is_some() {
+        if self.config.prepared_cache_enabled
+            && self.lock_cache().lookup_for_prepare(&handle).is_some()
+        {
             return Ok(self.prepared_descriptor(key.clone(), handle, component_digest));
         }
 
@@ -874,10 +901,7 @@ impl Phase0WasmtimeBackend {
         let cancellation_guard = cancellation_probe
             .as_ref()
             .map(|_| self.resources.cancellation_probe());
-        let deadline = monotonic_deadline(earliest_deadline(
-            request.activation.deadline_unix_millis,
-            request.budget.wall_deadline_unix_millis,
-        ))?;
+        let deadline = monotonic_deadline(request.activation.deadline_unix_millis)?;
         let stop = Arc::new(StopControl::new(deadline, cancellation_probe));
         if let Some(kind) = stop.observe() {
             return Ok(interrupted_outcome(
@@ -1029,16 +1053,22 @@ impl Phase0WasmtimeBackend {
                 consumption,
             }),
             Ok(Err(bindings::exports::examples::echo::api::EchoError::EmptyMessage)) => {
-                Ok(GuestOutcome::Returned {
-                    output: EMPTY_MESSAGE_OUTPUT.to_vec(),
-                    output_media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
+                Ok(GuestOutcome::DeclaredError {
+                    error: echo_declared_error(
+                        "empty-message",
+                        "the echo message must not be empty",
+                        EMPTY_MESSAGE_OUTPUT,
+                    ),
                     consumption,
                 })
             }
             Ok(Err(bindings::exports::examples::echo::api::EchoError::MessageTooLarge)) => {
-                Ok(GuestOutcome::Returned {
-                    output: MESSAGE_TOO_LARGE_OUTPUT.to_vec(),
-                    output_media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
+                Ok(GuestOutcome::DeclaredError {
+                    error: echo_declared_error(
+                        "message-too-large",
+                        "the echo message exceeds the declared byte limit",
+                        MESSAGE_TOO_LARGE_OUTPUT,
+                    ),
                     consumption,
                 })
             }
@@ -1340,7 +1370,7 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
                 ));
             }
             if self.config.prepared_cache_enabled {
-                self.lock_cache().remove(&prepared.opaque_handle);
+                let _ = self.lock_cache().remove(&prepared.opaque_handle);
             } else {
                 let mut uncached = self.lock_uncached_prepared();
                 if uncached
@@ -1355,16 +1385,18 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
     }
 }
 
-fn earliest_deadline(first: Option<u64>, second: Option<u64>) -> Option<u64> {
-    match (first, second) {
-        (Some(first), Some(second)) => Some(first.min(second)),
-        (Some(value), None) | (None, Some(value)) => Some(value),
-        (None, None) => None,
-    }
-}
-
 fn elapsed_micros(started: Instant) -> u64 {
     u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX)
+}
+
+fn echo_declared_error(code: &str, message: &str, payload: &[u8]) -> DeclaredError {
+    DeclaredError {
+        code: code.to_owned(),
+        message: message.to_owned(),
+        payload: payload.to_vec(),
+        media_type: ECHO_DOMAIN_ERROR_MEDIA_TYPE.to_owned(),
+        metadata: Metadata::new(),
+    }
 }
 
 fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
@@ -1398,7 +1430,7 @@ fn sha256_digest(bytes: &[u8]) -> String {
 }
 
 #[cfg(test)]
-mod timing_store_tests {
+mod timing_tests {
     use super::{InvocationTimingStore, Phase0InvocationTiming};
 
     #[test]
@@ -1446,7 +1478,10 @@ fn bounded_error(error: &wasmtime::Error) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{Phase0InstanceAllocator, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory};
+    use super::{
+        echo_declared_error, Phase0InstanceAllocator, Phase0WasmtimeConfig,
+        Phase0WasmtimeEngineFactory, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    };
     use crate::WasmtimeEngineFactory as _;
 
     #[test]
@@ -1493,5 +1528,18 @@ mod tests {
             ..Phase0WasmtimeConfig::default()
         };
         assert!(Phase0WasmtimeEngineFactory::new(config).is_err());
+    }
+
+    #[test]
+    fn typed_echo_error_keeps_code_payload_and_media_type_out_of_success() {
+        let error = echo_declared_error(
+            "empty-message",
+            "the echo message must not be empty",
+            br#"{"error":"empty-message"}"#,
+        );
+
+        assert_eq!(error.code, "empty-message");
+        assert_eq!(error.payload, br#"{"error":"empty-message"}"#);
+        assert_eq!(error.media_type, ECHO_DOMAIN_ERROR_MEDIA_TYPE);
     }
 }

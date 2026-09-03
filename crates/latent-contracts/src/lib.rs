@@ -107,10 +107,7 @@ pub trait ContractRegistry: Send + Sync {
         id: &'a ContractId,
     ) -> BoxFuture<'a, Result<Option<ContractDescriptor>, PlatformError>>;
 
-    fn publish<'a>(
-        &'a self,
-        contract: ContractDescriptor,
-    ) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn publish(&self, contract: ContractDescriptor) -> BoxFuture<'_, Result<(), PlatformError>>;
 
     fn list<'a>(
         &'a self,

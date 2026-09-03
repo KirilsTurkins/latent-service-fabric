@@ -180,11 +180,11 @@ struct Fixtures {
 fn fixture_paths(root: &Path) -> Fixtures {
     let target = target_root(root);
     let echo_capsule = env::var_os("LSF_ECHO_CAPSULE")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| target.join("capsules/echo/capsule.json"));
-    let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| target.join("capsules/containment/containment-capsule.wasm"));
+        .map_or_else(|| target.join("capsules/echo/capsule.json"), PathBuf::from);
+    let containment_component = env::var_os("LSF_CONTAINMENT_COMPONENT").map_or_else(
+        || target.join("capsules/containment/containment-capsule.wasm"),
+        PathBuf::from,
+    );
 
     if !echo_capsule.is_file() || !containment_component.is_file() {
         let status = Command::new(root.join("tools/validate_contracts.sh"))
@@ -322,6 +322,10 @@ fn assert_exit(output: &Output, expected: i32) {
 
 fn assert_fixed_and_clean(document: &Value, workers: u64, capacity: u64, activation_count: usize) {
     assert_eq!(document["schema_version"], "latent.phase0.spike.result.v1");
+    if activation_count > 0 {
+        assert_live_inventory(document, workers, capacity);
+        assert_cli_logs_are_redacted(document);
+    }
     assert_eq!(document["production_ready"], false);
     assert_eq!(document["phase1_api_compatible"], false);
     assert_eq!(document["topology"]["runtime_workers"], workers);
@@ -350,6 +354,102 @@ fn assert_fixed_and_clean(document: &Value, workers: u64, capacity: u64, activat
     assert_eq!(document["shutdown"]["retained_log_entries"], 0);
     assert_eq!(document["shutdown"]["prepared_cache_entries"], 0);
     assert_reclaimed_backend_resources(&document["shutdown"]["backend_resources"]);
+}
+
+fn assert_live_inventory(document: &Value, workers: u64, capacity: u64) {
+    let inventory = &document["inventory"];
+    assert!(
+        inventory.is_object(),
+        "completed CLI output must expose inventory"
+    );
+    assert_eq!(inventory["node"], "phase0-spike-node-0");
+    assert_eq!(inventory["route_generation"], 0);
+    assert_eq!(inventory["queue_depth"], 0);
+    assert_eq!(inventory["health"]["ready"], true);
+    assert_eq!(inventory["health"]["healthy"], true);
+
+    let cells = inventory["cells"]
+        .as_array()
+        .expect("inventory cells must be an array");
+    assert_eq!(cells.len(), 1);
+    assert_eq!(cells[0]["class"], "standard");
+    assert_eq!(cells[0]["total"], capacity);
+    assert_eq!(cells[0]["available"], capacity);
+    assert_eq!(cells[0]["active"], 0);
+    assert_eq!(cells[0]["queue_depth"], 0);
+
+    assert_eq!(inventory["cache"]["entries"], 0);
+    assert!(inventory["cache"]["misses"].as_u64().unwrap_or(0) >= 1);
+    assert!(inventory["cache"]["hits"].as_u64().unwrap_or(0) >= 1);
+    assert_eq!(inventory["cache"]["evictions"], 0);
+
+    for name in [
+        "memory_milli",
+        "queue_milli",
+        "cache_milli",
+        "telemetry_milli",
+    ] {
+        assert!(
+            inventory["pressure"][name].as_u64().unwrap_or(u64::MAX) <= 1_000,
+            "pressure {name} must be normalized"
+        );
+    }
+
+    let topology = inventory["topology"]
+        .as_array()
+        .expect("inventory topology must be an array");
+    let mut names = std::collections::BTreeSet::new();
+    for entry in topology {
+        let name = entry["name"].as_str().expect("topology name");
+        assert!(names.insert(name), "topology entry {name} was duplicated");
+        assert!(!name.starts_with("dormant-service"));
+        if entry["ownership"] == "service_resident" {
+            assert_eq!(entry["active_count"], 0);
+        }
+    }
+    let process = topology
+        .iter()
+        .find(|entry| entry["name"] == "latentd-process")
+        .expect("the node process must be reported once");
+    assert_eq!(process["configured_count"], 1);
+    assert_eq!(process["active_count"], 1);
+    let mut exporters = topology
+        .iter()
+        .filter(|entry| entry["name"] == "telemetry-exporter");
+    let exporter = exporters
+        .next()
+        .expect("telemetry exporter must be reported");
+    assert!(
+        exporters.next().is_none(),
+        "telemetry exporter was duplicated"
+    );
+    assert_eq!(exporter["active_count"], 1);
+    let runtime = topology
+        .iter()
+        .find(|entry| entry["name"] == "tokio-runtime-workers")
+        .expect("runtime workers must be reported once");
+    assert_eq!(runtime["configured_count"], workers);
+    assert_eq!(runtime["active_count"], workers);
+    let cells = topology
+        .iter()
+        .find(|entry| entry["name"] == "generic-execution-cells")
+        .expect("fixed execution cells must be reported");
+    assert_eq!(cells["configured_count"], capacity);
+    assert_eq!(cells["active_count"], capacity);
+}
+
+fn assert_cli_logs_are_redacted(document: &Value) {
+    for log in document["logs"].as_array().expect("logs must be an array") {
+        let message = log["message"].as_str().expect("log message");
+        assert!(message.is_empty() || message == "[REDACTED]");
+        for (name, value) in log["fields"]
+            .as_object()
+            .expect("log fields must be an object")
+        {
+            assert!(name.starts_with("redacted_field_"));
+            assert_eq!(value, "[REDACTED]");
+        }
+    }
 }
 
 fn assert_reclaimed_backend_resources(resources: &Value) {

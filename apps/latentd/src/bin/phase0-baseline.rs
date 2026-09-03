@@ -23,9 +23,7 @@
     clippy::type_complexity
 )]
 
-#[cfg(target_os = "linux")]
-use std::collections::BTreeSet;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::error::Error;
 use std::fmt::{self, Write as _};
 use std::fs;
@@ -51,7 +49,7 @@ use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner};
 use latent_scheduler::{CellClass, CellLease, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
     Phase0InstanceAllocator, Phase0InvocationTiming, Phase0WasmtimeBackend, PreparedCacheSnapshot,
-    RuntimeResourceSnapshot, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    RuntimeResourceSnapshot,
 };
 use latentd::phase0_composition::{
     self, Phase0InvocationConfig, Phase0PreparationConfig, Phase0RuntimeConfig,

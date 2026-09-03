@@ -28,6 +28,7 @@ IGNORED_DIRECTORY_NAMES = {
     ".pytest_cache",
     ".venv",
     ".vscode",
+    ".zig-cache",
     "__pycache__",
     "artifacts",
     "coverage",
@@ -40,7 +41,8 @@ SCHEMA_EXAMPLES: dict[str, tuple[str, ...]] = {
     "capsule-manifest.schema.json": ("examples/**/capsule.json",),
     "deployment.schema.json": ("examples/**/deployment.json",),
     "policy.schema.json": ("examples/policies/*.json",),
-    "route-snapshot.schema.json": (),
+    "release-publish.schema.json": ("examples/**/publish-release.json",),
+    "route-snapshot.schema.json": ("examples/route-snapshot.json",),
     "trigger.schema.json": ("examples/**/*trigger.json",),
 }
 
@@ -443,10 +445,10 @@ def validate_required_docs() -> None:
             fail(f"required documentation missing: {relative}")
 
 
-def validate_nonempty_files() -> None:
-    for path in iter_source_files():
+def validate_nonempty_files(root: Path = ROOT) -> None:
+    for path in iter_source_files(root):
         if path.stat().st_size == 0:
-            fail(f"empty file: {path.relative_to(ROOT)}")
+            fail(f"empty file: {path.relative_to(root)}")
 
 
 def main() -> int:

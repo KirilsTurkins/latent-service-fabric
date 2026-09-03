@@ -16,7 +16,7 @@ use state::PoolInner;
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tokio::sync::oneshot;
+use tokio::sync::{mpsc, oneshot};
 use types::{IdleCell, LeaseDisposition, PendingGrant, PoolState, Reservation, WaitRegistration};
 
 pub(crate) use types::LeaseControl;
@@ -46,10 +46,27 @@ impl FixedCellPoolConfig {
     }
 }
 
+/// One committed fixed-pool transition exposed only for deterministic harness coordination.
+#[doc(hidden)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FixedCellPoolTestTransition {
+    pub activation_id: ActivationId,
+    pub kind: FixedCellPoolTestTransitionKind,
+    pub observations: CellPoolSnapshot,
+}
+
+/// The admission boundary crossed by a [`FixedCellPoolTestTransition`].
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FixedCellPoolTestTransitionKind {
+    LeaseActivated,
+    RequestQueued,
+}
+
 /// A fixed-capacity, FIFO execution-cell pool with no capsule-owned idle state.
 #[derive(Clone)]
 pub struct FixedCellPool {
-    pub(super) inner: Arc<PoolInner>,
+    inner: Arc<PoolInner>,
 }
 
 impl std::fmt::Debug for FixedCellPool {
@@ -117,6 +134,7 @@ impl FixedCellPool {
                     next_waiter_id: 1,
                     next_lease_token: 1,
                 }),
+                test_transition_observer: Mutex::new(None),
             }),
         })
     }
@@ -125,6 +143,21 @@ impl FixedCellPool {
     #[must_use]
     pub fn observations(&self) -> CellPoolSnapshot {
         self.inner.observations(self.inner.config.class)
+    }
+
+    /// Installs the single transition stream used by deterministic benchmark and test coordination.
+    ///
+    /// Every item is sent after the corresponding active-lease or bounded-queue mutation has
+    /// committed while the pool state lock is held. Calling this method again replaces the prior
+    /// observer. Production scheduling decisions must not depend on this harness-only stream.
+    #[doc(hidden)]
+    #[must_use]
+    pub fn subscribe_test_transitions(
+        &self,
+    ) -> mpsc::UnboundedReceiver<FixedCellPoolTestTransition> {
+        let (sender, receiver) = mpsc::unbounded_channel();
+        self.inner.install_test_transition_observer(sender);
+        receiver
     }
 
     /// Cancels one queued activation. Active leases are not affected.
@@ -157,6 +190,7 @@ impl FixedCellPool {
         tenant: TenantId,
         class: CellClass,
         budget: ResourceBudget,
+        deadline: Option<u64>,
     ) -> Result<CellLease, PlatformError> {
         if class != self.inner.config.class {
             return Err(pool_error(
@@ -177,7 +211,6 @@ impl FixedCellPool {
             ));
         }
 
-        let deadline = budget.wall_deadline_unix_millis;
         let now = self.inner.clock.now_unix_millis();
         if deadline.is_some_and(|value| value <= now) {
             return Err(deadline_error(&activation_id, deadline.unwrap_or(now)));
@@ -260,8 +293,30 @@ impl CellPool for FixedCellPool {
         let activation_id = activation_id.clone();
         let tenant = tenant.clone();
         let budget = budget.clone();
+        let deadline = ResourceBudget::effective_deadline_unix_millis(
+            self.inner.clock.now_unix_millis(),
+            None,
+            [&budget],
+        );
         Box::pin(async move {
-            self.acquire_owned(activation_id, tenant, class, budget)
+            self.acquire_owned(activation_id, tenant, class, budget, deadline)
+                .await
+        })
+    }
+
+    fn acquire_with_deadline<'a>(
+        &'a self,
+        activation_id: &'a ActivationId,
+        tenant: &'a TenantId,
+        class: CellClass,
+        budget: &'a ResourceBudget,
+        deadline_unix_millis: Option<u64>,
+    ) -> BoxFuture<'a, Result<CellLease, PlatformError>> {
+        let activation_id = activation_id.clone();
+        let tenant = tenant.clone();
+        let budget = budget.clone();
+        Box::pin(async move {
+            self.acquire_owned(activation_id, tenant, class, budget, deadline_unix_millis)
                 .await
         })
     }
@@ -299,10 +354,7 @@ impl CellPool for FixedCellPool {
 }
 
 impl CellLease {
-    pub(super) fn managed(
-        identity: types::LeaseIdentity,
-        owner: std::sync::Weak<PoolInner>,
-    ) -> Self {
+    fn managed(identity: types::LeaseIdentity, owner: std::sync::Weak<PoolInner>) -> Self {
         Self {
             id: identity.cell.id.clone(),
             activation_id: identity.activation_id.clone(),

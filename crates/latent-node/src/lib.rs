@@ -10,12 +10,14 @@ pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,
 };
 pub use inventory::{
-    CacheInventorySource, CellClassCapacity, EmptyCacheInventorySource, HealthStatus,
-    InventoryReporter, MemoryPressureSource, MutableNodeHealthSource, NodeCacheSummary,
-    NodeDescriptor, NodeDirectory, NodeHealthObservation, NodeHealthSource, NodeHeartbeat,
-    NodeInventory, NodePressureObservation, NodeRegistrar, NodeResourceTopology, NodeTopologyEntry,
-    NodeTopologySource, ResourceOwnership, RouteGenerationSource, RouteWatcher,
+    CacheInventorySource, CellClassCapacity, EmptyCacheInventorySource, EmptyNodeTopologySource,
+    HealthStatus, InventoryReporter, MemoryPressureSource, MutableNodeHealthSource,
+    NodeCacheSummary, NodeDescriptor, NodeDirectory, NodeHealthObservation, NodeHealthSource,
+    NodeHeartbeat, NodeInventory, NodePressureObservation, NodeRegistrar, NodeResourceTopology,
+    NodeTopologyEntry, NodeTopologySource, ResourceOwnership, RouteGenerationSource, RouteWatcher,
     StandaloneInventoryConfig, StandaloneInventoryReporter, StaticMemoryPressureSource,
     StaticRouteGenerationSource,
 };
-pub use observability::{ObservedActivationManager, ObservedCellPool, ObservedExecutionBackend};
+pub use observability::{
+    GuestLogSource, ObservedActivationManager, ObservedCellPool, ObservedExecutionBackend,
+};

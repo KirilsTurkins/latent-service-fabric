@@ -89,22 +89,44 @@ pub trait TelemetrySink: Send + Sync {
 
 /// Synchronous observer contract used by activation, scheduler, and execution
 /// boundaries. Implementations used on the hot path must be non-blocking.
+///
+/// The result is normally `Ok(())` even when a record is dropped. A pipeline
+/// configured with `fail_on_drop` returns an error so deterministic tests can
+/// prove strict failure behavior without changing the production default.
 pub trait ActivationObserver: Send + Sync {
-    fn on_received(&self, _envelope: &ActivationEnvelope) {}
+    fn on_received(&self, _envelope: &ActivationEnvelope) -> Result<(), PlatformError> {
+        Ok(())
+    }
 
-    fn on_event(&self, _event: &ActivationEvent) {}
+    fn on_event(&self, _event: &ActivationEvent) -> Result<(), PlatformError> {
+        Ok(())
+    }
 
-    fn on_lifecycle(&self, _event: &ActivationLifecycleEvent) {}
+    fn on_lifecycle(&self, _event: &ActivationLifecycleEvent) -> Result<(), PlatformError> {
+        Ok(())
+    }
 
     /// Original scaffold completion hook. Implementations that need no access
     /// to the full envelope can override [`Self::on_finalized`] instead.
-    fn on_completed(&self, envelope: &ActivationEnvelope, outcome: &ActivationOutcome) {
-        self.on_finalized(&envelope.activation_id, outcome);
+    fn on_completed(
+        &self,
+        envelope: &ActivationEnvelope,
+        outcome: &ActivationOutcome,
+    ) -> Result<(), PlatformError> {
+        self.on_finalized(&envelope.activation_id, outcome)
     }
 
     /// Payload-free completion hook used by node wrappers so completing an
     /// activation never requires cloning or retaining its input.
-    fn on_finalized(&self, _activation_id: &ActivationId, _outcome: &ActivationOutcome) {}
+    fn on_finalized(
+        &self,
+        _activation_id: &ActivationId,
+        _outcome: &ActivationOutcome,
+    ) -> Result<(), PlatformError> {
+        Ok(())
+    }
 
-    fn on_cancel_requested(&self, _activation_id: &ActivationId) {}
+    fn on_cancel_requested(&self, _activation_id: &ActivationId) -> Result<(), PlatformError> {
+        Ok(())
+    }
 }

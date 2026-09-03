@@ -179,7 +179,7 @@ fn local_sink_error(code: PlatformErrorCode, message: &str) -> PlatformError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{LogSeverity, TelemetrySink as _};
+    use crate::LogSeverity;
 
     #[test]
     fn local_sink_evicts_oldest_records_within_both_bounds() {

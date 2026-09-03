@@ -1,12 +1,19 @@
 CARGO ?= cargo
 PYTHON ?= python3
 
-.PHONY: check guest-bindings echo-capsule echo-capsule-reproducibility phase0-spike-demo phase0-calibration phase0-gate phase0-gate-smoke fmt fmt-check clippy test schemas repository-tests contracts sdks validate tree
+.PHONY: check rpc-bindings component-bindings guest-bindings echo-capsule echo-capsule-reproducibility phase0-spike-demo phase0-calibration phase0-gate phase0-gate-smoke phase1-foundation fmt fmt-check clippy test schemas repository-tests contracts sdks validate tree
 
 check:
 	$(CARGO) check --workspace --all-targets --all-features --locked
 
-guest-bindings:
+rpc-bindings:
+	$(CARGO) check -p latent-rpc --all-targets --all-features --locked
+
+component-bindings:
+	$(CARGO) check -p latent-component-bindings --locked
+	$(CARGO) check -p latent-component-bindings --target wasm32-wasip2 --locked
+
+guest-bindings: component-bindings
 	$(CARGO) check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
 	$(CARGO) check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
 
@@ -42,6 +49,7 @@ test:
 
 schemas:
 	$(PYTHON) tools/validate_repository.py
+	$(PYTHON) tools/validate_foundation.py
 
 repository-tests:
 	$(PYTHON) -m unittest discover -s tools/tests
@@ -52,7 +60,9 @@ contracts:
 sdks:
 	tools/validate_sdks.sh
 
-validate: fmt-check check clippy test contracts sdks
+phase1-foundation: fmt-check check clippy test contracts
+
+validate: phase1-foundation sdks
 
 tree:
 	find . -type f \

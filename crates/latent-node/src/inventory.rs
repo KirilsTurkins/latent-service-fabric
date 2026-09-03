@@ -252,6 +252,15 @@ pub trait NodeHealthSource: Send + Sync {
 
 pub trait NodeTopologySource: Send + Sync {
     fn topology(&self) -> NodeResourceTopology;
+
+    /// Produces no more than the requested number of rows. Dynamic sources
+    /// should override this method so collection never constructs an unbounded
+    /// intermediate vector merely to truncate it later.
+    fn bounded_topology(&self, maximum_entries: usize) -> NodeResourceTopology {
+        let mut topology = self.topology();
+        topology.entries.truncate(maximum_entries);
+        topology
+    }
 }
 
 #[derive(Debug, Default)]
@@ -381,6 +390,17 @@ impl Default for StandaloneInventoryConfig {
     }
 }
 
+#[derive(Debug)]
+struct StaticNodeTopologySource {
+    topology: NodeResourceTopology,
+}
+
+impl NodeTopologySource for StaticNodeTopologySource {
+    fn topology(&self) -> NodeResourceTopology {
+        self.topology.clone()
+    }
+}
+
 pub struct StandaloneInventoryReporter {
     config: StandaloneInventoryConfig,
     node: NodeDescriptor,
@@ -389,7 +409,7 @@ pub struct StandaloneInventoryReporter {
     cache: Arc<dyn CacheInventorySource>,
     pressure: Arc<dyn MemoryPressureSource>,
     health: Arc<dyn NodeHealthSource>,
-    fixed_topology: NodeResourceTopology,
+    fixed_topology: Arc<dyn NodeTopologySource>,
     dynamic_topology: Arc<dyn NodeTopologySource>,
 }
 
@@ -399,7 +419,6 @@ impl std::fmt::Debug for StandaloneInventoryReporter {
             .debug_struct("StandaloneInventoryReporter")
             .field("config", &self.config)
             .field("node", &self.node)
-            .field("fixed_topology", &self.fixed_topology)
             .finish_non_exhaustive()
     }
 }
@@ -415,6 +434,33 @@ impl StandaloneInventoryReporter {
         pressure: Arc<dyn MemoryPressureSource>,
         health: Arc<dyn NodeHealthSource>,
         fixed_topology: NodeResourceTopology,
+        dynamic_topology: Arc<dyn NodeTopologySource>,
+    ) -> Result<Self, PlatformError> {
+        Self::new_with_topology_sources(
+            config,
+            node,
+            cell_pool,
+            routes,
+            cache,
+            pressure,
+            health,
+            Arc::new(StaticNodeTopologySource {
+                topology: fixed_topology,
+            }),
+            dynamic_topology,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_with_topology_sources(
+        config: StandaloneInventoryConfig,
+        node: NodeDescriptor,
+        cell_pool: Arc<dyn CellPool>,
+        routes: Arc<dyn RouteGenerationSource>,
+        cache: Arc<dyn CacheInventorySource>,
+        pressure: Arc<dyn MemoryPressureSource>,
+        health: Arc<dyn NodeHealthSource>,
+        fixed_topology: Arc<dyn NodeTopologySource>,
         dynamic_topology: Arc<dyn NodeTopologySource>,
     ) -> Result<Self, PlatformError> {
         validate_config(&config)?;
@@ -453,14 +499,24 @@ impl StandaloneInventoryReporter {
             .truncate(self.config.maximum_cache_descriptors);
         let pressure = normalize_pressure(self.pressure.pressure());
         let health = normalize_health(self.health.health());
-        let mut topology = self.fixed_topology.clone();
-        topology
-            .entries
-            .extend(self.dynamic_topology.topology().entries);
+
+        let mut topology = self
+            .fixed_topology
+            .bounded_topology(self.config.maximum_topology_entries);
         topology
             .entries
             .truncate(self.config.maximum_topology_entries);
+        let remaining = self
+            .config
+            .maximum_topology_entries
+            .saturating_sub(topology.entries.len());
+        if remaining > 0 {
+            let mut dynamic = self.dynamic_topology.bounded_topology(remaining);
+            dynamic.entries.truncate(remaining);
+            topology.entries.extend(dynamic.entries);
+        }
         normalize_topology(&mut topology);
+
         Ok(NodeInventory {
             node: self.node.clone(),
             cell_capacity: capacities,
@@ -595,6 +651,8 @@ fn inventory_error(code: PlatformErrorCode, message: &str) -> PlatformError {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
     use super::*;
 
     #[test]
@@ -620,5 +678,88 @@ mod tests {
             .reasons
             .iter()
             .all(|reason| reason.len() <= MAX_REASON_BYTES));
+    }
+
+    #[derive(Debug)]
+    struct BoundedProbeSource {
+        last_limit: AtomicUsize,
+        available_rows: usize,
+    }
+
+    impl NodeTopologySource for BoundedProbeSource {
+        fn topology(&self) -> NodeResourceTopology {
+            panic!("reporter must use the bounded topology seam")
+        }
+
+        fn bounded_topology(&self, maximum_entries: usize) -> NodeResourceTopology {
+            self.last_limit.store(maximum_entries, Ordering::Release);
+            NodeResourceTopology {
+                entries: (0..maximum_entries.min(self.available_rows))
+                    .map(|index| NodeTopologyEntry {
+                        name: format!("row-{index}"),
+                        kind: "test".to_owned(),
+                        ownership: ResourceOwnership::NodeFixed,
+                        configured_count: 1,
+                        active_count: 1,
+                        attributes: Metadata::new(),
+                    })
+                    .collect(),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn reporter_requests_only_the_remaining_topology_budget_end_to_end() {
+        use latent_scheduler::{FixedCellPool, FixedCellPoolConfig};
+
+        let fixed = Arc::new(BoundedProbeSource {
+            last_limit: AtomicUsize::new(0),
+            available_rows: 3,
+        });
+        let dynamic = Arc::new(BoundedProbeSource {
+            last_limit: AtomicUsize::new(0),
+            available_rows: 100_000,
+        });
+        let pool: Arc<dyn CellPool> = Arc::new(
+            FixedCellPool::new(FixedCellPoolConfig::new(
+                NodeId("node-test".to_owned()),
+                CellClass::Standard,
+                1,
+                1,
+            ))
+            .expect("valid pool"),
+        );
+        let reporter = StandaloneInventoryReporter::new_with_topology_sources(
+            StandaloneInventoryConfig {
+                cell_classes: vec![CellClass::Standard],
+                maximum_cache_descriptors: 1,
+                maximum_topology_entries: 5,
+            },
+            NodeDescriptor {
+                id: NodeId("node-test".to_owned()),
+                architecture: "test".to_owned(),
+                operating_system: "test".to_owned(),
+                cpu_features: Vec::new(),
+                trust_classes: Vec::new(),
+                region: None,
+                zone: None,
+                endpoint: "local://test".to_owned(),
+                identity: "test".to_owned(),
+                attributes: Metadata::new(),
+            },
+            pool,
+            Arc::new(StaticRouteGenerationSource::new(RouteGeneration(1))),
+            Arc::new(EmptyCacheInventorySource),
+            Arc::new(StaticMemoryPressureSource::default()),
+            Arc::new(MutableNodeHealthSource::default()),
+            fixed.clone(),
+            dynamic.clone(),
+        )
+        .expect("valid reporter");
+
+        let inventory = reporter.snapshot().await.expect("inventory");
+        assert_eq!(inventory.topology.entries.len(), 5);
+        assert_eq!(fixed.last_limit.load(Ordering::Acquire), 5);
+        assert_eq!(dynamic.last_limit.load(Ordering::Acquire), 2);
     }
 }

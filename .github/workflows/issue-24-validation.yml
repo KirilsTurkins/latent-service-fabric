@@ -82,7 +82,9 @@ jobs:
           tools.tests.test_reassemble_phase0_hot_path_profile_archive
           tools.tests.test_aggregate_phase0_resource_soak
       - name: Run deterministic Phase 0 baseline smoke
-        run: tools/run_phase0_baselines.sh smoke "${RUNNER_TEMP}/phase0-baseline"
+        run: |
+          unset CARGO_INCREMENTAL
+          tools/run_phase0_baselines.sh smoke "${RUNNER_TEMP}/phase0-baseline"
       - name: Upload raw measurements and report
         if: always()
         uses: actions/upload-artifact@v4
@@ -124,7 +126,9 @@ jobs:
         with:
           version: 1.72.0
       - name: Generate full reference evidence
-        run: tools/run_phase0_baselines.sh full benchmarks/phase0
+        run: |
+          unset CARGO_INCREMENTAL
+          tools/run_phase0_baselines.sh full benchmarks/phase0
       - name: Commit generated evidence to the PR branch
         run: |
           git config user.name "github-actions[bot]"

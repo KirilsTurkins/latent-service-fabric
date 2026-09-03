@@ -32,6 +32,9 @@ test = false
 bench = false
 doc = false
 
+[dependencies]
+latent-component-bindings = { path = "../../crates/latent-component-bindings" }
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 blake3.workspace = true
 clap.workspace = true
@@ -40,6 +43,8 @@ serde_json.workspace = true
 tempfile.workspace = true
 tokio.workspace = true
 toml.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 wasmtime.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

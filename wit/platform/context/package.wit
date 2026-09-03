@@ -19,7 +19,9 @@ interface context {
     record resource-budget {
         cpu-fuel: u64,
         memory-bytes: u64,
-        wall-deadline-unix-millis: option<u64>,
+        // A relative ceiling measured from admission. `none` adds no ceiling;
+        // `some(0)` grants no wall time.
+        wall-time-limit-millis: option<u64>,
         child-calls: u32,
         outbound-requests: u32,
         state-read-bytes: u64,

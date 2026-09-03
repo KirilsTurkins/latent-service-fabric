@@ -6,6 +6,8 @@ import "latent/control/v1/common.proto";
 
 message ReleaseDescriptor {
   string digest = 1;
+  // Server-assigned opaque locator only. A client must not provide a filesystem
+  // path and the node must not interpret this value as one.
   string artifact_reference = 2;
   string service = 3;
   string semantic_version = 4;
@@ -18,8 +20,18 @@ message ReleaseDescriptor {
   map<string, string> annotations = 11;
 }
 
+// The Phase 1 locally trusted publish representation. Both byte fields are
+// subject to the request-size limits enforced by the future adapter.
+message CapsuleArtifactUpload {
+  bytes capsule_manifest_json = 1;
+  bytes component_bytes = 2;
+  string component_digest = 3;
+  string component_media_type = 4;
+}
+
 message PublishReleaseRequest {
   ReleaseDescriptor release = 1;
+  CapsuleArtifactUpload artifact = 2;
 }
 
 message PublishReleaseResponse {
@@ -46,7 +58,10 @@ message ListReleasesResponse {
 }
 
 service ReleaseService {
+  // Phase 1 standalone: supported.
   rpc PublishRelease(PublishReleaseRequest) returns (PublishReleaseResponse);
+  // Phase 1 standalone: supported.
   rpc GetRelease(GetReleaseRequest) returns (GetReleaseResponse);
+  // Phase 1 standalone: supported.
   rpc ListReleases(ListReleasesRequest) returns (ListReleasesResponse);
 }

@@ -1,0 +1,16 @@
+{
+  "apiVersion": "latent.dev/v1alpha1",
+  "kind": "ReleasePublish",
+  "release": {
+    "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "service": "examples/echo",
+    "semanticVersion": "0.1.0",
+    "world": "examples:echo/service@0.1.0"
+  },
+  "artifact": {
+    "capsuleManifestJson": "{\"apiVersion\":\"latent.dev/v1alpha1\",\"kind\":\"Capsule\"}",
+    "componentBase64": "AGFzbQ==",
+    "componentDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "componentMediaType": "application/vnd.wasm.component.v1+wasm"
+  }
+}

@@ -4,11 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_ROOT="${CARGO_TARGET_DIR:-${ROOT}/target}"
 OUTPUT="${TARGET_ROOT}/contracts/sdk"
+ZIG_LOCAL_CACHE="${TARGET_ROOT}/zig-local-cache"
 C_TARGET="x86_64-linux-gnu"
 
 cd "${ROOT}"
 rm -rf "${OUTPUT}"
-mkdir -p "${OUTPUT}/c" "${OUTPUT}/dotnet" "${OUTPUT}/java"
+mkdir -p "${OUTPUT}/c" "${OUTPUT}/dotnet" "${OUTPUT}/java" "${ZIG_LOCAL_CACHE}"
 
 npm ci --prefix sdk/typescript-client --ignore-scripts
 python3 tools/check_tool_versions.py
@@ -38,8 +39,28 @@ cat > "${OUTPUT}/c/header-smoke.c" <<'EOF_C'
 #include <latent/latent.h>
 
 int main(void) {
-    return 0;
+    latent_invocation_receipt receipt = {0};
+    latent_declared_invocation_error declared = {
+        .receipt = receipt,
+    };
+    latent_invocation_outcome outcome = {
+        .kind = LATENT_INVOCATION_DECLARED_ERROR,
+        .declared_error = &declared,
+    };
+    latent_activation_success_summary success = {0};
+    latent_retained_invocation_outcome retained = {
+        .kind = LATENT_RETAINED_INVOCATION_SUCCEEDED,
+        .success = &success,
+    };
+    latent_activation_status status = {
+        .has_terminal_outcome = true,
+        .terminal_outcome = retained,
+    };
+    return outcome.declared_error == 0 || !status.has_terminal_outcome;
 }
 EOF_C
-zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
+sed -i 's/^          //' "${OUTPUT}/c/header-smoke.c"
+ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
+    zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
     -I sdk/c/include "${OUTPUT}/c/header-smoke.c" -o "${OUTPUT}/c/header-smoke"
+"${OUTPUT}/c/header-smoke"
