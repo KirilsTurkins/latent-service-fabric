@@ -81,14 +81,13 @@ jobs:
 
           source = source.replace("use serde::Deserialize;\n", "", 1)
 
-          old_decode = """    let document: CapsuleDocument = serde_json::from_slice(&manifest_bytes).map_err(|error| {
-              composition_error(
-                  PlatformErrorCode::CorruptArtifact,
-                  &format!("capsule manifest is not valid JSON for the Phase 0 composition: {error}"),
-              )
-          })?;
-              let manifest = document.into_manifest()?;
-          """
+          decode_start_marker = (
+              "    let document: CapsuleDocument = "
+              "serde_json::from_slice(&manifest_bytes)"
+          )
+          decode_end_marker = "    let manifest = document.into_manifest()?;\n"
+          decode_start = source.find(decode_start_marker)
+          decode_end = source.find(decode_end_marker, decode_start)
           new_decode = """    let codec = JsonManifestCodec::default();
               let manifest = codec.decode_capsule(&manifest_bytes).map_err(|violations| {
                   let detail = violations
@@ -115,10 +114,13 @@ jobs:
                       )
                   })?;
           """
-          if old_decode in source:
-              source = source.replace(old_decode, new_decode, 1)
-          elif new_decode not in source:
+          if decode_start < 0 or decode_end < 0:
               raise SystemExit("Phase 0 capsule decode block did not match the expected base source")
+          source = (
+              source[:decode_start]
+              + new_decode
+              + source[decode_end + len(decode_end_marker) :]
+          )
 
           marker = """#[derive(Debug, Deserialize)]
           #[serde(rename_all = "camelCase")]
@@ -128,6 +130,20 @@ jobs:
           else:
               raise SystemExit("duplicate Phase 0 capsule document parser was not found")
           path.write_text(source, encoding="utf-8")
+
+          codec_path = Path("crates/latent-manifest/src/codec.rs")
+          codec_source = codec_path.read_text(encoding="utf-8")
+          fixed_kind_attribute = '''#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+          #[serde(rename_all = "camelCase")]
+          enum FixedKind {'''
+          fixed_kind_definition = '''#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+          enum FixedKind {'''
+          if fixed_kind_attribute not in codec_source:
+              raise SystemExit("FixedKind wire-name patch did not match the generated source")
+          codec_path.write_text(
+              codec_source.replace(fixed_kind_attribute, fixed_kind_definition, 1),
+              encoding="utf-8",
+          )
 
           for payload_path in Path(".issue3").glob("payload-*"):
               payload_path.unlink()
