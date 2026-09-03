@@ -988,6 +988,8 @@ name = "latent-manifest"
 version = "0.1.0-alpha.1"
 dependencies = [
  "latent-core",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
