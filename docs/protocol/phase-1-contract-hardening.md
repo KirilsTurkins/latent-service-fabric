@@ -72,6 +72,13 @@ an ordered list of `{ kind, fields }` details; a map-only transport shape is
 not permitted because it loses both the detail kind and repeated detail
 boundaries.
 
+`latent-rpc::platform_error` provides the canonical conversion between the Rust
+`PlatformError` domain type and both generated Protobuf `PlatformError` types.
+Stable codes use the documented lower-kebab-case spelling. Unknown wire codes
+are rejected with `UnknownPlatformErrorCode` instead of being coerced to a known
+classification. The conversion preserves message, retryability, detail order,
+detail kind, and every bounded field exactly through Prost serialization.
+
 The Rust execution boundary mirrors that distinction before an activation is
 mapped: GuestOutcome has separate Returned, DeclaredError, Trapped, and
 Interrupted variants. A backend must convert a typed guest/domain result to

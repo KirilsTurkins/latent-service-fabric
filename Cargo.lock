@@ -1031,6 +1031,7 @@ dependencies = [
 name = "latent-rpc"
 version = "0.1.0-alpha.1"
 dependencies = [
+ "latent-core",
  "prost",
  "protoc-bin-vendored",
  "tonic",

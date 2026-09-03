@@ -3,7 +3,9 @@ namespace Latent.Sdk;
 /// <summary>Specifies the resources available to an activation.</summary>
 /// <param name="CpuFuel">The maximum CPU fuel available to the activation.</param>
 /// <param name="MemoryBytes">The maximum memory, in bytes, available to the activation.</param>
-/// <param name="WallTimeLimitMillis">The optional relative wall-time limit, in milliseconds, enforced from activation start.</param>
+/// <param name="WallTimeLimitMillis">
+/// Optional relative wall-time limit measured from admission. <see langword="null"/> adds no ceiling; zero grants no wall time.
+/// </param>
 /// <param name="ChildCalls">The maximum number of child calls available to the activation.</param>
 /// <param name="OutboundRequests">The maximum number of outbound requests available to the activation.</param>
 /// <param name="StateReadBytes">The maximum state bytes that the activation may read.</param>

@@ -233,6 +233,18 @@ class SchemaAndSurfaceTests(unittest.TestCase):
             self.assertNotIn("wallDeadlineUnixMillis", source, path)
             self.assertNotIn("wall_deadline_unix_millis", source, path)
 
+        dotnet = (ROOT / "sdk/dotnet/Latent.Sdk/Abstractions.cs").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "Optional relative wall-time limit measured from admission.", dotnet
+        )
+        self.assertIn(
+            '<see langword="null"/> adds no ceiling; zero grants no wall time.',
+            dotnet,
+        )
+        self.assertNotIn("activation start", dotnet)
+
     def test_sdk_invocation_status_and_cancellation_surfaces_are_equivalent(self) -> None:
         expected = {
             "sdk/rust/src/lib.rs": (
@@ -342,6 +354,21 @@ class SchemaAndSurfaceTests(unittest.TestCase):
             ROOT / "crates/latent-core/src/error.rs"
         ).read_text(encoding="utf-8")
         self.assertIn("pub details: Vec<ErrorDetail>", core_error)
+
+        rpc_manifest = (ROOT / "crates/latent-rpc/Cargo.toml").read_text(
+            encoding="utf-8"
+        )
+        rpc_conversion = (
+            ROOT / "crates/latent-rpc/src/platform_error.rs"
+        ).read_text(encoding="utf-8")
+        rpc_round_trip = (
+            ROOT / "crates/latent-rpc/tests/platform_error_round_trip.rs"
+        ).read_text(encoding="utf-8")
+        self.assertIn('latent-core = { path = "../latent-core" }', rpc_manifest)
+        self.assertIn("TryIntoDomainPlatformError", rpc_conversion)
+        self.assertIn("UnknownPlatformErrorCode", rpc_conversion)
+        self.assertIn("Message::encode_to_vec", rpc_round_trip)
+        self.assertIn("PlatformError::decode", rpc_round_trip)
 
         c = (ROOT / "sdk/c/include/latent/latent.h").read_text(encoding="utf-8")
         self.assertIn(
