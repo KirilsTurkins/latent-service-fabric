@@ -12,7 +12,7 @@ public final class Models {
     public record ResourceBudget(
             long cpuFuel,
             long memoryBytes,
-            Optional<Long> wallDeadlineUnixMillis,
+            Optional<Long> wallTimeLimitMillis,
             int childCalls,
             int outboundRequests,
             long stateReadBytes,
@@ -77,6 +77,82 @@ public final class Models {
             String code,
             String message,
             boolean retryable,
-            Map<String, String> details) {
+            List<ErrorDetail> details) {
+    }
+
+    public record ErrorDetail(
+            String kind,
+            Map<String, String> fields) {
+    }
+
+    public record DeclaredError(
+            String code,
+            String message,
+            ByteBuffer payload,
+            String mediaType,
+            Map<String, String> metadata) {
+    }
+
+    public record InvocationReceipt(
+            String activationId,
+            String revisionId,
+            String releaseDigest,
+            long routeGeneration,
+            BudgetConsumption consumption) {
+    }
+
+    public sealed interface InvocationOutcome permits InvocationSuccess,
+            DeclaredInvocationError, PlatformInvocationFailure {
+    }
+
+    public record InvocationSuccess(InvokeResponse response) implements InvocationOutcome {
+    }
+
+    public record DeclaredInvocationError(
+            InvocationReceipt receipt,
+            DeclaredError error) implements InvocationOutcome {
+    }
+
+    public record PlatformInvocationFailure(
+            InvocationReceipt receipt,
+            PlatformFailure error) implements InvocationOutcome {
+    }
+
+    public enum CancelDisposition {
+        ACCEPTED,
+        ALREADY_TERMINAL,
+        NOT_FOUND
+    }
+
+    public record CancelResponse(
+            CancelDisposition disposition,
+            Optional<String> terminalState) {
+    }
+
+    public sealed interface RetainedInvocationOutcome permits ActivationSuccessSummary,
+            RetainedDeclaredError, RetainedPlatformFailure {
+    }
+
+    public record ActivationSuccessSummary(
+            Optional<String> committedStateVersion,
+            List<String> effectIds,
+            Map<String, String> metadata) implements RetainedInvocationOutcome {
+    }
+
+    public record RetainedDeclaredError(DeclaredError error) implements RetainedInvocationOutcome {
+    }
+
+    public record RetainedPlatformFailure(PlatformFailure error) implements RetainedInvocationOutcome {
+    }
+
+    public record ActivationStatus(
+            String activationId,
+            String phase,
+            Optional<String> terminalState,
+            Optional<RetainedInvocationOutcome> terminalOutcome,
+            Optional<BudgetConsumption> finalConsumption,
+            long lastUpdatedUnixMillis,
+            Optional<Long> terminalAtUnixMillis,
+            Map<String, String> metadata) {
     }
 }

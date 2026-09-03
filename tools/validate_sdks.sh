@@ -39,9 +39,28 @@ cat > "${OUTPUT}/c/header-smoke.c" <<'EOF_C'
 #include <latent/latent.h>
 
 int main(void) {
-    return 0;
+    latent_invocation_receipt receipt = {0};
+    latent_declared_invocation_error declared = {
+        .receipt = receipt,
+    };
+    latent_invocation_outcome outcome = {
+        .kind = LATENT_INVOCATION_DECLARED_ERROR,
+        .declared_error = &declared,
+    };
+    latent_activation_success_summary success = {0};
+    latent_retained_invocation_outcome retained = {
+        .kind = LATENT_RETAINED_INVOCATION_SUCCEEDED,
+        .success = &success,
+    };
+    latent_activation_status status = {
+        .has_terminal_outcome = true,
+        .terminal_outcome = retained,
+    };
+    return outcome.declared_error == 0 || !status.has_terminal_outcome;
 }
 EOF_C
+sed -i 's/^          //' "${OUTPUT}/c/header-smoke.c"
 ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
     zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
     -I sdk/c/include "${OUTPUT}/c/header-smoke.c" -o "${OUTPUT}/c/header-smoke"
+"${OUTPUT}/c/header-smoke"

@@ -129,8 +129,9 @@ async fn invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_
         )
         .await
         .expect("declared empty-message result must complete");
-    assert_returned(
+    assert_declared_error(
         empty,
+        "empty-message",
         br#"{"error":"empty-message"}"#,
         ECHO_DOMAIN_ERROR_MEDIA_TYPE,
     );
@@ -150,8 +151,9 @@ async fn invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_
         )
         .await
         .expect("declared message-too-large result must complete");
-    assert_returned(
+    assert_declared_error(
         oversized,
+        "message-too-large",
         br#"{"error":"message-too-large"}"#,
         ECHO_DOMAIN_ERROR_MEDIA_TYPE,
     );
@@ -481,7 +483,7 @@ fn parse_capsule_manifest(document: &Value) -> CapsuleManifest {
             resource_budget_ceiling: ResourceBudget {
                 cpu_fuel: required_u64(limits, "/cpuFuel"),
                 memory_bytes: required_u64(limits, "/memoryBytes"),
-                wall_deadline_unix_millis: optional_u64(limits, "/wallDeadlineUnixMillis"),
+                wall_time_limit_millis: optional_u64(limits, "/wallTimeLimitMillis"),
                 child_calls: required_u32(limits, "/childCalls"),
                 outbound_requests: required_u32(limits, "/outboundRequests"),
                 state_read_bytes: required_u64(limits, "/stateReadBytes"),
@@ -670,5 +672,21 @@ fn assert_returned(outcome: GuestOutcome, expected: &[u8], expected_media_type: 
             assert_eq!(output_media_type, expected_media_type);
         }
         other => panic!("expected returned outcome, got {other:?}"),
+    }
+}
+
+fn assert_declared_error(
+    outcome: GuestOutcome,
+    expected_code: &str,
+    expected_payload: &[u8],
+    expected_media_type: &str,
+) {
+    match outcome {
+        GuestOutcome::DeclaredError { error, .. } => {
+            assert_eq!(error.code, expected_code);
+            assert_eq!(error.payload, expected_payload);
+            assert_eq!(error.media_type, expected_media_type);
+        }
+        other => panic!("expected declared guest error, got {other:?}"),
     }
 }

@@ -1,10 +1,13 @@
-//! Build-generated Protobuf messages and Tonic client/server definitions.
+//! Build-generated Protobuf messages, Tonic client/server definitions, and
+//! canonical domain/wire conversion seams.
 //!
 //! The checked-in `.proto` files under `api/proto` are authoritative. This crate
 //! owns deterministic Rust generation into Cargo `OUT_DIR`; it deliberately
 //! contains no service implementation, listener, process, thread, or runtime.
 
 #![forbid(unsafe_code)]
+
+pub mod platform_error;
 
 /// Control-plane APIs from the `latent.control.v1` Protobuf package.
 pub mod control {

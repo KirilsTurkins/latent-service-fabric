@@ -9,10 +9,10 @@ pub mod ids;
 pub mod lifecycle;
 
 pub use budget::{BudgetConsumption, ResourceBudget};
-pub use error::{ErrorDetail, PlatformError, PlatformErrorCode};
+pub use error::{DeclaredError, ErrorDetail, PlatformError, PlatformErrorCode};
 pub use identity::{InvocationPrincipal, PrincipalKind};
 pub use ids::*;
-pub use lifecycle::{ActivationPhase, ActivationTerminalState};
+pub use lifecycle::{ActivationPhase, ActivationTerminalState, CancelDisposition};
 
 use std::future::Future;
 use std::pin::Pin;

@@ -190,6 +190,7 @@ impl FixedCellPool {
         tenant: TenantId,
         class: CellClass,
         budget: ResourceBudget,
+        deadline: Option<u64>,
     ) -> Result<CellLease, PlatformError> {
         if class != self.inner.config.class {
             return Err(pool_error(
@@ -210,7 +211,6 @@ impl FixedCellPool {
             ));
         }
 
-        let deadline = budget.wall_deadline_unix_millis;
         let now = self.inner.clock.now_unix_millis();
         if deadline.is_some_and(|value| value <= now) {
             return Err(deadline_error(&activation_id, deadline.unwrap_or(now)));
@@ -293,8 +293,30 @@ impl CellPool for FixedCellPool {
         let activation_id = activation_id.clone();
         let tenant = tenant.clone();
         let budget = budget.clone();
+        let deadline = ResourceBudget::effective_deadline_unix_millis(
+            self.inner.clock.now_unix_millis(),
+            None,
+            [&budget],
+        );
         Box::pin(async move {
-            self.acquire_owned(activation_id, tenant, class, budget)
+            self.acquire_owned(activation_id, tenant, class, budget, deadline)
+                .await
+        })
+    }
+
+    fn acquire_with_deadline<'a>(
+        &'a self,
+        activation_id: &'a ActivationId,
+        tenant: &'a TenantId,
+        class: CellClass,
+        budget: &'a ResourceBudget,
+        deadline_unix_millis: Option<u64>,
+    ) -> BoxFuture<'a, Result<CellLease, PlatformError>> {
+        let activation_id = activation_id.clone();
+        let tenant = tenant.clone();
+        let budget = budget.clone();
+        Box::pin(async move {
+            self.acquire_owned(activation_id, tenant, class, budget, deadline_unix_millis)
                 .await
         })
     }
