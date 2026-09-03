@@ -1,0 +1,20 @@
+name: PR 46 guarded merge publisher
+
+on:
+  pull_request:
+    branches:
+      - automation/pr46-merge-base-20260903
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reconstruct and publish the verified merge
+        run: bash tools/pr46_publish_merge.sh
