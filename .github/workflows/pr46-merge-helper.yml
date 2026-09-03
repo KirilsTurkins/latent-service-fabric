@@ -1,4 +1,4 @@
-name: PR 46 isolated merge export
+name: PR 46 isolated merge transfer
 
 on:
   pull_request:
@@ -7,19 +7,43 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export:
+  transfer:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Export authenticated repository bundle
-        run: bash tools/validate_contracts.sh
-      - name: Upload merge bundle
-        uses: actions/upload-artifact@v4
         with:
-          name: pr46-merge-bundle-${{ github.sha }}
-          path: target/capsules/echo/interface/pr46-merge-helper/
-          if-no-files-found: error
-          retention-days: 1
+          fetch-depth: 0
+      - name: Verify and publish the resolved merge commit
+        env:
+          EXPECTED_COMMIT: add7508ef04ce7305ac471d65e7d52215d472854
+          EXPECTED_TREE: 5d70424a650898a660c41308e07367fa9b2ddead
+          EXPECTED_FEATURE_HEAD: e8cf01a4869b8f74a6231b68991a6ed8fd48b1f3
+          EXPECTED_DEVELOPMENT_HEAD: 7991defd7c3a8f05ac2720a9191072eb9ae35fd4
+          TARGET_BRANCH: feat/issue-36-contract-hardening
+        run: |
+          set -euo pipefail
+          git fetch --force --no-tags origin \
+            "+refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}" \
+            "+refs/heads/development:refs/remotes/origin/development"
+          test "$(git rev-parse "refs/remotes/origin/${TARGET_BRANCH}")" = "${EXPECTED_FEATURE_HEAD}"
+          test "$(git rev-parse refs/remotes/origin/development)" = "${EXPECTED_DEVELOPMENT_HEAD}"
+
+          BUNDLE="${RUNNER_TEMP}/pr46-merge-result.bundle"
+          base64 --decode tools/pr46-merge-result.bundle.b64 > "${BUNDLE}"
+          test "$(sha256sum "${BUNDLE}" | awk '{print $1}')" = \
+            "6fb5c7f97ed52aa03136b8cc278eac5e36c07fce66b788b92072fb99bad0e123"
+          git bundle verify "${BUNDLE}"
+          git fetch "${BUNDLE}" HEAD:refs/remotes/pr46/resolved
+
+          test "$(git rev-parse refs/remotes/pr46/resolved)" = "${EXPECTED_COMMIT}"
+          test "$(git rev-parse "${EXPECTED_COMMIT}^{tree}")" = "${EXPECTED_TREE}"
+          test "$(git show -s --format='%P' "${EXPECTED_COMMIT}")" = \
+            "${EXPECTED_FEATURE_HEAD} ${EXPECTED_DEVELOPMENT_HEAD}"
+          git diff-tree --check "${EXPECTED_COMMIT}"
+
+          git push origin \
+            "${EXPECTED_COMMIT}:refs/heads/${TARGET_BRANCH}" \
+            "--force-with-lease=refs/heads/${TARGET_BRANCH}:${EXPECTED_FEATURE_HEAD}"
