@@ -12,9 +12,10 @@ use serde_json::{Map, Number, Value};
 use crate::schema::{schema_text, validate_schema};
 use crate::{
     AvailabilityPolicy, BindingEndpoint, BindingManifest, BindingMode, CapabilityGrantSpec,
-    CapsuleManifest, ContractExport, ContractImport, ExecutionBackendKind, ExecutionRequirements,
-    JsonObject, ManifestCodec, ManifestResult, ManifestViolation, ObjectMetadata, PlacementPolicy,
-    PolicyManifest, StateModel, ThreadingModel, TriggerKind, TriggerManifest, TriggerTarget,
+    CapsuleManifest, ContractExport, ContractImport, DeploymentManifest, ExecutionBackendKind,
+    ExecutionRequirements, JsonObject, ManifestCodec, ManifestResult, ManifestViolation,
+    ObjectMetadata, PlacementPolicy, PolicyManifest, StateModel, ThreadingModel, TriggerKind,
+    TriggerManifest, TriggerTarget,
 };
 
 const DEFAULT_MAX_DOCUMENT_BYTES: usize = 1024 * 1024;
