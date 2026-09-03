@@ -503,7 +503,7 @@ impl NodeTopologySource for Phase0FixedTopologySource {
                 kind: "task".to_owned(),
                 ownership: ResourceOwnership::NodeFixed,
                 configured_count: 1,
-                active_count: if self.telemetry.is_closed() { 0 } else { 1 },
+                active_count: u64::from(!self.telemetry.is_closed()),
                 attributes: Metadata::from([("scope".to_owned(), "node".to_owned())]),
             },
             NodeTopologyEntry {

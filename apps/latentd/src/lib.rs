@@ -567,6 +567,7 @@ struct InventoryCacheReport {
 }
 
 #[derive(Debug, Clone, Serialize)]
+#[allow(clippy::struct_field_names)]
 struct InventoryPressureReport {
     memory_milli: u32,
     queue_milli: u32,
@@ -869,7 +870,6 @@ async fn prepare_composition(
         backend,
         preparation_key,
         prepared: initial_prepared,
-        cache_after_prepare: _,
         ..
     } = prepared_backend;
 
