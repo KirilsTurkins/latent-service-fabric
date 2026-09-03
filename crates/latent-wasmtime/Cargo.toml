@@ -13,6 +13,7 @@ workspace = true
 [dependencies]
 blake3.workspace = true
 latent-artifacts = { path = "../latent-artifacts" }
+latent-component-bindings = { path = "../latent-component-bindings" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
 latent-manifest = { path = "../latent-manifest" }

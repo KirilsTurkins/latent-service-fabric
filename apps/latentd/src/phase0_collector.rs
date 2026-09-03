@@ -19,6 +19,9 @@ pub struct NativeCollectorIdentity {
     pub build_configuration: NativeCollectorBuildConfiguration,
 }
 
+// These independent booleans intentionally mirror Cargo's serialized release
+// profile contract; collapsing them would make the retained evidence ambiguous.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct NativeCollectorBuildConfiguration {

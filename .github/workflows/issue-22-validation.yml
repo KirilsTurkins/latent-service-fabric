@@ -56,4 +56,6 @@ jobs:
         with:
           version: 1.72.0
       - name: Build and execute real containment fixtures
-        run: env -u CARGO_INCREMENTAL tools/validate_contracts.sh
+        run: |
+          unset CARGO_INCREMENTAL
+          tools/validate_contracts.sh

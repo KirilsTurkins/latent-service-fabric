@@ -17,6 +17,7 @@ from tools.phase0_collector_identity import (
     COLLECTOR_SCHEMA,
     EXPECTED_RELEASE_BUILD_CONFIGURATION,
 )
+from tools.tests.phase0_test_environment import sanitized_phase0_environment
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -420,6 +421,7 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             self.assertIn("cannot read JSON", completed.stderr)
 
     def test_hot_profile_runner_requires_a_fresh_calibration_path(self) -> None:
+        environment = sanitized_phase0_environment()
         completed = subprocess.run(
             [
                 str(HOT_PROFILE_RUNNER),
@@ -433,11 +435,13 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             check=False,
             text=True,
             capture_output=True,
+            env=environment,
         )
         self.assertEqual(completed.returncode, 2)
         self.assertIn("--calibration-aggregate is required", completed.stderr)
 
     def test_hot_profile_runner_rejects_a_missing_calibration_path_before_tool_checks(self) -> None:
+        environment = sanitized_phase0_environment()
         with tempfile.TemporaryDirectory() as directory:
             missing = Path(directory) / "missing-aggregate.json"
             completed = subprocess.run(
@@ -455,11 +459,13 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
                 check=False,
                 text=True,
                 capture_output=True,
+                env=environment,
             )
         self.assertEqual(completed.returncode, 2)
         self.assertIn("must be an existing regular file", completed.stderr)
 
     def test_calibration_runner_requires_durable_ref_and_external_output(self) -> None:
+        environment = sanitized_phase0_environment()
         missing_ref = subprocess.run(
             [
                 str(CALIBRATION_RUNNER),
@@ -471,6 +477,7 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             check=False,
             text=True,
             capture_output=True,
+            env=environment,
         )
         self.assertEqual(missing_ref.returncode, 2)
         self.assertIn("durable published source commit, tree, and branch or tag ref", missing_ref.stderr)
@@ -489,6 +496,7 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             check=False,
             text=True,
             capture_output=True,
+            env=environment,
         )
         self.assertEqual(relative_output.returncode, 2)
         self.assertIn("must be an absolute path outside the source tree", relative_output.stderr)
@@ -507,12 +515,13 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             check=False,
             text=True,
             capture_output=True,
+            env=environment,
         )
         self.assertEqual(source_tree_output.returncode, 2)
         self.assertIn("must be outside the source tree", source_tree_output.stderr)
 
         with tempfile.TemporaryDirectory() as directory:
-            environment = dict(os.environ)
+            environment = sanitized_phase0_environment()
             environment["LSF_CALIBRATION_TARGET_DIR"] = str(
                 ROOT / "target" / "phase0-calibration-test-build"
             )
@@ -536,7 +545,7 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
         self.assertIn("calibration build output must be outside the source tree", source_tree_build.stderr)
 
         with tempfile.TemporaryDirectory() as directory:
-            environment = dict(os.environ)
+            environment = sanitized_phase0_environment()
             environment["LSF_CALIBRATION_TARGET_DIR"] = directory
             reused_build = subprocess.run(
                 [
@@ -559,7 +568,7 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            environment = dict(os.environ)
+            environment = sanitized_phase0_environment()
             environment["LSF_CALIBRATION_TARGET_DIR"] = str(root / "evidence" / "build")
             overlapping_build = subprocess.run(
                 [
@@ -618,7 +627,7 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
                 bin_directory / "systemd-detect-virt",
                 "#!/usr/bin/env bash\nprintf '%s\\n' none\n",
             )
-            environment = dict(os.environ)
+            environment = sanitized_phase0_environment()
             # A real calibration run executes this regression suite from
             # inside its already-created external build directory.  Keep that
             # outer runner setting from changing which precondition this

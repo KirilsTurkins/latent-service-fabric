@@ -5,16 +5,21 @@ use super::types::{
     deliver, Delivery, IdleCell, LeaseDisposition, LeaseIdentity, LeaseRequest, PendingGrant,
     PoolState, QuarantinedCell, Reservation, Waiter,
 };
-use super::{FixedCellPoolConfig, GENERATION_EXHAUSTED_REASON, LEASE_TOKEN_EXHAUSTED_REASON};
+use super::{
+    FixedCellPoolConfig, FixedCellPoolTestTransition, FixedCellPoolTestTransitionKind,
+    GENERATION_EXHAUSTED_REASON, LEASE_TOKEN_EXHAUSTED_REASON,
+};
 use crate::{CellClass, CellLease, CellPoolSnapshot};
 use latent_core::{ActivationId, PlatformError, PlatformErrorCode, ResourceBudget, TenantId};
 use std::sync::{Arc, Mutex, MutexGuard};
-use tokio::sync::oneshot;
+use tokio::sync::{mpsc, oneshot};
 
 pub(super) struct PoolInner {
     pub(super) config: FixedCellPoolConfig,
     pub(super) clock: Arc<dyn WallClock>,
     pub(super) state: Mutex<PoolState>,
+    pub(super) test_transition_observer:
+        Mutex<Option<mpsc::UnboundedSender<FixedCellPoolTestTransition>>>,
 }
 
 impl PoolInner {
@@ -60,6 +65,11 @@ impl PoolInner {
                 },
             );
             state.assert_invariants(&self.config);
+            self.emit_test_transition_locked(
+                &state,
+                &lease.activation_id,
+                FixedCellPoolTestTransitionKind::LeaseActivated,
+            );
             return Ok(Reservation::Immediate(lease));
         }
 
@@ -99,6 +109,11 @@ impl PoolInner {
             sender,
         });
         state.assert_invariants(&self.config);
+        self.emit_test_transition_locked(
+            &state,
+            &activation_id,
+            FixedCellPoolTestTransitionKind::RequestQueued,
+        );
         Ok(Reservation::Queued {
             waiter_id,
             activation_id,
@@ -260,6 +275,11 @@ impl PoolInner {
                     deadline: waiter.deadline,
                 },
             );
+            owner.emit_test_transition_locked(
+                state,
+                &lease.activation_id,
+                FixedCellPoolTestTransitionKind::LeaseActivated,
+            );
             deliveries.push(Delivery::Grant {
                 sender: waiter.sender,
                 grant: PendingGrant::new(lease),
@@ -365,8 +385,41 @@ impl PoolInner {
             };
         }
         let state = self.lock_state();
+        self.observations_locked(&state)
+    }
+
+    pub(super) fn install_test_transition_observer(
+        &self,
+        observer: mpsc::UnboundedSender<FixedCellPoolTestTransition>,
+    ) {
+        *self.lock_test_transition_observer() = Some(observer);
+    }
+
+    fn emit_test_transition_locked(
+        &self,
+        state: &PoolState,
+        activation_id: &ActivationId,
+        kind: FixedCellPoolTestTransitionKind,
+    ) {
+        let mut observer = self.lock_test_transition_observer();
+        let Some(sender) = observer.as_ref() else {
+            return;
+        };
+        let disconnected = sender
+            .send(FixedCellPoolTestTransition {
+                activation_id: activation_id.clone(),
+                kind,
+                observations: self.observations_locked(state),
+            })
+            .is_err();
+        if disconnected {
+            *observer = None;
+        }
+    }
+
+    fn observations_locked(&self, state: &PoolState) -> CellPoolSnapshot {
         CellPoolSnapshot {
-            class: requested_class,
+            class: self.config.class,
             capacity: self.config.capacity,
             available: len_u32(state.idle.len()),
             queue_depth: len_u32(state.waiters.len()),
@@ -381,6 +434,14 @@ impl PoolInner {
 
     fn lock_state(&self) -> MutexGuard<'_, PoolState> {
         self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn lock_test_transition_observer(
+        &self,
+    ) -> MutexGuard<'_, Option<mpsc::UnboundedSender<FixedCellPoolTestTransition>>> {
+        self.test_transition_observer
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
