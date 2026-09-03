@@ -57,8 +57,8 @@ fn every_domain_code_has_a_stable_invocation_wire_mapping_and_round_trips() {
         assert_eq!(wire.code, expected_wire_code);
 
         let encoded = Message::encode_to_vec(&wire);
-        let decoded = invocation::PlatformError::decode(encoded.as_slice())
-            .expect("decode invocation error");
+        let decoded =
+            invocation::PlatformError::decode(encoded.as_slice()).expect("decode invocation error");
         let reconstructed = decoded
             .try_into_domain()
             .expect("known invocation platform code");
@@ -109,7 +109,10 @@ fn configured_boundary_length_diagnostics_survive_prost_exactly() {
 
     let details = (0..MAX_DETAILS)
         .map(|detail_index| ErrorDetail {
-            kind: padded(&format!("detail-{detail_index}-"), MAX_KIND_AND_FIELD_NAME_BYTES),
+            kind: padded(
+                &format!("detail-{detail_index}-"),
+                MAX_KIND_AND_FIELD_NAME_BYTES,
+            ),
             fields: (0..MAX_FIELDS)
                 .map(|field_index| {
                     (
@@ -170,8 +173,8 @@ fn unknown_wire_codes_are_rejected_without_coercion() {
         }],
     };
     let encoded = Message::encode_to_vec(&wire);
-    let decoded = invocation::PlatformError::decode(encoded.as_slice())
-        .expect("decode unknown code message");
+    let decoded =
+        invocation::PlatformError::decode(encoded.as_slice()).expect("decode unknown code message");
     let error = decoded
         .try_into_domain()
         .expect_err("unknown code must not be coerced");
