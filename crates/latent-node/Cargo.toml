@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Node contracts and the Phase 0 contained activation runner."
+description = "Node composition, inventory, activation orchestration, and shared observability adapters."
 
 [lints]
 workspace = true
@@ -17,7 +17,5 @@ latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
 latent-routing = { path = "../latent-routing" }
 latent-scheduler = { path = "../latent-scheduler" }
+latent-telemetry = { path = "../latent-telemetry" }
 tokio.workspace = true
-
-[dev-dependencies]
-tokio = { workspace = true, features = ["rt-multi-thread"] }

@@ -38,6 +38,8 @@ Rust bindings for the aggregate runtime world and maintained echo fixture are ge
 
 `latent-rpc` generates Rust messages, Tonic clients, Tonic server traits/wrappers, and an embedded descriptor set for every checked-in Protobuf file. It contains no listener or service implementation.
 
+Phase 1's supported standalone subset and all explicit unimplemented methods are defined in [Phase 1 contract hardening](protocol/phase-1-contract-hardening.md).
+
 ## Rust internal interfaces
 
 | Crate | Primary seams |

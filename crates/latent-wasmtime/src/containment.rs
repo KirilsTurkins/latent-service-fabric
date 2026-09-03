@@ -151,6 +151,7 @@ impl StopControl {
         None
     }
 
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {
         stop_kind(self.cause())
     }

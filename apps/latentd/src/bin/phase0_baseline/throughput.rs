@@ -630,7 +630,7 @@ fn pool_budget(timeout_ms: u64) -> ResourceBudget {
     ResourceBudget {
         cpu_fuel: 1,
         memory_bytes: 1,
-        wall_deadline_unix_millis: Some(now_unix_millis().saturating_add(timeout_ms)),
+        wall_time_limit_millis: Some(timeout_ms),
         child_calls: 0,
         outbound_requests: 0,
         state_read_bytes: 0,

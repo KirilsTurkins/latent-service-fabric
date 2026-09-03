@@ -6,6 +6,7 @@ pub use generated::{exports, latent, Service};
 
 /// Aggregate runtime-world host bindings for future generic host composition.
 pub mod runtime {
+    #[allow(unused_imports)]
     pub use latent_component_bindings::host::runtime::*;
 }
 

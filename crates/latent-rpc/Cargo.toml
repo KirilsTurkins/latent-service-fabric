@@ -12,6 +12,7 @@ publish = false
 workspace = true
 
 [dependencies]
+latent-core = { path = "../latent-core" }
 prost.workspace = true
 tonic.workspace = true
 tonic-prost.workspace = true

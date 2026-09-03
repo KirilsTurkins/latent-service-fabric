@@ -24,6 +24,7 @@ latent-manifest = { path = "../../crates/latent-manifest" }
 latent-node = { path = "../../crates/latent-node" }
 latent-routing = { path = "../../crates/latent-routing" }
 latent-scheduler = { path = "../../crates/latent-scheduler" }
+latent-telemetry = { path = "../../crates/latent-telemetry" }
 latent-wasmtime = { path = "../../crates/latent-wasmtime" }
 serde.workspace = true
 serde_json.workspace = true

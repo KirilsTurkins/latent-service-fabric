@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .build_transport(true)
         .emit_rerun_if_changed(false)
         .file_descriptor_set_path(output.join("latent_descriptor.bin"))
-        .compile_protos(&proto_files, &[proto_root.clone()])?;
+        .compile_protos(&proto_files, std::slice::from_ref(&proto_root))?;
 
     println!("cargo:rerun-if-changed={}", proto_manifest.display());
     println!("cargo:rerun-if-changed={}", proto_root.display());
@@ -49,7 +49,11 @@ fn read_proto_manifest(proto_root: &Path, manifest: &Path) -> Result<Vec<PathBuf
         if entry.is_empty() || entry.starts_with('#') {
             continue;
         }
-        if !entry.ends_with(".proto") || Path::new(entry).is_absolute() || entry.contains("..") {
+        let path = Path::new(entry);
+        let is_proto = path
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("proto"));
+        if !is_proto || path.is_absolute() || entry.contains("..") {
             return Err(format!(
                 "invalid Protobuf manifest entry at {}:{}: {entry}",
                 manifest.display(),

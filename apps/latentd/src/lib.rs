@@ -20,24 +20,27 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use clap::{error::ErrorKind, Args, Parser, Subcommand};
 use latent_activation::{ActivationManager, ActivationOutcome};
 use latent_core::{
-    ActivationId, ActivationTerminalState, BudgetConsumption, ErrorDetail, Metadata, NodeId,
-    PlatformError, PlatformErrorCode,
+    ActivationId, ActivationTerminalState, BudgetConsumption, CancelDisposition, ErrorDetail,
+    Metadata, NodeId, PlatformError, PlatformErrorCode, RouteGeneration,
 };
 use latent_executor::{ExecutionBackend, PreparedComponent};
 use latent_manifest::CapsuleManifest;
-use latent_node::{ActivationRunnerSnapshot, Phase0ActivationRunner};
+use latent_node::{
+    ActivationRunnerSnapshot, HealthStatus, NodeInventory, ObservedActivationManager,
+    ObservedExecutionBackend, Phase0ActivationRunner, ResourceOwnership,
+};
 use latent_scheduler::{CellClass, CellPool, CellPoolSnapshot, FixedCellPool};
 use latent_wasmtime::{
     CapturedLog, Phase0InstanceAllocator, Phase0WasmtimeBackend, PreparedCacheSnapshot,
-    RuntimeResourceSnapshot, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    RuntimeResourceSnapshot,
 };
 use serde::Serialize;
-use serde_json::Value;
 
 use crate::phase0_composition::{
     self, Phase0InvocationConfig, Phase0LoadedArtifact, Phase0PreparationConfig,
     Phase0RuntimeConfig, Phase0RuntimeWorkerMonitor,
 };
+use crate::phase0_observability::{Phase0NodeObservability, Phase0ObservabilityConfig};
 
 pub const EXIT_SUCCESS: u8 = 0;
 pub const EXIT_DOMAIN_ERROR: u8 = 10;
@@ -376,6 +379,7 @@ struct SpikeResult {
     logs: Vec<LogReport>,
     topology: TopologyReport,
     preparation: PreparationReport,
+    inventory: Option<InventoryReport>,
     recovery: Option<RecoveryReport>,
     shutdown: ShutdownReport,
 }
@@ -523,6 +527,70 @@ struct CacheSnapshotReport {
     source_bytes: usize,
     maximum_entries: usize,
     maximum_source_bytes: usize,
+    hits: u64,
+    misses: u64,
+    evictions: u64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct InventoryReport {
+    node: String,
+    observed_at_unix_millis: u64,
+    route_generation: u64,
+    queue_depth: u64,
+    cells: Vec<InventoryCellReport>,
+    cache: InventoryCacheReport,
+    pressure: InventoryPressureReport,
+    health: InventoryHealthReport,
+    topology: Vec<InventoryTopologyReport>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct InventoryCellReport {
+    class: String,
+    total: u32,
+    available: u32,
+    active: u32,
+    quarantined: u32,
+    queue_depth: u32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct InventoryCacheReport {
+    entries: u64,
+    resident_bytes: u64,
+    maximum_entries: u64,
+    maximum_bytes: u64,
+    hits: u64,
+    misses: u64,
+    evictions: u64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[allow(clippy::struct_field_names)]
+struct InventoryPressureReport {
+    memory_milli: u32,
+    queue_milli: u32,
+    cache_milli: u32,
+    telemetry_milli: u32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct InventoryHealthReport {
+    status: String,
+    ready: bool,
+    healthy: bool,
+    reasons: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct InventoryTopologyReport {
+    name: String,
+    kind: String,
+    ownership: String,
+    configured_count: u64,
+    active_count: u64,
+    attributes: Metadata,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -564,14 +632,18 @@ struct CompletedInvocation {
     resources: RuntimeResourceSnapshot,
     retained_log_entries: usize,
     cache: PreparedCacheSnapshot,
+    inventory: NodeInventory,
 }
 
 struct PreparedComposition {
     loaded: Phase0LoadedArtifact,
     backend: Arc<Phase0WasmtimeBackend>,
+    observed_backend: Arc<ObservedExecutionBackend<Phase0WasmtimeBackend>>,
+    observability: Arc<Phase0NodeObservability>,
     prepared: PreparedComponent,
     cache_after_prepare: PreparedCacheSnapshot,
     runner: Arc<Phase0ActivationRunner>,
+    manager: Arc<ObservedActivationManager<Phase0ActivationRunner>>,
 }
 
 struct PreparationFailure {
@@ -768,6 +840,7 @@ fn record_runtime_shutdown(report: &mut ProcessReport) {
 async fn prepare_composition(
     config: &ValidatedConfig,
     pool: &Arc<FixedCellPool>,
+    workers: &Phase0RuntimeWorkerMonitor,
 ) -> Result<PreparedComposition, PreparationFailure> {
     let prepared_backend =
         match phase0_composition::prepare_phase0_backend(&Phase0PreparationConfig {
@@ -795,27 +868,31 @@ async fn prepare_composition(
     let crate::phase0_composition::Phase0PreparedBackend {
         loaded,
         backend,
-        prepared,
-        cache_after_prepare,
+        preparation_key,
+        prepared: initial_prepared,
         ..
     } = prepared_backend;
 
-    let backend_for_runner: Arc<dyn ExecutionBackend> = backend.clone();
-    let pool_for_runner: Arc<dyn CellPool> = pool.clone();
-    let runner = match phase0_composition::create_phase0_activation_runner(
-        pool_for_runner,
-        backend_for_runner,
-        prepared.clone(),
+    let observability = match Phase0NodeObservability::start(
+        Phase0ObservabilityConfig {
+            runtime_worker_capacity: config.runtime_workers,
+            pool_queue_capacity: config.pool_queue_capacity,
+            ..Phase0ObservabilityConfig::default()
+        },
+        NodeId(SPIKE_NODE_ID.to_owned()),
+        pool.clone(),
+        backend.clone(),
+        workers.clone(),
     ) {
-        Ok(runner) => runner,
+        Ok(observability) => observability,
         Err(error) => {
-            let release_error = backend.release(prepared).await.err();
+            let release_error = backend.release(initial_prepared).await.err();
             let error = release_error.map_or(error, |release_error| {
                 cleanup_error("prepared-component release", release_error)
             });
             return Err(PreparationFailure {
                 component_bytes: loaded.component_bytes,
-                cache_after_prepare,
+                cache_after_prepare: backend.cache_snapshot(),
                 cache_after_release: backend.cache_snapshot(),
                 resources: backend.resource_snapshot(),
                 error,
@@ -823,12 +900,66 @@ async fn prepare_composition(
         }
     };
 
+    // Re-enter preparation through the observed backend. The raw Phase 0
+    // helper created the bounded runtime; this second same-key lookup records
+    // the real cache hit and makes the executable use the observation adapter.
+    let observed_backend = observability.observed_backend();
+    let prepared = match observed_backend
+        .prepare(&loaded.artifact, &preparation_key)
+        .await
+    {
+        Ok(prepared) => prepared,
+        Err(error) => {
+            let release_error = backend.release(initial_prepared).await.err();
+            observability.abort();
+            let error = release_error.map_or(error, |release_error| {
+                cleanup_error("prepared-component release", release_error)
+            });
+            return Err(PreparationFailure {
+                component_bytes: loaded.component_bytes,
+                cache_after_prepare: backend.cache_snapshot(),
+                cache_after_release: backend.cache_snapshot(),
+                resources: backend.resource_snapshot(),
+                error,
+            });
+        }
+    };
+
+    let backend_for_runner: Arc<dyn ExecutionBackend> = observed_backend.clone();
+    let pool_for_runner: Arc<dyn CellPool> = observability.observed_pool();
+    let runner = match phase0_composition::create_phase0_activation_runner(
+        pool_for_runner,
+        backend_for_runner,
+        prepared.clone(),
+    ) {
+        Ok(runner) => runner,
+        Err(error) => {
+            let release_error = observed_backend.release(prepared).await.err();
+            observability.abort();
+            let error = release_error.map_or(error, |release_error| {
+                cleanup_error("prepared-component release", release_error)
+            });
+            return Err(PreparationFailure {
+                component_bytes: loaded.component_bytes,
+                cache_after_prepare: backend.cache_snapshot(),
+                cache_after_release: backend.cache_snapshot(),
+                resources: backend.resource_snapshot(),
+                error,
+            });
+        }
+    };
+    let manager = observability.observe_manager(runner.clone());
+    let cache_after_prepare = backend.cache_snapshot();
+
     Ok(PreparedComposition {
         loaded,
         backend,
+        observed_backend,
+        observability,
         prepared,
         cache_after_prepare,
         runner,
+        manager,
     })
 }
 
@@ -876,10 +1007,13 @@ async fn execute_once(
     let PreparedComposition {
         loaded,
         backend,
+        observed_backend,
+        observability,
         prepared,
         cache_after_prepare,
         runner,
-    } = match prepare_composition(config, &pool).await {
+        manager,
+    } = match prepare_composition(config, &pool, &monitor).await {
         Ok(composition) => composition,
         Err(failure) => {
             return preparation_failure_report(config, topology, pool_before, &pool, failure);
@@ -892,6 +1026,8 @@ async fn execute_once(
         &pool,
         &backend,
         &runner,
+        &manager,
+        &observability,
         &mut topology,
         &monitor,
     )
@@ -899,7 +1035,7 @@ async fn execute_once(
     {
         Ok(completed) => completed,
         Err(error) => {
-            let release_error = backend.release(prepared).await.err();
+            let release_error = observed_backend.release(prepared).await.err();
             let error = release_error.map_or(error, |release_error| {
                 cleanup_error("prepared-component release", release_error)
             });
@@ -926,11 +1062,12 @@ async fn execute_once(
             cache_after_release: CacheSnapshotReport::default(),
         },
         shutdown_from_completed(&completed),
+        Some(&completed.inventory),
         None,
     );
     let mut exit_code = completed.exit_code;
 
-    if let Err(error) = backend.release(prepared).await {
+    if let Err(error) = observed_backend.release(prepared).await {
         apply_cleanup_failure(
             &mut result,
             cleanup_error("prepared-component release", error),
@@ -940,6 +1077,7 @@ async fn execute_once(
     result.preparation.cache_after_release = cache_report(&backend.cache_snapshot());
     result.shutdown.prepared_cache_entries = backend.cache_snapshot().entries;
     recompute_shutdown(&mut result.shutdown);
+    finalize_observability(&mut result, &mut exit_code, &observability).await;
 
     if !result.shutdown.clean_without_runtime() {
         let error = dirty_shutdown_error(&result.shutdown);
@@ -966,10 +1104,13 @@ async fn execute_recovery(
     let PreparedComposition {
         loaded,
         backend,
+        observed_backend,
+        observability,
         prepared,
         cache_after_prepare,
         runner,
-    } = match prepare_composition(config, &pool).await {
+        manager,
+    } = match prepare_composition(config, &pool, &monitor).await {
         Ok(composition) => composition,
         Err(failure) => {
             return preparation_failure_report(config, topology, pool_before, &pool, failure);
@@ -987,6 +1128,8 @@ async fn execute_recovery(
         &pool,
         &backend,
         &runner,
+        &manager,
+        &observability,
         &mut topology,
         &monitor,
     )
@@ -994,7 +1137,7 @@ async fn execute_recovery(
     {
         Ok(completed) => completed,
         Err(error) => {
-            let release_error = backend.release(prepared).await.err();
+            let release_error = observed_backend.release(prepared).await.err();
             let error = release_error.map_or(error, |release_error| {
                 cleanup_error("prepared-component release", release_error)
             });
@@ -1027,6 +1170,8 @@ async fn execute_recovery(
         &pool,
         &backend,
         &runner,
+        &manager,
+        &observability,
         &mut topology,
         &monitor,
     )
@@ -1044,14 +1189,15 @@ async fn execute_recovery(
                     cache_after_release: CacheSnapshotReport::default(),
                 },
                 shutdown_from_completed(&trapped),
+                Some(&trapped.inventory),
                 Some(RecoveryReport {
                     expected_failure: "trap".to_owned(),
                     activation_count: 1,
                     activations: vec![recovery_activation_report("trap", &trapped)],
                 }),
             );
-            let exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
-            if let Err(release_error) = backend.release(prepared).await {
+            let mut exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+            if let Err(release_error) = observed_backend.release(prepared).await {
                 apply_cleanup_failure(
                     &mut result,
                     cleanup_error("prepared-component release", release_error),
@@ -1062,6 +1208,7 @@ async fn execute_recovery(
             result.preparation.cache_after_release = cache_report(&backend.cache_snapshot());
             result.shutdown.prepared_cache_entries = backend.cache_snapshot().entries;
             recompute_shutdown(&mut result.shutdown);
+            finalize_observability(&mut result, &mut exit_code, &observability).await;
             if !result.shutdown.clean_without_runtime() {
                 let shutdown_error = dirty_shutdown_error(&result.shutdown);
                 apply_cleanup_failure(&mut result, shutdown_error);
@@ -1090,11 +1237,12 @@ async fn execute_recovery(
             cache_after_release: CacheSnapshotReport::default(),
         },
         shutdown_from_completed(&healthy),
+        Some(&healthy.inventory),
         Some(recovery_report),
     );
     let mut exit_code = EXIT_SUCCESS;
 
-    if let Err(error) = backend.release(prepared).await {
+    if let Err(error) = observed_backend.release(prepared).await {
         apply_cleanup_failure(
             &mut result,
             cleanup_error("prepared-component release", error),
@@ -1104,6 +1252,7 @@ async fn execute_recovery(
     result.preparation.cache_after_release = cache_report(&backend.cache_snapshot());
     result.shutdown.prepared_cache_entries = backend.cache_snapshot().entries;
     recompute_shutdown(&mut result.shutdown);
+    finalize_observability(&mut result, &mut exit_code, &observability).await;
 
     if !result.shutdown.clean_without_runtime() {
         let shutdown_error = dirty_shutdown_error(&result.shutdown);
@@ -1118,12 +1267,32 @@ async fn execute_recovery(
     ProcessReport { result, exit_code }
 }
 
+async fn finalize_observability(
+    result: &mut SpikeResult,
+    exit_code: &mut u8,
+    observability: &Phase0NodeObservability,
+) {
+    match observability.inventory().await {
+        Ok(inventory) => result.inventory = Some(inventory_report(&inventory)),
+        Err(error) => {
+            apply_cleanup_failure(result, cleanup_error("inventory snapshot", error));
+            *exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+        }
+    }
+    if let Err(error) = observability.shutdown().await {
+        apply_cleanup_failure(result, cleanup_error("telemetry shutdown", error));
+        *exit_code = EXIT_INTERNAL_SPIKE_FAILURE;
+    }
+}
+
 async fn invoke_prepared(
     config: &ValidatedConfig,
     manifest: &CapsuleManifest,
     pool: &Arc<FixedCellPool>,
     backend: &Arc<Phase0WasmtimeBackend>,
     runner: &Arc<Phase0ActivationRunner>,
+    manager: &Arc<ObservedActivationManager<Phase0ActivationRunner>>,
+    observability: &Arc<Phase0NodeObservability>,
     topology: &mut TopologyReport,
     monitor: &RuntimeTopologyMonitor,
 ) -> Result<CompletedInvocation, PlatformError> {
@@ -1152,23 +1321,34 @@ async fn invoke_prepared(
             span_id: SPIKE_SPAN_ID,
         },
     );
+    let route_generation = envelope
+        .resolved_revision
+        .as_ref()
+        .map_or(RouteGeneration(0), |revision| revision.route_generation);
+    observability.set_route_generation(route_generation)?;
 
     let started = Instant::now();
-    let invocation = runner.invoke(envelope);
+    let invocation = manager.invoke(envelope);
     tokio::pin!(invocation);
     let outcome = if let Some(cancel_after_ms) = config.cancel_after_ms {
         tokio::select! {
             biased;
             outcome = &mut invocation => outcome,
             () = tokio::time::sleep(Duration::from_millis(cancel_after_ms)) => {
-                if let Err(error) = runner
+                match manager
                     .cancel(&config.activation_id, "phase0-spike explicit cancellation")
                     .await
                 {
-                    eprintln!(
-                        "explicit cancellation raced with completion: {}",
-                        bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES)
-                    );
+                    Ok(CancelDisposition::Accepted) => {}
+                    Ok(CancelDisposition::AlreadyTerminal(_) | CancelDisposition::NotFound) => {
+                        eprintln!("explicit cancellation raced with completion");
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "explicit cancellation could not be sent: {}",
+                            bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES)
+                        );
+                    }
                 }
                 invocation.await
             }
@@ -1182,9 +1362,9 @@ async fn invoke_prepared(
     let pool_after = pool.observations();
     let resources = backend.resource_snapshot();
     let log_sink = backend.log_sink();
-    let logs = log_sink.snapshot_for(&config.activation_id);
-    log_sink.clear();
+    let logs = log_sink.take_for(&config.activation_id);
     let retained_log_entries = log_sink.snapshot().len();
+    let inventory = observability.inventory().await?;
     record_topology_after_activation(topology, monitor, pool)?;
     let (activation, exit_code) = activation_report(
         config,
@@ -1204,6 +1384,7 @@ async fn invoke_prepared(
         resources,
         retained_log_entries,
         cache: backend.cache_snapshot(),
+        inventory,
     })
 }
 
@@ -1258,6 +1439,7 @@ fn spike_result_from_activation(
     topology: TopologyReport,
     preparation: PreparationReport,
     shutdown: ShutdownReport,
+    inventory: Option<&NodeInventory>,
     recovery: Option<RecoveryReport>,
 ) -> SpikeResult {
     SpikeResult {
@@ -1276,6 +1458,7 @@ fn spike_result_from_activation(
         logs: activation.logs.clone(),
         topology,
         preparation,
+        inventory: inventory.map(inventory_report),
         recovery,
         shutdown,
     }
@@ -1728,26 +1911,6 @@ fn classify_activation_outcome(
     u8,
 ) {
     match outcome {
-        ActivationOutcome::Succeeded(success)
-            if success.output_media_type == ECHO_DOMAIN_ERROR_MEDIA_TYPE =>
-        {
-            let domain_code = domain_error_code(&success.output);
-            let output = output_report(success.output, success.output_media_type);
-            (
-                "domain_error".to_owned(),
-                Some("completed".to_owned()),
-                Some(output),
-                Some(ErrorReport {
-                    kind: "domain".to_owned(),
-                    code: domain_code.clone(),
-                    message: format!("guest returned declared echo domain error: {domain_code}"),
-                    retryable: false,
-                    details: Vec::new(),
-                }),
-                consumption_report(&success.consumption),
-                EXIT_DOMAIN_ERROR,
-            )
-        }
         ActivationOutcome::Succeeded(success) => (
             "success".to_owned(),
             Some("completed".to_owned()),
@@ -1755,6 +1918,20 @@ fn classify_activation_outcome(
             None,
             consumption_report(&success.consumption),
             EXIT_SUCCESS,
+        ),
+        ActivationOutcome::DeclaredError { error, consumption } => (
+            "domain_error".to_owned(),
+            Some("completed".to_owned()),
+            Some(output_report(error.payload, error.media_type)),
+            Some(ErrorReport {
+                kind: "domain".to_owned(),
+                code: error.code,
+                message: error.message,
+                retryable: false,
+                details: Vec::new(),
+            }),
+            consumption_report(&consumption),
+            EXIT_DOMAIN_ERROR,
         ),
         ActivationOutcome::Failed {
             terminal_state,
@@ -1873,6 +2050,7 @@ fn preflight_failure_with_preparation(
                 cache_after_prepare: cache_report(&cache_after_prepare),
                 cache_after_release: cache_report(&cache_after_release),
             },
+            inventory: None,
             recovery: None,
             shutdown,
         },
@@ -1960,6 +2138,7 @@ fn platform_uninitialized_report_for_surface(
                 unchanged: false,
             },
             preparation: PreparationReport::default(),
+            inventory: None,
             recovery: None,
             shutdown: ShutdownReport {
                 clean: true,
@@ -2016,18 +2195,6 @@ fn output_report(output: Vec<u8>, media_type: String) -> OutputReport {
     }
 }
 
-fn domain_error_code(output: &[u8]) -> String {
-    serde_json::from_slice::<Value>(output)
-        .ok()
-        .and_then(|document| {
-            document
-                .get("error")
-                .and_then(Value::as_str)
-                .map(str::to_owned)
-        })
-        .unwrap_or_else(|| "declared-domain-error".to_owned())
-}
-
 fn consumption_report(consumption: &BudgetConsumption) -> ConsumptionReport {
     ConsumptionReport {
         cpu_fuel: consumption.cpu_fuel,
@@ -2061,6 +2228,80 @@ fn cache_report(snapshot: &PreparedCacheSnapshot) -> CacheSnapshotReport {
         source_bytes: snapshot.source_bytes,
         maximum_entries: snapshot.maximum_entries,
         maximum_source_bytes: snapshot.maximum_source_bytes,
+        hits: snapshot.hits,
+        misses: snapshot.misses,
+        evictions: snapshot.evictions,
+    }
+}
+
+fn inventory_report(inventory: &NodeInventory) -> InventoryReport {
+    InventoryReport {
+        node: inventory.node.id.0.clone(),
+        observed_at_unix_millis: inventory.observed_at_unix_millis,
+        route_generation: inventory.route_generation.0,
+        queue_depth: inventory.queue_depth,
+        cells: inventory
+            .cell_capacity
+            .iter()
+            .map(|cell| InventoryCellReport {
+                class: cell.class.clone(),
+                total: cell.total,
+                available: cell.available,
+                active: cell.active,
+                quarantined: cell.quarantined,
+                queue_depth: cell.queue_depth,
+            })
+            .collect(),
+        cache: InventoryCacheReport {
+            entries: inventory.cache_summary.entries,
+            resident_bytes: inventory.cache_summary.resident_bytes,
+            maximum_entries: inventory.cache_summary.maximum_entries,
+            maximum_bytes: inventory.cache_summary.maximum_bytes,
+            hits: inventory.cache_summary.hits,
+            misses: inventory.cache_summary.misses,
+            evictions: inventory.cache_summary.evictions,
+        },
+        pressure: InventoryPressureReport {
+            memory_milli: inventory.pressure.memory_pressure_milli,
+            queue_milli: inventory.pressure.queue_pressure_milli,
+            cache_milli: inventory.pressure.cache_pressure_milli,
+            telemetry_milli: inventory.pressure.telemetry_pressure_milli,
+        },
+        health: InventoryHealthReport {
+            status: health_status_name(inventory.health.status).to_owned(),
+            ready: inventory.health.ready,
+            healthy: inventory.health.healthy,
+            reasons: inventory.health.reasons.clone(),
+        },
+        topology: inventory
+            .topology
+            .entries
+            .iter()
+            .map(|entry| InventoryTopologyReport {
+                name: entry.name.clone(),
+                kind: entry.kind.clone(),
+                ownership: resource_ownership_name(entry.ownership).to_owned(),
+                configured_count: entry.configured_count,
+                active_count: entry.active_count,
+                attributes: entry.attributes.clone(),
+            })
+            .collect(),
+    }
+}
+
+fn health_status_name(status: HealthStatus) -> &'static str {
+    match status {
+        HealthStatus::Healthy => "healthy",
+        HealthStatus::Degraded => "degraded",
+        HealthStatus::Unhealthy => "unhealthy",
+    }
+}
+
+fn resource_ownership_name(ownership: ResourceOwnership) -> &'static str {
+    match ownership {
+        ResourceOwnership::NodeFixed => "node_fixed",
+        ResourceOwnership::ActivationScoped => "activation_scoped",
+        ResourceOwnership::ServiceResident => "service_resident",
     }
 }
 
@@ -2077,11 +2318,22 @@ fn runtime_resource_report(snapshot: &RuntimeResourceSnapshot) -> RuntimeResourc
 }
 
 fn log_report(log: CapturedLog) -> LogReport {
+    let fields = log
+        .fields
+        .into_iter()
+        .take(16)
+        .enumerate()
+        .map(|(index, _)| (format!("redacted_field_{index}"), "[REDACTED]".to_owned()))
+        .collect();
     LogReport {
         activation_id: log.activation_id.0,
         level: log.level,
-        message: log.message,
-        fields: log.fields,
+        message: if log.message.is_empty() {
+            String::new()
+        } else {
+            "[REDACTED]".to_owned()
+        },
+        fields,
     }
 }
 
@@ -2203,6 +2455,9 @@ fn empty_cache_snapshot(config: &ValidatedConfig) -> PreparedCacheSnapshot {
         source_bytes: 0,
         maximum_entries: config.prepared_cache_entries,
         maximum_source_bytes: config.prepared_cache_bytes,
+        hits: 0,
+        misses: 0,
+        evictions: 0,
     }
 }
 

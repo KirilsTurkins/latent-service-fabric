@@ -322,7 +322,6 @@ pub fn phase0_activation_envelope(
     let mut budget = manifest.execution.resource_budget_ceiling.clone();
     budget.cpu_fuel = config.fuel;
     budget.memory_bytes = config.memory_bytes;
-    budget.wall_deadline_unix_millis = Some(config.deadline_unix_millis);
 
     ActivationEnvelope {
         activation_id: config.activation_id.clone(),
@@ -590,7 +589,7 @@ struct ExecutionDocument {
 struct LimitsDocument {
     cpu_fuel: u64,
     memory_bytes: u64,
-    wall_deadline_unix_millis: Option<u64>,
+    wall_time_limit_millis: Option<u64>,
     child_calls: u32,
     outbound_requests: u32,
     state_read_bytes: u64,
@@ -692,7 +691,7 @@ impl CapsuleDocument {
                 resource_budget_ceiling: ResourceBudget {
                     cpu_fuel: limits.cpu_fuel,
                     memory_bytes: limits.memory_bytes,
-                    wall_deadline_unix_millis: limits.wall_deadline_unix_millis,
+                    wall_time_limit_millis: limits.wall_time_limit_millis,
                     child_calls: limits.child_calls,
                     outbound_requests: limits.outbound_requests,
                     state_read_bytes: limits.state_read_bytes,

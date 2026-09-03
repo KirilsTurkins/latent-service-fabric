@@ -87,6 +87,26 @@ impl BoundedLogSink {
             .collect()
     }
 
+    /// Atomically removes only one activation's retained records.
+    ///
+    /// This preserves logs produced by concurrent activations while allowing
+    /// finite CLI invocations to release their own bounded records.
+    pub fn take_for(&self, activation_id: &ActivationId) -> Vec<CapturedLog> {
+        let mut state = self.lock_state();
+        let mut retained = VecDeque::with_capacity(state.entries.len());
+        let mut selected = Vec::new();
+        while let Some(entry) = state.entries.pop_front() {
+            if &entry.activation_id == activation_id {
+                state.bytes = state.bytes.saturating_sub(captured_log_size(&entry));
+                selected.push(entry);
+            } else {
+                retained.push_back(entry);
+            }
+        }
+        state.entries = retained;
+        selected
+    }
+
     pub fn clear(&self) {
         let mut state = self.lock_state();
         state.entries.clear();
@@ -510,7 +530,7 @@ impl context::Host for HostState {
         let value = context::ResourceBudget {
             cpu_fuel: budget.cpu_fuel,
             memory_bytes: budget.memory_bytes,
-            wall_deadline_unix_millis: budget.wall_deadline_unix_millis,
+            wall_time_limit_millis: budget.wall_time_limit_millis,
             child_calls: budget.child_calls,
             outbound_requests: budget.outbound_requests,
             state_read_bytes: budget.state_read_bytes,

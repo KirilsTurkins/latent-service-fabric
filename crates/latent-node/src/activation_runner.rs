@@ -8,8 +8,8 @@ use latent_activation::{
     ActivationEnvelope, ActivationManager, ActivationOutcome, ActivationSuccess,
 };
 use latent_core::{
-    ActivationId, ActivationTerminalState, BoxFuture, BudgetConsumption, ErrorDetail, Metadata,
-    PlatformError, PlatformErrorCode,
+    ActivationId, ActivationTerminalState, BoxFuture, BudgetConsumption, CancelDisposition,
+    ErrorDetail, Metadata, PlatformError, PlatformErrorCode, ResourceBudget,
 };
 use latent_executor::{
     BoundImport, ExecutionBackend, ExecutionCancellation, ExecutionCancellationProbe,
@@ -146,12 +146,12 @@ impl Phase0ActivationRunner {
         cancellation: CancellationToken,
     ) -> ActivationOutcome {
         let activation_id = envelope.activation_id.clone();
-        let effective_deadline = earliest_deadline(
+        let effective_deadline = ResourceBudget::effective_deadline_unix_millis(
+            now_unix_millis(),
             envelope.deadline_unix_millis,
-            envelope.budget.wall_deadline_unix_millis,
+            [&envelope.budget],
         );
         envelope.deadline_unix_millis = effective_deadline;
-        envelope.budget.wall_deadline_unix_millis = effective_deadline;
 
         if cancellation.is_cancelled() {
             return cancellation_failure(cancellation.reason());
@@ -175,9 +175,13 @@ impl Phase0ActivationRunner {
         // The inner scope guarantees that a losing acquisition future is dropped
         // before cancel_waiting is invoked or the envelope proceeds to execution.
         let resolution = {
-            let acquire =
-                self.pool
-                    .acquire(&activation_id, &tenant, self.config.cell_class, &budget);
+            let acquire = self.pool.acquire_with_deadline(
+                &activation_id,
+                &tenant,
+                self.config.cell_class,
+                &budget,
+                effective_deadline,
+            );
             tokio::pin!(acquire);
             let deadline_wait = wait_for_deadline(effective_deadline);
             tokio::pin!(deadline_wait);
@@ -372,19 +376,14 @@ impl ActivationManager for Phase0ActivationRunner {
         &'a self,
         activation_id: &'a ActivationId,
         reason: &'a str,
-    ) -> BoxFuture<'a, Result<(), PlatformError>> {
+    ) -> BoxFuture<'a, Result<CancelDisposition, PlatformError>> {
         Box::pin(async move {
-            let state = self
-                .lock_registrations()
-                .get(activation_id)
-                .cloned()
-                .ok_or_else(|| {
-                    platform_error(
-                        PlatformErrorCode::NotFound,
-                        "activation has no live cancellation registration",
-                        false,
-                    )
-                })?;
+            let Some(state) = self.lock_registrations().get(activation_id).cloned() else {
+                // The narrow Phase 0 runner intentionally retains no terminal
+                // status journal. Phase 1's retained status store can return
+                // `AlreadyTerminal`; here an unknown id is deterministic.
+                return Ok(CancelDisposition::NotFound);
+            };
             state.cancel(bounded_text(
                 if reason.is_empty() {
                     "cancelled"
@@ -397,7 +396,7 @@ impl ActivationManager for Phase0ActivationRunner {
             // Cancellation is owned by the runner token. Pool cancellation is a
             // best-effort queue acceleration and cannot revoke an accepted signal.
             let _ = self.pool.cancel_waiting(activation_id).await;
-            Ok(())
+            Ok(CancelDisposition::Accepted)
         })
     }
 }
@@ -600,6 +599,7 @@ fn execution_result_consumption(
 ) -> BudgetConsumption {
     match outcome {
         Ok(GuestOutcome::Returned { consumption, .. })
+        | Ok(GuestOutcome::DeclaredError { consumption, .. })
         | Ok(GuestOutcome::Trapped { consumption, .. })
         | Ok(GuestOutcome::Interrupted { consumption, .. }) => consumption.clone(),
         Err(_) => BudgetConsumption::default(),
@@ -629,6 +629,9 @@ fn map_execution_outcome(
                 effect_ids: Vec::new(),
                 metadata,
             })
+        }
+        Ok(GuestOutcome::DeclaredError { error, consumption }) => {
+            ActivationOutcome::DeclaredError { error, consumption }
         }
         Ok(GuestOutcome::Trapped { trap, consumption }) => {
             let mut fields = Metadata::new();
@@ -813,6 +816,7 @@ fn terminal_state_for_error(code: PlatformErrorCode) -> ActivationTerminalState 
 fn outcome_consumption(outcome: &ActivationOutcome) -> BudgetConsumption {
     match outcome {
         ActivationOutcome::Succeeded(success) => success.consumption.clone(),
+        ActivationOutcome::DeclaredError { consumption, .. } => consumption.clone(),
         ActivationOutcome::Failed { consumption, .. } => consumption.clone(),
     }
 }
@@ -843,14 +847,6 @@ fn platform_error(code: PlatformErrorCode, message: &str, retryable: bool) -> Pl
         message: bounded_text(message, MAX_DIAGNOSTIC_BYTES),
         retryable,
         details: Vec::new(),
-    }
-}
-
-fn earliest_deadline(first: Option<u64>, second: Option<u64>) -> Option<u64> {
-    match (first, second) {
-        (Some(first), Some(second)) => Some(first.min(second)),
-        (Some(value), None) | (None, Some(value)) => Some(value),
-        (None, None) => None,
     }
 }
 
@@ -930,5 +926,35 @@ mod tests {
             "released",
         );
         assert_eq!(early, running);
+    }
+
+    #[test]
+    fn typed_declared_guest_error_never_maps_to_success() {
+        let declared = latent_core::DeclaredError {
+            code: "guest.invalid-input".to_owned(),
+            message: "the guest rejected the supplied value".to_owned(),
+            payload: br#"{"field":"name"}"#.to_vec(),
+            media_type: "application/json".to_owned(),
+            metadata: Metadata::from([("field".to_owned(), "name".to_owned())]),
+        };
+        let consumption = BudgetConsumption {
+            cpu_fuel: 17,
+            ..BudgetConsumption::default()
+        };
+
+        assert_eq!(
+            map_execution_outcome(
+                Ok(GuestOutcome::DeclaredError {
+                    error: declared.clone(),
+                    consumption: consumption.clone(),
+                }),
+                "cell-declared-error",
+                "released",
+            ),
+            ActivationOutcome::DeclaredError {
+                error: declared,
+                consumption,
+            }
+        );
     }
 }

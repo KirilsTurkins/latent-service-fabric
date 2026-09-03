@@ -28,6 +28,8 @@ pub struct RevisionRoute {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServiceRoute {
     pub id: RouteId,
+    /// A service identifier is only unique inside this tenant scope.
+    pub tenant: TenantId,
     pub service: ServiceId,
     pub revisions: Vec<RevisionRoute>,
 }
@@ -35,8 +37,10 @@ pub struct ServiceRoute {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BindingRoute {
     pub id: BindingId,
+    pub consumer_tenant: TenantId,
     pub consumer_service: ServiceId,
     pub imported_contract: ContractId,
+    pub provider_tenant: TenantId,
     pub provider_service: ServiceId,
     pub provider_contract: ContractId,
     pub mode: BindingMode,

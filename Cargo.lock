@@ -1000,6 +1000,7 @@ dependencies = [
  "latent-executor",
  "latent-routing",
  "latent-scheduler",
+ "latent-telemetry",
  "tokio",
 ]
 
@@ -1031,6 +1032,7 @@ dependencies = [
 name = "latent-rpc"
 version = "0.1.0-alpha.1"
 dependencies = [
+ "latent-core",
  "prost",
  "protoc-bin-vendored",
  "tonic",
@@ -1074,6 +1076,8 @@ version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
+ "latent-routing",
+ "tokio",
 ]
 
 [[package]]
@@ -1175,6 +1179,7 @@ dependencies = [
  "latent-node",
  "latent-routing",
  "latent-scheduler",
+ "latent-telemetry",
  "latent-wasmtime",
  "serde",
  "serde_json",
@@ -1250,9 +1255,9 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "memfd"
-version = "0.6.5"
+version = "0.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad38eb12aea514a0466ea40a80fd8cc83637065948eb4a426e4aa46261175227"
+checksum = "57804b2c9b69967f1536a56f86297e367a33b19e98852ed624b84551cdbc0d90"
 dependencies = [
  "rustix",
 ]
@@ -1265,9 +1270,9 @@ checksum = "6877bb514081ee2a7ff5ef9de3281f14a4dd4bceac4c09388074a6b5df8a139a"
 
 [[package]]
 name = "mio"
-version = "1.2.2"
+version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30d65c71f1ce40ab09135ce117d742b9f8a19ff91a41a8b57ed50bc2de59c427"
+checksum = "4b18443e9c262bfe8fa82f51666e2642c53393f7e5c27b3e1aeab922cff5b9d8"
 dependencies = [
  "libc",
  "wasi",
@@ -1727,9 +1732,9 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "smallvec"
-version = "1.15.2"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
+checksum = "b9be42f50aa861c555654aa3a37f52f4b1074bacf4e48fe0ef7fa584e80f1f0f"
 dependencies = [
  "serde",
 ]

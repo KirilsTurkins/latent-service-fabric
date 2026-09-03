@@ -83,9 +83,14 @@ message ListNodesResponse {
 }
 
 service NodeService {
+  // Phase 2+ cluster registration. Explicitly unimplemented in Phase 1.
   rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+  // Phase 2+ cluster reporting. Explicitly unimplemented in Phase 1.
   rpc ReportInventory(ReportInventoryRequest) returns (Empty);
+  // Phase 2+ cluster heartbeats. Explicitly unimplemented in Phase 1.
   rpc Heartbeat(HeartbeatRequest) returns (Empty);
+  // Phase 1 standalone: returns the local node inventory only.
   rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
+  // Phase 1 standalone: returns the bounded local node list only.
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
 }
