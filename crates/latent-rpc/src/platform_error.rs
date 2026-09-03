@@ -79,10 +79,12 @@ impl TryIntoDomainPlatformError for invocation::PlatformError {
             self.code,
             self.message,
             self.retryable,
-            self.detail_items.into_iter().map(|detail| DomainErrorDetail {
-                kind: detail.kind,
-                fields: detail.fields.into_iter().collect(),
-            }),
+            self.detail_items
+                .into_iter()
+                .map(|detail| DomainErrorDetail {
+                    kind: detail.kind,
+                    fields: detail.fields.into_iter().collect(),
+                }),
         )
     }
 }
@@ -117,10 +119,12 @@ impl TryIntoDomainPlatformError for control::PlatformError {
             self.code,
             self.message,
             self.retryable,
-            self.detail_items.into_iter().map(|detail| DomainErrorDetail {
-                kind: detail.kind,
-                fields: detail.fields.into_iter().collect(),
-            }),
+            self.detail_items
+                .into_iter()
+                .map(|detail| DomainErrorDetail {
+                    kind: detail.kind,
+                    fields: detail.fields.into_iter().collect(),
+                }),
         )
     }
 }
