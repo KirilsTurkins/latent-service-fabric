@@ -138,10 +138,9 @@ jobs:
           containment = Path("crates/latent-wasmtime/src/containment.rs")
           replace_once(
               containment,
-              "    pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {\n"
-              "        stop_kind(self.cause())\n"
-              "    }\n\n",
-              "",
+              "    pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {\n",
+              "    #[cfg_attr(not(test), allow(dead_code))]\n"
+              "    pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {\n",
           )
           PY
           chmod +x tools/validate_pr53_observability.sh
