@@ -154,12 +154,13 @@ the validator's drift detection and the cross-SDK surface requirements.
 
 ## Integration boundary
 
-Phase 0 gate #25 is complete. This branch has been reconciled with the finalized
-Phase 0 retained/replaced classification, and the retained Phase 0 contract,
-containment, spike, baseline, and completion-gate workflows pass with these
-contract changes.
+Phase 0 gate #25 and the executable build foundation in #2 are complete. This
+work is reconciled with the finalized Phase 0 retained/replaced classification
+and with `development`'s generated Rust, Component Model, and RPC ownership.
+The hardened Protobuf services compile through `latent-rpc`, and the normalized
+Buf descriptor golden is verified from the same exhaustive Protobuf manifest.
 
-The pull request remains draft-only until #2 finalizes the generated Rust,
-Component Model, and RPC build foundation consumed by these contracts. Before
-merge, the final #2 integration must regenerate or verify the descriptor and
-cross-layer contract checks and resolve any resulting drift.
+No dependency gate remains on this contract work. Merge readiness is determined
+by the current clean-checkout CI, including the retained Phase 0 contract,
+containment, spike, baseline, and completion-gate workflows and the Phase 1
+cross-layer descriptor and SDK checks.
