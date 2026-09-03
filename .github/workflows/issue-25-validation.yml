@@ -57,8 +57,6 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1
         with:
           version: 1.72.0
-      - name: Remove generated Zig cache from source-validation scope
-        run: rm -rf .zig-cache
       - name: Run the clean-checkout Phase 0 smoke sequence
         run: |
           unset CARGO_INCREMENTAL

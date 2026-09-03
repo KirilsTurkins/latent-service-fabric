@@ -4,11 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TARGET_ROOT="${CARGO_TARGET_DIR:-${ROOT}/target}"
 OUTPUT="${TARGET_ROOT}/contracts/sdk"
+ZIG_LOCAL_CACHE="${TARGET_ROOT}/zig-local-cache"
 C_TARGET="x86_64-linux-gnu"
 
 cd "${ROOT}"
 rm -rf "${OUTPUT}"
-mkdir -p "${OUTPUT}/c" "${OUTPUT}/dotnet" "${OUTPUT}/java"
+mkdir -p "${OUTPUT}/c" "${OUTPUT}/dotnet" "${OUTPUT}/java" "${ZIG_LOCAL_CACHE}"
 
 npm ci --prefix sdk/typescript-client --ignore-scripts
 python3 tools/check_tool_versions.py
@@ -41,5 +42,6 @@ int main(void) {
     return 0;
 }
 EOF_C
-zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
+ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
+    zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
     -I sdk/c/include "${OUTPUT}/c/header-smoke.c" -o "${OUTPUT}/c/header-smoke"
