@@ -138,12 +138,13 @@ jobs:
           enum FixedKind {'''
           fixed_kind_definition = '''#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
           enum FixedKind {'''
-          if fixed_kind_attribute not in codec_source:
-              raise SystemExit("FixedKind wire-name patch did not match the generated source")
-          codec_path.write_text(
-              codec_source.replace(fixed_kind_attribute, fixed_kind_definition, 1),
-              encoding="utf-8",
-          )
+          if fixed_kind_attribute in codec_source:
+              codec_source = codec_source.replace(
+                  fixed_kind_attribute, fixed_kind_definition, 1
+              )
+          elif fixed_kind_definition not in codec_source:
+              raise SystemExit("FixedKind wire-name guard did not match the generated source")
+          codec_path.write_text(codec_source, encoding="utf-8")
 
           for payload_path in Path(".issue3").glob("payload-*"):
               payload_path.unlink()
