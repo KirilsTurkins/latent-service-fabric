@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify and publish the resolved merge commit
+      - name: Reconstruct, verify, and publish the resolved merge
         env:
           EXPECTED_COMMIT: add7508ef04ce7305ac471d65e7d52215d472854
           EXPECTED_TREE: 5d70424a650898a660c41308e07367fa9b2ddead
@@ -31,19 +31,242 @@ jobs:
           test "$(git rev-parse "refs/remotes/origin/${TARGET_BRANCH}")" = "${EXPECTED_FEATURE_HEAD}"
           test "$(git rev-parse refs/remotes/origin/development)" = "${EXPECTED_DEVELOPMENT_HEAD}"
 
-          BUNDLE="${RUNNER_TEMP}/pr46-merge-result.bundle"
-          base64 --decode tools/pr46-merge-result.bundle.b64 > "${BUNDLE}"
-          test "$(sha256sum "${BUNDLE}" | awk '{print $1}')" = \
-            "6fb5c7f97ed52aa03136b8cc278eac5e36c07fce66b788b92072fb99bad0e123"
-          git bundle verify "${BUNDLE}"
-          git fetch "${BUNDLE}" HEAD:refs/remotes/pr46/resolved
+          git switch --detach "${EXPECTED_FEATURE_HEAD}"
+          set +e
+          git merge --no-commit --no-ff "${EXPECTED_DEVELOPMENT_HEAD}"
+          merge_status=$?
+          set -e
+          test "${merge_status}" -eq 1
 
-          test "$(git rev-parse refs/remotes/pr46/resolved)" = "${EXPECTED_COMMIT}"
-          test "$(git rev-parse "${EXPECTED_COMMIT}^{tree}")" = "${EXPECTED_TREE}"
-          test "$(git show -s --format='%P' "${EXPECTED_COMMIT}")" = \
-            "${EXPECTED_FEATURE_HEAD} ${EXPECTED_DEVELOPMENT_HEAD}"
-          git diff-tree --check "${EXPECTED_COMMIT}"
+          mapfile -t conflicts < <(git diff --name-only --diff-filter=U | sort)
+          expected_conflicts=(
+            .github/workflows/issue-22-validation.yml
+            .github/workflows/issue-23-validation.yml
+            .github/workflows/issue-24-validation.yml
+            .github/workflows/issue-25-validation.yml
+            api/proto/README.md
+            apps/latentd/src/bin/phase0_baseline/throughput.rs
+            docs/api-surface.md
+            tools/validate_sdks.sh
+          )
+          test "$(printf '%s\n' "${conflicts[@]}")" = \
+            "$(printf '%s\n' "${expected_conflicts[@]}")"
+
+          git checkout --theirs -- \
+            .github/workflows/issue-22-validation.yml \
+            .github/workflows/issue-23-validation.yml \
+            .github/workflows/issue-24-validation.yml \
+            .github/workflows/issue-25-validation.yml
+
+          cat > api/proto/README.md <<'EOF_PROTO'
+          # Protobuf APIs
+
+          These files are the authoritative transport-neutral service definitions for the control plane, node registration, route distribution, trigger management, policy explanation, generic invocation, cancellation, and activation inspection.
+
+          Rust message types plus Tonic client and server surfaces are generated at build time by `crates/latent-rpc`. The generated Rust remains under Cargo `OUT_DIR`; it is never checked in beside the authoritative `.proto` files. `latent-api.protos` is the sorted, exhaustive input manifest used by both the build script and repository validator, so adding a `.proto` without adding it to generation fails validation.
+
+          WIT remains authoritative for typed component-to-component calls. The generic invocation API carries encoded payloads for tooling and gateways; generated RPC types do not implement service semantics.
+
+          The Phase 1 pre-stabilization compatibility record and checked-in descriptor contract are in [`docs/protocol/phase-1-contract-hardening.md`](../../docs/protocol/phase-1-contract-hardening.md) and `phase1-descriptor-contract.json`, which is validated from a Buf-built `FileDescriptorSet` by `tools/validate_phase1_descriptor.py`.
+          EOF_PROTO
+          sed -i 's/^          //' api/proto/README.md
+
+          git checkout --theirs -- apps/latentd/src/bin/phase0_baseline/throughput.rs
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("apps/latentd/src/bin/phase0_baseline/throughput.rs")
+          text = path.read_text()
+          old = "wall_deadline_unix_millis: Some(now_unix_millis().saturating_add(timeout_ms)),"
+          new = "wall_time_limit_millis: Some(timeout_ms),"
+          if text.count(old) != 1:
+              raise SystemExit(f"expected exactly one legacy throughput budget field, found {text.count(old)}")
+          path.write_text(text.replace(old, new))
+          PY
+
+          cat > docs/api-surface.md <<'EOF_API'
+          # API surface map
+
+          ## Guest-facing WIT packages
+
+          | Package | Purpose |
+          |---|---|
+          | `latent:context` | Identity, trace, deadline, metadata, and remaining budget |
+          | `latent:log` | Budgeted structured logging |
+          | `latent:clock` | Monotonic and wall clocks |
+          | `latent:random` | Budgeted random values |
+          | `latent:blob` | Large immutable and staged binary values |
+          | `latent:state` | Transactional keyed state |
+          | `latent:events` | Durable event publication intents |
+          | `latent:http` | Policy-scoped outbound HTTP |
+          | `latent:secrets` | Scoped secret reads |
+          | `latent:timer` | Durable timer scheduling |
+          | `latent:telemetry` | Custom budgeted metrics |
+          | `latent:service` | Component-to-component invocation |
+          | `latent:platform/capsule` | Aggregate platform world |
+
+          Rust bindings for the aggregate runtime world and maintained echo fixture are generated into Cargo `OUT_DIR` by `latent-component-bindings`. The executable echo guest generates its canonical ABI exports in the final component crate from the same authoritative WIT.
+
+          ## Protobuf services
+
+          | Service | Purpose |
+          |---|---|
+          | `ReleaseService` | Publish, inspect, and list release metadata |
+          | `ContractService` | Inspect contracts and compare compatibility |
+          | `CapabilityService` | Discover providers and explain grants |
+          | `AuditService` | Query administrative and security audit events |
+          | `DeploymentService` | Apply, inspect, list, delete, and watch deployments |
+          | `BindingService` | Apply bindings and validate binding graphs |
+          | `TriggerService` | Manage shared ingress triggers |
+          | `PolicyService` | Manage and explain policy decisions |
+          | `NodeService` | Register nodes and report inventory/health |
+          | `RouteService` | Retrieve and watch immutable route snapshots |
+          | `InvocationService` | Generic invocation, cancellation, and activation status |
+
+          `latent-rpc` generates Rust messages, Tonic clients, Tonic server traits/wrappers, and an embedded descriptor set for every checked-in Protobuf file. It contains no listener or service implementation.
+
+          Phase 1's supported standalone subset and all explicit unimplemented methods are defined in [Phase 1 contract hardening](protocol/phase-1-contract-hardening.md).
+
+          ## Rust internal interfaces
+
+          | Crate | Primary seams |
+          |---|---|
+          | `latent-rpc` | generated Protobuf messages, Tonic clients/servers, descriptor set |
+          | `latent-component-bindings` | shared generated runtime/echo Component Model bindings |
+          | `latent-artifacts` | `ArtifactRepository`, `ArtifactCache`, `ArtifactVerifier` |
+          | `latent-contracts` | `ContractRegistry`, `CompatibilityChecker`, `BindingCompiler` |
+          | `latent-policy` | `PolicyEngine`, `PolicyRepository` |
+          | `latent-routing` | `RouteResolver`, `RouteCompiler`, snapshot source/publisher |
+          | `latent-admission` | `AdmissionController`, `QuotaProvider` |
+          | `latent-scheduler` | open `CellPool`, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `CellPoolSnapshot`, `ActivationScheduler`, `ClusterPlacement` |
+          | `latent-activation` | `ActivationManager`, `ActivationJournal` |
+          | `latent-executor` | `ExecutionBackend`, backend registry and cancellation |
+          | `latent-wasmtime` | engine factory, AOT compiler/cache/validator, shared echo host bindings |
+          | `latent-capabilities` | provider, broker, registry, handle model |
+          | `latent-blobs` | large-value storage, leases, and transfer |
+          | `latent-identity` | authentication, authorization, delegation, node identity |
+          | `latent-triggers` | trigger sources, cursors, mapping, and dispatch |
+          | `latent-ingress` | shared protocol adapters and ingress routing |
+          | `latent-commit` | atomic state/effect commit and recovery |
+          | `latent-state` | state backend and entity lease manager |
+          | `latent-effects` | effect store, dispatcher, and provider |
+          | `latent-workflows` | continuation store and workflow runtime |
+          | `latent-wire` | codec, duplex channel, request multiplexer |
+          | `latent-wrpc` | remote client/server and connection factory |
+          | `latent-node` | node registration, inventory, route watch, directory |
+          | `latent-control-store` | desired-state persistence seams |
+          | `latent-telemetry` | telemetry sink and activation observer |
+          | `latent-audit` | audit store and publisher |
+          | `latent-testkit` | conformance suite, deterministic async/process/resource utilities, invariant probes |
+
+          ## Declarative schemas
+
+          The JSON Schemas in `schemas/` define capsules, deployments, bindings, policies, triggers, and compiled route snapshots.
+
+          ## Language SDKs
+
+          The Rust, Go, .NET, Java, TypeScript, and C directories define client and guest context surfaces. Transport-facing generated Rust is owned centrally by `latent-rpc`; cross-language transport generation remains a later implementation choice.
+          EOF_API
+          sed -i 's/^          //' docs/api-surface.md
+
+          cat > tools/validate_sdks.sh <<'EOF_SDK'
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+          TARGET_ROOT="${CARGO_TARGET_DIR:-${ROOT}/target}"
+          OUTPUT="${TARGET_ROOT}/contracts/sdk"
+          ZIG_LOCAL_CACHE="${TARGET_ROOT}/zig-local-cache"
+          C_TARGET="x86_64-linux-gnu"
+
+          cd "${ROOT}"
+          rm -rf "${OUTPUT}"
+          mkdir -p "${OUTPUT}/c" "${OUTPUT}/dotnet" "${OUTPUT}/java" "${ZIG_LOCAL_CACHE}"
+
+          npm ci --prefix sdk/typescript-client --ignore-scripts
+          python3 tools/check_tool_versions.py
+
+          (
+              cd sdk/go
+              go test ./...
+          )
+
+          npm --prefix sdk/typescript-client run build -- --noEmit
+
+          mapfile -t java_sources < <(find sdk/java-client/src/main/java -type f -name '*.java' | sort)
+          if (( ${#java_sources[@]} == 0 )); then
+              echo "no Java SDK sources found" >&2
+              exit 1
+          fi
+          javac --release 21 -d "${OUTPUT}/java" "${java_sources[@]}"
+
+          dotnet build sdk/dotnet/Latent.Sdk/Latent.Sdk.csproj \
+              --configuration Release \
+              --nologo \
+              --output "${OUTPUT}/dotnet/bin" \
+              -p:BaseIntermediateOutputPath="${OUTPUT}/dotnet/obj/" \
+              -p:ContinuousIntegrationBuild=true
+
+          cat > "${OUTPUT}/c/header-smoke.c" <<'EOF_C'
+          #include <latent/latent.h>
+
+          int main(void) {
+              latent_invocation_receipt receipt = {0};
+              latent_declared_invocation_error declared = {
+                  .receipt = receipt,
+              };
+              latent_invocation_outcome outcome = {
+                  .kind = LATENT_INVOCATION_DECLARED_ERROR,
+                  .declared_error = &declared,
+              };
+              latent_activation_success_summary success = {0};
+              latent_retained_invocation_outcome retained = {
+                  .kind = LATENT_RETAINED_INVOCATION_SUCCEEDED,
+                  .success = &success,
+              };
+              latent_activation_status status = {
+                  .has_terminal_outcome = true,
+                  .terminal_outcome = retained,
+              };
+              return outcome.declared_error == 0 || !status.has_terminal_outcome;
+          }
+          EOF_C
+          sed -i 's/^          //' "${OUTPUT}/c/header-smoke.c"
+          ZIG_LOCAL_CACHE_DIR="${ZIG_LOCAL_CACHE}" \
+              zig cc -target "${C_TARGET}" -std=c11 -Wall -Wextra -Werror -pedantic \
+              -I sdk/c/include "${OUTPUT}/c/header-smoke.c" -o "${OUTPUT}/c/header-smoke"
+          "${OUTPUT}/c/header-smoke"
+          EOF_SDK
+          sed -i 's/^          //' tools/validate_sdks.sh
+
+          git add \
+            .github/workflows/issue-22-validation.yml \
+            .github/workflows/issue-23-validation.yml \
+            .github/workflows/issue-24-validation.yml \
+            .github/workflows/issue-25-validation.yml \
+            api/proto/README.md \
+            apps/latentd/src/bin/phase0_baseline/throughput.rs \
+            docs/api-surface.md \
+            tools/validate_sdks.sh
+          test -z "$(git diff --name-only --diff-filter=U)"
+          git diff --check --cached
+
+          actual_tree="$(git write-tree)"
+          test "${actual_tree}" = "${EXPECTED_TREE}"
+          resolved_commit="$({
+            printf '%s\n' 'merge: integrate build foundation into Phase 1 contract hardening'
+          } | GIT_AUTHOR_NAME=OpenAI \
+              GIT_AUTHOR_EMAIL=noreply@openai.com \
+              GIT_AUTHOR_DATE='@1788439766 +0000' \
+              GIT_COMMITTER_NAME=OpenAI \
+              GIT_COMMITTER_EMAIL=noreply@openai.com \
+              GIT_COMMITTER_DATE='@1788439766 +0000' \
+              git commit-tree "${actual_tree}" \
+                -p "${EXPECTED_FEATURE_HEAD}" \
+                -p "${EXPECTED_DEVELOPMENT_HEAD}")"
+          test "${resolved_commit}" = "${EXPECTED_COMMIT}"
+          git diff-tree --check "${resolved_commit}"
 
           git push origin \
-            "${EXPECTED_COMMIT}:refs/heads/${TARGET_BRANCH}" \
+            "${resolved_commit}:refs/heads/${TARGET_BRANCH}" \
             "--force-with-lease=refs/heads/${TARGET_BRANCH}:${EXPECTED_FEATURE_HEAD}"
