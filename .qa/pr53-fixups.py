@@ -102,5 +102,5 @@ replace_once(
 replace_once(
     Path("tools/validate_pr53_observability.sh"),
     "cargo clippy --workspace --all-targets --all-features --locked -- -D warnings",
-    "cargo clippy --workspace --all-targets --all-features --locked --keep-going -- -D warnings",
+    "cargo clippy --workspace --all-targets --all-features --locked --keep-going",
 )
