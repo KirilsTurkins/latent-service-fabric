@@ -23,7 +23,6 @@ pub struct NativeCollectorIdentity {
 // profile contract; collapsing them would make the retained evidence ambiguous.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[allow(clippy::struct_excessive_bools)]
 pub struct NativeCollectorBuildConfiguration {
     pub schema_version: &'static str,
     pub cargo_profile: &'static str,
