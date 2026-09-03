@@ -7,7 +7,15 @@ TARGET_BRANCH="feat/issue-36-contract-hardening"
 
 work_dir="$(mktemp -d)"
 trap 'rm -rf "${work_dir}"' EXIT
-cat tools/pr46-qa.patch.part*.b64 | base64 --decode > "${work_dir}/pr46-qa.patch"
+cat \
+    tools/pr46-qa.patch.part00.b64 \
+    tools/pr46-qa.patch.part01-0.b64 \
+    tools/pr46-qa.patch.part01-1.b64 \
+    tools/pr46-qa.patch.part01-2.b64 \
+    tools/pr46-qa.patch.part01-3.b64 \
+    tools/pr46-qa.patch.part02.b64 \
+    tools/pr46-qa.patch.part03.b64 \
+    | base64 --decode > "${work_dir}/pr46-qa.patch"
 echo "${EXPECTED_PATCH_SHA256}  ${work_dir}/pr46-qa.patch" | sha256sum --check --status
 
 git fetch --force --no-tags origin \
