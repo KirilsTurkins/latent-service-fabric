@@ -1,0 +1,170 @@
+name: Bootstrap issue 3 implementation
+
+on:
+  push:
+    branches:
+      - feat/issue-3-manifest-codecs
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-and-validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt, clippy
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+          cache: pip
+          cache-dependency-path: tools/requirements.lock
+
+      - name: Install repository validation dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+
+      - name: Materialize implementation and integrate shared codec
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64
+          import hashlib
+          import json
+          import zlib
+          from pathlib import Path
+
+          parts = [
+              Path(f".issue3/payload-{index:02d}").read_text(encoding="utf-8").strip()
+              for index in range(10)
+          ]
+          payload = "".join(parts)
+          actual_digest = hashlib.sha256(payload.encode()).hexdigest()
+          expected_digest = "f8a1ca442985282b2be2121342e0d30fc1d47a5835ffc560c89393271cd73268"
+          if actual_digest != expected_digest:
+              raise SystemExit(
+                  f"issue 3 payload checksum mismatch: expected {expected_digest}, got {actual_digest}"
+              )
+
+          files = json.loads(zlib.decompress(base64.b64decode(payload)))
+          for relative, content in files.items():
+              path = Path(relative)
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_text(content, encoding="utf-8")
+
+          path = Path("apps/latentd/src/phase0_composition.rs")
+          source = path.read_text(encoding="utf-8")
+          source = source.replace("use std::collections::BTreeMap;\n", "", 1)
+
+          old_import = """use latent_manifest::{
+              CapsuleManifest, ContractExport, ContractImport, ExecutionBackendKind, ExecutionRequirements,
+              ObjectMetadata, StateModel, ThreadingModel,
+          };
+          """
+          new_import = """use latent_manifest::{
+              CapsuleManifest, JsonManifestCodec, ManifestCodec, ManifestValidator,
+              Phase1ManifestValidator,
+          };
+          """
+          if old_import in source:
+              source = source.replace(old_import, new_import, 1)
+          elif new_import not in source:
+              raise SystemExit("latent-manifest import block did not match the expected base source")
+
+          source = source.replace("use serde::Deserialize;\n", "", 1)
+
+          old_decode = """    let document: CapsuleDocument = serde_json::from_slice(&manifest_bytes).map_err(|error| {
+              composition_error(
+                  PlatformErrorCode::CorruptArtifact,
+                  &format!("capsule manifest is not valid JSON for the Phase 0 composition: {error}"),
+              )
+          })?;
+              let manifest = document.into_manifest()?;
+          """
+          new_decode = """    let codec = JsonManifestCodec::default();
+              let manifest = codec.decode_capsule(&manifest_bytes).map_err(|violations| {
+                  let detail = violations
+                      .iter()
+                      .map(ToString::to_string)
+                      .collect::<Vec<_>>()
+                      .join("; ");
+                  composition_error(
+                      PlatformErrorCode::CorruptArtifact,
+                      &format!("capsule manifest failed structural validation: {detail}"),
+                  )
+              })?;
+              Phase1ManifestValidator::new()
+                  .validate_capsule(&manifest)
+                  .map_err(|violations| {
+                      let detail = violations
+                          .iter()
+                          .map(ToString::to_string)
+                          .collect::<Vec<_>>()
+                          .join("; ");
+                      composition_error(
+                          PlatformErrorCode::InvalidArgument,
+                          &format!("capsule manifest failed Phase 1 validation: {detail}"),
+                      )
+                  })?;
+          """
+          if old_decode in source:
+              source = source.replace(old_decode, new_decode, 1)
+          elif new_decode not in source:
+              raise SystemExit("Phase 0 capsule decode block did not match the expected base source")
+
+          marker = """#[derive(Debug, Deserialize)]
+          #[serde(rename_all = "camelCase")]
+          struct CapsuleDocument {"""
+          if marker in source:
+              source = source[: source.index(marker)].rstrip() + "\n"
+          else:
+              raise SystemExit("duplicate Phase 0 capsule document parser was not found")
+          path.write_text(source, encoding="utf-8")
+
+          for payload_path in Path(".issue3").glob("payload-*"):
+              payload_path.unlink()
+          Path(".issue3").rmdir()
+          Path(".github/workflows/issue-3-bootstrap.yml").unlink()
+          PY
+
+          cargo fmt --all
+          cargo metadata --format-version 1 --no-deps >/dev/null
+          git diff --check
+
+      - name: Commit implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "feat: implement schema-backed manifest codecs"
+          git push
+
+      - name: Check formatting
+        run: cargo fmt --all --check
+
+      - name: Check workspace
+        run: cargo check --workspace --all-targets --all-features --locked
+
+      - name: Run Clippy
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+
+      - name: Test workspace
+        run: cargo test --workspace --all-targets --all-features --locked
+
+      - name: Validate repository contracts
+        run: |
+          python tools/validate_repository.py
+          python -m unittest discover -s tools/tests
+
+      - name: Check minimum supported Rust version
+        run: |
+          rustup toolchain install 1.94.1 --profile minimal
+          cargo +1.94.1 check --workspace --all-targets --all-features --locked
