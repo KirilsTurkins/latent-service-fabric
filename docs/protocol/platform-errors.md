@@ -25,3 +25,5 @@ Component domain errors are declared by each WIT contract. Infrastructure failur
 Every platform failure carries a stable code, human-readable message, explicit retryability hint, and structured details. The hint does not override operation-level idempotency rules.
 
 `latent-rpc::platform_error` is the canonical Rust/domain-to-Protobuf conversion seam for both invocation and control-plane `PlatformError` messages. It preserves ordered detail items and every detail field exactly. Unknown wire codes return `UnknownPlatformErrorCode`; they are never coerced to `internal` or another known meaning.
+
+The Prost regression suite covers every current code, unknown-code rejection, empty and multiple detail lists, multiple fields, and both generated message types at the configured 512-byte message, eight-detail, 16-field, 64-byte kind/name, and 256-byte value boundaries.
