@@ -8,9 +8,10 @@ Status: Phase 1 normative contract for issue #3.
 
 1. `JsonManifestCodec` accepts or produces bytes. It applies bounded JSON
    preflight before collection allocation, rejects duplicate object keys,
-   retains JSON numbers with arbitrary decimal precision, validates the decoded
-   value against the canonical schema embedded from `schemas/`, converts it to
-   the Rust domain model, and normalizes values used for indexing.
+   retains JSON numeric values with arbitrary decimal precision, canonicalizes
+   every number by mathematical value, validates the decoded value against the
+   canonical schema embedded from `schemas/`, converts it to the Rust domain
+   model, and normalizes values used for indexing.
 2. `Phase1ManifestValidator` accepts Rust domain values. It enforces the
    cross-field standalone Phase 1 rules that JSON Schema cannot express. It
    does not read files, persist state, fetch artifacts, compile routes, or
@@ -91,26 +92,34 @@ only intentional open objects in the current contracts are:
 - trigger `spec.configuration`, whose values may be arbitrary bounded JSON.
 
 Every open object and every array nested below trigger configuration is subject
-to the same schema and parser cardinality ceiling. The trigger configuration
-object is retained losslessly but is not interpreted by Phase 1. Duplicate keys
-are rejected even inside open objects.
+to the same schema and parser cardinality ceiling. Trigger configuration is
+retained without numeric precision loss but normalized to canonical JSON values;
+it is not interpreted by Phase 1. Duplicate keys are rejected even inside open
+objects.
 
 ## Draft 2020-12 numeric semantics
 
 `latent-manifest` enables `serde_json`'s `arbitrary_precision` representation.
-Every accepted number is retained as its exact decimal significand and exponent
-rather than being routed through binary `f64`. This includes integers wider than
-`u64`, high-precision fractions, and finite JSON number lexemes such as `1e400`
-and `1e-400` under recursively nested trigger configuration.
+Every accepted number retains its exact mathematical decimal value rather than
+being routed through binary `f64`. This includes integers wider than `u64`,
+high-precision fractions, and finite JSON number lexemes such as `1e400` and
+`1e-400` under recursively nested trigger configuration.
 
 Schema type `integer` is mathematical rather than lexical. Consequently `1`,
 `1.0`, `1e0`, and `-0.0` are integer values, while `10000.5` and values such as
-`1.0000000000000000000000000000000001` are not. Before typed deserialization,
-the codec converts mathematically integral lexical forms to canonical integer
-tokens only when the value fits the target-independent `i64`/`u64` JSON integer
-envelope. Wider and non-integral values remain exact arbitrary-precision
-numbers so schema type and range validation can reject them at their actual
-field path before any Rust-width conversion.
+`1.0000000000000000000000000000000001` are not. Every valid numeric token is
+normalized before schema validation and model construction: redundant leading
+and trailing zeroes are removed, negative zero becomes zero, exponent casing,
+signs, and leading zeroes are normalized, and mathematically equivalent
+significand/exponent combinations converge to one representation.
+
+Canonical numbers use plain decimal notation when the normalized decimal point
+lies in the compact range from `1e-6` through values below `1e21`; values outside
+that range use scientific notation with one leading significant digit, a
+lowercase `e`, and an explicit exponent sign. This keeps extreme exponents
+compact instead of expanding them into proportional runs of zeroes. Integral
+values inside the `i64`/`u64` JSON integer envelope are emitted as ordinary
+integer tokens so typed deserialization remains exact.
 
 Minimum and maximum checks use normalized decimal comparison rather than
 binary floating-point conversion. Numeric equality used by `const`, `enum`,
@@ -129,8 +138,8 @@ insignificant whitespace. Before encoding, the codec:
 - recursively orders keys in arbitrary trigger configuration objects;
 - uses ordered maps for metadata and constraints;
 - emits typed integer values in canonical integer form;
-- retains arbitrary-precision trigger numbers without rounding, including their
-  exact decimal significand and exponent;
+- emits every arbitrary-precision trigger number in the value-canonical form
+  described above, without rounding or exponent expansion;
 - omits an absent `wallTimeLimitMillis`, retaining its `None` meaning.
 
 The codec never deduplicates an invalid list: semantic or schema validation
