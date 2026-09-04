@@ -1,8 +1,10 @@
-//! Node identity, inventory, route watching, registration, health, and Phase 0 activation orchestration.
+//! Node identity, inventory, route watching, registration, health, and activation orchestration.
 
 #![forbid(unsafe_code)]
 
 mod activation_runner;
+mod budgeted_activation;
+mod cancellation;
 
 use latent_artifacts::CacheEntryDescriptor;
 use latent_core::{BoxFuture, Metadata, NodeId, PlatformError, RouteGeneration};
@@ -10,6 +12,14 @@ use latent_routing::RouteSnapshot;
 
 pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,
+};
+pub use budgeted_activation::{
+    ActivationBudgetPolicy, ActivationBudgetRegistry, ActivationBudgetRegistrySnapshot,
+    ActivationClock, BudgetedActivationManager, SystemActivationClock,
+};
+pub use cancellation::{
+    ActivationCancellationRegistry, CancellationHandle, CancellationRegistration,
+    CancellationRegistrySnapshot, CancellationToken,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

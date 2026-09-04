@@ -7,8 +7,8 @@ use std::sync::Arc;
 use latent_activation::ActivationEnvelope;
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
-    ActivationId, BoxFuture, BudgetConsumption, CapabilityId, CellId, DeclaredError, Metadata,
-    Payload, PlatformError, ReleaseDigest, ResourceBudget,
+    ActivationId, BoxFuture, BudgetConsumption, BudgetDimension, CapabilityId, CellId,
+    DeclaredError, Metadata, Payload, PlatformError, ReleaseDigest, ResourceBudget,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -67,6 +67,30 @@ pub enum GuestInterruptionKind {
     DeadlineExceeded,
     FuelExhausted,
     MemoryExhausted,
+}
+
+impl GuestInterruptionKind {
+    /// Maps execution-enforced budget dimensions to their canonical guest
+    /// interruption. Cooperative capability limits such as log bytes return
+    /// `None` because the host call reports a typed budget-exhausted result
+    /// without interrupting the guest.
+    #[must_use]
+    pub const fn for_budget_dimension(dimension: BudgetDimension) -> Option<Self> {
+        match dimension {
+            BudgetDimension::CpuFuel => Some(Self::FuelExhausted),
+            BudgetDimension::MemoryBytes => Some(Self::MemoryExhausted),
+            BudgetDimension::WallTime => Some(Self::DeadlineExceeded),
+            BudgetDimension::ChildCalls
+            | BudgetDimension::OutboundRequests
+            | BudgetDimension::StateReadBytes
+            | BudgetDimension::StateWriteBytes
+            | BudgetDimension::BlobReadBytes
+            | BudgetDimension::BlobWriteBytes
+            | BudgetDimension::LogBytes
+            | BudgetDimension::EffectCount => None,
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -200,4 +224,29 @@ pub trait ExecutionBackend: Send + Sync {
 pub trait ExecutionBackendRegistry: Send + Sync {
     fn get(&self, backend_id: &str) -> Option<&dyn ExecutionBackend>;
     fn list(&self) -> Vec<String>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn budget_dimensions_have_deterministic_interruption_mappings() {
+        assert_eq!(
+            GuestInterruptionKind::for_budget_dimension(BudgetDimension::CpuFuel),
+            Some(GuestInterruptionKind::FuelExhausted)
+        );
+        assert_eq!(
+            GuestInterruptionKind::for_budget_dimension(BudgetDimension::MemoryBytes),
+            Some(GuestInterruptionKind::MemoryExhausted)
+        );
+        assert_eq!(
+            GuestInterruptionKind::for_budget_dimension(BudgetDimension::WallTime),
+            Some(GuestInterruptionKind::DeadlineExceeded)
+        );
+        assert_eq!(
+            GuestInterruptionKind::for_budget_dimension(BudgetDimension::LogBytes),
+            None
+        );
+    }
 }
