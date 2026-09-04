@@ -1,24 +1,28 @@
-name: Issue 25 Phase 0 completion gate
+name: Phase 0 full validation
 
 on:
-  pull_request:
-    branches:
-      - development
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Validation profile to execute
+        required: true
+        default: full
+        type: choice
+        options:
+          - full
+          - smoke
 
 permissions:
   contents: read
 
 jobs:
-  phase0-gate:
-    name: Clean-checkout Phase 0 gate smoke
+  phase0-validation:
+    name: Clean-checkout Phase 0 ${{ inputs.mode }} gate
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
-          # The gate independently resolves every retained source commit/tree.
-          # A shallow checkout cannot establish that evidence applicability.
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
@@ -45,7 +49,7 @@ jobs:
           version: "0.16.0"
       - name: Install repository validator dependencies
         run: python -m pip install --requirement tools/requirements.lock
-      - name: Install checked-in evidence archive verifier
+      - name: Install retained-evidence archive verifier
         run: sudo apt-get update && sudo apt-get install --yes zstd
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
@@ -57,15 +61,17 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1
         with:
           version: 1.72.0
-      - name: Run the clean-checkout Phase 0 smoke sequence
+      - name: Run the clean-checkout Phase 0 gate
+        env:
+          PHASE0_MODE: ${{ inputs.mode }}
         run: |
           unset CARGO_INCREMENTAL
-          make phase0-gate-smoke
+          tools/run_phase0_gate.sh "${PHASE0_MODE}"
       - name: Upload gate evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: phase0-gate-smoke-${{ github.sha }}
+          name: phase0-${{ inputs.mode }}-validation-${{ github.sha }}
           path: target/phase0-gate
           if-no-files-found: warn
           retention-days: 14
