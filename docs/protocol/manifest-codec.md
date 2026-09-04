@@ -129,8 +129,8 @@ insignificant whitespace. Before encoding, the codec:
 - recursively orders keys in arbitrary trigger configuration objects;
 - uses ordered maps for metadata and constraints;
 - emits typed integer values in canonical integer form;
-- retains arbitrary-precision trigger numbers without rounding (the canonical
-  spelling may normalize an exponent such as `1e400` to `1e+400`);
+- retains arbitrary-precision trigger numbers without rounding, including their
+  exact decimal significand and exponent;
 - omits an absent `wallTimeLimitMillis`, retaining its `None` meaning.
 
 The codec never deduplicates an invalid list: semantic or schema validation
