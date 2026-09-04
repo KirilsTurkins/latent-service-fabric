@@ -1,0 +1,31 @@
+name: Issue 6 format export
+
+on:
+  push:
+    branches:
+      - feat/issue-6-resource-budget-accounting
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt
+      - name: Format workspace
+        run: cargo fmt --all
+      - name: Upload formatted issue 6 sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: issue-6-formatted-${{ github.sha }}
+          path: |
+            crates/latent-core/src/budget.rs
+            crates/latent-node/src/budgeted_activation.rs
+            crates/latent-node/src/cancellation.rs
+          if-no-files-found: error
+          retention-days: 1
