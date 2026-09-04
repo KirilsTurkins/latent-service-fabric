@@ -1143,6 +1143,11 @@ version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
+ "latent-routing",
+ "latent-rpc",
+ "prost",
+ "tokio",
+ "tonic",
 ]
 
 [[package]]

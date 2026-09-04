@@ -11,5 +11,13 @@ description = "Interface contracts for latent-wire."
 workspace = true
 
 [dependencies]
-latent-core = { path = "../latent-core" }
 latent-activation = { path = "../latent-activation" }
+latent-core = { path = "../latent-core" }
+latent-routing = { path = "../latent-routing" }
+latent-rpc = { path = "../latent-rpc" }
+prost.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
