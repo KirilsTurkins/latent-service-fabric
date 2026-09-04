@@ -102,7 +102,7 @@ impl JsonManifestCodec {
     fn preflight_decode(&self, bytes: &[u8]) -> ManifestResult<Vec<u8>> {
         enforce_raw_limits(bytes, self.limits)?;
         enforce_collection_limit_and_unique_keys(bytes, self.limits.max_collection_entries)?;
-        Ok(normalize_integral_number_lexemes(bytes))
+        Ok(normalize_number_lexemes(bytes))
     }
 
     fn preflight_encoded(&self, bytes: &[u8]) -> ManifestResult<()> {
@@ -217,7 +217,8 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn encode_trigger(&self, manifest: &TriggerManifest) -> ManifestResult<Vec<u8>> {
-        let bytes = self.wire_codec().encode_trigger(manifest)?;
+        let encoded = self.wire_codec().encode_trigger(manifest)?;
+        let bytes = normalize_number_lexemes(&encoded);
         self.preflight_encoded(&bytes)?;
         Ok(bytes)
     }
@@ -563,7 +564,7 @@ fn duplicate_key_error<E: de::Error>(key: &str) -> E {
     E::custom(format!("{DUPLICATE_KEY_MARKER} `{key}`"))
 }
 
-fn normalize_integral_number_lexemes(bytes: &[u8]) -> Vec<u8> {
+fn normalize_number_lexemes(bytes: &[u8]) -> Vec<u8> {
     let mut output = Vec::with_capacity(bytes.len());
     let mut index = 0_usize;
     let mut in_string = false;
@@ -598,8 +599,8 @@ fn normalize_integral_number_lexemes(bytes: &[u8]) -> Vec<u8> {
                 index += 1;
             }
             let token = &bytes[start..index];
-            if let Some(integer) = representable_integer_lexeme(token) {
-                output.extend_from_slice(&integer);
+            if let Some(number) = representable_integer_lexeme(token) {
+                output.extend_from_slice(&number);
             } else {
                 output.extend_from_slice(token);
             }
