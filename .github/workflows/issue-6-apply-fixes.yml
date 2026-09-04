@@ -30,6 +30,23 @@ jobs:
             "31f287b47bedcea9a30fd6faa8cad024201ab4309afc7fb0e93d8b7f0d17d0c6"
           git apply --check /tmp/issue-6-fixes.patch
           git apply /tmp/issue-6-fixes.patch
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("crates/latent-core/src/budget.rs")
+          source = path.read_text()
+          source = source.replace(
+              "fn grant(budget: ResourceBudget) -> EffectiveActivationBudget {",
+              "fn grant(budget: &ResourceBudget) -> EffectiveActivationBudget {",
+          )
+          source = source.replace(
+              "            &budget,\n            &budget,\n            &budget,",
+              "            budget,\n            budget,\n            budget,",
+          )
+          source = source.replace("grant(allowed)", "grant(&allowed)")
+          source = source.replace("grant(budget(None))", "grant(&budget(None))")
+          path.write_text(source)
+          PY
           rm -rf .github/issue-6-fix
           rm -f .github/workflows/issue-6-apply-fixes.yml
       - name: Format
@@ -37,7 +54,7 @@ jobs:
       - name: Check focused crates
         run: cargo check -p latent-core -p latent-node --all-targets --locked
       - name: Clippy focused crates
-        run: cargo clippy -p latent-core -p latent-node --all-targets --locked -- -D warnings
+        run: cargo clippy -p latent-core -p latent-node --all-targets --locked --no-deps -- -D warnings
       - name: Test focused crates
         run: cargo test -p latent-core -p latent-node --all-targets --locked
       - name: Commit validated changes
