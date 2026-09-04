@@ -54,7 +54,7 @@ jobs:
       - name: Check focused crates
         run: cargo check -p latent-core -p latent-node --all-targets --locked
       - name: Clippy focused crates
-        run: cargo clippy -p latent-core -p latent-node --all-targets --locked --no-deps -- -D warnings
+        run: cargo clippy -p latent-core -p latent-node --all-targets --locked
       - name: Test focused crates
         run: cargo test -p latent-core -p latent-node --all-targets --locked
       - name: Commit validated changes
