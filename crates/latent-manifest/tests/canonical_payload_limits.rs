@@ -39,11 +39,7 @@ fn decode_enforces_the_canonical_payload_limit_and_remains_closed_under_encode()
     let canonical_violation = below
         .decode_trigger(&canonical)
         .expect_err("canonical bytes one byte above the limit must be rejected");
-    assert_payload_too_large(
-        &canonical_violation,
-        canonical.len(),
-        canonical.len() - 1,
-    );
+    assert_payload_too_large(&canonical_violation, canonical.len(), canonical.len() - 1);
 }
 
 #[test]
@@ -88,9 +84,7 @@ fn direct_models_are_limited_after_number_canonicalization() {
 
 #[test]
 fn nested_expanding_numbers_obey_the_canonical_payload_limit() {
-    let source = trigger_source(
-        r#"{"values":[[1e20,1e20,1e20,1e20],[1e20,1e20,1e20,1e20]]}"#,
-    );
+    let source = trigger_source(r#"{"values":[[1e20,1e20,1e20,1e20],[1e20,1e20,1e20,1e20]]}"#);
     let canonical = canonical_bytes(&source);
     assert!(source.len() < canonical.len());
 
@@ -172,12 +166,12 @@ fn base_trigger() -> TriggerManifest {
     }
 }
 
-fn assert_payload_too_large(
-    violations: &[ManifestViolation],
-    actual: usize,
-    maximum: usize,
-) {
-    assert_eq!(violations.len(), 1, "unexpected violations: {violations:#?}");
+fn assert_payload_too_large(violations: &[ManifestViolation], actual: usize, maximum: usize) {
+    assert_eq!(
+        violations.len(),
+        1,
+        "unexpected violations: {violations:#?}"
+    );
     assert_eq!(violations[0].path, "$");
     assert_eq!(violations[0].code, "payload-too-large");
     assert!(
