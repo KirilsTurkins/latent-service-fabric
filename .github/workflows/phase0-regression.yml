@@ -6,6 +6,7 @@ on:
       - development
     paths:
       - ".github/workflows/phase0-regression.yml"
+      - "Makefile"
       - ".cargo/**"
       - "apps/latentd/**"
       - "crates/latent-activation/**"
@@ -31,6 +32,8 @@ on:
       - "tools/phase0_evidence.py"
       - "tools/reassemble_phase0_hot_path_profile_archive.py"
       - "tools/run_phase0_baselines.sh"
+      - "tools/run_phase0_gate.sh"
+      - "tools/run_phase0_spike.sh"
       - "tools/tests/test_aggregate_phase0_calibration.py"
       - "tools/tests/test_aggregate_phase0_hot_path_profiles.py"
       - "tools/tests/test_aggregate_phase0_resource_soak.py"
@@ -38,6 +41,7 @@ on:
       - "tools/toolchain.toml"
       - "tools/requirements.lock"
       - "tools/validate_contracts.sh"
+      - "tools/validate_phase0_gate.py"
       - "Cargo.lock"
       - "Cargo.toml"
       - "rust-toolchain.toml"
@@ -75,6 +79,12 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1
         with:
           version: 1.72.0
+      - name: Check Phase 0 runner syntax
+        run: >-
+          bash -n
+          tools/run_phase0_baselines.sh
+          tools/run_phase0_gate.sh
+          tools/run_phase0_spike.sh
       - name: Run deterministic runtime baseline
         run: |
           unset CARGO_INCREMENTAL
