@@ -32,7 +32,7 @@ pub(crate) fn canonical_number_key(number: &Number) -> String {
 /// representable integers.
 pub(crate) fn representable_integer_lexeme(token: &[u8]) -> Option<Vec<u8>> {
     let token = std::str::from_utf8(token).ok()?;
-    Some(DecimalNumber::parse(token)?.canonical_lexeme())
+    DecimalNumber::parse(token).map(|number| number.canonical_lexeme())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -184,7 +184,7 @@ impl DecimalNumber {
 
         let digit_count = i128::try_from(self.digits.len()).unwrap_or(i128::MAX);
         let decimal_point = self.exponent.saturating_add(digit_count);
-        if decimal_point > -6 && decimal_point <= 21 {
+        if (-5..=21).contains(&decimal_point) {
             self.plain_lexeme(decimal_point)
         } else {
             self.scientific_lexeme(digit_count)
@@ -235,9 +235,7 @@ impl DecimalNumber {
             output.extend_from_slice(&self.digits[1..]);
         }
 
-        let scientific_exponent = self
-            .exponent
-            .saturating_add(digit_count.saturating_sub(1));
+        let scientific_exponent = self.exponent.saturating_add(digit_count.saturating_sub(1));
         output.push(b'e');
         if scientific_exponent >= 0 {
             output.push(b'+');
