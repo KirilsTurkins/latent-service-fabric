@@ -425,8 +425,8 @@ mod tests {
         ActivationManager, ActivationOutcome, ActivationSuccess, TraceContext,
     };
     use latent_core::{
-        ContractId, DeclaredError, FunctionId, InvocationPrincipal, PrincipalKind, ServiceId,
-        SpanId, TenantId, TraceId,
+        BudgetReservation, ContractId, DeclaredError, FunctionId, InvocationPrincipal,
+        PrincipalKind, ServiceId, SpanId, TenantId, TraceId,
     };
     use latent_routing::InvocationTarget;
 
@@ -529,6 +529,8 @@ mod tests {
         cancel_disposition: Mutex<Result<CancelDisposition, PlatformError>>,
         budget_registry: Mutex<Option<ActivationBudgetRegistry>>,
         retained_budgets: Mutex<Vec<ActivationBudget>>,
+        reservation_report_bytes: AtomicU64,
+        retained_reservations: Mutex<Vec<BudgetReservation>>,
     }
 
     impl RecordingManager {
@@ -540,6 +542,8 @@ mod tests {
                 cancel_disposition: Mutex::new(Ok(CancelDisposition::Accepted)),
                 budget_registry: Mutex::new(None),
                 retained_budgets: Mutex::new(Vec::new()),
+                reservation_report_bytes: AtomicU64::new(0),
+                retained_reservations: Mutex::new(Vec::new()),
             }
         }
 
@@ -565,6 +569,19 @@ mod tests {
                 .cloned()
                 .expect("recording manager retained live accounting")
         }
+
+        fn report_unresolved_reservation(&self, bytes: u64) {
+            self.reservation_report_bytes
+                .store(bytes, Ordering::Release);
+        }
+
+        fn take_retained_reservation(&self) -> BudgetReservation {
+            self.retained_reservations
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .pop()
+                .expect("recording manager retained an unresolved reservation")
+        }
     }
 
     impl ActivationManager for RecordingManager {
@@ -581,16 +598,35 @@ mod tests {
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
                     .clone();
+                let mut outcome = self
+                    .outcome
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone();
                 if let Some(budget) = registry.and_then(|registry| registry.get(&activation_id)) {
                     self.retained_budgets
                         .lock()
                         .unwrap_or_else(std::sync::PoisonError::into_inner)
-                        .push(budget);
+                        .push(budget.clone());
+                    let reservation_bytes = self.reservation_report_bytes.load(Ordering::Acquire);
+                    if reservation_bytes != 0 {
+                        let reservation = budget
+                            .reserve_log_bytes(reservation_bytes)
+                            .expect("test reservation is within the grant");
+                        let capacity_used = budget
+                            .granted()
+                            .log_bytes
+                            .saturating_sub(budget.remaining_at(Instant::now()).log_bytes);
+                        let mut reported = outcome_consumption(&outcome);
+                        reported.log_bytes = capacity_used;
+                        outcome = replace_consumption(outcome, reported);
+                        self.retained_reservations
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .push(reservation);
+                    }
                 }
-                self.outcome
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .clone()
+                outcome
             })
         }
 
@@ -787,10 +823,40 @@ mod tests {
             let outcome = manager.invoke(request).await;
             assert_eq!(outcome_consumption(&outcome).cpu_fuel, 7);
             assert_eq!(outcome_consumption(&outcome).peak_memory_bytes, 128);
-            assert_eq!(outcome_consumption(&outcome).log_bytes, 9);
+            assert_eq!(
+                outcome_consumption(&outcome).log_bytes,
+                0,
+                "wrapped reports cannot forge host-owned log consumption"
+            );
             assert_eq!(manager.budget_snapshot().active_registrations, 0);
             assert_eq!(manager.cancellation_snapshot().active_registrations, 0);
         }
+    }
+
+    #[tokio::test]
+    async fn manager_cannot_recharge_an_unresolved_reservation_from_a_report() {
+        let inner = Arc::new(RecordingManager::new(success(BudgetConsumption::default())));
+        inner.report_unresolved_reservation(20);
+        let clock = Arc::new(FixedClock::new(1_000));
+        let manager = manager(Arc::clone(&inner), clock);
+        inner.attach_budget_registry(manager.budget_registry());
+
+        let outcome = manager.invoke(envelope(Some(1_400))).await;
+        assert!(matches!(outcome, ActivationOutcome::Succeeded(_)));
+        assert_eq!(outcome_consumption(&outcome).log_bytes, 0);
+
+        let accounting = inner.retained_budget();
+        let finalized = accounting
+            .finalization()
+            .expect("manager freezes accounting before registry removal");
+        assert_eq!(finalized.consumption().log_bytes, 0);
+        assert_eq!(accounting.outstanding_reservations(), 0);
+        assert!(matches!(
+            inner.take_retained_reservation().refund(),
+            Err(BudgetError::AccountingFinalized)
+        ));
+        assert_eq!(manager.budget_snapshot().active_registrations, 0);
+        assert_eq!(manager.cancellation_snapshot().active_registrations, 0);
     }
 
     #[tokio::test]

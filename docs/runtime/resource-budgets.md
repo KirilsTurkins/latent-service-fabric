@@ -84,11 +84,18 @@ activation state. This gives the following invariants:
 - repeated finalization returns the same snapshot; and
 - mutation after finalization fails deterministically.
 
-A backend terminal report is a total, not a delta. Reconciliation therefore
-takes the maximum of direct observations and valid backend totals for CPU fuel,
-peak memory, and log bytes. Wall time is never trusted from a backend report;
-the host-owned monotonic clock is authoritative. This prevents both double
-counting and a backend report from erasing already-observed host consumption.
+A backend terminal report is a total, not a delta. Reconciliation takes the
+maximum of committed direct observations and valid backend totals for CPU fuel
+and peak memory. A backend-reconciled dimension with an unresolved reservation
+uses direct committed accounting until terminalization resolves that reservation.
+Log bytes are host-owned: wrapped or backend reports are validated but never
+raise terminal log consumption. Wall time is likewise host-owned and comes only
+from the monotonic clock. This prevents provisional capacity from becoming
+consumption and prevents reports from erasing already-observed host usage.
+
+`snapshot_at` exposes committed consumption only and is safe to use as a terminal
+report. `remaining_at` separately treats live reservations as occupied capacity,
+so enforcement remains strict without presenting provisional work as consumed.
 
 Deadline exhaustion and accounting finalization are separate terminal
 concerns. Crossing the deadline selects a `DeadlineExceeded` outcome with the
@@ -166,6 +173,8 @@ SDK surfaces, and the retained Phase 0 runtime regression.
 The tests cover deadline boundaries, conservative clock sampling, reusable
 relative ceilings, deterministic intersection and effective-deadline
 properties, every Phase 1-enforced dimension, concurrent consume races,
-reservation/finalization races, peak memory, deadline-overrun finalization,
-exactly-once terminal snapshots, cancellation-versus-terminal-publication
-races, reason propagation, registry cleanup, and pre-delegation rejection.
+reservation/finalization races, reservation-inclusive terminal reports,
+manager-level report reconciliation with unresolved reservations, peak memory,
+deadline-overrun finalization, exactly-once terminal snapshots,
+cancellation-versus-terminal-publication races, reason propagation, registry
+cleanup, and pre-delegation rejection.

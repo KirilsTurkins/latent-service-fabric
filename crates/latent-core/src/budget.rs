@@ -91,10 +91,19 @@ impl BudgetDimension {
         Self::LogBytes,
     ];
 
-    /// Dimensions whose terminal totals may be reported by an execution backend.
-    /// Wall time is deliberately excluded because the host-owned monotonic clock
-    /// is the authoritative source for terminal elapsed time.
+    /// Dimensions whose values are accepted in a terminal report.
+    ///
+    /// Wall time is host-owned and omitted. Log bytes may appear for API
+    /// compatibility, but host accounting remains authoritative during
+    /// finalization.
     pub const PHASE1_REPORTED: [Self; 3] = [Self::CpuFuel, Self::MemoryBytes, Self::LogBytes];
+
+    /// Backend totals that may raise committed terminal consumption.
+    ///
+    /// Log bytes are excluded because host logging owns reservation, commit,
+    /// and refund semantics. A wrapped report cannot turn provisional log
+    /// capacity into consumption.
+    pub const PHASE1_BACKEND_RECONCILED: [Self; 2] = [Self::CpuFuel, Self::MemoryBytes];
 }
 
 /// Maximum resources delegated to an activation and its descendants.
@@ -854,9 +863,26 @@ impl ActivationBudget {
         Ok(())
     }
 
-    /// Returns a non-final snapshot. Wall time is measured monotonically.
+    /// Returns committed consumption only. Unresolved reservations are
+    /// deliberately excluded so this snapshot is safe to use in a terminal
+    /// report. Wall time is measured monotonically.
     #[must_use]
     pub fn snapshot_at(&self, now: Instant) -> BudgetConsumption {
+        let state = self.lock_state();
+        if let Some(finalized) = &state.finalized {
+            return finalized.consumption().clone();
+        }
+        let mut snapshot = Self::committed_consumption(&state);
+        snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
+            now.saturating_duration_since(self.inner.started_at),
+        ));
+        snapshot
+    }
+
+    /// Returns capacity already occupied by committed consumption and live
+    /// reservations. This representation is used only to calculate remaining
+    /// capacity and is never a terminal consumption report.
+    fn capacity_snapshot_at(&self, now: Instant) -> BudgetConsumption {
         let state = self.lock_state();
         if let Some(finalized) = &state.finalized {
             return finalized.consumption().clone();
@@ -869,9 +895,11 @@ impl ActivationBudget {
     }
 
     /// Remaining Phase 1 budget, suitable for immutable activation context.
+    /// Live reservations are treated as occupied capacity until committed,
+    /// refunded, dropped, or atomically resolved by finalization.
     #[must_use]
     pub fn remaining_at(&self, now: Instant) -> ResourceBudget {
-        let snapshot = self.snapshot_at(now);
+        let snapshot = self.capacity_snapshot_at(now);
         ResourceBudget {
             cpu_fuel: self
                 .inner
@@ -908,9 +936,13 @@ impl ActivationBudget {
     /// and dropping it cannot mutate the frozen result.
     ///
     /// `reported` is an execution backend's total terminal report. Host-owned
-    /// monotonic elapsed time is authoritative for wall time, while valid CPU,
-    /// peak-memory, and log totals are reconciled as lower bounds. An invalid
-    /// report is retained as `violation` without preventing finalization.
+    /// monotonic elapsed time is authoritative for wall time, while valid CPU
+    /// and peak-memory totals are reconciled as lower bounds. Host log accounting
+    /// is authoritative and cannot be raised by a wrapped report. If a backend-
+    /// reconciled dimension has an unresolved reservation, direct committed
+    /// accounting is authoritative for that dimension until finalization resolves
+    /// the reservation. An invalid report is retained as `violation` without
+    /// preventing finalization.
     #[must_use]
     pub fn finalize_at(
         &self,
@@ -922,22 +954,17 @@ impl ActivationBudget {
             return finalized.clone();
         }
 
-        let mut consumption = state.consumption.clone();
-        for dimension in BudgetDimension::CUMULATIVE {
-            let current = consumption.consumed(dimension);
-            let reserved = state.reserved.consumed(dimension);
-            debug_assert!(reserved <= current);
-            consumption.set_consumed(dimension, current.saturating_sub(reserved));
-        }
+        let mut consumption = Self::committed_consumption(&state);
         consumption.wall_time_micros =
             duration_micros(now.saturating_duration_since(self.inner.started_at));
 
         let violation =
             reported.and_then(|report| report.validate_phase1_report(&self.inner.granted).err());
         if let Some(report) = reported {
-            for dimension in BudgetDimension::PHASE1_REPORTED {
+            for dimension in BudgetDimension::PHASE1_BACKEND_RECONCILED {
                 let reported_value = report.consumed(dimension);
-                if reported_value <= self.inner.granted.limit_for(dimension) {
+                let reserved = state.reserved.consumed(dimension);
+                if reserved == 0 && reported_value <= self.inner.granted.limit_for(dimension) {
                     consumption.set_consumed(
                         dimension,
                         consumption.consumed(dimension).max(reported_value),
@@ -971,6 +998,17 @@ impl ActivationBudget {
     #[must_use]
     pub fn outstanding_reservations(&self) -> u64 {
         self.lock_state().outstanding_reservations
+    }
+
+    fn committed_consumption(state: &AccountingState) -> BudgetConsumption {
+        let mut consumption = state.consumption.clone();
+        for dimension in BudgetDimension::CUMULATIVE {
+            let current = consumption.consumed(dimension);
+            let reserved = state.reserved.consumed(dimension);
+            debug_assert!(reserved <= current);
+            consumption.set_consumed(dimension, current.saturating_sub(reserved));
+        }
+        consumption
     }
 
     fn consume_locked(
@@ -1328,6 +1366,9 @@ mod tests {
         let second = accounting.finalize_at(None, now + Duration::from_secs(1));
         assert_eq!(first, second);
         assert!(first.violation().is_none());
+        assert_eq!(first.consumption().cpu_fuel, 5);
+        assert_eq!(first.consumption().peak_memory_bytes, 7);
+        assert_eq!(first.consumption().log_bytes, 0);
         assert_eq!(accounting.finalization(), Some(first.clone()));
         assert_eq!(accounting.finalized(), Some(first.consumption().clone()));
         assert!(matches!(
@@ -1407,6 +1448,31 @@ mod tests {
         assert_eq!(accounting.finalization(), Some(first));
         assert_eq!(accounting.outstanding_reservations(), 0);
         assert_eq!(accounting.finalized().expect("frozen").log_bytes, 0);
+    }
+
+    #[test]
+    fn reservation_inclusive_reports_cannot_resurrect_unresolved_capacity() {
+        for dimension in [BudgetDimension::CpuFuel, BudgetDimension::LogBytes] {
+            let accounting = ActivationBudget::new(grant(&budget(None)));
+            let reservation = accounting
+                .reserve(dimension, 2)
+                .expect("reservation succeeds");
+            let now = Instant::now();
+
+            let committed = accounting.snapshot_at(now);
+            assert_eq!(committed.consumed(dimension), 0);
+            let capacity_inclusive_report = accounting.capacity_snapshot_at(now);
+            assert_eq!(capacity_inclusive_report.consumed(dimension), 2);
+
+            let finalized = accounting.finalize_at(Some(&capacity_inclusive_report), now);
+            assert_eq!(finalized.consumption().consumed(dimension), 0);
+            assert_eq!(accounting.outstanding_reservations(), 0);
+            assert!(matches!(
+                reservation.refund(),
+                Err(BudgetError::AccountingFinalized)
+            ));
+            assert_eq!(accounting.finalization(), Some(finalized));
+        }
     }
 
     #[test]
