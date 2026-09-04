@@ -1,0 +1,511 @@
+name: Apply issue 6 reservation report fix
+
+on:
+  push:
+    branches:
+      - feat/issue-6-resource-budget-accounting
+    paths:
+      - .github/workflows/issue-6-reservation-report-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out pull request branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/issue-6-resource-budget-accounting
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: clippy,rustfmt
+
+      - name: Apply accounting correction and regressions
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one replacement target, found {count}")
+              target.write_text(text.replace(old, new, 1))
+
+          budget_path = "crates/latent-core/src/budget.rs"
+
+          replace_once(
+              budget_path,
+              '''    /// Dimensions whose terminal totals may be reported by an execution backend.
+    /// Wall time is deliberately excluded because the host-owned monotonic clock
+    /// is the authoritative source for terminal elapsed time.
+    pub const PHASE1_REPORTED: [Self; 3] = [Self::CpuFuel, Self::MemoryBytes, Self::LogBytes];
+''',
+              '''    /// Dimensions whose values are accepted in a terminal report.
+    ///
+    /// Wall time is host-owned and omitted. Log bytes may appear for API
+    /// compatibility, but host accounting remains authoritative during
+    /// finalization.
+    pub const PHASE1_REPORTED: [Self; 3] = [Self::CpuFuel, Self::MemoryBytes, Self::LogBytes];
+
+    /// Backend totals that may raise committed terminal consumption.
+    ///
+    /// Log bytes are excluded because host logging owns reservation, commit,
+    /// and refund semantics. A wrapped report cannot turn provisional log
+    /// capacity into consumption.
+    pub const PHASE1_BACKEND_RECONCILED: [Self; 2] = [Self::CpuFuel, Self::MemoryBytes];
+''',
+          )
+
+          replace_once(
+              budget_path,
+              '''    /// Returns a non-final snapshot. Wall time is measured monotonically.
+    #[must_use]
+    pub fn snapshot_at(&self, now: Instant) -> BudgetConsumption {
+        let state = self.lock_state();
+        if let Some(finalized) = &state.finalized {
+            return finalized.consumption().clone();
+        }
+        let mut snapshot = state.consumption.clone();
+        snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
+            now.saturating_duration_since(self.inner.started_at),
+        ));
+        snapshot
+    }
+
+    /// Remaining Phase 1 budget, suitable for immutable activation context.
+    #[must_use]
+    pub fn remaining_at(&self, now: Instant) -> ResourceBudget {
+        let snapshot = self.snapshot_at(now);
+''',
+              '''    /// Returns committed consumption only. Unresolved reservations are
+    /// deliberately excluded so this snapshot is safe to use in a terminal
+    /// report. Wall time is measured monotonically.
+    #[must_use]
+    pub fn snapshot_at(&self, now: Instant) -> BudgetConsumption {
+        let state = self.lock_state();
+        if let Some(finalized) = &state.finalized {
+            return finalized.consumption().clone();
+        }
+        let mut snapshot = Self::committed_consumption(&state);
+        snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
+            now.saturating_duration_since(self.inner.started_at),
+        ));
+        snapshot
+    }
+
+    /// Returns capacity already occupied by committed consumption and live
+    /// reservations. This representation is used only to calculate remaining
+    /// capacity and is never a terminal consumption report.
+    fn capacity_snapshot_at(&self, now: Instant) -> BudgetConsumption {
+        let state = self.lock_state();
+        if let Some(finalized) = &state.finalized {
+            return finalized.consumption().clone();
+        }
+        let mut snapshot = state.consumption.clone();
+        snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
+            now.saturating_duration_since(self.inner.started_at),
+        ));
+        snapshot
+    }
+
+    /// Remaining Phase 1 budget, suitable for immutable activation context.
+    /// Live reservations are treated as occupied capacity until committed,
+    /// refunded, dropped, or atomically resolved by finalization.
+    #[must_use]
+    pub fn remaining_at(&self, now: Instant) -> ResourceBudget {
+        let snapshot = self.capacity_snapshot_at(now);
+''',
+          )
+
+          replace_once(
+              budget_path,
+              '''    /// `reported` is an execution backend's total terminal report. Host-owned
+    /// monotonic elapsed time is authoritative for wall time, while valid CPU,
+    /// peak-memory, and log totals are reconciled as lower bounds. An invalid
+    /// report is retained as `violation` without preventing finalization.
+''',
+              '''    /// `reported` is an execution backend's total terminal report. Host-owned
+    /// monotonic elapsed time is authoritative for wall time, while valid CPU
+    /// and peak-memory totals are reconciled as lower bounds. Host log accounting
+    /// is authoritative and cannot be raised by a wrapped report. If a backend-
+    /// reconciled dimension has an unresolved reservation, direct committed
+    /// accounting is authoritative for that dimension until finalization resolves
+    /// the reservation. An invalid report is retained as `violation` without
+    /// preventing finalization.
+''',
+          )
+
+          replace_once(
+              budget_path,
+              '''        let mut consumption = state.consumption.clone();
+        for dimension in BudgetDimension::CUMULATIVE {
+            let current = consumption.consumed(dimension);
+            let reserved = state.reserved.consumed(dimension);
+            debug_assert!(reserved <= current);
+            consumption.set_consumed(dimension, current.saturating_sub(reserved));
+        }
+        consumption.wall_time_micros =
+''',
+              '''        let mut consumption = Self::committed_consumption(&state);
+        consumption.wall_time_micros =
+''',
+          )
+
+          replace_once(
+              budget_path,
+              '''        if let Some(report) = reported {
+            for dimension in BudgetDimension::PHASE1_REPORTED {
+                let reported_value = report.consumed(dimension);
+                if reported_value <= self.inner.granted.limit_for(dimension) {
+                    consumption.set_consumed(
+                        dimension,
+                        consumption.consumed(dimension).max(reported_value),
+                    );
+                }
+            }
+        }
+''',
+              '''        if let Some(report) = reported {
+            for dimension in BudgetDimension::PHASE1_BACKEND_RECONCILED {
+                let reported_value = report.consumed(dimension);
+                let reserved = state.reserved.consumed(dimension);
+                if reserved == 0 && reported_value <= self.inner.granted.limit_for(dimension) {
+                    consumption.set_consumed(
+                        dimension,
+                        consumption.consumed(dimension).max(reported_value),
+                    );
+                }
+            }
+        }
+''',
+          )
+
+          replace_once(
+              budget_path,
+              '''    fn consume_locked(
+''',
+              '''    fn committed_consumption(state: &AccountingState) -> BudgetConsumption {
+        let mut consumption = state.consumption.clone();
+        for dimension in BudgetDimension::CUMULATIVE {
+            let current = consumption.consumed(dimension);
+            let reserved = state.reserved.consumed(dimension);
+            debug_assert!(reserved <= current);
+            consumption.set_consumed(dimension, current.saturating_sub(reserved));
+        }
+        consumption
+    }
+
+    fn consume_locked(
+''',
+          )
+
+          replace_once(
+              budget_path,
+              '''        assert!(first.violation().is_none());
+        assert_eq!(accounting.finalization(), Some(first.clone()));
+''',
+              '''        assert!(first.violation().is_none());
+        assert_eq!(first.consumption().cpu_fuel, 5);
+        assert_eq!(first.consumption().peak_memory_bytes, 7);
+        assert_eq!(first.consumption().log_bytes, 0);
+        assert_eq!(accounting.finalization(), Some(first.clone()));
+''',
+          )
+
+          replace_once(
+              budget_path,
+              '''    #[test]
+    fn reservation_and_finalization_race_has_one_atomic_winner() {
+''',
+              '''    #[test]
+    fn reservation_inclusive_reports_cannot_resurrect_unresolved_capacity() {
+        for dimension in [BudgetDimension::CpuFuel, BudgetDimension::LogBytes] {
+            let accounting = ActivationBudget::new(grant(&budget(None)));
+            let reservation = accounting
+                .reserve(dimension, 2)
+                .expect("reservation succeeds");
+            let now = Instant::now();
+
+            let committed = accounting.snapshot_at(now);
+            assert_eq!(committed.consumed(dimension), 0);
+            let capacity_inclusive_report = accounting.capacity_snapshot_at(now);
+            assert_eq!(capacity_inclusive_report.consumed(dimension), 2);
+
+            let finalized = accounting.finalize_at(Some(&capacity_inclusive_report), now);
+            assert_eq!(finalized.consumption().consumed(dimension), 0);
+            assert_eq!(accounting.outstanding_reservations(), 0);
+            assert!(matches!(
+                reservation.refund(),
+                Err(BudgetError::AccountingFinalized)
+            ));
+            assert_eq!(accounting.finalization(), Some(finalized));
+        }
+    }
+
+    #[test]
+    fn reservation_and_finalization_race_has_one_atomic_winner() {
+''',
+          )
+
+          manager_path = "crates/latent-node/src/budgeted_activation.rs"
+
+          replace_once(
+              manager_path,
+              '''    use latent_core::{
+        ContractId, DeclaredError, FunctionId, InvocationPrincipal, PrincipalKind, ServiceId,
+        SpanId, TenantId, TraceId,
+    };
+''',
+              '''    use latent_core::{
+        BudgetReservation, ContractId, DeclaredError, FunctionId, InvocationPrincipal,
+        PrincipalKind, ServiceId, SpanId, TenantId, TraceId,
+    };
+''',
+          )
+
+          replace_once(
+              manager_path,
+              '''        budget_registry: Mutex<Option<ActivationBudgetRegistry>>,
+        retained_budgets: Mutex<Vec<ActivationBudget>>,
+''',
+              '''        budget_registry: Mutex<Option<ActivationBudgetRegistry>>,
+        retained_budgets: Mutex<Vec<ActivationBudget>>,
+        reservation_report_bytes: AtomicU64,
+        retained_reservations: Mutex<Vec<BudgetReservation>>,
+''',
+          )
+
+          replace_once(
+              manager_path,
+              '''                budget_registry: Mutex::new(None),
+                retained_budgets: Mutex::new(Vec::new()),
+''',
+              '''                budget_registry: Mutex::new(None),
+                retained_budgets: Mutex::new(Vec::new()),
+                reservation_report_bytes: AtomicU64::new(0),
+                retained_reservations: Mutex::new(Vec::new()),
+''',
+          )
+
+          replace_once(
+              manager_path,
+              '''        fn retained_budget(&self) -> ActivationBudget {
+            self.retained_budgets
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .last()
+                .cloned()
+                .expect("recording manager retained live accounting")
+        }
+''',
+              '''        fn retained_budget(&self) -> ActivationBudget {
+            self.retained_budgets
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .last()
+                .cloned()
+                .expect("recording manager retained live accounting")
+        }
+
+        fn report_unresolved_reservation(&self, bytes: u64) {
+            self.reservation_report_bytes.store(bytes, Ordering::Release);
+        }
+
+        fn take_retained_reservation(&self) -> BudgetReservation {
+            self.retained_reservations
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .pop()
+                .expect("recording manager retained an unresolved reservation")
+        }
+''',
+          )
+
+          replace_once(
+              manager_path,
+              '''                let registry = self
+                    .budget_registry
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone();
+                if let Some(budget) = registry.and_then(|registry| registry.get(&activation_id)) {
+                    self.retained_budgets
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .push(budget);
+                }
+                self.outcome
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone()
+''',
+              '''                let registry = self
+                    .budget_registry
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone();
+                let mut outcome = self
+                    .outcome
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone();
+                if let Some(budget) = registry.and_then(|registry| registry.get(&activation_id)) {
+                    self.retained_budgets
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .push(budget.clone());
+                    let reservation_bytes =
+                        self.reservation_report_bytes.load(Ordering::Acquire);
+                    if reservation_bytes != 0 {
+                        let reservation = budget
+                            .reserve_log_bytes(reservation_bytes)
+                            .expect("test reservation is within the grant");
+                        let capacity_used = budget
+                            .granted()
+                            .log_bytes
+                            .saturating_sub(budget.remaining_at(Instant::now()).log_bytes);
+                        let mut reported = outcome_consumption(&outcome);
+                        reported.log_bytes = capacity_used;
+                        outcome = replace_consumption(outcome, reported);
+                        self.retained_reservations
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .push(reservation);
+                    }
+                }
+                outcome
+''',
+          )
+
+          replace_once(
+              manager_path,
+              '''            assert_eq!(outcome_consumption(&outcome).log_bytes, 9);
+''',
+              '''            assert_eq!(
+                outcome_consumption(&outcome).log_bytes,
+                0,
+                "wrapped reports cannot forge host-owned log consumption"
+            );
+''',
+          )
+
+          replace_once(
+              manager_path,
+              '''    #[tokio::test]
+    async fn forged_later_phase_consumption_becomes_platform_failure() {
+''',
+              '''    #[tokio::test]
+    async fn manager_cannot_recharge_an_unresolved_reservation_from_a_report() {
+        let inner = Arc::new(RecordingManager::new(success(BudgetConsumption::default())));
+        inner.report_unresolved_reservation(20);
+        let clock = Arc::new(FixedClock::new(1_000));
+        let manager = manager(Arc::clone(&inner), clock);
+        inner.attach_budget_registry(manager.budget_registry());
+
+        let outcome = manager.invoke(envelope(Some(1_400))).await;
+        assert!(matches!(outcome, ActivationOutcome::Succeeded(_)));
+        assert_eq!(outcome_consumption(&outcome).log_bytes, 0);
+
+        let accounting = inner.retained_budget();
+        let finalized = accounting
+            .finalization()
+            .expect("manager freezes accounting before registry removal");
+        assert_eq!(finalized.consumption().log_bytes, 0);
+        assert_eq!(accounting.outstanding_reservations(), 0);
+        assert!(matches!(
+            inner.take_retained_reservation().refund(),
+            Err(BudgetError::AccountingFinalized)
+        ));
+        assert_eq!(manager.budget_snapshot().active_registrations, 0);
+        assert_eq!(manager.cancellation_snapshot().active_registrations, 0);
+    }
+
+    #[tokio::test]
+    async fn forged_later_phase_consumption_becomes_platform_failure() {
+''',
+          )
+
+          docs_path = "docs/runtime/resource-budgets.md"
+          replace_once(
+              docs_path,
+              '''A backend terminal report is a total, not a delta. Reconciliation therefore
+takes the maximum of direct observations and valid backend totals for CPU fuel,
+peak memory, and log bytes. Wall time is never trusted from a backend report;
+the host-owned monotonic clock is authoritative. This prevents both double
+counting and a backend report from erasing already-observed host consumption.
+''',
+              '''A backend terminal report is a total, not a delta. Reconciliation takes the
+maximum of committed direct observations and valid backend totals for CPU fuel
+and peak memory. A backend-reconciled dimension with an unresolved reservation
+uses direct committed accounting until terminalization resolves that reservation.
+Log bytes are host-owned: wrapped or backend reports are validated but never
+raise terminal log consumption. Wall time is likewise host-owned and comes only
+from the monotonic clock. This prevents provisional capacity from becoming
+consumption and prevents reports from erasing already-observed host usage.
+
+`snapshot_at` exposes committed consumption only and is safe to use as a terminal
+report. `remaining_at` separately treats live reservations as occupied capacity,
+so enforcement remains strict without presenting provisional work as consumed.
+''',
+          )
+
+          replace_once(
+              docs_path,
+              '''The tests cover deadline boundaries, conservative clock sampling, reusable
+relative ceilings, deterministic intersection and effective-deadline
+properties, every Phase 1-enforced dimension, concurrent consume races,
+reservation/finalization races, peak memory, deadline-overrun finalization,
+exactly-once terminal snapshots, cancellation-versus-terminal-publication
+races, reason propagation, registry cleanup, and pre-delegation rejection.
+''',
+              '''The tests cover deadline boundaries, conservative clock sampling, reusable
+relative ceilings, deterministic intersection and effective-deadline
+properties, every Phase 1-enforced dimension, concurrent consume races,
+reservation/finalization races, reservation-inclusive terminal reports,
+manager-level report reconciliation with unresolved reservations, peak memory,
+deadline-overrun finalization, exactly-once terminal snapshots,
+cancellation-versus-terminal-publication races, reason propagation, registry
+cleanup, and pre-delegation rejection.
+''',
+          )
+          PY
+
+          rm .github/workflows/issue-6-reservation-report-fix.yml
+
+      - name: Format
+        run: cargo fmt --all
+
+      - name: Check focused crates
+        run: cargo check -p latent-core -p latent-node --all-targets --locked
+
+      - name: Clippy focused crates
+        run: cargo clippy -p latent-core -p latent-node --all-targets --locked -- -D warnings
+
+      - name: Test focused crates
+        run: cargo test -p latent-core -p latent-node --all-targets --locked
+
+      - name: Validate patch cleanliness
+        run: |
+          cargo fmt --all -- --check
+          git diff --check
+          test ! -e .github/workflows/issue-6-reservation-report-fix.yml
+
+      - name: Commit validated correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add crates/latent-core/src/budget.rs \
+                  crates/latent-node/src/budgeted_activation.rs \
+                  docs/runtime/resource-budgets.md \
+                  .github/workflows/issue-6-reservation-report-fix.yml
+          git commit -m "fix: separate reservations from terminal reports"
+          git push origin HEAD:feat/issue-6-resource-budget-accounting
