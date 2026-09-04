@@ -355,11 +355,7 @@ impl EffectiveActivationBudget {
         admitted_at_unix_millis: u64,
         admitted_at_monotonic: Instant,
     ) -> Result<Self, BudgetError> {
-        let budget = ResourceBudget::phase1_effective(
-            request,
-            deployment_ceiling,
-            node_ceiling,
-        )?;
+        let budget = ResourceBudget::phase1_effective(request, deployment_ceiling, node_ceiling)?;
         let unix_millis = ResourceBudget::effective_deadline_unix_millis(
             admitted_at_unix_millis,
             caller_deadline_unix_millis,
@@ -417,12 +413,7 @@ impl EffectiveActivationBudget {
     /// infeasible activation into a pre-allocation resource exhaustion.
     pub fn require_executable_capacity(&self) -> Result<(), BudgetError> {
         if self.budget.cpu_fuel == 0 {
-            return Err(BudgetError::exhausted(
-                BudgetDimension::CpuFuel,
-                0,
-                0,
-                1,
-            ));
+            return Err(BudgetError::exhausted(BudgetDimension::CpuFuel, 0, 0, 1));
         }
         if self.budget.memory_bytes == 0 {
             return Err(BudgetError::exhausted(
@@ -472,12 +463,7 @@ pub enum BudgetError {
 }
 
 impl BudgetError {
-    fn exhausted(
-        dimension: BudgetDimension,
-        limit: u64,
-        consumed: u64,
-        requested: u64,
-    ) -> Self {
+    fn exhausted(dimension: BudgetDimension, limit: u64, consumed: u64, requested: u64) -> Self {
         if dimension == BudgetDimension::WallTime {
             return Self::DeadlineExceeded {
                 deadline_unix_millis: 0,
@@ -627,11 +613,9 @@ impl fmt::Display for BudgetError {
                 "{} exhausted: limit={limit}, consumed={consumed}, requested={requested}",
                 dimension.wire_name()
             ),
-            Self::ArithmeticOverflow { dimension } => write!(
-                formatter,
-                "{} accounting overflowed",
-                dimension.wire_name()
-            ),
+            Self::ArithmeticOverflow { dimension } => {
+                write!(formatter, "{} accounting overflowed", dimension.wire_name())
+            }
             Self::InvalidAccountingOperation { dimension } => write!(
                 formatter,
                 "{} does not support additive consumption",
@@ -786,9 +770,9 @@ impl ActivationBudget {
             return finalized.clone();
         }
         let mut snapshot = state.consumption.clone();
-        snapshot.wall_time_micros = snapshot
-            .wall_time_micros
-            .max(duration_micros(now.saturating_duration_since(self.inner.started_at)));
+        snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
+            now.saturating_duration_since(self.inner.started_at),
+        ));
         snapshot
     }
 
@@ -797,24 +781,28 @@ impl ActivationBudget {
     pub fn remaining_at(&self, now: Instant) -> ResourceBudget {
         let snapshot = self.snapshot_at(now);
         ResourceBudget {
-            cpu_fuel: self.inner.granted.cpu_fuel.saturating_sub(snapshot.cpu_fuel),
+            cpu_fuel: self
+                .inner
+                .granted
+                .cpu_fuel
+                .saturating_sub(snapshot.cpu_fuel),
             memory_bytes: self
                 .inner
                 .granted
                 .memory_bytes
                 .saturating_sub(snapshot.peak_memory_bytes),
-            wall_time_limit_millis: self
-                .inner
-                .deadline
-                .remaining_at(now)
-                .map(duration_millis),
+            wall_time_limit_millis: self.inner.deadline.remaining_at(now).map(duration_millis),
             child_calls: 0,
             outbound_requests: 0,
             state_read_bytes: 0,
             state_write_bytes: 0,
             blob_read_bytes: 0,
             blob_write_bytes: 0,
-            log_bytes: self.inner.granted.log_bytes.saturating_sub(snapshot.log_bytes),
+            log_bytes: self
+                .inner
+                .granted
+                .log_bytes
+                .saturating_sub(snapshot.log_bytes),
             effect_count: 0,
         }
     }
@@ -836,9 +824,9 @@ impl ActivationBudget {
         }
 
         let mut finalized = state.consumption.clone();
-        finalized.wall_time_micros = finalized
-            .wall_time_micros
-            .max(duration_micros(now.saturating_duration_since(self.inner.started_at)));
+        finalized.wall_time_micros = finalized.wall_time_micros.max(duration_micros(
+            now.saturating_duration_since(self.inner.started_at),
+        ));
         if let Some(reported) = reported {
             for dimension in BudgetDimension::LATER_PHASE {
                 let value = reported.consumed(dimension);
@@ -946,11 +934,12 @@ impl BudgetReservation {
         )?;
         if refund && state.finalized.is_none() {
             let current = state.consumption.consumed(self.dimension);
-            let remaining = current.checked_sub(self.amount).ok_or(
-                BudgetError::ArithmeticOverflow {
-                    dimension: self.dimension,
-                },
-            )?;
+            let remaining =
+                current
+                    .checked_sub(self.amount)
+                    .ok_or(BudgetError::ArithmeticOverflow {
+                        dimension: self.dimension,
+                    })?;
             state.consumption.set_consumed(self.dimension, remaining);
         }
         self.active = false;
@@ -1118,12 +1107,8 @@ mod tests {
 
         let mut deployment = budget(None);
         deployment.state_read_bytes = 10_000;
-        let effective = ResourceBudget::phase1_effective(
-            &budget(None),
-            &deployment,
-            &deployment,
-        )
-        .expect("reusable future ceilings are harmless in Phase 1");
+        let effective = ResourceBudget::phase1_effective(&budget(None), &deployment, &deployment)
+            .expect("reusable future ceilings are harmless in Phase 1");
         assert_eq!(effective.state_read_bytes, 0);
     }
 
@@ -1177,10 +1162,7 @@ mod tests {
         let accounting = ActivationBudget::new(grant(budget(None)));
         accounting.observe_peak_memory(12).expect("within limit");
         accounting.observe_peak_memory(4).expect("lower sample");
-        assert_eq!(
-            accounting.snapshot_at(Instant::now()).peak_memory_bytes,
-            12
-        );
+        assert_eq!(accounting.snapshot_at(Instant::now()).peak_memory_bytes, 12);
         assert!(matches!(
             accounting.observe_peak_memory(21),
             Err(BudgetError::Exhausted {
@@ -1249,10 +1231,16 @@ mod tests {
             let platform = error.to_platform_error();
             if dimension == BudgetDimension::WallTime {
                 assert_eq!(platform.code, PlatformErrorCode::DeadlineExceeded);
-                assert_eq!(error.terminal_state(), ActivationTerminalState::DeadlineExceeded);
+                assert_eq!(
+                    error.terminal_state(),
+                    ActivationTerminalState::DeadlineExceeded
+                );
             } else {
                 assert_eq!(platform.code, PlatformErrorCode::ResourceExhausted);
-                assert_eq!(error.terminal_state(), ActivationTerminalState::ResourceExhausted);
+                assert_eq!(
+                    error.terminal_state(),
+                    ActivationTerminalState::ResourceExhausted
+                );
             }
             assert_eq!(platform.details.len(), 1);
         }
@@ -1290,12 +1278,8 @@ mod tests {
                 log_bytes: seed.rotate_left(29),
                 effect_count: 0,
             };
-            let effective = ResourceBudget::phase1_effective(
-                &request,
-                &deployment,
-                &deployment,
-            )
-            .expect("generated budget is valid");
+            let effective = ResourceBudget::phase1_effective(&request, &deployment, &deployment)
+                .expect("generated budget is valid");
             assert!(effective.cpu_fuel <= request.cpu_fuel);
             assert!(effective.cpu_fuel <= deployment.cpu_fuel);
             assert!(effective.memory_bytes <= request.memory_bytes);

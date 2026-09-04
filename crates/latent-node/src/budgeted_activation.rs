@@ -88,10 +88,7 @@ impl ActivationBudgetRegistry {
                 retryable: false,
                 details: vec![ErrorDetail {
                     kind: "activation.budget-duplicate-registration".to_owned(),
-                    fields: Metadata::from([(
-                        "activation_id".to_owned(),
-                        activation_id.0.clone(),
-                    )]),
+                    fields: Metadata::from([("activation_id".to_owned(), activation_id.0.clone())]),
                 }],
             });
         }
@@ -245,14 +242,13 @@ where
         envelope.deadline_unix_millis = grant.deadline.unix_millis();
 
         let accounting = ActivationBudget::new(grant);
-        let budget_registration =
-            match self
-                .budgets
-                .register(activation_id.clone(), accounting.clone())
-            {
-                Ok(registration) => registration,
-                Err(error) => return platform_failure(error, BudgetConsumption::default()),
-            };
+        let budget_registration = match self
+            .budgets
+            .register(activation_id.clone(), accounting.clone())
+        {
+            Ok(registration) => registration,
+            Err(error) => return platform_failure(error, BudgetConsumption::default()),
+        };
         let cancellation_registration = match self.cancellations.register(activation_id.clone()) {
             Ok(registration) => registration,
             Err(error) => {

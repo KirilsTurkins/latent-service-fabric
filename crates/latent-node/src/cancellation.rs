@@ -147,9 +147,7 @@ impl ActivationCancellationRegistry {
         }
     }
 
-    fn lock_registrations(
-        &self,
-    ) -> MutexGuard<'_, HashMap<ActivationId, Arc<CancellationState>>> {
+    fn lock_registrations(&self) -> MutexGuard<'_, HashMap<ActivationId, Arc<CancellationState>>> {
         self.inner
             .registrations
             .lock()
@@ -401,9 +399,18 @@ mod tests {
         let registry = ActivationCancellationRegistry::new(12).expect("valid registry");
         let id = ActivationId("activation-cancel".to_owned());
         let registration = registry.register(id.clone()).expect("registered");
-        assert_eq!(registry.cancel(&id, "first-reason"), CancelDisposition::Accepted);
-        assert_eq!(registry.cancel(&id, "second-reason"), CancelDisposition::Accepted);
-        assert_eq!(registration.token().reason().as_deref(), Some("first-reason"));
+        assert_eq!(
+            registry.cancel(&id, "first-reason"),
+            CancelDisposition::Accepted
+        );
+        assert_eq!(
+            registry.cancel(&id, "second-reason"),
+            CancelDisposition::Accepted
+        );
+        assert_eq!(
+            registration.token().reason().as_deref(),
+            Some("first-reason")
+        );
     }
 
     #[test]
@@ -454,7 +461,10 @@ mod tests {
         assert_eq!(registry.snapshot().active_registrations, 1);
         drop(registration);
         assert_eq!(registry.snapshot().active_registrations, 0);
-        assert_eq!(registry.cancel(&id, "too late"), CancelDisposition::NotFound);
+        assert_eq!(
+            registry.cancel(&id, "too late"),
+            CancelDisposition::NotFound
+        );
     }
 
     #[test]
