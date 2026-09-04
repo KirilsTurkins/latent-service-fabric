@@ -132,6 +132,10 @@ cargo test -p latent-executor --all-targets --locked
 cargo test -p latent-node --all-targets --locked
 ```
 
+Required CI also checks canonical formatting, the complete workspace at the
+current toolchain and MSRV, Clippy, generated bindings, repository contracts,
+SDK surfaces, and the retained Phase 0 runtime regression.
+
 The tests cover deadline boundaries, reusable relative ceilings, deterministic
 intersection properties, every Phase 1-enforced dimension, concurrent consume
 races, reservation commit/refund/drop behavior, peak memory, exactly-once
