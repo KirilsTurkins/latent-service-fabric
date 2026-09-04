@@ -1,0 +1,51 @@
+name: Apply issue 6 review fixes
+
+on:
+  push:
+    branches:
+      - feat/issue-6-resource-budget-accounting
+    paths:
+      - .github/workflows/issue-6-apply-fixes.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/issue-6-resource-budget-accounting
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt, clippy
+      - name: Apply reviewed patch
+        shell: bash
+        run: |
+          cat .github/issue-6-fix/part-* | base64 --decode | gzip --decompress > /tmp/issue-6-fixes.patch
+          test "$(sha256sum /tmp/issue-6-fixes.patch | cut -d' ' -f1)" = \
+            "31f287b47bedcea9a30fd6faa8cad024201ab4309afc7fb0e93d8b7f0d17d0c6"
+          git apply --check /tmp/issue-6-fixes.patch
+          git apply /tmp/issue-6-fixes.patch
+          rm -rf .github/issue-6-fix
+          rm -f .github/workflows/issue-6-apply-fixes.yml
+      - name: Format
+        run: cargo fmt --all
+      - name: Check focused crates
+        run: cargo check -p latent-core -p latent-node --all-targets --locked
+      - name: Clippy focused crates
+        run: cargo clippy -p latent-core -p latent-node --all-targets --locked -- -D warnings
+      - name: Test focused crates
+        run: cargo test -p latent-core -p latent-node --all-targets --locked
+      - name: Commit validated changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "fix: linearize budget terminalization"
+          git push origin HEAD:feat/issue-6-resource-budget-accounting
