@@ -205,7 +205,12 @@ fn validate_object(
                 "too-many-properties",
                 format!("object may contain at most {maximum} properties"),
             );
-            return;
+            // Open objects can stop immediately. Closed objects continue so
+            // callers retain the established field-specific unknown-field
+            // diagnostics alongside the cardinality violation.
+            if !matches!(schema.get("additionalProperties"), Some(Value::Bool(false))) {
+                return;
+            }
         }
     }
 
