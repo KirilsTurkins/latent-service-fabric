@@ -1,0 +1,1 @@
+{"apiVersion":"latent.dev/v1alpha1","kind":"HttpTrigger","metadata":{"name":"echo-http","tenant":"examples"},"spec":{"configuration":{"host":"echo.example.invalid","method":"POST","path":"/echo"},"target":{"contract":"examples:echo/api@0.1.0","function":"echo","route":"production","service":"examples/echo"}}}

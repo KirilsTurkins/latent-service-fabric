@@ -62,7 +62,9 @@ fn route_weight_boundaries_are_schema_checked_without_narrowing_panics() {
 #[test]
 fn exact_nesting_boundary_is_deterministic() {
     let mut trigger: Value = serde_json::from_slice(ECHO_TRIGGER).expect("trigger");
-    trigger["spec"]["configuration"] = nested_value(8);
+    // The root and `spec` objects consume two levels. Ten configuration
+    // objects therefore reach a maximum depth of exactly twelve.
+    trigger["spec"]["configuration"] = nested_value(10);
     let bytes = serde_json::to_vec(&trigger).expect("JSON");
 
     let permissive = JsonManifestCodec::new(ManifestLimits {
