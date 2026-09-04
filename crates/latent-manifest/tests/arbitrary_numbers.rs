@@ -53,14 +53,8 @@ fn trigger_configuration_retains_arbitrary_precision_numbers_exactly() {
         &first.configuration["nested"]["array"][2],
         "0.123456789012345678901234567890",
     );
-    assert_number(
-        &first.configuration["nested"]["array"][3],
-        "1e400",
-    );
-    assert_number(
-        &first.configuration["nested"]["array"][4],
-        "1e-400",
-    );
+    assert_number(&first.configuration["nested"]["array"][3], "1e400");
+    assert_number(&first.configuration["nested"]["array"][4], "1e-400");
     assert_number(
         &first.configuration["nested"]["object"]["value"],
         "12345678901234567890.12345678901234567890",
@@ -111,22 +105,13 @@ fn near_integral_fractions_are_field_specific_type_errors_for_every_integer_fiel
             "\"outboundRequests\": 0",
             "$.execution.limits.outboundRequests",
         ),
-        (
-            "\"stateReadBytes\": 0",
-            "$.execution.limits.stateReadBytes",
-        ),
+        ("\"stateReadBytes\": 0", "$.execution.limits.stateReadBytes"),
         (
             "\"stateWriteBytes\": 0",
             "$.execution.limits.stateWriteBytes",
         ),
-        (
-            "\"blobReadBytes\": 0",
-            "$.execution.limits.blobReadBytes",
-        ),
-        (
-            "\"blobWriteBytes\": 0",
-            "$.execution.limits.blobWriteBytes",
-        ),
+        ("\"blobReadBytes\": 0", "$.execution.limits.blobReadBytes"),
+        ("\"blobWriteBytes\": 0", "$.execution.limits.blobWriteBytes"),
         ("\"logBytes\": 16384", "$.execution.limits.logBytes"),
         ("\"effectCount\": 0", "$.execution.limits.effectCount"),
         (
@@ -149,10 +134,7 @@ fn near_integral_fractions_are_field_specific_type_errors_for_every_integer_fiel
     let deployment_cases = [
         ("\"weight\": 10000", "$.spec.route.weight"),
         ("\"cpuFuel\": 1000000", "$.spec.resources.cpuFuel"),
-        (
-            "\"memoryBytes\": 4194304",
-            "$.spec.resources.memoryBytes",
-        ),
+        ("\"memoryBytes\": 4194304", "$.spec.resources.memoryBytes"),
         (
             "\"wallTimeLimitMillis\": null",
             "$.spec.resources.wallTimeLimitMillis",
@@ -162,32 +144,17 @@ fn near_integral_fractions_are_field_specific_type_errors_for_every_integer_fiel
             "\"outboundRequests\": 0",
             "$.spec.resources.outboundRequests",
         ),
-        (
-            "\"stateReadBytes\": 0",
-            "$.spec.resources.stateReadBytes",
-        ),
-        (
-            "\"stateWriteBytes\": 0",
-            "$.spec.resources.stateWriteBytes",
-        ),
-        (
-            "\"blobReadBytes\": 0",
-            "$.spec.resources.blobReadBytes",
-        ),
-        (
-            "\"blobWriteBytes\": 0",
-            "$.spec.resources.blobWriteBytes",
-        ),
+        ("\"stateReadBytes\": 0", "$.spec.resources.stateReadBytes"),
+        ("\"stateWriteBytes\": 0", "$.spec.resources.stateWriteBytes"),
+        ("\"blobReadBytes\": 0", "$.spec.resources.blobReadBytes"),
+        ("\"blobWriteBytes\": 0", "$.spec.resources.blobWriteBytes"),
         ("\"logBytes\": 16384", "$.spec.resources.logBytes"),
         ("\"effectCount\": 0", "$.spec.resources.effectCount"),
         (
             "\"minimumCachedCopies\": 1",
             "$.spec.availability.minimumCachedCopies",
         ),
-        (
-            "\"minimumZones\": 1",
-            "$.spec.availability.minimumZones",
-        ),
+        ("\"minimumZones\": 1", "$.spec.availability.minimumZones"),
     ];
     for (anchor, path) in deployment_cases {
         let document = replace_number(DEPLOYMENT, anchor);
@@ -235,13 +202,13 @@ fn schema_width_overflows_emit_one_path_code_pair() {
     let violations = codec
         .decode_capsule(u64_overflow.as_bytes())
         .expect_err("u64 overflow");
-    assert_single_violation(&violations, "$.execution.limits.memoryBytes", "out-of-range");
-
-    let route_overflow = DEPLOYMENT.replacen(
-        "\"weight\": 10000",
-        "\"weight\": 10001",
-        1,
+    assert_single_violation(
+        &violations,
+        "$.execution.limits.memoryBytes",
+        "out-of-range",
     );
+
+    let route_overflow = DEPLOYMENT.replacen("\"weight\": 10000", "\"weight\": 10001", 1);
     let violations = codec
         .decode_deployment(route_overflow.as_bytes())
         .expect_err("route weight overflow");
@@ -276,11 +243,7 @@ fn replace_number(template: &str, anchor: &str) -> String {
         .split_once(':')
         .map(|(field, _)| field)
         .expect("field anchor");
-    template.replacen(
-        anchor,
-        &format!("{field}: {NEAR_INTEGRAL_FRACTION}"),
-        1,
-    )
+    template.replacen(anchor, &format!("{field}: {NEAR_INTEGRAL_FRACTION}"), 1)
 }
 
 fn assert_number(value: &Value, expected: &str) {
