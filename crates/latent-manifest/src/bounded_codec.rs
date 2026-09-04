@@ -1,15 +1,18 @@
+use std::collections::HashSet;
 use std::fmt;
 
-use serde::de::{self, DeserializeSeed, IgnoredAny, MapAccess, SeqAccess, Visitor};
+use serde::de::{self, DeserializeOwned, DeserializeSeed, MapAccess, SeqAccess, Visitor};
 use serde::Deserialize;
+use serde_json::Value;
 
 use crate::json_number::representable_integer_lexeme;
+use crate::schema::validate_schema;
 use crate::wire_codec::{
     JsonManifestCodec as WireJsonManifestCodec, ManifestLimits as WireManifestLimits,
 };
 use crate::{
     BindingManifest, CapsuleManifest, DeploymentManifest, ManifestCodec, ManifestDocument,
-    ManifestResult, ManifestViolation, PolicyManifest, TriggerManifest,
+    ManifestKind, ManifestResult, ManifestViolation, PolicyManifest, TriggerManifest,
 };
 
 const DEFAULT_MAX_DOCUMENT_BYTES: usize = 1024 * 1024;
@@ -18,6 +21,7 @@ const DEFAULT_MAX_STRING_BYTES: usize = 256 * 1024;
 const DEFAULT_MAX_COLLECTION_ENTRIES: usize = 4096;
 const DEFAULT_MAX_VIOLATIONS: usize = 128;
 const COLLECTION_LIMIT_MARKER: &str = "manifest collection entry limit exceeded";
+const DUPLICATE_KEY_MARKER: &str = "duplicate object key";
 
 /// Resource-consumption limits applied before and during JSON decoding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,9 +29,8 @@ pub struct ManifestLimits {
     pub max_document_bytes: usize,
     pub max_nesting_depth: usize,
     pub max_string_bytes: usize,
-    /// Maximum number of entries in any one JSON array or object. The check is
-    /// performed by a no-allocation preflight visitor before typed values are
-    /// constructed.
+    /// Maximum number of entries in any one JSON array or object. A streaming
+    /// preflight enforces the limit before a complete collection is allocated.
     pub max_collection_entries: usize,
     pub max_violations: usize,
 }
@@ -44,9 +47,9 @@ impl Default for ManifestLimits {
     }
 }
 
-/// Bounded public JSON codec. The inner wire codec owns canonical model
-/// mapping; this layer enforces admission limits and Draft-compatible integral
-/// number normalization before that mapping allocates collections.
+/// Bounded public JSON codec. Decoding retains arbitrary-precision JSON
+/// numbers, applies the embedded schema, and only then constructs the typed
+/// model. The inner wire codec remains the single serialization authority.
 #[derive(Debug, Clone)]
 pub struct JsonManifestCodec {
     limits: ManifestLimits,
@@ -71,15 +74,20 @@ impl JsonManifestCodec {
 
     /// Decodes any manifest kind identified by its top-level `kind` field.
     pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
-        let normalized = self.preflight_decode(bytes)?;
-        self.wire_codec().decode_document(&normalized)
+        let value = self.parse_exact(bytes)?;
+        let kind = document_kind(&value)?;
+        self.decode_preparsed(kind, value)
     }
 
     /// Canonically encodes a type-erased manifest.
     pub fn encode_document(&self, manifest: &ManifestDocument) -> ManifestResult<Vec<u8>> {
-        let bytes = self.wire_codec().encode_document(manifest)?;
-        self.preflight_encoded(&bytes)?;
-        Ok(bytes)
+        match manifest {
+            ManifestDocument::Capsule(value) => self.encode_capsule(value),
+            ManifestDocument::Deployment(value) => self.encode_deployment(value),
+            ManifestDocument::Binding(value) => self.encode_binding(value),
+            ManifestDocument::Trigger(value) => self.encode_trigger(value),
+            ManifestDocument::Policy(value) => self.encode_policy(value),
+        }
     }
 
     fn wire_codec(&self) -> WireJsonManifestCodec {
@@ -93,20 +101,89 @@ impl JsonManifestCodec {
 
     fn preflight_decode(&self, bytes: &[u8]) -> ManifestResult<Vec<u8>> {
         enforce_raw_limits(bytes, self.limits)?;
-        enforce_collection_limit(bytes, self.limits.max_collection_entries)?;
+        enforce_collection_limit_and_unique_keys(bytes, self.limits.max_collection_entries)?;
         Ok(normalize_integral_number_lexemes(bytes))
     }
 
     fn preflight_encoded(&self, bytes: &[u8]) -> ManifestResult<()> {
         enforce_raw_limits(bytes, self.limits)?;
-        enforce_collection_limit(bytes, self.limits.max_collection_entries)
+        enforce_collection_limit_and_unique_keys(bytes, self.limits.max_collection_entries)
+    }
+
+    fn parse_exact(&self, bytes: &[u8]) -> ManifestResult<Value> {
+        let normalized = self.preflight_decode(bytes)?;
+        let mut deserializer = serde_json::Deserializer::from_slice(&normalized);
+        Value::deserialize(&mut deserializer)
+            .and_then(|value| deserializer.end().map(|()| value))
+            .map_err(|error| {
+                vec![ManifestViolation::new(
+                    "$",
+                    "malformed-json",
+                    format!(
+                        "manifest JSON could not be decoded at line {}, column {}: {error}",
+                        error.line(),
+                        error.column()
+                    ),
+                )]
+            })
+    }
+
+    fn decode_kind<T>(&self, bytes: &[u8], kind: ManifestKind) -> ManifestResult<T>
+    where
+        T: DeserializeOwned + Normalize,
+    {
+        let value = self.parse_exact(bytes)?;
+        self.validate_and_decode(value, kind)
+    }
+
+    fn decode_preparsed(
+        &self,
+        kind: ManifestKind,
+        value: Value,
+    ) -> ManifestResult<ManifestDocument> {
+        match kind {
+            ManifestKind::Capsule => self
+                .validate_and_decode(value, kind)
+                .map(ManifestDocument::Capsule),
+            ManifestKind::Deployment => self
+                .validate_and_decode(value, kind)
+                .map(ManifestDocument::Deployment),
+            ManifestKind::Binding => self
+                .validate_and_decode(value, kind)
+                .map(ManifestDocument::Binding),
+            ManifestKind::Trigger => self
+                .validate_and_decode(value, kind)
+                .map(ManifestDocument::Trigger),
+            ManifestKind::Policy => self
+                .validate_and_decode(value, kind)
+                .map(ManifestDocument::Policy),
+        }
+    }
+
+    fn validate_and_decode<T>(&self, value: Value, kind: ManifestKind) -> ManifestResult<T>
+    where
+        T: DeserializeOwned + Normalize,
+    {
+        let violations = validate_schema(kind, &value, self.limits.max_violations.max(1));
+        if !violations.is_empty() {
+            return Err(violations);
+        }
+
+        let mut decoded: T = serde_json::from_value(value).map_err(|error| {
+            vec![ManifestViolation::new(
+                "$",
+                "model-decode-failed",
+                format!("schema-valid JSON could not be represented by the Rust model: {error}"),
+            )]
+        })?;
+        decoded.normalize();
+        Ok(decoded)
     }
 }
 
 impl ManifestCodec for JsonManifestCodec {
     fn decode_capsule(&self, bytes: &[u8]) -> ManifestResult<CapsuleManifest> {
-        let normalized = self.preflight_decode(bytes)?;
-        self.wire_codec().decode_capsule(&normalized)
+        self.decode_kind(bytes, ManifestKind::Capsule)
     }
 
     fn encode_capsule(&self, manifest: &CapsuleManifest) -> ManifestResult<Vec<u8>> {
@@ -116,8 +193,7 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn decode_deployment(&self, bytes: &[u8]) -> ManifestResult<DeploymentManifest> {
-        let normalized = self.preflight_decode(bytes)?;
-        self.wire_codec().decode_deployment(&normalized)
+        self.decode_kind(bytes, ManifestKind::Deployment)
     }
 
     fn encode_deployment(&self, manifest: &DeploymentManifest) -> ManifestResult<Vec<u8>> {
@@ -127,8 +203,7 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn decode_binding(&self, bytes: &[u8]) -> ManifestResult<BindingManifest> {
-        let normalized = self.preflight_decode(bytes)?;
-        self.wire_codec().decode_binding(&normalized)
+        self.decode_kind(bytes, ManifestKind::Binding)
     }
 
     fn encode_binding(&self, manifest: &BindingManifest) -> ManifestResult<Vec<u8>> {
@@ -138,8 +213,7 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn decode_trigger(&self, bytes: &[u8]) -> ManifestResult<TriggerManifest> {
-        let normalized = self.preflight_decode(bytes)?;
-        self.wire_codec().decode_trigger(&normalized)
+        self.decode_kind(bytes, ManifestKind::Trigger)
     }
 
     fn encode_trigger(&self, manifest: &TriggerManifest) -> ManifestResult<Vec<u8>> {
@@ -149,14 +223,54 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn decode_policy(&self, bytes: &[u8]) -> ManifestResult<PolicyManifest> {
-        let normalized = self.preflight_decode(bytes)?;
-        self.wire_codec().decode_policy(&normalized)
+        self.decode_kind(bytes, ManifestKind::Policy)
     }
 
     fn encode_policy(&self, manifest: &PolicyManifest) -> ManifestResult<Vec<u8>> {
         let bytes = self.wire_codec().encode_policy(manifest)?;
         self.preflight_encoded(&bytes)?;
         Ok(bytes)
+    }
+}
+
+fn document_kind(value: &Value) -> ManifestResult<ManifestKind> {
+    let object = value.as_object().ok_or_else(|| {
+        vec![ManifestViolation::new(
+            "$",
+            "invalid-type",
+            "a manifest document must be a JSON object",
+        )]
+    })?;
+    let kind = object.get("kind").ok_or_else(|| {
+        vec![ManifestViolation::new(
+            "$.kind",
+            "missing-field",
+            "required field `kind` is missing",
+        )]
+    })?;
+    let kind = kind.as_str().ok_or_else(|| {
+        vec![ManifestViolation::new(
+            "$.kind",
+            "invalid-type",
+            "field `kind` must be a string",
+        )]
+    })?;
+    match kind {
+        "Capsule" => Ok(ManifestKind::Capsule),
+        "Deployment" => Ok(ManifestKind::Deployment),
+        "Binding" => Ok(ManifestKind::Binding),
+        "Policy" => Ok(ManifestKind::Policy),
+        "HttpTrigger"
+        | "EventTrigger"
+        | "TimerTrigger"
+        | "QueueTrigger"
+        | "BlobTrigger"
+        | "DirectInvocationTrigger" => Ok(ManifestKind::Trigger),
+        _ => Err(vec![ManifestViolation::new(
+            "$.kind",
+            "unexpected-kind",
+            format!("unsupported manifest kind `{kind}`"),
+        )]),
     }
 }
 
@@ -231,7 +345,7 @@ fn enforce_raw_limits(bytes: &[u8], limits: ManifestLimits) -> ManifestResult<()
     Ok(())
 }
 
-fn enforce_collection_limit(bytes: &[u8], maximum: usize) -> ManifestResult<()> {
+fn enforce_collection_limit_and_unique_keys(bytes: &[u8], maximum: usize) -> ManifestResult<()> {
     let mut deserializer = serde_json::Deserializer::from_slice(bytes);
     let result = CollectionLimitSeed { maximum }
         .deserialize(&mut deserializer)
@@ -240,6 +354,8 @@ fn enforce_collection_limit(bytes: &[u8], maximum: usize) -> ManifestResult<()> 
         let message = error.to_string();
         let code = if message.contains(COLLECTION_LIMIT_MARKER) {
             "collection-limit-exceeded"
+        } else if message.contains(DUPLICATE_KEY_MARKER) {
+            "duplicate-key"
         } else {
             "malformed-json"
         };
@@ -375,13 +491,17 @@ impl<'de> Visitor<'de> for CollectionLimitVisitor {
         }
 
         let mut index = 0_usize;
+        let mut keys = HashSet::new();
         loop {
             let key = object.next_key_seed(BoundedKeySeed {
                 maximum: self.maximum,
                 index,
             })?;
-            if key.is_none() {
+            let Some(key) = key else {
                 break;
+            };
+            if !keys.insert(key.clone()) {
+                return Err(duplicate_key_error(&key));
             }
             object.next_value_seed(CollectionLimitSeed {
                 maximum: self.maximum,
@@ -420,7 +540,7 @@ struct BoundedKeySeed {
 }
 
 impl<'de> DeserializeSeed<'de> for BoundedKeySeed {
-    type Value = ();
+    type Value = String;
 
     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
     where
@@ -429,7 +549,7 @@ impl<'de> DeserializeSeed<'de> for BoundedKeySeed {
         if self.index >= self.maximum {
             return Err(collection_limit_error(self.maximum));
         }
-        IgnoredAny::deserialize(deserializer).map(|_| ())
+        String::deserialize(deserializer)
     }
 }
 
@@ -437,6 +557,10 @@ fn collection_limit_error<E: de::Error>(maximum: usize) -> E {
     E::custom(format!(
         "{COLLECTION_LIMIT_MARKER}; configured maximum is {maximum} entries"
     ))
+}
+
+fn duplicate_key_error<E: de::Error>(key: &str) -> E {
+    E::custom(format!("{DUPLICATE_KEY_MARKER} `{key}`"))
 }
 
 fn normalize_integral_number_lexemes(bytes: &[u8]) -> Vec<u8> {
@@ -491,4 +615,74 @@ fn normalize_integral_number_lexemes(bytes: &[u8]) -> Vec<u8> {
 
 const fn is_number_delimiter(byte: u8) -> bool {
     matches!(byte, b' ' | b'\t' | b'\r' | b'\n' | b',' | b']' | b'}')
+}
+
+trait Normalize {
+    fn normalize(&mut self);
+}
+
+impl Normalize for CapsuleManifest {
+    fn normalize(&mut self) {
+        self.component_digest.0.make_ascii_lowercase();
+        self.exports
+            .sort_by(|left, right| left.contract.cmp(&right.contract));
+        self.imports.sort_by(|left, right| {
+            (&left.contract, left.optional).cmp(&(&right.contract, right.optional))
+        });
+    }
+}
+
+impl Normalize for DeploymentManifest {
+    fn normalize(&mut self) {
+        self.release.0.make_ascii_lowercase();
+        for grant in &mut self.grants {
+            grant.operations.sort();
+        }
+        self.grants.sort_by(|left, right| {
+            (&left.capability, &left.policy, &left.operations).cmp(&(
+                &right.capability,
+                &right.policy,
+                &right.operations,
+            ))
+        });
+        self.placement.architectures.sort();
+        self.placement.regions.sort();
+        self.placement.zones.sort();
+        self.placement.required_features.sort();
+    }
+}
+
+impl Normalize for BindingManifest {
+    fn normalize(&mut self) {}
+}
+
+impl Normalize for TriggerManifest {
+    fn normalize(&mut self) {
+        for value in self.configuration.values_mut() {
+            canonicalize_json_value(value);
+        }
+    }
+}
+
+impl Normalize for PolicyManifest {
+    fn normalize(&mut self) {}
+}
+
+fn canonicalize_json_value(value: &mut Value) {
+    match value {
+        Value::Array(values) => {
+            for value in values {
+                canonicalize_json_value(value);
+            }
+        }
+        Value::Object(object) => {
+            let mut entries: Vec<_> = std::mem::take(object).into_iter().collect();
+            entries.sort_by(|left, right| left.0.cmp(&right.0));
+            for (key, mut value) in entries {
+                canonicalize_json_value(&mut value);
+                object.insert(key, value);
+            }
+        }
+        Value::Null | Value::Bool(_) | Value::Number(_) | Value::String(_) => {}
+    }
 }

@@ -8,9 +8,9 @@ Status: Phase 1 normative contract for issue #3.
 
 1. `JsonManifestCodec` accepts or produces bytes. It applies bounded JSON
    preflight before collection allocation, rejects duplicate object keys,
-   validates the decoded value against the canonical schema embedded from
-   `schemas/`, converts it to the Rust domain model, and normalizes values used
-   for indexing.
+   retains JSON numbers with arbitrary decimal precision, validates the decoded
+   value against the canonical schema embedded from `schemas/`, converts it to
+   the Rust domain model, and normalizes values used for indexing.
 2. `Phase1ManifestValidator` accepts Rust domain values. It enforces the
    cross-field standalone Phase 1 rules that JSON Schema cannot express. It
    does not read files, persist state, fetch artifacts, compile routes, or
@@ -61,11 +61,13 @@ The default codec applies these limits before model allocation:
 | Entries in one JSON array or object | 4,096 |
 | Collected schema violations | 128 |
 
-`ManifestLimits` makes every parser limit explicit. The collection limit is
-checked by a recursive no-allocation Serde visitor before the wire decoder
-constructs a complete `Vec` or map. The authoritative schemas independently
-retain a 4,096-entry maximum for manifest arrays and open objects; increasing a
-caller's parser envelope therefore does not widen the current wire contract.
+`ManifestLimits` makes every parser limit explicit. A recursive streaming Serde
+visitor checks each collection before the wire decoder constructs a complete
+`Vec` or map. It retains only the bounded set of keys for the object currently
+being visited so duplicate keys can be rejected without allocating the decoded
+value tree. The authoritative schemas independently retain a 4,096-entry
+maximum for manifest arrays and open objects; increasing a caller's parser
+envelope therefore does not widen the current wire contract.
 
 Payload and string bounds are byte bounds, not Unicode character counts. A
 parser-limit failure produces exactly one root violation. Malformed UTF-8,
@@ -95,18 +97,26 @@ are rejected even inside open objects.
 
 ## Draft 2020-12 numeric semantics
 
+`latent-manifest` enables `serde_json`'s `arbitrary_precision` representation.
+Every accepted number is retained as its exact decimal significand and exponent
+rather than being routed through binary `f64`. This includes integers wider than
+`u64`, high-precision fractions, and finite JSON number lexemes such as `1e400`
+and `1e-400` under recursively nested trigger configuration.
+
 Schema type `integer` is mathematical rather than lexical. Consequently `1`,
-`1.0`, `1e0`, and `-0.0` are integer values, while `10000.5` is not. Before
-typed deserialization, the codec converts integral lexical forms to canonical
-integer tokens only when the value fits the exact Rust/JSON integer storage
-range. Wider values remain numeric values so exact schema maxima can reject
-them without a narrowing conversion.
+`1.0`, `1e0`, and `-0.0` are integer values, while `10000.5` and values such as
+`1.0000000000000000000000000000000001` are not. Before typed deserialization,
+the codec converts mathematically integral lexical forms to canonical integer
+tokens only when the value fits the target-independent `i64`/`u64` JSON integer
+envelope. Wider and non-integral values remain exact arbitrary-precision
+numbers so schema type and range validation can reject them at their actual
+field path before any Rust-width conversion.
 
 Minimum and maximum checks use normalized decimal comparison rather than
 binary floating-point conversion. Numeric equality used by `const`, `enum`,
 and `uniqueItems` follows the same mathematical rule. A shared regression
-corpus is run through both the Rust evaluator and Python's full Draft 2020-12
-validator in CI.
+corpus is loaded with exact decimal values and run through both the Rust
+evaluator and Python's full Draft 2020-12 validator in CI.
 
 ## Canonical encoding
 
@@ -119,6 +129,8 @@ insignificant whitespace. Before encoding, the codec:
 - recursively orders keys in arbitrary trigger configuration objects;
 - uses ordered maps for metadata and constraints;
 - emits typed integer values in canonical integer form;
+- retains arbitrary-precision trigger numbers without rounding (the canonical
+  spelling may normalize an exponent such as `1e400` to `1e+400`);
 - omits an absent `wallTimeLimitMillis`, retaining its `None` meaning.
 
 The codec never deduplicates an invalid list: semantic or schema validation
@@ -170,8 +182,10 @@ The validator enforces at least the following:
 ## Violations
 
 All public operations return `Result<T, Vec<ManifestViolation>>`. Violations are
-sorted and deduplicated before return. Callers may rely on `path` and `code`;
-`message` is diagnostic text and may improve without an API revision.
+sorted and deduplicated by the stable `(path, code)` identity before return.
+Callers may rely on `path` and `code`; `message` is diagnostic text and may
+improve without an API revision. When schema and model guards identify the same
+failure, the schema diagnostic is retained once.
 
 Paths use a JSONPath-like form rooted at `$`, for example
 `$.spec.resources.wallTimeLimitMillis` and `$.imports[1].contract`. Codes use

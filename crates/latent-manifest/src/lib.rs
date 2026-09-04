@@ -18,6 +18,7 @@ pub use bounded_codec::{JsonManifestCodec, ManifestLimits};
 pub use validation::{Phase1ManifestValidator, MANIFEST_API_VERSION, PHASE1_FABRIC_VERSION};
 pub use wire_codec::{ManifestDocument, ManifestKind};
 
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::fmt;
 
@@ -254,7 +255,7 @@ pub struct PolicyManifest {
 }
 
 /// Stable, path-addressed rejection returned by codecs and validators.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestViolation {
     /// JSONPath-like location rooted at `$`.
@@ -277,6 +278,30 @@ impl ManifestViolation {
             code: code.into(),
             message: message.into(),
         }
+    }
+
+    fn identity(&self) -> (&str, &str) {
+        (&self.path, &self.code)
+    }
+}
+
+impl PartialEq for ManifestViolation {
+    fn eq(&self, other: &Self) -> bool {
+        self.identity() == other.identity()
+    }
+}
+
+impl Eq for ManifestViolation {}
+
+impl PartialOrd for ManifestViolation {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ManifestViolation {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.identity().cmp(&other.identity())
     }
 }
 

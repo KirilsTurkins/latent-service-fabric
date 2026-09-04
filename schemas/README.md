@@ -16,7 +16,9 @@ capability-grant constraints, and trigger configuration. Manifest arrays and
 open objects are capped at 4,096 entries, including arrays and objects nested
 recursively inside trigger configuration. Integer fields use Draft 2020-12
 mathematical integer semantics and include explicit maxima matching their Rust
-wire types.
+wire types. Arbitrary trigger-configuration numbers are retained with exact
+decimal significand and exponent precision; they are never silently rounded
+through binary floating point.
 
 See `docs/protocol/manifest-codec.md` for parser limits, normalization, semantic
 Phase 1 validation, and forward-compatibility rules.

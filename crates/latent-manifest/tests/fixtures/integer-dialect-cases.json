@@ -36,6 +36,12 @@
     "valid": false
   },
   {
+    "name": "near-integral route value remains non-integral",
+    "target": "deployment-weight",
+    "lexeme": "1.0000000000000000000000000000000001",
+    "valid": false
+  },
+  {
     "name": "route value above schema maximum",
     "target": "deployment-weight",
     "lexeme": "10001",
@@ -58,6 +64,12 @@
     "target": "capsule-host-call-depth",
     "lexeme": "4294967295.0",
     "valid": true
+  },
+  {
+    "name": "near-integral u32 value remains non-integral",
+    "target": "capsule-host-call-depth",
+    "lexeme": "1.0000000000000000000000000000000001",
+    "valid": false
   },
   {
     "name": "u32 maximum plus one",
@@ -100,6 +112,12 @@
     "target": "capsule-memory-bytes",
     "lexeme": "18446744073709551615",
     "valid": true
+  },
+  {
+    "name": "near-integral u64 value remains non-integral",
+    "target": "capsule-memory-bytes",
+    "lexeme": "1.0000000000000000000000000000000001",
+    "valid": false
   },
   {
     "name": "u64 maximum plus one",
