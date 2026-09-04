@@ -64,19 +64,13 @@ impl DecimalNumber {
         match bytes[index] {
             b'0' => {
                 index += 1;
-                if bytes
-                    .get(index)
-                    .is_some_and(|byte| byte.is_ascii_digit())
-                {
+                if bytes.get(index).is_some_and(|byte| byte.is_ascii_digit()) {
                     return None;
                 }
             }
             b'1'..=b'9' => {
                 index += 1;
-                while bytes
-                    .get(index)
-                    .is_some_and(|byte| byte.is_ascii_digit())
-                {
+                while bytes.get(index).is_some_and(|byte| byte.is_ascii_digit()) {
                     index += 1;
                 }
             }
@@ -89,10 +83,7 @@ impl DecimalNumber {
         if bytes.get(index) == Some(&b'.') {
             index += 1;
             fraction_start = index;
-            while bytes
-                .get(index)
-                .is_some_and(|byte| byte.is_ascii_digit())
-            {
+            while bytes.get(index).is_some_and(|byte| byte.is_ascii_digit()) {
                 index += 1;
             }
             fraction_length = index.saturating_sub(fraction_start);
@@ -112,10 +103,7 @@ impl DecimalNumber {
                 index += 1;
             }
             let exponent_start = index;
-            while bytes
-                .get(index)
-                .is_some_and(|byte| byte.is_ascii_digit())
-            {
+            while bytes.get(index).is_some_and(|byte| byte.is_ascii_digit()) {
                 explicit_exponent = explicit_exponent
                     .saturating_mul(10)
                     .saturating_add(i128::from(bytes[index] - b'0'));
@@ -175,8 +163,8 @@ impl DecimalNumber {
     }
 
     fn canonical_key(&self) -> String {
-        let digits = std::str::from_utf8(&self.digits)
-            .expect("normalized decimal digits are always ASCII");
+        let digits =
+            std::str::from_utf8(&self.digits).expect("normalized decimal digits are always ASCII");
         format!(
             "{}{}e{}",
             if self.negative { "-" } else { "" },

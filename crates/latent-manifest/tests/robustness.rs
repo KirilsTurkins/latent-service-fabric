@@ -128,11 +128,8 @@ fn collection_preflight_accepts_the_exact_limit_and_rejects_the_next_entry() {
     });
 
     let mut trigger: Value = serde_json::from_slice(ECHO_TRIGGER).expect("trigger");
-    trigger["spec"]["configuration"] = Value::Array(
-        (0..LIMIT)
-            .map(|index| json!(index))
-            .collect::<Vec<_>>(),
-    );
+    trigger["spec"]["configuration"] =
+        Value::Array((0..LIMIT).map(|index| json!(index)).collect::<Vec<_>>());
     codec
         .decode_trigger(&serde_json::to_vec(&trigger).expect("JSON"))
         .expect_err("configuration must remain an object");
@@ -144,11 +141,8 @@ fn collection_preflight_accepts_the_exact_limit_and_rejects_the_next_entry() {
         .decode_trigger(&serde_json::to_vec(&trigger).expect("JSON"))
         .expect("an array at the exact collection limit is accepted");
 
-    trigger["spec"]["configuration"]["nested"] = Value::Array(
-        (0..=LIMIT)
-            .map(|index| json!(index))
-            .collect::<Vec<_>>(),
-    );
+    trigger["spec"]["configuration"]["nested"] =
+        Value::Array((0..=LIMIT).map(|index| json!(index)).collect::<Vec<_>>());
     let bytes = serde_json::to_vec(&trigger).expect("JSON");
     let first = codec
         .decode_trigger(&bytes)
@@ -206,9 +200,9 @@ fn authoritative_schema_and_parser_bound_large_distinct_arrays() {
     })
     .decode_capsule(&over)
     .expect_err("the authoritative schema retains its own cardinality limit");
-    assert!(schema_violation.iter().any(|violation| {
-        violation.path == "$.exports" && violation.code == "too-many-items"
-    }));
+    assert!(schema_violation
+        .iter()
+        .any(|violation| { violation.path == "$.exports" && violation.code == "too-many-items" }));
 }
 
 #[test]

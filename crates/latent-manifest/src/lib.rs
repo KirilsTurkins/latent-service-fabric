@@ -8,11 +8,11 @@
 #![forbid(unsafe_code)]
 
 mod bounded_codec;
-#[path = "codec.rs"]
-mod wire_codec;
 mod json_number;
 mod schema;
 mod validation;
+#[path = "codec.rs"]
+mod wire_codec;
 
 pub use bounded_codec::{JsonManifestCodec, ManifestLimits};
 pub use validation::{Phase1ManifestValidator, MANIFEST_API_VERSION, PHASE1_FABRIC_VERSION};

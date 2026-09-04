@@ -461,9 +461,7 @@ fn matches_single_type(expected: &str, instance: &Value) -> bool {
         "object" => instance.is_object(),
         "array" => instance.is_array(),
         "string" => instance.is_string(),
-        "integer" => instance
-            .as_number()
-            .is_some_and(is_mathematical_integer),
+        "integer" => instance.as_number().is_some_and(is_mathematical_integer),
         "number" => instance.is_number(),
         "boolean" => instance.is_boolean(),
         "null" => instance.is_null(),
