@@ -6,7 +6,7 @@ const DEPLOYMENT: &str = include_str!("../../../examples/echo-contract/deploymen
 const NEAR_INTEGRAL_FRACTION: &str = "1.0000000000000000000000000000000001";
 
 #[test]
-fn trigger_configuration_retains_arbitrary_precision_numbers_exactly() {
+fn trigger_configuration_retains_arbitrary_precision_number_values_exactly() {
     let source = trigger_document(
         r#"{
             "wideInteger": 18446744073709551617,
@@ -37,7 +37,7 @@ fn trigger_configuration_retains_arbitrary_precision_numbers_exactly() {
     assert_number(&first.configuration["wideNegative"], "-9223372036854775809");
     assert_number(
         &first.configuration["ratio"],
-        "0.123456789012345678901234567890",
+        "0.12345678901234567890123456789",
     );
     assert_number(&first.configuration["largeNumber"], "1e+400");
     assert_number(&first.configuration["smallNumber"], "1e-400");
@@ -51,13 +51,13 @@ fn trigger_configuration_retains_arbitrary_precision_numbers_exactly() {
     );
     assert_number(
         &first.configuration["nested"]["array"][2],
-        "0.123456789012345678901234567890",
+        "0.12345678901234567890123456789",
     );
     assert_number(&first.configuration["nested"]["array"][3], "1e+400");
     assert_number(&first.configuration["nested"]["array"][4], "1e-400");
     assert_number(
         &first.configuration["nested"]["object"]["value"],
-        "12345678901234567890.12345678901234567890",
+        "12345678901234567890.1234567890123456789",
     );
 
     let encoded_once = codec
@@ -77,16 +77,80 @@ fn trigger_configuration_retains_arbitrary_precision_numbers_exactly() {
     for retained in [
         "18446744073709551617",
         "-9223372036854775809",
-        "0.123456789012345678901234567890",
+        "0.12345678901234567890123456789",
         "1e+400",
         "1e-400",
-        "12345678901234567890.12345678901234567890",
+        "12345678901234567890.1234567890123456789",
     ] {
         assert!(
             encoded.contains(retained),
             "canonical output did not retain `{retained}`: {encoded}"
         );
     }
+}
+
+#[test]
+fn equivalent_trigger_number_spellings_share_models_and_canonical_bytes() {
+    let codec = JsonManifestCodec::default();
+    let cases = [
+        ("1.5", "1.50", "1.5"),
+        ("1.5", "15e-1", "1.5"),
+        ("1.5", "0.150e1", "1.5"),
+        ("1.5", "1500e-3", "1.5"),
+        ("1e400", "10e399", "1e+400"),
+        ("1e-400", "10e-401", "1e-400"),
+        ("0", "-0.0", "0"),
+    ];
+
+    for (left_number, right_number, canonical) in cases {
+        let left_source = trigger_document(&format!(r#"{{"value":{left_number}}}"#));
+        let right_source = trigger_document(&format!(r#"{{"value":{right_number}}}"#));
+        let left = codec
+            .decode_trigger(left_source.as_bytes())
+            .expect("left equivalent trigger number");
+        let right = codec
+            .decode_trigger(right_source.as_bytes())
+            .expect("right equivalent trigger number");
+
+        assert_eq!(left, right, "{left_number} and {right_number}");
+        assert_number(&left.configuration["value"], canonical);
+        assert_eq!(
+            codec.encode_trigger(&left).expect("left canonical bytes"),
+            codec.encode_trigger(&right).expect("right canonical bytes"),
+            "{left_number} and {right_number}"
+        );
+    }
+
+    let left_source = trigger_document(
+        r#"{
+            "array": [1.50, 10e399, 10e-401, -0.0],
+            "object": {"ratio": 1500e-3, "zero": -0e999}
+        }"#,
+    );
+    let right_source = trigger_document(
+        r#"{
+            "array": [15e-1, 1e400, 1e-400, 0],
+            "object": {"ratio": 1.5, "zero": 0}
+        }"#,
+    );
+    let left = codec
+        .decode_trigger(left_source.as_bytes())
+        .expect("nested left equivalent numbers");
+    let right = codec
+        .decode_trigger(right_source.as_bytes())
+        .expect("nested right equivalent numbers");
+
+    assert_eq!(left, right);
+    assert_eq!(
+        codec.encode_trigger(&left).expect("nested left bytes"),
+        codec.encode_trigger(&right).expect("nested right bytes")
+    );
+    assert_number(&left.configuration["array"][0], "1.5");
+    assert_number(&left.configuration["array"][1], "1e+400");
+    assert_number(&left.configuration["array"][2], "1e-400");
+    assert_number(&left.configuration["array"][3], "0");
+    assert_number(&left.configuration["object"]["ratio"], "1.5");
+    assert_number(&left.configuration["object"]["zero"], "0");
 }
 
 #[test]
