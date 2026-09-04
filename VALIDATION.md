@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-08-30** for the authorized Phase 0 executable contract, native-Linux variance calibration, profiling and resource-soak evidence, full completion receipt, toolchain baseline, Rust echo capsule fixture, and fixed generic execution-cell pool.
+Updated on **2026-09-04** for the authorized Phase 0 executable contract, native-Linux variance calibration, profiling and resource-soak evidence, full completion receipt, toolchain baseline, Rust echo capsule fixture, fixed generic execution-cell pool, and consolidated CI topology.
 
 ## Entry point
 
@@ -23,13 +23,15 @@ The clean-checkout Phase 0 sequence is:
 make phase0-gate
 ```
 
-It runs `make validate`, repository-tool tests, the real executable spike and
-containment suite, and a new full executable baseline. It then writes a
-machine-readable `latent.phase0.gate.v3` receipt below `target/phase0-gate/`
-after independently rebuilding the retained calibration, profile, and soak
-aggregates from their raw artifacts and validating the fresh baseline against
-them. A full command fails if the receipt is not `authorized`; it never reports
-an incomplete or synthetic archive as a pass.
+It runs formatting, workspace build/lint/test, and SDK validation once, then the
+real executable spike and containment suite and a new full executable baseline.
+The outer gate no longer adds a third contract and repository-test pass before
+the standalone spike and baseline runners perform their retained fixture gates.
+It then writes a machine-readable `latent.phase0.gate.v3` receipt below
+`target/phase0-gate/` after independently rebuilding the retained calibration,
+profile, and soak aggregates from their raw artifacts and validating the fresh
+baseline against them. A full command fails if the receipt is not `authorized`;
+it never reports an incomplete or synthetic archive as a pass.
 
 The retained [August 30 native-Linux receipt](benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
 records the fresh clean-checkout result: `pass`, `authorized`, and zero
@@ -223,7 +225,29 @@ historical.
 
 ## CI jobs
 
-The workflow fixes its host boundary at `ubuntu-24.04` and separates default Rust checks, the MSRV check, contract and echo-component validation, and SDK validation. The contracts job installs the pinned `wasm-tools` version before running the reproducible component build. The Issue 25 workflow runs `make phase0-gate-smoke` from a clean checkout and uploads the fresh baseline plus receipt. A completed validation failure is evidence that the executable interface baseline needs investigation; a job that fails before its steps run (for example, runner or account infrastructure) is not source-validation evidence and must be rerun.
+Normal pull requests use two automated workflows. `CI` runs formatting,
+workspace compilation, generated binding checks, Clippy, tests, the MSRV check,
+repository/contract validation, the reproducible echo component build, and all
+SDK surfaces. Its core Rust job also retains the strict `latentd` Clippy policy
+that previously lived in an issue-specific workflow. Superseded runs for the
+same ref are cancelled.
+
+`Phase 0 runtime regression` is path-filtered to execution-relevant sources. It
+runs the deterministic executable baseline smoke and then the ignored
+`latentd` outcome/recovery matrix against the already-built fixtures. The job
+also syntax-checks the retained Phase 0 runners and uploads its raw measurements
+and report. It does not repeat the full workspace formatting, compilation,
+Clippy, test, MSRV, or SDK matrix.
+
+`Phase 0 full validation` is manual-only. Its `workflow_dispatch` input selects
+the full authorization gate or the deterministic smoke gate from a clean,
+full-history checkout. The completed Phase 0 reference evidence is no longer
+auto-refreshed or committed by a pull-request workflow.
+
+A completed validation failure is evidence that the executable interface
+baseline needs investigation; a job that fails before its steps run (for
+example, runner or account infrastructure) is not source-validation evidence
+and must be rerun.
 
 After a successful contracts job, the workflow prints `build.json` and `sha256.txt` and uploads the generated component, capsule metadata, extracted interface, build receipt, and digest as `phase-0-echo-capsule-${GITHUB_SHA}` for 14 days. This retained artifact is reproducibility evidence for the locally trusted fixture; it is not a signed or distributable release artifact.
 
