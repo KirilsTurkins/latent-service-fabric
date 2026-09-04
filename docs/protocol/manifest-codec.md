@@ -70,6 +70,14 @@ value tree. The authoritative schemas independently retain a 4,096-entry
 maximum for manifest arrays and open objects; increasing a caller's parser
 envelope therefore does not widen the current wire contract.
 
+The complete-payload limit applies independently to the original untrusted
+bytes and to their value-canonical numeric representation. Number tokens are
+normalized only after the original source and collection structure pass
+preflight, and the normalized byte length is checked before a `serde_json::Value`
+tree is allocated. A compact spelling such as `1e20` is therefore rejected when
+its canonical spelling would cross the configured limit. Successful trigger
+decoding remains closed under canonical encoding with the same limits.
+
 Payload and string bounds are byte bounds, not Unicode character counts. A
 parser-limit failure produces exactly one root violation. Malformed UTF-8,
 malformed JSON, trailing JSON values, duplicate keys, and over-limit nested
@@ -138,8 +146,11 @@ insignificant whitespace. Before encoding, the codec:
 - recursively orders keys in arbitrary trigger configuration objects;
 - uses ordered maps for metadata and constraints;
 - emits typed integer values in canonical integer form;
+- normalizes numbers in directly constructed or modified trigger models before
+  the wire encoder performs its payload-size check;
 - emits every arbitrary-precision trigger number in the value-canonical form
   described above, without rounding or exponent expansion;
+- verifies that the final canonical bytes fit `max_document_bytes`;
 - omits an absent `wallTimeLimitMillis`, retaining its `None` meaning.
 
 The codec never deduplicates an invalid list: semantic or schema validation
