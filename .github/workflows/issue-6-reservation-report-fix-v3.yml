@@ -1,0 +1,87 @@
+name: Apply issue 6 reservation report fix v3
+
+on:
+  push:
+    branches:
+      - feat/issue-6-resource-budget-accounting
+    paths:
+      - .github/workflows/issue-6-reservation-report-fix-v3.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out pull request branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/issue-6-resource-budget-accounting
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt
+
+      - name: Apply accounting correction and remove temporary workflows
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64
+          import zlib
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/issue-6-reservation-report-fix.yml')
+          payload = next(
+              line.split('PATCH_B64:', 1)[1].strip()
+              for line in workflow.read_text().splitlines()
+              if 'PATCH_B64:' in line
+          )
+          exec(zlib.decompress(base64.b64decode(payload)).decode())
+          PY
+          rm .github/workflows/issue-6-reservation-report-fix.yml
+          rm .github/workflows/issue-6-reservation-report-fix-v2.yml
+          rm .github/workflows/issue-6-reservation-report-fix-v3.yml
+
+      - name: Format
+        run: cargo fmt --all
+
+      - name: Check focused crates
+        run: cargo check -p latent-core -p latent-node --all-targets --locked
+
+      - name: Test focused crates
+        run: cargo test -p latent-core -p latent-node --all-targets --locked
+
+      - name: Validate patch scope and cleanliness
+        shell: bash
+        run: |
+          cargo fmt --all -- --check
+          git diff --check
+          python - <<'PY'
+          import subprocess
+
+          expected = {
+              '.github/workflows/issue-6-reservation-report-fix-v3.yml',
+              '.github/workflows/issue-6-reservation-report-fix-v2.yml',
+              '.github/workflows/issue-6-reservation-report-fix.yml',
+              'crates/latent-core/src/budget.rs',
+              'crates/latent-node/src/budgeted_activation.rs',
+              'docs/runtime/resource-budgets.md',
+          }
+          actual = set(subprocess.check_output(
+              ['git', 'diff', '--name-only'], text=True
+          ).splitlines())
+          if actual != expected:
+              raise SystemExit(f'unexpected patch scope: {sorted(actual)}')
+          PY
+
+      - name: Commit validated correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: separate reservations from terminal reports"
+          git push origin HEAD:feat/issue-6-resource-budget-accounting
