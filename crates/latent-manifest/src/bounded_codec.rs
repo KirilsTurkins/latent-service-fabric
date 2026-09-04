@@ -102,7 +102,10 @@ impl JsonManifestCodec {
     fn preflight_decode(&self, bytes: &[u8]) -> ManifestResult<Vec<u8>> {
         enforce_raw_limits(bytes, self.limits)?;
         enforce_collection_limit_and_unique_keys(bytes, self.limits.max_collection_entries)?;
-        Ok(normalize_number_lexemes(bytes))
+
+        let normalized = normalize_number_lexemes(bytes);
+        enforce_raw_limits(&normalized, self.limits)?;
+        Ok(normalized)
     }
 
     fn preflight_encoded(&self, bytes: &[u8]) -> ManifestResult<()> {
@@ -217,8 +220,9 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn encode_trigger(&self, manifest: &TriggerManifest) -> ManifestResult<Vec<u8>> {
-        let encoded = self.wire_codec().encode_trigger(manifest)?;
-        let bytes = normalize_number_lexemes(&encoded);
+        let mut normalized = manifest.clone();
+        normalized.normalize();
+        let bytes = self.wire_codec().encode_trigger(&normalized)?;
         self.preflight_encoded(&bytes)?;
         Ok(bytes)
     }
@@ -684,6 +688,12 @@ fn canonicalize_json_value(value: &mut Value) {
                 object.insert(key, value);
             }
         }
-        Value::Null | Value::Bool(_) | Value::Number(_) | Value::String(_) => {}
+        Value::Number(number) => {
+            let canonical = representable_integer_lexeme(number.as_str().as_bytes())
+                .expect("serde_json::Number always stores valid JSON-number syntax");
+            *number = serde_json::from_slice(&canonical)
+                .expect("value-canonical JSON-number syntax remains valid");
+        }
+        Value::Null | Value::Bool(_) | Value::String(_) => {}
     }
 }
