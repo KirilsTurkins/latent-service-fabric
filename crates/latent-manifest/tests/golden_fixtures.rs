@@ -16,8 +16,8 @@ fn capsule_golden_fixture_is_schema_valid_and_byte_stable() {
     assert_golden(
         CAPSULE_FIXTURE,
         ManifestKind::Capsule,
-        |codec, bytes| codec.decode_capsule(bytes),
-        |codec, manifest| codec.encode_capsule(manifest),
+        ManifestCodec::decode_capsule,
+        ManifestCodec::encode_capsule,
     );
 }
 
@@ -26,8 +26,8 @@ fn deployment_golden_fixture_is_schema_valid_and_byte_stable() {
     assert_golden(
         DEPLOYMENT_FIXTURE,
         ManifestKind::Deployment,
-        |codec, bytes| codec.decode_deployment(bytes),
-        |codec, manifest| codec.encode_deployment(manifest),
+        ManifestCodec::decode_deployment,
+        ManifestCodec::encode_deployment,
     );
 }
 
@@ -36,8 +36,8 @@ fn binding_golden_fixture_is_schema_valid_and_byte_stable() {
     assert_golden(
         BINDING_FIXTURE,
         ManifestKind::Binding,
-        |codec, bytes| codec.decode_binding(bytes),
-        |codec, manifest| codec.encode_binding(manifest),
+        ManifestCodec::decode_binding,
+        ManifestCodec::encode_binding,
     );
 }
 
@@ -46,8 +46,8 @@ fn trigger_golden_fixture_is_schema_valid_and_byte_stable() {
     assert_golden(
         TRIGGER_FIXTURE,
         ManifestKind::Trigger,
-        |codec, bytes| codec.decode_trigger(bytes),
-        |codec, manifest| codec.encode_trigger(manifest),
+        ManifestCodec::decode_trigger,
+        ManifestCodec::encode_trigger,
     );
 }
 
@@ -56,8 +56,8 @@ fn policy_golden_fixture_is_schema_valid_and_byte_stable() {
     assert_golden(
         POLICY_FIXTURE,
         ManifestKind::Policy,
-        |codec, bytes| codec.decode_policy(bytes),
-        |codec, manifest| codec.encode_policy(manifest),
+        ManifestCodec::decode_policy,
+        ManifestCodec::encode_policy,
     );
 }
 
