@@ -2,43 +2,37 @@ use std::collections::HashMap;
 use std::fmt;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex, MutexGuard};
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::Instant;
 
 use latent_activation::{ActivationEnvelope, ActivationManager, ActivationOutcome};
 use latent_core::{
     ActivationBudget, ActivationId, ActivationTerminalState, BoxFuture, BudgetConsumption,
-    BudgetError, CancelDisposition, EffectiveActivationBudget, ErrorDetail, Metadata,
+    BudgetError, CancelDisposition, ClockSample, EffectiveActivationBudget, ErrorDetail, Metadata,
     PlatformError, PlatformErrorCode, ResourceBudget,
 };
 
-use crate::cancellation::{
-    ActivationCancellationRegistry, CancellationRegistrySnapshot, CancellationToken,
-};
+use crate::cancellation::{ActivationCancellationRegistry, CancellationRegistrySnapshot};
 
 const DEFAULT_MAXIMUM_CANCELLATION_REASON_BYTES: usize = 256;
 const CANCELLATION_MESSAGE: &str = "activation cancelled";
-const DEADLINE_MESSAGE: &str = "activation wall-clock deadline exceeded";
 
 /// Clock boundary used to bind an admitted wall-clock deadline to monotonic
-/// process time. Tests may inject a deterministic implementation.
+/// process time. Admission consumes one coherent sample; terminal accounting
+/// reads only monotonic time.
 pub trait ActivationClock: Send + Sync {
-    fn unix_millis(&self) -> u64;
-    fn monotonic(&self) -> Instant;
+    fn sample(&self) -> ClockSample;
+    fn monotonic_now(&self) -> Instant;
 }
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct SystemActivationClock;
 
 impl ActivationClock for SystemActivationClock {
-    fn unix_millis(&self) -> u64 {
-        let millis = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis();
-        u64::try_from(millis).unwrap_or(u64::MAX)
+    fn sample(&self) -> ClockSample {
+        ClockSample::system_now()
     }
 
-    fn monotonic(&self) -> Instant {
+    fn monotonic_now(&self) -> Instant {
         Instant::now()
     }
 }
@@ -225,8 +219,7 @@ where
             &self.policy.deployment_ceiling,
             &self.policy.node_ceiling,
             envelope.deadline_unix_millis,
-            self.clock.unix_millis(),
-            self.clock.monotonic(),
+            self.clock.sample(),
         )?;
         grant.require_executable_capacity()?;
         Ok(grant)
@@ -256,24 +249,30 @@ where
                 return platform_failure(error, BudgetConsumption::default());
             }
         };
-        let token = cancellation_registration.token();
-
         let outcome = self.inner.invoke(envelope).await;
-        let now = self.clock.monotonic();
-        let outcome = apply_terminal_precedence(outcome, &token, &accounting, now);
+        let now = self.clock.monotonic_now();
+        let deadline_violation = accounting.check_deadline_at(now).err();
         let reported = outcome_consumption(&outcome);
-        let finalized = match accounting.finalize_at(Some(&reported), now) {
-            Ok(finalized) => finalized,
-            Err(error) => {
-                let consumption = accounting
-                    .finalize_at(None, now)
-                    .unwrap_or_else(|_| accounting.snapshot_at(now));
-                drop(cancellation_registration);
-                drop(budget_registration);
-                return budget_failure(error, consumption);
-            }
+        let finalization = accounting.finalize_at(Some(&reported), now);
+        let consumption = finalization.consumption().clone();
+
+        let candidate = if let Some(error) = deadline_violation {
+            budget_failure(error, consumption.clone())
+        } else if let Some(error) = finalization.violation().cloned() {
+            budget_failure(error, consumption.clone())
+        } else {
+            replace_consumption(outcome, consumption.clone())
         };
-        let outcome = replace_consumption(outcome, finalized);
+        let proposed_terminal = outcome_terminal_state(&candidate);
+        let publication = cancellation_registration.publish_terminal(proposed_terminal);
+        let outcome = if publication.state == ActivationTerminalState::Cancelled {
+            publication.cancellation_reason.map_or(candidate, |reason| {
+                platform_failure(cancellation_error(Some(reason)), consumption)
+            })
+        } else {
+            candidate
+        };
+
         drop(cancellation_registration);
         drop(budget_registration);
         outcome
@@ -308,30 +307,27 @@ where
         reason: &'a str,
     ) -> BoxFuture<'a, Result<CancelDisposition, PlatformError>> {
         Box::pin(async move {
-            let local = self.cancellations.cancel(activation_id, reason);
-            let delegated = self.inner.cancel(activation_id, reason).await;
-            match local {
-                CancelDisposition::Accepted => Ok(CancelDisposition::Accepted),
-                CancelDisposition::NotFound | CancelDisposition::AlreadyTerminal(_) => delegated,
+            match self.cancellations.cancel(activation_id, reason) {
+                CancelDisposition::Accepted => {
+                    let _ = self.inner.cancel(activation_id, reason).await;
+                    Ok(CancelDisposition::Accepted)
+                }
+                CancelDisposition::AlreadyTerminal(state) => {
+                    Ok(CancelDisposition::AlreadyTerminal(state))
+                }
+                CancelDisposition::NotFound => self.inner.cancel(activation_id, reason).await,
             }
         })
     }
 }
 
-fn apply_terminal_precedence(
-    outcome: ActivationOutcome,
-    cancellation: &CancellationToken,
-    accounting: &ActivationBudget,
-    now: Instant,
-) -> ActivationOutcome {
-    let consumption = outcome_consumption(&outcome);
-    if cancellation.is_cancelled() {
-        return platform_failure(cancellation_error(cancellation.reason()), consumption);
+fn outcome_terminal_state(outcome: &ActivationOutcome) -> ActivationTerminalState {
+    match outcome {
+        ActivationOutcome::Succeeded(_) | ActivationOutcome::DeclaredError { .. } => {
+            ActivationTerminalState::Completed
+        }
+        ActivationOutcome::Failed { terminal_state, .. } => *terminal_state,
     }
-    if accounting.check_deadline_at(now).is_err() {
-        return platform_failure(deadline_error(), consumption);
-    }
-    outcome
 }
 
 fn replace_consumption(
@@ -396,18 +392,6 @@ fn cancellation_error(reason: Option<String>) -> PlatformError {
     }
 }
 
-fn deadline_error() -> PlatformError {
-    PlatformError {
-        code: PlatformErrorCode::DeadlineExceeded,
-        message: DEADLINE_MESSAGE.to_owned(),
-        retryable: false,
-        details: vec![ErrorDetail {
-            kind: "activation.deadline-exceeded".to_owned(),
-            fields: Metadata::new(),
-        }],
-    }
-}
-
 fn terminal_state_for_code(code: PlatformErrorCode) -> ActivationTerminalState {
     match code {
         PlatformErrorCode::DeadlineExceeded => ActivationTerminalState::DeadlineExceeded,
@@ -433,7 +417,9 @@ fn terminal_state_for_code(code: PlatformErrorCode) -> ActivationTerminalState {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+    use std::thread;
+    use std::time::Duration;
 
     use latent_activation::{
         ActivationManager, ActivationOutcome, ActivationSuccess, TraceContext,
@@ -450,6 +436,7 @@ mod tests {
     struct FixedClock {
         unix_millis: AtomicU64,
         started: Instant,
+        terminal_offset_micros: AtomicU64,
     }
 
     impl FixedClock {
@@ -457,17 +444,80 @@ mod tests {
             Self {
                 unix_millis: AtomicU64::new(unix_millis),
                 started: Instant::now(),
+                terminal_offset_micros: AtomicU64::new(0),
             }
+        }
+
+        fn set_terminal_offset(&self, offset: Duration) {
+            let micros = u64::try_from(offset.as_micros()).unwrap_or(u64::MAX);
+            self.terminal_offset_micros.store(micros, Ordering::Release);
         }
     }
 
     impl ActivationClock for FixedClock {
-        fn unix_millis(&self) -> u64 {
-            self.unix_millis.load(Ordering::Acquire)
+        fn sample(&self) -> ClockSample {
+            ClockSample::new(self.unix_millis.load(Ordering::Acquire), self.started)
         }
 
-        fn monotonic(&self) -> Instant {
+        fn monotonic_now(&self) -> Instant {
             self.started
+                + Duration::from_micros(self.terminal_offset_micros.load(Ordering::Acquire))
+        }
+    }
+
+    #[derive(Debug)]
+    struct AdvancingSampleClock {
+        unix_millis: AtomicU64,
+        started: Instant,
+        sampling_advance_millis: u64,
+    }
+
+    impl ActivationClock for AdvancingSampleClock {
+        fn sample(&self) -> ClockSample {
+            let monotonic = self.started;
+            let unix_millis = self
+                .unix_millis
+                .fetch_add(self.sampling_advance_millis, Ordering::AcqRel)
+                .saturating_add(self.sampling_advance_millis);
+            ClockSample::new(unix_millis, monotonic)
+        }
+
+        fn monotonic_now(&self) -> Instant {
+            self.started
+        }
+    }
+
+    #[derive(Debug)]
+    struct GatedTerminalClock {
+        sample: ClockSample,
+        terminal_now: Instant,
+        entered: AtomicBool,
+        release: AtomicBool,
+    }
+
+    impl GatedTerminalClock {
+        fn new(unix_millis: u64) -> Self {
+            let started = Instant::now();
+            Self {
+                sample: ClockSample::new(unix_millis, started),
+                terminal_now: started,
+                entered: AtomicBool::new(false),
+                release: AtomicBool::new(false),
+            }
+        }
+    }
+
+    impl ActivationClock for GatedTerminalClock {
+        fn sample(&self) -> ClockSample {
+            self.sample
+        }
+
+        fn monotonic_now(&self) -> Instant {
+            self.entered.store(true, Ordering::Release);
+            while !self.release.load(Ordering::Acquire) {
+                thread::yield_now();
+            }
+            self.terminal_now
         }
     }
 
@@ -476,6 +526,9 @@ mod tests {
         invocations: AtomicU64,
         captured: Mutex<Vec<ActivationEnvelope>>,
         outcome: Mutex<ActivationOutcome>,
+        cancel_disposition: Mutex<Result<CancelDisposition, PlatformError>>,
+        budget_registry: Mutex<Option<ActivationBudgetRegistry>>,
+        retained_budgets: Mutex<Vec<ActivationBudget>>,
     }
 
     impl RecordingManager {
@@ -484,7 +537,33 @@ mod tests {
                 invocations: AtomicU64::new(0),
                 captured: Mutex::new(Vec::new()),
                 outcome: Mutex::new(outcome),
+                cancel_disposition: Mutex::new(Ok(CancelDisposition::Accepted)),
+                budget_registry: Mutex::new(None),
+                retained_budgets: Mutex::new(Vec::new()),
             }
+        }
+
+        fn attach_budget_registry(&self, registry: ActivationBudgetRegistry) {
+            *self
+                .budget_registry
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(registry);
+        }
+
+        fn set_cancel_disposition(&self, disposition: Result<CancelDisposition, PlatformError>) {
+            *self
+                .cancel_disposition
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner) = disposition;
+        }
+
+        fn retained_budget(&self) -> ActivationBudget {
+            self.retained_budgets
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .last()
+                .cloned()
+                .expect("recording manager retained live accounting")
         }
     }
 
@@ -492,10 +571,22 @@ mod tests {
         fn invoke<'a>(&'a self, envelope: ActivationEnvelope) -> BoxFuture<'a, ActivationOutcome> {
             Box::pin(async move {
                 self.invocations.fetch_add(1, Ordering::AcqRel);
+                let activation_id = envelope.activation_id.clone();
                 self.captured
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
                     .push(envelope);
+                let registry = self
+                    .budget_registry
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone();
+                if let Some(budget) = registry.and_then(|registry| registry.get(&activation_id)) {
+                    self.retained_budgets
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .push(budget);
+                }
                 self.outcome
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -508,7 +599,12 @@ mod tests {
             _activation_id: &'a ActivationId,
             _reason: &'a str,
         ) -> BoxFuture<'a, Result<CancelDisposition, PlatformError>> {
-            Box::pin(async move { Ok(CancelDisposition::Accepted) })
+            Box::pin(async move {
+                self.cancel_disposition
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .clone()
+            })
         }
     }
 
@@ -578,15 +674,19 @@ mod tests {
         })
     }
 
-    fn manager(
+    fn manager<C>(
         inner: Arc<RecordingManager>,
-        clock: Arc<FixedClock>,
-    ) -> BudgetedActivationManager<RecordingManager> {
+        clock: Arc<C>,
+    ) -> BudgetedActivationManager<RecordingManager>
+    where
+        C: ActivationClock + 'static,
+    {
         let mut deployment = budget();
         deployment.cpu_fuel = 80;
         let mut node = budget();
         node.memory_bytes = 512;
         node.log_bytes = 60;
+        let clock: Arc<dyn ActivationClock> = clock;
         BudgetedActivationManager::new_with_clock(
             inner,
             ActivationBudgetPolicy::new(deployment, node),
@@ -713,5 +813,154 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    #[test]
+    fn coherent_clock_sample_makes_sampling_delay_conservative() {
+        let started = Instant::now();
+        let clock = Arc::new(AdvancingSampleClock {
+            unix_millis: AtomicU64::new(1_000),
+            started,
+            sampling_advance_millis: 75,
+        });
+        let inner = Arc::new(RecordingManager::new(success(BudgetConsumption::default())));
+        let manager = manager(inner, clock);
+
+        let grant = manager
+            .admit(&envelope(Some(1_100)))
+            .expect("deadline remains valid after conservative sampling");
+        assert_eq!(grant.deadline.admitted_at_unix_millis(), 1_075);
+        assert_eq!(grant.deadline.unix_millis(), Some(1_100));
+        assert_eq!(
+            grant.deadline.monotonic(),
+            Some(started + Duration::from_millis(25))
+        );
+        assert!(
+            grant.deadline.monotonic().expect("bounded deadline")
+                <= started + Duration::from_millis(100)
+        );
+    }
+
+    #[tokio::test]
+    async fn deadline_terminal_path_freezes_truthful_accounting_exactly_once() {
+        let inner = Arc::new(RecordingManager::new(success(BudgetConsumption {
+            cpu_fuel: 7,
+            peak_memory_bytes: 128,
+            log_bytes: 9,
+            ..BudgetConsumption::default()
+        })));
+        let clock = Arc::new(FixedClock::new(1_000));
+        clock.set_terminal_offset(Duration::from_millis(600));
+        let manager = manager(Arc::clone(&inner), Arc::clone(&clock));
+        inner.attach_budget_registry(manager.budget_registry());
+
+        let outcome = manager.invoke(envelope(Some(1_400))).await;
+        let consumption = match &outcome {
+            ActivationOutcome::Failed {
+                terminal_state,
+                error,
+                consumption,
+            } => {
+                assert_eq!(*terminal_state, ActivationTerminalState::DeadlineExceeded);
+                assert_eq!(error.code, PlatformErrorCode::DeadlineExceeded);
+                assert_eq!(error.details.len(), 1);
+                assert_eq!(
+                    error.details[0].fields.get("deadline_unix_millis"),
+                    Some(&"1400".to_owned())
+                );
+                assert_eq!(
+                    error.details[0].fields.get("admitted_at_unix_millis"),
+                    Some(&"1000".to_owned())
+                );
+                consumption.clone()
+            }
+            other => panic!("expected deadline failure, got {other:?}"),
+        };
+
+        let accounting = inner.retained_budget();
+        let first = accounting
+            .finalization()
+            .expect("deadline path freezes terminal accounting");
+        assert_eq!(first.consumption(), &consumption);
+        assert_eq!(first.consumption().wall_time_micros, 600_000);
+        assert_eq!(accounting.finalized(), Some(consumption));
+        assert_eq!(
+            accounting.finalize_at(None, clock.started + Duration::from_secs(10)),
+            first
+        );
+        assert!(matches!(
+            accounting.consume_cpu_fuel(1),
+            Err(BudgetError::AccountingFinalized)
+        ));
+        assert_eq!(manager.budget_snapshot().active_registrations, 0);
+        assert_eq!(manager.cancellation_snapshot().active_registrations, 0);
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn cancellation_between_completion_and_publication_cannot_be_lost() {
+        let inner = Arc::new(RecordingManager::new(success(BudgetConsumption {
+            cpu_fuel: 7,
+            ..BudgetConsumption::default()
+        })));
+        inner.set_cancel_disposition(Ok(CancelDisposition::AlreadyTerminal(
+            ActivationTerminalState::Completed,
+        )));
+        let clock = Arc::new(GatedTerminalClock::new(1_000));
+        let manager = Arc::new(manager(Arc::clone(&inner), Arc::clone(&clock)));
+        inner.attach_budget_registry(manager.budget_registry());
+        let request = envelope(Some(1_400));
+        let activation_id = request.activation_id.clone();
+
+        let invocation = {
+            let manager = Arc::clone(&manager);
+            tokio::spawn(async move { manager.invoke(request).await })
+        };
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while !clock.entered.load(Ordering::Acquire) {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("invocation reaches terminal publication gate");
+
+        let accounting = inner.retained_budget();
+        let disposition = manager
+            .cancel(&activation_id, "between completion and publication")
+            .await
+            .expect("local cancellation request completes");
+        assert_eq!(disposition, CancelDisposition::Accepted);
+        clock.release.store(true, Ordering::Release);
+
+        let outcome = tokio::time::timeout(Duration::from_secs(2), invocation)
+            .await
+            .expect("invocation completes after terminal gate release")
+            .expect("invocation task joins");
+        let consumption = match &outcome {
+            ActivationOutcome::Failed {
+                terminal_state,
+                error,
+                consumption,
+            } => {
+                assert_eq!(*terminal_state, ActivationTerminalState::Cancelled);
+                assert_eq!(error.code, PlatformErrorCode::Cancelled);
+                assert_eq!(error.message, "between completion and publication");
+                consumption.clone()
+            }
+            other => panic!("accepted cancellation must determine terminal result: {other:?}"),
+        };
+        let first = accounting
+            .finalization()
+            .expect("cancelled path freezes terminal accounting");
+        assert_eq!(first.consumption(), &consumption);
+        assert_eq!(
+            accounting.finalize_at(None, clock.terminal_now + Duration::from_secs(1)),
+            first
+        );
+        assert!(matches!(
+            accounting.consume_log_bytes(1),
+            Err(BudgetError::AccountingFinalized)
+        ));
+        assert_eq!(manager.budget_snapshot().active_registrations, 0);
+        assert_eq!(manager.cancellation_snapshot().active_registrations, 0);
     }
 }

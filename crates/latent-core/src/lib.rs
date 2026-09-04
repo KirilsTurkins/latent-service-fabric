@@ -9,8 +9,8 @@ pub mod ids;
 pub mod lifecycle;
 
 pub use budget::{
-    ActivationBudget, BudgetConsumption, BudgetDimension, BudgetError, BudgetReservation,
-    EffectiveActivationBudget, EffectiveDeadline, ResourceBudget,
+    ActivationBudget, BudgetConsumption, BudgetDimension, BudgetError, BudgetFinalization,
+    BudgetReservation, ClockSample, EffectiveActivationBudget, EffectiveDeadline, ResourceBudget,
 };
 pub use error::{DeclaredError, ErrorDetail, PlatformError, PlatformErrorCode};
 pub use identity::{InvocationPrincipal, PrincipalKind};

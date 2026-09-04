@@ -48,11 +48,15 @@ effective deadline = min(
 )
 ```
 
-The absolute result is retained for API/context reporting. At the same admission
-boundary, it is converted once to a `std::time::Instant`. Runtime expiry checks
-thereafter use the monotonic value. An absolute deadline that has already
-expired, or a duration that cannot be represented by the process monotonic
-clock, is rejected before a wrapped activation manager is invoked.
+The absolute result is retained for API/context reporting. Admission receives a
+single `ClockSample` containing the wall and monotonic anchors. The production
+sample captures the monotonic anchor before reading wall time, so scheduling
+delay during sampling can only shorten the installed deadline; it cannot extend
+a caller's absolute deadline. The result is converted once to a
+`std::time::Instant`, and runtime expiry checks thereafter use only monotonic
+time. An absolute deadline that has already expired, or a duration that cannot
+be represented by the process monotonic clock, is rejected before a wrapped
+activation manager is invoked.
 
 `BudgetedActivationManager` is the node integration seam. It performs admission
 before delegating to the wrapped manager, replaces the envelope budget/deadline
@@ -71,15 +75,27 @@ activation state. This gives the following invariants:
 - peak memory only moves upward and cannot exceed its ceiling;
 - reservations consume capacity immediately;
 - committing retains the reserved amount;
-- explicit refund or drop refunds exactly once;
+- explicit refund or drop before terminalization refunds exactly once;
+- terminalization atomically refunds every unresolved reservation before
+  freezing consumption;
+- an explicit commit or refund that loses to terminalization reports
+  `AccountingFinalized`, while a later drop cannot mutate the frozen result;
 - finalization freezes a single terminal snapshot;
 - repeated finalization returns the same snapshot; and
 - mutation after finalization fails deterministically.
 
 A backend terminal report is a total, not a delta. Reconciliation therefore
-takes the maximum of direct observations and the backend report for each
-Phase 1-enforced dimension. This prevents both double counting and a backend
-report from erasing already-observed host consumption.
+takes the maximum of direct observations and valid backend totals for CPU fuel,
+peak memory, and log bytes. Wall time is never trusted from a backend report;
+the host-owned monotonic clock is authoritative. This prevents both double
+counting and a backend report from erasing already-observed host consumption.
+
+Deadline exhaustion and accounting finalization are separate terminal
+concerns. Crossing the deadline selects a `DeadlineExceeded` outcome with the
+actual effective and admission deadlines in its structured detail, while
+finalization still freezes one repeatable terminal snapshot. The snapshot keeps
+actual elapsed monotonic wall time, which may exceed the granted limit and is
+therefore evidence of the overrun rather than a second accounting failure.
 
 The activation budget registry exposes the same `ActivationBudget` by
 `ActivationId` to Wasmtime and host-capability composition. This avoids ambient
@@ -112,8 +128,19 @@ They contain no tenant or cross-activation data.
 
 Cancellation is first-writer-wins. The first bounded reason is retained, later
 requests are idempotently accepted, and the token observes the original reason.
-Cancellation state is intentionally not durable and is removed when activation
-handling terminates.
+Cancellation acceptance and terminal publication share one lifecycle lock:
+
+```text
+Live -> CancellationAccepted
+or
+Live -> Terminal(state)
+```
+
+If cancellation wins, terminal publication must produce `Cancelled`. If
+terminal publication wins, a racing cancellation returns
+`AlreadyTerminal(state)` rather than `Accepted`. The live cancellation
+registration is intentionally not durable and is removed after terminal
+publication and accounting finalization.
 
 ## Phase boundary
 
@@ -136,8 +163,9 @@ Required CI also checks canonical formatting, the complete workspace at the
 current toolchain and MSRV, Clippy, generated bindings, repository contracts,
 SDK surfaces, and the retained Phase 0 runtime regression.
 
-The tests cover deadline boundaries, reusable relative ceilings, deterministic
-intersection properties, every Phase 1-enforced dimension, concurrent consume
-races, reservation commit/refund/drop behavior, peak memory, exactly-once
-finalization, cancellation races, reason propagation, registry cleanup, and
-pre-delegation rejection.
+The tests cover deadline boundaries, conservative clock sampling, reusable
+relative ceilings, deterministic intersection and effective-deadline
+properties, every Phase 1-enforced dimension, concurrent consume races,
+reservation/finalization races, peak memory, deadline-overrun finalization,
+exactly-once terminal snapshots, cancellation-versus-terminal-publication
+races, reason propagation, registry cleanup, and pre-delegation rejection.

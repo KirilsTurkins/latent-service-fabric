@@ -59,6 +59,19 @@ impl BudgetDimension {
         !matches!(self, Self::MemoryBytes | Self::WallTime)
     }
 
+    /// Every additive counter dimension.
+    pub const CUMULATIVE: [Self; 9] = [
+        Self::CpuFuel,
+        Self::ChildCalls,
+        Self::OutboundRequests,
+        Self::StateReadBytes,
+        Self::StateWriteBytes,
+        Self::BlobReadBytes,
+        Self::BlobWriteBytes,
+        Self::LogBytes,
+        Self::EffectCount,
+    ];
+
     /// Dimensions whose implementation belongs to a later phase.
     pub const LATER_PHASE: [Self; 7] = [
         Self::ChildCalls,
@@ -77,6 +90,11 @@ impl BudgetDimension {
         Self::WallTime,
         Self::LogBytes,
     ];
+
+    /// Dimensions whose terminal totals may be reported by an execution backend.
+    /// Wall time is deliberately excluded because the host-owned monotonic clock
+    /// is the authoritative source for terminal elapsed time.
+    pub const PHASE1_REPORTED: [Self; 3] = [Self::CpuFuel, Self::MemoryBytes, Self::LogBytes];
 }
 
 /// Maximum resources delegated to an activation and its descendants.
@@ -253,7 +271,10 @@ impl BudgetConsumption {
         }
     }
 
-    /// Validates a terminal report against the granted Phase 1 budget.
+    /// Validates backend-owned terminal totals against the granted Phase 1 budget.
+    ///
+    /// Wall time is intentionally excluded: terminal elapsed time is measured
+    /// from the host-owned monotonic clock by [`ActivationBudget::finalize_at`].
     pub fn validate_phase1_report(&self, granted: &ResourceBudget) -> Result<(), BudgetError> {
         for dimension in BudgetDimension::LATER_PHASE {
             let value = self.consumed(dimension);
@@ -261,7 +282,7 @@ impl BudgetConsumption {
                 return Err(BudgetError::UnsupportedConsumptionDimension { dimension, value });
             }
         }
-        for dimension in BudgetDimension::PHASE1_ENFORCED {
+        for dimension in BudgetDimension::PHASE1_REPORTED {
             let consumed = self.consumed(dimension);
             let limit = granted.limit_for(dimension);
             if consumed > limit {
@@ -291,6 +312,44 @@ impl BudgetConsumption {
                 self.effect_count = u32::try_from(value).unwrap_or(u32::MAX);
             }
         }
+    }
+}
+
+/// Coherent wall-clock and monotonic anchors captured for one admission.
+///
+/// System sampling always captures the monotonic anchor first. Any delay before
+/// reading wall time therefore shortens the installed deadline instead of
+/// extending a caller's absolute deadline.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ClockSample {
+    unix_millis: u64,
+    monotonic: Instant,
+}
+
+impl ClockSample {
+    #[must_use]
+    pub const fn new(unix_millis: u64, monotonic: Instant) -> Self {
+        Self {
+            unix_millis,
+            monotonic,
+        }
+    }
+
+    #[must_use]
+    pub fn system_now() -> Self {
+        let monotonic = Instant::now();
+        let unix_millis = now_unix_millis();
+        Self::new(unix_millis, monotonic)
+    }
+
+    #[must_use]
+    pub const fn unix_millis(self) -> u64 {
+        self.unix_millis
+    }
+
+    #[must_use]
+    pub const fn monotonic(self) -> Instant {
+        self.monotonic
     }
 }
 
@@ -352,10 +411,11 @@ impl EffectiveActivationBudget {
         deployment_ceiling: &ResourceBudget,
         node_ceiling: &ResourceBudget,
         caller_deadline_unix_millis: Option<u64>,
-        admitted_at_unix_millis: u64,
-        admitted_at_monotonic: Instant,
+        sample: ClockSample,
     ) -> Result<Self, BudgetError> {
         let budget = ResourceBudget::phase1_effective(request, deployment_ceiling, node_ceiling)?;
+        let admitted_at_unix_millis = sample.unix_millis();
+        let admitted_at_monotonic = sample.monotonic();
         let unix_millis = ResourceBudget::effective_deadline_unix_millis(
             admitted_at_unix_millis,
             caller_deadline_unix_millis,
@@ -403,8 +463,7 @@ impl EffectiveActivationBudget {
             deployment_ceiling,
             node_ceiling,
             caller_deadline_unix_millis,
-            now_unix_millis(),
-            Instant::now(),
+            ClockSample::system_now(),
         )
     }
 
@@ -464,12 +523,7 @@ pub enum BudgetError {
 
 impl BudgetError {
     fn exhausted(dimension: BudgetDimension, limit: u64, consumed: u64, requested: u64) -> Self {
-        if dimension == BudgetDimension::WallTime {
-            return Self::DeadlineExceeded {
-                deadline_unix_millis: 0,
-                admitted_at_unix_millis: 0,
-            };
-        }
+        debug_assert_ne!(dimension, BudgetDimension::WallTime);
         Self::Exhausted {
             dimension,
             limit,
@@ -630,6 +684,34 @@ impl fmt::Display for BudgetError {
 
 impl std::error::Error for BudgetError {}
 
+/// One repeatable terminal accounting transition.
+///
+/// Finalization always freezes `consumption`, even when an untrusted backend
+/// report contains a deterministic violation. Callers use `violation` to choose
+/// the terminal platform outcome without leaving the accounting state mutable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BudgetFinalization {
+    consumption: BudgetConsumption,
+    violation: Option<BudgetError>,
+}
+
+impl BudgetFinalization {
+    #[must_use]
+    pub fn consumption(&self) -> &BudgetConsumption {
+        &self.consumption
+    }
+
+    #[must_use]
+    pub fn violation(&self) -> Option<&BudgetError> {
+        self.violation.as_ref()
+    }
+
+    #[must_use]
+    pub fn into_consumption(self) -> BudgetConsumption {
+        self.consumption
+    }
+}
+
 /// Thread-safe activation-scoped accounting state.
 ///
 /// Clones share one state. All mutations and finalization are serialized so a
@@ -651,7 +733,8 @@ struct ActivationBudgetInner {
 #[derive(Debug, Default)]
 struct AccountingState {
     consumption: BudgetConsumption,
-    finalized: Option<BudgetConsumption>,
+    reserved: BudgetConsumption,
+    finalized: Option<BudgetFinalization>,
     outstanding_reservations: u64,
 }
 
@@ -720,7 +803,12 @@ impl ActivationBudget {
             .outstanding_reservations
             .checked_add(1)
             .ok_or(BudgetError::ArithmeticOverflow { dimension })?;
+        let reserved = state.reserved.consumed(dimension);
+        let reserved = reserved
+            .checked_add(amount)
+            .ok_or(BudgetError::ArithmeticOverflow { dimension })?;
         self.consume_locked(&mut state, dimension, amount)?;
+        state.reserved.set_consumed(dimension, reserved);
         state.outstanding_reservations = reservation_count;
         Ok(BudgetReservation {
             budget: self.clone(),
@@ -755,7 +843,11 @@ impl ActivationBudget {
     pub fn check_deadline_at(&self, now: Instant) -> Result<(), BudgetError> {
         if self.inner.deadline.is_expired_at(now) {
             return Err(BudgetError::DeadlineExceeded {
-                deadline_unix_millis: self.inner.deadline.unix_millis().unwrap_or(0),
+                deadline_unix_millis: self
+                    .inner
+                    .deadline
+                    .unix_millis()
+                    .expect("an expired monotonic deadline has a Unix representation"),
                 admitted_at_unix_millis: self.inner.deadline.admitted_at_unix_millis(),
             });
         }
@@ -767,7 +859,7 @@ impl ActivationBudget {
     pub fn snapshot_at(&self, now: Instant) -> BudgetConsumption {
         let state = self.lock_state();
         if let Some(finalized) = &state.finalized {
-            return finalized.clone();
+            return finalized.consumption().clone();
         }
         let mut snapshot = state.consumption.clone();
         snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
@@ -808,47 +900,72 @@ impl ActivationBudget {
     }
 
     /// Finalizes terminal consumption exactly once and returns the same frozen
-    /// value on every subsequent call.
+    /// transition on every subsequent call.
     ///
-    /// `reported` is a backend's total terminal report. Existing direct counter
-    /// observations remain authoritative lower bounds, so reconciliation uses
-    /// the maximum rather than double-counting them.
+    /// Unresolved reservations are atomically refunded before the terminal
+    /// snapshot is frozen. A reservation handle that loses this race observes
+    /// [`BudgetError::AccountingFinalized`] from an explicit commit or refund,
+    /// and dropping it cannot mutate the frozen result.
+    ///
+    /// `reported` is an execution backend's total terminal report. Host-owned
+    /// monotonic elapsed time is authoritative for wall time, while valid CPU,
+    /// peak-memory, and log totals are reconciled as lower bounds. An invalid
+    /// report is retained as `violation` without preventing finalization.
+    #[must_use]
     pub fn finalize_at(
         &self,
         reported: Option<&BudgetConsumption>,
         now: Instant,
-    ) -> Result<BudgetConsumption, BudgetError> {
+    ) -> BudgetFinalization {
         let mut state = self.lock_state();
         if let Some(finalized) = &state.finalized {
-            return Ok(finalized.clone());
+            return finalized.clone();
         }
 
-        let mut finalized = state.consumption.clone();
-        finalized.wall_time_micros = finalized.wall_time_micros.max(duration_micros(
-            now.saturating_duration_since(self.inner.started_at),
-        ));
-        if let Some(reported) = reported {
-            for dimension in BudgetDimension::LATER_PHASE {
-                let value = reported.consumed(dimension);
-                if value != 0 {
-                    return Err(BudgetError::UnsupportedConsumptionDimension { dimension, value });
+        let mut consumption = state.consumption.clone();
+        for dimension in BudgetDimension::CUMULATIVE {
+            let current = consumption.consumed(dimension);
+            let reserved = state.reserved.consumed(dimension);
+            debug_assert!(reserved <= current);
+            consumption.set_consumed(dimension, current.saturating_sub(reserved));
+        }
+        consumption.wall_time_micros =
+            duration_micros(now.saturating_duration_since(self.inner.started_at));
+
+        let violation =
+            reported.and_then(|report| report.validate_phase1_report(&self.inner.granted).err());
+        if let Some(report) = reported {
+            for dimension in BudgetDimension::PHASE1_REPORTED {
+                let reported_value = report.consumed(dimension);
+                if reported_value <= self.inner.granted.limit_for(dimension) {
+                    consumption.set_consumed(
+                        dimension,
+                        consumption.consumed(dimension).max(reported_value),
+                    );
                 }
             }
-            for dimension in BudgetDimension::PHASE1_ENFORCED {
-                let value = finalized
-                    .consumed(dimension)
-                    .max(reported.consumed(dimension));
-                finalized.set_consumed(dimension, value);
-            }
         }
-        finalized.validate_phase1_report(&self.inner.granted)?;
+
+        let finalized = BudgetFinalization {
+            consumption,
+            violation,
+        };
+        state.consumption = finalized.consumption().clone();
+        state.reserved = BudgetConsumption::default();
+        state.outstanding_reservations = 0;
         state.finalized = Some(finalized.clone());
-        Ok(finalized)
+        finalized
+    }
+
+    #[must_use]
+    pub fn finalization(&self) -> Option<BudgetFinalization> {
+        self.lock_state().finalized.clone()
     }
 
     #[must_use]
     pub fn finalized(&self) -> Option<BudgetConsumption> {
-        self.lock_state().finalized.clone()
+        self.finalization()
+            .map(BudgetFinalization::into_consumption)
     }
 
     #[must_use]
@@ -927,19 +1044,40 @@ impl BudgetReservation {
             return Ok(());
         }
         let mut state = self.budget.lock_state();
-        state.outstanding_reservations = state.outstanding_reservations.checked_sub(1).ok_or(
+        if state.finalized.is_some() {
+            self.active = false;
+            return Err(BudgetError::AccountingFinalized);
+        }
+
+        let reservation_count = state.outstanding_reservations.checked_sub(1).ok_or(
             BudgetError::ArithmeticOverflow {
                 dimension: self.dimension,
             },
         )?;
-        if refund && state.finalized.is_none() {
-            let current = state.consumption.consumed(self.dimension);
-            let remaining =
-                current
+        let reserved = state.reserved.consumed(self.dimension);
+        let reserved =
+            reserved
+                .checked_sub(self.amount)
+                .ok_or(BudgetError::ArithmeticOverflow {
+                    dimension: self.dimension,
+                })?;
+        let remaining = if refund {
+            Some(
+                state
+                    .consumption
+                    .consumed(self.dimension)
                     .checked_sub(self.amount)
                     .ok_or(BudgetError::ArithmeticOverflow {
                         dimension: self.dimension,
-                    })?;
+                    })?,
+            )
+        } else {
+            None
+        };
+
+        state.outstanding_reservations = reservation_count;
+        state.reserved.set_consumed(self.dimension, reserved);
+        if let Some(remaining) = remaining {
             state.consumption.set_consumed(self.dimension, remaining);
         }
         self.active = false;
@@ -983,6 +1121,7 @@ fn now_unix_millis() -> u64 {
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
+    use std::sync::Barrier;
     use std::thread;
 
     use super::*;
@@ -1003,10 +1142,16 @@ mod tests {
         }
     }
 
-    fn grant(budget: ResourceBudget) -> EffectiveActivationBudget {
+    fn grant(budget: &ResourceBudget) -> EffectiveActivationBudget {
         let now = Instant::now();
-        EffectiveActivationBudget::admit_at(&budget, &budget, &budget, None, 1_000, now)
-            .expect("test grant is valid")
+        EffectiveActivationBudget::admit_at(
+            budget,
+            budget,
+            budget,
+            None,
+            ClockSample::new(1_000, now),
+        )
+        .expect("test grant is valid")
     }
 
     #[test]
@@ -1039,8 +1184,7 @@ mod tests {
             &deployment,
             &node,
             Some(1_400),
-            1_000,
-            admitted,
+            ClockSample::new(1_000, admitted),
         )
         .expect("deadline is valid");
 
@@ -1059,8 +1203,7 @@ mod tests {
             &budget(None),
             &budget(None),
             None,
-            1_000,
-            Instant::now(),
+            ClockSample::new(1_000, Instant::now()),
         )
         .expect_err("zero wall time cannot survive admission");
         assert!(matches!(error, BudgetError::DeadlineExceeded { .. }));
@@ -1075,8 +1218,7 @@ mod tests {
             &persistent,
             &budget(None),
             Some(999),
-            1_000,
-            admitted,
+            ClockSample::new(1_000, admitted),
         )
         .expect_err("caller deadline is expired");
         assert_eq!(expired.platform_code(), PlatformErrorCode::DeadlineExceeded);
@@ -1086,8 +1228,7 @@ mod tests {
             &persistent,
             &budget(None),
             None,
-            9_000_000,
-            admitted,
+            ClockSample::new(9_000_000, admitted),
         )
         .expect("relative deployment ceiling remains valid");
         assert_eq!(later.deadline.unix_millis(), Some(9_000_250));
@@ -1116,7 +1257,7 @@ mod tests {
     fn concurrent_consumption_never_exceeds_the_grant() {
         let mut allowed = budget(None);
         allowed.cpu_fuel = 1_000;
-        let accounting = ActivationBudget::new(grant(allowed));
+        let accounting = ActivationBudget::new(grant(&allowed));
         let successes = Arc::new(AtomicU64::new(0));
         let mut workers = Vec::new();
         for _ in 0..16 {
@@ -1139,7 +1280,7 @@ mod tests {
 
     #[test]
     fn reservations_commit_refund_and_drop_exactly_once() {
-        let accounting = ActivationBudget::new(grant(budget(None)));
+        let accounting = ActivationBudget::new(grant(&budget(None)));
         accounting
             .reserve_log_bytes(10)
             .expect("first reservation")
@@ -1159,7 +1300,7 @@ mod tests {
 
     #[test]
     fn peak_memory_is_monotonic_and_bounded() {
-        let accounting = ActivationBudget::new(grant(budget(None)));
+        let accounting = ActivationBudget::new(grant(&budget(None)));
         accounting.observe_peak_memory(12).expect("within limit");
         accounting.observe_peak_memory(4).expect("lower sample");
         assert_eq!(accounting.snapshot_at(Instant::now()).peak_memory_bytes, 12);
@@ -1174,7 +1315,7 @@ mod tests {
 
     #[test]
     fn finalization_is_idempotent_and_freezes_all_counters() {
-        let accounting = ActivationBudget::new(grant(budget(None)));
+        let accounting = ActivationBudget::new(grant(&budget(None)));
         accounting.consume_cpu_fuel(3).expect("fuel consumed");
         let reported = BudgetConsumption {
             cpu_fuel: 5,
@@ -1183,13 +1324,12 @@ mod tests {
             ..BudgetConsumption::default()
         };
         let now = Instant::now();
-        let first = accounting
-            .finalize_at(Some(&reported), now)
-            .expect("first finalization succeeds");
-        let second = accounting
-            .finalize_at(None, now + Duration::from_secs(1))
-            .expect("later finalization is idempotent");
+        let first = accounting.finalize_at(Some(&reported), now);
+        let second = accounting.finalize_at(None, now + Duration::from_secs(1));
         assert_eq!(first, second);
+        assert!(first.violation().is_none());
+        assert_eq!(accounting.finalization(), Some(first.clone()));
+        assert_eq!(accounting.finalized(), Some(first.consumption().clone()));
         assert!(matches!(
             accounting.consume_cpu_fuel(1),
             Err(BudgetError::AccountingFinalized)
@@ -1197,18 +1337,141 @@ mod tests {
     }
 
     #[test]
-    fn forged_later_phase_terminal_consumption_is_rejected() {
-        let accounting = ActivationBudget::new(grant(budget(None)));
+    fn deadline_exhaustion_freezes_truthful_repeatable_accounting() {
+        let mut limited = budget(Some(10));
+        limited.cpu_fuel = 100;
+        let admitted = Instant::now();
+        let grant = EffectiveActivationBudget::admit_at(
+            &limited,
+            &limited,
+            &limited,
+            None,
+            ClockSample::new(1_000, admitted),
+        )
+        .expect("deadline grant is valid");
+        let accounting = ActivationBudget::new(grant);
+        let terminal = admitted + Duration::from_millis(12);
+
+        let error = accounting
+            .check_deadline_at(terminal)
+            .expect_err("deadline is exhausted");
+        assert_eq!(
+            error,
+            BudgetError::DeadlineExceeded {
+                deadline_unix_millis: 1_010,
+                admitted_at_unix_millis: 1_000,
+            }
+        );
+        let platform = error.to_platform_error();
+        assert_eq!(
+            platform.details[0].fields.get("deadline_unix_millis"),
+            Some(&"1010".to_owned())
+        );
+        assert_eq!(
+            platform.details[0].fields.get("admitted_at_unix_millis"),
+            Some(&"1000".to_owned())
+        );
+
+        let first = accounting.finalize_at(None, terminal);
+        let later = accounting.finalize_at(None, terminal + Duration::from_secs(1));
+        assert_eq!(first, later);
+        assert_eq!(first.consumption().wall_time_micros, 12_000);
+        assert_eq!(accounting.finalized(), Some(first.consumption().clone()));
+        assert!(matches!(
+            accounting.consume_cpu_fuel(1),
+            Err(BudgetError::AccountingFinalized)
+        ));
+    }
+
+    #[test]
+    fn terminalization_refunds_unresolved_reservations_atomically() {
+        let accounting = ActivationBudget::new(grant(&budget(None)));
+        let reservation = accounting
+            .reserve_log_bytes(20)
+            .expect("reservation succeeds");
+        let first = accounting.finalize_at(None, Instant::now());
+        assert_eq!(first.consumption().log_bytes, 0);
+        assert_eq!(accounting.outstanding_reservations(), 0);
+        assert!(matches!(
+            reservation.refund(),
+            Err(BudgetError::AccountingFinalized)
+        ));
+        assert_eq!(accounting.finalization(), Some(first));
+
+        let accounting = ActivationBudget::new(grant(&budget(None)));
+        let reservation = accounting
+            .reserve_log_bytes(30)
+            .expect("reservation succeeds");
+        let first = accounting.finalize_at(None, Instant::now());
+        drop(reservation);
+        assert_eq!(accounting.finalization(), Some(first));
+        assert_eq!(accounting.outstanding_reservations(), 0);
+        assert_eq!(accounting.finalized().expect("frozen").log_bytes, 0);
+    }
+
+    #[test]
+    fn reservation_and_finalization_race_has_one_atomic_winner() {
+        for _ in 0..128 {
+            let accounting = ActivationBudget::new(grant(&budget(None)));
+            let barrier = Arc::new(Barrier::new(3));
+
+            let reserve_accounting = accounting.clone();
+            let reserve_barrier = Arc::clone(&barrier);
+            let reserve = thread::spawn(move || {
+                reserve_barrier.wait();
+                reserve_accounting.reserve_log_bytes(10)
+            });
+
+            let finalize_accounting = accounting.clone();
+            let finalize_barrier = Arc::clone(&barrier);
+            let finalize = thread::spawn(move || {
+                finalize_barrier.wait();
+                finalize_accounting.finalize_at(None, Instant::now())
+            });
+
+            barrier.wait();
+            let reservation = reserve.join().expect("reservation racer completes");
+            let finalized = finalize.join().expect("finalizer completes");
+            assert_eq!(finalized.consumption().log_bytes, 0);
+            assert_eq!(accounting.outstanding_reservations(), 0);
+            match reservation {
+                Ok(reservation) => assert!(matches!(
+                    reservation.refund(),
+                    Err(BudgetError::AccountingFinalized)
+                )),
+                Err(BudgetError::AccountingFinalized) => {}
+                Err(error) => panic!("unexpected reservation race error: {error}"),
+            }
+            assert_eq!(accounting.finalization(), Some(finalized));
+        }
+    }
+
+    #[test]
+    fn forged_later_phase_terminal_consumption_is_rejected_and_frozen() {
+        let accounting = ActivationBudget::new(grant(&budget(None)));
         let reported = BudgetConsumption {
+            cpu_fuel: 4,
             effect_count: 1,
             ..BudgetConsumption::default()
         };
+        let first = accounting.finalize_at(Some(&reported), Instant::now());
         assert!(matches!(
-            accounting.finalize_at(Some(&reported), Instant::now()),
-            Err(BudgetError::UnsupportedConsumptionDimension {
+            first.violation(),
+            Some(BudgetError::UnsupportedConsumptionDimension {
                 dimension: BudgetDimension::EffectCount,
                 value: 1,
             })
+        ));
+        assert_eq!(first.consumption().cpu_fuel, 4);
+        assert_eq!(first.consumption().effect_count, 0);
+        assert_eq!(accounting.finalization(), Some(first.clone()));
+        assert_eq!(
+            accounting.finalize_at(None, Instant::now() + Duration::from_secs(1)),
+            first
+        );
+        assert!(matches!(
+            accounting.consume_log_bytes(1),
+            Err(BudgetError::AccountingFinalized)
         ));
     }
 
@@ -1247,14 +1510,17 @@ mod tests {
     }
 
     #[test]
-    fn intersection_property_never_exceeds_any_input() {
+    fn intersection_and_deadline_property_never_exceed_any_input() {
         let mut seed = 0x9e37_79b9_7f4a_7c15_u64;
+        let admitted_unix_millis = 1_000_000_u64;
+        let admitted_monotonic = Instant::now();
         for _ in 0..10_000 {
             seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+            let request_wall = seed % 10_000 + 1;
             let request = ResourceBudget {
                 cpu_fuel: seed,
                 memory_bytes: seed.rotate_left(7),
-                wall_time_limit_millis: Some(seed.rotate_left(13)),
+                wall_time_limit_millis: Some(request_wall),
                 child_calls: 0,
                 outbound_requests: 0,
                 state_read_bytes: 0,
@@ -1265,10 +1531,11 @@ mod tests {
                 effect_count: 0,
             };
             seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+            let deployment_wall = seed % 10_000 + 1;
             let deployment = ResourceBudget {
                 cpu_fuel: seed,
                 memory_bytes: seed.rotate_left(7),
-                wall_time_limit_millis: Some(seed.rotate_left(13)),
+                wall_time_limit_millis: Some(deployment_wall),
                 child_calls: 0,
                 outbound_requests: 0,
                 state_read_bytes: 0,
@@ -1278,14 +1545,60 @@ mod tests {
                 log_bytes: seed.rotate_left(29),
                 effect_count: 0,
             };
-            let effective = ResourceBudget::phase1_effective(&request, &deployment, &deployment)
+            seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+            let node_wall = seed % 10_000 + 1;
+            let node = ResourceBudget {
+                cpu_fuel: seed,
+                memory_bytes: seed.rotate_left(7),
+                wall_time_limit_millis: Some(node_wall),
+                child_calls: 0,
+                outbound_requests: 0,
+                state_read_bytes: 0,
+                state_write_bytes: 0,
+                blob_read_bytes: 0,
+                blob_write_bytes: 0,
+                log_bytes: seed.rotate_left(29),
+                effect_count: 0,
+            };
+            let caller_delta = seed.rotate_left(41) % 10_000 + 1;
+            let caller_deadline = admitted_unix_millis + caller_delta;
+
+            let effective = ResourceBudget::phase1_effective(&request, &deployment, &node)
                 .expect("generated budget is valid");
             assert!(effective.cpu_fuel <= request.cpu_fuel);
             assert!(effective.cpu_fuel <= deployment.cpu_fuel);
+            assert!(effective.cpu_fuel <= node.cpu_fuel);
             assert!(effective.memory_bytes <= request.memory_bytes);
             assert!(effective.memory_bytes <= deployment.memory_bytes);
+            assert!(effective.memory_bytes <= node.memory_bytes);
             assert!(effective.log_bytes <= request.log_bytes);
             assert!(effective.log_bytes <= deployment.log_bytes);
+            assert!(effective.log_bytes <= node.log_bytes);
+            let effective_wall = effective
+                .wall_time_limit_millis
+                .expect("all generated ceilings are bounded");
+            assert!(effective_wall <= request_wall);
+            assert!(effective_wall <= deployment_wall);
+            assert!(effective_wall <= node_wall);
+
+            let grant = EffectiveActivationBudget::admit_at(
+                &request,
+                &deployment,
+                &node,
+                Some(caller_deadline),
+                ClockSample::new(admitted_unix_millis, admitted_monotonic),
+            )
+            .expect("generated deadline is representable");
+            let deadline_unix = grant.deadline.unix_millis().expect("bounded deadline");
+            assert!(deadline_unix <= caller_deadline);
+            assert!(deadline_unix <= admitted_unix_millis + request_wall);
+            assert!(deadline_unix <= admitted_unix_millis + deployment_wall);
+            assert!(deadline_unix <= admitted_unix_millis + node_wall);
+            let deadline_monotonic = grant.deadline.monotonic().expect("bounded deadline");
+            assert!(deadline_monotonic <= admitted_monotonic + Duration::from_millis(caller_delta));
+            assert!(
+                deadline_monotonic <= admitted_monotonic + Duration::from_millis(effective_wall)
+            );
         }
     }
 }

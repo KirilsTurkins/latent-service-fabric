@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use latent_core::{
-    ActivationId, CancelDisposition, ErrorDetail, Metadata, PlatformError, PlatformErrorCode,
+    ActivationId, ActivationTerminalState, CancelDisposition, ErrorDetail, Metadata, PlatformError,
+    PlatformErrorCode,
 };
 use latent_executor::{ExecutionCancellation, ExecutionCancellationProbe};
 use tokio::sync::watch;
@@ -20,9 +20,11 @@ pub struct CancellationRegistrySnapshot {
 
 /// Node-local, activation-keyed cancellation state.
 ///
-/// Registrations are removed by their non-cloneable guard. A cancellation is
-/// idempotent and first-writer-wins: repeated requests retain the original
-/// bounded reason while still returning [`CancelDisposition::Accepted`].
+/// Registrations are removed by their non-cloneable guard. Cancellation and
+/// terminal publication share one linearized state transition: a cancellation
+/// that wins first is idempotently accepted and determines a cancelled terminal
+/// result, while a terminal publication that wins first is reported as
+/// [`CancelDisposition::AlreadyTerminal`].
 #[derive(Clone)]
 pub struct ActivationCancellationRegistry {
     inner: Arc<RegistryInner>,
@@ -108,8 +110,14 @@ impl ActivationCancellationRegistry {
         let Some(state) = state else {
             return CancelDisposition::NotFound;
         };
-        state.cancel(self.bound_reason(reason));
-        CancelDisposition::Accepted
+        match state.request_cancellation(self.bound_reason(reason)) {
+            CancellationRequest::Installed | CancellationRequest::AlreadyAccepted => {
+                CancelDisposition::Accepted
+            }
+            CancellationRequest::AlreadyTerminal(state) => {
+                CancelDisposition::AlreadyTerminal(state)
+            }
+        }
     }
 
     #[must_use]
@@ -182,6 +190,16 @@ impl CancellationRegistration {
             maximum_reason_bytes: self.registry.inner.maximum_reason_bytes,
         }
     }
+
+    /// Atomically publishes the terminal state against cancellation requests.
+    /// A previously accepted cancellation changes the published state to
+    /// `Cancelled`; a later cancellation observes `AlreadyTerminal`.
+    pub(crate) fn publish_terminal(
+        &self,
+        proposed: ActivationTerminalState,
+    ) -> TerminalPublication {
+        self.state.publish_terminal(proposed)
+    }
 }
 
 impl fmt::Debug for CancellationRegistration {
@@ -190,6 +208,7 @@ impl fmt::Debug for CancellationRegistration {
             .debug_struct("CancellationRegistration")
             .field("activation_id", &self.activation_id)
             .field("cancelled", &self.state.is_cancelled())
+            .field("terminal_state", &self.state.terminal_state())
             .finish_non_exhaustive()
     }
 }
@@ -215,14 +234,19 @@ impl CancellationHandle {
     }
 
     /// Returns `true` only for the request that installed the retained reason.
+    /// A terminal activation and an already-accepted cancellation both return
+    /// `false` without changing the retained state.
     pub fn cancel(&self, reason: &str) -> bool {
         let reason = if reason.trim().is_empty() {
             DEFAULT_REASON
         } else {
             reason
         };
-        self.state
-            .cancel(bounded_text(reason, self.maximum_reason_bytes))
+        matches!(
+            self.state
+                .request_cancellation(bounded_text(reason, self.maximum_reason_bytes,)),
+            CancellationRequest::Installed
+        )
     }
 }
 
@@ -232,6 +256,7 @@ impl fmt::Debug for CancellationHandle {
             .debug_struct("CancellationHandle")
             .field("activation_id", &self.state.activation_id)
             .field("cancelled", &self.state.is_cancelled())
+            .field("terminal_state", &self.state.terminal_state())
             .finish_non_exhaustive()
     }
 }
@@ -270,6 +295,7 @@ impl fmt::Debug for CancellationToken {
             .field("activation_id", &self.state.activation_id)
             .field("cancelled", &self.state.is_cancelled())
             .field("reason", &self.state.reason())
+            .field("terminal_state", &self.state.terminal_state())
             .finish_non_exhaustive()
     }
 }
@@ -302,10 +328,34 @@ impl ExecutionCancellation for CancellationToken {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum CancellationLifecycle {
+    Live,
+    CancellationAccepted {
+        reason: String,
+    },
+    Terminal {
+        state: ActivationTerminalState,
+        cancellation_reason: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CancellationRequest {
+    Installed,
+    AlreadyAccepted,
+    AlreadyTerminal(ActivationTerminalState),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct TerminalPublication {
+    pub state: ActivationTerminalState,
+    pub cancellation_reason: Option<String>,
+}
+
 struct CancellationState {
     activation_id: ActivationId,
-    cancelled: AtomicBool,
-    reason: Mutex<Option<String>>,
+    lifecycle: Mutex<CancellationLifecycle>,
     signal: watch::Sender<bool>,
 }
 
@@ -314,35 +364,107 @@ impl CancellationState {
         let (signal, _) = watch::channel(false);
         Self {
             activation_id,
-            cancelled: AtomicBool::new(false),
-            reason: Mutex::new(None),
+            lifecycle: Mutex::new(CancellationLifecycle::Live),
             signal,
         }
     }
 
-    fn cancel(&self, reason: String) -> bool {
-        let mut current_reason = self
-            .reason
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if self.cancelled.load(Ordering::Acquire) {
-            return false;
+    fn request_cancellation(&self, reason: String) -> CancellationRequest {
+        let transition = {
+            let mut lifecycle = self.lock_lifecycle();
+            match &*lifecycle {
+                CancellationLifecycle::Live => {
+                    *lifecycle = CancellationLifecycle::CancellationAccepted { reason };
+                    CancellationRequest::Installed
+                }
+                CancellationLifecycle::CancellationAccepted { .. } => {
+                    CancellationRequest::AlreadyAccepted
+                }
+                CancellationLifecycle::Terminal { state, .. } => {
+                    CancellationRequest::AlreadyTerminal(*state)
+                }
+            }
+        };
+        if transition == CancellationRequest::Installed {
+            self.signal.send_replace(true);
         }
-        *current_reason = Some(reason);
-        self.cancelled.store(true, Ordering::Release);
-        self.signal.send_replace(true);
-        true
+        transition
+    }
+
+    fn publish_terminal(&self, proposed: ActivationTerminalState) -> TerminalPublication {
+        let (publication, notify_cancelled) = {
+            let mut lifecycle = self.lock_lifecycle();
+            match &*lifecycle {
+                CancellationLifecycle::Live => {
+                    let publication = TerminalPublication {
+                        state: proposed,
+                        cancellation_reason: None,
+                    };
+                    *lifecycle = CancellationLifecycle::Terminal {
+                        state: publication.state,
+                        cancellation_reason: None,
+                    };
+                    (publication, proposed == ActivationTerminalState::Cancelled)
+                }
+                CancellationLifecycle::CancellationAccepted { reason } => {
+                    let reason = reason.clone();
+                    let publication = TerminalPublication {
+                        state: ActivationTerminalState::Cancelled,
+                        cancellation_reason: Some(reason.clone()),
+                    };
+                    *lifecycle = CancellationLifecycle::Terminal {
+                        state: ActivationTerminalState::Cancelled,
+                        cancellation_reason: Some(reason),
+                    };
+                    (publication, false)
+                }
+                CancellationLifecycle::Terminal {
+                    state,
+                    cancellation_reason,
+                } => (
+                    TerminalPublication {
+                        state: *state,
+                        cancellation_reason: cancellation_reason.clone(),
+                    },
+                    false,
+                ),
+            }
+        };
+        if notify_cancelled {
+            self.signal.send_replace(true);
+        }
+        publication
     }
 
     fn is_cancelled(&self) -> bool {
-        self.cancelled.load(Ordering::Acquire)
+        matches!(
+            &*self.lock_lifecycle(),
+            CancellationLifecycle::CancellationAccepted { .. }
+                | CancellationLifecycle::Terminal {
+                    state: ActivationTerminalState::Cancelled,
+                    ..
+                }
+        )
     }
 
     fn reason(&self) -> Option<String> {
-        self.reason
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .clone()
+        match &*self.lock_lifecycle() {
+            CancellationLifecycle::CancellationAccepted { reason } => Some(reason.clone()),
+            CancellationLifecycle::Terminal {
+                cancellation_reason,
+                ..
+            } => cancellation_reason.clone(),
+            CancellationLifecycle::Live => None,
+        }
+    }
+
+    fn terminal_state(&self) -> Option<ActivationTerminalState> {
+        match &*self.lock_lifecycle() {
+            CancellationLifecycle::Terminal { state, .. } => Some(*state),
+            CancellationLifecycle::Live | CancellationLifecycle::CancellationAccepted { .. } => {
+                None
+            }
+        }
     }
 
     async fn cancelled(&self) {
@@ -355,6 +477,12 @@ impl CancellationState {
                 return;
             }
         }
+    }
+
+    fn lock_lifecycle(&self) -> MutexGuard<'_, CancellationLifecycle> {
+        self.lifecycle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 }
 
@@ -389,6 +517,7 @@ fn registry_error(
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Barrier;
     use std::thread;
     use std::time::Duration;
 
@@ -434,6 +563,69 @@ mod tests {
         }
         assert_eq!(winners.load(Ordering::Relaxed), 1);
         assert!(registration.token().reason().is_some());
+    }
+
+    #[test]
+    fn terminal_publication_returns_already_terminal_until_removal() {
+        let registry = ActivationCancellationRegistry::default();
+        let id = ActivationId("activation-terminal".to_owned());
+        let registration = registry.register(id.clone()).expect("registered");
+        let publication = registration.publish_terminal(ActivationTerminalState::Completed);
+        assert_eq!(publication.state, ActivationTerminalState::Completed);
+        assert_eq!(publication.cancellation_reason, None);
+        assert_eq!(
+            registry.cancel(&id, "too late"),
+            CancelDisposition::AlreadyTerminal(ActivationTerminalState::Completed)
+        );
+        drop(registration);
+        assert_eq!(registry.cancel(&id, "removed"), CancelDisposition::NotFound);
+    }
+
+    #[test]
+    fn cancellation_and_terminal_publication_have_one_linearization_winner() {
+        for index in 0..256 {
+            let registry = ActivationCancellationRegistry::default();
+            let id = ActivationId(format!("activation-terminal-race-{index}"));
+            let registration = Arc::new(registry.register(id.clone()).expect("registered"));
+            let barrier = Arc::new(Barrier::new(3));
+
+            let cancel_registry = registry.clone();
+            let cancel_id = id.clone();
+            let cancel_barrier = Arc::clone(&barrier);
+            let cancel = thread::spawn(move || {
+                cancel_barrier.wait();
+                cancel_registry.cancel(&cancel_id, "race cancellation")
+            });
+
+            let publish_registration = Arc::clone(&registration);
+            let publish_barrier = Arc::clone(&barrier);
+            let publish = thread::spawn(move || {
+                publish_barrier.wait();
+                publish_registration.publish_terminal(ActivationTerminalState::Completed)
+            });
+
+            barrier.wait();
+            let disposition = cancel.join().expect("cancellation racer completes");
+            let publication = publish.join().expect("publication racer completes");
+            match disposition {
+                CancelDisposition::Accepted => {
+                    assert_eq!(publication.state, ActivationTerminalState::Cancelled);
+                    assert_eq!(
+                        publication.cancellation_reason.as_deref(),
+                        Some("race cancellation")
+                    );
+                }
+                CancelDisposition::AlreadyTerminal(ActivationTerminalState::Completed) => {
+                    assert_eq!(publication.state, ActivationTerminalState::Completed);
+                    assert_eq!(publication.cancellation_reason, None);
+                }
+                other => panic!("unexpected cancellation race disposition: {other:?}"),
+            }
+            assert_eq!(
+                registry.cancel(&id, "after publication"),
+                CancelDisposition::AlreadyTerminal(publication.state)
+            );
+        }
     }
 
     #[tokio::test]
