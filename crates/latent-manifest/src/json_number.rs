@@ -383,10 +383,7 @@ impl DecimalExponent {
 
     fn add(&self, other: &Self) -> Self {
         if self.negative == other.negative {
-            return Self::normalized(
-                self.negative,
-                add_magnitudes(&self.digits, &other.digits),
-            );
+            return Self::normalized(self.negative, add_magnitudes(&self.digits, &other.digits));
         }
 
         match compare_magnitudes(&self.digits, &other.digits) {
@@ -570,7 +567,10 @@ mod tests {
         let negative_boundary = format!("1e-{I128_MAX_PLUS_ONE}");
         let equivalent_negative = format!("10e-{I128_MAX_PLUS_TWO}");
         let distinct_negative = format!("10e-{I128_MAX_PLUS_ONE}");
-        assert_eq!(canonical(&negative_boundary), canonical(&equivalent_negative));
+        assert_eq!(
+            canonical(&negative_boundary),
+            canonical(&equivalent_negative)
+        );
         assert_ne!(canonical(&negative_boundary), canonical(&distinct_negative));
     }
 
@@ -612,10 +612,8 @@ mod tests {
     }
 
     fn canonical(text: &str) -> String {
-        String::from_utf8(
-            representable_integer_lexeme(text.as_bytes()).expect("valid JSON number"),
-        )
-        .expect("canonical number is UTF-8")
+        String::from_utf8(representable_integer_lexeme(text.as_bytes()).expect("valid JSON number"))
+            .expect("canonical number is UTF-8")
     }
 
     fn number(text: &str) -> Number {
