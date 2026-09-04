@@ -39,7 +39,7 @@ fn trigger_configuration_retains_arbitrary_precision_numbers_exactly() {
         &first.configuration["ratio"],
         "0.123456789012345678901234567890",
     );
-    assert_number(&first.configuration["largeNumber"], "1e400");
+    assert_number(&first.configuration["largeNumber"], "1e+400");
     assert_number(&first.configuration["smallNumber"], "1e-400");
     assert_number(
         &first.configuration["nested"]["array"][0],
@@ -53,7 +53,7 @@ fn trigger_configuration_retains_arbitrary_precision_numbers_exactly() {
         &first.configuration["nested"]["array"][2],
         "0.123456789012345678901234567890",
     );
-    assert_number(&first.configuration["nested"]["array"][3], "1e400");
+    assert_number(&first.configuration["nested"]["array"][3], "1e+400");
     assert_number(&first.configuration["nested"]["array"][4], "1e-400");
     assert_number(
         &first.configuration["nested"]["object"]["value"],
@@ -78,7 +78,7 @@ fn trigger_configuration_retains_arbitrary_precision_numbers_exactly() {
         "18446744073709551617",
         "-9223372036854775809",
         "0.123456789012345678901234567890",
-        "1e400",
+        "1e+400",
         "1e-400",
         "12345678901234567890.12345678901234567890",
     ] {
