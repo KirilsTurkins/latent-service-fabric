@@ -1,8 +1,10 @@
-use std::collections::BTreeSet;
+use std::cmp::Ordering;
+use std::collections::{BTreeSet, HashSet};
 use std::sync::OnceLock;
 
 use serde_json::{Number, Value};
 
+use crate::json_number::{canonical_number_key, compare_numbers, is_mathematical_integer};
 use crate::{ManifestKind, ManifestViolation};
 
 const CAPSULE_SCHEMA_TEXT: &str = include_str!("../../../schemas/capsule-manifest.schema.json");
@@ -72,7 +74,7 @@ fn assert_supported_schema(schema: &Value, path: &str) {
             "$schema" | "$id" | "$ref" | "title" | "description" | "$comment"
             | "type" | "const" | "enum" | "required" | "default" | "uniqueItems" | "minLength"
             | "maxLength" | "pattern" | "minItems" | "maxItems" | "minProperties"
-            | "minimum" | "maximum" => {}
+            | "maxProperties" | "minimum" | "maximum" => {}
             "$defs" | "properties" => {
                 let children = value.as_object().unwrap_or_else(|| {
                     panic!("embedded schema keyword `{path}.{keyword}` must be an object")
@@ -131,7 +133,7 @@ fn validate_node(
     }
 
     if let Some(expected) = schema.get("const") {
-        if instance != expected {
+        if !values_equal(instance, expected) {
             let code = if path == "$.apiVersion" {
                 "unsupported-api-version"
             } else if path == "$.kind" {
@@ -150,7 +152,10 @@ fn validate_node(
     }
 
     if let Some(allowed) = schema.get("enum").and_then(Value::as_array) {
-        if !allowed.iter().any(|candidate| candidate == instance) {
+        if !allowed
+            .iter()
+            .any(|candidate| values_equal(candidate, instance))
+        {
             let code = if path == "$.kind" {
                 "unexpected-kind"
             } else {
@@ -168,10 +173,10 @@ fn validate_node(
 
     match instance {
         Value::Object(object) => {
-            validate_object(schema, object, path, root, violations, max_violations)
+            validate_object(schema, object, path, root, violations, max_violations);
         }
         Value::Array(items) => {
-            validate_array(schema, items, path, root, violations, max_violations)
+            validate_array(schema, items, path, root, violations, max_violations);
         }
         Value::String(value) => {
             validate_string(schema, value, path, violations, max_violations);
@@ -191,6 +196,31 @@ fn validate_object(
     violations: &mut Vec<ManifestViolation>,
     max_violations: usize,
 ) {
+    if let Some(maximum) = schema.get("maxProperties").and_then(Value::as_u64) {
+        if u64::try_from(object.len()).unwrap_or(u64::MAX) > maximum {
+            push_violation(
+                violations,
+                max_violations,
+                path,
+                "too-many-properties",
+                format!("object may contain at most {maximum} properties"),
+            );
+            return;
+        }
+    }
+
+    if let Some(minimum) = schema.get("minProperties").and_then(Value::as_u64) {
+        if u64::try_from(object.len()).unwrap_or(u64::MAX) < minimum {
+            push_violation(
+                violations,
+                max_violations,
+                path,
+                "too-few-properties",
+                format!("object must contain at least {minimum} properties"),
+            );
+        }
+    }
+
     if let Some(required) = schema.get("required").and_then(Value::as_array) {
         for field in required.iter().filter_map(Value::as_str) {
             if !object.contains_key(field) {
@@ -201,6 +231,9 @@ fn validate_object(
                     "missing-field",
                     format!("required field `{field}` is missing"),
                 );
+            }
+            if violations.len() >= max_violations {
+                return;
             }
         }
     }
@@ -217,6 +250,9 @@ fn validate_object(
                     violations,
                     max_violations,
                 );
+            }
+            if violations.len() >= max_violations {
+                return;
             }
         }
     }
@@ -248,17 +284,8 @@ fn validate_object(
             Some(Value::Bool(true)) | None => {}
             Some(_) => panic!("embedded schema has an invalid additionalProperties value"),
         }
-    }
-
-    if let Some(minimum) = schema.get("minProperties").and_then(Value::as_u64) {
-        if u64::try_from(object.len()).unwrap_or(u64::MAX) < minimum {
-            push_violation(
-                violations,
-                max_violations,
-                path,
-                "too-few-properties",
-                format!("object must contain at least {minimum} properties"),
-            );
+        if violations.len() >= max_violations {
+            return;
         }
     }
 }
@@ -271,37 +298,6 @@ fn validate_array(
     violations: &mut Vec<ManifestViolation>,
     max_violations: usize,
 ) {
-    if let Some(item_schema) = schema.get("items") {
-        for (index, item) in items.iter().enumerate() {
-            validate_node(
-                item_schema,
-                item,
-                &format!("{path}[{index}]"),
-                root,
-                violations,
-                max_violations,
-            );
-        }
-    }
-
-    if schema
-        .get("uniqueItems")
-        .and_then(Value::as_bool)
-        .unwrap_or(false)
-    {
-        for (index, item) in items.iter().enumerate() {
-            if items[..index].iter().any(|earlier| earlier == item) {
-                push_violation(
-                    violations,
-                    max_violations,
-                    &format!("{path}[{index}]"),
-                    "duplicate-item",
-                    "array items must be unique",
-                );
-            }
-        }
-    }
-
     if let Some(minimum) = schema.get("minItems").and_then(Value::as_u64) {
         if u64::try_from(items.len()).unwrap_or(u64::MAX) < minimum {
             push_violation(
@@ -323,6 +319,45 @@ fn validate_array(
                 "too-many-items",
                 format!("array may contain at most {maximum} items"),
             );
+            return;
+        }
+    }
+
+    if let Some(item_schema) = schema.get("items") {
+        for (index, item) in items.iter().enumerate() {
+            validate_node(
+                item_schema,
+                item,
+                &format!("{path}[{index}]"),
+                root,
+                violations,
+                max_violations,
+            );
+            if violations.len() >= max_violations {
+                return;
+            }
+        }
+    }
+
+    if schema
+        .get("uniqueItems")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
+        let mut seen = HashSet::with_capacity(items.len());
+        for (index, item) in items.iter().enumerate() {
+            if !seen.insert(canonical_value_key(item)) {
+                push_violation(
+                    violations,
+                    max_violations,
+                    &format!("{path}[{index}]"),
+                    "duplicate-item",
+                    "array items must be unique",
+                );
+            }
+            if violations.len() >= max_violations {
+                return;
+            }
         }
     }
 }
@@ -386,15 +421,8 @@ fn validate_number(
     violations: &mut Vec<ManifestViolation>,
     max_violations: usize,
 ) {
-    let Some(value) = value.as_f64() else {
-        return;
-    };
-    if let Some(minimum) = schema
-        .get("minimum")
-        .and_then(Value::as_number)
-        .and_then(Number::as_f64)
-    {
-        if value < minimum {
+    if let Some(minimum) = schema.get("minimum").and_then(Value::as_number) {
+        if compare_numbers(value, minimum) == Ordering::Less {
             push_violation(
                 violations,
                 max_violations,
@@ -404,12 +432,8 @@ fn validate_number(
             );
         }
     }
-    if let Some(maximum) = schema
-        .get("maximum")
-        .and_then(Value::as_number)
-        .and_then(Number::as_f64)
-    {
-        if value > maximum {
+    if let Some(maximum) = schema.get("maximum").and_then(Value::as_number) {
+        if compare_numbers(value, maximum) == Ordering::Greater {
             push_violation(
                 violations,
                 max_violations,
@@ -439,11 +463,83 @@ fn matches_single_type(expected: &str, instance: &Value) -> bool {
         "string" => instance.is_string(),
         "integer" => instance
             .as_number()
-            .is_some_and(|number| number.is_i64() || number.is_u64()),
+            .is_some_and(is_mathematical_integer),
         "number" => instance.is_number(),
         "boolean" => instance.is_boolean(),
         "null" => instance.is_null(),
         _ => panic!("embedded schema uses unsupported type `{expected}`"),
+    }
+}
+
+fn values_equal(left: &Value, right: &Value) -> bool {
+    match (left, right) {
+        (Value::Number(left), Value::Number(right)) => {
+            compare_numbers(left, right) == Ordering::Equal
+        }
+        (Value::Array(left), Value::Array(right)) => {
+            left.len() == right.len()
+                && left
+                    .iter()
+                    .zip(right)
+                    .all(|(left, right)| values_equal(left, right))
+        }
+        (Value::Object(left), Value::Object(right)) => {
+            left.len() == right.len()
+                && left.iter().all(|(key, value)| {
+                    right
+                        .get(key)
+                        .is_some_and(|right| values_equal(value, right))
+                })
+        }
+        _ => left == right,
+    }
+}
+
+fn canonical_value_key(value: &Value) -> String {
+    let mut output = String::new();
+    append_canonical_value_key(value, &mut output);
+    output
+}
+
+fn append_canonical_value_key(value: &Value, output: &mut String) {
+    match value {
+        Value::Null => output.push('N'),
+        Value::Bool(false) => output.push_str("B0"),
+        Value::Bool(true) => output.push_str("B1"),
+        Value::Number(number) => {
+            output.push('D');
+            output.push_str(&canonical_number_key(number));
+            output.push(';');
+        }
+        Value::String(value) => {
+            output.push('S');
+            output.push_str(&value.len().to_string());
+            output.push(':');
+            output.push_str(value);
+        }
+        Value::Array(values) => {
+            output.push('A');
+            output.push_str(&values.len().to_string());
+            output.push('[');
+            for value in values {
+                append_canonical_value_key(value, output);
+            }
+            output.push(']');
+        }
+        Value::Object(object) => {
+            output.push('O');
+            output.push_str(&object.len().to_string());
+            output.push('{');
+            let mut entries: Vec<_> = object.iter().collect();
+            entries.sort_by(|left, right| left.0.cmp(right.0));
+            for (key, value) in entries {
+                output.push_str(&key.len().to_string());
+                output.push(':');
+                output.push_str(key);
+                append_canonical_value_key(value, output);
+            }
+            output.push('}');
+        }
     }
 }
 
@@ -501,7 +597,7 @@ fn instance_type(value: &Value) -> &'static str {
     match value {
         Value::Null => "null",
         Value::Bool(_) => "boolean",
-        Value::Number(number) if number.is_i64() || number.is_u64() => "integer",
+        Value::Number(number) if is_mathematical_integer(number) => "integer",
         Value::Number(_) => "number",
         Value::String(_) => "string",
         Value::Array(_) => "array",

@@ -7,12 +7,16 @@
 
 #![forbid(unsafe_code)]
 
-mod codec;
+mod bounded_codec;
+#[path = "codec.rs"]
+mod wire_codec;
+mod json_number;
 mod schema;
 mod validation;
 
-pub use codec::{JsonManifestCodec, ManifestDocument, ManifestKind, ManifestLimits};
+pub use bounded_codec::{JsonManifestCodec, ManifestLimits};
 pub use validation::{Phase1ManifestValidator, MANIFEST_API_VERSION, PHASE1_FABRIC_VERSION};
+pub use wire_codec::{ManifestDocument, ManifestKind};
 
 use std::collections::BTreeMap;
 use std::fmt;

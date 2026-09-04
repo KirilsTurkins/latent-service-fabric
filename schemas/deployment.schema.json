@@ -3,6 +3,7 @@
   "$id": "https://latent.dev/schemas/v1alpha1/deployment.schema.json",
   "title": "LSF Deployment",
   "type": "object",
+  "maxProperties": 4,
   "additionalProperties": false,
   "required": [
     "apiVersion",
@@ -19,6 +20,7 @@
     },
     "metadata": {
       "type": "object",
+      "maxProperties": 5,
       "required": [
         "name"
       ],
@@ -38,12 +40,14 @@
         },
         "labels": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
         },
         "annotations": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
@@ -52,6 +56,7 @@
     },
     "spec": {
       "type": "object",
+      "maxProperties": 7,
       "additionalProperties": false,
       "required": [
         "service",
@@ -72,6 +77,7 @@
         },
         "route": {
           "type": "object",
+          "maxProperties": 1,
           "additionalProperties": false,
           "required": [
             "weight"
@@ -86,8 +92,10 @@
         },
         "grants": {
           "type": "array",
+          "maxItems": 4096,
           "items": {
             "type": "object",
+            "maxProperties": 4,
             "additionalProperties": false,
             "required": [
               "capability",
@@ -104,6 +112,7 @@
               },
               "operations": {
                 "type": "array",
+                "maxItems": 4096,
                 "items": {
                   "type": "string"
                 },
@@ -111,6 +120,7 @@
               },
               "constraints": {
                 "type": "object",
+                "maxProperties": 4096,
                 "additionalProperties": {
                   "type": "string"
                 }
@@ -120,6 +130,7 @@
         },
         "resources": {
           "type": "object",
+          "maxProperties": 11,
           "additionalProperties": false,
           "required": [
             "cpuFuel",
@@ -136,55 +147,67 @@
           "properties": {
             "cpuFuel": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "memoryBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "wallTimeLimitMillis": {
               "type": [
                 "integer",
                 "null"
               ],
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "childCalls": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 4294967295
             },
             "outboundRequests": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 4294967295
             },
             "stateReadBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "stateWriteBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "blobReadBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "blobWriteBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "logBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "effectCount": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 4294967295
             }
           }
         },
         "availability": {
           "type": "object",
+          "maxProperties": 2,
           "additionalProperties": false,
           "required": [
             "minimumCachedCopies",
@@ -193,16 +216,19 @@
           "properties": {
             "minimumCachedCopies": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 4294967295
             },
             "minimumZones": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 4294967295
             }
           }
         },
         "placement": {
           "type": "object",
+          "maxProperties": 5,
           "additionalProperties": false,
           "required": [
             "trustClass"
@@ -214,6 +240,7 @@
             },
             "architectures": {
               "type": "array",
+              "maxItems": 4096,
               "items": {
                 "type": "string"
               },
@@ -221,6 +248,7 @@
             },
             "regions": {
               "type": "array",
+              "maxItems": 4096,
               "items": {
                 "type": "string"
               },
@@ -228,6 +256,7 @@
             },
             "zones": {
               "type": "array",
+              "maxItems": 4096,
               "items": {
                 "type": "string"
               },
@@ -235,6 +264,7 @@
             },
             "requiredFeatures": {
               "type": "array",
+              "maxItems": 4096,
               "items": {
                 "type": "string"
               },

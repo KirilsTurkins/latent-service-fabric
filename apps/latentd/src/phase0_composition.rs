@@ -210,7 +210,7 @@ pub async fn prepare_phase0_backend(
     validate_requested_budget(config, &loaded.artifact.manifest)?;
     let capsule_validation_and_load_micros = elapsed_micros(load_started);
 
-    let declared = &loaded.artifact.manifest.execution.resource_budget_ceiling;
+    let declared: &ResourceBudget = &loaded.artifact.manifest.execution.resource_budget_ceiling;
     let engine_started = Instant::now();
     let factory = Phase0WasmtimeEngineFactory::new(Phase0WasmtimeConfig {
         maximum_component_bytes: config.component_maximum_bytes,
@@ -467,8 +467,8 @@ fn load_phase0_artifact(
             &format!("failed to read component file: {error}"),
         )
     })?;
-    let actual_digest = component_digest(&bytes);
-    if manifest.component_digest.0 != actual_digest {
+    let actual_digest = ReleaseDigest(component_digest(&bytes));
+    if manifest.component_digest != actual_digest {
         return Err(composition_error(
             PlatformErrorCode::CorruptArtifact,
             "component digest does not match capsule metadata",
@@ -507,7 +507,7 @@ fn validate_requested_budget(
     config: &Phase0PreparationConfig,
     manifest: &CapsuleManifest,
 ) -> Result<(), PlatformError> {
-    let declared = &manifest.execution.resource_budget_ceiling;
+    let declared: &ResourceBudget = &manifest.execution.resource_budget_ceiling;
     if declared.memory_bytes == 0 || declared.cpu_fuel == 0 {
         return Err(composition_error(
             PlatformErrorCode::InvalidArgument,

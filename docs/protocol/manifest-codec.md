@@ -7,9 +7,10 @@ Status: Phase 1 normative contract for issue #3.
 `latent-manifest` exposes two independent layers:
 
 1. `JsonManifestCodec` accepts or produces bytes. It applies bounded JSON
-   parsing, rejects duplicate object keys, validates the decoded value against
-   the canonical schema embedded from `schemas/`, converts it to the Rust
-   domain model, and normalizes values used for indexing.
+   preflight before collection allocation, rejects duplicate object keys,
+   validates the decoded value against the canonical schema embedded from
+   `schemas/`, converts it to the Rust domain model, and normalizes values used
+   for indexing.
 2. `Phase1ManifestValidator` accepts Rust domain values. It enforces the
    cross-field standalone Phase 1 rules that JSON Schema cannot express. It
    does not read files, persist state, fetch artifacts, compile routes, or
@@ -57,13 +58,19 @@ The default codec applies these limits before model allocation:
 | Complete JSON payload | 1 MiB |
 | Object/array nesting depth | 64 |
 | Encoded bytes in one JSON string | 256 KiB |
+| Entries in one JSON array or object | 4,096 |
 | Collected schema violations | 128 |
 
-`ManifestLimits` makes every limit explicit and allows a caller to choose a
-smaller envelope. The payload and string bounds are byte bounds, not Unicode
-character counts. A parser-limit failure produces exactly one root violation.
-Malformed UTF-8, malformed JSON, trailing JSON values, and duplicate keys are
-errors. No decoder API panics for untrusted bytes.
+`ManifestLimits` makes every parser limit explicit. The collection limit is
+checked by a recursive no-allocation Serde visitor before the wire decoder
+constructs a complete `Vec` or map. The authoritative schemas independently
+retain a 4,096-entry maximum for manifest arrays and open objects; increasing a
+caller's parser envelope therefore does not widen the current wire contract.
+
+Payload and string bounds are byte bounds, not Unicode character counts. A
+parser-limit failure produces exactly one root violation. Malformed UTF-8,
+malformed JSON, trailing JSON values, duplicate keys, and over-limit nested
+collections are errors. No decoder API panics for untrusted bytes.
 
 ## Schema and forward-compatibility policy
 
@@ -81,8 +88,25 @@ only intentional open objects in the current contracts are:
 - capability-grant constraints, whose values are strings;
 - trigger `spec.configuration`, whose values may be arbitrary bounded JSON.
 
-The trigger configuration object is retained losslessly but is not interpreted
-by Phase 1. Duplicate keys are rejected even inside open objects.
+Every open object and every array nested below trigger configuration is subject
+to the same schema and parser cardinality ceiling. The trigger configuration
+object is retained losslessly but is not interpreted by Phase 1. Duplicate keys
+are rejected even inside open objects.
+
+## Draft 2020-12 numeric semantics
+
+Schema type `integer` is mathematical rather than lexical. Consequently `1`,
+`1.0`, `1e0`, and `-0.0` are integer values, while `10000.5` is not. Before
+typed deserialization, the codec converts integral lexical forms to canonical
+integer tokens only when the value fits the exact Rust/JSON integer storage
+range. Wider values remain numeric values so exact schema maxima can reject
+them without a narrowing conversion.
+
+Minimum and maximum checks use normalized decimal comparison rather than
+binary floating-point conversion. Numeric equality used by `const`, `enum`,
+and `uniqueItems` follows the same mathematical rule. A shared regression
+corpus is run through both the Rust evaluator and Python's full Draft 2020-12
+validator in CI.
 
 ## Canonical encoding
 
@@ -94,13 +118,14 @@ insignificant whitespace. Before encoding, the codec:
 - sorts deployment grants, grant operations, and placement set fields;
 - recursively orders keys in arbitrary trigger configuration objects;
 - uses ordered maps for metadata and constraints;
+- emits typed integer values in canonical integer form;
 - omits an absent `wallTimeLimitMillis`, retaining its `None` meaning.
 
-The codec never deduplicates an invalid list: semantic validation reports the
-duplicate. JSON array order is preserved where the schema does not define a
-set-like field. Canonical bytes are suitable as deterministic local indexing
-input; cryptographic artifact identity remains the separately declared release
-digest.
+The codec never deduplicates an invalid list: semantic or schema validation
+reports the duplicate. JSON array order is preserved where the schema does not
+define a set-like field. Canonical bytes are suitable as deterministic local
+indexing input; cryptographic artifact identity remains the separately declared
+release digest.
 
 ## Hardened budget meaning
 
@@ -150,7 +175,8 @@ sorted and deduplicated before return. Callers may rely on `path` and `code`;
 
 Paths use a JSONPath-like form rooted at `$`, for example
 `$.spec.resources.wallTimeLimitMillis` and `$.imports[1].contract`. Codes use
-lower-kebab-case, including `malformed-json`, `duplicate-key`, `unknown-field`,
-`invalid-type`, `unsupported-api-version`, `invalid-digest`,
-`unsupported-state-model`, `invalid-stateless-budget`,
-`tenant-scope-mismatch`, and `budget-exceeds-capsule`.
+lower-kebab-case, including `malformed-json`, `duplicate-key`,
+`collection-limit-exceeded`, `unknown-field`, `invalid-type`,
+`unsupported-api-version`, `invalid-digest`, `unsupported-state-model`,
+`invalid-stateless-budget`, `tenant-scope-mismatch`, and
+`budget-exceeds-capsule`.

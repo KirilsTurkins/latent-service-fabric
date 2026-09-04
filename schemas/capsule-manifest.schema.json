@@ -3,6 +3,7 @@
   "$id": "https://latent.dev/schemas/v1alpha1/capsule-manifest.schema.json",
   "title": "LSF Capsule",
   "type": "object",
+  "maxProperties": 8,
   "additionalProperties": false,
   "required": [
     "apiVersion",
@@ -23,6 +24,7 @@
     },
     "metadata": {
       "type": "object",
+      "maxProperties": 5,
       "required": [
         "name"
       ],
@@ -42,12 +44,14 @@
         },
         "labels": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
         },
         "annotations": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
@@ -56,6 +60,7 @@
     },
     "component": {
       "type": "object",
+      "maxProperties": 3,
       "additionalProperties": false,
       "required": [
         "digest",
@@ -79,6 +84,7 @@
     },
     "exports": {
       "type": "array",
+      "maxItems": 4096,
       "items": {
         "type": "string",
         "minLength": 1
@@ -87,8 +93,10 @@
     },
     "imports": {
       "type": "array",
+      "maxItems": 4096,
       "items": {
         "type": "object",
+        "maxProperties": 2,
         "additionalProperties": false,
         "required": [
           "contract"
@@ -107,6 +115,7 @@
     },
     "execution": {
       "type": "object",
+      "maxProperties": 8,
       "additionalProperties": false,
       "required": [
         "backend",
@@ -141,6 +150,7 @@
         },
         "limits": {
           "type": "object",
+          "maxProperties": 11,
           "additionalProperties": false,
           "required": [
             "cpuFuel",
@@ -157,60 +167,73 @@
           "properties": {
             "cpuFuel": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "memoryBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "wallTimeLimitMillis": {
               "type": [
                 "integer",
                 "null"
               ],
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "childCalls": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 4294967295
             },
             "outboundRequests": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 4294967295
             },
             "stateReadBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "stateWriteBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "blobReadBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "blobWriteBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "logBytes": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 18446744073709551615
             },
             "effectCount": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 4294967295
             }
           }
         },
         "hostCallDepthMaximum": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "maximum": 4294967295
         },
         "componentCallDepthMaximum": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "maximum": 4294967295
         },
         "snapshotEligible": {
           "type": "boolean"
@@ -222,6 +245,7 @@
     },
     "compatibility": {
       "type": "object",
+      "maxProperties": 1,
       "additionalProperties": false,
       "required": [
         "minimumFabricVersion"
