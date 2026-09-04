@@ -26,12 +26,13 @@ pub(crate) fn canonical_number_key(number: &Number) -> String {
         .canonical_key()
 }
 
-/// Converts an integral JSON-number token to a canonical integer token when
-/// the result can be represented losslessly by serde_json's integer storage.
-/// Non-integral and wider-than-supported tokens are left untouched by callers.
+/// Canonicalizes any valid JSON-number token by mathematical value. The
+/// historical function name is retained for the bounded codec call site: the
+/// result now covers non-integral and arbitrary-precision values as well as
+/// representable integers.
 pub(crate) fn representable_integer_lexeme(token: &[u8]) -> Option<Vec<u8>> {
     let token = std::str::from_utf8(token).ok()?;
-    DecimalNumber::parse(token)?.representable_integer_lexeme()
+    Some(DecimalNumber::parse(token)?.canonical_lexeme())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -171,6 +172,78 @@ impl DecimalNumber {
             digits,
             self.exponent
         )
+    }
+
+    fn canonical_lexeme(&self) -> Vec<u8> {
+        if self.is_zero() {
+            return vec![b'0'];
+        }
+        if let Some(integer) = self.representable_integer_lexeme() {
+            return integer;
+        }
+
+        let digit_count = i128::try_from(self.digits.len()).unwrap_or(i128::MAX);
+        let decimal_point = self.exponent.saturating_add(digit_count);
+        if decimal_point > -6 && decimal_point <= 21 {
+            self.plain_lexeme(decimal_point)
+        } else {
+            self.scientific_lexeme(digit_count)
+        }
+    }
+
+    fn plain_lexeme(&self, decimal_point: i128) -> Vec<u8> {
+        let mut output = Vec::with_capacity(self.digits.len().saturating_add(24));
+        if self.negative {
+            output.push(b'-');
+        }
+
+        if decimal_point <= 0 {
+            output.extend_from_slice(b"0.");
+            let leading_zeroes = usize::try_from(-decimal_point)
+                .expect("plain decimal notation inserts at most six leading zeroes");
+            output.resize(output.len().saturating_add(leading_zeroes), b'0');
+            output.extend_from_slice(&self.digits);
+            return output;
+        }
+
+        let decimal_point = usize::try_from(decimal_point)
+            .expect("plain decimal notation uses a small positive point position");
+        if decimal_point >= self.digits.len() {
+            output.extend_from_slice(&self.digits);
+            output.resize(
+                output
+                    .len()
+                    .saturating_add(decimal_point.saturating_sub(self.digits.len())),
+                b'0',
+            );
+        } else {
+            output.extend_from_slice(&self.digits[..decimal_point]);
+            output.push(b'.');
+            output.extend_from_slice(&self.digits[decimal_point..]);
+        }
+        output
+    }
+
+    fn scientific_lexeme(&self, digit_count: i128) -> Vec<u8> {
+        let mut output = Vec::with_capacity(self.digits.len().saturating_add(48));
+        if self.negative {
+            output.push(b'-');
+        }
+        output.push(self.digits[0]);
+        if self.digits.len() > 1 {
+            output.push(b'.');
+            output.extend_from_slice(&self.digits[1..]);
+        }
+
+        let scientific_exponent = self
+            .exponent
+            .saturating_add(digit_count.saturating_sub(1));
+        output.push(b'e');
+        if scientific_exponent >= 0 {
+            output.push(b'+');
+        }
+        output.extend_from_slice(scientific_exponent.to_string().as_bytes());
+        output
     }
 
     fn representable_integer_lexeme(&self) -> Option<Vec<u8>> {
