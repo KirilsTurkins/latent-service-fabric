@@ -12,3 +12,4 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+serde.workspace = true
