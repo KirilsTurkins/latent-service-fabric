@@ -156,7 +156,10 @@ impl From<&ArtifactDescriptor> for StoredArtifactDescriptor {
             release_digest: value.release_digest.0.clone(),
             media_type: value.media_type.clone(),
             size_bytes: value.size_bytes,
-            publisher: value.publisher.as_ref().map(|publisher| publisher.0.clone()),
+            publisher: value
+                .publisher
+                .as_ref()
+                .map(|publisher| publisher.0.clone()),
             layers: value.layers.iter().map(StoredArtifactLayer::from).collect(),
             annotations: value.annotations.clone(),
         }
@@ -419,7 +422,9 @@ impl CatalogIndex {
         }
         if let Some(existing_digest) = self.by_reference.get(&descriptor.reference) {
             if existing_digest != &descriptor.release_digest {
-                return Err(corrupt("artifact reference maps to conflicting release digests"));
+                return Err(corrupt(
+                    "artifact reference maps to conflicting release digests",
+                ));
             }
         }
         self.by_reference.insert(
