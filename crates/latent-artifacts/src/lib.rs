@@ -2,6 +2,10 @@
 
 #![forbid(unsafe_code)]
 
+mod local_repository;
+
+pub use local_repository::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
+
 use latent_contracts::ContractDescriptor;
 use latent_core::{
     ArtifactReference, BoxFuture, Metadata, PlatformError, PublisherId, ReleaseDigest,
@@ -40,6 +44,14 @@ pub struct ArtifactQuery {
     pub reference: Option<ArtifactReference>,
     pub release_digest: Option<ReleaseDigest>,
     pub media_type: Option<String>,
+}
+
+/// One deterministic, bounded page from an artifact repository.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ArtifactPage {
+    pub entries: Vec<ArtifactDescriptor>,
+    /// Digest to pass as `after` to retrieve the next page.
+    pub next_after: Option<ReleaseDigest>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -86,6 +98,14 @@ pub trait ArtifactRepository: Send + Sync {
         &'a self,
         artifact: CapsuleArtifact,
     ) -> BoxFuture<'a, Result<ArtifactDescriptor, PlatformError>>;
+
+    /// Lists releases in ascending digest order without repository downcasting.
+    /// Implementations must bound `limit`; callers may paginate with `next_after`.
+    fn list<'a>(
+        &'a self,
+        after: Option<&'a ReleaseDigest>,
+        limit: usize,
+    ) -> BoxFuture<'a, Result<ArtifactPage, PlatformError>>;
 }
 
 pub trait ArtifactCache: Send + Sync {
