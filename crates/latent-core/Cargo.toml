@@ -9,3 +9,6 @@ description = "Interface contracts for latent-core."
 
 [lints]
 workspace = true
+
+[dependencies]
+serde.workspace = true
