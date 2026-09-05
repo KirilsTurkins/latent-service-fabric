@@ -76,7 +76,9 @@ impl JsonManifestCodec {
     pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
         let value = self.parse_exact(bytes)?;
         let kind = document_kind(&value)?;
-        self.decode_preparsed(kind, value)
+        let document = self.decode_preparsed(kind, value)?;
+        self.encode_document(&document)?;
+        Ok(document)
     }
 
     /// Canonically encodes a type-erased manifest.
@@ -186,7 +188,9 @@ impl JsonManifestCodec {
 
 impl ManifestCodec for JsonManifestCodec {
     fn decode_capsule(&self, bytes: &[u8]) -> ManifestResult<CapsuleManifest> {
-        self.decode_kind(bytes, ManifestKind::Capsule)
+        let manifest = self.decode_kind(bytes, ManifestKind::Capsule)?;
+        self.encode_capsule(&manifest)?;
+        Ok(manifest)
     }
 
     fn encode_capsule(&self, manifest: &CapsuleManifest) -> ManifestResult<Vec<u8>> {
@@ -196,7 +200,9 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn decode_deployment(&self, bytes: &[u8]) -> ManifestResult<DeploymentManifest> {
-        self.decode_kind(bytes, ManifestKind::Deployment)
+        let manifest = self.decode_kind(bytes, ManifestKind::Deployment)?;
+        self.encode_deployment(&manifest)?;
+        Ok(manifest)
     }
 
     fn encode_deployment(&self, manifest: &DeploymentManifest) -> ManifestResult<Vec<u8>> {
@@ -206,7 +212,9 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn decode_binding(&self, bytes: &[u8]) -> ManifestResult<BindingManifest> {
-        self.decode_kind(bytes, ManifestKind::Binding)
+        let manifest = self.decode_kind(bytes, ManifestKind::Binding)?;
+        self.encode_binding(&manifest)?;
+        Ok(manifest)
     }
 
     fn encode_binding(&self, manifest: &BindingManifest) -> ManifestResult<Vec<u8>> {
@@ -216,7 +224,9 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn decode_trigger(&self, bytes: &[u8]) -> ManifestResult<TriggerManifest> {
-        self.decode_kind(bytes, ManifestKind::Trigger)
+        let manifest = self.decode_kind(bytes, ManifestKind::Trigger)?;
+        self.encode_trigger(&manifest)?;
+        Ok(manifest)
     }
 
     fn encode_trigger(&self, manifest: &TriggerManifest) -> ManifestResult<Vec<u8>> {
@@ -228,7 +238,9 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn decode_policy(&self, bytes: &[u8]) -> ManifestResult<PolicyManifest> {
-        self.decode_kind(bytes, ManifestKind::Policy)
+        let manifest = self.decode_kind(bytes, ManifestKind::Policy)?;
+        self.encode_policy(&manifest)?;
+        Ok(manifest)
     }
 
     fn encode_policy(&self, manifest: &PolicyManifest) -> ManifestResult<Vec<u8>> {
