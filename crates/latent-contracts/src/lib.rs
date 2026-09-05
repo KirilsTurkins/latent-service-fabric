@@ -3,9 +3,8 @@
 #![forbid(unsafe_code)]
 
 use latent_core::{BoxFuture, ContractId, FunctionId, InterfaceId, Metadata, PlatformError};
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ValueType {
     Bool,
     U8,
@@ -35,14 +34,14 @@ pub enum ValueType {
     Stream(Box<ValueType>),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FieldDescriptor {
     pub name: String,
     pub value_type: ValueType,
     pub documentation: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionDescriptor {
     pub id: FunctionId,
     pub name: String,
@@ -53,7 +52,7 @@ pub struct FunctionDescriptor {
     pub attributes: Metadata,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterfaceDescriptor {
     pub id: InterfaceId,
     pub functions: Vec<FunctionDescriptor>,
@@ -61,7 +60,7 @@ pub struct InterfaceDescriptor {
     pub digest: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContractDescriptor {
     pub id: ContractId,
     pub package_name: String,
