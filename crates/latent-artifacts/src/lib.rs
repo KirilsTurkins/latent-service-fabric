@@ -11,9 +11,8 @@ use latent_core::{
     ArtifactReference, BoxFuture, Metadata, PlatformError, PublisherId, ReleaseDigest,
 };
 use latent_manifest::CapsuleManifest;
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArtifactLayer {
     pub media_type: String,
     pub digest: String,
@@ -21,7 +20,7 @@ pub struct ArtifactLayer {
     pub annotations: Metadata,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArtifactDescriptor {
     pub reference: ArtifactReference,
     pub release_digest: ReleaseDigest,
