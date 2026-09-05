@@ -201,11 +201,7 @@ fn round_trip_policy(codec: &JsonManifestCodec, source: &[u8]) -> ManifestResult
     codec.encode_policy(&manifest)
 }
 
-fn assert_payload_too_large(
-    violations: &[ManifestViolation],
-    actual: usize,
-    maximum: usize,
-) {
+fn assert_payload_too_large(violations: &[ManifestViolation], actual: usize, maximum: usize) {
     assert_eq!(
         violations.len(),
         1,
