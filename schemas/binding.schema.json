@@ -3,6 +3,7 @@
   "$id": "https://latent.dev/schemas/v1alpha1/binding.schema.json",
   "title": "LSF Binding",
   "type": "object",
+  "maxProperties": 4,
   "additionalProperties": false,
   "required": [
     "apiVersion",
@@ -13,6 +14,7 @@
   "$defs": {
     "endpoint": {
       "type": "object",
+      "maxProperties": 3,
       "additionalProperties": false,
       "required": [
         "service",
@@ -43,6 +45,7 @@
     },
     "metadata": {
       "type": "object",
+      "maxProperties": 5,
       "required": [
         "name"
       ],
@@ -62,12 +65,14 @@
         },
         "labels": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
         },
         "annotations": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
@@ -76,6 +81,7 @@
     },
     "spec": {
       "type": "object",
+      "maxProperties": 3,
       "additionalProperties": false,
       "required": [
         "consumer",

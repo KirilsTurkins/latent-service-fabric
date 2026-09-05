@@ -6,7 +6,6 @@
 //! the exact executable wiring rather than reconstructing a near-equivalent
 //! runtime.
 
-use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -22,8 +21,7 @@ use latent_core::{
 };
 use latent_executor::{BoundImport, ExecutionBackend, PreparationKey, PreparedComponent};
 use latent_manifest::{
-    CapsuleManifest, ContractExport, ContractImport, ExecutionBackendKind, ExecutionRequirements,
-    ObjectMetadata, StateModel, ThreadingModel,
+    CapsuleManifest, JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator,
 };
 use latent_node::{Phase0ActivationRunner, Phase0ActivationRunnerConfig};
 use latent_routing::InvocationTarget;
@@ -33,7 +31,6 @@ use latent_wasmtime::{
     Phase0WasmtimeEngineFactory, PreparedCacheSnapshot, CONTEXT_IMPORT, ECHO_EXPORT,
     ECHO_SUCCESS_MEDIA_TYPE, LOG_IMPORT,
 };
-use serde::Deserialize;
 use sha2::{Digest as _, Sha256};
 use tokio::runtime::Builder;
 
@@ -213,7 +210,7 @@ pub async fn prepare_phase0_backend(
     validate_requested_budget(config, &loaded.artifact.manifest)?;
     let capsule_validation_and_load_micros = elapsed_micros(load_started);
 
-    let declared = &loaded.artifact.manifest.execution.resource_budget_ceiling;
+    let declared: &ResourceBudget = &loaded.artifact.manifest.execution.resource_budget_ceiling;
     let engine_started = Instant::now();
     let factory = Phase0WasmtimeEngineFactory::new(Phase0WasmtimeConfig {
         maximum_component_bytes: config.component_maximum_bytes,
@@ -389,13 +386,33 @@ fn load_phase0_artifact(
             &format!("failed to read capsule manifest: {error}"),
         )
     })?;
-    let document: CapsuleDocument = serde_json::from_slice(&manifest_bytes).map_err(|error| {
-        composition_error(
-            PlatformErrorCode::CorruptArtifact,
-            &format!("capsule manifest is not valid JSON for the Phase 0 composition: {error}"),
-        )
-    })?;
-    let manifest = document.into_manifest()?;
+    let codec = JsonManifestCodec::default();
+    let manifest = codec
+        .decode_capsule(&manifest_bytes)
+        .map_err(|violations| {
+            let detail = violations
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join("; ");
+            composition_error(
+                PlatformErrorCode::CorruptArtifact,
+                &format!("capsule manifest failed structural validation: {detail}"),
+            )
+        })?;
+    Phase1ManifestValidator::new()
+        .validate_capsule(&manifest)
+        .map_err(|violations| {
+            let detail = violations
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join("; ");
+            composition_error(
+                PlatformErrorCode::InvalidArgument,
+                &format!("capsule manifest failed Phase 1 validation: {detail}"),
+            )
+        })?;
     let base_directory = manifest_path.parent().unwrap_or_else(|| Path::new("."));
     let component_path = match &config.component {
         Some(path) => path.clone(),
@@ -450,8 +467,8 @@ fn load_phase0_artifact(
             &format!("failed to read component file: {error}"),
         )
     })?;
-    let actual_digest = component_digest(&bytes);
-    if manifest.component_digest.0 != actual_digest {
+    let actual_digest = ReleaseDigest(component_digest(&bytes));
+    if manifest.component_digest != actual_digest {
         return Err(composition_error(
             PlatformErrorCode::CorruptArtifact,
             "component digest does not match capsule metadata",
@@ -490,7 +507,7 @@ fn validate_requested_budget(
     config: &Phase0PreparationConfig,
     manifest: &CapsuleManifest,
 ) -> Result<(), PlatformError> {
-    let declared = &manifest.execution.resource_budget_ceiling;
+    let declared: &ResourceBudget = &manifest.execution.resource_budget_ceiling;
     if declared.memory_bytes == 0 || declared.cpu_fuel == 0 {
         return Err(composition_error(
             PlatformErrorCode::InvalidArgument,
@@ -529,184 +546,5 @@ fn composition_error(code: PlatformErrorCode, message: &str) -> PlatformError {
         message: message.to_owned(),
         retryable: false,
         details: Vec::new(),
-    }
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CapsuleDocument {
-    api_version: String,
-    kind: String,
-    metadata: MetadataDocument,
-    component: ComponentDocument,
-    exports: Vec<String>,
-    imports: Vec<ImportDocument>,
-    execution: ExecutionDocument,
-    compatibility: CompatibilityDocument,
-}
-
-#[derive(Debug, Deserialize)]
-struct MetadataDocument {
-    name: String,
-    #[serde(default)]
-    tenant: Option<String>,
-    #[serde(default)]
-    namespace: Option<String>,
-    #[serde(default)]
-    labels: BTreeMap<String, String>,
-    #[serde(default)]
-    annotations: BTreeMap<String, String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ComponentDocument {
-    digest: String,
-    version: String,
-    world: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct ImportDocument {
-    contract: String,
-    optional: bool,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ExecutionDocument {
-    backend: String,
-    threading: String,
-    state_model: String,
-    limits: LimitsDocument,
-    host_call_depth_maximum: u32,
-    component_call_depth_maximum: u32,
-    snapshot_eligible: bool,
-    fusion_eligible: bool,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct LimitsDocument {
-    cpu_fuel: u64,
-    memory_bytes: u64,
-    wall_time_limit_millis: Option<u64>,
-    child_calls: u32,
-    outbound_requests: u32,
-    state_read_bytes: u64,
-    state_write_bytes: u64,
-    blob_read_bytes: u64,
-    blob_write_bytes: u64,
-    log_bytes: u64,
-    effect_count: u32,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct CompatibilityDocument {
-    minimum_fabric_version: String,
-}
-
-impl CapsuleDocument {
-    fn into_manifest(self) -> Result<CapsuleManifest, PlatformError> {
-        if self.kind != "Capsule" {
-            return Err(composition_error(
-                PlatformErrorCode::InvalidArgument,
-                "capsule document kind must be Capsule",
-            ));
-        }
-        if self.metadata.name.trim().is_empty()
-            || self.component.digest.trim().is_empty()
-            || self.component.version.trim().is_empty()
-            || self.component.world.trim().is_empty()
-        {
-            return Err(composition_error(
-                PlatformErrorCode::InvalidArgument,
-                "capsule identity and component fields must be non-empty",
-            ));
-        }
-        let backend = match self.execution.backend.as_str() {
-            "wasm-component" => ExecutionBackendKind::WasmComponent,
-            _ => {
-                return Err(composition_error(
-                    PlatformErrorCode::IncompatibleContract,
-                    "the Phase 0 composition supports only the wasm-component backend",
-                ));
-            }
-        };
-        let threading = match self.execution.threading.as_str() {
-            "single-threaded" => ThreadingModel::SingleThreaded,
-            "reentrant" => ThreadingModel::Reentrant,
-            "cooperative" => ThreadingModel::Cooperative,
-            _ => {
-                return Err(composition_error(
-                    PlatformErrorCode::IncompatibleContract,
-                    "capsule declares an unknown threading model",
-                ));
-            }
-        };
-        let state_model = match self.execution.state_model.as_str() {
-            "stateless" => StateModel::Stateless,
-            "transactional-keyed" => StateModel::TransactionalKeyed,
-            "entity" => StateModel::Entity,
-            "durable-workflow" => StateModel::DurableWorkflow,
-            _ => {
-                return Err(composition_error(
-                    PlatformErrorCode::IncompatibleContract,
-                    "capsule declares an unknown state model",
-                ));
-            }
-        };
-        let limits = self.execution.limits;
-        Ok(CapsuleManifest {
-            api_version: self.api_version,
-            metadata: ObjectMetadata {
-                name: self.metadata.name,
-                tenant: self.metadata.tenant.map(TenantId),
-                namespace: self.metadata.namespace,
-                labels: self.metadata.labels,
-                annotations: self.metadata.annotations,
-            },
-            semantic_version: self.component.version,
-            component_digest: ReleaseDigest(self.component.digest),
-            world: ContractId(self.component.world),
-            exports: self
-                .exports
-                .into_iter()
-                .map(|contract| ContractExport {
-                    contract: ContractId(contract),
-                })
-                .collect(),
-            imports: self
-                .imports
-                .into_iter()
-                .map(|import| ContractImport {
-                    contract: ContractId(import.contract),
-                    optional: import.optional,
-                })
-                .collect(),
-            execution: ExecutionRequirements {
-                backend,
-                threading,
-                state_model,
-                resource_budget_ceiling: ResourceBudget {
-                    cpu_fuel: limits.cpu_fuel,
-                    memory_bytes: limits.memory_bytes,
-                    wall_time_limit_millis: limits.wall_time_limit_millis,
-                    child_calls: limits.child_calls,
-                    outbound_requests: limits.outbound_requests,
-                    state_read_bytes: limits.state_read_bytes,
-                    state_write_bytes: limits.state_write_bytes,
-                    blob_read_bytes: limits.blob_read_bytes,
-                    blob_write_bytes: limits.blob_write_bytes,
-                    log_bytes: limits.log_bytes,
-                    effect_count: limits.effect_count,
-                },
-                host_call_depth_maximum: self.execution.host_call_depth_maximum,
-                component_call_depth_maximum: self.execution.component_call_depth_maximum,
-                snapshot_eligible: self.execution.snapshot_eligible,
-                fusion_eligible: self.execution.fusion_eligible,
-            },
-            minimum_fabric_version: self.compatibility.minimum_fabric_version,
-        })
     }
 }
