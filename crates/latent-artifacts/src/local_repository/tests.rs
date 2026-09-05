@@ -318,7 +318,8 @@ fn listing_is_bounded_deterministic_and_paginated_from_memory() {
     assert!(first.next_after.is_some());
     assert!(first.entries[0].release_digest < first.entries[1].release_digest);
 
-    let second = block_on(repo.list(first.next_after.as_ref(), 100)).expect("second page must list");
+    let second =
+        block_on(repo.list(first.next_after.as_ref(), 100)).expect("second page must list");
     assert_eq!(second.entries.len(), 2);
     assert!(second.next_after.is_some());
     assert!(first.entries[1].release_digest < second.entries[0].release_digest);
@@ -448,8 +449,7 @@ fn restart_cleans_incomplete_temporary_writes_without_exposing_them() {
 
     let orphan = temp.path().join(".tmp").join("interrupted-publish");
     fs::create_dir_all(&orphan).expect("orphan directory must be created");
-    fs::write(orphan.join("component.wasm"), b"partial")
-        .expect("partial file must be created");
+    fs::write(orphan.join("component.wasm"), b"partial").expect("partial file must be created");
 
     let reopened = repository(temp.path());
     assert!(!orphan.exists());
