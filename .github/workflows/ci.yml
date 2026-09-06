@@ -66,14 +66,20 @@ jobs:
   catalog:
     name: Durable catalog acceptance
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    # 60m publication + 30m reopen, with build/cleanup/evidence-upload headroom.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.97.1
       - name: Run catalog recovery and codec regressions
         run: cargo test -p latent-artifacts --lib --locked
+      - name: Check catalog probe supervision
+        run: cargo test -p latentd --test catalog_scale --locked
       - name: Publish and reopen 100,000 dormant releases in isolated processes
         shell: bash
+        env:
+          TMPDIR: ${{ runner.temp }}
+          LSF_CATALOG_SCALE_LOG_DIR: ${{ github.workspace }}/catalog-scale-logs
         run: |
           set -o pipefail
           cargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1 2>&1 | tee catalog-scale.log
@@ -82,7 +88,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: catalog-scale-${{ github.sha }}
-          path: catalog-scale.log
+          path: |
+            catalog-scale.log
+            catalog-scale-logs/*.log
           if-no-files-found: warn
           retention-days: 14
 

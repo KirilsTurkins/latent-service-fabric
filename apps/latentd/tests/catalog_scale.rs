@@ -3,15 +3,16 @@
 
 #![cfg(target_os = "linux")]
 
+#[path = "catalog_scale/supervisor.rs"]
+mod supervisor;
+
 use std::collections::BTreeSet;
-use std::fs::{self, File};
+use std::fs;
 use std::future::Future;
-use std::path::Path;
 use std::pin::Pin;
-use std::process::{Command, Stdio};
 use std::task::{Context, Poll, Waker};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use latent_artifacts::{
     ArtifactDescriptor, ArtifactQuery, ArtifactRepository, CapsuleArtifact,
@@ -23,9 +24,13 @@ use latent_scheduler::{CellClass, FixedCellPool, FixedCellPoolConfig};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
+use supervisor::run_child;
+
 const RELEASE_COUNT: u32 = 100_000;
+const PROGRESS_INTERVAL: u32 = 1_000;
 const MODE_ENV: &str = "LSF_CATALOG_SCALE_MODE";
 const ROOT_ENV: &str = "LSF_CATALOG_SCALE_ROOT";
+const LOG_DIR_ENV: &str = "LSF_CATALOG_SCALE_LOG_DIR";
 
 fn block_on<T>(mut future: Pin<Box<dyn Future<Output = T> + Send + '_>>) -> T {
     let mut context = Context::from_waker(Waker::noop());
@@ -134,16 +139,22 @@ fn synthetic_release(template: &CapsuleManifest, index: u32) -> CapsuleArtifact 
     }
 }
 
+fn report_progress(phase: &str, count: u32, started: Instant) {
+    eprintln!(
+        "{phase}: {count}/{RELEASE_COUNT} releases; elapsed={:.1}s",
+        started.elapsed().as_secs_f64()
+    );
+}
+
 fn verify_catalog(repo: &dyn ArtifactRepository, template: &CapsuleManifest) {
+    let started = Instant::now();
+    report_progress("verify", 0, started);
     let mut after = None;
     let mut seen = 0_u32;
     loop {
         let page = block_on(repo.list(after.as_ref(), 1_000)).expect("bounded listing");
         assert!(page.entries.len() <= 1_000);
-        let last = page
-            .entries
-            .last()
-            .map(|entry| entry.release_digest.clone());
+        let last = page.entries.last().map(|entry| entry.release_digest.clone());
         for descriptor in &page.entries {
             if let Some(previous) = &after {
                 assert!(
@@ -176,6 +187,9 @@ fn verify_catalog(repo: &dyn ArtifactRepository, template: &CapsuleManifest) {
             );
             after = Some(descriptor.release_digest.clone());
             seen += 1;
+            if seen.is_multiple_of(PROGRESS_INTERVAL) {
+                report_progress("verify", seen, started);
+            }
         }
         match page.next_after {
             Some(cursor) => {
@@ -194,6 +208,35 @@ fn verify_catalog(repo: &dyn ArtifactRepository, template: &CapsuleManifest) {
         seen, RELEASE_COUNT,
         "all persisted releases must be retrievable"
     );
+}
+
+fn publish_catalog(
+    repo: &dyn ArtifactRepository,
+    template: &CapsuleManifest,
+    pool: &FixedCellPool,
+    opened: &Topology,
+) {
+    let started = Instant::now();
+    report_progress("publish", 0, started);
+    for index in 0..RELEASE_COUNT {
+        let release = synthetic_release(template, index);
+        let descriptor = release.descriptor.clone();
+        assert_eq!(
+            block_on(repo.publish(release)).expect("durable publication"),
+            descriptor
+        );
+        if (index + 1).is_multiple_of(10_000) {
+            assert_eq!(
+                &topology(pool),
+                opened,
+                "registration checkpoint {}",
+                index + 1
+            );
+        }
+        if (index + 1).is_multiple_of(PROGRESS_INTERVAL) {
+            report_progress("publish", index + 1, started);
+        }
+    }
 }
 
 fn report_topology(mode: &str, baseline: &Topology, after: &Topology) {
@@ -237,6 +280,8 @@ fn catalog_scale_child() {
     let baseline = topology(&pool);
     assert_eq!(baseline.active_leases, 0);
     assert_eq!(baseline.generic_cells, 2);
+    let started = Instant::now();
+    eprintln!("{mode}: opening/rebuilding production repository");
     let repo = DirectoryArtifactRepository::open(
         root,
         DirectoryArtifactRepositoryConfig {
@@ -246,6 +291,10 @@ fn catalog_scale_child() {
         },
     )
     .expect("open or rebuild production repository");
+    eprintln!(
+        "{mode}: repository opened; elapsed={:.1}s",
+        started.elapsed().as_secs_f64()
+    );
     let mut opened = baseline.clone();
     opened.open_fds += 1; // One root-ownership lock, not one FD per release.
     assert_eq!(
@@ -254,32 +303,11 @@ fn catalog_scale_child() {
         "opening adds only a fixed ownership FD"
     );
     let template = JsonManifestCodec::default()
-        .decode_capsule(include_bytes!(
-            "../../../examples/echo-contract/capsule.json"
-        ))
+        .decode_capsule(include_bytes!("../../../examples/echo-contract/capsule.json"))
         .expect("valid capsule template");
     let repository: &dyn ArtifactRepository = &repo;
     if mode == "publish" {
-        for index in 0..RELEASE_COUNT {
-            let release = synthetic_release(&template, index);
-            let descriptor = release.descriptor.clone();
-            assert_eq!(
-                block_on(repository.publish(release)).expect("durable publication"),
-                descriptor
-            );
-            if (index + 1).is_multiple_of(10_000) {
-                assert_eq!(
-                    topology(&pool),
-                    opened,
-                    "registration checkpoint {}",
-                    index + 1
-                );
-                eprintln!(
-                    "published {} complete releases through ArtifactRepository::publish",
-                    index + 1
-                );
-            }
-        }
+        publish_catalog(repository, &template, &pool, &opened);
     }
     verify_catalog(repository, &template);
     let after = topology(&pool);
@@ -296,51 +324,17 @@ fn catalog_scale_child() {
     );
 }
 
-fn run_child(root: &Path, mode: &str, log_path: &Path) {
-    let log = File::create(log_path).expect("probe diagnostics");
-    let mut child = Command::new(std::env::current_exe().expect("acceptance test binary"))
-        .args([
-            "--exact",
-            "catalog_scale_child",
-            "--ignored",
-            "--nocapture",
-            "--test-threads=1",
-        ])
-        .env(ROOT_ENV, root)
-        .env(MODE_ENV, mode)
-        .stdout(Stdio::from(log.try_clone().expect("clone log")))
-        .stderr(Stdio::from(log))
-        .spawn()
-        .expect("spawn isolated catalog process");
-    let deadline = Instant::now() + Duration::from_mins(20);
-    let status = loop {
-        if let Some(status) = child.try_wait().expect("poll probe") {
-            break status;
-        }
-        if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
-            panic!(
-                "{mode} scale child timed out:\n{}",
-                fs::read_to_string(log_path).unwrap_or_default()
-            );
-        }
-        thread::sleep(Duration::from_millis(25));
-    };
-    let diagnostics = fs::read_to_string(log_path).expect("read probe diagnostics");
-    print!("{diagnostics}");
-    assert!(
-        status.success(),
-        "{mode} scale child failed: {status}\n{diagnostics}"
-    );
-}
-
 #[test]
 #[ignore = "100,000 real fsynced publications; run in the dedicated catalog acceptance CI job"]
 fn production_catalog_100k() {
     let root = tempfile::tempdir().expect("persistent catalog root");
-    let logs = tempfile::tempdir().expect("probe logs");
-    run_child(root.path(), "publish", &logs.path().join("publish.log"));
+    let temporary_logs = tempfile::tempdir().expect("probe logs");
+    let logs = std::env::var_os(LOG_DIR_ENV).map_or_else(
+        || temporary_logs.path().to_path_buf(),
+        std::path::PathBuf::from,
+    );
+    fs::create_dir_all(&logs).expect("persistent diagnostic directory");
+    run_child(root.path(), "publish", &logs.join("publish.log"));
     assert_eq!(
         fs::read_dir(root.path().join("releases"))
             .expect("completed directories")
@@ -349,5 +343,5 @@ fn production_catalog_100k() {
     );
     // The publisher process is gone before the second process acquires the
     // root, rebuilds its index, and fetches every release from persistent files.
-    run_child(root.path(), "reopen", &logs.path().join("reopen.log"));
+    run_child(root.path(), "reopen", &logs.join("reopen.log"));
 }

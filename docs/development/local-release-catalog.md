@@ -48,7 +48,21 @@ Run the acceptance probe explicitly with:
 cargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1
 ```
 
-Both subprocess waits have deadlines and collect diagnostic logs without unbounded pipe buffering. The publication-visibility unit tests likewise observe writer errors/panics and deadlines; a deterministic coordination test forces completion between an absent resolve and the writer-status check, then verifies a fresh resolve/fetch after joining.
+### Runtime budgets and diagnostics
+
+This is a durability/resource-invariant acceptance test, not a minimum-publication-throughput benchmark. The earlier fixed 20-minute child deadline stopped a CI run after at least 70,000 successful publications, before it could establish the 100,000-release invariant. Production syncs and the release count must not be reduced to satisfy that deadline.
+
+The publisher child now has a 60-minute absolute budget, including its full retrieval pass, and a 10-minute no-output watchdog. Publication and verification emit completed-record checkpoints every 1,000 releases with elapsed seconds. The reopen child has a separate 30-minute absolute budget including rebuild and full retrieval; its silence allowance is also 30 minutes because production index rebuild does not expose per-entry progress callbacks. Progress never extends either absolute deadline. The CI job budget is 120 minutes, covering both child budgets plus build, cleanup, and evidence upload. These are finite operational limits, not promised runtimes.
+
+The supervisor runs only in the parent process, tails each child log with an independent read cursor in bounded 8 KiB chunks, and forwards output live without adding threads or file descriptors to the measured child. It checks child completion before declaring a timeout, propagates unsuccessful exits, and kills/reaps the child on timeout or supervisor failure. CI uses the runner's disk-backed temporary directory and sets `LSF_CATALOG_SCALE_LOG_DIR` to a retained workspace directory. Both `publish.log`/`reopen.log` and the combined `catalog-scale.log` are uploaded even when the probe fails; live forwarding also leaves progress in the Actions console. Local runs may set `LSF_CATALOG_SCALE_LOG_DIR` to retain the child logs outside temporary cleanup.
+
+Fast supervisor regressions run in ordinary workspace tests and explicitly before the expensive CI probe. They cover healthy progress beyond the old deadline, silence timeout/reset, the non-extendable absolute deadline, silent bounded rebuild, and bounded log forwarding that resumes after EOF. Run only the fast integration-target tests with:
+
+```sh
+cargo test -p latentd --test catalog_scale --locked
+```
+
+The publication-visibility unit tests likewise observe writer errors/panics and deadlines; a deterministic coordination test forces completion between an absent resolve and the writer-status check, then verifies a fresh resolve/fetch after joining.
 
 ## Recovery procedure
 
