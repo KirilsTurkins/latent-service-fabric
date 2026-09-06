@@ -42,6 +42,29 @@ jobs:
       - name: Run tests
         run: cargo test --workspace --all-targets --all-features --locked
 
+  catalog:
+    name: Durable catalog acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - name: Run catalog recovery and codec regressions
+        run: cargo test -p latent-artifacts --lib --locked
+      - name: Publish and reopen 100,000 dormant releases in isolated processes
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1 2>&1 | tee catalog-scale.log
+      - name: Retain catalog acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-scale-${{ github.sha }}
+          path: catalog-scale.log
+          if-no-files-found: warn
+          retention-days: 14
+
   msrv:
     name: Rust MSRV 1.94.1
     runs-on: ubuntu-24.04

@@ -1,4 +1,5 @@
 mod metadata;
+mod metadata_codec;
 mod sha256;
 
 #[cfg(test)]
@@ -14,7 +15,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[cfg(test)]
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use latent_contracts::ContractDescriptor;
 use latent_core::{ArtifactReference, BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest};
 use latent_manifest::{
     __serde_json as serde_json, JsonManifestCodec, ManifestCodec, ManifestValidator,
@@ -22,7 +22,8 @@ use latent_manifest::{
 };
 
 use crate::{ArtifactDescriptor, ArtifactPage, ArtifactQuery, ArtifactRepository, CapsuleArtifact};
-use metadata::{StoredArtifactDescriptor, StoredContractDescriptor, StoredMetadata};
+use metadata::StoredArtifactDescriptor;
+use metadata_codec::{decode_metadata, encode_metadata};
 use sha256::release_digest;
 
 const RELEASES_DIR: &str = "releases";
@@ -140,7 +141,9 @@ pub struct DirectoryArtifactRepository {
     codec: JsonManifestCodec,
     validator: Phase1ManifestValidator,
     index: RwLock<CatalogIndex>,
-    publish_lock: Mutex<()>,
+    /// Serializes writers and gates mutations after indeterminate durability.
+    /// Only a retry of the pending digest may proceed until durable adoption.
+    publish_lock: Mutex<Option<ReleaseDigest>>,
     _owner_lock: File,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
@@ -181,6 +184,7 @@ impl DirectoryArtifactRepository {
         fs::create_dir_all(root.join(RELEASES_DIR)).map_err(io_error)?;
         fs::create_dir_all(root.join(TEMP_DIR)).map_err(io_error)?;
         cleanup_temporary_entries(&root)?;
+        sync_dir(&root)?;
 
         let repository = Self {
             root,
@@ -188,7 +192,7 @@ impl DirectoryArtifactRepository {
             codec: JsonManifestCodec::default(),
             validator: Phase1ManifestValidator::new(),
             index: RwLock::new(CatalogIndex::default()),
-            publish_lock: Mutex::new(()),
+            publish_lock: Mutex::new(None),
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),
@@ -206,7 +210,7 @@ impl DirectoryArtifactRepository {
         let releases = self.root.join(RELEASES_DIR);
         let mut complete_entries = Vec::new();
         let mut scanned = 0_usize;
-        for entry in fs::read_dir(releases).map_err(io_error)? {
+        for entry in fs::read_dir(&releases).map_err(io_error)? {
             let entry = entry.map_err(io_error)?;
             if !entry.file_type().map_err(io_error)?.is_dir() {
                 continue;
@@ -236,6 +240,9 @@ impl DirectoryArtifactRepository {
             let descriptor_bytes = self.validate_descriptor_bounds(&artifact.descriptor)?;
             next.insert(artifact.descriptor, descriptor_bytes, self.config)?;
         }
+        // Reconcile completed entries from an interrupted publication before
+        // exposing the rebuilt index or allowing further mutations.
+        sync_dir(&releases)?;
         *self.index.write().map_err(lock_error)? = next;
         Ok(())
     }
@@ -249,20 +256,14 @@ impl DirectoryArtifactRepository {
             self.config.max_metadata_bytes,
             "catalog metadata",
         )?;
-        let stored: StoredMetadata = serde_json::from_slice(&metadata_bytes)
-            .map_err(|_| corrupt("invalid catalog metadata"))?;
-        let descriptor = ArtifactDescriptor::from(stored.descriptor);
+        let (descriptor, contracts) =
+            decode_metadata(&metadata_bytes, self.config.max_metadata_bytes)?;
         self.validate_descriptor_bounds(&descriptor)?;
         if descriptor.size_bytes > self.config.max_component_bytes as u64 {
             return Err(resource_exhausted(
                 "stored component exceeds configured component byte limit",
             ));
         }
-        let contracts = stored
-            .contracts
-            .into_iter()
-            .map(ContractDescriptor::from)
-            .collect::<Vec<_>>();
         let manifest_bytes = read_bounded_file(
             &path.join(MANIFEST_FILE),
             self.codec.limits().max_document_bytes,
@@ -363,8 +364,38 @@ impl DirectoryArtifactRepository {
         Ok(())
     }
 
+    fn sync_and_adopt(
+        &self,
+        descriptor: ArtifactDescriptor,
+        pending: &mut Option<ReleaseDigest>,
+    ) -> Result<ArtifactDescriptor, PlatformError> {
+        // The completed destination now exists. Keep the mutation gate closed
+        // across every failure, including repeated sync or adoption failures.
+        *pending = Some(descriptor.release_digest.clone());
+        #[cfg(test)]
+        if self.fail_parent_sync_once.swap(false, Ordering::SeqCst) {
+            return Err(error(
+                PlatformErrorCode::Internal,
+                "injected parent-directory sync failure after rename",
+            ));
+        }
+        sync_dir(&self.root.join(RELEASES_DIR))?;
+        let adopted = self.finalize_adoption(descriptor)?;
+        *pending = None;
+        Ok(adopted)
+    }
+
     fn publish_sync(&self, artifact: CapsuleArtifact) -> Result<ArtifactDescriptor, PlatformError> {
-        let _guard = self.publish_lock.lock().map_err(lock_error)?;
+        let mut pending = self.publish_lock.lock().map_err(lock_error)?;
+        if pending
+            .as_ref()
+            .is_some_and(|digest| digest != &artifact.descriptor.release_digest)
+        {
+            return Err(error(
+                PlatformErrorCode::Unavailable,
+                "catalog needs publication recovery: retry the pending release or reopen the root",
+            ));
+        }
         self.validator
             .validate_capsule(&artifact.manifest)
             .map_err(|_| {
@@ -390,28 +421,8 @@ impl DirectoryArtifactRepository {
             &artifact.component_bytes,
         )?;
         self.preflight_adoption(&artifact.descriptor)?;
+        let metadata_bytes = encode_metadata(&artifact, self.config.max_metadata_bytes)?;
 
-        let stored = StoredMetadata {
-            descriptor: StoredArtifactDescriptor::from(&artifact.descriptor),
-            contracts: artifact
-                .contracts
-                .iter()
-                .map(StoredContractDescriptor::from)
-                .collect(),
-        };
-        let metadata_bytes = serde_json::to_vec(&stored).map_err(|_| {
-            error(
-                PlatformErrorCode::Internal,
-                "failed to serialize catalog metadata",
-            )
-        })?;
-        if metadata_bytes.len() > self.config.max_metadata_bytes {
-            return Err(resource_exhausted(
-                "catalog metadata exceeds configured byte limit",
-            ));
-        }
-
-        let releases_dir = self.root.join(RELEASES_DIR);
         let destination = self.entry_path(&artifact.descriptor.release_digest)?;
         if destination.exists() {
             let existing = self.load_complete_entry(&destination)?;
@@ -421,8 +432,7 @@ impl DirectoryArtifactRepository {
                     "release digest already contains different catalog content",
                 ));
             }
-            sync_dir(&releases_dir)?;
-            return self.finalize_adoption(existing.descriptor);
+            return self.sync_and_adopt(existing.descriptor, &mut pending);
         }
 
         let nonce = SystemTime::now()
@@ -458,8 +468,7 @@ impl DirectoryArtifactRepository {
             if destination.exists() {
                 let existing = self.load_complete_entry(&destination)?;
                 if existing == artifact {
-                    sync_dir(&releases_dir)?;
-                    return self.finalize_adoption(existing.descriptor);
+                    return self.sync_and_adopt(existing.descriptor, &mut pending);
                 }
                 return Err(error(
                     PlatformErrorCode::AlreadyExists,
@@ -468,30 +477,12 @@ impl DirectoryArtifactRepository {
             }
             return Err(rename_failure);
         }
-
-        #[cfg(test)]
-        if self.fail_parent_sync_once.swap(false, Ordering::SeqCst) {
-            return Err(error(
-                PlatformErrorCode::Internal,
-                "injected parent-directory sync failure after rename",
-            ));
-        }
-        sync_dir(&releases_dir)?;
-        self.finalize_adoption(artifact.descriptor)
+        self.sync_and_adopt(artifact.descriptor, &mut pending)
     }
 
     #[cfg(test)]
     fn inject_parent_sync_failure_once(&self) {
         self.fail_parent_sync_once.store(true, Ordering::SeqCst);
-    }
-
-    #[cfg(test)]
-    fn register_durable_descriptor_for_acceptance(
-        &self,
-        descriptor: ArtifactDescriptor,
-    ) -> Result<(), PlatformError> {
-        self.preflight_adoption(&descriptor)?;
-        self.finalize_adoption(descriptor).map(|_| ())
     }
 }
 

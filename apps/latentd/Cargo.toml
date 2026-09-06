@@ -36,3 +36,7 @@ tempfile.workspace = true
 [[test]]
 name = "phase0_spike_e2e"
 path = "tests/phase0_spike_e2e_root.rs"
+
+[[test]]
+name = "catalog_scale"
+path = "tests/catalog_scale.rs"
