@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, RwLock, TryLockError};
+use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, TryLockError};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use latent_artifacts::ArtifactRepository;
@@ -56,6 +56,7 @@ impl Default for DirectoryDeploymentRepositoryConfig {
 /// Writers compile outside the reader lock, then compare-and-swap the generation.
 /// Concurrent writers may receive `state-conflict` and retry their transaction.
 /// Management methods are trusted-local operations; authentication belongs to their adapter.
+/// Management I/O is synchronous and must run on a control-plane worker, not an invocation worker.
 /// Invocation reads use one nonblocking lock attempt followed by an immutable index lookup.
 /// A contended publication returns retryable `unavailable`, never waits for control-plane I/O.
 pub struct DirectoryDeploymentRepository {
@@ -73,6 +74,7 @@ pub struct DirectoryDeploymentRepository {
 }
 
 /// An owned read view that stays on its original generation after replacement or deletion.
+/// Explicit pins retain that generation's metadata until their last owner drops the view.
 #[derive(Clone)]
 pub struct PinnedRouteResolver {
     catalog: Arc<CompiledCatalog>,
@@ -93,11 +95,15 @@ impl DirectoryDeploymentRepository {
             || config.max_identifier_bytes == 0
             || config.max_routing_key_bytes == 0
         {
-            return Err(error(PlatformErrorCode::InvalidArgument, "invalid-catalog-limits"));
+            return Err(error(
+                PlatformErrorCode::InvalidArgument,
+                "invalid-catalog-limits",
+            ));
         }
         let root = root.into();
         let owner_lock = persistence::own_root(&root)?;
         let restored = persistence::load(&root, config)?;
+        let needs_initial_state = restored.is_none();
         let (deployments, generation, generated_at) = match &restored {
             Some(record) => (
                 record.deployments(config)?,
@@ -106,11 +112,20 @@ impl DirectoryDeploymentRepository {
             ),
             None => (BTreeMap::new(), RouteGeneration(0), 0),
         };
-        let catalog = compile(deployments, generation, generated_at, artifacts.as_ref(), config)
-            .await?;
+        let catalog = compile(
+            deployments,
+            generation,
+            generated_at,
+            artifacts.as_ref(),
+            config,
+        )
+        .await?;
         if let Some(record) = restored {
             if record.payload.snapshot != persistence::snapshot_value(&catalog.snapshot) {
-                return Err(error(PlatformErrorCode::CorruptArtifact, "persisted-route-mismatch"));
+                return Err(error(
+                    PlatformErrorCode::CorruptArtifact,
+                    "persisted-route-mismatch",
+                ));
             }
         }
         let repository = Self {
@@ -127,12 +142,13 @@ impl DirectoryDeploymentRepository {
             fail_parent_sync: std::sync::atomic::AtomicBool::new(false),
         };
         // A durable empty catalog makes subsequent loss distinguishable from first startup.
-        if !repository.root.join(persistence::STATE_FILE).exists() {
+        if needs_initial_state {
             let bytes = persistence::encode(&repository.read_catalog(), config)?;
             persistence::stage(&repository.root, &bytes)?;
             persistence::replace(&repository.root)?;
-            persistence::sync_root(&repository.root)?;
         }
+        // Also completes initialization interrupted after the first state rename.
+        persistence::sync_root(&repository.root)?;
         Ok(repository)
     }
 
@@ -146,65 +162,108 @@ impl DirectoryDeploymentRepository {
             return Ok(self.read_catalog().snapshot.generation);
         }
         if deployments.len() > self.config.max_deployments {
-            return Err(error(PlatformErrorCode::ResourceExhausted, "deployment-count-limit"));
+            return Err(error(
+                PlatformErrorCode::ResourceExhausted,
+                "deployment-count-limit",
+            ));
         }
         let previous = self.read_catalog();
         let mut next = previous.deployments.clone();
         let mut seen = BTreeSet::new();
         for mut deployment in deployments {
-            Phase1ManifestValidator.validate_deployment(&deployment).map_err(manifest_error)?;
-            JsonManifestCodec::default().encode_deployment(&deployment).map_err(manifest_error)?;
+            Phase1ManifestValidator
+                .validate_deployment(&deployment)
+                .map_err(manifest_error)?;
             deployment.release.0.make_ascii_lowercase();
             if deployment.id.0 == "default" {
-                return Err(error(PlatformErrorCode::AlreadyExists, "reserved-default-route"));
+                return Err(error(
+                    PlatformErrorCode::AlreadyExists,
+                    "reserved-default-route",
+                ));
             }
             if !seen.insert(deployment.id.clone()) {
-                return Err(error(PlatformErrorCode::AlreadyExists, "duplicate-deployment-id"));
+                return Err(error(
+                    PlatformErrorCode::AlreadyExists,
+                    "duplicate-deployment-id",
+                ));
             }
             if let Some(old) = next.get(&deployment.id) {
                 if old.metadata.tenant != deployment.metadata.tenant
                     || old.metadata.namespace != deployment.metadata.namespace
                     || old.service != deployment.service
                 {
-                    return Err(error(PlatformErrorCode::PermissionDenied, "deployment-scope-conflict"));
+                    return Err(error(
+                        PlatformErrorCode::PermissionDenied,
+                        "deployment-scope-conflict",
+                    ));
                 }
             }
             next.insert(deployment.id.clone(), deployment);
         }
         let generation = next_generation(previous.snapshot.generation)?;
-        let compiled = compile(next, generation, now()?, self.artifacts.as_ref(), self.config).await?;
+        let compiled = compile(
+            next,
+            generation,
+            now()?,
+            self.artifacts.as_ref(),
+            self.config,
+        )
+        .await?;
         self.commit(previous.snapshot.generation, compiled)?;
         Ok(generation)
     }
 
     /// Acquires an immutable read view without waiting on a writer.
     pub fn pin(&self) -> Result<PinnedRouteResolver, PlatformError> {
-        let catalog = match self.current.try_read() {
-            Ok(current) => Arc::clone(&current),
-            Err(TryLockError::Poisoned(poisoned)) => Arc::clone(&poisoned.into_inner()),
-            Err(TryLockError::WouldBlock) => {
-                return Err(error(PlatformErrorCode::Unavailable, "snapshot-publication-busy"));
-            }
-        };
-        Ok(PinnedRouteResolver { catalog, config: self.config })
+        Ok(PinnedRouteResolver {
+            catalog: Arc::clone(&self.invocation_catalog()?),
+            config: self.config,
+        })
+    }
+
+    fn invocation_catalog(
+        &self,
+    ) -> Result<RwLockReadGuard<'_, Arc<CompiledCatalog>>, PlatformError> {
+        match self.current.try_read() {
+            Ok(current) => Ok(current),
+            Err(TryLockError::Poisoned(poisoned)) => Ok(poisoned.into_inner()),
+            Err(TryLockError::WouldBlock) => Err(error(
+                PlatformErrorCode::Unavailable,
+                "snapshot-publication-busy",
+            )),
+        }
     }
 
     fn read_catalog(&self) -> Arc<CompiledCatalog> {
-        Arc::clone(&self.current.read().unwrap_or_else(std::sync::PoisonError::into_inner))
+        Arc::clone(
+            &self
+                .current
+                .read()
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
+        )
     }
 
     fn commit(&self, expected: RouteGeneration, next: CompiledCatalog) -> Result<(), PlatformError> {
         // No await, compilation, or artifact access occurs with this writer guard held.
-        let _writer = self.writer.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _writer = self
+            .writer
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if self.read_catalog().snapshot.generation != expected {
-            return Err(error(PlatformErrorCode::StateConflict, "stale-route-generation"));
+            return Err(error(
+                PlatformErrorCode::StateConflict,
+                "stale-route-generation",
+            ));
         }
         let bytes = persistence::encode(&next, self.config)?;
         let next = Arc::new(next);
         persistence::stage(&self.root, &bytes)?;
         #[cfg(test)]
         if self.fail_before_rename.swap(false, Ordering::SeqCst) {
-            return Err(error(PlatformErrorCode::Unavailable, "injected-before-rename"));
+            return Err(error(
+                PlatformErrorCode::Unavailable,
+                "injected-before-rename",
+            ));
         }
         persistence::replace(&self.root)?;
         // Rename is the visibility commit point. Even an uncertain directory fsync must
@@ -212,7 +271,10 @@ impl DirectoryDeploymentRepository {
         let durable = self.sync_parent();
         let generation = next.snapshot.generation.0;
         let old = {
-            let mut current = self.current.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut current = self
+                .current
+                .write()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             let old = std::mem::replace(&mut *current, next);
             self.generation.store(generation, Ordering::Release);
             old
@@ -224,18 +286,27 @@ impl DirectoryDeploymentRepository {
     fn sync_parent(&self) -> Result<(), PlatformError> {
         #[cfg(test)]
         if self.fail_parent_sync.swap(false, Ordering::SeqCst) {
-            return Err(error(PlatformErrorCode::Unavailable, "commit-durability-uncertain"));
+            return Err(error(
+                PlatformErrorCode::Unavailable,
+                "commit-durability-uncertain",
+            ));
         }
         persistence::sync_root(&self.root)
     }
 }
 
 impl DeploymentStore for DirectoryDeploymentRepository {
-    fn apply<'a>(&'a self, deployment: DeploymentManifest) -> BoxFuture<'a, Result<(), PlatformError>> {
+    fn apply<'a>(
+        &'a self,
+        deployment: DeploymentManifest,
+    ) -> BoxFuture<'a, Result<(), PlatformError>> {
         Box::pin(async move { self.apply_many(vec![deployment]).await.map(|_| ()) })
     }
 
-    fn get<'a>(&'a self, id: &'a DeploymentId) -> BoxFuture<'a, Result<Option<DeploymentManifest>, PlatformError>> {
+    fn get<'a>(
+        &'a self,
+        id: &'a DeploymentId,
+    ) -> BoxFuture<'a, Result<Option<DeploymentManifest>, PlatformError>> {
         Box::pin(async move { Ok(self.read_catalog().deployments.get(id).cloned()) })
     }
 
@@ -251,19 +322,34 @@ impl DeploymentStore for DirectoryDeploymentRepository {
                 return Err(error(PlatformErrorCode::NotFound, "deployment-not-found"));
             }
             let generation = next_generation(previous.snapshot.generation)?;
-            let compiled = compile(next, generation, now()?, self.artifacts.as_ref(), self.config).await?;
+            let compiled = compile(
+                next,
+                generation,
+                now()?,
+                self.artifacts.as_ref(),
+                self.config,
+            )
+            .await?;
             self.commit(previous.snapshot.generation, compiled)
         })
     }
 }
 
 impl RouteCompiler for DirectoryDeploymentRepository {
-    fn compile<'a>(&'a self, previous: Option<&'a RouteSnapshot>) -> BoxFuture<'a, Result<RouteSnapshot, PlatformError>> {
+    fn compile<'a>(
+        &'a self,
+        previous: Option<&'a RouteSnapshot>,
+    ) -> BoxFuture<'a, Result<RouteSnapshot, PlatformError>> {
         Box::pin(async move {
             let current = self.read_catalog();
-            let matches = previous.map_or(current.snapshot.generation.0 == 0, |old| old == &current.snapshot);
+            let matches = previous.map_or(current.snapshot.generation.0 == 0, |old| {
+                old == &current.snapshot
+            });
             if !matches {
-                return Err(error(PlatformErrorCode::StateConflict, "stale-route-generation"));
+                return Err(error(
+                    PlatformErrorCode::StateConflict,
+                    "stale-route-generation",
+                ));
             }
             let next = compile(
                 current.deployments.clone(),
@@ -271,7 +357,8 @@ impl RouteCompiler for DirectoryDeploymentRepository {
                 now()?,
                 self.artifacts.as_ref(),
                 self.config,
-            ).await?;
+            )
+            .await?;
             Ok(next.snapshot)
         })
     }
@@ -282,7 +369,10 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
         Box::pin(async move {
             let current = self.read_catalog();
             if snapshot.generation != next_generation(current.snapshot.generation)? {
-                return Err(error(PlatformErrorCode::StateConflict, "stale-route-generation"));
+                return Err(error(
+                    PlatformErrorCode::StateConflict,
+                    "stale-route-generation",
+                ));
             }
             let compiled = compile(
                 current.deployments.clone(),
@@ -290,9 +380,13 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
                 snapshot.generated_at_unix_millis,
                 self.artifacts.as_ref(),
                 self.config,
-            ).await?;
+            )
+            .await?;
             if compiled.snapshot != snapshot {
-                return Err(error(PlatformErrorCode::InvalidArgument, "uncompiled-route-snapshot"));
+                return Err(error(
+                    PlatformErrorCode::InvalidArgument,
+                    "uncompiled-route-snapshot",
+                ));
             }
             self.commit(current.snapshot.generation, compiled)
         })
@@ -304,13 +398,23 @@ impl RouteSnapshotSource for DirectoryDeploymentRepository {
         Box::pin(async move { Ok(self.read_catalog().snapshot.clone()) })
     }
 
-    fn watch<'a>(&'a self, after: RouteGeneration) -> BoxFuture<'a, Result<Vec<RouteSnapshot>, PlatformError>> {
+    fn watch<'a>(
+        &'a self,
+        after: RouteGeneration,
+    ) -> BoxFuture<'a, Result<Vec<RouteSnapshot>, PlatformError>> {
         Box::pin(async move {
             let current = self.read_catalog();
             if after > current.snapshot.generation {
-                return Err(error(PlatformErrorCode::InvalidArgument, "future-route-generation"));
+                return Err(error(
+                    PlatformErrorCode::InvalidArgument,
+                    "future-route-generation",
+                ));
             }
-            Ok(if after < current.snapshot.generation { vec![current.snapshot.clone()] } else { Vec::new() })
+            Ok(if after < current.snapshot.generation {
+                vec![current.snapshot.clone()]
+            } else {
+                Vec::new()
+            })
         })
     }
 }
@@ -324,7 +428,10 @@ impl CompiledRouteStore for DirectoryDeploymentRepository {
         RouteSnapshotSource::current(self)
     }
 
-    fn get<'a>(&'a self, generation: RouteGeneration) -> BoxFuture<'a, Result<Option<RouteSnapshot>, PlatformError>> {
+    fn get<'a>(
+        &'a self,
+        generation: RouteGeneration,
+    ) -> BoxFuture<'a, Result<Option<RouteSnapshot>, PlatformError>> {
         Box::pin(async move {
             let current = self.read_catalog();
             Ok((generation == current.snapshot.generation).then(|| current.snapshot.clone()))
@@ -333,12 +440,27 @@ impl CompiledRouteStore for DirectoryDeploymentRepository {
 }
 
 impl RouteResolver for DirectoryDeploymentRepository {
-    fn resolve(&self, target: &InvocationTarget, routing_key: Option<&str>) -> Result<ResolvedRevision, PlatformError> {
-        self.pin()?.resolve(target, routing_key)
+    fn resolve(
+        &self,
+        target: &InvocationTarget,
+        routing_key: Option<&str>,
+    ) -> Result<ResolvedRevision, PlatformError> {
+        // Borrow instead of pinning: a normal lookup never becomes the last owner that
+        // has to destroy an entire retired catalog on the invocation worker.
+        self.invocation_catalog()?
+            .resolve(target, routing_key, self.config)
     }
 
-    fn resolve_binding(&self, _consumer: &ResolvedRevision, _contract: &ContractId, _key: Option<&str>) -> Result<ResolvedBinding, PlatformError> {
-        Err(error(PlatformErrorCode::RouteUnavailable, "local-bindings-not-configured"))
+    fn resolve_binding(
+        &self,
+        _consumer: &ResolvedRevision,
+        _contract: &ContractId,
+        _key: Option<&str>,
+    ) -> Result<ResolvedBinding, PlatformError> {
+        Err(error(
+            PlatformErrorCode::RouteUnavailable,
+            "local-bindings-not-configured",
+        ))
     }
 
     fn generation(&self) -> RouteGeneration {
@@ -347,12 +469,24 @@ impl RouteResolver for DirectoryDeploymentRepository {
 }
 
 impl RouteResolver for PinnedRouteResolver {
-    fn resolve(&self, target: &InvocationTarget, routing_key: Option<&str>) -> Result<ResolvedRevision, PlatformError> {
+    fn resolve(
+        &self,
+        target: &InvocationTarget,
+        routing_key: Option<&str>,
+    ) -> Result<ResolvedRevision, PlatformError> {
         self.catalog.resolve(target, routing_key, self.config)
     }
 
-    fn resolve_binding(&self, _consumer: &ResolvedRevision, _contract: &ContractId, _key: Option<&str>) -> Result<ResolvedBinding, PlatformError> {
-        Err(error(PlatformErrorCode::RouteUnavailable, "local-bindings-not-configured"))
+    fn resolve_binding(
+        &self,
+        _consumer: &ResolvedRevision,
+        _contract: &ContractId,
+        _key: Option<&str>,
+    ) -> Result<ResolvedBinding, PlatformError> {
+        Err(error(
+            PlatformErrorCode::RouteUnavailable,
+            "local-bindings-not-configured",
+        ))
     }
 
     fn generation(&self) -> RouteGeneration {
@@ -363,25 +497,37 @@ impl RouteResolver for PinnedRouteResolver {
 /// Versioned revision identity over the canonical deployment, excluding only route weight.
 /// Release spelling is normalized; tenant, namespace, ID, service, policy and budgets remain bound.
 pub fn deployment_revision_id(deployment: &DeploymentManifest) -> Result<RevisionId, PlatformError> {
-    Phase1ManifestValidator.validate_deployment(deployment).map_err(manifest_error)?;
+    Phase1ManifestValidator
+        .validate_deployment(deployment)
+        .map_err(manifest_error)?;
     let mut identity = deployment.clone();
     identity.route_weight = 1;
     identity.release.0.make_ascii_lowercase();
-    let bytes = JsonManifestCodec::default().encode_deployment(&identity).map_err(manifest_error)?;
+    let bytes = JsonManifestCodec::default()
+        .encode_deployment(&identity)
+        .map_err(manifest_error)?;
     let mut framed = b"lsf-deployment-revision-v1\0".to_vec();
     framed.extend_from_slice(&(bytes.len() as u64).to_be_bytes());
     framed.extend_from_slice(&bytes);
-    Ok(RevisionId(format!("revision-v1:{}", latent_artifacts::content_digest(&framed).0)))
+    Ok(RevisionId(format!(
+        "revision-v1:{}",
+        latent_artifacts::content_digest(&framed).0
+    )))
 }
 
 fn next_generation(previous: RouteGeneration) -> Result<RouteGeneration, PlatformError> {
     previous.0.checked_add(1).map(RouteGeneration).ok_or_else(|| {
-        error(PlatformErrorCode::ResourceExhausted, "route-generation-exhausted")
+        error(
+            PlatformErrorCode::ResourceExhausted,
+            "route-generation-exhausted",
+        )
     })
 }
 
 fn now() -> Result<u64, PlatformError> {
-    SystemTime::now().duration_since(UNIX_EPOCH).ok()
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()
         .and_then(|duration| u64::try_from(duration.as_millis()).ok())
         .ok_or_else(|| error(PlatformErrorCode::Internal, "invalid-system-clock"))
 }
@@ -390,7 +536,10 @@ fn error(code: PlatformErrorCode, reason: &str) -> PlatformError {
     PlatformError {
         code,
         message: reason.to_owned(),
-        retryable: matches!(code, PlatformErrorCode::Unavailable | PlatformErrorCode::StateConflict),
+        retryable: matches!(
+            code,
+            PlatformErrorCode::Unavailable | PlatformErrorCode::StateConflict
+        ),
         details: vec![ErrorDetail {
             kind: "deployment-catalog".to_owned(),
             fields: Metadata::from([("reason".to_owned(), reason.to_owned())]),
@@ -399,7 +548,10 @@ fn error(code: PlatformErrorCode, reason: &str) -> PlatformError {
 }
 
 fn manifest_error(violations: Vec<ManifestViolation>) -> PlatformError {
-    let code = if violations.iter().any(|v| v.code.contains("scope") || v.code == "namespace-requires-tenant") {
+    let code = if violations
+        .iter()
+        .any(|v| v.code.contains("scope") || v.code == "namespace-requires-tenant")
+    {
         PlatformErrorCode::PermissionDenied
     } else {
         PlatformErrorCode::InvalidArgument
@@ -408,12 +560,15 @@ fn manifest_error(violations: Vec<ManifestViolation>) -> PlatformError {
         code,
         message: "deployment or release failed Phase 1 validation".to_owned(),
         retryable: false,
-        details: violations.into_iter().map(|violation| ErrorDetail {
-            kind: "manifest-violation".to_owned(),
-            fields: Metadata::from([
-                ("path".to_owned(), violation.path),
-                ("code".to_owned(), violation.code),
-            ]),
-        }).collect(),
+        details: violations
+            .into_iter()
+            .map(|violation| ErrorDetail {
+                kind: "manifest-violation".to_owned(),
+                fields: Metadata::from([
+                    ("path".to_owned(), violation.path),
+                    ("code".to_owned(), violation.code),
+                ]),
+            })
+            .collect(),
     }
 }

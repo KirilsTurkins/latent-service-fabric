@@ -71,8 +71,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.97.1
-      - name: Run catalog recovery and codec regressions
-        run: cargo test -p latent-artifacts --lib --locked
+      - name: Run catalog recovery, routing, and dormancy regressions
+        run: cargo test -p latent-artifacts -p latent-control-store --lib --locked -- --nocapture
       - name: Check catalog probe supervision
         run: cargo test -p latentd --test catalog_scale --locked
       - name: Publish and reopen 100,000 dormant releases in isolated processes
