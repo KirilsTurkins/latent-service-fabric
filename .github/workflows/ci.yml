@@ -36,11 +36,63 @@ jobs:
           cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
           cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
       - name: Run Clippy
+        id: clippy
+        env:
+          CARGO_TERM_COLOR: never
         run: |
-          cargo clippy --workspace --all-targets --all-features --locked
-          cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D warnings
+          status=0
+          cargo clippy --workspace --all-targets --all-features --locked > "$RUNNER_TEMP/lsf-clippy.log" 2>&1 || status=$?
+          if [ "$status" -eq 0 ]; then
+            cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D warnings >> "$RUNNER_TEMP/lsf-clippy.log" 2>&1 || status=$?
+          fi
+          tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import re
+          lines = (pathlib.Path(os.environ["RUNNER_TEMP"]) / "lsf-clippy.log").read_text().splitlines()
+          errors = [" ".join(lines[i:i + 4]) for i, line in enumerate(lines) if re.match(r"^error(?:\[.*?\])?:", line)]
+          diagnostic = " | ".join(errors)[:1000] or "no compiler errors"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"diagnostic={diagnostic}\n")
+          PY
+          exit "$status"
+      - name: "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}"
+        if: failure() && steps.clippy.outcome == 'failure'
+        run: tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
       - name: Run tests
         run: cargo test --workspace --all-targets --all-features --locked
+
+  catalog:
+    name: Durable catalog acceptance
+    runs-on: ubuntu-24.04
+    # 60m publication + 30m reopen, with build/cleanup/evidence-upload headroom.
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - name: Run catalog recovery and codec regressions
+        run: cargo test -p latent-artifacts --lib --locked
+      - name: Check catalog probe supervision
+        run: cargo test -p latentd --test catalog_scale --locked
+      - name: Publish and reopen 100,000 dormant releases in isolated processes
+        shell: bash
+        env:
+          TMPDIR: ${{ runner.temp }}
+          LSF_CATALOG_SCALE_LOG_DIR: ${{ github.workspace }}/catalog-scale-logs
+        run: |
+          set -o pipefail
+          cargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1 2>&1 | tee catalog-scale.log
+      - name: Retain catalog acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-scale-${{ github.sha }}
+          path: |
+            catalog-scale.log
+            catalog-scale-logs/*.log
+          if-no-files-found: warn
+          retention-days: 14
 
   msrv:
     name: Rust MSRV 1.94.1

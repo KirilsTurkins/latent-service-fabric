@@ -18,6 +18,11 @@ pub use bounded_codec::{JsonManifestCodec, ManifestLimits};
 pub use validation::{Phase1ManifestValidator, MANIFEST_API_VERSION, PHASE1_FABRIC_VERSION};
 pub use wire_codec::{ManifestDocument, ManifestKind};
 
+#[doc(hidden)]
+pub use serde as __serde;
+#[doc(hidden)]
+pub use serde_json as __serde_json;
+
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::fmt;
