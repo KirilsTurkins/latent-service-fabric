@@ -64,7 +64,14 @@ impl AdmissionPermit {
     ) -> Result<Self, PlatformError> {
         // Caller-supplied metadata is not propagated as execution policy.
         revision.attributes.clear();
-        let mut permit = Self { activation_id, revision, grant, obligations, quotas, reserved: false };
+        let mut permit = Self {
+            activation_id,
+            revision,
+            grant,
+            obligations,
+            quotas,
+            reserved: false,
+        };
         permit.quotas.reserve(ReservationSpec {
             activation_id: &permit.activation_id,
             tenant: &permit.revision.target.tenant,
@@ -80,32 +87,51 @@ impl AdmissionPermit {
     }
 
     #[must_use]
-    pub fn activation_id(&self) -> &ActivationId { &self.activation_id }
+    pub fn activation_id(&self) -> &ActivationId {
+        &self.activation_id
+    }
 
     #[must_use]
-    pub fn tenant(&self) -> &TenantId { &self.revision.target.tenant }
+    pub fn tenant(&self) -> &TenantId {
+        &self.revision.target.tenant
+    }
 
     #[must_use]
-    pub fn revision(&self) -> &ResolvedRevision { &self.revision }
+    pub fn revision(&self) -> &ResolvedRevision {
+        &self.revision
+    }
 
     #[must_use]
-    pub fn granted_budget(&self) -> &ResourceBudget { &self.grant.budget }
+    pub fn granted_budget(&self) -> &ResourceBudget {
+        &self.grant.budget
+    }
 
     /// Pass this exact grant to activation accounting. Never recompute a new
     /// relative deadline when the request leaves the queue.
     #[must_use]
-    pub fn effective_budget(&self) -> &EffectiveActivationBudget { &self.grant }
+    pub fn effective_budget(&self) -> &EffectiveActivationBudget {
+        &self.grant
+    }
 
     #[must_use]
-    pub fn deadline(&self) -> &EffectiveDeadline { &self.grant.deadline }
+    pub fn deadline(&self) -> &EffectiveDeadline {
+        &self.grant.deadline
+    }
 
     #[must_use]
-    pub fn obligations(&self) -> &AdmissionObligations { &self.obligations }
+    pub fn obligations(&self) -> &AdmissionObligations {
+        &self.obligations
+    }
 
     /// Check immediately before allocating/handing off an execution cell.
     pub fn ensure_schedulable_at(&self, now: Instant) -> Result<(), PlatformError> {
         if self.grant.deadline.is_expired_at(now) {
-            Err(rejection(PlatformErrorCode::DeadlineExceeded, "request", "deadline", "deadline-exceeded"))
+            Err(rejection(
+                PlatformErrorCode::DeadlineExceeded,
+                "request",
+                "deadline",
+                "deadline-exceeded",
+            ))
         } else {
             Ok(())
         }
@@ -128,12 +154,15 @@ impl AdmissionPermit {
 
 impl ExecutionPermit {
     #[must_use]
-    pub fn admission(&self) -> &AdmissionPermit { &self.admission }
+    pub fn admission(&self) -> &AdmissionPermit {
+        &self.admission
+    }
 }
 
 impl fmt::Debug for AdmissionPermit {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.debug_struct("AdmissionPermit")
+        formatter
+            .debug_struct("AdmissionPermit")
             .field("obligations", &self.obligations)
             .field("reserved", &self.reserved)
             .finish_non_exhaustive()
@@ -142,7 +171,10 @@ impl fmt::Debug for AdmissionPermit {
 
 impl fmt::Debug for ExecutionPermit {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.debug_tuple("ExecutionPermit").field(&self.admission).finish()
+        formatter
+            .debug_tuple("ExecutionPermit")
+            .field(&self.admission)
+            .finish()
     }
 }
 

@@ -18,19 +18,55 @@ pub struct QuotaUsage {
 }
 
 impl QuotaUsage {
-    fn reserve(self, budget: &ResourceBudget, limits: QuotaLimits, scope: &'static str) -> Result<Self, PlatformError> {
-        let exhausted = |dimension| rejection(PlatformErrorCode::ResourceExhausted, scope, dimension, "capacity-exhausted");
+    fn reserve(
+        self,
+        budget: &ResourceBudget,
+        limits: QuotaLimits,
+        scope: &'static str,
+    ) -> Result<Self, PlatformError> {
+        let exhausted = |dimension| {
+            rejection(
+                PlatformErrorCode::ResourceExhausted,
+                scope,
+                dimension,
+                "capacity-exhausted",
+            )
+        };
         let next = Self {
-            active_activations: self.active_activations.checked_add(1).ok_or_else(|| exhausted("concurrency"))?,
-            queued_activations: self.queued_activations.checked_add(1).ok_or_else(|| exhausted("queue"))?,
-            reserved_cpu_fuel: self.reserved_cpu_fuel.checked_add(budget.cpu_fuel).ok_or_else(|| exhausted("cpu-fuel"))?,
-            reserved_memory_bytes: self.reserved_memory_bytes.checked_add(budget.memory_bytes).ok_or_else(|| exhausted("memory-bytes"))?,
+            active_activations: self
+                .active_activations
+                .checked_add(1)
+                .ok_or_else(|| exhausted("concurrency"))?,
+            queued_activations: self
+                .queued_activations
+                .checked_add(1)
+                .ok_or_else(|| exhausted("queue"))?,
+            reserved_cpu_fuel: self
+                .reserved_cpu_fuel
+                .checked_add(budget.cpu_fuel)
+                .ok_or_else(|| exhausted("cpu-fuel"))?,
+            reserved_memory_bytes: self
+                .reserved_memory_bytes
+                .checked_add(budget.memory_bytes)
+                .ok_or_else(|| exhausted("memory-bytes"))?,
         };
         for (exceeded, dimension) in [
-            (next.active_activations > limits.maximum_concurrent_activations, "concurrency"),
-            (next.queued_activations > limits.maximum_queued_activations, "queue"),
-            (next.reserved_cpu_fuel > limits.maximum_reserved_cpu_fuel, "cpu-fuel"),
-            (next.reserved_memory_bytes > limits.maximum_reserved_memory_bytes, "memory-bytes"),
+            (
+                next.active_activations > limits.maximum_concurrent_activations,
+                "concurrency",
+            ),
+            (
+                next.queued_activations > limits.maximum_queued_activations,
+                "queue",
+            ),
+            (
+                next.reserved_cpu_fuel > limits.maximum_reserved_cpu_fuel,
+                "cpu-fuel",
+            ),
+            (
+                next.reserved_memory_bytes > limits.maximum_reserved_memory_bytes,
+                "memory-bytes",
+            ),
         ] {
             if exceeded {
                 return Err(exhausted(dimension));
@@ -95,7 +131,10 @@ impl LocalQuotaProvider {
     pub fn new(policy: NodeAdmissionPolicy) -> Result<Self, PlatformError> {
         policy.validate()?;
         Ok(Self {
-            inner: Arc::new(Inner { policy, state: Mutex::new(State::default()) }),
+            inner: Arc::new(Inner {
+                policy,
+                state: Mutex::new(State::default()),
+            }),
         })
     }
 
@@ -115,16 +154,27 @@ impl LocalQuotaProvider {
 
     pub fn snapshot_now(&self, tenant: &TenantId) -> Result<QuotaSnapshot, PlatformError> {
         let policy = self.policy().tenants.get(tenant).ok_or_else(|| {
-            rejection(PlatformErrorCode::PermissionDenied, "tenant", "principal", "tenant-not-authorized")
+            rejection(
+                PlatformErrorCode::PermissionDenied,
+                "tenant",
+                "principal",
+                "tenant-not-authorized",
+            )
         })?;
-        let usage = self.lock()?.tenants.get(tenant).copied().unwrap_or_default();
+        let usage = self
+            .lock()?
+            .tenants
+            .get(tenant)
+            .copied()
+            .unwrap_or_default();
         Ok(QuotaSnapshot {
             tenant: tenant.clone(),
             maximum_concurrent_activations: policy.limits.maximum_concurrent_activations,
             active_activations: usage.active_activations,
             queued_activations: usage.queued_activations,
             remaining_cpu_fuel: policy.limits.maximum_reserved_cpu_fuel - usage.reserved_cpu_fuel,
-            remaining_memory_bytes: policy.limits.maximum_reserved_memory_bytes - usage.reserved_memory_bytes,
+            remaining_memory_bytes: policy.limits.maximum_reserved_memory_bytes
+                - usage.reserved_memory_bytes,
             reset_at_unix_millis: None,
         })
     }
@@ -137,34 +187,84 @@ impl LocalQuotaProvider {
         let class = &policy.cell_classes[spec.cell_class];
         let mut state = self.lock()?;
         if state.reservations.contains_key(spec.activation_id) {
-            return Err(rejection(PlatformErrorCode::AlreadyExists, "request", "activation-id", "activation-id-unavailable"));
+            return Err(rejection(
+                PlatformErrorCode::AlreadyExists,
+                "request",
+                "activation-id",
+                "activation-id-unavailable",
+            ));
         }
         // Calculate every new value and perform every rejection before mutation.
         // The same critical section includes deadline estimation, so racing
         // admissions observe reservations made by earlier winners.
-        let next_usage = state.usage.reserve(&spec.grant.budget, policy.limits, "node")?;
-        let next_tenant = state.tenants.get(spec.tenant).copied().unwrap_or_default()
+        let next_usage = state
+            .usage
+            .reserve(&spec.grant.budget, policy.limits, "node")?;
+        let next_tenant = state
+            .tenants
+            .get(spec.tenant)
+            .copied()
+            .unwrap_or_default()
             .reserve(&spec.grant.budget, tenant.limits, "tenant")?;
-        let next_trust = state.trust_classes.get(spec.trust_class).copied().unwrap_or_default()
+        let next_trust = state
+            .trust_classes
+            .get(spec.trust_class)
+            .copied()
+            .unwrap_or_default()
             .reserve(&spec.grant.budget, trust.limits, "trust-class")?;
-        let next_queue = state.queues.get(spec.queue_class).copied().unwrap_or(0)
-            .checked_add(1).filter(|count| *count <= queue.maximum_queued_activations)
-            .ok_or_else(|| rejection(PlatformErrorCode::ResourceExhausted, "queue-class", "queue", "capacity-exhausted"))?;
+        let next_queue = state
+            .queues
+            .get(spec.queue_class)
+            .copied()
+            .unwrap_or(0)
+            .checked_add(1)
+            .filter(|count| *count <= queue.maximum_queued_activations)
+            .ok_or_else(|| {
+                rejection(
+                    PlatformErrorCode::ResourceExhausted,
+                    "queue-class",
+                    "queue",
+                    "capacity-exhausted",
+                )
+            })?;
         let current_cell = state.cells.get(spec.cell_class).copied().unwrap_or(0);
         let next_cell = current_cell.checked_add(1).ok_or_else(|| {
-            rejection(PlatformErrorCode::ResourceExhausted, "node", "concurrency", "capacity-exhausted")
+            rejection(
+                PlatformErrorCode::ResourceExhausted,
+                "node",
+                "concurrency",
+                "capacity-exhausted",
+            )
         })?;
         let waves = u64::from(current_cell) / u64::from(class.parallelism);
-        let required_millis = waves.checked_mul(policy.deadline.estimated_service_time_millis)
+        let required_millis = waves
+            .checked_mul(policy.deadline.estimated_service_time_millis)
             .map(|estimate| estimate.max(spec.observed_queue_delay_millis))
             .and_then(|wait| wait.checked_add(policy.deadline.minimum_execution_time_millis))
             .and_then(|wait| wait.checked_add(policy.deadline.safety_margin_millis))
-            .ok_or_else(|| rejection(PlatformErrorCode::AdmissionRejected, "node", "deadline", "queue-estimate-overflow"))?;
+            .ok_or_else(|| {
+                rejection(
+                    PlatformErrorCode::AdmissionRejected,
+                    "node",
+                    "deadline",
+                    "queue-estimate-overflow",
+                )
+            })?;
         let remaining = spec.grant.deadline.remaining_at(spec.now).ok_or_else(|| {
-            rejection(PlatformErrorCode::InvalidArgument, "request", "deadline", "missing-effective-deadline")
+            rejection(
+                PlatformErrorCode::InvalidArgument,
+                "request",
+                "deadline",
+                "missing-effective-deadline",
+            )
         })?;
         if remaining <= Duration::from_millis(required_millis) {
-            return Err(rejection(PlatformErrorCode::AdmissionRejected, "node", "deadline", "queue-deadline-infeasible"));
+            return Err(rejection(
+                PlatformErrorCode::AdmissionRejected,
+                "node",
+                "deadline",
+                "queue-deadline-infeasible",
+            ));
         }
         let record = Reservation {
             tenant: spec.tenant.clone(),
@@ -176,10 +276,14 @@ impl LocalQuotaProvider {
             queued: true,
         };
         state.tenants.insert(record.tenant.clone(), next_tenant);
-        state.trust_classes.insert(record.trust_class.clone(), next_trust);
+        state
+            .trust_classes
+            .insert(record.trust_class.clone(), next_trust);
         state.queues.insert(record.queue_class.clone(), next_queue);
         state.cells.insert(record.cell_class.clone(), next_cell);
-        state.reservations.insert(spec.activation_id.clone(), record);
+        state
+            .reservations
+            .insert(spec.activation_id.clone(), record);
         state.usage = next_usage;
         Ok(())
     }
@@ -187,25 +291,47 @@ impl LocalQuotaProvider {
     pub(crate) fn start(&self, activation_id: &ActivationId) -> Result<(), PlatformError> {
         let mut state = self.lock()?;
         let record = state.reservations.get_mut(activation_id).ok_or_else(|| {
-            rejection(PlatformErrorCode::Internal, "request", "quota", "reservation-not-live")
+            rejection(
+                PlatformErrorCode::Internal,
+                "request",
+                "quota",
+                "reservation-not-live",
+            )
         })?;
         if !record.queued {
-            return Err(rejection(PlatformErrorCode::Internal, "request", "quota", "reservation-already-started"));
+            return Err(rejection(
+                PlatformErrorCode::Internal,
+                "request",
+                "quota",
+                "reservation-already-started",
+            ));
         }
         record.queued = false;
         let tenant = record.tenant.clone();
         let trust = record.trust_class.clone();
         let queue = record.queue_class.clone();
         state.usage.queued_activations -= 1;
-        state.tenants.get_mut(&tenant).expect("live tenant reservation").queued_activations -= 1;
-        state.trust_classes.get_mut(&trust).expect("live trust reservation").queued_activations -= 1;
+        state
+            .tenants
+            .get_mut(&tenant)
+            .expect("live tenant reservation")
+            .queued_activations -= 1;
+        state
+            .trust_classes
+            .get_mut(&trust)
+            .expect("live trust reservation")
+            .queued_activations -= 1;
         decrement(&mut state.queues, &queue);
         Ok(())
     }
 
     pub(crate) fn release(&self, activation_id: &ActivationId) {
         // Drop must reclaim a live reservation even after a poisoned reader.
-        let mut state = self.inner.state.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if let Some(record) = state.reservations.remove(activation_id) {
             state.usage.release(&record);
             release_usage(&mut state.tenants, &record.tenant, &record);
@@ -219,7 +345,12 @@ impl LocalQuotaProvider {
 
     fn lock(&self) -> Result<MutexGuard<'_, State>, PlatformError> {
         self.inner.state.lock().map_err(|_| {
-            rejection(PlatformErrorCode::Unavailable, "node", "quota", "quota-state-unavailable")
+            rejection(
+                PlatformErrorCode::Unavailable,
+                "node",
+                "quota",
+                "quota-state-unavailable",
+            )
         })
     }
 }
@@ -241,7 +372,10 @@ fn decrement(map: &mut BTreeMap<String, u32>, key: &str) {
 }
 
 impl QuotaProvider for LocalQuotaProvider {
-    fn snapshot<'a>(&'a self, tenant: &'a TenantId) -> BoxFuture<'a, Result<QuotaSnapshot, PlatformError>> {
+    fn snapshot<'a>(
+        &'a self,
+        tenant: &'a TenantId,
+    ) -> BoxFuture<'a, Result<QuotaSnapshot, PlatformError>> {
         Box::pin(async move { self.snapshot_now(tenant) })
     }
 }

@@ -100,5 +100,7 @@ pub(crate) fn rejection(
 pub(crate) fn valid_identifier(value: &str, maximum: usize) -> bool {
     !value.is_empty()
         && value.len() <= maximum
-        && !value.chars().any(|character| character.is_control() || character.is_whitespace())
+        && !value
+            .chars()
+            .any(|character| character.is_control() || character.is_whitespace())
 }

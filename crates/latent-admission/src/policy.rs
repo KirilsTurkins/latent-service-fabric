@@ -94,8 +94,14 @@ impl NodeAdmissionPolicy {
     pub fn validate(&self) -> Result<(), PlatformError> {
         if self.maximum_identifier_bytes == 0
             || !valid_identifier(&self.architecture, self.maximum_identifier_bytes)
-            || self.region.as_ref().is_some_and(|value| !self.valid_name(value))
-            || self.zone.as_ref().is_some_and(|value| !self.valid_name(value))
+            || self
+                .region
+                .as_ref()
+                .is_some_and(|value| !self.valid_name(value))
+            || self
+                .zone
+                .as_ref()
+                .is_some_and(|value| !self.valid_name(value))
         {
             return Err(configuration("invalid-node-identity"));
         }
@@ -112,7 +118,9 @@ impl NodeAdmissionPolicy {
         }
         if self.deadline.estimated_service_time_millis == 0
             || self.deadline.minimum_execution_time_millis == 0
-            || self.deadline.minimum_execution_time_millis
+            || self
+                .deadline
+                .minimum_execution_time_millis
                 .checked_add(self.deadline.safety_margin_millis)
                 .is_none()
         {
@@ -128,14 +136,21 @@ impl NodeAdmissionPolicy {
                     || class.maximum_memory_bytes < previous_memory
                     || class.parallelism == 0
                     || class.threading_models.is_empty()
-                    || class.features.iter().any(|feature| !self.valid_name(feature))
+                    || class
+                        .features
+                        .iter()
+                        .any(|feature| !self.valid_name(feature))
                 {
                     return Err(configuration("invalid-cell-class"));
                 }
                 previous_memory = class.maximum_memory_bytes;
             }
         }
-        if self.cell_classes.keys().any(|name| cell_rank(name).is_none()) {
+        if self
+            .cell_classes
+            .keys()
+            .any(|name| cell_rank(name).is_none())
+        {
             return Err(configuration("unknown-cell-class"));
         }
         let mut priorities = [false; 256];
@@ -162,10 +177,16 @@ impl NodeAdmissionPolicy {
         }
         for (tenant, policy) in &self.tenants {
             if !self.valid_name(&tenant.0)
-                || policy.allowed_subjects.iter().any(|subject| !self.valid_name(subject))
+                || policy
+                    .allowed_subjects
+                    .iter()
+                    .any(|subject| !self.valid_name(subject))
                 || policy.maximum_priority > self.maximum_priority
                 || !self.valid_cells(&policy.allowed_cell_classes)
-                || policy.allowed_trust_classes.iter().any(|name| !self.trust_classes.contains_key(name))
+                || policy
+                    .allowed_trust_classes
+                    .iter()
+                    .any(|name| !self.trust_classes.contains_key(name))
             {
                 return Err(configuration("invalid-tenant-policy"));
             }
@@ -174,7 +195,9 @@ impl NodeAdmissionPolicy {
     }
 
     fn valid_cells(&self, names: &BTreeSet<String>) -> bool {
-        names.iter().all(|name| self.cell_classes.contains_key(name))
+        names
+            .iter()
+            .all(|name| self.cell_classes.contains_key(name))
     }
 
     fn valid_name(&self, name: &str) -> bool {
@@ -194,5 +217,10 @@ pub(crate) fn cell_rank(name: &str) -> Option<u8> {
 }
 
 fn configuration(reason: &'static str) -> PlatformError {
-    rejection(PlatformErrorCode::InvalidArgument, "node", "configuration", reason)
+    rejection(
+        PlatformErrorCode::InvalidArgument,
+        "node",
+        "configuration",
+        reason,
+    )
 }
