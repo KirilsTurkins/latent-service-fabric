@@ -12,7 +12,8 @@ fn wait_for_publication(
     mut after_absent: impl FnMut(&thread::JoinHandle<Result<ArtifactDescriptor, PlatformError>>),
 ) -> Result<CapsuleArtifact, String> {
     loop {
-        let observed = block_on(repo.resolve(query)).map_err(|error| format!("resolve: {error:?}"))?;
+        let observed =
+            block_on(repo.resolve(query)).map_err(|error| format!("resolve: {error:?}"))?;
         if let Some(descriptor) = observed {
             let complete = block_on(repo.fetch(&descriptor.release_digest))
                 .map_err(|error| format!("visible release was incomplete: {error:?}"))?;
@@ -23,7 +24,8 @@ fn wait_for_publication(
             after_absent(&writer);
         }
         if writer.is_finished() {
-            let descriptor = writer.join()
+            let descriptor = writer
+                .join()
                 .map_err(|_| "publication writer panicked".to_owned())?
                 .map_err(|error| format!("publication writer failed: {error:?}"))?;
             // The earlier None preceded the join. Only this fresh observation
@@ -37,7 +39,9 @@ fn wait_for_publication(
                 .map_err(|error| format!("fetch after join: {error:?}"));
         }
         if Instant::now() >= deadline {
-            return Err(format!("publication visibility deadline exceeded for {query:?}"));
+            return Err(format!(
+                "publication visibility deadline exceeded for {query:?}"
+            ));
         }
         thread::yield_now();
     }
@@ -56,8 +60,14 @@ fn readers_never_observe_partial_publication_and_wait_is_bounded() {
     let writer_repo = Arc::clone(&repo);
     let writer_artifact = expected.clone();
     let writer = thread::spawn(move || block_on(writer_repo.publish(writer_artifact)));
-    let actual = wait_for_publication(&repo, &query, writer,
-        Instant::now() + Duration::from_secs(10), |_| {}).expect("complete publication");
+    let actual = wait_for_publication(
+        &repo,
+        &query,
+        writer,
+        Instant::now() + Duration::from_secs(10),
+        |_| {},
+    )
+    .expect("complete publication");
     assert_eq!(actual, expected);
 }
 
@@ -75,20 +85,28 @@ fn completion_between_absent_resolve_and_writer_check_is_not_a_failure() {
     let writer_repo = Arc::clone(&repo);
     let writer_artifact = expected.clone();
     let writer = thread::spawn(move || {
-        wait.recv_timeout(Duration::from_secs(5)).expect("reader first observed absence");
+        wait.recv_timeout(Duration::from_secs(5))
+            .expect("reader first observed absence");
         block_on(writer_repo.publish(writer_artifact))
     });
     let deadline = Instant::now() + Duration::from_secs(10);
     let mut scheduled = false;
     let actual = wait_for_publication(&repo, &query, writer, deadline, |writer| {
-        assert!(!scheduled, "the forced absent observation happens exactly once");
+        assert!(
+            !scheduled,
+            "the forced absent observation happens exactly once"
+        );
         scheduled = true;
         start.send(()).expect("unblock publisher after None");
         while !writer.is_finished() {
-            assert!(Instant::now() < deadline, "coordinated writer did not finish");
+            assert!(
+                Instant::now() < deadline,
+                "coordinated writer did not finish"
+            );
             thread::yield_now();
         }
-    }).expect("a successful intervening publication must remain visible");
+    })
+    .expect("a successful intervening publication must remain visible");
     assert!(scheduled);
     assert_eq!(actual, expected);
 }
@@ -106,8 +124,14 @@ fn publication_visibility_wait_reports_writer_failure_promptly() {
     };
     let writer_repo = Arc::clone(&repo);
     let writer = thread::spawn(move || block_on(writer_repo.publish(expected)));
-    let failure = wait_for_publication(&repo, &query, writer,
-        Instant::now() + Duration::from_secs(5), |_| {}).expect_err("injected writer failure");
+    let failure = wait_for_publication(
+        &repo,
+        &query,
+        writer,
+        Instant::now() + Duration::from_secs(5),
+        |_| {},
+    )
+    .expect_err("injected writer failure");
     assert!(failure.contains("Internal"), "{failure}");
     assert!(!failure.contains("deadline"), "{failure}");
 }
@@ -122,7 +146,13 @@ fn publication_visibility_wait_reports_writer_panic_promptly() {
         media_type: None,
     };
     let writer = thread::spawn(|| panic!("injected writer panic"));
-    let failure = wait_for_publication(&repo, &query, writer,
-        Instant::now() + Duration::from_secs(5), |_| {}).expect_err("writer panic");
+    let failure = wait_for_publication(
+        &repo,
+        &query,
+        writer,
+        Instant::now() + Duration::from_secs(5),
+        |_| {},
+    )
+    .expect_err("writer panic");
     assert_eq!(failure, "publication writer panicked");
 }

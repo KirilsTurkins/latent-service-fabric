@@ -20,7 +20,9 @@ use latent_core::{
     ArtifactReference, ContractId, FunctionId, InterfaceId, Metadata, PlatformErrorCode,
     ReleaseDigest,
 };
-use latent_manifest::{JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator};
+use latent_manifest::{
+    JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator,
+};
 
 use super::{
     release_digest, ArtifactDescriptor, ArtifactQuery, ArtifactRepository, CapsuleArtifact,
@@ -198,7 +200,10 @@ fn digest_disagreement_is_corrupt_and_not_visible() {
     invalid.manifest.component_digest = release_digest(b"component-two");
     let failure = block_on(repo.publish(invalid)).expect_err("digest mismatch must fail");
     assert_eq!(failure.code, PlatformErrorCode::CorruptArtifact);
-    assert!(block_on(repo.list(None, 10)).expect("list").entries.is_empty());
+    assert!(block_on(repo.list(None, 10))
+        .expect("list")
+        .entries
+        .is_empty());
 }
 
 #[test]
@@ -260,10 +265,15 @@ fn post_rename_parent_sync_failure_is_not_success_and_retry_repairs_visibility()
     .expect("resolve after failure")
     .is_none());
     assert_eq!(
-        block_on(repo.fetch(&digest)).expect_err("fetch after failure").code,
+        block_on(repo.fetch(&digest))
+            .expect_err("fetch after failure")
+            .code,
         PlatformErrorCode::NotFound
     );
-    assert!(block_on(repo.list(None, 10)).expect("list after failure").entries.is_empty());
+    assert!(block_on(repo.list(None, 10))
+        .expect("list after failure")
+        .entries
+        .is_empty());
     assert_eq!(
         block_on(repo.publish(expected.clone())).expect("retry must durably adopt"),
         expected.descriptor
@@ -275,8 +285,17 @@ fn post_rename_parent_sync_failure_is_not_success_and_retry_repairs_visibility()
     }))
     .expect("resolve after retry")
     .is_some());
-    assert_eq!(block_on(repo.fetch(&digest)).expect("fetch after retry"), expected);
-    assert_eq!(block_on(repo.list(None, 10)).expect("list after retry").entries.len(), 1);
+    assert_eq!(
+        block_on(repo.fetch(&digest)).expect("fetch after retry"),
+        expected
+    );
+    assert_eq!(
+        block_on(repo.list(None, 10))
+            .expect("list after retry")
+            .entries
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -287,13 +306,21 @@ fn root_is_exclusively_owned_before_cleanup_and_rebuild() {
     fs::create_dir_all(&active_stage).expect("active stage");
     fs::write(active_stage.join("component.wasm"), b"active").expect("active data");
     let failure = DirectoryArtifactRepository::open(
-        temp.path(), DirectoryArtifactRepositoryConfig::default(),
-    ).expect_err("second live opener must fail");
+        temp.path(),
+        DirectoryArtifactRepositoryConfig::default(),
+    )
+    .expect_err("second live opener must fail");
     assert_eq!(failure.code, PlatformErrorCode::Unavailable);
-    assert!(active_stage.exists(), "rejected opener must not run cleanup");
+    assert!(
+        active_stage.exists(),
+        "rejected opener must not run cleanup"
+    );
     drop(first);
     let reopened = repository(temp.path());
-    assert!(!active_stage.exists(), "new owner cleans abandoned staging data");
+    assert!(
+        !active_stage.exists(),
+        "new owner cleans abandoned staging data"
+    );
     drop(reopened);
 }
 
@@ -303,28 +330,44 @@ fn exclusive_root_ownership_prevents_conflicting_independent_handles() {
     let first = repository(temp.path());
     block_on(first.publish(artifact("same-reference", b"one"))).expect("first publish");
     assert_eq!(
-        DirectoryArtifactRepository::open(temp.path(), DirectoryArtifactRepositoryConfig::default())
-            .expect_err("second handle cannot publish identical or conflicting releases").code,
+        DirectoryArtifactRepository::open(
+            temp.path(),
+            DirectoryArtifactRepositoryConfig::default()
+        )
+        .expect_err("second handle cannot publish identical or conflicting releases")
+        .code,
         PlatformErrorCode::Unavailable
     );
     drop(first);
     let reopened = repository(temp.path());
-    assert_eq!(block_on(reopened.list(None, 10)).expect("reopen list").entries.len(), 1);
+    assert_eq!(
+        block_on(reopened.list(None, 10))
+            .expect("reopen list")
+            .entries
+            .len(),
+        1
+    );
 }
 
 #[test]
 fn listing_is_entry_and_byte_bounded_and_deterministic() {
     let temp = TempRoot::new();
-    let repo = DirectoryArtifactRepository::open(temp.path(), DirectoryArtifactRepositoryConfig {
-        max_page_size: 2,
-        max_page_bytes: 16 * 1024,
-        max_descriptor_bytes: 8 * 1024,
-        ..DirectoryArtifactRepositoryConfig::default()
-    }).expect("open");
+    let repo = DirectoryArtifactRepository::open(
+        temp.path(),
+        DirectoryArtifactRepositoryConfig {
+            max_page_size: 2,
+            max_page_bytes: 16 * 1024,
+            max_descriptor_bytes: 8 * 1024,
+            ..DirectoryArtifactRepositoryConfig::default()
+        },
+    )
+    .expect("open");
     for index in 0..5 {
         block_on(repo.publish(artifact(
-            &format!("page-{index}"), format!("component-{index}").as_bytes(),
-        ))).expect("publish");
+            &format!("page-{index}"),
+            format!("component-{index}").as_bytes(),
+        )))
+        .expect("publish");
     }
     let first = block_on(repo.list(None, 100)).expect("first page");
     assert_eq!(first.entries.len(), 2);
@@ -341,16 +384,28 @@ fn listing_is_entry_and_byte_bounded_and_deterministic() {
 fn oversized_descriptor_fields_are_rejected_before_visibility() {
     for variant in ["reference", "annotation", "layer"] {
         let temp = TempRoot::new();
-        let repo = DirectoryArtifactRepository::open(temp.path(), DirectoryArtifactRepositoryConfig {
-            max_descriptor_bytes: 512,
-            max_page_bytes: 1024,
-            max_metadata_bytes: 2048,
-            ..DirectoryArtifactRepositoryConfig::default()
-        }).expect("open");
+        let repo = DirectoryArtifactRepository::open(
+            temp.path(),
+            DirectoryArtifactRepositoryConfig {
+                max_descriptor_bytes: 512,
+                max_page_bytes: 1024,
+                max_metadata_bytes: 2048,
+                ..DirectoryArtifactRepositoryConfig::default()
+            },
+        )
+        .expect("open");
         let mut value = artifact(variant, b"bounded-component");
         match variant {
-            "reference" => value.descriptor.reference = ArtifactReference(format!("local://{}", "x".repeat(2048))),
-            "annotation" => { value.descriptor.annotations.insert("large".to_owned(), "x".repeat(2048)); }
+            "reference" => {
+                value.descriptor.reference =
+                    ArtifactReference(format!("local://{}", "x".repeat(2048)))
+            }
+            "annotation" => {
+                value
+                    .descriptor
+                    .annotations
+                    .insert("large".to_owned(), "x".repeat(2048));
+            }
             "layer" => value.descriptor.layers.push(ArtifactLayer {
                 media_type: "x".repeat(2048),
                 digest: release_digest(b"layer").0,
@@ -359,25 +414,42 @@ fn oversized_descriptor_fields_are_rejected_before_visibility() {
             }),
             _ => unreachable!(),
         }
-        assert_eq!(block_on(repo.publish(value)).expect_err("oversized descriptor").code,
-            PlatformErrorCode::ResourceExhausted);
-        assert!(block_on(repo.list(None, 10)).expect("list").entries.is_empty());
+        assert_eq!(
+            block_on(repo.publish(value))
+                .expect_err("oversized descriptor")
+                .code,
+            PlatformErrorCode::ResourceExhausted
+        );
+        assert!(block_on(repo.list(None, 10))
+            .expect("list")
+            .entries
+            .is_empty());
     }
 }
 
 #[test]
 fn aggregate_index_byte_budget_is_enforced_before_persistence() {
     let temp = TempRoot::new();
-    let repo = DirectoryArtifactRepository::open(temp.path(), DirectoryArtifactRepositoryConfig {
-        max_index_entries: 100,
-        max_index_bytes: 3_000,
-        ..DirectoryArtifactRepositoryConfig::default()
-    }).expect("open");
+    let repo = DirectoryArtifactRepository::open(
+        temp.path(),
+        DirectoryArtifactRepositoryConfig {
+            max_index_entries: 100,
+            max_index_bytes: 3_000,
+            ..DirectoryArtifactRepositoryConfig::default()
+        },
+    )
+    .expect("open");
     block_on(repo.publish(artifact("budget-one", b"budget-one"))).expect("first release fits");
-    assert_eq!(block_on(repo.publish(artifact("budget-two", b"budget-two")))
-        .expect_err("aggregate budget must reject second release").code,
-        PlatformErrorCode::ResourceExhausted);
-    assert_eq!(block_on(repo.list(None, 10)).expect("list").entries.len(), 1);
+    assert_eq!(
+        block_on(repo.publish(artifact("budget-two", b"budget-two")))
+            .expect_err("aggregate budget must reject second release")
+            .code,
+        PlatformErrorCode::ResourceExhausted
+    );
+    assert_eq!(
+        block_on(repo.list(None, 10)).expect("list").entries.len(),
+        1
+    );
 }
 
 #[test]
@@ -388,14 +460,21 @@ fn oversized_persisted_metadata_is_rejected_before_allocation_on_reopen() {
     let repo = repository(temp.path());
     block_on(repo.publish(expected)).expect("publish");
     drop(repo);
-    fs::write(release_dir(temp.path(), &digest).join("metadata.json"), vec![b'x'; 8192])
-        .expect("replace metadata");
-    let failure = DirectoryArtifactRepository::open(temp.path(), DirectoryArtifactRepositoryConfig {
-        max_metadata_bytes: 1024,
-        max_descriptor_bytes: 512,
-        max_page_bytes: 1024,
-        ..DirectoryArtifactRepositoryConfig::default()
-    }).expect_err("oversized persisted metadata must fail bounded reopen");
+    fs::write(
+        release_dir(temp.path(), &digest).join("metadata.json"),
+        vec![b'x'; 8192],
+    )
+    .expect("replace metadata");
+    let failure = DirectoryArtifactRepository::open(
+        temp.path(),
+        DirectoryArtifactRepositoryConfig {
+            max_metadata_bytes: 1024,
+            max_descriptor_bytes: 512,
+            max_page_bytes: 1024,
+            ..DirectoryArtifactRepositoryConfig::default()
+        },
+    )
+    .expect_err("oversized persisted metadata must fail bounded reopen");
     assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
 }
 
@@ -411,12 +490,22 @@ fn incomplete_directories_do_not_consume_completed_index_quota() {
     block_on(repo.publish(artifact("complete", b"complete-component"))).expect("publish");
     drop(repo);
     for index in 0..8 {
-        fs::create_dir_all(temp.path().join("releases").join(format!("incomplete-{index:02}")))
-            .expect("incomplete directory");
+        fs::create_dir_all(
+            temp.path()
+                .join("releases")
+                .join(format!("incomplete-{index:02}")),
+        )
+        .expect("incomplete directory");
     }
     let reopened = DirectoryArtifactRepository::open(temp.path(), config)
         .expect("incomplete debris must not consume completed quota");
-    assert_eq!(block_on(reopened.list(None, 10)).expect("list").entries.len(), 1);
+    assert_eq!(
+        block_on(reopened.list(None, 10))
+            .expect("list")
+            .entries
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -427,11 +516,19 @@ fn separate_recovery_scan_bound_is_enforced() {
         fs::create_dir_all(temp.path().join("releases").join(format!("debris-{index}")))
             .expect("debris");
     }
-    assert_eq!(DirectoryArtifactRepository::open(temp.path(), DirectoryArtifactRepositoryConfig {
-        max_index_entries: 100,
-        max_recovery_directories: 2,
-        ..DirectoryArtifactRepositoryConfig::default()
-    }).expect_err("separate recovery scan bound").code, PlatformErrorCode::ResourceExhausted);
+    assert_eq!(
+        DirectoryArtifactRepository::open(
+            temp.path(),
+            DirectoryArtifactRepositoryConfig {
+                max_index_entries: 100,
+                max_recovery_directories: 2,
+                ..DirectoryArtifactRepositoryConfig::default()
+            }
+        )
+        .expect_err("separate recovery scan bound")
+        .code,
+        PlatformErrorCode::ResourceExhausted
+    );
 }
 
 #[test]
@@ -452,9 +549,15 @@ fn concurrent_identical_publishers_on_one_owned_handle_observe_one_release() {
     }
     barrier.wait();
     for task in tasks {
-        assert_eq!(task.join().expect("publisher join").expect("publish"), expected.descriptor);
+        assert_eq!(
+            task.join().expect("publisher join").expect("publish"),
+            expected.descriptor
+        );
     }
-    assert_eq!(block_on(repo.list(None, 10)).expect("list").entries.len(), 1);
+    assert_eq!(
+        block_on(repo.list(None, 10)).expect("list").entries.len(),
+        1
+    );
 }
 
 #[test]
@@ -466,7 +569,10 @@ fn restart_cleans_abandoned_temporary_writes() {
     fs::write(orphan.join("component.wasm"), b"partial").expect("partial");
     let reopened = repository(temp.path());
     assert!(!orphan.exists());
-    assert!(block_on(reopened.list(None, 10)).expect("list").entries.is_empty());
+    assert!(block_on(reopened.list(None, 10))
+        .expect("list")
+        .entries
+        .is_empty());
 }
 
 #[test]
@@ -474,11 +580,15 @@ fn one_hundred_thousand_index_adoptions_are_bounded() {
     // This is deliberately only an index unit test. Durable publication and
     // measured topology belong to latentd's isolated catalog_scale acceptance.
     let temp = TempRoot::new();
-    let repo = DirectoryArtifactRepository::open(temp.path(), DirectoryArtifactRepositoryConfig {
-        max_index_entries: 100_000,
-        max_index_bytes: 256 * 1024 * 1024,
-        ..DirectoryArtifactRepositoryConfig::default()
-    }).expect("open index fixture");
+    let repo = DirectoryArtifactRepository::open(
+        temp.path(),
+        DirectoryArtifactRepositoryConfig {
+            max_index_entries: 100_000,
+            max_index_bytes: 256 * 1024 * 1024,
+            ..DirectoryArtifactRepositoryConfig::default()
+        },
+    )
+    .expect("open index fixture");
     for value in 0_u32..100_000 {
         let descriptor = ArtifactDescriptor {
             reference: ArtifactReference(format!("local://synthetic/{value}")),
@@ -489,7 +599,8 @@ fn one_hundred_thousand_index_adoptions_are_bounded() {
             layers: Vec::new(),
             annotations: Metadata::new(),
         };
-        repo.preflight_adoption(&descriptor).expect("index preflight");
+        repo.preflight_adoption(&descriptor)
+            .expect("index preflight");
         repo.finalize_adoption(descriptor).expect("index adoption");
     }
     assert_eq!(repo.index.read().expect("index").by_digest.len(), 100_000);
