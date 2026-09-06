@@ -100,7 +100,8 @@ pub trait ArtifactRepository: Send + Sync {
     ) -> BoxFuture<'a, Result<ArtifactDescriptor, PlatformError>>;
 
     /// Lists releases in ascending digest order without repository downcasting.
-    /// Implementations must bound `limit`; callers may paginate with `next_after`.
+    /// Implementations must bound both entry count and response materialization;
+    /// callers may paginate with `next_after`.
     fn list<'a>(
         &'a self,
         after: Option<&'a ReleaseDigest>,
