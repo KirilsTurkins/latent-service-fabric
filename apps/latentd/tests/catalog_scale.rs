@@ -154,7 +154,10 @@ fn verify_catalog(repo: &dyn ArtifactRepository, template: &CapsuleManifest) {
     loop {
         let page = block_on(repo.list(after.as_ref(), 1_000)).expect("bounded listing");
         assert!(page.entries.len() <= 1_000);
-        let last = page.entries.last().map(|entry| entry.release_digest.clone());
+        let last = page
+            .entries
+            .last()
+            .map(|entry| entry.release_digest.clone());
         for descriptor in &page.entries {
             if let Some(previous) = &after {
                 assert!(
@@ -303,7 +306,9 @@ fn catalog_scale_child() {
         "opening adds only a fixed ownership FD"
     );
     let template = JsonManifestCodec::default()
-        .decode_capsule(include_bytes!("../../../examples/echo-contract/capsule.json"))
+        .decode_capsule(include_bytes!(
+            "../../../examples/echo-contract/capsule.json"
+        ))
         .expect("valid capsule template");
     let repository: &dyn ArtifactRepository = &repo;
     if mode == "publish" {
