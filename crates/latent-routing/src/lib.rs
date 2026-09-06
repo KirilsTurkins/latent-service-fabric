@@ -2,6 +2,10 @@
 
 #![forbid(unsafe_code)]
 
+pub mod revision_policy;
+
+pub use revision_policy::{RevisionAdmissionPolicy, RevisionPolicySource};
+
 use latent_core::{
     BindingId, BoxFuture, ContractId, FunctionId, Metadata, PlatformError, ReleaseDigest,
     RevisionId, RouteGeneration, RouteId, ServiceId, TenantId,

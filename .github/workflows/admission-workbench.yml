@@ -1,0 +1,38 @@
+# Temporary feature-branch editing harness; removed before this PR is ready.
+name: Admission development workbench
+on:
+  push:
+    branches: [feat/issue-7-single-node-admission]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: admission-development-workbench
+  cancel-in-progress: true
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/feat/issue-7-single-node-admission'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/issue-7-single-node-admission
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: rustfmt, clippy
+      - name: Format feature changes
+        run: |
+          cargo fmt --all
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add crates/latent-admission crates/latent-routing crates/latent-control-store
+          if ! git diff --cached --quiet; then
+            git commit -m 'style: format admission and catalog policy integration'
+            git push origin HEAD:feat/issue-7-single-node-admission
+          fi
+      - name: Admission tests and affine ownership doctest
+        run: cargo test -p latent-admission --locked -- --nocapture
+      - name: Admission Clippy
+        run: cargo clippy -p latent-admission --all-targets --locked --no-deps
+      - name: Catalog integration and existing recovery regressions
+        run: cargo test -p latent-control-store --lib --locked -- --nocapture
