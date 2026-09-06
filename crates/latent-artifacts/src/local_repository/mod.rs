@@ -15,17 +15,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use latent_contracts::ContractDescriptor;
-use latent_core::{
-    ArtifactReference, BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest,
-};
+use latent_core::{ArtifactReference, BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest};
 use latent_manifest::{
     __serde_json as serde_json, JsonManifestCodec, ManifestCodec, ManifestValidator,
     Phase1ManifestValidator,
 };
 
-use crate::{
-    ArtifactDescriptor, ArtifactPage, ArtifactQuery, ArtifactRepository, CapsuleArtifact,
-};
+use crate::{ArtifactDescriptor, ArtifactPage, ArtifactQuery, ArtifactRepository, CapsuleArtifact};
 use metadata::{StoredArtifactDescriptor, StoredContractDescriptor, StoredMetadata};
 use sha256::release_digest;
 
@@ -312,12 +308,13 @@ impl DirectoryArtifactRepository {
         &self,
         descriptor: &ArtifactDescriptor,
     ) -> Result<usize, PlatformError> {
-        let bytes = serde_json::to_vec(&StoredArtifactDescriptor::from(descriptor)).map_err(|_| {
-            error(
-                PlatformErrorCode::Internal,
-                "failed to serialize artifact descriptor for bound accounting",
-            )
-        })?;
+        let bytes =
+            serde_json::to_vec(&StoredArtifactDescriptor::from(descriptor)).map_err(|_| {
+                error(
+                    PlatformErrorCode::Internal,
+                    "failed to serialize artifact descriptor for bound accounting",
+                )
+            })?;
         if bytes.len() > self.config.max_descriptor_bytes {
             return Err(resource_exhausted(
                 "artifact descriptor exceeds configured byte limit",
@@ -370,7 +367,12 @@ impl DirectoryArtifactRepository {
         let _guard = self.publish_lock.lock().map_err(lock_error)?;
         self.validator
             .validate_capsule(&artifact.manifest)
-            .map_err(|_| error(PlatformErrorCode::InvalidArgument, "capsule manifest validation failed"))?;
+            .map_err(|_| {
+                error(
+                    PlatformErrorCode::InvalidArgument,
+                    "capsule manifest validation failed",
+                )
+            })?;
         let manifest_bytes = self.codec.encode_capsule(&artifact.manifest).map_err(|_| {
             error(
                 PlatformErrorCode::InvalidArgument,
@@ -419,15 +421,18 @@ impl DirectoryArtifactRepository {
                     "release digest already contains different catalog content",
                 ));
             }
-            // An existing identical destination may be the residue of a prior
-            // post-rename durability failure. Re-sync the parent before adoption.
             sync_dir(&releases_dir)?;
             return self.finalize_adoption(existing.descriptor);
         }
 
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .map_err(|_| error(PlatformErrorCode::Internal, "system clock is before Unix epoch"))?
+            .map_err(|_| {
+                error(
+                    PlatformErrorCode::Internal,
+                    "system clock is before Unix epoch",
+                )
+            })?
             .as_nanos();
         let tmp_path = self.root.join(TEMP_DIR).join(format!(
             "{}-{}-{nonce}",
@@ -471,8 +476,6 @@ impl DirectoryArtifactRepository {
                 "injected parent-directory sync failure after rename",
             ));
         }
-        // A failure here is a failure. The completed directory is intentionally
-        // left in place so a retry can re-sync and durably adopt it.
         sync_dir(&releases_dir)?;
         self.finalize_adoption(artifact.descriptor)
     }
@@ -511,8 +514,14 @@ impl ArtifactRepository for DirectoryArtifactRepository {
             };
             Ok(descriptor
                 .filter(|value| {
-                    query.reference.as_ref().is_none_or(|reference| &value.reference == reference)
-                        && query.media_type.as_ref().is_none_or(|media_type| &value.media_type == media_type)
+                    query
+                        .reference
+                        .as_ref()
+                        .is_none_or(|reference| &value.reference == reference)
+                        && query
+                            .media_type
+                            .as_ref()
+                            .is_none_or(|media_type| &value.media_type == media_type)
                 })
                 .cloned())
         })
@@ -523,8 +532,17 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>> {
         Box::pin(async move {
-            if !self.index.read().map_err(lock_error)?.by_digest.contains_key(digest) {
-                return Err(error(PlatformErrorCode::NotFound, "release digest not found"));
+            if !self
+                .index
+                .read()
+                .map_err(lock_error)?
+                .by_digest
+                .contains_key(digest)
+            {
+                return Err(error(
+                    PlatformErrorCode::NotFound,
+                    "release digest not found",
+                ));
             }
             self.load_complete_entry(&self.entry_path(digest)?)
         })
@@ -554,10 +572,11 @@ impl ArtifactRepository for DirectoryArtifactRepository {
             let mut entries = Vec::new();
             let mut response_bytes = 0_usize;
             let mut has_more = false;
-            for (digest, descriptor) in index
+            for descriptor in index
                 .by_digest
                 .iter()
                 .filter(|(digest, _)| after.is_none_or(|cursor| *digest > cursor))
+                .map(|(_, descriptor)| descriptor)
             {
                 if entries.len() >= entry_limit {
                     has_more = true;
@@ -570,14 +589,16 @@ impl ArtifactRepository for DirectoryArtifactRepository {
                 }
                 response_bytes = response_bytes.saturating_add(descriptor_bytes);
                 entries.push(descriptor.clone());
-                let _ = digest;
             }
             let next_after = if has_more {
                 entries.last().map(|value| value.release_digest.clone())
             } else {
                 None
             };
-            Ok(ArtifactPage { entries, next_after })
+            Ok(ArtifactPage {
+                entries,
+                next_after,
+            })
         })
     }
 }
@@ -659,12 +680,8 @@ fn digest_hex(digest: &ReleaseDigest) -> Result<String, PlatformError> {
     Ok(hex.to_ascii_lowercase())
 }
 
-fn read_bounded_file(
-    path: &Path,
-    limit: usize,
-    label: &str,
-) -> Result<Vec<u8>, PlatformError> {
-    let mut file = File::open(path).map_err(|_| corrupt("completed release is missing data"))?;
+fn read_bounded_file(path: &Path, limit: usize, label: &str) -> Result<Vec<u8>, PlatformError> {
+    let file = File::open(path).map_err(|_| corrupt("completed release is missing data"))?;
     let length = file
         .metadata()
         .map_err(|_| corrupt("completed release data metadata cannot be read"))?
@@ -676,8 +693,13 @@ fn read_bounded_file(
     }
     let capacity = usize::try_from(length)
         .map_err(|_| resource_exhausted("stored release file length cannot fit in memory"))?;
+    let read_limit = u64::try_from(limit)
+        .map_err(|_| resource_exhausted("configured file limit cannot fit in u64"))?
+        .saturating_add(1);
+    let mut reader = file.take(read_limit);
     let mut bytes = Vec::with_capacity(capacity);
-    file.read_to_end(&mut bytes)
+    reader
+        .read_to_end(&mut bytes)
         .map_err(|_| corrupt("completed release data cannot be read"))?;
     if bytes.len() > limit {
         return Err(resource_exhausted(format!(

@@ -19,9 +19,10 @@ use latent_core::{
 use latent_manifest::{JsonManifestCodec, ManifestCodec};
 
 use super::{
-    release_digest, ArtifactDescriptor, ArtifactLayer, ArtifactQuery, ArtifactRepository,
-    CapsuleArtifact, DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig,
+    release_digest, ArtifactDescriptor, ArtifactQuery, ArtifactRepository, CapsuleArtifact,
+    DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig,
 };
+use crate::ArtifactLayer;
 
 const PLACEHOLDER_DIGEST: &str =
     "sha256:1111111111111111111111111111111111111111111111111111111111111111";
@@ -57,6 +58,7 @@ impl Drop for TempRoot {
 }
 
 struct NoopWake;
+
 impl Wake for NoopWake {
     fn wake(self: Arc<Self>) {}
 }
@@ -176,13 +178,13 @@ fn publish_duplicate_resolve_fetch_and_restart_round_trip() {
         block_on(repo.publish(expected.clone())).expect("duplicate publish"),
         expected.descriptor
     );
-    assert_eq!(
-        block_on(repo.fetch(&digest)).expect("fetch"),
-        expected
-    );
+    assert_eq!(block_on(repo.fetch(&digest)).expect("fetch"), expected);
     drop(repo);
     let reopened = repository(temp.path());
-    assert_eq!(block_on(reopened.fetch(&digest)).expect("restart fetch"), expected);
+    assert_eq!(
+        block_on(reopened.fetch(&digest)).expect("restart fetch"),
+        expected
+    );
 }
 
 #[test]
@@ -193,7 +195,10 @@ fn digest_disagreement_is_corrupt_and_not_visible() {
     invalid.manifest.component_digest = release_digest(b"component-two");
     let failure = block_on(repo.publish(invalid)).expect_err("digest mismatch must fail");
     assert_eq!(failure.code, PlatformErrorCode::CorruptArtifact);
-    assert!(block_on(repo.list(None, 10)).expect("list").entries.is_empty());
+    assert!(block_on(repo.list(None, 10))
+        .expect("list")
+        .entries
+        .is_empty());
 }
 
 #[test]
@@ -208,8 +213,11 @@ fn missing_and_corrupt_entries_are_rejected() {
     let expected = artifact("corrupt", b"component-before-corruption");
     let release = expected.descriptor.release_digest.clone();
     block_on(repo.publish(expected)).expect("publish");
-    fs::write(release_dir(temp.path(), &release).join("component.wasm"), b"corrupted")
-        .expect("corrupt component");
+    fs::write(
+        release_dir(temp.path(), &release).join("component.wasm"),
+        b"corrupted",
+    )
+    .expect("corrupt component");
     assert_eq!(
         block_on(repo.fetch(&release)).expect_err("corruption").code,
         PlatformErrorCode::CorruptArtifact
@@ -225,7 +233,10 @@ fn full_contract_metadata_round_trips() {
     block_on(repo.publish(expected.clone())).expect("publish");
     drop(repo);
     let reopened = repository(temp.path());
-    assert_eq!(block_on(reopened.fetch(&digest)).expect("fetch").contracts, expected.contracts);
+    assert_eq!(
+        block_on(reopened.fetch(&digest)).expect("fetch").contracts,
+        expected.contracts
+    );
 }
 
 #[test]
@@ -249,10 +260,15 @@ fn post_rename_parent_sync_failure_is_not_success_and_retry_repairs_visibility()
     .expect("resolve after failure")
     .is_none());
     assert_eq!(
-        block_on(repo.fetch(&digest)).expect_err("fetch after failure").code,
+        block_on(repo.fetch(&digest))
+            .expect_err("fetch after failure")
+            .code,
         PlatformErrorCode::NotFound
     );
-    assert!(block_on(repo.list(None, 10)).expect("list after failure").entries.is_empty());
+    assert!(block_on(repo.list(None, 10))
+        .expect("list after failure")
+        .entries
+        .is_empty());
 
     assert_eq!(
         block_on(repo.publish(expected.clone())).expect("retry must durably adopt"),
@@ -265,8 +281,17 @@ fn post_rename_parent_sync_failure_is_not_success_and_retry_repairs_visibility()
     }))
     .expect("resolve after retry")
     .is_some());
-    assert_eq!(block_on(repo.fetch(&digest)).expect("fetch after retry"), expected);
-    assert_eq!(block_on(repo.list(None, 10)).expect("list after retry").entries.len(), 1);
+    assert_eq!(
+        block_on(repo.fetch(&digest)).expect("fetch after retry"),
+        expected
+    );
+    assert_eq!(
+        block_on(repo.list(None, 10))
+            .expect("list after retry")
+            .entries
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -283,11 +308,17 @@ fn root_is_exclusively_owned_before_cleanup_and_rebuild() {
     )
     .expect_err("second live opener must fail");
     assert_eq!(failure.code, PlatformErrorCode::Unavailable);
-    assert!(active_stage.exists(), "rejected opener must not run cleanup");
+    assert!(
+        active_stage.exists(),
+        "rejected opener must not run cleanup"
+    );
 
     drop(first);
     let reopened = repository(temp.path());
-    assert!(!active_stage.exists(), "new owner cleans abandoned staging data");
+    assert!(
+        !active_stage.exists(),
+        "new owner cleans abandoned staging data"
+    );
     drop(reopened);
 }
 
@@ -307,7 +338,13 @@ fn exclusive_root_ownership_prevents_conflicting_independent_handles() {
     );
     drop(first);
     let reopened = repository(temp.path());
-    assert_eq!(block_on(reopened.list(None, 10)).expect("reopen list").entries.len(), 1);
+    assert_eq!(
+        block_on(reopened.list(None, 10))
+            .expect("reopen list")
+            .entries
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -356,9 +393,15 @@ fn oversized_descriptor_fields_are_rejected_before_visibility() {
         .expect("open");
         let mut value = artifact(variant, b"bounded-component");
         match variant {
-            "reference" => value.descriptor.reference = ArtifactReference(format!("local://{}", "x".repeat(2048))),
+            "reference" => {
+                value.descriptor.reference =
+                    ArtifactReference(format!("local://{}", "x".repeat(2048)))
+            }
             "annotation" => {
-                value.descriptor.annotations.insert("large".to_owned(), "x".repeat(2048));
+                value
+                    .descriptor
+                    .annotations
+                    .insert("large".to_owned(), "x".repeat(2048));
             }
             "layer" => value.descriptor.layers.push(ArtifactLayer {
                 media_type: "x".repeat(2048),
@@ -369,10 +412,15 @@ fn oversized_descriptor_fields_are_rejected_before_visibility() {
             _ => unreachable!(),
         }
         assert_eq!(
-            block_on(repo.publish(value)).expect_err("oversized descriptor").code,
+            block_on(repo.publish(value))
+                .expect_err("oversized descriptor")
+                .code,
             PlatformErrorCode::ResourceExhausted
         );
-        assert!(block_on(repo.list(None, 10)).expect("list").entries.is_empty());
+        assert!(block_on(repo.list(None, 10))
+            .expect("list")
+            .entries
+            .is_empty());
     }
 }
 
@@ -395,7 +443,10 @@ fn aggregate_index_byte_budget_is_enforced_before_persistence() {
             .code,
         PlatformErrorCode::ResourceExhausted
     );
-    assert_eq!(block_on(repo.list(None, 10)).expect("list").entries.len(), 1);
+    assert_eq!(
+        block_on(repo.list(None, 10)).expect("list").entries.len(),
+        1
+    );
 }
 
 #[test]
@@ -406,8 +457,11 @@ fn oversized_persisted_metadata_is_rejected_before_allocation_on_reopen() {
     let repo = repository(temp.path());
     block_on(repo.publish(expected)).expect("publish");
     drop(repo);
-    fs::write(release_dir(temp.path(), &digest).join("metadata.json"), vec![b'x'; 8192])
-        .expect("replace metadata");
+    fs::write(
+        release_dir(temp.path(), &digest).join("metadata.json"),
+        vec![b'x'; 8192],
+    )
+    .expect("replace metadata");
     let failure = DirectoryArtifactRepository::open(
         temp.path(),
         DirectoryArtifactRepositoryConfig {
@@ -433,12 +487,21 @@ fn incomplete_directories_do_not_consume_completed_index_quota() {
     block_on(repo.publish(artifact("complete", b"complete-component"))).expect("publish");
     drop(repo);
     for index in 0..8 {
-        let path = temp.path().join("releases").join(format!("incomplete-{index:02}"));
+        let path = temp
+            .path()
+            .join("releases")
+            .join(format!("incomplete-{index:02}"));
         fs::create_dir_all(path).expect("incomplete directory");
     }
     let reopened = DirectoryArtifactRepository::open(temp.path(), config)
         .expect("incomplete debris must not consume completed quota");
-    assert_eq!(block_on(reopened.list(None, 10)).expect("list").entries.len(), 1);
+    assert_eq!(
+        block_on(reopened.list(None, 10))
+            .expect("list")
+            .entries
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -482,9 +545,15 @@ fn concurrent_identical_publishers_on_one_owned_handle_observe_one_release() {
     }
     barrier.wait();
     for task in tasks {
-        assert_eq!(task.join().expect("publisher join").expect("publish"), expected.descriptor);
+        assert_eq!(
+            task.join().expect("publisher join").expect("publish"),
+            expected.descriptor
+        );
     }
-    assert_eq!(block_on(repo.list(None, 10)).expect("list").entries.len(), 1);
+    assert_eq!(
+        block_on(repo.list(None, 10)).expect("list").entries.len(),
+        1
+    );
 }
 
 #[test]
@@ -499,20 +568,32 @@ fn readers_never_observe_partial_publication_and_wait_is_bounded() {
     };
     let writer_repo = Arc::clone(&repo);
     let writer_artifact = expected.clone();
-    let mut writer = Some(thread::spawn(move || block_on(writer_repo.publish(writer_artifact))));
+    let mut writer = Some(thread::spawn(move || {
+        block_on(writer_repo.publish(writer_artifact))
+    }));
     let deadline = Instant::now() + Duration::from_secs(10);
     loop {
         if let Some(descriptor) = block_on(repo.resolve(&query)).expect("resolve") {
             assert_eq!(descriptor, expected.descriptor);
-            assert_eq!(block_on(repo.fetch(&descriptor.release_digest)).expect("complete fetch"), expected);
+            assert_eq!(
+                block_on(repo.fetch(&descriptor.release_digest)).expect("complete fetch"),
+                expected
+            );
             break;
         }
         if writer.as_ref().is_some_and(thread::JoinHandle::is_finished) {
-            let result = writer.take().expect("writer handle").join().expect("writer join");
+            let result = writer
+                .take()
+                .expect("writer handle")
+                .join()
+                .expect("writer join");
             result.expect("writer completed without making release visible");
             panic!("writer reported success before release became visible");
         }
-        assert!(Instant::now() < deadline, "publication visibility deadline exceeded");
+        assert!(
+            Instant::now() < deadline,
+            "publication visibility deadline exceeded"
+        );
         thread::yield_now();
     }
     if let Some(writer) = writer {
@@ -530,11 +611,18 @@ fn publication_visibility_wait_reports_writer_failure_promptly() {
     let writer = thread::spawn(move || block_on(writer_repo.publish(expected)));
     let deadline = Instant::now() + Duration::from_secs(5);
     while !writer.is_finished() {
-        assert!(Instant::now() < deadline, "failed writer did not terminate promptly");
+        assert!(
+            Instant::now() < deadline,
+            "failed writer did not terminate promptly"
+        );
         thread::yield_now();
     }
     assert_eq!(
-        writer.join().expect("writer join").expect_err("injected failure").code,
+        writer
+            .join()
+            .expect("writer join")
+            .expect_err("injected failure")
+            .code,
         PlatformErrorCode::Internal
     );
 }
@@ -548,7 +636,10 @@ fn restart_cleans_abandoned_temporary_writes() {
     fs::write(orphan.join("component.wasm"), b"partial").expect("partial");
     let reopened = repository(temp.path());
     assert!(!orphan.exists());
-    assert!(block_on(reopened.list(None, 10)).expect("list").entries.is_empty());
+    assert!(block_on(reopened.list(None, 10))
+        .expect("list")
+        .entries
+        .is_empty());
 }
 
 #[cfg(target_os = "linux")]
@@ -570,8 +661,8 @@ fn process_topology() -> ProcessTopology {
         .and_then(|value| value.split_whitespace().next())
         .and_then(|value| value.parse().ok())
         .expect("thread count");
-    let children = fs::read_to_string(format!("/proc/self/task/{process_id}/children"))
-        .expect("children");
+    let children =
+        fs::read_to_string(format!("/proc/self/task/{process_id}/children")).expect("children");
     let child_processes = children.split_whitespace().count();
     let sockets = fs::read_dir("/proc/self/fd")
         .expect("fd directory")
@@ -622,7 +713,7 @@ fn dormant_scale_probe_child() {
         temp.path(),
         DirectoryArtifactRepositoryConfig {
             max_index_entries: 100_000,
-            max_index_bytes: 128 * 1024 * 1024,
+            max_index_bytes: 256 * 1024 * 1024,
             ..DirectoryArtifactRepositoryConfig::default()
         },
     )
@@ -647,6 +738,4 @@ fn dormant_scale_probe_child() {
     assert_eq!(after.child_processes, before.child_processes);
     assert_eq!(after.threads, before.threads);
     assert_eq!(after.sockets, before.sockets);
-    // latent-artifacts has no scheduler/executor dependency and the registration
-    // finalization path contains no process, thread, listener, preparation, or cell allocation.
 }

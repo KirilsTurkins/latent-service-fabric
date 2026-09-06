@@ -1,5 +1,9 @@
-use latent_contracts::{ContractDescriptor, FieldDescriptor, FunctionDescriptor, InterfaceDescriptor, ValueType};
-use latent_core::{ArtifactReference, ContractId, FunctionId, InterfaceId, Metadata, PublisherId, ReleaseDigest};
+use latent_contracts::{
+    ContractDescriptor, FieldDescriptor, FunctionDescriptor, InterfaceDescriptor, ValueType,
+};
+use latent_core::{
+    ArtifactReference, ContractId, FunctionId, InterfaceId, Metadata, PublisherId, ReleaseDigest,
+};
 use latent_manifest::__serde::{Deserialize, Serialize};
 
 use crate::{ArtifactDescriptor, ArtifactLayer};
@@ -110,7 +114,10 @@ impl From<&ArtifactDescriptor> for StoredArtifactDescriptor {
             release_digest: value.release_digest.0.clone(),
             media_type: value.media_type.clone(),
             size_bytes: value.size_bytes,
-            publisher: value.publisher.as_ref().map(|publisher| publisher.0.clone()),
+            publisher: value
+                .publisher
+                .as_ref()
+                .map(|publisher| publisher.0.clone()),
             layers: value.layers.iter().map(StoredArtifactLayer::from).collect(),
             annotations: value.annotations.clone(),
         }
@@ -159,8 +166,16 @@ impl From<&ContractDescriptor> for StoredContractDescriptor {
             id: value.id.0.clone(),
             package_name: value.package_name.clone(),
             semantic_version: value.semantic_version.clone(),
-            interfaces: value.interfaces.iter().map(StoredInterfaceDescriptor::from).collect(),
-            dependencies: value.dependencies.iter().map(|dependency| dependency.0.clone()).collect(),
+            interfaces: value
+                .interfaces
+                .iter()
+                .map(StoredInterfaceDescriptor::from)
+                .collect(),
+            dependencies: value
+                .dependencies
+                .iter()
+                .map(|dependency| dependency.0.clone())
+                .collect(),
             digest: value.digest.clone(),
         }
     }
@@ -172,7 +187,11 @@ impl From<StoredContractDescriptor> for ContractDescriptor {
             id: ContractId(value.id),
             package_name: value.package_name,
             semantic_version: value.semantic_version,
-            interfaces: value.interfaces.into_iter().map(InterfaceDescriptor::from).collect(),
+            interfaces: value
+                .interfaces
+                .into_iter()
+                .map(InterfaceDescriptor::from)
+                .collect(),
             dependencies: value.dependencies.into_iter().map(ContractId).collect(),
             digest: value.digest,
         }
@@ -183,7 +202,11 @@ impl From<&InterfaceDescriptor> for StoredInterfaceDescriptor {
     fn from(value: &InterfaceDescriptor) -> Self {
         Self {
             id: value.id.0.clone(),
-            functions: value.functions.iter().map(StoredFunctionDescriptor::from).collect(),
+            functions: value
+                .functions
+                .iter()
+                .map(StoredFunctionDescriptor::from)
+                .collect(),
             documentation: value.documentation.clone(),
             digest: value.digest.clone(),
         }
@@ -194,7 +217,11 @@ impl From<StoredInterfaceDescriptor> for InterfaceDescriptor {
     fn from(value: StoredInterfaceDescriptor) -> Self {
         Self {
             id: InterfaceId(value.id),
-            functions: value.functions.into_iter().map(FunctionDescriptor::from).collect(),
+            functions: value
+                .functions
+                .into_iter()
+                .map(FunctionDescriptor::from)
+                .collect(),
             documentation: value.documentation,
             digest: value.digest,
         }
@@ -207,8 +234,16 @@ impl From<&FunctionDescriptor> for StoredFunctionDescriptor {
             id: value.id.0.clone(),
             name: value.name.clone(),
             asynchronous: value.asynchronous,
-            parameters: value.parameters.iter().map(StoredFieldDescriptor::from).collect(),
-            results: value.results.iter().map(StoredFieldDescriptor::from).collect(),
+            parameters: value
+                .parameters
+                .iter()
+                .map(StoredFieldDescriptor::from)
+                .collect(),
+            results: value
+                .results
+                .iter()
+                .map(StoredFieldDescriptor::from)
+                .collect(),
             documentation: value.documentation.clone(),
             attributes: value.attributes.clone(),
         }
@@ -221,8 +256,16 @@ impl From<StoredFunctionDescriptor> for FunctionDescriptor {
             id: FunctionId(value.id),
             name: value.name,
             asynchronous: value.asynchronous,
-            parameters: value.parameters.into_iter().map(FieldDescriptor::from).collect(),
-            results: value.results.into_iter().map(FieldDescriptor::from).collect(),
+            parameters: value
+                .parameters
+                .into_iter()
+                .map(FieldDescriptor::from)
+                .collect(),
+            results: value
+                .results
+                .into_iter()
+                .map(FieldDescriptor::from)
+                .collect(),
             documentation: value.documentation,
             attributes: value.attributes,
         }
@@ -269,8 +312,12 @@ impl From<&ValueType> for StoredValueType {
             ValueType::List(inner) => Self::List(Box::new(Self::from(inner.as_ref()))),
             ValueType::Option(inner) => Self::Option(Box::new(Self::from(inner.as_ref()))),
             ValueType::Result { ok, error } => Self::Result {
-                ok: ok.as_ref().map(|inner| Box::new(Self::from(inner.as_ref()))),
-                error: error.as_ref().map(|inner| Box::new(Self::from(inner.as_ref()))),
+                ok: ok
+                    .as_ref()
+                    .map(|inner| Box::new(Self::from(inner.as_ref()))),
+                error: error
+                    .as_ref()
+                    .map(|inner| Box::new(Self::from(inner.as_ref()))),
             },
             ValueType::Tuple(values) => Self::Tuple(values.iter().map(Self::from).collect()),
             ValueType::Record(name) => Self::Record(name.clone()),
@@ -305,7 +352,9 @@ impl From<StoredValueType> for ValueType {
                 ok: ok.map(|inner| Box::new(Self::from(*inner))),
                 error: error.map(|inner| Box::new(Self::from(*inner))),
             },
-            StoredValueType::Tuple(values) => Self::Tuple(values.into_iter().map(Self::from).collect()),
+            StoredValueType::Tuple(values) => {
+                Self::Tuple(values.into_iter().map(Self::from).collect())
+            }
             StoredValueType::Record(name) => Self::Record(name),
             StoredValueType::Variant(name) => Self::Variant(name),
             StoredValueType::Resource(name) => Self::Resource(name),
