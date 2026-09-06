@@ -11,6 +11,9 @@ use latent_routing::RouteResolver;
 use super::fixtures::*;
 use crate::DeploymentStore;
 
+#[cfg(target_os = "linux")]
+mod compilation_memory;
+
 const CHILD_ENV: &str = "LSF_DEPLOYMENT_DORMANCY_CHILD";
 const TEST_NAME: &str =
     "deployments::tests::resources::dormant_deployments_allocate_no_runtime_resources";

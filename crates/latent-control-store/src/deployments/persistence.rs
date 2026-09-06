@@ -14,10 +14,14 @@ use latent_routing::RouteSnapshot;
 use super::compiler::CompiledCatalog;
 use super::{error, DirectoryDeploymentRepositoryConfig};
 
+#[cfg(test)]
+pub(super) mod faults;
+
 pub(super) const STATE_FILE: &str = "catalog.json";
 const PENDING_FILE: &str = ".catalog.pending";
 const OWNER_FILE: &str = ".catalog.lock";
 const INITIALIZED_FILE: &str = "INITIALIZED";
+const INITIALIZED_PENDING_FILE: &str = ".INITIALIZED.pending";
 const INITIALIZED_CONTENT: &[u8] = b"lsf-deployment-catalog-v1\n";
 
 #[derive(Serialize, Deserialize)]
@@ -71,7 +75,7 @@ impl Record {
 }
 
 pub(super) fn own_root(root: &Path) -> Result<File, PlatformError> {
-    fs::create_dir_all(root).map_err(io_error)?;
+    create_durable_root(root)?;
     regular_or_absent(&root.join(OWNER_FILE))?;
     let owner = OpenOptions::new()
         .create(true)
@@ -86,6 +90,7 @@ pub(super) fn own_root(root: &Path) -> Result<File, PlatformError> {
     regular_or_absent(&root.join(STATE_FILE))?;
     regular_or_absent(&root.join(PENDING_FILE))?;
     regular_or_absent(&root.join(INITIALIZED_FILE))?;
+    regular_or_absent(&root.join(INITIALIZED_PENDING_FILE))?;
     if root.join(INITIALIZED_FILE).exists() {
         let mut marker = Vec::new();
         File::open(root.join(INITIALIZED_FILE))
@@ -103,8 +108,28 @@ pub(super) fn own_root(root: &Path) -> Result<File, PlatformError> {
             ));
         }
     }
+    // Cleanup is only allowed after acquiring the exclusive root lock. A staging
+    // marker, including an empty or truncated one, is never authoritative state.
     remove_pending(root)?;
+    remove_if_present(&root.join(INITIALIZED_PENDING_FILE))?;
     Ok(owner)
+}
+
+/// Synchronize every link that makes the catalog reachable, leaf to filesystem root.
+/// Repeating this on existing paths repairs an earlier failed/interrupted creation:
+/// existence alone does not prove that an ancestor's directory entry is durable.
+fn create_durable_root(root: &Path) -> Result<(), PlatformError> {
+    fs::create_dir_all(root).map_err(io_error)?;
+    let absolute = fs::canonicalize(root).map_err(io_error)?;
+    for directory in absolute.ancestors() {
+        sync_directory(directory, IoStep::PathDirectorySync).map_err(|_| {
+            error(
+                PlatformErrorCode::Unavailable,
+                "catalog-path-durability-uncertain",
+            )
+        })?;
+    }
+    Ok(())
 }
 
 pub(super) fn load(
@@ -256,32 +281,70 @@ pub(super) fn replace(root: &Path) -> Result<(), PlatformError> {
 }
 
 pub(super) fn sync_root(root: &Path) -> Result<(), PlatformError> {
-    File::open(root)
-        .and_then(|directory| directory.sync_all())
-        .map_err(|_| {
-            error(
-                PlatformErrorCode::Unavailable,
-                "commit-durability-uncertain",
-            )
-        })?;
-    // Fixed node-owned initialization marker, not a per-deployment resource.
+    sync_directory(root, IoStep::StateDirectorySync).map_err(|_| {
+        error(
+            PlatformErrorCode::Unavailable,
+            "commit-durability-uncertain",
+        )
+    })?;
+    // Publish the fixed node-owned marker using the same durability protocol as
+    // catalog.json. Never expose an empty/partial marker under its completed name.
     if !root.join(INITIALIZED_FILE).exists() {
+        let path = root.join(INITIALIZED_PENDING_FILE);
+        regular_or_absent(&path)?;
+        remove_if_present(&path)?;
         let mut marker = OpenOptions::new()
             .create_new(true)
             .write(true)
-            .open(root.join(INITIALIZED_FILE))
+            .open(&path)
             .map_err(io_error)?;
-        marker.write_all(INITIALIZED_CONTENT).map_err(io_error)?;
+        checkpoint(IoStep::MarkerCreated, &path).map_err(io_error)?;
+        let middle = INITIALIZED_CONTENT.len() / 2;
+        marker
+            .write_all(&INITIALIZED_CONTENT[..middle])
+            .map_err(io_error)?;
+        checkpoint(IoStep::MarkerPartialWrite, &path).map_err(io_error)?;
+        marker
+            .write_all(&INITIALIZED_CONTENT[middle..])
+            .map_err(io_error)?;
+        checkpoint(IoStep::MarkerFileSync, &path).map_err(io_error)?;
         marker.sync_all().map_err(io_error)?;
-        File::open(root)
-            .and_then(|directory| directory.sync_all())
-            .map_err(io_error)?;
+        checkpoint(IoStep::MarkerRename, &path).map_err(io_error)?;
+        fs::rename(&path, root.join(INITIALIZED_FILE)).map_err(io_error)?;
+        sync_directory(root, IoStep::MarkerDirectorySync).map_err(io_error)?;
     }
     Ok(())
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum IoStep {
+    PathDirectorySync,
+    StateDirectorySync,
+    MarkerCreated,
+    MarkerPartialWrite,
+    MarkerFileSync,
+    MarkerRename,
+    MarkerDirectorySync,
+}
+
+fn sync_directory(path: &Path, step: IoStep) -> std::io::Result<()> {
+    checkpoint(step, path)?;
+    File::open(path)?.sync_all()
+}
+
+fn checkpoint(step: IoStep, path: &Path) -> std::io::Result<()> {
+    #[cfg(test)]
+    faults::checkpoint(step, path)?;
+    let _ = (step, path);
+    Ok(())
+}
+
 fn remove_pending(root: &Path) -> Result<(), PlatformError> {
-    match fs::remove_file(root.join(PENDING_FILE)) {
+    remove_if_present(&root.join(PENDING_FILE))
+}
+
+fn remove_if_present(path: &Path) -> Result<(), PlatformError> {
+    match fs::remove_file(path) {
         Ok(()) => Ok(()),
         Err(failure) if failure.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(failure) => Err(io_error(failure)),

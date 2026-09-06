@@ -2,10 +2,12 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use latent_artifacts::{
-    content_digest, ArtifactRepository, ContractDescriptor, FieldDescriptor, ValueType,
+    content_digest, ArtifactRepository, CapsuleArtifact, ContractDescriptor, FieldDescriptor,
+    ValueType,
 };
 use latent_core::{
-    DeploymentId, Metadata, PlatformError, PlatformErrorCode, RouteGeneration, RouteId,
+    DeploymentId, Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration,
+    RouteId,
 };
 use latent_manifest::{
     __serde_json as json, DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidator,
@@ -124,7 +126,16 @@ pub(super) async fn compile(
         ));
     }
     let codec = JsonManifestCodec::default();
-    let mut releases = BTreeMap::new();
+    // Group references, not cloned artifacts. At most one release's full metadata
+    // is alive, even when every deployment references a different large release.
+    let mut ordered = deployments.values().collect::<Vec<_>>();
+    ordered.sort_unstable_by(|left, right| {
+        left.release
+            .cmp(&right.release)
+            .then_with(|| left.id.cmp(&right.id))
+    });
+    let mut release: Option<(ReleaseDigest, CapsuleArtifact)> = None;
+    let mut fingerprints = BTreeMap::new();
     let mut scopes = BTreeMap::new();
     let mut contracts = BTreeMap::new();
     let mut services: BTreeMap<RouteKey, ServiceRoute> = BTreeMap::new();
@@ -132,7 +143,7 @@ pub(super) async fn compile(
     let mut route_entries = 0_usize;
     let mut metadata_budget = config.max_state_bytes;
 
-    for deployment in deployments.values() {
+    for deployment in ordered {
         Phase1ManifestValidator
             .validate_deployment(deployment)
             .map_err(manifest_error)?;
@@ -170,7 +181,13 @@ pub(super) async fn compile(
                 ));
             }
         }
-        if !releases.contains_key(&deployment.release) {
+        if release
+            .as_ref()
+            .is_none_or(|(digest, _)| digest != &deployment.release)
+        {
+            // Drop before awaiting the next fetch, not after its result is allocated.
+            drop(release.take());
+            fingerprints.clear();
             let mut artifact = artifacts.fetch(&deployment.release).await?;
             let digest_matches = artifact
                 .descriptor
@@ -191,9 +208,9 @@ pub(super) async fn compile(
             }
             // Never retain component bytes in the route catalog, or prepare/instantiate them.
             drop(std::mem::take(&mut artifact.component_bytes));
-            releases.insert(deployment.release.clone(), artifact);
+            release = Some((deployment.release.clone(), artifact));
         }
-        let artifact = &releases[&deployment.release];
+        let artifact = &release.as_ref().expect("current release was fetched").1;
         Phase1ManifestValidator
             .validate_deployment_against_capsule(deployment, &artifact.manifest)
             .map_err(manifest_error)?;
@@ -221,15 +238,32 @@ pub(super) async fn compile(
                     "missing-export-contract-metadata",
                 )
             })?;
+            // Canonical trees and their encoded bytes are temporary for one contract.
+            // Both caches retain only computed SHA-256 fingerprints, never documentation
+            // or type trees. The canonical bytes (and persisted schema IDs) are unchanged.
+            let schema = match fingerprints.get(&export.contract) {
+                Some(schema) => String::clone(schema),
+                None => {
+                    let schema = contract_fingerprint(descriptor)?;
+                    charge_fingerprint(&mut metadata_budget, &[&export.contract.0, &schema])?;
+                    fingerprints.insert(export.contract.clone(), schema.clone());
+                    schema
+                }
+            };
             let contract_key = (scope_key.clone(), export.contract.clone());
-            let canonical = contract_value(descriptor);
-            if let Some(previous) = contracts.insert(contract_key, canonical.clone()) {
-                if previous != canonical {
+            if let Some(previous) = contracts.get(&contract_key) {
+                if previous != &schema {
                     return Err(error(
                         PlatformErrorCode::IncompatibleContract,
                         "conflicting-contract-metadata",
                     ));
                 }
+            } else {
+                charge_fingerprint(
+                    &mut metadata_budget,
+                    &[&tenant.0, &deployment.service.0, &export.contract.0, &schema],
+                )?;
+                contracts.insert(contract_key, schema.clone());
             }
             let mut interface_ids = BTreeSet::new();
             let mut functions = BTreeSet::new();
@@ -262,12 +296,10 @@ pub(super) async fn compile(
                     "export-has-no-functions",
                 ));
             }
-            let bytes = json::to_vec(&canonical)
-                .map_err(|_| error(PlatformErrorCode::Internal, "contract-encoding-failed"))?;
             exported.insert(
                 export.contract.0.clone(),
                 json::json!({
-                    "schema": content_digest(&bytes).0,
+                    "schema": schema,
                     "functions": functions,
                 }),
             );
@@ -321,6 +353,9 @@ pub(super) async fn compile(
             }
         }
     }
+    drop(release);
+    drop(fingerprints);
+    drop(contracts);
     let routes = services.keys().cloned().collect();
     let services = services
         .into_values()
@@ -385,6 +420,23 @@ fn charge(remaining: &mut usize, bytes: usize) -> Result<(), PlatformError> {
         )
     })?;
     Ok(())
+}
+
+fn charge_fingerprint(remaining: &mut usize, fields: &[&str]) -> Result<(), PlatformError> {
+    // Charge key/digest storage and conservative per-entry tree bookkeeping before
+    // retaining it. Charges are not refunded when the single-release cache rotates.
+    charge(remaining, 256)?;
+    for field in fields {
+        charge(remaining, field.len())?;
+    }
+    Ok(())
+}
+
+fn contract_fingerprint(contract: &ContractDescriptor) -> Result<String, PlatformError> {
+    let canonical = contract_value(contract);
+    let bytes = json::to_vec(&canonical)
+        .map_err(|_| error(PlatformErrorCode::Internal, "contract-encoding-failed"))?;
+    Ok(content_digest(&bytes).0)
 }
 
 fn contract_value(contract: &ContractDescriptor) -> json::Value {
