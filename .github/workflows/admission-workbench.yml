@@ -20,14 +20,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
           components: rustfmt, clippy
-      - name: Format feature changes
+      - name: Apply source edits and format feature changes
         run: |
+          if test -f tools/admission-workbench-patch.py; then
+            python3 tools/admission-workbench-patch.py
+          fi
           cargo fmt --all
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add crates/latent-admission crates/latent-routing crates/latent-control-store
+          git add -A crates/latent-admission crates/latent-routing crates/latent-control-store Cargo.lock tools
           if ! git diff --cached --quiet; then
-            git commit -m 'style: format admission and catalog policy integration'
+            git commit -m 'feat(catalog): compile and verify immutable admission policy records'
             git push origin HEAD:feat/issue-7-single-node-admission
           fi
       - name: Admission tests and affine ownership doctest
