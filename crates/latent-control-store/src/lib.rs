@@ -1,6 +1,13 @@
-//! Control-plane persistence interfaces for desired state and compiled route state.
+//! Control-plane persistence interfaces and an embedded local deployment catalog.
 
 #![forbid(unsafe_code)]
+
+mod deployments;
+
+pub use deployments::{
+    deployment_revision_id, DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig,
+    PinnedRouteResolver,
+};
 
 use latent_artifacts::ArtifactDescriptor;
 use latent_audit::AuditEvent;

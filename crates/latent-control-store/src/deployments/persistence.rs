@@ -1,0 +1,195 @@
+use std::collections::BTreeMap;
+use std::fs::{self, File, OpenOptions};
+use std::io::{Read, Write};
+use std::path::Path;
+
+use latent_artifacts::content_digest;
+use latent_core::{DeploymentId, PlatformError, PlatformErrorCode};
+use latent_manifest::{
+    __serde::{Deserialize, Serialize},
+    __serde_json as json, DeploymentManifest, JsonManifestCodec, ManifestCodec,
+};
+use latent_routing::RouteSnapshot;
+
+use super::compiler::CompiledCatalog;
+use super::{error, DirectoryDeploymentRepositoryConfig};
+
+pub(super) const STATE_FILE: &str = "catalog.json";
+const PENDING_FILE: &str = ".catalog.pending";
+const OWNER_FILE: &str = ".catalog.lock";
+const INITIALIZED_FILE: &str = "INITIALIZED";
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
+pub(super) struct Payload {
+    pub generation: u64,
+    pub generated_at_unix_millis: u64,
+    deployments: Vec<json::Value>,
+    pub snapshot: json::Value,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
+pub(super) struct Record {
+    format_version: u32,
+    checksum: String,
+    pub payload: Payload,
+}
+
+impl Record {
+    pub(super) fn deployments(
+        &self,
+        config: DirectoryDeploymentRepositoryConfig,
+    ) -> Result<BTreeMap<DeploymentId, DeploymentManifest>, PlatformError> {
+        if self.payload.deployments.len() > config.max_deployments {
+            return Err(error(PlatformErrorCode::ResourceExhausted, "deployment-count-limit"));
+        }
+        let codec = JsonManifestCodec::default();
+        let mut deployments = BTreeMap::new();
+        for value in &self.payload.deployments {
+            let bytes = json::to_vec(value).map_err(|_| corrupt())?;
+            let deployment = codec.decode_deployment(&bytes).map_err(|_| corrupt())?;
+            if deployments.insert(deployment.id.clone(), deployment).is_some() {
+                return Err(error(PlatformErrorCode::CorruptArtifact, "duplicate-persisted-deployment-id"));
+            }
+        }
+        Ok(deployments)
+    }
+}
+
+pub(super) fn own_root(root: &Path) -> Result<File, PlatformError> {
+    fs::create_dir_all(root).map_err(io_error)?;
+    regular_or_absent(&root.join(OWNER_FILE))?;
+    let owner = OpenOptions::new().create(true).truncate(false).read(true).write(true)
+        .open(root.join(OWNER_FILE)).map_err(io_error)?;
+    owner.try_lock().map_err(|_| error(PlatformErrorCode::Unavailable, "catalog-root-already-owned"))?;
+    regular_or_absent(&root.join(STATE_FILE))?;
+    regular_or_absent(&root.join(PENDING_FILE))?;
+    regular_or_absent(&root.join(INITIALIZED_FILE))?;
+    if root.join(INITIALIZED_FILE).exists() && !root.join(STATE_FILE).exists() {
+        return Err(error(PlatformErrorCode::CorruptArtifact, "initialized-catalog-state-missing"));
+    }
+    remove_pending(root)?;
+    Ok(owner)
+}
+
+pub(super) fn load(root: &Path, config: DirectoryDeploymentRepositoryConfig) -> Result<Option<Record>, PlatformError> {
+    let file = match File::open(root.join(STATE_FILE)) {
+        Ok(file) => file,
+        Err(failure) if failure.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(failure) => return Err(io_error(failure)),
+    };
+    if file.metadata().map_err(io_error)?.len() > config.max_state_bytes as u64 {
+        return Err(error(PlatformErrorCode::ResourceExhausted, "catalog-state-byte-limit"));
+    }
+    let mut bytes = Vec::new();
+    file.take(config.max_state_bytes as u64 + 1).read_to_end(&mut bytes).map_err(io_error)?;
+    if bytes.len() > config.max_state_bytes {
+        return Err(error(PlatformErrorCode::ResourceExhausted, "catalog-state-byte-limit"));
+    }
+    let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
+    let payload = json::to_vec(&record.payload).map_err(|_| corrupt())?;
+    if record.format_version != 1 || content_digest(&payload).0 != record.checksum {
+        return Err(corrupt());
+    }
+    Ok(Some(record))
+}
+
+pub(super) fn encode(catalog: &CompiledCatalog, config: DirectoryDeploymentRepositoryConfig) -> Result<Vec<u8>, PlatformError> {
+    let codec = JsonManifestCodec::default();
+    let deployments = catalog.deployments.values().map(|deployment| {
+        let bytes = codec.encode_deployment(deployment).map_err(super::manifest_error)?;
+        json::from_slice(&bytes).map_err(|_| corrupt())
+    }).collect::<Result<Vec<_>, PlatformError>>()?;
+    let payload = Payload {
+        generation: catalog.snapshot.generation.0,
+        generated_at_unix_millis: catalog.snapshot.generated_at_unix_millis,
+        deployments,
+        snapshot: snapshot_value(&catalog.snapshot),
+    };
+    let payload_bytes = json::to_vec(&payload).map_err(|_| corrupt())?;
+    if payload_bytes.len() > config.max_state_bytes {
+        return Err(error(PlatformErrorCode::ResourceExhausted, "catalog-state-byte-limit"));
+    }
+    let record = Record { format_version: 1, checksum: content_digest(&payload_bytes).0, payload };
+    let bytes = json::to_vec(&record).map_err(|_| corrupt())?;
+    if bytes.len() > config.max_state_bytes {
+        return Err(error(PlatformErrorCode::ResourceExhausted, "catalog-state-byte-limit"));
+    }
+    Ok(bytes)
+}
+
+pub(super) fn snapshot_value(snapshot: &RouteSnapshot) -> json::Value {
+    let services = snapshot.services.iter().map(|service| {
+        let revisions = service.revisions.iter().map(|revision| json::json!({
+            "revision": revision.revision.0,
+            "release": revision.release.0,
+            "weight": revision.weight,
+            "attributes": revision.attributes,
+        })).collect::<Vec<_>>();
+        json::json!({
+            "route": service.id.0,
+            "tenant": service.tenant.0,
+            "service": service.service.0,
+            "revisions": revisions,
+        })
+    }).collect::<Vec<_>>();
+    json::json!({
+        "generation": snapshot.generation.0,
+        "generated_at_unix_millis": snapshot.generated_at_unix_millis,
+        "services": services,
+        "bindings": [],
+        "policy_digests": snapshot.policy_digests,
+    })
+}
+
+pub(super) fn stage(root: &Path, bytes: &[u8]) -> Result<(), PlatformError> {
+    remove_pending(root)?;
+    let mut pending = OpenOptions::new().create_new(true).write(true)
+        .open(root.join(PENDING_FILE)).map_err(io_error)?;
+    pending.write_all(bytes).map_err(io_error)?;
+    pending.sync_all().map_err(io_error)
+}
+
+pub(super) fn replace(root: &Path) -> Result<(), PlatformError> {
+    fs::rename(root.join(PENDING_FILE), root.join(STATE_FILE)).map_err(io_error)
+}
+
+pub(super) fn sync_root(root: &Path) -> Result<(), PlatformError> {
+    File::open(root).and_then(|directory| directory.sync_all())
+        .map_err(|_| error(PlatformErrorCode::Unavailable, "commit-durability-uncertain"))?;
+    // Fixed node-owned initialization marker, not a per-deployment resource.
+    if !root.join(INITIALIZED_FILE).exists() {
+        let mut marker = OpenOptions::new().create_new(true).write(true)
+            .open(root.join(INITIALIZED_FILE)).map_err(io_error)?;
+        marker.write_all(b"lsf-deployment-catalog-v1\n").map_err(io_error)?;
+        marker.sync_all().map_err(io_error)?;
+        File::open(root).and_then(|directory| directory.sync_all()).map_err(io_error)?;
+    }
+    Ok(())
+}
+
+fn remove_pending(root: &Path) -> Result<(), PlatformError> {
+    match fs::remove_file(root.join(PENDING_FILE)) {
+        Ok(()) => Ok(()),
+        Err(failure) if failure.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(failure) => Err(io_error(failure)),
+    }
+}
+
+fn regular_or_absent(path: &Path) -> Result<(), PlatformError> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_file() => Ok(()),
+        Ok(_) => Err(error(PlatformErrorCode::CorruptArtifact, "non-regular-catalog-file")),
+        Err(failure) if failure.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(failure) => Err(io_error(failure)),
+    }
+}
+
+fn io_error(_failure: std::io::Error) -> PlatformError {
+    error(PlatformErrorCode::Unavailable, "catalog-io-failure")
+}
+
+fn corrupt() -> PlatformError {
+    error(PlatformErrorCode::CorruptArtifact, "invalid-persisted-catalog")
+}
