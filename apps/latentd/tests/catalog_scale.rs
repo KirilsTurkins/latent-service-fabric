@@ -203,6 +203,31 @@ fn verify_catalog(repo: &dyn ArtifactRepository, template: &CapsuleManifest) {
     );
 }
 
+fn report_topology(mode: &str, baseline: &Topology, after: &Topology) {
+    println!(
+        "{}",
+        serde_json::json!({
+            "mode": mode,
+            "registered_and_fetched": RELEASE_COUNT,
+            "baseline": baseline,
+            "after": after,
+            "fixed_helpers": {
+                "probe_processes": 1,
+                "harness_threads": baseline.threads,
+                "node_generic_cells": baseline.generic_cells,
+                "catalog_ownership_fds": 1
+            },
+            "service_specific_growth": {
+                "processes": after.child_processes - baseline.child_processes,
+                "threads": after.threads - baseline.threads,
+                "listening_sockets": after.listening_sockets - baseline.listening_sockets,
+                "execution_cells": after.generic_cells - baseline.generic_cells,
+                "active_leases": after.active_leases - baseline.active_leases
+            }
+        })
+    );
+}
+
 #[test]
 #[ignore = "run through production_catalog_100k; requires a parent-owned persistent root"]
 fn catalog_scale_child() {
@@ -269,28 +294,7 @@ fn catalog_scale_child() {
         after, opened,
         "no per-release execution or OS resource growth"
     );
-    println!(
-        "{}",
-        serde_json::json!({
-            "mode": mode,
-            "registered_and_fetched": RELEASE_COUNT,
-            "baseline": baseline,
-            "after": after,
-            "fixed_helpers": {
-                "probe_processes": 1,
-                "harness_threads": baseline.threads,
-                "node_generic_cells": baseline.generic_cells,
-                "catalog_ownership_fds": 1
-            },
-            "service_specific_growth": {
-                "processes": after.child_processes - baseline.child_processes,
-                "threads": after.threads - baseline.threads,
-                "listening_sockets": after.listening_sockets - baseline.listening_sockets,
-                "execution_cells": after.generic_cells - baseline.generic_cells,
-                "active_leases": after.active_leases - baseline.active_leases
-            }
-        })
-    );
+    report_topology(&mode, &baseline, &after);
     drop(repo);
     assert_eq!(
         topology(&pool),
