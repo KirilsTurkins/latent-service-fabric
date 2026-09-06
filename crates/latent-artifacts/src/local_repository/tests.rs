@@ -82,11 +82,7 @@ fn repository(root: &Path) -> DirectoryArtifactRepository {
 fn artifact(name: &str, bytes: &[u8]) -> CapsuleArtifact {
     let release = release_digest(bytes);
     let manifest_source = include_str!("../../../../examples/echo-contract/capsule.json")
-        .replace(PLACEHOLDER_DIGEST, &release.0)
-        .replace(
-            "\"name\": \"examples/echo\"",
-            &format!("\"name\": \"tests/{name}\""),
-        );
+        .replace(PLACEHOLDER_DIGEST, &release.0);
     let manifest = JsonManifestCodec::default()
         .decode_capsule(manifest_source.as_bytes())
         .expect("test capsule must decode");
@@ -355,6 +351,7 @@ fn listing_is_entry_and_byte_bounded_and_deterministic() {
         DirectoryArtifactRepositoryConfig {
             max_page_size: 2,
             max_page_bytes: 16 * 1024,
+            max_descriptor_bytes: 8 * 1024,
             ..DirectoryArtifactRepositoryConfig::default()
         },
     )
