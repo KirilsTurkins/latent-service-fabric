@@ -55,11 +55,17 @@ fn large_release_metadata_has_a_bounded_compilation_working_set() {
             if let Some(status) = child.0.try_wait().unwrap() {
                 let evidence = fs::read_to_string(&path).unwrap();
                 assert!(status.success(), "{mode} child failed: {evidence}");
-                assert!(evidence.contains(&format!("memory-mode={mode}")), "{evidence}");
+                assert!(
+                    evidence.contains(&format!("memory-mode={mode}")),
+                    "{evidence}"
+                );
                 println!("{evidence}");
                 break;
             }
-            assert!(Instant::now() < deadline, "{mode} child exceeded its deadline");
+            assert!(
+                Instant::now() < deadline,
+                "{mode} child exceeded its deadline"
+            );
             std::thread::sleep(Duration::from_millis(10));
         }
     }
@@ -112,8 +118,7 @@ fn child_probe(mode: &str, root: &Path) {
     if mode == "publish" {
         for index in 0..RELEASES {
             let mut value = artifact(&marker(index));
-            value.contracts[0].interfaces[0].documentation =
-                Some("d".repeat(DOCUMENTATION_BYTES));
+            value.contracts[0].interfaces[0].documentation = Some("d".repeat(DOCUMENTATION_BYTES));
             let descriptor = run(releases.publish(value)).unwrap();
             assert_eq!(descriptor.release_digest, digest(index));
             let restored = run(releases.fetch(&descriptor.release_digest)).unwrap();
@@ -145,8 +150,7 @@ fn child_probe(mode: &str, root: &Path) {
             "shared-release-distinct-scopes"
         };
         let path = root.join(scenario);
-        let previous = (mode == "reopen")
-            .then(|| fs::read(path.join("catalog.json")).unwrap());
+        let previous = (mode == "reopen").then(|| fs::read(path.join("catalog.json")).unwrap());
         let store = run(Store::open(path.clone(), releases.clone(), limits)).unwrap();
         let deployments = desired(distinct_releases);
         if mode == "apply" {

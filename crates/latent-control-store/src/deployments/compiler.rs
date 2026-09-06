@@ -261,7 +261,12 @@ pub(super) async fn compile(
             } else {
                 charge_fingerprint(
                     &mut metadata_budget,
-                    &[&tenant.0, &deployment.service.0, &export.contract.0, &schema],
+                    &[
+                        &tenant.0,
+                        &deployment.service.0,
+                        &export.contract.0,
+                        &schema,
+                    ],
                 )?;
                 contracts.insert(contract_key, schema.clone());
             }

@@ -135,7 +135,10 @@ fn open(path: &Path) -> Result<Store, PlatformError> {
         Arc::new(NoReleases),
         DirectoryDeploymentRepositoryConfig::default(),
     ));
-    match future.as_mut().poll(&mut Context::from_waker(Waker::noop())) {
+    match future
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+    {
         Poll::Ready(result) => result,
         Poll::Pending => panic!("empty initialization has no asynchronous release work"),
     }
@@ -174,9 +177,7 @@ fn marker_creation_and_partial_writes_are_recoverable_at_every_boundary() {
             let contents = fs::read(&pending).unwrap();
             let expected = match step {
                 IoStep::MarkerCreated => &INITIALIZED_CONTENT[..0],
-                IoStep::MarkerPartialWrite => {
-                    &INITIALIZED_CONTENT[..INITIALIZED_CONTENT.len() / 2]
-                }
+                IoStep::MarkerPartialWrite => &INITIALIZED_CONTENT[..INITIALIZED_CONTENT.len() / 2],
                 _ => INITIALIZED_CONTENT,
             };
             assert_eq!(contents, expected);
@@ -242,13 +243,19 @@ fn nested_path_sync_failures_propagate_and_existing_path_retries_resync_all_link
         drop(open(&root).unwrap());
         let events = guard.events();
         assert_eq!(&events[..expected.len()], expected.as_slice());
-        assert_eq!(fs::read(root.join(INITIALIZED_FILE)).unwrap(), INITIALIZED_CONTENT);
+        assert_eq!(
+            fs::read(root.join(INITIALIZED_FILE)).unwrap(),
+            INITIALIZED_CONTENT
+        );
         drop(guard);
 
         // A subsequent failure on an existing catalog must not replace its state.
         let complete = fs::read(root.join(STATE_FILE)).unwrap();
         let guard = Guard::new(Some(expected[failed_index].clone()));
-        assert_eq!(open(&root).err().unwrap().code, PlatformErrorCode::Unavailable);
+        assert_eq!(
+            open(&root).err().unwrap().code,
+            PlatformErrorCode::Unavailable
+        );
         assert_eq!(fs::read(root.join(STATE_FILE)).unwrap(), complete);
         drop(guard);
         drop(open(&root).unwrap());
@@ -265,13 +272,22 @@ fn staging_marker_cleanup_never_repairs_corrupt_completed_state() {
     for bad_marker in [b"".as_slice(), b"lsf-deployment", b"wrong-version\n"] {
         fs::write(root.join(INITIALIZED_FILE), bad_marker).unwrap();
         fs::write(root.join(INITIALIZED_PENDING_FILE), INITIALIZED_CONTENT).unwrap();
-        assert_eq!(open(&root).err().unwrap().code, PlatformErrorCode::CorruptArtifact);
+        assert_eq!(
+            open(&root).err().unwrap().code,
+            PlatformErrorCode::CorruptArtifact
+        );
         assert_eq!(fs::read(root.join(INITIALIZED_FILE)).unwrap(), bad_marker);
         assert_eq!(fs::read(root.join(STATE_FILE)).unwrap(), complete);
     }
     fs::remove_file(root.join(INITIALIZED_FILE)).unwrap();
     fs::write(root.join(STATE_FILE), b"corrupt completed record").unwrap();
-    assert_eq!(open(&root).err().unwrap().code, PlatformErrorCode::CorruptArtifact);
+    assert_eq!(
+        open(&root).err().unwrap().code,
+        PlatformErrorCode::CorruptArtifact
+    );
     assert!(!root.join(INITIALIZED_FILE).exists());
-    assert_eq!(fs::read(root.join(STATE_FILE)).unwrap(), b"corrupt completed record");
+    assert_eq!(
+        fs::read(root.join(STATE_FILE)).unwrap(),
+        b"corrupt completed record"
+    );
 }
