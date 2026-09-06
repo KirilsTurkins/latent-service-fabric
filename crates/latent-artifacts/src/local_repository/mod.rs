@@ -60,8 +60,9 @@ pub struct DirectoryArtifactRepositoryConfig {
     pub max_descriptor_bytes: usize,
     pub max_metadata_bytes: usize,
     pub max_component_bytes: usize,
-    /// Separate startup scan bound. Incomplete directories do not consume the
-    /// completed-release index quota.
+    /// Bounds all release directories at startup and during publication,
+    /// including retained incomplete entries and pending durable adoption.
+    /// This can limit publication before the completed-release index quota.
     pub max_recovery_directories: usize,
 }
 
@@ -130,6 +131,14 @@ impl CatalogIndex {
     }
 }
 
+#[derive(Debug, Default)]
+struct PublicationState {
+    pending: Option<ReleaseDigest>,
+    // Includes indexed, pending and incomplete directories, not just releases
+    // visible to readers. Root ownership and the writer mutex protect this count.
+    release_directories: usize,
+}
+
 /// Crash-safe local trusted release catalog for standalone `latentd`.
 ///
 /// A repository owns its root exclusively for its lifetime using an OS file
@@ -141,9 +150,9 @@ pub struct DirectoryArtifactRepository {
     codec: JsonManifestCodec,
     validator: Phase1ManifestValidator,
     index: RwLock<CatalogIndex>,
-    /// Serializes writers and gates mutations after indeterminate durability.
-    /// Only a retry of the pending digest may proceed until durable adoption.
-    publish_lock: Mutex<Option<ReleaseDigest>>,
+    /// Serializes writers, reserves directory capacity and gates mutations after
+    /// indeterminate durability. Only a retry of the pending digest may proceed.
+    publish_lock: Mutex<PublicationState>,
     _owner_lock: File,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
@@ -192,7 +201,7 @@ impl DirectoryArtifactRepository {
             codec: JsonManifestCodec::default(),
             validator: Phase1ManifestValidator::new(),
             index: RwLock::new(CatalogIndex::default()),
-            publish_lock: Mutex::new(None),
+            publish_lock: Mutex::new(PublicationState::default()),
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),
@@ -207,6 +216,7 @@ impl DirectoryArtifactRepository {
     }
 
     fn rebuild_index(&self) -> Result<(), PlatformError> {
+        let mut publication = self.publish_lock.lock().map_err(lock_error)?;
         let releases = self.root.join(RELEASES_DIR);
         let mut complete_entries = Vec::new();
         let mut scanned = 0_usize;
@@ -244,6 +254,8 @@ impl DirectoryArtifactRepository {
         // exposing the rebuilt index or allowing further mutations.
         sync_dir(&releases)?;
         *self.index.write().map_err(lock_error)? = next;
+        publication.release_directories = scanned;
+        publication.pending = None;
         Ok(())
     }
 
@@ -386,8 +398,9 @@ impl DirectoryArtifactRepository {
     }
 
     fn publish_sync(&self, artifact: CapsuleArtifact) -> Result<ArtifactDescriptor, PlatformError> {
-        let mut pending = self.publish_lock.lock().map_err(lock_error)?;
-        if pending
+        let mut publication = self.publish_lock.lock().map_err(lock_error)?;
+        if publication
+            .pending
             .as_ref()
             .is_some_and(|digest| digest != &artifact.descriptor.release_digest)
         {
@@ -432,7 +445,14 @@ impl DirectoryArtifactRepository {
                     "release digest already contains different catalog content",
                 ));
             }
-            return self.sync_and_adopt(existing.descriptor, &mut pending);
+            return self.sync_and_adopt(existing.descriptor, &mut publication.pending);
+        }
+        // Holding the writer mutex reserves this slot until rename or failure.
+        // Existing-entry retries above use their already-accounted directory.
+        if publication.release_directories >= self.config.max_recovery_directories {
+            return Err(resource_exhausted(
+                "catalog recovery directory capacity reached",
+            ));
         }
 
         let nonce = SystemTime::now()
@@ -466,9 +486,13 @@ impl DirectoryArtifactRepository {
         if let Err(rename_failure) = fs::rename(&tmp_path, &destination).map_err(io_error) {
             let _ = fs::remove_dir_all(&tmp_path);
             if destination.exists() {
+                // A destination appeared after the initial absence check.
+                // Account for it before adoption, even if validation/sync fails.
+                publication.release_directories += 1;
+                publication.pending = Some(artifact.descriptor.release_digest.clone());
                 let existing = self.load_complete_entry(&destination)?;
                 if existing == artifact {
-                    return self.sync_and_adopt(existing.descriptor, &mut pending);
+                    return self.sync_and_adopt(existing.descriptor, &mut publication.pending);
                 }
                 return Err(error(
                     PlatformErrorCode::AlreadyExists,
@@ -477,7 +501,10 @@ impl DirectoryArtifactRepository {
             }
             return Err(rename_failure);
         }
-        self.sync_and_adopt(artifact.descriptor, &mut pending)
+        // Rename consumes the reserved slot independently of index visibility.
+        // A parent-sync failure must retain this charge until reopen/recovery.
+        publication.release_directories += 1;
+        self.sync_and_adopt(artifact.descriptor, &mut publication.pending)
     }
 
     #[cfg(test)]
@@ -617,6 +644,8 @@ fn validate_config(config: DirectoryArtifactRepositoryConfig) -> Result<(), Plat
             "descriptor byte bound must fit within page and metadata byte bounds",
         ));
     }
+    // Directory and index limits are independent; publication enforces both.
+    // Retained debris can exhaust directory capacity before index capacity.
     Ok(())
 }
 

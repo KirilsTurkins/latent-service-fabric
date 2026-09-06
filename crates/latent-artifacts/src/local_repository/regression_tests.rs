@@ -1,3 +1,6 @@
+#[path = "recovery_budget_tests.rs"]
+mod recovery_budget;
+
 use super::super::metadata::{StoredArtifactDescriptor, StoredContractDescriptor, StoredMetadata};
 use super::super::metadata_codec::{MAX_CONTRACT_TYPE_DEPTH, MAX_CONTRACT_TYPE_NODES};
 use super::*;
