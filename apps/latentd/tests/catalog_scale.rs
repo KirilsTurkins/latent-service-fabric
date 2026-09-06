@@ -9,8 +9,7 @@ use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
 use std::process::{Command, Stdio};
-use std::sync::Arc;
-use std::task::{Context, Poll, Wake, Waker};
+use std::task::{Context, Poll, Waker};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -28,14 +27,8 @@ const RELEASE_COUNT: u32 = 100_000;
 const MODE_ENV: &str = "LSF_CATALOG_SCALE_MODE";
 const ROOT_ENV: &str = "LSF_CATALOG_SCALE_ROOT";
 
-struct NoopWake;
-impl Wake for NoopWake {
-    fn wake(self: Arc<Self>) {}
-}
-
 fn block_on<T>(mut future: Pin<Box<dyn Future<Output = T> + Send + '_>>) -> T {
-    let waker = Waker::from(Arc::new(NoopWake));
-    let mut context = Context::from_waker(&waker);
+    let mut context = Context::from_waker(Waker::noop());
     loop {
         match future.as_mut().poll(&mut context) {
             Poll::Ready(value) => return value,
@@ -319,7 +312,7 @@ fn run_child(root: &Path, mode: &str, log_path: &Path) {
         .stderr(Stdio::from(log))
         .spawn()
         .expect("spawn isolated catalog process");
-    let deadline = Instant::now() + Duration::from_secs(1_200);
+    let deadline = Instant::now() + Duration::from_mins(20);
     let status = loop {
         if let Some(status) = child.try_wait().expect("poll probe") {
             break status;
