@@ -937,6 +937,7 @@ version = "0.1.0-alpha.1"
 name = "latent-control-store"
 version = "0.1.0-alpha.1"
 dependencies = [
+ "latent-admission",
  "latent-artifacts",
  "latent-audit",
  "latent-core",

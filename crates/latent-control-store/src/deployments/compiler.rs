@@ -1,3 +1,5 @@
+mod admission;
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
@@ -32,6 +34,7 @@ pub(super) struct CompiledCatalog {
     pub snapshot: RouteSnapshot,
     routes: BTreeSet<RouteKey>,
     endpoints: BTreeMap<EndpointKey, WeightedSet>,
+    admission_policies: BTreeMap<latent_core::RevisionId, latent_routing::RevisionAdmissionPolicy>,
 }
 
 impl CompiledCatalog {
@@ -140,6 +143,7 @@ pub(super) async fn compile(
     let mut contracts = BTreeMap::new();
     let mut services: BTreeMap<RouteKey, ServiceRoute> = BTreeMap::new();
     let mut endpoints: BTreeMap<EndpointKey, Vec<Arc<RevisionRoute>>> = BTreeMap::new();
+    let mut admission_policies = BTreeMap::new();
     let mut route_entries = 0_usize;
     let mut metadata_budget = config.max_state_bytes;
 
@@ -313,8 +317,16 @@ pub(super) async fn compile(
             .map_err(|_| error(PlatformErrorCode::Internal, "deployment-encoding-failed"))?;
         let exports_json = json::to_string(&exported)
             .map_err(|_| error(PlatformErrorCode::Internal, "contract-encoding-failed"))?;
+        let revision_id = deployment_revision_id(deployment)?;
+        admission::retain_policy(
+            &mut admission_policies,
+            revision_id.clone(),
+            deployment,
+            &artifact.manifest.execution,
+            &mut metadata_budget,
+        )?;
         let revision = Arc::new(RevisionRoute {
-            revision: deployment_revision_id(deployment)?,
+            revision: revision_id,
             release: deployment.release.clone(),
             weight: deployment.route_weight,
             attributes: Metadata::from([
@@ -407,6 +419,7 @@ pub(super) async fn compile(
         },
         routes,
         endpoints: weighted,
+        admission_policies,
     };
     // Check exact persisted size, including JSON escaping, before publication.
     super::persistence::encode(&catalog, config)?;

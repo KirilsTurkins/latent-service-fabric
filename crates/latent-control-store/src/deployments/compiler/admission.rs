@@ -19,7 +19,10 @@ pub(super) fn retain_policy(
     // Charge the fixed record, key, and conservative B-tree bookkeeping before
     // cloning. Only placement strings and fixed-size execution requirements are
     // retained; never component bytes, contract trees, or a full artifact.
-    charge(remaining, 512 + std::mem::size_of::<RevisionAdmissionPolicy>())?;
+    charge(
+        remaining,
+        512 + std::mem::size_of::<RevisionAdmissionPolicy>(),
+    )?;
     charge(remaining, revision.0.len())?;
     charge(remaining, deployment.placement.trust_class.len())?;
     for values in [
@@ -39,7 +42,10 @@ pub(super) fn retain_policy(
         placement: deployment.placement.clone(),
     };
     if policies.insert(revision, policy).is_some() {
-        return Err(error(PlatformErrorCode::AlreadyExists, "duplicate-revision-policy"));
+        return Err(error(
+            PlatformErrorCode::AlreadyExists,
+            "duplicate-revision-policy",
+        ));
     }
     Ok(())
 }
@@ -61,31 +67,50 @@ impl RevisionPolicySource for PinnedRouteResolver {
             revision.release.0.as_str(),
         ] {
             if !valid_identifier(id, self.config.max_identifier_bytes) {
-                return Err(error(PlatformErrorCode::InvalidArgument, "invalid-pinned-revision"));
+                return Err(error(
+                    PlatformErrorCode::InvalidArgument,
+                    "invalid-pinned-revision",
+                ));
             }
         }
         if revision.route_generation != self.catalog.snapshot.generation {
             return Err(missing_policy());
         }
         let key = (
-            (target.tenant.0.clone(), target.service.0.clone(), route.to_owned()),
+            (
+                target.tenant.0.clone(),
+                target.service.0.clone(),
+                route.to_owned(),
+            ),
             target.contract.0.clone(),
             target.function.0.clone(),
         );
-        let candidates = self.catalog.endpoints.get(&key).ok_or_else(missing_policy)?;
+        let candidates = self
+            .catalog
+            .endpoints
+            .get(&key)
+            .ok_or_else(missing_policy)?;
         // Compilation sorts candidate revisions by their stable identities. No
         // scan across services, caller metadata parsing, or re-resolution with a
         // different routing key is performed at this boundary.
-        let index = candidates.revisions.binary_search_by(|(_, candidate)| {
-            candidate.revision.cmp(&revision.revision)
-        }).map_err(|_| missing_policy())?;
+        let index = candidates
+            .revisions
+            .binary_search_by(|(_, candidate)| candidate.revision.cmp(&revision.revision))
+            .map_err(|_| missing_policy())?;
         if candidates.revisions[index].1.release != revision.release {
             return Err(missing_policy());
         }
-        self.catalog.admission_policies.get(&revision.revision).cloned().ok_or_else(missing_policy)
+        self.catalog
+            .admission_policies
+            .get(&revision.revision)
+            .cloned()
+            .ok_or_else(missing_policy)
     }
 }
 
 fn missing_policy() -> PlatformError {
-    error(PlatformErrorCode::RouteUnavailable, "pinned-revision-not-found")
+    error(
+        PlatformErrorCode::RouteUnavailable,
+        "pinned-revision-not-found",
+    )
 }
