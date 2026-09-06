@@ -20,9 +20,7 @@ use latent_manifest::{
 };
 use latent_routing::{InvocationTarget, RouteSnapshot, RouteSnapshotSource};
 
-use super::super::{
-    error, DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig,
-};
+use super::super::{error, DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig};
 
 pub(super) type Store = DirectoryDeploymentRepository;
 pub(super) type Limits = DirectoryDeploymentRepositoryConfig;
@@ -89,7 +87,10 @@ impl Releases {
     pub fn add(&self, marker: &str) -> ReleaseDigest {
         let artifact = artifact(marker);
         let digest = artifact.descriptor.release_digest.clone();
-        self.values.write().unwrap().insert(digest.clone(), artifact);
+        self.values
+            .write()
+            .unwrap()
+            .insert(digest.clone(), artifact);
         digest
     }
 }
@@ -284,7 +285,12 @@ pub(super) fn target(tenant: &str, route: Option<&str>) -> InvocationTarget {
 }
 
 pub(super) fn open(root: &TempRoot, releases: &Arc<Releases>) -> Store {
-    run(Store::open(root.0.clone(), releases.clone(), Limits::default())).unwrap()
+    run(Store::open(
+        root.0.clone(),
+        releases.clone(),
+        Limits::default(),
+    ))
+    .unwrap()
 }
 
 pub(super) fn snapshot(store: &Store) -> RouteSnapshot {

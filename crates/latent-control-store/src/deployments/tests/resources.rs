@@ -55,7 +55,10 @@ fn dormant_deployments_allocate_no_runtime_resources() {
             println!("{evidence}");
             break;
         }
-        assert!(Instant::now() < deadline, "dormancy child exceeded its deadline");
+        assert!(
+            Instant::now() < deadline,
+            "dormancy child exceeded its deadline"
+        );
         std::thread::sleep(Duration::from_millis(10));
     }
 }
@@ -111,18 +114,35 @@ fn child_probe() {
     let before = measure();
     let before_files = fs::read_dir(&deployments_root).unwrap().count();
     let deployments = (0..1000)
-        .map(|index| deployment(&format!("blue-{index}"), "alice", &descriptor.release_digest))
+        .map(|index| {
+            deployment(
+                &format!("blue-{index}"),
+                "alice",
+                &descriptor.release_digest,
+            )
+        })
         .collect();
     run(store.apply_many(deployments)).unwrap();
     assert_eq!(run(store.list()).unwrap().len(), 1000);
     for index in 0..1000 {
         let route = format!("blue-{index}");
-        let resolved = store.resolve(&target("alice", Some(&route)), Some("key")).unwrap();
+        let resolved = store
+            .resolve(&target("alice", Some(&route)), Some("key"))
+            .unwrap();
         assert_eq!(resolved.release, descriptor.release_digest);
     }
     let after = measure();
-    assert_eq!(before, after, "dormant routes must not allocate runtime resources");
-    assert_eq!(fs::read_dir(&deployments_root).unwrap().count(), before_files);
-    assert_eq!(before_files, 3, "only state, initialization marker, and node lock persist");
+    assert_eq!(
+        before, after,
+        "dormant routes must not allocate runtime resources"
+    );
+    assert_eq!(
+        fs::read_dir(&deployments_root).unwrap().count(),
+        before_files
+    );
+    assert_eq!(
+        before_files, 3,
+        "only state, initialization marker, and node lock persist"
+    );
     println!("deployments=1000 before={before:?} after={after:?} catalog_files={before_files}");
 }

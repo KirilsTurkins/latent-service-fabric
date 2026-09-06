@@ -11,7 +11,9 @@ use latent_manifest::{
     __serde_json as json, DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidator,
     Phase1ManifestValidator,
 };
-use latent_routing::{InvocationTarget, ResolvedRevision, RevisionRoute, RouteSnapshot, ServiceRoute};
+use latent_routing::{
+    InvocationTarget, ResolvedRevision, RevisionRoute, RouteSnapshot, ServiceRoute,
+};
 
 use super::{deployment_revision_id, error, manifest_error, DirectoryDeploymentRepositoryConfig};
 
@@ -62,9 +64,16 @@ impl CompiledCatalog {
             route.to_owned(),
         );
         if !self.routes.contains(&route_key) {
-            return Err(error(PlatformErrorCode::RouteUnavailable, "route-not-found"));
+            return Err(error(
+                PlatformErrorCode::RouteUnavailable,
+                "route-not-found",
+            ));
         }
-        let endpoint_key = (route_key, target.contract.0.clone(), target.function.0.clone());
+        let endpoint_key = (
+            route_key,
+            target.contract.0.clone(),
+            target.function.0.clone(),
+        );
         let candidates = self.endpoints.get(&endpoint_key).ok_or_else(|| {
             error(
                 PlatformErrorCode::IncompatibleContract,
@@ -87,7 +96,9 @@ impl CompiledCatalog {
         let hash = u64::from_str_radix(&digest.0[7..23], 16)
             .expect("content_digest returns canonical SHA-256 hexadecimal");
         let bucket = hash % candidates.total;
-        let index = candidates.revisions.partition_point(|(end, _)| *end <= bucket);
+        let index = candidates
+            .revisions
+            .partition_point(|(end, _)| *end <= bucket);
         let revision = &candidates.revisions[index].1;
         Ok(ResolvedRevision {
             target: target.clone(),
@@ -326,9 +337,14 @@ pub(super) async fn compile(
         let mut total = 0_u64;
         let mut cumulative = Vec::with_capacity(revisions.len());
         for revision in revisions {
-            total = total.checked_add(u64::from(revision.weight)).ok_or_else(|| {
-                error(PlatformErrorCode::ResourceExhausted, "route-weight-overflow")
-            })?;
+            total = total
+                .checked_add(u64::from(revision.weight))
+                .ok_or_else(|| {
+                    error(
+                        PlatformErrorCode::ResourceExhausted,
+                        "route-weight-overflow",
+                    )
+                })?;
             cumulative.push((total, revision));
         }
         weighted.insert(

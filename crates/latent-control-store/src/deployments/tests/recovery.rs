@@ -39,7 +39,9 @@ fn real_release_and_deployment_catalogs_restore_exact_routes_and_deletions() {
     let deployment = deployment("blue", "alice", &descriptor.release_digest);
     run(store.apply(deployment.clone())).unwrap();
     let expected_snapshot = snapshot(&store);
-    let expected_route = store.resolve(&target("alice", None), Some("stable")).unwrap();
+    let expected_route = store
+        .resolve(&target("alice", None), Some("stable"))
+        .unwrap();
     drop(store);
     drop(releases);
 
@@ -51,7 +53,9 @@ fn real_release_and_deployment_catalogs_restore_exact_routes_and_deletions() {
     ))
     .unwrap();
     assert_eq!(snapshot(&store), expected_snapshot);
-    let restored = store.resolve(&target("alice", None), Some("stable")).unwrap();
+    let restored = store
+        .resolve(&target("alice", None), Some("stable"))
+        .unwrap();
     assert_eq!(restored, expected_route);
     assert_eq!(run(store.list()).unwrap(), vec![deployment.clone()]);
     run(store.delete(&deployment.id)).unwrap();
@@ -66,7 +70,10 @@ fn real_release_and_deployment_catalogs_restore_exact_routes_and_deletions() {
     .unwrap();
     assert_eq!(store.generation(), RouteGeneration(2));
     assert!(run(store.list()).unwrap().is_empty());
-    assert_code(store.resolve(&target("alice", None), None), Code::RouteUnavailable);
+    assert_code(
+        store.resolve(&target("alice", None), None),
+        Code::RouteUnavailable,
+    );
 }
 
 #[test]
@@ -86,7 +93,11 @@ fn restart_ignores_pending_but_rejects_corrupt_or_missing_complete_state() {
     let state = root.0.join(persistence::STATE_FILE);
     fs::write(&state, b"broken").unwrap();
     assert_code(
-        run(Store::open(root.0.clone(), releases.clone(), Limits::default())),
+        run(Store::open(
+            root.0.clone(),
+            releases.clone(),
+            Limits::default(),
+        )),
         Code::CorruptArtifact,
     );
     fs::remove_file(&state).unwrap();
@@ -105,18 +116,33 @@ fn crash_boundaries_keep_disk_and_memory_on_complete_snapshots() {
     let store = open(&root, &releases);
     run(store.apply(deployment("blue", "alice", &one))).unwrap();
     store.fail_before_rename.store(true, Ordering::SeqCst);
-    assert_code(run(store.apply(deployment("blue", "alice", &two))), Code::Unavailable);
-    assert_eq!(store.resolve(&target("alice", None), None).unwrap().release, one);
+    assert_code(
+        run(store.apply(deployment("blue", "alice", &two))),
+        Code::Unavailable,
+    );
+    assert_eq!(
+        store.resolve(&target("alice", None), None).unwrap().release,
+        one
+    );
     drop(store);
     let store = open(&root, &releases);
-    assert_eq!(store.resolve(&target("alice", None), None).unwrap().release, one);
+    assert_eq!(
+        store.resolve(&target("alice", None), None).unwrap().release,
+        one
+    );
     store.fail_parent_sync.store(true, Ordering::SeqCst);
     let failure = run(store.apply(deployment("blue", "alice", &two))).unwrap_err();
     assert_eq!(failure.message, "commit-durability-uncertain");
-    assert_eq!(store.resolve(&target("alice", None), None).unwrap().release, two);
+    assert_eq!(
+        store.resolve(&target("alice", None), None).unwrap().release,
+        two
+    );
     drop(store);
     let store = open(&root, &releases);
-    assert_eq!(store.resolve(&target("alice", None), None).unwrap().release, two);
+    assert_eq!(
+        store.resolve(&target("alice", None), None).unwrap().release,
+        two
+    );
     assert_eq!(store.generation(), RouteGeneration(2));
 }
 
@@ -148,7 +174,9 @@ fn valid_checksum_does_not_hide_a_mismatched_compiled_snapshot() {
     record.payload.snapshot["services"] = json::json!([]);
     record.checksum = content_digest(&json::to_vec(&record.payload).unwrap()).0;
     fs::write(path, json::to_vec(&record).unwrap()).unwrap();
-    let failure = run(Store::open(root.0.clone(), releases, Limits::default())).err().unwrap();
+    let failure = run(Store::open(root.0.clone(), releases, Limits::default()))
+        .err()
+        .unwrap();
     assert_eq!(failure.code, Code::CorruptArtifact);
     assert_eq!(failure.message, "persisted-route-mismatch");
 }
@@ -164,17 +192,26 @@ fn recovery_never_silently_drops_a_missing_release_or_changed_contract() {
     let original = fs::read(root.0.join(persistence::STATE_FILE)).unwrap();
     releases.values.write().unwrap().remove(&one);
     assert_code(
-        run(Store::open(root.0.clone(), releases.clone(), Limits::default())),
+        run(Store::open(
+            root.0.clone(),
+            releases.clone(),
+            Limits::default(),
+        )),
         Code::NotFound,
     );
-    assert_eq!(fs::read(root.0.join(persistence::STATE_FILE)).unwrap(), original);
+    assert_eq!(
+        fs::read(root.0.join(persistence::STATE_FILE)).unwrap(),
+        original
+    );
     releases.add("one");
     {
         let mut values = releases.values.write().unwrap();
         let function = &mut values.get_mut(&one).unwrap().contracts[0].interfaces[0].functions[0];
         function.name = "changed-metadata".to_owned();
     }
-    let failure = run(Store::open(root.0.clone(), releases, Limits::default())).err().unwrap();
+    let failure = run(Store::open(root.0.clone(), releases, Limits::default()))
+        .err()
+        .unwrap();
     assert_eq!(failure.code, Code::CorruptArtifact);
     assert_eq!(failure.message, "persisted-route-mismatch");
 }
@@ -187,9 +224,15 @@ fn staging_io_failure_does_not_publish_any_desired_state() {
     let store = open(&root, &releases);
     let before = fs::read(root.0.join(persistence::STATE_FILE)).unwrap();
     fs::create_dir(root.0.join(".catalog.pending")).unwrap();
-    assert_code(run(store.apply(deployment("blue", "alice", &one))), Code::Unavailable);
+    assert_code(
+        run(store.apply(deployment("blue", "alice", &one))),
+        Code::Unavailable,
+    );
     assert_eq!(store.generation(), RouteGeneration(0));
-    assert_eq!(fs::read(root.0.join(persistence::STATE_FILE)).unwrap(), before);
+    assert_eq!(
+        fs::read(root.0.join(persistence::STATE_FILE)).unwrap(),
+        before
+    );
     fs::remove_dir(root.0.join(".catalog.pending")).unwrap();
     drop(store);
     assert!(run(open(&root, &releases).list()).unwrap().is_empty());
@@ -210,8 +253,17 @@ fn generation_exhaustion_never_wraps_to_zero() {
     .unwrap();
     store.commit(RouteGeneration(0), exhausted).unwrap();
     let current = snapshot(&store);
-    assert_code(run(RouteCompiler::compile(&store, None)), Code::StateConflict);
-    assert_code(run(RouteCompiler::compile(&store, Some(&current))), Code::ResourceExhausted);
-    assert_code(run(store.delete(&DeploymentId("missing".to_owned()))), Code::NotFound);
+    assert_code(
+        run(RouteCompiler::compile(&store, None)),
+        Code::StateConflict,
+    );
+    assert_code(
+        run(RouteCompiler::compile(&store, Some(&current))),
+        Code::ResourceExhausted,
+    );
+    assert_code(
+        run(store.delete(&DeploymentId("missing".to_owned()))),
+        Code::NotFound,
+    );
     assert_eq!(store.generation(), RouteGeneration(u64::MAX));
 }

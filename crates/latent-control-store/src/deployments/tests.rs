@@ -9,9 +9,7 @@ use std::sync::{Arc, Barrier};
 use latent_artifacts::content_digest;
 use latent_core::{DeploymentId, RouteGeneration, TenantId};
 use latent_manifest::{ExecutionBackendKind, StateModel};
-use latent_routing::{
-    RouteCompiler, RouteResolver, RouteSnapshotPublisher, RouteSnapshotSource,
-};
+use latent_routing::{RouteCompiler, RouteResolver, RouteSnapshotPublisher, RouteSnapshotSource};
 
 use super::deployment_revision_id;
 use crate::{CompiledRouteStore, DeploymentStore};
@@ -28,7 +26,10 @@ fn apply_read_list_delete_and_pinned_revision() {
     let id = first.id.clone();
     run(store.apply(first.clone())).unwrap();
     assert_eq!(store.generation(), RouteGeneration(1));
-    assert_eq!(run(DeploymentStore::get(&store, &id)).unwrap(), Some(first.clone()));
+    assert_eq!(
+        run(DeploymentStore::get(&store, &id)).unwrap(),
+        Some(first.clone())
+    );
     assert_eq!(run(store.list()).unwrap(), vec![first]);
     let pinned = store.pin().unwrap();
     let resolved = pinned.resolve(&target("alice", None), Some("key")).unwrap();
@@ -36,13 +37,25 @@ fn apply_read_list_delete_and_pinned_revision() {
     let current = store.resolve(&target("alice", None), Some("key")).unwrap();
     assert_eq!(current.release, two);
     assert_ne!(current.revision, resolved.revision);
-    assert_eq!(pinned.resolve(&target("alice", None), Some("key")).unwrap(), resolved);
+    assert_eq!(
+        pinned.resolve(&target("alice", None), Some("key")).unwrap(),
+        resolved
+    );
     assert_eq!(resolved.release, one);
     assert_eq!(resolved.route_generation, RouteGeneration(1));
     run(store.delete(&id)).unwrap();
     assert_eq!(store.generation(), RouteGeneration(3));
-    assert_code(store.resolve(&target("alice", None), None), Code::RouteUnavailable);
-    assert_eq!(pinned.resolve(&target("alice", None), None).unwrap().release, one);
+    assert_code(
+        store.resolve(&target("alice", None), None),
+        Code::RouteUnavailable,
+    );
+    assert_eq!(
+        pinned
+            .resolve(&target("alice", None), None)
+            .unwrap()
+            .release,
+        one
+    );
     assert_code(run(store.delete(&id)), Code::NotFound);
     assert!(run(DeploymentStore::get(&store, &id)).unwrap().is_none());
 }
@@ -60,14 +73,23 @@ fn tenants_and_named_routes_never_cross_boundaries() {
     ];
     run(store.apply_many(deployments)).unwrap();
     for key in [None, Some(""), Some("same-key")] {
-        assert_eq!(store.resolve(&target("alice", None), key).unwrap().release, one);
-        assert_eq!(store.resolve(&target("bob", None), key).unwrap().release, two);
+        assert_eq!(
+            store.resolve(&target("alice", None), key).unwrap().release,
+            one
+        );
+        assert_eq!(
+            store.resolve(&target("bob", None), key).unwrap().release,
+            two
+        );
     }
     assert_code(
         store.resolve(&target("alice", Some("bob-blue")), None),
         Code::RouteUnavailable,
     );
-    assert_code(store.resolve(&target("unknown", None), None), Code::RouteUnavailable);
+    assert_code(
+        store.resolve(&target("unknown", None), None),
+        Code::RouteUnavailable,
+    );
     let mut wrong = target("alice", None);
     wrong.function.0 = "missing".to_owned();
     assert_code(store.resolve(&wrong, None), Code::IncompatibleContract);
@@ -99,9 +121,17 @@ fn weighting_is_deterministic_order_independent_and_restart_stable() {
         assert_eq!(result, reordered);
         choices.push(result);
     }
-    let blue_count = choices.iter().filter(|choice| choice.release == one).count();
-    assert!((400..=625).contains(&blue_count), "blue count: {blue_count}");
-    let named = store.resolve(&target("alice", Some("blue")), Some("any")).unwrap();
+    let blue_count = choices
+        .iter()
+        .filter(|choice| choice.release == one)
+        .count();
+    assert!(
+        (400..=625).contains(&blue_count),
+        "blue count: {blue_count}"
+    );
+    let named = store
+        .resolve(&target("alice", Some("blue")), Some("any"))
+        .unwrap();
     assert_eq!(named.release, one);
     let mut changed = blue.clone();
     changed.route_weight = 10_000;
@@ -173,33 +203,76 @@ fn rejects_unsupported_releases_and_contract_conflicts() {
         ExecutionBackendKind::EphemeralProcess,
         ExecutionBackendKind::RemoteProvider,
     ] {
-        releases.values.write().unwrap().get_mut(&two).unwrap().manifest.execution.backend = backend;
+        releases
+            .values
+            .write()
+            .unwrap()
+            .get_mut(&two)
+            .unwrap()
+            .manifest
+            .execution
+            .backend = backend;
         assert_code(
             run(store.apply(deployment("green", "alice", &two))),
             Code::InvalidArgument,
         );
     }
     releases.add("two");
-    for state in [StateModel::Entity, StateModel::DurableWorkflow, StateModel::TransactionalKeyed] {
-        releases.values.write().unwrap().get_mut(&two).unwrap().manifest.execution.state_model = state;
+    for state in [
+        StateModel::Entity,
+        StateModel::DurableWorkflow,
+        StateModel::TransactionalKeyed,
+    ] {
+        releases
+            .values
+            .write()
+            .unwrap()
+            .get_mut(&two)
+            .unwrap()
+            .manifest
+            .execution
+            .state_model = state;
         assert_code(
             run(store.apply(deployment("green", "alice", &two))),
             Code::InvalidArgument,
         );
     }
     releases.add("two");
-    releases.values.write().unwrap().get_mut(&two).unwrap().contracts[0].interfaces[0].functions[0].asynchronous = true;
+    releases
+        .values
+        .write()
+        .unwrap()
+        .get_mut(&two)
+        .unwrap()
+        .contracts[0]
+        .interfaces[0]
+        .functions[0]
+        .asynchronous = true;
     assert_code(
         run(store.apply(deployment("green", "alice", &two))),
         Code::IncompatibleContract,
     );
-    releases.values.write().unwrap().get_mut(&two).unwrap().contracts.clear();
+    releases
+        .values
+        .write()
+        .unwrap()
+        .get_mut(&two)
+        .unwrap()
+        .contracts
+        .clear();
     assert_code(
         run(store.apply(deployment("green", "alice", &two))),
         Code::IncompatibleContract,
     );
     releases.add("two");
-    releases.values.write().unwrap().get_mut(&two).unwrap().component_bytes.push(0);
+    releases
+        .values
+        .write()
+        .unwrap()
+        .get_mut(&two)
+        .unwrap()
+        .component_bytes
+        .push(0);
     assert_code(
         run(store.apply(deployment("green", "alice", &two))),
         Code::CorruptArtifact,
@@ -218,14 +291,20 @@ fn duplicate_contract_and_function_ids_are_rejected() {
         let artifact = values.get_mut(&one).unwrap();
         artifact.contracts.push(artifact.contracts[0].clone());
     }
-    assert_code(run(store.apply(deployment("blue", "alice", &one))), Code::AlreadyExists);
+    assert_code(
+        run(store.apply(deployment("blue", "alice", &one))),
+        Code::AlreadyExists,
+    );
     releases.add("one");
     {
         let mut values = releases.values.write().unwrap();
         let functions = &mut values.get_mut(&one).unwrap().contracts[0].interfaces[0].functions;
         functions.push(functions[0].clone());
     }
-    assert_code(run(store.apply(deployment("blue", "alice", &one))), Code::AlreadyExists);
+    assert_code(
+        run(store.apply(deployment("blue", "alice", &one))),
+        Code::AlreadyExists,
+    );
     assert_eq!(store.generation(), RouteGeneration(0));
 }
 
@@ -243,11 +322,22 @@ fn compiler_publisher_and_coalescing_source_enforce_complete_generations() {
     assert_code(run(store.publish(invalid)), Code::InvalidArgument);
     run(CompiledRouteStore::put(&store, next.clone())).unwrap();
     assert_code(run(store.publish(next.clone())), Code::StateConflict);
-    assert_code(run(RouteCompiler::compile(&store, Some(&old))), Code::StateConflict);
-    assert_eq!(run(store.watch(old.generation)).unwrap(), vec![next.clone()]);
+    assert_code(
+        run(RouteCompiler::compile(&store, Some(&old))),
+        Code::StateConflict,
+    );
+    assert_eq!(
+        run(store.watch(old.generation)).unwrap(),
+        vec![next.clone()]
+    );
     assert!(run(store.watch(next.generation)).unwrap().is_empty());
-    assert_code(run(store.watch(RouteGeneration(999))), Code::InvalidArgument);
-    assert!(run(CompiledRouteStore::get(&store, old.generation)).unwrap().is_none());
+    assert_code(
+        run(store.watch(RouteGeneration(999))),
+        Code::InvalidArgument,
+    );
+    assert!(run(CompiledRouteStore::get(&store, old.generation))
+        .unwrap()
+        .is_none());
 }
 
 #[test]
@@ -257,7 +347,11 @@ fn root_ownership_limits_and_hot_path_are_explicit() {
     let one = releases.add("one");
     let store = open(&root, &releases);
     assert_code(
-        run(Store::open(root.0.clone(), releases.clone(), Limits::default())),
+        run(Store::open(
+            root.0.clone(),
+            releases.clone(),
+            Limits::default(),
+        )),
         Code::Unavailable,
     );
     run(store.apply(deployment("blue", "alice", &one))).unwrap();
@@ -267,15 +361,24 @@ fn root_ownership_limits_and_hot_path_are_explicit() {
     }
     assert_eq!(releases.fetches.load(Ordering::Relaxed), calls);
     let guard = store.current.write().unwrap();
-    assert_code(store.resolve(&target("alice", None), None), Code::Unavailable);
+    assert_code(
+        store.resolve(&target("alice", None), None),
+        Code::Unavailable,
+    );
     drop(guard);
     assert_code(
         store.resolve(&target("alice", None), Some(&"x".repeat(4097))),
         Code::InvalidArgument,
     );
     drop(store);
-    let limits = Limits { max_state_bytes: 1024, ..Limits::default() };
-    assert_code(run(Store::open(root.0.clone(), releases, limits)), Code::ResourceExhausted);
+    let limits = Limits {
+        max_state_bytes: 1024,
+        ..Limits::default()
+    };
+    assert_code(
+        run(Store::open(root.0.clone(), releases, limits)),
+        Code::ResourceExhausted,
+    );
 }
 
 #[test]
@@ -283,17 +386,29 @@ fn configured_bounds_reject_mutations_before_persistence() {
     let releases = Arc::new(Releases::default());
     let one = releases.add("one");
     let limits = [
-        Limits { max_state_bytes: 1024, ..Limits::default() },
-        Limits { max_route_entries: 1, ..Limits::default() },
+        Limits {
+            max_state_bytes: 1024,
+            ..Limits::default()
+        },
+        Limits {
+            max_route_entries: 1,
+            ..Limits::default()
+        },
     ];
     for limit in limits {
         let root = TempRoot::new();
         let store = run(Store::open(root.0.clone(), releases.clone(), limit)).unwrap();
-        assert_code(run(store.apply(deployment("blue", "alice", &one))), Code::ResourceExhausted);
+        assert_code(
+            run(store.apply(deployment("blue", "alice", &one))),
+            Code::ResourceExhausted,
+        );
         assert_eq!(store.generation(), RouteGeneration(0));
     }
     let root = TempRoot::new();
-    let limit = Limits { max_identifier_bytes: 32, ..Limits::default() };
+    let limit = Limits {
+        max_identifier_bytes: 32,
+        ..Limits::default()
+    };
     let store = run(Store::open(root.0.clone(), releases, limit)).unwrap();
     let oversized = deployment(&"x".repeat(33), "alice", &one);
     assert_code(run(store.apply(oversized)), Code::InvalidArgument);
@@ -319,7 +434,10 @@ fn concurrent_writers_cannot_overwrite_a_newer_generation() {
     assert_eq!(store.generation(), RouteGeneration(1));
     assert_eq!(run(store.list()).unwrap().len(), 1);
     *releases.fetch_gate.lock().unwrap() = None;
-    let batch = vec![deployment("blue", "alice", &one), deployment("green", "alice", &one)];
+    let batch = vec![
+        deployment("blue", "alice", &one),
+        deployment("green", "alice", &one),
+    ];
     run(store.apply_many(batch)).unwrap();
     assert_eq!(store.generation(), RouteGeneration(2));
     assert_eq!(run(store.list()).unwrap().len(), 2);
@@ -332,7 +450,10 @@ fn concurrent_snapshot_replacement_never_exposes_half_a_batch() {
     let one = releases.add("one");
     let two = releases.add("two");
     let store = open(&root, &releases);
-    let initial = vec![deployment("blue", "alice", &one), deployment("green", "alice", &one)];
+    let initial = vec![
+        deployment("blue", "alice", &one),
+        deployment("green", "alice", &one),
+    ];
     run(store.apply_many(initial)).unwrap();
     let barrier = Barrier::new(5);
     std::thread::scope(|scope| {
@@ -373,5 +494,10 @@ fn concurrent_snapshot_replacement_never_exposes_half_a_batch() {
         }
     });
     assert_eq!(run(store.list()).unwrap().len(), 2);
-    assert!(run(DeploymentStore::get(&store, &DeploymentId("blue".to_owned()))).unwrap().is_some());
+    assert!(run(DeploymentStore::get(
+        &store,
+        &DeploymentId("blue".to_owned())
+    ))
+    .unwrap()
+    .is_some());
 }

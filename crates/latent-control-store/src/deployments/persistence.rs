@@ -80,12 +80,9 @@ pub(super) fn own_root(root: &Path) -> Result<File, PlatformError> {
         .write(true)
         .open(root.join(OWNER_FILE))
         .map_err(io_error)?;
-    owner.try_lock().map_err(|_| {
-        error(
-            PlatformErrorCode::Unavailable,
-            "catalog-root-already-owned",
-        )
-    })?;
+    owner
+        .try_lock()
+        .map_err(|_| error(PlatformErrorCode::Unavailable, "catalog-root-already-owned"))?;
     regular_or_absent(&root.join(STATE_FILE))?;
     regular_or_absent(&root.join(PENDING_FILE))?;
     regular_or_absent(&root.join(INITIALIZED_FILE))?;
@@ -315,5 +312,8 @@ fn byte_limit() -> PlatformError {
 }
 
 fn corrupt() -> PlatformError {
-    error(PlatformErrorCode::CorruptArtifact, "invalid-persisted-catalog")
+    error(
+        PlatformErrorCode::CorruptArtifact,
+        "invalid-persisted-catalog",
+    )
 }
