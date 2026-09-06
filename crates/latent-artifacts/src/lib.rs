@@ -2,15 +2,25 @@
 
 #![forbid(unsafe_code)]
 
+mod content_hash;
 mod local_repository;
 
 pub use local_repository::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
 
-use latent_contracts::ContractDescriptor;
+/// Contract metadata accepted by artifact publication and consumed by route compilation.
+pub use latent_contracts::{
+    ContractDescriptor, FieldDescriptor, FunctionDescriptor, InterfaceDescriptor, ValueType,
+};
 use latent_core::{
     ArtifactReference, BoxFuture, Metadata, PlatformError, PublisherId, ReleaseDigest,
 };
 use latent_manifest::CapsuleManifest;
+
+/// Computes the canonical SHA-256 content identity shared by local catalogs.
+#[must_use]
+pub fn content_digest(bytes: &[u8]) -> ReleaseDigest {
+    content_hash::release_digest(bytes)
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArtifactLayer {
