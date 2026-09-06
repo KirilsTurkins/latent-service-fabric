@@ -22,8 +22,8 @@ use latent_manifest::{
     Phase1ManifestValidator,
 };
 use latent_routing::{
-    InvocationTarget, ResolvedBinding, ResolvedRevision, RouteCompiler, RouteResolver, RouteSnapshot,
-    RouteSnapshotPublisher, RouteSnapshotSource,
+    InvocationTarget, ResolvedBinding, ResolvedRevision, RouteCompiler, RouteResolver,
+    RouteSnapshot, RouteSnapshotPublisher, RouteSnapshotSource,
 };
 
 use crate::{CompiledRouteStore, DeploymentStore};
@@ -215,8 +215,9 @@ impl DirectoryDeploymentRepository {
 
     /// Acquires an immutable read view without waiting on a writer.
     pub fn pin(&self) -> Result<PinnedRouteResolver, PlatformError> {
+        let catalog = self.invocation_catalog()?;
         Ok(PinnedRouteResolver {
-            catalog: Arc::clone(&self.invocation_catalog()?),
+            catalog: Arc::clone(&catalog),
             config: self.config,
         })
     }
@@ -243,7 +244,11 @@ impl DirectoryDeploymentRepository {
         )
     }
 
-    fn commit(&self, expected: RouteGeneration, next: CompiledCatalog) -> Result<(), PlatformError> {
+    fn commit(
+        &self,
+        expected: RouteGeneration,
+        next: CompiledCatalog,
+    ) -> Result<(), PlatformError> {
         // No await, compilation, or artifact access occurs with this writer guard held.
         let _writer = self
             .writer
@@ -496,7 +501,9 @@ impl RouteResolver for PinnedRouteResolver {
 
 /// Versioned revision identity over the canonical deployment, excluding only route weight.
 /// Release spelling is normalized; tenant, namespace, ID, service, policy and budgets remain bound.
-pub fn deployment_revision_id(deployment: &DeploymentManifest) -> Result<RevisionId, PlatformError> {
+pub fn deployment_revision_id(
+    deployment: &DeploymentManifest,
+) -> Result<RevisionId, PlatformError> {
     Phase1ManifestValidator
         .validate_deployment(deployment)
         .map_err(manifest_error)?;
@@ -516,12 +523,16 @@ pub fn deployment_revision_id(deployment: &DeploymentManifest) -> Result<Revisio
 }
 
 fn next_generation(previous: RouteGeneration) -> Result<RouteGeneration, PlatformError> {
-    previous.0.checked_add(1).map(RouteGeneration).ok_or_else(|| {
-        error(
-            PlatformErrorCode::ResourceExhausted,
-            "route-generation-exhausted",
-        )
-    })
+    previous
+        .0
+        .checked_add(1)
+        .map(RouteGeneration)
+        .ok_or_else(|| {
+            error(
+                PlatformErrorCode::ResourceExhausted,
+                "route-generation-exhausted",
+            )
+        })
 }
 
 fn now() -> Result<u64, PlatformError> {
