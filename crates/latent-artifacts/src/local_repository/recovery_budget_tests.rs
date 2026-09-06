@@ -38,7 +38,10 @@ fn assert_catalog(repo: &DirectoryArtifactRepository, expected: &[CapsuleArtifac
 fn assert_budget_rejected(repo: &DirectoryArtifactRepository, release: &CapsuleArtifact) {
     let failure = block_on(repo.publish(release.clone())).expect_err("directory budget");
     assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
-    assert!(failure.message.contains("recovery directory"), "{failure:?}");
+    assert!(
+        failure.message.contains("recovery directory"),
+        "{failure:?}"
+    );
     let digest = &release.descriptor.release_digest;
     assert!(!release_dir(repo.root(), digest).exists());
     assert_eq!(
@@ -51,7 +54,9 @@ fn assert_budget_rejected(repo: &DirectoryArtifactRepository, release: &CapsuleA
         None
     );
     assert_eq!(
-        block_on(repo.fetch(digest)).expect_err("not persisted").code,
+        block_on(repo.fetch(digest))
+            .expect_err("not persisted")
+            .code,
         PlatformErrorCode::NotFound
     );
     assert_eq!(
@@ -163,18 +168,24 @@ fn pending_release_keeps_its_directory_charge_through_retry_or_reopen() {
         let second = artifact("unrelated", b"unrelated");
         repo.inject_parent_sync_failure_once();
         assert_eq!(
-            block_on(repo.publish(first.clone())).expect_err("sync failure").code,
+            block_on(repo.publish(first.clone()))
+                .expect_err("sync failure")
+                .code,
             PlatformErrorCode::Internal
         );
         assert_catalog(&repo, &[]);
         assert_eq!(
-            block_on(repo.publish(second.clone())).expect_err("recovery gate").code,
+            block_on(repo.publish(second.clone()))
+                .expect_err("recovery gate")
+                .code,
             PlatformErrorCode::Unavailable
         );
         if recover_by_retry {
             repo.inject_parent_sync_failure_once();
             assert_eq!(
-                block_on(repo.publish(first.clone())).expect_err("repeat failure").code,
+                block_on(repo.publish(first.clone()))
+                    .expect_err("repeat failure")
+                    .code,
                 PlatformErrorCode::Internal
             );
             block_on(repo.publish(first.clone())).expect("retry uses charged directory");
@@ -227,7 +238,10 @@ fn concurrent_publishers_cannot_overcommit_the_last_recovery_directory() {
     let barrier = Arc::new(Barrier::new(8));
     let mut writers = Vec::new();
     for index in 0..8 {
-        let value = artifact(&format!("writer-{index}"), format!("bytes-{index}").as_bytes());
+        let value = artifact(
+            &format!("writer-{index}"),
+            format!("bytes-{index}").as_bytes(),
+        );
         let writer_repo = Arc::clone(&repo);
         let start = Arc::clone(&barrier);
         writers.push(thread::spawn(move || {
@@ -254,7 +268,9 @@ fn concurrent_publishers_cannot_overcommit_the_last_recovery_directory() {
     assert_eq!(accepted.len(), 1);
     assert_catalog(&repo, &accepted);
     assert_eq!(
-        fs::read_dir(temp.path().join("releases")).expect("directories").count(),
+        fs::read_dir(temp.path().join("releases"))
+            .expect("directories")
+            .count(),
         2
     );
     drop(repo);
