@@ -274,7 +274,7 @@ fn catalog_scale_child() {
                 block_on(repository.publish(release)).expect("durable publication"),
                 descriptor
             );
-            if (index + 1) % 10_000 == 0 {
+            if (index + 1).is_multiple_of(10_000) {
                 assert_eq!(
                     topology(&pool),
                     opened,
