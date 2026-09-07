@@ -1,3 +1,7 @@
+#[path = "integrity_tests.rs"]
+mod integrity;
+#[path = "integrity_publication_tests.rs"]
+mod integrity_publication;
 #[path = "regression_tests.rs"]
 mod regressions;
 #[path = "root_durability_tests.rs"]

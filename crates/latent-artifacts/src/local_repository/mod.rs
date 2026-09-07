@@ -1,3 +1,4 @@
+mod integrity;
 mod metadata;
 mod metadata_codec;
 mod root_durability;
@@ -24,6 +25,7 @@ use latent_manifest::{
 };
 
 use crate::{ArtifactDescriptor, ArtifactPage, ArtifactQuery, ArtifactRepository, CapsuleArtifact};
+use integrity::CompletionRecord;
 use metadata::StoredArtifactDescriptor;
 use metadata_codec::{decode_metadata, encode_metadata};
 use sha256::release_digest;
@@ -141,6 +143,25 @@ struct PublicationState {
     release_directories: usize,
 }
 
+struct VerifiedEntry {
+    artifact: CapsuleArtifact,
+    completion: CompletionRecord,
+}
+
+struct PreparedPublication {
+    artifact: CapsuleArtifact,
+    metadata_bytes: Vec<u8>,
+    manifest_bytes: Vec<u8>,
+    completion: CompletionRecord,
+}
+
+impl PreparedPublication {
+    /// Release caller-owned payloads before materializing the persisted entry.
+    fn into_completion(self) -> CompletionRecord {
+        self.completion
+    }
+}
+
 /// Crash-safe local trusted release catalog for standalone `latentd`.
 ///
 /// A repository owns its root exclusively for its lifetime using an OS file
@@ -236,7 +257,7 @@ impl DirectoryArtifactRepository {
                 ));
             }
             let path = entry.path();
-            if !path.join(COMPLETE_FILE).is_file() {
+            if !is_recovery_candidate(&path)? {
                 continue;
             }
             if complete_entries.len() >= self.config.max_index_entries {
@@ -250,7 +271,7 @@ impl DirectoryArtifactRepository {
 
         let mut next = CatalogIndex::default();
         for path in complete_entries {
-            let artifact = self.load_complete_entry(&path)?;
+            let artifact = self.load_complete_entry(&path)?.artifact;
             let descriptor_bytes = self.validate_descriptor_bounds(&artifact.descriptor)?;
             next.insert(artifact.descriptor, descriptor_bytes, self.config)?;
         }
@@ -263,18 +284,19 @@ impl DirectoryArtifactRepository {
         Ok(())
     }
 
-    fn load_complete_entry(&self, path: &Path) -> Result<CapsuleArtifact, PlatformError> {
-        if !path.join(COMPLETE_FILE).is_file() {
-            return Err(corrupt("release entry is incomplete"));
-        }
+    fn load_complete_entry(&self, path: &Path) -> Result<VerifiedEntry, PlatformError> {
+        let completion = CompletionRecord::read(path)?;
         let metadata_bytes = read_bounded_file(
             &path.join(METADATA_FILE),
             self.config.max_metadata_bytes,
             "catalog metadata",
         )?;
+        completion.verify_metadata(&metadata_bytes)?;
         let (descriptor, contracts) =
             decode_metadata(&metadata_bytes, self.config.max_metadata_bytes)?;
+        drop(metadata_bytes);
         self.validate_descriptor_bounds(&descriptor)?;
+        completion.verify_component_association(&descriptor)?;
         if descriptor.size_bytes > self.config.max_component_bytes as u64 {
             return Err(resource_exhausted(
                 "stored component exceeds configured component byte limit",
@@ -285,11 +307,7 @@ impl DirectoryArtifactRepository {
             self.codec.limits().max_document_bytes,
             "capsule manifest",
         )?;
-        let component_bytes = read_bounded_file(
-            &path.join(COMPONENT_FILE),
-            self.config.max_component_bytes,
-            "component artifact",
-        )?;
+        completion.verify_manifest(&manifest_bytes)?;
         let manifest = self
             .codec
             .decode_capsule(&manifest_bytes)
@@ -297,11 +315,6 @@ impl DirectoryArtifactRepository {
         self.validator
             .validate_capsule(&manifest)
             .map_err(|_| corrupt("stored capsule manifest violates Phase 1 rules"))?;
-        verify_component_identity(&descriptor, &manifest.component_digest, &component_bytes)?;
-        let expected_dir = digest_hex(&descriptor.release_digest)?;
-        if path.file_name().and_then(|value| value.to_str()) != Some(expected_dir.as_str()) {
-            return Err(corrupt("release directory does not match its digest"));
-        }
         let canonical = self
             .codec
             .encode_capsule(&manifest)
@@ -309,11 +322,26 @@ impl DirectoryArtifactRepository {
         if canonical != manifest_bytes {
             return Err(corrupt("stored capsule manifest is not canonical"));
         }
-        Ok(CapsuleArtifact {
-            descriptor,
-            manifest,
-            contracts,
-            component_bytes,
+        drop(canonical);
+        drop(manifest_bytes);
+        let component_bytes = read_bounded_file(
+            &path.join(COMPONENT_FILE),
+            self.config.max_component_bytes,
+            "component artifact",
+        )?;
+        verify_component_identity(&descriptor, &manifest.component_digest, &component_bytes)?;
+        let expected_dir = digest_hex(&descriptor.release_digest)?;
+        if path.file_name().and_then(|value| value.to_str()) != Some(expected_dir.as_str()) {
+            return Err(corrupt("release directory does not match its digest"));
+        }
+        Ok(VerifiedEntry {
+            artifact: CapsuleArtifact {
+                descriptor,
+                manifest,
+                contracts,
+                component_bytes,
+            },
+            completion,
         })
     }
 
@@ -401,21 +429,10 @@ impl DirectoryArtifactRepository {
         Ok(adopted)
     }
 
-    fn publish_sync(
+    fn prepare_publication(
         &self,
         mut artifact: CapsuleArtifact,
-    ) -> Result<ArtifactDescriptor, PlatformError> {
-        let mut publication = self.publish_lock.lock().map_err(lock_error)?;
-        if publication
-            .pending
-            .as_ref()
-            .is_some_and(|digest| digest != &artifact.descriptor.release_digest)
-        {
-            return Err(error(
-                PlatformErrorCode::Unavailable,
-                "catalog needs publication recovery: retry the pending release or reopen the root",
-            ));
-        }
+    ) -> Result<PreparedPublication, PlatformError> {
         self.validator
             .validate_capsule(&artifact.manifest)
             .map_err(|_| {
@@ -450,26 +467,17 @@ impl DirectoryArtifactRepository {
         )?;
         self.preflight_adoption(&artifact.descriptor)?;
         let metadata_bytes = encode_metadata(&artifact, self.config.max_metadata_bytes)?;
+        let completion =
+            CompletionRecord::from_payloads(&artifact.descriptor, &metadata_bytes, &manifest_bytes);
+        Ok(PreparedPublication {
+            artifact,
+            metadata_bytes,
+            manifest_bytes,
+            completion,
+        })
+    }
 
-        let destination = self.entry_path(&artifact.descriptor.release_digest)?;
-        if destination.exists() {
-            let existing = self.load_complete_entry(&destination)?;
-            if existing != artifact {
-                return Err(error(
-                    PlatformErrorCode::AlreadyExists,
-                    "release digest already contains different catalog content",
-                ));
-            }
-            return self.sync_and_adopt(existing.descriptor, &mut publication.pending);
-        }
-        // Holding the writer mutex reserves this slot until rename or failure.
-        // Existing-entry retries above use their already-accounted directory.
-        if publication.release_directories >= self.config.max_recovery_directories {
-            return Err(resource_exhausted(
-                "catalog recovery directory capacity reached",
-            ));
-        }
-
+    fn stage_publication(&self, prepared: &PreparedPublication) -> Result<PathBuf, PlatformError> {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|_| {
@@ -482,21 +490,80 @@ impl DirectoryArtifactRepository {
         let tmp_path = self.root.join(TEMP_DIR).join(format!(
             "{}-{}-{nonce}",
             std::process::id(),
-            digest_hex(&artifact.descriptor.release_digest)?
+            digest_hex(&prepared.artifact.descriptor.release_digest)?
         ));
         fs::create_dir(&tmp_path).map_err(io_error)?;
 
         let staged = (|| {
-            write_synced(&tmp_path.join(METADATA_FILE), &metadata_bytes)?;
-            write_synced(&tmp_path.join(MANIFEST_FILE), &manifest_bytes)?;
-            write_synced(&tmp_path.join(COMPONENT_FILE), &artifact.component_bytes)?;
-            write_synced(&tmp_path.join(COMPLETE_FILE), b"complete\n")?;
+            write_synced(&tmp_path.join(METADATA_FILE), &prepared.metadata_bytes)?;
+            write_synced(&tmp_path.join(MANIFEST_FILE), &prepared.manifest_bytes)?;
+            write_synced(
+                &tmp_path.join(COMPONENT_FILE),
+                &prepared.artifact.component_bytes,
+            )?;
+            write_synced(
+                &tmp_path.join(COMPLETE_FILE),
+                &prepared.completion.encode()?,
+            )?;
             sync_dir(&tmp_path)
         })();
         if let Err(failure) = staged {
             let _ = fs::remove_dir_all(&tmp_path);
             return Err(failure);
         }
+        Ok(tmp_path)
+    }
+
+    /// Only verified identical persisted bytes are eligible for publication adoption.
+    /// Returning a descriptor drops the loaded component before directory sync/index work.
+    fn read_for_adoption(
+        &self,
+        path: &Path,
+        expected: &CompletionRecord,
+    ) -> Result<Option<ArtifactDescriptor>, PlatformError> {
+        let verified = self.load_complete_entry(path)?;
+        if &verified.completion != expected {
+            return Ok(None);
+        }
+        Ok(Some(verified.artifact.descriptor))
+    }
+
+    fn publish_sync(&self, artifact: CapsuleArtifact) -> Result<ArtifactDescriptor, PlatformError> {
+        let mut publication = self.publish_lock.lock().map_err(lock_error)?;
+        let digest = artifact.descriptor.release_digest.clone();
+        if publication
+            .pending
+            .as_ref()
+            .is_some_and(|pending| pending != &digest)
+        {
+            return Err(error(
+                PlatformErrorCode::Unavailable,
+                "catalog needs publication recovery: retry the pending release or reopen the root",
+            ));
+        }
+        let prepared = self.prepare_publication(artifact)?;
+        let destination = self.entry_path(&digest)?;
+        if destination.exists() {
+            let expected = prepared.into_completion();
+            let descriptor = self
+                .read_for_adoption(&destination, &expected)?
+                .ok_or_else(|| {
+                    error(
+                        PlatformErrorCode::AlreadyExists,
+                        "release digest already contains different catalog content",
+                    )
+                })?;
+            return self.sync_and_adopt(descriptor, &mut publication.pending);
+        }
+        // Holding the writer mutex reserves this slot until rename or failure.
+        // Existing-entry retries above use their already-accounted directory.
+        if publication.release_directories >= self.config.max_recovery_directories {
+            return Err(resource_exhausted(
+                "catalog recovery directory capacity reached",
+            ));
+        }
+        let tmp_path = self.stage_publication(&prepared)?;
+        let expected = prepared.into_completion();
 
         if let Err(rename_failure) = fs::rename(&tmp_path, &destination).map_err(io_error) {
             let _ = fs::remove_dir_all(&tmp_path);
@@ -504,22 +571,29 @@ impl DirectoryArtifactRepository {
                 // A destination appeared after the initial absence check.
                 // Account for it before adoption, even if validation/sync fails.
                 publication.release_directories += 1;
-                publication.pending = Some(artifact.descriptor.release_digest.clone());
-                let existing = self.load_complete_entry(&destination)?;
-                if existing == artifact {
-                    return self.sync_and_adopt(existing.descriptor, &mut publication.pending);
-                }
-                return Err(error(
-                    PlatformErrorCode::AlreadyExists,
-                    "release digest was externally published with different content",
-                ));
+                publication.pending = Some(digest);
+                let descriptor = self
+                    .read_for_adoption(&destination, &expected)?
+                    .ok_or_else(|| {
+                        error(
+                            PlatformErrorCode::AlreadyExists,
+                            "release digest was externally published with different content",
+                        )
+                    })?;
+                return self.sync_and_adopt(descriptor, &mut publication.pending);
             }
             return Err(rename_failure);
         }
         // Rename consumes the reserved slot independently of index visibility.
-        // A parent-sync failure must retain this charge until reopen/recovery.
+        // Keep the mutation gate and charge across every verification/sync failure.
         publication.release_directories += 1;
-        self.sync_and_adopt(artifact.descriptor, &mut publication.pending)
+        publication.pending = Some(digest);
+        #[cfg(test)]
+        integrity::faults::after_rename(&destination);
+        let descriptor = self
+            .read_for_adoption(&destination, &expected)?
+            .ok_or_else(integrity::invalid_record)?;
+        self.sync_and_adopt(descriptor, &mut publication.pending)
     }
 
     #[cfg(test)]
@@ -577,7 +651,9 @@ impl ArtifactRepository for DirectoryArtifactRepository {
                     "release digest not found",
                 ));
             }
-            self.load_complete_entry(&self.entry_path(digest)?)
+            Ok(self
+                .load_complete_entry(&self.entry_path(digest)?)?
+                .artifact)
         })
     }
 
@@ -668,6 +744,25 @@ fn index_accounted_bytes(descriptor_bytes: usize) -> Result<usize, PlatformError
         .checked_mul(INDEX_ACCOUNTING_MULTIPLIER)
         .and_then(|value| value.checked_add(INDEX_ACCOUNTING_FIXED_BYTES))
         .ok_or_else(|| resource_exhausted("catalog index byte accounting overflow"))
+}
+
+fn is_recovery_candidate(path: &Path) -> Result<bool, PlatformError> {
+    // A digest-named final directory can only follow publication's completed
+    // staging rename. Losing COMPLETE must not silently erase it from recovery.
+    if path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.len() == 64 && name.bytes().all(|byte| byte.is_ascii_hexdigit()))
+    {
+        return Ok(true);
+    }
+    // Non-digest incomplete debris still counts toward the directory budget.
+    // Any claimed completion is verified, including non-regular marker entries.
+    match fs::symlink_metadata(path.join(COMPLETE_FILE)) {
+        Ok(_) => Ok(true),
+        Err(failure) if failure.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(failure) => Err(io_error(failure)),
+    }
 }
 
 fn cleanup_temporary_entries(root: &Path) -> Result<(), PlatformError> {

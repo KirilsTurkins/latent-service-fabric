@@ -296,11 +296,19 @@ fn persisted_contract_types_obey_the_same_structural_limit() {
             .collect(),
     };
     let bytes = serde_json::to_vec(&stored).expect("serialize corrupt fixture");
-    fs::write(
-        release_dir(temp.path(), &value.descriptor.release_digest).join("metadata.json"),
-        bytes,
+    let entry = release_dir(temp.path(), &value.descriptor.release_digest);
+    fs::write(entry.join("metadata.json"), &bytes).expect("replace persisted metadata");
+    // Supply a matching integrity record so this fixture still reaches the
+    // independent structural limit rather than failing at checksum verification.
+    let manifest = fs::read(entry.join("manifest.json")).expect("persisted canonical manifest");
+    let completion = super::super::integrity::CompletionRecord::from_payloads(
+        &value.descriptor,
+        &bytes,
+        &manifest,
     )
-    .expect("replace persisted metadata");
+    .encode()
+    .expect("matching completion record for structurally unsupported fixture");
+    fs::write(entry.join("COMPLETE"), completion).expect("replace fixture completion record");
     assert_eq!(
         DirectoryArtifactRepository::open(
             temp.path(),
