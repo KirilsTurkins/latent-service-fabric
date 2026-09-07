@@ -43,7 +43,7 @@ jobs:
           status=0
           cargo clippy --workspace --all-targets --all-features --locked > "$RUNNER_TEMP/lsf-clippy.log" 2>&1 || status=$?
           if [ "$status" -eq 0 ]; then
-            cargo clippy -p latentd --all-targets --all-features --locked --no-deps -- -D warnings >> "$RUNNER_TEMP/lsf-clippy.log" 2>&1 || status=$?
+            cargo clippy -p latentd -p latent-admission --all-targets --all-features --locked --no-deps -- -D warnings >> "$RUNNER_TEMP/lsf-clippy.log" 2>&1 || status=$?
           fi
           tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
           python3 - <<'PY'
@@ -61,7 +61,9 @@ jobs:
         if: failure() && steps.clippy.outcome == 'failure'
         run: tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
       - name: Run tests
-        run: cargo test --workspace --all-targets --all-features --locked
+        run: |
+          cargo test --workspace --all-targets --all-features --locked
+          cargo test -p latent-admission --doc --locked
 
   catalog:
     name: Durable catalog acceptance
