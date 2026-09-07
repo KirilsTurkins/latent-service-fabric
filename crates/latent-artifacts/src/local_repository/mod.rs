@@ -1,5 +1,6 @@
 mod metadata;
 mod metadata_codec;
+mod root_durability;
 mod sha256;
 
 #[cfg(test)]
@@ -176,7 +177,7 @@ impl DirectoryArtifactRepository {
     ) -> Result<Self, PlatformError> {
         validate_config(config)?;
         let root = root.into();
-        fs::create_dir_all(&root).map_err(io_error)?;
+        let root = root_durability::create_durable_root(&root)?;
 
         let owner_lock = OpenOptions::new()
             .create(true)
@@ -211,6 +212,8 @@ impl DirectoryArtifactRepository {
         Ok(repository)
     }
 
+    /// Canonical absolute directory whose ownership lock this handle retains.
+    /// Later process working-directory changes do not redirect repository I/O.
     #[must_use]
     pub fn root(&self) -> &Path {
         &self.root
