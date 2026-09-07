@@ -1,6 +1,25 @@
 # Phase 1 local release catalog
 
-The Phase 1 standalone node owns one local release-catalog root exclusively for the lifetime of its `DirectoryArtifactRepository`. Ownership is acquired with an operating-system file lock on `.catalog.lock` before temporary cleanup or index rebuild. A second live opener fails with `unavailable`; the OS releases the lock automatically on normal close or process exit/crash. Never unlink `.catalog.lock` while a repository is open: cooperating owners must lock the same file.
+`latent-artifacts::DirectoryArtifactRepository` implements the local release
+catalog intended for the Phase 1 standalone node. Standalone node/listener
+composition remains #14 work; the repository is available as a Rust API.
+Its owner holds one local release-catalog root exclusively for the lifetime of
+the repository. Ownership is acquired with an operating-system file lock on
+`.catalog.lock` before temporary cleanup or index rebuild. A second live opener
+fails with `unavailable`; the OS releases the lock automatically on normal
+close or process exit/crash. Never unlink `.catalog.lock` while a repository is
+open: cooperating owners must lock the same file.
+
+The supported persistence environment is a Linux local filesystem with file
+locking, atomic same-directory rename, and file/directory synchronization, as
+for the [deployment repository](../deployment-routing.md).
+
+The September 7 audit identified two remaining durability/integrity limitations:
+[new root/ancestor synchronization](https://github.com/KirilsTurkins/latent-service-fabric/issues/66)
+and [detection of valid-JSON persisted metadata corruption](https://github.com/KirilsTurkins/latent-service-fabric/issues/68).
+Component bytes are digest-verified, but the current completion marker does not
+checksum all immutable metadata. Passing existing restart tests does not close
+those issues.
 
 ## Layout and publication
 
@@ -48,7 +67,7 @@ The separate Linux `latentd` integration target `catalog_scale` exercises the pu
 
 Each child owns a real fixed cell pool with two generic node-owned cells before establishing its baseline. The probe measures process identity, child processes across all tasks, thread count, owned socket descriptors, owned TCP/Unix listening sockets, open file descriptors, pool capacity/availability, active leases, queue depth and quarantined cells. Measurements are checked after opening, at publication checkpoints, after complete verification and after closing. JSON output reports baseline/after measurements, zero-growth assertions for service-specific resources, and fixed helpers separately: the isolated probe process, its observed harness threads, two generic cells, and one catalog lock FD. These are controlled catalog-integration measurements, not a claim to benchmark the full running node or Wasmtime allocation behavior.
 
-The scale probe opts into a 256 MiB index-accounting budget to fit 100,000 records. It runs on the ordinary disk-backed temporary directory with production syncs enabled. Ordinary unit-test invocations compile but ignore the expensive integration tests. The maintained `Durable catalog acceptance` job in the existing CI workflow explicitly runs the probe and retains its log, without adding an issue-specific workflow.
+The scale probe opts into a 256 MiB index-accounting budget to fit 100,000 records. It runs on the ordinary disk-backed temporary directory with production syncs enabled. Ordinary unit-test invocations compile but ignore the expensive integration tests. The maintained `Durable catalog acceptance` job in the existing CI workflow runs the probe and retains its logs only when a manual dispatch sets `run_catalog_scale` to `true` (default `false`). Normal pull requests, pushes, and default dispatches still run the catalog recovery, routing, and supervisor regressions.
 
 Run the acceptance probe explicitly with:
 

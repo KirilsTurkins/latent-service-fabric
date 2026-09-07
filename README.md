@@ -7,7 +7,7 @@ processes, sockets, threads, heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Most of this repository remains an architecture and API scaffold. Phase 0 contains a narrow executable spike for one local echo capsule. The retained August 30 native-Linux full-gate receipt authorizes Phase 1 from the verified Phase 0 execution evidence. That authorization is not a production-readiness or Phase 1 API-compatibility claim.
+> Phase 1 is in progress. The executable Phase 0 echo runtime now has maintained manifest validation, budget/cancellation primitives, a durable local release catalog, and immutable deployment/routing implementations alongside it. A standalone Phase 1 node, public service adapters, and operator CLI remain pending. The retained August 30 native-Linux Phase 0 full-gate receipt authorizes that work; it does not establish production readiness or completion of Phase 1.
 
 ## Core invariant
 
@@ -29,7 +29,7 @@ The number of operating-system processes, threads, sockets, and execution cells 
 
 ```text
 apps/                 Binary entry points and the explicit latentd Phase 0 spike mode
-crates/               Rust architectural interfaces, data models, and Phase 0 runtime pieces
+crates/               Rust interfaces, Phase 0 runtime, and implemented Phase 1 foundations
 wit/                  WIT packages for platform capabilities
 api/proto/            Protobuf service definitions
 schemas/              JSON Schemas for declarative resources
@@ -39,7 +39,7 @@ adr/                   Accepted architecture decisions
 rfcs/                  Future design proposals
 research/              Experimental tracks kept outside the production core
 docs/                  Architecture, protocol, operations, and security documentation
-tests/                 Conformance, isolation, chaos, and leak-test specifications
+tests/                 Cross-phase test specifications; executable tests also live with crates/apps/tools
 benchmarks/            Benchmark definitions and checked-in Phase 0 evidence
 tools/                 Pinned validation, generation, spike, benchmark, and gate tooling
 ```
@@ -51,6 +51,25 @@ tools/                 Pinned validation, generation, spike, benchmark, and gate
 - `latent`: future build, package, deployment, inspection, invocation, and benchmark CLI placeholder.
 
 The `latentd` spike has no management API, public invocation listener, persistent catalog, deployment surface, or production operations contract.
+
+## Available Phase 1 foundations
+
+These implementations are usable through Rust APIs and focused tests; composing
+them into the standalone node is still tracked by
+[#14](https://github.com/KirilsTurkins/latent-service-fabric/issues/14).
+
+| Feature | Implemented surface and documentation |
+| --- | --- |
+| Locked build and generated contracts | Protobuf/Tonic and Component Model bindings, SDK checks, deterministic test utilities; [build foundation](docs/development/build-foundation.md) |
+| Manifest decoding and validation | Bounded schema-backed JSON codecs, canonicalization, and stateless Phase 1 semantic validation; [manifest codec](docs/protocol/manifest-codec.md) |
+| Resource accounting | Effective deadlines, concurrent budget consumption/reservations, terminal reconciliation, and cancellation primitives; [resource budgets](docs/runtime/resource-budgets.md) |
+| Local release storage | Exclusive directory ownership, immutable digest verification, bounded listing/indexes, durable publication and recovery; [release catalog](docs/development/local-release-catalog.md) |
+| Deployment and routing | Atomic deployment updates, immutable route generations, tenant-safe deterministic resolution, pinned revisions, and restart recovery; [deployment routing](docs/deployment-routing.md) |
+
+Admission and fair scheduling, generic Wasmtime dispatch, complete activation
+orchestration, clock capabilities, invocation/management services, shared
+telemetry, the standalone node, CLI, and the Phase 1 gate remain open work. See
+[the roadmap](docs/roadmap.md) for issue links and phase boundaries.
 
 ## Phase 0 result
 
@@ -82,7 +101,7 @@ boundary and future invariants. Documentation SVGs follow the shared
 
 ## Build and validation
 
-The Phase 0 build baseline pins Rust, Component Model, Protobuf, schema, and SDK tools. After installing the prerequisites documented in [`docs/development/toolchain.md`](docs/development/toolchain.md), validate a clean checkout with:
+The build baseline pins Rust, Component Model, Protobuf, schema, and SDK tools. After installing the prerequisites documented in [`docs/development/toolchain.md`](docs/development/toolchain.md), validate a clean checkout with:
 
 ```bash
 python3.13 -m venv .venv
@@ -90,6 +109,12 @@ python3.13 -m venv .venv
 python -m pip install --requirement tools/requirements.lock
 make validate
 ```
+
+This runs the normal source, contract, SDK, and workspace checks. Expensive
+ignored tests require explicit selection. The durable 100,000-release catalog
+probe runs only when requested with the CI workflow's `run_catalog_scale` input
+or its documented local command; native-Linux calibration and resource soaks
+are also separate explicit work. See [validation tiers](VALIDATION.md).
 
 Run the complete local Phase 0 executable demonstration with:
 

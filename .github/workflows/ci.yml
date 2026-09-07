@@ -6,6 +6,11 @@ on:
     branches:
       - development
   workflow_dispatch:
+    inputs:
+      run_catalog_scale:
+        description: "Run the heavyweight 100,000-release catalog acceptance probe"
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -76,6 +81,7 @@ jobs:
       - name: Check catalog probe supervision
         run: cargo test -p latentd --test catalog_scale --locked
       - name: Publish and reopen 100,000 dormant releases in isolated processes
+        if: github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale
         shell: bash
         env:
           TMPDIR: ${{ runner.temp }}
@@ -84,7 +90,7 @@ jobs:
           set -o pipefail
           cargo test -p latentd --test catalog_scale --locked production_catalog_100k -- --exact --ignored --nocapture --test-threads=1 2>&1 | tee catalog-scale.log
       - name: Retain catalog acceptance evidence
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.run_catalog_scale
         uses: actions/upload-artifact@v4
         with:
           name: catalog-scale-${{ github.sha }}

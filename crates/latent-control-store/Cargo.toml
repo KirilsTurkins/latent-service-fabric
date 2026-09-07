@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-control-store."
+description = "Control-plane persistence interfaces and immutable local deployment routing."
 
 [lints]
 workspace = true

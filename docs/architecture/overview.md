@@ -46,6 +46,12 @@ cluster behavior, or production telemetry/SLOs.
 
 ## Service model
 
+The [Phase 1 roadmap](../roadmap.md) tracks implementation beyond the Phase 0
+evidence: schema-backed manifests, budget/cancellation primitives, a durable
+local release catalog, and an immutable deployment/routing catalog are now
+implemented through Rust APIs. Standalone node composition, service adapters,
+generic dispatch, and the full Phase 1 gate remain pending.
+
 ```text
 Service = stable logical name
 Release = immutable capsule digest

@@ -121,6 +121,10 @@ the service ID string.
 
 ## Standalone Phase 1 RPC subset
 
+This table is the implementation contract for #12, #37, and #14. Those adapters
+and the standalone listener are not yet merged; generated messages and service
+traits alone do not make these methods callable.
+
 | Service/method | Phase 1 standalone behavior |
 | --- | --- |
 | `ReleaseService` publish/get/list | Supported locally. |
@@ -167,7 +171,8 @@ and with `development`'s generated Rust, Component Model, and RPC ownership.
 The hardened Protobuf services compile through `latent-rpc`, and the normalized
 Buf descriptor golden is verified from the same exhaustive Protobuf manifest.
 
-No dependency gate remains on this contract work. Merge readiness is determined
-by the current clean-checkout CI, including the retained Phase 0 contract,
-containment, spike, baseline, and completion-gate workflows and the Phase 1
-cross-layer descriptor and SDK checks.
+No dependency gate remains on this merged contract work. Changes are checked
+by the normal `CI` workflow and the path-filtered `Phase 0 runtime regression`
+workflow, including Phase 1 descriptor/SDK checks and retained executable
+containment coverage. The Phase 0 full completion gate and heavy catalog scale
+probe require explicit manual selection; see [validation](../../VALIDATION.md).

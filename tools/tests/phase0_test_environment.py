@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import os
+import shlex
+import shutil
+import stat
 from collections.abc import Mapping
 from fnmatch import fnmatchcase
+from pathlib import Path
 
 PHASE0_REJECTED_BUILD_OVERRIDE_PATTERNS = (
     "RUSTFLAGS",
@@ -66,3 +70,38 @@ def sanitized_phase0_environment(
         for name, value in environment.items()
         if not is_phase0_rejected_build_override(name)
     }
+
+
+def write_native_linux_runner_stubs(bin_directory: Path) -> None:
+    """Give isolated fail-fast runner tests one consistent, fake host identity.
+
+    Only copied runners with fake workload tools may use these PATH stubs.
+    Production collectors still inspect the real host. Grep retains its real
+    matching behavior; only the two kernel identity file inputs are replaced.
+    """
+    real_grep = shutil.which("grep")
+    if real_grep is None:
+        raise RuntimeError("runner fixtures require grep")
+    kernel_identity = bin_directory / "native-kernel.txt"
+    kernel_identity.write_text("Linux version 6.8.0-native-test\n", encoding="utf-8")
+    commands = {
+        "uname": "#!/usr/bin/env bash\nprintf '%s\\n' Linux\n",
+        "systemd-detect-virt": "#!/usr/bin/env bash\nprintf '%s\\n' none\n",
+        "grep": (
+            "#!/usr/bin/env bash\n"
+            "set -eu\n"
+            "arguments=()\n"
+            'for argument in "$@"; do\n'
+            '  case "$argument" in\n'
+            "    /proc/sys/kernel/osrelease|/proc/version)\n"
+            f"      arguments+=({shlex.quote(str(kernel_identity))}) ;;\n"
+            '    *) arguments+=("$argument") ;;\n'
+            "  esac\n"
+            "done\n"
+            f'exec {shlex.quote(real_grep)} "${{arguments[@]}}"\n'
+        ),
+    }
+    for command, contents in commands.items():
+        path = bin_directory / command
+        path.write_text(contents, encoding="utf-8")
+        path.chmod(path.stat().st_mode | stat.S_IXUSR)
