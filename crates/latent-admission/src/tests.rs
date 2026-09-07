@@ -153,7 +153,7 @@ fn revision(tenant: &str) -> ResolvedRevision {
             function: FunctionId("echo".to_owned()),
             route: None,
         },
-        revision: RevisionId("revision-a".to_owned()),
+        revision: RevisionId(format!("revision-v1:sha256:{}", "a".repeat(64))),
         release: ReleaseDigest(format!("sha256:{}", "a".repeat(64))),
         route_generation: RouteGeneration(1),
         attributes: Metadata::new(),
@@ -687,6 +687,40 @@ fn attributes_cannot_replace_catalog_policy_or_escape_in_error_details() {
     let error = h.controller.admit_at(request, h.sample).unwrap_err();
     assert!(!format!("{error:?}").contains("private-token"));
     assert_eq!(error.details[0].fields.len(), 3);
+    h.assert_empty();
+}
+
+#[test]
+fn short_name_limits_preserve_bounded_generated_revision_identities() {
+    let mut policy = node_policy();
+    policy.maximum_identifier_bytes = 64;
+    let h = Harness::new(policy, revision_policy());
+    let permit = h.admit("short-name").unwrap();
+    assert_eq!(permit.revision().revision.0.len(), 83);
+    assert_eq!(permit.revision().release.0.len(), 71);
+    drop(permit);
+    let lookups = h.source.calls.load(Ordering::Relaxed);
+
+    for field in ["activation", "revision", "release"] {
+        let mut request = Harness::request("invalid");
+        match field {
+            "activation" => request.activation_id.0 = "x".repeat(65),
+            "revision" => request.revision.revision.0.push('x'),
+            _ => request.revision.release.0 = "x".repeat(84),
+        }
+        assert_eq!(
+            h.controller.admit_at(request, h.sample).unwrap_err().code,
+            Code::InvalidArgument
+        );
+        assert_eq!(h.source.calls.load(Ordering::Relaxed), lookups);
+    }
+
+    let mut forged = Harness::request("forged");
+    forged.revision.revision.0 = format!("revision-v1:sha256:{}", "b".repeat(64));
+    assert_eq!(
+        h.controller.admit_at(forged, h.sample).unwrap_err().code,
+        Code::AdmissionRejected
+    );
     h.assert_empty();
 }
 

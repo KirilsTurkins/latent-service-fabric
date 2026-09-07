@@ -80,7 +80,7 @@ lifetime. Changing a controller's catalog source does not change its node policy
 | `queue_classes` | Named, nonoverlapping priority ranges with independent queue bounds. |
 | `cell_classes` | Startup-defined capabilities for a subset of tiny, small, standard, large, and extra-large. Each configured class has positive memory capacity and usable parallelism, supported threading models, and features. |
 | Tenant subject/kind/trust/cell allowlists | Exact authorization; empty allowlists deny access. Extra-large requires explicit tenant and trust-class permission. |
-| `maximum_identifier_bytes` | Bounds input identifiers; empty, whitespace-containing, and control-containing identifiers are rejected. |
+| `maximum_identifier_bytes` | Bounds caller-selected activation/target names; empty, whitespace-containing, and control-containing identifiers are rejected. Generated revision/release identities have a separate bounded allowance of at least 83 bytes and must match the pinned catalog exactly. |
 | `maximum_metadata_entries` / `maximum_metadata_bytes` | Aggregate bounds across principal claims, request attributes, and resolved-revision attributes, checked before retaining quota state. |
 | `overload` | Independent CPU and memory pressure thresholds and maximum observation age. Pressure at or above its threshold rejects admission. |
 | `deadline` | Estimated service time, minimum useful execution time, and a safety margin for bounded-backlog feasibility. |
@@ -228,8 +228,17 @@ cargo clippy -p latent-admission --all-targets --locked --no-deps -- -D warnings
 Admission unit tests cover independent limits, exact boundaries, all unsupported
 budget dimensions, class selection, sanitized errors, ownership, stale load,
 deadline arithmetic, and coordinated concurrent reservations. An isolated Linux
-regression submits 100,000 distinct rejected service targets and checks unchanged
-thread/descriptor/socket/child counts and empty retained tenant counters.
+regression submits 1,000 distinct rejected service targets and completes 100
+reservations, checking unchanged thread/descriptor/socket/child counts and empty
+retained tenant counters. The child has a fixed deadline and is reaped on failure.
+The larger 100,000-target variant is ignored by ordinary CI and requires explicit
+selection:
+
+```sh
+cargo test -p latent-admission --locked \
+  tests::stress::admission_state_does_not_grow_with_100k_rejected_services -- \
+  --exact --ignored --nocapture
+```
 
 Catalog tests verify every pinned identity field, deterministic weighted policy
 selection, generation replacement/deletion, restart, and no artifact access on

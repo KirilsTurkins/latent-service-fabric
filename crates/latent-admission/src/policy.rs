@@ -79,6 +79,9 @@ pub struct NodeAdmissionPolicy {
     pub cell_classes: BTreeMap<String, CellClassPolicy>,
     pub maximum_payload_bytes: u64,
     pub maximum_priority: u8,
+    /// Bound for caller-chosen names. Generated revision/release identities use
+    /// at least 83 bytes for revision-v1:sha256 identities and are then verified
+    /// against the exact trusted catalog tuple.
     pub maximum_identifier_bytes: usize,
     /// Aggregate bound across principal claims and both request/revision metadata maps.
     pub maximum_metadata_entries: usize,

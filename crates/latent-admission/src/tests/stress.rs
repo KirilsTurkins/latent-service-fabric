@@ -242,18 +242,52 @@ fn memory_without_a_compatible_configured_cell_is_rejected() {
 #[cfg(target_os = "linux")]
 #[test]
 fn admission_state_does_not_grow_with_rejected_service_cardinality() {
+    check_dormant_admission(
+        "tests::stress::admission_state_does_not_grow_with_rejected_service_cardinality",
+        1_000,
+        100,
+    );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+#[ignore = "explicit 100,000-service cardinality probe; ordinary CI uses the small fixture"]
+fn admission_state_does_not_grow_with_100k_rejected_services() {
+    check_dormant_admission(
+        "tests::stress::admission_state_does_not_grow_with_100k_rejected_services",
+        100_000,
+        1_000,
+    );
+}
+
+#[cfg(target_os = "linux")]
+fn check_dormant_admission(test_name: &str, rejected_services: usize, completed: usize) {
     const CHILD: &str = "LSF_ADMISSION_DORMANCY_CHILD";
-    if std::env::var(CHILD).as_deref() != Ok("1") {
-        let output = std::process::Command::new(std::env::current_exe().unwrap())
-            .args([
-                "--exact",
-                "tests::stress::admission_state_does_not_grow_with_rejected_service_cardinality",
-                "--nocapture",
-                "--test-threads=1",
-            ])
-            .env(CHILD, "1")
-            .output()
-            .unwrap();
+    if std::env::var(CHILD).as_deref() != Ok(test_name) {
+        let mut child = ReapedProbe(Some(
+            std::process::Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    test_name,
+                    "--include-ignored",
+                    "--nocapture",
+                    "--test-threads=1",
+                ])
+                .env(CHILD, test_name)
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped())
+                .spawn()
+                .unwrap(),
+        ));
+        let deadline = Instant::now() + Duration::from_mins(1);
+        while child.0.as_mut().unwrap().try_wait().unwrap().is_none() {
+            assert!(
+                Instant::now() < deadline,
+                "admission probe exceeded its deadline"
+            );
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        let output = child.0.take().unwrap().wait_with_output().unwrap();
         assert!(
             output.status.success(),
             "{}\n{}",
@@ -286,18 +320,33 @@ fn admission_state_does_not_grow_with_rejected_service_cardinality() {
         (threads, descriptors, sockets, children)
     };
     let before = resources();
-    for index in 0..100_000 {
+    for index in 0..rejected_services {
         let mut request = Harness::request("not-retained");
         request.revision.target.service = ServiceId(format!("dormant-{index}"));
         assert!(h.controller.admit_at(request, h.sample).is_err());
     }
-    for index in 0..1000 {
+    for index in 0..completed {
         drop(h.admit(&format!("completed-{index}")).unwrap());
     }
     h.assert_empty();
     let after = resources();
     assert_eq!(before, after);
-    println!("rejected_services=100000 completed=1000 resources_before={before:?} resources_after={after:?} retained_tenants=0");
+    println!("rejected_services={rejected_services} completed={completed} resources_before={before:?} resources_after={after:?} retained_tenants=0");
+}
+
+#[cfg(target_os = "linux")]
+struct ReapedProbe(Option<std::process::Child>);
+
+#[cfg(target_os = "linux")]
+impl Drop for ReapedProbe {
+    fn drop(&mut self) {
+        if let Some(child) = self.0.as_mut() {
+            if !matches!(child.try_wait(), Ok(Some(_))) {
+                let _ = child.kill();
+                let _ = child.wait();
+            }
+        }
+    }
 }
 
 #[test]

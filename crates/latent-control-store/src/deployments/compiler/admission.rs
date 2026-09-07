@@ -63,8 +63,6 @@ impl RevisionPolicySource for PinnedRouteResolver {
             target.contract.0.as_str(),
             target.function.0.as_str(),
             route,
-            revision.revision.0.as_str(),
-            revision.release.0.as_str(),
         ] {
             if !valid_identifier(id, self.config.max_identifier_bytes) {
                 return Err(error(
@@ -93,6 +91,9 @@ impl RevisionPolicySource for PinnedRouteResolver {
         // Compilation sorts candidate revisions by their stable identities. No
         // scan across services, caller metadata parsing, or re-resolution with a
         // different routing key is performed at this boundary.
+        // Generated revision/release identities can exceed the configured route
+        // identifier limit. Their exact stored values below are the authority;
+        // comparisons inspect at most the corresponding stored identity length.
         let index = candidates
             .revisions
             .binary_search_by(|(_, candidate)| candidate.revision.cmp(&revision.revision))

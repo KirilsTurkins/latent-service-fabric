@@ -15,6 +15,11 @@ use crate::{
     AdmissionRequest, LocalQuotaProvider, NodeAdmissionPolicy, TenantAdmissionPolicy,
 };
 
+// Generated identities are not caller-chosen names. Accommodate the current
+// revision-v1:sha256:<hex> identity even when names have a shorter configured
+// limit; the trusted catalog lookup still verifies the exact stored tuple.
+const GENERATED_IDENTITY_BOUND_FLOOR: usize = "revision-v1:sha256:".len() + 64;
+
 /// Trusted node-wide observation, never accepted from invocation metadata.
 /// `queue_delay_millis` is a scheduler-observed estimate; admission uses the
 /// greater of this value and its own atomically reserved class backlog estimate.
@@ -273,11 +278,25 @@ fn validate_request<'a>(
         target.service.0.as_str(),
         target.contract.0.as_str(),
         target.function.0.as_str(),
-        request.revision.revision.0.as_str(),
-        request.revision.release.0.as_str(),
         target.route.as_deref().unwrap_or("default"),
     ] {
         if !valid_identifier(id, node.maximum_identifier_bytes) {
+            return Err(rejection(
+                PlatformErrorCode::InvalidArgument,
+                "request",
+                "identifier",
+                "invalid-identifier",
+            ));
+        }
+    }
+    let generated_identity_bound = node
+        .maximum_identifier_bytes
+        .max(GENERATED_IDENTITY_BOUND_FLOOR);
+    for identity in [
+        request.revision.revision.0.as_str(),
+        request.revision.release.0.as_str(),
+    ] {
+        if !valid_identifier(identity, generated_identity_bound) {
             return Err(rejection(
                 PlatformErrorCode::InvalidArgument,
                 "request",

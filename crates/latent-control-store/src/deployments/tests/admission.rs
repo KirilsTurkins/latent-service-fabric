@@ -183,6 +183,61 @@ fn deployment_for_bob(digest: &latent_core::ReleaseDigest) -> latent_manifest::D
 }
 
 #[test]
+fn generated_revision_identities_do_not_consume_the_route_identifier_budget() {
+    let root = TempRoot::new();
+    let releases = Arc::new(Releases::default());
+    let digest = releases.add("bounded-route-identifiers");
+    let store = run(Store::open(
+        &root.0,
+        releases,
+        Limits {
+            max_identifier_bytes: 64,
+            ..Limits::default()
+        },
+    ))
+    .unwrap();
+    let deployment = deployment("blue", "alice", &digest);
+    run(store.apply(deployment.clone())).unwrap();
+    let pin = store.pin().unwrap();
+    let revision = pin.resolve(&target("alice", None), None).unwrap();
+    assert!(revision.revision.0.len() > 64);
+    assert!(revision.release.0.len() > 64);
+    assert_eq!(
+        pin.admission_policy(&revision).unwrap().deployment_ceiling,
+        deployment.resources
+    );
+    let (controller, quotas, sample) = controller(&store, 1);
+    drop(
+        controller
+            .admit_at(
+                request("bounded-identifiers", revision.clone(), &quotas),
+                sample,
+            )
+            .unwrap(),
+    );
+    assert_eq!(quotas.usage().unwrap(), QuotaUsage::default());
+
+    let mut oversized_target = revision.clone();
+    oversized_target.target.service = ServiceId("x".repeat(65));
+    assert_eq!(
+        pin.admission_policy(&oversized_target).unwrap_err().code,
+        Code::InvalidArgument
+    );
+    for change_release in [false, true] {
+        let mut forged = revision.clone();
+        if change_release {
+            forged.release.0 = "x".repeat(4096);
+        } else {
+            forged.revision.0 = "x".repeat(4096);
+        }
+        assert_eq!(
+            pin.admission_policy(&forged).unwrap_err().code,
+            Code::RouteUnavailable
+        );
+    }
+}
+
+#[test]
 fn weighted_selection_preserves_each_exact_revisions_own_policy() {
     let root = TempRoot::new();
     let releases = Arc::new(Releases::default());
