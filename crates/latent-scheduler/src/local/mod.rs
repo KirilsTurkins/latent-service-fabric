@@ -55,6 +55,8 @@ pub struct LocalSchedulerConfig {
 /// transaction. Counters saturate and retain no activation/tenant history.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct SchedulerSnapshot {
+    /// False after shutdown or when this class has a zero scheduling capacity.
+    pub accepting: bool,
     pub capacity: u32,
     pub available: u32,
     pub active_leases: u32,
@@ -158,6 +160,17 @@ impl LocalScheduler {
     #[must_use]
     pub fn observations(&self, class: CellClass) -> SchedulerSnapshot {
         self.inner.observations(class)
+    }
+
+    /// Immutable configured capacity of this scheduler's own wait queue.
+    /// Underlying pools deliberately have no queue in the fair scheduler path.
+    #[must_use]
+    pub fn queue_capacity(&self, class: CellClass) -> Option<u32> {
+        self.inner
+            .config
+            .queue_capacity_per_class
+            .get(&class)
+            .copied()
     }
 
     /// Settles all queued waiters and refunds their permits. Execution-owned

@@ -84,7 +84,7 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 | `latent-wrpc` | remote client/server and connection factory |
 | `latent-node` | `LocalActivationManager`, immediate-ID `ActivationHandle`, `ActivationReceipt`, scoped status/cancel, bounded `LocalActivationJournal`; retained Phase 0/budget adapters and node registration/inventory/watch seams |
 | `latent-control-store` | `DeploymentStore` versioned mutations, committed receipts and bounded tenant/service pages; `DirectoryDeploymentRepository` implements persistence, route compilation/publication, and resolution |
-| `latent-telemetry` | telemetry sink and activation observer |
+| `latent-telemetry` | `TelemetryRuntime`, bounded `TelemetryHandle`, `StructuredLocalSink`, typed payload-free `ActivationObserver`, `SharedActivationObserver`, and borrowed `GuestLogObserver` |
 | `latent-audit` | audit store and publisher |
 | `latent-testkit` | conformance suite, deterministic async/process/resource utilities, invariant probes |
 
@@ -94,6 +94,10 @@ runtime and the activation owner's cancellation state. The
 [local activation manager](activation-lifecycle.md) composes those owners with
 catalog pinning, preparation, execution, and bounded terminal publication.
 Standalone node composition remains #14 work.
+
+[Shared telemetry](telemetry.md) observes that existing lifecycle owner directly.
+`StandaloneInventoryReporter` implements bounded node snapshots from configured
+classes and shared resource sources, including explicit unavailable observations.
 
 ## Declarative schemas
 

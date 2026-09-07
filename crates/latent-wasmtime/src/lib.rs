@@ -14,6 +14,7 @@ mod phase0;
 mod preparation_metadata;
 mod services;
 mod surface;
+mod telemetry;
 mod timing;
 mod values;
 
@@ -37,6 +38,7 @@ pub use phase0::{
 };
 pub use services::WasmtimeHostServices;
 pub use surface::{CONTEXT_IMPORT, LOG_IMPORT, MONOTONIC_CLOCK_IMPORT, WALL_CLOCK_IMPORT};
+pub use telemetry::TelemetryLogSink;
 pub use timing::{InvocationTimingStoreSnapshot, Phase0InvocationTiming};
 pub use values::{ValueCodecLimits, MEDIA_TYPE as WIT_VALUES_MEDIA_TYPE};
 

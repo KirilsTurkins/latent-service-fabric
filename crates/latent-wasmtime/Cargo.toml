@@ -17,6 +17,7 @@ latent-component-bindings = { path = "../latent-component-bindings" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
 latent-manifest = { path = "../latent-manifest" }
+latent-telemetry = { path = "../latent-telemetry" }
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

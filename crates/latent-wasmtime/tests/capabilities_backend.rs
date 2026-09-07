@@ -10,3 +10,5 @@ mod logging;
 mod rejection;
 #[path = "capabilities_backend/support.rs"]
 mod support;
+#[path = "capabilities_backend/telemetry.rs"]
+mod telemetry;

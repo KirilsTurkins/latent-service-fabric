@@ -2,7 +2,24 @@
 
 #![forbid(unsafe_code)]
 
-use latent_activation::{ActivationEnvelope, ActivationEvent, ActivationOutcome, TraceContext};
+mod local;
+mod observation;
+mod observer;
+mod pipeline;
+
+pub use local::{LocalSinkConfig, LocalSinkSnapshot, StructuredLocalSink, TelemetryRecord};
+pub use observation::{
+    ActivationCleanupDisposition, ActivationObservation, ActivationObservationContext,
+    ActivationObservationKind, ActivationObservationToken, ActivationOutcomeClass,
+    ActivationTerminalObservation, GuestLogObserver, GuestLogRecord, NoopActivationObserver,
+};
+pub use observer::{ObserverSnapshot, SharedActivationObserver, SharedActivationObserverConfig};
+pub use pipeline::{
+    TelemetryDropReason, TelemetryHandle, TelemetryPipelineConfig, TelemetryPipelineSnapshot,
+    TelemetryRuntime,
+};
+
+use latent_activation::TraceContext;
 use latent_core::{BoxFuture, Metadata, PlatformError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,15 +71,15 @@ pub struct SpanRecord {
 }
 
 pub trait TelemetrySink: Send + Sync {
-    fn emit_metric<'a>(&'a self, point: MetricPoint) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn emit_metric(&self, point: MetricPoint) -> BoxFuture<'_, Result<(), PlatformError>>;
 
-    fn emit_log<'a>(&'a self, record: LogRecord) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn emit_log(&self, record: LogRecord) -> BoxFuture<'_, Result<(), PlatformError>>;
 
-    fn emit_span<'a>(&'a self, record: SpanRecord) -> BoxFuture<'a, Result<(), PlatformError>>;
+    fn emit_span(&self, record: SpanRecord) -> BoxFuture<'_, Result<(), PlatformError>>;
 }
 
 pub trait ActivationObserver: Send + Sync {
-    fn on_received(&self, envelope: &ActivationEnvelope);
-    fn on_event(&self, event: &ActivationEvent);
-    fn on_completed(&self, envelope: &ActivationEnvelope, outcome: &ActivationOutcome);
+    /// Nonblocking observation of a committed lifecycle transition. The context
+    /// deliberately excludes payloads, claims, baggage, and diagnostic messages.
+    fn on_observation(&self, context: &ActivationObservationContext, event: &ActivationObservation);
 }

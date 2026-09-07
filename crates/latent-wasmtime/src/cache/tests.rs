@@ -55,6 +55,10 @@ fn shared_hits_refresh_lru_and_release_requires_matching_runtime() {
     assert_eq!(snapshot.metadata_bytes, 3);
     assert_eq!(snapshot.compiled_image_bytes, 4);
     assert_eq!(snapshot.preparing, 0);
+    assert_eq!(snapshot.hits, 2);
+    assert_eq!(snapshot.misses, 4);
+    assert_eq!(snapshot.evictions, 1);
+    assert_eq!(snapshot.invalidations, 1);
 }
 
 #[test]
@@ -271,6 +275,14 @@ fn discovered_metadata_charges_actual_bytes_without_exceeding_its_reservation() 
         .publish_with_metadata(Arc::new(3), 4, 4)
         .unwrap_err();
     assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
-    assert_eq!(cache.snapshot(), snapshot);
+    let after = cache.snapshot();
+    assert_eq!(after.misses, snapshot.misses + 1);
+    assert_eq!(
+        after,
+        PreparedCacheSnapshot {
+            misses: snapshot.misses + 1,
+            ..snapshot
+        }
+    );
     assert!(cache.get("a").is_some() && cache.get("b").is_some());
 }

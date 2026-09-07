@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
-use latent_activation::ActivationOutcome;
+use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{
     ActivationBudget, ActivationClock, ActivationId, ActivationPhase, ActivationTerminalState,
-    BudgetConsumption, Metadata, PlatformError, PlatformErrorCode,
+    BudgetConsumption, CancelDisposition, Metadata, PlatformError, PlatformErrorCode,
 };
 use latent_routing::ResolvedRevision;
 use latent_scheduler::ScheduledActivation;
+use latent_telemetry::ActivationCleanupDisposition;
 
 use crate::activation_runner::{failure_for_platform_error, outcome_consumption};
 use crate::budgeted_activation::{outcome_terminal_state, replace_consumption};
@@ -14,6 +15,7 @@ use crate::journal::JournalOwner;
 use crate::CancellationRegistration;
 
 use super::control::error;
+use super::observation::{Observation, ObservationServices};
 
 /// Owns cleanup and terminal publication once. Every execution future borrows
 /// this guard and is destroyed before its Drop can finalize accounting.
@@ -26,6 +28,8 @@ pub(super) struct Lifecycle {
     pub(super) scheduled: Option<ScheduledActivation>,
     pub(super) execution_started: bool,
     pub(super) quarantine_reason: Option<String>,
+    pub(super) assigned: bool,
+    observation: Option<Observation>,
 }
 
 impl Lifecycle {
@@ -43,6 +47,38 @@ impl Lifecycle {
             scheduled: None,
             execution_started: false,
             quarantine_reason: None,
+            assigned: false,
+            observation: None,
+        }
+    }
+
+    pub(super) fn begin_observation(
+        &mut self,
+        services: Option<&ObservationServices>,
+        envelope: &ActivationEnvelope,
+    ) {
+        if let Some(services) = services {
+            let journal = self.journal.as_ref().expect("accepted journal owner");
+            self.observation = Some(Observation::new(
+                services.clone(),
+                journal.serial(),
+                envelope,
+                journal.stamp(),
+            ));
+        }
+    }
+
+    pub(super) fn observe_cancellation(&mut self) {
+        if self.registration().token().is_cancelled() {
+            if let Some(observation) = &mut self.observation {
+                observation.cancellation(CancelDisposition::Accepted);
+            }
+        }
+    }
+
+    pub(super) fn observe_cleanup(&mut self, disposition: ActivationCleanupDisposition) {
+        if let Some(observation) = &mut self.observation {
+            observation.cleanup(disposition);
         }
     }
 
@@ -60,21 +96,38 @@ impl Lifecycle {
         phase: ActivationPhase,
         attributes: Metadata,
     ) -> Result<(), PlatformError> {
-        self.journal
+        let stamp = self
+            .journal
             .as_mut()
             .expect("live lifecycle journal")
-            .advance(phase, attributes)
+            .advance(phase, attributes)?;
+        if let Some(observation) = &mut self.observation {
+            observation.advance(
+                stamp,
+                self.resolved.as_ref(),
+                self.budget.as_ref().map(ActivationBudget::granted),
+            );
+        }
+        Ok(())
     }
 
     fn reclaim(&mut self) {
+        self.observe_cancellation();
+        let mut disposition = if self.assigned {
+            ActivationCleanupDisposition::Abandoned
+        } else {
+            ActivationCleanupDisposition::NoCell
+        };
         if let Some(scheduled) = self.scheduled.take() {
             if self.execution_started {
                 // The backend/pool has not completed a reusable disposition.
                 drop(scheduled);
             } else {
                 scheduled.reclaim_before_execution();
+                disposition = ActivationCleanupDisposition::ReclaimedBeforeExecution;
             }
         }
+        self.observe_cleanup(disposition);
     }
 
     pub(super) fn complete(mut self, outcome: ActivationOutcome) -> ActivationOutcome {
@@ -103,6 +156,7 @@ impl Lifecycle {
         let publication = self
             .registration()
             .publish_terminal(outcome_terminal_state(&outcome));
+        let cancellation_accepted = publication.cancellation_reason.is_some();
         if publication.state == ActivationTerminalState::Cancelled {
             if let Some(reason) = publication.cancellation_reason {
                 outcome = failure_for_platform_error(
@@ -111,12 +165,18 @@ impl Lifecycle {
                 );
             }
         }
-        let outcome = self
+        let (outcome, stamp) = self
             .journal
             .take()
             .expect("live terminal reservation")
-            .finish(outcome);
+            .finish_with_stamp(outcome);
         drop(self.cancellation.take());
+        if let Some(observation) = &mut self.observation {
+            if cancellation_accepted {
+                observation.cancellation(CancelDisposition::Accepted);
+            }
+            observation.terminal(&outcome, stamp, self.resolved.as_ref());
+        }
         outcome
     }
 }

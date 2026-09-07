@@ -117,6 +117,14 @@ pub struct Harness {
 
 impl Harness {
     pub fn new(parallelism: u32, maximum_terminal: usize) -> Self {
+        Self::with_observer(parallelism, maximum_terminal, None)
+    }
+
+    pub fn with_observer(
+        parallelism: u32,
+        maximum_terminal: usize,
+        observer: Option<Arc<dyn latent_telemetry::ActivationObserver>>,
+    ) -> Self {
         let clock = Arc::new(Clock(Mutex::new(ClockSample::system_now())));
         let ids = Arc::new(Ids::default());
         let catalog = Arc::new(CatalogSource::default());
@@ -168,6 +176,7 @@ impl Harness {
             LocalActivationServices {
                 clock: clock.clone(),
                 ids: ids.clone(),
+                observer,
             },
         )
         .expect("manager");
