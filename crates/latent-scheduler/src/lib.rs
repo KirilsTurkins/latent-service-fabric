@@ -3,6 +3,12 @@
 #![forbid(unsafe_code)]
 
 mod fixed_pool;
+mod local;
+
+pub use local::{
+    AdmittedSchedulingRequest, LocalNodePlacement, LocalScheduler, LocalSchedulerConfig,
+    ScheduledActivation, SchedulerSnapshot, SchedulingCancellation,
+};
 
 pub use fixed_pool::{
     FixedCellPool, FixedCellPoolConfig, FixedCellPoolTestTransition,
@@ -148,10 +154,10 @@ pub struct PlacementDecision {
 }
 
 pub trait ActivationScheduler: Send + Sync {
-    fn enqueue<'a>(
-        &'a self,
-        request: SchedulingRequest,
-    ) -> BoxFuture<'a, Result<CellLease, PlatformError>>;
+    fn enqueue(
+        &self,
+        request: AdmittedSchedulingRequest,
+    ) -> BoxFuture<'_, Result<ScheduledActivation, PlatformError>>;
 
     fn cancel<'a>(
         &'a self,
@@ -166,6 +172,31 @@ pub trait ActivationScheduler: Send + Sync {
 /// observations have conservative defaults so independent implementations remain
 /// source-compatible at the trait boundary.
 pub trait CellPool: Send + Sync {
+    /// Atomically reserves an available cell without creating a pool waiter.
+    /// Fair schedulers keep their ordering queue above this operation. `None`
+    /// means temporarily busy; permanently unusable capacity returns an error.
+    fn try_acquire_now(
+        &self,
+        activation_id: &ActivationId,
+        _tenant: &TenantId,
+        _class: CellClass,
+        _budget: &ResourceBudget,
+        _deadline_unix_millis: Option<u64>,
+    ) -> Result<Option<CellLease>, PlatformError> {
+        Err(unsupported_pool_operation(
+            "try-acquire",
+            Some(activation_id),
+            None,
+        ))
+    }
+
+    /// Bounded, coalescing change notifications. Subscribe before inspecting
+    /// capacity to avoid losing a concurrent release. Tokens are hints, not
+    /// capacity accounting. Legacy pools may omit this scheduler extension.
+    fn subscribe_changes(&self) -> Option<tokio::sync::watch::Receiver<u64>> {
+        None
+    }
+
     fn acquire<'a>(
         &'a self,
         activation_id: &'a ActivationId,

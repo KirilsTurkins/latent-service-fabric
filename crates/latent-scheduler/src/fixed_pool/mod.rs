@@ -16,7 +16,7 @@ use state::PoolInner;
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{mpsc, oneshot, watch};
 use types::{IdleCell, LeaseDisposition, PendingGrant, PoolState, Reservation, WaitRegistration};
 
 pub(crate) use types::LeaseControl;
@@ -66,7 +66,7 @@ pub enum FixedCellPoolTestTransitionKind {
 /// A fixed-capacity, FIFO execution-cell pool with no capsule-owned idle state.
 #[derive(Clone)]
 pub struct FixedCellPool {
-    pub(super) inner: Arc<PoolInner>,
+    inner: Arc<PoolInner>,
 }
 
 impl std::fmt::Debug for FixedCellPool {
@@ -135,6 +135,7 @@ impl FixedCellPool {
                     next_lease_token: 1,
                 }),
                 test_transition_observer: Mutex::new(None),
+                changes: watch::channel(0).0,
             }),
         })
     }
@@ -143,6 +144,48 @@ impl FixedCellPool {
     #[must_use]
     pub fn observations(&self) -> CellPoolSnapshot {
         self.inner.observations(self.inner.config.class)
+    }
+
+    /// Atomically acquires an idle cell without creating a pool waiter.
+    ///
+    /// `None` means no cell is immediately available. Existing FIFO waiters keep
+    /// their turn, and an unusable pool returns an error instead of asking the
+    /// scheduler to wait forever. The supplied absolute deadline is checked
+    /// after taking the pool lock; callers owning a monotonic deadline can pass
+    /// `None` and enforce that original deadline at their scheduling boundary.
+    pub fn try_acquire_now(
+        &self,
+        activation_id: &ActivationId,
+        tenant: &TenantId,
+        class: CellClass,
+        budget: &ResourceBudget,
+        deadline_unix_millis: Option<u64>,
+    ) -> Result<Option<CellLease>, PlatformError> {
+        if class != self.inner.config.class {
+            return Err(pool_error(
+                PlatformErrorCode::InvalidArgument,
+                "cell class is not configured by this pool",
+                false,
+                "cell-pool.unsupported-class",
+                [
+                    ("requested", cell_class_name(class)),
+                    ("configured", cell_class_name(self.inner.config.class)),
+                ],
+            ));
+        }
+        self.inner
+            .try_reserve(activation_id, tenant, budget, deadline_unix_millis)
+    }
+
+    /// Subscribes to bounded, coalescing notifications of release and quarantine.
+    ///
+    /// Subscribe before checking availability or trying acquisition. On each
+    /// change, retry acquisition and inspect current observations; intermediate
+    /// transitions can coalesce. The wrapping value is a change hint, not an
+    /// accounting counter. Notifications retain no activation or service data.
+    #[must_use]
+    pub fn subscribe_changes(&self) -> watch::Receiver<u64> {
+        self.inner.changes.subscribe()
     }
 
     /// Installs the single transition stream used by deterministic benchmark and test coordination.
@@ -283,6 +326,28 @@ impl FixedCellPool {
 }
 
 impl CellPool for FixedCellPool {
+    fn try_acquire_now(
+        &self,
+        activation_id: &ActivationId,
+        tenant: &TenantId,
+        class: CellClass,
+        budget: &ResourceBudget,
+        deadline_unix_millis: Option<u64>,
+    ) -> Result<Option<CellLease>, PlatformError> {
+        FixedCellPool::try_acquire_now(
+            self,
+            activation_id,
+            tenant,
+            class,
+            budget,
+            deadline_unix_millis,
+        )
+    }
+
+    fn subscribe_changes(&self) -> Option<watch::Receiver<u64>> {
+        Some(FixedCellPool::subscribe_changes(self))
+    }
+
     fn acquire<'a>(
         &'a self,
         activation_id: &'a ActivationId,
@@ -354,10 +419,7 @@ impl CellPool for FixedCellPool {
 }
 
 impl CellLease {
-    pub(super) fn managed(
-        identity: types::LeaseIdentity,
-        owner: std::sync::Weak<PoolInner>,
-    ) -> Self {
+    fn managed(identity: types::LeaseIdentity, owner: std::sync::Weak<PoolInner>) -> Self {
         Self {
             id: identity.cell.id.clone(),
             activation_id: identity.activation_id.clone(),

@@ -129,6 +129,10 @@ pub(crate) struct ReservationSpec<'a> {
 }
 
 impl LocalQuotaProvider {
+    pub(crate) fn shares_ledger(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
+
     pub fn new(policy: NodeAdmissionPolicy) -> Result<Self, PlatformError> {
         policy.validate()?;
         Ok(Self {

@@ -3,10 +3,11 @@ use std::fmt;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use latent_core::{
-    ActivationId, ActivationTerminalState, CancelDisposition, ErrorDetail, Metadata, PlatformError,
-    PlatformErrorCode,
+    ActivationId, ActivationTerminalState, BoxFuture, CancelDisposition, ErrorDetail, Metadata,
+    PlatformError, PlatformErrorCode,
 };
 use latent_executor::{ExecutionCancellation, ExecutionCancellationProbe};
+use latent_scheduler::SchedulingCancellation;
 use tokio::sync::watch;
 
 const DEFAULT_MAXIMUM_REASON_BYTES: usize = 256;
@@ -247,6 +248,27 @@ impl CancellationHandle {
                 .request_cancellation(bounded_text(reason, self.maximum_reason_bytes,)),
             CancellationRequest::Installed
         )
+    }
+}
+
+/// Scheduling observes and requests cancellation on the activation's original
+/// registry state. It does not create another cancellation registration or
+/// bypass the shared cancellation-versus-terminal publication transition.
+impl SchedulingCancellation for CancellationHandle {
+    fn activation_id(&self) -> &ActivationId {
+        self.activation_id()
+    }
+
+    fn is_cancelled(&self) -> bool {
+        self.state.is_cancelled()
+    }
+
+    fn request_cancellation(&self) -> bool {
+        self.cancel("scheduler cancellation")
+    }
+
+    fn cancelled(&self) -> BoxFuture<'_, ()> {
+        Box::pin(self.state.cancelled())
     }
 }
 
@@ -579,6 +601,41 @@ mod tests {
         );
         drop(registration);
         assert_eq!(registry.cancel(&id, "removed"), CancelDisposition::NotFound);
+    }
+
+    #[test]
+    fn scheduler_cancellation_preserves_terminal_publication_order() {
+        for cancellation_first in [true, false] {
+            let registry = ActivationCancellationRegistry::default();
+            let id = ActivationId("scheduler-terminal-order".to_owned());
+            let registration = registry.register(id.clone()).expect("registered");
+            let handle = registration.handle();
+            if cancellation_first {
+                assert!(SchedulingCancellation::request_cancellation(&handle));
+            }
+            let publication = registration.publish_terminal(ActivationTerminalState::Completed);
+            assert!(!SchedulingCancellation::request_cancellation(&handle));
+            assert_eq!(
+                SchedulingCancellation::is_cancelled(&handle),
+                cancellation_first
+            );
+            assert_eq!(
+                publication.state,
+                if cancellation_first {
+                    ActivationTerminalState::Cancelled
+                } else {
+                    ActivationTerminalState::Completed
+                }
+            );
+            assert_eq!(
+                publication.cancellation_reason.as_deref(),
+                cancellation_first.then_some("scheduler cancellation")
+            );
+            assert_eq!(
+                registry.cancel(&id, "after terminal publication"),
+                CancelDisposition::AlreadyTerminal(publication.state)
+            );
+        }
     }
 
     #[test]
