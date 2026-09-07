@@ -36,25 +36,41 @@ The handle retains this canonical absolute path, and `root()` returns it. A
 later process working-directory change cannot redirect publication, recovery or
 cleanup away from the directory whose ownership lock the handle holds.
 
-The September 7 audit's remaining integrity follow-up is
-[detection of valid-JSON persisted metadata corruption](https://github.com/KirilsTurkins/latent-service-fabric/issues/68).
-Component bytes are digest-verified, but the current completion marker does not
-checksum all immutable metadata. Ancestor synchronization and passing restart
-tests do not establish metadata corruption detection.
-
 ## Layout and publication
 
-Completed releases live under `releases/<sha256>/` and contain `metadata.json`, canonical `manifest.json`, `component.wasm`, and a `COMPLETE` marker. Publication validates the manifest, component identity, descriptor bounds, contract metadata and recovery-directory capacity before creating a private directory under `.tmp/`. It fsyncs every file and the temporary directory, renames the complete directory into its immutable digest location, then fsyncs `releases/` before adopting the descriptor into the in-memory index.
+Completed releases live under `releases/<sha256>/` and contain `metadata.json`, canonical `manifest.json`, `component.wasm`, and a versioned `COMPLETE` integrity record. Publication validates the manifest, component identity, descriptor bounds, contract metadata and recovery-directory capacity before creating a private directory under `.tmp/`. It writes and fsyncs the payload files followed by the completion record, fsyncs the temporary directory, and renames that complete directory into its immutable digest location. It verifies the stored entry and fsyncs `releases/` before adopting the descriptor into the in-memory index.
 
 Every successful publication/adoption path uses the same sync-and-adopt operation. Thus `publish -> Ok` implies immediate eligibility for `resolve`, `fetch`, and `list` on that handle. Identical publication is idempotent; different content under an existing digest or reference is rejected.
 
+### Completion record and immutable metadata
+
+`COMPLETE` must be a regular file, not a directory or symbolic link. It contains canonical JSON with these fields in the listed order:
+
+| Field | Meaning |
+| --- | --- |
+| `format_version` | Integer `1`, identifying this completion-record format. |
+| `component_digest` | The release's `sha256:` digest of component bytes. |
+| `component_size_bytes` | Component byte length. |
+| `metadata_digest` | SHA-256 of the exact stored `metadata.json` bytes, covering the descriptor and all contract metadata. |
+| `manifest_digest` | SHA-256 of the exact canonical `manifest.json` bytes. |
+
+The record has a fixed 1 KiB maximum, independent of configurable payload limits. Unknown versions or fields, duplicate fields, noncanonical serialization, missing or damaged records, and integrity mismatches are corruption errors. Verification checks the component digest against the record, descriptor, manifest and actual bytes, and checks byte length against the record and descriptor. The directory name must match the release digest. Recovery, fetch, identical retries and initial publication all verify before returning or adopting a completed artifact. Valid JSON alone cannot make a changed descriptor, contract or manifest acceptable.
+
+The release identity remains SHA-256 of component bytes. Metadata fingerprints provide accidental-corruption detection under the existing locally trusted filesystem boundary; they do not authenticate a publisher or protect against an administrator who can replace both data and integrity records.
+
+### Compatibility with legacy catalogs
+
+Earlier catalogs wrote the literal `complete\n` marker without metadata fingerprints. Opening a legacy catalog returns `CorruptArtifact` with message `legacy catalog completion marker is unsupported`. A mixed legacy/new completed catalog also fails opening. The reader preserves committed files and never generates a new integrity record from unverified legacy contents.
+
+To move an existing catalog forward, stop its owner and retain the entire old root. Re-register the trusted original component, manifest, descriptor and contracts through `ArtifactRepository::publish` into a fresh root, then open the application against that verified root. Do not manufacture completion records from possibly damaged old metadata or overwrite the old root during recovery. This compatibility policy does not change component digests or automatically migrate stored files.
+
 ### Indeterminate durability and the mutation gate
 
-A parent-directory sync failure after rename is returned as a publication failure. The completed destination may remain on disk while a newly published release remains hidden from that handle's readers. Under the writer mutex, the repository retains the pending release digest and rejects publications of any other digest with `unavailable`. This includes an otherwise nonconflicting release: the pending directory must not be bypassed for reference uniqueness, entry capacity, aggregate index-byte capacity, or recovery-directory capacity.
+A verification, parent-directory sync or index-adoption failure after rename is returned as a publication failure. The completed destination may remain on disk while a newly published release remains hidden from that handle's readers. Under the writer mutex, the repository records the pending release digest before verifying the destination and rejects publications of any other digest with `unavailable`. This includes an otherwise nonconflicting release: the pending directory must not be bypassed for reference uniqueness, entry capacity, aggregate index-byte capacity, or recovery-directory capacity.
 
 Retrying the pending artifact verifies the existing complete entry, re-syncs `releases/`, and adopts it before clearing the gate. A changed artifact with the same digest is not an identical retry and is rejected. Repeated sync/adoption failures keep the gate closed. Previously indexed releases remain readable. The alternative recovery is to drop all references to the repository and reopen its root; rebuild validates and accounts for every completed entry and syncs `releases/` before allowing new mutations. An unsuccessful publication acknowledgment therefore means the release may be recovered after restart, not that its bytes were rolled back.
 
-The root lock means `.tmp` cleanup cannot delete another live repository handle's active stage. On startup, once ownership is acquired, all `.tmp` contents are treated as abandoned crash debris and removed. Final directories without `COMPLETE` are ignored as incomplete recovery debris and are never exposed. This protocol assumes cooperating publishers and a local filesystem supporting directory fsync and atomic directory rename; manual changes to an owned root are outside that protocol.
+The root lock means `.tmp` cleanup cannot delete another live repository handle's active stage. On startup, once ownership is acquired, all `.tmp` contents are treated as abandoned crash debris and removed, whether their completion record is absent, partial or complete. A digest-named final directory must contain a valid record: publication writes the record before the final rename, so a missing record is corruption and must not silently erase a release from recovery. Non-digest directories with no completion record remain invisible incomplete debris and count toward recovery capacity. This protocol assumes cooperating publishers and a local filesystem supporting directory fsync and atomic directory rename; manual changes to an owned root are outside that protocol.
 
 ## Bounds and the metadata codec
 
@@ -64,7 +80,7 @@ Index accounting charges four times the canonical serialized descriptor size plu
 
 Contract field types have a maximum structural depth of 32 (the root type counts as one) and an aggregate limit of 16,384 type nodes across all contract parameters and results in an artifact. These checks precede recursive conversion and serialization, and apply again when reading persisted metadata. All recursive variants, including both result branches and tuple elements, participate. The JSON reader retains its normal recursion protection. Publication also decodes the exact serialized metadata bytes with the production decoder and checks descriptor/contract equality before writing any files; accepting data that fetch or reopen cannot deserialize is not permitted.
 
-Startup reads inspect file length before allocation and reject persisted metadata, manifests, or components that exceed their configured limits. Incomplete final directories count only toward the separate recovery-directory bound, never the completed-release index quota. Listing is served from the ordered in-memory digest index without directory scans per request, with ascending digest order and both row-count and descriptor-byte bounds.
+Startup reads inspect file length before allocation and reject persisted metadata, manifests, or components that exceed their configured limits with `ResourceExhausted`. An oversized completion record returns `CorruptArtifact` under its separate fixed bound. Publication releases caller payload buffers before reading back the stored component for verification. Retained non-digest incomplete directories count only toward the separate recovery-directory bound, never the completed-release index quota. Listing is served from the ordered in-memory digest index without directory scans per request, with ascending digest order and both row-count and descriptor-byte bounds.
 
 ### Recovery-directory capacity
 
@@ -125,6 +141,6 @@ physical power loss.
 1. For a post-rename publication error, retry the exact pending artifact; do not assume failure removed its completed directory. Other publications receive `unavailable` until reconciliation.
 2. Alternatively stop the standalone node and drop all repository handles so `.catalog.lock` is released. Preserve the root before any manual repair.
 3. Remove only known abandoned `.tmp` content if manual cleanup is necessary; normal startup performs this automatically after acquiring ownership.
-4. Do not promote directories lacking `COMPLETE` manually. Rebuild excludes them from the visible index but counts them against recovery-directory capacity; they may be inspected or removed offline.
+4. Do not promote directories lacking a valid `COMPLETE` record manually. A damaged digest-named final directory fails recovery; preserve it and recover from trusted source artifacts. Only non-digest incomplete debris is excluded from the visible index while counting against recovery-directory capacity, and may be inspected or removed offline.
 5. Reopen the repository. Rebuild checks bounded/readable contract metadata, canonical manifests, digest-directory identity, component bytes, reference uniqueness and all configured limits. It syncs the release directory before exposing the rebuilt index and rebuilds the directory count before accepting publications.
 6. Conflicting completed mappings, corrupt completed data or unsupported metadata are operator-visible open failures, never silently selected records. Preserve evidence and repair/remove the offending completed entry only offline; do not bypass bounds or JSON recursion protection to force startup.
