@@ -12,7 +12,7 @@ use latent_manifest::{
 use latent_routing::RouteSnapshot;
 
 use super::compiler::CompiledCatalog;
-use super::{error, DirectoryDeploymentRepositoryConfig};
+use super::{error, DirectoryDeploymentRepositoryConfig, OwnerLock};
 
 #[cfg(test)]
 pub(super) mod faults;
@@ -111,7 +111,7 @@ impl Record {
     }
 }
 
-pub(super) fn own_root(root: &Path) -> Result<(PathBuf, File), PlatformError> {
+pub(super) fn own_root(root: &Path) -> Result<(PathBuf, OwnerLock), PlatformError> {
     let root = create_durable_root(root)?;
     regular_or_absent(&root.join(OWNER_FILE))?;
     let owner = OpenOptions::new()
@@ -124,6 +124,7 @@ pub(super) fn own_root(root: &Path) -> Result<(PathBuf, File), PlatformError> {
     owner
         .try_lock()
         .map_err(|_| error(PlatformErrorCode::Unavailable, "catalog-root-already-owned"))?;
+    let owner = OwnerLock(owner);
     regular_or_absent(&root.join(STATE_FILE))?;
     regular_or_absent(&root.join(PENDING_FILE))?;
     regular_or_absent(&root.join(INITIALIZED_FILE))?;

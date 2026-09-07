@@ -66,6 +66,18 @@ impl Default for DirectoryDeploymentRepositoryConfig {
     }
 }
 
+/// Releases ownership even while a forked child still has a duplicate descriptor.
+/// Construct only after acquisition succeeds, before fallible initialization.
+struct OwnerLock(File);
+
+impl Drop for OwnerLock {
+    fn drop(&mut self) {
+        // Closing alone leaves a Unix flock alive until all inherited handles
+        // close. Explicit unlock releases our ownership before the file closes.
+        let _ = self.0.unlock();
+    }
+}
+
 /// One node-owned catalog. No runtime, task, thread, socket, or execution cell is created.
 ///
 /// Writers compile outside the reader lock, then compare-and-swap the generation.
@@ -82,7 +94,7 @@ pub struct DirectoryDeploymentRepository {
     generation: AtomicU64,
     writer: Mutex<()>,
     pagination_fingerprint: RandomState,
-    _owner_lock: File,
+    _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_before_rename: std::sync::atomic::AtomicBool,
     #[cfg(test)]

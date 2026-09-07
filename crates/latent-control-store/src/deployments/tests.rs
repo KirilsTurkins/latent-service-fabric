@@ -1,5 +1,7 @@
 mod admission;
 mod fixtures;
+#[cfg(unix)]
+mod lock_release;
 mod pagination;
 mod recovery;
 #[cfg(target_os = "linux")]
