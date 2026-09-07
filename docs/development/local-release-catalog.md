@@ -14,12 +14,33 @@ The supported persistence environment is a Linux local filesystem with file
 locking, atomic same-directory rename, and file/directory synchronization, as
 for the [deployment repository](../deployment-routing.md).
 
-The September 7 audit identified two remaining durability/integrity limitations:
-[new root/ancestor synchronization](https://github.com/KirilsTurkins/latent-service-fabric/issues/66)
-and [detection of valid-JSON persisted metadata corruption](https://github.com/KirilsTurkins/latent-service-fabric/issues/68).
+`open` may create a nonexistent nested root. It anchors relative input against
+the current directory once before filesystem work, then canonicalizes that path and
+synchronizes every directory from the catalog root through the filesystem root,
+leaf first, before acquiring ownership or initializing catalog state. The same
+sequence runs for an existing root: an interrupted or failed earlier open may
+have left directory entries present without making them durable. All ancestor
+directories must be readable and support directory synchronization. Pre-existing
+symlinks and external mount provisioning remain the operator's responsibility.
+
+If any ancestor synchronization fails, opening returns retryable `Unavailable`
+with message `catalog-path-durability-uncertain`. Initialization and temporary
+cleanup do not proceed. Created directories remain in place; retrying the same
+path repeats the complete synchronization chain before normal ownership,
+layout initialization and recovery. No catalog handle or successful publication
+is acknowledged through a failed open. These guarantees assume the local
+filesystem and storage honor successful synchronization, as in the deployment
+repository.
+
+The handle retains this canonical absolute path, and `root()` returns it. A
+later process working-directory change cannot redirect publication, recovery or
+cleanup away from the directory whose ownership lock the handle holds.
+
+The September 7 audit's remaining integrity follow-up is
+[detection of valid-JSON persisted metadata corruption](https://github.com/KirilsTurkins/latent-service-fabric/issues/68).
 Component bytes are digest-verified, but the current completion marker does not
-checksum all immutable metadata. Passing existing restart tests does not close
-those issues.
+checksum all immutable metadata. Ancestor synchronization and passing restart
+tests do not establish metadata corruption detection.
 
 ## Layout and publication
 
@@ -92,6 +113,14 @@ cargo test -p latentd --test catalog_scale --locked
 The publication-visibility unit tests likewise observe writer errors/panics and deadlines; a deterministic coordination test forces completion between an absent resolve and the writer-status check, then verifies a fresh resolve/fetch after joining.
 
 ## Recovery procedure
+
+For a root-initialization synchronization failure, preserve the directory and
+retry `open` after resolving the filesystem error. A retry synchronizes the full
+path even though it now exists. Bounded fault-injection tests verify the exact
+leaf-to-root sequence, failure at each ancestor, full replay on retry, relative
+nested paths, exclusive ownership, and preservation/reopening of a tiny release.
+These tests verify operation ordering and error propagation; they do not simulate
+physical power loss.
 
 1. For a post-rename publication error, retry the exact pending artifact; do not assume failure removed its completed directory. Other publications receive `unavailable` until reconciliation.
 2. Alternatively stop the standalone node and drop all repository handles so `.catalog.lock` is released. Preserve the root before any manual repair.

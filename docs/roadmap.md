@@ -36,6 +36,7 @@ The remaining work is tracked by the
 
 | Area | Remaining issues |
 | --- | --- |
+| Catalog and contract corrections | [Stable deployment root ownership #73](https://github.com/KirilsTurkins/latent-service-fabric/issues/73), [immutable metadata integrity #68](https://github.com/KirilsTurkins/latent-service-fabric/issues/68), [versioned deployment mutations/pages #67](https://github.com/KirilsTurkins/latent-service-fabric/issues/67), [SDK identity/cancellation parity #65](https://github.com/KirilsTurkins/latent-service-fabric/issues/65) |
 | Invocation runtime | [Generic Wasmtime backend #9](https://github.com/KirilsTurkins/latent-service-fabric/issues/9), [context/log/clock #10](https://github.com/KirilsTurkins/latent-service-fabric/issues/10), [activation orchestration #11](https://github.com/KirilsTurkins/latent-service-fabric/issues/11) |
 | Node services and operations | [Invocation/cancellation/status #12](https://github.com/KirilsTurkins/latent-service-fabric/issues/12), [telemetry/inventory #13](https://github.com/KirilsTurkins/latent-service-fabric/issues/13), [management adapters #37](https://github.com/KirilsTurkins/latent-service-fabric/issues/37), [standalone node #14](https://github.com/KirilsTurkins/latent-service-fabric/issues/14), [CLI #15](https://github.com/KirilsTurkins/latent-service-fabric/issues/15) |
 | Completion evidence | [Conformance, isolation, reclamation, and zero-idle scaling gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16) |

@@ -1,5 +1,7 @@
 #[path = "regression_tests.rs"]
 mod regressions;
+#[path = "root_durability_tests.rs"]
+mod root_durability;
 #[path = "visibility_tests.rs"]
 mod visibility;
 
@@ -38,12 +40,16 @@ struct TempRoot(PathBuf);
 
 impl TempRoot {
     fn new() -> Self {
+        Self::under(&std::env::temp_dir())
+    }
+
+    fn under(parent: &Path) -> Self {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("test clock must be after Unix epoch")
             .as_nanos();
         let sequence = NEXT_TEMP_ID.fetch_add(1, Ordering::Relaxed);
-        let path = std::env::temp_dir().join(format!(
+        let path = parent.join(format!(
             "latent-artifact-catalog-{}-{nonce}-{sequence}",
             std::process::id()
         ));
