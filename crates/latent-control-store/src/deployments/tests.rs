@@ -1,9 +1,11 @@
 mod admission;
 mod fixtures;
+mod pagination;
 mod recovery;
 #[cfg(target_os = "linux")]
 mod resources;
 mod root_identity;
+mod versioned;
 
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Barrier};

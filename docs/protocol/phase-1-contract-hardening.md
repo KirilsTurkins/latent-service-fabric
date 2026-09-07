@@ -110,6 +110,49 @@ locator itself. `ReleaseDescriptor.artifact_reference` is therefore a
 server-assigned opaque locator, never a client-visible filesystem path. The
 JSON analogue is `schemas/release-publish.schema.json`.
 
+## Deployment generations and pagination
+
+The [deployment repository](../deployment-routing.md) supplies the atomic
+versioned port consumed by management adapters in #37. The generated
+`Deployment.generation` field is output-only: adapters ignore it in apply input
+and preserve its full unsigned 64-bit value in responses. The optional
+`expected_generation` field is the caller's only precondition:
+
+| Expected generation | Apply | Delete |
+| --- | --- | --- |
+| Absent | Unconditional upsert. | Delete an existing object; missing is `NotFound`. |
+| `0` | Require absence, then create. | Existing object conflicts; absent object is `NotFound`. |
+| Positive | Require the exact current object version. | Require the exact current object version. |
+
+An object version is its last mutation's catalog stamp. Unrelated writes do not
+change it; unchanged applies do. Delete/recreate receives a new stamp. The
+repository checks caller expectations at atomic commit and returns the committed
+record/version directly. Adapters must not substitute read/check/write sequences
+or read the current object afterward to construct a mutation response. Internal
+compilation conflicts are separate from stale caller versions: a concurrent
+unrelated write may require recompilation with the same caller precondition.
+
+Get, list and delete requests obtain their tenant from the authenticated local
+principal; the wire messages' missing tenant fields do not authorize global
+catalog access. An apply's manifest tenant must match that principal. Adapters
+must use the tenant-scoped repository operations, bound input and response sizes,
+and map structured errors without exposing another tenant's state.
+
+Deployment pages are ordered by deployment ID within one tenant and optional
+service filter. Tokens are opaque and bound to that scope and repository
+generation; any catalog publication or repository reopen expires them. They do
+not authenticate or authorize callers. Limits and token validity are checked
+before selecting or cloning records, and pagination does not fetch artifacts.
+Changing page size between continuations is permitted within the configured
+limits. The repository rejects page size zero. In #37's wire adapter, a missing
+`PageRequest` or zero `page_size` selects the adapter's configured positive
+default within the repository limit: Protobuf cannot distinguish an omitted
+non-optional scalar from explicit zero. The repository's page byte budget covers
+encoded records; adapters also bound the entire wire response. #37 must test
+generation conversion, preconditions, scoped pagination and
+unsupported watch behavior through its generated client/server path; this
+repository feature does not expose a management listener.
+
 ## Tenant-qualified routes
 
 Service IDs are not globally unique. Every compiled `ServiceRoute` has a

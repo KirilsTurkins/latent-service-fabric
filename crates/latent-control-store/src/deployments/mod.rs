@@ -1,11 +1,14 @@
 //! Embedded, tenant-safe deployment catalog and immutable route publication.
 
 mod compiler;
+mod mutations;
+mod pagination;
 mod persistence;
 #[cfg(test)]
 mod tests;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::hash_map::RandomState;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -14,8 +17,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use latent_artifacts::ArtifactRepository;
 use latent_core::{
-    BoxFuture, ContractId, DeploymentId, ErrorDetail, Metadata, PlatformError, PlatformErrorCode,
-    RevisionId, RouteGeneration,
+    BoxFuture, ContractId, ErrorDetail, Metadata, PlatformError, PlatformErrorCode, RevisionId,
+    RouteGeneration,
 };
 use latent_manifest::{
     DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidator, ManifestViolation,
@@ -26,8 +29,10 @@ use latent_routing::{
     RouteSnapshot, RouteSnapshotPublisher, RouteSnapshotSource,
 };
 
-use crate::{CompiledRouteStore, DeploymentStore};
-use compiler::{compile, CompiledCatalog};
+use crate::CompiledRouteStore;
+use compiler::{compile_versioned, CompiledCatalog};
+use mutations::{CommitOutcome, ObjectPrecondition};
+pub use pagination::{DeploymentPage, DeploymentPageRequest};
 
 /// Bounds retained desired state, serialized state, and weighted index entries.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,6 +42,8 @@ pub struct DirectoryDeploymentRepositoryConfig {
     pub max_route_entries: usize,
     pub max_identifier_bytes: usize,
     pub max_routing_key_bytes: usize,
+    pub max_page_size: u32,
+    pub max_page_bytes: usize,
 }
 
 impl Default for DirectoryDeploymentRepositoryConfig {
@@ -47,6 +54,8 @@ impl Default for DirectoryDeploymentRepositoryConfig {
             max_route_entries: 1_000_000,
             max_identifier_bytes: 1024,
             max_routing_key_bytes: 4096,
+            max_page_size: 1000,
+            max_page_bytes: 4 * 1024 * 1024,
         }
     }
 }
@@ -66,6 +75,7 @@ pub struct DirectoryDeploymentRepository {
     current: RwLock<Arc<CompiledCatalog>>,
     generation: AtomicU64,
     writer: Mutex<()>,
+    pagination_fingerprint: RandomState,
     _owner_lock: File,
     #[cfg(test)]
     fail_before_rename: std::sync::atomic::AtomicBool,
@@ -96,6 +106,7 @@ impl DirectoryDeploymentRepository {
             || config.max_route_entries == 0
             || config.max_identifier_bytes == 0
             || config.max_routing_key_bytes == 0
+            || !pagination::valid_page_config(config)
         {
             return Err(error(
                 PlatformErrorCode::InvalidArgument,
@@ -106,16 +117,22 @@ impl DirectoryDeploymentRepository {
         let (root, owner_lock) = persistence::own_root(&root)?;
         let restored = persistence::load(&root, config)?;
         let needs_initial_state = restored.is_none();
-        let (deployments, generation, generated_at) = match &restored {
-            Some(record) => (
-                record.deployments(config)?,
-                RouteGeneration(record.payload.generation),
-                record.payload.generated_at_unix_millis,
-            ),
-            None => (BTreeMap::new(), RouteGeneration(0), 0),
+        let (deployments, versions, generation, generated_at) = match &restored {
+            Some(record) => {
+                let deployments = record.deployments(config)?;
+                let versions = record.object_generations(&deployments)?;
+                (
+                    deployments,
+                    versions,
+                    RouteGeneration(record.payload.generation),
+                    record.payload.generated_at_unix_millis,
+                )
+            }
+            None => (BTreeMap::new(), BTreeMap::new(), RouteGeneration(0), 0),
         };
-        let catalog = compile(
+        let catalog = compile_versioned(
             deployments,
+            versions,
             generation,
             generated_at,
             artifacts.as_ref(),
@@ -137,6 +154,7 @@ impl DirectoryDeploymentRepository {
             generation: AtomicU64::new(generation.0),
             current: RwLock::new(Arc::new(catalog)),
             writer: Mutex::new(()),
+            pagination_fingerprint: RandomState::new(),
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_before_rename: std::sync::atomic::AtomicBool::new(false),
@@ -152,67 +170,6 @@ impl DirectoryDeploymentRepository {
         // Also completes initialization interrupted after the first state rename.
         persistence::sync_root(&repository.root)?;
         Ok(repository)
-    }
-
-    /// Atomically applies a batch. Repeated IDs in a batch are rejected, not last-write-wins.
-    /// Existing IDs may be updated only inside their original tenant/namespace/service scope.
-    pub async fn apply_many(
-        &self,
-        deployments: Vec<DeploymentManifest>,
-    ) -> Result<RouteGeneration, PlatformError> {
-        if deployments.is_empty() {
-            return Ok(self.read_catalog().snapshot.generation);
-        }
-        if deployments.len() > self.config.max_deployments {
-            return Err(error(
-                PlatformErrorCode::ResourceExhausted,
-                "deployment-count-limit",
-            ));
-        }
-        let previous = self.read_catalog();
-        let mut next = previous.deployments.clone();
-        let mut seen = BTreeSet::new();
-        for mut deployment in deployments {
-            Phase1ManifestValidator
-                .validate_deployment(&deployment)
-                .map_err(manifest_error)?;
-            deployment.release.0.make_ascii_lowercase();
-            if deployment.id.0 == "default" {
-                return Err(error(
-                    PlatformErrorCode::AlreadyExists,
-                    "reserved-default-route",
-                ));
-            }
-            if !seen.insert(deployment.id.clone()) {
-                return Err(error(
-                    PlatformErrorCode::AlreadyExists,
-                    "duplicate-deployment-id",
-                ));
-            }
-            if let Some(old) = next.get(&deployment.id) {
-                if old.metadata.tenant != deployment.metadata.tenant
-                    || old.metadata.namespace != deployment.metadata.namespace
-                    || old.service != deployment.service
-                {
-                    return Err(error(
-                        PlatformErrorCode::PermissionDenied,
-                        "deployment-scope-conflict",
-                    ));
-                }
-            }
-            next.insert(deployment.id.clone(), deployment);
-        }
-        let generation = next_generation(previous.snapshot.generation)?;
-        let compiled = compile(
-            next,
-            generation,
-            now()?,
-            self.artifacts.as_ref(),
-            self.config,
-        )
-        .await?;
-        self.commit(previous.snapshot.generation, compiled)?;
-        Ok(generation)
     }
 
     /// Acquires an immutable read view without waiting on a writer.
@@ -251,12 +208,25 @@ impl DirectoryDeploymentRepository {
         expected: RouteGeneration,
         next: CompiledCatalog,
     ) -> Result<(), PlatformError> {
+        self.commit_checked(expected, next, None)?.durability
+    }
+
+    fn commit_checked(
+        &self,
+        expected: RouteGeneration,
+        next: CompiledCatalog,
+        precondition: Option<&ObjectPrecondition>,
+    ) -> Result<CommitOutcome, PlatformError> {
         // No await, compilation, or artifact access occurs with this writer guard held.
         let _writer = self
             .writer
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if self.read_catalog().snapshot.generation != expected {
+        let current = self.read_catalog();
+        if let Some(precondition) = precondition {
+            precondition.check(&current)?;
+        }
+        if current.snapshot.generation != expected {
             return Err(error(
                 PlatformErrorCode::StateConflict,
                 "stale-route-generation",
@@ -287,7 +257,9 @@ impl DirectoryDeploymentRepository {
             old
         };
         drop(old); // Potentially large destruction is deliberately outside the reader lock.
-        durable
+        Ok(CommitOutcome {
+            durability: durable,
+        })
     }
 
     fn sync_parent(&self) -> Result<(), PlatformError> {
@@ -299,46 +271,6 @@ impl DirectoryDeploymentRepository {
             ));
         }
         persistence::sync_root(&self.root)
-    }
-}
-
-impl DeploymentStore for DirectoryDeploymentRepository {
-    fn apply<'a>(
-        &'a self,
-        deployment: DeploymentManifest,
-    ) -> BoxFuture<'a, Result<(), PlatformError>> {
-        Box::pin(async move { self.apply_many(vec![deployment]).await.map(|_| ()) })
-    }
-
-    fn get<'a>(
-        &'a self,
-        id: &'a DeploymentId,
-    ) -> BoxFuture<'a, Result<Option<DeploymentManifest>, PlatformError>> {
-        Box::pin(async move { Ok(self.read_catalog().deployments.get(id).cloned()) })
-    }
-
-    fn list<'a>(&'a self) -> BoxFuture<'a, Result<Vec<DeploymentManifest>, PlatformError>> {
-        Box::pin(async move { Ok(self.read_catalog().deployments.values().cloned().collect()) })
-    }
-
-    fn delete<'a>(&'a self, id: &'a DeploymentId) -> BoxFuture<'a, Result<(), PlatformError>> {
-        Box::pin(async move {
-            let previous = self.read_catalog();
-            let mut next = previous.deployments.clone();
-            if next.remove(id).is_none() {
-                return Err(error(PlatformErrorCode::NotFound, "deployment-not-found"));
-            }
-            let generation = next_generation(previous.snapshot.generation)?;
-            let compiled = compile(
-                next,
-                generation,
-                now()?,
-                self.artifacts.as_ref(),
-                self.config,
-            )
-            .await?;
-            self.commit(previous.snapshot.generation, compiled)
-        })
     }
 }
 
@@ -358,8 +290,9 @@ impl RouteCompiler for DirectoryDeploymentRepository {
                     "stale-route-generation",
                 ));
             }
-            let next = compile(
+            let next = compile_versioned(
                 current.deployments.clone(),
+                current.versions.clone(),
                 next_generation(current.snapshot.generation)?,
                 now()?,
                 self.artifacts.as_ref(),
@@ -381,8 +314,9 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
                     "stale-route-generation",
                 ));
             }
-            let compiled = compile(
+            let compiled = compile_versioned(
                 current.deployments.clone(),
+                current.versions.clone(),
                 snapshot.generation,
                 snapshot.generated_at_unix_millis,
                 self.artifacts.as_ref(),

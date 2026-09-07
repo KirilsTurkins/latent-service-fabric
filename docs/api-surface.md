@@ -81,7 +81,7 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 | `latent-wire` | codec, duplex channel, request multiplexer |
 | `latent-wrpc` | remote client/server and connection factory |
 | `latent-node` | node registration/inventory/watch seams; `Phase0ActivationRunner`, `BudgetedActivationManager`, budget/cancellation registries, and the scheduler adapter on `CancellationHandle` |
-| `latent-control-store` | desired-state persistence seams; `DirectoryDeploymentRepository` implements local deployment storage, route compilation/publication, and resolution |
+| `latent-control-store` | `DeploymentStore` versioned mutations, committed receipts and bounded tenant/service pages; `DirectoryDeploymentRepository` implements persistence, route compilation/publication, and resolution |
 | `latent-telemetry` | telemetry sink and activation observer |
 | `latent-audit` | audit store and publisher |
 | `latent-testkit` | conformance suite, deterministic async/process/resource utilities, invariant probes |
