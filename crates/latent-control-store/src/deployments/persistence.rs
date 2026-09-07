@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use latent_artifacts::content_digest;
 use latent_core::{DeploymentId, PlatformError, PlatformErrorCode};
@@ -74,8 +74,8 @@ impl Record {
     }
 }
 
-pub(super) fn own_root(root: &Path) -> Result<File, PlatformError> {
-    create_durable_root(root)?;
+pub(super) fn own_root(root: &Path) -> Result<(PathBuf, File), PlatformError> {
+    let root = create_durable_root(root)?;
     regular_or_absent(&root.join(OWNER_FILE))?;
     let owner = OpenOptions::new()
         .create(true)
@@ -110,17 +110,23 @@ pub(super) fn own_root(root: &Path) -> Result<File, PlatformError> {
     }
     // Cleanup is only allowed after acquiring the exclusive root lock. A staging
     // marker, including an empty or truncated one, is never authoritative state.
-    remove_pending(root)?;
+    remove_pending(&root)?;
     remove_if_present(&root.join(INITIALIZED_PENDING_FILE))?;
-    Ok(owner)
+    Ok((root, owner))
 }
 
 /// Synchronize every link that makes the catalog reachable, leaf to filesystem root.
 /// Repeating this on existing paths repairs an earlier failed/interrupted creation:
 /// existence alone does not prove that an ancestor's directory entry is durable.
-fn create_durable_root(root: &Path) -> Result<(), PlatformError> {
-    fs::create_dir_all(root).map_err(io_error)?;
-    let absolute = fs::canonicalize(root).map_err(io_error)?;
+fn create_durable_root(root: &Path) -> Result<PathBuf, PlatformError> {
+    // Anchor relative input once before filesystem work or asynchronous suspension.
+    let absolute = if root.is_absolute() {
+        root.to_owned()
+    } else {
+        std::env::current_dir().map_err(io_error)?.join(root)
+    };
+    fs::create_dir_all(&absolute).map_err(io_error)?;
+    let absolute = fs::canonicalize(absolute).map_err(io_error)?;
     for directory in absolute.ancestors() {
         sync_directory(directory, IoStep::PathDirectorySync).map_err(|_| {
             error(
@@ -129,7 +135,7 @@ fn create_durable_root(root: &Path) -> Result<(), PlatformError> {
             )
         })?;
     }
-    Ok(())
+    Ok(absolute)
 }
 
 pub(super) fn load(
