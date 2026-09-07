@@ -3,6 +3,7 @@ mod fixtures;
 mod recovery;
 #[cfg(target_os = "linux")]
 mod resources;
+mod root_identity;
 
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Barrier};

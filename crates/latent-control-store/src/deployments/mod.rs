@@ -83,6 +83,8 @@ pub struct PinnedRouteResolver {
 
 impl DirectoryDeploymentRepository {
     /// Restores and verifies the latest complete state; never silently resets a corrupt catalog.
+    /// Relative paths are anchored on first poll, before suspension. The retained
+    /// canonical absolute root keeps later operations bound to the owned directory.
     pub async fn open(
         root: impl Into<PathBuf>,
         artifacts: Arc<dyn ArtifactRepository>,
@@ -101,7 +103,7 @@ impl DirectoryDeploymentRepository {
             ));
         }
         let root = root.into();
-        let owner_lock = persistence::own_root(&root)?;
+        let (root, owner_lock) = persistence::own_root(&root)?;
         let restored = persistence::load(&root, config)?;
         let needs_initial_state = restored.is_none();
         let (deployments, generation, generated_at) = match &restored {
