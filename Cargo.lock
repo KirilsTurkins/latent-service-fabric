@@ -1157,7 +1157,19 @@ name = "latent-wire"
 version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
+ "latent-admission",
+ "latent-artifacts",
  "latent-core",
+ "latent-executor",
+ "latent-manifest",
+ "latent-node",
+ "latent-routing",
+ "latent-rpc",
+ "latent-scheduler",
+ "latent-telemetry",
+ "prost",
+ "tokio",
+ "tonic",
 ]
 
 [[package]]

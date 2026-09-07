@@ -3,7 +3,7 @@
 Updated on **2026-09-07** for the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
-generic execution, activation capabilities/lifecycle, and explicit heavy
+generic execution, activation capabilities/lifecycle, invocation service adapters, and explicit heavy
 validation gates. These commands describe validation coverage; the evidence
 from the September 7 audit is recorded separately in
 [the audit report](docs/development/feature-audit-2026-09-07.md).
@@ -90,6 +90,7 @@ Run it from an isolated clone or worktree when local build output is present.
 - The generic Wasmtime suite builds a separate maintained Rust component and tiny WAT adversarial components. It checks dynamic contract/function selection, canonical scalar/composite values, declared versus nested errors, missing imports/exports and unsupported types, pre-store input rejection, bounded output, fresh guest state, short fuel/deadline/cancellation/memory containment, post-return failure, recovery, and explicit cleanup. These small fixtures are ordinary contract regressions; they do not run a resource soak or establish the Phase 1 gate. See [generic execution](docs/runtime/wasmtime.md).
 - The capability suite builds a separate Rust/WIT component importing only context, logging, and monotonic/wall clocks. It checks filtered context and pinned identity across cell reuse, live shared fuel/memory/log accounting, injected clock adjustments and monotonic clamping, complete escaped record byte limits, reserved/invalid fields, and failed-sink reservation refunds. Each small invocation has a five-second watchdog and cleanup checks. See [activation capabilities](docs/runtime/capabilities.md).
 - Shared telemetry tests use tiny bounded queues and local sinks to check redaction, correlated distinct outcomes, finalized consumption, pinned revisions, monotonic duration, overlapping activation-ID incarnations, failed/full exporters, and bounded shutdown. Node integrations cover lifecycle/drop observations and inventory sources without catalog enumeration. See [telemetry and inventory](docs/telemetry.md).
+- `invocation_service` calls generated Invoke/Cancel/GetActivation methods against a real manager, admission controller, and scheduler. Bounded fixtures cover principal and lineage validation, pending/retained status, scoped cancellation, drop/deadline cleanup, outcome accounting, absent/pinned receipts, redaction, and cell/ID reuse. See [invocation service](docs/protocol/invocation-service.md).
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
 - All seven JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, release-publish, binding, policy, trigger, and compiled-route examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interfaces compile and execute small fake-client identity/cancellation fixtures. They cover status/cancellation before invoke completion, transport failures, lost-response status recovery, optional identity and lineage; see the [SDK contract](sdk/README.md#executable-contract-fixtures). These are contract tests, not implemented transport coverage.
@@ -137,6 +138,7 @@ foundations without selecting expensive ignored acceptance probes:
 cargo test -p latent-manifest --all-targets --locked
 cargo test -p latent-core -p latent-executor -p latent-node --all-targets --locked
 cargo test -p latent-node --test activation_lifecycle --locked
+cargo test -p latent-wire --all-targets --locked
 cargo test -p latent-artifacts -p latent-control-store --lib --locked
 cargo test -p latentd --test catalog_scale --locked
 ```
@@ -306,8 +308,9 @@ Static schema, WIT, Protobuf, and artifact validation uses compiler and validato
 
 Passing ordinary Phase 1 foundation checks validates the implemented manifest,
 budget/cancellation, storage, local routing, admission, scheduling, generic
-execution, activation capabilities, and lifecycle behavior covered by those tests.
-It does not establish a composed standalone node, service adapters, operator
+execution, activation capabilities/lifecycle, telemetry, and invocation adapter
+behavior covered by those tests. It does not establish a composed standalone
+node, management adapters, operator
 CLI, long-running reclamation evidence, or completion of the Phase 1 gate.
 
 Passing the Phase 0 executable baseline establishes source consistency, guest behavior,

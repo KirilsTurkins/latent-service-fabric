@@ -19,3 +19,6 @@ mod support;
 
 #[path = "activation_lifecycle/observations.rs"]
 mod observations;
+
+#[path = "activation_lifecycle/deadline_abort.rs"]
+mod deadline_abort;

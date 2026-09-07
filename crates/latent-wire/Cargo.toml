@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-wire."
+description = "Bounded invocation RPC adapters, local runtime bridge, and data-plane wire contracts."
 
 [lints]
 workspace = true
@@ -13,3 +13,18 @@ workspace = true
 [dependencies]
 latent-core = { path = "../latent-core" }
 latent-activation = { path = "../latent-activation" }
+latent-node = { path = "../latent-node" }
+latent-routing = { path = "../latent-routing" }
+latent-rpc = { path = "../latent-rpc" }
+prost.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+
+[dev-dependencies]
+latent-admission = { path = "../latent-admission" }
+latent-artifacts = { path = "../latent-artifacts" }
+latent-executor = { path = "../latent-executor" }
+latent-manifest = { path = "../latent-manifest" }
+latent-scheduler = { path = "../latent-scheduler" }
+latent-telemetry = { path = "../latent-telemetry" }
+tokio = { workspace = true, features = ["test-util", "rt-multi-thread"] }

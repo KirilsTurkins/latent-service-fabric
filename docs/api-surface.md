@@ -51,8 +51,9 @@ describe later-phase surfaces. Dynamic exported value mapping follows the
 Phase 1's planned standalone subset and the methods that must report explicit
 unsupported/unimplemented behavior are defined in
 [Phase 1 contract hardening](protocol/phase-1-contract-hardening.md).
-Invocation adapters (#12), management adapters (#37), and listener composition
-(#14) remain pending on the integration branch.
+[Invocation adapters](protocol/invocation-service.md) (#12) implement Invoke,
+Cancel, and GetActivation through the local manager. Management adapters (#37)
+and listener composition (#14) remain pending.
 
 ## Rust internal interfaces
 
@@ -80,7 +81,7 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 | `latent-state` | state backend and entity lease manager |
 | `latent-effects` | effect store, dispatcher, and provider |
 | `latent-workflows` | continuation store and workflow runtime |
-| `latent-wire` | codec, duplex channel, request multiplexer |
+| `latent-wire` | Generated `InvocationServiceAdapter`, `LocalInvocationRuntime`, scoped principal/trace services and lossless converters; codec, duplex channel, request multiplexer seams |
 | `latent-wrpc` | remote client/server and connection factory |
 | `latent-node` | `LocalActivationManager`, immediate-ID `ActivationHandle`, `ActivationReceipt`, scoped status/cancel, bounded `LocalActivationJournal`; retained Phase 0/budget adapters and node registration/inventory/watch seams |
 | `latent-control-store` | `DeploymentStore` versioned mutations, committed receipts and bounded tenant/service pages; `DirectoryDeploymentRepository` implements persistence, route compilation/publication, and resolution |

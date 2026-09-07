@@ -7,7 +7,7 @@ mod run;
 
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Duration;
@@ -100,12 +100,23 @@ pub struct ActivationReceipt {
 pub struct ActivationHandle {
     activation_id: ActivationId,
     completion: Pin<Box<dyn Future<Output = ActivationReceipt> + Send>>,
+    deadline_abort: Arc<AtomicBool>,
 }
 
 impl ActivationHandle {
     #[must_use]
     pub fn activation_id(&self) -> &ActivationId {
         &self.activation_id
+    }
+
+    /// Consumes this exact lifecycle owner after its transport deadline expires.
+    /// Inner execution is dropped before the existing lifecycle guard finalizes
+    /// accounting and publishes the terminal state. An already accepted explicit
+    /// cancellation or completed publication retains its existing winner.
+    /// This never looks up an activation by a possibly reused caller ID.
+    pub fn abort_due_to_deadline(self) {
+        self.deadline_abort.store(true, Ordering::Release);
+        drop(self);
     }
 }
 
@@ -206,7 +217,13 @@ impl LocalActivationManager {
         let (journal, cancellation) = self.inner.journal.begin_with(&envelope, || {
             self.inner.cancellations.register(activation_id.clone())
         })?;
-        let mut lifecycle = Lifecycle::new(journal, cancellation, Arc::clone(&self.inner.clock));
+        let deadline_abort = Arc::new(AtomicBool::new(false));
+        let mut lifecycle = Lifecycle::new(
+            journal,
+            cancellation,
+            Arc::clone(&self.inner.clock),
+            Arc::clone(&deadline_abort),
+        );
         lifecycle.begin_observation(self.inner.observations.as_ref(), &envelope);
         let inner = Arc::clone(&self.inner);
         let completion = Box::pin(async move {
@@ -234,6 +251,7 @@ impl LocalActivationManager {
         Ok(ActivationHandle {
             activation_id,
             completion,
+            deadline_abort,
         })
     }
 
