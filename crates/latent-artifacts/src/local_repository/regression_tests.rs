@@ -7,6 +7,38 @@ use super::*;
 use latent_manifest::__serde_json as serde_json;
 
 #[test]
+fn noncanonical_manifest_order_remains_idempotent_across_retry_and_reopen() {
+    for fail_parent_sync in [false, true] {
+        let temp = TempRoot::new();
+        let repo = repository(temp.path());
+        let expected = artifact("normalized-retry", b"normalized-retry");
+        let mut submitted = expected.clone();
+        submitted.manifest.imports.reverse();
+        assert_ne!(submitted.manifest, expected.manifest);
+        if fail_parent_sync {
+            repo.inject_parent_sync_failure_once();
+            block_on(repo.publish(submitted.clone())).expect_err("injected parent sync failure");
+        }
+        for _ in 0..2 {
+            assert_eq!(
+                block_on(repo.publish(submitted.clone())).expect("identical retry"),
+                expected.descriptor
+            );
+        }
+        assert_eq!(
+            block_on(repo.fetch(&expected.descriptor.release_digest)).expect("normalized fetch"),
+            expected
+        );
+        drop(repo);
+        let reopened = repository(temp.path());
+        assert_eq!(
+            block_on(reopened.publish(submitted)).expect("identical retry after reopen"),
+            expected.descriptor
+        );
+    }
+}
+
+#[test]
 fn pending_sync_failure_blocks_conflicting_reference_even_after_failed_retry() {
     let temp = TempRoot::new();
     let repo = repository(temp.path());

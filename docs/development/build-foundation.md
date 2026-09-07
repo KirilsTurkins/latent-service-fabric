@@ -123,7 +123,7 @@ make guest-bindings
 
 ## CI contract
 
-`.github/workflows/ci.yml` runs for every pull request, pushes to `development`, and manual dispatches. Its Rust job verifies formatting, the whole workspace, host and guest Component Model bindings, RPC generation, Clippy, and tests. Separate jobs verify the MSRV, repository contracts and retained echo/containment integration, and all language SDK surfaces.
+`.github/workflows/ci.yml` runs for every pull request, pushes to `development`, and manual dispatches. Its Rust job verifies formatting, the whole workspace, host and guest Component Model bindings, RPC generation, Clippy, and tests. Separate jobs verify the MSRV, repository contracts, the reproducible echo fixture, catalog/routing regressions, and all language SDK surfaces. The path-filtered `Phase 0 runtime regression` workflow owns the retained executable echo/containment integration. The durable 100,000-release catalog probe runs only when `CI` is dispatched with `run_catalog_scale: true`; ordinary checks leave it ignored.
 
 ## Phase 0 continuity
 

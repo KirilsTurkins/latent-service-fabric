@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-artifacts."
+description = "Artifact interfaces and a bounded durable local release catalog."
 
 [lints]
 workspace = true

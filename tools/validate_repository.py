@@ -422,11 +422,6 @@ def validate_interface_only_policy() -> None:
             if token in text:
                 fail(f"implementation placeholder token {token!r} found in {path.relative_to(ROOT)}")
 
-    for app_main in (ROOT / "apps").glob("*/src/main.rs"):
-        text = app_main.read_text(encoding="utf-8")
-        if not re.search(r"fn\s+main\s*\(\s*\)\s*\{\s*\}", text, re.DOTALL):
-            warn(f"binary placeholder has behavior: {app_main.relative_to(ROOT)}")
-
 
 def validate_required_docs() -> None:
     required = [

@@ -19,13 +19,35 @@ execution identity, profiling, resource soak, and fresh-baseline checks
 together. Phase 1 builds on the retained runtime and invariants; Phase 0 does
 not claim production readiness or Phase 1 API compatibility.
 
-## Phase 1: single-node stateless fabric — authorized to begin
+## Phase 1: single-node stateless fabric — in progress
 
-Standalone node, local release catalog, route table, scheduler, activation envelopes, resource budgets, context/log/clock capabilities, generic invocation API, CLI flow, and telemetry.
+The following foundations are merged:
+
+- [Executable build and generated bindings](development/build-foundation.md) (#2) and [cross-layer contracts](protocol/phase-1-contract-hardening.md) (#36).
+- [Manifest codecs and schema-backed validation](protocol/manifest-codec.md) (#3).
+- [Durable local release catalog](development/local-release-catalog.md) (#4).
+- [Embedded deployment catalog and immutable local routing](deployment-routing.md) (#5).
+- [Resource budgets, deadlines, and cancellation primitives](runtime/resource-budgets.md) (#6).
+
+The remaining work is tracked by the
+[Phase 1 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/1):
+
+| Area | Remaining issues |
+| --- | --- |
+| Invocation runtime | [Admission #7](https://github.com/KirilsTurkins/latent-service-fabric/issues/7), [fair scheduler #8](https://github.com/KirilsTurkins/latent-service-fabric/issues/8), [generic Wasmtime backend #9](https://github.com/KirilsTurkins/latent-service-fabric/issues/9), [context/log/clock #10](https://github.com/KirilsTurkins/latent-service-fabric/issues/10), [activation orchestration #11](https://github.com/KirilsTurkins/latent-service-fabric/issues/11) |
+| Node services and operations | [Invocation/cancellation/status #12](https://github.com/KirilsTurkins/latent-service-fabric/issues/12), [telemetry/inventory #13](https://github.com/KirilsTurkins/latent-service-fabric/issues/13), [management adapters #37](https://github.com/KirilsTurkins/latent-service-fabric/issues/37), [standalone node #14](https://github.com/KirilsTurkins/latent-service-fabric/issues/14), [CLI #15](https://github.com/KirilsTurkins/latent-service-fabric/issues/15) |
+| Completion evidence | [Conformance, isolation, reclamation, and zero-idle scaling gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16) |
+
+Status is recorded as of September 7, 2026. An open implementation PR does not
+make its feature available on the integration branch. Phase 0 remains the
+runnable local echo demonstration; the complete standalone release-to-invocation
+workflow and Phase 1 completion evidence are pending.
 
 ## Phase 2: packaging and supply chain
 
-OCI push/pull, signatures, provenance, SBOM, trusted AOT cache, atomic routing, canary, and rollback.
+OCI push/pull, signatures, provenance, SBOM, trusted AOT cache, release rollout
+orchestration, canary, and rollback. Atomic local deployment/snapshot publication
+and deterministic weighted selection are already Phase 1 routing foundations.
 
 ## Phase 3: capabilities
 

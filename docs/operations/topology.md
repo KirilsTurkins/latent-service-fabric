@@ -1,17 +1,26 @@
 # Operational topology
 
+These diagrams describe intended topologies. The current runnable `latentd`
+surface is the finite [Phase 0 spike](../phase-0-spike.md). Phase 1's local
+catalog/routing libraries are implemented, while the standalone node,
+listeners, management services, and telemetry composition remain pending; see
+[the roadmap](../roadmap.md).
+
 ## Development
 
 ```text
-latentd --standalone
+standalone latentd (planned)
 ├── embedded control modules
 ├── local route snapshot
 ├── local artifact directory
-├── local state backend
+├── bounded activation status and telemetry
 └── fixed execution-cell pool
 ```
 
 ## Initial production
+
+This topology belongs to later phases; Phase 1 uses local storage and stateless
+execution without PostgreSQL, OCI, state/effect providers, or clustering.
 
 ```text
 management LB

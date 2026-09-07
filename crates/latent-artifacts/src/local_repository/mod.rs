@@ -8,6 +8,7 @@ mod tests;
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
+use std::ops::Bound::{Excluded, Unbounded};
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -397,7 +398,10 @@ impl DirectoryArtifactRepository {
         Ok(adopted)
     }
 
-    fn publish_sync(&self, artifact: CapsuleArtifact) -> Result<ArtifactDescriptor, PlatformError> {
+    fn publish_sync(
+        &self,
+        mut artifact: CapsuleArtifact,
+    ) -> Result<ArtifactDescriptor, PlatformError> {
         let mut publication = self.publish_lock.lock().map_err(lock_error)?;
         if publication
             .pending
@@ -421,6 +425,14 @@ impl DirectoryArtifactRepository {
             error(
                 PlatformErrorCode::InvalidArgument,
                 "capsule manifest encoding failed",
+            )
+        })?;
+        // Compare retries with the same normalized model that fetch/reopen reads.
+        // A caller may construct valid imports/exports in any order.
+        artifact.manifest = self.codec.decode_capsule(&manifest_bytes).map_err(|_| {
+            error(
+                PlatformErrorCode::InvalidArgument,
+                "canonical capsule manifest decoding failed",
             )
         })?;
         if artifact.component_bytes.len() > self.config.max_component_bytes {
@@ -592,8 +604,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
             let mut has_more = false;
             for descriptor in index
                 .by_digest
-                .iter()
-                .filter(|(digest, _)| after.is_none_or(|cursor| *digest > cursor))
+                .range((after.map_or(Unbounded, Excluded), Unbounded))
                 .map(|(_, descriptor)| descriptor)
             {
                 if entries.len() >= entry_limit {

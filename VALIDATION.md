@@ -1,6 +1,11 @@
 # Validation baseline
 
-Updated on **2026-09-04** for the authorized Phase 0 executable contract, native-Linux variance calibration, profiling and resource-soak evidence, full completion receipt, toolchain baseline, Rust echo capsule fixture, fixed generic execution-cell pool, and consolidated CI topology.
+Updated on **2026-09-07** for the retained Phase 0 evidence, generated build
+foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
+release and deployment catalogs, immutable local routing, and explicit heavy
+validation gates. These commands describe validation coverage; the evidence
+from the September 7 audit is recorded separately in
+[the audit report](docs/development/feature-audit-2026-09-07.md).
 
 ## Entry point
 
@@ -14,6 +19,13 @@ make validate
 ```
 
 The command is intentionally non-mutating for authoritative sources. Formatting is checked with `cargo fmt --all --check`; generated bindings, descriptors, and capsule artifacts are written below `target/` or Cargo `OUT_DIR`.
+
+Normal validation runs unit/integration regressions and contract/SDK checks.
+It does not select the ignored durable 100,000-release catalog probe or run
+native profiling/calibration/resource soaks. Small unit tests may exercise large
+in-memory counter/index ranges; those do not execute 100,000 guest activations
+or publish 100,000 durable artifacts. Heavy execution and durable scale evidence
+require the explicit commands below.
 
 ## Phase 0 completion sequence
 
@@ -59,10 +71,14 @@ Run it from an isolated clone or worktree when local build output is present.
 
 ## What is validated
 
-- The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph. Adding Tokio to `latent-scheduler` changes only that workspace package's dependency list; existing registry checksums remain byte-for-byte unchanged.
+- The committed root `Cargo.lock` contains the selected direct dependency versions and is consumed unchanged by every Cargo command with `--locked`; CI does not generate or substitute a dependency graph.
 - The pinned Rust toolchain, MSRV, target, direct dependency versions, Python requirements, and CI tool versions remain synchronized.
 - Every Rust workspace target compiles, passes Clippy, and runs its tests using the committed lockfile.
 - The fixed execution-cell pool tests cover startup-fixed capacity, concurrent acquisition limits, bounded FIFO rejection, duplicate activations and returns, modified and foreign lease identities, explicit cancellation, deterministic deadline expiry with an injected wall clock, queued-future drop before release, explicit and drop-triggered quarantine, unaccepted handoff reclamation, token-sequence exhaustion, and barrier-controlled multi-threaded release/cancellation and release/task-abort races.
+- Manifest tests cover schema-backed decoding, document/depth/collection bounds, duplicate-key rejection, exact JSON numbers, canonicalization, Rust round trips, and unsupported Phase 1 semantic combinations.
+- Budget and cancellation tests cover effective deadlines, concurrent consumption/reservations, final accounting, unsupported dimensions, cancellation-versus-terminal races, and registry cleanup.
+- Release-catalog tests cover immutable publication, component digest verification, metadata syntax/semantic validation, bounded indexes/listing/recovery, exclusive ownership, interrupted writes, indeterminate durability, retry, and reopen behavior. The audit report tracks the remaining metadata-corruption and root-initialization durability gaps.
+- Deployment/routing tests cover tenant/namespace isolation, deterministic revisions/weighting, pinned snapshots, concurrent publication, integrity and size bounds, initialization durability, restart recovery, and bounded resource/memory regressions.
 - An integration test implements `CellPool` outside `latent-scheduler` using only the original required trait methods, mints an affine lease through `CellLease::new`, and proves that the issuer-retained `CellLeaseLifecycle` capability can disposition or observe abandonment without access to `FixedCellPool` internals.
 - The runtime WIT world is staged with all platform dependencies; every platform and example WIT package is parsed by `wasm-tools`; generated Wasmtime host bindings and `wit-bindgen` guest bindings compile.
 - The Rust echo guest returns normal input unchanged and its shared implementation tests cover `empty-message`, `message-too-large`, the exact 65,536-byte boundary, UTF-8 byte accounting, and bounded activation-ID logging data.
@@ -70,7 +86,7 @@ Run it from an isolated clone or worktree when local build output is present.
 - The extracted component interface contains the exported `echo` function and both declared domain-error variants. Any ambient WASI import, missing import, or unexpected export fails validation.
 - Two isolated clean echo builds must be byte-identical. A generated capsule manifest, build receipt, and SHA-256 file record stable metadata, local-build trust, the documented reproducibility boundary, and the computed component digest beneath `target/capsules/echo/`.
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
-- All six JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, binding, policy, and trigger examples validate against their corresponding schemas.
+- All seven JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, release-publish, binding, policy, trigger, and compiled-route examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interface surfaces compile or pass syntax checks.
 - SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.0 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
 - Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
@@ -106,6 +122,26 @@ cargo test -p latent-scheduler --all-targets --locked
 ```
 
 The pool itself creates no runtime, operating-system thread, listener, socket, connection, component instance, store, or memory. Queued acquisition and deadline timers execute on the caller-provided shared Tokio runtime.
+
+## Phase 1 focused regression commands
+
+After installing the pinned toolchain, these commands exercise the implemented
+foundations without selecting expensive ignored acceptance probes:
+
+```bash
+cargo test -p latent-manifest --all-targets --locked
+cargo test -p latent-core -p latent-executor -p latent-node --all-targets --locked
+cargo test -p latent-artifacts -p latent-control-store --lib --locked
+cargo test -p latentd --test catalog_scale --locked
+```
+
+The final command runs catalog-probe supervision tests. The durable
+100,000-release publication/reopen probe requires `--ignored` and its exact test
+name; see [the catalog acceptance instructions](docs/development/local-release-catalog.md).
+That probe is also available through manual dispatch of `CI` with
+`run_catalog_scale: true` (default `false`). Ordinary pull requests, pushes,
+and default dispatches run catalog recovery/routing/supervision regressions
+without the heavy probe.
 
 ## Native-Linux Phase 0 calibration
 
@@ -232,6 +268,11 @@ SDK surfaces. Its core Rust job also retains the strict `latentd` Clippy policy
 that previously lived in an issue-specific workflow. Superseded runs for the
 same ref are cancelled.
 
+The `Durable catalog acceptance` job runs ordinary artifact, deployment/routing,
+and catalog-probe supervision regressions. Its expensive 100,000-release
+publication/reopen step and retained scale logs are enabled only by manual
+dispatch with `run_catalog_scale: true`; the default is `false`.
+
 `Phase 0 runtime regression` is path-filtered to execution-relevant sources. It
 runs the deterministic executable baseline smoke and then the ignored
 `latentd` outcome/recovery matrix against the already-built fixtures. The job
@@ -257,7 +298,12 @@ Contract and capsule validation starts compiler and validator commands only. It 
 
 ## Scope
 
-Passing the executable baseline establishes source consistency, guest behavior,
+Passing ordinary Phase 1 foundation checks validates the implemented manifest,
+budget/cancellation, storage, and local routing behavior covered by those tests.
+It does not establish a composed standalone node, service adapters, operator
+CLI, generic component dispatch, or completion of the Phase 1 gate.
+
+Passing the Phase 0 executable baseline establishes source consistency, guest behavior,
 component-interface validity, fixed cell-pool accounting, real Wasmtime
 invocation/containment, and same-boundary build reproducibility. A baseline
 does not by itself authorize Phase 1: the retained August 30 full receipt also
