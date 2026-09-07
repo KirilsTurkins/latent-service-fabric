@@ -11,20 +11,20 @@ fn concurrent_tenant_trust_and_queue_class_reservations_are_linearized() {
                     .get_mut(&TenantId("tenant-a".to_owned()))
                     .unwrap()
                     .limits
-                    .maximum_concurrent_activations = 3
+                    .maximum_concurrent_activations = 3;
             }
             "trust-class" => {
                 node.trust_classes
                     .get_mut("sandbox")
                     .unwrap()
                     .limits
-                    .maximum_concurrent_activations = 3
+                    .maximum_concurrent_activations = 3;
             }
             "queue-class" => {
                 node.queue_classes
                     .get_mut("normal")
                     .unwrap()
-                    .maximum_queued_activations = 3
+                    .maximum_queued_activations = 3;
             }
             _ => node.cell_classes.get_mut("tiny").unwrap().parallelism = 1,
         }
