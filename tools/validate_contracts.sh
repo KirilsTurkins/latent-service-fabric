@@ -16,6 +16,11 @@ python3 tools/validate_repository.py
 python3 tools/validate_foundation.py
 python3 -m unittest discover -s tools/tests
 
+wasm-tools parse crates/latent-wasmtime/src/values/types.wat \
+    -o "${OUTPUT}/wit/value-types.wasm"
+cmp "${OUTPUT}/wit/value-types.wasm" crates/latent-wasmtime/src/values/types.wasm
+wasm-tools validate "${OUTPUT}/wit/value-types.wasm"
+
 while IFS= read -r package; do
     name="$(basename "${package}")"
     if [[ "${name}" == "runtime" ]]; then
@@ -49,6 +54,7 @@ cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example containment-capsule --target wasm32-wasip2 --locked
+cargo check -p latent-toolchain-smoke --example generic-capsule --target wasm32-wasip2 --locked
 python3 tools/build_echo_capsule.py --verify-reproducible
 cargo build -p latent-toolchain-smoke --example oversized-log-capsule \
     --target wasm32-unknown-unknown --release --locked
@@ -66,6 +72,22 @@ mkdir -p "$(dirname "${CONTAINMENT_COMPONENT}")"
 wasm-tools component new "${CONTAINMENT_CORE}" -o "${CONTAINMENT_COMPONENT}"
 wasm-tools validate "${CONTAINMENT_COMPONENT}"
 
+cargo build -p latent-toolchain-smoke --example generic-capsule \
+    --target wasm32-unknown-unknown --release --locked
+GENERIC_CORE="${TARGET_ROOT}/wasm32-unknown-unknown/release/examples/generic_capsule.wasm"
+GENERIC_COMPONENT="${TARGET_ROOT}/capsules/generic/generic-capsule.wasm"
+GENERIC_FIXTURES="${TARGET_ROOT}/capsules/generic/adversarial"
+mkdir -p "${GENERIC_FIXTURES}"
+wasm-tools component new "${GENERIC_CORE}" -o "${GENERIC_COMPONENT}"
+wasm-tools validate "${GENERIC_COMPONENT}"
+wasm-tools component wit tools/toolchain-smoke/examples/generic_capsule --json \
+    > "${OUTPUT}/wit/generic-fixture.json"
+for fixture in "${ROOT}"/crates/latent-wasmtime/tests/fixtures/*.wat; do
+    name="$(basename "${fixture}" .wat)"
+    wasm-tools parse "${fixture}" -o "${GENERIC_FIXTURES}/${name}.wasm"
+    wasm-tools validate "${GENERIC_FIXTURES}/${name}.wasm"
+done
+
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
 LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
 LSF_OVERSIZED_LOG_COMPONENT="${OVERSIZED_LOG_COMPONENT}" \
@@ -73,4 +95,10 @@ LSF_OVERSIZED_LOG_COMPONENT="${OVERSIZED_LOG_COMPONENT}" \
 
 LSF_CONTAINMENT_COMPONENT="${CONTAINMENT_COMPONENT}" \
     cargo test -p latent-wasmtime --test containment_backend --locked -- \
+        --ignored --nocapture --test-threads=1
+
+LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \
+LSF_GENERIC_FIXTURES="${GENERIC_FIXTURES}" \
+LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
+    cargo test -p latent-wasmtime --test generic_backend --locked -- \
         --ignored --nocapture --test-threads=1

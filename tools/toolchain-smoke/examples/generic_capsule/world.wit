@@ -1,0 +1,54 @@
+package tests:generic@0.1.0;
+
+interface values {
+    enum shade { red, blue }
+    flags permissions { read, write }
+    variant selection { empty, named(string) }
+
+    record scalars {
+        boolean: bool,
+        byte: u8,
+        short: u16,
+        count: u32,
+        wide: u64,
+        signed-byte: s8,
+        signed-short: s16,
+        signed-count: s32,
+        signed-wide: s64,
+        single: f32,
+        double: f64,
+        character: char,
+        text: string,
+    }
+
+    record composite {
+        numbers: scalars,
+        bytes: list<u8>,
+        pair: tuple<s32, string>,
+        maybe: option<string>,
+        nested: result<u32, string>,
+        choice: selection,
+        color: shade,
+        access: permissions,
+    }
+
+    identify: func() -> u32;
+    combine: func(left: s32, right: s32) -> s32;
+    transform: func(value: composite) -> composite;
+    checked: func(allowed: bool) -> result<string, selection>;
+    nothing: func();
+    unit-result: func(allowed: bool) -> result;
+    bump: func() -> u32;
+    trap: func() -> u32;
+    spin: func() -> u32;
+    grow: func() -> u32;
+}
+
+interface alternate {
+    identify: func() -> u32;
+}
+
+world service {
+    export values;
+    export alternate;
+}

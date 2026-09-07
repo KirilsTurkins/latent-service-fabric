@@ -10,36 +10,15 @@ use wasmtime::{ResourceLimiter, StoreLimits, StoreLimitsBuilder};
 
 use crate::bindings::latent::context::context;
 use crate::bindings::latent::log::log;
+use crate::config::WasmtimeConfig;
 
-const MAX_ECHO_RESULT_BYTES: usize = 64 * 1024;
+mod request_context;
+pub(crate) use request_context::validate_request_context;
+
 const MAX_LOG_MESSAGE_BYTES: usize = 256;
 const MAX_LOG_FIELDS: usize = 16;
 const MAX_LOG_FIELD_NAME_BYTES: usize = 64;
 const MAX_LOG_FIELD_VALUE_BYTES: usize = 256;
-// Reserve explicit canonical-ABI headroom above the largest dynamic payload in
-// the Phase 0 world. Wasmtime applies this allowance to every guest-to-host
-// Component Model transfer, including lifting the echo export result.
-const HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES: usize = 16 * 1024;
-const HOSTCALL_FUEL_PER_FIELD_OVERHEAD_BYTES: usize = 32;
-const MAX_LOG_GUEST_PAYLOAD_BYTES: usize =
-    MAX_LOG_MESSAGE_BYTES + MAX_LOG_FIELDS * (MAX_LOG_FIELD_NAME_BYTES + MAX_LOG_FIELD_VALUE_BYTES);
-const MAX_LOG_CANONICAL_OVERHEAD_BYTES: usize =
-    HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES + MAX_LOG_FIELDS * HOSTCALL_FUEL_PER_FIELD_OVERHEAD_BYTES;
-const MAX_ECHO_CANONICAL_TRANSFER_BYTES: usize =
-    HOSTCALL_FUEL_FIXED_OVERHEAD_BYTES + MAX_ECHO_RESULT_BYTES;
-
-pub(crate) fn hostcall_fuel_limit(
-    configured_maximum_log_bytes: usize,
-    delegated_log_bytes: u64,
-) -> usize {
-    let delegated = usize::try_from(delegated_log_bytes).unwrap_or(usize::MAX);
-    let permitted_log_payload = configured_maximum_log_bytes
-        .min(delegated)
-        .min(MAX_LOG_GUEST_PAYLOAD_BYTES);
-    let maximum_log_transfer =
-        MAX_LOG_CANONICAL_OVERHEAD_BYTES.saturating_add(permitted_log_payload);
-    MAX_ECHO_CANONICAL_TRANSFER_BYTES.max(maximum_log_transfer)
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CapturedLog {
@@ -242,14 +221,19 @@ pub(crate) struct TrackingLimiter {
 }
 
 impl TrackingLimiter {
+    #[cfg(test)]
     pub(crate) fn new(maximum_memory_bytes: usize) -> Self {
+        Self::with_config(maximum_memory_bytes, &WasmtimeConfig::default())
+    }
+
+    fn with_config(maximum_memory_bytes: usize, config: &WasmtimeConfig) -> Self {
         Self {
             limits: StoreLimitsBuilder::new()
                 .memory_size(maximum_memory_bytes)
-                .table_elements(10_000)
-                .instances(128)
-                .tables(128)
-                .memories(16)
+                .table_elements(config.maximum_table_elements)
+                .instances(config.maximum_instances_per_store)
+                .tables(config.maximum_tables_per_store)
+                .memories(config.maximum_memories_per_store)
                 .trap_on_grow_failure(true)
                 .build(),
             maximum_memory_bytes,
@@ -403,21 +387,35 @@ pub(crate) struct HostCallTiming {
 }
 
 impl HostState {
+    #[cfg(test)]
     pub(crate) fn new(
         context: ActivationHostContext,
         maximum_memory_bytes: usize,
         maximum_log_entries: usize,
         maximum_log_bytes: usize,
     ) -> Self {
+        let config = WasmtimeConfig {
+            invocation_log_maximum_entries: maximum_log_entries,
+            invocation_log_maximum_bytes: maximum_log_bytes,
+            ..WasmtimeConfig::default()
+        };
+        Self::with_config(context, maximum_memory_bytes, &config)
+    }
+
+    pub(crate) fn with_config(
+        context: ActivationHostContext,
+        maximum_memory_bytes: usize,
+        config: &WasmtimeConfig,
+    ) -> Self {
         let logs = InvocationLogBuffer::new(
             context.activation_id.clone(),
-            maximum_log_entries,
-            maximum_log_bytes,
+            config.invocation_log_maximum_entries,
+            config.invocation_log_maximum_bytes,
             context.budget.log_bytes,
         );
         Self {
             context,
-            limiter: TrackingLimiter::new(maximum_memory_bytes),
+            limiter: TrackingLimiter::with_config(maximum_memory_bytes, config),
             logs,
             host_call_timing: HostCallTiming::default(),
         }
@@ -601,12 +599,27 @@ mod tests {
     }
 
     #[test]
-    fn hostcall_fuel_covers_the_largest_guest_to_host_transfer_in_the_world() {
-        let world_ceiling = hostcall_fuel_limit(usize::MAX, u64::MAX);
-        assert_eq!(world_ceiling, MAX_ECHO_CANONICAL_TRANSFER_BYTES);
-        assert!(world_ceiling > MAX_ECHO_RESULT_BYTES);
-        assert!(world_ceiling > MAX_LOG_CANONICAL_OVERHEAD_BYTES + MAX_LOG_GUEST_PAYLOAD_BYTES);
-        assert_eq!(hostcall_fuel_limit(128, 64), world_ceiling);
-        assert!(world_ceiling < 128 * 1024);
+    fn configured_store_counts_and_table_growth_override_legacy_defaults() {
+        let config = WasmtimeConfig {
+            maximum_instances_per_store: 3,
+            maximum_memories_per_store: 2,
+            maximum_tables_per_store: 1,
+            maximum_table_elements: 7,
+            ..WasmtimeConfig::default()
+        };
+        let mut limiter = TrackingLimiter::with_config(WASM_PAGE_BYTES, &config);
+        assert_eq!(limiter.instances(), 3);
+        assert_eq!(limiter.memories(), 2);
+        assert_eq!(limiter.tables(), 1);
+        assert!(limiter
+            .table_growing(0, 7, None)
+            .expect("exact table limit"));
+        assert!(limiter.table_growing(7, 8, None).is_err());
+        assert!(limiter
+            .memory_growing(0, WASM_PAGE_BYTES, None)
+            .expect("exact memory limit"));
+        assert!(limiter
+            .memory_growing(WASM_PAGE_BYTES, 2 * WASM_PAGE_BYTES, None)
+            .is_err());
     }
 }

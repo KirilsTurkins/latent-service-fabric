@@ -1,30 +1,41 @@
-//! Wasmtime Component Model preparation and execution for the Phase 0 echo spike.
-//!
-//! The concrete backend intentionally supports only `examples:echo/service@0.1.0`.
-//! It retains a bounded node-owned cache of compiled component state, while every
-//! invocation receives a fresh Wasmtime store, limiter, host context, log buffer,
-//! and component instance. Epoch interruption and fuel stop non-cooperative guest
-//! code without exposing WASI or ambient operating-system authority.
+//! Bounded generic Wasmtime Component Model execution with fresh stores.
+//! A compatibility facade retains the Phase 0 echo payload contract.
 
 #![forbid(unsafe_code)]
 
 mod backend;
 mod bindings;
+mod cache;
+mod config;
 mod containment;
+mod factory;
 mod host;
+mod phase0;
+mod preparation_metadata;
+mod surface;
+mod timing;
+mod values;
 
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{BoxFuture, Metadata, PlatformError, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 
-pub use backend::{
-    InvocationTimingStoreSnapshot, Phase0InstanceAllocator, Phase0InvocationTiming,
-    Phase0WasmtimeBackend, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory,
-    PreparedCacheSnapshot, BACKEND_ID, CONTEXT_IMPORT, ECHO_DOMAIN_ERROR_MEDIA_TYPE, ECHO_EXPORT,
-    ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD, LOG_IMPORT, WASMTIME_VERSION,
+pub use backend::WasmtimeBackend;
+pub use cache::PreparedCacheSnapshot;
+pub use config::{
+    InstanceAllocator, Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig,
+    GENERIC_BACKEND_ID, WASMTIME_VERSION,
 };
 pub use containment::RuntimeResourceSnapshot;
+pub use factory::WasmtimeComponentEngineFactory;
 pub use host::{BoundedLogSink, CapturedLog};
+pub use phase0::{
+    Phase0WasmtimeBackend, Phase0WasmtimeEngineFactory, BACKEND_ID, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+    ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD,
+};
+pub use surface::{CONTEXT_IMPORT, LOG_IMPORT};
+pub use timing::{InvocationTimingStoreSnapshot, Phase0InvocationTiming};
+pub use values::{ValueCodecLimits, MEDIA_TYPE as WIT_VALUES_MEDIA_TYPE};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WasmtimeEngineProfile {

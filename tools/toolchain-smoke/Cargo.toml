@@ -32,6 +32,14 @@ test = false
 bench = false
 doc = false
 
+[[example]]
+name = "generic-capsule"
+path = "examples/generic_capsule/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
 [dependencies]
 latent-component-bindings = { path = "../../crates/latent-component-bindings" }
 
