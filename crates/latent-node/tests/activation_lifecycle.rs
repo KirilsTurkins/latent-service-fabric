@@ -16,3 +16,6 @@ mod outcomes;
 mod races;
 #[path = "activation_lifecycle/support.rs"]
 mod support;
+
+#[path = "activation_lifecycle/observations.rs"]
+mod observations;

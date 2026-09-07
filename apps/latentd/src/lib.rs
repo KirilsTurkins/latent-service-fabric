@@ -2199,6 +2199,10 @@ fn empty_cache_snapshot(config: &ValidatedConfig) -> PreparedCacheSnapshot {
         maximum_concurrent_preparations: policy.maximum_concurrent_preparations,
         preparing_source_bytes: 0,
         preparing_metadata_bytes: 0,
+        hits: 0,
+        misses: 0,
+        evictions: 0,
+        invalidations: 0,
     }
 }
 

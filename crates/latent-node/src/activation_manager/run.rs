@@ -12,6 +12,7 @@ use latent_executor::{
 };
 use latent_routing::RevisionPolicySource;
 use latent_scheduler::AdmittedSchedulingRequest;
+use latent_telemetry::ActivationCleanupDisposition;
 
 use crate::activation_runner::{
     disposition_failure, failure_for_platform_error, map_execution_outcome, outcome_consumption,
@@ -52,6 +53,7 @@ impl Inner {
         lifecycle: &mut Lifecycle,
     ) -> ActivationOutcome {
         let result = self.run(envelope, lifecycle).await;
+        lifecycle.observe_cancellation();
         let outcome = result.unwrap_or_else(|error| {
             failure_for_platform_error(error, BudgetConsumption::default())
         });
@@ -59,8 +61,9 @@ impl Inner {
             return outcome;
         };
         let quarantined = lifecycle.quarantine_reason.is_some();
+        let quarantine_reason = lifecycle.quarantine_reason.take();
         let disposition = async move {
-            if let Some(reason) = lifecycle.quarantine_reason.take() {
+            if let Some(reason) = quarantine_reason {
                 scheduled.quarantine(reason).await
             } else {
                 scheduled.release().await
@@ -68,10 +71,18 @@ impl Inner {
         };
         let result = tokio::time::timeout(self.config.cleanup_grace, disposition).await;
         let failure = match result {
-            Ok(Ok(())) => return outcome,
+            Ok(Ok(())) => {
+                lifecycle.observe_cleanup(if quarantined {
+                    ActivationCleanupDisposition::Quarantined
+                } else {
+                    ActivationCleanupDisposition::Released
+                });
+                return outcome;
+            }
             Ok(Err(error)) => error,
             Err(_) => error(PlatformErrorCode::Internal, "cell disposition timed out"),
         };
+        lifecycle.observe_cleanup(ActivationCleanupDisposition::Failed);
         disposition_failure(
             if quarantined { "quarantine" } else { "release" },
             failure,
@@ -104,6 +115,7 @@ impl Inner {
             &self.clock,
         )
         .await?;
+        lifecycle.assigned = true;
         // An implementation cannot substitute another reservation or target.
         if scheduled.permit().admission().activation_id() != &envelope.activation_id
             || scheduled.permit().admission().revision()

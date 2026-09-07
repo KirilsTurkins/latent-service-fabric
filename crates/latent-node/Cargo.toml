@@ -18,6 +18,7 @@ latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
 latent-routing = { path = "../latent-routing" }
 latent-scheduler = { path = "../latent-scheduler" }
+latent-telemetry = { path = "../latent-telemetry" }
 tokio.workspace = true
 
 [dev-dependencies]

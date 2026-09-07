@@ -2,10 +2,12 @@
 
 mod control;
 mod lifecycle;
+mod observation;
 mod run;
 
 use std::future::Future;
 use std::pin::Pin;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Duration;
@@ -24,6 +26,7 @@ use latent_core::{
 use latent_executor::ExecutionBackend;
 use latent_routing::{ActivationCatalogSource, ResolvedRevision};
 use latent_scheduler::ActivationScheduler;
+use latent_telemetry::ActivationObserver;
 
 use crate::activation_runner::failure_for_platform_error;
 use crate::{
@@ -32,6 +35,10 @@ use crate::{
 };
 use control::{error, CatchPanic};
 use lifecycle::Lifecycle;
+pub use observation::ActivationObservationSnapshot;
+use observation::{Counters, ObservationServices};
+
+static NEXT_OBSERVATION_OWNER: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Debug, Clone)]
 pub struct LocalActivationManagerConfig {
@@ -66,6 +73,7 @@ pub struct LocalActivationDependencies {
 pub struct LocalActivationServices {
     pub clock: Arc<dyn ActivationClock>,
     pub ids: Arc<dyn ActivationIdSource>,
+    pub observer: Option<Arc<dyn ActivationObserver>>,
 }
 
 impl Default for LocalActivationServices {
@@ -73,6 +81,7 @@ impl Default for LocalActivationServices {
         Self {
             clock: Arc::new(SystemActivationClock),
             ids: Arc::new(SystemActivationIdSource::default()),
+            observer: None,
         }
     }
 }
@@ -114,6 +123,8 @@ struct Inner {
     requests: ActivationRequestBuilder,
     journal: LocalActivationJournal,
     cancellations: ActivationCancellationRegistry,
+    observations: Option<ObservationServices>,
+    observation_counters: Arc<Counters>,
 }
 
 #[derive(Clone)]
@@ -144,6 +155,27 @@ impl LocalActivationManager {
         let journal = LocalActivationJournal::new(config.journal, Arc::clone(&services.clock))?;
         let cancellations =
             ActivationCancellationRegistry::new(config.maximum_cancellation_reason_bytes)?;
+        let observation_counters = Arc::new(Counters::default());
+        let observations = if let Some(observer) = services.observer {
+            let owner = NEXT_OBSERVATION_OWNER
+                .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
+                    value.checked_add(1)
+                })
+                .map_err(|_| {
+                    error(
+                        PlatformErrorCode::ResourceExhausted,
+                        "activation observation owner namespace exhausted",
+                    )
+                })?;
+            Some(ObservationServices {
+                observer,
+                counters: Arc::clone(&observation_counters),
+                clock: Arc::clone(&services.clock),
+                owner,
+            })
+        } else {
+            None
+        };
         Ok(Self {
             inner: Arc::new(Inner {
                 config,
@@ -152,6 +184,8 @@ impl LocalActivationManager {
                 requests,
                 journal,
                 cancellations,
+                observations,
+                observation_counters,
             }),
         })
     }
@@ -172,7 +206,8 @@ impl LocalActivationManager {
         let (journal, cancellation) = self.inner.journal.begin_with(&envelope, || {
             self.inner.cancellations.register(activation_id.clone())
         })?;
-        let lifecycle = Lifecycle::new(journal, cancellation, Arc::clone(&self.inner.clock));
+        let mut lifecycle = Lifecycle::new(journal, cancellation, Arc::clone(&self.inner.clock));
+        lifecycle.begin_observation(self.inner.observations.as_ref(), &envelope);
         let inner = Arc::clone(&self.inner);
         let completion = Box::pin(async move {
             let mut lifecycle = lifecycle;
@@ -256,6 +291,11 @@ impl LocalActivationManager {
     #[must_use]
     pub fn cancellation_snapshot(&self) -> CancellationRegistrySnapshot {
         self.inner.cancellations.snapshot()
+    }
+
+    #[must_use]
+    pub fn observation_snapshot(&self) -> ActivationObservationSnapshot {
+        self.inner.observation_counters.snapshot()
     }
 }
 

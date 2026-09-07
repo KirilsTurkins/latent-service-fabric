@@ -16,7 +16,7 @@ use latent_core::{
     TenantId,
 };
 
-pub(crate) use owner::JournalOwner;
+pub(crate) use owner::{JournalOwner, JournalStamp};
 use state::{Record, State};
 
 const MAXIMUM_EVENTS: usize = 7;

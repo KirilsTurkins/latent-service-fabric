@@ -1009,6 +1009,7 @@ dependencies = [
  "latent-manifest",
  "latent-routing",
  "latent-scheduler",
+ "latent-telemetry",
  "tokio",
 ]
 
@@ -1086,6 +1087,7 @@ version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
  "latent-core",
+ "tokio",
 ]
 
 [[package]]
@@ -1142,6 +1144,7 @@ dependencies = [
  "latent-node",
  "latent-routing",
  "latent-scheduler",
+ "latent-telemetry",
  "serde",
  "serde_json",
  "sha2",

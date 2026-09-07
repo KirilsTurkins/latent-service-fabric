@@ -34,6 +34,10 @@ struct State<T> {
     preparing: HashMap<String, PreparationCost>,
     preparing_source_bytes: usize,
     preparing_metadata_bytes: usize,
+    hits: u64,
+    misses: u64,
+    evictions: u64,
+    invalidations: u64,
 }
 
 struct Entry<T> {
@@ -78,6 +82,10 @@ impl<T> PreparedCache<T> {
                 preparing: HashMap::new(),
                 preparing_source_bytes: 0,
                 preparing_metadata_bytes: 0,
+                hits: 0,
+                misses: 0,
+                evictions: 0,
+                invalidations: 0,
             }),
         })
     }
@@ -155,7 +163,11 @@ impl<T> PreparedCache<T> {
             {
                 return false;
             }
-            state.remove(handle)
+            let removed = state.remove(handle);
+            state.invalidations = state
+                .invalidations
+                .saturating_add(u64::from(removed.is_some()));
+            removed
         };
         // Compiler-owned destructors must not run under the cache mutex.
         removed.is_some()
@@ -176,6 +188,10 @@ impl<T> PreparedCache<T> {
             maximum_concurrent_preparations: self.limits.maximum_concurrent_preparations,
             preparing_source_bytes: state.preparing_source_bytes,
             preparing_metadata_bytes: state.preparing_metadata_bytes,
+            hits: state.hits,
+            misses: state.misses,
+            evictions: state.evictions,
+            invalidations: state.invalidations,
         }
     }
 
@@ -237,6 +253,7 @@ impl<T> PrepareReservation<T> {
                     .expect("eviction requires a resident entry")
                     .clone();
                 evicted.push(state.remove(&oldest).expect("resident LRU entry"));
+                state.evictions = state.evictions.saturating_add(1);
             }
             state.source_bytes += cost.source_bytes;
             state.metadata_bytes += actual_metadata_bytes;
@@ -269,7 +286,12 @@ impl<T> Drop for PrepareReservation<T> {
 
 impl<T> State<T> {
     fn get(&mut self, handle: &str) -> Option<Arc<T>> {
-        let runtime = Arc::clone(&self.entries.get(handle)?.runtime);
+        let Some(entry) = self.entries.get(handle) else {
+            self.misses = self.misses.saturating_add(1);
+            return None;
+        };
+        self.hits = self.hits.saturating_add(1);
+        let runtime = Arc::clone(&entry.runtime);
         self.remove_lru(handle);
         self.lru.push_back(handle.to_owned());
         Some(runtime)

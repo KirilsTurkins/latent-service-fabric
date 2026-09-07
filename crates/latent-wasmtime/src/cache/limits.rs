@@ -63,4 +63,11 @@ pub struct PreparedCacheSnapshot {
     pub maximum_concurrent_preparations: usize,
     pub preparing_source_bytes: usize,
     pub preparing_metadata_bytes: usize,
+    /// Successful resident lookups, including preparation and legacy invocation.
+    pub hits: u64,
+    /// Valid lookups with no resident entry; these may later fail preparation.
+    pub misses: u64,
+    pub evictions: u64,
+    /// Explicit matching-release removals, separate from capacity eviction.
+    pub invalidations: u64,
 }

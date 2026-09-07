@@ -188,6 +188,12 @@ impl Inner {
                 return SchedulerSnapshot::default();
             };
             let mut snapshot = queue.counters;
+            snapshot.accepting = !state.shutdown
+                && self
+                    .config
+                    .queue_capacity_per_class
+                    .get(&class)
+                    .is_some_and(|capacity| *capacity > 0);
             snapshot.queue_depth = queue.depth;
             snapshot.queued_tenants = u32::try_from(queue.tenants.len()).unwrap_or(u32::MAX);
             snapshot.oldest_lease_age_micros =

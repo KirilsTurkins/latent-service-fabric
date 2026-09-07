@@ -71,9 +71,9 @@ them into the standalone node is still tracked by
 | Generic component execution | Dynamic WIT export dispatch, bounded canonical values, shared preparation, fresh stores, non-cooperative interruption, and cleanup proof; [Wasmtime backend](docs/runtime/wasmtime.md) |
 | Activation capabilities | Filtered context, injectable clocks, live shared budgets, and correlated structured log acceptance; [capabilities](docs/runtime/capabilities.md) |
 | Activation lifecycle | Pinned resolution, admission/scheduling, affine preparation, bounded status/journal, scoped cancellation, terminal accounting, and unconditional cleanup; [lifecycle](docs/activation-lifecycle.md) |
+| Telemetry and inventory | Shared bounded export, payload-free lifecycle observation, redacted guest logs, fixed-dimension metrics, and bounded node resource snapshots; [telemetry](docs/telemetry.md) |
 
-Invocation/management services, shared
-telemetry, the standalone node, CLI, and the Phase 1 gate remain open work. See
+Invocation/management services, the standalone node, CLI, and the Phase 1 gate remain open work. See
 [the roadmap](docs/roadmap.md) for issue links and phase boundaries.
 
 ## Phase 0 result

@@ -33,6 +33,7 @@ The following foundations are implemented:
 - [Generic Wasmtime execution and bounded canonical values](runtime/wasmtime.md) (#9).
 - [Activation context, structured logging, and clock capabilities](runtime/capabilities.md) (#10).
 - [Stateless activation lifecycle, bounded journal/status, and scoped cancellation](activation-lifecycle.md) (#11).
+- [Shared telemetry, redacted lifecycle/guest observations, and bounded node inventory](telemetry.md) (#13).
 - [SDK caller identity and cancellation contracts](../sdk/README.md) with executable fixtures across six languages (#65).
 
 The remaining work is tracked by the
@@ -40,7 +41,7 @@ The remaining work is tracked by the
 
 | Area | Remaining issues |
 | --- | --- |
-| Node services and operations | [Invocation/cancellation/status #12](https://github.com/KirilsTurkins/latent-service-fabric/issues/12), [telemetry/inventory #13](https://github.com/KirilsTurkins/latent-service-fabric/issues/13), [management adapters #37](https://github.com/KirilsTurkins/latent-service-fabric/issues/37), [standalone node #14](https://github.com/KirilsTurkins/latent-service-fabric/issues/14), [CLI #15](https://github.com/KirilsTurkins/latent-service-fabric/issues/15) |
+| Node services and operations | [Invocation/cancellation/status #12](https://github.com/KirilsTurkins/latent-service-fabric/issues/12), [management adapters #37](https://github.com/KirilsTurkins/latent-service-fabric/issues/37), [standalone node #14](https://github.com/KirilsTurkins/latent-service-fabric/issues/14), [CLI #15](https://github.com/KirilsTurkins/latent-service-fabric/issues/15) |
 | Completion evidence | [Conformance, isolation, reclamation, and zero-idle scaling gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16) |
 
 Status is recorded as of September 7, 2026. An open implementation PR does not

@@ -7,15 +7,16 @@ mod activation_runner;
 mod budgeted_activation;
 mod budgeted_execution;
 mod cancellation;
+mod inventory;
 mod journal;
 
-use latent_artifacts::CacheEntryDescriptor;
 use latent_core::{BoxFuture, Metadata, NodeId, PlatformError, RouteGeneration};
 use latent_routing::RouteSnapshot;
 
 pub use activation_manager::{
-    ActivationHandle, ActivationReceipt, LocalActivationDependencies, LocalActivationManager,
-    LocalActivationManagerConfig, LocalActivationServices,
+    ActivationHandle, ActivationObservationSnapshot, ActivationReceipt,
+    LocalActivationDependencies, LocalActivationManager, LocalActivationManagerConfig,
+    LocalActivationServices,
 };
 pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,
@@ -33,37 +34,14 @@ pub use journal::{
     ActivationJournalSnapshot, LocalActivationJournal, LocalActivationJournalConfig,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CellClassCapacity {
-    pub class: String,
-    pub total: u32,
-    pub available: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NodeDescriptor {
-    pub id: NodeId,
-    pub architecture: String,
-    pub operating_system: String,
-    pub cpu_features: Vec<String>,
-    pub trust_classes: Vec<String>,
-    pub region: Option<String>,
-    pub zone: Option<String>,
-    pub endpoint: String,
-    pub identity: String,
-    pub attributes: Metadata,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NodeInventory {
-    pub node: NodeDescriptor,
-    pub cell_capacity: Vec<CellClassCapacity>,
-    pub memory_pressure_milli: u32,
-    pub queue_depth: u64,
-    pub route_generation: RouteGeneration,
-    pub cache_entries: Vec<CacheEntryDescriptor>,
-    pub observed_at_unix_millis: u64,
-}
+pub use inventory::{
+    CacheInventorySource, CacheInventoryWriter, CellClassCapacity, EmptyCacheInventorySource,
+    EmptyNodeTopologySource, HealthStatus, InventoryReporter, NodeCacheSummary, NodeDescriptor,
+    NodeHealthObservation, NodeInventory, NodePressureObservation, NodeQuotaSummary,
+    NodeResourceTopology, NodeTopologyEntry, NodeTopologySource, NodeTopologyWriter,
+    ResourceOwnership, SchedulerInventorySnapshot, SchedulerInventorySource,
+    StandaloneInventoryConfig, StandaloneInventoryReporter, StandaloneInventorySources,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NodeHeartbeat {
@@ -86,10 +64,6 @@ pub trait NodeRegistrar: Send + Sync {
     ) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn deregister<'a>(&'a self, node: &'a NodeId) -> BoxFuture<'a, Result<(), PlatformError>>;
-}
-
-pub trait InventoryReporter: Send + Sync {
-    fn snapshot<'a>(&'a self) -> BoxFuture<'a, Result<NodeInventory, PlatformError>>;
 }
 
 pub trait RouteWatcher: Send + Sync {
