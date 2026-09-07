@@ -30,13 +30,13 @@ The following foundations are implemented:
 - [Resource budgets, deadlines, and cancellation primitives](runtime/resource-budgets.md) (#6).
 - [Bounded single-node admission and overload control](admission-control.md) (#7).
 - [Fixed class pools and bounded tenant-fair scheduling](scheduling.md) (#8).
+- [SDK caller identity and cancellation contracts](../sdk/README.md) with executable fixtures across six languages (#65).
 
 The remaining work is tracked by the
 [Phase 1 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/1):
 
 | Area | Remaining issues |
 | --- | --- |
-| Catalog and contract corrections | [SDK identity/cancellation parity #65](https://github.com/KirilsTurkins/latent-service-fabric/issues/65) |
 | Invocation runtime | [Generic Wasmtime backend #9](https://github.com/KirilsTurkins/latent-service-fabric/issues/9), [context/log/clock #10](https://github.com/KirilsTurkins/latent-service-fabric/issues/10), [activation orchestration #11](https://github.com/KirilsTurkins/latent-service-fabric/issues/11) |
 | Node services and operations | [Invocation/cancellation/status #12](https://github.com/KirilsTurkins/latent-service-fabric/issues/12), [telemetry/inventory #13](https://github.com/KirilsTurkins/latent-service-fabric/issues/13), [management adapters #37](https://github.com/KirilsTurkins/latent-service-fabric/issues/37), [standalone node #14](https://github.com/KirilsTurkins/latent-service-fabric/issues/14), [CLI #15](https://github.com/KirilsTurkins/latent-service-fabric/issues/15) |
 | Completion evidence | [Conformance, isolation, reclamation, and zero-idle scaling gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16) |

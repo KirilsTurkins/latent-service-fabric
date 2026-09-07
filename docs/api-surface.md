@@ -103,3 +103,9 @@ structural validation plus separate Phase 1 semantic rules; see the
 ## Language SDKs
 
 The Rust, Go, .NET, Java, TypeScript, and C directories define client and guest context surfaces. Transport-facing generated Rust is owned centrally by `latent-rpc`; cross-language transport generation remains a later implementation choice.
+
+All six invocation request models expose optional caller activation/root/parent
+identity and cancellation/status by known activation ID. C cancellation uses a
+callback with a separate transport-error channel. The [SDK contract](../sdk/README.md)
+documents absence and lineage rules, callback ownership, compatibility, and
+the executable fake-client checks for operations before invocation completion.

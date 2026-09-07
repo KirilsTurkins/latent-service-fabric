@@ -83,11 +83,17 @@ public sealed record InvokeOptions(
 /// <param name="Payload">The invocation payload.</param>
 /// <param name="MediaType">The media type of <paramref name="Payload"/>.</param>
 /// <param name="Options">The invocation options.</param>
+/// <param name="ActivationId">Optional caller identity; null requests server assignment, never SDK generation.</param>
+/// <param name="RootActivationId">Optional lineage claim, not authority. Without root or parent, the server uses the effective activation ID.</param>
+/// <param name="ParentActivationId">Optional lineage claim; the server rejects a parent without an explicit root.</param>
 public sealed record InvokeRequest(
     InvocationTarget Target,
     ReadOnlyMemory<byte> Payload,
     string MediaType,
-    InvokeOptions Options);
+    InvokeOptions Options,
+    string? ActivationId = null,
+    string? RootActivationId = null,
+    string? ParentActivationId = null);
 
 /// <summary>Represents a successful invocation response.</summary>
 /// <param name="ActivationId">The identifier of the completed activation.</param>

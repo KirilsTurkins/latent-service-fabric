@@ -49,6 +49,12 @@ export interface InvokeRequest {
   readonly payload: Uint8Array;
   readonly mediaType: string;
   readonly options: InvokeOptions;
+  /** Optional caller identity; absence requests server assignment. Never SDK-generated. */
+  readonly activationId?: string;
+  /** Optional lineage claim, not authority. Without parent/root, the server uses the effective ID. */
+  readonly rootActivationId?: string;
+  /** Optional lineage claim; the server rejects a parent without an explicit root. */
+  readonly parentActivationId?: string;
 }
 
 export interface InvokeResponse {

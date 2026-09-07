@@ -10,6 +10,10 @@ extern "C" {
 #endif
 
 typedef struct latent_client latent_client;
+/* Identifies a local invoke operation for callback correlation. It is not an
+   activation ID and cannot identify an activation after that operation ends.
+   Callers must never dereference or free this opaque handle, and must not use
+   it after the invocation completion callback returns. */
 typedef struct latent_invocation latent_invocation;
 
 typedef struct latent_bytes {
@@ -85,6 +89,16 @@ typedef struct latent_invoke_request {
     bool has_idempotency_key;
     const latent_key_value *metadata;
     size_t metadata_count;
+    /* Presence is independent of string length: a present empty value must be
+       forwarded for server validation, never treated as absent. If activation
+       ID is absent, the server assigns it. Root and parent are optional lineage
+       claims subject to server validation and authorization. */
+    bool has_activation_id;
+    latent_string activation_id;
+    bool has_root_activation_id;
+    latent_string root_activation_id;
+    bool has_parent_activation_id;
+    latent_string parent_activation_id;
 } latent_invoke_request;
 
 typedef struct latent_invoke_response {
@@ -208,6 +222,13 @@ typedef struct latent_activation_status {
     size_t metadata_count;
 } latent_activation_status;
 
+/* Every asynchronous operation invokes its callback exactly once, with exactly
+   one result/outcome/status/response or transport_error pointer non-null.
+   Callbacks may run inline before the initiating method returns. Result/error
+   pointers and nested data are borrowed until the callback returns; copy data
+   that must outlive it. An invocation handle may be compared during its callback,
+   but must not be retained for use afterward. The client and user_data must
+   remain valid until every outstanding callback has completed. */
 typedef void (*latent_invoke_callback)(
     latent_invocation *invocation,
     const latent_invocation_outcome *outcome,
@@ -220,17 +241,38 @@ typedef void (*latent_get_activation_callback)(
     const latent_transport_error *transport_error,
     void *user_data);
 
+/* Invoked exactly once per cancel operation, with exactly one of response and
+   transport_error non-null. The response/error and all nested data are borrowed
+   only until this callback returns; copy anything that must be retained. */
+typedef void (*latent_cancel_callback)(
+    latent_client *client,
+    const latent_cancel_response *response,
+    const latent_transport_error *transport_error,
+    void *user_data);
+
+/* Request data and its nested pointers are borrowed until the method returns.
+   An asynchronous implementation must copy any request data it retains. Client
+   and user_data instead follow the outstanding-callback lifetime above. */
 typedef struct latent_client_vtable {
+    /* Request and all nested data are borrowed until invoke returns. An
+       asynchronous implementation must copy the data it retains. The returned
+       handle is local operation identity, not a persistent activation ID. */
     latent_invocation *(*invoke)(
         latent_client *client,
         const latent_invoke_request *request,
         latent_invoke_callback callback,
         void *user_data);
 
-    latent_cancel_response (*cancel)(
+    /* Cancel by a known activation ID, including while invoke is pending or
+       after its response was lost. Arguments are borrowed until cancel returns;
+       asynchronous implementations must copy retained activation ID/reason data.
+       Transport failure is reported separately from the three dispositions. */
+    void (*cancel)(
         latent_client *client,
-        latent_invocation *invocation,
-        latent_string reason);
+        latent_string activation_id,
+        latent_string reason,
+        latent_cancel_callback callback,
+        void *user_data);
 
     void (*get_activation)(
         latent_client *client,
@@ -238,6 +280,7 @@ typedef struct latent_client_vtable {
         latent_get_activation_callback callback,
         void *user_data);
 
+    /* Destroy only after every outstanding operation callback has completed. */
     void (*destroy)(latent_client *client);
 } latent_client_vtable;
 

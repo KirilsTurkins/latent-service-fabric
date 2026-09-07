@@ -53,11 +53,25 @@ public final class Models {
             Map<String, String> metadata) {
     }
 
+    /**
+     * Caller identity and lineage remain optional claims, never SDK-generated authority.
+     * The server assigns an absent activation ID and, when root and parent are absent,
+     * uses the effective ID as root. It rejects a parent without an explicit root.
+     * Present empty values remain present for server validation.
+     */
     public record InvokeRequest(
             InvocationTarget target,
             ByteBuffer payload,
             String mediaType,
-            InvokeOptions options) {
+            InvokeOptions options,
+            Optional<String> activationId,
+            Optional<String> rootActivationId,
+            Optional<String> parentActivationId) {
+        public InvokeRequest(
+                InvocationTarget target, ByteBuffer payload, String mediaType, InvokeOptions options) {
+            this(target, payload, mediaType, options,
+                    Optional.empty(), Optional.empty(), Optional.empty());
+        }
     }
 
     public record InvokeResponse(

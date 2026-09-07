@@ -31,6 +31,18 @@ pub struct InvokeOptions {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvokeRequest {
+    /// Optional caller identity, available for cancellation/status before completion.
+    /// `None` requests server assignment. A present empty ID remains present and
+    /// must fail server validation; the SDK does not generate or normalize IDs.
+    pub activation_id: Option<ActivationId>,
+    /// Optional lineage claim, subject to server validation rather than authority.
+    /// With neither root nor parent supplied, the server uses the effective
+    /// activation ID as the root.
+    pub root_activation_id: Option<ActivationId>,
+    /// Optional lineage claim, subject to server validation rather than authority.
+    /// The Phase 1 server must reject a parent supplied without an explicit root.
+    /// This interface preserves the request; it does not perform that validation.
+    pub parent_activation_id: Option<ActivationId>,
     pub target: InvocationTarget,
     pub payload: Payload,
     pub media_type: String,
@@ -159,11 +171,16 @@ pub struct GuestInvocationContext {
 }
 
 pub trait LatentClient: Send + Sync {
-    fn invoke<'a>(
-        &'a self,
+    /// Returns the terminal outcome. Retain a supplied activation ID for status
+    /// recovery: dropping this future or losing its response does not prove that
+    /// execution stopped. Activation identity is not an automatic retry policy.
+    fn invoke(
+        &self,
         request: InvokeRequest,
-    ) -> BoxFuture<'a, Result<InvocationOutcome, ClientTransportError>>;
+    ) -> BoxFuture<'_, Result<InvocationOutcome, ClientTransportError>>;
 
+    /// Requests cancellation by known activation ID. Acceptance is advisory;
+    /// only subsequent terminal status confirms how the activation ended.
     fn cancel<'a>(
         &'a self,
         activation_id: &'a ActivationId,
