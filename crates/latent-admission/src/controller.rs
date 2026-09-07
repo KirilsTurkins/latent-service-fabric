@@ -9,6 +9,7 @@ use latent_routing::revision_policy::{ExecutionBackendKind, StateModel};
 use latent_routing::{RevisionAdmissionPolicy, RevisionPolicySource};
 
 use crate::policy::cell_rank;
+use crate::timing::{AdmissionClock, ReservationTiming};
 use crate::{
     rejection, valid_identifier, AdmissionController, AdmissionObligations, AdmissionPermit,
     AdmissionRequest, LocalQuotaProvider, NodeAdmissionPolicy, TenantAdmissionPolicy,
@@ -102,7 +103,12 @@ impl LocalAdmissionController {
 
     pub fn admit_now(&self, request: AdmissionRequest) -> Result<AdmissionPermit, PlatformError> {
         let load = self.load.snapshot().map_err(|_| unavailable_load())?;
-        self.admit_observed_at(request, load, ClockSample::system_now())
+        self.admit_observed_at(
+            request,
+            load,
+            ClockSample::system_now(),
+            AdmissionClock::Live,
+        )
     }
 
     /// Deterministic clock seam for trusted embedding code and boundary tests.
@@ -113,7 +119,12 @@ impl LocalAdmissionController {
         sample: ClockSample,
     ) -> Result<AdmissionPermit, PlatformError> {
         let load = self.load.snapshot().map_err(|_| unavailable_load())?;
-        self.admit_observed_at(request, load, sample)
+        self.admit_observed_at(
+            request,
+            load,
+            sample,
+            AdmissionClock::Fixed(sample.monotonic()),
+        )
     }
 
     fn admit_observed_at(
@@ -121,6 +132,7 @@ impl LocalAdmissionController {
         request: AdmissionRequest,
         load: NodeLoadSnapshot,
         sample: ClockSample,
+        clock: AdmissionClock,
     ) -> Result<AdmissionPermit, PlatformError> {
         let node = self.quotas.policy();
         let tenant = validate_request(&request, node)?;
@@ -163,10 +175,10 @@ impl LocalAdmissionController {
             request.deadline_unix_millis,
             sample,
         )
-        .map_err(budget_rejection)?;
+        .map_err(|error| budget_rejection(&error))?;
         grant
             .require_executable_capacity()
-            .map_err(budget_rejection)?;
+            .map_err(|error| budget_rejection(&error))?;
         let class = select_class(
             &policy,
             node,
@@ -187,6 +199,9 @@ impl LocalAdmissionController {
             queue_class: queue,
             trust_class: policy.placement.trust_class,
             priority: request.priority,
+            backend: policy.execution.backend,
+            threading: policy.execution.threading,
+            state_model: policy.execution.state_model,
             required_features: policy.placement.required_features,
             host_call_depth_maximum: policy.execution.host_call_depth_maximum,
             component_call_depth_maximum: policy.execution.component_call_depth_maximum,
@@ -197,17 +212,20 @@ impl LocalAdmissionController {
             request.revision,
             grant,
             obligations,
-            load.queue_delay_millis,
-            sample.monotonic(),
+            ReservationTiming {
+                clock,
+                observed_queue_delay_millis: load.queue_delay_millis,
+                load_observed_at: load.observed_at,
+            },
         )
     }
 }
 
 impl AdmissionController for LocalAdmissionController {
-    fn admit<'a>(
-        &'a self,
+    fn admit(
+        &self,
         request: AdmissionRequest,
-    ) -> BoxFuture<'a, Result<AdmissionPermit, PlatformError>> {
+    ) -> BoxFuture<'_, Result<AdmissionPermit, PlatformError>> {
         Box::pin(async move { self.admit_now(request) })
     }
 }
@@ -297,6 +315,15 @@ fn validate_request<'a>(
             ));
         }
     }
+    validate_metadata(request, node)?;
+    Ok(tenant)
+}
+
+fn validate_metadata(
+    request: &AdmissionRequest,
+    node: &NodeAdmissionPolicy,
+) -> Result<(), PlatformError> {
+    let principal = &request.principal;
     let mut entries = 0_usize;
     let mut bytes = 0_usize;
     for metadata in [
@@ -321,7 +348,7 @@ fn validate_request<'a>(
                 .ok_or_else(metadata_rejection)?;
         }
     }
-    Ok(tenant)
+    Ok(())
 }
 
 fn validate_revision_policy(
@@ -519,7 +546,7 @@ fn metadata_rejection() -> PlatformError {
     )
 }
 
-fn budget_rejection(error: BudgetError) -> PlatformError {
+fn budget_rejection(error: &BudgetError) -> PlatformError {
     let (code, dimension, reason) = match error {
         BudgetError::UnsupportedRequestDimension { dimension, .. } => (
             PlatformErrorCode::InvalidArgument,

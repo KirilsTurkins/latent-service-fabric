@@ -5,6 +5,7 @@ use latent_core::{
     ActivationId, EffectiveActivationBudget, EffectiveDeadline, PlatformError, PlatformErrorCode,
     ResourceBudget, TenantId,
 };
+use latent_routing::revision_policy::{ExecutionBackendKind, StateModel, ThreadingModel};
 use latent_routing::ResolvedRevision;
 
 use crate::quota::ReservationSpec;
@@ -21,6 +22,9 @@ pub struct AdmissionObligations {
     pub queue_class: String,
     pub trust_class: String,
     pub priority: u8,
+    pub backend: ExecutionBackendKind,
+    pub threading: ThreadingModel,
+    pub state_model: StateModel,
     pub required_features: Vec<String>,
     pub host_call_depth_maximum: u32,
     pub component_call_depth_maximum: u32,
@@ -59,8 +63,7 @@ impl AdmissionPermit {
         mut revision: ResolvedRevision,
         grant: EffectiveActivationBudget,
         obligations: AdmissionObligations,
-        observed_queue_delay_millis: u64,
-        now: Instant,
+        timing: crate::timing::ReservationTiming,
     ) -> Result<Self, PlatformError> {
         // Caller-supplied metadata is not propagated as execution policy.
         revision.attributes.clear();
@@ -79,8 +82,7 @@ impl AdmissionPermit {
             queue_class: &permit.obligations.queue_class,
             cell_class: &permit.obligations.cell_class,
             grant: &permit.grant,
-            observed_queue_delay_millis,
-            now,
+            timing,
         })?;
         permit.reserved = true;
         Ok(permit)
@@ -153,7 +155,6 @@ impl AdmissionPermit {
 }
 
 impl ExecutionPermit {
-    #[must_use]
     pub fn admission(&self) -> &AdmissionPermit {
         &self.admission
     }

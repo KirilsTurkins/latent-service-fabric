@@ -1,6 +1,5 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, MutexGuard};
-use std::time::{Duration, Instant};
 
 use latent_core::{
     ActivationId, BoxFuture, EffectiveActivationBudget, PlatformError, PlatformErrorCode,
@@ -116,6 +115,7 @@ pub struct LocalQuotaProvider {
     inner: Arc<Inner>,
 }
 
+#[derive(Clone, Copy)]
 pub(crate) struct ReservationSpec<'a> {
     pub activation_id: &'a ActivationId,
     pub tenant: &'a TenantId,
@@ -123,8 +123,7 @@ pub(crate) struct ReservationSpec<'a> {
     pub queue_class: &'a str,
     pub cell_class: &'a str,
     pub grant: &'a EffectiveActivationBudget,
-    pub observed_queue_delay_millis: u64,
-    pub now: Instant,
+    pub timing: crate::timing::ReservationTiming,
 }
 
 impl LocalQuotaProvider {
@@ -236,36 +235,8 @@ impl LocalQuotaProvider {
                 "capacity-exhausted",
             )
         })?;
-        let waves = u64::from(current_cell) / u64::from(class.parallelism);
-        let required_millis = waves
-            .checked_mul(policy.deadline.estimated_service_time_millis)
-            .map(|estimate| estimate.max(spec.observed_queue_delay_millis))
-            .and_then(|wait| wait.checked_add(policy.deadline.minimum_execution_time_millis))
-            .and_then(|wait| wait.checked_add(policy.deadline.safety_margin_millis))
-            .ok_or_else(|| {
-                rejection(
-                    PlatformErrorCode::AdmissionRejected,
-                    "node",
-                    "deadline",
-                    "queue-estimate-overflow",
-                )
-            })?;
-        let remaining = spec.grant.deadline.remaining_at(spec.now).ok_or_else(|| {
-            rejection(
-                PlatformErrorCode::InvalidArgument,
-                "request",
-                "deadline",
-                "missing-effective-deadline",
-            )
-        })?;
-        if remaining <= Duration::from_millis(required_millis) {
-            return Err(rejection(
-                PlatformErrorCode::AdmissionRejected,
-                "node",
-                "deadline",
-                "queue-deadline-infeasible",
-            ));
-        }
+        spec.timing
+            .validate(policy, spec.grant, current_cell, class.parallelism)?;
         let record = Reservation {
             tenant: spec.tenant.clone(),
             trust_class: spec.trust_class.to_owned(),

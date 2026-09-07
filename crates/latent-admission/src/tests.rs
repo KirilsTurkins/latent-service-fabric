@@ -19,6 +19,9 @@ use latent_routing::{
 
 use super::*;
 
+mod stress;
+type PolicyMutation = (fn(&mut RevisionAdmissionPolicy), &'static str);
+
 fn names(values: &[&str]) -> BTreeSet<String> {
     values.iter().map(|value| (*value).to_owned()).collect()
 }
@@ -251,7 +254,7 @@ impl Harness {
         Self::new(node_policy(), revision_policy())
     }
 
-    fn request(&self, id: &str) -> AdmissionRequest {
+    fn request(id: &str) -> AdmissionRequest {
         AdmissionRequest {
             activation_id: ActivationId(id.to_owned()),
             principal: InvocationPrincipal {
@@ -271,7 +274,7 @@ impl Harness {
     }
 
     fn admit(&self, id: &str) -> Result<AdmissionPermit, PlatformError> {
-        self.controller.admit_at(self.request(id), self.sample)
+        self.controller.admit_at(Self::request(id), self.sample)
     }
 
     fn assert_empty(&self) {
@@ -329,7 +332,7 @@ fn budget_intersection_includes_capsule_deployment_node_and_caller() {
     policy.execution.resource_budget_ceiling.memory_bytes = 150_000;
     policy.execution.resource_budget_ceiling.log_bytes = 8;
     let h = Harness::new(node, policy);
-    let mut request = h.request("a");
+    let mut request = Harness::request("a");
     request.requested_budget.memory_bytes = 1_000_000;
     request.deadline_unix_millis = Some(10_250);
     let permit = h.controller.admit_at(request, h.sample).unwrap();
@@ -348,7 +351,7 @@ fn request_budget_boundaries_never_increase_any_grant() {
     let h = Harness::standard();
     for cpu in [0, 1, 100, 10_001, u64::MAX] {
         for memory in [0, 1, 65_536, 65_537, 262_144] {
-            let mut request = h.request("boundary");
+            let mut request = Harness::request("boundary");
             request.requested_budget.cpu_fuel = cpu;
             request.requested_budget.memory_bytes = memory;
             let result = h.controller.admit_at(request, h.sample);
@@ -372,7 +375,7 @@ fn request_budget_boundaries_never_increase_any_grant() {
 fn every_later_phase_budget_dimension_is_rejected_without_reservation() {
     for index in 0..7 {
         let h = Harness::standard();
-        let mut request = h.request("later");
+        let mut request = Harness::request("later");
         match index {
             0 => request.requested_budget.child_calls = 1,
             1 => request.requested_budget.outbound_requests = 1,
@@ -393,7 +396,7 @@ fn every_later_phase_budget_dimension_is_rejected_without_reservation() {
 fn expired_zero_and_omitted_deadlines_have_distinct_semantics() {
     let h = Harness::standard();
     for deadline in [Some(0), Some(9999), Some(10_000)] {
-        let mut request = h.request("expired");
+        let mut request = Harness::request("expired");
         request.deadline_unix_millis = deadline;
         assert_eq!(
             h.controller.admit_at(request, h.sample).unwrap_err().code,
@@ -401,13 +404,13 @@ fn expired_zero_and_omitted_deadlines_have_distinct_semantics() {
         );
         h.assert_empty();
     }
-    let mut request = h.request("zero");
+    let mut request = Harness::request("zero");
     request.requested_budget.wall_time_limit_millis = Some(0);
     assert_eq!(
         h.controller.admit_at(request, h.sample).unwrap_err().code,
         Code::DeadlineExceeded
     );
-    let mut request = h.request("omitted");
+    let mut request = Harness::request("omitted");
     request.requested_budget.wall_time_limit_millis = None;
     let permit = h.controller.admit_at(request, h.sample).unwrap();
     assert_eq!(permit.deadline().unix_millis(), Some(11_000));
@@ -420,7 +423,7 @@ fn deadline_feasibility_uses_atomically_reserved_backlog_and_observed_delay() {
     let h = Harness::standard();
     let first = h.admit("a").unwrap();
     let second = h.admit("b").unwrap();
-    let mut request = h.request("c");
+    let mut request = Harness::request("c");
     request.deadline_unix_millis = Some(10_110);
     let error = h
         .controller
@@ -513,7 +516,11 @@ fn expired_handoff_consumes_and_releases_the_permit() {
     let permit = h.admit("a").unwrap();
     let original_deadline = permit.deadline().monotonic().unwrap();
     assert!(permit
-        .ensure_schedulable_at(original_deadline - Duration::from_nanos(1))
+        .ensure_schedulable_at(
+            original_deadline
+                .checked_sub(Duration::from_nanos(1))
+                .unwrap()
+        )
         .is_ok());
     assert_eq!(
         permit
@@ -538,11 +545,11 @@ fn queue_class_capacity_and_priority_authorization_are_independent() {
         detail(&h.admit("overflow").unwrap_err(), "scope"),
         "queue-class"
     );
-    let mut urgent = h.request("urgent");
+    let mut urgent = Harness::request("urgent");
     urgent.priority = 128;
     let urgent = h.controller.admit_at(urgent, h.sample).unwrap();
     assert_eq!(urgent.obligations().queue_class, "urgent");
-    let mut forbidden = h.request("forbidden");
+    let mut forbidden = Harness::request("forbidden");
     forbidden.priority = 201;
     assert_eq!(
         detail(
@@ -569,10 +576,10 @@ fn payload_limits_are_exact_and_independent_for_node_and_tenant() {
             detail(&h.admit("too-large").unwrap_err(), "scope"),
             expected_scope
         );
-        let mut exact = h.request("exact");
+        let mut exact = Harness::request("exact");
         exact.payload_bytes = 9;
         drop(h.controller.admit_at(exact, h.sample).unwrap());
-        let mut empty = h.request("empty");
+        let mut empty = Harness::request("empty");
         empty.payload_bytes = 0;
         drop(h.controller.admit_at(empty, h.sample).unwrap());
         h.assert_empty();
@@ -591,7 +598,7 @@ fn anonymous_forged_cross_tenant_and_unconfigured_principals_are_denied_before_l
     ];
     for mutate in mutations {
         let h = Harness::standard();
-        let mut request = h.request("principal");
+        let mut request = Harness::request("principal");
         mutate(&mut request);
         request
             .principal
@@ -614,7 +621,7 @@ fn service_principals_require_a_valid_service_identity() {
         .unwrap()
         .allowed_principal_kinds = vec![PrincipalKind::Service];
     let h = Harness::new(node, revision_policy());
-    let mut request = h.request("service");
+    let mut request = Harness::request("service");
     request.principal.kind = PrincipalKind::Service;
     assert_eq!(
         h.controller
@@ -640,7 +647,7 @@ fn exact_revision_release_generation_and_endpoint_must_exist() {
     ];
     for mutate in mutations {
         let h = Harness::standard();
-        let mut request = h.request("forged");
+        let mut request = Harness::request("forged");
         mutate(&mut request);
         let error = h.controller.admit_at(request, h.sample).unwrap_err();
         assert_eq!(error.code, Code::AdmissionRejected);
@@ -659,7 +666,7 @@ fn exact_revision_release_generation_and_endpoint_must_exist() {
 #[test]
 fn attributes_cannot_replace_catalog_policy_or_escape_in_error_details() {
     let h = Harness::standard();
-    let mut request = h.request("spoof");
+    let mut request = Harness::request("spoof");
     request
         .attributes
         .insert("trust_class".to_owned(), "administrator-secret".to_owned());
@@ -671,7 +678,7 @@ fn attributes_cannot_replace_catalog_policy_or_escape_in_error_details() {
     assert_eq!(permit.obligations().trust_class, "sandbox");
     assert!(permit.revision().attributes.is_empty());
     drop(permit);
-    let mut request = h.request("denied");
+    let mut request = Harness::request("denied");
     request
         .principal
         .claims
@@ -687,7 +694,7 @@ fn attributes_cannot_replace_catalog_policy_or_escape_in_error_details() {
 fn metadata_identifier_and_empty_revision_boundaries_are_checked() {
     let h = Harness::standard();
     for field in ["activation", "revision", "function"] {
-        let mut request = h.request("invalid");
+        let mut request = Harness::request("invalid");
         match field {
             "activation" => request.activation_id.0.clear(),
             "revision" => request.revision.revision.0 = "x".repeat(1025),
@@ -698,7 +705,7 @@ fn metadata_identifier_and_empty_revision_boundaries_are_checked() {
             Code::InvalidArgument
         );
     }
-    let mut request = h.request("metadata");
+    let mut request = Harness::request("metadata");
     request
         .principal
         .claims
@@ -710,7 +717,7 @@ fn metadata_identifier_and_empty_revision_boundaries_are_checked() {
         ),
         "metadata"
     );
-    let mut request = h.request("generation");
+    let mut request = Harness::request("generation");
     request.revision.route_generation = RouteGeneration(0);
     assert_eq!(
         h.controller.admit_at(request, h.sample).unwrap_err().code,
@@ -721,7 +728,7 @@ fn metadata_identifier_and_empty_revision_boundaries_are_checked() {
 
 #[test]
 fn incompatible_backends_state_threading_features_and_placement_are_independent() {
-    let mutations: [(fn(&mut RevisionAdmissionPolicy), &str); 6] = [
+    let mutations: [PolicyMutation; 6] = [
         (
             |p| p.execution.backend = ExecutionBackendKind::Container,
             "backend",
@@ -788,7 +795,7 @@ fn extra_large_requires_explicit_tenant_and_trust_permission() {
                     .insert("extra-large".to_owned());
             }
             let h = Harness::new(node, revision_policy());
-            let mut request = h.request("large");
+            let mut request = Harness::request("large");
             request.requested_budget.memory_bytes = 8_388_608;
             let result = h.controller.admit_at(request, h.sample);
             if permit_tenant && permit_trust {
@@ -806,7 +813,7 @@ fn trust_class_permission_cannot_be_granted_by_request_metadata() {
     let mut policy = revision_policy();
     policy.placement.trust_class = "privileged".to_owned();
     let h = Harness::new(node_policy(), policy);
-    let mut request = h.request("trust");
+    let mut request = Harness::request("trust");
     request
         .attributes
         .insert("trust_class".to_owned(), "sandbox".to_owned());
@@ -858,15 +865,21 @@ fn stale_future_malformed_and_unavailable_load_samples_fail_closed() {
     let stale = ClockSample::new(20_001, h.sample.monotonic() + Duration::from_millis(10_001));
     assert_eq!(
         h.controller
-            .admit_at(h.request("stale"), stale)
+            .admit_at(Harness::request("stale"), stale)
             .unwrap_err()
             .code,
         Code::Unavailable
     );
-    let future = ClockSample::new(9999, h.sample.monotonic() - Duration::from_millis(1));
+    let future = ClockSample::new(
+        9999,
+        h.sample
+            .monotonic()
+            .checked_sub(Duration::from_millis(1))
+            .unwrap(),
+    );
     assert_eq!(
         h.controller
-            .admit_at(h.request("future"), future)
+            .admit_at(Harness::request("future"), future)
             .unwrap_err()
             .code,
         Code::Unavailable
@@ -885,7 +898,7 @@ fn stale_future_malformed_and_unavailable_load_samples_fail_closed() {
 fn duplicate_activation_ids_do_not_replace_or_refund_live_reservations() {
     let h = Harness::standard();
     let original = h.admit("same").unwrap();
-    let mut request = h.request("same");
+    let mut request = Harness::request("same");
     request.principal.subject = "bob".to_owned();
     request.principal.tenant = Some(TenantId("tenant-b".to_owned()));
     request.revision = revision("tenant-b");
@@ -903,7 +916,7 @@ fn duplicate_activation_ids_do_not_replace_or_refund_live_reservations() {
 fn tenant_counters_are_isolated_while_node_and_trust_limits_are_shared() {
     let h = Harness::standard();
     let first = h.admit("alice").unwrap();
-    let mut request = h.request("bob");
+    let mut request = Harness::request("bob");
     request.principal.subject = "bob".to_owned();
     request.principal.tenant = Some(TenantId("tenant-b".to_owned()));
     request.revision = revision("tenant-b");
@@ -952,11 +965,11 @@ fn all_terminal_outcomes_release_reserved_capacity_after_accounting() {
 #[test]
 fn dropped_unpolled_queued_running_and_ready_futures_leave_no_quota_state() {
     let h = Harness::standard();
-    drop(h.controller.admit(h.request("unpolled")));
+    drop(h.controller.admit(Harness::request("unpolled")));
     h.assert_empty();
     for running in [false, true] {
         let controller = h.controller.clone();
-        let request = h.request("abandoned");
+        let request = Harness::request("abandoned");
         let sample = h.sample;
         let mut future = Box::pin(async move {
             let permit = controller.admit_at(request, sample).unwrap();
@@ -975,7 +988,7 @@ fn dropped_unpolled_queued_running_and_ready_futures_leave_no_quota_state() {
         drop(future);
         h.assert_empty();
     }
-    let mut future = h.controller.admit(h.request("ready"));
+    let mut future = h.controller.admit(Harness::request("ready"));
     let mut context = Context::from_waker(Waker::noop());
     let result = future.as_mut().poll(&mut context);
     assert!(matches!(&result, Poll::Ready(Ok(_))));
@@ -1022,7 +1035,7 @@ fn concurrent_admission_never_exceeds_any_configured_limit() {
                 let admitted = admitted.clone();
                 let release = release.clone();
                 let controller = h.controller.clone();
-                let request = h.request(&format!("race-{index}"));
+                let request = Harness::request(&format!("race-{index}"));
                 let sample = h.sample;
                 let winners = &winners;
                 scope.spawn(move || {
@@ -1038,13 +1051,14 @@ fn concurrent_admission_never_exceeds_any_configured_limit() {
             }
             start.wait();
             admitted.wait();
-            assert_eq!(winners.load(Ordering::SeqCst), 4, "{dimension}");
+            let winner_count = winners.load(Ordering::SeqCst);
             let usage = h.quotas.usage().unwrap();
+            release.wait();
+            assert_eq!(winner_count, 4, "{dimension}");
             assert_eq!(usage.active_activations, 4);
             assert_eq!(usage.queued_activations, 4);
             assert_eq!(usage.reserved_cpu_fuel, 400);
             assert_eq!(usage.reserved_memory_bytes, 4 * 65_536);
-            release.wait();
         });
         h.assert_empty();
     }
@@ -1059,13 +1073,15 @@ fn controller_replacement_shares_existing_quota_reservations() {
     let next = h.controller.with_policy_source(h.source.clone());
     assert_eq!(
         detail(
-            &next.admit_at(h.request("new"), h.sample).unwrap_err(),
+            &next
+                .admit_at(Harness::request("new"), h.sample)
+                .unwrap_err(),
             "dimension"
         ),
         "concurrency"
     );
     drop(original);
-    drop(next.admit_at(h.request("new"), h.sample).unwrap());
+    drop(next.admit_at(Harness::request("new"), h.sample).unwrap());
     h.assert_empty();
 }
 
@@ -1086,7 +1102,7 @@ fn maximum_integer_reservations_cannot_wrap_or_double_refund() {
     policy.deployment_ceiling.cpu_fuel = u64::MAX;
     policy.execution.resource_budget_ceiling.cpu_fuel = u64::MAX;
     let h = Harness::new(node, policy);
-    let mut request = h.request("maximum");
+    let mut request = Harness::request("maximum");
     request.requested_budget.cpu_fuel = u64::MAX;
     let permit = h.controller.admit_at(request, h.sample).unwrap();
     assert_eq!(h.quotas.usage().unwrap().reserved_cpu_fuel, u64::MAX);
@@ -1113,7 +1129,7 @@ fn invalid_startup_policies_are_rejected_before_any_state_exists() {
             p.cell_classes
                 .get_mut("small")
                 .unwrap()
-                .maximum_memory_bytes = 1
+                .maximum_memory_bytes = 1;
         },
     ];
     for mutate in mutations {

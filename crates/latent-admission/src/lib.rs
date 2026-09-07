@@ -14,6 +14,7 @@ mod policy;
 mod quota;
 #[cfg(test)]
 mod tests;
+mod timing;
 
 pub use controller::{LocalAdmissionController, NodeLoadSnapshot, NodeLoadSource, NodeLoadState};
 pub use permit::{AdmissionObligations, AdmissionPermit, ExecutionPermit};
@@ -58,10 +59,10 @@ pub struct QuotaSnapshot {
 }
 
 pub trait AdmissionController: Send + Sync {
-    fn admit<'a>(
-        &'a self,
+    fn admit(
+        &self,
         request: AdmissionRequest,
-    ) -> BoxFuture<'a, Result<AdmissionPermit, PlatformError>>;
+    ) -> BoxFuture<'_, Result<AdmissionPermit, PlatformError>>;
 }
 
 /// Trusted-local observation seam. An API adapter must authorize access to a
@@ -82,10 +83,11 @@ pub(crate) fn rejection(
     PlatformError {
         code,
         message: "invocation does not satisfy local admission policy".to_owned(),
-        retryable: matches!(
-            code,
-            PlatformErrorCode::ResourceExhausted | PlatformErrorCode::Unavailable
-        ) || reason == "queue-deadline-infeasible",
+        retryable: code == PlatformErrorCode::Unavailable
+            || matches!(
+                reason,
+                "capacity-exhausted" | "node-overloaded" | "queue-deadline-infeasible"
+            ),
         details: vec![ErrorDetail {
             kind: "admission.limit".to_owned(),
             fields: Metadata::from([

@@ -39,24 +39,55 @@ impl ReservationTiming {
     ) -> Result<(), PlatformError> {
         let now = self.clock.now();
         if grant.deadline.is_expired_at(now) {
-            return Err(rejection(PlatformErrorCode::DeadlineExceeded, "request", "deadline", "deadline-exceeded"));
+            return Err(rejection(
+                PlatformErrorCode::DeadlineExceeded,
+                "request",
+                "deadline",
+                "deadline-exceeded",
+            ));
         }
-        if now.checked_duration_since(self.load_observed_at).is_none_or(|age| {
-            age > Duration::from_millis(policy.overload.maximum_sample_age_millis)
-        }) {
-            return Err(rejection(PlatformErrorCode::Unavailable, "node", "load", "load-sample-not-current"));
+        if now
+            .checked_duration_since(self.load_observed_at)
+            .is_none_or(|age| {
+                age > Duration::from_millis(policy.overload.maximum_sample_age_millis)
+            })
+        {
+            return Err(rejection(
+                PlatformErrorCode::Unavailable,
+                "node",
+                "load",
+                "load-sample-not-current",
+            ));
         }
         let waves = u64::from(current_cell) / u64::from(parallelism);
-        let required_millis = waves.checked_mul(policy.deadline.estimated_service_time_millis)
+        let required_millis = waves
+            .checked_mul(policy.deadline.estimated_service_time_millis)
             .map(|estimate| estimate.max(self.observed_queue_delay_millis))
             .and_then(|wait| wait.checked_add(policy.deadline.minimum_execution_time_millis))
             .and_then(|wait| wait.checked_add(policy.deadline.safety_margin_millis))
-            .ok_or_else(|| rejection(PlatformErrorCode::AdmissionRejected, "node", "deadline", "queue-estimate-overflow"))?;
+            .ok_or_else(|| {
+                rejection(
+                    PlatformErrorCode::AdmissionRejected,
+                    "node",
+                    "deadline",
+                    "queue-estimate-overflow",
+                )
+            })?;
         let remaining = grant.deadline.remaining_at(now).ok_or_else(|| {
-            rejection(PlatformErrorCode::InvalidArgument, "request", "deadline", "missing-effective-deadline")
+            rejection(
+                PlatformErrorCode::InvalidArgument,
+                "request",
+                "deadline",
+                "missing-effective-deadline",
+            )
         })?;
         if remaining <= Duration::from_millis(required_millis) {
-            return Err(rejection(PlatformErrorCode::AdmissionRejected, "node", "deadline", "queue-deadline-infeasible"));
+            return Err(rejection(
+                PlatformErrorCode::AdmissionRejected,
+                "node",
+                "deadline",
+                "queue-deadline-infeasible",
+            ));
         }
         Ok(())
     }
