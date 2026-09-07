@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
@@ -23,6 +24,7 @@ pub(super) struct Lifecycle {
     journal: Option<JournalOwner>,
     cancellation: Option<CancellationRegistration>,
     clock: Arc<dyn ActivationClock>,
+    deadline_abort: Arc<AtomicBool>,
     pub(super) budget: Option<ActivationBudget>,
     pub(super) resolved: Option<ResolvedRevision>,
     pub(super) scheduled: Option<ScheduledActivation>,
@@ -37,11 +39,13 @@ impl Lifecycle {
         journal: JournalOwner,
         cancellation: CancellationRegistration,
         clock: Arc<dyn ActivationClock>,
+        deadline_abort: Arc<AtomicBool>,
     ) -> Self {
         Self {
             journal: Some(journal),
             cancellation: Some(cancellation),
             clock,
+            deadline_abort,
             budget: None,
             resolved: None,
             scheduled: None,
@@ -191,16 +195,18 @@ impl Drop for Lifecycle {
         self.reclaim();
         let code = if std::thread::panicking() {
             PlatformErrorCode::Internal
+        } else if self.deadline_abort.load(Ordering::Acquire) {
+            PlatformErrorCode::DeadlineExceeded
         } else {
             PlatformErrorCode::Cancelled
         };
-        let outcome = failure_for_platform_error(
-            error(
-                code,
-                "activation handle abandoned before terminal completion",
-            ),
-            BudgetConsumption::default(),
-        );
+        let message = if code == PlatformErrorCode::DeadlineExceeded {
+            "activation transport deadline exceeded"
+        } else {
+            "activation handle abandoned before terminal completion"
+        };
+        let outcome =
+            failure_for_platform_error(error(code, message), BudgetConsumption::default());
         let _ = self.publish(outcome);
     }
 }
