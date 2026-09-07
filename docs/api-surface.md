@@ -64,7 +64,7 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 | `latent-contracts` | `ContractRegistry`, `CompatibilityChecker`, `BindingCompiler` |
 | `latent-policy` | `PolicyEngine`, `PolicyRepository` |
 | `latent-routing` | `RouteResolver`, `RouteCompiler`, snapshot source/publisher |
-| `latent-admission` | `AdmissionController`, `QuotaProvider` |
+| `latent-admission` | `AdmissionController`, `QuotaProvider`, `LocalAdmissionController`, `LocalQuotaProvider`, affine admission/execution permits |
 | `latent-scheduler` | open `CellPool`, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `CellPoolSnapshot`, `ActivationScheduler`, `ClusterPlacement` |
 | `latent-activation` | `ActivationManager`, `ActivationJournal` |
 | `latent-executor` | `ExecutionBackend`, backend registry and cancellation |

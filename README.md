@@ -65,8 +65,9 @@ them into the standalone node is still tracked by
 | Resource accounting | Effective deadlines, concurrent budget consumption/reservations, terminal reconciliation, and cancellation primitives; [resource budgets](docs/runtime/resource-budgets.md) |
 | Local release storage | Exclusive directory ownership, immutable digest verification, bounded listing/indexes, durable publication and recovery; [release catalog](docs/development/local-release-catalog.md) |
 | Deployment and routing | Atomic deployment updates, immutable route generations, tenant-safe deterministic resolution, pinned revisions, and restart recovery; [deployment routing](docs/deployment-routing.md) |
+| Admission and quotas | Tenant/trust/queue capacity, bounded input, deadline and overload checks, compatible cell selection, and affine quota permits; [admission control](docs/admission-control.md) |
 
-Admission and fair scheduling, generic Wasmtime dispatch, complete activation
+Fair scheduling, generic Wasmtime dispatch, complete activation
 orchestration, clock capabilities, invocation/management services, shared
 telemetry, the standalone node, CLI, and the Phase 1 gate remain open work. See
 [the roadmap](docs/roadmap.md) for issue links and phase boundaries.
