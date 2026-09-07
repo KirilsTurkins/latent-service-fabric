@@ -58,7 +58,12 @@ time. An absolute deadline that has already expired, or a duration that cannot
 be represented by the process monotonic clock, is rejected before a wrapped
 activation manager is invoked.
 
-`BudgetedActivationManager` is the node integration seam. It performs admission
+The [local activation manager](../activation-lifecycle.md) owns Phase 1 admission,
+execution, cancellation, and finalization directly. It supplies one shared ledger
+to the backend and capabilities and also finalizes on dropped or panicking work.
+Do not wrap it in another budget/lifecycle owner.
+
+`BudgetedActivationManager` remains a compatibility integration seam. It performs admission
 before delegating to the wrapped manager, replaces the envelope budget/deadline
 with the effective grant, installs activation-keyed accounting and cancellation
 registrations, applies cancellation-over-deadline terminal precedence, freezes

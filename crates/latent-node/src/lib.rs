@@ -2,15 +2,21 @@
 
 #![forbid(unsafe_code)]
 
+mod activation_manager;
 mod activation_runner;
 mod budgeted_activation;
 mod budgeted_execution;
 mod cancellation;
+mod journal;
 
 use latent_artifacts::CacheEntryDescriptor;
 use latent_core::{BoxFuture, Metadata, NodeId, PlatformError, RouteGeneration};
 use latent_routing::RouteSnapshot;
 
+pub use activation_manager::{
+    ActivationHandle, ActivationReceipt, LocalActivationDependencies, LocalActivationManager,
+    LocalActivationManagerConfig, LocalActivationServices,
+};
 pub use activation_runner::{
     ActivationRunnerSnapshot, Phase0ActivationRunner, Phase0ActivationRunnerConfig,
 };
@@ -22,6 +28,9 @@ pub use budgeted_execution::BudgetedExecutionBackend;
 pub use cancellation::{
     ActivationCancellationRegistry, CancellationHandle, CancellationRegistration,
     CancellationRegistrySnapshot, CancellationToken,
+};
+pub use journal::{
+    ActivationJournalSnapshot, LocalActivationJournal, LocalActivationJournalConfig,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

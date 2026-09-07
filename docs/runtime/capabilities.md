@@ -8,7 +8,8 @@ invocation must bind exactly its prepared imports. No WASI filesystem,
 environment, network, process, or other ambient authority is installed. The
 remaining platform capability packages are contracts for later implementation.
 
-These Rust APIs are building blocks for activation orchestration. They do not
+The [local activation manager](../activation-lifecycle.md) supplies these
+capabilities with the activation's shared accounting owner. These APIs do not
 provide the standalone node, public invocation service, or a capability broker
 for later-phase state, network, secrets, or child-call access.
 

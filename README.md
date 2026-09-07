@@ -70,8 +70,9 @@ them into the standalone node is still tracked by
 | Fair scheduling | Fixed class pools, bounded tenant-fair queues, priority/deadline/aging order, shared cancellation, and owned cell/quota disposition; [scheduling](docs/scheduling.md) |
 | Generic component execution | Dynamic WIT export dispatch, bounded canonical values, shared preparation, fresh stores, non-cooperative interruption, and cleanup proof; [Wasmtime backend](docs/runtime/wasmtime.md) |
 | Activation capabilities | Filtered context, injectable clocks, live shared budgets, and correlated structured log acceptance; [capabilities](docs/runtime/capabilities.md) |
+| Activation lifecycle | Pinned resolution, admission/scheduling, affine preparation, bounded status/journal, scoped cancellation, terminal accounting, and unconditional cleanup; [lifecycle](docs/activation-lifecycle.md) |
 
-Complete activation orchestration, invocation/management services, shared
+Invocation/management services, shared
 telemetry, the standalone node, CLI, and the Phase 1 gate remain open work. See
 [the roadmap](docs/roadmap.md) for issue links and phase boundaries.
 

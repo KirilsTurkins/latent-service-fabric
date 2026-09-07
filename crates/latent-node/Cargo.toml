@@ -5,13 +5,14 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Node contracts and the Phase 0 contained activation runner."
+description = "Single-node activation lifecycle orchestration and node contracts."
 
 [lints]
 workspace = true
 
 [dependencies]
 latent-activation = { path = "../latent-activation" }
+latent-admission = { path = "../latent-admission" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
@@ -20,4 +21,5 @@ latent-scheduler = { path = "../latent-scheduler" }
 tokio.workspace = true
 
 [dev-dependencies]
+latent-manifest = { path = "../latent-manifest" }
 tokio = { workspace = true, features = ["rt-multi-thread"] }

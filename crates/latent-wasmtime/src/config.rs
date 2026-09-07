@@ -66,6 +66,9 @@ pub struct WasmtimeConfig {
     pub maximum_component_bytes: usize,
     pub maximum_memory_bytes: u64,
     pub maximum_fuel: u64,
+    /// Optional positive fuel interval for cooperative async yields. It does
+    /// not replenish fuel or change the activation's granted CPU allowance.
+    pub fuel_async_yield_interval: Option<u64>,
     pub maximum_wasm_stack_bytes: usize,
     pub async_stack_bytes: usize,
     pub prepared_cache_maximum_entries: usize,
@@ -115,6 +118,7 @@ impl Default for WasmtimeConfig {
             maximum_component_bytes: 16 * 1024 * 1024,
             maximum_memory_bytes: 64 * 1024 * 1024,
             maximum_fuel: 100_000_000,
+            fuel_async_yield_interval: None,
             maximum_wasm_stack_bytes: 512 * 1024,
             async_stack_bytes: 2 * 1024 * 1024,
             prepared_cache_maximum_entries: 8,
@@ -172,6 +176,7 @@ impl WasmtimeConfig {
             || self.maximum_memory_bytes == 0
             || usize::try_from(self.maximum_memory_bytes).is_err()
             || self.maximum_fuel == 0
+            || self.fuel_async_yield_interval == Some(0)
             || self.async_stack_bytes < self.maximum_wasm_stack_bytes
             || self.epoch_deadline_ticks == 0
             || self.epoch_tick_interval_millis == 0

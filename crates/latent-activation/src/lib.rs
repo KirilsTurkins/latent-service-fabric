@@ -2,6 +2,12 @@
 
 #![forbid(unsafe_code)]
 
+mod request;
+pub use request::{
+    ActivationIdSource, ActivationRequest, ActivationRequestBuilder, ActivationRequestLimits,
+    SystemActivationIdSource,
+};
+
 use latent_core::{
     ActivationId, ActivationPhase, ActivationTerminalState, BoxFuture, BudgetConsumption,
     CancelDisposition, DeclaredError, IdempotencyKey, InvocationPrincipal, Metadata, Payload,
@@ -127,6 +133,8 @@ pub struct ActivationStatus {
 pub struct ActivationEvent {
     pub activation_id: ActivationId,
     pub phase: ActivationPhase,
+    /// Set only on the final event, which retains the last live phase.
+    pub terminal_state: Option<ActivationTerminalState>,
     pub occurred_at_unix_millis: u64,
     pub sequence: u64,
     pub attributes: Metadata,
@@ -143,8 +151,12 @@ pub trait ActivationManager: Send + Sync {
 }
 
 pub trait ActivationJournal: Send + Sync {
+    /// A journal may require its lifecycle owner's write capability and reject
+    /// direct appends. This method does not confer ownership of an activation.
     fn append<'a>(&'a self, event: ActivationEvent) -> BoxFuture<'a, Result<(), PlatformError>>;
 
+    /// Trusted-local query. Authenticated adapters must use a tenant-scoped
+    /// query rather than exposing this identity-only lookup directly.
     fn read<'a>(
         &'a self,
         activation_id: &'a ActivationId,

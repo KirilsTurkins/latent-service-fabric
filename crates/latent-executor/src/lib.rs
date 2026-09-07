@@ -4,11 +4,15 @@
 
 use std::sync::Arc;
 
+mod prepared_use;
+pub use prepared_use::PreparedUse;
+
 use latent_activation::ActivationEnvelope;
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
     ActivationId, BoxFuture, BudgetConsumption, BudgetDimension, CapabilityId, CellId,
-    DeclaredError, Metadata, Payload, PlatformError, ReleaseDigest, ResourceBudget,
+    DeclaredError, Metadata, Payload, PlatformError, PlatformErrorCode, ReleaseDigest,
+    ResourceBudget,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -200,6 +204,36 @@ impl ExecutionReport {
 pub trait ExecutionBackend: Send + Sync {
     fn backend_id(&self) -> &str;
 
+    /// Computes this backend's immutable engine compatibility identity without
+    /// coupling activation orchestration to a particular runtime implementation.
+    fn preparation_key(&self, _release: &ReleaseDigest) -> Result<PreparationKey, PlatformError> {
+        Err(owned_preparation_unsupported())
+    }
+
+    /// Pins immutable prepared state until the returned affine owner is consumed
+    /// by invocation or dropped. It must not retain a running guest store.
+    fn prepare_for_use<'a>(
+        &'a self,
+        _artifact: &'a CapsuleArtifact,
+        _key: &'a PreparationKey,
+    ) -> BoxFuture<'a, Result<PreparedUse, PlatformError>> {
+        Box::pin(async { Err(owned_preparation_unsupported()) })
+    }
+
+    /// Consumes one prepared-state owner. The returned future owns synchronous
+    /// reclamation even if it is never polled, cancelled, or unwinds.
+    fn invoke_prepared_contained<'a>(
+        &'a self,
+        _request: ExecutionRequest,
+        prepared: PreparedUse,
+        _cancellation: &'a dyn ExecutionCancellation,
+    ) -> BoxFuture<'a, ExecutionReport> {
+        Box::pin(async move {
+            drop(prepared);
+            ExecutionReport::reusable(Err(owned_preparation_unsupported()))
+        })
+    }
+
     fn prepare<'a>(
         &'a self,
         artifact: &'a CapsuleArtifact,
@@ -235,6 +269,15 @@ pub trait ExecutionBackend: Send + Sync {
         &'a self,
         prepared: PreparedComponent,
     ) -> BoxFuture<'a, Result<(), PlatformError>>;
+}
+
+fn owned_preparation_unsupported() -> PlatformError {
+    PlatformError {
+        code: PlatformErrorCode::IncompatibleContract,
+        message: "execution backend does not support owned preparation".to_owned(),
+        retryable: false,
+        details: Vec::new(),
+    }
 }
 
 pub trait ExecutionBackendRegistry: Send + Sync {

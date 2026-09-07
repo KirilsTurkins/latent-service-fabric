@@ -68,8 +68,8 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 | `latent-routing` | `RouteResolver`, `RouteCompiler`, snapshot source/publisher |
 | `latent-admission` | `AdmissionController`, `QuotaProvider`, `LocalAdmissionController`, `LocalQuotaProvider`, affine admission/execution permits |
 | `latent-scheduler` | open `CellPool` with nonqueueing acquisition/change notifications, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `LocalScheduler`, `AdmittedSchedulingRequest`, `ScheduledActivation`, `SchedulerSnapshot`, `SchedulingCancellation`, `LocalNodePlacement` |
-| `latent-activation` | `ActivationManager`, `ActivationJournal` |
-| `latent-executor` | `ExecutionBackend`, backend registry and cancellation |
+| `latent-activation` | `ActivationRequest`, bounded `ActivationRequestBuilder`, `ActivationIdSource`, `ActivationManager`, `ActivationJournal` |
+| `latent-executor` | `ExecutionBackend`, affine `PreparedUse`, backend registry and cancellation |
 | `latent-wasmtime` | `WasmtimeComponentEngineFactory`, generic `WasmtimeBackend`, bounded preparation/value policy, `WasmtimeHostServices`, `ContextExposurePolicy`, `StructuredLogSink`, dynamic exports and cleanup proof; retained Phase 0 facade and future AOT interfaces |
 | `latent-capabilities` | provider, broker, registry, handle model |
 | `latent-blobs` | large-value storage, leases, and transfer |
@@ -82,7 +82,7 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 | `latent-workflows` | continuation store and workflow runtime |
 | `latent-wire` | codec, duplex channel, request multiplexer |
 | `latent-wrpc` | remote client/server and connection factory |
-| `latent-node` | node registration/inventory/watch seams; `Phase0ActivationRunner`, `BudgetedActivationManager`, budget/cancellation registries, and the scheduler adapter on `CancellationHandle` |
+| `latent-node` | `LocalActivationManager`, immediate-ID `ActivationHandle`, `ActivationReceipt`, scoped status/cancel, bounded `LocalActivationJournal`; retained Phase 0/budget adapters and node registration/inventory/watch seams |
 | `latent-control-store` | `DeploymentStore` versioned mutations, committed receipts and bounded tenant/service pages; `DirectoryDeploymentRepository` implements persistence, route compilation/publication, and resolution |
 | `latent-telemetry` | telemetry sink and activation observer |
 | `latent-audit` | audit store and publisher |
@@ -90,8 +90,10 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 
 The [local scheduler](scheduling.md) consumes admission permits and returns an
 affine cell/quota assignment. Its cooperative enqueue futures use the caller's
-runtime and the activation owner's cancellation state; complete activation
-orchestration and the standalone node remain #11/#14 work.
+runtime and the activation owner's cancellation state. The
+[local activation manager](activation-lifecycle.md) composes those owners with
+catalog pinning, preparation, execution, and bounded terminal publication.
+Standalone node composition remains #14 work.
 
 ## Declarative schemas
 

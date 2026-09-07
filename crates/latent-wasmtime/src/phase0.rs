@@ -12,7 +12,7 @@ use latent_core::{
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
-    PreparationKey, PreparedComponent,
+    PreparationKey, PreparedComponent, PreparedUse,
 };
 use latent_manifest::ExecutionBackendKind;
 
@@ -108,6 +108,40 @@ impl Phase0WasmtimeBackend {
 impl ExecutionBackend for Phase0WasmtimeBackend {
     fn backend_id(&self) -> &str {
         self.inner.backend_id()
+    }
+
+    fn preparation_key(&self, release: &ReleaseDigest) -> Result<PreparationKey, PlatformError> {
+        self.inner.preparation_key(release)
+    }
+
+    fn prepare_for_use<'a>(
+        &'a self,
+        artifact: &'a CapsuleArtifact,
+        key: &'a PreparationKey,
+    ) -> BoxFuture<'a, Result<PreparedUse, PlatformError>> {
+        Box::pin(async move {
+            validate_manifest(artifact)?;
+            self.inner.prepare_for_use(artifact, key).await
+        })
+    }
+
+    fn invoke_prepared_contained<'a>(
+        &'a self,
+        request: ExecutionRequest,
+        prepared: PreparedUse,
+        cancellation: &'a dyn ExecutionCancellation,
+    ) -> BoxFuture<'a, ExecutionReport> {
+        Box::pin(async move {
+            let request = match self.adapt_request(request, cancellation) {
+                Ok(request) => request,
+                Err(error) => return ExecutionReport::reusable(Err(error)),
+            };
+            let report = self
+                .inner
+                .invoke_prepared_contained(request, prepared, cancellation)
+                .await;
+            adapter::report(report, self.inner.config.value_codec_limits)
+        })
     }
 
     fn prepare<'a>(

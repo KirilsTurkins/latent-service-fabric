@@ -81,6 +81,11 @@ impl WasmtimeConfig {
         include!("maximum-component-bytes", self.maximum_component_bytes);
         include!("maximum-memory-bytes", self.maximum_memory_bytes);
         include!("maximum-fuel", self.maximum_fuel);
+        fields.insert(
+            "fuel-async-yield-interval".to_owned(),
+            self.fuel_async_yield_interval
+                .map_or_else(|| "disabled".to_owned(), |interval| interval.to_string()),
+        );
         include!("maximum-wasm-stack-bytes", self.maximum_wasm_stack_bytes);
         include!("async-stack-bytes", self.async_stack_bytes);
         include!(

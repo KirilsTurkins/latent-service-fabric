@@ -606,7 +606,7 @@ fn execution_result_consumption(
     }
 }
 
-fn map_execution_outcome(
+pub(crate) fn map_execution_outcome(
     outcome: Result<GuestOutcome, PlatformError>,
     cell_id: &str,
     disposition: &str,
@@ -727,7 +727,7 @@ fn deadline_error() -> PlatformError {
     }
 }
 
-fn failure_for_platform_error(
+pub(crate) fn failure_for_platform_error(
     error: PlatformError,
     consumption: BudgetConsumption,
 ) -> ActivationOutcome {
@@ -739,7 +739,7 @@ fn failure_for_platform_error(
     failure(error, consumption)
 }
 
-fn disposition_failure(
+pub(crate) fn disposition_failure(
     operation: &str,
     error: PlatformError,
     consumption: BudgetConsumption,
@@ -813,7 +813,7 @@ fn terminal_state_for_error(code: PlatformErrorCode) -> ActivationTerminalState 
     }
 }
 
-fn outcome_consumption(outcome: &ActivationOutcome) -> BudgetConsumption {
+pub(crate) fn outcome_consumption(outcome: &ActivationOutcome) -> BudgetConsumption {
     match outcome {
         ActivationOutcome::Succeeded(success) => success.consumption.clone(),
         ActivationOutcome::DeclaredError { consumption, .. } => consumption.clone(),

@@ -31,6 +31,11 @@ use crate::host::{
 use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0InvocationTiming};
 use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
 
+mod owned;
+mod store;
+use owned::WasmtimePreparedUse;
+use store::AccountedStore;
+
 struct PreparedRuntime {
     pre: InstancePre<HostState>,
     declared_budget: ResourceBudget,
@@ -127,6 +132,15 @@ impl WasmtimeBackend {
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
     ) -> Result<PreparedComponent, PlatformError> {
+        self.prepare_runtime(artifact, key)
+            .map(|runtime| runtime.descriptor.clone())
+    }
+
+    fn prepare_runtime(
+        &self,
+        artifact: &CapsuleArtifact,
+        key: &PreparationKey,
+    ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         let identity = crate::preparation_metadata::identity(
             artifact,
             self.config.maximum_artifact_metadata_bytes,
@@ -153,7 +167,7 @@ impl WasmtimeBackend {
             artifact.component_bytes.len(),
             reserved_metadata,
         )? {
-            PrepareAccess::Hit(runtime) => return Ok(runtime.descriptor.clone()),
+            PrepareAccess::Hit(runtime) => return Ok(runtime),
             PrepareAccess::Compile(reservation) => reservation,
         };
         let component =
@@ -187,10 +201,10 @@ impl WasmtimeBackend {
             pre,
             declared_budget: artifact.manifest.execution.resource_budget_ceiling.clone(),
             surface,
-            descriptor: descriptor.clone(),
+            descriptor,
         });
         if self.config.prepared_cache_enabled {
-            reservation.publish_with_metadata(runtime, image_bytes, metadata_bytes)?;
+            reservation.publish_with_metadata(Arc::clone(&runtime), image_bytes, metadata_bytes)?;
         } else {
             if image_bytes > self.config.prepared_cache_maximum_compiled_image_bytes {
                 return Err(platform_error(
@@ -207,11 +221,11 @@ impl WasmtimeBackend {
                     true,
                 ));
             }
-            *slot = Some((handle, runtime));
+            *slot = Some((handle, Arc::clone(&runtime)));
             drop(slot);
             drop(reservation);
         }
-        Ok(descriptor)
+        Ok(runtime)
     }
     fn validate_component_bytes(
         &self,
@@ -271,13 +285,14 @@ impl WasmtimeBackend {
         &self,
         request: ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
+        prepared: Option<WasmtimePreparedUse>,
     ) -> Result<GuestOutcome, PlatformError> {
         validate_request_context(&request, self.config.maximum_artifact_metadata_bytes)?;
         let activation_id = request.activation.activation_id.clone();
         let started = Instant::now();
         let mut timing = Phase0InvocationTiming::default();
         let outcome = self
-            .invoke_inner_timed(request, cancellation, &mut timing)
+            .invoke_inner_timed(request, cancellation, &mut timing, prepared)
             .await;
         timing.backend_total_micros = elapsed_micros(started);
         self.lock_timings().insert(activation_id.0, timing);
@@ -289,6 +304,7 @@ impl WasmtimeBackend {
         request: ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
         timing: &mut Phase0InvocationTiming,
+        prepared: Option<WasmtimePreparedUse>,
     ) -> Result<GuestOutcome, PlatformError> {
         let setup_started = Instant::now();
         let _active_invocation = self.shared.resources.active_invocation();
@@ -306,16 +322,10 @@ impl WasmtimeBackend {
             ));
         }
 
-        let instance_permit = self.shared.instances.try_acquire()?;
-        let runtime = self
-            .prepared_runtime(&request.prepared.opaque_handle)
-            .ok_or_else(|| {
-                platform_error(
-                    PlatformErrorCode::NotFound,
-                    "prepared component is absent or has been evicted",
-                    true,
-                )
-            })?;
+        // Both paths own one permit before retaining a runtime. A prepared use
+        // transfers its original reservation and never looks in the cache again.
+        let (instance_permit, runtime) =
+            self.invocation_runtime(prepared, &request.prepared.opaque_handle)?;
         let function = self.requested_function(&runtime, &request)?;
         let temporary_buffer_guard = self.shared.resources.temporary_buffer();
         let input = values::decode_params(
@@ -357,7 +367,7 @@ impl WasmtimeBackend {
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
-        let mut store = self.invocation_store(&request, &stop, accounting)?;
+        let mut store = AccountedStore::new(self.invocation_store(&request, &stop, accounting)?);
 
         let component_instance_guard = self.shared.resources.component_instance();
         let mut output = vec![Val::Bool(false); function.results.len()];
@@ -533,6 +543,18 @@ impl WasmtimeBackend {
                 false,
             )
         })?;
+        store
+            .fuel_async_yield_interval(self.config.fuel_async_yield_interval)
+            .map_err(|error| {
+                platform_error(
+                    PlatformErrorCode::Internal,
+                    &format!(
+                        "failed to configure cooperative fuel yielding: {}",
+                        bounded_error(&error)
+                    ),
+                    false,
+                )
+            })?;
         configure_epoch(
             &mut store,
             Arc::clone(stop),
@@ -741,6 +763,30 @@ impl ExecutionBackend for WasmtimeBackend {
         &self.profile.id
     }
 
+    fn preparation_key(
+        &self,
+        release: &latent_core::ReleaseDigest,
+    ) -> Result<PreparationKey, PlatformError> {
+        Ok(self.key_for_release(release))
+    }
+
+    fn prepare_for_use<'a>(
+        &'a self,
+        artifact: &'a CapsuleArtifact,
+        key: &'a PreparationKey,
+    ) -> BoxFuture<'a, Result<latent_executor::PreparedUse, PlatformError>> {
+        Box::pin(async move { self.prepare_owned(artifact, key) })
+    }
+
+    fn invoke_prepared_contained<'a>(
+        &'a self,
+        request: ExecutionRequest,
+        prepared: latent_executor::PreparedUse,
+        cancellation: &'a dyn ExecutionCancellation,
+    ) -> BoxFuture<'a, ExecutionReport> {
+        Box::pin(async move { self.invoke_owned(request, prepared, cancellation).await })
+    }
+
     fn prepare<'a>(
         &'a self,
         artifact: &'a CapsuleArtifact,
@@ -754,7 +800,7 @@ impl ExecutionBackend for WasmtimeBackend {
         request: ExecutionRequest,
         cancellation: &'a dyn ExecutionCancellation,
     ) -> BoxFuture<'a, Result<GuestOutcome, PlatformError>> {
-        Box::pin(async move { self.invoke_inner(request, cancellation).await })
+        Box::pin(async move { self.invoke_inner(request, cancellation, None).await })
     }
 
     fn invoke_contained<'a>(
@@ -769,7 +815,7 @@ impl ExecutionBackend for WasmtimeBackend {
                 return ExecutionReport::reusable(Err(error));
             }
             let activation_id = request.activation.activation_id.clone();
-            let outcome = self.invoke_inner(request, cancellation).await;
+            let outcome = self.invoke_inner(request, cancellation, None).await;
             let proof_started = Instant::now();
             let report = ExecutionReport::reusable(outcome);
             self.lock_timings()
