@@ -134,12 +134,20 @@ pub trait ExecutionCancellation: Send + Sync {
     fn is_cancelled(&self) -> bool;
     fn reason(&self) -> Option<String>;
 
+    /// The activation owner's existing accounting state, when available.
+    /// Backends clone this handle instead of admitting or registering a second
+    /// ledger. The owner retains responsibility for terminal finalization.
+    fn budget_accounting(&self) -> Option<&latent_core::ActivationBudget> {
+        None
+    }
+
     /// Admission's original wall/monotonic deadline, when supplied by the
     /// activation owner. Backends preserve this instant through queueing rather
     /// than recalculating a fresh duration from a later wall-clock sample.
     /// Legacy direct callers may omit it; node orchestration supplies it.
     fn effective_deadline(&self) -> Option<&latent_core::EffectiveDeadline> {
-        None
+        self.budget_accounting()
+            .map(latent_core::ActivationBudget::deadline)
     }
 
     /// Returns a live cancellation view suitable for a runtime-owned callback.

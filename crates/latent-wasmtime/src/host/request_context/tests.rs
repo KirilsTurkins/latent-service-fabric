@@ -10,8 +10,6 @@ use latent_executor::{
 use latent_routing::{InvocationTarget, ResolvedRevision};
 
 use super::validate_request_context;
-use crate::host::{ActivationHostContext, HostState};
-use wasmtime::ResourceLimiter;
 
 const LIMIT: usize = 16 * 1024;
 
@@ -86,31 +84,6 @@ fn empty_metadata_values_still_consume_structural_budget_and_input_is_separate()
     let error = validate_request_context(&request, LIMIT).expect_err("map nodes consume budget");
     assert_eq!(error.code, PlatformErrorCode::ResourceExhausted);
     assert!(validate_request_context(&request, 0).is_err());
-}
-
-#[test]
-fn retained_host_constructor_keeps_legacy_store_and_log_bounds() {
-    let request = request();
-    let activation = request.activation;
-    let context = ActivationHostContext::new(
-        activation.activation_id,
-        activation.root_activation_id,
-        activation.parent_activation_id,
-        activation.principal,
-        activation.trace.trace_id.0,
-        activation.trace.span_id.0,
-        activation.trace.trace_flags,
-        activation.trace.baggage,
-        None,
-        activation.budget,
-        activation.metadata,
-    );
-    let host = HostState::new(context, 64 * 1024, 3, 200);
-    assert_eq!(host.limiter.instances(), 128);
-    assert_eq!(host.limiter.memories(), 16);
-    assert_eq!(host.limiter.tables(), 128);
-    assert_eq!(host.logs.maximum_entries, 3);
-    assert_eq!(host.logs.maximum_bytes, 200);
 }
 
 fn oversized() -> String {

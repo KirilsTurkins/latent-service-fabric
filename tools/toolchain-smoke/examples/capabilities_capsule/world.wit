@@ -1,0 +1,49 @@
+package tests:capabilities@0.1.0;
+
+interface api {
+    use latent:context/context@0.1.0.{invocation-principal, trace-context, resource-budget};
+    use latent:log/log@0.1.0.{field, log-error};
+
+    record context-snapshot {
+        activation: string,
+        root: string,
+        parent: option<string>,
+        principal: invocation-principal,
+        trace: trace-context,
+        deadline: option<u64>,
+        metadata: list<tuple<string, string>>,
+        remaining: resource-budget,
+    }
+
+    record log-observation {
+        before: u64,
+        outcome: result<bool, log-error>,
+        after: u64,
+    }
+
+    record clock-reading {
+        monotonic: u64,
+        wall: u64,
+    }
+
+    record work-observation {
+        before: resource-budget,
+        after: resource-budget,
+        logged: result<bool, log-error>,
+        checksum: u32,
+    }
+
+    snapshot: func() -> context-snapshot;
+    log-probe: func(message: string, fields: list<field>) -> log-observation;
+    log-twice: func(message: string, fields: list<field>) -> list<log-observation>;
+    clocks: func() -> list<clock-reading>;
+    work-observe: func() -> work-observation;
+}
+
+world service {
+    import latent:context/context@0.1.0;
+    import latent:log/log@0.1.0;
+    import latent:clock/monotonic@0.1.0;
+    import latent:clock/wall@0.1.0;
+    export api;
+}

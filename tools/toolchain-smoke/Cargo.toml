@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Compile probes and generated component fixtures for the pinned Phase 0 toolchain."
+description = "Compile probes and generated component fixtures for the pinned toolchain."
 publish = false
 
 [[example]]
@@ -35,6 +35,14 @@ doc = false
 [[example]]
 name = "generic-capsule"
 path = "examples/generic_capsule/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "capabilities-capsule"
+path = "examples/capabilities_capsule/component.rs"
 crate-type = ["cdylib"]
 test = false
 bench = false

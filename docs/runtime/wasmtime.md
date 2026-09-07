@@ -47,7 +47,7 @@ the backend returns its reuse proof.
 ## Activation ownership and containment
 
 Every invocation creates a fresh store, aggregate memory limiter, component
-instance, activation context, import state, log buffer, and cancellation probe.
+instance, activation context, import state, log accounting, and cancellation probe.
 An activation cannot retain guest globals or linear memory for a later cell
 occupant. The effective linear-memory allowance is the minimum of the node,
 cell, and granted activation limits, accounted across the store's memories.
@@ -69,13 +69,15 @@ probe before returning `ExecutionCleanup::Reusable`. Callers must honor the
 explicit cleanup proof; an outcome by itself does not authorize cell reuse.
 
 No WASI filesystem, environment, network, process, or other ambient authority
-is installed. Existing activation context/log bindings remain the supported
-host imports; broader capability hardening and clock support are #10 work.
+is installed. The supported host imports are activation context, structured
+logging, and monotonic/wall clocks. Their disclosure policy, shared live budget,
+clock injection, and log acceptance contract are documented in
+[activation capabilities](capabilities.md).
 
 ## Node policy and shared preparation
 
 `WasmtimeConfig` carries explicit component, memory, fuel, stack, cache, logging,
-epoch, instance-allocation, and value-codec limits. Async Component Model calls,
+epoch, instance-allocation, context disclosure, and value-codec limits. Async Component Model calls,
 fuel, and epoch interruption are required containment mechanisms. The configured
 epoch interval multiplied by deadline ticks must be between one millisecond
 and one second. The factory validates policy before creating an engine.
@@ -121,8 +123,8 @@ resource counters for tests and node integration.
 
 `tools/validate_contracts.sh` builds the maintained Rust generic component with
 `wit-bindgen`, componentizes its `wasm32-unknown-unknown` core, validates tiny WAT
-adversarial components, and runs `generic_backend` alongside the retained echo
-and containment suites. The generic fixture exports two interfaces with the
+adversarial components, and runs `generic_backend` alongside the retained echo,
+containment, and focused [capability](capabilities.md) suites. The generic fixture exports two interfaces with the
 same function name, multiple parameters, composite values, declared errors,
 guest-local mutable state, and direct containment functions.
 

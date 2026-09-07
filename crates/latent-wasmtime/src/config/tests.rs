@@ -70,6 +70,13 @@ fn changes_to_execution_and_preparation_bounds_change_compatibility() {
         |c| c.value_codec_limits.max_output_bytes /= 2,
         |c| c.value_codec_limits.max_decoded_value_bytes /= 2,
         |c| c.value_codec_limits.max_type_nodes /= 2,
+        |c| {
+            c.context_policy
+                .metadata_prefixes
+                .push("public.".to_owned());
+        },
+        |c| c.context_policy.claim_keys.push("role".to_owned()),
+        |c| c.context_policy.baggage_keys.push("region".to_owned()),
     ];
     for (index, change) in changes.iter().enumerate() {
         let mut policy = config.clone();
@@ -101,6 +108,7 @@ fn invalid_and_overflowing_policy_is_rejected_before_engine_construction() {
         |c| c.cpu_feature_set = String::new(),
         |c| c.cpu_feature_set = "x".repeat(257),
         |c| c.target_triple = "unsupported-target".to_owned(),
+        |c| c.context_policy.metadata_prefixes.push(String::new()),
         |c| {
             c.instance_allocator = InstanceAllocator::Pooling;
             c.pooling_maximum_instances = u32::MAX;
@@ -124,6 +132,33 @@ fn invalid_and_overflowing_policy_is_rejected_before_engine_construction() {
         ..WasmtimeConfig::default()
     };
     at_boundary.validate().unwrap();
+}
+
+#[test]
+fn context_policy_compatibility_is_order_independent_and_namespace_framed() {
+    let mut config = WasmtimeConfig::default();
+    config.context_policy.metadata_prefixes = vec!["guest.".to_owned(), "public.".to_owned()];
+    config.context_policy.claim_keys = vec!["role".to_owned(), "scope".to_owned()];
+    config.context_policy.baggage_keys = vec!["region".to_owned(), "zone".to_owned()];
+    config.validate().unwrap();
+    let before = config.configuration_digest(DispatchMode::Generic);
+    config.context_policy.metadata_prefixes.reverse();
+    config.context_policy.claim_keys.reverse();
+    config.context_policy.baggage_keys.reverse();
+    assert_eq!(before, config.configuration_digest(DispatchMode::Generic));
+
+    // Moving the same exposed name to a different namespace changes behavior.
+    std::mem::swap(
+        &mut config.context_policy.claim_keys,
+        &mut config.context_policy.baggage_keys,
+    );
+    assert_ne!(before, config.configuration_digest(DispatchMode::Generic));
+    let profile = config.profile(DispatchMode::Generic);
+    assert_eq!(
+        profile.configuration["context-exposure-policy"],
+        "explicit-allowlists-v1"
+    );
+    assert_eq!(profile.configuration["context-metadata-prefix-count"], "2");
 }
 
 #[test]

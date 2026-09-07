@@ -10,7 +10,7 @@ use wasmtime::{Config, Engine};
 use crate::backend::{SharedRuntime, WasmtimeBackend};
 use crate::config::{DispatchMode, WasmtimeConfig};
 use crate::containment::{bounded_text, platform_error, start_epoch_ticker, MAX_DIAGNOSTIC_BYTES};
-use crate::{BoundedLogSink, WasmtimeEngineFactory, WasmtimeEngineProfile};
+use crate::{BoundedLogSink, WasmtimeEngineFactory, WasmtimeEngineProfile, WasmtimeHostServices};
 
 pub struct WasmtimeComponentEngineFactory {
     engine: Engine,
@@ -24,9 +24,24 @@ impl WasmtimeComponentEngineFactory {
         Self::with_mode(config, DispatchMode::Generic)
     }
 
+    pub fn with_host_services(
+        config: WasmtimeConfig,
+        services: WasmtimeHostServices,
+    ) -> Result<Self, PlatformError> {
+        Self::with_mode_and_services(config, DispatchMode::Generic, services)
+    }
+
     pub(crate) fn with_mode(
+        config: WasmtimeConfig,
+        mode: DispatchMode,
+    ) -> Result<Self, PlatformError> {
+        Self::with_mode_and_services(config, mode, WasmtimeHostServices::default())
+    }
+
+    fn with_mode_and_services(
         mut config: WasmtimeConfig,
         mode: DispatchMode,
+        services: WasmtimeHostServices,
     ) -> Result<Self, PlatformError> {
         if mode == DispatchMode::Phase0 {
             // Preserve the Phase 0 64 KiB payload plus 16 KiB canonical ABI
@@ -43,7 +58,7 @@ impl WasmtimeComponentEngineFactory {
         }
         let mut engine_config = Config::new();
         config.apply_engine(&mut engine_config)?;
-        let shared = Arc::new(SharedRuntime::new(&config)?);
+        let shared = Arc::new(SharedRuntime::new(&config, services)?);
         let engine = Engine::new(&engine_config).map_err(|error| {
             platform_error(
                 PlatformErrorCode::Internal,

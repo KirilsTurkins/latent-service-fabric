@@ -9,6 +9,7 @@ use latent_core::{PlatformError, PlatformErrorCode};
 
 use crate::cache::CacheLimits;
 use crate::containment::platform_error;
+use crate::host::policy::ContextExposurePolicy;
 use crate::values::ValueCodecLimits;
 
 pub const WASMTIME_VERSION: &str = "47.0.3";
@@ -100,6 +101,7 @@ pub struct WasmtimeConfig {
     /// Per-transfer Component Model lifting allowance for generic execution.
     pub hostcall_fuel: usize,
     pub value_codec_limits: ValueCodecLimits,
+    pub context_policy: ContextExposurePolicy,
 }
 
 /// Compatibility name retaining every old field and its default value.
@@ -143,6 +145,7 @@ impl Default for WasmtimeConfig {
             pooling_maximum_tables_per_component: 2,
             hostcall_fuel: 128 * 1024,
             value_codec_limits: ValueCodecLimits::default(),
+            context_policy: ContextExposurePolicy::default(),
         }
     }
 }
@@ -183,6 +186,7 @@ impl WasmtimeConfig {
             self.validate_pooling()?;
         }
         self.cache_limits().validate()?;
+        self.context_policy.validate()?;
         self.value_codec_limits.validate()
     }
 

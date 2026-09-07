@@ -1,12 +1,12 @@
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 use std::sync::{Arc, Mutex, MutexGuard};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
-    ActivationId, BoxFuture, BudgetConsumption, Metadata, PlatformError, PlatformErrorCode,
-    ResourceBudget,
+    ActivationClock, ActivationId, BoxFuture, BudgetConsumption, Metadata, PlatformError,
+    PlatformErrorCode, ResourceBudget,
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
@@ -14,22 +14,22 @@ use latent_executor::{
 };
 use latent_manifest::{ExecutionBackendKind, StateModel, ThreadingModel};
 use sha2::{Digest, Sha256};
-use wasmtime::component::{Component, HasSelf, InstancePre, Linker, Val};
+use wasmtime::component::{Component, InstancePre, Linker, Val};
 use wasmtime::{Engine, Store};
 
 use crate::bindings;
 use crate::cache::{ActiveInstanceGate, PrepareAccess, PreparedCache, PreparedCacheSnapshot};
 use crate::config::{WasmtimeConfig, PHASE0_BACKEND_ID};
 use crate::containment::{
-    bounded_text, classify_runtime_error, configure_epoch, interrupted_outcome, monotonic_deadline,
-    platform_error, RuntimeResourceCounters, RuntimeResourceSnapshot, StopControl,
-    MAX_DIAGNOSTIC_BYTES,
+    bounded_text, classify_runtime_error, configure_epoch, interrupted_outcome, platform_error,
+    RuntimeResourceCounters, RuntimeResourceSnapshot, StopControl, MAX_DIAGNOSTIC_BYTES,
 };
+use crate::host::accounting::InvocationAccounting;
 use crate::host::{
     validate_request_context, ActivationHostContext, BoundedLogSink, HostCallTiming, HostState,
 };
 use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0InvocationTiming};
-use crate::{surface, values, WasmtimeEngineProfile};
+use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
 
 struct PreparedRuntime {
     pre: InstancePre<HostState>,
@@ -44,19 +44,29 @@ pub(crate) struct SharedRuntime {
     instances: Arc<ActiveInstanceGate>,
     uncached_prepared: Mutex<Option<(String, Arc<PreparedRuntime>)>>,
     pub(crate) log_sink: BoundedLogSink,
+    clock: Arc<dyn ActivationClock>,
+    clock_origin: Instant,
+    context_policy: Arc<ContextExposurePolicy>,
     resources: RuntimeResourceCounters,
     timings: Mutex<InvocationTimingStore>,
 }
 impl SharedRuntime {
-    pub(crate) fn new(config: &WasmtimeConfig) -> Result<Self, PlatformError> {
+    pub(crate) fn new(
+        config: &WasmtimeConfig,
+        services: WasmtimeHostServices,
+    ) -> Result<Self, PlatformError> {
         Ok(Self {
             cache: Arc::new(PreparedCache::new(config.cache_limits())?),
             instances: Arc::new(ActiveInstanceGate::new(config.active_instance_limit())?),
             uncached_prepared: Mutex::new(None),
-            log_sink: BoundedLogSink::new(
+            log_sink: BoundedLogSink::with_target(
                 config.retained_log_maximum_entries,
                 config.retained_log_maximum_bytes,
+                services.log_sink,
             ),
+            clock_origin: services.clock.monotonic_now(),
+            clock: services.clock,
+            context_policy: Arc::new(config.context_policy.clone()),
             resources: RuntimeResourceCounters::default(),
             timings: Mutex::new(InvocationTimingStore::new(256)),
         })
@@ -237,15 +247,13 @@ impl WasmtimeBackend {
         component: &Component,
     ) -> Result<InstancePre<HostState>, PlatformError> {
         let mut linker = Linker::<HostState>::new(&self.engine);
-        bindings::Service::add_to_linker::<_, HasSelf<_>>(&mut linker, |state| state).map_err(
-            |error| {
-                platform_error(
-                    PlatformErrorCode::Internal,
-                    &format!("failed to bind host imports: {}", bounded_error(&error)),
-                    false,
-                )
-            },
-        )?;
+        bindings::install_context_log_clock(&mut linker).map_err(|error| {
+            platform_error(
+                PlatformErrorCode::Internal,
+                &format!("failed to bind host imports: {}", bounded_error(&error)),
+                false,
+            )
+        })?;
         let pre = linker.instantiate_pre(component).map_err(|error| {
             platform_error(
                 PlatformErrorCode::IncompatibleContract,
@@ -321,8 +329,23 @@ impl WasmtimeBackend {
         let cancellation_guard = cancellation_probe
             .as_ref()
             .map(|_| self.shared.resources.cancellation_probe());
-        let deadline = invocation_deadline(&request, cancellation)?;
-        let stop = Arc::new(StopControl::new(deadline, cancellation_probe));
+        let accounting =
+            match InvocationAccounting::new(&request, cancellation, self.shared.clock.as_ref()) {
+                Ok(accounting) => accounting,
+                Err(error) if error.code == PlatformErrorCode::DeadlineExceeded => {
+                    return Ok(interrupted_outcome(
+                        latent_executor::GuestInterruptionKind::DeadlineExceeded,
+                        bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
+                        BudgetConsumption::default(),
+                    ));
+                }
+                Err(error) => return Err(error),
+            };
+        let stop = Arc::new(StopControl::with_clock(
+            accounting.deadline().monotonic(),
+            cancellation_probe,
+            Arc::clone(&self.shared.clock),
+        ));
         if let Some(kind) = stop.observe() {
             return Ok(interrupted_outcome(
                 kind,
@@ -331,10 +354,10 @@ impl WasmtimeBackend {
             ));
         }
 
-        let contained_execution_started = Instant::now();
+        let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
-        let mut store = self.invocation_store(&request, &stop)?;
+        let mut store = self.invocation_store(&request, &stop, accounting)?;
 
         let component_instance_guard = self.shared.resources.component_instance();
         let mut output = vec![Val::Bool(false); function.results.len()];
@@ -351,8 +374,16 @@ impl WasmtimeBackend {
         // Wasmtime 47's safe dynamic call completes canonical ABI post-return
         // before resolving, including propagation of post-return traps.
         let component_post_return_started = Instant::now();
-        let (consumption, logs) =
-            invocation_accounting(&store, &request, contained_execution_started, timing);
+        let wall_time_micros = u64::try_from(
+            self.shared
+                .clock
+                .monotonic_now()
+                .saturating_duration_since(contained_execution_started)
+                .as_micros(),
+        )
+        .unwrap_or(u64::MAX);
+        let (consumption, accounting_error) =
+            invocation_accounting(&mut store, wall_time_micros, timing);
         let memory_exhausted = call_result
             .as_ref()
             .err()
@@ -379,14 +410,24 @@ impl WasmtimeBackend {
         timing.activation_resource_reclamation_micros = elapsed_micros(reclamation_started);
 
         let classification_started = Instant::now();
-        let outcome =
-            classify_call_result(call_result, encoded, &stop, memory_exhausted, consumption);
+        let outcome = if let Some(error) = accounting_error {
+            Ok(GuestOutcome::Trapped {
+                trap: latent_executor::GuestTrap {
+                    code: "budget-accounting-failed".to_owned(),
+                    message: bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
+                    guest_backtrace: Vec::new(),
+                    metadata: Metadata::new(),
+                },
+                consumption,
+            })
+        } else {
+            classify_call_result(call_result, encoded, &stop, memory_exhausted, consumption)
+        };
         timing.outcome_classification_micros = elapsed_micros(classification_started);
 
         let reusable_proof_started = Instant::now();
         drop(stop);
         drop(cancellation_guard);
-        self.shared.log_sink.publish(logs);
         timing.reusable_proof_micros = elapsed_micros(reusable_proof_started);
         outcome
     }
@@ -433,6 +474,7 @@ impl WasmtimeBackend {
         &self,
         request: &ExecutionRequest,
         stop: &Arc<StopControl>,
+        accounting: InvocationAccounting,
     ) -> Result<Store<HostState>, PlatformError> {
         let effective_memory = request
             .budget
@@ -463,16 +505,25 @@ impl WasmtimeBackend {
             request.activation.trace.span_id.0.clone(),
             request.activation.trace.trace_flags,
             request.activation.trace.baggage.clone(),
-            request.activation.deadline_unix_millis,
-            request.budget.clone(),
+            accounting.deadline().unix_millis(),
             request.activation.metadata.clone(),
         );
-        let host_state = HostState::with_config(host_context, maximum_memory_bytes, &self.config);
+        let initial_fuel = accounting.initial_fuel();
+        let host_state = HostState::with_config(
+            host_context,
+            maximum_memory_bytes,
+            &self.config,
+            accounting,
+            Arc::clone(&self.shared.context_policy),
+            Arc::clone(&self.shared.clock),
+            self.shared.clock_origin,
+            self.shared.log_sink.clone(),
+        );
 
         let mut store = Store::new(&self.engine, host_state);
         store.set_hostcall_fuel(self.config.hostcall_fuel);
         store.limiter(|state| &mut state.limiter);
-        store.set_fuel(request.budget.cpu_fuel).map_err(|error| {
+        store.set_fuel(initial_fuel).map_err(|error| {
             platform_error(
                 PlatformErrorCode::Internal,
                 &format!(
@@ -793,78 +844,6 @@ fn bounded_error(error: &wasmtime::Error) -> String {
     bounded_text(&error.to_string(), MAX_DIAGNOSTIC_BYTES)
 }
 
-fn invocation_deadline(
-    request: &ExecutionRequest,
-    cancellation: &dyn ExecutionCancellation,
-) -> Result<Option<Instant>, PlatformError> {
-    if let Some(admitted) = cancellation.effective_deadline() {
-        // Preserve the admission clock sample: queued time consumes this grant.
-        let relative = request
-            .budget
-            .wall_time_limit_millis
-            .map(|millis| {
-                admitted
-                    .admitted_at_monotonic()
-                    .checked_add(Duration::from_millis(millis))
-                    .ok_or_else(|| {
-                        platform_error(
-                            PlatformErrorCode::InvalidArgument,
-                            "relative invocation deadline is out of range",
-                            false,
-                        )
-                    })
-            })
-            .transpose()?;
-        let envelope = request
-            .activation
-            .deadline_unix_millis
-            .map(|deadline| {
-                admitted
-                    .admitted_at_monotonic()
-                    .checked_add(Duration::from_millis(
-                        deadline.saturating_sub(admitted.admitted_at_unix_millis()),
-                    ))
-                    .ok_or_else(|| {
-                        platform_error(
-                            PlatformErrorCode::InvalidArgument,
-                            "absolute invocation deadline is out of range",
-                            false,
-                        )
-                    })
-            })
-            .transpose()?;
-        return Ok(earliest_deadline(
-            earliest_deadline(admitted.monotonic(), relative),
-            envelope,
-        ));
-    }
-    let absolute = monotonic_deadline(request.activation.deadline_unix_millis)?;
-    // Compatibility callers without an admission token get a bounded execution
-    // interval. Node orchestration supplies the original token in Phase 1.
-    let relative = request
-        .budget
-        .wall_time_limit_millis
-        .map(|millis| {
-            Instant::now()
-                .checked_add(Duration::from_millis(millis))
-                .ok_or_else(|| {
-                    platform_error(
-                        PlatformErrorCode::InvalidArgument,
-                        "relative invocation deadline is out of range",
-                        false,
-                    )
-                })
-        })
-        .transpose()?;
-    Ok(earliest_deadline(absolute, relative))
-}
-fn earliest_deadline(first: Option<Instant>, second: Option<Instant>) -> Option<Instant> {
-    match (first, second) {
-        (Some(first), Some(second)) => Some(first.min(second)),
-        (first, second) => first.or(second),
-    }
-}
-
 async fn call_export(
     runtime: &PreparedRuntime,
     function: &surface::Function,
@@ -934,28 +913,35 @@ fn classify_call_result(
 }
 
 fn invocation_accounting(
-    store: &Store<HostState>,
-    request: &ExecutionRequest,
-    contained_execution_started: Instant,
+    store: &mut Store<HostState>,
+    wall_time_micros: u64,
     timing: &mut Phase0InvocationTiming,
-) -> (BudgetConsumption, Vec<crate::host::CapturedLog>) {
+) -> (BudgetConsumption, Option<PlatformError>) {
     let remaining_fuel = store.get_fuel().unwrap_or(0);
-    let wall_time_micros = elapsed_micros(contained_execution_started);
+    let peak_memory = store.data().limiter.peak_memory_bytes();
+    let accounting_error = store
+        .data_mut()
+        .accounting
+        .observe_runtime(remaining_fuel, peak_memory)
+        .err();
     let HostCallTiming {
         calls: host_call_count,
         elapsed_micros: host_call_micros,
     } = store.data().host_call_timing();
     let consumption = BudgetConsumption {
-        cpu_fuel: request.budget.cpu_fuel.saturating_sub(remaining_fuel),
+        cpu_fuel: store
+            .data()
+            .accounting
+            .initial_fuel()
+            .saturating_sub(remaining_fuel),
         peak_memory_bytes: store.data().limiter.peak_memory_bytes(),
         wall_time_micros,
         log_bytes: store.data().logs.bytes(),
         ..BudgetConsumption::default()
     };
-    let logs = store.data().logs.entries();
     timing.host_call_count = host_call_count;
     timing.host_call_micros = host_call_micros;
-    (consumption, logs)
+    (consumption, accounting_error)
 }
 
 fn cancellation_before_execution(

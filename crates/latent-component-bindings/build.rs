@@ -101,7 +101,10 @@ fn write_host_bindings(output: &Path, runtime_wit: &Path, echo_wit: &Path) -> io
         r#"wasmtime::component::bindgen!({{
     path: {runtime_path},
     world: "latent:platform/capsule@0.1.0",
-    imports: {{ default: async }},
+    imports: {{
+        "latent:context/context@0.1.0.remaining-budget": store | trappable,
+        default: async,
+    }},
     exports: {{ default: async }},
 }});
 "#

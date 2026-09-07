@@ -2,12 +2,11 @@ use std::collections::HashMap;
 use std::fmt;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex, MutexGuard};
-use std::time::Instant;
 
 use latent_activation::{ActivationEnvelope, ActivationManager, ActivationOutcome};
 use latent_core::{
     ActivationBudget, ActivationId, ActivationTerminalState, BoxFuture, BudgetConsumption,
-    BudgetError, CancelDisposition, ClockSample, EffectiveActivationBudget, ErrorDetail, Metadata,
+    BudgetError, CancelDisposition, EffectiveActivationBudget, ErrorDetail, Metadata,
     PlatformError, PlatformErrorCode, ResourceBudget,
 };
 
@@ -16,26 +15,7 @@ use crate::cancellation::{ActivationCancellationRegistry, CancellationRegistrySn
 const DEFAULT_MAXIMUM_CANCELLATION_REASON_BYTES: usize = 256;
 const CANCELLATION_MESSAGE: &str = "activation cancelled";
 
-/// Clock boundary used to bind an admitted wall-clock deadline to monotonic
-/// process time. Admission consumes one coherent sample; terminal accounting
-/// reads only monotonic time.
-pub trait ActivationClock: Send + Sync {
-    fn sample(&self) -> ClockSample;
-    fn monotonic_now(&self) -> Instant;
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct SystemActivationClock;
-
-impl ActivationClock for SystemActivationClock {
-    fn sample(&self) -> ClockSample {
-        ClockSample::system_now()
-    }
-
-    fn monotonic_now(&self) -> Instant {
-        Instant::now()
-    }
-}
+pub use latent_core::{ActivationClock, SystemActivationClock};
 
 /// Reusable deployment and node ceilings applied to every wrapped invocation.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -174,13 +154,29 @@ where
         policy: ActivationBudgetPolicy,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
+        Self::new_with_clock_and_budget_registry(
+            inner,
+            policy,
+            clock,
+            ActivationBudgetRegistry::default(),
+        )
+    }
+
+    /// Uses the same registry supplied to execution adapters. Existing
+    /// constructors retain their private registry for source compatibility.
+    pub fn new_with_clock_and_budget_registry(
+        inner: Arc<M>,
+        policy: ActivationBudgetPolicy,
+        clock: Arc<dyn ActivationClock>,
+        budgets: ActivationBudgetRegistry,
+    ) -> Result<Self, PlatformError> {
         let cancellations =
             ActivationCancellationRegistry::new(policy.maximum_cancellation_reason_bytes)?;
         Ok(Self {
             inner,
             policy,
             clock,
-            budgets: ActivationBudgetRegistry::default(),
+            budgets,
             cancellations,
         })
     }
@@ -419,13 +415,13 @@ fn terminal_state_for_code(code: PlatformErrorCode) -> ActivationTerminalState {
 mod tests {
     use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
     use std::thread;
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
 
     use latent_activation::{
         ActivationManager, ActivationOutcome, ActivationSuccess, TraceContext,
     };
     use latent_core::{
-        BudgetReservation, ContractId, DeclaredError, FunctionId, InvocationPrincipal,
+        BudgetReservation, ClockSample, ContractId, DeclaredError, FunctionId, InvocationPrincipal,
         PrincipalKind, ServiceId, SpanId, TenantId, TraceId,
     };
     use latent_routing::InvocationTarget;
