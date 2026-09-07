@@ -6,10 +6,12 @@ use std::task::Poll;
 
 use latent_activation::{ActivationEnvelope, ActivationManager, ActivationOutcome, TraceContext};
 use latent_artifacts::CapsuleArtifact;
-use latent_core::{BoxFuture, BudgetConsumption, DeclaredError, NodeId, PlatformError, SpanId, TraceId};
+use latent_core::{
+    BoxFuture, BudgetConsumption, DeclaredError, NodeId, PlatformError, SpanId, TraceId,
+};
 use latent_executor::{
-    ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestInterruptionKind,
-    GuestOutcome, GuestTrap, PreparationKey, PreparedComponent,
+    ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest,
+    GuestInterruptionKind, GuestOutcome, GuestTrap, PreparationKey, PreparedComponent,
 };
 use latent_node::{Phase0ActivationRunner, Phase0ActivationRunnerConfig};
 use latent_scheduler::{CellClass, CellPool, FixedCellPool, FixedCellPoolConfig};
@@ -109,11 +111,13 @@ impl ExecutionBackend for FaultBackend {
                     consumption,
                 }),
                 Mode::PlatformFailure => Err(injected_error(Code::Unavailable)),
-                Mode::Success | Mode::CleanupFailure | Mode::Blocked => Ok(GuestOutcome::Returned {
-                    output: request.activation.input,
-                    output_media_type: "application/octet-stream".to_owned(),
-                    consumption,
-                }),
+                Mode::Success | Mode::CleanupFailure | Mode::Blocked => {
+                    Ok(GuestOutcome::Returned {
+                        output: request.activation.input,
+                        output_media_type: "application/octet-stream".to_owned(),
+                        consumption,
+                    })
+                }
             }
         })
     }
@@ -165,26 +169,49 @@ impl Fixture {
         run(store.apply(deployment("blue", "alice", &digest))).unwrap();
         let (admission, quotas, _) = controller(&store, 3);
         let revision = store.resolve(&target("alice", None), None).unwrap();
-        let pool = Arc::new(FixedCellPool::new(FixedCellPoolConfig::new(
-            NodeId("admission-test-node".to_owned()), CellClass::Tiny, 1, queue_capacity,
-        )).unwrap());
-        let backend = Arc::new(FaultBackend { mode, calls: AtomicUsize::new(0), resume: Notify::new() });
+        let pool = Arc::new(
+            FixedCellPool::new(FixedCellPoolConfig::new(
+                NodeId("admission-test-node".to_owned()),
+                CellClass::Tiny,
+                1,
+                queue_capacity,
+            ))
+            .unwrap(),
+        );
+        let backend = Arc::new(FaultBackend {
+            mode,
+            calls: AtomicUsize::new(0),
+            resume: Notify::new(),
+        });
         let runner = Phase0ActivationRunner::new(
-            Phase0ActivationRunnerConfig { cell_class: CellClass::Tiny, ..Phase0ActivationRunnerConfig::default() },
-            pool.clone(), backend.clone(),
+            Phase0ActivationRunnerConfig {
+                cell_class: CellClass::Tiny,
+                ..Phase0ActivationRunnerConfig::default()
+            },
+            pool.clone(),
+            backend.clone(),
             prepared(PreparationKey {
                 release: digest,
                 engine_version: "test".to_owned(),
                 engine_configuration_digest: "test".to_owned(),
                 target_triple: "test".to_owned(),
                 cpu_feature_set: "test".to_owned(),
-            }), Vec::new(),
-        ).unwrap();
+            }),
+            Vec::new(),
+        )
+        .unwrap();
         // The controller owns its immutable catalog pin. Neither lookup nor
         // admission needs the repository, directory, or artifact source afterward.
         drop(store);
         drop(root);
-        Self { admission, quotas, revision, pool, runner, backend }
+        Self {
+            admission,
+            quotas,
+            revision,
+            pool,
+            runner,
+            backend,
+        }
     }
 
     fn request(&self, id: &str) -> AdmissionRequest {
@@ -197,18 +224,26 @@ impl Fixture {
         let id = permit.activation_id().clone();
         let accounting = ActivationBudget::new(permit.effective_budget().clone());
         let envelope = ActivationEnvelope {
-            activation_id: id.clone(), parent_activation_id: None, root_activation_id: id,
-            principal, target: permit.revision().target.clone(),
+            activation_id: id.clone(),
+            parent_activation_id: None,
+            root_activation_id: id,
+            principal,
+            target: permit.revision().target.clone(),
             resolved_revision: Some(permit.revision().clone()),
             deadline_unix_millis: permit.deadline().unix_millis(),
             priority: permit.obligations().priority,
             trace: TraceContext {
                 trace_id: TraceId("admission-test-trace".to_owned()),
                 span_id: SpanId("admission-test-span".to_owned()),
-                trace_flags: 0, baggage: Metadata::new(),
+                trace_flags: 0,
+                baggage: Metadata::new(),
             },
-            idempotency_key: None, retry_attempt: 0, budget: permit.granted_budget().clone(),
-            metadata: Metadata::new(), input: b"test".to_vec(), input_media_type: "application/octet-stream".to_owned(),
+            idempotency_key: None,
+            retry_attempt: 0,
+            budget: permit.granted_budget().clone(),
+            metadata: Metadata::new(),
+            input: b"test".to_vec(),
+            input_media_type: "application/octet-stream".to_owned(),
         };
         // The legacy runner has no admission handoff hook. This test bridge
         // conservatively retains the queued permit through cell disposition.
@@ -219,9 +254,13 @@ impl Fixture {
         assert_eq!(self.runner.snapshot().active_cancellation_registrations, 0);
         let consumption = match &outcome {
             ActivationOutcome::Succeeded(success) => &success.consumption,
-            ActivationOutcome::DeclaredError { consumption, .. } | ActivationOutcome::Failed { consumption, .. } => consumption,
+            ActivationOutcome::DeclaredError { consumption, .. }
+            | ActivationOutcome::Failed { consumption, .. } => consumption,
         };
-        assert!(accounting.finalize_at(Some(consumption), Instant::now()).violation().is_none());
+        assert!(accounting
+            .finalize_at(Some(consumption), Instant::now())
+            .violation()
+            .is_none());
         drop(permit);
         Ok(outcome)
     }
@@ -244,11 +283,21 @@ fn failure_code(outcome: &ActivationOutcome) -> Code {
 
 #[tokio::test]
 async fn runner_terminal_matrix_disposes_cells_before_quota_returns_to_baseline() {
-    for mode in [Mode::Success, Mode::Declared, Mode::Trap, Mode::Deadline, Mode::Fuel, Mode::PlatformFailure, Mode::CleanupFailure] {
+    for mode in [
+        Mode::Success,
+        Mode::Declared,
+        Mode::Trap,
+        Mode::Deadline,
+        Mode::Fuel,
+        Mode::PlatformFailure,
+        Mode::CleanupFailure,
+    ] {
         let fixture = Fixture::new(mode, 1);
         let outcome = fixture.invoke(fixture.request("terminal")).await.unwrap();
         match mode {
-            Mode::Success | Mode::CleanupFailure => assert!(matches!(outcome, ActivationOutcome::Succeeded(_))),
+            Mode::Success | Mode::CleanupFailure => {
+                assert!(matches!(outcome, ActivationOutcome::Succeeded(_)))
+            }
             Mode::Declared => assert!(matches!(outcome, ActivationOutcome::DeclaredError { .. })),
             Mode::Trap => assert_eq!(failure_code(&outcome), Code::GuestTrap),
             Mode::Deadline => assert_eq!(failure_code(&outcome), Code::DeadlineExceeded),
@@ -258,8 +307,14 @@ async fn runner_terminal_matrix_disposes_cells_before_quota_returns_to_baseline(
         }
         assert_eq!(fixture.backend.calls.load(Ordering::SeqCst), 1);
         assert_eq!(fixture.pool.observations().active_leases, 0);
-        assert_eq!(fixture.pool.observations().quarantined, u32::from(matches!(mode, Mode::CleanupFailure)));
-        assert_eq!(fixture.pool.observations().available, u32::from(!matches!(mode, Mode::CleanupFailure)));
+        assert_eq!(
+            fixture.pool.observations().quarantined,
+            u32::from(matches!(mode, Mode::CleanupFailure))
+        );
+        assert_eq!(
+            fixture.pool.observations().available,
+            u32::from(!matches!(mode, Mode::CleanupFailure))
+        );
         fixture.assert_clean();
     }
 }
@@ -270,7 +325,10 @@ async fn admission_rejection_never_calls_the_real_runner_or_cell_pool() {
     let before = fixture.pool.observations();
     let mut request = fixture.request("rejected");
     request.payload_bytes = 1025;
-    assert_eq!(fixture.invoke(request).await.unwrap_err().code, Code::ResourceExhausted);
+    assert_eq!(
+        fixture.invoke(request).await.unwrap_err().code,
+        Code::ResourceExhausted
+    );
     assert_eq!(fixture.runner.snapshot().total_invocations, 0);
     assert_eq!(fixture.backend.calls.load(Ordering::SeqCst), 0);
     assert_eq!(fixture.pool.observations(), before);
@@ -282,8 +340,20 @@ async fn downstream_queue_failure_returns_the_admission_reservation() {
     let fixture = Fixture::new(Mode::Success, 0);
     let id = ActivationId("occupier".to_owned());
     let tenant = TenantId("alice".to_owned());
-    let lease = fixture.pool.acquire(&id, &tenant, CellClass::Tiny, &fixture.quotas.policy().budget_ceiling).await.unwrap();
-    let outcome = fixture.invoke(fixture.request("enqueue-failed")).await.unwrap();
+    let lease = fixture
+        .pool
+        .acquire(
+            &id,
+            &tenant,
+            CellClass::Tiny,
+            &fixture.quotas.policy().budget_ceiling,
+        )
+        .await
+        .unwrap();
+    let outcome = fixture
+        .invoke(fixture.request("enqueue-failed"))
+        .await
+        .unwrap();
     assert_eq!(failure_code(&outcome), Code::ResourceExhausted);
     assert_eq!(fixture.backend.calls.load(Ordering::SeqCst), 0);
     fixture.assert_clean();
@@ -298,37 +368,83 @@ async fn cancellation_in_the_real_runner_releases_queued_and_running_quota() {
         let id = ActivationId("occupier".to_owned());
         let tenant = TenantId("alice".to_owned());
         let held = if queued {
-            Some(fixture.pool.acquire(&id, &tenant, CellClass::Tiny, &fixture.quotas.policy().budget_ceiling).await.unwrap())
-        } else { None };
+            Some(
+                fixture
+                    .pool
+                    .acquire(
+                        &id,
+                        &tenant,
+                        CellClass::Tiny,
+                        &fixture.quotas.policy().budget_ceiling,
+                    )
+                    .await
+                    .unwrap(),
+            )
+        } else {
+            None
+        };
         let mut invocation = Box::pin(fixture.invoke(fixture.request("cancelled")));
-        assert!(matches!(invocation.as_mut().poll(&mut Context::from_waker(Waker::noop())), Poll::Pending));
+        assert!(matches!(
+            invocation
+                .as_mut()
+                .poll(&mut Context::from_waker(Waker::noop())),
+            Poll::Pending
+        ));
         assert_eq!(fixture.quotas.usage().unwrap().active_activations, 1);
         assert_eq!(fixture.pool.observations().queue_depth, u32::from(queued));
-        assert_eq!(fixture.runner.cancel(&ActivationId("cancelled".to_owned()), "stop").await.unwrap(), CancelDisposition::Accepted);
+        assert_eq!(
+            fixture
+                .runner
+                .cancel(&ActivationId("cancelled".to_owned()), "stop")
+                .await
+                .unwrap(),
+            CancelDisposition::Accepted
+        );
         fixture.backend.resume.notify_one();
         let outcome = invocation.await.unwrap();
         assert_eq!(failure_code(&outcome), Code::Cancelled);
         fixture.assert_clean();
-        if let Some(lease) = held { fixture.pool.release(lease).await.unwrap(); }
+        if let Some(lease) = held {
+            fixture.pool.release(lease).await.unwrap();
+        }
         assert_eq!(fixture.pool.observations().available, 1);
     }
 }
 
 #[tokio::test]
-async fn dropping_real_runner_futures_reclaims_quota_and_cancellation_without_reusing_uncertain_cells() {
+async fn dropping_real_runner_futures_reclaims_quota_and_cancellation_without_reusing_uncertain_cells(
+) {
     for queued in [true, false] {
         let fixture = Fixture::new(Mode::Blocked, 1);
         let id = ActivationId("occupier".to_owned());
         let tenant = TenantId("alice".to_owned());
         let held = if queued {
-            Some(fixture.pool.acquire(&id, &tenant, CellClass::Tiny, &fixture.quotas.policy().budget_ceiling).await.unwrap())
-        } else { None };
+            Some(
+                fixture
+                    .pool
+                    .acquire(
+                        &id,
+                        &tenant,
+                        CellClass::Tiny,
+                        &fixture.quotas.policy().budget_ceiling,
+                    )
+                    .await
+                    .unwrap(),
+            )
+        } else {
+            None
+        };
         let mut invocation = Box::pin(fixture.invoke(fixture.request("dropped")));
-        assert!(invocation.as_mut().poll(&mut Context::from_waker(Waker::noop())).is_pending());
+        assert!(invocation
+            .as_mut()
+            .poll(&mut Context::from_waker(Waker::noop()))
+            .is_pending());
         assert_eq!(fixture.quotas.usage().unwrap().active_activations, 1);
         drop(invocation);
         fixture.assert_clean();
-        if let Some(lease) = held { fixture.pool.release(lease).await.unwrap(); }
+        if let Some(lease) = held {
+            fixture.pool.release(lease).await.unwrap();
+        }
         assert_eq!(fixture.pool.observations().active_leases, 0);
         assert_eq!(fixture.pool.observations().quarantined, u32::from(!queued));
     }

@@ -11,7 +11,7 @@ pub(crate) enum AdmissionClock {
 }
 
 impl AdmissionClock {
-    fn now(self) -> Instant {
+    pub(crate) fn now(self) -> Instant {
         match self {
             Self::Live => Instant::now(),
             Self::Fixed(now) => now,

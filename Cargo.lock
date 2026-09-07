@@ -937,14 +937,18 @@ version = "0.1.0-alpha.1"
 name = "latent-control-store"
 version = "0.1.0-alpha.1"
 dependencies = [
+ "latent-activation",
  "latent-admission",
  "latent-artifacts",
  "latent-audit",
  "latent-core",
+ "latent-executor",
  "latent-manifest",
  "latent-node",
  "latent-policy",
  "latent-routing",
+ "latent-scheduler",
+ "tokio",
 ]
 
 [[package]]

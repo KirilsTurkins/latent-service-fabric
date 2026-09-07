@@ -144,13 +144,20 @@ impl AdmissionPermit {
     /// or quarantine its independently owned cell lease. A second dequeue is
     /// prevented by ownership rather than an idempotent counter decrement.
     pub fn start_execution_at(self, now: Instant) -> Result<ExecutionPermit, PlatformError> {
-        self.ensure_schedulable_at(now)?;
-        self.quotas.start(&self.activation_id)?;
-        Ok(ExecutionPermit { admission: self })
+        self.start_execution_with_clock(crate::timing::AdmissionClock::Fixed(now))
     }
 
     pub fn start_execution(self) -> Result<ExecutionPermit, PlatformError> {
-        self.start_execution_at(Instant::now())
+        self.start_execution_with_clock(crate::timing::AdmissionClock::Live)
+    }
+
+    fn start_execution_with_clock(
+        self,
+        clock: crate::timing::AdmissionClock,
+    ) -> Result<ExecutionPermit, PlatformError> {
+        self.quotas
+            .start(&self.activation_id, &self.grant.deadline, clock)?;
+        Ok(ExecutionPermit { admission: self })
     }
 }
 

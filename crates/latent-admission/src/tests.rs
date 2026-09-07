@@ -938,7 +938,7 @@ fn tenant_counters_are_isolated_while_node_and_trust_limits_are_shared() {
 }
 
 #[test]
-fn all_terminal_outcomes_release_reserved_capacity_after_accounting() {
+fn reservation_guard_is_outcome_agnostic_and_outlives_accounting() {
     let h = Harness::standard();
     for outcome in [
         "success",

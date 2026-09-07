@@ -1,3 +1,5 @@
+use crate::timing::AdmissionClock;
+use latent_core::EffectiveDeadline;
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -259,8 +261,23 @@ impl LocalQuotaProvider {
         Ok(())
     }
 
-    pub(crate) fn start(&self, activation_id: &ActivationId) -> Result<(), PlatformError> {
+    pub(crate) fn start(
+        &self,
+        activation_id: &ActivationId,
+        deadline: &EffectiveDeadline,
+        clock: AdmissionClock,
+    ) -> Result<(), PlatformError> {
         let mut state = self.lock()?;
+        // Check after lock contention, before returning queue capacity or
+        // authorizing execution. A live caller never reuses an earlier sample.
+        if deadline.is_expired_at(clock.now()) {
+            return Err(rejection(
+                PlatformErrorCode::DeadlineExceeded,
+                "request",
+                "deadline",
+                "deadline-exceeded",
+            ));
+        }
         let record = state.reservations.get_mut(activation_id).ok_or_else(|| {
             rejection(
                 PlatformErrorCode::Internal,

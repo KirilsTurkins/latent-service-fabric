@@ -21,3 +21,7 @@ latent-audit = { path = "../latent-audit" }
 
 [dev-dependencies]
 latent-admission = { path = "../latent-admission" }
+latent-activation = { path = "../latent-activation" }
+latent-executor = { path = "../latent-executor" }
+latent-scheduler = { path = "../latent-scheduler" }
+tokio.workspace = true
