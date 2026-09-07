@@ -12,7 +12,10 @@ import unittest
 from pathlib import Path
 
 from tools.phase0_collector_identity import EXPECTED_RELEASE_BUILD_CONFIGURATION
-from tools.tests.phase0_test_environment import sanitized_phase0_environment
+from tools.tests.phase0_test_environment import (
+    sanitized_phase0_environment,
+    write_native_linux_runner_stubs,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -610,8 +613,9 @@ class Phase0ResourceSoakAggregateTests(unittest.TestCase):
             fake_bin = workspace / "bin"
             fake_bin.mkdir()
             fake_cargo = fake_bin / "cargo"
-            fake_cargo.write_text("#!/usr/bin/env sh\nexit 0\n", encoding="utf-8")
+            fake_cargo.write_text("#!/usr/bin/env sh\nexit 99\n", encoding="utf-8")
             fake_cargo.chmod(0o755)
+            write_native_linux_runner_stubs(fake_bin)
             environment = sanitized_phase0_environment()
             environment["LSF_RESOURCE_SOAK_TARGET_DIR"] = str(target_root)
             environment["PATH"] = f"{fake_bin}{os.pathsep}{environment.get('PATH', '')}"

@@ -1,5 +1,9 @@
 # API surface map
 
+This map includes implemented APIs and architectural contracts. The current
+implementation status is summarized in [the roadmap](roadmap.md). Generated
+bindings and declared traits do not by themselves provide running services.
+
 ## Guest-facing WIT packages
 
 | Package | Purpose |
@@ -20,6 +24,10 @@
 
 Rust bindings for the aggregate runtime world and maintained echo fixture are generated into Cargo `OUT_DIR` by `latent-component-bindings`. The executable echo guest generates its canonical ABI exports in the final component crate from the same authoritative WIT.
 
+The retained Phase 0 echo backend implements its context/log imports. Generic
+context/log hardening and clock binding remain Phase 1 #10 work; the other
+capability packages describe later-phase surfaces.
+
 ## Protobuf services
 
 | Service | Purpose |
@@ -38,15 +46,21 @@ Rust bindings for the aggregate runtime world and maintained echo fixture are ge
 
 `latent-rpc` generates Rust messages, Tonic clients, Tonic server traits/wrappers, and an embedded descriptor set for every checked-in Protobuf file. It contains no listener or service implementation.
 
-Phase 1's supported standalone subset and all explicit unimplemented methods are defined in [Phase 1 contract hardening](protocol/phase-1-contract-hardening.md).
+Phase 1's planned standalone subset and the methods that must report explicit
+unsupported/unimplemented behavior are defined in
+[Phase 1 contract hardening](protocol/phase-1-contract-hardening.md).
+Invocation adapters (#12), management adapters (#37), and listener composition
+(#14) remain pending on the integration branch.
 
 ## Rust internal interfaces
 
 | Crate | Primary seams |
 |---|---|
+| `latent-core` | IDs/errors/lifecycle models, `ActivationBudget`, `EffectiveActivationBudget`, reservations and terminal consumption |
+| `latent-manifest` | `ManifestCodec`, `ManifestValidator`, bounded `JsonManifestCodec`, `Phase1ManifestValidator` |
 | `latent-rpc` | generated Protobuf messages, Tonic clients/servers, descriptor set |
 | `latent-component-bindings` | shared generated runtime/echo Component Model bindings |
-| `latent-artifacts` | `ArtifactRepository`, `ArtifactCache`, `ArtifactVerifier` |
+| `latent-artifacts` | `ArtifactRepository`, `DirectoryArtifactRepository`, `ArtifactCache`, `ArtifactVerifier` |
 | `latent-contracts` | `ContractRegistry`, `CompatibilityChecker`, `BindingCompiler` |
 | `latent-policy` | `PolicyEngine`, `PolicyRepository` |
 | `latent-routing` | `RouteResolver`, `RouteCompiler`, snapshot source/publisher |
@@ -66,8 +80,8 @@ Phase 1's supported standalone subset and all explicit unimplemented methods are
 | `latent-workflows` | continuation store and workflow runtime |
 | `latent-wire` | codec, duplex channel, request multiplexer |
 | `latent-wrpc` | remote client/server and connection factory |
-| `latent-node` | node registration, inventory, route watch, directory |
-| `latent-control-store` | desired-state persistence seams |
+| `latent-node` | node registration/inventory/watch seams; `Phase0ActivationRunner`, `BudgetedActivationManager`, budget and cancellation registries |
+| `latent-control-store` | desired-state persistence seams; `DirectoryDeploymentRepository` implements local deployment storage, route compilation/publication, and resolution |
 | `latent-telemetry` | telemetry sink and activation observer |
 | `latent-audit` | audit store and publisher |
 | `latent-testkit` | conformance suite, deterministic async/process/resource utilities, invariant probes |
@@ -75,6 +89,11 @@ Phase 1's supported standalone subset and all explicit unimplemented methods are
 ## Declarative schemas
 
 The JSON Schemas in `schemas/` define capsules, deployments, bindings, policies, triggers, and compiled route snapshots.
+
+The seventh schema defines locally trusted release-publication requests.
+`latent-manifest` embeds the five manifest schemas and applies bounded
+structural validation plus separate Phase 1 semantic rules; see the
+[manifest codec contract](protocol/manifest-codec.md).
 
 ## Language SDKs
 

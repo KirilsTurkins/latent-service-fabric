@@ -17,7 +17,10 @@ from tools.phase0_collector_identity import (
     COLLECTOR_SCHEMA,
     EXPECTED_RELEASE_BUILD_CONFIGURATION,
 )
-from tools.tests.phase0_test_environment import sanitized_phase0_environment
+from tools.tests.phase0_test_environment import (
+    sanitized_phase0_environment,
+    write_native_linux_runner_stubs,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -618,15 +621,9 @@ class Phase0CalibrationAggregateTests(unittest.TestCase):
             )
             for command in ("cargo",):
                 self.write_executable(
-                    bin_directory / command, "#!/usr/bin/env bash\nexit 0\n"
+                    bin_directory / command, "#!/usr/bin/env bash\nexit 99\n"
                 )
-            self.write_executable(
-                bin_directory / "uname", "#!/usr/bin/env bash\nprintf '%s\\n' Linux\n"
-            )
-            self.write_executable(
-                bin_directory / "systemd-detect-virt",
-                "#!/usr/bin/env bash\nprintf '%s\\n' none\n",
-            )
+            write_native_linux_runner_stubs(bin_directory)
             environment = sanitized_phase0_environment()
             # A real calibration run executes this regression suite from
             # inside its already-created external build directory.  Keep that
