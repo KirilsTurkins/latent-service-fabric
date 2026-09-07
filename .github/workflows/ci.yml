@@ -68,7 +68,7 @@ jobs:
       - name: Run tests
         run: |
           cargo test --workspace --all-targets --all-features --locked
-          cargo test -p latent-admission --doc --locked
+          cargo test -p latent-admission -p latent-scheduler --doc --locked
 
   catalog:
     name: Durable catalog acceptance

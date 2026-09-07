@@ -52,7 +52,11 @@ Release validates the pool owner and immutable lease identity recorded by `Activ
 
 Sequence exhaustion is fail-closed. If the internal lease-token sequence is exhausted, the affected cell is quarantined and every queued acquisition is failed instead of leaving requests stranded behind apparently available capacity.
 
-Quarantine is intentionally one-way in Phase 0. Repair, replacement, multiple classes, fairness, priorities, autoscaling, and cluster placement remain later work.
+Quarantine is intentionally one-way. The Phase 1 [local scheduler](../scheduling.md)
+now composes startup-fixed class pools with bounded fair queues and priority/
+deadline/aging policy through nonqueueing acquisition and bounded change
+notifications. This document describes the retained single-class Phase 0 pool;
+repair/replacement, autoscaling, and cross-node placement remain later work.
 
 ## Validation
 

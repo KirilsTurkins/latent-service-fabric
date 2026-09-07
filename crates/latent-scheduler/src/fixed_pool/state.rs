@@ -12,7 +12,7 @@ use super::{
 use crate::{CellClass, CellLease, CellPoolSnapshot};
 use latent_core::{ActivationId, PlatformError, PlatformErrorCode, ResourceBudget, TenantId};
 use std::sync::{Arc, Mutex, MutexGuard};
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{mpsc, oneshot, watch};
 
 pub(super) struct PoolInner {
     pub(super) config: FixedCellPoolConfig,
@@ -20,9 +20,86 @@ pub(super) struct PoolInner {
     pub(super) state: Mutex<PoolState>,
     pub(super) test_transition_observer:
         Mutex<Option<mpsc::UnboundedSender<FixedCellPoolTestTransition>>>,
+    pub(super) changes: watch::Sender<u64>,
 }
 
 impl PoolInner {
+    pub(super) fn try_reserve(
+        self: &Arc<Self>,
+        activation_id: &ActivationId,
+        tenant: &TenantId,
+        budget: &ResourceBudget,
+        deadline: Option<u64>,
+    ) -> Result<Option<CellLease>, PlatformError> {
+        let mut state = self.lock_state();
+        if let Some(deadline) = deadline.filter(|value| *value <= self.clock.now_unix_millis()) {
+            return Err(pool_error(
+                PlatformErrorCode::DeadlineExceeded,
+                "cell acquisition deadline expired",
+                false,
+                "cell-pool.deadline-exceeded",
+                [("deadline_unix_millis", deadline.to_string())],
+            ));
+        }
+        if state.active.contains_key(activation_id)
+            || state.waiting_by_activation.contains_key(activation_id)
+        {
+            return Err(pool_error(
+                PlatformErrorCode::AlreadyExists,
+                "activation already owns or is waiting for a cell",
+                false,
+                "cell-pool.duplicate-acquisition",
+                std::iter::empty::<(&str, &str)>(),
+            ));
+        }
+        if state.active.is_empty() && state.quarantined.len() == self.configured_capacity() {
+            return Err(pool_error(
+                PlatformErrorCode::Unavailable,
+                "all configured cells are quarantined",
+                true,
+                "cell-pool.all-quarantined",
+                [("quarantined", state.quarantined.len().to_string())],
+            ));
+        }
+        // A legacy FIFO waiter owns the next released cell before a nonqueueing
+        // caller. No waiter or identifier clone is allocated on this path.
+        if !state.waiters.is_empty() {
+            return Ok(None);
+        }
+        let Some(cell) = state.idle.pop_front() else {
+            return Ok(None);
+        };
+        let token = match state.take_lease_token() {
+            Ok(token) => token,
+            Err(error) => {
+                Self::quarantine_token_exhaustion_locked(&mut state, cell);
+                state.assert_invariants(&self.config);
+                drop(state);
+                self.notify_change();
+                return Err(error);
+            }
+        };
+        let lease = Self::activate_locked(
+            self,
+            &mut state,
+            token,
+            cell,
+            LeaseRequest {
+                activation_id: activation_id.clone(),
+                tenant: tenant.clone(),
+                budget: budget.clone(),
+                deadline,
+            },
+        );
+        state.assert_invariants(&self.config);
+        self.emit_test_transition_locked(
+            &state,
+            activation_id,
+            FixedCellPoolTestTransitionKind::LeaseActivated,
+        );
+        Ok(Some(lease))
+    }
+
     pub(super) fn reserve_or_queue(
         self: &Arc<Self>,
         activation_id: ActivationId,
@@ -49,6 +126,8 @@ impl PoolInner {
                 Err(error) => {
                     Self::quarantine_token_exhaustion_locked(&mut state, cell);
                     state.assert_invariants(&self.config);
+                    drop(state);
+                    self.notify_change();
                     return Err(error);
                 }
             };
@@ -222,8 +301,16 @@ impl PoolInner {
             state.assert_invariants(&self.config);
             deliveries
         };
+        self.notify_change();
         deliver(deliveries);
         Ok(())
+    }
+
+    fn notify_change(&self) {
+        // Never acquire the watch value lock while holding pool state: callers
+        // may briefly retain a watch borrow while inspecting pool observations.
+        self.changes
+            .send_modify(|version| *version = version.wrapping_add(1));
     }
 
     fn assign_cell_locked(

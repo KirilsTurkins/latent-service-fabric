@@ -21,7 +21,7 @@ not claim production readiness or Phase 1 API compatibility.
 
 ## Phase 1: single-node stateless fabric — in progress
 
-The following foundations are merged:
+The following foundations are implemented:
 
 - [Executable build and generated bindings](development/build-foundation.md) (#2) and [cross-layer contracts](protocol/phase-1-contract-hardening.md) (#36).
 - [Manifest codecs and schema-backed validation](protocol/manifest-codec.md) (#3).
@@ -29,13 +29,14 @@ The following foundations are merged:
 - [Embedded deployment catalog and immutable local routing](deployment-routing.md) (#5).
 - [Resource budgets, deadlines, and cancellation primitives](runtime/resource-budgets.md) (#6).
 - [Bounded single-node admission and overload control](admission-control.md) (#7).
+- [Fixed class pools and bounded tenant-fair scheduling](scheduling.md) (#8).
 
 The remaining work is tracked by the
 [Phase 1 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/1):
 
 | Area | Remaining issues |
 | --- | --- |
-| Invocation runtime | [Fair scheduler #8](https://github.com/KirilsTurkins/latent-service-fabric/issues/8), [generic Wasmtime backend #9](https://github.com/KirilsTurkins/latent-service-fabric/issues/9), [context/log/clock #10](https://github.com/KirilsTurkins/latent-service-fabric/issues/10), [activation orchestration #11](https://github.com/KirilsTurkins/latent-service-fabric/issues/11) |
+| Invocation runtime | [Generic Wasmtime backend #9](https://github.com/KirilsTurkins/latent-service-fabric/issues/9), [context/log/clock #10](https://github.com/KirilsTurkins/latent-service-fabric/issues/10), [activation orchestration #11](https://github.com/KirilsTurkins/latent-service-fabric/issues/11) |
 | Node services and operations | [Invocation/cancellation/status #12](https://github.com/KirilsTurkins/latent-service-fabric/issues/12), [telemetry/inventory #13](https://github.com/KirilsTurkins/latent-service-fabric/issues/13), [management adapters #37](https://github.com/KirilsTurkins/latent-service-fabric/issues/37), [standalone node #14](https://github.com/KirilsTurkins/latent-service-fabric/issues/14), [CLI #15](https://github.com/KirilsTurkins/latent-service-fabric/issues/15) |
 | Completion evidence | [Conformance, isolation, reclamation, and zero-idle scaling gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16) |
 

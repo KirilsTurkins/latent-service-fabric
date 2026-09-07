@@ -7,7 +7,7 @@ processes, sockets, threads, heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Phase 1 is in progress. The executable Phase 0 echo runtime now has maintained manifest validation, budget/cancellation primitives, a durable local release catalog, and immutable deployment/routing implementations alongside it. A standalone Phase 1 node, public service adapters, and operator CLI remain pending. The retained August 30 native-Linux Phase 0 full-gate receipt authorizes that work; it does not establish production readiness or completion of Phase 1.
+> Phase 1 is in progress. The executable Phase 0 echo runtime now has maintained manifest validation, budget/cancellation primitives, durable local catalogs and routing, bounded admission, and fair scheduling implementations alongside it. A standalone Phase 1 node, public service adapters, and operator CLI remain pending. The retained August 30 native-Linux Phase 0 full-gate receipt authorizes that work; it does not establish production readiness or completion of Phase 1.
 
 ## Core invariant
 
@@ -66,8 +66,9 @@ them into the standalone node is still tracked by
 | Local release storage | Exclusive directory ownership, immutable digest verification, bounded listing/indexes, durable publication and recovery; [release catalog](docs/development/local-release-catalog.md) |
 | Deployment and routing | Atomic deployment updates, immutable route generations, tenant-safe deterministic resolution, pinned revisions, and restart recovery; [deployment routing](docs/deployment-routing.md) |
 | Admission and quotas | Tenant/trust/queue capacity, bounded input, deadline and overload checks, compatible cell selection, and affine quota permits; [admission control](docs/admission-control.md) |
+| Fair scheduling | Fixed class pools, bounded tenant-fair queues, priority/deadline/aging order, shared cancellation, and owned cell/quota disposition; [scheduling](docs/scheduling.md) |
 
-Fair scheduling, generic Wasmtime dispatch, complete activation
+Generic Wasmtime dispatch, complete activation
 orchestration, clock capabilities, invocation/management services, shared
 telemetry, the standalone node, CLI, and the Phase 1 gate remain open work. See
 [the roadmap](docs/roadmap.md) for issue links and phase boundaries.

@@ -65,7 +65,7 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 | `latent-policy` | `PolicyEngine`, `PolicyRepository` |
 | `latent-routing` | `RouteResolver`, `RouteCompiler`, snapshot source/publisher |
 | `latent-admission` | `AdmissionController`, `QuotaProvider`, `LocalAdmissionController`, `LocalQuotaProvider`, affine admission/execution permits |
-| `latent-scheduler` | open `CellPool`, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `CellPoolSnapshot`, `ActivationScheduler`, `ClusterPlacement` |
+| `latent-scheduler` | open `CellPool` with nonqueueing acquisition/change notifications, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `LocalScheduler`, `AdmittedSchedulingRequest`, `ScheduledActivation`, `SchedulerSnapshot`, `SchedulingCancellation`, `LocalNodePlacement` |
 | `latent-activation` | `ActivationManager`, `ActivationJournal` |
 | `latent-executor` | `ExecutionBackend`, backend registry and cancellation |
 | `latent-wasmtime` | engine factory, AOT compiler/cache/validator, shared echo host bindings |
@@ -80,11 +80,16 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 | `latent-workflows` | continuation store and workflow runtime |
 | `latent-wire` | codec, duplex channel, request multiplexer |
 | `latent-wrpc` | remote client/server and connection factory |
-| `latent-node` | node registration/inventory/watch seams; `Phase0ActivationRunner`, `BudgetedActivationManager`, budget and cancellation registries |
+| `latent-node` | node registration/inventory/watch seams; `Phase0ActivationRunner`, `BudgetedActivationManager`, budget/cancellation registries, and the scheduler adapter on `CancellationHandle` |
 | `latent-control-store` | desired-state persistence seams; `DirectoryDeploymentRepository` implements local deployment storage, route compilation/publication, and resolution |
 | `latent-telemetry` | telemetry sink and activation observer |
 | `latent-audit` | audit store and publisher |
 | `latent-testkit` | conformance suite, deterministic async/process/resource utilities, invariant probes |
+
+The [local scheduler](scheduling.md) consumes admission permits and returns an
+affine cell/quota assignment. Its cooperative enqueue futures use the caller's
+runtime and the activation owner's cancellation state; complete activation
+orchestration and the standalone node remain #11/#14 work.
 
 ## Declarative schemas
 

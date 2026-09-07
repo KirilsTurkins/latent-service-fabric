@@ -1051,7 +1051,9 @@ name = "latent-scheduler"
 version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
+ "latent-admission",
  "latent-core",
+ "latent-routing",
  "tokio",
 ]
 

@@ -7,9 +7,10 @@ It creates no execution cell, cancellation registration, artifact preparation,
 worker, runtime, socket, service-specific queue, or periodic task.
 
 The embedded deployment catalog supplies immutable typed execution policy via
-`RevisionPolicySource`. The fair scheduler and generalized activation manager
-remain the separate work in issues #8 and #11. This change does not turn the
-Phase 0 test executable into the Phase 1 invocation service.
+`RevisionPolicySource`. The [fair scheduler](scheduling.md) consumes the permit
+and retains its reservation with the assigned cell. The generalized activation
+manager remains #11 work; these APIs do not turn the Phase 0 test executable
+into the Phase 1 invocation service.
 
 ## Ownership and trust boundaries
 

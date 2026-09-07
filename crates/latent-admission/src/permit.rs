@@ -125,6 +125,13 @@ impl AdmissionPermit {
         &self.obligations
     }
 
+    /// Verifies that scheduling uses the node ledger which reserved this work.
+    /// A permit from a different node/provider cannot bypass this node's quotas.
+    #[must_use]
+    pub fn is_reserved_by(&self, quotas: &LocalQuotaProvider) -> bool {
+        self.quotas.shares_ledger(quotas)
+    }
+
     /// Check immediately before allocating/handing off an execution cell.
     pub fn ensure_schedulable_at(&self, now: Instant) -> Result<(), PlatformError> {
         if self.grant.deadline.is_expired_at(now) {
@@ -145,6 +152,22 @@ impl AdmissionPermit {
     /// prevented by ownership rather than an idempotent counter decrement.
     pub fn start_execution_at(self, now: Instant) -> Result<ExecutionPermit, PlatformError> {
         self.start_execution_with_clock(crate::timing::AdmissionClock::Fixed(now))
+    }
+
+    /// Scheduler handoff variant: on failure retain the reservation so its
+    /// owner can dispose the assigned, unaccepted cell before refunding quota.
+    pub fn try_start_execution_at(
+        self,
+        now: Instant,
+    ) -> Result<ExecutionPermit, Box<(Self, PlatformError)>> {
+        match self.quotas.start(
+            &self.activation_id,
+            &self.grant.deadline,
+            crate::timing::AdmissionClock::Fixed(now),
+        ) {
+            Ok(()) => Ok(ExecutionPermit { admission: self }),
+            Err(error) => Err(Box::new((self, error))),
+        }
     }
 
     pub fn start_execution(self) -> Result<ExecutionPermit, PlatformError> {
