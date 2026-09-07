@@ -82,9 +82,10 @@ Run it from an isolated clone or worktree when local build output is present.
 - An integration test implements `CellPool` outside `latent-scheduler` using only the original required trait methods, mints an affine lease through `CellLease::new`, and proves that the issuer-retained `CellLeaseLifecycle` capability can disposition or observe abandonment without access to `FixedCellPool` internals.
 - The runtime WIT world is staged with all platform dependencies; every platform and example WIT package is parsed by `wasm-tools`; generated Wasmtime host bindings and `wit-bindgen` guest bindings compile.
 - The Rust echo guest returns normal input unchanged and its shared implementation tests cover `empty-message`, `message-too-large`, the exact 65,536-byte boundary, UTF-8 byte accounting, and bounded activation-ID logging data.
-- The echo guest is built as a `wasm32-wasip2` Component Model artifact with generated WIT bindings. `wasm-tools validate` accepts it, and the extracted root world must import exactly `latent:context/context@0.1.0` and `latent:log/log@0.1.0` and export exactly `examples:echo/api@0.1.0`.
+- The executable echo guest is built as a self-contained `wasm32-unknown-unknown` core with generated WIT bindings and wrapped with `wasm-tools component new`. The separate `wasm32-wasip2` build checks binding compatibility. `wasm-tools validate` accepts the executable component, and its extracted root world must import exactly `latent:context/context@0.1.0` and `latent:log/log@0.1.0` and export exactly `examples:echo/api@0.1.0`.
 - The extracted component interface contains the exported `echo` function and both declared domain-error variants. Any ambient WASI import, missing import, or unexpected export fails validation.
 - Two isolated clean echo builds must be byte-identical. A generated capsule manifest, build receipt, and SHA-256 file record stable metadata, local-build trust, the documented reproducibility boundary, and the computed component digest beneath `target/capsules/echo/`.
+- The generic Wasmtime suite builds a separate maintained Rust component and tiny WAT adversarial components. It checks dynamic contract/function selection, canonical scalar/composite values, declared versus nested errors, missing imports/exports and unsupported types, pre-store input rejection, bounded output, fresh guest state, short fuel/deadline/cancellation/memory containment, post-return failure, recovery, and explicit cleanup. These small fixtures are ordinary contract regressions; they do not run a resource soak or establish the Phase 1 gate. See [generic execution](docs/runtime/wasmtime.md).
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
 - All seven JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, release-publish, binding, policy, trigger, and compiled-route examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interfaces compile and execute small fake-client identity/cancellation fixtures. They cover status/cancellation before invoke completion, transport failures, lost-response status recovery, optional identity and lineage; see the [SDK contract](sdk/README.md#executable-contract-fixtures). These are contract tests, not implemented transport coverage.
@@ -294,14 +295,15 @@ After a successful contracts job, the workflow prints `build.json` and `sha256.t
 
 ## Allocation boundary
 
-Contract and capsule validation starts compiler and validator commands only. It does not start a service process, construct a Wasmtime engine or store, create an async runtime or worker pool, open a listener, lease an execution cell, or reserve capsule-owned execution state. The fixed pool stores only node-owned slot identifiers and generation counters while idle; activation and tenant identity exist only in bounded waiters and active leases.
+Static schema, WIT, Protobuf, and artifact validation uses compiler and validator commands. The complete `tools/validate_contracts.sh` gate also runs real Component Model integration tests: those tests create bounded engines, async runtimes, stores, and execution fixtures, then verify cleanup. They do not start a public node listener. Dormant catalog entries and prepared components do not retain activation stores or instances. The fixed pool stores only node-owned slot identifiers and generation counters while idle; activation and tenant identity exist only in bounded waiters and active leases.
 
 ## Scope
 
 Passing ordinary Phase 1 foundation checks validates the implemented manifest,
-budget/cancellation, storage, and local routing behavior covered by those tests.
+budget/cancellation, storage, local routing, admission, scheduling, and generic
+execution behavior covered by those tests.
 It does not establish a composed standalone node, service adapters, operator
-CLI, generic component dispatch, or completion of the Phase 1 gate.
+CLI, long-running reclamation evidence, or completion of the Phase 1 gate.
 
 Passing the Phase 0 executable baseline establishes source consistency, guest behavior,
 component-interface validity, fixed cell-pool accounting, real Wasmtime

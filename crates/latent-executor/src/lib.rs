@@ -134,6 +134,14 @@ pub trait ExecutionCancellation: Send + Sync {
     fn is_cancelled(&self) -> bool;
     fn reason(&self) -> Option<String>;
 
+    /// Admission's original wall/monotonic deadline, when supplied by the
+    /// activation owner. Backends preserve this instant through queueing rather
+    /// than recalculating a fresh duration from a later wall-clock sample.
+    /// Legacy direct callers may omit it; node orchestration supplies it.
+    fn effective_deadline(&self) -> Option<&latent_core::EffectiveDeadline> {
+        None
+    }
+
     /// Returns a live cancellation view suitable for a runtime-owned callback.
     ///
     /// Legacy handles remain source-compatible. They are still checked before

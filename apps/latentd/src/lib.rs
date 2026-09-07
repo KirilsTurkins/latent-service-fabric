@@ -2185,11 +2185,20 @@ fn cleanup_error(operation: &str, cause: PlatformError) -> PlatformError {
 }
 
 fn empty_cache_snapshot(config: &ValidatedConfig) -> PreparedCacheSnapshot {
+    let policy = latent_wasmtime::Phase0WasmtimeConfig::default();
     PreparedCacheSnapshot {
         entries: 0,
         source_bytes: 0,
         maximum_entries: config.prepared_cache_entries,
         maximum_source_bytes: config.prepared_cache_bytes,
+        metadata_bytes: 0,
+        maximum_metadata_bytes: policy.prepared_cache_maximum_metadata_bytes,
+        compiled_image_bytes: 0,
+        maximum_compiled_image_bytes: policy.prepared_cache_maximum_compiled_image_bytes,
+        preparing: 0,
+        maximum_concurrent_preparations: policy.maximum_concurrent_preparations,
+        preparing_source_bytes: 0,
+        preparing_metadata_bytes: 0,
     }
 }
 
