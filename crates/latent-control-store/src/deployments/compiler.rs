@@ -19,6 +19,7 @@ use latent_routing::{
     InvocationTarget, ResolvedRevision, RevisionRoute, RouteSnapshot, ServiceRoute,
 };
 
+use super::pagination::DeploymentIndex;
 use super::{deployment_revision_id, error, manifest_error, DirectoryDeploymentRepositoryConfig};
 
 type RouteKey = (String, String, String);
@@ -31,6 +32,8 @@ struct WeightedSet {
 
 pub(super) struct CompiledCatalog {
     pub deployments: BTreeMap<DeploymentId, DeploymentManifest>,
+    pub versions: BTreeMap<DeploymentId, u64>,
+    pub paging_index: DeploymentIndex,
     pub snapshot: RouteSnapshot,
     routes: BTreeSet<RouteKey>,
     endpoints: BTreeMap<EndpointKey, WeightedSet>,
@@ -115,8 +118,32 @@ impl CompiledCatalog {
     }
 }
 
+#[cfg(test)]
 pub(super) async fn compile(
     deployments: BTreeMap<DeploymentId, DeploymentManifest>,
+    generation: RouteGeneration,
+    generated_at_unix_millis: u64,
+    artifacts: &dyn ArtifactRepository,
+    config: DirectoryDeploymentRepositoryConfig,
+) -> Result<CompiledCatalog, PlatformError> {
+    let versions = deployments
+        .keys()
+        .map(|id| (id.clone(), generation.0))
+        .collect();
+    compile_versioned(
+        deployments,
+        versions,
+        generation,
+        generated_at_unix_millis,
+        artifacts,
+        config,
+    )
+    .await
+}
+
+pub(super) async fn compile_versioned(
+    deployments: BTreeMap<DeploymentId, DeploymentManifest>,
+    versions: BTreeMap<DeploymentId, u64>,
     generation: RouteGeneration,
     generated_at_unix_millis: u64,
     artifacts: &dyn ArtifactRepository,
@@ -126,6 +153,16 @@ pub(super) async fn compile(
         return Err(error(
             PlatformErrorCode::ResourceExhausted,
             "deployment-count-limit",
+        ));
+    }
+    if versions.len() != deployments.len()
+        || versions.iter().any(|(id, stamp)| {
+            *stamp == 0 || *stamp > generation.0 || !deployments.contains_key(id)
+        })
+    {
+        return Err(error(
+            PlatformErrorCode::CorruptArtifact,
+            "invalid-persisted-catalog",
         ));
     }
     let codec = JsonManifestCodec::default();
@@ -146,6 +183,10 @@ pub(super) async fn compile(
     let mut admission_policies = BTreeMap::new();
     let mut route_entries = 0_usize;
     let mut metadata_budget = config.max_state_bytes;
+    for id in versions.keys() {
+        charge(&mut metadata_budget, 128)?;
+        charge(&mut metadata_budget, id.0.len())?;
+    }
 
     for deployment in ordered {
         Phase1ManifestValidator
@@ -407,8 +448,12 @@ pub(super) async fn compile(
             },
         );
     }
+    let paging_index = DeploymentIndex::build(&deployments, &versions, config, metadata_budget)?;
+    charge(&mut metadata_budget, paging_index.retained_bytes())?;
     let catalog = CompiledCatalog {
         deployments,
+        versions,
+        paging_index,
         snapshot: RouteSnapshot {
             generation,
             generated_at_unix_millis,

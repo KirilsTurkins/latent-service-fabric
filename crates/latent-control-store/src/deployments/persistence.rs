@@ -31,6 +31,16 @@ pub(super) struct Payload {
     pub generated_at_unix_millis: u64,
     deployments: Vec<json::Value>,
     pub snapshot: json::Value,
+    // Omission preserves the exact v1 typed payload serialization used by its checksum.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    object_generations: Option<Vec<StoredObjectGeneration>>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
+struct StoredObjectGeneration {
+    id: String,
+    generation: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -42,6 +52,33 @@ pub(super) struct Record {
 }
 
 impl Record {
+    pub(super) fn object_generations(
+        &self,
+        deployments: &BTreeMap<DeploymentId, DeploymentManifest>,
+    ) -> Result<BTreeMap<DeploymentId, u64>, PlatformError> {
+        match (self.format_version, &self.payload.object_generations) {
+            (1, None) => Ok(deployments
+                .keys()
+                .map(|id| (id.clone(), self.payload.generation))
+                .collect()),
+            (2, Some(stored)) if stored.len() == deployments.len() => {
+                let mut versions = BTreeMap::new();
+                for entry in stored {
+                    let id = DeploymentId(entry.id.clone());
+                    if entry.generation == 0
+                        || entry.generation > self.payload.generation
+                        || !deployments.contains_key(&id)
+                        || versions.insert(id, entry.generation).is_some()
+                    {
+                        return Err(corrupt());
+                    }
+                }
+                Ok(versions)
+            }
+            _ => Err(corrupt()),
+        }
+    }
+
     pub(super) fn deployments(
         &self,
         config: DirectoryDeploymentRepositoryConfig,
@@ -159,7 +196,7 @@ pub(super) fn load(
     }
     let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
     let payload = bounded_json(&record.payload, config.max_state_bytes)?;
-    if record.format_version != 1 || content_digest(&payload).0 != record.checksum {
+    if !matches!(record.format_version, 1 | 2) || content_digest(&payload).0 != record.checksum {
         return Err(corrupt());
     }
     Ok(Some(record))
@@ -185,12 +222,22 @@ pub(super) fn encode(
         generated_at_unix_millis: catalog.snapshot.generated_at_unix_millis,
         deployments,
         snapshot: snapshot_value(&catalog.snapshot),
+        object_generations: Some(
+            catalog
+                .versions
+                .iter()
+                .map(|(id, generation)| StoredObjectGeneration {
+                    id: id.0.clone(),
+                    generation: *generation,
+                })
+                .collect(),
+        ),
     };
     let payload_bytes = bounded_json(&payload, config.max_state_bytes)?;
     let checksum = content_digest(&payload_bytes).0;
     drop(payload_bytes);
     let record = Record {
-        format_version: 1,
+        format_version: 2,
         checksum,
         payload,
     };
