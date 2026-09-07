@@ -2,6 +2,9 @@
 mod integrity;
 #[path = "integrity_publication_tests.rs"]
 mod integrity_publication;
+#[cfg(unix)]
+#[path = "lock_release_tests.rs"]
+mod lock_release;
 #[path = "regression_tests.rs"]
 mod regressions;
 #[path = "root_durability_tests.rs"]

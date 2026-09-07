@@ -162,6 +162,18 @@ impl PreparedPublication {
     }
 }
 
+/// Releases ownership even while a forked child still has a duplicate descriptor.
+/// Construct only after acquisition succeeds, before fallible initialization.
+struct OwnerLock(File);
+
+impl Drop for OwnerLock {
+    fn drop(&mut self) {
+        // Closing alone leaves a Unix flock alive until all inherited handles
+        // close. Explicit unlock releases our ownership before the file closes.
+        let _ = self.0.unlock();
+    }
+}
+
 /// Crash-safe local trusted release catalog for standalone `latentd`.
 ///
 /// A repository owns its root exclusively for its lifetime using an OS file
@@ -176,7 +188,7 @@ pub struct DirectoryArtifactRepository {
     /// Serializes writers, reserves directory capacity and gates mutations after
     /// indeterminate durability. Only a retry of the pending digest may proceed.
     publish_lock: Mutex<PublicationState>,
-    _owner_lock: File,
+    _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
 }
@@ -212,6 +224,7 @@ impl DirectoryArtifactRepository {
                 "catalog root is already owned by another live repository handle",
             )
         })?;
+        let owner_lock = OwnerLock(owner_lock);
 
         fs::create_dir_all(root.join(RELEASES_DIR)).map_err(io_error)?;
         fs::create_dir_all(root.join(TEMP_DIR)).map_err(io_error)?;
