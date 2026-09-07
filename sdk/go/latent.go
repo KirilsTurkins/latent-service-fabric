@@ -50,10 +50,20 @@ type InvokeOptions struct {
 }
 
 type InvokeRequest struct {
-	Target    Target
-	Payload   []byte
-	MediaType string
-	Options   InvokeOptions
+	// Nil requests server assignment. A pointer to an empty string remains
+	// present and must fail server validation; the SDK does not normalize IDs.
+	// Retain a supplied ID for cancellation/status before or after the response.
+	ActivationID *string
+	// Lineage claims require server validation and grant no authority. With
+	// neither root nor parent supplied, the server roots at the effective ID.
+	RootActivationID *string
+	// The Phase 1 server must reject a parent without an explicit root. This
+	// interface preserves the request; it does not perform that validation.
+	ParentActivationID *string
+	Target             Target
+	Payload            []byte
+	MediaType          string
+	Options            InvokeOptions
 }
 
 type InvokeResponse struct {
@@ -155,7 +165,10 @@ type ActivationStatus struct {
 type Client interface {
 	// error represents transport/authentication/decoding failure. Platform and
 	// declared component failures are explicit InvocationOutcome values.
+	// Cancelling ctx or losing the response does not prove execution stopped;
+	// use the known activation ID for status instead of blindly reinvoking.
 	Invoke(ctx context.Context, request InvokeRequest) (InvocationOutcome, error)
+	// Accepted is advisory; terminal status confirms how the activation ended.
 	Cancel(ctx context.Context, activationID string, reason string) (CancelResponse, error)
 	GetActivation(ctx context.Context, activationID string) (ActivationStatus, error)
 }

@@ -61,6 +61,14 @@ silently cross a tenant boundary.
 
 ## Invocation, errors, and status
 
+Caller activation, root, and parent IDs are optional and are preserved across
+all six SDK request surfaces. Their absence, lineage validation, known-ID
+cancellation/status, local-wait cancellation, and compatibility rules are
+specified in the [SDK contract](../../sdk/README.md#invocation-identity-and-cancellation).
+The server assigns missing activation IDs; SDKs do not silently generate them
+or reinterpret a present empty ID as absent. This does not add an automatic
+retry policy or make an activation ID an idempotency key.
+
 An invocation has exactly one wire-visible terminal result:
 
 - `success`: a guest completed successfully;

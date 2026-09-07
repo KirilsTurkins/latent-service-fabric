@@ -35,7 +35,14 @@ message ErrorDetail {
 }
 
 message InvokeRequest {
+  // Absent requests server assignment. Present values, including empty strings,
+  // are preserved for validation; accepted caller identity is usable for Cancel
+  // and GetActivation before this unary response completes. This is not an
+  // idempotency key or authorization credential.
   optional string activation_id = 1;
+  // Optional lineage claims, validated against trusted context. Phase 1 rejects
+  // a parent without a root. No parent/root means a new root at the effective
+  // activation ID. Supplying lineage does not grant access to another tree.
   optional string parent_activation_id = 2;
   optional string root_activation_id = 3;
   InvocationTarget target = 4;
