@@ -3,7 +3,8 @@
 The audit reviewed `development` at `d5a7692`, the Phase 1 milestone and every
 open issue/PR, with the closed foundation tickets used to check delivered scope.
 The repository's integration branch is `development`; there is no `dev` branch.
-Corrections are on `chore/feature-audit-2026-09-07`.
+Corrections are on `chore/feature-audit-2026-09-07` in
+[PR #69](https://github.com/KirilsTurkins/latent-service-fabric/pull/69).
 
 Phase 1 foundations are implemented and have executable regression coverage.
 The complete standalone release-to-invocation product remains unfinished.
@@ -88,6 +89,8 @@ Windows support claim; Linux is the documented persistence/reference platform.
 | Exact SDK toolchains and surfaces | `tools/validate_sdks.sh` passes for Go, TypeScript, Java, .NET and Zig/C; Rust SDK is included in workspace tests. |
 | Repository/contracts Python suite | All 186 tests pass; repository and foundation validators and Phase 1 descriptor validation pass. |
 | Collector fixture correction | 60 focused Python tests pass, including every previously failing Linux/WSL fixture. |
+| Real Component Model contracts | `tools/validate_contracts.sh` passes: WIT/Buf/generated bindings, byte-identical echo rebuilds, three echo/backend checks and four real containment checks. |
+| Executable outcome/recovery matrix | The explicitly selected `latentd` Phase 0 end-to-end test passes with the generated fixtures, covering success, failures and same-runtime recovery. |
 | Workflow syntax | Actionlint 1.7.12 accepts the updated CI workflow. |
 
 The lightweight workspace command was:
