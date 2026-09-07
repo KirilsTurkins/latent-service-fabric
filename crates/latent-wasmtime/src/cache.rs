@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use latent_core::{PlatformError, PlatformErrorCode};
 
 use crate::containment::platform_error;
-pub(crate) use instances::ActiveInstanceGate;
+pub(crate) use instances::{ActiveInstanceGate, ActiveInstancePermit};
 pub(crate) use limits::CacheLimits;
 pub use limits::PreparedCacheSnapshot;
 

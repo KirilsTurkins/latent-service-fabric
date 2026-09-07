@@ -34,6 +34,12 @@ use compiler::{compile_versioned, CompiledCatalog};
 use mutations::{CommitOutcome, ObjectPrecondition};
 pub use pagination::{DeploymentPage, DeploymentPageRequest};
 
+impl latent_routing::ActivationCatalogSource for DirectoryDeploymentRepository {
+    fn pin(&self) -> Result<Arc<dyn latent_routing::ActivationCatalog>, PlatformError> {
+        Ok(Arc::new(DirectoryDeploymentRepository::pin(self)?))
+    }
+}
+
 /// Bounds retained desired state, serialized state, and weighted index entries.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DirectoryDeploymentRepositoryConfig {

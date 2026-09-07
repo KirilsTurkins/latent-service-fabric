@@ -43,7 +43,6 @@ impl ActiveInstanceGate {
         })
     }
 
-    #[cfg(test)]
     pub(crate) fn active(&self) -> usize {
         self.active.load(Ordering::Acquire)
     }

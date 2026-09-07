@@ -3,7 +3,7 @@
 Updated on **2026-09-07** for the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
-generic execution, activation capabilities, and explicit heavy
+generic execution, activation capabilities/lifecycle, and explicit heavy
 validation gates. These commands describe validation coverage; the evidence
 from the September 7 audit is recorded separately in
 [the audit report](docs/development/feature-audit-2026-09-07.md).
@@ -78,6 +78,7 @@ Run it from an isolated clone or worktree when local build output is present.
 - The fixed execution-cell pool tests cover startup-fixed capacity, concurrent acquisition limits, bounded FIFO rejection, duplicate activations and returns, modified and foreign lease identities, explicit cancellation, deterministic deadline expiry with an injected wall clock, queued-future drop before release, explicit and drop-triggered quarantine, unaccepted handoff reclamation, token-sequence exhaustion, and barrier-controlled multi-threaded release/cancellation and release/task-abort races.
 - Manifest tests cover schema-backed decoding, document/depth/collection bounds, duplicate-key rejection, exact JSON numbers, canonicalization, Rust round trips, and unsupported Phase 1 semantic combinations.
 - Budget and cancellation tests cover effective deadlines, concurrent consumption/reservations, final accounting, unsupported dimensions, cancellation-versus-terminal races, and registry cleanup.
+- `activation_lifecycle` composes real admission and scheduling with tiny controlled catalog/artifact/backend fixtures. It checks immediate identity, lineage and tenant scope, bounded terminal retention, pinned routing keys/revisions, ordered terminal outcomes, cancellation/drop/panic cleanup across stages, and concurrent identity/terminal races. The tests use five-second completion watchdogs and verify affine preparation, cell, quota, and registration cleanup; see [local lifecycle](docs/activation-lifecycle.md).
 - Release-catalog tests cover immutable publication, component digest verification, metadata syntax/semantic validation, bounded indexes/listing/recovery, exclusive ownership, interrupted writes, indeterminate durability, retry, and reopen behavior. Root-initialization tests inject failures at every ancestor synchronization, verify complete retry ordering for existing and relative paths, and preserve a tiny published release across failed open and restart. An isolated process verifies that working-directory changes cannot redirect a handle away from its locked catalog. Tiny integrity fixtures cover valid-JSON metadata changes, damaged or mismatched versioned completion records, byte-preserving legacy rejection, interrupted staging and verification before index adoption, including the pending-publication mutation gate.
 - Deployment/routing tests cover tenant/namespace isolation, deterministic revisions/weighting, pinned snapshots, concurrent publication, integrity and size bounds, initialization durability, restart recovery, and bounded resource/memory regressions. Versioned mutations test atomic caller preconditions, competing writers, delete/recreate, exact receipts and persisted object stamps. Tiny scoped-pagination fixtures count selected/cloned records, verify no artifact fetches, and cover byte boundaries, continuation order, token scope and expiry. Supervised isolated processes change working directories after open and during suspended initialization, verifying that the original locked root receives its initialization marker and mutations while a second live catalog remains unchanged.
 - An integration test implements `CellPool` outside `latent-scheduler` using only the original required trait methods, mints an affine lease through `CellLease::new`, and proves that the issuer-retained `CellLeaseLifecycle` capability can disposition or observe abandonment without access to `FixedCellPool` internals.
@@ -134,6 +135,7 @@ foundations without selecting expensive ignored acceptance probes:
 ```bash
 cargo test -p latent-manifest --all-targets --locked
 cargo test -p latent-core -p latent-executor -p latent-node --all-targets --locked
+cargo test -p latent-node --test activation_lifecycle --locked
 cargo test -p latent-artifacts -p latent-control-store --lib --locked
 cargo test -p latentd --test catalog_scale --locked
 ```
@@ -303,7 +305,7 @@ Static schema, WIT, Protobuf, and artifact validation uses compiler and validato
 
 Passing ordinary Phase 1 foundation checks validates the implemented manifest,
 budget/cancellation, storage, local routing, admission, scheduling, generic
-execution, and activation capability behavior covered by those tests.
+execution, activation capabilities, and lifecycle behavior covered by those tests.
 It does not establish a composed standalone node, service adapters, operator
 CLI, long-running reclamation evidence, or completion of the Phase 1 gate.
 

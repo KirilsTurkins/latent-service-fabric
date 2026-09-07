@@ -92,6 +92,18 @@ pub trait RouteResolver: Send + Sync {
     fn generation(&self) -> RouteGeneration;
 }
 
+/// One immutable view used for both resolution and admission policy lookup.
+pub trait ActivationCatalog: RouteResolver + RevisionPolicySource {}
+
+impl<T: RouteResolver + RevisionPolicySource> ActivationCatalog for T {}
+
+/// Capture one catalog generation before resolving an activation. Keeping this
+/// view through admission prevents a concurrent deployment change from mixing
+/// routing and execution policy from different generations.
+pub trait ActivationCatalogSource: Send + Sync {
+    fn pin(&self) -> Result<std::sync::Arc<dyn ActivationCatalog>, PlatformError>;
+}
+
 pub trait RouteCompiler: Send + Sync {
     fn compile<'a>(
         &'a self,

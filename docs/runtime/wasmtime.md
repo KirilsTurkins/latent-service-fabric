@@ -6,9 +6,10 @@ and invoke the requested exported contract and function through
 `ExecutionBackend`. The caller supplies a pinned prepared component, activation
 envelope, granted budget, cell, and activation-owned cancellation view.
 
-This Rust API is a runtime building block. Complete activation orchestration,
-public invocation services, and the standalone node remain separate Phase 1
-work. The `Phase0WasmtimeEngineFactory` compatibility facade preserves the
+This Rust API is a runtime building block used by the
+[activation lifecycle manager](../activation-lifecycle.md). Public invocation
+services and the standalone node remain separate Phase 1 work.
+The `Phase0WasmtimeEngineFactory` compatibility facade preserves the
 retained echo demonstration and its original text/domain-error wire format.
 
 ## Preparation and dispatch
@@ -81,6 +82,10 @@ epoch, instance-allocation, context disclosure, and value-codec limits. Async Co
 fuel, and epoch interruption are required containment mechanisms. The configured
 epoch interval multiplied by deadline ticks must be between one millisecond
 and one second. The factory validates policy before creating an engine.
+The optional positive `fuel_async_yield_interval` makes async guest execution
+yield after a configured amount of fuel. Its default is disabled; enabling it
+does not replenish the activation's allowance and participates in preparation
+compatibility. Fuel exhaustion and epoch interruption remain enforced.
 The Phase 0 facade retains its stricter 80 KiB canonical-transfer allowance;
 its effective allowance is also included in preparation compatibility.
 `preparation_key` binds the release to the Wasmtime
@@ -99,6 +104,32 @@ admission dimensions; compiled-image accounting is not a measurement of all
 compiler heap allocations or process RSS. Eviction and `release` remove cache
 ownership. An executing activation may retain its bounded runtime pin until
 cleanup, so resident cache counters exclude those active evicted pins.
+
+Activation orchestration obtains the engine key through
+`ExecutionBackend::preparation_key` and calls `prepare_for_use`. Its affine
+`PreparedUse` retains the exact immutable runtime and one shared instance
+reservation from materialization through `invoke_prepared_contained`. Invocation
+consumes this owner without looking in the cache again, so eviction or explicit
+legacy `release` cannot invalidate an already prepared use. Dropping an unused
+owner releases its pin synchronously. The backend rejects tokens from another
+factory or descriptors that differ from the token's original descriptor.
+
+`active_instance_reservations` reports both materializing prepared uses and
+running invocations against `maximum_instance_reservations`; the same reservation
+is transferred into execution. Resident cache limits remain separate. Evicted
+runtime pins are bounded by this shared reservation count and each runtime's
+validated source, metadata, and compiled-image ceilings. These counters do not
+claim to measure total process memory. Legacy `prepare` still returns only a
+descriptor, which can become absent after eviction; legacy `release` removes
+cache ownership and is not activation cleanup.
+
+Each invocation owns a store guard that observes remaining fuel and confirmed
+peak linear memory into the activation's existing accounting handle before
+destroying the store. It also runs when the invocation future is dropped or
+unwinds. Normal completion advances the same fuel watermark first, so the final
+drop observation cannot charge the same work twice. The activation manager must
+drop the backend future before finalizing its budget and disposing of its cell;
+an abandoned future does not itself produce a reusable-cell proof.
 
 At most two preparations compile concurrently by default. Duplicate in-flight
 work or a full compilation allowance returns retryable `unavailable` without

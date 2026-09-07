@@ -37,6 +37,16 @@ impl ScheduledActivation {
         self.cancellation.as_ref()
     }
 
+    /// Reclaim an assignment before any execution backend has received its
+    /// cell. The lifecycle owner must never call this after starting execution.
+    /// Issuers with no synchronous reclamation proof conservatively quarantine.
+    pub fn reclaim_before_execution(mut self) {
+        if let Some(mut lease) = self.lease.take() {
+            lease.reclaim_unaccepted();
+        }
+        // Drop refunds quota only after the issuer has disposed the cell.
+    }
+
     /// Call only after the backend has affirmatively proven cleanup. The
     /// reservation stays alive through the pool's release future and its drop.
     pub async fn release(mut self) -> Result<(), PlatformError> {

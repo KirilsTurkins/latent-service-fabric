@@ -317,7 +317,7 @@ where
     }
 }
 
-fn outcome_terminal_state(outcome: &ActivationOutcome) -> ActivationTerminalState {
+pub(crate) fn outcome_terminal_state(outcome: &ActivationOutcome) -> ActivationTerminalState {
     match outcome {
         ActivationOutcome::Succeeded(_) | ActivationOutcome::DeclaredError { .. } => {
             ActivationTerminalState::Completed
@@ -326,7 +326,7 @@ fn outcome_terminal_state(outcome: &ActivationOutcome) -> ActivationTerminalStat
     }
 }
 
-fn replace_consumption(
+pub(crate) fn replace_consumption(
     outcome: ActivationOutcome,
     consumption: BudgetConsumption,
 ) -> ActivationOutcome {

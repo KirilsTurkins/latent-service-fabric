@@ -28,6 +28,56 @@ use sha2::{Digest, Sha256};
 const MAX_MESSAGE_BYTES: usize = 64 * 1024;
 const OVERSIZED_HOSTCALL_MESSAGE_BYTES: usize = 128 * 1024;
 
+#[tokio::test(flavor = "current_thread")]
+#[ignore = "requires the component and capsule metadata produced by tools/build_echo_capsule.py"]
+async fn owned_phase_zero_preparation_preserves_success_and_declared_error_framing() {
+    let artifact = load_issue19_artifact();
+    let budget = artifact.manifest.execution.resource_budget_ceiling.clone();
+    let factory = Phase0WasmtimeEngineFactory::new(Phase0WasmtimeConfig {
+        maximum_memory_bytes: 8 * 1024 * 1024,
+        maximum_active_instances: 1,
+        ..Phase0WasmtimeConfig::default()
+    })
+    .unwrap();
+    let backend = factory.create_backend_instance();
+    let key = backend
+        .preparation_key(&artifact.descriptor.release_digest)
+        .unwrap();
+    assert_eq!(
+        key,
+        factory.preparation_key(artifact.descriptor.release_digest.clone())
+    );
+    for message in ["owned echo", ""] {
+        let prepared = backend.prepare_for_use(&artifact, &key).await.unwrap();
+        let descriptor = prepared.descriptor().clone();
+        backend.release(descriptor.clone()).await.unwrap();
+        let id = ActivationId("owned-phase-zero".to_owned());
+        let report = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            backend.invoke_prepared_contained(
+                request(descriptor, id.clone(), message.to_owned(), &budget),
+                prepared,
+                &NeverCancelled { activation_id: id },
+            ),
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.cleanup, latent_executor::ExecutionCleanup::Reusable);
+        let outcome = report.outcome.unwrap();
+        if message.is_empty() {
+            assert_declared_error(
+                outcome,
+                "empty-message",
+                br#"{"error":"empty-message"}"#,
+                ECHO_DOMAIN_ERROR_MEDIA_TYPE,
+            );
+        } else {
+            assert_returned(outcome, message.as_bytes(), ECHO_SUCCESS_MEDIA_TYPE);
+        }
+        assert_eq!(backend.active_instance_reservations(), 0);
+    }
+}
+
 #[derive(Debug)]
 struct NeverCancelled {
     activation_id: ActivationId,

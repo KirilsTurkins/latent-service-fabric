@@ -17,6 +17,7 @@ fn legacy_alias_preserves_the_existing_default_policy() {
     assert_eq!(config.retained_log_maximum_entries, 256);
     assert_eq!(config.retained_log_maximum_bytes, 512 * 1024);
     assert_eq!(config.epoch_deadline_ticks, 1);
+    assert_eq!(config.fuel_async_yield_interval, None);
     assert_eq!(config.epoch_tick_interval_millis, 5);
     assert_eq!(config.instance_allocator, Phase0InstanceAllocator::OnDemand);
     assert_eq!(config.pooling_maximum_instances, 1);
@@ -52,6 +53,7 @@ fn changes_to_execution_and_preparation_bounds_change_compatibility() {
     let changes: &[fn(&mut WasmtimeConfig)] = &[
         |c| c.maximum_memory_bytes /= 2,
         |c| c.maximum_fuel /= 2,
+        |c| c.fuel_async_yield_interval = Some(1_000),
         |c| c.maximum_wasm_stack_bytes /= 2,
         |c| c.maximum_instances_per_store /= 2,
         |c| c.maximum_memories_per_store /= 2,
@@ -96,6 +98,7 @@ fn invalid_and_overflowing_policy_is_rejected_before_engine_construction() {
         |c| c.maximum_component_bytes = 0,
         |c| c.maximum_memory_bytes = 0,
         |c| c.maximum_fuel = 0,
+        |c| c.fuel_async_yield_interval = Some(0),
         |c| c.maximum_active_instances = 0,
         |c| c.maximum_concurrent_preparations = 0,
         |c| c.maximum_artifact_metadata_bytes = 0,

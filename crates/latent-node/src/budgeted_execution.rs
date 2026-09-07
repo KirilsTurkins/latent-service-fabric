@@ -5,10 +5,11 @@ use std::sync::Arc;
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
     ActivationBudget, ActivationId, BoxFuture, BudgetError, PlatformError, PlatformErrorCode,
+    ReleaseDigest,
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionCancellationProbe, ExecutionReport,
-    ExecutionRequest, GuestOutcome, PreparationKey, PreparedComponent,
+    ExecutionRequest, GuestOutcome, PreparationKey, PreparedComponent, PreparedUse,
 };
 
 use crate::ActivationBudgetRegistry;
@@ -97,6 +98,42 @@ impl ExecutionCancellation for CapturedCancellation<'_> {
 impl ExecutionBackend for BudgetedExecutionBackend {
     fn backend_id(&self) -> &str {
         self.inner.backend_id()
+    }
+
+    fn preparation_key(&self, release: &ReleaseDigest) -> Result<PreparationKey, PlatformError> {
+        self.inner.preparation_key(release)
+    }
+
+    fn prepare_for_use<'a>(
+        &'a self,
+        artifact: &'a CapsuleArtifact,
+        key: &'a PreparationKey,
+    ) -> BoxFuture<'a, Result<PreparedUse, PlatformError>> {
+        self.inner.prepare_for_use(artifact, key)
+    }
+
+    fn invoke_prepared_contained<'a>(
+        &'a self,
+        request: ExecutionRequest,
+        prepared: PreparedUse,
+        cancellation: &'a dyn ExecutionCancellation,
+    ) -> BoxFuture<'a, ExecutionReport> {
+        Box::pin(async move {
+            let budget = match self.capture(&request, cancellation) {
+                Ok(budget) => budget,
+                Err(error) => return ExecutionReport::reusable(Err(error)),
+            };
+            self.inner
+                .invoke_prepared_contained(
+                    request,
+                    prepared,
+                    &CapturedCancellation {
+                        inner: cancellation,
+                        budget,
+                    },
+                )
+                .await
+        })
     }
 
     fn prepare<'a>(

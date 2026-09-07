@@ -13,6 +13,7 @@ use latent_executor::ExecutionCleanup;
 use super::*;
 use crate::{ActivationBudgetPolicy, BudgetedActivationManager};
 
+mod owned;
 mod support;
 use support::{budget, request};
 
@@ -80,6 +81,25 @@ impl Recorder {
 impl ExecutionBackend for Recorder {
     fn backend_id(&self) -> &'static str {
         "test"
+    }
+    fn preparation_key(&self, release: &ReleaseDigest) -> Result<PreparationKey, PlatformError> {
+        let mut key = request().prepared.key;
+        key.release = release.clone();
+        Ok(key)
+    }
+    fn invoke_prepared_contained<'a>(
+        &'a self,
+        request: ExecutionRequest,
+        prepared: PreparedUse,
+        cancellation: &'a dyn ExecutionCancellation,
+    ) -> BoxFuture<'a, ExecutionReport> {
+        Box::pin(async move {
+            let (descriptor, _owner) = prepared
+                .into_parts::<owned::Owner>()
+                .expect("exact owner forwarded");
+            assert_eq!(descriptor, request.prepared);
+            ExecutionReport::quarantine(Ok(self.run(cancellation)), "fixture cleanup proof")
+        })
     }
     fn prepare<'a>(
         &'a self,

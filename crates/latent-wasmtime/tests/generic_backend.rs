@@ -4,6 +4,8 @@
 mod containment;
 #[path = "generic_backend/dispatch.rs"]
 mod dispatch;
+#[path = "generic_backend/owned_preparation.rs"]
+mod owned_preparation;
 #[path = "generic_backend/preparation.rs"]
 mod preparation;
 #[path = "generic_backend/rejection.rs"]

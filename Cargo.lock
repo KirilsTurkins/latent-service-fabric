@@ -1002,9 +1002,11 @@ name = "latent-node"
 version = "0.1.0-alpha.1"
 dependencies = [
  "latent-activation",
+ "latent-admission",
  "latent-artifacts",
  "latent-core",
  "latent-executor",
+ "latent-manifest",
  "latent-routing",
  "latent-scheduler",
  "tokio",
