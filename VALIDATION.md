@@ -2,7 +2,8 @@
 
 Updated on **2026-09-07** for the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
-release and deployment catalogs, immutable local routing, and explicit heavy
+release and deployment catalogs, immutable local routing, admission, scheduling,
+generic execution, activation capabilities, and explicit heavy
 validation gates. These commands describe validation coverage; the evidence
 from the September 7 audit is recorded separately in
 [the audit report](docs/development/feature-audit-2026-09-07.md).
@@ -86,6 +87,7 @@ Run it from an isolated clone or worktree when local build output is present.
 - The extracted component interface contains the exported `echo` function and both declared domain-error variants. Any ambient WASI import, missing import, or unexpected export fails validation.
 - Two isolated clean echo builds must be byte-identical. A generated capsule manifest, build receipt, and SHA-256 file record stable metadata, local-build trust, the documented reproducibility boundary, and the computed component digest beneath `target/capsules/echo/`.
 - The generic Wasmtime suite builds a separate maintained Rust component and tiny WAT adversarial components. It checks dynamic contract/function selection, canonical scalar/composite values, declared versus nested errors, missing imports/exports and unsupported types, pre-store input rejection, bounded output, fresh guest state, short fuel/deadline/cancellation/memory containment, post-return failure, recovery, and explicit cleanup. These small fixtures are ordinary contract regressions; they do not run a resource soak or establish the Phase 1 gate. See [generic execution](docs/runtime/wasmtime.md).
+- The capability suite builds a separate Rust/WIT component importing only context, logging, and monotonic/wall clocks. It checks filtered context and pinned identity across cell reuse, live shared fuel/memory/log accounting, injected clock adjustments and monotonic clamping, complete escaped record byte limits, reserved/invalid fields, and failed-sink reservation refunds. Each small invocation has a five-second watchdog and cleanup checks. See [activation capabilities](docs/runtime/capabilities.md).
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
 - All seven JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, release-publish, binding, policy, trigger, and compiled-route examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interfaces compile and execute small fake-client identity/cancellation fixtures. They cover status/cancellation before invoke completion, transport failures, lost-response status recovery, optional identity and lineage; see the [SDK contract](sdk/README.md#executable-contract-fixtures). These are contract tests, not implemented transport coverage.
@@ -300,8 +302,8 @@ Static schema, WIT, Protobuf, and artifact validation uses compiler and validato
 ## Scope
 
 Passing ordinary Phase 1 foundation checks validates the implemented manifest,
-budget/cancellation, storage, local routing, admission, scheduling, and generic
-execution behavior covered by those tests.
+budget/cancellation, storage, local routing, admission, scheduling, generic
+execution, and activation capability behavior covered by those tests.
 It does not establish a composed standalone node, service adapters, operator
 CLI, long-running reclamation evidence, or completion of the Phase 1 gate.
 

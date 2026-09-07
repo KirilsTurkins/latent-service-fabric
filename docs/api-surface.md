@@ -24,10 +24,10 @@ bindings and declared traits do not by themselves provide running services.
 
 Rust bindings for the aggregate runtime world and maintained echo fixture are generated into Cargo `OUT_DIR` by `latent-component-bindings`. The executable echo guest generates its canonical ABI exports in the final component crate from the same authoritative WIT.
 
-The generic Wasmtime backend supports the existing activation context/log
-bindings and components with no imports. Further context/log hardening and clock
-binding remain Phase 1 #10 work; the other capability packages describe
-later-phase surfaces. Dynamic exported value mapping follows the
+The generic Wasmtime backend supports components with no imports and four
+[activation capabilities](runtime/capabilities.md): filtered context, budgeted
+structured logging, and monotonic/wall clocks. The other capability packages
+describe later-phase surfaces. Dynamic exported value mapping follows the
 [canonical WIT value protocol](protocol/wit-values.md).
 
 ## Protobuf services
@@ -58,7 +58,7 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 
 | Crate | Primary seams |
 |---|---|
-| `latent-core` | IDs/errors/lifecycle models, `ActivationBudget`, `EffectiveActivationBudget`, reservations and terminal consumption |
+| `latent-core` | IDs/errors/lifecycle models, `ActivationClock`, `ActivationBudget`, `EffectiveActivationBudget`, reservations and terminal consumption |
 | `latent-manifest` | `ManifestCodec`, `ManifestValidator`, bounded `JsonManifestCodec`, `Phase1ManifestValidator` |
 | `latent-rpc` | generated Protobuf messages, Tonic clients/servers, descriptor set |
 | `latent-component-bindings` | shared generated runtime/echo Component Model bindings |
@@ -70,7 +70,7 @@ Invocation adapters (#12), management adapters (#37), and listener composition
 | `latent-scheduler` | open `CellPool` with nonqueueing acquisition/change notifications, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `LocalScheduler`, `AdmittedSchedulingRequest`, `ScheduledActivation`, `SchedulerSnapshot`, `SchedulingCancellation`, `LocalNodePlacement` |
 | `latent-activation` | `ActivationManager`, `ActivationJournal` |
 | `latent-executor` | `ExecutionBackend`, backend registry and cancellation |
-| `latent-wasmtime` | `WasmtimeComponentEngineFactory`, generic `WasmtimeBackend`, bounded preparation/value policy, dynamic exports and cleanup proof; retained Phase 0 facade and future AOT interfaces |
+| `latent-wasmtime` | `WasmtimeComponentEngineFactory`, generic `WasmtimeBackend`, bounded preparation/value policy, `WasmtimeHostServices`, `ContextExposurePolicy`, `StructuredLogSink`, dynamic exports and cleanup proof; retained Phase 0 facade and future AOT interfaces |
 | `latent-capabilities` | provider, broker, registry, handle model |
 | `latent-blobs` | large-value storage, leases, and transfer |
 | `latent-identity` | authentication, authorization, delegation, node identity |

@@ -55,6 +55,7 @@ cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-was
 cargo check -p latent-toolchain-smoke --example oversized-log-capsule --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example containment-capsule --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example generic-capsule --target wasm32-wasip2 --locked
+cargo check -p latent-toolchain-smoke --example capabilities-capsule --target wasm32-wasip2 --locked
 python3 tools/build_echo_capsule.py --verify-reproducible
 cargo build -p latent-toolchain-smoke --example oversized-log-capsule \
     --target wasm32-unknown-unknown --release --locked
@@ -88,6 +89,27 @@ for fixture in "${ROOT}"/crates/latent-wasmtime/tests/fixtures/*.wat; do
     wasm-tools validate "${GENERIC_FIXTURES}/${name}.wasm"
 done
 
+cargo build -p latent-toolchain-smoke --example capabilities-capsule \
+    --target wasm32-unknown-unknown --release --locked
+CAPABILITIES_CORE="${TARGET_ROOT}/wasm32-unknown-unknown/release/examples/capabilities_capsule.wasm"
+CAPABILITIES_COMPONENT="${TARGET_ROOT}/capsules/capabilities/capabilities-capsule.wasm"
+mkdir -p "$(dirname "${CAPABILITIES_COMPONENT}")"
+wasm-tools component new "${CAPABILITIES_CORE}" -o "${CAPABILITIES_COMPONENT}"
+wasm-tools validate "${CAPABILITIES_COMPONENT}"
+python3 tools/stage_runtime_wit.py "${OUTPUT}/capabilities-wit" \
+    --source tools/toolchain-smoke/examples/capabilities_capsule
+wasm-tools component wit "${OUTPUT}/capabilities-wit" --json \
+    > "${OUTPUT}/wit/capabilities-fixture.json"
+CAPABILITIES_FIXTURES="${ROOT}/crates/latent-wasmtime/tests/capabilities_backend/fixtures"
+while read -r family contract; do
+    wat="${OUTPUT}/wit/denied-${family}.wat"
+    component="$(dirname "${CAPABILITIES_COMPONENT}")/denied-${family}.wasm"
+    sed "s|tests:denied/host@0.1.0|${contract}|" \
+        "${CAPABILITIES_FIXTURES}/denied-import.wat" > "${wat}"
+    wasm-tools parse "${wat}" -o "${component}"
+    wasm-tools validate "${component}"
+done < "${CAPABILITIES_FIXTURES}/denied-imports.txt"
+
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
 LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
 LSF_OVERSIZED_LOG_COMPONENT="${OVERSIZED_LOG_COMPONENT}" \
@@ -101,4 +123,8 @@ LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \
 LSF_GENERIC_FIXTURES="${GENERIC_FIXTURES}" \
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
     cargo test -p latent-wasmtime --test generic_backend --locked -- \
+        --ignored --nocapture --test-threads=1
+
+LSF_CAPABILITIES_COMPONENT="${CAPABILITIES_COMPONENT}" \
+    cargo test -p latent-wasmtime --test capabilities_backend --locked -- \
         --ignored --nocapture --test-threads=1

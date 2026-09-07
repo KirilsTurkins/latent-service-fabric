@@ -1,9 +1,9 @@
 use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::thread;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 
-use latent_core::{BudgetConsumption, Metadata, PlatformError, PlatformErrorCode};
+use latent_core::{ActivationClock, BudgetConsumption, Metadata, PlatformError, PlatformErrorCode};
 use latent_executor::{ExecutionCancellationProbe, GuestInterruptionKind, GuestOutcome, GuestTrap};
 use wasmtime::{Engine, Store, Trap, UpdateDeadline};
 
@@ -110,17 +110,32 @@ pub(crate) struct StopControl {
     deadline: Option<Instant>,
     cancellation: Option<Arc<dyn ExecutionCancellationProbe>>,
     cause: AtomicU8,
+    clock: Arc<dyn ActivationClock>,
 }
 
 impl StopControl {
+    #[cfg(test)]
     pub(crate) fn new(
         deadline: Option<Instant>,
         cancellation: Option<Arc<dyn ExecutionCancellationProbe>>,
+    ) -> Self {
+        Self::with_clock(
+            deadline,
+            cancellation,
+            Arc::new(latent_core::SystemActivationClock),
+        )
+    }
+
+    pub(crate) fn with_clock(
+        deadline: Option<Instant>,
+        cancellation: Option<Arc<dyn ExecutionCancellationProbe>>,
+        clock: Arc<dyn ActivationClock>,
     ) -> Self {
         Self {
             deadline,
             cancellation,
             cause: AtomicU8::new(StopCause::None as u8),
+            clock,
         }
     }
 
@@ -143,7 +158,7 @@ impl StopControl {
         }
         if self
             .deadline
-            .is_some_and(|deadline| Instant::now() >= deadline)
+            .is_some_and(|deadline| self.clock.monotonic_now() >= deadline)
         {
             self.record(StopCause::DeadlineExceeded);
             return stop_kind(self.cause());
@@ -151,6 +166,7 @@ impl StopControl {
         None
     }
 
+    #[cfg(test)]
     pub(crate) fn kind(&self) -> Option<GuestInterruptionKind> {
         stop_kind(self.cause())
     }
@@ -250,32 +266,6 @@ pub(crate) fn configure_epoch<T: 'static>(
     {
         let _ = (store, stop, deadline_ticks);
     }
-}
-
-pub(crate) fn monotonic_deadline(
-    deadline_unix_millis: Option<u64>,
-) -> Result<Option<Instant>, PlatformError> {
-    let Some(deadline) = deadline_unix_millis else {
-        return Ok(None);
-    };
-    let now_wall = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis();
-    let now_wall = u64::try_from(now_wall).unwrap_or(u64::MAX);
-    let now = Instant::now();
-    if deadline <= now_wall {
-        return Ok(Some(now));
-    }
-    now.checked_add(Duration::from_millis(deadline - now_wall))
-        .map(Some)
-        .ok_or_else(|| {
-            platform_error(
-                PlatformErrorCode::InvalidArgument,
-                "activation deadline cannot be represented by the monotonic clock",
-                false,
-            )
-        })
 }
 
 pub(crate) fn interrupted_outcome(
@@ -474,6 +464,42 @@ mod tests {
             "a later cancellation must not replace the first deadline cause"
         );
         assert_eq!(stop.kind(), Some(GuestInterruptionKind::DeadlineExceeded));
+    }
+
+    #[test]
+    fn injected_monotonic_clock_controls_deadline_without_wall_clock_or_sleep() {
+        struct Clock(std::sync::Mutex<latent_core::ClockSample>);
+        impl ActivationClock for Clock {
+            fn sample(&self) -> latent_core::ClockSample {
+                *self.0.lock().expect("test clock")
+            }
+            fn monotonic_now(&self) -> Instant {
+                self.sample().monotonic()
+            }
+        }
+        let origin = Instant::now() + Duration::from_secs(60);
+        let deadline = origin + Duration::from_millis(10);
+        let clock = Arc::new(Clock(std::sync::Mutex::new(latent_core::ClockSample::new(
+            1000, origin,
+        ))));
+        let stop = StopControl::with_clock(Some(deadline), None, clock.clone());
+        assert_eq!(stop.observe(), None);
+        *clock.0.lock().expect("test clock") = latent_core::ClockSample::new(u64::MAX, origin);
+        assert_eq!(
+            stop.observe(),
+            None,
+            "wall adjustment does not expire a monotonic grant"
+        );
+        *clock.0.lock().expect("test clock") = latent_core::ClockSample::new(1, deadline);
+        assert_eq!(
+            stop.observe(),
+            Some(GuestInterruptionKind::DeadlineExceeded)
+        );
+        *clock.0.lock().expect("test clock") = latent_core::ClockSample::new(2, origin);
+        assert_eq!(
+            stop.observe(),
+            Some(GuestInterruptionKind::DeadlineExceeded)
+        );
     }
 
     #[test]

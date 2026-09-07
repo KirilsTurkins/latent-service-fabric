@@ -68,6 +68,7 @@ impl WasmtimeConfig {
         ]);
         self.include_resource_policy(&mut fields);
         self.include_value_policy(&mut fields);
+        self.context_policy.append_profile_fields(&mut fields);
         fields
     }
 

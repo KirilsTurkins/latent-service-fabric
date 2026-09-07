@@ -1,209 +1,25 @@
-use std::collections::VecDeque;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::Arc;
 use std::time::Instant;
 
 use latent_core::{
-    ActivationId, InvocationPrincipal as FabricPrincipal, Metadata, PrincipalKind,
-    ResourceBudget as FabricBudget,
+    ActivationClock, ActivationId, InvocationPrincipal as FabricPrincipal, Metadata,
 };
 use wasmtime::{ResourceLimiter, StoreLimits, StoreLimitsBuilder};
 
-use crate::bindings::latent::context::context;
-use crate::bindings::latent::log::log;
+pub(crate) mod accounting;
+mod clock;
+mod context;
+mod logging;
+pub(crate) mod policy;
+pub(crate) use logging::InvocationLogBuffer;
+pub use logging::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
+
 use crate::config::WasmtimeConfig;
+use accounting::InvocationAccounting;
+use policy::ContextExposurePolicy;
 
 mod request_context;
 pub(crate) use request_context::validate_request_context;
-
-const MAX_LOG_MESSAGE_BYTES: usize = 256;
-const MAX_LOG_FIELDS: usize = 16;
-const MAX_LOG_FIELD_NAME_BYTES: usize = 64;
-const MAX_LOG_FIELD_VALUE_BYTES: usize = 256;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CapturedLog {
-    pub activation_id: ActivationId,
-    pub level: String,
-    pub message: String,
-    pub fields: Metadata,
-}
-
-#[derive(Debug)]
-struct LogSinkState {
-    entries: VecDeque<CapturedLog>,
-    bytes: usize,
-}
-
-#[derive(Debug, Clone)]
-pub struct BoundedLogSink {
-    state: Arc<Mutex<LogSinkState>>,
-    maximum_entries: usize,
-    maximum_bytes: usize,
-}
-
-impl BoundedLogSink {
-    pub fn new(maximum_entries: usize, maximum_bytes: usize) -> Self {
-        Self {
-            state: Arc::new(Mutex::new(LogSinkState {
-                entries: VecDeque::new(),
-                bytes: 0,
-            })),
-            maximum_entries,
-            maximum_bytes,
-        }
-    }
-
-    pub fn snapshot(&self) -> Vec<CapturedLog> {
-        self.lock_state().entries.iter().cloned().collect()
-    }
-
-    pub fn snapshot_for(&self, activation_id: &ActivationId) -> Vec<CapturedLog> {
-        self.lock_state()
-            .entries
-            .iter()
-            .filter(|entry| &entry.activation_id == activation_id)
-            .cloned()
-            .collect()
-    }
-
-    pub fn clear(&self) {
-        let mut state = self.lock_state();
-        state.entries.clear();
-        state.bytes = 0;
-    }
-
-    pub(crate) fn publish(&self, entries: Vec<CapturedLog>) {
-        let mut state = self.lock_state();
-        for entry in entries {
-            let entry_bytes = captured_log_size(&entry);
-            if entry_bytes > self.maximum_bytes || self.maximum_entries == 0 {
-                continue;
-            }
-            while state.entries.len() >= self.maximum_entries
-                || state.bytes.saturating_add(entry_bytes) > self.maximum_bytes
-            {
-                let Some(evicted) = state.entries.pop_front() else {
-                    break;
-                };
-                state.bytes = state.bytes.saturating_sub(captured_log_size(&evicted));
-            }
-            state.bytes = state.bytes.saturating_add(entry_bytes);
-            state.entries.push_back(entry);
-        }
-    }
-
-    fn lock_state(&self) -> MutexGuard<'_, LogSinkState> {
-        self.state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-    }
-}
-
-fn captured_log_size(entry: &CapturedLog) -> usize {
-    entry.activation_id.0.len()
-        + entry.level.len()
-        + entry.message.len()
-        + entry
-            .fields
-            .iter()
-            .map(|(name, value)| name.len() + value.len())
-            .sum::<usize>()
-}
-
-#[derive(Debug)]
-pub(crate) struct InvocationLogBuffer {
-    activation_id: ActivationId,
-    maximum_entries: usize,
-    maximum_bytes: usize,
-    bytes: usize,
-    entries: Vec<CapturedLog>,
-}
-
-impl InvocationLogBuffer {
-    fn new(
-        activation_id: ActivationId,
-        maximum_entries: usize,
-        configured_maximum_bytes: usize,
-        delegated_log_bytes: u64,
-    ) -> Self {
-        let delegated = usize::try_from(delegated_log_bytes).unwrap_or(usize::MAX);
-        Self {
-            activation_id,
-            maximum_entries,
-            maximum_bytes: configured_maximum_bytes.min(delegated),
-            bytes: 0,
-            entries: Vec::new(),
-        }
-    }
-
-    fn write(
-        &mut self,
-        level: log::Level,
-        message: String,
-        fields: Vec<log::Field>,
-    ) -> Result<bool, log::LogError> {
-        if message.len() > MAX_LOG_MESSAGE_BYTES {
-            return Err(log::LogError::InvalidField("message-too-large".to_owned()));
-        }
-        if fields.len() > MAX_LOG_FIELDS {
-            return Err(log::LogError::InvalidField("too-many-fields".to_owned()));
-        }
-
-        let mut normalized = Metadata::new();
-        for field in fields {
-            if field.name.is_empty()
-                || field.name.len() > MAX_LOG_FIELD_NAME_BYTES
-                || !field
-                    .name
-                    .bytes()
-                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'.'))
-            {
-                return Err(log::LogError::InvalidField("invalid-field-name".to_owned()));
-            }
-            if field.value.len() > MAX_LOG_FIELD_VALUE_BYTES {
-                return Err(log::LogError::InvalidField(field.name));
-            }
-            if normalized.insert(field.name.clone(), field.value).is_some() {
-                return Err(log::LogError::InvalidField(field.name));
-            }
-        }
-
-        let entry = CapturedLog {
-            activation_id: self.activation_id.clone(),
-            level: level_name(level).to_owned(),
-            message,
-            fields: normalized,
-        };
-        let entry_bytes = captured_log_size(&entry);
-        if self.entries.len() >= self.maximum_entries
-            || self.bytes.saturating_add(entry_bytes) > self.maximum_bytes
-        {
-            return Err(log::LogError::BudgetExhausted);
-        }
-
-        self.bytes = self.bytes.saturating_add(entry_bytes);
-        self.entries.push(entry);
-        Ok(true)
-    }
-
-    pub(crate) fn entries(&self) -> Vec<CapturedLog> {
-        self.entries.clone()
-    }
-
-    pub(crate) fn bytes(&self) -> u64 {
-        u64::try_from(self.bytes).unwrap_or(u64::MAX)
-    }
-}
-
-fn level_name(level: log::Level) -> &'static str {
-    match level {
-        log::Level::Trace => "trace",
-        log::Level::Debug => "debug",
-        log::Level::Info => "info",
-        log::Level::Warn => "warn",
-        log::Level::Error => "error",
-    }
-}
 
 #[derive(Debug)]
 struct PendingMemoryGrowth {
@@ -334,7 +150,6 @@ pub(crate) struct ActivationHostContext {
     trace_flags: u8,
     baggage: Metadata,
     deadline_unix_millis: Option<u64>,
-    budget: FabricBudget,
     metadata: Metadata,
 }
 
@@ -350,7 +165,6 @@ impl ActivationHostContext {
         trace_flags: u8,
         baggage: Metadata,
         deadline_unix_millis: Option<u64>,
-        budget: FabricBudget,
         metadata: Metadata,
     ) -> Self {
         Self {
@@ -363,17 +177,20 @@ impl ActivationHostContext {
             trace_flags,
             baggage,
             deadline_unix_millis,
-            budget,
             metadata,
         }
     }
 }
 
-#[derive(Debug)]
 pub(crate) struct HostState {
     context: ActivationHostContext,
     pub(crate) limiter: TrackingLimiter,
     pub(crate) logs: InvocationLogBuffer,
+    pub(crate) accounting: InvocationAccounting,
+    context_policy: Arc<ContextExposurePolicy>,
+    clock: Arc<dyn ActivationClock>,
+    clock_origin: Instant,
+    last_monotonic_nanos: u64,
     host_call_timing: HostCallTiming,
 }
 
@@ -387,38 +204,63 @@ pub(crate) struct HostCallTiming {
 }
 
 impl HostState {
-    #[cfg(test)]
-    pub(crate) fn new(
-        context: ActivationHostContext,
-        maximum_memory_bytes: usize,
-        maximum_log_entries: usize,
-        maximum_log_bytes: usize,
-    ) -> Self {
-        let config = WasmtimeConfig {
-            invocation_log_maximum_entries: maximum_log_entries,
-            invocation_log_maximum_bytes: maximum_log_bytes,
-            ..WasmtimeConfig::default()
-        };
-        Self::with_config(context, maximum_memory_bytes, &config)
-    }
-
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn with_config(
         context: ActivationHostContext,
         maximum_memory_bytes: usize,
         config: &WasmtimeConfig,
+        accounting: InvocationAccounting,
+        context_policy: Arc<ContextExposurePolicy>,
+        clock: Arc<dyn ActivationClock>,
+        clock_origin: Instant,
+        sink: BoundedLogSink,
     ) -> Self {
         let logs = InvocationLogBuffer::new(
-            context.activation_id.clone(),
             config.invocation_log_maximum_entries,
             config.invocation_log_maximum_bytes,
-            context.budget.log_bytes,
+            accounting.budget().clone(),
+            sink,
         );
         Self {
             context,
             limiter: TrackingLimiter::with_config(maximum_memory_bytes, config),
             logs,
+            accounting,
+            context_policy,
+            clock,
+            clock_origin,
+            last_monotonic_nanos: 0,
             host_call_timing: HostCallTiming::default(),
         }
+    }
+
+    fn remaining_budget_snapshot(
+        &mut self,
+        fuel: u64,
+    ) -> wasmtime::Result<crate::bindings::latent::context::context::ResourceBudget> {
+        self.accounting
+            .observe_runtime(fuel, self.limiter.peak_memory_bytes())
+            .map_err(|error| wasmtime::Error::msg(error.message))?;
+        let remaining = self
+            .accounting
+            .remaining_at(
+                self.clock.monotonic_now(),
+                self.limiter.maximum_memory_bytes as u64,
+            )
+            .map_err(|error| wasmtime::Error::msg(error.message))?;
+        Ok(crate::bindings::latent::context::context::ResourceBudget {
+            cpu_fuel: remaining.cpu_fuel,
+            memory_bytes: remaining.memory_bytes,
+            wall_time_limit_millis: remaining.wall_time_limit_millis,
+            child_calls: remaining.child_calls,
+            outbound_requests: remaining.outbound_requests,
+            state_read_bytes: remaining.state_read_bytes,
+            state_write_bytes: remaining.state_write_bytes,
+            blob_read_bytes: remaining.blob_read_bytes,
+            blob_write_bytes: remaining.blob_write_bytes,
+            log_bytes: remaining.log_bytes,
+            effect_count: remaining.effect_count,
+        })
     }
 
     pub(crate) fn host_call_timing(&self) -> HostCallTiming {
@@ -431,135 +273,6 @@ impl HostState {
             .host_call_timing
             .elapsed_micros
             .saturating_add(u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX));
-    }
-}
-
-impl context::Host for HostState {
-    async fn activation_id(&mut self) -> String {
-        let started = Instant::now();
-        let value = self.context.activation_id.0.clone();
-        self.record_host_call(started);
-        value
-    }
-
-    async fn root_activation_id(&mut self) -> String {
-        let started = Instant::now();
-        let value = self.context.root_activation_id.0.clone();
-        self.record_host_call(started);
-        value
-    }
-
-    async fn parent_activation_id(&mut self) -> Option<String> {
-        let started = Instant::now();
-        let value = self
-            .context
-            .parent_activation_id
-            .as_ref()
-            .map(|activation_id| activation_id.0.clone());
-        self.record_host_call(started);
-        value
-    }
-
-    async fn principal(&mut self) -> context::InvocationPrincipal {
-        let started = Instant::now();
-        let value = context::InvocationPrincipal {
-            subject: self.context.principal.subject.clone(),
-            kind: principal_kind(self.context.principal.kind).to_owned(),
-            tenant: self
-                .context
-                .principal
-                .tenant
-                .as_ref()
-                .map(|tenant| tenant.0.clone()),
-            service: self
-                .context
-                .principal
-                .service
-                .as_ref()
-                .map(|service| service.0.clone()),
-            claims: metadata_pairs(&self.context.principal.claims),
-        };
-        self.record_host_call(started);
-        value
-    }
-
-    async fn trace(&mut self) -> context::TraceContext {
-        let started = Instant::now();
-        let value = context::TraceContext {
-            trace_id: self.context.trace_id.clone(),
-            span_id: self.context.span_id.clone(),
-            trace_flags: self.context.trace_flags,
-            baggage: metadata_pairs(&self.context.baggage),
-        };
-        self.record_host_call(started);
-        value
-    }
-
-    async fn deadline_unix_millis(&mut self) -> Option<u64> {
-        let started = Instant::now();
-        let value = self.context.deadline_unix_millis;
-        self.record_host_call(started);
-        value
-    }
-
-    async fn remaining_budget(&mut self) -> context::ResourceBudget {
-        let started = Instant::now();
-        let budget = &self.context.budget;
-        let value = context::ResourceBudget {
-            cpu_fuel: budget.cpu_fuel,
-            memory_bytes: budget.memory_bytes,
-            wall_time_limit_millis: budget.wall_time_limit_millis,
-            child_calls: budget.child_calls,
-            outbound_requests: budget.outbound_requests,
-            state_read_bytes: budget.state_read_bytes,
-            state_write_bytes: budget.state_write_bytes,
-            blob_read_bytes: budget.blob_read_bytes,
-            blob_write_bytes: budget.blob_write_bytes,
-            log_bytes: budget.log_bytes,
-            effect_count: budget.effect_count,
-        };
-        self.record_host_call(started);
-        value
-    }
-
-    async fn metadata(&mut self) -> Vec<(String, String)> {
-        let started = Instant::now();
-        let value = metadata_pairs(&self.context.metadata);
-        self.record_host_call(started);
-        value
-    }
-}
-
-impl log::Host for HostState {
-    async fn write(
-        &mut self,
-        level: log::Level,
-        message: String,
-        fields: Vec<log::Field>,
-    ) -> Result<bool, log::LogError> {
-        let started = Instant::now();
-        let result = self.logs.write(level, message, fields);
-        self.record_host_call(started);
-        result
-    }
-}
-
-fn metadata_pairs(metadata: &Metadata) -> Vec<(String, String)> {
-    metadata
-        .iter()
-        .map(|(name, value)| (name.clone(), value.clone()))
-        .collect()
-}
-
-fn principal_kind(kind: PrincipalKind) -> &'static str {
-    match kind {
-        PrincipalKind::User => "user",
-        PrincipalKind::Service => "service",
-        PrincipalKind::Node => "node",
-        PrincipalKind::Trigger => "trigger",
-        PrincipalKind::Administrator => "administrator",
-        PrincipalKind::Anonymous => "anonymous",
-        _ => "unknown",
     }
 }
 

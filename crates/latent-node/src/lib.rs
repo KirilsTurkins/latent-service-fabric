@@ -4,6 +4,7 @@
 
 mod activation_runner;
 mod budgeted_activation;
+mod budgeted_execution;
 mod cancellation;
 
 use latent_artifacts::CacheEntryDescriptor;
@@ -17,6 +18,7 @@ pub use budgeted_activation::{
     ActivationBudgetPolicy, ActivationBudgetRegistry, ActivationBudgetRegistrySnapshot,
     ActivationClock, BudgetedActivationManager, SystemActivationClock,
 };
+pub use budgeted_execution::BudgetedExecutionBackend;
 pub use cancellation::{
     ActivationCancellationRegistry, CancellationHandle, CancellationRegistration,
     CancellationRegistrySnapshot, CancellationToken,

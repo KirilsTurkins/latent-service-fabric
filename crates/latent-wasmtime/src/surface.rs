@@ -14,6 +14,8 @@ use crate::values::validate_signature;
 
 pub const CONTEXT_IMPORT: &str = "latent:context/context@0.1.0";
 pub const LOG_IMPORT: &str = "latent:log/log@0.1.0";
+pub const MONOTONIC_CLOCK_IMPORT: &str = "latent:clock/monotonic@0.1.0";
+pub const WALL_CLOCK_IMPORT: &str = "latent:clock/wall@0.1.0";
 
 pub(crate) struct Function {
     pub index: ComponentExportIndex,
@@ -149,7 +151,10 @@ fn validate_imports(
     let mut imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
-        if !matches!(name, CONTEXT_IMPORT | LOG_IMPORT) {
+        if !matches!(
+            name,
+            CONTEXT_IMPORT | LOG_IMPORT | MONOTONIC_CLOCK_IMPORT | WALL_CLOCK_IMPORT
+        ) {
             return Err(incompatible(
                 "component imports an unsupported host capability",
             ));

@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 pub mod budget;
+pub mod clock;
 pub mod error;
 pub mod identity;
 pub mod ids;
@@ -12,6 +13,7 @@ pub use budget::{
     ActivationBudget, BudgetConsumption, BudgetDimension, BudgetError, BudgetFinalization,
     BudgetReservation, ClockSample, EffectiveActivationBudget, EffectiveDeadline, ResourceBudget,
 };
+pub use clock::{ActivationClock, SystemActivationClock};
 pub use error::{DeclaredError, ErrorDetail, PlatformError, PlatformErrorCode};
 pub use identity::{InvocationPrincipal, PrincipalKind};
 pub use ids::*;
