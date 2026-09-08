@@ -153,7 +153,7 @@ resident entry; explicit release then removed that entry. Every current receipt
 retained the published release, revision and route generation 1, and its final
 consumption matched the subsequent retained status. All current shutdown
 receipts were clean, with zero transient owners, flushed telemetry and a joined
-epoch helper. All 14 parent processes exited successfully, were reaped, closed
+epoch helper. All 14 supervised processes exited successfully, were reaped, closed
 their output readers and removed their owned temporary data.
 
 Per-call process observations showed four threads and zero listeners in the
