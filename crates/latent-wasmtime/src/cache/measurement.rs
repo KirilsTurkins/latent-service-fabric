@@ -38,7 +38,7 @@ fn measured_cache_hits(
 fn warmup_cache_hits(cache: &PreparedCache<u16>, keys: &[String], trace: &[u16]) {
     for &index in trace {
         let runtime = cache.get(&keys[usize::from(index)]).expect("warmup hit");
-        assert_eq!(*black_box(&runtime), index);
+        assert_eq!(**black_box(&runtime), index);
         drop(black_box(runtime));
     }
 }
@@ -49,25 +49,38 @@ fn cache_lookup_collector() {
     collect().expect("cache lookup collector");
 }
 
+fn populated_cache(keys: &[String]) -> Result<Arc<PreparedCache<u16>>, Box<dyn std::error::Error>> {
+    let cache = Arc::new(
+        PreparedCache::new(CacheLimits {
+            maximum_entries: keys.len(),
+            maximum_source_bytes: keys.len() * 2,
+            maximum_metadata_bytes: keys.len() * 3,
+            maximum_compiled_image_bytes: keys.len() * 4,
+            maximum_concurrent_preparations: 1,
+        })
+        .map_err(|error| format!("lookup cache construction: {error:?}"))?,
+    );
+    for (index, key) in keys.iter().enumerate() {
+        let PrepareAccess::Compile(reservation) = cache
+            .begin(key.clone(), 2, 3)
+            .map_err(|error| format!("lookup prepopulation reservation: {error:?}"))?
+        else {
+            return Err("unexpected prepopulation hit".into());
+        };
+        reservation
+            .publish(Arc::new(u16::try_from(index)?), 4)
+            .map_err(|error| format!("lookup prepopulation publication: {error:?}"))?;
+    }
+    Ok(cache)
+}
+
 fn collect() -> Result<(), Box<dyn std::error::Error>> {
     let input = input::Input::load()?;
     let plan = &input.plan;
     let keys: Vec<_> = (0..plan.capacity)
         .map(|index| format!("cache-key-{index:04x}"))
         .collect();
-    let cache = Arc::new(PreparedCache::new(CacheLimits {
-        maximum_entries: plan.capacity,
-        maximum_source_bytes: plan.capacity * 2,
-        maximum_metadata_bytes: plan.capacity * 3,
-        maximum_compiled_image_bytes: plan.capacity * 4,
-        maximum_concurrent_preparations: 1,
-    })?);
-    for (index, key) in keys.iter().enumerate() {
-        let PrepareAccess::Compile(reservation) = cache.begin(key.clone(), 2, 3)? else {
-            return Err("unexpected prepopulation hit".into());
-        };
-        reservation.publish(Arc::new(u16::try_from(index)?), 4)?;
-    }
+    let cache = populated_cache(&keys)?;
     let warmup = plan.trace(plan.warmup_hits);
     warmup_cache_hits(&cache, &keys, &warmup);
     let trace = plan.trace(plan.measured_hits);

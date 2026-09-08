@@ -53,6 +53,12 @@ pub(crate) struct PreparedRuntime {
     image_bytes: usize,
 }
 
+impl PreparedRuntime {
+    pub(crate) fn descriptor(&self) -> &PreparedComponent {
+        &self.descriptor
+    }
+}
+
 /// Immutable compiled state and bounded diagnostics owned by one node factory.
 pub(crate) struct SharedRuntime {
     // Join compiler jobs before the ticker, components and engine references.
@@ -186,6 +192,14 @@ impl WasmtimeBackend {
     #[must_use]
     pub fn cache_snapshot(&self) -> PreparedCacheSnapshot {
         self.shared.cache.snapshot()
+    }
+    /// Returns the actual descriptor only when exactly one resident matches.
+    /// This bounded diagnostic scan performs no fetch, promotion or hit/miss
+    /// accounting. Different source identities can share a preparation key;
+    /// such an ambiguous lookup returns `None`.
+    #[must_use]
+    pub fn cached_preparation(&self, key: &PreparationKey) -> Option<PreparedComponent> {
+        self.shared.cache.cached_preparation(key)
     }
     /// Measured residency with optional unique prepared-runtime costs.
     #[must_use]

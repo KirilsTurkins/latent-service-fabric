@@ -4,6 +4,7 @@
 //! stores, instances and host context belong to the backend's activation scope.
 
 mod accounting;
+mod diagnostics;
 mod instances;
 mod limits;
 #[cfg(all(test, target_os = "linux"))]
