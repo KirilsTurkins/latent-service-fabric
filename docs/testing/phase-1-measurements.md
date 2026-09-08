@@ -165,6 +165,13 @@ does not manufacture a productionization delta from unrelated measurements.
 The generic Phase 1/RPC composition also changes some boundaries deliberately.
 Those changes remain visible in the comparison and completion report.
 
+The separate [controlled historical/current experiment](phase-1-controlled-comparison.md)
+runs the original runtime and current node on one observed environment, using
+identical maintained Echo source and fixed semantic workloads. It measures the
+declared production changes while preserving the August reference and this
+comparator's strict compatibility rules. Unmatched historical observations alone
+do not satisfy the gate's requested productionization comparison.
+
 Validate retained artifacts again, or produce the comparison from a benchmark
 aggregate and the checked-in Phase 0 aggregate:
 

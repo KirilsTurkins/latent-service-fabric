@@ -46,7 +46,7 @@ pub(super) fn write(
     Ok(())
 }
 
-fn retain(directory: &Path, relative: &str, bytes: &[u8]) -> Result<Value> {
+pub(super) fn retain(directory: &Path, relative: &str, bytes: &[u8]) -> Result<Value> {
     if bytes.is_empty() || bytes.len() > MAXIMUM_FILE_BYTES {
         return Err("measurement metadata input byte limit".into());
     }

@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/benchmarks/phase1/paired-plan.schema.json",
+  "title": "paired-plan shape (semantic replay is also required)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "repetition",
+    "warmup_samples",
+    "measured_samples",
+    "maximum_run_seconds",
+    "maximum_output_bytes"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.phase1.paired-plan.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "repetition": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7
+    },
+    "warmup_samples": {
+      "enum": [
+        2,
+        40
+      ]
+    },
+    "measured_samples": {
+      "enum": [
+        4,
+        400
+      ]
+    },
+    "maximum_run_seconds": {
+      "enum": [
+        "120",
+        "600"
+      ]
+    },
+    "maximum_output_bytes": {
+      "const": "16777216"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "warmup_samples": {
+            "const": 2
+          },
+          "measured_samples": {
+            "const": 4
+          },
+          "maximum_run_seconds": {
+            "const": "120"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "warmup_samples": {
+            "const": 40
+          },
+          "measured_samples": {
+            "const": 400
+          },
+          "maximum_run_seconds": {
+            "const": "600"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -214,6 +214,12 @@ Benchmark uses seven independent release-build processes. The
 and retains available failure diagnostics. Container/hosted results retain
 their environment; they are not silently promoted to native comparison data.
 
+The [controlled comparison](docs/testing/phase-1-controlled-comparison.md) separately
+runs historical and current semantic Echo workloads in alternating process pairs.
+Its [explicit workflow](.github/workflows/phase1-controlled-comparison.yml) defaults
+to smoke. Full mode uses seven pairs of 40 warmup and 400 measured calls per arm;
+it does not repeat scale or soak workloads or replace the retained native reference.
+
 ## Native-Linux Phase 0 calibration
 
 The deterministic smoke profile and normal validation suite protect correctness.
