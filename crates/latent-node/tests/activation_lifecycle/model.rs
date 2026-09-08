@@ -200,7 +200,7 @@ pub fn artifact(generation: u8, bucket: u8) -> CapsuleArtifact {
                 .iter()
                 .map(|contract| ContractImport {
                     contract: ContractId((*contract).to_owned()),
-                    optional: false,
+                    optional: *contract == "latent:log/log@0.1.0",
                 })
                 .collect(),
             execution: policy().execution,

@@ -32,6 +32,7 @@ pub struct Backend {
     pub mode: AtomicU8,
     pub entered: AtomicUsize,
     pub preparation_calls: AtomicUsize,
+    pub preparation_fault: AtomicU8,
     pub live_calls: Arc<AtomicUsize>,
     pub live_prepared: Arc<AtomicUsize>,
     pub requests: Mutex<Vec<ExecutionRequest>>,
@@ -45,6 +46,7 @@ impl Default for Backend {
             mode: AtomicU8::new(SUCCESS),
             entered: AtomicUsize::new(0),
             preparation_calls: AtomicUsize::new(0),
+            preparation_fault: AtomicU8::new(0),
             live_calls: Arc::default(),
             live_prepared: Arc::default(),
             requests: Mutex::new(Vec::new()),
@@ -86,7 +88,13 @@ impl ExecutionBackend for Backend {
             self.preparation_calls.fetch_add(1, Ordering::Relaxed);
             let pin = LiveGuard::new(&self.live_prepared);
             self.prepare_gate.wait().await;
-            Ok(PreparedUse::new(descriptor(key.clone()), pin))
+            let mut prepared = descriptor(key.clone());
+            match self.preparation_fault.load(Ordering::Acquire) {
+                1 => prepared.key.release = ReleaseDigest("foreign-release".to_owned()),
+                2 => prepared.backend = "foreign-backend".to_owned(),
+                _ => {}
+            }
+            Ok(PreparedUse::new(prepared, pin))
         })
     }
 

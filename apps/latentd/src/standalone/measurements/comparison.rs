@@ -3,6 +3,7 @@ mod call;
 mod evidence;
 mod node;
 mod plan;
+mod revision;
 mod writer;
 
 use std::path::Path;

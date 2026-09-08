@@ -285,7 +285,7 @@ fn eight_index_adoptions_precharge_capacity_and_preserve_every_scope_path() {
     let cost = index::entry_cost(&template, DirectoryArtifactRepositoryConfig::default());
     let config = DirectoryArtifactRepositoryConfig {
         max_index_entries: 8,
-        max_index_bytes: cost * 8,
+        max_index_bytes: cost * 8 + index::REPOSITORY_ACCOUNTED_BYTES,
         ..DirectoryArtifactRepositoryConfig::default()
     };
     let repo = DirectoryArtifactRepository::open(temp.path(), config).expect("open");
@@ -294,7 +294,7 @@ fn eight_index_adoptions_precharge_capacity_and_preserve_every_scope_path() {
         value.descriptor.reference = ArtifactReference(format!("local://tests/index-{n}"));
         value.descriptor.release_digest = ReleaseDigest(format!("sha256:{n:064x}"));
         repo.preflight_adoption(&value).expect("preflight");
-        repo.finalize_adoption(value).expect("adopt");
+        repo.finalize_adoption(value, None).expect("adopt");
     }
     assert_eq!(
         block_on(repo.list_catalog_entries(&query("tenant-a", Some("echo"), 10)))

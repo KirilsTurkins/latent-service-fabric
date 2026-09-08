@@ -151,6 +151,9 @@ pub(super) fn measure(
     }
     // This covers all allocations in the returned owned entry, including sparse maps.
     let materialized_bytes = retained.used;
+    retained.add(Some(
+        size_of::<Option<crate::PreparationMetadataFingerprint>>(),
+    ))?;
     // Seven potentially sparse index nodes plus boxed record and collection bookkeeping.
     // Repeated charging for shared scope keys intentionally overestimates their storage.
     retained.add(Some(8192))?;

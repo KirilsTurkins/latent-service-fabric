@@ -9,6 +9,7 @@ use sha2::{Digest, Sha256};
 
 use super::{corrupt, resource_exhausted};
 use crate::content_hash::format_digest;
+use crate::verification_statistics::{add, VerificationStatistics};
 
 pub(super) const SCRATCH_BYTES: usize = 64 * 1024;
 
@@ -28,7 +29,9 @@ pub(super) fn read_component(
     path: &Path,
     limit: usize,
     retention: Retention,
+    statistics: &VerificationStatistics,
 ) -> Result<ComponentRead, PlatformError> {
+    add(&statistics.component_verification_attempts, 1);
     // Check before open so a misplaced FIFO is not treated as component input.
     let metadata = fs::metadata(path).map_err(|_| corrupt("completed release is missing data"))?;
     if !metadata.is_file() {
@@ -41,14 +44,25 @@ pub(super) fn read_component(
     if !metadata.is_file() {
         return Err(corrupt("completed release data is not a regular file"));
     }
-    read_stream(file, metadata.len(), limit, retention)
+    read_stream_counted(file, metadata.len(), limit, retention, Some(statistics))
 }
 
+#[cfg(test)]
 fn read_stream(
     reader: impl Read,
     initial_length: u64,
     limit: usize,
     retention: Retention,
+) -> Result<ComponentRead, PlatformError> {
+    read_stream_counted(reader, initial_length, limit, retention, None)
+}
+
+fn read_stream_counted(
+    reader: impl Read,
+    initial_length: u64,
+    limit: usize,
+    retention: Retention,
+    statistics: Option<&VerificationStatistics>,
 ) -> Result<ComponentRead, PlatformError> {
     let limit = u64::try_from(limit)
         .map_err(|_| resource_exhausted("configured file limit cannot fit in u64"))?;
@@ -79,6 +93,9 @@ fn read_stream(
             return Err(too_large());
         }
         hasher.update(&scratch[..count]);
+        if let Some(statistics) = statistics {
+            add(&statistics.component_bytes_hashed, count as u64);
+        }
         if matches!(retention, Retention::Component) {
             bytes
                 .try_reserve_exact(count)

@@ -6,7 +6,8 @@ use std::time::Instant;
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest};
 use latent_executor::{
-    ExecutionCancellation, ExecutionReport, ExecutionRequest, PreparationKey, PreparedUse,
+    ExecutionCancellation, ExecutionReport, ExecutionRequest, PreparationKey, PreparedActivation,
+    PreparedUse,
 };
 
 use super::{elapsed_micros, PreparedRuntime, SharedRuntime, WasmtimeBackend};
@@ -72,14 +73,34 @@ impl WasmtimeBackend {
         // The runtime is retained inside the same cache access/publication that
         // prepared it, so concurrent eviction cannot open a descriptor-only gap.
         let runtime = self.prepare_runtime(artifact, key)?;
-        Ok(PreparedUse::new(
+        Ok(self.runtime_use(runtime, permit))
+    }
+
+    pub(super) fn activation_use(
+        &self,
+        runtime: Arc<PreparedRuntime>,
+        permit: ActiveInstancePermit,
+    ) -> PreparedActivation {
+        let imports = runtime.imports.clone();
+        PreparedActivation {
+            prepared: self.runtime_use(runtime, permit),
+            imports,
+        }
+    }
+
+    fn runtime_use(
+        &self,
+        runtime: Arc<PreparedRuntime>,
+        permit: ActiveInstancePermit,
+    ) -> PreparedUse {
+        PreparedUse::new(
             runtime.descriptor.clone(),
             WasmtimePreparedUse {
                 runtime,
                 permit,
                 shared: Arc::clone(&self.shared),
             },
-        ))
+        )
     }
 
     pub(super) async fn invoke_owned(

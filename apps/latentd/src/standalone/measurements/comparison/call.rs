@@ -8,8 +8,17 @@ use super::super::soak;
 use super::{evidence, node::Node, writer::Writer, Result, INPUT};
 
 pub(super) async fn run(node: &mut Node, writer: &mut Writer, iteration: u32) -> Result<()> {
+    run_with_cold_start(node, writer, iteration, false).await
+}
+
+pub(super) async fn run_with_cold_start(
+    node: &mut Node,
+    writer: &mut Writer,
+    iteration: u32,
+    cold_start: bool,
+) -> Result<()> {
     let id = format!("baseline-warm-echo-{iteration:08}");
-    let result = invoke(node, iteration, &id).await;
+    let result = invoke(node, iteration, &id, cold_start).await;
     match result {
         Ok(sample) => writer.sample(&sample),
         Err(error) => {
@@ -24,7 +33,7 @@ pub(super) async fn run(node: &mut Node, writer: &mut Writer, iteration: u32) ->
     }
 }
 
-async fn invoke(node: &mut Node, iteration: u32, id: &str) -> Result<Value> {
+async fn invoke(node: &mut Node, iteration: u32, id: &str, cold_start: bool) -> Result<Value> {
     let mut request = node.fixture.request("echo", id, &json!([INPUT]));
     let budget = request.budget.as_mut().ok_or("comparison budget missing")?;
     budget.cpu_fuel = 10_000_000_000;
@@ -83,9 +92,10 @@ async fn invoke(node: &mut Node, iteration: u32, id: &str) -> Result<Value> {
     let after = node.owner.backend.cache_snapshot();
     if after.entries != 1
         || after.misses != 1
-        || after.hits != before.hits + 1
+        || after.hits != before.hits + u64::from(!cold_start)
         || after.evictions != 0
         || after.invalidations != 0
+        || (cold_start && (iteration != 0 || before.entries != 0 || before.misses != 0))
     {
         return Err("comparison RPC did not reuse the single published preparation".into());
     }
