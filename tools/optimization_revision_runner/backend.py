@@ -12,6 +12,10 @@ from .build import git, source
 
 CONTROLS = ("apps/latentd/src/standalone/measurements/comparison", "tools/build_echo_capsule.py",
             "tools/toolchain-smoke/examples/echo_capsule", "examples/echo-contract", "tools/toolchain.toml")
+# Retain these when present; only the new cold replay requires equality. Older
+# exact-source warm collectors and immutable receipts remain valid unchanged.
+COLD_CONTROLS = ("crates/latent-wasmtime/src/preparation_observer/cpu.rs",
+                 "crates/latent-wasmtime/src/preparation_observer/model.rs")
 RECIPE = ("source tools/phase0_build_environment.sh; phase0_reject_inherited_build_overrides; "
           "phase0_reject_hidden_cargo_configuration; phase0_release_cargo test --release --locked "
           "-p latentd --lib --no-run --message-format=json")
@@ -21,7 +25,7 @@ def inputs(root, label, output):
     names = [name for name in git(root, "ls-files").splitlines()
              if name.endswith("Cargo.toml") or name in ("Cargo.lock", "rust-toolchain.toml", ".cargo/config.toml",
                                                        "tools/phase0_build_environment.sh")
-             or any(name == prefix or name.startswith(prefix + "/") for prefix in CONTROLS)]
+             or any(name == prefix or name.startswith(prefix + "/") for prefix in (*CONTROLS,*COLD_CONTROLS))]
     if not 1 <= len(names) <= 512:
         raise ValueError("backend-build-input-bound")
     return {name: legacy.retain(root / name, output, f"builds/{label}/source/{name}") for name in names}
