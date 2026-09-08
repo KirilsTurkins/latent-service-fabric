@@ -6,14 +6,14 @@ from . import attempts, model, controls as control_checks
 from .observer import Observer
 
 
-def configuration(value, variant):
+def configuration(value, variant, node_id="cold-comparison", entries=8):
     fields(value, "formatVersion dataDirectory nodeId bind workers cells execution catalogs cache retention telemetry shutdownGraceMillis")
-    require(value["formatVersion"] == 1 and value["nodeId"] == "cold-comparison"
+    require(value["formatVersion"] == 1 and value["nodeId"] == node_id
             and value["dataDirectory"] == "data" and value["bind"] == "127.0.0.1:0", "cold-configuration-identity")
     require(value["workers"] == {"runtime":2,"control":4}
             and value["cells"] == [{"class":"standard","capacity":4,"queueCapacity":64,"maximumMemoryBytes":67_108_864}]
             and value["execution"] == {"maximumCpuFuel":10_000_000_000,"maximumWallTimeMillis":5000,"maximumLogBytes":16384}, "cold-execution-controls")
-    cache = {"entries":8,"sourceBytes":134_217_728,"metadataBytes":67_108_864,"compiledImageBytes":536_870_912,"preparations":4}
+    cache = {"entries":entries,"sourceBytes":134_217_728,"metadataBytes":67_108_864,"compiledImageBytes":536_870_912,"preparations":4}
     if variant == "candidate":
         cache["compilerWorkers"] = 2
     require(value["cache"] == cache and value["catalogs"] == {"releaseEntries":16,"releaseIndexBytes":16_777_216,"deployments":16,"deploymentStateBytes":16_777_216}
@@ -22,9 +22,11 @@ def configuration(value, variant):
             and value["shutdownGraceMillis"] == 1000, "cold-capacity-controls")
 
 
-def fixtures(value, artifacts, directory, echo):
-    require(isinstance(value, list) and len(value) == 8, "cold-fixture-count")
+def fixtures(value, artifacts, directory, echo, expected_components=None):
     base = artifacts.path(echo["component"]).read_bytes()
+    if expected_components is None:
+        expected_components = [base + (bytes([0,2,0,index]) if index else b"") for index in range(8)]
+    require(isinstance(value, list) and len(value) == len(expected_components), "cold-fixture-count")
     original_contracts = artifacts.json(echo["contracts"])
     releases = []
     for index,row in enumerate(value):
@@ -34,7 +36,7 @@ def fixtures(value, artifacts, directory, echo):
         component = row["component"]
         require(component["path"] == "echo-component.wasm", "cold-component-path")
         actual = artifacts.nested(parent,component).read_bytes()
-        require(actual == base + (bytes([0,2,0,index]) if index else b""), "cold-fixture-treatment-changed")
+        require(actual == expected_components[index], "cold-fixture-treatment-changed")
         digest = sha256(actual)
         releases.append(digest)
         artifact = fields(row["artifact"], "component_sha256 component_bytes stored_descriptor_reference capsule contracts deployment")
@@ -57,7 +59,7 @@ def fixtures(value, artifacts, directory, echo):
         require(row["publication"] == {"release_digest":digest,"deployment_id":f"cold-key-{index}",
                 "object_generation":str(index+1),"catalog_generation":str(index+1)}, "cold-publication-stamp")
         require(row["target"] == {"tenant":"examples","service":f"cold-key-{index}","contract":"examples:echo/api@0.1.0","function":"echo"}, "cold-target-changed")
-    require(len(set(releases)) == 8, "cold-components-not-distinct")
+    require(len(set(releases)) == len(expected_components), "cold-components-not-distinct")
     return releases
 
 
