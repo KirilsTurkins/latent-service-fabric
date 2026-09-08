@@ -35,6 +35,7 @@ The following foundations are implemented:
 - [Stateless activation lifecycle, bounded journal/status, and scoped cancellation](activation-lifecycle.md) (#11).
 - [Shared telemetry, redacted lifecycle/guest observations, and bounded node inventory](telemetry.md) (#13).
 - [Generic invocation, cancellation, and retained-status service adapters](protocol/invocation-service.md) (#12).
+- [Release, deployment, route, and node management service adapters](reference/management-services.md) (#37).
 - [SDK caller identity and cancellation contracts](../sdk/README.md) with executable fixtures across six languages (#65).
 
 The remaining work is tracked by the
@@ -42,10 +43,10 @@ The remaining work is tracked by the
 
 | Area | Remaining issues |
 | --- | --- |
-| Node services and operations | [management adapters #37](https://github.com/KirilsTurkins/latent-service-fabric/issues/37), [standalone node #14](https://github.com/KirilsTurkins/latent-service-fabric/issues/14), [CLI #15](https://github.com/KirilsTurkins/latent-service-fabric/issues/15) |
+| Node services and operations | [standalone node #14](https://github.com/KirilsTurkins/latent-service-fabric/issues/14), [CLI #15](https://github.com/KirilsTurkins/latent-service-fabric/issues/15) |
 | Completion evidence | [Conformance, isolation, reclamation, and zero-idle scaling gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16) |
 
-Status is recorded as of September 7, 2026. An open implementation PR does not
+Status is recorded as of September 8, 2026. An open implementation PR does not
 make its feature available on the integration branch. Phase 0 remains the
 runnable local echo demonstration; the complete standalone release-to-invocation
 workflow and Phase 1 completion evidence are pending.

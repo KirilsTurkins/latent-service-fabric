@@ -289,7 +289,7 @@ fn catalog_scale_child() {
         root,
         DirectoryArtifactRepositoryConfig {
             max_index_entries: RELEASE_COUNT as usize,
-            max_index_bytes: 256 * 1024 * 1024,
+            max_index_bytes: 1024 * 1024 * 1024,
             ..DirectoryArtifactRepositoryConfig::default()
         },
     )

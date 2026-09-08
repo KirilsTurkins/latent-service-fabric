@@ -7,7 +7,7 @@ processes, sockets, threads, heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Phase 1 is in progress. The executable Phase 0 echo runtime now has maintained manifest validation, budget/cancellation primitives, durable local catalogs and routing, bounded admission, fair scheduling, generic Wasmtime execution, and activation capabilities alongside it. A standalone Phase 1 node, management adapters, and operator CLI remain pending. The retained August 30 native-Linux Phase 0 full-gate receipt authorizes that work; it does not establish production readiness or completion of Phase 1.
+> Phase 1 is in progress. The executable Phase 0 echo runtime now has maintained manifest validation, durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, and invocation/management adapters alongside it. The standalone Phase 1 node and operator CLI remain pending. The retained August 30 native-Linux Phase 0 full-gate receipt authorizes that work; it does not establish production readiness or completion of Phase 1.
 
 ## Core invariant
 
@@ -73,8 +73,9 @@ them into the standalone node is still tracked by
 | Activation lifecycle | Pinned resolution, admission/scheduling, affine preparation, bounded status/journal, scoped cancellation, terminal accounting, and unconditional cleanup; [lifecycle](docs/activation-lifecycle.md) |
 | Telemetry and inventory | Shared bounded export, payload-free lifecycle observation, redacted guest logs, fixed-dimension metrics, and bounded node resource snapshots; [telemetry](docs/telemetry.md) |
 | Invocation service | Generated Invoke/Cancel/GetActivation adapters, scoped local authentication, manager-owned execution and retained status; [invocation service](docs/protocol/invocation-service.md) |
+| Management services | Typed release uploads, atomic versioned deployments, tenant-scoped indexed reads/routes, and operator-authorized node inventory through generated RPCs; [management services](docs/reference/management-services.md) |
 
-Management services, the standalone node, CLI, and the Phase 1 gate remain open work. See
+The standalone node, CLI, and the Phase 1 gate remain open work. See
 [the roadmap](docs/roadmap.md) for issue links and phase boundaries.
 
 ## Phase 0 result

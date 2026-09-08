@@ -948,6 +948,7 @@ dependencies = [
  "latent-policy",
  "latent-routing",
  "latent-scheduler",
+ "sha2",
  "tokio",
 ]
 
@@ -1156,9 +1157,11 @@ dependencies = [
 name = "latent-wire"
 version = "0.1.0-alpha.1"
 dependencies = [
+ "hyper-util",
  "latent-activation",
  "latent-admission",
  "latent-artifacts",
+ "latent-control-store",
  "latent-core",
  "latent-executor",
  "latent-manifest",
@@ -1170,6 +1173,7 @@ dependencies = [
  "prost",
  "tokio",
  "tonic",
+ "tower",
 ]
 
 [[package]]

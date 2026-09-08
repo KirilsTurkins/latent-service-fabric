@@ -245,6 +245,32 @@ class SchemaAndSurfaceTests(unittest.TestCase):
         )
         self.assertNotIn("activation start", dotnet)
 
+    def test_release_upload_requires_encoded_typed_contract_metadata(self) -> None:
+        example = json.loads(
+            (ROOT / "examples/echo-contract/publish-release.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validator = self.schema_validator("release-publish.schema.json")
+        for invalid in (None, "", {}):
+            document = copy.deepcopy(example)
+            if invalid is None:
+                document["artifact"].pop("contractMetadataJson")
+            else:
+                document["artifact"]["contractMetadataJson"] = invalid
+            self.assertTrue(list(validator.iter_errors(document)))
+
+        metadata = json.loads(example["artifact"]["contractMetadataJson"])
+        self.assertEqual(metadata["format_version"], 1)
+        contract = metadata["contracts"][0]
+        self.assertEqual(contract["id"], "examples:echo/api@0.1.0")
+        function = contract["interfaces"][0]["functions"][0]
+        self.assertEqual(function["parameters"][0]["value_type"], "String")
+        self.assertEqual(
+            function["results"][0]["value_type"],
+            {"Result": {"ok": "String", "error": {"Variant": "echo-error"}}},
+        )
+
     def test_sdk_invocation_status_and_cancellation_surfaces_are_equivalent(self) -> None:
         expected = {
             "sdk/rust/src/lib.rs": (

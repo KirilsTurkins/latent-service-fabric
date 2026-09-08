@@ -7,6 +7,7 @@ mod recovery;
 #[cfg(target_os = "linux")]
 mod resources;
 mod root_identity;
+mod scoped_routes;
 mod versioned;
 
 use std::sync::atomic::Ordering;

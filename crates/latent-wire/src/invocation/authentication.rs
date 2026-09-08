@@ -39,7 +39,7 @@ impl AuthenticatedInvocationContext {
         request.extensions_mut().insert(self.clone());
         request
     }
-    pub(super) fn into_principal(self) -> InvocationPrincipal {
+    pub(crate) fn into_principal(self) -> InvocationPrincipal {
         self.principal
     }
 }
@@ -81,7 +81,7 @@ impl PrincipalPolicy for LocalPrincipalPolicy {
     }
 }
 
-pub(super) fn take_context<T>(
+pub(crate) fn take_context<T>(
     request: &mut Request<T>,
     limits: &InvocationLimits,
     policy: &dyn PrincipalPolicy,

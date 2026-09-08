@@ -51,7 +51,7 @@ deadline.
 | Platform detail | `Vec<ErrorDetail>` | repeated `detail_items` | not a declarative resource | `list<error-detail>` | typed list/array, never a flattened map |
 | Terminal outcome | `ActivationOutcome` / `ActivationStatus` | invocation/status oneofs | not a declarative resource | `invocation-outcome` | `InvocationOutcome` and retained status unions |
 | Route identity | `InvocationTarget` / tenant fields on routes | tenant fields on service/binding routes | required route tenant fields | tenant option on direct service target | generic target always carries tenant |
-| Local upload | `CapsuleArtifact` seam | `CapsuleArtifactUpload` | `ReleasePublish.artifact` | not guest-visible | management transport is deferred to #37 |
+| Local upload | `CapsuleArtifact` and bounded typed descriptor codec | `CapsuleArtifactUpload` | `ReleasePublish.artifact` | not guest-visible | generated management RPC clients; handwritten SDK surfaces remain invocation-focused |
 
 The one intentional target difference is WIT direct service invocation:
 `target.tenant = none` means the current invocation principal's tenant. The
@@ -109,8 +109,10 @@ Phase 1 `PublishRelease` uses the bounded unary `CapsuleArtifactUpload`:
 
 - `capsule_manifest_json`;
 - `component_bytes`;
-- `component_digest`; and
-- `component_media_type`.
+- `component_digest`;
+- `component_media_type`; and
+- `contract_metadata_json`, the bounded `{"format_version":1,"contracts":[...]}`
+  typed descriptor document.
 
 The adapter must impose configured request/artifact byte limits before parsing
 or storing content, verify the component digest, and derive any local storage
@@ -118,10 +120,19 @@ locator itself. `ReleaseDescriptor.artifact_reference` is therefore a
 server-assigned opaque locator, never a client-visible filesystem path. The
 JSON analogue is `schemas/release-publish.schema.json`.
 
+The implemented [management adapter](../reference/management-services.md)
+requires an explicit capsule tenant matching the authenticated administrator.
+It verifies typed metadata for every declared export and preserves descriptor
+parameters, results, and nested value types through the public contract codec.
+The JSON schema analogue requires a `contractMetadataJson` string. The checked-in
+publish example demonstrates that shape with placeholder bytes/digests; it is
+not an executable upload. Actual generated-client tests use complete tiny
+catalog publication fixtures.
+
 ## Deployment generations and pagination
 
 The [deployment repository](../deployment-routing.md) supplies the atomic
-versioned port consumed by management adapters in #37. The generated
+versioned port consumed by the implemented management adapter. The generated
 `Deployment.generation` field is output-only: adapters ignore it in apply input
 and preserve its full unsigned 64-bit value in responses. The optional
 `expected_generation` field is the caller's only precondition:
@@ -156,10 +167,10 @@ limits. The repository rejects page size zero. In #37's wire adapter, a missing
 `PageRequest` or zero `page_size` selects the adapter's configured positive
 default within the repository limit: Protobuf cannot distinguish an omitted
 non-optional scalar from explicit zero. The repository's page byte budget covers
-encoded records; adapters also bound the entire wire response. #37 must test
-generation conversion, preconditions, scoped pagination and
-unsupported watch behavior through its generated client/server path; this
-repository feature does not expose a management listener.
+encoded records; adapters also bound the entire wire response. Generated-client/
+server tests over an in-memory transport cover generation conversion,
+preconditions, scoped pagination, and unsupported watches against real small
+directory catalogs. The adapter does not expose a management listener.
 
 ## Tenant-qualified routes
 
@@ -172,16 +183,17 @@ the service ID string.
 
 ## Standalone Phase 1 RPC subset
 
-This table is the implementation contract for #12, #37, and #14. Those adapters
-and the standalone listener are not yet merged; generated messages and service
-traits alone do not make these methods callable.
+The invocation adapter (#12) and management adapter (#37) implement their
+standalone subsets in `latent-wire`. The standalone listener and process
+composition remain #14 work. Generated messages and service traits alone do not
+make the other control-plane services callable.
 
 | Service/method | Phase 1 standalone behavior |
 | --- | --- |
 | `ReleaseService` publish/get/list | Supported locally. |
 | `DeploymentService` apply/get/list/delete | Supported locally. |
 | `DeploymentService.WatchDeployment` | Explicitly unimplemented. |
-| `RouteService.GetRouteSnapshot` | Supported for current or retained local snapshots. |
+| `RouteService.GetRouteSnapshot` | Supported for the current tenant-scoped snapshot; noncurrent generations are `NotFound`. |
 | `RouteService.WatchRouteSnapshots` | Explicitly unimplemented. |
 | `NodeService.GetNode` / `ListNodes` | Supported for the local node inventory only. |
 | `NodeService.RegisterNode` | Explicitly unimplemented. |
@@ -196,8 +208,8 @@ listed unsupported method; it must never return an empty successful response.
 
 This is a deliberate pre-Phase-1-stabilization source and wire break. The
 repository has not released a stable Phase 1 API, and no generated client code
-is committed. The changes replace ambiguity before persistent data or external
-clients exist:
+is committed. The initial #36 changes removed ambiguity at the Phase 1
+foundation boundary:
 
 | Prior shape | Replacement | Protection |
 | --- | --- | --- |
@@ -206,6 +218,16 @@ clients exist:
 | `InvokeResponse.error` field 6 | `declared_error` field 8 and `platform_failure` field 9 | Field 6 and its name are reserved. |
 | `CancelResponse.accepted` boolean field 1 | enum disposition field 2 | Field 1 and its name are reserved. |
 | unscoped route services/bindings | required tenant fields | Schema fixtures and descriptor contract tests require the fields. |
+
+The #37 implementation adds upload field 5 (`contract_metadata_json`), explicit
+release and snapshot tenant fields, and complete node inventory observations
+without reusing existing field numbers. Older publish callers must supply the
+new typed metadata even though protobuf decodes an omitted bytes field as empty;
+the adapter rejects empty metadata. Inventory preserves optional/unmeasured
+values, cache and topology availability, scheduler acceptance, quotas, pressure,
+and health. Snapshot digests cover a canonical tenant projection rather than
+global catalog state. The descriptor golden records these additive wire fields
+and their presence semantics.
 
 api/proto/phase1-descriptor-contract.json is a normalized, checked-in
 FileDescriptorSet golden. tools/validate_contracts.sh builds the authoritative

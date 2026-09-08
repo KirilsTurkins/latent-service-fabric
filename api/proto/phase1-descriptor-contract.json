@@ -2028,6 +2028,50 @@
       "dependency": [
         "latent/control/v1/common.proto"
       ],
+      "enumType": [
+        {
+          "name": "NodeHealthStatus",
+          "value": [
+            {
+              "name": "NODE_HEALTH_STATUS_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "NODE_HEALTH_STATUS_HEALTHY",
+              "number": 1
+            },
+            {
+              "name": "NODE_HEALTH_STATUS_DEGRADED",
+              "number": 2
+            },
+            {
+              "name": "NODE_HEALTH_STATUS_UNHEALTHY",
+              "number": 3
+            }
+          ]
+        },
+        {
+          "name": "ResourceOwnership",
+          "value": [
+            {
+              "name": "RESOURCE_OWNERSHIP_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "RESOURCE_OWNERSHIP_NODE_FIXED",
+              "number": 1
+            },
+            {
+              "name": "RESOURCE_OWNERSHIP_ACTIVATION_SCOPED",
+              "number": 2
+            },
+            {
+              "name": "RESOURCE_OWNERSHIP_SERVICE_RESIDENT",
+              "number": 3
+            }
+          ]
+        }
+      ],
       "messageType": [
         {
           "field": [
@@ -2051,6 +2095,104 @@
               "name": "available",
               "number": 3,
               "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "observationAvailable",
+              "label": "LABEL_OPTIONAL",
+              "name": "observation_available",
+              "number": 4,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "accepting",
+              "label": "LABEL_OPTIONAL",
+              "name": "accepting",
+              "number": 5,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "active",
+              "label": "LABEL_OPTIONAL",
+              "name": "active",
+              "number": 6,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "quarantined",
+              "label": "LABEL_OPTIONAL",
+              "name": "quarantined",
+              "number": 7,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "queueDepth",
+              "label": "LABEL_OPTIONAL",
+              "name": "queue_depth",
+              "number": 8,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "queueCapacity",
+              "label": "LABEL_OPTIONAL",
+              "name": "queue_capacity",
+              "number": 9,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "queuedTenants",
+              "label": "LABEL_OPTIONAL",
+              "name": "queued_tenants",
+              "number": 10,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "rejected",
+              "label": "LABEL_OPTIONAL",
+              "name": "rejected",
+              "number": 11,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "cancellations",
+              "label": "LABEL_OPTIONAL",
+              "name": "cancellations",
+              "number": 12,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "expired",
+              "label": "LABEL_OPTIONAL",
+              "name": "expired",
+              "number": 13,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "granted",
+              "label": "LABEL_OPTIONAL",
+              "name": "granted",
+              "number": 14,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "totalWaitMicros",
+              "label": "LABEL_OPTIONAL",
+              "name": "total_wait_micros",
+              "number": 15,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maxWaitMicros",
+              "label": "LABEL_OPTIONAL",
+              "name": "max_wait_micros",
+              "number": 16,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "oldestLeaseAgeMicros",
+              "label": "LABEL_OPTIONAL",
+              "name": "oldest_lease_age_micros",
+              "number": 17,
+              "type": "TYPE_UINT64"
             }
           ],
           "name": "CellCapacity"
@@ -2260,9 +2402,483 @@
               "name": "observed_at_unix_millis",
               "number": 7,
               "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "cacheSummary",
+              "label": "LABEL_OPTIONAL",
+              "name": "cache_summary",
+              "number": 8,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeCacheSummary"
+            },
+            {
+              "jsonName": "pressure",
+              "label": "LABEL_OPTIONAL",
+              "name": "pressure",
+              "number": 9,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodePressureObservation"
+            },
+            {
+              "jsonName": "health",
+              "label": "LABEL_OPTIONAL",
+              "name": "health",
+              "number": 10,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeHealthObservation"
+            },
+            {
+              "jsonName": "topology",
+              "label": "LABEL_OPTIONAL",
+              "name": "topology",
+              "number": 11,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeResourceTopology"
+            },
+            {
+              "jsonName": "quotas",
+              "label": "LABEL_OPTIONAL",
+              "name": "quotas",
+              "number": 12,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeQuotaSummary"
+            },
+            {
+              "jsonName": "retainedBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "retained_bytes",
+              "number": 13,
+              "type": "TYPE_UINT64"
             }
           ],
-          "name": "NodeInventory"
+          "name": "NodeInventory",
+          "oneofDecl": [
+            {
+              "name": "_quotas"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "status",
+              "label": "LABEL_OPTIONAL",
+              "name": "status",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.NodeHealthStatus"
+            },
+            {
+              "jsonName": "ready",
+              "label": "LABEL_OPTIONAL",
+              "name": "ready",
+              "number": 2,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "healthy",
+              "label": "LABEL_OPTIONAL",
+              "name": "healthy",
+              "number": 3,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "reasons",
+              "label": "LABEL_REPEATED",
+              "name": "reasons",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "observedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "observed_at_unix_millis",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "NodeHealthObservation"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "loadAvailable",
+              "label": "LABEL_OPTIONAL",
+              "name": "load_available",
+              "number": 1,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "loadSampleAgeMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "load_sample_age_millis",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "cpuPressureMilli",
+              "label": "LABEL_OPTIONAL",
+              "name": "cpu_pressure_milli",
+              "number": 3,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "memoryPressureMilli",
+              "label": "LABEL_OPTIONAL",
+              "name": "memory_pressure_milli",
+              "number": 4,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "queuePressureMilli",
+              "label": "LABEL_OPTIONAL",
+              "name": "queue_pressure_milli",
+              "number": 5,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "cachePressureMilli",
+              "label": "LABEL_OPTIONAL",
+              "name": "cache_pressure_milli",
+              "number": 6,
+              "type": "TYPE_UINT32"
+            }
+          ],
+          "name": "NodePressureObservation",
+          "oneofDecl": [
+            {
+              "name": "_load_sample_age_millis"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "available",
+              "label": "LABEL_OPTIONAL",
+              "name": "available",
+              "number": 1,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "entries",
+              "label": "LABEL_OPTIONAL",
+              "name": "entries",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumEntries",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_entries",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "sourceBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "source_bytes",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumSourceBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_source_bytes",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "metadataBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "metadata_bytes",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumMetadataBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_metadata_bytes",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "compiledImageBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "compiled_image_bytes",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumCompiledImageBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_compiled_image_bytes",
+              "number": 9,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "preparing",
+              "label": "LABEL_OPTIONAL",
+              "name": "preparing",
+              "number": 10,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumConcurrentPreparations",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_concurrent_preparations",
+              "number": 11,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "preparingSourceBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "preparing_source_bytes",
+              "number": 12,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "preparingMetadataBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "preparing_metadata_bytes",
+              "number": 13,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "hits",
+              "label": "LABEL_OPTIONAL",
+              "name": "hits",
+              "number": 14,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "misses",
+              "label": "LABEL_OPTIONAL",
+              "name": "misses",
+              "number": 15,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "evictions",
+              "label": "LABEL_OPTIONAL",
+              "name": "evictions",
+              "number": 16,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "invalidations",
+              "label": "LABEL_OPTIONAL",
+              "name": "invalidations",
+              "number": 17,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "NodeCacheSummary"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "name",
+              "label": "LABEL_OPTIONAL",
+              "name": "name",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "ownership",
+              "label": "LABEL_OPTIONAL",
+              "name": "ownership",
+              "number": 3,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ResourceOwnership"
+            },
+            {
+              "jsonName": "configuredCount",
+              "label": "LABEL_OPTIONAL",
+              "name": "configured_count",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "activeCount",
+              "label": "LABEL_OPTIONAL",
+              "name": "active_count",
+              "number": 5,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "attributes",
+              "label": "LABEL_REPEATED",
+              "name": "attributes",
+              "number": 6,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeTopologyEntry.AttributesEntry"
+            }
+          ],
+          "name": "NodeTopologyEntry",
+          "nestedType": [
+            {
+              "field": [
+                {
+                  "jsonName": "key",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "key",
+                  "number": 1,
+                  "type": "TYPE_STRING"
+                },
+                {
+                  "jsonName": "value",
+                  "label": "LABEL_OPTIONAL",
+                  "name": "value",
+                  "number": 2,
+                  "type": "TYPE_STRING"
+                }
+              ],
+              "name": "AttributesEntry",
+              "options": {
+                "mapEntry": true
+              }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_active_count"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "entries",
+              "label": "LABEL_REPEATED",
+              "name": "entries",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeTopologyEntry"
+            },
+            {
+              "jsonName": "available",
+              "label": "LABEL_OPTIONAL",
+              "name": "available",
+              "number": 2,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "complete",
+              "label": "LABEL_OPTIONAL",
+              "name": "complete",
+              "number": 3,
+              "type": "TYPE_BOOL"
+            }
+          ],
+          "name": "NodeResourceTopology"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "activeActivations",
+              "label": "LABEL_OPTIONAL",
+              "name": "active_activations",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "queuedActivations",
+              "label": "LABEL_OPTIONAL",
+              "name": "queued_activations",
+              "number": 2,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "reservedCpuFuel",
+              "label": "LABEL_OPTIONAL",
+              "name": "reserved_cpu_fuel",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "reservedMemoryBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "reserved_memory_bytes",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "NodeQuotaUsage"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "maximumConcurrentActivations",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_concurrent_activations",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "maximumQueuedActivations",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_queued_activations",
+              "number": 2,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "maximumReservedCpuFuel",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_reserved_cpu_fuel",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumReservedMemoryBytes",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_reserved_memory_bytes",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "NodeQuotaLimits"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "usage",
+              "label": "LABEL_OPTIONAL",
+              "name": "usage",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeQuotaUsage"
+            },
+            {
+              "jsonName": "limits",
+              "label": "LABEL_OPTIONAL",
+              "name": "limits",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.NodeQuotaLimits"
+            },
+            {
+              "jsonName": "retainedTenants",
+              "label": "LABEL_OPTIONAL",
+              "name": "retained_tenants",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "NodeQuotaSummary"
         },
         {
           "field": [
@@ -2943,6 +3559,15 @@
               "number": 11,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.ReleaseDescriptor.AnnotationsEntry"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 12,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
             }
           ],
           "name": "ReleaseDescriptor",
@@ -2968,6 +3593,11 @@
               "options": {
                 "mapEntry": true
               }
+            }
+          ],
+          "oneofDecl": [
+            {
+              "name": "_tenant"
             }
           ]
         },
@@ -3000,6 +3630,13 @@
               "name": "component_media_type",
               "number": 4,
               "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "contractMetadataJson",
+              "label": "LABEL_OPTIONAL",
+              "name": "contract_metadata_json",
+              "number": 5,
+              "type": "TYPE_BYTES"
             }
           ],
           "name": "CapsuleArtifactUpload"
@@ -3359,9 +3996,23 @@
               "name": "snapshot_digest",
               "number": 6,
               "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 7,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
             }
           ],
-          "name": "RouteSnapshot"
+          "name": "RouteSnapshot",
+          "oneofDecl": [
+            {
+              "name": "_tenant"
+            }
+          ]
         },
         {
           "field": [

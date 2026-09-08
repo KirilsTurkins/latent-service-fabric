@@ -3,6 +3,9 @@
 #![forbid(unsafe_code)]
 
 mod deployments;
+mod scoped_routes;
+
+pub use scoped_routes::{RouteReadLimits, ScopedRouteRequest, ScopedRouteSnapshot};
 
 pub use deployments::{
     deployment_revision_id, DeploymentPage, DeploymentPageRequest, DirectoryDeploymentRepository,
@@ -159,6 +162,21 @@ pub trait NodeInventoryStore: Send + Sync {
 }
 
 pub trait CompiledRouteStore: Send + Sync {
+    /// Complete tenant-scoped read; implementations must bound selected data before cloning.
+    fn scoped(
+        &self,
+        _request: ScopedRouteRequest,
+    ) -> BoxFuture<'_, Result<ScopedRouteSnapshot, PlatformError>> {
+        Box::pin(async {
+            Err(PlatformError {
+                code: latent_core::PlatformErrorCode::IncompatibleContract,
+                message: "scoped-routes-unsupported".to_owned(),
+                retryable: false,
+                details: Vec::new(),
+            })
+        })
+    }
+
     fn put<'a>(&'a self, snapshot: RouteSnapshot) -> BoxFuture<'a, Result<(), PlatformError>>;
 
     fn current<'a>(&'a self) -> BoxFuture<'a, Result<RouteSnapshot, PlatformError>>;

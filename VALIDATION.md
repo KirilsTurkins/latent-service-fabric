@@ -1,9 +1,9 @@
 # Validation baseline
 
-Updated on **2026-09-07** for the retained Phase 0 evidence, generated build
+Updated on **2026-09-08** for the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
-generic execution, activation capabilities/lifecycle, invocation service adapters, and explicit heavy
+generic execution, activation capabilities/lifecycle, invocation and management service adapters, and explicit heavy
 validation gates. These commands describe validation coverage; the evidence
 from the September 7 audit is recorded separately in
 [the audit report](docs/development/feature-audit-2026-09-07.md).
@@ -22,10 +22,10 @@ make validate
 The command is intentionally non-mutating for authoritative sources. Formatting is checked with `cargo fmt --all --check`; generated bindings, descriptors, and capsule artifacts are written below `target/` or Cargo `OUT_DIR`.
 
 Normal validation runs unit/integration regressions and contract/SDK checks.
-It does not select the ignored durable 100,000-release catalog probe or run
-native profiling/calibration/resource soaks. Small unit tests may exercise large
-in-memory counter/index ranges; those do not execute 100,000 guest activations
-or publish 100,000 durable artifacts. Heavy execution and durable scale evidence
+It does not select the ignored 100,000-entry metadata index probe or the
+durable 100,000-release catalog probe, or run native profiling, calibration,
+or resource soaks. An eight-entry index fixture checks normal capacity
+accounting without selecting the large probes. Heavy execution and durable scale evidence
 require the explicit commands below.
 
 ## Phase 0 completion sequence
@@ -91,6 +91,7 @@ Run it from an isolated clone or worktree when local build output is present.
 - The capability suite builds a separate Rust/WIT component importing only context, logging, and monotonic/wall clocks. It checks filtered context and pinned identity across cell reuse, live shared fuel/memory/log accounting, injected clock adjustments and monotonic clamping, complete escaped record byte limits, reserved/invalid fields, and failed-sink reservation refunds. Each small invocation has a five-second watchdog and cleanup checks. See [activation capabilities](docs/runtime/capabilities.md).
 - Shared telemetry tests use tiny bounded queues and local sinks to check redaction, correlated distinct outcomes, finalized consumption, pinned revisions, monotonic duration, overlapping activation-ID incarnations, failed/full exporters, and bounded shutdown. Node integrations cover lifecycle/drop observations and inventory sources without catalog enumeration. See [telemetry and inventory](docs/telemetry.md).
 - `invocation_service` calls generated Invoke/Cancel/GetActivation methods against a real manager, admission controller, and scheduler. Bounded fixtures cover principal and lineage validation, pending/retained status, scoped cancellation, drop/deadline cleanup, outcome accounting, absent/pinned receipts, redaction, and cell/ID reuse. See [invocation service](docs/protocol/invocation-service.md).
+- `management_service` uses generated Tonic clients over an in-memory duplex transport and real local catalogs. Tiny fixtures publish typed contract metadata, deploy the published release, verify atomic version receipts and scoped pagination, inspect complete tenant route projections, and require a trusted node operator for inventory. Rejections cover authentication, tenant mismatches, output authority claims, byte limits, stale tokens/generations, and unsupported clustered methods. Catalog and conversion unit tests cover precharged allocation limits, lossless observations, scoped digest integrity, and bounded error redaction. See [management services](docs/reference/management-services.md).
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
 - All seven JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, release-publish, binding, policy, trigger, and compiled-route examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interfaces compile and execute small fake-client identity/cancellation fixtures. They cover status/cancellation before invoke completion, transport failures, lost-response status recovery, optional identity and lineage; see the [SDK contract](sdk/README.md#executable-contract-fixtures). These are contract tests, not implemented transport coverage.

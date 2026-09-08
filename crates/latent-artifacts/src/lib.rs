@@ -5,6 +5,9 @@
 mod content_hash;
 mod local_repository;
 
+pub use local_repository::contract_metadata::{
+    decode_contract_metadata, encode_contract_metadata, ContractMetadataLimits,
+};
 pub use local_repository::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
 
 /// Contract metadata accepted by artifact publication and consumed by route compilation.
@@ -12,7 +15,8 @@ pub use latent_contracts::{
     ContractDescriptor, FieldDescriptor, FunctionDescriptor, InterfaceDescriptor, ValueType,
 };
 use latent_core::{
-    ArtifactReference, BoxFuture, Metadata, PlatformError, PublisherId, ReleaseDigest,
+    ArtifactReference, BoxFuture, ContractId, Metadata, PlatformError, PlatformErrorCode,
+    PublisherId, ReleaseDigest, ServiceId, TenantId,
 };
 use latent_manifest::CapsuleManifest;
 
@@ -64,6 +68,33 @@ pub struct ArtifactPage {
     pub next_after: Option<ReleaseDigest>,
 }
 
+/// Immutable metadata verified at publication or recovery, without loading component bytes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ArtifactCatalogEntry {
+    pub descriptor: ArtifactDescriptor,
+    pub tenant: Option<TenantId>,
+    pub service: ServiceId,
+    pub semantic_version: String,
+    pub world: ContractId,
+}
+
+/// The tenant comes from the authenticated adapter, independently of the opaque cursor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ArtifactCatalogPageRequest {
+    pub tenant: TenantId,
+    pub service: Option<ServiceId>,
+    pub page_size: u32,
+    pub page_token: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ArtifactCatalogPage {
+    pub entries: Vec<ArtifactCatalogEntry>,
+    pub next_page_token: Option<String>,
+    /// Repository-local visibility generation; tokens also expire when it is reopened.
+    pub catalog_generation: u64,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CacheTier {
     Metadata,
@@ -94,6 +125,24 @@ pub struct DerivedArtifactDescriptor {
 }
 
 pub trait ArtifactRepository: Send + Sync {
+    /// Returns None for absent, foreign-tenant and tenant-neutral releases.
+    /// Implementations must authorize scope before cloning metadata and must not fetch components.
+    fn get_catalog_entry<'a>(
+        &'a self,
+        _tenant: &'a TenantId,
+        _digest: &'a ReleaseDigest,
+    ) -> BoxFuture<'a, Result<Option<ArtifactCatalogEntry>, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    /// Uses a scoped index, never a global scan followed by filtering or full artifact fetches.
+    fn list_catalog_entries<'a>(
+        &'a self,
+        _request: &'a ArtifactCatalogPageRequest,
+    ) -> BoxFuture<'a, Result<ArtifactCatalogPage, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
     fn resolve<'a>(
         &'a self,
         query: &'a ArtifactQuery,
@@ -117,6 +166,15 @@ pub trait ArtifactRepository: Send + Sync {
         after: Option<&'a ReleaseDigest>,
         limit: usize,
     ) -> BoxFuture<'a, Result<ArtifactPage, PlatformError>>;
+}
+
+fn unsupported_catalog_query() -> PlatformError {
+    PlatformError {
+        code: PlatformErrorCode::IncompatibleContract,
+        message: "artifact-catalog-query-unsupported".to_owned(),
+        retryable: false,
+        details: Vec::new(),
+    }
 }
 
 pub trait ArtifactCache: Send + Sync {

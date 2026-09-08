@@ -67,7 +67,7 @@ pub(super) fn decode_metadata(
     Ok((ArtifactDescriptor::from(stored.descriptor), contracts))
 }
 
-fn validate_contracts(contracts: &[ContractDescriptor]) -> Result<(), PlatformError> {
+pub(super) fn validate_contracts(contracts: &[ContractDescriptor]) -> Result<(), PlatformError> {
     let mut remaining = MAX_CONTRACT_TYPE_NODES;
     for contract in contracts {
         for interface in &contract.interfaces {

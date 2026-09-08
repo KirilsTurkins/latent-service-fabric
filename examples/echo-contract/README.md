@@ -2,6 +2,14 @@
 
 The authoritative contract remains [`wit/echo.wit`](wit/echo.wit). The Rust guest implementation is the `echo-capsule` example target in [`../../tools/toolchain-smoke/examples/echo_capsule/component.rs`](../../tools/toolchain-smoke/examples/echo_capsule/component.rs). `wit-bindgen` generates every guest import, export trait, canonical ABI shim, and domain-error type directly from the checked-in WIT packages.
 
+[`publish-release.json`](publish-release.json) is a schema-shape example with
+placeholder component/descriptor digests and an incomplete manifest. Its
+`contractMetadataJson` demonstrates typed parameters and the declared echo
+result. It is not an executable publication request. Actual publication must
+use complete validated capsule metadata, generated component bytes and their
+content digest, and the bounded typed descriptor codec described in the
+[management reference](../../docs/reference/management-services.md).
+
 ## Behavior
 
 The fixture applies a documented limit of **65,536 UTF-8 bytes** to the message.
