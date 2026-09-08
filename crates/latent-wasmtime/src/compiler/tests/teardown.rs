@@ -41,12 +41,9 @@ fn dropped_quiesce_future_keeps_stopping_owner_until_actual_join() {
 #[test]
 fn reentrant_final_owner_abort_is_supervised() {
     use std::future::Future as _;
-    use std::io::Read as _;
     use std::pin::Pin;
-    use std::process::{Child, Command, Stdio};
     use std::sync::Mutex;
     use std::task::{Context, Wake, Waker};
-    use std::time::Instant;
 
     const SCENARIO: &str = "compiler::tests::teardown::reentrant_final_owner_abort_is_supervised";
     const ENVIRONMENT: &str = "LSF_COMPILER_REENTRANT_TEST";
@@ -75,54 +72,5 @@ fn reentrant_final_owner_abort_is_supervised() {
         std::thread::sleep(Duration::from_secs(2));
         panic!("reentrant final destruction must abort this child");
     }
-    struct Supervised(Child);
-    impl Drop for Supervised {
-        fn drop(&mut self) {
-            let _ = self.0.kill();
-            let _ = self.0.wait();
-        }
-    }
-    let executable = std::env::current_exe().unwrap();
-    let mut child = Supervised(
-        Command::new("sh")
-            .args(["-c", "ulimit -c 0; exec \"$@\"", "latent-compiler-test"])
-            .arg(executable)
-            .args(["--exact", SCENARIO, "--nocapture", "--test-threads=1"])
-            .env(ENVIRONMENT, SCENARIO)
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()
-            .unwrap(),
-    );
-    let deadline = Instant::now() + Duration::from_secs(8);
-    let status = loop {
-        if let Some(status) = child.0.try_wait().unwrap() {
-            break status;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "reentrant child exceeded its watchdog"
-        );
-        std::thread::sleep(Duration::from_millis(5));
-    };
-    let mut output = String::new();
-    child
-        .0
-        .stdout
-        .take()
-        .unwrap()
-        .take(16 * 1024)
-        .read_to_string(&mut output)
-        .unwrap();
-    assert!(
-        output.contains(READY),
-        "the intended child branch must execute"
-    );
-    use std::os::unix::process::ExitStatusExt as _;
-    assert_eq!(
-        status.signal(),
-        Some(6),
-        "child must terminate by SIGABRT: {status}"
-    );
+    supervised_abort(SCENARIO, ENVIRONMENT, READY);
 }

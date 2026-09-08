@@ -228,3 +228,59 @@ pub(super) fn source() -> (Directory, Arc<DirectoryArtifactRepository>, Coalesci
     };
     (directory, repository, CoalescingKey { key, source })
 }
+
+#[cfg(unix)]
+pub(super) fn supervised_abort(scenario: &str, environment: &str, ready: &str) {
+    use std::io::Read as _;
+    use std::process::{Child, Command, Stdio};
+    struct Supervised(Child);
+    impl Drop for Supervised {
+        fn drop(&mut self) {
+            let _ = self.0.kill();
+            let _ = self.0.wait();
+        }
+    }
+    let executable = std::env::current_exe().unwrap();
+    let mut child = Supervised(
+        Command::new("sh")
+            .args(["-c", "ulimit -c 0; exec \"$@\"", "latent-compiler-test"])
+            .arg(executable)
+            .args(["--exact", scenario, "--nocapture", "--test-threads=1"])
+            .env(environment, scenario)
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap(),
+    );
+    let deadline = Instant::now() + Duration::from_secs(8);
+    let status = loop {
+        if let Some(status) = child.0.try_wait().unwrap() {
+            break status;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "reentrant child exceeded its watchdog"
+        );
+        std::thread::sleep(Duration::from_millis(5));
+    };
+    let mut output = String::new();
+    child
+        .0
+        .stdout
+        .take()
+        .unwrap()
+        .take(16 * 1024)
+        .read_to_string(&mut output)
+        .unwrap();
+    assert!(
+        output.contains(ready),
+        "the intended child branch must execute"
+    );
+    use std::os::unix::process::ExitStatusExt as _;
+    assert_eq!(
+        status.signal(),
+        Some(6),
+        "child must terminate by SIGABRT: {status}"
+    );
+}

@@ -214,6 +214,10 @@ callbacks or consuming any join handles. It supplies no graceful-cleanup proof.
 The standalone node retains the factory through borrowed compiler quiescence and
 then joins all workers from its shutdown owner. An isolated child test exercises
 the exceptional embedding boundary without terminating the test supervisor.
+Caught compiler panic payloads are disposed before job completion is recorded.
+If a trusted host payload's destructor itself panics, cleanup aborts the process
+without attempting recursive panic-payload destruction or reporting clean shutdown.
+A separate supervised child verifies this fatal cleanup boundary.
 
 The factory owns the engine and one weak-engine epoch ticker. Any additional
 Wasmtime compilation/runtime helpers belong to that bounded node runtime, not

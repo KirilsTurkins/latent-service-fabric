@@ -14,8 +14,19 @@ pub(super) fn run<T: Send + Sync + 'static>(core: Arc<Core<T>>, worker: usize) {
         core: Arc::clone(&core),
     };
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run_loop(&core, worker)));
-    if result.is_err() {
+    if let Err(payload) = result {
+        dispose_panic_payload(payload);
         core.fail_worker(worker);
+    }
+}
+
+fn dispose_panic_payload(payload: Box<dyn std::any::Any + Send>) {
+    // A trusted host panic payload can itself own cleanup. Dispose of it before
+    // retiring the job. A second panic during that cleanup is fatal: attempting
+    // another payload destructor could recurse or strand registered ownership.
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(payload))) {
+        Ok(()) => {}
+        Err(_secondary_payload) => std::process::abort(),
     }
 }
 
@@ -56,7 +67,10 @@ fn run_loop<T: Send + Sync + 'static>(core: &Arc<Core<T>>, worker: usize) {
         };
         core.metrics.notify();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| task(queue)))
-            .unwrap_or_else(|_| Err(capacity_error("compiler-job-panicked")));
+            .unwrap_or_else(|payload| {
+                dispose_panic_payload(payload);
+                Err(capacity_error("compiler-job-panicked"))
+            });
         finish(&core, worker, id, result);
     }
 }
