@@ -1,0 +1,1011 @@
+{
+  "archive": {
+    "bytes": "50544383",
+    "path": "raw-evidence.tar.gz",
+    "sha256": "sha256:f1537fdadfd9190c328a712de5d1720876a8bb178ee2d5ea2f6885d67631be1b"
+  },
+  "files": [
+    {
+      "bytes": "594841",
+      "path": "aggregate.json",
+      "sha256": "sha256:d56235dc545149a53d5d0a8008265b21fbe25cd290504e3b8d2cbaebc69ef7dd"
+    },
+    {
+      "bytes": "181",
+      "path": "benchmark-01/collector.log",
+      "sha256": "sha256:b1e7c41cca1970cd6cd51f84454f4b315bff247f25720c9240bc2802fcd0a7b8"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-01/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "benchmark-01/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "benchmark-01/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "benchmark-01/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "benchmark-01/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "benchmark-01/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "benchmark-01/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "benchmark-01/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "benchmark-01/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "816",
+      "path": "benchmark-01/host-after.json",
+      "sha256": "sha256:9c052e236c49d9ceb7bb01b411962dcf733532707deae61aa10a14a712c0df77"
+    },
+    {
+      "bytes": "2794",
+      "path": "benchmark-01/identity.json",
+      "sha256": "sha256:bd1b94a4cf4673396602d6774ca31a75d7264f42d0c5c2ff18f019ba7e06dcc1"
+    },
+    {
+      "bytes": "11428431",
+      "path": "benchmark-01/measurements.jsonl",
+      "sha256": "sha256:d2f26dbafb71de007576c4fbf4e27179e86afff2425582df6cb23fb5eb81c4cf"
+    },
+    {
+      "bytes": "22",
+      "path": "benchmark-01/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "414",
+      "path": "benchmark-01/plan.json",
+      "sha256": "sha256:6b451c84188192639c8b6a4dfb16b77f7785e6ad28b713ff530bcbc542ac07e2"
+    },
+    {
+      "bytes": "120",
+      "path": "benchmark-01/process.json",
+      "sha256": "sha256:77edf6b7be35f6f9492004429d19068f21ab83331d4719dd26ddfb452078bc49"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-01/summary.json",
+      "sha256": "sha256:a87b937d85429f81d29c42a53e8aad53ff33e8b1531f8d39cae64ba9d565d833"
+    },
+    {
+      "bytes": "181",
+      "path": "benchmark-02/collector.log",
+      "sha256": "sha256:168cbfbba1e39ace551c78a6e9ff07d3db5b171dd96019d57f20914bed6c3898"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-02/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "benchmark-02/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "benchmark-02/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "benchmark-02/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "benchmark-02/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "benchmark-02/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "benchmark-02/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "benchmark-02/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "benchmark-02/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "804",
+      "path": "benchmark-02/host-after.json",
+      "sha256": "sha256:51149ead4d35e333625bfa91137a9a6a31ccb60366206644dd9c2a94822c41cb"
+    },
+    {
+      "bytes": "2795",
+      "path": "benchmark-02/identity.json",
+      "sha256": "sha256:59e337dcb97460511eff3723d94d0355a054697e63b1e3fbd89957fe01a335d9"
+    },
+    {
+      "bytes": "11430611",
+      "path": "benchmark-02/measurements.jsonl",
+      "sha256": "sha256:1651f0e7e7d67b0cdca7b3f2952aa10c67833b9a6fb9d68a2798693a51f8935e"
+    },
+    {
+      "bytes": "22",
+      "path": "benchmark-02/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "414",
+      "path": "benchmark-02/plan.json",
+      "sha256": "sha256:1dff2e4b7313d952d5abf313bace32a6fbfa24b908a775bd6b517d6feb5b9766"
+    },
+    {
+      "bytes": "120",
+      "path": "benchmark-02/process.json",
+      "sha256": "sha256:09880bb2153190491b5a6f6853671d9205cc058e57a50e58bbc5db95b39a0635"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-02/summary.json",
+      "sha256": "sha256:8972a134016e09542c16fa8821e9a9fc6c6868c22f92a7f27a99b1253b4cc636"
+    },
+    {
+      "bytes": "181",
+      "path": "benchmark-03/collector.log",
+      "sha256": "sha256:9747f6c2121ffa0596cb846a22dde5f7bc049e4234bb3930b840578f338b9fd7"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-03/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "benchmark-03/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "benchmark-03/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "benchmark-03/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "benchmark-03/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "benchmark-03/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "benchmark-03/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "benchmark-03/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "benchmark-03/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "817",
+      "path": "benchmark-03/host-after.json",
+      "sha256": "sha256:07f1e71c610979db079ab255dc4aa1bec116c2b6d1223779d299108a7411d555"
+    },
+    {
+      "bytes": "2791",
+      "path": "benchmark-03/identity.json",
+      "sha256": "sha256:bf3127a34c20ddff65bf19279c85f75bf0d08a83a46aae17dbd7d8454d87fb5c"
+    },
+    {
+      "bytes": "11429304",
+      "path": "benchmark-03/measurements.jsonl",
+      "sha256": "sha256:3cb68d0c26a7339df80a4e35566bbd0080e46c30d9722e7b64a270f8181d2f71"
+    },
+    {
+      "bytes": "22",
+      "path": "benchmark-03/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "414",
+      "path": "benchmark-03/plan.json",
+      "sha256": "sha256:40162ec3b0a3aedfcf0e9a994e397bbe26fb11b01d2153f115d033abf810769d"
+    },
+    {
+      "bytes": "120",
+      "path": "benchmark-03/process.json",
+      "sha256": "sha256:0452660f27fb3fc01773ef26bb5095fe80f9d6918556fb827df8b6374836fd2c"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-03/summary.json",
+      "sha256": "sha256:79283536b1e2f936e340cc71bf9c1019f41e16da28dd229e6aeb0c2e8386402e"
+    },
+    {
+      "bytes": "181",
+      "path": "benchmark-04/collector.log",
+      "sha256": "sha256:dc5046adc50346f7c0bf7ff5721b927af669a400dd1a93b5006c0d8d27cc7f97"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-04/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "benchmark-04/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "benchmark-04/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "benchmark-04/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "benchmark-04/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "benchmark-04/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "benchmark-04/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "benchmark-04/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "benchmark-04/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "816",
+      "path": "benchmark-04/host-after.json",
+      "sha256": "sha256:e3d7e64a6cb5a9c5c3f160a56e8a32e3bddff02466c9b1b7bfd9bb77c1a6a047"
+    },
+    {
+      "bytes": "2796",
+      "path": "benchmark-04/identity.json",
+      "sha256": "sha256:4341ff9480c22b0f522d562f3208ec05655e5649ee743d23bc9fac7ce9c8a9d2"
+    },
+    {
+      "bytes": "11428365",
+      "path": "benchmark-04/measurements.jsonl",
+      "sha256": "sha256:5638572e5c5a4ab9b960495a6da189579a2d2c0d3c90c79af01f5898a9b09433"
+    },
+    {
+      "bytes": "22",
+      "path": "benchmark-04/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "414",
+      "path": "benchmark-04/plan.json",
+      "sha256": "sha256:427228627f0848e0caa448c7c34b84c1571c1b24ca8fa442780ebbe54b785898"
+    },
+    {
+      "bytes": "120",
+      "path": "benchmark-04/process.json",
+      "sha256": "sha256:2716f4434fb5a6004c918c4cab6c417e2118318e93caf23a38c862ac4b6d67d7"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-04/summary.json",
+      "sha256": "sha256:907e16e3a69620c090dc6e79ab8b18d63424928b04315de4594fd1c393dba1a0"
+    },
+    {
+      "bytes": "181",
+      "path": "benchmark-05/collector.log",
+      "sha256": "sha256:fb39e89aa4e34ac80d660eb2267b015e2b7ed4a39eb161f9e48ffe341844871c"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-05/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "benchmark-05/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "benchmark-05/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "benchmark-05/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "benchmark-05/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "benchmark-05/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "benchmark-05/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "benchmark-05/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "benchmark-05/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "818",
+      "path": "benchmark-05/host-after.json",
+      "sha256": "sha256:2e533b282aecb3b7b7f6e95ff770acec4e17745228f00d74c880ca7d5dd7d75d"
+    },
+    {
+      "bytes": "2795",
+      "path": "benchmark-05/identity.json",
+      "sha256": "sha256:bb258239f597567ddeff7398a23985fe0aa05d0fd9b49b204390ae125f496d30"
+    },
+    {
+      "bytes": "11428970",
+      "path": "benchmark-05/measurements.jsonl",
+      "sha256": "sha256:a2c03fb6d5e7bdbaa1850eca0d0cf20bac1246f7ad97669ff982f29a6b532d43"
+    },
+    {
+      "bytes": "22",
+      "path": "benchmark-05/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "414",
+      "path": "benchmark-05/plan.json",
+      "sha256": "sha256:755f89efe6889826db313966c3a2db8596d9037f4cbd35ebd89c2b7730240a00"
+    },
+    {
+      "bytes": "120",
+      "path": "benchmark-05/process.json",
+      "sha256": "sha256:46ba53b9cf57148a110e3047abb448c9be0b524c0f33e0c7328c3afd1be93e8c"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-05/summary.json",
+      "sha256": "sha256:23c6691ad85cff6815b87d029d8684eb1bb28a37a592940c10395302aa6da18a"
+    },
+    {
+      "bytes": "181",
+      "path": "benchmark-06/collector.log",
+      "sha256": "sha256:d4cbeccb717ea331b22424b72aea5e14e6c5f5145b99a5f007196ae8bedc1ce8"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-06/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "benchmark-06/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "benchmark-06/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "benchmark-06/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "benchmark-06/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "benchmark-06/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "benchmark-06/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "benchmark-06/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "benchmark-06/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "811",
+      "path": "benchmark-06/host-after.json",
+      "sha256": "sha256:03d8a2ae050c44d5d6bdc21bab161244d53f243c85428dd1b4d9f0e9251dbbda"
+    },
+    {
+      "bytes": "2797",
+      "path": "benchmark-06/identity.json",
+      "sha256": "sha256:f5408c65ed6c607eb66586e37326676da210d4642d970ce7e048ea913eae7263"
+    },
+    {
+      "bytes": "11429012",
+      "path": "benchmark-06/measurements.jsonl",
+      "sha256": "sha256:26b84f6ab619e5b8d80bcc236270b59a32705e093afd29ad679983b89a33a60e"
+    },
+    {
+      "bytes": "22",
+      "path": "benchmark-06/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "414",
+      "path": "benchmark-06/plan.json",
+      "sha256": "sha256:515082e90a4626f08db83c8e0e2d129e809974f7d3ae19efee6fa1639385b61d"
+    },
+    {
+      "bytes": "120",
+      "path": "benchmark-06/process.json",
+      "sha256": "sha256:2482d4fdfd1ec578bcfb188e9ba241accf84db55625afb0b3cd9bd389484fa43"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-06/summary.json",
+      "sha256": "sha256:5b02b8baab9b0dcf32def213657e88ca264ad40d818890c905f11a703e544bfa"
+    },
+    {
+      "bytes": "181",
+      "path": "benchmark-07/collector.log",
+      "sha256": "sha256:90c2ea5c0058687c65072e1f3801d9fd050b1fec2174b4a1ef3ee8c55be0fb29"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-07/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "benchmark-07/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "benchmark-07/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "benchmark-07/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "benchmark-07/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "benchmark-07/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "benchmark-07/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "benchmark-07/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "benchmark-07/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "813",
+      "path": "benchmark-07/host-after.json",
+      "sha256": "sha256:d3543ecace3a777389aa21501e696760359bdd4bff700215e8e052c3aba9383f"
+    },
+    {
+      "bytes": "2790",
+      "path": "benchmark-07/identity.json",
+      "sha256": "sha256:1ad9d7b5e477800268504b30fd556394e5efb1075e684763e642c373151df0a2"
+    },
+    {
+      "bytes": "11429630",
+      "path": "benchmark-07/measurements.jsonl",
+      "sha256": "sha256:34a10584d0708e748ad536ba975a848415ad3ad7f82cc8c378fd58ddbfa6e67d"
+    },
+    {
+      "bytes": "22",
+      "path": "benchmark-07/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "414",
+      "path": "benchmark-07/plan.json",
+      "sha256": "sha256:c3c6f9edb0d33751eaf104b23de2205778351504108967c49c9d4d2042f97184"
+    },
+    {
+      "bytes": "120",
+      "path": "benchmark-07/process.json",
+      "sha256": "sha256:54e2b6a62e4e1e7322b94974f56bb1714aa23be25d4270ccbc7472388c917ef8"
+    },
+    {
+      "bytes": "1091",
+      "path": "benchmark-07/summary.json",
+      "sha256": "sha256:3fde4baa5d8cf09a3d22f606bda05013dac592ec5f52f4e15c43356007782b5d"
+    },
+    {
+      "bytes": "23",
+      "path": "build-policy.log",
+      "sha256": "sha256:b799c5d75796df6cff6e29a549579442bea3c95ab24dd2ab387d453c92dc31bf"
+    },
+    {
+      "bytes": "247748",
+      "path": "build.log",
+      "sha256": "sha256:a494cdd9fda9f2ca6e1b6a4eff29ef48f5dc799315ead8fc67b2d8d12983e410"
+    },
+    {
+      "bytes": "125834",
+      "path": "comparison.json",
+      "sha256": "sha256:15fbb3677c65bb0c1a92f03f0947de01b19f13e13c39a74f9dc6a5be4d9c4483"
+    },
+    {
+      "bytes": "2795",
+      "path": "identity.json",
+      "sha256": "sha256:b37bf83683956318fa18c83f61395e2539549a67b186d0b463fdc62b9a54bf28"
+    },
+    {
+      "bytes": "1035",
+      "path": "measurement-policy.json",
+      "sha256": "sha256:ee6d2348970eacfc79f0d1a618d6f27d68938bb20785acf99d38b70ff1c40363"
+    },
+    {
+      "bytes": "113847",
+      "path": "phase0-reference.json",
+      "sha256": "sha256:2fd84f8c57e46e538762a8bb41a2df8e19c7494c26f856be95b09f7a978827f8"
+    },
+    {
+      "bytes": "40670",
+      "path": "reproduction/capabilities-capsule.wasm",
+      "sha256": "sha256:ac09292307eed8921e370575709f42febf3fd824cb4c4ac60a5c40384e5c3fa2"
+    },
+    {
+      "bytes": "197010104",
+      "path": "reproduction/collector",
+      "sha256": "sha256:f4baba64c13b7c590a2b11addbfe666b9e9925d04190712019f49f49b3942d44"
+    },
+    {
+      "bytes": "24754",
+      "path": "reproduction/echo-capsule.wasm",
+      "sha256": "sha256:a45c2680dcbb6f5a67c532459cc2ff14daaa5b893f793b92eecec31c7488a694"
+    },
+    {
+      "bytes": "28056",
+      "path": "reproduction/generic-capsule.wasm",
+      "sha256": "sha256:9a13eed96ca7f2d217b5f6262694c2c5fc4398067a773d53371481613d254105"
+    },
+    {
+      "bytes": "183",
+      "path": "scale-01/collector.log",
+      "sha256": "sha256:1e61f085fb80ce0f2f0e91aca8a8961c65b81de3f80e68a260f14634cd336762"
+    },
+    {
+      "bytes": "1091",
+      "path": "scale-01/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "scale-01/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "scale-01/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "scale-01/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "scale-01/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "scale-01/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "scale-01/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "scale-01/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "scale-01/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "818",
+      "path": "scale-01/host-after.json",
+      "sha256": "sha256:9ae83bcf5d24681932305a200c632d21d4587a8253a78d3f7dcf0947e4f2bb41"
+    },
+    {
+      "bytes": "2795",
+      "path": "scale-01/identity.json",
+      "sha256": "sha256:b37bf83683956318fa18c83f61395e2539549a67b186d0b463fdc62b9a54bf28"
+    },
+    {
+      "bytes": "324221",
+      "path": "scale-01/measurements.jsonl",
+      "sha256": "sha256:bd1903181a50cc848e0bd5e20ca5f3449945ca5a86b618b928a09210efe0fe5a"
+    },
+    {
+      "bytes": "22",
+      "path": "scale-01/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "410",
+      "path": "scale-01/plan.json",
+      "sha256": "sha256:f0171a5bfc87d872dedfd6122f18daf454b5f6282d396fec07e30c8e47dc4159"
+    },
+    {
+      "bytes": "120",
+      "path": "scale-01/process.json",
+      "sha256": "sha256:2bd8249167335de68ae35a02589237686d84559c5646e3d254c6cff6ccaa565d"
+    },
+    {
+      "bytes": "947",
+      "path": "scale-01/summary.json",
+      "sha256": "sha256:2e1f612c7d4f2ca75078ca95532f1356f2e4ae0ed8f56f8109994f83756a1184"
+    },
+    {
+      "bytes": "182",
+      "path": "soak-01/collector.log",
+      "sha256": "sha256:4398d1d9fc329801dc51604cae953aaf8882a73d1ae6fa9daab787fdd51cffd5"
+    },
+    {
+      "bytes": "1091",
+      "path": "soak-01/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "soak-01/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "soak-01/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "soak-01/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "soak-01/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "soak-01/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "soak-01/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "soak-01/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "soak-01/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "813",
+      "path": "soak-01/host-after.json",
+      "sha256": "sha256:b70a89dd7feb15c445872dbe698c8c4bc937c67a5912a419d2e3d0f05e413399"
+    },
+    {
+      "bytes": "2797",
+      "path": "soak-01/identity.json",
+      "sha256": "sha256:46261772b72650bab24a23f926dfea8287716de35830f6b39588450052bc1e9a"
+    },
+    {
+      "bytes": "1305951",
+      "path": "soak-01/measurements.jsonl",
+      "sha256": "sha256:bcdc62c5c8471f872b8f1094d93f2dafc7e70d6d69894d482f9d6cd4cbba030c"
+    },
+    {
+      "bytes": "22",
+      "path": "soak-01/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "409",
+      "path": "soak-01/plan.json",
+      "sha256": "sha256:9ab527542513e9906ce4e30f51b460adfc65f1b91515ad9330e756c609ec3246"
+    },
+    {
+      "bytes": "120",
+      "path": "soak-01/process.json",
+      "sha256": "sha256:785823ed01af885d9835027f269a1dc10b9760c8a4455ea9fdd59a3c92b2abc9"
+    },
+    {
+      "bytes": "1226",
+      "path": "soak-01/summary.json",
+      "sha256": "sha256:f3cd9fa3db393237b7fae2e26ac9f4d1615cb39577d6ffd946bc11751a5760be"
+    },
+    {
+      "bytes": "182",
+      "path": "soak-02/collector.log",
+      "sha256": "sha256:0ab539c865ece730a11fa901629452693f045531a70a5232cee0320b03361a02"
+    },
+    {
+      "bytes": "1091",
+      "path": "soak-02/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "soak-02/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "soak-02/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "soak-02/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "soak-02/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "soak-02/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "soak-02/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "soak-02/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "soak-02/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "817",
+      "path": "soak-02/host-after.json",
+      "sha256": "sha256:ee465a7a3fd333d1a1912d682e9a271f43c1d5188523c80ed4edacb7c470c578"
+    },
+    {
+      "bytes": "2792",
+      "path": "soak-02/identity.json",
+      "sha256": "sha256:98a69afb7f4f9d705d597c7da7eea240c1990c946275c113809de8c2b644576c"
+    },
+    {
+      "bytes": "1307539",
+      "path": "soak-02/measurements.jsonl",
+      "sha256": "sha256:16f5349fc0be557c588ac25c2691ef1d50c8753534bd8d8e0fc2b8cbe6972bf0"
+    },
+    {
+      "bytes": "22",
+      "path": "soak-02/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "409",
+      "path": "soak-02/plan.json",
+      "sha256": "sha256:9ce44102fa122ad130da52f8170d30c5434ea89f1f8cddb9f1c303c80f7b734c"
+    },
+    {
+      "bytes": "120",
+      "path": "soak-02/process.json",
+      "sha256": "sha256:1f1625f50ac490e83b9319d990bffe1d610d45635deaf662cba6e2e8b884fd12"
+    },
+    {
+      "bytes": "1226",
+      "path": "soak-02/summary.json",
+      "sha256": "sha256:340901184ffde18bd6fd8c667eaa3325c0ec832301ed77c0b0560828900e0353"
+    },
+    {
+      "bytes": "182",
+      "path": "soak-03/collector.log",
+      "sha256": "sha256:94b1e1eeabbbc2371c59a3fdab46278f7d4e42b95d65f855809755f5b926b57c"
+    },
+    {
+      "bytes": "1091",
+      "path": "soak-03/fixture-inputs/capabilities-capsule.json",
+      "sha256": "sha256:fe95447aa840959a5e7d2226f3f5ee22c299e9f1c92377f1d13bf4669fc0d98f"
+    },
+    {
+      "bytes": "1730",
+      "path": "soak-03/fixture-inputs/capabilities-contracts.json",
+      "sha256": "sha256:e58eb2fef37c47b55d4d3040fa1f5d10c8acb0c5b1c305f897e0e6c2c5ba6597"
+    },
+    {
+      "bytes": "958",
+      "path": "soak-03/fixture-inputs/capabilities-deployment.json",
+      "sha256": "sha256:260f6498b2bbd3500694aa2e4bbeb847598fc5e233c74f8ba4c92dfe2c752c00"
+    },
+    {
+      "bytes": "1041",
+      "path": "soak-03/fixture-inputs/echo-capsule.json",
+      "sha256": "sha256:df913e9c2cea3f0e554016bc2c704c682bd6173ca9abcf109e55a5e91ac6a85f"
+    },
+    {
+      "bytes": "679",
+      "path": "soak-03/fixture-inputs/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "soak-03/fixture-inputs/echo-deployment.json",
+      "sha256": "sha256:c37d617855606d58d99f421edb79547d5575e4ab3c2ab2a3655b7b413d2041de"
+    },
+    {
+      "bytes": "881",
+      "path": "soak-03/fixture-inputs/generic-capsule.json",
+      "sha256": "sha256:0653deea1369000c01ca53e38828ab80b239bfb479c8ad92e8301660d949683b"
+    },
+    {
+      "bytes": "3064",
+      "path": "soak-03/fixture-inputs/generic-contracts.json",
+      "sha256": "sha256:32033f42594303ef21de3761da0ab318f4a7d8d990883569944b21a2ebb7a680"
+    },
+    {
+      "bytes": "602",
+      "path": "soak-03/fixture-inputs/generic-deployment.json",
+      "sha256": "sha256:e30e0da69e94498418f37e00ee9400dd9c433619b48b974f79815a5226132e7d"
+    },
+    {
+      "bytes": "815",
+      "path": "soak-03/host-after.json",
+      "sha256": "sha256:a0fe2cd7a2fa189ea23da8b21a43a3ad164c46236447c2709d880707465a451b"
+    },
+    {
+      "bytes": "2796",
+      "path": "soak-03/identity.json",
+      "sha256": "sha256:e15aa37d3dfd23affa591766e96ddc338e8650f4439d9d2612258c652bb23254"
+    },
+    {
+      "bytes": "1304017",
+      "path": "soak-03/measurements.jsonl",
+      "sha256": "sha256:c56f77789b5bfccb138e6258766fa03ae08b5323db520f4beb22dd18a5f10c4b"
+    },
+    {
+      "bytes": "22",
+      "path": "soak-03/parent-cleanup.json",
+      "sha256": "sha256:4f676b368ce8c0ba38035bfdedd8066835f543cbc6d3b14f8490cde968323b09"
+    },
+    {
+      "bytes": "409",
+      "path": "soak-03/plan.json",
+      "sha256": "sha256:ab534d9ef23b9029784b02f631ce565ebd4953d9a49f35f0a1225634e0266500"
+    },
+    {
+      "bytes": "120",
+      "path": "soak-03/process.json",
+      "sha256": "sha256:3e844efa7a02b64abb498c3b01eca015f8f0f3dca61a14c95dedb4034dcefe35"
+    },
+    {
+      "bytes": "1226",
+      "path": "soak-03/summary.json",
+      "sha256": "sha256:b0105fe14e4fb238b35ca36428ec037243b9965abc1930f172803ece3b814a3d"
+    },
+    {
+      "bytes": "40359",
+      "path": "suite.json",
+      "sha256": "sha256:b2a6300733d344f2df933b4e3601457d7f38a970deca19fa47d362b23d6f253e"
+    },
+    {
+      "bytes": "88",
+      "path": "validation.log",
+      "sha256": "sha256:d6720d9aec4a3515e6739a723d73da8aa35ff535226151e5229a1b32d4ecc584"
+    }
+  ],
+  "schema": "latent.phase1.archive-manifest.v1",
+  "total_bytes": "282655298"
+}

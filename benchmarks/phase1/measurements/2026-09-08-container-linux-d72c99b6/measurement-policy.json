@@ -1,0 +1,18 @@
+{
+  "schema": "latent.phase1.measurement-policy.v1",
+  "observational_only": true,
+  "production_slo": false,
+  "dormant_scales": [100, 1000, 10000, 100000],
+  "independent_runs": {"scale": 1, "soak": 3, "benchmark": 7},
+  "reclamation": {
+    "baseline": "idle-after-complete-mixed-cycle-warmup",
+    "rss_growth_allowance_bytes": "67108864",
+    "file_descriptor_growth_allowance": "2",
+    "tail_batch_window": 10,
+    "retain_every_batch": true,
+    "drop_outliers": false,
+    "smoke_qualifies": false
+  },
+  "derivation": "Initial observational allowances retain the historical Phase 0 64 MiB RSS and two-descriptor allowances. The Phase 1 warm baseline must be measured after the complete mixed cycle; no historical RSS value is reused as this node's baseline.",
+  "limitations": "Finite runs do not prove leak freedom, arbitrary-duration fairness or an SLO. Every full run must satisfy the fixed allowance; violations require investigation rather than retroactive threshold changes. Smoke runs do not calibrate reclamation."
+}
