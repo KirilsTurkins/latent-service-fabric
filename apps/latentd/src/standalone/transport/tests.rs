@@ -16,7 +16,7 @@ use super::*;
 
 const TOKEN: &str = "standalone-test-credential-00000001";
 
-fn configuration() -> TransportConfig {
+pub(super) fn configuration() -> TransportConfig {
     TransportConfig {
         bind: "127.0.0.1:0".parse().unwrap(),
         maximum_connections: 1,
