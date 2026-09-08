@@ -22,7 +22,8 @@ use crate::cache::{ActiveInstanceGate, PrepareAccess, PreparedCache, PreparedCac
 use crate::config::{WasmtimeConfig, PHASE0_BACKEND_ID};
 use crate::containment::{
     bounded_text, classify_runtime_error, configure_epoch, interrupted_outcome, platform_error,
-    RuntimeResourceCounters, RuntimeResourceSnapshot, StopControl, MAX_DIAGNOSTIC_BYTES,
+    EpochTicker, RuntimeResourceCounters, RuntimeResourceSnapshot, StopControl,
+    MAX_DIAGNOSTIC_BYTES,
 };
 use crate::host::accounting::InvocationAccounting;
 use crate::host::{
@@ -45,6 +46,9 @@ struct PreparedRuntime {
 
 /// Immutable compiled state and bounded diagnostics owned by one node factory.
 pub(crate) struct SharedRuntime {
+    // Drop the ticker before cached components and their engine references. All
+    // backends and prepared-use owners retain this same runtime until idle.
+    epoch_ticker: EpochTicker,
     cache: Arc<PreparedCache<PreparedRuntime>>,
     instances: Arc<ActiveInstanceGate>,
     uncached_prepared: Mutex<Option<(String, Arc<PreparedRuntime>)>>,
@@ -59,8 +63,10 @@ impl SharedRuntime {
     pub(crate) fn new(
         config: &WasmtimeConfig,
         services: WasmtimeHostServices,
+        epoch_ticker: EpochTicker,
     ) -> Result<Self, PlatformError> {
         Ok(Self {
+            epoch_ticker,
             cache: Arc::new(PreparedCache::new(config.cache_limits())?),
             instances: Arc::new(ActiveInstanceGate::new(config.active_instance_limit())?),
             uncached_prepared: Mutex::new(None),
@@ -75,6 +81,17 @@ impl SharedRuntime {
             resources: RuntimeResourceCounters::default(),
             timings: Mutex::new(InvocationTimingStore::new(256)),
         })
+    }
+
+    pub(crate) fn shutdown(&mut self) -> Result<(), PlatformError> {
+        // Unique ownership is established by the factory before this call. No
+        // cache, diagnostics, or backend lock is held while joining the worker.
+        self.epoch_ticker.stop_and_join()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn epoch_observation(&self) -> crate::containment::EpochObservation {
+        self.epoch_ticker.observation()
     }
 }
 

@@ -1,8 +1,8 @@
 # Phase 1 local release catalog
 
 `latent-artifacts::DirectoryArtifactRepository` implements the local release
-catalog intended for the Phase 1 standalone node. Standalone node/listener
-composition remains #14 work; the repository is available as a Rust API.
+catalog used by the [Phase 1 standalone node](../reference/standalone-node.md).
+The repository is also available directly as a Rust API.
 Its owner holds one local release-catalog root exclusively for the lifetime of
 the repository. Ownership is acquired with an operating-system file lock on
 `.catalog.lock` before temporary cleanup or index rebuild. A second live opener

@@ -184,9 +184,10 @@ the service ID string.
 ## Standalone Phase 1 RPC subset
 
 The invocation adapter (#12) and management adapter (#37) implement their
-standalone subsets in `latent-wire`. The standalone listener and process
-composition remain #14 work. Generated messages and service traits alone do not
-make the other control-plane services callable.
+standalone subsets in `latent-wire`. The [standalone node](../reference/standalone-node.md)
+(#14) supplies their configured loopback listener and process composition.
+Generated messages and service traits alone do not make the other control-plane
+services callable.
 
 | Service/method | Phase 1 standalone behavior |
 | --- | --- |

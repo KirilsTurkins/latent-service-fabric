@@ -1,11 +1,15 @@
 use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
-use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use latent_core::{ActivationClock, BudgetConsumption, Metadata, PlatformError, PlatformErrorCode};
 use latent_executor::{ExecutionCancellationProbe, GuestInterruptionKind, GuestOutcome, GuestTrap};
-use wasmtime::{Engine, Store, Trap, UpdateDeadline};
+use wasmtime::{Store, Trap, UpdateDeadline};
+
+mod epoch;
+#[cfg(test)]
+pub(crate) use epoch::EpochObservation;
+pub(crate) use epoch::EpochTicker;
 
 pub(crate) const MAX_DIAGNOSTIC_BYTES: usize = 512;
 
@@ -213,39 +217,6 @@ fn stop_kind(cause: StopCause) -> Option<GuestInterruptionKind> {
     }
 }
 
-pub(crate) fn start_epoch_ticker(engine: &Engine, interval: Duration) -> Result<(), PlatformError> {
-    #[cfg(target_has_atomic = "64")]
-    {
-        let weak_engine = engine.weak();
-        thread::Builder::new()
-            .name("latent-wasmtime-epoch".to_owned())
-            .spawn(move || loop {
-                thread::sleep(interval);
-                let Some(engine) = weak_engine.upgrade() else {
-                    break;
-                };
-                engine.increment_epoch();
-            })
-            .map(|_| ())
-            .map_err(|_| {
-                platform_error(
-                    PlatformErrorCode::Internal,
-                    "failed to start the Wasmtime epoch ticker",
-                    false,
-                )
-            })
-    }
-    #[cfg(not(target_has_atomic = "64"))]
-    {
-        let _ = (engine, interval);
-        Err(platform_error(
-            PlatformErrorCode::Internal,
-            "Wasmtime epoch interruption requires 64-bit atomics",
-            false,
-        ))
-    }
-}
-
 pub(crate) fn configure_epoch<T: 'static>(
     store: &mut Store<T>,
     stop: Arc<StopControl>,
@@ -412,6 +383,7 @@ pub(crate) fn bounded_text(value: &str, maximum_bytes: usize) -> String {
 mod tests {
     use super::*;
     use std::sync::atomic::AtomicBool;
+    use std::time::Duration;
 
     struct TestCancellationProbe {
         cancelled: AtomicBool,

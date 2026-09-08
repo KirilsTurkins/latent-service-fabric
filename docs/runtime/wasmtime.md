@@ -7,8 +7,9 @@ and invoke the requested exported contract and function through
 envelope, granted budget, cell, and activation-owned cancellation view.
 
 This Rust API is a runtime building block used by the
-[activation lifecycle manager](../activation-lifecycle.md). Public invocation
-services and the standalone node remain separate Phase 1 work.
+[activation lifecycle manager](../activation-lifecycle.md) and the
+[standalone Linux node](../reference/standalone-node.md), which supplies the
+configured invocation and management listener.
 The `Phase0WasmtimeEngineFactory` compatibility facade preserves the
 retained echo demonstration and its original text/domain-error wire format.
 

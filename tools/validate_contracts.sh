@@ -128,3 +128,18 @@ LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
 LSF_CAPABILITIES_COMPONENT="${CAPABILITIES_COMPONENT}" \
     cargo test -p latent-wasmtime --test capabilities_backend --locked -- \
         --ignored --nocapture --test-threads=1
+
+# Two real node invocations across a durable restart; no scale workload.
+LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
+LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
+    cargo test -p latentd --test standalone_node --locked -- \
+        --ignored --nocapture --test-threads=1
+
+# A tiny generic component verifies one running and one queued owner at shutdown.
+SHUTDOWN_COMPONENT="${TARGET_ROOT}/capsules/standalone-shutdown/spin.wasm"
+mkdir -p "$(dirname "${SHUTDOWN_COMPONENT}")"
+wasm-tools parse apps/latentd/tests/standalone_shutdown/spin.wat -o "${SHUTDOWN_COMPONENT}"
+wasm-tools validate "${SHUTDOWN_COMPONENT}"
+LSF_SHUTDOWN_COMPONENT="${SHUTDOWN_COMPONENT}" \
+    cargo test -p latentd --test standalone_shutdown --locked -- \
+        --ignored --nocapture --test-threads=1

@@ -3,7 +3,8 @@
 Updated on **2026-09-08** for the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
-generic execution, activation capabilities/lifecycle, invocation and management service adapters, and explicit heavy
+generic execution, activation capabilities/lifecycle, invocation and management
+service adapters, standalone Linux node composition, and explicit heavy
 validation gates. These commands describe validation coverage; the evidence
 from the September 7 audit is recorded separately in
 [the audit report](docs/development/feature-audit-2026-09-07.md).
@@ -141,6 +142,8 @@ cargo test -p latent-core -p latent-executor -p latent-node --all-targets --lock
 cargo test -p latent-node --test activation_lifecycle --locked
 cargo test -p latent-wire --all-targets --locked
 cargo test -p latent-artifacts -p latent-control-store --lib --locked
+cargo test -p latentd --lib --locked
+cargo test -p latentd --test standalone_node --test standalone_command --locked
 cargo test -p latentd --test catalog_scale --locked
 ```
 
@@ -151,6 +154,30 @@ That probe is also available through manual dispatch of `CI` with
 `run_catalog_scale: true` (default `false`). Ordinary pull requests, pushes,
 and default dispatches run catalog recovery/routing/supervision regressions
 without the heavy probe.
+
+The `latentd` library tests cover bounded configuration, command/status output,
+pressure parsing and transport ownership. On Linux, `standalone_node` opens a
+real loopback listener and checks authentication, inventory and empty restart.
+Its separately ignored component case publishes a tiny real echo release,
+deploys and invokes it across durable restart, and checks actual cleanup. After
+building the maintained echo fixture, select that bounded case with:
+
+```bash
+LSF_ECHO_COMPONENT=target/capsules/echo/echo-capsule.wasm \
+  cargo test -p latentd --test standalone_node --locked -- --include-ignored
+```
+
+The ordinary `standalone_command` target runs real node processes through invalid
+configuration, corrupt catalog, SIGTERM and Ctrl-C scenarios. The contracts gate
+also builds the tiny generic `standalone_shutdown/spin.wat` fixture and runs the
+ignored `standalone_shutdown` target with `LSF_SHUTDOWN_COMPONENT`. That test
+observes one running guest and one queued activation, then checks their actual
+cleanup after a 20 ms drain interval. It uses two activations and an external
+watchdog; no Phase 0 payload controls are involved.
+
+The integration children have finite supervision deadlines. These commands do
+not select the catalog scale probe or a resource soak. See
+[standalone operation and shutdown evidence](docs/reference/standalone-node.md).
 
 ## Native-Linux Phase 0 calibration
 
@@ -309,10 +336,11 @@ Static schema, WIT, Protobuf, and artifact validation uses compiler and validato
 
 Passing ordinary Phase 1 foundation checks validates the implemented manifest,
 budget/cancellation, storage, local routing, admission, scheduling, generic
-execution, activation capabilities/lifecycle, telemetry, and invocation adapter
-behavior covered by those tests. It does not establish a composed standalone
-node, management adapters, operator
-CLI, long-running reclamation evidence, or completion of the Phase 1 gate.
+execution, activation capabilities/lifecycle, telemetry, invocation/management
+adapters, and standalone behavior covered by the selected tests. The operator
+CLI remains unimplemented. Finite startup/restart/shutdown checks do not establish
+long-running reclamation evidence, heavy dormant-service scale, or completion of
+the Phase 1 gate.
 
 Passing the Phase 0 executable baseline establishes source consistency, guest behavior,
 component-interface validity, fixed cell-pool accounting, real Wasmtime

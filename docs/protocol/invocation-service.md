@@ -3,8 +3,9 @@
 `latent-wire::invocation` implements the generated Tonic `Invoke`, `Cancel`,
 and `GetActivation` methods. `LocalInvocationRuntime` connects the adapter to
 `LocalActivationManager`, the existing activation lifecycle and bounded journal.
-The service is embeddable: listener configuration and standalone node composition
-remain separate work (#14).
+The service remains embeddable. The [standalone Linux node](../reference/standalone-node.md)
+supplies listener configuration, trusted authentication and shared runtime
+composition (#14).
 
 ## Generated RPC foundation
 
@@ -145,5 +146,6 @@ trace/retry defaults, pre-acceptance rejection, absent/pinned failure receipts,
 retained ID reuse, catalog pinning, outcome/accounting preservation, public error
 redaction, dropped-call isolation, a short live timeout, and cell cleanup/reuse.
 Completion waits have five-second watchdogs. These tests open no listener and
-run no Wasmtime workload, scale test, or soak. Socket-level composition remains
-part of the standalone node work.
+run no Wasmtime workload, scale test, or soak. Separate
+[standalone node tests](../reference/standalone-node.md) exercise socket-level
+composition and the bounded release-to-invocation workflow.
