@@ -76,17 +76,34 @@ pub(super) fn status(
     }
 }
 
+pub(super) struct InvokeOptions {
+    pub phase: String,
+    pub index: u32,
+    pub key: u32,
+    pub scheduled: u128,
+    pub id: String,
+    pub release: String,
+    pub overload: bool,
+}
+
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep request construction, response validation and the final observation timestamp inside the unchanged measured boundary."
+)]
 pub(super) async fn invoke(
     channel: Channel,
     clock: Clock,
-    phase: String,
-    index: u32,
-    key: u32,
-    scheduled: u128,
-    id: String,
-    release: String,
-    overload: bool,
+    options: InvokeOptions,
 ) -> Result<Value> {
+    let InvokeOptions {
+        phase,
+        index,
+        key,
+        scheduled,
+        id,
+        release,
+        overload,
+    } = options;
     let deadline = scheduled + 1_000_000_000;
     let absolute = (clock.unix_nanos + deadline).div_ceil(1_000_000);
     let mut row = json!({"kind":"invoke","phase":phase,"index":index.to_string(),"key":key.to_string(),

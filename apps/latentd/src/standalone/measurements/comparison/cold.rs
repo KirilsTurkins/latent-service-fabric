@@ -16,6 +16,10 @@ use super::{evidence, node::Node, writer::Writer, INPUT};
 
 #[test]
 #[ignore = "explicit cold revision profile supplies bounded plan and exact inputs"]
+#[expect(
+    clippy::too_many_lines,
+    reason = "The matched collector keeps startup, measured work and synchronous teardown in one auditable sequence."
+)]
 fn phase1_cold_preparation_collector() {
     let origin = Instant::now();
     let plan: plan::Plan = serde_json::from_slice(
@@ -47,10 +51,10 @@ fn phase1_cold_preparation_collector() {
         .prefix("cold-comparison-owned-")
         .tempdir_in(super::super::required("LSF_PHASE1_COMPARISON_DATA_ROOT"))
         .unwrap();
-    let observed = crate::standalone::RuntimeThreads::default();
+    let runtime_threads = crate::standalone::RuntimeThreads::default();
     let client_threads = Arc::new(AtomicUsize::new(0));
-    let invocation = super::super::runtime(2, &observed.invocation);
-    let control = super::super::runtime(4, &observed.control);
+    let invocation = super::super::runtime(2, &runtime_threads.invocation);
+    let control = super::super::runtime(4, &runtime_threads.control);
     let client = super::super::runtime(2, &client_threads);
     let mut node = invocation
         .block_on(Node::start_configured(
@@ -59,8 +63,8 @@ fn phase1_cold_preparation_collector() {
             base,
             control.handle().clone(),
             crate::standalone::RuntimeThreads {
-                invocation: observed.invocation.clone(),
-                control: observed.control.clone(),
+                invocation: runtime_threads.invocation.clone(),
+                control: runtime_threads.control.clone(),
             },
             origin,
         ))
@@ -101,8 +105,8 @@ fn phase1_cold_preparation_collector() {
     drop(client);
     drop(control);
     drop(invocation);
-    let runtimes = json!({"invocation":observed.invocation.load(Ordering::Acquire),
-        "control":observed.control.load(Ordering::Acquire),"client":client_threads.load(Ordering::Acquire)});
+    let runtimes = json!({"invocation":runtime_threads.invocation.load(Ordering::Acquire),
+        "control":runtime_threads.control.load(Ordering::Acquire),"client":client_threads.load(Ordering::Acquire)});
     let final_observer = observation::snapshot(&observer, clock).unwrap();
     let clean = shutdown.as_ref().is_ok_and(|report| {
         report.clean
@@ -146,7 +150,16 @@ async fn run(
     .await?;
     checkpoint(node, writer, clock, "after-baseline")?;
     schedule::burst(
-        node, writer, clock, plan, "same-key", &[1; 8], releases, false,
+        node,
+        writer,
+        clock,
+        plan,
+        releases,
+        schedule::BurstOptions {
+            phase: "same-key",
+            cold_keys: &[1; 8],
+            cancel: false,
+        },
     )
     .await?;
     schedule::burst(
@@ -154,13 +167,27 @@ async fn run(
         writer,
         clock,
         plan,
-        "distinct",
-        &[2, 3, 4, 5, 6],
         releases,
-        false,
+        schedule::BurstOptions {
+            phase: "distinct",
+            cold_keys: &[2, 3, 4, 5, 6],
+            cancel: false,
+        },
     )
     .await?;
-    schedule::burst(node, writer, clock, plan, "cancel", &[7; 8], releases, true).await?;
+    schedule::burst(
+        node,
+        writer,
+        clock,
+        plan,
+        releases,
+        schedule::BurstOptions {
+            phase: "cancel",
+            cold_keys: &[7; 8],
+            cancel: true,
+        },
+    )
+    .await?;
     schedule::sequential(node, writer, clock, "healthy", plan.healthy(), &releases[0]).await?;
     checkpoint(node, writer, clock, "after-healthy")
 }
