@@ -73,6 +73,14 @@ pub(crate) struct SharedRuntime {
     preparation_context: Arc<PreparationContext>,
 }
 impl SharedRuntime {
+    pub(crate) fn cache_accounting_snapshot(&self) -> crate::PreparedCacheAccountingSnapshot {
+        self.cache.accounting_snapshot()
+    }
+
+    pub(crate) fn prepared_runtime_observer(&self) -> crate::PreparedRuntimeObserver {
+        self.cache.prepared_runtime_observer()
+    }
+
     pub(crate) fn new(
         config: &WasmtimeConfig,
         services: WasmtimeHostServices,
@@ -178,6 +186,16 @@ impl WasmtimeBackend {
     #[must_use]
     pub fn cache_snapshot(&self) -> PreparedCacheSnapshot {
         self.shared.cache.snapshot()
+    }
+    /// Measured residency with optional unique prepared-runtime costs.
+    #[must_use]
+    pub fn cache_accounting_snapshot(&self) -> crate::PreparedCacheAccountingSnapshot {
+        self.shared.cache_accounting_snapshot()
+    }
+    /// Retains diagnostic counters without retaining the cache or native owners.
+    #[must_use]
+    pub fn prepared_runtime_observer(&self) -> crate::PreparedRuntimeObserver {
+        self.shared.prepared_runtime_observer()
     }
     #[must_use]
     pub fn stores_created(&self) -> u64 {

@@ -27,6 +27,13 @@ pub use model::{
 };
 use state::{Inner, State, MAXIMUM_STAGE_OBSERVATIONS};
 
+/// The cache libtest brackets its batch with the same bounded task probe used
+/// by preparation observations. No filesystem probe runs inside a cache hit.
+#[cfg(all(test, target_os = "linux"))]
+pub(crate) fn sample_thread_cpu() -> Option<PreparationThreadCpu> {
+    cpu::sample()
+}
+
 /// Cloneable diagnostics ownership independent of the runtime factory.
 #[derive(Clone)]
 pub struct PreparationObserver {

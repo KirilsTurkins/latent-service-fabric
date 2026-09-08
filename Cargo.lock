@@ -1201,6 +1201,7 @@ dependencies = [
  "latent-routing",
  "latent-scheduler",
  "latent-telemetry",
+ "rustix",
  "serde",
  "serde_json",
  "sha2",

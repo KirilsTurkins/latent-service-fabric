@@ -20,6 +20,18 @@ pub struct WasmtimeComponentEngineFactory {
 }
 
 impl WasmtimeComponentEngineFactory {
+    /// Measured residency with optional unique prepared-runtime costs.
+    #[must_use]
+    pub fn cache_accounting_snapshot(&self) -> crate::PreparedCacheAccountingSnapshot {
+        self.shared.cache_accounting_snapshot()
+    }
+
+    /// Retains diagnostic counters without preventing consuming shutdown.
+    #[must_use]
+    pub fn prepared_runtime_observer(&self) -> crate::PreparedRuntimeObserver {
+        self.shared.prepared_runtime_observer()
+    }
+
     /// Independent counters remain available after the factory is consumed.
     #[must_use]
     pub fn compiler_observer(&self) -> crate::CompilerObserver {

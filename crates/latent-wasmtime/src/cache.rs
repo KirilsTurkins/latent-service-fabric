@@ -3,8 +3,11 @@
 //! Cached values must contain only immutable prepared state. Invocation-owned
 //! stores, instances and host context belong to the backend's activation scope.
 
+mod accounting;
 mod instances;
 mod limits;
+#[cfg(all(test, target_os = "linux"))]
+mod measurement;
 #[cfg(test)]
 mod tests;
 
@@ -14,6 +17,10 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use latent_core::{PlatformError, PlatformErrorCode};
 
 use crate::containment::platform_error;
+pub use accounting::{
+    PreparedCacheAccountingSnapshot, PreparedRuntimeObserver, PreparedRuntimePopulation,
+    PreparedRuntimeSnapshot,
+};
 pub(crate) use instances::{ActiveInstanceGate, ActiveInstancePermit};
 pub(crate) use limits::CacheLimits;
 pub use limits::PreparedCacheSnapshot;
@@ -23,6 +30,7 @@ const MAXIMUM_HANDLE_BYTES: usize = 256;
 pub(crate) struct PreparedCache<T> {
     limits: CacheLimits,
     state: Mutex<State<T>>,
+    runtime_observer: PreparedRuntimeObserver,
 }
 
 struct State<T> {
@@ -73,6 +81,7 @@ impl<T> PreparedCache<T> {
         limits.validate()?;
         Ok(Self {
             limits,
+            runtime_observer: PreparedRuntimeObserver::default(),
             state: Mutex::new(State {
                 entries: HashMap::new(),
                 lru: VecDeque::new(),
