@@ -79,6 +79,7 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1
         with:
           version: 1.72.0
+          github_token: ${{ github.token }}
       - name: Check Phase 0 runner syntax
         run: >-
           bash -n
