@@ -142,6 +142,12 @@ configured capacity remains visible; deliberate shutdown can remain healthy.
 Optional cache/topology failures degrade diagnostics without inventing
 observations or changing guest execution.
 
+The standalone `wasmtime-compiler` topology row is a `NodeFixed` thread resource.
+Its configured count comes from the compiler pool's maximum workers, and its
+active count is the pool's observed live workers, including idle workers. Job
+counts and joined workers do not stand in for live threads. The row uses the
+existing bounded topology writer; a selection that omits rows remains incomplete.
+
 ## Validation
 
 ```bash

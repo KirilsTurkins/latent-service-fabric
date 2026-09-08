@@ -1,4 +1,4 @@
-use latent_node::ResourceOwnership;
+use latent_node::{NodeTopologyEntry, ResourceOwnership};
 use latent_wire::management::{node_inventory_from_proto, proto};
 use proto::node_service_client::NodeServiceClient;
 use proto::release_service_client::ReleaseServiceClient;
@@ -78,7 +78,8 @@ pub fn scenario() {
             assert_eq!(inventory.cache_summary.entries, 0);
             assert!(inventory.cache_entries.is_empty());
             assert!(inventory.topology.available && inventory.topology.complete);
-            assert_eq!(inventory.topology.entries.len(), 19);
+            assert_eq!(inventory.topology.entries.len(), 20);
+            assert_compiler_topology(&inventory.topology.entries);
             for row in inventory
                 .topology
                 .entries
@@ -101,4 +102,17 @@ pub fn scenario() {
         }
     });
     runtimes.finish();
+}
+
+fn assert_compiler_topology(entries: &[NodeTopologyEntry]) {
+    let compiler = entries
+        .iter()
+        .find(|row| row.name == "wasmtime-compiler")
+        .expect("actual compiler topology");
+    assert_eq!(compiler.kind, "thread");
+    assert_eq!(compiler.ownership, ResourceOwnership::NodeFixed);
+    assert!(compiler.configured_count > 0);
+    assert!(compiler
+        .active_count
+        .is_some_and(|live| live <= compiler.configured_count));
 }
