@@ -52,10 +52,16 @@
         "capsuleManifestJson",
         "componentBase64",
         "componentDigest",
-        "componentMediaType"
+        "componentMediaType",
+        "contractMetadataJson"
       ],
       "properties": {
         "capsuleManifestJson": {
+          "type": "string",
+          "minLength": 2
+        },
+        "contractMetadataJson": {
+          "description": "UTF-8 JSON document with format_version 1 and typed contracts; decoded and bounded by the management adapter.",
           "type": "string",
           "minLength": 2
         },

@@ -36,6 +36,9 @@ message RouteSnapshot {
   repeated BindingRoute bindings = 4;
   repeated string policy_digests = 5;
   string snapshot_digest = 6;
+  // Phase 1 returns a complete projection for this authenticated tenant.
+  // Its digest binds this scope and all returned fields; it is not the global digest.
+  optional string tenant = 7;
 }
 
 message GetRouteSnapshotRequest {

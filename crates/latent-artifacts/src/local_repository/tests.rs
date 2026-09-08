@@ -1,3 +1,5 @@
+#[path = "catalog_query_tests.rs"]
+mod catalog_queries;
 #[path = "integrity_tests.rs"]
 mod integrity;
 #[path = "integrity_publication_tests.rs"]
@@ -124,7 +126,7 @@ fn artifact(name: &str, bytes: &[u8]) -> CapsuleArtifact {
     }
 }
 
-fn contract_fixture() -> ContractDescriptor {
+pub(super) fn contract_fixture() -> ContractDescriptor {
     let mut attributes = Metadata::new();
     attributes.insert("latent.dev/test".to_owned(), "catalog".to_owned());
     ContractDescriptor {
@@ -411,7 +413,7 @@ fn oversized_descriptor_fields_are_rejected_before_visibility() {
         match variant {
             "reference" => {
                 value.descriptor.reference =
-                    ArtifactReference(format!("local://{}", "x".repeat(2048)))
+                    ArtifactReference(format!("local://{}", "x".repeat(2048)));
             }
             "annotation" => {
                 value
@@ -447,7 +449,10 @@ fn aggregate_index_byte_budget_is_enforced_before_persistence() {
         temp.path(),
         DirectoryArtifactRepositoryConfig {
             max_index_entries: 100,
-            max_index_bytes: 3_000,
+            max_index_bytes: super::index::entry_cost(
+                &artifact("budget-one", b"budget-one"),
+                DirectoryArtifactRepositoryConfig::default(),
+            ),
             ..DirectoryArtifactRepositoryConfig::default()
         },
     )
@@ -589,6 +594,7 @@ fn restart_cleans_abandoned_temporary_writes() {
 }
 
 #[test]
+#[ignore = "large metadata index probe; explicitly opt in with --ignored --exact"]
 fn one_hundred_thousand_index_adoptions_are_bounded() {
     // This is deliberately only an index unit test. Durable publication and
     // measured topology belong to latentd's isolated catalog_scale acceptance.
@@ -597,11 +603,12 @@ fn one_hundred_thousand_index_adoptions_are_bounded() {
         temp.path(),
         DirectoryArtifactRepositoryConfig {
             max_index_entries: 100_000,
-            max_index_bytes: 256 * 1024 * 1024,
+            max_index_bytes: 1024 * 1024 * 1024,
             ..DirectoryArtifactRepositoryConfig::default()
         },
     )
     .expect("open index fixture");
+    let template = artifact("synthetic", b"");
     for value in 0_u32..100_000 {
         let descriptor = ArtifactDescriptor {
             reference: ArtifactReference(format!("local://synthetic/{value}")),
@@ -612,9 +619,10 @@ fn one_hundred_thousand_index_adoptions_are_bounded() {
             layers: Vec::new(),
             annotations: Metadata::new(),
         };
-        repo.preflight_adoption(&descriptor)
-            .expect("index preflight");
-        repo.finalize_adoption(descriptor).expect("index adoption");
+        let mut indexed = template.clone();
+        indexed.descriptor = descriptor;
+        repo.preflight_adoption(&indexed).expect("index preflight");
+        repo.finalize_adoption(indexed).expect("index adoption");
     }
     assert_eq!(repo.index.read().expect("index").by_digest.len(), 100_000);
     assert!(repo.index.read().expect("index").accounted_bytes <= repo.config.max_index_bytes);

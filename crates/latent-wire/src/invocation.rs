@@ -18,7 +18,7 @@ use latent_core::{
 };
 use latent_routing::InvocationTarget;
 
-pub(crate) use authentication::authenticated_tenant;
+pub(crate) use authentication::{authenticated_tenant, take_context};
 pub use authentication::{AuthenticatedInvocationContext, LocalPrincipalPolicy, PrincipalPolicy};
 pub use cancellation::{InvocationCancellation, InvocationInterruption};
 pub use conversion::{
@@ -29,7 +29,8 @@ pub use conversion::{
     invocation_response_to_proto, platform_error_from_proto, platform_error_to_proto,
     InvocationConversionError,
 };
-use errors::{boundary_error, platform_status, public_platform_message};
+use errors::{boundary_error, platform_status};
+pub(crate) use errors::{public_platform_message, tonic_code};
 pub use latent_rpc::invocation::v1 as proto;
 pub use limits::InvocationLimits;
 pub use local::LocalInvocationRuntime;

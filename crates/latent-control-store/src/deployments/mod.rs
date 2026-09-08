@@ -4,6 +4,7 @@ mod compiler;
 mod mutations;
 mod pagination;
 mod persistence;
+mod scoped_routes;
 #[cfg(test)]
 mod tests;
 
@@ -379,6 +380,13 @@ impl RouteSnapshotSource for DirectoryDeploymentRepository {
 }
 
 impl CompiledRouteStore for DirectoryDeploymentRepository {
+    fn scoped(
+        &self,
+        request: crate::ScopedRouteRequest,
+    ) -> BoxFuture<'_, Result<crate::ScopedRouteSnapshot, PlatformError>> {
+        Box::pin(async move { self.scoped_routes(request) })
+    }
+
     fn put<'a>(&'a self, snapshot: RouteSnapshot) -> BoxFuture<'a, Result<(), PlatformError>> {
         RouteSnapshotPublisher::publish(self, snapshot)
     }

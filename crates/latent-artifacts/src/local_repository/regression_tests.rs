@@ -94,11 +94,8 @@ fn pending_sync_failure_preserves_entry_and_byte_capacity_across_reopen() {
         let temp = TempRoot::new();
         let first = artifact("capacity-one", b"capacity-one");
         let second = artifact("capacity-two", b"capacity-two");
-        let descriptor_bytes =
-            serde_json::to_vec(&StoredArtifactDescriptor::from(&first.descriptor))
-                .expect("serialized descriptor")
-                .len();
-        let accounted = super::super::index_accounted_bytes(descriptor_bytes).expect("accounting");
+        let accounted =
+            super::super::index::entry_cost(&first, DirectoryArtifactRepositoryConfig::default());
         let config = DirectoryArtifactRepositoryConfig {
             max_index_entries: if byte_limit { 10 } else { 1 },
             max_index_bytes: if byte_limit {

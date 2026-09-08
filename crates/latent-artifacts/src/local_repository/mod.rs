@@ -1,13 +1,16 @@
+pub(crate) mod contract_metadata;
+mod index;
 mod integrity;
 mod metadata;
 mod metadata_codec;
+mod paging;
 mod root_durability;
 mod sha256;
 
 #[cfg(test)]
 mod tests;
 
-use std::collections::BTreeMap;
+use std::collections::hash_map::RandomState;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::ops::Bound::{Excluded, Unbounded};
@@ -18,15 +21,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[cfg(test)]
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use latent_core::{ArtifactReference, BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest};
+use latent_core::{BoxFuture, PlatformError, PlatformErrorCode, ReleaseDigest};
 use latent_manifest::{
-    __serde_json as serde_json, JsonManifestCodec, ManifestCodec, ManifestValidator,
-    Phase1ManifestValidator,
+    JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator,
 };
 
 use crate::{ArtifactDescriptor, ArtifactPage, ArtifactQuery, ArtifactRepository, CapsuleArtifact};
+use index::CatalogIndex;
 use integrity::CompletionRecord;
-use metadata::StoredArtifactDescriptor;
 use metadata_codec::{decode_metadata, encode_metadata};
 use sha256::release_digest;
 
@@ -46,14 +48,14 @@ const DEFAULT_MAX_DESCRIPTOR_BYTES: usize = 256 * 1024;
 const DEFAULT_MAX_METADATA_BYTES: usize = 4 * 1024 * 1024;
 const DEFAULT_MAX_COMPONENT_BYTES: usize = 256 * 1024 * 1024;
 const DEFAULT_MAX_RECOVERY_DIRECTORIES: usize = 1_000_000;
-const INDEX_ACCOUNTING_MULTIPLIER: usize = 4;
-const INDEX_ACCOUNTING_FIXED_BYTES: usize = 1_024;
 
 /// Explicit catalog resource bounds.
 ///
 /// `max_index_bytes` bounds a conservative accounting value for all retained
-/// descriptors and reference keys. `max_descriptor_bytes` and `max_page_bytes`
-/// bound individual and aggregate list payload materialization. Persisted
+/// compact summaries, descriptors, reference keys and tenant/service index nodes.
+/// `max_descriptor_bytes` bounds individual descriptor encodings. Scoped pages
+/// charge both canonical summary bytes and owned materialization (including
+/// collection slots); `max_page_bytes` bounds their aggregate. Persisted
 /// metadata and component reads are also bounded before allocation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DirectoryArtifactRepositoryConfig {
@@ -82,56 +84,6 @@ impl Default for DirectoryArtifactRepositoryConfig {
             max_component_bytes: DEFAULT_MAX_COMPONENT_BYTES,
             max_recovery_directories: DEFAULT_MAX_RECOVERY_DIRECTORIES,
         }
-    }
-}
-
-#[derive(Debug, Default)]
-struct CatalogIndex {
-    by_digest: BTreeMap<ReleaseDigest, ArtifactDescriptor>,
-    by_reference: BTreeMap<ArtifactReference, ReleaseDigest>,
-    accounted_bytes: usize,
-}
-
-impl CatalogIndex {
-    fn insert(
-        &mut self,
-        descriptor: ArtifactDescriptor,
-        descriptor_bytes: usize,
-        config: DirectoryArtifactRepositoryConfig,
-    ) -> Result<(), PlatformError> {
-        if let Some(existing) = self.by_digest.get(&descriptor.release_digest) {
-            if existing == &descriptor {
-                return Ok(());
-            }
-            return Err(corrupt("duplicate release digest has conflicting metadata"));
-        }
-        if let Some(existing_digest) = self.by_reference.get(&descriptor.reference) {
-            if existing_digest != &descriptor.release_digest {
-                return Err(corrupt(
-                    "artifact reference maps to conflicting release digests",
-                ));
-            }
-        }
-        if self.by_digest.len() >= config.max_index_entries {
-            return Err(resource_exhausted("catalog index entry limit reached"));
-        }
-        let accounted = index_accounted_bytes(descriptor_bytes)?;
-        let next_bytes = self
-            .accounted_bytes
-            .checked_add(accounted)
-            .ok_or_else(|| resource_exhausted("catalog index byte accounting overflow"))?;
-        if next_bytes > config.max_index_bytes {
-            return Err(resource_exhausted("catalog index byte limit reached"));
-        }
-
-        self.by_reference.insert(
-            descriptor.reference.clone(),
-            descriptor.release_digest.clone(),
-        );
-        self.by_digest
-            .insert(descriptor.release_digest.clone(), descriptor);
-        self.accounted_bytes = next_bytes;
-        Ok(())
     }
 }
 
@@ -185,6 +137,7 @@ pub struct DirectoryArtifactRepository {
     codec: JsonManifestCodec,
     validator: Phase1ManifestValidator,
     index: RwLock<CatalogIndex>,
+    pagination_fingerprint: RandomState,
     /// Serializes writers, reserves directory capacity and gates mutations after
     /// indeterminate durability. Only a retry of the pending digest may proceed.
     publish_lock: Mutex<PublicationState>,
@@ -237,6 +190,7 @@ impl DirectoryArtifactRepository {
             codec: JsonManifestCodec::default(),
             validator: Phase1ManifestValidator::new(),
             index: RwLock::new(CatalogIndex::default()),
+            pagination_fingerprint: RandomState::new(),
             publish_lock: Mutex::new(PublicationState::default()),
             _owner_lock: owner_lock,
             #[cfg(test)]
@@ -285,8 +239,7 @@ impl DirectoryArtifactRepository {
         let mut next = CatalogIndex::default();
         for path in complete_entries {
             let artifact = self.load_complete_entry(&path)?.artifact;
-            let descriptor_bytes = self.validate_descriptor_bounds(&artifact.descriptor)?;
-            next.insert(artifact.descriptor, descriptor_bytes, self.config)?;
+            next.insert(artifact, self.config)?;
         }
         // Reconcile completed entries from an interrupted publication before
         // exposing the rebuilt index or allowing further mutations.
@@ -366,69 +319,30 @@ impl DirectoryArtifactRepository {
         &self,
         descriptor: &ArtifactDescriptor,
     ) -> Result<usize, PlatformError> {
-        let bytes =
-            serde_json::to_vec(&StoredArtifactDescriptor::from(descriptor)).map_err(|_| {
-                error(
-                    PlatformErrorCode::Internal,
-                    "failed to serialize artifact descriptor for bound accounting",
-                )
-            })?;
-        if bytes.len() > self.config.max_descriptor_bytes {
-            return Err(resource_exhausted(
-                "artifact descriptor exceeds configured byte limit",
-            ));
-        }
-        Ok(bytes.len())
+        index::descriptor_bytes(descriptor, self.config.max_descriptor_bytes)
     }
 
     fn finalize_adoption(
         &self,
-        descriptor: ArtifactDescriptor,
+        artifact: CapsuleArtifact,
     ) -> Result<ArtifactDescriptor, PlatformError> {
-        let descriptor_bytes = self.validate_descriptor_bounds(&descriptor)?;
         let mut index = self.index.write().map_err(lock_error)?;
-        index.insert(descriptor.clone(), descriptor_bytes, self.config)?;
-        Ok(descriptor)
+        index.insert(artifact, self.config)
     }
 
-    fn preflight_adoption(&self, descriptor: &ArtifactDescriptor) -> Result<(), PlatformError> {
-        let descriptor_bytes = self.validate_descriptor_bounds(descriptor)?;
+    fn preflight_adoption(&self, artifact: &CapsuleArtifact) -> Result<(), PlatformError> {
         let index = self.index.read().map_err(lock_error)?;
-        if let Some(existing) = index.by_digest.get(&descriptor.release_digest) {
-            if existing == descriptor {
-                return Ok(());
-            }
-            return Err(error(
-                PlatformErrorCode::AlreadyExists,
-                "release digest already indexes different catalog metadata",
-            ));
-        }
-        if let Some(existing_digest) = index.by_reference.get(&descriptor.reference) {
-            if existing_digest != &descriptor.release_digest {
-                return Err(error(
-                    PlatformErrorCode::AlreadyExists,
-                    "artifact reference already resolves to another release",
-                ));
-            }
-        }
-        if index.by_digest.len() >= self.config.max_index_entries {
-            return Err(resource_exhausted("catalog index entry limit reached"));
-        }
-        let accounted = index_accounted_bytes(descriptor_bytes)?;
-        if index.accounted_bytes.saturating_add(accounted) > self.config.max_index_bytes {
-            return Err(resource_exhausted("catalog index byte limit reached"));
-        }
-        Ok(())
+        index.preflight(&artifact.descriptor, &artifact.manifest, self.config)
     }
 
     fn sync_and_adopt(
         &self,
-        descriptor: ArtifactDescriptor,
+        artifact: CapsuleArtifact,
         pending: &mut Option<ReleaseDigest>,
     ) -> Result<ArtifactDescriptor, PlatformError> {
         // The completed destination now exists. Keep the mutation gate closed
         // across every failure, including repeated sync or adoption failures.
-        *pending = Some(descriptor.release_digest.clone());
+        *pending = Some(artifact.descriptor.release_digest.clone());
         #[cfg(test)]
         if self.fail_parent_sync_once.swap(false, Ordering::SeqCst) {
             return Err(error(
@@ -437,7 +351,7 @@ impl DirectoryArtifactRepository {
             ));
         }
         sync_dir(&self.root.join(RELEASES_DIR))?;
-        let adopted = self.finalize_adoption(descriptor)?;
+        let adopted = self.finalize_adoption(artifact)?;
         *pending = None;
         Ok(adopted)
     }
@@ -478,7 +392,7 @@ impl DirectoryArtifactRepository {
             &artifact.manifest.component_digest,
             &artifact.component_bytes,
         )?;
-        self.preflight_adoption(&artifact.descriptor)?;
+        self.preflight_adoption(&artifact)?;
         let metadata_bytes = encode_metadata(&artifact, self.config.max_metadata_bytes)?;
         let completion =
             CompletionRecord::from_payloads(&artifact.descriptor, &metadata_bytes, &manifest_bytes);
@@ -528,17 +442,20 @@ impl DirectoryArtifactRepository {
     }
 
     /// Only verified identical persisted bytes are eligible for publication adoption.
-    /// Returning a descriptor drops the loaded component before directory sync/index work.
+    /// Drops the loaded component and contracts before directory sync/index work.
     fn read_for_adoption(
         &self,
         path: &Path,
         expected: &CompletionRecord,
-    ) -> Result<Option<ArtifactDescriptor>, PlatformError> {
-        let verified = self.load_complete_entry(path)?;
+    ) -> Result<Option<CapsuleArtifact>, PlatformError> {
+        let mut verified = self.load_complete_entry(path)?;
         if &verified.completion != expected {
             return Ok(None);
         }
-        Ok(Some(verified.artifact.descriptor))
+        // Retain only bounded metadata across the durability and index boundary.
+        verified.artifact.component_bytes = Vec::new();
+        verified.artifact.contracts = Vec::new();
+        Ok(Some(verified.artifact))
     }
 
     fn publish_sync(&self, artifact: CapsuleArtifact) -> Result<ArtifactDescriptor, PlatformError> {
@@ -616,6 +533,21 @@ impl DirectoryArtifactRepository {
 }
 
 impl ArtifactRepository for DirectoryArtifactRepository {
+    fn get_catalog_entry<'a>(
+        &'a self,
+        tenant: &'a latent_core::TenantId,
+        digest: &'a ReleaseDigest,
+    ) -> BoxFuture<'a, Result<Option<crate::ArtifactCatalogEntry>, PlatformError>> {
+        Box::pin(async move { self.catalog_entry(tenant, digest) })
+    }
+
+    fn list_catalog_entries<'a>(
+        &'a self,
+        request: &'a crate::ArtifactCatalogPageRequest,
+    ) -> BoxFuture<'a, Result<crate::ArtifactCatalogPage, PlatformError>> {
+        Box::pin(async move { self.catalog_page(request) })
+    }
+
     fn resolve<'a>(
         &'a self,
         query: &'a ArtifactQuery,
@@ -633,6 +565,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
                 None
             };
             Ok(descriptor
+                .map(|entry| &entry.value.descriptor)
                 .filter(|value| {
                     query
                         .reference
@@ -703,13 +636,13 @@ impl ArtifactRepository for DirectoryArtifactRepository {
                     has_more = true;
                     break;
                 }
-                let descriptor_bytes = self.validate_descriptor_bounds(descriptor)?;
+                let descriptor_bytes = descriptor.descriptor_bytes;
                 if response_bytes.saturating_add(descriptor_bytes) > self.config.max_page_bytes {
                     has_more = true;
                     break;
                 }
                 response_bytes = response_bytes.saturating_add(descriptor_bytes);
-                entries.push(descriptor.clone());
+                entries.push(descriptor.value.descriptor.clone());
             }
             let next_after = if has_more {
                 entries.last().map(|value| value.release_digest.clone())
@@ -750,13 +683,6 @@ fn validate_config(config: DirectoryArtifactRepositoryConfig) -> Result<(), Plat
     // Directory and index limits are independent; publication enforces both.
     // Retained debris can exhaust directory capacity before index capacity.
     Ok(())
-}
-
-fn index_accounted_bytes(descriptor_bytes: usize) -> Result<usize, PlatformError> {
-    descriptor_bytes
-        .checked_mul(INDEX_ACCOUNTING_MULTIPLIER)
-        .and_then(|value| value.checked_add(INDEX_ACCOUNTING_FIXED_BYTES))
-        .ok_or_else(|| resource_exhausted("catalog index byte accounting overflow"))
 }
 
 fn is_recovery_candidate(path: &Path) -> Result<bool, PlatformError> {

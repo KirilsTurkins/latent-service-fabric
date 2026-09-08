@@ -1,7 +1,7 @@
 use latent_core::{PlatformError, PlatformErrorCode};
 use tonic::{Code, Status};
 
-fn tonic_code(code: PlatformErrorCode) -> Code {
+pub(crate) fn tonic_code(code: PlatformErrorCode) -> Code {
     match code {
         PlatformErrorCode::Unavailable | PlatformErrorCode::RouteUnavailable => Code::Unavailable,
         PlatformErrorCode::DeadlineExceeded => Code::DeadlineExceeded,
@@ -23,7 +23,7 @@ fn tonic_code(code: PlatformErrorCode) -> Code {
     }
 }
 
-pub(super) fn public_platform_message(code: PlatformErrorCode) -> &'static str {
+pub(crate) fn public_platform_message(code: PlatformErrorCode) -> &'static str {
     match code {
         PlatformErrorCode::Unavailable => "the invocation service is unavailable",
         PlatformErrorCode::DeadlineExceeded => "the invocation deadline was exceeded",
