@@ -901,6 +901,7 @@ dependencies = [
  "latent-contracts",
  "latent-core",
  "latent-manifest",
+ "sha2",
 ]
 
 [[package]]

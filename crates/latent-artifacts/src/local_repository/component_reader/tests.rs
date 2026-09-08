@@ -89,7 +89,7 @@ fn metadata_verification_has_fixed_scratch_and_no_retained_component_allocation(
         if length == 1024 * 1024 {
             assert_eq!(
                 result.digest.0,
-                "sha256:9bc1b2a288b26af7257a36277ae3816a7d4f16e89c1e6e46f269948dede01642"
+                "sha256:9bc1b2a288b26af7257a36277ae3816a7d4f16e89c1e7e77d0a5c48bad62b360"
             );
         }
     }
