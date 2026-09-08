@@ -410,3 +410,83 @@ fn cpu_intervals_reject_task_migration_reuse_and_regressing_counters() {
     assert!(cpu::interval(None, Some(after)).is_none());
     assert!(cpu::interval(Some(before), None).is_none());
 }
+
+#[test]
+fn generic_async_cpu_suppression_keeps_synchronous_stage_observations_independent() {
+    let observer = PreparationObserver::new(1);
+    observer.enable();
+    let mut job = observer.begin(&release());
+    let mut fetch = job.stage(PreparationStage::RepositoryFetchVerified);
+    job.suppress_thread_cpu();
+    fetch.suppress_thread_cpu();
+    fetch.complete();
+    job.stage(PreparationStage::ComponentNew).complete();
+    job.complete();
+    let snapshot = observer.snapshot();
+    assert_eq!(snapshot.active_jobs, 0);
+    for stage in [
+        PreparationStage::RepositoryFetchVerified,
+        PreparationStage::WholeJob,
+    ] {
+        let totals = snapshot
+            .stages
+            .iter()
+            .find(|totals| totals.stage == stage)
+            .unwrap();
+        assert_eq!(
+            (
+                totals.completed,
+                totals.thread_cpu_samples,
+                totals.thread_cpu_unavailable
+            ),
+            (1, 0, 1)
+        );
+        let record = snapshot
+            .recent_stages
+            .iter()
+            .find(|record| record.stage == stage)
+            .unwrap();
+        assert!(record.thread_cpu.is_none());
+    }
+    let compile = snapshot
+        .stages
+        .iter()
+        .find(|totals| totals.stage == PreparationStage::ComponentNew)
+        .unwrap();
+    assert_eq!(compile.completed, 1);
+    assert_eq!(
+        compile.thread_cpu_samples + compile.thread_cpu_unavailable,
+        1
+    );
+    let record = snapshot
+        .recent_stages
+        .iter()
+        .find(|record| record.stage == PreparationStage::ComponentNew)
+        .unwrap();
+    assert_eq!(
+        u64::from(record.thread_cpu.is_some()),
+        compile.thread_cpu_samples
+    );
+}
+
+#[test]
+fn exhausted_observation_ids_do_not_alias_existing_jobs_or_records() {
+    let observer = PreparationObserver::new(2);
+    observer.enable();
+    let first = observer.begin(&release());
+    observer.inner.lock().next_job = u64::MAX;
+    let unobserved = observer.begin(&release());
+    assert_eq!(observer.snapshot().active_jobs, 1);
+    assert_eq!(observer.snapshot().dropped_running_entries, 1);
+    unobserved.stage(PreparationStage::ComponentNew).complete();
+    unobserved.complete();
+    assert_eq!(observer.snapshot().active_jobs, 1);
+    observer.inner.lock().next_observation = u64::MAX - 1;
+    first.stage(PreparationStage::ComponentNew).complete();
+    first.complete();
+    let snapshot = observer.snapshot();
+    assert_eq!(snapshot.active_jobs, 0);
+    assert_eq!(snapshot.recent_stages.len(), 1);
+    assert_eq!(snapshot.recent_stages[0].sequence, u64::MAX - 1);
+    assert_eq!(snapshot.dropped_stage_observations, 1);
+}
