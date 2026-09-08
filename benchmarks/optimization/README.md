@@ -166,3 +166,18 @@ The archive retains original binaries, fixtures, profiles and receipts with exac
 hashes. Packaging requires successful full-population replay and does not add a
 measurement policy or a historical comparison from another protocol. Existing
 Phase 0, Phase 1 and optimization baseline evidence remains unchanged.
+
+## Bounded cold preparation
+
+The [retained cold preparation comparison](cold-preparation/2026-09-08-container-linux-368d621/REPORT.md)
+accounts for 11,942 Invoke attempts across seven alternating process pairs.
+Same-key cold success changed from 14/56 to 56/56. During distinct cold bursts,
+median per-process successful warm p99 changed from 70.824 ms to 1.824 ms, while
+the candidate rejected 7/35 cold offers at its preparation bound. The report
+retains those rejections, cancellation outcomes, compiler task CPU, the added
+worker threads and slightly higher RSS; it does not claim faster compilation.
+
+This separate `--experiment cold` protocol uses matched release binaries and a
+common in-process RPC client/observer. It is distinct from the standalone
+external-client baseline. The report provides exact source/build identities,
+collection and replay commands, limitations and the complete raw archive.
