@@ -27,6 +27,7 @@ try:
     from .artifact_identity_evidence import validate_suite as validate_artifact_identity_suite
     from .optimization_revision_evidence.suite import validate_suite as validate_revision_suite
     from .optimization_backend_revision.evidence import validate_suite as validate_backend_revision_suite
+    from .optimization_cache_lookup.evidence import validate_suite as validate_cache_lookup_suite
 except ImportError:
     import package_phase0_evidence as paths
     import phase0_evidence
@@ -38,6 +39,7 @@ except ImportError:
     from tools.artifact_identity_evidence import validate_suite as validate_artifact_identity_suite
     from tools.optimization_revision_evidence.suite import validate_suite as validate_revision_suite
     from tools.optimization_backend_revision.evidence import validate_suite as validate_backend_revision_suite
+    from tools.optimization_cache_lookup.evidence import validate_suite as validate_cache_lookup_suite
 
 ARCHIVE = 'raw-evidence.tar.gz'
 MANIFEST = 'raw-evidence.manifest.json'
@@ -217,6 +219,9 @@ def evidence_kind(directory):
         return 'backend-revision'
     if aggregate.get('schema') == 'latent.optimization.cold-aggregate.v1':
         return 'cold'
+    for kind in ('cache-lookup', 'cache-behavior'):
+        if aggregate.get('schema') == f'latent.optimization.{kind}-aggregate.v1':
+            return kind
     del aggregate
     # Other formats still satisfy every original structural/string limit.
     aggregate = read_json(path, MAX_AGGREGATE_BYTES)
@@ -269,6 +274,24 @@ def verify_revision(directory, *, backend=False, cold=False):
         MAX_AGGREGATE_BYTES)
     suite = paths.existing_regular_file_path(directory / 'suite.json', f'{kind} suite')
     validator = validate_backend_revision_suite if backend or cold else validate_revision_suite
+    regenerated = validator(suite)
+    require(canonical(retained) == canonical(regenerated),
+            f'{kind} aggregate differs from replayed evidence')
+    require(regenerated.get('schema') == f'latent.optimization.{kind}-aggregate.v1'
+            and regenerated.get('profile') == 'full'
+            and regenerated.get('status') == 'complete'
+            and regenerated.get('population_complete') is True
+            and regenerated.get('attempt_count_complete') is True,
+            f'{kind} archive requires complete full-population evidence')
+
+
+def verify_cache(directory, kind):
+    require(kind in ('cache-lookup', 'cache-behavior'), 'unsupported cache evidence kind')
+    retained = read_optimization_json(
+        paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
+        MAX_AGGREGATE_BYTES)
+    suite = paths.existing_regular_file_path(directory / 'suite.json', f'{kind} suite')
+    validator = validate_cache_lookup_suite if kind == 'cache-lookup' else validate_backend_revision_suite
     regenerated = validator(suite)
     require(canonical(retained) == canonical(regenerated),
             f'{kind} aggregate differs from replayed evidence')
@@ -340,7 +363,8 @@ def verify_archive(root, manifest, archive_path, *, replay):
         kind = evidence_kind(extracted)
         outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
                        if kind == 'measurement' else ('aggregate.json',))
-        if kind in ('optimization', 'artifact-identity', 'revision', 'backend-revision', 'cold'):
+        if kind in ('optimization', 'artifact-identity', 'revision', 'backend-revision', 'cold',
+                    'cache-lookup', 'cache-behavior'):
             require('suite.json' in expected, f'{kind} archive omits suite')
         for name in outer_files:
             require(name in expected and file_reference(root / name, root) == expected[name],
@@ -354,6 +378,8 @@ def verify_archive(root, manifest, archive_path, *, replay):
                 verify_artifact_identity(extracted)
             elif kind in ('revision', 'backend-revision', 'cold'):
                 verify_revision(extracted, backend=kind == 'backend-revision', cold=kind == 'cold')
+            elif kind in ('cache-lookup', 'cache-behavior'):
+                verify_cache(extracted, kind)
             else:
                 validate_aggregate(extracted / 'aggregate.json')
                 validate_comparison(extracted / 'comparison.json')

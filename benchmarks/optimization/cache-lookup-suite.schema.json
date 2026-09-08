@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/cache-lookup-suite.schema.json",
+  "$comment": "Bounded structural envelope only. Mandatory semantic, identity, ownership, count and hash replay uses tools.optimization_cache_lookup.evidence.validate_suite for lookup or tools.optimization_backend_revision.evidence.validate_suite for behavior. Full archive publication additionally requires complete status and both completion booleans; smoke never qualifies.",
+  "$defs": {
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "$ref": "#/$defs/json"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/json"
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "required": [
+    "schema",
+    "profile",
+    "plan",
+    "builds",
+    "runner_source",
+    "runner_source_after",
+    "status",
+    "reason",
+    "elapsed_nanos",
+    "runs",
+    "artifacts",
+    "tools",
+    "symbols"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.cache-lookup-suite.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "plan": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "builds": {
+      "$ref": "#/$defs/artifact"
+    },
+    "runner_source": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "runner_source_after": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed"
+      ]
+    },
+    "reason": {
+      "enum": [
+        null,
+        "collection-failed"
+      ]
+    },
+    "elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 168,
+      "items": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "tools": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "symbols": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "passed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "const": null
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reason": {
+            "const": "collection-failed"
+          }
+        }
+      }
+    }
+  ]
+}
