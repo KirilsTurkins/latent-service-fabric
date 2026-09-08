@@ -1,6 +1,8 @@
 //! Fixed node-owned composition for the standalone stateless runtime.
 
 mod load;
+#[cfg(all(test, target_os = "linux"))]
+mod measurements;
 mod observations;
 #[cfg(all(test, target_os = "linux"))]
 mod parity;

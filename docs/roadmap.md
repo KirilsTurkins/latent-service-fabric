@@ -39,6 +39,7 @@ The following foundations are implemented:
 - [Configured standalone Linux node, loopback RPCs, durable restart and bounded shutdown](reference/standalone-node.md) (#14).
 - [Bounded developer/operator CLI and scriptable local echo workflow](reference/operator-cli.md) (#15).
 - [Bounded deterministic conformance, child resource observations and diagnostic report validation](testing/phase-1-conformance.md) (selected #16 coverage; full gate remains open).
+- [Explicit scale, mixed-workload soak and benchmark collectors](testing/phase-1-measurements.md), with separate smoke validation and versioned evidence (#16; full measurements remain required).
 - [SDK caller identity and cancellation contracts](../sdk/README.md) with executable fixtures across six languages (#65).
 
 The remaining work is tracked by the

@@ -156,7 +156,7 @@ fn initial_missing_case_evidence_is_failed_and_heavy_work_is_explicitly_unrun() 
         .deferred_evidence
         .iter()
         .all(|entry| entry.status == EvidenceStatus::NotRun
-            && entry.reason == "not-authorized-heavy-work"));
+            && entry.reason == "outside-bounded-profile"));
     assert!(report.encode_bounded(ReportLimits::default()).is_ok());
 }
 

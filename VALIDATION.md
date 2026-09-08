@@ -94,7 +94,7 @@ Run it from an isolated clone or worktree when local build output is present.
 - `invocation_service` calls generated Invoke/Cancel/GetActivation methods against a real manager, admission controller, and scheduler. Bounded fixtures cover principal and lineage validation, pending/retained status, scoped cancellation, drop/deadline cleanup, outcome accounting, absent/pinned receipts, redaction, and cell/ID reuse. See [invocation service](docs/protocol/invocation-service.md).
 - `management_service` uses generated Tonic clients over an in-memory duplex transport and real local catalogs. Tiny fixtures publish typed contract metadata, deploy the published release, verify atomic version receipts and scoped pagination, inspect complete tenant route projections, and require a trusted node operator for inventory. Rejections cover authentication, tenant mismatches, output authority claims, byte limits, stale tokens/generations, and unsupported clustered methods. Catalog and conversion unit tests cover precharged allocation limits, lossless observations, scoped digest integrity, and bounded error redaction. See [management services](docs/reference/management-services.md).
 - All Protobuf files pass Buf lint and generate a deterministic file-descriptor set.
-- All seven JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, release-publish, binding, policy, trigger, and compiled-route examples validate against their corresponding schemas.
+- JSON Schemas pass Draft 2020-12 meta-schema validation, and checked-in capsule, deployment, release-publish, binding, policy, trigger, and compiled-route examples validate against their corresponding schemas.
 - Rust, Go, TypeScript, Java, .NET, and C SDK interfaces compile and execute small fake-client identity/cancellation fixtures. They cover status/cancellation before invoke completion, transport failures, lost-response status recovery, optional identity and lineage; see the [SDK contract](sdk/README.md#executable-contract-fixtures). These are contract tests, not implemented transport coverage.
 - SDK compiler identities are verified before compilation, including Eclipse Temurin 21.0.11+10 and Zig 0.16.0 with its Clang 21.1.0 frontend targeting `x86_64-linux-gnu`; the runner-provided C compiler is not used.
 - Generated directories are excluded from repository traversal without excluding malformed authoritative source files.
@@ -190,6 +190,29 @@ watchdog; no Phase 0 payload controls are involved.
 The integration children have finite supervision deadlines. These commands do
 not select the catalog scale probe or a resource soak. See
 [standalone operation and shutdown evidence](docs/reference/standalone-node.md).
+
+## Phase 1 measurement collectors
+
+The contracts gate also runs the separate tiny scale/soak/benchmark collector
+smoke profile. It validates collection, process ownership and result schemas;
+it cannot satisfy full measurement acceptance. See the
+[measurement guide](docs/testing/phase-1-measurements.md) for exact work counts,
+resource limits, artifacts and comparison rules.
+
+With maintained fixtures built, full workloads are explicit:
+
+```bash
+python3 tools/run_phase1_measurements.py --profile full --kind scale
+python3 tools/run_phase1_measurements.py --profile full --kind soak
+python3 tools/run_phase1_measurements.py --profile full --kind benchmark
+```
+
+Scale observes 100, 1,000, 10,000 and 100,000 durable releases/deployments.
+Soak uses three independent processes with 100,000 measured calls each.
+Benchmark uses seven independent release-build processes. The
+[manual workflow](.github/workflows/phase1-measurements.yml) defaults to smoke
+and retains available failure diagnostics. Container/hosted results retain
+their environment; they are not silently promoted to native comparison data.
 
 ## Native-Linux Phase 0 calibration
 

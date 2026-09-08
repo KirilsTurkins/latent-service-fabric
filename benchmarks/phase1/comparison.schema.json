@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.invalid/phase1/comparison.schema.json",
+  "title": "Phase 1 comparison evidence",
+  "description": "Structural schema. Python validation additionally verifies bounded files, hashes, profile presets, conservation, process ownership, scope and compatible measurement populations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "phase1_completion",
+    "observational_only",
+    "candidate",
+    "reference",
+    "reference_validation",
+    "comparisons",
+    "summary"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.phase1.measurement-comparison.v1"
+    },
+    "phase1_completion": {
+      "const": "incomplete"
+    },
+    "observational_only": {
+      "const": true
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "reference_validation": {
+      "enum": [
+        "retained-aggregate",
+        "raw-reverified"
+      ]
+    },
+    "comparisons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "phase1_metric",
+          "phase0_metric",
+          "unit",
+          "phase1_value",
+          "phase0_value",
+          "status",
+          "reasons",
+          "delta",
+          "relative_change_percent"
+        ],
+        "properties": {
+          "phase1_metric": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "phase0_metric": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              }
+            ]
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "phase1_value": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              }
+            ]
+          },
+          "phase0_value": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "comparable",
+              "not_comparable"
+            ]
+          },
+          "reasons": {
+            "type": "array",
+            "maxItems": 32,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          },
+          "delta": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              }
+            ]
+          },
+          "relative_change_percent": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparable_metrics",
+        "not_comparable_metrics",
+        "all_requested_metrics_comparable"
+      ],
+      "properties": {
+        "comparable_metrics": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "not_comparable_metrics": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "all_requested_metrics_comparable": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

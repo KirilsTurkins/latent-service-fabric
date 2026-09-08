@@ -141,7 +141,8 @@ scale or calibrated resource evidence.
 
 Every report retains `phase1_completion: incomplete`, even when
 `deterministic_status: passed`. The following required heavy evidence is
-`not_run` with reason `not-authorized-heavy-work`:
+`not_run` within this report with reason `outside-bounded-profile`. Separate
+[scale, soak and benchmark collectors](phase-1-measurements.md) collect it:
 
 - dormant registrations at 100, 1,000, 10,000 and 100,000 releases/deployments;
 - a mixed workload soak and matched RSS reclamation baseline;

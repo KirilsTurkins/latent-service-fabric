@@ -954,7 +954,10 @@ def validate_report(report: Any, artifacts_root: Path, *, expected_source_commit
         text(entry["id"], 128)
         require(entry["id"] not in identifiers and entry["id"] in manifest["deferred_evidence"], "invalid-deferred-evidence")
         identifiers.add(entry["id"])
-        require(entry["status"] == "not_run" and entry["reason"] == "not-authorized-heavy-work", "unauthorized-heavy-evidence")
+        # Earlier retained v1 runs recorded the authorization state at collection.
+        # New runs describe the fixed profile boundary independently of permission.
+        require(entry["status"] == "not_run" and entry["reason"] in
+                {"outside-bounded-profile", "not-authorized-heavy-work"}, "evidence-outside-bounded-profile")
 
 
 def file_digest(path: Path, maximum: int) -> tuple[str, int]:
