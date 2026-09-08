@@ -7,7 +7,7 @@ processes, sockets, threads, heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
 
-> Phase 1 is in progress. The standalone Linux node now composes durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, and invocation/management RPCs. The operator CLI and completion gate remain pending. The retained August 30 native-Linux Phase 0 full-gate receipt authorizes that work; it does not establish production readiness or completion of Phase 1.
+> Phase 1 is in progress. The standalone Linux node composes durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, and invocation/management RPCs. The operator CLI supports the local publish-to-invoke workflow; the completion gate remains pending. The retained August 30 native-Linux Phase 0 full-gate receipt authorizes that work; it does not establish production readiness or completion of Phase 1.
 
 ## Core invariant
 
@@ -28,7 +28,7 @@ The number of operating-system processes, threads, sockets, and execution cells 
 ## Repository map
 
 ```text
-apps/                 Standalone latentd node, explicit Phase 0 spike, and future CLI/control entry points
+apps/                 Standalone latentd node, operator CLI, explicit Phase 0 spike, and control-plane placeholder
 crates/               Rust interfaces, Phase 0 runtime, and implemented Phase 1 foundations
 wit/                  WIT packages for platform capabilities
 api/proto/            Protobuf service definitions
@@ -48,10 +48,13 @@ tools/                 Pinned validation, generation, spike, benchmark, and gate
 
 - `latentd`: standalone Linux node through `serve --config PATH`, plus the finite local `phase0-spike invoke-once` harness and `verify-recovery` containment proof.
 - `latent-control`: clustered control-plane application placeholder.
-- `latent`: future build, package, deployment, inspection, invocation, and benchmark CLI placeholder.
+- `latent`: bounded local manifest validation, release publication, versioned deployment, invocation/cancellation/status, routing and node inspection through generated RPC clients.
 
 See [standalone node configuration and operation](docs/reference/standalone-node.md)
 for loopback authentication, readiness, durable restart, and bounded shutdown.
+The [operator CLI reference](docs/reference/operator-cli.md) and
+[scriptable echo quickstart](docs/development/standalone-quickstart.md) cover the
+complete local client workflow.
 The explicit Phase 0 spike retains its separate measured scope.
 
 ## Available Phase 1 foundations
@@ -76,8 +79,9 @@ configured standalone node's supported RPC surface.
 | Invocation service | Generated Invoke/Cancel/GetActivation adapters, scoped local authentication, manager-owned execution and retained status; [invocation service](docs/protocol/invocation-service.md) |
 | Management services | Typed release uploads, atomic versioned deployments, tenant-scoped indexed reads/routes, and operator-authorized node inventory through generated RPCs; [management services](docs/reference/management-services.md) |
 | Standalone node | Versioned local configuration, Linux loopback listener, fixed runtime/control workers, measured pressure/readiness, durable restart and verified shutdown; [standalone node](docs/reference/standalone-node.md) |
+| Operator CLI | Private explicit profiles, bounded local preflight, one RPC per command, exact versions/identity, structured output and exit codes, and generated echo package inputs; [operator CLI](docs/reference/operator-cli.md) |
 
-The operator CLI and the Phase 1 gate remain open work. See
+The Phase 1 completion gate remains open work. See
 [the roadmap](docs/roadmap.md) for issue links and phase boundaries.
 
 ## Phase 0 result

@@ -1,0 +1,49 @@
+{
+  "format_version": 1,
+  "contracts": [
+    {
+      "id": "examples:echo/api@0.1.0",
+      "package_name": "examples:echo",
+      "semantic_version": "0.1.0",
+      "interfaces": [
+        {
+          "id": "examples:echo/api@0.1.0",
+          "functions": [
+            {
+              "id": "echo",
+              "name": "echo",
+              "asynchronous": false,
+              "parameters": [
+                {
+                  "name": "message",
+                  "value_type": "String",
+                  "documentation": null
+                }
+              ],
+              "results": [
+                {
+                  "name": "result",
+                  "value_type": {
+                    "Result": {
+                      "ok": "String",
+                      "error": {
+                        "Variant": "echo-error"
+                      }
+                    }
+                  },
+                  "documentation": null
+                }
+              ],
+              "documentation": null,
+              "attributes": {}
+            }
+          ],
+          "documentation": null,
+          "digest": "sha256:a61ba62d4631002e5e41d7edde86f2983613670c787d474cd9c2e95164deeeaa"
+        }
+      ],
+      "dependencies": [],
+      "digest": "sha256:fe6102311b0d42fc70186988480308210d93cc02b457775ad0223c4854bda8a5"
+    }
+  ]
+}

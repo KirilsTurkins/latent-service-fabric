@@ -50,6 +50,7 @@ homepage = "https://github.com/KirilsTurkins/latent-service-fabric"
 description = "Interface-first architecture scaffold for the Latent Service Fabric"
 
 [workspace.dependencies]
+base64 = "=0.22.1"
 blake3 = "=1.8.5"
 clap = { version = "=4.6.4", features = ["derive"] }
 prost = "=0.14.4"

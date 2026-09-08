@@ -143,3 +143,12 @@ wasm-tools validate "${SHUTDOWN_COMPONENT}"
 LSF_SHUTDOWN_COMPONENT="${SHUTDOWN_COMPONENT}" \
     cargo test -p latentd --test standalone_shutdown --locked -- \
         --ignored --nocapture --test-threads=1
+
+# Small real CLI/node workflows, including explicit cancellation; no scale workload.
+cargo build -p latent -p latentd --locked
+LSF_LATENTD_BIN="${TARGET_ROOT}/debug/latentd" \
+LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
+LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \
+LSF_GENERIC_FIXTURES="${GENERIC_FIXTURES}" \
+    cargo test -p latent --test standalone_cli --locked -- \
+        --ignored --nocapture --test-threads=1
