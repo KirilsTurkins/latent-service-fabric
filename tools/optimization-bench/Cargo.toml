@@ -12,6 +12,11 @@ publish = false
 workspace = true
 
 [dependencies]
+latent-artifacts = { path = "../../crates/latent-artifacts" }
+latent-control-store = { path = "../../crates/latent-control-store" }
+latent-core = { path = "../../crates/latent-core" }
+latent-manifest = { path = "../../crates/latent-manifest" }
+latent-routing = { path = "../../crates/latent-routing" }
 latent-optimization-workloads = { path = "../optimization-workloads" }
 latent-rpc = { path = "../../crates/latent-rpc" }
 latent-wire = { path = "../../crates/latent-wire" }
@@ -22,3 +27,8 @@ serde_json.workspace = true
 sha2.workspace = true
 tonic.workspace = true
 tokio = { workspace = true, features = ["net", "signal", "rt-multi-thread", "io-util"] }
+wasmparser = "=0.252.0"
+
+[[bin]]
+name = "artifact-identity-probe"
+path = "src/bin/artifact-identity-probe.rs"
