@@ -16,7 +16,7 @@ use std::time::{Duration, Instant};
 
 fn spin(harness: &mut Harness, package: &Package, id: &str, input: &Path) -> PendingCli {
     let mut args = invoke_args(package, "spin", id, input);
-    args.extend_from_slice(&["--wall-time-ms", "3000", "--cpu-fuel", "10000000000"]);
+    args.extend_from_slice(&["--wall-time-ms", "5000", "--cpu-fuel", "10000000000"]);
     harness.spawn_cli(package.profile(), &args)
 }
 

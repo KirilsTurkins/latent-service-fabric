@@ -1,9 +1,12 @@
 #[path = "failure/cancellation.rs"]
 mod cancellation;
+#[path = "failure/fuel.rs"]
+mod fuel;
 
 use super::{decode_payload, payload, unsigned};
 use crate::{evidence::Evidence, fixtures::Package, harness::Harness};
 pub use cancellation::cancel;
+pub use fuel::fuel;
 use serde_json::json;
 
 pub async fn mixed(harness: &mut Harness, evidence: &mut Evidence, package: &Package) {

@@ -18,7 +18,7 @@ pub fn request(index: usize, id: &str) -> proto::InvokeRequest {
         parent_activation_id: Some("parity-parent".to_owned()),
         target: Some(proto::InvocationTarget {
             tenant: "examples".to_owned(),
-            service: "examples/echo".to_owned(),
+            service: super::fixture::SHARED.to_owned(),
             contract: "examples:echo/api@0.1.0".to_owned(),
             function: "echo".to_owned(),
             route: None,
@@ -60,11 +60,7 @@ pub fn compare(
                 .metadata
                 .remove("cell-id")
                 .expect("actual selected cell");
-            assert!(matches!(
-                cell.as_str(),
-                "phase1-adapter-parity:phase0:standard:00000000"
-                    | "phase1-adapter-parity:phase0:standard:00000001"
-            ));
+            assert_eq!(cell, super::fixture::CELL);
             assert_eq!(
                 value.metadata.get("cell-disposition").map(String::as_str),
                 Some("released")

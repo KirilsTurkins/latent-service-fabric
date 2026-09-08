@@ -227,8 +227,14 @@ impl ConformanceReport {
 
     fn add_driver(&mut self, driver: &str, work: WorkCounts) -> Result<(), EvidenceError> {
         let (invokes, commands) = match driver {
-            "process" => (48, 224),
-            "adapter" => (16, 32),
+            "process" => (
+                super::PROCESS_MAXIMUM_INVOKE_ATTEMPTS,
+                super::PROCESS_MAXIMUM_COMMANDS,
+            ),
+            "adapter" => (
+                super::ADAPTER_MAXIMUM_INVOKE_ATTEMPTS,
+                super::ADAPTER_MAXIMUM_COMMANDS,
+            ),
             _ => return Err(EvidenceError("unknown-conformance-driver")),
         };
         if self.drivers.iter().any(|entry| entry.driver == driver)
@@ -315,7 +321,13 @@ impl ConformanceReport {
             && self
                 .drivers
                 .iter()
-                .filter(|driver| driver.driver == "process" && driver.work.within(48, 224))
+                .filter(|driver| {
+                    driver.driver == "process"
+                        && driver.work.within(
+                            super::PROCESS_MAXIMUM_INVOKE_ATTEMPTS,
+                            super::PROCESS_MAXIMUM_COMMANDS,
+                        )
+                })
                 .count()
                 == 1
             && self
@@ -323,8 +335,11 @@ impl ConformanceReport {
                 .iter()
                 .filter(|driver| {
                     driver.driver == "adapter"
-                        && driver.work.within(16, 32)
-                        && driver.work.invoke_attempts == 16
+                        && driver.work.within(
+                            super::ADAPTER_MAXIMUM_INVOKE_ATTEMPTS,
+                            super::ADAPTER_MAXIMUM_COMMANDS,
+                        )
+                        && driver.work.invoke_attempts == super::REQUIRED_ADAPTER_INVOKE_ATTEMPTS
                         && self
                             .cases
                             .iter()

@@ -8,6 +8,8 @@ mod concurrency;
 mod failure;
 #[path = "cases/recovery.rs"]
 mod recovery;
+#[path = "cases/wall.rs"]
+mod wall;
 
 use base64::{engine::general_purpose::STANDARD, Engine};
 use latent_testkit::conformance::ProcessSample;
@@ -28,11 +30,13 @@ pub async fn run(harness: &mut Harness, evidence: &mut Evidence, fixtures: &Fixt
     failure::cancel(harness, evidence, &fixtures.generic).await;
     failure::malformed(harness, evidence, &fixtures.generic).await;
     failure::memory(harness, evidence, &fixtures.generic).await;
+    failure::fuel(harness, evidence, &fixtures.generic).await;
     capabilities::context(harness, evidence, &fixtures.capabilities).await;
     capabilities::logs(harness, evidence, &fixtures.capabilities).await;
     catalog::tenants(harness, evidence, fixtures).await;
     concurrency::route_update(harness, evidence, &fixtures.generic).await;
     concurrency::queue_admission(harness, evidence, fixtures).await;
+    wall::persistent_wall(harness, evidence, &fixtures.capabilities).await;
     recovery::healthy(harness, evidence, &fixtures.generic).await;
     recovery::resources(harness, evidence).await;
     recovery::shutdown(harness, evidence).await;
@@ -47,7 +51,7 @@ async fn fresh(harness: &mut Harness, evidence: &mut Evidence, fixtures: &Fixtur
         .await;
     assert_eq!(payload(&warm), json!([11]));
     let mut responses = vec![warm];
-    for id in ["fresh-first", "fresh-second"] {
+    for id in ["fresh-first", "fresh-second", "fresh-third"] {
         let response = harness
             .invoke(package, "bump", id, &input, &[], (0, "success"))
             .await;
@@ -58,6 +62,11 @@ async fn fresh(harness: &mut Harness, evidence: &mut Evidence, fixtures: &Fixtur
         );
         responses.push(response);
     }
+    let first_cell = responses[1]["data"]["metadata"]["cell-id"]
+        .as_str()
+        .expect("actual first reused cell");
+    assert_eq!(responses[3]["data"]["metadata"]["cell-id"], first_cell);
+    assert_ne!(responses[2]["data"]["metadata"]["cell-id"], first_cell);
     let sample = harness.sample("warm").await;
     idle(&sample);
     assert_eq!(sample.inventory["cacheSummary"]["entries"], "1");

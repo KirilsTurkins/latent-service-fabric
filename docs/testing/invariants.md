@@ -48,6 +48,10 @@ integrity, profiling, and a fresh baseline.
 The [bounded conformance profile](phase-1-conformance.md) exercises the actual
 standalone CLI/node, typed generic and capability fixtures, tenant-scoped
 observations, adapter/RPC pairs, child PID resources and verified shutdown.
+Its controlled queue handoffs distinguish tenant fairness from FIFO, and its
+runtime budget cases cover positive fuel exhaustion and aged relative wall-time
+ceilings. Cell identities and correlated guest logs/spans connect reuse and
+tenant-isolation assertions to the actual composition.
 Its versioned report distinguishes passed selected cases from unrun heavy gate
 evidence. It does not establish a calibrated Phase 1 RSS plateau, zero-idle
 scaling at 100,000 registrations or complete end-to-end gate coverage.
@@ -122,6 +126,9 @@ model allow them. Phase 0 has no durable state/effect commit path.
 
 Domain output, platform errors, identity, deadlines, budgets, tracing, state
 semantics, and accounting must match whether a binding is inline, isolated
-local, or remote. The bounded Phase 1 profile compares eight direct adapter/RPC
-pairs; complete backend/context/tracing equivalence remains gate work. Phase 0
+local, or remote. The bounded Phase 1 profile compares eight outcome pairs and
+three capability pairs through the direct adapter and real RPC, including live
+budgets, per-call context/clock invariants and correlated telemetry. This is
+selected evidence for the Phase 1 standalone boundary; other execution-host
+backends and later-phase state semantics require their own coverage. Phase 0
 exercises only the local Wasmtime path.

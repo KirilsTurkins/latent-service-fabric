@@ -18,6 +18,11 @@ pub const REPORT_SCHEMA: &str = "latent.phase1.conformance.v1";
 pub const PROFILE: &str = "bounded-deterministic";
 pub const MAXIMUM_INVOKE_ATTEMPTS: u64 = 64;
 pub const MAXIMUM_COMMANDS: u64 = 256;
+pub const PROCESS_MAXIMUM_INVOKE_ATTEMPTS: u64 = 36;
+pub const PROCESS_MAXIMUM_COMMANDS: u64 = 192;
+pub const ADAPTER_MAXIMUM_INVOKE_ATTEMPTS: u64 = 28;
+pub const ADAPTER_MAXIMUM_COMMANDS: u64 = 64;
+pub const REQUIRED_ADAPTER_INVOKE_ATTEMPTS: u64 = 22;
 pub const CASE_MANIFEST: &str = include_str!("../../../benchmarks/phase1/cases.json");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

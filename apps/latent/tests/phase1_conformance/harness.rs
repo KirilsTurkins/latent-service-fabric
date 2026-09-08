@@ -25,6 +25,7 @@ pub struct Harness {
     pub public_config: Value,
     profile: PathBuf,
     node: Option<OwnedProcess>,
+    node_started_at: Option<Instant>,
     probe: Option<ChildProcessProbe>,
     output: PathBuf,
     artifacts: Vec<ArtifactReference>,
@@ -48,6 +49,7 @@ impl Harness {
             _node_directory: node_directory,
             client_directory,
             node: None,
+            node_started_at: None,
             probe: None,
             output,
             artifacts: Vec::new(),
@@ -81,6 +83,7 @@ impl Harness {
             started["event"].as_str(),
             Some("ready" | "started")
         ));
+        self.node_started_at = Some(Instant::now());
         let endpoint = format!(
             "http://{}",
             started["endpoint"].as_str().expect("actual listener")
@@ -91,6 +94,13 @@ impl Harness {
                 .expect("live retained child probe"),
         );
         self.node = Some(node);
+    }
+
+    #[must_use]
+    pub fn node_age(&self) -> Duration {
+        self.node_started_at
+            .expect("actual startup record was observed")
+            .elapsed()
     }
 
     pub fn spawn_cli(&mut self, profile: &str, args: &[&str]) -> PendingCli {
@@ -107,8 +117,14 @@ impl Harness {
             .current_dir(self.client_directory.path());
         PendingCli {
             sequence,
-            process: OwnedProcess::spawn(command, ProcessLimits::default())
-                .expect("bounded CLI child"),
+            process: OwnedProcess::spawn(
+                command,
+                ProcessLimits {
+                    timeout: Duration::from_secs(8),
+                    ..ProcessLimits::default()
+                },
+            )
+            .expect("bounded CLI child"),
         }
     }
 
