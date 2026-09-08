@@ -1,4 +1,3 @@
-use std::future::Future as _;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
 use std::task::{Context, Wake, Waker};

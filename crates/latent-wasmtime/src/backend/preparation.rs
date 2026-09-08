@@ -7,7 +7,7 @@ pub(super) use counters::PreparationCounters;
 
 use std::mem::size_of;
 
-use latent_artifacts::{ArtifactPreparationIdentity, ArtifactRepository, CapsuleArtifact};
+use latent_artifacts::{ArtifactPreparationIdentity, ArtifactRepository};
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedActivation};
 
