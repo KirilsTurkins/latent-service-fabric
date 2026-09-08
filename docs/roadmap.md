@@ -38,6 +38,7 @@ The following foundations are implemented:
 - [Release, deployment, route, and node management service adapters](reference/management-services.md) (#37).
 - [Configured standalone Linux node, loopback RPCs, durable restart and bounded shutdown](reference/standalone-node.md) (#14).
 - [Bounded developer/operator CLI and scriptable local echo workflow](reference/operator-cli.md) (#15).
+- [Bounded deterministic conformance, child resource observations and diagnostic report validation](testing/phase-1-conformance.md) (selected #16 coverage; full gate remains open).
 - [SDK caller identity and cancellation contracts](../sdk/README.md) with executable fixtures across six languages (#65).
 
 The remaining work is tracked by the

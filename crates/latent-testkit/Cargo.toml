@@ -16,7 +16,11 @@ latent-activation = { path = "../latent-activation" }
 latent-executor = { path = "../latent-executor" }
 latent-node = { path = "../latent-node" }
 latent-telemetry = { path = "../latent-telemetry" }
-tokio.workspace = true
+tokio = { workspace = true, features = ["process", "io-util"] }
+serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
+latent-artifacts = { path = "../latent-artifacts" }
+latent-routing = { path = "../latent-routing" }
 tempfile.workspace = true

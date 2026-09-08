@@ -1,5 +1,9 @@
 //! Deterministic process-command construction and captured execution.
 
+mod owned;
+
+pub use owned::{OwnedProcess, ProcessLimits};
+
 use std::ffi::{OsStr, OsString};
 use std::io;
 use std::path::{Path, PathBuf};
@@ -13,14 +17,17 @@ pub struct CapturedProcess {
 }
 
 impl CapturedProcess {
+    #[must_use]
     pub fn success(&self) -> bool {
         self.status.success()
     }
 
+    #[must_use]
     pub fn stdout_text(&self) -> String {
         String::from_utf8_lossy(&self.stdout).into_owned()
     }
 
+    #[must_use]
     pub fn stderr_text(&self) -> String {
         String::from_utf8_lossy(&self.stderr).into_owned()
     }
@@ -91,6 +98,7 @@ impl ProcessHarness {
         self
     }
 
+    #[must_use]
     pub fn command(&self) -> Command {
         let mut command = Command::new(&self.program);
         command.args(&self.arguments);
@@ -110,10 +118,17 @@ impl ProcessHarness {
         self.command().output().map(Into::into)
     }
 
+    /// Starts a child with explicitly bounded asynchronous output and lifetime.
+    pub fn spawn_bounded(&self, limits: ProcessLimits) -> io::Result<OwnedProcess> {
+        OwnedProcess::spawn(self.command(), limits)
+    }
+
+    #[must_use]
     pub fn program(&self) -> &OsStr {
         &self.program
     }
 
+    #[must_use]
     pub fn current_directory(&self) -> Option<&Path> {
         self.current_directory.as_deref()
     }
