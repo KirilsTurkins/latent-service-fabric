@@ -4,13 +4,14 @@ from types import SimpleNamespace
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools"))
 
 from tools.optimization_revision_runner import backend, build
 from tools.optimization_revision_runner.model import CONTROL, plan, population, run_id
+from tools import run_optimization_revision_benchmarks as cli
 
 
 class RevisionRunnerTests(unittest.TestCase):
@@ -48,6 +49,55 @@ class RevisionRunnerTests(unittest.TestCase):
         self.assertIn("--release --locked", backend.RECIPE)
         self.assertIn("-p latentd --lib --no-run --message-format=json", backend.RECIPE)
         self.assertNotIn("cargo build", backend.RECIPE)
+
+    def test_configured_ancestor_rejected_before_git_or_build(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            (parent / ".cargo").mkdir()
+            for name in ("config", "config.toml"):
+                with self.subTest(name=name):
+                    configured = parent / ".cargo" / name
+                    configured.write_text("[build]\n", encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "choose --target-root outside"):
+                        build.preflight_build_parent(parent / "target" / "owned")
+                    configured.unlink()
+            self.assertEqual(build.preflight_build_parent(parent / "external"), (parent / "external").resolve())
+
+    def test_default_parent_is_private_external_and_removed_after_execution(self):
+        observed = []
+        def execute(args, repo):
+            observed.append(args.target_root)
+            self.assertTrue(args.target_root.is_dir())
+            self.assertFalse(args.target_root.is_relative_to(repo))
+            return 0
+        with patch.object(cli, "execute", side_effect=execute):
+            self.assertEqual(cli.main(["--candidate-ref", "c" * 40, "--harness-ref", "d" * 40,
+                                       "--output", "unused-owned-test-output"]), 0)
+        self.assertEqual(len(observed), 1)
+        self.assertFalse(observed[0].exists())
+
+    def test_failed_build_retains_failure_and_records_actual_cleanup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            suite = {"status": "failed", "identity": {"builds": {}}, "cleanup": {"owned_worktree_removed": False}}
+            refs = {"control": "a" * 40, "candidate": "b" * 40, "harness": "c" * 40}
+            calls = []
+            def git(repo, *arguments):
+                calls.append(arguments)
+                if arguments[:2] == ("worktree", "add"):
+                    Path(arguments[3]).mkdir()
+                elif arguments[:2] == ("worktree", "remove"):
+                    Path(arguments[3]).rmdir()
+                return ""
+            with patch.object(build, "matching_controls"), patch.object(build, "git", side_effect=git), \
+                    patch.object(build, "source", return_value={"commit": refs["control"]}), \
+                    patch.object(build, "build_one", side_effect=RuntimeError("build-failed")):
+                with self.assertRaisesRegex(RuntimeError, "build-failed"):
+                    build.collect(ROOT, refs, parent, parent, 0, suite, Mock())
+            self.assertEqual(suite["status"], "failed")
+            self.assertTrue(suite["cleanup"]["owned_worktree_removed"])
+            self.assertTrue(any(call[:2] == ("worktree", "remove") for call in calls))
+            self.assertEqual(list(parent.iterdir()), [])
 
 
 if __name__ == "__main__":

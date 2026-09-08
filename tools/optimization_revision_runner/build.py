@@ -31,6 +31,21 @@ def matching_controls(repo: Path, refs: dict) -> None:
             raise ValueError("revision-common-source-controls-differ:" + name)
 
 
+def preflight_build_parent(target_parent: Path) -> Path:
+    """A nested checkout would inherit all Cargo configuration above this path."""
+    resolved = target_parent.resolve()
+    for ancestor in (resolved, *resolved.parents):
+        for name in ("config", "config.toml"):
+            candidate = ancestor / ".cargo" / name
+            if candidate.exists() or candidate.is_symlink():
+                raise ValueError(
+                    f"revision-build-parent-inherits-Cargo-config: {candidate}; "
+                    "choose --target-root outside the repository and other Cargo-configured ancestors "
+                    "(for example an external /tmp directory). The pinned build policy remains required."
+                )
+    return resolved
+
+
 def build_one(root: Path, target: Path, label: str, output: Path, deadline: int) -> dict:
     directory = output / "builds" / label
     directory.mkdir(parents=True)
@@ -66,6 +81,7 @@ def build_one(root: Path, target: Path, label: str, output: Path, deadline: int)
 
 def collect(repo: Path, refs: dict, output: Path, target_parent: Path, deadline: int,
             suite: dict, save, backend_output: Path | None = None) -> None:
+    target_parent = preflight_build_parent(target_parent)
     matching_controls(repo, refs)
     backend_receipt = None
     if backend_output is not None:
@@ -79,33 +95,41 @@ def collect(repo: Path, refs: dict, output: Path, target_parent: Path, deadline:
                            "build": copy.deepcopy(suite["identity"]["build"]), "builds": {}, "harness": None,
                            "cleanup": {"owned_worktree_removed": False}}
         backend_receipt["build"]["overrides"]["collector_surface"] = "libtest"
-    with tempfile.TemporaryDirectory(prefix="revision-build-owned-", dir=target_parent) as temporary:
-        root, target = Path(temporary) / "source", Path(temporary) / "target"
-        registered = False
-        try:
-            git(repo, "worktree", "add", "--detach", str(root), refs["control"])
-            registered = True
-            for label in ("control", "candidate", "harness"):
-                if label != "control":
-                    git(root, "checkout", "--detach", refs[label])
-                if source(root)["commit"] != refs[label]:
-                    raise ValueError("revision-source-ref-mismatch")
-                suite["identity"]["builds"][label] = build_one(root, target, label, output, deadline)
-                if backend_receipt is not None:
-                    if label == "harness":
-                        backend_receipt["harness"] = backend.build_echo(root, target, backend_output, deadline)
-                    else:
-                        backend_receipt["builds"][label] = backend.build_backend(root, target, label, backend_output, deadline)
-                    from .collect import write
-                    write(backend_output / "backend-builds.json", backend_receipt)
-                save()
-        finally:
-            if registered:
-                if root.parent.resolve() != Path(temporary).resolve():
-                    raise ValueError("revision-owned-worktree-path-mismatch")
-                git(repo, "worktree", "remove", "--force", str(root))
-    suite["cleanup"]["owned_worktree_removed"] = True
-    if backend_receipt is not None:
-        backend_receipt["cleanup"]["owned_worktree_removed"] = True
-        from .collect import write
-        write(backend_output / "backend-builds.json", backend_receipt)
+    removed, temporary = False, None
+    try:
+        with tempfile.TemporaryDirectory(prefix="revision-build-owned-", dir=target_parent) as temporary:
+            root, target = Path(temporary) / "source", Path(temporary) / "target"
+            registered = False
+            try:
+                git(repo, "worktree", "add", "--detach", str(root), refs["control"])
+                registered = True
+                for label in ("control", "candidate", "harness"):
+                    if label != "control":
+                        git(root, "checkout", "--detach", refs[label])
+                    if source(root)["commit"] != refs[label]:
+                        raise ValueError("revision-source-ref-mismatch")
+                    suite["identity"]["builds"][label] = build_one(root, target, label, output, deadline)
+                    if backend_receipt is not None:
+                        if label == "harness":
+                            backend_receipt["harness"] = backend.build_echo(root, target, backend_output, deadline)
+                        else:
+                            backend_receipt["builds"][label] = backend.build_backend(root, target, label, backend_output, deadline)
+                        from .collect import write
+                        write(backend_output / "backend-builds.json", backend_receipt)
+                    save()
+            finally:
+                if registered:
+                    if root.parent.resolve() != Path(temporary).resolve():
+                        raise ValueError("revision-owned-worktree-path-mismatch")
+                    git(repo, "worktree", "remove", "--force", str(root))
+                    removed = True
+    finally:
+        # A failed build still has a successful ownership receipt when both
+        # Git registration and the private source/target directory were removed.
+        if removed and temporary is not None and not Path(temporary).exists():
+            suite["cleanup"]["owned_worktree_removed"] = True
+            if backend_receipt is not None:
+                backend_receipt["cleanup"]["owned_worktree_removed"] = True
+                from .collect import write
+                write(backend_output / "backend-builds.json", backend_receipt)
+            save()
