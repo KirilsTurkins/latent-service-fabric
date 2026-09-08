@@ -43,6 +43,20 @@ impl State {
         }
     }
 
+    pub(super) fn record(&mut self, mut observation: PreparationStageObservation) {
+        let Some(next) = self.next_observation.checked_add(1) else {
+            self.dropped_observations = self.dropped_observations.saturating_add(1);
+            return;
+        };
+        observation.sequence = self.next_observation;
+        self.next_observation = next;
+        if self.observations.len() == MAXIMUM_STAGE_OBSERVATIONS {
+            self.observations.pop_front();
+            self.dropped_observations = self.dropped_observations.saturating_add(1);
+        }
+        self.observations.push_back(observation);
+    }
+
     pub(super) fn changed(&mut self) -> Option<Waker> {
         self.revision = self.revision.saturating_add(1);
         self.waiter.take().map(|(_, waker)| waker)
@@ -50,6 +64,7 @@ impl State {
 }
 
 pub(super) struct Inner {
+    pub(super) compiler: Mutex<Option<std::sync::Arc<Mutex<super::PreparationCompilerSnapshot>>>>,
     pub(super) enabled: AtomicBool,
     pub(super) origin: Instant,
     pub(super) state: Mutex<State>,

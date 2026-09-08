@@ -134,7 +134,7 @@ pub struct PreparationObserverSnapshot {
 }
 
 /// Fixed optional compiler ownership schema, present in both comparison builds.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
 pub struct PreparationCompilerSnapshot {
     pub maximum_jobs: usize,
     pub maximum_workers: usize,

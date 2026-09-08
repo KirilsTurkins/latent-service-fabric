@@ -74,8 +74,14 @@ impl WasmtimeBackend {
         let permit = self.shared.instances.try_acquire()?;
         let Some(identity) = identity.filter(|_| self.config.prepared_cache_enabled) else {
             counters::add(&self.shared.preparation.repository_fetches, 1);
-            let job = self.shared.preparation_observer.begin(&key.release);
-            let fetch = job.stage(PreparationStage::RepositoryFetchVerified);
+            let mut job = self.shared.preparation_observer.begin(&key.release);
+            let mut fetch = job.stage(PreparationStage::RepositoryFetchVerified);
+            if source.is_none() {
+                // An arbitrary asynchronous fetch may share this task thread
+                // with unrelated work even when it resumes on the same thread.
+                job.suppress_thread_cpu();
+                fetch.suppress_thread_cpu();
+            }
             // Even a stamp-ineligible source owns its fallback read; an outer
             // repository adapter cannot redirect it to another repository.
             let (artifact, integrity) = match source {
