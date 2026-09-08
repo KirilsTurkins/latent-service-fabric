@@ -1042,6 +1042,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "latent-optimization-bench"
+version = "0.1.0-alpha.1"
+dependencies = [
+ "clap",
+ "latent-optimization-workloads",
+ "latent-rpc",
+ "latent-wire",
+ "prost",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "tonic",
+]
+
+[[package]]
+name = "latent-optimization-workloads"
+version = "0.1.0-alpha.1"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "latent-policy"
 version = "0.1.0-alpha.1"
 dependencies = [
@@ -1134,6 +1158,7 @@ dependencies = [
  "blake3",
  "clap",
  "latent-component-bindings",
+ "latent-optimization-workloads",
  "serde",
  "serde_json",
  "tempfile",

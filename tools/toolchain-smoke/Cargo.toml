@@ -48,8 +48,17 @@ test = false
 bench = false
 doc = false
 
+[[example]]
+name = "optimization-capsule"
+path = "examples/optimization_capsule/component.rs"
+crate-type = ["cdylib"]
+test = false
+bench = false
+doc = false
+
 [dependencies]
 latent-component-bindings = { path = "../../crates/latent-component-bindings" }
+latent-optimization-workloads = { path = "../optimization-workloads" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 blake3.workspace = true
