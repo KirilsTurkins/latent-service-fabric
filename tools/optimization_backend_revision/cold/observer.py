@@ -75,9 +75,19 @@ class Observer:
             require(compiler["maximum_jobs"] == "4" and compiler["maximum_workers"] == "2"
                     and compiler["maximum_queued_jobs"] == "2" and compiler["maximum_waiters"] == "68"
                     and compiler["maximum_waiters_per_job"] == "68"
-                    and compiler["maximum_ready_preparations"] == "68", "cold-compiler-controls")
-            for field, ceiling in (("assigned_jobs", 2), ("running_jobs", 2), ("queued_jobs", 2), ("waiting_callers", 68)):
+                    and compiler["maximum_ready_preparations"] == "68"
+                    # Standalone: J * (repository metadata + manifest + reader allowance).
+                    and compiler["maximum_document_bytes"] == "21233664", "cold-compiler-controls")
+            for field, ceiling in (("assigned_jobs", 2), ("running_jobs", 2), ("queued_jobs", 2), ("waiting_callers", 68),
+                                   ("ready_preparations", 68), ("ready_metadata_bytes", 67_108_864),
+                                   ("ready_compiled_image_bytes", 536_870_912), ("reserved_document_bytes", 21_233_664),
+                                   ("workers_live", 2), ("workers_quiescent", 2), ("workers_joined", 2)):
                 require(uint(compiler[field]) <= ceiling, "cold-compiler-gauge-bound")
+            if compiler["ready_preparations"] == "0":
+                require(compiler["ready_metadata_bytes"] == compiler["ready_compiled_image_bytes"] == "0",
+                        "cold-ready-bytes-without-owner")
+            if all(compiler[field] == "0" for field in ("assigned_jobs","running_jobs","queued_jobs")):
+                require(compiler["reserved_document_bytes"] == "0", "cold-document-bytes-without-job")
             if final:
                 validate_compiler_shutdown({key:item if type(item) is bool else uint(item)
                                            for key,item in compiler.items()}, require)

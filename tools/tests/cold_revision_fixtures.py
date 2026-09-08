@@ -17,7 +17,7 @@ from tools.phase1_paired.common import INPUT, TIMINGS
 def compiler(final=False):
     value = {name:"0" for name in FIELDS}
     value.update(maximum_jobs="4",maximum_workers="2",maximum_queued_jobs="2",maximum_waiters="68",
-                 maximum_waiters_per_job="68",maximum_ready_preparations="68",maximum_document_bytes="1048576",
+                 maximum_waiters_per_job="68",maximum_ready_preparations="68",maximum_document_bytes="21233664",
                  workers_live="0" if final else "2",workers_quiescent="2" if final else "0",
                  workers_joined="2" if final else "0",accepting=not final,failed=False)
     return value
@@ -140,7 +140,7 @@ class Fixture(WarmFixture):
                     "backend_timing":{key:"1" for key in TIMINGS},"retained_valid":True}
         initial=observer(now)
         checkpoint("empty")
-        compile_key(0,now+1000)
+        compile_key(0,now+101_000)
         for phase,count in (("warmup",2),("baseline",4)):
             for index in range(count):
                 now+=100_000
@@ -156,7 +156,7 @@ class Fixture(WarmFixture):
             rows.append({"kind":"phase-anchor","phase":phase,"recorded_nanos":str(anchor),"offer_lead_nanos":"10000000",
                          "origin_nanos":str(first),"cold_due_nanos":str(cold_due)})
             for key in dict.fromkeys(keys):
-                compile_key(key,cold_due)
+                compile_key(key,cold_due+1000)
             for index in range(16):
                 rows.append(invoke(phase,index,0,first+2_000_000*index,"warm-"))
             for index,key in enumerate(keys):

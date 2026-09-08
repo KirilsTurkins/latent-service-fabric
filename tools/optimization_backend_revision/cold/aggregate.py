@@ -8,24 +8,52 @@ from tools.phase1_paired.aggregate import delta
 from .observer import STAGES
 
 
-def summarize(rows, observer, controls, snapshots):
+def compilation_windows(events):
+    """Use one observer clock, including compilation of the warm release K0."""
+    checkpoints = {row["label"]:row["observer"]["snapshot"] for row in events if row["kind"] == "checkpoint"}
+    starts = {row["phase"]:row["observer"]["snapshot"] for row in events if row["kind"] == "phase-start"}
+    ends = {row["phase"]:row["observer"]["snapshot"] for row in events if row["kind"] == "phase-end"}
+    windows = {"warmup":(checkpoints["empty"],checkpoints["after-warmup"]),
+               "baseline":(checkpoints["after-warmup"],checkpoints["after-baseline"]),
+               **{phase:(starts[phase],ends[phase]) for phase in starts},
+               "healthy":(ends["cancel"],checkpoints["after-healthy"])}
+    return windows
+
+
+def phase_compilations(records, window):
+    before,after=window
+    known={row["sequence"] for row in before["recent_stages"]}
+    observed={row["sequence"] for row in after["recent_stages"]}
+    return [row for row in records if row["sequence"] in observed-known
+            and uint(before["observed_nanos"]) <= uint(row["started_nanos"])
+            and uint(row["finished_nanos"]) <= uint(after["observed_nanos"])]
+
+
+def summarize(rows, observer, controls, snapshots, events):
     phases = []
     lower = max(left for left,_ in observer.anchors)
     upper = min(right for _,right in observer.anchors)
     compile_rows = [row for row in observer.records.values() if row["stage"] == "component_new"]
+    windows = compilation_windows(events)
+    attributed = set()
+    warm_release = next(row["release_digest"] for row in rows if row["key"] == "0")
     for phase in ("warmup","baseline","same-key","distinct","cancel","healthy"):
         selected = [row for row in rows if row["phase"] == phase]
         warm = [row for row in selected if row["key"] == "0"]
         cold = [row for row in selected if row["key"] != "0"]
-        phase_digests = {row["release_digest"] for row in cold}
-        jobs = [row for row in compile_rows if observer.jobs[uint(row["job_id"])] in phase_digests]
+        began, finished = (uint(snapshot["observed_nanos"]) for snapshot in windows[phase])
+        jobs = phase_compilations(compile_rows,windows[phase])
+        attributed.update(row["sequence"] for row in jobs)
+        warm_jobs = [row for row in jobs if observer.jobs[uint(row["job_id"])] == warm_release]
         overlap = [row for row in warm if row["dispatch_nanos"] is not None and any(
             max(uint(row["dispatch_nanos"]),uint(job["started_nanos"])+upper)
             < min(uint(row["completed_nanos"]),uint(job["finished_nanos"])+lower) for job in jobs)]
         phases.append({"phase":phase,"offers":str(len(selected)),"outcomes":dict(sorted(Counter(row["outcome"] for row in selected).items())),
                        "all":metrics(selected),"warm":metrics(warm) if warm else None,"cold":metrics(cold) if cold else None,
                        "warm_overlap_offers":str(len(overlap)),"warm_overlap_successes":str(sum(row["outcome"] == "success" for row in overlap)),
-                       "warm_overlap":metrics(overlap) if overlap else None,"actual_compilations":str(len(jobs))})
+                       "warm_overlap":metrics(overlap) if overlap else None,"actual_compilations":str(len(jobs)),
+                       "warm_key_compilations":str(len(warm_jobs)),"cold_key_compilations":str(len(jobs)-len(warm_jobs)),
+                       "compilation_observer_window_nanos":[str(began),str(finished)]})
     stages = []
     for stage in STAGES:
         selected = [row for row in observer.records.values() if row["stage"] == stage]
@@ -42,6 +70,7 @@ def summarize(rows, observer, controls, snapshots):
             "fresh_rpc_nanos":str(uint(fresh["completed_nanos"])-uint(fresh["dispatch_nanos"])),
             "baseline_success_latency_nanos":distribution([uint(row["latency_nanos"]) for row in rows if row["phase"] == "baseline"]),
             "node_samples":snapshots,"control_observations":controls,
+            "unattributed_compilation_records":[row for row in compile_rows if row["sequence"] not in attributed],
             "compiler_job_records":list(observer.records.values()),"observer_clock_offset_interval_nanos":[str(lower),str(upper)]}
 
 
@@ -85,6 +114,7 @@ def aggregate(suite, checksum, builds, records, complete, failed):
             "runs":records,"pairs":pairs,"across_pairs":across,
             "limitations":["Fixed common client runtime and opt-in observation overhead belong to both processes.",
                 "Warm overlap means the RPC interval intersects a conservatively mapped actual Component::new interval; its sample count is explicit.",
+                "Phase compilation counts include K0 and cold releases within paired observer captures on the same clock; boundary-crossing or interphase records remain explicitly unattributed.",
                 "CPU fields are actual task ticks with retained clock resolution, not wall time; zero ticks are quantized observations.",
                 "QueueWait spans submitted-ready to worker pickup, including assigned-slot wake delay; it is per job, not a queued-waiter latency distribution.",
                 "WholeJob measures the preparation body after worker pickup (inline in control); valid same-task CPU readings are retained. QueueWait has unavailable CPU and is separate.",

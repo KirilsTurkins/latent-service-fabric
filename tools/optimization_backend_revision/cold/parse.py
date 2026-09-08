@@ -139,6 +139,11 @@ def parse(value, selected, identity, artifacts, raw_path, echo, variant):
                 require(uint(row["observer"]["collector_finished_nanos"]) <= phase_finish
                         and all(uint(item["retained_observed_nanos"]) <= phase_finish
                                 for item in normalized if item["phase"] == active_phase), "cold-phase-ended-before-calls-drained")
+                for control in controls:
+                    if control["phase"] == active_phase:
+                        times=([control["finished_nanos"]] if control["kind"] == "status-probe" else
+                               [command["finished_nanos"] for command in control["commands"]])
+                        require(all(uint(finished) <= phase_finish for finished in times), "cold-control-after-phase-end")
                 active_phase=None
                 ended.append(row["phase"])
                 idle(row["node"])
@@ -161,6 +166,7 @@ def parse(value, selected, identity, artifacts, raw_path, echo, variant):
             controls.append(row)
             probed.append(row["phase"])
         elif kind == "cancellation":
+            require(active_phase == "cancel", "cold-cancellation-outside-phase")
             control_checks.cancellation(row,observer,releases[7])
             controls.append(row)
         else:
@@ -171,10 +177,7 @@ def parse(value, selected, identity, artifacts, raw_path, echo, variant):
             and ended == begun == anchored == probed == ["same-key","distinct","cancel"]
             and len(controls) == 4, "cold-missing-population")
     observer.check(value["final_observer"],final=True)
-    compiled={observer.jobs[uint(row["job_id"])] for row in observer.records.values()
-              if row["stage"] == "component_new" and row["succeeded"]}
-    require({row["release_digest"] for row in normalized if row["outcome"] == "success"} <= compiled,
-            "cold-success-without-observed-compilation")
+    control_checks.compilation_associations(observer,normalized)
     idle(value["before_shutdown"])
     shutdown(value["shutdown"],cells=4)
     require(("compiler" in value["shutdown"]) == (variant == "candidate"), "cold-shutdown-compiler-proof-absent-or-invented")
@@ -185,4 +188,4 @@ def parse(value, selected, identity, artifacts, raw_path, echo, variant):
     require(tracker.last_finished <= uint(value["elapsed_micros"]) <= model.maximum_seconds(selected["profile"])*1_000_000, "cold-arm-window")
     from .aggregate import summarize
     return {"samples":str(count),"process_identity":tracker.identity,"clock_ticks_per_second":ticks,
-            **summarize(normalized,observer,controls,snapshots)}
+            **summarize(normalized,observer,controls,snapshots,rows)}

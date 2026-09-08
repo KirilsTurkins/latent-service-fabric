@@ -36,3 +36,24 @@ def drained(capture):
         require(all(current["compiler"][name] == "0" for name in
                     ("assigned_jobs","running_jobs","queued_jobs","waiting_callers","ready_preparations")),
                 "cold-phase-compiler-owner")
+
+
+def compilation_associations(observer,rows):
+    """Use conservative clock brackets, never infer preparation from RPC time."""
+    lower=max(left for left,_ in observer.anchors)
+    upper=min(right for _,right in observer.anchors)
+    compiled=[row for row in observer.records.values() if row["stage"] == "component_new"]
+    first={}
+    for row in rows:
+        if row["dispatch_nanos"] is not None:
+            release=row["release_digest"]
+            first[release]=min(first.get(release,2**64),uint(row["dispatch_nanos"]))
+    for job in compiled:
+        release=observer.jobs[uint(job["job_id"])]
+        require(release in first and uint(job["started_nanos"])+lower >= first[release],
+                "cold-compilation-before-first-dispatch")
+    for row in rows:
+        if row["outcome"] == "success":
+            require(any(job["succeeded"] and observer.jobs[uint(job["job_id"])] == row["release_digest"]
+                        and uint(job["finished_nanos"])+upper <= uint(row["completed_nanos"]) for job in compiled),
+                    "cold-success-before-observed-compilation")
