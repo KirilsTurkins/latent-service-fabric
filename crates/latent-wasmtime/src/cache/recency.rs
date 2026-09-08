@@ -45,7 +45,7 @@ impl<T> Recency<T> {
 
     #[cfg(test)]
     pub(super) fn allocated_slots(&self) -> usize {
-        self.slots.len()
+        self.slots.capacity()
     }
 
     pub(super) fn get(&mut self, key: &str) -> Option<Arc<T>> {
@@ -80,9 +80,18 @@ impl<T> Recency<T> {
                 .try_reserve(required - self.len())
                 .map_err(|_| super::capacity_error())?;
         }
-        if self.free.is_none() && self.slots.len() < maximum_entries {
+        if self.free.is_none()
+            && self.slots.len() < maximum_entries
+            && self.slots.len() == self.slots.capacity()
+        {
+            let target = self
+                .slots
+                .capacity()
+                .saturating_mul(2)
+                .max(1)
+                .min(maximum_entries);
             self.slots
-                .try_reserve(1)
+                .try_reserve_exact(target - self.slots.len())
                 .map_err(|_| super::capacity_error())?;
         }
         Ok(())
@@ -170,6 +179,42 @@ impl<T> Recency<T> {
         match &mut self.slots[slot] {
             Slot::Occupied(resident) => resident,
             Slot::Vacant { .. } => unreachable!("linked slot is occupied"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn non_power_of_two_limits_bound_allocated_capacity_and_reuse_vacant_slots() {
+        for maximum in [3, 5] {
+            let mut recency = Recency::default();
+            assert_eq!(recency.allocated_slots(), 0);
+            for iteration in 0..(maximum * 5) {
+                recency.reserve_publication(maximum).unwrap();
+                if recency.len() == maximum {
+                    drop(recency.remove_oldest().unwrap());
+                }
+                recency.insert(
+                    Arc::from(format!("key-{iteration}")),
+                    Entry {
+                        runtime: Arc::new(iteration),
+                        source_bytes: 0,
+                        metadata_bytes: 0,
+                        compiled_image_bytes: 0,
+                        residency: None,
+                    },
+                );
+                assert!(recency.allocated_slots() <= maximum);
+                assert_eq!(recency.len(), (iteration + 1).min(maximum));
+            }
+            let capacity = recency.allocated_slots();
+            while recency.remove_oldest().is_some() {}
+            assert_eq!(recency.len(), 0);
+            recency.reserve_publication(maximum).unwrap();
+            assert_eq!(recency.allocated_slots(), capacity);
         }
     }
 }

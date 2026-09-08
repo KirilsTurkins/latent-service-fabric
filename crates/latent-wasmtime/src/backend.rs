@@ -35,6 +35,7 @@ mod owned;
 mod preparation;
 mod preparation_context;
 mod readiness;
+mod reclamation;
 #[cfg(test)]
 mod result_lifetime_tests;
 use preparation_context::PreparationContext;
@@ -458,26 +459,16 @@ impl WasmtimeBackend {
         drop(temporary_buffer_guard);
         timing.activation_resource_reclamation_micros = elapsed_micros(reclamation_started);
 
-        let classification_started = Instant::now();
-        let outcome = classify_call_result(
-            call_result,
-            encoded,
-            &stop,
-            memory_exhausted,
-            consumption,
-            accounting_error,
-        );
-        timing.outcome_classification_micros = elapsed_micros(classification_started);
-
-        // Native error backtraces can retain compiled images. Classification
-        // consumes those errors before the final runtime charge and permit.
-        // Measure only these drops, not the intervening classification work.
-        let runtime_reclamation_started = Instant::now();
-        drop(runtime);
-        drop(instance_permit);
-        timing.activation_resource_reclamation_micros = timing
-            .activation_resource_reclamation_micros
-            .saturating_add(elapsed_micros(runtime_reclamation_started));
+        let outcome = reclamation::finish(runtime, instance_permit, timing, || {
+            classify_call_result(
+                call_result,
+                encoded,
+                &stop,
+                memory_exhausted,
+                consumption,
+                accounting_error,
+            )
+        });
 
         let reusable_proof_started = Instant::now();
         drop(stop);
