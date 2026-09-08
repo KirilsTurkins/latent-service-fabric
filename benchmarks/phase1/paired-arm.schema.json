@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/benchmarks/phase1/paired-arm.schema.json",
+  "title": "paired-arm shape (semantic replay is also required)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "arm",
+    "profile",
+    "plan",
+    "warmup_samples",
+    "measured_samples",
+    "identity",
+    "semantic_input",
+    "semantic_output",
+    "effective_options",
+    "configuration",
+    "startup",
+    "preparation_elapsed_micros",
+    "artifact",
+    "publication",
+    "preparation_cache_before",
+    "preparation_cache_after",
+    "samples",
+    "status",
+    "reason",
+    "elapsed_micros",
+    "work",
+    "shutdown",
+    "data_cleanup",
+    "prepared_release_elapsed_micros",
+    "after_release"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.phase1.paired-arm.v1"
+    },
+    "arm": {
+      "const": "candidate"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "profile",
+        "repetition",
+        "warmup_samples",
+        "measured_samples",
+        "maximum_run_seconds",
+        "maximum_output_bytes"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.paired-plan.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "repetition": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "warmup_samples": {
+          "enum": [
+            2,
+            40
+          ]
+        },
+        "measured_samples": {
+          "enum": [
+            4,
+            400
+          ]
+        },
+        "maximum_run_seconds": {
+          "enum": [
+            "120",
+            "600"
+          ]
+        },
+        "maximum_output_bytes": {
+          "const": "16777216"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "warmup_samples": {
+                "const": 2
+              },
+              "measured_samples": {
+                "const": 4
+              },
+              "maximum_run_seconds": {
+                "const": "120"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "warmup_samples": {
+                "const": 40
+              },
+              "measured_samples": {
+                "const": 400
+              },
+              "maximum_run_seconds": {
+                "const": "600"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "warmup_samples": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "measured_samples": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "identity": {
+      "type": "object"
+    },
+    "semantic_input": {
+      "type": "object"
+    },
+    "semantic_output": {
+      "type": "object"
+    },
+    "effective_options": {
+      "type": "object"
+    },
+    "configuration": {
+      "type": "object"
+    },
+    "startup": {
+      "type": "object"
+    },
+    "preparation_elapsed_micros": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "artifact": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "publication": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "preparation_cache_before": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "preparation_cache_after": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "samples": {
+      "type": "array",
+      "maxItems": 440,
+      "items": {
+        "type": "object"
+      }
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed"
+      ]
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "elapsed_micros": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "work": {
+      "type": "object"
+    },
+    "shutdown": {
+      "type": "object"
+    },
+    "data_cleanup": {
+      "type": "object"
+    },
+    "prepared_release_elapsed_micros": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "after_release": {
+      "type": "object"
+    }
+  }
+}

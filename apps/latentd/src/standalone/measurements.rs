@@ -1,5 +1,6 @@
 //! Explicit measurement collector; ordinary workspace tests never run workloads.
 mod benchmark;
+mod comparison;
 mod fixture_inputs;
 mod fixtures;
 mod identity;

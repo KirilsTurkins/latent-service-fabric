@@ -1,4 +1,4 @@
-mod projection;
+pub(super) mod projection;
 
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
