@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from run_phase1_conformance import ROOT, digest
+from tools.run_phase1_conformance import ROOT, digest
 from .plans import CONTRACT, SERVICES, TENANT, TOKEN
 
 

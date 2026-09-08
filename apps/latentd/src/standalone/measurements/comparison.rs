@@ -3,6 +3,7 @@ mod call;
 mod evidence;
 mod node;
 mod plan;
+mod revision;
 mod writer;
 
 use std::path::Path;
@@ -109,6 +110,7 @@ async fn run(
         "plan":plan,"identity":identity,"semantic_input":evidence::input(),"semantic_output":evidence::input(),
         "effective_options":evidence::options(&node),"configuration":node.config,"startup":node.startup,
         "preparation_elapsed_micros":preparation["elapsed_micros"],"artifact":preparation["artifact"],
+        "preparation_scope":"repository-acquisition-including-verified-refill",
         "publication":preparation["publication"],"preparation_cache_before":preparation["cache_before"],
         "preparation_cache_after":preparation["cache_after"]});
     let mut writer = Writer::new(directory, &header)?;
@@ -152,12 +154,17 @@ async fn prepare(node: &mut Node, directory: &Path) -> Result<(PreparedComponent
         .map_err(platform)?;
     let before = backend.cache_snapshot();
     let started = Instant::now();
-    let prepared = backend.prepare(&artifact, &key).await.map_err(|error| {
-        std::io::Error::other(format!(
-            "comparison initial preparation failed: {:?}",
-            error.code
-        ))
-    })?;
+    let activation = backend
+        .prepare_from_repository(node.artifacts.as_ref(), &key)
+        .await
+        .map_err(|error| {
+            std::io::Error::other(format!(
+                "comparison initial preparation failed: {:?}",
+                error.code
+            ))
+        })?;
+    let prepared = activation.prepared.descriptor().clone();
+    drop(activation);
     let elapsed = started.elapsed().as_micros().to_string();
     let after = backend.cache_snapshot();
     if before.entries != 0

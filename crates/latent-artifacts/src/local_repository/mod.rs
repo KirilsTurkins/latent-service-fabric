@@ -16,7 +16,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::ops::Bound::{Excluded, Unbounded};
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(test)]
@@ -27,9 +27,12 @@ use latent_manifest::{
     JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator,
 };
 
+use crate::preparation::{repository_stamp, RepositoryEpoch};
+use crate::verification_statistics::{add, VerificationStatistics};
 use crate::{
-    ArtifactDescriptor, ArtifactPage, ArtifactQuery, ArtifactRepository, CapsuleArtifact,
-    VerifiedArtifactMetadata,
+    ArtifactDescriptor, ArtifactPage, ArtifactPreparationIdentity, ArtifactPreparationSource,
+    ArtifactQuery, ArtifactRepository, ArtifactVerificationSnapshot, CapsuleArtifact,
+    PreparationMetadataFingerprint, VerifiedArtifactMetadata,
 };
 use component_reader::{read_component, Retention};
 use index::CatalogIndex;
@@ -58,6 +61,9 @@ const DEFAULT_MAX_RECOVERY_DIRECTORIES: usize = 1_000_000;
 ///
 /// `max_index_bytes` bounds a conservative accounting value for all retained
 /// compact summaries, descriptors, reference keys and tenant/service index nodes.
+/// It also charges fixed preparation stamps, one repository epoch allocation,
+/// and fixed verification-counter storage. Optional stamp ineligibility does not
+/// change the persisted artifact contract or full-fetch behavior.
 /// `max_descriptor_bytes` bounds individual descriptor encodings. Scoped pages
 /// charge both canonical summary bytes and owned materialization (including
 /// collection slots); `max_page_bytes` bounds their aggregate. Persisted
@@ -106,6 +112,11 @@ struct VerifiedEntry {
     completion: CompletionRecord,
 }
 
+struct PublicationAdoption {
+    artifact: CapsuleArtifact,
+    stamp: Option<PreparationMetadataFingerprint>,
+}
+
 struct PreparedPublication {
     artifact: CapsuleArtifact,
     metadata_bytes: Vec<u8>,
@@ -144,12 +155,16 @@ pub struct DirectoryArtifactRepository {
     validator: Phase1ManifestValidator,
     index: RwLock<CatalogIndex>,
     pagination_fingerprint: RandomState,
+    preparation_epoch: Arc<RepositoryEpoch>,
+    verification_statistics: VerificationStatistics,
     /// Serializes writers, reserves directory capacity and gates mutations after
     /// indeterminate durability. Only a retry of the pending digest may proceed.
     publish_lock: Mutex<PublicationState>,
     _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
+    #[cfg(test)]
+    stamp_byte_limit: usize,
 }
 
 impl std::fmt::Debug for DirectoryArtifactRepository {
@@ -197,10 +212,14 @@ impl DirectoryArtifactRepository {
             validator: Phase1ManifestValidator::new(),
             index: RwLock::new(CatalogIndex::default()),
             pagination_fingerprint: RandomState::new(),
+            preparation_epoch: Arc::new(RepositoryEpoch),
+            verification_statistics: VerificationStatistics::default(),
             publish_lock: Mutex::new(PublicationState::default()),
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),
+            #[cfg(test)]
+            stamp_byte_limit: crate::preparation::MAXIMUM_STAMP_BYTES,
         };
         repository.rebuild_index()?;
         Ok(repository)
@@ -211,6 +230,50 @@ impl DirectoryArtifactRepository {
     #[must_use]
     pub fn root(&self) -> &Path {
         &self.root
+    }
+
+    /// Fixed-memory counters for fresh disk verification and stamp creation.
+    /// Warm preparation identity lookups do not modify these counters.
+    #[must_use]
+    pub fn verification_snapshot(&self) -> ArtifactVerificationSnapshot {
+        self.verification_statistics.snapshot()
+    }
+
+    pub(crate) fn preparation_identity(
+        &self,
+        release: &ReleaseDigest,
+    ) -> Result<Option<ArtifactPreparationIdentity>, PlatformError> {
+        let index = self.index.read().map_err(lock_error)?;
+        let entry = index
+            .by_digest
+            .get(release)
+            .ok_or_else(|| error(PlatformErrorCode::NotFound, "release digest not found"))?;
+        entry
+            .preparation_stamp
+            .map(|stamp| {
+                ArtifactPreparationIdentity::new(
+                    Arc::clone(&self.preparation_epoch),
+                    release,
+                    entry.value.descriptor.size_bytes,
+                    stamp,
+                )
+            })
+            .transpose()
+    }
+
+    fn preparation_stamp(
+        &self,
+        metadata: &VerifiedArtifactMetadata,
+    ) -> Option<PreparationMetadataFingerprint> {
+        add(
+            &self.verification_statistics.metadata_fingerprint_attempts,
+            1,
+        );
+        #[cfg(not(test))]
+        let maximum = crate::preparation::MAXIMUM_STAMP_BYTES;
+        #[cfg(test)]
+        let maximum = self.stamp_byte_limit;
+        repository_stamp(metadata, maximum)
     }
 
     fn rebuild_index(&self) -> Result<(), PlatformError> {
@@ -247,7 +310,8 @@ impl DirectoryArtifactRepository {
             let metadata = self
                 .load_complete_entry(&path, Retention::Metadata)?
                 .metadata;
-            next.insert_verified(metadata, self.config)?;
+            let stamp = self.preparation_stamp(&metadata);
+            next.insert_verified(metadata, stamp, self.config)?;
         }
         // Reconcile completed entries from an interrupted publication before
         // exposing the rebuilt index or allowing further mutations.
@@ -306,6 +370,7 @@ impl DirectoryArtifactRepository {
             &path.join(COMPONENT_FILE),
             self.config.max_component_bytes,
             retention,
+            &self.verification_statistics,
         )?;
         verify_component_digest(
             &descriptor,
@@ -343,9 +408,10 @@ impl DirectoryArtifactRepository {
     fn finalize_adoption(
         &self,
         artifact: CapsuleArtifact,
+        stamp: Option<PreparationMetadataFingerprint>,
     ) -> Result<ArtifactDescriptor, PlatformError> {
         let mut index = self.index.write().map_err(lock_error)?;
-        index.insert(artifact, self.config)
+        index.insert(artifact, stamp, self.config)
     }
 
     fn preflight_adoption(&self, artifact: &CapsuleArtifact) -> Result<(), PlatformError> {
@@ -355,12 +421,12 @@ impl DirectoryArtifactRepository {
 
     fn sync_and_adopt(
         &self,
-        artifact: CapsuleArtifact,
+        adoption: PublicationAdoption,
         pending: &mut Option<ReleaseDigest>,
     ) -> Result<ArtifactDescriptor, PlatformError> {
         // The completed destination now exists. Keep the mutation gate closed
         // across every failure, including repeated sync or adoption failures.
-        *pending = Some(artifact.descriptor.release_digest.clone());
+        *pending = Some(adoption.artifact.descriptor.release_digest.clone());
         #[cfg(test)]
         if self.fail_parent_sync_once.swap(false, Ordering::SeqCst) {
             return Err(error(
@@ -369,7 +435,7 @@ impl DirectoryArtifactRepository {
             ));
         }
         sync_dir(&self.root.join(RELEASES_DIR))?;
-        let adopted = self.finalize_adoption(artifact)?;
+        let adopted = self.finalize_adoption(adoption.artifact, adoption.stamp)?;
         *pending = None;
         Ok(adopted)
     }
@@ -465,20 +531,24 @@ impl DirectoryArtifactRepository {
         &self,
         path: &Path,
         expected: &CompletionRecord,
-    ) -> Result<Option<CapsuleArtifact>, PlatformError> {
+    ) -> Result<Option<PublicationAdoption>, PlatformError> {
         let verified = self.load_complete_entry(path, Retention::Metadata)?;
         if &verified.completion != expected {
             return Ok(None);
         }
+        let stamp = self.preparation_stamp(&verified.metadata);
         // Adoption needs only descriptor/manifest. Release decoded contracts
         // before directory synchronization and index locking, as before.
         let (descriptor, manifest, contracts) = verified.metadata.into_parts();
         drop(contracts);
-        Ok(Some(CapsuleArtifact {
-            descriptor,
-            manifest,
-            contracts: Vec::new(),
-            component_bytes: Vec::new(),
+        Ok(Some(PublicationAdoption {
+            artifact: CapsuleArtifact {
+                descriptor,
+                manifest,
+                contracts: Vec::new(),
+                component_bytes: Vec::new(),
+            },
+            stamp,
         }))
     }
 
@@ -557,6 +627,9 @@ impl DirectoryArtifactRepository {
 }
 
 impl ArtifactRepository for DirectoryArtifactRepository {
+    fn preparation_source(&self) -> Option<ArtifactPreparationSource<'_>> {
+        Some(ArtifactPreparationSource::new(self))
+    }
     fn get_catalog_entry<'a>(
         &'a self,
         tenant: &'a latent_core::TenantId,
@@ -609,6 +682,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>> {
         Box::pin(async move {
+            add(&self.verification_statistics.full_fetch_attempts, 1);
             if !self
                 .index
                 .read()
@@ -638,6 +712,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<VerifiedArtifactMetadata, PlatformError>> {
         Box::pin(async move {
+            add(&self.verification_statistics.metadata_fetch_attempts, 1);
             if !self
                 .index
                 .read()
@@ -733,6 +808,9 @@ fn validate_config(config: DirectoryArtifactRepositoryConfig) -> Result<(), Plat
             PlatformErrorCode::InvalidArgument,
             "descriptor byte bound must fit within page and metadata byte bounds",
         ));
+    }
+    if config.max_index_bytes < index::REPOSITORY_ACCOUNTED_BYTES {
+        return Err(resource_exhausted("catalog index byte limit reached"));
     }
     // Directory and index limits are independent; publication enforces both.
     // Retained debris can exhaust directory capacity before index capacity.

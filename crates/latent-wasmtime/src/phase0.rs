@@ -6,13 +6,13 @@ mod tests;
 
 use std::ops::Deref;
 
-use latent_artifacts::CapsuleArtifact;
+use latent_artifacts::{ArtifactRepository, CapsuleArtifact};
 use latent_core::{
     BoxFuture, ErrorDetail, Metadata, PlatformError, PlatformErrorCode, ReleaseDigest,
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
-    PreparationKey, PreparedComponent, PreparedUse,
+    PreparationKey, PreparedActivation, PreparedComponent, PreparedUse,
 };
 use latent_manifest::ExecutionBackendKind;
 
@@ -125,6 +125,16 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
         })
     }
 
+    fn prepare_from_repository<'a>(
+        &'a self,
+        repository: &'a dyn ArtifactRepository,
+        key: &'a PreparationKey,
+    ) -> BoxFuture<'a, Result<PreparedActivation, PlatformError>> {
+        // The common repository path checks Phase 0 manifest/signature policy
+        // before publishing a cache entry under this factory's distinct profile.
+        self.inner.prepare_from_repository(repository, key)
+    }
+
     fn invoke_prepared_contained<'a>(
         &'a self,
         request: ExecutionRequest,
@@ -190,7 +200,7 @@ impl ExecutionBackend for Phase0WasmtimeBackend {
     }
 }
 
-fn validate_manifest(artifact: &CapsuleArtifact) -> Result<(), PlatformError> {
+pub(crate) fn validate_manifest(artifact: &CapsuleArtifact) -> Result<(), PlatformError> {
     let manifest = &artifact.manifest;
     if manifest.world.0 != ECHO_WORLD {
         return Err(PlatformError {

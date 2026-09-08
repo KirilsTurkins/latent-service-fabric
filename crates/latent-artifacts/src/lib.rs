@@ -4,8 +4,16 @@
 
 mod content_hash;
 mod local_repository;
+mod preparation;
+mod preparation_fingerprint;
+mod verification_statistics;
 mod verified_metadata;
 
+pub use preparation::{ArtifactPreparationIdentity, ArtifactPreparationSource};
+pub use preparation_fingerprint::{
+    preparation_metadata_fingerprint, PreparationMetadataFingerprint,
+};
+pub use verification_statistics::ArtifactVerificationSnapshot;
 pub use verified_metadata::VerifiedArtifactMetadata;
 
 pub use local_repository::contract_metadata::{
@@ -128,6 +136,14 @@ pub struct DerivedArtifactDescriptor {
 }
 
 pub trait ArtifactRepository: Send + Sync {
+    /// Delegates preparation identity AND full reads to one sealed repository
+    /// source. Consumers selecting this capability must also use its fetch for
+    /// cold and stamp-ineligible paths, never combine it with this trait's fetch.
+    /// Generic implementations retain their fully checked path by returning None.
+    fn preparation_source(&self) -> Option<ArtifactPreparationSource<'_>> {
+        None
+    }
+
     /// Returns None for absent, foreign-tenant and tenant-neutral releases.
     /// Implementations must authorize scope before cloning metadata and must not fetch components.
     fn get_catalog_entry<'a>(

@@ -18,8 +18,10 @@ import sys
 import tempfile
 import time
 
-from phase1_measurement_environment import capture, host
-from run_phase1_conformance import ROOT, bounded_run, digest
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from tools.phase1_measurement_environment import capture, host
+from tools.run_phase1_conformance import ROOT, bounded_run, digest
 
 COLLECTOR = "standalone::measurements::phase1_measurement_collector"
 KINDS = ("scale", "soak", "benchmark")

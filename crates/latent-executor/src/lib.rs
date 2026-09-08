@@ -4,11 +4,13 @@
 
 use std::sync::Arc;
 
+mod prepared_activation;
 mod prepared_use;
+pub use prepared_activation::PreparedActivation;
 pub use prepared_use::PreparedUse;
 
 use latent_activation::ActivationEnvelope;
-use latent_artifacts::CapsuleArtifact;
+use latent_artifacts::{ArtifactRepository, CapsuleArtifact};
 use latent_core::{
     ActivationId, BoxFuture, BudgetConsumption, BudgetDimension, CapabilityId, CellId,
     DeclaredError, Metadata, Payload, PlatformError, PlatformErrorCode, ReleaseDigest,
@@ -218,6 +220,18 @@ pub trait ExecutionBackend: Send + Sync {
         _key: &'a PreparationKey,
     ) -> BoxFuture<'a, Result<PreparedUse, PlatformError>> {
         Box::pin(async { Err(owned_preparation_unsupported()) })
+    }
+
+    /// Materializes through one repository source. Implementations may acquire
+    /// an authenticated immutable cache pin before loading component bytes.
+    /// The default freshly fetches and verifies the full artifact. A sealed
+    /// preparation source delegates all reads to its owner, including fallback.
+    fn prepare_from_repository<'a>(
+        &'a self,
+        repository: &'a dyn ArtifactRepository,
+        key: &'a PreparationKey,
+    ) -> BoxFuture<'a, Result<PreparedActivation, PlatformError>> {
+        Box::pin(prepared_activation::prepare(self, repository, key))
     }
 
     /// Consumes one prepared-state owner. The returned future owns synchronous

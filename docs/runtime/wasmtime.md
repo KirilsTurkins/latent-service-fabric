@@ -1,7 +1,8 @@
 # Generic Wasmtime execution
 
 `WasmtimeComponentEngineFactory` and `WasmtimeBackend` implement the Phase 1
-Component Model execution port. They prepare a locally trusted `CapsuleArtifact`
+Component Model execution port. They prepare a locally trusted release through
+its repository, or accept a directly supplied `CapsuleArtifact`,
 and invoke the requested exported contract and function through
 `ExecutionBackend`. The caller supplies a pinned prepared component, activation
 envelope, granted budget, cell, and activation-owned cancellation view.
@@ -99,6 +100,34 @@ identity also binds a deterministic, engine-version-scoped fingerprint of
 bounded artifact metadata, including the declared budget and contracts: unchanged component bytes cannot reuse a different metadata
 policy accidentally. Backends created by one factory share this cache.
 
+`prepare_from_repository` selects `ArtifactRepository::preparation_source` once.
+The directory implementation returns a sealed, borrowed capability: both its
+identity lookup and its verified fetch use the same concrete repository owner.
+An outer adapter may delegate that capability, but cannot combine its token
+with another repository's fetch. Without a capability, preparation fetches the
+artifact and verifies its bytes, size, release association and metadata before
+reuse. A source whose metadata is ineligible for a compact stamp still owns the
+fallback fetch, including when the prepared cache is disabled.
+
+The directory source issues a fixed-size token containing its open-instance
+epoch, canonical component digest and size, and the normalized metadata
+fingerprint with checked byte/depth requirements. The cache key includes this
+identity and the engine preparation key; a hit also compares the complete token.
+Warm acquisition performs no component I/O/hash or full metadata traversal.
+It still performs the bounded cache lookup, an ordered catalog lookup, and
+clones the bounded descriptor/import list needed by the activation. A missing
+catalog entry returns `NotFound`. A cache miss reserves preparation capacity,
+fetches verified content through the selected source, and checks its metadata
+against the token before compilation.
+
+This is reuse of an admitted snapshot, not a live audit of files on every call.
+Fresh reads and recovery retain their integrity checks. A reopened repository
+has a new epoch; old cached entries cannot satisfy its acquisition. Tokens keep
+only the small epoch allocation alive, not the repository or its ownership lock.
+Both the catalog stamp and retained cache token have explicit byte charges;
+the [catalog contract](../development/local-release-catalog.md#verified-preparation-snapshots)
+defines their eligibility and verification counters.
+
 The cache defaults to eight entries, 64 MiB of source bytes, 8 MiB of bounded
 metadata accounting, and 128 MiB of compiled image address ranges. These are separate
 admission dimensions; compiled-image accounting is not a measurement of all
@@ -107,13 +136,16 @@ ownership. An executing activation may retain its bounded runtime pin until
 cleanup, so resident cache counters exclude those active evicted pins.
 
 Activation orchestration obtains the engine key through
-`ExecutionBackend::preparation_key` and calls `prepare_for_use`. Its affine
-`PreparedUse` retains the exact immutable runtime and one shared instance
+`ExecutionBackend::preparation_key` and calls `prepare_from_repository`. The
+returned `PreparedActivation` carries all manifest-declared imports, including
+optional ones, alongside its affine `PreparedUse`. That use retains the exact
+immutable runtime and one shared instance
 reservation from materialization through `invoke_prepared_contained`. Invocation
 consumes this owner without looking in the cache again, so eviction or explicit
 legacy `release` cannot invalidate an already prepared use. Dropping an unused
 owner releases its pin synchronously. The backend rejects tokens from another
 factory or descriptors that differ from the token's original descriptor.
+Direct `prepare_for_use` callers retain the checked owned-artifact path.
 
 `active_instance_reservations` reports both materializing prepared uses and
 running invocations against `maximum_instance_reservations`; the same reservation
@@ -135,7 +167,14 @@ an abandoned future does not itself produce a reusable-cell proof.
 At most two preparations compile concurrently by default. Duplicate in-flight
 work or a full compilation allowance returns retryable `unavailable` without
 an internal wait queue. In-flight source and metadata bytes are reported
-separately. A shared instance gate defaults to 64 active component instances
+separately. Cold repository reads and compilation remain synchronous work during
+materialization after scheduler assignment. Moving that work to a bounded
+blocking stage and coalescing duplicate compilation remain
+[#101](https://github.com/KirilsTurkins/latent-service-fabric/issues/101);
+cache/LRU changes remain
+[#102](https://github.com/KirilsTurkins/latent-service-fabric/issues/102).
+The verified warm path changes none of those limits or scheduling semantics.
+A shared instance gate defaults to 64 active component instances
 across the factory's backends, and each store also has explicit instance,
 memory, table, and table-element limits. Pooling exposes its component/core
 instance and allocation bounds in the same policy. All of these resources are

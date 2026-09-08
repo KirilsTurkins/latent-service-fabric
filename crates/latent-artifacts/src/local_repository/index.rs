@@ -12,7 +12,13 @@ use super::{
     corrupt, error, resource_exhausted, DirectoryArtifactRepositoryConfig, PlatformError,
     PlatformErrorCode,
 };
-use crate::{ArtifactCatalogEntry, ArtifactDescriptor, CapsuleArtifact, VerifiedArtifactMetadata};
+use crate::{
+    ArtifactCatalogEntry, ArtifactDescriptor, CapsuleArtifact, PreparationMetadataFingerprint,
+    VerifiedArtifactMetadata,
+};
+
+pub(super) const REPOSITORY_ACCOUNTED_BYTES: usize = crate::preparation::EPOCH_RETAINED_BYTES
+    + std::mem::size_of::<crate::verification_statistics::VerificationStatistics>();
 
 pub(super) type Rows = BTreeSet<ReleaseDigest>;
 
@@ -21,9 +27,10 @@ pub(super) struct IndexedEntry {
     pub(super) value: ArtifactCatalogEntry,
     pub(super) descriptor_bytes: usize,
     pub(super) page_bytes: usize,
+    pub(super) preparation_stamp: Option<PreparationMetadataFingerprint>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(super) struct CatalogIndex {
     pub(super) by_digest: BTreeMap<ReleaseDigest, Box<IndexedEntry>>,
     pub(super) by_reference: BTreeMap<ArtifactReference, ReleaseDigest>,
@@ -31,6 +38,19 @@ pub(super) struct CatalogIndex {
     by_service: BTreeMap<TenantId, BTreeMap<ServiceId, Rows>>,
     pub(super) accounted_bytes: usize,
     pub(super) generation: u64,
+}
+
+impl Default for CatalogIndex {
+    fn default() -> Self {
+        Self {
+            by_digest: BTreeMap::new(),
+            by_reference: BTreeMap::new(),
+            by_tenant: BTreeMap::new(),
+            by_service: BTreeMap::new(),
+            accounted_bytes: REPOSITORY_ACCOUNTED_BYTES,
+            generation: 0,
+        }
+    }
 }
 
 impl CatalogIndex {
@@ -101,6 +121,7 @@ impl CatalogIndex {
     pub(super) fn insert(
         &mut self,
         artifact: CapsuleArtifact,
+        stamp: Option<PreparationMetadataFingerprint>,
         config: DirectoryArtifactRepositoryConfig,
     ) -> Result<ArtifactDescriptor, PlatformError> {
         let CapsuleArtifact {
@@ -108,23 +129,25 @@ impl CatalogIndex {
             manifest,
             ..
         } = artifact;
-        self.insert_parts(descriptor, manifest, config)
+        self.insert_parts(descriptor, manifest, stamp, config)
     }
 
     pub(super) fn insert_verified(
         &mut self,
         metadata: VerifiedArtifactMetadata,
+        stamp: Option<PreparationMetadataFingerprint>,
         config: DirectoryArtifactRepositoryConfig,
     ) -> Result<ArtifactDescriptor, PlatformError> {
         let (descriptor, manifest, contracts) = metadata.into_parts();
         drop(contracts);
-        self.insert_parts(descriptor, manifest, config)
+        self.insert_parts(descriptor, manifest, stamp, config)
     }
 
     fn insert_parts(
         &mut self,
         descriptor: ArtifactDescriptor,
         manifest: CapsuleManifest,
+        stamp: Option<PreparationMetadataFingerprint>,
         config: DirectoryArtifactRepositoryConfig,
     ) -> Result<ArtifactDescriptor, PlatformError> {
         let cost = sizing::measure(&descriptor, &manifest, config)?;
@@ -136,7 +159,12 @@ impl CatalogIndex {
                     failure
                 }
             })?;
-        if self.by_digest.contains_key(&descriptor.release_digest) {
+        if let Some(existing) = self.by_digest.get(&descriptor.release_digest) {
+            if existing.preparation_stamp != stamp {
+                return Err(corrupt(
+                    "verified preparation metadata changed after adoption",
+                ));
+            }
             return Ok(descriptor);
         }
         let mut value = ArtifactCatalogEntry {
@@ -148,11 +176,16 @@ impl CatalogIndex {
         };
         compact(&mut value);
         let receipt = value.descriptor.clone();
-        self.install(value, cost);
+        self.install(value, stamp, cost);
         Ok(receipt)
     }
 
-    fn install(&mut self, value: ArtifactCatalogEntry, cost: sizing::EntryCost) {
+    fn install(
+        &mut self,
+        value: ArtifactCatalogEntry,
+        stamp: Option<PreparationMetadataFingerprint>,
+        cost: sizing::EntryCost,
+    ) {
         let descriptor = &value.descriptor;
         if let Some(tenant) = &value.tenant {
             self.by_tenant
@@ -176,6 +209,7 @@ impl CatalogIndex {
                 value,
                 descriptor_bytes: cost.descriptor,
                 page_bytes: cost.page,
+                preparation_stamp: stamp,
             }),
         );
         self.accounted_bytes += cost.retained;

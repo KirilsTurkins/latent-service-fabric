@@ -165,8 +165,21 @@ impl ArtifactRepository for Artifacts {
             }
             for generation in [1, 2] {
                 for bucket in [0, 1] {
-                    let artifact = model::artifact(generation, bucket);
+                    let mut artifact = model::artifact(generation, bucket);
                     if artifact.descriptor.release_digest == *digest {
+                        match self.fail.load(Ordering::Acquire) {
+                            3 => artifact.component_bytes[0] ^= 0xff,
+                            4 => {
+                                artifact.manifest.component_digest =
+                                    ReleaseDigest("foreign".to_owned())
+                            }
+                            5 => {
+                                artifact.descriptor.release_digest =
+                                    ReleaseDigest("foreign".to_owned())
+                            }
+                            6 => artifact.descriptor.size_bytes += 1,
+                            _ => {}
+                        }
                         return Ok(artifact);
                     }
                 }

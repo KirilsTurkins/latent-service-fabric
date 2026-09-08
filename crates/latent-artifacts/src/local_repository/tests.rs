@@ -7,6 +7,8 @@ mod integrity_publication;
 #[cfg(unix)]
 #[path = "lock_release_tests.rs"]
 mod lock_release;
+#[path = "preparation_tests.rs"]
+mod preparation;
 #[path = "regression_tests.rs"]
 mod regressions;
 #[path = "root_durability_tests.rs"]
@@ -454,7 +456,7 @@ fn aggregate_index_byte_budget_is_enforced_before_persistence() {
             max_index_bytes: super::index::entry_cost(
                 &artifact("budget-one", b"budget-one"),
                 DirectoryArtifactRepositoryConfig::default(),
-            ),
+            ) + super::index::REPOSITORY_ACCOUNTED_BYTES,
             ..DirectoryArtifactRepositoryConfig::default()
         },
     )
@@ -624,7 +626,8 @@ fn one_hundred_thousand_index_adoptions_are_bounded() {
         let mut indexed = template.clone();
         indexed.descriptor = descriptor;
         repo.preflight_adoption(&indexed).expect("index preflight");
-        repo.finalize_adoption(indexed).expect("index adoption");
+        repo.finalize_adoption(indexed, None)
+            .expect("index adoption");
     }
     assert_eq!(repo.index.read().expect("index").by_digest.len(), 100_000);
     assert!(repo.index.read().expect("index").accounted_bytes <= repo.config.max_index_bytes);

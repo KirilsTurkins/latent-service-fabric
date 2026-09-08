@@ -63,6 +63,41 @@ class ArchiveTests(unittest.TestCase):
         package.create_archive(self.source, second, self.policy)
         self.assertEqual((self.output / verify.ARCHIVE).read_bytes(), (second / verify.ARCHIVE).read_bytes())
 
+    def test_explicit_default_compression_preserves_existing_archive_bytes(self):
+        second = self.root / 'explicit-six'
+        second.mkdir()
+        package.create_archive(self.source, second, self.policy, compression_level=6)
+        self.assertEqual((self.output / verify.ARCHIVE).read_bytes(), (second / verify.ARCHIVE).read_bytes())
+
+    def test_level_nine_preserves_every_uncompressed_byte(self):
+        second = self.root / 'level-nine'
+        second.mkdir()
+        manifest = package.create_archive(self.source, second, self.policy, compression_level=9)
+        self.assertEqual(gzip.decompress((self.output / verify.ARCHIVE).read_bytes()),
+                         gzip.decompress((second / verify.ARCHIVE).read_bytes()))
+        self.assertEqual(manifest, verify.verify_package(second, replay=False))
+        self.assertEqual(manifest['files'], json.loads((self.output / verify.MANIFEST).read_text())['files'])
+
+    def test_noninteger_and_out_of_range_compression_levels_fail_before_output(self):
+        for index, level in enumerate((0, 10, -1, True, '9', 1.5, float('inf'), float('nan'))):
+            with self.subTest(level=level):
+                destination = self.root / f'invalid-compression-{index}'
+                with self.assertRaisesRegex(ValueError, 'integer from 1 through 9'):
+                    package.package(self.source, destination, self.policy, compression_level=level)
+                self.assertFalse(destination.exists())
+                destination.mkdir()
+                with self.assertRaisesRegex(ValueError, 'integer from 1 through 9'):
+                    package.create_archive(self.source, destination, self.policy, compression_level=level)
+                self.assertEqual(list(destination.iterdir()), [])
+
+    def test_compressed_bound_diagnostic_reports_actual_maximum_and_path(self):
+        destination = self.root / 'bounded-compression'
+        destination.mkdir()
+        with patch.object(package, 'MAX_COMPRESSED', 1):
+            with self.assertRaisesRegex(ValueError, r'actual=\d+ bytes, maximum=1 bytes') as caught:
+                package.create_archive(self.source, destination, self.policy, compression_level=9)
+        self.assertIn(str(destination / verify.ARCHIVE), str(caught.exception))
+
     def test_rejects_tampered_archive_checksum(self):
         with (self.output / verify.ARCHIVE).open('ab') as stream:
             stream.write(b'changed')
@@ -172,6 +207,10 @@ class PairedArchiveTests(unittest.TestCase):
         self.assertFalse((self.output / 'comparison.json').exists())
         self.assertEqual(before, {path.relative_to(self.source).as_posix(): path.read_bytes()
                                 for path in self.source.rglob('*') if path.is_file()})
+
+    def test_level_nine_package_still_requires_full_semantic_replay(self):
+        manifest = package.package(self.source, self.output, self.unneeded_policy, compression_level=9)
+        self.assertEqual(manifest, verify.verify_package(self.output))
 
     def test_paired_outer_aggregate_tamper_rejected(self):
         package.package(self.source, self.output, self.unneeded_policy)

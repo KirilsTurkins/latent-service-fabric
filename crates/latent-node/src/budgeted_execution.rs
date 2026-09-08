@@ -2,14 +2,15 @@
 
 use std::sync::Arc;
 
-use latent_artifacts::CapsuleArtifact;
+use latent_artifacts::{ArtifactRepository, CapsuleArtifact};
 use latent_core::{
     ActivationBudget, ActivationId, BoxFuture, BudgetError, PlatformError, PlatformErrorCode,
     ReleaseDigest,
 };
 use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionCancellationProbe, ExecutionReport,
-    ExecutionRequest, GuestOutcome, PreparationKey, PreparedComponent, PreparedUse,
+    ExecutionRequest, GuestOutcome, PreparationKey, PreparedActivation, PreparedComponent,
+    PreparedUse,
 };
 
 use crate::ActivationBudgetRegistry;
@@ -110,6 +111,14 @@ impl ExecutionBackend for BudgetedExecutionBackend {
         key: &'a PreparationKey,
     ) -> BoxFuture<'a, Result<PreparedUse, PlatformError>> {
         self.inner.prepare_for_use(artifact, key)
+    }
+
+    fn prepare_from_repository<'a>(
+        &'a self,
+        repository: &'a dyn ArtifactRepository,
+        key: &'a PreparationKey,
+    ) -> BoxFuture<'a, Result<PreparedActivation, PlatformError>> {
+        self.inner.prepare_from_repository(repository, key)
     }
 
     fn invoke_prepared_contained<'a>(

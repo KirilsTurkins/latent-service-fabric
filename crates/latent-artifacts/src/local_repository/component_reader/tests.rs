@@ -157,3 +157,28 @@ fn partial_io_failure_never_returns_verified_metadata_or_partial_bytes() {
         assert_eq!(failure.message, "completed release data cannot be read");
     }
 }
+
+#[test]
+fn verification_statistics_include_hashed_prefix_but_not_oversized_sentinel() {
+    use std::sync::atomic::Ordering;
+    let statistics = VerificationStatistics::default();
+    assert!(read_stream_counted(
+        FailsAfterPrefix(false),
+        3,
+        3,
+        Retention::Metadata,
+        Some(&statistics)
+    )
+    .is_err());
+    assert_eq!(statistics.component_bytes_hashed.load(Ordering::Relaxed), 1);
+    assert!(read_stream_counted(
+        Cursor::new(b"abcd"),
+        0,
+        3,
+        Retention::Metadata,
+        Some(&statistics)
+    )
+    .is_err());
+    // The over-limit chunk is rejected before any of its bytes reach SHA-256.
+    assert_eq!(statistics.component_bytes_hashed.load(Ordering::Relaxed), 1);
+}

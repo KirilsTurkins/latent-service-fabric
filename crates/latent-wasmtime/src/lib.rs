@@ -22,7 +22,7 @@ use latent_artifacts::CapsuleArtifact;
 use latent_core::{BoxFuture, Metadata, PlatformError, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 
-pub use backend::WasmtimeBackend;
+pub use backend::{PreparationActivitySnapshot, WasmtimeBackend};
 pub use cache::PreparedCacheSnapshot;
 pub use config::{
     InstanceAllocator, Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig,

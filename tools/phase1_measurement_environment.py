@@ -7,7 +7,7 @@ import platform
 import re
 import subprocess
 
-from run_phase1_conformance import ROOT, digest, git, identity
+from tools.run_phase1_conformance import ROOT, digest, git, identity
 
 
 def command(*arguments: str) -> str:

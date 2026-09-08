@@ -281,19 +281,6 @@ impl Inner {
             .expect("pinned revision")
             .release;
         let expiry = budget.deadline().monotonic();
-        let artifact = stage(
-            self.dependencies.artifacts.fetch(release),
-            token,
-            expiry,
-            &self.clock,
-        )
-        .await?;
-        if &artifact.descriptor.release_digest != release {
-            return Err(error(
-                PlatformErrorCode::CorruptArtifact,
-                "artifact repository returned a different release",
-            ));
-        }
         let key = self.dependencies.backend.preparation_key(release)?;
         if &key.release != release {
             return Err(error(
@@ -301,13 +288,16 @@ impl Inner {
                 "backend preparation key changed the pinned release",
             ));
         }
-        let prepared = stage(
-            self.dependencies.backend.prepare_for_use(&artifact, &key),
+        let activation = stage(
+            self.dependencies
+                .backend
+                .prepare_from_repository(self.dependencies.artifacts.as_ref(), &key),
             token,
             expiry,
             &self.clock,
         )
         .await?;
+        let prepared = activation.prepared;
         if prepared.descriptor().key != key
             || prepared.descriptor().backend != self.dependencies.backend.backend_id()
         {
@@ -316,13 +306,12 @@ impl Inner {
                 "prepared ownership does not match the requested release or backend",
             ));
         }
-        let imports = artifact
-            .manifest
+        let imports = activation
             .imports
-            .iter()
+            .into_iter()
             .map(|import| BoundImport {
-                capability: CapabilityId(import.contract.0.clone()),
-                contract: import.contract.0.clone(),
+                capability: CapabilityId(import.0.clone()),
+                contract: import.0,
                 opaque_handle: envelope.activation_id.0.clone(),
             })
             .collect();

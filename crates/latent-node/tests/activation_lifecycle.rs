@@ -12,6 +12,8 @@ mod identity;
 mod model;
 #[path = "activation_lifecycle/outcomes.rs"]
 mod outcomes;
+#[path = "activation_lifecycle/preparation.rs"]
+mod preparation;
 #[path = "activation_lifecycle/races.rs"]
 mod races;
 #[path = "activation_lifecycle/support.rs"]

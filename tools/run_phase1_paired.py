@@ -19,9 +19,11 @@ import sys
 import tempfile
 import time
 
-from phase1_measurement_environment import build_configuration, capture, host
-from run_phase1_conformance import ROOT, bounded_run, digest
-from run_phase1_measurements import build, reference, write_json
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from tools.phase1_measurement_environment import build_configuration, capture, host
+from tools.run_phase1_conformance import ROOT, bounded_run, digest
+from tools.run_phase1_measurements import build, reference, write_json
 
 HISTORICAL_COMMIT = "52ac47542a05c0a1263f78a14c04a5c2e6b761f3"
 COLLECTOR = "standalone::measurements::comparison::phase1_comparison_collector"

@@ -24,7 +24,7 @@ pub(super) struct Node {
     pub work: WorkCounts,
     pub maximum_commands: u64,
     channel: Channel,
-    artifacts: std::sync::Arc<latent_artifacts::DirectoryArtifactRepository>,
+    pub(super) artifacts: std::sync::Arc<latent_artifacts::DirectoryArtifactRepository>,
     journal: LocalActivationJournalConfig,
     correlations: usize,
     probe: CurrentProcessOwnerProbe,

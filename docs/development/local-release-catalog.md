@@ -78,6 +78,13 @@ The repository has independent bounds for completed index entries, conservativel
 
 Index accounting charges compact descriptor and manifest-summary strings, vectors and sparse metadata maps, plus 8 KiB per release for the boxed summary, index nodes and bookkeeping. Duplicate digest, reference, tenant and service keys are charged separately before insertion. The default 64 MiB byte ceiling therefore admits fewer entries than the independent 250,000-entry ceiling. This conservative accounting is not a measurement of process RSS. Oversized descriptors and aggregate index exhaustion are rejected before staging a new release.
 
+The index also charges `size_of::<Option<PreparationMetadataFingerprint>>()`
+per release, whether its optional stamp is present or absent. Per-repository
+accounting includes a conservative 64-byte epoch allocation and the fixed five
+atomic verification counters. These charges apply before publication and during
+recovery; even an empty repository requires this fixed allowance. Page response
+accounting excludes the private stamp because it is not returned in a page.
+
 Contract field types have a maximum structural depth of 32 (the root type counts as one) and an aggregate limit of 16,384 type nodes across all contract parameters and results in an artifact. These checks precede recursive conversion and serialization, and apply again when reading persisted metadata. All recursive variants, including both result branches and tuple elements, participate. The JSON reader retains its normal recursion protection. Publication also decodes the exact serialized metadata bytes with the production decoder and checks descriptor/contract equality before writing any files; accepting data that fetch or reopen cannot deserialize is not permitted.
 
 Startup reads inspect file length before allocation and reject persisted metadata, manifests, or components that exceed their configured limits with `ResourceExhausted`. An oversized completion record returns `CorruptArtifact` under its separate fixed bound. Publication releases caller payload buffers before reading back the stored component for verification. Retained non-digest incomplete directories count only toward the separate recovery-directory bound, never the completed-release index quota. Listing is served from the ordered in-memory digest index without directory scans per request, with ascending digest order and both row-count and descriptor-byte bounds.
@@ -85,6 +92,42 @@ Startup reads inspect file length before allocation and reject persisted metadat
 ### Scoped metadata reads
 
 `get_catalog_entry` and `list_catalog_entries` expose only the authenticated tenant's compact descriptor and manifest summary. Ordered tenant/service indexes select rows without loading components, fetching full artifacts, or scanning unrelated tenants. Trusted local entries with no tenant remain outside these queries. Pages are bounded before cloning and ordered by digest; their fixed-size opaque tokens bind tenant, optional service, visible catalog generation and this open instance. A new visible publication or reopen expires tokens; an identical retry does not. The global content digest remains unique, so another tenant cannot replace its metadata or acquire an alias for the same bytes. See [management services](../reference/management-services.md) for the RPC upload codec and scope conventions.
+
+### Verified preparation snapshots
+
+Verified publication/adoption and recovery compute an optional compact
+preparation stamp over the decoded descriptor, canonical manifest and typed
+contracts. It preserves Wasmtime's existing ordered `Debug`-stream fingerprint;
+the digest, charged bytes and required type depth occupy fixed-size fields.
+It is an internal engine-version-scoped identity, not a replacement for the
+release digest or persisted `COMPLETE` record. Its independent 16 MiB work bound
+and 32-level type bound only determine optimization eligibility: exceeding them
+disables the stamp without rejecting an otherwise valid publication.
+
+`ArtifactRepository::preparation_source` defaults to `None`. The directory
+implementation exposes a sealed borrowed `ArtifactPreparationSource` that binds
+identity lookup and verified fetch to the same concrete owner. Its lookup reads
+the bounded index without files or full metadata traversal; an invisible or
+missing release is `NotFound`, while a visible unstamped release yields `None`
+and requires that source's checked fetch. Pending publication is not exposed.
+A custom adapter may delegate a source, but cannot replace that source's fetch.
+
+Each open repository has a distinct epoch. A cloned token retains only that
+small epoch allocation, so it cannot prolong the root's ownership lock. Reopen
+verifies disk content and issues a new epoch. Reuse is of the verified admitted
+snapshot; it does not promise per-invocation detection of external disk changes.
+Cache misses, explicit fresh reads and recovery still verify content under the
+existing local-filesystem trust boundary. No guest preparation happens during
+stamp creation.
+
+`verification_snapshot()` returns five fixed, saturating counters:
+`full_fetch_attempts`, `metadata_fetch_attempts`,
+`component_verification_attempts`, `component_bytes_hashed`, and
+`metadata_fingerprint_attempts`. Attempts include failures once their stage is
+entered. Hashed bytes include a prefix processed before a later failure, but
+exclude a chunk rejected for exceeding the byte bound. Caller-buffer hashing
+during publication is outside these disk-read counters. Snapshot fields are
+sampled independently; warm identity lookups change none of them.
 
 ### Recovery-directory capacity
 

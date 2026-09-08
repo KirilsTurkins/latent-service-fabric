@@ -251,14 +251,14 @@ async fn invokes_echo_through_the_execution_backend_and_enforces_the_phase_zero_
         .expect_err("undeclared host authority must be rejected");
     assert_eq!(error.code, PlatformErrorCode::IncompatibleContract);
 
-    let mut invalid = artifact.clone();
-    invalid.component_bytes = vec![0, 1, 2, 3];
-    invalid.manifest.component_digest = ReleaseDigest(component_digest(&invalid.component_bytes));
+    let invalid = replace_component(artifact.clone(), vec![0, 1, 2, 3]);
+    let invalid_key = factory.preparation_key(invalid.descriptor.release_digest.clone());
     let error = backend
-        .prepare(&invalid, &key)
+        .prepare(&invalid, &invalid_key)
         .await
         .expect_err("invalid component bytes must be rejected");
     assert_eq!(error.code, PlatformErrorCode::CorruptArtifact);
+    assert!(error.message.starts_with("component validation failed:"));
 
     let mut excessive = artifact.clone();
     excessive
@@ -304,15 +304,20 @@ async fn prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instanc
     let factory = Phase0WasmtimeEngineFactory::new(config).expect("factory must build");
     let backend = factory.create_backend_instance();
 
-    let first_release = ReleaseDigest("sha256:phase-zero-echo-release-a".to_owned());
-    let first_artifact = with_release(base_artifact.clone(), first_release.clone());
+    let first_artifact = base_artifact.clone();
+    let first_release = first_artifact.descriptor.release_digest.clone();
     let first = backend
         .prepare(&first_artifact, &factory.preparation_key(first_release))
         .await
         .expect("first component must prepare");
 
-    let second_release = ReleaseDigest("sha256:phase-zero-echo-release-b".to_owned());
-    let second_artifact = with_release(base_artifact, second_release.clone());
+    let mut second_bytes = base_artifact.component_bytes.clone();
+    // A valid top-level custom section: two payload bytes, an empty name,
+    // and one inert marker. This changes content identity while preserving Echo.
+    second_bytes.extend_from_slice(&[0, 2, 0, b'b']);
+    let second_artifact = replace_component(base_artifact, second_bytes);
+    let second_release = second_artifact.descriptor.release_digest.clone();
+    assert_ne!(first_artifact.descriptor.release_digest, second_release);
     let second = backend
         .prepare(&second_artifact, &factory.preparation_key(second_release))
         .await
@@ -374,11 +379,7 @@ async fn prepared_state_is_entry_bounded_and_evicts_without_retaining_an_instanc
 async fn oversized_canonical_abi_log_payload_is_rejected_by_hostcall_fuel() {
     let base_artifact = load_issue19_artifact();
     let attack_component = load_bytes_from_env("LSF_OVERSIZED_LOG_COMPONENT");
-    let attack_artifact = replace_component(
-        base_artifact,
-        attack_component,
-        ReleaseDigest("sha256:phase-zero-oversized-log".to_owned()),
-    );
+    let attack_artifact = replace_component(base_artifact, attack_component);
     let invocation_budget = attack_artifact
         .manifest
         .execution
@@ -462,20 +463,13 @@ fn load_bytes_from_env(name: &str) -> Vec<u8> {
     fs::read(path).unwrap_or_else(|error| panic!("failed to read {name}: {error}"))
 }
 
-fn with_release(mut artifact: CapsuleArtifact, release: ReleaseDigest) -> CapsuleArtifact {
-    artifact.descriptor.release_digest = release;
-    artifact
-}
-
-fn replace_component(
-    mut artifact: CapsuleArtifact,
-    component_bytes: Vec<u8>,
-    release: ReleaseDigest,
-) -> CapsuleArtifact {
-    artifact.descriptor.release_digest = release;
+fn replace_component(mut artifact: CapsuleArtifact, component_bytes: Vec<u8>) -> CapsuleArtifact {
+    let release = ReleaseDigest(component_digest(&component_bytes));
+    artifact.descriptor.reference = ArtifactReference(format!("memory:echo-backend/{}", release.0));
+    artifact.descriptor.release_digest = release.clone();
     artifact.descriptor.size_bytes =
         u64::try_from(component_bytes.len()).expect("component size fits u64");
-    artifact.manifest.component_digest = ReleaseDigest(component_digest(&component_bytes));
+    artifact.manifest.component_digest = release;
     artifact.component_bytes = component_bytes;
     artifact
 }

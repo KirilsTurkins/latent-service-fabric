@@ -99,7 +99,7 @@ fn pending_sync_failure_preserves_entry_and_byte_capacity_across_reopen() {
         let config = DirectoryArtifactRepositoryConfig {
             max_index_entries: if byte_limit { 10 } else { 1 },
             max_index_bytes: if byte_limit {
-                accounted
+                accounted + super::super::index::REPOSITORY_ACCOUNTED_BYTES
             } else {
                 64 * 1024 * 1024
             },
