@@ -8,7 +8,7 @@ use super::Result;
 
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct Plan {
+pub(in crate::standalone::measurements::comparison) struct Plan {
     pub schema: String,
     pub profile: String,
     pub repetition: u32,

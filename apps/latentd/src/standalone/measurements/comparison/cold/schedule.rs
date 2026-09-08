@@ -31,7 +31,11 @@ fn retained_valid(row: &Value) -> bool {
     }
 }
 
-fn record(node: &Node, writer: &mut Writer, mut row: Value) -> Result<bool> {
+pub(in crate::standalone::measurements::comparison) fn record(
+    node: &Node,
+    writer: &mut Writer,
+    mut row: Value,
+) -> Result<bool> {
     let valid = retained_valid(&row);
     if let Some(id) = row["activation_id"]
         .as_str()
@@ -48,7 +52,7 @@ fn record(node: &Node, writer: &mut Writer, mut row: Value) -> Result<bool> {
     Ok(valid)
 }
 
-pub(super) async fn sequential(
+pub(in crate::standalone::measurements::comparison) async fn sequential(
     node: &mut Node,
     writer: &mut Writer,
     clock: call::Clock,
@@ -82,23 +86,44 @@ pub(super) async fn sequential(
     Ok(())
 }
 
-pub(super) struct BurstOptions<'a> {
+pub(in crate::standalone::measurements::comparison) struct BurstOptions<'a> {
     pub phase: &'static str,
     pub cold_keys: &'a [u32],
     pub cancel: bool,
 }
 
-#[expect(
-    clippy::too_many_lines,
-    reason = "Offer ordering, task collection and deferred status reads must remain one auditable matched benchmark sequence."
-)]
-pub(super) async fn burst(
+pub(in crate::standalone::measurements::comparison) async fn burst(
     node: &mut Node,
     writer: &mut Writer,
     clock: call::Clock,
     plan: &Plan,
     releases: &[String],
     options: BurstOptions<'_>,
+) -> Result<()> {
+    burst_at_generation(
+        node,
+        writer,
+        clock,
+        plan,
+        releases,
+        options,
+        (8, plan.cold_offset()),
+    )
+    .await
+}
+
+#[expect(
+    clippy::too_many_lines,
+    reason = "Offer ordering, task collection and deferred status reads must remain one auditable matched benchmark sequence."
+)]
+pub(in crate::standalone::measurements::comparison) async fn burst_at_generation(
+    node: &mut Node,
+    writer: &mut Writer,
+    clock: call::Clock,
+    plan: &Plan,
+    releases: &[String],
+    options: BurstOptions<'_>,
+    target: (u64, Duration),
 ) -> Result<()> {
     let BurstOptions {
         phase,
@@ -111,7 +136,7 @@ pub(super) async fn burst(
         "node":node.sample(phase)?}))?;
     let anchor_recorded = clock.elapsed();
     let origin = anchor_recorded + 10_000_000;
-    let cold_due = origin + plan.cold_offset().as_nanos();
+    let cold_due = origin + target.1.as_nanos();
     writer.sample(&json!({"kind":"phase-anchor","phase":phase,"recorded_nanos":anchor_recorded.to_string(),
         "offer_lead_nanos":"10000000","origin_nanos":origin.to_string(),"cold_due_nanos":cold_due.to_string()}))?;
     if clock.elapsed() >= origin {
@@ -189,7 +214,7 @@ pub(super) async fn burst(
         );
         if overload {
             pending.push(
-                call::invoke(
+                call::invoke_at_generation(
                     channel,
                     clock,
                     call::InvokeOptions {
@@ -201,13 +226,14 @@ pub(super) async fn burst(
                         release,
                         overload: true,
                     },
+                    target.0,
                 )
                 .await?,
             );
         } else {
             tasks.spawn(async move {
                 Ok((
-                    call::invoke(
+                    call::invoke_at_generation(
                         channel,
                         clock,
                         call::InvokeOptions {
@@ -219,6 +245,7 @@ pub(super) async fn burst(
                             release,
                             overload: false,
                         },
+                        target.0,
                     )
                     .await?,
                     warm,
