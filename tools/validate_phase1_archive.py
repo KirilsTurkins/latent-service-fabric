@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import gzip
 import hashlib
 import json
@@ -40,7 +41,10 @@ except ImportError:
 
 ARCHIVE = 'raw-evidence.tar.gz'
 MANIFEST = 'raw-evidence.manifest.json'
+PARTS_MANIFEST = 'raw-evidence.parts.json'
 MAX_COMPRESSED = 99_000_000
+MAX_SPLIT_COMPRESSED = 198_000_000
+MAX_PART_BYTES = 50_000_000
 MAX_EXPANDED = 1024 * 1024 * 1024
 MAX_FILES = 5000
 MAX_AGGREGATE_BYTES = 8 * 1024 * 1024
@@ -83,6 +87,82 @@ def file_reference(path, root, maximum=MAX_EXPANDED):
             digest.update(chunk)
     return {'path': relative_path(path.relative_to(root).as_posix()),
             'bytes': str(total), 'sha256': 'sha256:' + digest.hexdigest()}
+
+
+def split_layout(total):
+    require(20 <= total <= MAX_SPLIT_COMPRESSED, 'split archive compressed byte bound')
+    chunk_bytes = min(MAX_PART_BYTES, (total + 1) // 2)
+    count = (total + chunk_bytes - 1) // chunk_bytes
+    require(2 <= count <= 4, 'split archive part count bound')
+    return [(f'{ARCHIVE}.part-{index + 1:04d}', min(chunk_bytes, total - index * chunk_bytes))
+            for index in range(count)]
+
+
+def transport_names(root, expected):
+    # Reserve the complete transport namespace, including case aliases. Other
+    # published files (for example REPORT.md) remain compatible with old packages.
+    for path in root.iterdir():
+        folded = path.name.casefold()
+        if (folded.startswith(ARCHIVE.casefold()) or folded.startswith(PARTS_MANIFEST.casefold())
+                or folded == MANIFEST.casefold()):
+            require(path.name in expected, 'unexpected or ambiguous archive transport file')
+            paths.require_regular_file(path, 'archive transport file')
+
+
+@contextmanager
+def archive_input(root, manifest):
+    split_path = root / PARTS_MANIFEST
+    if not split_path.exists() and not split_path.is_symlink():
+        transport_names(root, {ARCHIVE, ARCHIVE + '.sha256', MANIFEST})
+        archive_path = paths.existing_regular_file_path(root / ARCHIVE, 'evidence archive')
+        require(file_reference(archive_path, root, MAX_COMPRESSED) == manifest['archive'],
+                'archive checksum mismatch')
+        yield archive_path
+        return
+    paths.require_regular_file(split_path, 'split archive manifest')
+    with split_path.open('rb') as stream:
+        encoded = stream.read(8193)
+    require(len(encoded) <= 8192, 'split manifest exceeds bound')
+    value = json.loads(encoded, object_pairs_hook=pairs)
+    require(isinstance(value, dict) and set(value) == {'schema', 'archive', 'parts'}
+            and value['schema'] == 'latent.phase1.archive-parts.v1', 'invalid split manifest schema')
+    require(value['archive'] == manifest['archive'], 'split logical archive mismatch')
+    layout = split_layout(size(manifest['archive']['bytes']))
+    require(isinstance(value['parts'], list) and len(value['parts']) == len(layout),
+            'split archive part count mismatch')
+    expected_names = {MANIFEST, PARTS_MANIFEST, ARCHIVE + '.sha256'}
+    expected_names.update(name for name, _ in layout)
+    transport_names(root, expected_names)
+    for row, (name, expected_bytes) in zip(value['parts'], layout):
+        require(isinstance(row, dict) and set(row) == {'path', 'bytes', 'sha256'}
+                and row['path'] == name and row['bytes'] == str(expected_bytes)
+                and isinstance(row['sha256'], str) and re.fullmatch(r'sha256:[0-9a-f]{64}', row['sha256']),
+                'invalid split part identity or order')
+    with tempfile.TemporaryDirectory(prefix='latent-phase1-parts-') as temporary:
+        archive_path = Path(temporary) / ARCHIVE
+        whole_digest = hashlib.sha256()
+        total = 0
+        with archive_path.open('xb') as output:
+            for row in value['parts']:
+                path = paths.existing_regular_file_path(root / row['path'], 'archive part')
+                require(path.stat().st_size == size(row['bytes']), 'split part size mismatch')
+                digest = hashlib.sha256()
+                observed = 0
+                with path.open('rb') as stream:
+                    for chunk in iter(lambda: stream.read(CHUNK), b''):
+                        observed += len(chunk)
+                        total += len(chunk)
+                        require(observed <= size(row['bytes']) and total <= MAX_SPLIT_COMPRESSED,
+                                'split archive read exceeds bound')
+                        digest.update(chunk)
+                        whole_digest.update(chunk)
+                        output.write(chunk)
+                require(observed == size(row['bytes']) and 'sha256:' + digest.hexdigest() == row['sha256'],
+                        'split part checksum mismatch')
+        require(total == size(manifest['archive']['bytes'])
+                and 'sha256:' + whole_digest.hexdigest() == manifest['archive']['sha256'],
+                'split whole archive checksum mismatch')
+        yield archive_path
 
 
 def load_manifest(root):
@@ -201,12 +281,15 @@ def verify_revision(directory, *, backend=False):
 def verify_package(directory, *, replay=True):
     root = paths.existing_directory_path(directory, 'evidence package')
     manifest = load_manifest(root)
-    archive_path = paths.existing_regular_file_path(root / ARCHIVE, 'evidence archive')
-    require(file_reference(archive_path, root, MAX_COMPRESSED) == manifest['archive'], 'archive checksum mismatch')
     checksum = paths.existing_regular_file_path(root / (ARCHIVE + '.sha256'), 'archive checksum')
     require(checksum.stat().st_size <= 256, 'oversized archive checksum')
     require(checksum.read_text() == manifest['archive']['sha256'][7:] + '  ' + ARCHIVE + '\n',
             'archive checksum sidecar mismatch')
+    with archive_input(root, manifest) as archive_path:
+        return verify_archive(root, manifest, archive_path, replay=replay)
+
+
+def verify_archive(root, manifest, archive_path, *, replay):
     expected = {row['path']: row for row in manifest['files']}
     # Inspect fixed-size headers before a general tar parser can allocate a PAX
     # body. Packages use plain USTAR only. All expansion, padding and trailing
