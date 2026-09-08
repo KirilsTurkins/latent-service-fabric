@@ -2,8 +2,9 @@
 
 `latent-control-store::DirectoryDeploymentRepository` is the standalone, node-owned implementation of `DeploymentStore`, `CompiledRouteStore`, `RouteCompiler`, `RouteSnapshotPublisher`, `RouteSnapshotSource`, and `RouteResolver`.
 
-The implementation is available through Rust APIs. Composing it into a running
-standalone `latentd` node and exposing management RPCs remain #14 and #37 work.
+The implementation is available through Rust APIs and the
+[standalone node](reference/standalone-node.md), whose
+[management RPCs](reference/management-services.md) use this same repository.
 
 It converts deployment metadata and verified release metadata into immutable local route indexes. It does not prepare Wasmtime modules, allocate execution cells, start runtimes, spawn tasks or threads, create listeners, or perform admission. Those operations belong to the node's execution path after resolution.
 

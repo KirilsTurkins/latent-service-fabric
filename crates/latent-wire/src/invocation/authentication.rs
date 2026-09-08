@@ -3,6 +3,7 @@ use latent_activation::TraceContext;
 use latent_core::{
     InvocationPrincipal, Metadata, PlatformError, PlatformErrorCode, PrincipalKind, TenantId,
 };
+use std::time::Instant;
 use tonic::{Request, Status};
 
 /// Trusted identity supplied by the embedding listener; invocation metadata
@@ -11,6 +12,7 @@ use tonic::{Request, Status};
 pub struct AuthenticatedInvocationContext {
     principal: InvocationPrincipal,
     transport_deadline_unix_millis: Option<u64>,
+    transport_expires_at: Option<Instant>,
 }
 impl AuthenticatedInvocationContext {
     #[must_use]
@@ -18,12 +20,30 @@ impl AuthenticatedInvocationContext {
         Self {
             principal,
             transport_deadline_unix_millis: None,
+            transport_expires_at: None,
         }
     }
     #[must_use]
     pub fn with_transport_deadline(mut self, deadline_unix_millis: u64) -> Self {
         self.transport_deadline_unix_millis = Some(deadline_unix_millis);
+        self.transport_expires_at = None;
         self
+    }
+    /// Pins the listener's arrival deadline before body decoding or dispatch.
+    /// The monotonic point must use the same clock as the service adapter.
+    #[must_use]
+    pub fn with_transport_deadline_at(
+        mut self,
+        deadline_unix_millis: u64,
+        expires_at: Instant,
+    ) -> Self {
+        self.transport_deadline_unix_millis = Some(deadline_unix_millis);
+        self.transport_expires_at = Some(expires_at);
+        self
+    }
+    #[must_use]
+    pub const fn transport_expires_at(&self) -> Option<Instant> {
+        self.transport_expires_at
     }
     #[must_use]
     pub fn principal(&self) -> &InvocationPrincipal {

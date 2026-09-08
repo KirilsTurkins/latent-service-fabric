@@ -5,8 +5,9 @@
 versioned deployment store, compiled routes, and inventory reporter. It opens no
 listener and creates no execution backend, guest instance, cell pool, or service
 worker. The embedding application supplies these shared services and a trusted
-authentication boundary. Standalone process composition and CLI commands are
-separate Phase 1 work.
+authentication boundary. The [standalone Linux node](standalone-node.md)
+supplies this composition and a configured loopback listener. The `latent`
+operator CLI remains separate Phase 1 work.
 
 ## Supported calls
 

@@ -84,6 +84,7 @@ impl<R: InvocationRuntime + ?Sized + 'static> InvocationService for InvocationSe
         let deadline = deadline::plan(
             &request,
             context.transport_deadline_unix_millis(),
+            context.transport_expires_at(),
             self.services.clock.sample(),
             &self.limits,
         )?;

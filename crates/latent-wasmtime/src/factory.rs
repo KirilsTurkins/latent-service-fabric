@@ -9,7 +9,7 @@ use wasmtime::{Config, Engine};
 
 use crate::backend::{SharedRuntime, WasmtimeBackend};
 use crate::config::{DispatchMode, WasmtimeConfig};
-use crate::containment::{bounded_text, platform_error, start_epoch_ticker, MAX_DIAGNOSTIC_BYTES};
+use crate::containment::{bounded_text, platform_error, EpochTicker, MAX_DIAGNOSTIC_BYTES};
 use crate::{BoundedLogSink, WasmtimeEngineFactory, WasmtimeEngineProfile, WasmtimeHostServices};
 
 pub struct WasmtimeComponentEngineFactory {
@@ -58,7 +58,6 @@ impl WasmtimeComponentEngineFactory {
         }
         let mut engine_config = Config::new();
         config.apply_engine(&mut engine_config)?;
-        let shared = Arc::new(SharedRuntime::new(&config, services)?);
         let engine = Engine::new(&engine_config).map_err(|error| {
             platform_error(
                 PlatformErrorCode::Internal,
@@ -69,10 +68,11 @@ impl WasmtimeComponentEngineFactory {
                 false,
             )
         })?;
-        start_epoch_ticker(
+        let epoch_ticker = EpochTicker::start(
             &engine,
             Duration::from_millis(config.epoch_tick_interval_millis),
         )?;
+        let shared = Arc::new(SharedRuntime::new(&config, services, epoch_ticker)?);
         let profile = config.profile(mode);
         Ok(Self {
             engine,
@@ -112,7 +112,30 @@ impl WasmtimeComponentEngineFactory {
             Arc::clone(&self.shared),
         )
     }
+
+    /// Consumes this factory and stops and joins its epoch worker once all
+    /// backends and prepared-use owners have been dropped.
+    ///
+    /// Returns `Unavailable` if another runtime owner remains. That owner keeps
+    /// the worker running, and its final drop will stop and join the worker.
+    /// The factory is consumed on both success and failure. Joining requires no
+    /// runtime lock and wakes the worker immediately instead of waiting for the
+    /// configured tick interval; completion still depends on OS scheduling.
+    pub fn shutdown(self) -> Result<(), PlatformError> {
+        let Self { shared, .. } = self;
+        let mut shared = Arc::try_unwrap(shared).map_err(|_| {
+            platform_error(
+                PlatformErrorCode::Unavailable,
+                "wasmtime-runtime-still-owned",
+                false,
+            )
+        })?;
+        shared.shutdown()
+    }
 }
+
+#[cfg(test)]
+mod tests;
 
 impl WasmtimeEngineFactory for WasmtimeComponentEngineFactory {
     fn profile(&self) -> &WasmtimeEngineProfile {

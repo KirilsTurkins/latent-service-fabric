@@ -6,9 +6,9 @@ queued work fairly, and returns one execution-owned cell and quota reservation.
 It creates no dispatcher task, worker thread, runtime, listener, or per-service
 queue. Enqueue futures cooperatively dispatch on the caller's async runtime.
 
-This is a Rust scheduling API. Generic Wasmtime dispatch, complete activation
-lifecycle orchestration, and standalone node composition remain #9, #11, and
-#14 work. The retained Phase 0 execution path continues to provide its separate
+This Rust API is composed by the [activation lifecycle](activation-lifecycle.md)
+and [standalone node](reference/standalone-node.md) with generic Wasmtime
+dispatch. The retained Phase 0 execution path continues to provide its separate
 echo/containment regression coverage.
 
 ## Construction and resource topology
