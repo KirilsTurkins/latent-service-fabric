@@ -21,12 +21,13 @@ impl super::super::PreparationContext {
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
         input: Compilation,
-        reservation: PrepareReservation<PreparedRuntime>,
+        mut reservation: PrepareReservation<PreparedRuntime>,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         let runtime = self.build_runtime(artifact, key, input, job)?;
         let adoption = job.stage(PreparationStage::CacheAdoption);
         if self.config.prepared_cache_enabled {
+            reservation.track_runtime(&runtime)?;
             reservation.publish_with_metadata(
                 Arc::clone(&runtime),
                 runtime.image_bytes,
@@ -101,6 +102,9 @@ impl super::super::PreparationContext {
             input.handle.clone(),
             input.component_digest,
         );
+        // InstancePre now owns the image. Do not retain an extra local native
+        // owner beyond construction of its uniquely charged prepared runtime.
+        drop(component);
         let runtime = Arc::new(PreparedRuntime {
             pre,
             declared_budget: artifact.manifest.execution.resource_budget_ceiling.clone(),
@@ -116,6 +120,13 @@ impl super::super::PreparationContext {
                 .iter()
                 .map(|import| import.contract.clone())
                 .collect(),
+            lifetime_charge: self
+                .runtime_ledger
+                .register(crate::cache::PreparedRuntimeCost {
+                    source_bytes: artifact.component_bytes.len(),
+                    metadata_bytes,
+                    compiled_image_bytes: image_bytes,
+                })?,
         });
         linking.complete();
         Ok(runtime)

@@ -2,6 +2,10 @@ use std::sync::Arc;
 
 use crate::cache::{CacheLimits, PrepareAccess, PreparedCache};
 
+mod failures;
+mod lifetime;
+mod support;
+
 #[test]
 fn untracked_cache_exposes_actual_residency_without_inventing_unique_costs() {
     let cache = Arc::new(

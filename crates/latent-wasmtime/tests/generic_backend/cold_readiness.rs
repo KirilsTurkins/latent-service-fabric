@@ -5,7 +5,7 @@ use latent_artifacts::{
 };
 use latent_core::PlatformErrorCode;
 use latent_executor::{ExecutionBackend, ExecutionCleanup};
-use latent_wasmtime::WasmtimeComponentEngineFactory;
+use latent_wasmtime::{PreparedRuntimeSnapshot, WasmtimeComponentEngineFactory};
 use serde_json::json;
 
 use super::support::{
@@ -61,6 +61,7 @@ async fn readiness_is_independent_of_instance_gate_and_pins_evicted_runtime_thro
     configuration.prepared_cache_maximum_entries = 1;
     let factory = WasmtimeComponentEngineFactory::new(configuration).unwrap();
     let backend = factory.create_backend_instance();
+    let accounting = backend.prepared_runtime_observer();
     let key = backend.preparation_key(&digest).unwrap();
     let first = tokio::time::timeout(
         WATCHDOG,
@@ -76,6 +77,10 @@ async fn readiness_is_independent_of_instance_gate_and_pins_evicted_runtime_thro
         .prepare_ready_from_repository(repository.clone(), key.clone())
         .await
         .unwrap();
+    let unique = accounting.snapshot().unwrap();
+    assert_eq!(unique.live.runtimes, 1);
+    assert_eq!(unique.live, unique.resident);
+    assert_eq!(unique.unpublished.runtimes, 0);
     assert_eq!(
         repository.verification_snapshot(),
         verification,
@@ -86,15 +91,21 @@ async fn readiness_is_independent_of_instance_gate_and_pins_evicted_runtime_thro
     let error = backend.materialize_ready(second).unwrap_err();
     assert_eq!(error.code, PlatformErrorCode::Unavailable);
     assert_eq!(backend.compiler_snapshot().ready_preparations, 0);
+    assert_eq!(accounting.snapshot(), Some(unique));
     let independent = backend
         .prepare_ready_from_repository(repository.clone(), key)
         .await
         .unwrap();
     assert_eq!(backend.compiler_snapshot().ready_preparations, 1);
     drop(independent);
+    assert_eq!(accounting.snapshot(), Some(unique));
     let descriptor = active.prepared.descriptor().clone();
     backend.release(descriptor.clone()).await.unwrap();
     assert_eq!(backend.cache_snapshot().entries, 0);
+    let evicted = accounting.snapshot().unwrap();
+    assert_eq!(evicted.live, unique.live);
+    assert_eq!(evicted.evicted_live, unique.live);
+    assert_eq!(evicted.resident.runtimes, 0);
     let cancellation = Cancellation::new("ready-evicted-invoke");
     let report = tokio::time::timeout(
         WATCHDOG,
@@ -117,6 +128,7 @@ async fn readiness_is_independent_of_instance_gate_and_pins_evicted_runtime_thro
     assert_eq!(returned(report.outcome.unwrap()), json!([11]));
     idle(&backend);
     assert_eq!(backend.active_instance_reservations(), 0);
+    assert_eq!(accounting.snapshot().unwrap().live.runtimes, 0);
     tokio::time::timeout(WATCHDOG, factory.quiesce_compiler())
         .await
         .unwrap()
@@ -124,6 +136,10 @@ async fn readiness_is_independent_of_instance_gate_and_pins_evicted_runtime_thro
     let compiler = factory.compiler_observer();
     drop(backend);
     factory.shutdown().unwrap();
+    assert_eq!(
+        accounting.snapshot(),
+        Some(PreparedRuntimeSnapshot::default())
+    );
     let joined = compiler.snapshot();
     assert_eq!(joined.workers_joined, joined.maximum_workers as u64);
     assert_eq!(

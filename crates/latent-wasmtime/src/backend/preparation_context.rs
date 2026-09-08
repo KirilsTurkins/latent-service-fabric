@@ -19,6 +19,7 @@ use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
 pub(super) struct PreparationContext {
+    pub(super) runtime_ledger: crate::cache::PreparedRuntimeLedger,
     pub(super) next_untrusted: std::sync::atomic::AtomicU64,
     pub(super) engine: Engine,
     pub(super) profile: WasmtimeEngineProfile,

@@ -35,6 +35,8 @@ mod owned;
 mod preparation;
 mod preparation_context;
 mod readiness;
+#[cfg(test)]
+mod result_lifetime_tests;
 use preparation_context::PreparationContext;
 mod store;
 use owned::WasmtimePreparedUse;
@@ -51,11 +53,19 @@ pub(crate) struct PreparedRuntime {
     authentication: Option<ArtifactPreparationIdentity>,
     metadata_bytes: usize,
     image_bytes: usize,
+    // Runtime-owned costs retire only after all native and metadata fields.
+    lifetime_charge: crate::cache::PreparedRuntimeCharge,
 }
 
 impl PreparedRuntime {
     pub(crate) fn descriptor(&self) -> &PreparedComponent {
         &self.descriptor
+    }
+}
+
+impl crate::cache::TrackedPreparedValue for PreparedRuntime {
+    fn runtime_charge(&self) -> &crate::cache::PreparedRuntimeCharge {
+        &self.lifetime_charge
     }
 }
 
@@ -94,7 +104,7 @@ impl SharedRuntime {
         engine: Engine,
         profile: WasmtimeEngineProfile,
     ) -> Result<Self, PlatformError> {
-        let cache = Arc::new(PreparedCache::new(config.cache_limits())?);
+        let cache = Arc::new(PreparedCache::new_tracked(config.cache_limits())?);
         let preparation = Arc::new(PreparationCounters::default());
         let preparation_observer = PreparationObserver::new(config.maximum_concurrent_preparations);
         let uncached_prepared = Arc::new(Mutex::new(None));
@@ -106,6 +116,9 @@ impl SharedRuntime {
             observer: preparation_observer.clone(),
             uncached: Arc::clone(&uncached_prepared),
             next_untrusted: std::sync::atomic::AtomicU64::new(0),
+            runtime_ledger: cache
+                .runtime_ledger()
+                .expect("factory tracks runtime lifetimes"),
         });
         let compiler = if profile.id == crate::config::GENERIC_BACKEND_ID {
             Some(crate::compiler::CompilerPool::new(
@@ -442,26 +455,29 @@ impl WasmtimeBackend {
         drop(host_state_guard);
         drop(input);
         drop(output);
-        drop(runtime);
-        drop(instance_permit);
         drop(temporary_buffer_guard);
         timing.activation_resource_reclamation_micros = elapsed_micros(reclamation_started);
 
         let classification_started = Instant::now();
-        let outcome = if let Some(error) = accounting_error {
-            Ok(GuestOutcome::Trapped {
-                trap: latent_executor::GuestTrap {
-                    code: "budget-accounting-failed".to_owned(),
-                    message: bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
-                    guest_backtrace: Vec::new(),
-                    metadata: Metadata::new(),
-                },
-                consumption,
-            })
-        } else {
-            classify_call_result(call_result, encoded, &stop, memory_exhausted, consumption)
-        };
+        let outcome = classify_call_result(
+            call_result,
+            encoded,
+            &stop,
+            memory_exhausted,
+            consumption,
+            accounting_error,
+        );
         timing.outcome_classification_micros = elapsed_micros(classification_started);
+
+        // Native error backtraces can retain compiled images. Classification
+        // consumes those errors before the final runtime charge and permit.
+        // Measure only these drops, not the intervening classification work.
+        let runtime_reclamation_started = Instant::now();
+        drop(runtime);
+        drop(instance_permit);
+        timing.activation_resource_reclamation_micros = timing
+            .activation_resource_reclamation_micros
+            .saturating_add(elapsed_micros(runtime_reclamation_started));
 
         let reusable_proof_started = Instant::now();
         drop(stop);
@@ -866,7 +882,21 @@ fn classify_call_result(
     stop: &StopControl,
     memory_exhausted: bool,
     consumption: BudgetConsumption,
+    accounting_error: Option<PlatformError>,
 ) -> Result<GuestOutcome, PlatformError> {
+    if let Some(error) = accounting_error {
+        // Even a superseded trap can own native backtrace/image state.
+        drop(call_result);
+        return Ok(GuestOutcome::Trapped {
+            trap: latent_executor::GuestTrap {
+                code: "budget-accounting-failed".to_owned(),
+                message: bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
+                guest_backtrace: Vec::new(),
+                metadata: Metadata::new(),
+            },
+            consumption,
+        });
+    }
     match call_result {
         Ok(()) => match encoded.expect("successful call encoded its values") {
             Ok(values::EncodedResult::Returned(output)) => Ok(GuestOutcome::Returned {

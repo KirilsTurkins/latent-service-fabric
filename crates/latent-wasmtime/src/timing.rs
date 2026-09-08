@@ -34,10 +34,12 @@ pub struct Phase0InvocationTiming {
     /// `guest_call_micros` because Wasmtime completes it inside the safe Component Model
     /// call API.
     pub component_post_return_micros: u64,
-    /// Store/instance/host-state, temporary-buffer, and runtime resource
-    /// reclamation.
+    /// Sum of the store/instance/host-state and temporary-buffer drop span,
+    /// and the final runtime/permit drop span after error classification.
+    /// The intervening classification work is excluded.
     pub activation_resource_reclamation_micros: u64,
-    /// Guest result classification after activation resources are reclaimed.
+    /// Guest result classification after stores and buffers are reclaimed,
+    /// including native error destruction before the final runtime release.
     pub outcome_classification_micros: u64,
     /// Final cancellation/log cleanup and construction of the reusable proof.
     pub reusable_proof_micros: u64,
