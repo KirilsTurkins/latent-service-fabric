@@ -8,6 +8,9 @@ use tonic::Status;
 use super::signal::Signal;
 use super::{failure, TransportConfig};
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TransportSnapshot {
     pub accepting: bool,
@@ -124,8 +127,14 @@ impl Shared {
             Ok(counts) => counts,
             Err(TryLockError::Poisoned(error)) => error.into_inner(),
             Err(TryLockError::WouldBlock) => {
-                self.reject(kind);
-                return Err(Status::unavailable("standalone dispatch is busy"));
+                #[cfg(test)]
+                tests::note_contention();
+                // This mutex protects only phase and scalar counters. Brief
+                // contention is not exhausted capacity; inspect the actual
+                // limits after the current count operation has completed.
+                self.counts
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
             }
         };
         let closed = match kind {
