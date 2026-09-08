@@ -1046,7 +1046,12 @@ name = "latent-optimization-bench"
 version = "0.1.0-alpha.1"
 dependencies = [
  "clap",
+ "latent-artifacts",
+ "latent-control-store",
+ "latent-core",
+ "latent-manifest",
  "latent-optimization-workloads",
+ "latent-routing",
  "latent-rpc",
  "latent-wire",
  "prost",
@@ -1055,6 +1060,7 @@ dependencies = [
  "sha2",
  "tokio",
  "tonic",
+ "wasmparser 0.252.0",
 ]
 
 [[package]]
