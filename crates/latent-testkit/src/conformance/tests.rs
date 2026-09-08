@@ -29,6 +29,53 @@ fn command_ceiling_also_bounds_non_invocation_work() {
 }
 
 #[test]
+fn expanded_drivers_share_the_same_total_work_ceiling() {
+    use super::{
+        ADAPTER_MAXIMUM_COMMANDS, ADAPTER_MAXIMUM_INVOKE_ATTEMPTS, MAXIMUM_COMMANDS,
+        MAXIMUM_INVOKE_ATTEMPTS, PROCESS_MAXIMUM_COMMANDS, PROCESS_MAXIMUM_INVOKE_ATTEMPTS,
+    };
+    assert_eq!(
+        PROCESS_MAXIMUM_COMMANDS + ADAPTER_MAXIMUM_COMMANDS,
+        MAXIMUM_COMMANDS
+    );
+    assert_eq!(
+        PROCESS_MAXIMUM_INVOKE_ATTEMPTS + ADAPTER_MAXIMUM_INVOKE_ATTEMPTS,
+        MAXIMUM_INVOKE_ATTEMPTS
+    );
+    let mut report = report();
+    let too_many = WorkCounts {
+        commands: 37,
+        invoke_attempts: 37,
+        budget_exhausted: false,
+    };
+    assert!(report.finish_process(too_many).is_err());
+    assert_eq!(report.work, WorkCounts::default());
+    let process = WorkCounts {
+        commands: PROCESS_MAXIMUM_COMMANDS,
+        invoke_attempts: PROCESS_MAXIMUM_INVOKE_ATTEMPTS,
+        budget_exhausted: false,
+    };
+    report.finish_process(process).unwrap();
+    let fragment = super::DriverEvidence {
+        driver: "adapter".to_owned(),
+        cases: vec![],
+        work: WorkCounts {
+            commands: ADAPTER_MAXIMUM_COMMANDS,
+            invoke_attempts: ADAPTER_MAXIMUM_INVOKE_ATTEMPTS,
+            budget_exhausted: false,
+        },
+        artifacts: vec![],
+    };
+    report.merge_driver(fragment).unwrap();
+    assert_eq!(report.work.commands, MAXIMUM_COMMANDS);
+    assert_eq!(report.work.invoke_attempts, MAXIMUM_INVOKE_ATTEMPTS);
+    assert!(
+        report.validate_deterministic().is_err(),
+        "budgets alone never establish case completion"
+    );
+}
+
+#[test]
 fn concurrent_callers_cannot_oversubscribe_the_shared_counter() {
     let counter = WorkCounter::with_limits(4, 4).unwrap();
     let accepted = std::thread::scope(|scope| {

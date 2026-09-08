@@ -15,7 +15,7 @@
     "public_config": {"type": "object", "minProperties": 1},
     "work": {"$ref": "#/$defs/work"},
     "drivers": {"type": "array", "maxItems": 2, "items": {"type": "object", "additionalProperties": false, "required": ["driver", "work"], "properties": {"driver": {"enum": ["process", "adapter"]}, "work": {"$ref": "#/$defs/work"}}}},
-    "cases": {"type": "array", "maxItems": 17, "items": {"$ref": "#/$defs/case"}},
+    "cases": {"type": "array", "maxItems": 19, "items": {"$ref": "#/$defs/case"}},
     "samples": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/sample"}},
     "shutdowns": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/shutdown"}},
     "artifacts": {"type": "array", "maxItems": 512, "items": {"$ref": "#/$defs/artifact"}},

@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import hashlib
 import json
 import math
@@ -289,6 +291,266 @@ def verify_shutdown(raw: Any, *, cells: int = 5) -> None:
     number(raw["telemetryRetainedEntries"], 65536)
 
 
+def cli_data(value: Any, command: str, category: str, *, known: bool = True) -> dict[str, Any]:
+    fields(value, "schemaVersion command category data error requestDispatched outcomeKnown")
+    require(value["schemaVersion"] == "latent.cli.result.v1" and value["command"] == command
+            and value["category"] == category and value["requestDispatched"] is True
+            and value["outcomeKnown"] is known, "invalid-case-cli-outcome")
+    require(isinstance(value["data"], dict), "missing-case-cli-data")
+    if category == "success":
+        require(value["error"] is None, "unexpected-case-cli-error")
+    return value["data"]
+
+
+def cli_consumption(value: Any) -> dict[str, int]:
+    fields(value, "cpuFuel peakMemoryBytes wallTimeMicros childCalls outboundRequests stateReadBytes stateWriteBytes blobReadBytes blobWriteBytes logBytes effectCount")
+    numbers = {key: uint(value[key]) for key in ("cpuFuel", "peakMemoryBytes", "wallTimeMicros",
+               "stateReadBytes", "stateWriteBytes", "blobReadBytes", "blobWriteBytes", "logBytes")}
+    for key in ("childCalls", "outboundRequests", "effectCount"):
+        numbers[key] = number(value[key], 0)
+    require(all(numbers[key] == 0 for key in ("stateReadBytes", "stateWriteBytes", "blobReadBytes", "blobWriteBytes")),
+            "unexpected-later-phase-consumption")
+    return numbers
+
+
+def cli_payload(value: Any) -> Any:
+    fields(value, "encoding mediaType data byteLength")
+    require(value["encoding"] == "base64" and value["mediaType"] == "application/vnd.latent.wit-values.v1+json",
+            "invalid-case-payload-media")
+    require(isinstance(value["data"], str) and len(value["data"]) <= 8192, "case-payload-byte-limit")
+    try:
+        raw = base64.b64decode(value["data"], validate=True)
+    except (ValueError, binascii.Error) as error:
+        raise ConformanceValidationError("invalid-case-payload-encoding") from error
+    require(len(raw) == uint(value["byteLength"]) and len(raw) <= 4096, "case-payload-byte-limit")
+    return parse_bounded(raw, 4096)
+
+
+def terminal_status(value: Any, activation_id: str, terminal: str, consumption: Any) -> dict[str, Any]:
+    data = cli_data(value, "activation get", "success")
+    require(data.get("activationId") == activation_id and data.get("terminalState") == terminal,
+            "case-terminal-association")
+    require(uint(data.get("terminalAtUnixMillis")) > 0, "missing-case-terminal-time")
+    cli_consumption(data.get("finalConsumption"))
+    require(canonical_json(data["finalConsumption"]) == canonical_json(consumption), "case-terminal-accounting-mismatch")
+    return data
+
+
+def phase_status(value: Any, activation_id: str, phase: str) -> None:
+    data = cli_data(value, "activation get", "success")
+    require(data.get("activationId") == activation_id and data.get("phase") == phase
+            and data.get("terminalState") is None and data.get("finalConsumption") is None
+            and data.get("terminalAtUnixMillis") is None, "case-pending-association")
+
+
+def invocation_failure(value: Any, activation_id: str, code: str, terminal: str) -> dict[str, Any]:
+    data = cli_data(value, "invoke", "platform-failure")
+    require(data.get("activationId") == activation_id and data.get("terminalState") == terminal
+            and isinstance(value["error"], dict) and value["error"].get("code") == code,
+            "case-platform-outcome-mismatch")
+    cli_consumption(data.get("consumption"))
+    pin = fields(data.get("resolvedRevision"), "revisionId releaseDigest routeGeneration")
+    text(pin["revisionId"], 512)
+    digest(pin["releaseDigest"])
+    require(uint(pin["routeGeneration"]) > 0, "missing-case-revision")
+    return data
+
+
+def idle_sample(sample: Any, report: dict[str, Any], phase: str) -> None:
+    fields(sample, "sequence sample_started_micros sample_finished_micros node_instance phase process inventory")
+    require(sample["phase"] == phase and isinstance(sample["process"], dict), "invalid-idle-sample")
+    uint(sample["sequence"])
+    require(uint(sample["sample_started_micros"]) <= uint(sample["sample_finished_micros"]), "invalid-observation-window")
+    require(any(sample["node_instance"] == retained["node_instance"]
+                and sample["process"].get("identity") == retained["process"]["identity"]
+                for retained in report["samples"]), "wrong-idle-sample-owner")
+    inventory = sample["inventory"]
+    require(isinstance(inventory, dict), "missing-idle-inventory")
+    require(uint(inventory.get("queueDepth")) == 0, "nonempty-idle-queue")
+    cache = inventory.get("cacheSummary")
+    require(isinstance(cache, dict), "missing-idle-cache")
+    for key in ("preparing", "preparingSourceBytes", "preparingMetadataBytes"):
+        require(uint(cache.get(key)) == 0, "live-idle-preparation")
+    quotas = inventory.get("quotas")
+    require(isinstance(quotas, dict) and isinstance(quotas.get("usage"), dict), "missing-idle-quota")
+    usage = quotas["usage"]
+    for key in ("activeActivations", "queuedActivations"):
+        number(usage.get(key), 0)
+    for key in ("reservedCpuFuel", "reservedMemoryBytes"):
+        require(uint(usage.get(key)) == 0, "live-idle-quota")
+    cells = inventory.get("cellCapacity")
+    require(isinstance(cells, list) and len(cells) == 1 and isinstance(cells[0], dict), "missing-idle-cells")
+    for key, expected in (("total", 2), ("available", 2), ("active", 0), ("quarantined", 0), ("queueDepth", 0)):
+        number(cells[0].get(key), expected, expected)
+    topology = inventory.get("topology")
+    require(isinstance(topology, dict) and topology.get("available") is True
+            and isinstance(topology.get("entries"), list) and 0 < len(topology["entries"]) <= 32,
+            "missing-idle-topology")
+    for entry in topology["entries"]:
+        require(isinstance(entry, dict), "invalid-idle-topology-row")
+        if entry.get("ownership") in ("activation-scoped", "service-resident"):
+            require(uint(entry.get("activeCount")) == 0, "live-idle-owner")
+        if entry.get("ownership") == "service-resident":
+            require(uint(entry.get("configuredCount")) == 0, "service-resident-owner")
+
+
+def verify_fuel(observations: Any, report: dict[str, Any]) -> None:
+    fields(observations, "response status fuelGrant idleSample")
+    require(uint(observations["fuelGrant"]) == 50_000, "invalid-fuel-witness-grant")
+    response = invocation_failure(observations["response"], "fuel-exhausted", "resource-exhausted", "resource_exhausted")
+    spent = cli_consumption(response["consumption"])
+    require(0 < spent["cpuFuel"] <= 50_000 and spent["peakMemoryBytes"] > 0, "missing-positive-fuel-exhaustion")
+    terminal_status(observations["status"], "fuel-exhausted", "resource_exhausted", response["consumption"])
+    idle_sample(observations["idleSample"], report, "fuel-settled")
+
+
+def full_queue(inventory: Any) -> None:
+    require(isinstance(inventory, dict), "missing-full-queue-inventory")
+    cells = inventory.get("cellCapacity")
+    require(isinstance(cells, list) and len(cells) == 1 and isinstance(cells[0], dict), "missing-full-queue-cells")
+    for key, expected in (("total", 2), ("active", 2), ("available", 0), ("queueDepth", 3), ("queuedTenants", 2)):
+        number(cells[0].get(key), expected, expected)
+    require(uint(inventory.get("queueDepth")) == 3, "invalid-full-queue-depth")
+    require(isinstance(inventory.get("quotas"), dict) and isinstance(inventory["quotas"].get("usage"), dict),
+            "missing-full-queue-quota")
+    number(inventory["quotas"]["usage"].get("activeActivations"), 5, 5)
+    number(inventory["quotas"]["usage"].get("queuedActivations"), 3, 3)
+
+
+def verify_fair_queue(observations: Any, report: dict[str, Any]) -> None:
+    fields(observations, "holdersRunning queued full overflow overflowStatus unchangedFull firstHandoff secondHandoff cancelled holderResults queuedResults queuedStatuses idleSample fairnessOracle overflowBoundary")
+    require(observations["fairnessOracle"] == "other-tenant-completes-before-uncancelled-same-tenant-spin"
+            and observations["overflowBoundary"] == "standalone-active-owner-ceiling-before-extra-journal-registration",
+            "invalid-fairness-witness")
+    holders = ("queue-holder-first", "queue-holder-second")
+    queued = ("queued-tests-first", "queued-tests-second", "queued-examples")
+    for key, identifiers, phase in (("holdersRunning", holders, "running"), ("queued", queued, "queued")):
+        rows = observations[key]
+        require(isinstance(rows, list) and len(rows) == len(identifiers), "missing-queue-owners")
+        for row, identifier in zip(rows, identifiers):
+            phase_status(row, identifier, phase)
+    full_queue(observations["full"])
+    full_queue(observations["unchangedFull"])
+    overflow = observations["overflow"]
+    fields(overflow, "schemaVersion command category data error requestDispatched outcomeKnown")
+    require(overflow["schemaVersion"] == "latent.cli.result.v1" and overflow["command"] == "invoke"
+            and overflow["category"] == "transport-failure" and overflow["requestDispatched"] is True
+            and overflow["outcomeKnown"] is False and isinstance(overflow["error"], dict)
+            and overflow["error"].get("grpcCode") == "resource-exhausted", "missing-queue-overflow-rejection")
+    absent = observations["overflowStatus"]
+    fields(absent, "schemaVersion command category data error requestDispatched outcomeKnown")
+    require(absent["schemaVersion"] == "latent.cli.result.v1" and absent["command"] == "activation get"
+            and absent["category"] == "not-found" and absent["requestDispatched"] is True
+            and absent["outcomeKnown"] is True, "missing-overflow-status-proof")
+    phase_status(observations["firstHandoff"], queued[0], "running")
+    handoff = fields(observations["secondHandoff"], "examplesResult secondHolderRunning secondQueuedRunning")
+    phase_status(handoff["secondHolderRunning"], holders[1], "running")
+    phase_status(handoff["secondQueuedRunning"], queued[1], "running")
+    cancellations = observations["cancelled"]
+    require(isinstance(cancellations, list) and len(cancellations) == 4, "missing-accepted-cancellations")
+    for row, identifier in zip(cancellations, (holders[0], queued[0], queued[1], holders[1])):
+        data = cli_data(row, "activation cancel", "success")
+        require(data.get("activationId") == identifier and data.get("disposition") == "accepted"
+                and data.get("terminalState") is None, "queue-owner-expired-before-cancellation")
+    results, statuses = observations["queuedResults"], observations["queuedStatuses"]
+    require(isinstance(results, list) and len(results) == 3 and isinstance(statuses, list) and len(statuses) == 3,
+            "missing-queue-terminal-evidence")
+    for index, (row, status, identifier) in enumerate(zip(results, statuses, queued)):
+        if index < 2:
+            data = invocation_failure(row, identifier, "cancelled", "cancelled")
+        else:
+            data = cli_data(row, "invoke", "success")
+            require(data.get("activationId") == identifier and cli_payload(data.get("payload")) == [{"ok": "queued other tenant"}],
+                    "wrong-other-tenant-result")
+            require(canonical_json(row) == canonical_json(handoff["examplesResult"]), "changed-fairness-result")
+        terminal_status(status, identifier, "cancelled" if index < 2 else "completed", data.get("consumption"))
+    holder_results = observations["holderResults"]
+    require(isinstance(holder_results, list) and len(holder_results) == 2, "missing-holder-results")
+    for row, identifier in zip(holder_results, holders):
+        invocation_failure(row, identifier, "cancelled", "cancelled")
+    idle_sample(observations["idleSample"], report, "queue-settled")
+
+
+def verify_fresh(observations: Any, report: dict[str, Any]) -> None:
+    fields(observations, "responses sample")
+    rows = observations["responses"]
+    require(isinstance(rows, list) and len(rows) == 4, "missing-reused-cell-witness")
+    cells = []
+    for index, (row, activation_id) in enumerate(zip(rows, ("warmup", "fresh-first", "fresh-second", "fresh-third"))):
+        data = cli_data(row, "invoke", "success")
+        require(data.get("activationId") == activation_id and cli_payload(data.get("payload")) == [11 if index == 0 else 1],
+                "guest-state-not-fresh")
+        require(isinstance(data.get("metadata"), dict), "missing-fresh-cell-identity")
+        cells.append(text(data["metadata"].get("cell-id"), 512))
+        cli_consumption(data.get("consumption"))
+    require(cells[1] == cells[3] and cells[1] != cells[2], "missing-actual-cell-reuse")
+    idle_sample(observations["sample"], report, "warm")
+
+
+def wall_observation(value: Any, activation_id: str, ceiling: int, absolute: int | None = None) -> None:
+    fields(value, "response status decoded beforeUnixMillis afterUnixMillis effectiveDeadlineUnixMillis remainingMillis requestedWallMillis clockResolutionMillis")
+    before, after = uint(value["beforeUnixMillis"]), uint(value["afterUnixMillis"])
+    effective, remaining = uint(value["effectiveDeadlineUnixMillis"]), uint(value["remainingMillis"])
+    require(before > 0 and after >= before and effective > before and 0 < remaining <= ceiling
+            and uint(value["requestedWallMillis"]) == 5000 and uint(value["clockResolutionMillis"]) == 1,
+            "invalid-relative-wall-observation")
+    if absolute is None:
+        require(before + ceiling - 1 <= effective <= after + ceiling + 1, "aged-relative-ceiling-became-deadline")
+    else:
+        require(effective == absolute and 0 < absolute - before < 1000, "caller-deadline-not-preserved")
+    data = cli_data(value["response"], "invoke", "success")
+    require(data.get("activationId") == activation_id, "wrong-wall-activation")
+    decoded = cli_payload(data.get("payload"))
+    require(canonical_json(decoded) == canonical_json(value["decoded"])
+            and isinstance(decoded, list) and len(decoded) == 1 and isinstance(decoded[0], dict),
+            "wall-payload-mismatch")
+    snapshot = decoded[0]
+    require(snapshot.get("activation") == activation_id and snapshot.get("deadline") == {"some": str(effective)}
+            and isinstance(snapshot.get("remaining"), dict)
+            and snapshot["remaining"].get("wall-time-limit-millis") == {"some": str(remaining)},
+            "wall-context-mismatch")
+    terminal_status(value["status"], activation_id, "completed", data.get("consumption"))
+
+
+def wall_deployment(value: Any, command: str, ceiling: int | None) -> dict[str, Any]:
+    data = cli_data(value, command, "success")
+    deployment = fields(data.get("deployment"), "manifest generation")
+    require(uint(deployment["generation"]) > 0 and isinstance(deployment["manifest"], dict), "invalid-wall-deployment")
+    manifest = deployment["manifest"]
+    require(isinstance(manifest.get("metadata"), dict) and manifest["metadata"].get("name") == "capabilities"
+            and manifest["metadata"].get("tenant") == "tests" and isinstance(manifest.get("spec"), dict)
+            and isinstance(manifest["spec"].get("resources"), dict)
+            and manifest["spec"]["resources"].get("wallTimeLimitMillis") == ceiling, "wrong-persisted-relative-ceiling")
+    return deployment
+
+
+def verify_wall(observations: Any, report: dict[str, Any]) -> None:
+    fields(observations, "nodeCeiling deploymentCeiling callerDeadline restored idleSample")
+    node = fields(observations["nodeCeiling"], "ceilingMillis nodeAgeMillis observation scope")
+    require(uint(node["ceilingMillis"]) == 5000 and uint(node["nodeAgeMillis"]) > 5000
+            and node["scope"] == "configured-standalone-transport-and-admission", "missing-aged-node-ceiling")
+    wall_observation(node["observation"], "wall-node-aged", 5000)
+    deployment = fields(observations["deploymentCeiling"],
+                        "ceilingMillis agedMillis committedUnixMillis original applied persistedBefore observation persistedAfter")
+    require(isinstance(deployment["observation"], dict), "missing-deployment-wall-observation")
+    require(uint(deployment["ceilingMillis"]) == 1000 and uint(deployment["agedMillis"]) > 1000
+            and uint(deployment["observation"].get("beforeUnixMillis")) > uint(deployment["committedUnixMillis"]) + 1000,
+            "missing-aged-deployment-ceiling")
+    original = wall_deployment(deployment["original"], "deployment get", None)
+    applied = wall_deployment(deployment["applied"], "deployment apply", 1000)
+    before = wall_deployment(deployment["persistedBefore"], "deployment get", 1000)
+    after = wall_deployment(deployment["persistedAfter"], "deployment get", 1000)
+    require(canonical_json(applied) == canonical_json(before) == canonical_json(after)
+            and uint(applied["generation"]) > uint(original["generation"]), "persistent-ceiling-mutated-by-invocation")
+    wall_observation(deployment["observation"], "wall-deployment-aged", 1000)
+    caller = fields(observations["callerDeadline"], "absoluteUnixMillis observation")
+    wall_observation(caller["observation"], "wall-caller-earlier", 500, uint(caller["absoluteUnixMillis"]))
+    restored = wall_deployment(observations["restored"], "deployment apply", None)
+    require(canonical_json(restored["manifest"]) == canonical_json(original["manifest"])
+            and uint(restored["generation"]) > uint(applied["generation"]), "relative-ceiling-not-restored")
+    idle_sample(observations["idleSample"], report, "wall-ceilings-settled")
+
+
 def verify_adapter_config(config: Any) -> None:
     fields(config, "formatVersion dataDirectory nodeId bind workers cells execution shutdownGraceMillis")
     require(config["formatVersion"] == 1 and type(config["formatVersion"]) is int
@@ -300,23 +562,226 @@ def verify_adapter_config(config: Any) -> None:
     require(isinstance(config["cells"], list) and len(config["cells"]) == 1, "adapter-cell-bound")
     cell = fields(config["cells"][0], "class capacity queueCapacity maximumMemoryBytes")
     require(cell["class"] == "standard", "adapter-cell-class")
-    number(cell["capacity"], 2, 1)
+    number(cell["capacity"], 1, 1)
     number(cell["queueCapacity"], 2, 1)
-    number(cell["maximumMemoryBytes"], 64 * 1024 * 1024, 1)
+    # The selected capability pairs actually receive these full grants. A
+    # smaller reported node ceiling cannot describe their execution honestly.
+    number(cell["maximumMemoryBytes"], 64 * 1024 * 1024, 64 * 1024 * 1024)
     execution = fields(config["execution"], "maximumCpuFuel maximumWallTimeMillis maximumLogBytes")
-    number(execution["maximumCpuFuel"], 100_000_000, 1)
-    number(execution["maximumWallTimeMillis"], 5000, 1)
-    number(execution["maximumLogBytes"], 16384, 1)
+    number(execution["maximumCpuFuel"], 100_000_000, 100_000_000)
+    number(execution["maximumWallTimeMillis"], 5000, 4000)
+    number(execution["maximumLogBytes"], 16384, 16384)
     number(config["shutdownGraceMillis"], 500, 1)
 
 
-def verify_parity(observations: Any, identity: dict[str, Any]) -> None:
-    fields(observations, "pairs shutdown node_starts public_config config_sha256 inputs comparison variable_fields scope retained_metric_points inventory_cache_entries")
+def parity_consumption(value: Any) -> dict[str, int]:
+    fields(value, "cpu_fuel peak_memory_bytes wall_time_micros log_bytes child_calls outbound_requests state_read_bytes state_write_bytes blob_read_bytes blob_write_bytes effect_count")
+    result = {key: uint(item) for key, item in value.items()}
+    require(0 < result["cpu_fuel"] <= 100_000_000 and 0 < result["peak_memory_bytes"] <= 67_108_864
+            and result["log_bytes"] <= 16384 and result["wall_time_micros"] <= 4_500_000,
+            "capability-consumption-bound")
+    require(all(result[key] == 0 for key in result if key not in ("cpu_fuel", "peak_memory_bytes", "log_bytes", "wall_time_micros")),
+            "unexpected-later-phase-consumption")
+    return result
+
+
+def parity_trace(value: Any) -> None:
+    fields(value, "trace_id span_id trace_flags baggage")
+    for key, width in (("trace_id", 32), ("span_id", 16)):
+        require(isinstance(value[key], str) and re.fullmatch(f"[0-9a-fA-F]{{{width}}}", value[key]) is not None,
+                "invalid-observed-trace")
+    number(value["trace_flags"], 255)
+    require(value["baggage"] == {}, "private-trace-baggage")
+
+
+def telemetry_correlation(call: Any, tenant: str, activation: str, expected_logs: int) -> None:
+    require(call["activation_id"] == activation and call["tenant"] == tenant and call["service"] == "shared",
+            "wrong-telemetry-tenant-owner")
+    root, parent = (("parity-root", "parity-parent") if tenant == "examples" else ("capability-root", "capability-parent"))
+    require(call["root_activation_id"] == root and call["parent_activation_id"] == parent, "wrong-telemetry-lineage")
+    digest(call["release_digest"])
+    text(call["revision_id"], 512)
+    require(uint(call["route_generation"]) > 0, "missing-telemetry-pin")
+    correlation = {"activation_id": activation, "root_activation_id": root, "parent_activation_id": parent,
+                   "tenant": tenant, "service": "shared", "release": call["release_digest"],
+                   "revision": call["revision_id"], "route_generation": call["route_generation"]}
+    correlation["contract"] = "examples:echo/api@0.1.0" if tenant == "examples" else "tests:capabilities/api@0.1.0"
+    correlation["function"] = "echo" if tenant == "examples" else activation.split("-cap-", 1)[-1]
+    span = fields(call["completion_span"], "name status attributes trace started_at_unix_nanos ended_at_unix_nanos")
+    require(span["name"] == "latent.activation" and span["status"] == "ok"
+            and 0 < uint(span["started_at_unix_nanos"]) <= uint(span["ended_at_unix_nanos"]), "invalid-completion-span")
+    parity_trace(span["trace"])
+    logs = call["guest_logs"]
+    require(isinstance(logs, list) and len(logs) == expected_logs, "missing-accepted-guest-logs")
+    for row in [span, *logs]:
+        attributes = row["attributes"] if isinstance(row, dict) and "attributes" in row else None
+        require(isinstance(attributes, dict) and all(attributes.get(key) == item for key, item in correlation.items()),
+                "telemetry-correlation-mismatch")
+        require(not any(key.startswith("guest.") for key in attributes)
+                and "private-context-marker" not in canonical_json(row).decode(), "private-telemetry-field")
+    for log in logs:
+        fields(log, "body attributes trace observed_at_unix_millis")
+        require(log["body"] == "[REDACTED]" and uint(log["observed_at_unix_millis"]) > 0
+                and canonical_json(log["trace"]) == canonical_json(span["trace"]), "guest-log-trace-mismatch")
+
+
+def remaining_budget(value: Any) -> dict[str, int]:
+    fields(value, "cpu-fuel memory-bytes wall-time-limit-millis child-calls outbound-requests state-read-bytes state-write-bytes blob-read-bytes blob-write-bytes log-bytes effect-count")
+    result = {key: uint(value[key]) for key in ("cpu-fuel", "memory-bytes", "log-bytes",
+              "state-read-bytes", "state-write-bytes", "blob-read-bytes", "blob-write-bytes")}
+    require(result["cpu-fuel"] < 100_000_000 and result["memory-bytes"] < 67_108_864
+            and result["log-bytes"] <= 16384, "remaining-budget-exceeds-grant")
+    require(all(result[key] == 0 for key in ("state-read-bytes", "state-write-bytes", "blob-read-bytes", "blob-write-bytes")),
+            "unexpected-later-phase-budget")
+    for key in ("child-calls", "outbound-requests", "effect-count"):
+        number(value[key], 0)
+    wall = fields(value["wall-time-limit-millis"], "some")
+    # Millisecond projection can be zero while the monotonic ledger still has
+    # a positive sub-millisecond remainder. Terminal success is checked apart.
+    require(uint(wall["some"]) <= 4000, "invalid-remaining-wall-budget")
+    return result
+
+
+def capability_call(call: Any, name: str, direct: bool, before: int, after: int) -> None:
+    fields(call, "activation_id root_activation_id parent_activation_id tenant service release_digest revision_id route_generation completion_span guest_logs cell_id decoded consumption grant retained_status")
+    identifier = ("direct" if direct else "remote") + "-cap-" + name
+    telemetry_correlation(call, "tests", identifier, {"snapshot": 0, "work-observe": 1, "clocks": 2}[name])
+    require(call["cell_id"] == "phase1-adapter-parity:phase0:standard:00000000", "capability-cell-not-reused")
+    grant = fields(call["grant"], "cpu_fuel memory_bytes log_bytes wall_time_limit_millis")
+    for key, expected in (("cpu_fuel", 100_000_000), ("memory_bytes", 67_108_864), ("log_bytes", 16384), ("wall_time_limit_millis", 4000)):
+        require(uint(grant[key]) == expected, "wrong-capability-grant")
+    used = parity_consumption(call["consumption"])
+    status = fields(call["retained_status"], "activation_id phase terminal_state final_consumption terminal_at_unix_millis last_updated_unix_millis metadata terminal_kind")
+    require(status["activation_id"] == identifier and status["terminal_state"] == "completed" and status["terminal_kind"] == "success"
+            and 0 < uint(status["terminal_at_unix_millis"]) == uint(status["last_updated_unix_millis"]),
+            "capability-retained-status-mismatch")
+    text(status["phase"], 64)
+    require(isinstance(status["metadata"], dict)
+            and canonical_json(status["final_consumption"]) == canonical_json(call["consumption"]), "capability-retained-accounting-mismatch")
+    require(all(status["metadata"].get(key) == call[field] for key, field in
+                (("release", "release_digest"), ("revision", "revision_id"), ("route-generation", "route_generation"))),
+            "capability-retained-pin-mismatch")
+    for attribute, field in (("cpu_fuel", "cpu_fuel"), ("memory_bytes", "peak_memory_bytes"),
+                             ("wall_time_micros", "wall_time_micros"), ("log_bytes", "log_bytes")):
+        require(call["completion_span"]["attributes"].get(attribute) == call["consumption"][field], "span-accounting-mismatch")
+    decoded = call["decoded"]
+    require(isinstance(decoded, list) and len(decoded) == 1 and "private-context-marker" not in canonical_json(decoded).decode(),
+            "invalid-capability-result")
+    output = decoded[0]
+    if name == "snapshot":
+        fields(output, "activation root parent principal trace deadline metadata remaining")
+        require(output["activation"] == identifier and output["root"] == "capability-root"
+                and output["parent"] == {"some": "capability-parent"} and output["metadata"] == [["guest.visible", "paired"]],
+                "capability-context-owner-mismatch")
+        principal = fields(output["principal"], "subject kind tenant service claims")
+        require(principal["subject"] == "parity-tests" and principal["tenant"] == {"some": "tests"}
+                and principal["claims"] == [] and principal["kind"] == "administrator"
+                and principal["service"] == {"none": None}, "capability-principal-mismatch")
+        observed = call["completion_span"]["trace"]
+        require(output["trace"] == {"trace-id": observed["trace_id"], "span-id": observed["span_id"],
+                                     "trace-flags": observed["trace_flags"], "baggage": []}, "guest-context-trace-mismatch")
+        deadline = uint(fields(output["deadline"], "some")["some"])
+        require(before + 4000 <= deadline <= after + 4000, "capability-deadline-mismatch")
+        remaining = remaining_budget(output["remaining"])
+        require(remaining["log-bytes"] == 16384 and used["log_bytes"] == 0, "snapshot-log-accounting-mismatch")
+    elif name == "work-observe":
+        fields(output, "before after logged checksum")
+        require(type(output["checksum"]) is int and output["checksum"] == 1024 and output["logged"] == {"ok": True},
+                "missing-bounded-guest-work")
+        first, last = remaining_budget(output["before"]), remaining_budget(output["after"])
+        require(all(last[key] < first[key] for key in ("cpu-fuel", "memory-bytes", "log-bytes")), "missing-live-budget-delta")
+        require(first["log-bytes"] == 16384 and used["log_bytes"] == 16384 - last["log-bytes"]
+                and used["cpu_fuel"] >= 100_000_000 - last["cpu-fuel"]
+                and used["peak_memory_bytes"] >= 67_108_864 - last["memory-bytes"], "live-budget-accounting-mismatch")
+    else:
+        require(isinstance(output, list) and len(output) == 3 and used["log_bytes"] > 0, "missing-clock-readings")
+        previous = 0
+        for reading in output:
+            fields(reading, "wall monotonic")
+            require(uint(reading["wall"]) > 0 and uint(reading["monotonic"]) >= previous, "nonmonotonic-guest-clock")
+            previous = uint(reading["monotonic"])
+
+
+def verify_published_inputs(observations: Any, report: dict[str, Any], root: Path) -> dict[str, str]:
+    rows = observations["published_inputs"]
+    require(isinstance(rows, list) and len(rows) == 2, "missing-published-parity-inputs")
+    releases = {}
+    for row, name, tenant in zip(rows, ("echo", "capabilities"), ("examples", "tests")):
+        fields(row, "tenant service component_sha256 manifest contracts deployment")
+        source = next(item for item in report["identity"]["fixtures"] if item["name"] == name)
+        require(row["tenant"] == tenant and row["service"] == "shared" and row["component_sha256"] == source["sha256"],
+                "published-parity-source-mismatch")
+        releases[tenant] = row["component_sha256"]
+        documents = {}
+        for kind in ("manifest", "contracts", "deployment"):
+            reference = fields(row[kind], "path sha256 bytes")
+            require(reference["path"] == f"adapter-inputs/{name}-{kind}.json" and reference in report["artifacts"],
+                    "missing-transmitted-parity-artifact")
+            documents[kind] = verified_json_artifact(report, root, reference["path"], 1024 * 1024)
+        manifest, deployment, contracts = (documents[key] for key in ("manifest", "deployment", "contracts"))
+        require(isinstance(manifest, dict) and isinstance(deployment, dict) and isinstance(contracts, dict), "invalid-published-parity-document")
+        require(isinstance(manifest.get("metadata"), dict) and manifest["metadata"].get("tenant") == tenant
+                and manifest["metadata"].get("name") == "shared" and isinstance(manifest.get("component"), dict)
+                and manifest["component"].get("digest") == releases[tenant], "published-manifest-scope-mismatch")
+        require(isinstance(deployment.get("metadata"), dict) and deployment["metadata"].get("tenant") == tenant
+                and isinstance(deployment.get("spec"), dict) and deployment["spec"].get("service") == "shared"
+                and deployment["spec"].get("release") == releases[tenant], "published-deployment-scope-mismatch")
+        require(type(contracts.get("format_version")) is int and contracts["format_version"] == 1
+                and isinstance(contracts.get("contracts"), list) and 0 < len(contracts["contracts"]) <= 16,
+                "invalid-published-contract-metadata")
+        expected_package = "examples:echo" if name == "echo" else "tests:capabilities"
+        expected_contract = expected_package + "/api@0.1.0"
+        require(manifest.get("exports") == [expected_contract] and len(contracts["contracts"]) == 1
+                and isinstance(contracts["contracts"][0], dict)
+                and contracts["contracts"][0].get("id") == expected_contract
+                and contracts["contracts"][0].get("package_name") == expected_package,
+                "published-contract-export-mismatch")
+    require(releases["examples"] != releases["tests"], "tenant-release-not-isolated")
+    return releases
+
+
+def verify_capability_parity(observations: Any, releases: dict[str, str]) -> None:
+    rows = observations["capability_pairs"]
+    require(isinstance(rows, list) and len(rows) == 3, "missing-capability-parity-pairs")
+    traces = set()
+    for row, name in zip(rows, ("snapshot", "work-observe", "clocks")):
+        fields(row, "name direct rpc observed_before_unix_millis observed_after_unix_millis")
+        require(row["name"] == name, "invalid-capability-pair-order")
+        before, after = uint(row["observed_before_unix_millis"]), uint(row["observed_after_unix_millis"])
+        require(0 < before <= after, "invalid-capability-pair-window")
+        for side in ("direct", "rpc"):
+            capability_call(row[side], name, side == "direct", before, after)
+            require(row[side]["release_digest"] == releases["tests"], "capability-release-mismatch")
+            observed_trace = row[side]["completion_span"]["trace"]["trace_id"]
+            require(observed_trace not in traces, "activation-trace-reused")
+            traces.add(observed_trace)
+        for key in ("revision_id", "route_generation", "cell_id"):
+            require(row["direct"][key] == row["rpc"][key], "capability-pair-pin-mismatch")
+        for key in ("peak_memory_bytes", "log_bytes"):
+            require(row["direct"]["consumption"][key] == row["rpc"]["consumption"][key], "capability-pair-accounting-mismatch")
+    tenant_rows = observations["tenant_telemetry"]
+    require(isinstance(tenant_rows, list) and len(tenant_rows) == 2, "missing-tenant-telemetry")
+    echo = fields(tenant_rows[0], "activation_id root_activation_id parent_activation_id tenant service release_digest revision_id route_generation completion_span guest_logs")
+    telemetry_correlation(echo, "examples", "remote-0", 1)
+    require(echo["release_digest"] == releases["examples"] and echo["completion_span"]["trace"]["trace_id"] not in traces,
+            "cross-tenant-telemetry-identity")
+    success = observations["pairs"][0] if isinstance(observations["pairs"], list) and observations["pairs"] else None
+    require(isinstance(success, dict), "missing-echo-success-pair")
+    for attribute, field in (("cpu_fuel", "cpu_fuel"), ("memory_bytes", "peak_memory_bytes"), ("log_bytes", "log_bytes")):
+        require(echo["completion_span"]["attributes"].get(attribute) == success.get(field), "echo-span-accounting-mismatch")
+    require(canonical_json(tenant_rows[1]) == canonical_json(rows[1]["rpc"]), "tenant-telemetry-call-mismatch")
+
+
+def verify_parity(observations: Any, report: dict[str, Any], root: Path) -> None:
+    identity = report["identity"]
+    fields(observations, "pairs capability_pairs tenant_telemetry published_inputs shutdown node_starts public_config config_sha256 inputs comparison variable_fields scope retained_metric_points inventory_cache_entries")
     require(uint(observations["node_starts"]) == 1, "adapter-node-start-bound")
     require(uint(observations["retained_metric_points"]) <= 1024, "adapter-metric-retention-bound")
-    require(uint(observations["inventory_cache_entries"]) == 1, "adapter-cache-entry-count")
+    require(uint(observations["inventory_cache_entries"]) == 2, "adapter-cache-entry-count")
     verify_config_digest(observations["public_config"], observations["config_sha256"])
     verify_adapter_config(observations["public_config"])
+    releases = verify_published_inputs(observations, report, root)
+    verify_capability_parity(observations, releases)
     verify_shutdown(observations["shutdown"], cells=observations["public_config"]["cells"][0]["capacity"])
     text(observations["comparison"], 1024)
     text(observations["scope"], 1024)
@@ -369,7 +834,15 @@ def verify_cases(report: dict[str, Any], manifest: dict[str, Any], artifacts: se
         found[identifier] = work(entry["work"])
         verify_case_artifact(entry, report, root)
         if identifier == "adapter-rpc-parity":
-            verify_parity(entry["observations"], report["identity"])
+            verify_parity(entry["observations"], report, root)
+        elif identifier == "fuel-budget":
+            verify_fuel(entry["observations"], report)
+        elif identifier == "queue-admission":
+            verify_fair_queue(entry["observations"], report)
+        elif identifier == "fresh-store":
+            verify_fresh(entry["observations"], report)
+        elif identifier == "persistent-wall-ceiling":
+            verify_wall(entry["observations"], report)
     require(set(found) == set(manifest["required_cases"]), "missing-required-case")
     counts = work(report["work"])
     require(tuple(sum(item[index] for item in found.values()) for index in (0, 1)) == counts,
@@ -381,11 +854,11 @@ def verify_cases(report: dict[str, Any], manifest: dict[str, Any], artifacts: se
         fields(driver, "driver work")
         name = driver["driver"]
         require(name in ("process", "adapter") and name not in driver_counts, "invalid-driver-work")
-        driver_counts[name] = work(driver["work"], *( (48, 224) if name == "process" else (16, 32) ))
+        driver_counts[name] = work(driver["work"], *( (36, 192) if name == "process" else (28, 64) ))
     require(tuple(sum(item[index] for item in driver_counts.values()) for index in (0, 1)) == counts,
             "driver-work-mismatch")
     require(driver_counts["adapter"] == found["adapter-rpc-parity"], "adapter-work-mismatch")
-    require(driver_counts["adapter"][1] == 16, "missing-parity-pairs")
+    require(driver_counts["adapter"][1] == 22, "missing-parity-pairs")
 
 
 def verify_samples(report: dict[str, Any]) -> None:
@@ -471,8 +944,8 @@ def validate_report(report: Any, artifacts_root: Path, *, expected_source_commit
     require(environment["os"].lower() == "linux", "linux-evidence-required")
     verify_config_digest(report["public_config"], report["identity"]["config_sha256"])
     artifacts = verify_artifacts(report, artifacts_root)
-    verify_cases(report, manifest, artifacts, artifacts_root)
     verify_samples(report)
+    verify_cases(report, manifest, artifacts, artifacts_root)
     deferred = report["deferred_evidence"]
     require(isinstance(deferred, list) and len(deferred) == len(manifest["deferred_evidence"]), "missing-deferred-evidence")
     identifiers = set()

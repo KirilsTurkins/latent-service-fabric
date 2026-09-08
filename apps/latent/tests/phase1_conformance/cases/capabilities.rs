@@ -6,7 +6,11 @@ pub async fn context(harness: &mut Harness, evidence: &mut Evidence, package: &P
     evidence.begin("capability-context");
     let empty = package.input("context.json", &json!([]));
     let mut snapshots = Vec::new();
-    for (id, marker) in [("context-first", "first"), ("context-second", "second")] {
+    for (id, marker) in [
+        ("context-first", "first"),
+        ("context-second", "second"),
+        ("context-third", "third"),
+    ] {
         let visible = format!("guest.visible={marker}");
         let root = format!("root-{marker}");
         let parent = format!("parent-{marker}");
@@ -51,6 +55,21 @@ pub async fn context(harness: &mut Harness, evidence: &mut Evidence, package: &P
     assert_ne!(
         snapshots[0]["decoded"][0]["trace"]["trace-id"],
         snapshots[1]["decoded"][0]["trace"]["trace-id"]
+    );
+    assert_ne!(
+        snapshots[0]["decoded"][0]["trace"]["trace-id"],
+        snapshots[2]["decoded"][0]["trace"]["trace-id"]
+    );
+    let first_cell = snapshots[0]["response"]["data"]["metadata"]["cell-id"]
+        .as_str()
+        .expect("actual context cell");
+    assert_eq!(
+        snapshots[2]["response"]["data"]["metadata"]["cell-id"],
+        first_cell
+    );
+    assert_ne!(
+        snapshots[1]["response"]["data"]["metadata"]["cell-id"],
+        first_cell
     );
     let live = live_budget(harness, package, &empty).await;
     let clocks = clocks(harness, package, &empty).await;
