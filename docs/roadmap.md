@@ -37,6 +37,7 @@ The following foundations are implemented:
 - [Generic invocation, cancellation, and retained-status service adapters](protocol/invocation-service.md) (#12).
 - [Release, deployment, route, and node management service adapters](reference/management-services.md) (#37).
 - [Configured standalone Linux node, loopback RPCs, durable restart and bounded shutdown](reference/standalone-node.md) (#14).
+- [Bounded developer/operator CLI and scriptable local echo workflow](reference/operator-cli.md) (#15).
 - [SDK caller identity and cancellation contracts](../sdk/README.md) with executable fixtures across six languages (#65).
 
 The remaining work is tracked by the
@@ -44,14 +45,15 @@ The remaining work is tracked by the
 
 | Area | Remaining issues |
 | --- | --- |
-| Operator tooling | [CLI #15](https://github.com/KirilsTurkins/latent-service-fabric/issues/15) |
 | Completion evidence | [Conformance, isolation, reclamation, and zero-idle scaling gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16) |
 
-Status is recorded as of September 8, 2026. An open implementation PR does not
-make its feature available on the integration branch. The standalone node
-supports the local release-to-invocation workflow through generated RPC clients;
-the operator CLI and Phase 1 completion evidence remain pending. The retained
-Phase 0 echo demonstration and historical receipts keep their original scope.
+Status is recorded as of September 8, 2026. Feature status describes the code in
+this revision; an implementation is available on the integration branch after
+its PR merges. The standalone node and operator CLI support the local
+release-to-invocation workflow through generated RPC clients; see the
+[scriptable quickstart](development/standalone-quickstart.md). Phase 1 completion
+evidence remains pending. The retained Phase 0 echo demonstration and historical
+receipts keep their original scope.
 
 ## Phase 2: packaging and supply chain
 

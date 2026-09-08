@@ -7,5 +7,25 @@ license.workspace = true
 authors.workspace = true
 description = "Developer and operator CLI entry point."
 
+[dependencies]
+base64.workspace = true
+clap.workspace = true
+prost.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["net", "signal", "io-util"] }
+tonic.workspace = true
+latent-activation = { path = "../../crates/latent-activation" }
+latent-artifacts = { path = "../../crates/latent-artifacts" }
+latent-control-store = { path = "../../crates/latent-control-store" }
+latent-core = { path = "../../crates/latent-core" }
+latent-manifest = { path = "../../crates/latent-manifest" }
+latent-rpc = { path = "../../crates/latent-rpc" }
+latent-wire = { path = "../../crates/latent-wire" }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+tempfile.workspace = true
+
 [lints]
 workspace = true

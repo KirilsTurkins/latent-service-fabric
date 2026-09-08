@@ -6,8 +6,11 @@ versioned deployment store, compiled routes, and inventory reporter. It opens no
 listener and creates no execution backend, guest instance, cell pool, or service
 worker. The embedding application supplies these shared services and a trusted
 authentication boundary. The [standalone Linux node](standalone-node.md)
-supplies this composition and a configured loopback listener. The `latent`
-operator CLI remains separate Phase 1 work.
+supplies this composition and a configured loopback listener. The
+[`latent` operator CLI](operator-cli.md) exposes these calls with bounded local
+input validation, exact object versions, private profiles, and one request per
+command. The [echo quickstart](../development/standalone-quickstart.md) uses its
+generated package inputs through this RPC boundary.
 
 ## Supported calls
 

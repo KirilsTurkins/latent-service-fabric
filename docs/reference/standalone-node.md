@@ -7,11 +7,14 @@ bounded lifecycle/status retention, telemetry, and the invocation and management
 RPC adapters. Worker and listener counts come from node configuration and do not
 grow with deployed services.
 
-The `latent` operator CLI remains separate work (#15). Use the generated Tonic
-clients and the [management](management-services.md) and
-[invocation](../protocol/invocation-service.md) contracts to publish, deploy,
-invoke, cancel, and inspect. The Phase 0 `phase0-spike`/`spike` command family keeps
-its existing arguments, payload convention, output and exit codes.
+The [`latent` operator CLI](operator-cli.md) uses the generated clients to publish,
+deploy, invoke, cancel, and inspect; the
+[scriptable echo quickstart](../development/standalone-quickstart.md) starts a node
+with an ephemeral endpoint and private credentials. Generated Tonic clients can
+also use the [management](management-services.md) and
+[invocation](../protocol/invocation-service.md) contracts directly. The Phase 0
+`phase0-spike`/`spike` command family keeps its existing arguments, payload
+convention, output and exit codes.
 
 ## Start a local node
 

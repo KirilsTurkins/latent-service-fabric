@@ -4,7 +4,7 @@ Updated on **2026-09-08** for the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
 generic execution, activation capabilities/lifecycle, invocation and management
-service adapters, standalone Linux node composition, and explicit heavy
+service adapters, standalone Linux node composition, operator CLI workflows, and explicit heavy
 validation gates. These commands describe validation coverage; the evidence
 from the September 7 audit is recorded separately in
 [the audit report](docs/development/feature-audit-2026-09-07.md).
@@ -144,8 +144,20 @@ cargo test -p latent-wire --all-targets --locked
 cargo test -p latent-artifacts -p latent-control-store --lib --locked
 cargo test -p latentd --lib --locked
 cargo test -p latentd --test standalone_node --test standalone_command --locked
+cargo test -p latent --all-targets --locked
 cargo test -p latentd --test catalog_scale --locked
 ```
+
+The CLI's ordinary tests cover local command processes, strict inputs/profiles,
+exact receipts, deadline/drop ownership, error categories, and response bounds.
+`make contracts` also builds both binaries and runs two supervised CLI/node
+workflows with the generated echo/generic fixtures: ten total guest activations,
+small publication/pagination cases, durable restart, declared errors, trap,
+deadline, explicit Cancel, local Ctrl-C, output-file failure, and clean shutdown.
+Those fixture tests require explicit `LSF_LATENTD_BIN`, `LSF_ECHO_COMPONENT`,
+`LSF_GENERIC_COMPONENT`, and `LSF_GENERIC_FIXTURES`; they never silently build or
+skip a missing prerequisite. See the [CLI reference](docs/reference/operator-cli.md)
+and [scriptable quickstart](docs/development/standalone-quickstart.md).
 
 The final command runs catalog-probe supervision tests. The durable
 100,000-release publication/reopen probe requires `--ignored` and its exact test
