@@ -8,21 +8,27 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sys
 import tarfile
 import tempfile
+
+if __package__ in (None, ''):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 try:
     from . import package_phase0_evidence as paths
     from . import phase0_evidence
     from .phase1_evidence.replay import validate_aggregate, validate_comparison
-    from .phase1_evidence.common import read_json
+    from .phase1_evidence.common import canonical, read_json
     from .validate_phase1_paired import replay as validate_paired
+    from .optimization_evidence.suite import validate_suite as validate_optimization_suite
 except ImportError:
     import package_phase0_evidence as paths
     import phase0_evidence
     from phase1_evidence.replay import validate_aggregate, validate_comparison
-    from phase1_evidence.common import read_json
+    from phase1_evidence.common import canonical, read_json
     from validate_phase1_paired import replay as validate_paired
+    from tools.optimization_evidence.suite import validate_suite as validate_optimization_suite
 
 ARCHIVE = 'raw-evidence.tar.gz'
 MANIFEST = 'raw-evidence.manifest.json'
@@ -112,10 +118,26 @@ def evidence_kind(directory):
     schema = aggregate.get('schema')
     if schema == 'latent.phase1.paired-aggregate.v1':
         return 'paired'
+    if schema == 'latent.optimization.aggregate.v1':
+        return 'optimization'
     # Shape-only archive verification remains available for legacy callers.
     # A missing schema never passes the mandatory semantic publication replay.
     require(schema in (None, 'latent.phase1.measurement-aggregate.v1'), 'unsupported evidence schema')
     return 'measurement'
+
+
+def verify_optimization(directory):
+    retained = read_json(paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'))
+    suite = paths.existing_regular_file_path(directory / 'suite.json', 'optimization suite')
+    regenerated = validate_optimization_suite(suite)
+    require(canonical(retained) == canonical(regenerated),
+            'optimization aggregate differs from replayed evidence')
+    require(regenerated.get('schema') == 'latent.optimization.aggregate.v1'
+            and regenerated.get('profile') == 'full'
+            and regenerated.get('status') == 'complete'
+            and regenerated.get('population_complete') is True
+            and regenerated.get('attempt_count_complete') is True,
+            'optimization archive requires complete full-population evidence')
 
 
 def verify_package(directory, *, replay=True):
@@ -172,14 +194,19 @@ def verify_package(directory, *, replay=True):
         require(files == seen, 'extraction differs from verified archive')
         for name, row in expected.items():
             require(file_reference(extracted / name, extracted) == row, 'round-trip checksum mismatch')
-        paired = evidence_kind(extracted) == 'paired'
-        outer_files = ('aggregate.json',) if paired else ('aggregate.json', 'comparison.json', 'measurement-policy.json')
+        kind = evidence_kind(extracted)
+        outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
+                       if kind == 'measurement' else ('aggregate.json',))
+        if kind == 'optimization':
+            require('suite.json' in expected, 'optimization archive omits suite')
         for name in outer_files:
             require(name in expected and file_reference(root / name, root) == expected[name],
                     'outer evidence differs from archived evidence')
         if replay:
-            if paired:
+            if kind == 'paired':
                 validate_paired(extracted / 'aggregate.json')
+            elif kind == 'optimization':
+                verify_optimization(extracted)
             else:
                 validate_aggregate(extracted / 'aggregate.json')
                 validate_comparison(extracted / 'comparison.json')

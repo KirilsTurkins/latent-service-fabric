@@ -48,8 +48,10 @@ def cases(profile: str) -> list[dict]:
     for rate in (250, 1000, 4000):
         add(f"rate-{rate}", concurrency=64,
             schedule={"mode": "scheduled", "interval_nanos": 1_000_000_000 // rate})
+    # Keep the ordinary1s budget below the server's5s maximum: converting the
+    # absolute deadline to whole milliseconds can round it upward by <1ms.
     add("cache-working-set", services=SERVICES, warmup_attempts=5,
-        measured_attempts=100 if full else 10, budget_millis=5000)
+        measured_attempts=100 if full else 10)
     return result
 
 

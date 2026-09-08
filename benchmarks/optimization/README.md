@@ -83,6 +83,15 @@ retention. These treatment differences are part of the comparison. They are not
 silently equated. No failure data is discarded to claim a faster successful-call
 latency. Valid workload outputs must match across both arms.
 
+Cases run in a fixed order on the same server within each arm. Cache contents,
+journal entries and any quarantined cells can therefore affect later cases.
+Clean shutdown establishes reclaimed ownership; the retained quarantine count
+separately describes lost serving capacity. Process resource intervals include
+client startup, connection setup and warmup through the completion observation,
+so their CPU deltas are not measured-only per-call costs. Native admission uses
+four executing slots and two runtime workers; LSF also has64 queue slots and two
+control workers. These configurations describe the compared systems explicitly.
+
 This protocol supplies the baseline for optimization tickets. Real Docker and
 Kubernetes deployment comparisons are tracked separately in
 [#111](https://github.com/KirilsTurkins/latent-service-fabric/issues/111) and
