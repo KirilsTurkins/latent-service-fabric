@@ -36,6 +36,6 @@ class Artifacts(BaseArtifacts):
 
     def nested(self, parent, row):
         path = verify_artifact(parent, row, 16 * 1024**2)
-        name = path.relative_to(self.root).as_posix()
+        name = path.relative_to(self.root.resolve()).as_posix()
         require(self.rows.get(name) == dict(row, path=name), "cache-unregistered-nested-artifact")
         return path

@@ -20,7 +20,7 @@ from .cache import model as cache_model
 class Artifacts(BaseArtifacts):
     def nested(self, parent, row):
         path = verify_artifact(parent, row, DOCUMENT_BYTES)
-        name = path.relative_to(self.root).as_posix()
+        name = path.relative_to(self.root.resolve()).as_posix()
         require(self.rows.get(name) == dict(row, path=name), "unregistered-backend-nested-artifact")
         return path
 
