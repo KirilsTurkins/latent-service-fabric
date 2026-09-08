@@ -20,6 +20,24 @@ pub struct WasmtimeComponentEngineFactory {
 }
 
 impl WasmtimeComponentEngineFactory {
+    /// Independent counters remain available after the factory is consumed.
+    #[must_use]
+    pub fn compiler_observer(&self) -> crate::CompilerObserver {
+        self.shared
+            .compiler
+            .as_ref()
+            .map_or_else(crate::CompilerObserver::disabled, |pool| pool.observer())
+    }
+
+    /// Closes compiler admission now, then waits for worker-owned work to end.
+    /// The caller applies its own deadline and retains this owner on timeout.
+    /// Successful quiescence precedes, and does not replace, final thread joins.
+    pub fn quiesce_compiler(&self) -> latent_core::BoxFuture<'_, Result<(), PlatformError>> {
+        self.shared.compiler.as_ref().map_or_else(
+            || Box::pin(async { Ok(()) }) as latent_core::BoxFuture<'_, Result<(), PlatformError>>,
+            crate::compiler::CompilerPool::quiesce,
+        )
+    }
     pub fn new(config: WasmtimeConfig) -> Result<Self, PlatformError> {
         Self::with_mode(config, DispatchMode::Generic)
     }
@@ -72,8 +90,14 @@ impl WasmtimeComponentEngineFactory {
             &engine,
             Duration::from_millis(config.epoch_tick_interval_millis),
         )?;
-        let shared = Arc::new(SharedRuntime::new(&config, services, epoch_ticker)?);
         let profile = config.profile(mode);
+        let shared = Arc::new(SharedRuntime::new(
+            &config,
+            services,
+            epoch_ticker,
+            engine.clone(),
+            profile.clone(),
+        )?);
         Ok(Self {
             engine,
             config,

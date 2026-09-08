@@ -99,7 +99,8 @@ from startup failure diagnostics.
 | `cache.sourceBytes` | `67108864` | Retained source ceiling, at least one maximum component and at most 1 GiB. |
 | `cache.metadataBytes` | `8388608` | Retained preparation metadata, 1 MiB–1 GiB. |
 | `cache.compiledImageBytes` | `134217728` | Retained compiled image ranges, at most 1 GiB. |
-| `cache.preparations` | `1` | Concurrent preparations, no greater than fixed cells or control workers. |
+| `cache.preparations` | `1` | Total distinct compiler jobs, assigned plus queued; at most the admitted population (cells plus queue capacity). |
+| `cache.compilerWorkers` | `min(2, cache.preparations)` | Fixed compiler threads, 1?8 and no greater than total compiler jobs. Remaining job slots form the bounded compiler queue. |
 | `catalogs.releaseEntries` | `4096` | Completed-release index count, at most 100000. |
 | `catalogs.releaseIndexBytes` | `67108864` | Release index allocation ceiling, 1 MiB–1 GiB. |
 | `catalogs.deployments` | `4096` | Deployment count, at most 100000. |
@@ -117,6 +118,13 @@ Known classes are `tiny`, `small`, `standard`, `large`, and `extra-large`. Omit
 disabled classes. Every configured capacity and queue is positive; larger classes
 cannot have smaller memory ceilings. Total cells are at most 64, and total cells
 plus queue capacity are at most 1024. Memory is 64 KiB–1 GiB per class.
+
+Compiler jobs use their own fixed workers, independently of invocation and
+management workers. Same-key waiters and ready pins are each bounded by the
+admitted population. Queued and assigned jobs retain source/metadata reservations;
+encoded document reservations are separately bounded by the number of jobs times
+the repository and manifest document ceilings plus fixed read allowance. These
+input and ownership charges do not measure transient decoder or compiler heap.
 
 The fixed trust class is `internal`, matching the existing deployment examples.
 The runtime supports stateless single-threaded and reentrant components. Host
@@ -215,8 +223,11 @@ Ctrl-C or SIGTERM closes acceptance, allows the configured activation drain
 interval, then cancels outstanding owners and shuts down transport and sampling.
 The node checks actual transport/control ownership, journal/cancellation state,
 quota reservations, queued work, cell leases, backend instance reservations,
-pending preparations and their source/metadata charges, and live stores,
-instances and host state before flushing telemetry and joining the epoch helper.
+pending preparations and their source/metadata charges, ready pins, compiler
+queues, waiter registrations, encoded document reservations, and live stores,
+instances and host state. It closes compiler admission and waits for actual worker
+quiescence before these observations, then flushes telemetry and joins every
+compiler worker and the epoch helper.
 Quarantined cells remain visible in the report. The command then shuts down both runtime owners and
 requires their observed thread counts to reach zero.
 
@@ -229,10 +240,15 @@ server termination also triggers cleanup and an unsuccessful exit.
 The outer watchdog includes drain, transport, sampler, activation cleanup,
 telemetry and coordination allowances. Runtime shutdown uses bounded waits.
 These bounds cannot kill a thread already inside a stuck filesystem call or
-other non-cooperative operating-system work. Such a timeout is failure evidence,
-not proof that the work stopped. A clean finite run establishes the reported
+other non-cooperative operating-system work. Wasmtime's native compilation is
+synchronous and cannot be force-cancelled with guest fuel or epoch interruption.
+A timed-out compiler quiesce keeps its factory and reservations owned; final
+teardown may wait beyond the grace interval for actual thread joins. An outer
+process supervisor supplies the hard termination boundary. A timeout is failure
+evidence, not proof that the work stopped. A clean finite run establishes the reported
 cleanup for that run; it does not establish long-running reclamation, dormant
-100000-service scale, or completion of the Phase 1 gate (#16).
+100000-service scale. The retained [Phase 1 measurements](../testing/phase-1-measurements.md)
+provide that separate evidence for their recorded source revisions.
 
 See [validation commands](../../VALIDATION.md) for the focused configuration,
 transport, catalog and execution tests. No heavy scale or soak run is required

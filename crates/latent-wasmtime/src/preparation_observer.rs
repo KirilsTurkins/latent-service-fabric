@@ -9,6 +9,8 @@ mod cpu;
 mod guard;
 mod model;
 mod state;
+#[cfg(test)]
+mod tests;
 mod wait;
 
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -31,11 +33,24 @@ pub struct PreparationObserver {
     inner: Arc<Inner>,
 }
 
+#[derive(Clone)]
+pub(crate) struct PreparationNotifier(std::sync::Weak<Inner>);
+
+impl PreparationNotifier {
+    pub(crate) fn notify(&self) {
+        if let Some(inner) = self.0.upgrade() {
+            let waker = inner.lock().changed();
+            state::wake(waker);
+        }
+    }
+}
+
 impl PreparationObserver {
     pub(crate) fn new(maximum_running: usize) -> Self {
         Self {
             inner: Arc::new(Inner {
                 enabled: AtomicBool::new(false),
+                compiler: Mutex::new(None),
                 origin: Instant::now(),
                 state: Mutex::new(State::new(maximum_running.clamp(1, 1024))),
             }),
@@ -64,7 +79,17 @@ impl PreparationObserver {
             active_jobs: state.active_jobs,
             dropped_running_entries: state.dropped_running,
             dropped_stage_observations: state.dropped_observations,
-            compiler: None,
+            compiler: self
+                .inner
+                .compiler
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .as_ref()
+                .map(|state| {
+                    *state
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                }),
             stages: state.stages,
             running: state.running.clone(),
             recent_stages: state.observations.iter().cloned().collect(),
@@ -86,6 +111,18 @@ impl PreparationObserver {
 
     pub(crate) fn begin(&self, release: &ReleaseDigest) -> PreparationJob {
         PreparationJob::new(Arc::clone(&self.inner), digest(&release.0))
+    }
+
+    pub(crate) fn attach_compiler(&self, state: Arc<Mutex<PreparationCompilerSnapshot>>) {
+        *self
+            .inner
+            .compiler
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(state);
+    }
+
+    pub(crate) fn notifier(&self) -> PreparationNotifier {
+        PreparationNotifier(Arc::downgrade(&self.inner))
     }
 }
 

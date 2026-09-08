@@ -8,20 +8,65 @@ use latent_executor::PreparationKey;
 use wasmtime::component::Component;
 
 use super::{metadata_overflow, Compilation};
-use crate::backend::{bounded_error, PreparedRuntime, WasmtimeBackend};
+use crate::backend::{bounded_error, PreparedRuntime};
 use crate::cache::PrepareReservation;
 use crate::config::PHASE0_BACKEND_ID;
 use crate::containment::platform_error;
 use crate::preparation_observer::{PreparationJob, PreparationStage};
 use crate::surface;
 
-impl WasmtimeBackend {
+impl super::super::PreparationContext {
     pub(in crate::backend) fn compile_runtime(
         &self,
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
         input: Compilation,
         reservation: PrepareReservation<PreparedRuntime>,
+        job: &PreparationJob,
+    ) -> Result<Arc<PreparedRuntime>, PlatformError> {
+        let runtime = self.build_runtime(artifact, key, input, job)?;
+        let adoption = job.stage(PreparationStage::CacheAdoption);
+        if self.config.prepared_cache_enabled {
+            reservation.publish_with_metadata(
+                Arc::clone(&runtime),
+                runtime.image_bytes,
+                runtime.metadata_bytes,
+            )?;
+        } else {
+            if runtime.image_bytes > self.config.prepared_cache_maximum_compiled_image_bytes {
+                return Err(platform_error(
+                    PlatformErrorCode::ResourceExhausted,
+                    "compiled component image exceeds the configured limit",
+                    false,
+                ));
+            }
+            let mut slot = self
+                .uncached
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if slot.is_some() {
+                return Err(platform_error(
+                    PlatformErrorCode::StateConflict,
+                    "cache-disabled preparation is still owned by an active runner",
+                    true,
+                ));
+            }
+            *slot = Some((
+                runtime.descriptor.opaque_handle.clone(),
+                Arc::clone(&runtime),
+            ));
+            drop(slot);
+            drop(reservation);
+        }
+        adoption.complete();
+        Ok(runtime)
+    }
+
+    pub(in crate::backend) fn build_runtime(
+        &self,
+        artifact: &CapsuleArtifact,
+        key: &PreparationKey,
+        input: Compilation,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         let compilation = job.stage(PreparationStage::ComponentNew);
@@ -62,6 +107,8 @@ impl WasmtimeBackend {
             surface,
             descriptor,
             authentication: input.authentication,
+            metadata_bytes,
+            image_bytes,
             // The existing full metadata charge includes these manifest fields.
             imports: artifact
                 .manifest
@@ -71,30 +118,6 @@ impl WasmtimeBackend {
                 .collect(),
         });
         linking.complete();
-        let adoption = job.stage(PreparationStage::CacheAdoption);
-        if self.config.prepared_cache_enabled {
-            reservation.publish_with_metadata(Arc::clone(&runtime), image_bytes, metadata_bytes)?;
-        } else {
-            if image_bytes > self.config.prepared_cache_maximum_compiled_image_bytes {
-                return Err(platform_error(
-                    PlatformErrorCode::ResourceExhausted,
-                    "compiled component image exceeds the configured limit",
-                    false,
-                ));
-            }
-            let mut slot = self.lock_uncached_prepared();
-            if slot.is_some() {
-                return Err(platform_error(
-                    PlatformErrorCode::StateConflict,
-                    "cache-disabled preparation is still owned by an active runner",
-                    true,
-                ));
-            }
-            *slot = Some((input.handle, Arc::clone(&runtime)));
-            drop(slot);
-            drop(reservation);
-        }
-        adoption.complete();
         Ok(runtime)
     }
 }

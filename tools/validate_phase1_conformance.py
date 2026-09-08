@@ -14,6 +14,11 @@ import re
 import sys
 from typing import Any
 
+if __package__:
+    from .phase1_compiler_shutdown import validate_compiler_shutdown
+else:
+    from phase1_compiler_shutdown import validate_compiler_shutdown
+
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "benchmarks/phase1/cases.json"
 MAX_REPORT_BYTES = 4 * 1024 * 1024
@@ -284,7 +289,10 @@ def verify_case_artifact(entry: dict[str, Any], report: dict[str, Any], root: Pa
 
 def verify_shutdown(raw: Any, *, cells: int = 5) -> None:
     fields(raw, " ".join(ZERO_SHUTDOWN_FIELDS) +
-           " clean quarantinedCells telemetryRetainedEntries telemetryFlushed epochHelperJoined")
+           " clean quarantinedCells telemetryRetainedEntries telemetryFlushed epochHelperJoined"
+           + (" compiler" if isinstance(raw, dict) and "compiler" in raw else ""))
+    if "compiler" in raw:
+        validate_compiler_shutdown(raw["compiler"], require)
     require(all(raw[key] is True for key in ("clean", "telemetryFlushed", "epochHelperJoined")), "unclean-shutdown")
     require(all(type(raw[key]) is int and raw[key] == 0 for key in ZERO_SHUTDOWN_FIELDS), "live-transient-owners")
     number(raw["quarantinedCells"], cells)

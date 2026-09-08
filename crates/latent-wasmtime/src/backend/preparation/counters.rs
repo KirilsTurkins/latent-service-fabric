@@ -16,17 +16,17 @@ pub struct PreparationActivitySnapshot {
 
 #[derive(Default)]
 pub(in crate::backend) struct PreparationCounters {
-    pub(super) repository_acquisitions: AtomicU64,
-    pub(super) authenticated_hits: AtomicU64,
-    pub(super) authenticated_misses: AtomicU64,
-    pub(super) repository_fetches: AtomicU64,
-    pub(super) component_hashes: AtomicU64,
-    pub(super) component_bytes_hashed: AtomicU64,
-    pub(super) metadata_fingerprints: AtomicU64,
+    pub(in crate::backend) repository_acquisitions: AtomicU64,
+    pub(in crate::backend) authenticated_hits: AtomicU64,
+    pub(in crate::backend) authenticated_misses: AtomicU64,
+    pub(in crate::backend) repository_fetches: AtomicU64,
+    pub(in crate::backend) component_hashes: AtomicU64,
+    pub(in crate::backend) component_bytes_hashed: AtomicU64,
+    pub(in crate::backend) metadata_fingerprints: AtomicU64,
 }
 
 impl PreparationCounters {
-    pub(super) fn snapshot(&self) -> PreparationActivitySnapshot {
+    pub(in crate::backend) fn snapshot(&self) -> PreparationActivitySnapshot {
         PreparationActivitySnapshot {
             repository_acquisitions: self.repository_acquisitions.load(Ordering::Relaxed),
             authenticated_hits: self.authenticated_hits.load(Ordering::Relaxed),
@@ -39,7 +39,7 @@ impl PreparationCounters {
     }
 }
 
-pub(super) fn add(counter: &AtomicU64, value: u64) {
+pub(in crate::backend) fn add(counter: &AtomicU64, value: u64) {
     let _ = counter.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
         Some(current.saturating_add(value))
     });

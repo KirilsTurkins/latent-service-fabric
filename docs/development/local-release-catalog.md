@@ -137,6 +137,25 @@ The count is maintained by the exclusive root owner, not recomputed with a per-p
 
 Incomplete directories remain invisible and are not automatically deleted to make room. Stop the owner before inspecting/removing known incomplete debris, then reopen to rebuild the count and reclaim capacity. Live external filesystem changes are not part of the ownership protocol. Regression tests cover both configurations above, a root filled entirely with incomplete entries, rejection before staging access, pending retries/reopen, pre-rename filesystem failures, concurrent publishers competing for the last slot, and offline cleanup followed by publication and reopen.
 
+### Owned preparation reads
+
+`Arc<dyn ArtifactRepository>::owned_preparation_source` optionally delegates
+identity, read bounds and blocking fetch to one sealed directory owner. Its
+`read_bounds` copies the indexed component length and encoded document ceilings
+without disk I/O or descriptor clones. Compiler jobs reserve those inputs before
+queueing, then pass explicit ceilings to `fetch_blocking`. Reads intersect the
+caller and repository limits and reject file growth before extending retained
+buffers beyond the admitted component/document allowance. Completion records,
+canonical manifest checks, metadata association and component hashes still apply.
+
+Cloning the source only clones its concrete repository `Arc`. A running compiler
+job retains that owner/root lock even after its callers cancel; cached runtimes
+and delivered ready pins retain only their small epoch identity. A source with
+no compact stamp still owns its fallback fetch. Repositories returning `None`
+keep the ordinary awaited fetch interface; their private allocation/yield behavior
+is outside the sealed source's guarantees. Document ceilings bound encoded input,
+not total decoder or compiler heap usage.
+
 ## Trust boundary
 
 Phase 1 is locally trusted. The catalog validates and canonicalizes capsule manifests and verifies SHA-256 agreement between transferred component bytes, the manifest component digest, and the immutable release digest. It does not claim signature, provenance, SBOM, registry-authentication, OCI, or trusted-AOT verification; those remain later-phase work. Registration validates catalog data without preparing or instantiating the component.

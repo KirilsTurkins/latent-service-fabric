@@ -6,6 +6,7 @@
 mod backend;
 mod bindings;
 mod cache;
+mod compiler;
 mod config;
 mod containment;
 mod factory;
@@ -25,6 +26,7 @@ use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 
 pub use backend::{PreparationActivitySnapshot, WasmtimeBackend};
 pub use cache::PreparedCacheSnapshot;
+pub use compiler::CompilerObserver;
 pub use config::{
     InstanceAllocator, Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig,
     GENERIC_BACKEND_ID, WASMTIME_VERSION,

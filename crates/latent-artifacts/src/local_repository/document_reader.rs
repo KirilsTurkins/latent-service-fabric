@@ -13,7 +13,8 @@ pub(super) fn read_bounded_file(
     limit: usize,
     label: &str,
 ) -> Result<Vec<u8>, PlatformError> {
-    // Check before open so a misplaced FIFO cannot block a compiler worker.
+    // Reject a file already observed as non-regular before opening it.
+    // External replacement races and stuck filesystem calls are not preemptible.
     let metadata = fs::metadata(path).map_err(|_| corrupt("completed release is missing data"))?;
     if !metadata.is_file() {
         return Err(corrupt("completed release data is not a regular file"));

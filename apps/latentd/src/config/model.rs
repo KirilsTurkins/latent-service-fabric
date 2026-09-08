@@ -75,7 +75,10 @@ pub struct CacheConfig {
     pub source_bytes: usize,
     pub metadata_bytes: usize,
     pub compiled_image_bytes: usize,
+    /// Total distinct compiler jobs, including assigned workers and queued jobs.
     pub preparations: usize,
+    /// Fixed compiler workers; defaults to min(2, preparations).
+    pub compiler_workers: Option<usize>,
 }
 
 #[derive(Clone, Deserialize)]

@@ -67,6 +67,29 @@ impl WasmtimeConfig {
             ("value-codec".to_owned(), "canonical-json-v1".to_owned()),
         ]);
         self.include_resource_policy(&mut fields);
+        if mode == DispatchMode::Generic {
+            for (name, value) in [
+                ("compiler-workers", self.effective_compiler_workers()),
+                (
+                    "maximum-preparation-waiters",
+                    self.maximum_preparation_waiters,
+                ),
+                (
+                    "maximum-waiters-per-preparation",
+                    self.maximum_waiters_per_preparation,
+                ),
+                (
+                    "maximum-ready-preparations",
+                    self.maximum_ready_preparations,
+                ),
+                (
+                    "maximum-preparation-document-bytes",
+                    self.maximum_preparation_document_bytes,
+                ),
+            ] {
+                fields.insert(name.to_owned(), value.to_string());
+            }
+        }
         self.include_value_policy(&mut fields);
         self.context_policy.append_profile_fields(&mut fields);
         fields

@@ -50,6 +50,7 @@ impl State {
 }
 
 pub(super) struct Inner {
+    pub(super) compiler: Mutex<Option<std::sync::Arc<Mutex<super::PreparationCompilerSnapshot>>>>,
     pub(super) enabled: AtomicBool,
     pub(super) origin: Instant,
     pub(super) state: Mutex<State>,

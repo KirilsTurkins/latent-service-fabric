@@ -1,5 +1,6 @@
 use latent_core::Metadata;
 use latent_telemetry::{LogRecord, LogSeverity};
+use latent_wasmtime::PreparationCompilerSnapshot;
 use serde::Serialize;
 
 use super::{error, transport, Duration, PlatformError, PlatformErrorCode, StandaloneNode};
@@ -34,6 +35,9 @@ pub struct ShutdownReport {
     pub telemetry_retained_entries: usize,
     pub telemetry_flushed: bool,
     pub epoch_helper_joined: bool,
+    /// Separate compiler ownership population; thread joins are observed after
+    /// consuming factory shutdown, never inferred from quiescent user code.
+    pub compiler: PreparationCompilerSnapshot,
 }
 
 impl ShutdownReport {
@@ -60,6 +64,7 @@ impl ShutdownReport {
             && self.live_instances == 0
             && self.live_temporary_buffers == 0
             && self.live_cancellation_probes == 0
+            && compiler_reclaimed(&self.compiler)
     }
 }
 
@@ -93,6 +98,24 @@ impl StandaloneNode {
             .await
         {
             failure.get_or_insert(error);
+        }
+        // Calling quiesce closes preparation admission synchronously. Its
+        // borrowed future cannot detach the native worker on timeout/drop.
+        let factory = self.factory.as_ref().expect("owned engine factory");
+        let compiler_observer = factory.compiler_observer();
+        match tokio::time::timeout_at(drain_deadline, factory.quiesce_compiler()).await {
+            Ok(Ok(())) => {}
+            Ok(Err(error)) => {
+                failure.get_or_insert(error);
+            }
+            Err(_) => {
+                failure.get_or_insert_with(|| {
+                    error(
+                        PlatformErrorCode::DeadlineExceeded,
+                        "compiler quiescence exceeded shutdown grace",
+                    )
+                });
+            }
         }
         let mut report = self.shutdown_observations(handle.snapshot());
         if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
@@ -136,11 +159,17 @@ impl StandaloneNode {
         } else if let Ok(report) = &mut report {
             report.epoch_helper_joined = true;
         }
+        if let Ok(report) = &mut report {
+            report.compiler = compiler_observer.snapshot();
+        }
         if let Some(error) = failure {
             return Err(error);
         }
         let mut report = report?;
-        report.clean = report.reclaimed() && report.telemetry_flushed && report.epoch_helper_joined;
+        report.clean = report.reclaimed()
+            && report.telemetry_flushed
+            && report.epoch_helper_joined
+            && report.compiler.workers_joined == report.compiler.maximum_workers as u64;
         Ok(report)
     }
 
@@ -188,6 +217,22 @@ impl StandaloneNode {
             telemetry_retained_entries: 0,
             telemetry_flushed: false,
             epoch_helper_joined: false,
+            compiler: self.backend.compiler_snapshot(),
         })
     }
+}
+
+fn compiler_reclaimed(compiler: &PreparationCompilerSnapshot) -> bool {
+    !compiler.accepting
+        && !compiler.failed
+        && compiler.assigned_jobs == 0
+        && compiler.running_jobs == 0
+        && compiler.queued_jobs == 0
+        && compiler.waiting_callers == 0
+        && compiler.ready_preparations == 0
+        && compiler.ready_metadata_bytes == 0
+        && compiler.ready_compiled_image_bytes == 0
+        && compiler.reserved_document_bytes == 0
+        && compiler.workers_live == 0
+        && compiler.workers_quiescent == compiler.maximum_workers as u64
 }

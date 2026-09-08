@@ -12,12 +12,10 @@ use latent_executor::{
     ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest, GuestOutcome,
     PreparationKey, PreparedActivation, PreparedComponent,
 };
-use latent_manifest::{ExecutionBackendKind, StateModel, ThreadingModel};
 use sha2::{Digest, Sha256};
-use wasmtime::component::{Component, InstancePre, Linker, Val};
+use wasmtime::component::{InstancePre, Val};
 use wasmtime::{Engine, Store};
 
-use crate::bindings;
 use crate::cache::{ActiveInstanceGate, PrepareAccess, PreparedCache, PreparedCacheSnapshot};
 use crate::config::WasmtimeConfig;
 use crate::containment::{
@@ -35,19 +33,24 @@ use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, Wasmt
 
 mod owned;
 mod preparation;
+mod preparation_context;
+mod readiness;
+use preparation_context::PreparationContext;
 mod store;
 use owned::WasmtimePreparedUse;
 pub use preparation::PreparationActivitySnapshot;
 use preparation::{Compilation, ComponentIntegrity, PreparationCounters};
 use store::AccountedStore;
 
-struct PreparedRuntime {
+pub(crate) struct PreparedRuntime {
     pre: InstancePre<HostState>,
     declared_budget: ResourceBudget,
     surface: surface::Surface,
     descriptor: PreparedComponent,
     imports: Vec<ContractId>,
     authentication: Option<ArtifactPreparationIdentity>,
+    metadata_bytes: usize,
+    image_bytes: usize,
 }
 
 /// Immutable compiled state and bounded diagnostics owned by one node factory.
@@ -57,27 +60,54 @@ pub(crate) struct SharedRuntime {
     epoch_ticker: EpochTicker,
     cache: Arc<PreparedCache<PreparedRuntime>>,
     instances: Arc<ActiveInstanceGate>,
-    uncached_prepared: Mutex<Option<(String, Arc<PreparedRuntime>)>>,
+    uncached_prepared: Arc<Mutex<Option<(String, Arc<PreparedRuntime>)>>>,
     pub(crate) log_sink: BoundedLogSink,
     clock: Arc<dyn ActivationClock>,
     clock_origin: Instant,
     context_policy: Arc<ContextExposurePolicy>,
     resources: RuntimeResourceCounters,
     timings: Mutex<InvocationTimingStore>,
-    preparation: PreparationCounters,
+    preparation: Arc<PreparationCounters>,
     pub(crate) preparation_observer: PreparationObserver,
+    preparation_context: Arc<PreparationContext>,
+    pub(crate) compiler: Option<crate::compiler::CompilerPool<PreparedRuntime>>,
 }
 impl SharedRuntime {
     pub(crate) fn new(
         config: &WasmtimeConfig,
         services: WasmtimeHostServices,
         epoch_ticker: EpochTicker,
+        engine: Engine,
+        profile: WasmtimeEngineProfile,
     ) -> Result<Self, PlatformError> {
+        let cache = Arc::new(PreparedCache::new(config.cache_limits())?);
+        let preparation = Arc::new(PreparationCounters::default());
+        let preparation_observer = PreparationObserver::new(config.maximum_concurrent_preparations);
+        let uncached_prepared = Arc::new(Mutex::new(None));
+        let preparation_context = Arc::new(PreparationContext {
+            engine,
+            profile: profile.clone(),
+            config: config.clone(),
+            preparation: Arc::clone(&preparation),
+            observer: preparation_observer.clone(),
+            uncached: Arc::clone(&uncached_prepared),
+            next_untrusted: std::sync::atomic::AtomicU64::new(0),
+        });
+        let compiler = if profile.id == crate::config::GENERIC_BACKEND_ID {
+            Some(crate::compiler::CompilerPool::new(
+                config,
+                Arc::clone(&cache),
+                preparation_observer.clone(),
+                |runtime: &PreparedRuntime| (runtime.metadata_bytes, runtime.image_bytes),
+            )?)
+        } else {
+            None
+        };
         Ok(Self {
             epoch_ticker,
-            cache: Arc::new(PreparedCache::new(config.cache_limits())?),
+            cache,
             instances: Arc::new(ActiveInstanceGate::new(config.active_instance_limit())?),
-            uncached_prepared: Mutex::new(None),
+            uncached_prepared,
             log_sink: BoundedLogSink::with_target(
                 config.retained_log_maximum_entries,
                 config.retained_log_maximum_bytes,
@@ -88,14 +118,19 @@ impl SharedRuntime {
             context_policy: Arc::new(config.context_policy.clone()),
             resources: RuntimeResourceCounters::default(),
             timings: Mutex::new(InvocationTimingStore::new(256)),
-            preparation: PreparationCounters::default(),
-            preparation_observer: PreparationObserver::new(config.maximum_concurrent_preparations),
+            preparation,
+            preparation_observer,
+            preparation_context,
+            compiler,
         })
     }
 
     pub(crate) fn shutdown(&mut self) -> Result<(), PlatformError> {
         // Unique ownership is established by the factory before this call. No
         // cache, diagnostics, or backend lock is held while joining the worker.
+        if let Some(compiler) = &mut self.compiler {
+            compiler.stop_and_join()?;
+        }
         self.epoch_ticker.stop_and_join()
     }
 
@@ -113,6 +148,13 @@ pub struct WasmtimeBackend {
     shared: Arc<SharedRuntime>,
 }
 impl WasmtimeBackend {
+    #[must_use]
+    pub fn compiler_snapshot(&self) -> crate::PreparationCompilerSnapshot {
+        self.shared
+            .compiler
+            .as_ref()
+            .map_or_else(Default::default, |pool| pool.observer().snapshot())
+    }
     /// Bounded stage observations that do not retain a runtime owner.
     #[must_use]
     pub fn preparation_observer(&self) -> PreparationObserver {
@@ -188,13 +230,26 @@ impl WasmtimeBackend {
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         let validation = job.stage(PreparationStage::MetadataValidation);
-        let identity = self.metadata_identity(artifact)?;
-        self.validate_key(artifact, key)?;
-        self.validate_manifest(artifact)?;
-        let component_digest = self.component_identity(artifact, key, integrity)?;
+        let identity = self
+            .shared
+            .preparation_context
+            .metadata_identity(artifact)?;
+        self.shared
+            .preparation_context
+            .validate_key(artifact, key)?;
+        self.shared
+            .preparation_context
+            .validate_manifest(artifact)?;
+        let component_digest = self
+            .shared
+            .preparation_context
+            .component_identity(artifact, key, integrity)?;
         let handle = prepared_handle(key, &component_digest, &identity.digest);
         let metadata_bytes = preparation::retained_metadata_bytes(identity.bytes, None)?;
-        let reserved_metadata = self.reserved_metadata(metadata_bytes)?;
+        let reserved_metadata = self
+            .shared
+            .preparation_context
+            .reserved_metadata(metadata_bytes)?;
         validation.complete();
         // The reservation lives through all synchronous compilation and validation,
         // including unwind. No store or component instance is created here.
@@ -206,7 +261,7 @@ impl WasmtimeBackend {
             PrepareAccess::Hit(runtime) => return Ok(runtime),
             PrepareAccess::Compile(reservation) => reservation,
         };
-        self.compile_runtime(
+        self.shared.preparation_context.compile_runtime(
             artifact,
             key,
             Compilation {
@@ -218,78 +273,6 @@ impl WasmtimeBackend {
             reservation,
             job,
         )
-    }
-    fn validate_component_bytes(
-        &self,
-        artifact: &CapsuleArtifact,
-    ) -> Result<String, PlatformError> {
-        if artifact.component_bytes.is_empty() {
-            return Err(platform_error(
-                PlatformErrorCode::CorruptArtifact,
-                "component artifact is empty",
-                false,
-            ));
-        }
-        if artifact.component_bytes.len() > self.config.maximum_component_bytes {
-            return Err(platform_error(
-                PlatformErrorCode::ResourceExhausted,
-                "component artifact exceeds the configured byte limit",
-                false,
-            ));
-        }
-        self.record_component_hash(artifact.component_bytes.len());
-        let component_digest = sha256_digest(&artifact.component_bytes);
-        if !artifact
-            .manifest
-            .component_digest
-            .0
-            .eq_ignore_ascii_case(&component_digest)
-        {
-            return Err(platform_error(
-                PlatformErrorCode::CorruptArtifact,
-                "component content digest does not match the capsule manifest",
-                false,
-            ));
-        }
-        if !artifact
-            .descriptor
-            .release_digest
-            .0
-            .eq_ignore_ascii_case(&component_digest)
-            || artifact.descriptor.size_bytes != artifact.component_bytes.len() as u64
-        {
-            return Err(platform_error(
-                PlatformErrorCode::CorruptArtifact,
-                "component content does not match the artifact descriptor",
-                false,
-            ));
-        }
-        Ok(component_digest)
-    }
-
-    fn link_component(
-        &self,
-        component: &Component,
-    ) -> Result<InstancePre<HostState>, PlatformError> {
-        let mut linker = Linker::<HostState>::new(&self.engine);
-        bindings::install_context_log_clock(&mut linker).map_err(|error| {
-            platform_error(
-                PlatformErrorCode::Internal,
-                &format!("failed to bind host imports: {}", bounded_error(&error)),
-                false,
-            )
-        })?;
-        let pre = linker.instantiate_pre(component).map_err(|error| {
-            platform_error(
-                PlatformErrorCode::IncompatibleContract,
-                &format!(
-                    "component imports cannot be resolved: {}",
-                    bounded_error(&error)
-                ),
-                false,
-            )
-        })?;
-        Ok(pre)
     }
 
     async fn invoke_inner(
@@ -575,76 +558,6 @@ impl WasmtimeBackend {
         Ok(store)
     }
 
-    fn validate_key(
-        &self,
-        artifact: &CapsuleArtifact,
-        key: &PreparationKey,
-    ) -> Result<(), PlatformError> {
-        if !key
-            .release
-            .0
-            .eq_ignore_ascii_case(&artifact.descriptor.release_digest.0)
-        {
-            return Err(platform_error(
-                PlatformErrorCode::CorruptArtifact,
-                "preparation release does not match the artifact descriptor",
-                false,
-            ));
-        }
-        self.validate_engine_key(key)
-    }
-
-    fn validate_engine_key(&self, key: &PreparationKey) -> Result<(), PlatformError> {
-        let expected_digest = self
-            .profile
-            .configuration
-            .get("configuration-digest")
-            .expect("profile always contains a configuration digest");
-        if key.engine_version != self.profile.wasmtime_version
-            || &key.engine_configuration_digest != expected_digest
-            || key.target_triple != self.profile.target_triple
-            || key.cpu_feature_set != self.profile.cpu_feature_set
-        {
-            return Err(platform_error(
-                PlatformErrorCode::IncompatibleContract,
-                "preparation key does not match the active Wasmtime engine profile",
-                false,
-            ));
-        }
-        Ok(())
-    }
-
-    fn validate_manifest(&self, artifact: &CapsuleArtifact) -> Result<(), PlatformError> {
-        let manifest = &artifact.manifest;
-        if manifest.world.0.is_empty()
-            || manifest.execution.backend != ExecutionBackendKind::WasmComponent
-            || !matches!(
-                manifest.execution.threading,
-                ThreadingModel::SingleThreaded | ThreadingModel::Reentrant
-            )
-            || manifest.execution.state_model != StateModel::Stateless
-        {
-            return Err(platform_error(
-                PlatformErrorCode::IncompatibleContract,
-                "backend requires a named world with stateless, single-threaded or reentrant Wasm Component execution",
-                false,
-            ));
-        }
-        let declared = &manifest.execution.resource_budget_ceiling;
-        if declared.memory_bytes == 0
-            || declared.memory_bytes > self.config.maximum_memory_bytes
-            || declared.cpu_fuel == 0
-            || declared.cpu_fuel > self.config.maximum_fuel
-            || declared.wall_time_limit_millis == Some(0)
-        {
-            return Err(platform_error(
-                PlatformErrorCode::ResourceExhausted,
-                "capsule-declared resource limits exceed the engine profile",
-                false,
-            ));
-        }
-        Ok(())
-    }
     fn validate_bound_imports(
         request: &ExecutionRequest,
         required: &BTreeSet<String>,
@@ -705,57 +618,6 @@ impl WasmtimeBackend {
         Ok(())
     }
 
-    fn prepared_descriptor(
-        &self,
-        artifact: &CapsuleArtifact,
-        key: PreparationKey,
-        handle: String,
-        component_digest: String,
-    ) -> PreparedComponent {
-        let mut metadata = Metadata::new();
-        metadata.insert("world".to_owned(), artifact.manifest.world.0.clone());
-        metadata.insert(
-            "imports".to_owned(),
-            artifact
-                .manifest
-                .imports
-                .iter()
-                .map(|entry| entry.contract.0.as_str())
-                .collect::<Vec<_>>()
-                .join(","),
-        );
-        metadata.insert(
-            "exports".to_owned(),
-            artifact
-                .manifest
-                .exports
-                .iter()
-                .map(|entry| entry.contract.0.as_str())
-                .collect::<Vec<_>>()
-                .join(","),
-        );
-        metadata.insert("component-digest".to_owned(), component_digest);
-        metadata.insert(
-            "cache".to_owned(),
-            if self.config.prepared_cache_enabled {
-                "bounded-node-owned"
-            } else {
-                "runner-scoped-no-reuse"
-            }
-            .to_owned(),
-        );
-        metadata.insert(
-            "resident-state".to_owned(),
-            "compiled-component,linker,dynamic-indices".to_owned(),
-        );
-        metadata.insert("ambient-authority".to_owned(), "none".to_owned());
-        PreparedComponent {
-            key,
-            backend: self.profile.id.clone(),
-            opaque_handle: handle,
-            metadata,
-        }
-    }
     fn lock_uncached_prepared(&self) -> MutexGuard<'_, Option<(String, Arc<PreparedRuntime>)>> {
         self.shared
             .uncached_prepared
@@ -782,6 +644,20 @@ impl WasmtimeBackend {
 }
 
 impl ExecutionBackend for WasmtimeBackend {
+    fn prepare_ready_from_repository<'a>(
+        &'a self,
+        repository: Arc<dyn ArtifactRepository>,
+        key: PreparationKey,
+    ) -> BoxFuture<'a, Result<latent_executor::PreparedReadiness, PlatformError>> {
+        Box::pin(self.prepare_ready_repository(repository, key))
+    }
+
+    fn materialize_ready(
+        &self,
+        ready: latent_executor::PreparedReadiness,
+    ) -> Result<PreparedActivation, PlatformError> {
+        self.materialize_readiness(ready)
+    }
     fn backend_id(&self) -> &str {
         &self.profile.id
     }

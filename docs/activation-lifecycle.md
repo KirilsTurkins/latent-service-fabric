@@ -115,10 +115,19 @@ Host log charges and observed CPU/memory consumption survive failures and drops;
 the owner finalizes only after execution resources and cell disposition settle.
 Cancellation takes precedence over deadline expiration at terminal publication.
 
-The manager calls `ExecutionBackend::prepare_from_repository` with the pinned
-release's preparation key. It receives a `PreparedActivation`: an affine
-`PreparedUse` and the manifest's complete declared import list, including optional
-imports. The use pins the immutable prepared runtime through cache eviction.
+After admission, the manager calls `ExecutionBackend::prepare_ready_from_repository`
+with the owned repository and pinned release's preparation key. The affine
+`PreparedReadiness` retains immutable code and all declared imports while the
+activation remains `Queued`. Readiness completes before scheduler enqueue;
+the original admission permit, budget, deadline and cancellation registration
+remain owned throughout. Cold completion therefore affects scheduler eligibility:
+arrival order across cold code is not a FIFO guarantee.
+
+Once a cell is assigned, `materialize_ready` transfers the same pin into a
+`PreparedActivation` containing an affine `PreparedUse` and the complete import
+list, including optional imports. Wasmtime acquires its active-instance permit
+at this point; readiness itself owns no Store, instance or execution cell.
+The use pins the immutable prepared runtime through cache eviction.
 `invoke_prepared_contained` consumes that owner; completion, future drop, and
 panic release its guard. Direct callers can still use `prepare_for_use` with
 owned artifact bytes.
@@ -131,12 +140,18 @@ For the directory repository, preparation can reuse a verified immutable
 snapshot through a sealed source whose identity lookup and fetch belong to the
 same repository owner. A warm cache hit performs no component read/hash or full
 manifest/contract traversal. A miss fetches and verifies stored content through
-that source before compiling and adopting it. Repositories without this source
+that source before compiling and adopting it. The sealed owned directory source
+keeps bounded verified I/O and compilation on fixed compiler workers. Identical
+verified misses share a job with bounded waiter registration. Cancelling the last
+running waiter leaves the job's resources owned until native compilation actually
+returns; its abandoned result is discarded. Repositories without this source
 use the fully verified fetch path. These are preparation optimizations, not a
 replacement for routing, tenant checks, admission or activation accounting; see
 [Wasmtime preparation](runtime/wasmtime.md#node-policy-and-shared-preparation).
 
-Artifact/preparation failure releases a cell that never entered execution.
+Artifact/readiness failure terminates at `Queued` without assigning or disposing
+of a cell. Dropping that owner releases its unassigned admission quota. A failure
+after assignment releases the cell that never entered execution.
 Before backend entry, dropped built-in assignments can synchronously reclaim
 their unaccepted lease. Once execution begins, reuse requires a positive backend
 cleanup proof. Missing proof, dropped running work, or uncertain cleanup
@@ -145,9 +160,11 @@ manager and cannot bypass terminal accounting or affine cleanup.
 
 `cleanup_grace` bounds cooperative backend and pool cleanup; it defaults to
 100 milliseconds and must be positive and no more than one second. A missing
-acknowledgment cannot retain work indefinitely. External pool/backend
-implementations must honor their synchronous ownership and cleanup contracts;
-the manager conservatively quarantines when they cannot establish safe reuse.
+execution-cleanup acknowledgment leads to conservative cell quarantine. External
+pool/backend implementations must honor their synchronous ownership and cleanup
+contracts. This grace does not preempt a running native compiler job: cancellation
+removes the activation's waiter, while the factory retains the worker and its
+reservations until compilation returns and final shutdown joins the thread.
 
 ## Bounded status and validation
 

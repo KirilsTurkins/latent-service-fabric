@@ -66,14 +66,14 @@ through one bounded, authenticated loopback listener on Linux.
 | `latent-manifest` | `ManifestCodec`, `ManifestValidator`, bounded `JsonManifestCodec`, `Phase1ManifestValidator` |
 | `latent-rpc` | generated Protobuf messages, Tonic clients/servers, descriptor set |
 | `latent-component-bindings` | shared generated runtime/echo Component Model bindings |
-| `latent-artifacts` | `ArtifactRepository`, `DirectoryArtifactRepository`, sealed `VerifiedArtifactMetadata` and `ArtifactPreparationSource`, compact `ArtifactPreparationIdentity`, `ArtifactVerificationSnapshot`, `ArtifactCache`, `ArtifactVerifier` |
+| `latent-artifacts` | `ArtifactRepository`, `DirectoryArtifactRepository`, sealed `VerifiedArtifactMetadata` and `ArtifactPreparationSource`/`OwnedArtifactPreparationSource`, bounded preparation reads, compact `ArtifactPreparationIdentity`, `ArtifactVerificationSnapshot`, `ArtifactCache`, `ArtifactVerifier` |
 | `latent-contracts` | `ContractRegistry`, `CompatibilityChecker`, `BindingCompiler` |
 | `latent-policy` | `PolicyEngine`, `PolicyRepository` |
 | `latent-routing` | `RouteResolver`, `RouteCompiler`, snapshot source/publisher |
 | `latent-admission` | `AdmissionController`, `QuotaProvider`, `LocalAdmissionController`, `LocalQuotaProvider`, affine admission/execution permits |
 | `latent-scheduler` | open `CellPool` with nonqueueing acquisition/change notifications, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `LocalScheduler`, `AdmittedSchedulingRequest`, `ScheduledActivation`, `SchedulerSnapshot`, `SchedulingCancellation`, `LocalNodePlacement` |
 | `latent-activation` | `ActivationRequest`, bounded `ActivationRequestBuilder`, `ActivationIdSource`, `ActivationManager`, `ActivationJournal` |
-| `latent-executor` | `ExecutionBackend::prepare_from_repository`, `PreparedActivation`, affine `PreparedUse`, backend registry and cancellation |
+| `latent-executor` | `ExecutionBackend::prepare_ready_from_repository`/`materialize_ready`, compatible `prepare_from_repository`, `PreparedActivation`, `PreparedReadiness`, affine `PreparedUse`, backend registry and cancellation |
 | `latent-wasmtime` | `WasmtimeComponentEngineFactory`, generic `WasmtimeBackend`, bounded preparation/value policy, `WasmtimeHostServices`, `ContextExposurePolicy`, `StructuredLogSink`, dynamic exports and cleanup proof; retained Phase 0 facade and future AOT interfaces |
 | `latent-capabilities` | provider, broker, registry, handle model |
 | `latent-blobs` | large-value storage, leases, and transfer |
