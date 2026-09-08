@@ -1,7 +1,7 @@
 use latent_node::{NodeInventory, ResourceOwnership};
 use serde_json::{json, Value};
 
-pub(super) fn inventory(value: &NodeInventory) -> Value {
+pub(in super::super) fn inventory(value: &NodeInventory) -> Value {
     let cache = value.cache_summary;
     let cells: Vec<_> = value.cell_capacity.iter().map(|cell| json!({"class":cell.class,"total":cell.total,
         "available":cell.available,"active":cell.active,"quarantined":cell.quarantined,"queueDepth":cell.queue_depth,
@@ -27,14 +27,14 @@ pub(super) fn inventory(value: &NodeInventory) -> Value {
         "topology":{"available":value.topology.available,"complete":value.topology.complete,"entries":topology}})
 }
 
-pub(super) fn backend(value: latent_wasmtime::RuntimeResourceSnapshot) -> Value {
+pub(in super::super) fn backend(value: latent_wasmtime::RuntimeResourceSnapshot) -> Value {
     json!({"active_invocations":value.active_invocations.to_string(),"live_stores":value.live_stores.to_string(),
         "live_host_states":value.live_host_states.to_string(),"live_component_instances":value.live_component_instances.to_string(),
         "live_temporary_buffers":value.live_temporary_buffers.to_string(),"live_cancellation_probes":value.live_cancellation_probes.to_string(),
         "stores_created":value.stores_created.to_string()})
 }
 
-pub(super) fn ownership(
+pub(in super::super) fn ownership(
     node: &crate::standalone::StandaloneNode,
     journal_config: latent_node::LocalActivationJournalConfig,
     maximum_active_correlations: usize,

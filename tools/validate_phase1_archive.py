@@ -15,10 +15,14 @@ try:
     from . import package_phase0_evidence as paths
     from . import phase0_evidence
     from .phase1_evidence.replay import validate_aggregate, validate_comparison
+    from .phase1_evidence.common import read_json
+    from .validate_phase1_paired import replay as validate_paired
 except ImportError:
     import package_phase0_evidence as paths
     import phase0_evidence
     from phase1_evidence.replay import validate_aggregate, validate_comparison
+    from phase1_evidence.common import read_json
+    from validate_phase1_paired import replay as validate_paired
 
 ARCHIVE = 'raw-evidence.tar.gz'
 MANIFEST = 'raw-evidence.manifest.json'
@@ -102,6 +106,18 @@ def verify_policy(policy, aggregate):
             'archived policy digest differs from aggregate policy')
 
 
+def evidence_kind(directory):
+    aggregate = read_json(paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'))
+    require(isinstance(aggregate, dict), 'invalid aggregate object')
+    schema = aggregate.get('schema')
+    if schema == 'latent.phase1.paired-aggregate.v1':
+        return 'paired'
+    # Shape-only archive verification remains available for legacy callers.
+    # A missing schema never passes the mandatory semantic publication replay.
+    require(schema in (None, 'latent.phase1.measurement-aggregate.v1'), 'unsupported evidence schema')
+    return 'measurement'
+
+
 def verify_package(directory, *, replay=True):
     root = paths.existing_directory_path(directory, 'evidence package')
     manifest = load_manifest(root)
@@ -156,15 +172,20 @@ def verify_package(directory, *, replay=True):
         require(files == seen, 'extraction differs from verified archive')
         for name, row in expected.items():
             require(file_reference(extracted / name, extracted) == row, 'round-trip checksum mismatch')
-        for name in ('aggregate.json', 'comparison.json', 'measurement-policy.json'):
+        paired = evidence_kind(extracted) == 'paired'
+        outer_files = ('aggregate.json',) if paired else ('aggregate.json', 'comparison.json', 'measurement-policy.json')
+        for name in outer_files:
             require(name in expected and file_reference(root / name, root) == expected[name],
                     'outer evidence differs from archived evidence')
         if replay:
-            validate_aggregate(extracted / 'aggregate.json')
-            validate_comparison(extracted / 'comparison.json')
-            policy = json.loads((extracted / 'measurement-policy.json').read_text())
-            aggregate = json.loads((extracted / 'aggregate.json').read_text())
-            verify_policy(policy, aggregate)
+            if paired:
+                validate_paired(extracted / 'aggregate.json')
+            else:
+                validate_aggregate(extracted / 'aggregate.json')
+                validate_comparison(extracted / 'comparison.json')
+                policy = json.loads((extracted / 'measurement-policy.json').read_text())
+                aggregate = json.loads((extracted / 'aggregate.json').read_text())
+                verify_policy(policy, aggregate)
     return manifest
 
 

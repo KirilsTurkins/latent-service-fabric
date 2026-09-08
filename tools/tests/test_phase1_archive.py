@@ -141,5 +141,70 @@ class ArchiveTests(unittest.TestCase):
             verify.verify_policy(policy, aggregate)
 
 
+class PairedArchiveTests(unittest.TestCase):
+    def setUp(self):
+        import sys
+        tools_directory = str(Path(__file__).resolve().parents[1])
+        sys.path.insert(0, tools_directory)
+        self.addCleanup(sys.path.remove, tools_directory)
+        self.temporary = tempfile.TemporaryDirectory(prefix='phase1-paired-archive-test-')
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.source = self.root / 'source'
+        self.source.mkdir()
+        from tools.tests.phase1_paired_fixtures import suite
+        from tools.phase1_paired.aggregate import aggregate
+        from tools.phase1_evidence.common import canonical
+        self.suite_path = suite(self.source)
+        (self.source / 'aggregate.json').write_bytes(canonical(aggregate(self.suite_path, self.source)))
+        self.output = self.root / 'package'
+        self.unneeded_policy = self.root / 'does-not-exist.json'
+
+    def test_paired_round_trip_replays_all_inputs_without_measurement_policy(self):
+        before = {path.relative_to(self.source).as_posix(): path.read_bytes()
+                  for path in self.source.rglob('*') if path.is_file()}
+        manifest = package.package(self.source, self.output, self.unneeded_policy)
+        self.assertEqual(manifest, verify.verify_package(self.output))
+        self.assertEqual({row['path'] for row in manifest['files']}, set(before))
+        self.assertTrue({'reproduction/candidate/collector', 'reproduction/control/release/phase0-baseline',
+                         'reproduction/candidate/echo-capsule.wasm', 'suite.json'} <= set(before))
+        self.assertFalse((self.output / 'measurement-policy.json').exists())
+        self.assertFalse((self.output / 'comparison.json').exists())
+        self.assertEqual(before, {path.relative_to(self.source).as_posix(): path.read_bytes()
+                                for path in self.source.rglob('*') if path.is_file()})
+
+    def test_paired_outer_aggregate_tamper_rejected(self):
+        package.package(self.source, self.output, self.unneeded_policy)
+        path = self.output / 'aggregate.json'
+        value = json.loads(path.read_bytes())
+        value['status'] = 'passed'
+        path.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'outer evidence'):
+            verify.verify_package(self.output)
+
+    def test_rehashed_paired_raw_association_never_publishes(self):
+        from tools.phase1_evidence.common import canonical, reference
+        from tools.tests.phase1_paired_fixtures import refresh
+        path = self.source / 'pair-01/candidate/candidate.json'
+        value = json.loads(path.read_bytes())
+        value['samples'][0]['receipt']['release_digest'] = 'sha256:' + '0' * 64
+        path.write_bytes(canonical(value))
+        refresh(self.suite_path)
+        aggregate_path = self.source / 'aggregate.json'
+        value = json.loads(aggregate_path.read_bytes())
+        value['source'] = reference(self.suite_path, self.source)
+        aggregate_path.write_bytes(canonical(value))
+        with self.assertRaisesRegex(ValueError, 'terminal-pin'):
+            package.package(self.source, self.output, self.unneeded_policy)
+        self.assertFalse(self.output.exists())
+
+    def test_paired_executed_binary_tamper_rejected_by_semantic_replay(self):
+        binary = self.source / 'reproduction/candidate/collector'
+        binary.write_bytes(b'changed executable')
+        with self.assertRaisesRegex(ValueError, 'artifact-identity-mismatch'):
+            package.package(self.source, self.output, self.unneeded_policy)
+        self.assertFalse(self.output.exists())
+
+
 if __name__ == '__main__':
     unittest.main()

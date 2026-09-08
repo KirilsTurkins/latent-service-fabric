@@ -1,0 +1,73 @@
+name: Phase 1 controlled comparison
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Smoke validates one small pair; full collects seven independent pairs
+        type: choice
+        default: smoke
+        options:
+          - smoke
+          - full
+
+permissions:
+  contents: read
+
+jobs:
+  comparison:
+    name: Historical and current semantic echo comparison
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+          cache: pip
+          cache-dependency-path: tools/requirements.lock
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          targets: wasm32-wasip2,wasm32-unknown-unknown
+      - uses: bytecodealliance/actions/wasm-tools/setup@v1
+        with:
+          version: 1.254.0
+      - name: Install validator dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+      - name: Build the unchanged historical control
+        run: |
+          unset CARGO_INCREMENTAL
+          git worktree add --detach "$RUNNER_TEMP/phase1-control-source" 52ac47542a05c0a1263f78a14c04a5c2e6b761f3
+          mkdir -p target
+          python3 - <<'PY'
+          import os, sys
+          from pathlib import Path
+          sys.path.insert(0, 'tools')
+          from run_phase1_conformance import bounded_run
+          temporary = Path(os.environ['RUNNER_TEMP'])
+          bounded_run(['bash', 'tools/build_phase1_historical_control.sh',
+                       str(temporary / 'phase1-control-source'), str(temporary / 'phase1-control-build')],
+                      Path('target/phase1-control-bootstrap.log'), 3600, os.environ.copy())
+          PY
+      - name: Collect and validate alternating independent processes
+        env:
+          COMPARISON_PROFILE: ${{ inputs.profile }}
+        run: |
+          unset CARGO_INCREMENTAL
+          python3 tools/run_phase1_paired.py --profile "$COMPARISON_PROFILE" \
+            --control-source "$RUNNER_TEMP/phase1-control-source" \
+            --control-build-dir "$RUNNER_TEMP/phase1-control-build"
+      - name: Retain all attempts and failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase1-controlled-${{ inputs.profile }}-${{ github.sha }}
+          path: |
+            target/phase1-paired/
+            target/phase1-control-bootstrap.log
+            ${{ runner.temp }}/phase1-control-build/build.log
+            ${{ runner.temp }}/phase1-control-build/build-receipt.json
+          if-no-files-found: warn
+          retention-days: 30

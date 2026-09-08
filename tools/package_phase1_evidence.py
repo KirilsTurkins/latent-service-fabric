@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package complete Phase 1 measurements unchanged, including the executed binary."""
+"""Package Phase 1 measurement or paired evidence unchanged, including executed binaries."""
 from __future__ import annotations
 
 import argparse
@@ -13,20 +13,22 @@ import tempfile
 try:
     from . import package_phase0_evidence as paths
     from .validate_phase1_archive import (ARCHIVE, MANIFEST, MAX_COMPRESSED, MAX_EXPANDED,
-                                         MAX_FILES, file_reference, relative_path, require,
+                                         MAX_FILES, evidence_kind, file_reference, relative_path, require,
                                          verify_package)
 except ImportError:
     import package_phase0_evidence as paths
     from validate_phase1_archive import (ARCHIVE, MANIFEST, MAX_COMPRESSED, MAX_EXPANDED,
-                                        MAX_FILES, file_reference, relative_path, require,
+                                        MAX_FILES, evidence_kind, file_reference, relative_path, require,
                                         verify_package)
 
 
 def create_archive(source, stage, policy):
+    paired = evidence_kind(source) == 'paired'
     files = {relative_path(path.relative_to(source).as_posix()): path
              for path in paths.regular_files(source, 'measurement source')}
-    require('measurement-policy.json' not in files, 'source already contains a policy copy')
-    files['measurement-policy.json'] = paths.existing_regular_file_path(policy, 'measurement policy')
+    if not paired:
+        require('measurement-policy.json' not in files, 'source already contains a policy copy')
+        files['measurement-policy.json'] = paths.existing_regular_file_path(policy, 'measurement policy')
     require(len(files) <= MAX_FILES, 'too many evidence files')
     require(sum(path.stat().st_size for path in files.values()) <= MAX_EXPANDED, 'evidence exceeds expanded bound')
     references = []
@@ -48,7 +50,8 @@ def create_archive(source, stage, policy):
                 'files': references, 'total_bytes': str(sum(int(row['bytes']) for row in references))}
     (stage / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8', newline='\n')
     (stage / (ARCHIVE + '.sha256')).write_text(manifest['archive']['sha256'][7:] + '  ' + ARCHIVE + '\n', encoding='ascii', newline='\n')
-    for name in ('aggregate.json', 'comparison.json', 'measurement-policy.json'):
+    outer_files = ('aggregate.json',) if paired else ('aggregate.json', 'comparison.json', 'measurement-policy.json')
+    for name in outer_files:
         require(name in files, 'required outer measurement evidence missing')
         shutil.copyfile(files[name], stage / name)
     return manifest

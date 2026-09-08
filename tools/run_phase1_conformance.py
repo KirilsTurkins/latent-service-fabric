@@ -28,12 +28,12 @@ PROCESS_TEST = "phase1_bounded_child_conformance"
 
 
 def bounded_run(command: list[str], log: Path, timeout: float, env: dict[str, str],
-                receipt: dict | None = None) -> bytes:
+                receipt: dict | None = None, cwd: Path | None = None) -> bytes:
     """Bound pipes, wall time and the entire disposable driver process group."""
     deadline = time.monotonic() + timeout
     output = bytearray()
     with log.open("xb") as sink, selectors.DefaultSelector() as selector:
-        child = subprocess.Popen(command, cwd=ROOT, env=env, stdin=subprocess.DEVNULL,
+        child = subprocess.Popen(command, cwd=ROOT if cwd is None else cwd, env=env, stdin=subprocess.DEVNULL,
                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                  start_new_session=True)
         assert child.stdout is not None
