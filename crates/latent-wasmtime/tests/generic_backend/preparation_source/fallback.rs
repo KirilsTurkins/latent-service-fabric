@@ -138,7 +138,7 @@ async fn authenticated_size_and_metadata_bounds_reject_before_fetch_or_reservati
 }
 
 #[tokio::test(flavor = "current_thread")]
-async fn empty_component_is_corrupt_for_authenticated_and_uncached_repository_paths() {
+async fn empty_component_is_corrupt_for_direct_authenticated_and_untrusted_acquisition() {
     let directory = Directory::new();
     let repository = directory.open();
     let value = artifact_bytes(Vec::new(), &[VALUES]);
@@ -147,21 +147,29 @@ async fn empty_component_is_corrupt_for_authenticated_and_uncached_repository_pa
         .await
         .unwrap()
         .release_digest;
-    for enabled in [true, false] {
-        let mut bounded = config();
-        bounded.prepared_cache_enabled = enabled;
-        let factory = WasmtimeComponentEngineFactory::new(bounded).unwrap();
-        let backend = factory.create_backend_instance();
-        let key = factory.preparation_key(release.clone());
-        let direct = backend.prepare_for_use(&value, &key).await.unwrap_err();
-        let sourced = backend
-            .prepare_from_repository(&repository, &key)
-            .await
-            .unwrap_err();
-        assert_eq!(direct.code, PlatformErrorCode::CorruptArtifact);
-        assert_eq!(sourced.code, direct.code);
-        assert_eq!(sourced.message, direct.message);
-        no_reservations(&backend);
-        assert_eq!(backend.cache_snapshot().entries, 0);
+    let factory = WasmtimeComponentEngineFactory::new(config()).unwrap();
+    let backend = factory.create_backend_instance();
+    let key = factory.preparation_key(release);
+    let direct = backend.prepare_for_use(&value, &key).await.unwrap_err();
+    let sourced = backend
+        .prepare_from_repository(&repository, &key)
+        .await
+        .unwrap_err();
+    let fallback = Repository {
+        source: None,
+        fallback: Some(value),
+        fetches: AtomicUsize::new(0),
+    };
+    let untrusted = backend
+        .prepare_from_repository(&fallback, &key)
+        .await
+        .unwrap_err();
+    assert_eq!(direct.code, PlatformErrorCode::CorruptArtifact);
+    for error in [sourced, untrusted] {
+        assert_eq!(error.code, direct.code);
+        assert_eq!(error.message, direct.message);
     }
+    assert_eq!(fallback.fetches.load(Ordering::Relaxed), 1);
+    no_reservations(&backend);
+    assert_eq!(backend.cache_snapshot().entries, 0);
 }

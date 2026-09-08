@@ -9,7 +9,7 @@ import signal
 import subprocess
 import time
 
-from run_phase1_conformance import digest
+from tools.run_phase1_conformance import digest
 from .cgroups import cgroup
 
 

@@ -133,7 +133,7 @@ def aggregate(suite, checksum, runs, owners, attempts, failed, complete):
                 "Both variants execute LSF; the shared client and CLI are built from the declared harness revision.",
                 "Warmup remains in raw counts and is excluded from measured latency populations.",
                 "Successful-response latency contrasts are conditional on success; inspect all offered outcomes and budget misses.",
-                "Throughput uses whole phase/batch intervals, never summed reciprocal call latencies.",
+                "Throughput uses first scheduled offer through last completed attempt, excluding harness work outside that interval; it is never a sum of reciprocal call latencies.",
                 "Cache snapshots include warmup and node-get observation overhead outside request timers; they are not per-call I/O counters.",
                 "Cold first response includes client launch/connect and the before-batch inventory observation, not isolated preparation.",
                 "Validated process counts cover seed servers, measured servers and load clients; provisioning/node-get CLI helpers are separate overhead.",

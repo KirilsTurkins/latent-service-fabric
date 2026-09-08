@@ -21,11 +21,11 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from optimization_runner import fixtures
-from optimization_runner.plans import plan, SERVICES, TENANT, TOKEN
-from optimization_runner.processes import OwnedProcess, cgroup, snapshot
-from phase1_measurement_environment import build_configuration, host
-from run_phase1_conformance import bounded_run, digest, git
+from tools.optimization_runner import fixtures
+from tools.optimization_runner.plans import plan, SERVICES, TENANT, TOKEN
+from tools.optimization_runner.processes import OwnedProcess, cgroup, snapshot
+from tools.phase1_measurement_environment import build_configuration, host
+from tools.run_phase1_conformance import bounded_run, digest, git
 
 
 class Limits:
