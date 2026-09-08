@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/cache-behavior-aggregate.schema.json",
+  "$comment": "Bounded structural envelope only. Mandatory semantic, identity, ownership, count and hash replay uses tools.optimization_cache_lookup.evidence.validate_suite for lookup or tools.optimization_backend_revision.evidence.validate_suite for behavior. Full archive publication additionally requires complete status and both completion booleans; smoke never qualifies.",
+  "$defs": {
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "$ref": "#/$defs/json"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/json"
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "required": [
+    "schema",
+    "profile",
+    "status",
+    "suite_sha256",
+    "builds",
+    "population_complete",
+    "attempt_count_complete",
+    "runs",
+    "pairs",
+    "across_pairs",
+    "limitations",
+    "validated_calls",
+    "validated_direct_executions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.cache-behavior-aggregate.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "failed"
+      ]
+    },
+    "suite_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "builds": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "population_complete": {
+      "type": "boolean"
+    },
+    "attempt_count_complete": {
+      "type": "boolean"
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 14,
+      "items": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "pairs": {
+      "type": "array",
+      "maxItems": 7,
+      "items": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "across_pairs": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "string",
+        "maxLength": 4096
+      }
+    },
+    "validated_calls": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "validated_direct_executions": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "complete"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          },
+          "population_complete": {
+            "const": true
+          },
+          "attempt_count_complete": {
+            "const": true
+          }
+        }
+      }
+    }
+  ]
+}
