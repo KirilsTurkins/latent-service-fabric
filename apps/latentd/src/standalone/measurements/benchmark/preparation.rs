@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use latent_artifacts::{ArtifactRepository, CapsuleArtifact};
-use latent_executor::ExecutionBackend;
+use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 use latent_wasmtime::PreparedCacheSnapshot;
 use serde_json::{json, Value};
 
@@ -10,13 +10,13 @@ use super::{execute, platform, write_call, Case, MeasurementNode, MeasurementWri
 pub(super) async fn initial(node: &MeasurementNode, writer: &mut MeasurementWriter) -> Result<()> {
     let backend = &node.node.backend;
     let fixture = &node.fixtures.echo;
-    let artifact = published(node, fixture).await?;
+    drop(published(node, fixture).await?);
     let key = backend
         .preparation_key(&fixture.artifact.descriptor.release_digest)
         .map_err(platform)?;
     let before = backend.cache_snapshot();
     let started = Instant::now();
-    let _prepared = backend.prepare(&artifact, &key).await.map_err(platform)?;
+    let _prepared = prepare(node, &key).await?;
     let elapsed = started.elapsed().as_micros();
     let after = backend.cache_snapshot();
     if before.entries != 0 || before.misses != 0 || after.entries != 1 || after.misses != 1 {
@@ -25,6 +25,7 @@ pub(super) async fn initial(node: &MeasurementNode, writer: &mut MeasurementWrit
     writer.write(
         "benchmark-prepare",
         &json!({"sample":"0","operation":"initial","elapsed_micros":elapsed.to_string(),
+        "scope":"repository-acquisition-including-verified-refill",
         "cache_before":cache(&before),"cache_after":cache(&after)}),
     )?;
     Ok(())
@@ -37,15 +38,15 @@ pub(super) async fn pair(
 ) -> Result<()> {
     let backend = &node.node.backend;
     let fixture = &node.fixtures.echo;
-    let artifact = published(node, fixture).await?;
+    drop(published(node, fixture).await?);
     let key = backend
         .preparation_key(&fixture.artifact.descriptor.release_digest)
         .map_err(platform)?;
-    let descriptor = backend.prepare(&artifact, &key).await.map_err(platform)?;
+    let descriptor = prepare(node, &key).await?;
     backend.release(descriptor).await.map_err(platform)?;
     let before = backend.cache_snapshot();
     let started = Instant::now();
-    let cold = backend.prepare(&artifact, &key).await.map_err(platform)?;
+    let cold = prepare(node, &key).await?;
     let elapsed = started.elapsed().as_micros();
     let after = backend.cache_snapshot();
     if after.misses != before.misses + 1 || after.entries != before.entries + 1 {
@@ -54,6 +55,7 @@ pub(super) async fn pair(
     writer.write(
         "benchmark-prepare",
         &json!({"sample":index.to_string(),"operation":"cold","elapsed_micros":elapsed.to_string(),
+        "scope":"repository-acquisition-including-verified-refill",
         "cache_before":cache(&before),"cache_after":cache(&after)}),
     )?;
     let first = execute(node, Case::FirstEcho, &format!("bench-first-{index}")).await?;
@@ -61,13 +63,14 @@ pub(super) async fn pair(
     write_call(writer, "cold_first_rpc", index, &first)?;
     let before = backend.cache_snapshot();
     let started = Instant::now();
-    let hit = backend.prepare(&artifact, &key).await.map_err(platform)?;
+    let hit = prepare(node, &key).await?;
     let elapsed = started.elapsed().as_micros();
     let after = backend.cache_snapshot();
     if cold != hit || after.hits != before.hits + 1 || after.misses != before.misses {
         return Err("cache preparation did not reuse identity".into());
     }
     writer.write("benchmark-prepare",&json!({"sample":index.to_string(),"operation":"cache_hit","elapsed_micros":elapsed.to_string(),
+        "scope":"repository-acquisition-including-verified-refill",
         "cache_before":cache(&before),"cache_after":cache(&after)}))?;
     let warm = execute(node, Case::Echo, &format!("bench-hit-{index}")).await?;
     require_reuse(node, &after)?;
@@ -83,7 +86,7 @@ pub(super) async fn prewarm_failures(node: &MeasurementNode) -> Result<()> {
             .map_err(platform)?;
         drop(
             backend
-                .prepare_for_use(&artifact, &key)
+                .prepare_from_repository(node.artifacts.as_ref(), &key)
                 .await
                 .map_err(platform)?,
         );
@@ -93,6 +96,18 @@ pub(super) async fn prewarm_failures(node: &MeasurementNode) -> Result<()> {
         return Err("benchmark prewarm did not retain exactly three published identities".into());
     }
     Ok(())
+}
+
+async fn prepare(node: &MeasurementNode, key: &PreparationKey) -> Result<PreparedComponent> {
+    let activation = node
+        .node
+        .backend
+        .prepare_from_repository(node.artifacts.as_ref(), key)
+        .await
+        .map_err(platform)?;
+    let descriptor = activation.prepared.descriptor().clone();
+    drop(activation);
+    Ok(descriptor)
 }
 
 pub(super) fn require_reuse(node: &MeasurementNode, before: &PreparedCacheSnapshot) -> Result<()> {
@@ -112,7 +127,8 @@ async fn published(
 ) -> Result<CapsuleArtifact> {
     // Management creates the stored descriptor. Its reference participates in
     // preparation identity, so the caller's pre-publication descriptor cannot
-    // substitute for it. Fetch/validation stay outside preparation timings.
+    // substitute for it. This fixture oracle is outside preparation timings;
+    // actual repository acquisition (including verified refill) is timed.
     let artifact = node
         .artifacts
         .fetch(&fixture.artifact.descriptor.release_digest)

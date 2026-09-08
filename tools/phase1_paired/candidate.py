@@ -6,12 +6,17 @@ from .common import GRANTS, INPUT, RAW_LIMIT, plan as validate_plan
 from .metrics import consumption, summarize, timing
 
 
-def parse(value, plan, identity, artifacts, raw_path):
-    fields(value, "schema arm profile warmup_samples measured_samples plan identity semantic_input semantic_output "
-           "effective_options configuration startup preparation_elapsed_micros artifact publication preparation_cache_before "
-           "preparation_cache_after samples status reason elapsed_micros work shutdown data_cleanup "
-           "prepared_release_elapsed_micros after_release")
-    require(value["schema"] == "latent.phase1.paired-arm.v1" and value["arm"] == "candidate"
+def parse(value, plan, identity, artifacts, raw_path, *, revision=False):
+    common_fields = ("schema arm profile warmup_samples measured_samples plan identity semantic_input semantic_output "
+                     "effective_options configuration startup artifact publication preparation_cache_before "
+                     "samples status reason elapsed_micros work shutdown data_cleanup ")
+    fields(value, common_fields + ("warmup_method before_shutdown" if revision else
+           "preparation_elapsed_micros preparation_cache_after prepared_release_elapsed_micros after_release"),
+           "" if revision else "preparation_scope")
+    scope = value.get("preparation_scope")
+    require(scope in (None, "repository-acquisition-including-verified-refill"), "changed-preparation-scope")
+    require(value["schema"] == ("latent.optimization.backend-revision-arm.v1" if revision else "latent.phase1.paired-arm.v1")
+            and value["arm"] == ("lsf" if revision else "candidate")
             and value["profile"] == plan["profile"] and value["status"] == "passed" and value["reason"] is None,
             "candidate-did-not-pass")
     validate_plan(value["plan"])
@@ -33,11 +38,14 @@ def parse(value, plan, identity, artifacts, raw_path):
             and publication["deployment_id"] == fixture["metadata"]["name"]
             and publication["object_generation"] == publication["catalog_generation"] == "1", "candidate-publication-mismatch")
     cache(value["preparation_cache_before"], entries=0, hits=0, misses=0)
-    cache(value["preparation_cache_after"], entries=1, hits=0, misses=1)
-    require(value["preparation_cache_after"]["source_bytes"] == identity["fixtures"][0]["bytes"], "candidate-prepared-wrong-component")
+    if revision:
+        require(value["warmup_method"] == "first-rpc-empty-cache-in-declared-warmup", "changed-revision-warmup-method")
+    else:
+        cache(value["preparation_cache_after"], entries=1, hits=0, misses=1)
+        require(value["preparation_cache_after"]["source_bytes"] == identity["fixtures"][0]["bytes"], "candidate-prepared-wrong-component")
     total = plan["warmup_samples"] + plan["measured_samples"]
     require(isinstance(value["samples"], list) and len(value["samples"]) == total, "candidate-sample-count")
-    tracker, samples, revision = Samples(), [], None
+    tracker, samples, pinned_revision = Samples(), [], None
     for index, row in enumerate(value["samples"]):
         fields(row, "iteration activation_id semantic_output_sha256 outcome elapsed_micros timing consumption post_call receipt")
         require(row["iteration"] == str(index) and row["activation_id"] == f"baseline-warm-echo-{index:08}", "reordered-candidate-population")
@@ -45,10 +53,10 @@ def parse(value, plan, identity, artifacts, raw_path):
         consumed = consumption(row["consumption"])
         require(0 < consumed["log_bytes"] and consumed["wall_time_micros"] < 1_000_000, "candidate-common-grant-exhausted")
         receipt = fields(row["receipt"], "release_digest revision_id route_generation terminal_state retained_consumption_matches")
-        if revision is None:
-            revision = receipt["revision_id"]
-        require(isinstance(revision, str) and revision.startswith("revision-v1:sha256:")
-                and receipt["revision_id"] == revision and receipt["release_digest"] == publication["release_digest"]
+        if pinned_revision is None:
+            pinned_revision = receipt["revision_id"]
+        require(isinstance(pinned_revision, str) and pinned_revision.startswith("revision-v1:sha256:")
+                and receipt["revision_id"] == pinned_revision and receipt["release_digest"] == publication["release_digest"]
                 and receipt["route_generation"] == "1" and receipt["terminal_state"] == "completed"
                 and receipt["retained_consumption_matches"] is True, "candidate-terminal-pin-mismatch")
         post = row["post_call"]
@@ -59,21 +67,41 @@ def parse(value, plan, identity, artifacts, raw_path):
         require(len(cells) == 1 and cells[0]["total"] == cells[0]["available"] == 2
                 and cells[0]["quarantined"] == 0 and cells[0]["queueCapacity"] == 3, "candidate-cell-control-mismatch")
         resident = post["inventory"]["cacheSummary"]
-        require(resident["entries"] == resident["misses"] == "1" and resident["hits"] == str(index + 1)
+        require(resident["entries"] == resident["misses"] == "1" and resident["hits"] == str(index if revision else index + 1)
                 and resident["evictions"] == resident["invalidations"] == "0"
                 and resident["sourceBytes"] == identity["fixtures"][0]["bytes"], "candidate-cache-not-reused")
         work(post["work"], index + 1)
         samples.append({"elapsed": uint(row["elapsed_micros"]), "timing": timing(row["timing"])})
-    tracker.check(value["after_release"])
-    idle(value["after_release"])
-    require(value["after_release"]["inventory"]["cacheSummary"]["entries"] == "0"
-            and value["after_release"]["backend"]["stores_created"] == str(total), "candidate-release-not-observed")
+    final = value["before_shutdown" if revision else "after_release"]
+    tracker.check(final)
+    idle(final)
+    require(final["inventory"]["cacheSummary"]["entries"] == ("1" if revision else "0")
+            and final["backend"]["stores_created"] == str(total), "candidate-final-residency-not-observed")
+    if revision:
+        resident = final["inventory"]["cacheSummary"]
+        require(resident["hits"] == str(total - 1) and resident["misses"] == "1"
+                and resident["evictions"] == resident["invalidations"] == "0", "revision-final-cache-mismatch")
     work(value["work"], total)
     shutdown(value["shutdown"])
     require(value["shutdown"]["quarantinedCells"] == 0 and value["data_cleanup"] == {"removed": True}, "candidate-did-not-clean")
-    uint(value["prepared_release_elapsed_micros"])
+    if not revision:
+        uint(value["prepared_release_elapsed_micros"])
     require(tracker.last_finished <= uint(value["elapsed_micros"]) <= int(plan["maximum_run_seconds"]) * 1_000_000, "candidate-exceeded-window")
-    return {"metrics": summarize(samples, plan["warmup_samples"], uint(value["preparation_elapsed_micros"])),
+    metrics = summarize(samples, plan["warmup_samples"], samples[0]["elapsed"] if revision else uint(value["preparation_elapsed_micros"]))
+    if scope:
+        for metric in metrics:
+            if metric["name"] == "initial_preparation_micros":
+                metric["boundary"]["candidate"] = "repository-acquisition-including-verified-refill"
+    if revision:
+        for metric in metrics:
+            if metric["name"] == "initial_preparation_micros":
+                metric["name"] = "first_rpc_empty_cache_micros"
+                metric["boundary"] = {"category": "node-rpc", "control": "first-rpc-empty-cache-through-terminal-receipt",
+                                      "candidate": "first-rpc-empty-cache-through-terminal-receipt"}
+            elif metric["name"] == "semantic_invoke_elapsed_micros":
+                metric["boundary"] = {"category": "node-rpc", "control": "persistent-loopback-rpc-invoke-through-terminal-receipt",
+                                      "candidate": "persistent-loopback-rpc-invoke-through-terminal-receipt"}
+    return {"metrics": metrics,
             "samples": str(total), "process_identity": tracker.identity,
             "effective_options": value["effective_options"], "historical_full_proof": "not-applicable"}
 

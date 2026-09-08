@@ -228,6 +228,9 @@
     },
     "after_release": {
       "type": "object"
+    },
+    "preparation_scope": {
+      "const": "repository-acquisition-including-verified-refill"
     }
   }
 }

@@ -159,7 +159,9 @@ class Benchmark(CommonWorkload):
         if self.common_event(kind, payload):
             return
         if kind == "benchmark-prepare":
-            fields(payload, "sample operation elapsed_micros cache_before cache_after")
+            fields(payload, "sample operation elapsed_micros cache_before cache_after", "scope")
+            scope = payload.get("scope")
+            require(scope in (None, "repository-acquisition-including-verified-refill"), "benchmark-preparation-scope")
             operation = payload["operation"]
             require(operation in ("initial", "cold", "cache_hit") and uint(payload["sample"]) == self.prepares[operation], "benchmark-prepare-sequence")
             require(isinstance(payload["cache_before"], dict) and isinstance(payload["cache_after"], dict), "missing-preparation-cache-observations")
@@ -177,7 +179,9 @@ class Benchmark(CommonWorkload):
             else:
                 require(uint(after["hits"]) == uint(before["hits"]) + 1
                         and after["misses"] == before["misses"] and after["entries"] == before["entries"], "cache-hit-not-measured")
-            self.measurements.add("prepare." + operation, "wasmtime.prepare-for-use.v1", "us", [payload["elapsed_micros"]])
+            self.measurements.add("prepare." + operation,
+                                  "wasmtime.prepare-from-repository.v1" if scope else "wasmtime.prepare-for-use.v1",
+                                  "us", [payload["elapsed_micros"]])
             self.prepares[operation] += 1
         elif kind == "benchmark-call":
             fields(payload, "boundary sample invocation")

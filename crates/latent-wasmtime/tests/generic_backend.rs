@@ -8,6 +8,8 @@ mod dispatch;
 mod owned_preparation;
 #[path = "generic_backend/preparation.rs"]
 mod preparation;
+#[path = "generic_backend/preparation_source.rs"]
+mod preparation_source;
 #[path = "generic_backend/rejection.rs"]
 mod rejection;
 #[path = "generic_backend/support.rs"]
