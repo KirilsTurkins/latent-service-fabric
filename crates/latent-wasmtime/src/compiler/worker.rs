@@ -158,6 +158,8 @@ fn finish<T: Send + Sync + 'static>(
     core.record(&state);
     drop(state);
     drop(removed);
+    core.metrics
+        .record_work_completed_at(std::time::Instant::now());
     core.metrics.notify();
     super::wake(wakers);
     core.wake.notify_all();

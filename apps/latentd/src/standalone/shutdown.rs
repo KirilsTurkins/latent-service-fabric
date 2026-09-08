@@ -82,6 +82,11 @@ impl StandaloneNode {
             }
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
+        // Seal compiler admission at the drain cutoff, before transport or
+        // sampler cleanup can hide a native job that finishes after its grace.
+        let factory = self.factory.take().expect("owned engine factory");
+        let compiler_observer = factory.compiler_observer();
+        let compiler_quiescence = factory.quiesce_compiler();
         self.scheduler.shutdown();
         let mut failure = self
             .transport
@@ -99,23 +104,22 @@ impl StandaloneNode {
         {
             failure.get_or_insert(error);
         }
-        // Calling quiesce closes preparation admission synchronously. Its
-        // borrowed future cannot detach the native worker on timeout/drop.
-        let factory = self.factory.as_ref().expect("owned engine factory");
-        let compiler_observer = factory.compiler_observer();
-        match tokio::time::timeout_at(drain_deadline, factory.quiesce_compiler()).await {
-            Ok(Ok(())) => {}
-            Ok(Err(error)) => {
-                failure.get_or_insert(error);
-            }
-            Err(_) => {
-                failure.get_or_insert_with(|| {
-                    error(
-                        PlatformErrorCode::DeadlineExceeded,
-                        "compiler quiescence exceeded shutdown grace",
-                    )
-                });
-            }
+        // Native jobs cannot be preempted. Their owned completion must precede
+        // observations and final joins, even when it makes shutdown unsuccessful.
+        // Idle thread wake/exit scheduling is not additional invocation work.
+        if let Err(error) = compiler_quiescence.await {
+            failure.get_or_insert(error);
+        }
+        if compiler_observer
+            .last_work_completed_at()
+            .is_some_and(|completed| completed > drain_deadline.into_std())
+        {
+            failure.get_or_insert_with(|| {
+                error(
+                    PlatformErrorCode::DeadlineExceeded,
+                    "compiler work exceeded shutdown grace",
+                )
+            });
         }
         let mut report = self.shutdown_observations(handle.snapshot());
         if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
@@ -150,7 +154,6 @@ impl StandaloneNode {
             report.telemetry_flushed = true;
             report.telemetry_retained_entries = self.sink.snapshot().entries;
         }
-        let factory = self.factory.take().expect("owned engine factory");
         // Inventory, manager, and backend are the remaining runtime owners. Their
         // destruction precedes the factory's unique-owner shutdown barrier.
         drop(self);

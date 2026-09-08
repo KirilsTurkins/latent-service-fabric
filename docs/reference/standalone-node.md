@@ -220,7 +220,8 @@ do not repair integrity failures by replacing completion records or deleting
 committed state blindly.
 
 Ctrl-C or SIGTERM closes acceptance, allows the configured activation drain
-interval, then cancels outstanding owners and shuts down transport and sampling.
+interval, then closes compiler admission at that cutoff, cancels outstanding
+owners, and shuts down transport and sampling.
 The node checks actual transport/control ownership, journal/cancellation state,
 quota reservations, queued work, cell leases, backend instance reservations,
 pending preparations and their source/metadata charges, ready pins, compiler
@@ -242,9 +243,13 @@ telemetry and coordination allowances. Runtime shutdown uses bounded waits.
 These bounds cannot kill a thread already inside a stuck filesystem call or
 other non-cooperative operating-system work. Wasmtime's native compilation is
 synchronous and cannot be force-cancelled with guest fuel or epoch interruption.
-A timed-out compiler quiesce keeps its factory and reservations owned; final
-teardown may wait beyond the grace interval for actual thread joins. An outer
-process supervisor supplies the hard termination boundary. A timeout is failure
+The original drain deadline also bounds native compiler work: the node records
+the latest actual job completion and rejects clean shutdown if that work finishes
+late, including during transport cleanup. Idle worker wake/exit scheduling does
+not count as extra invocation work. Compiler quiescence and final joins retain
+the factory and reservations until actual completion, so teardown may outlast
+grace even though the run reports failure. An outer process supervisor supplies
+the hard termination boundary. A timeout is failure
 evidence, not proof that the work stopped. A clean finite run establishes the reported
 cleanup for that run; it does not establish long-running reclamation, dormant
 100000-service scale. The retained [Phase 1 measurements](../testing/phase-1-measurements.md)

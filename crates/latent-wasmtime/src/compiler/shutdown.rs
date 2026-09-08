@@ -27,7 +27,12 @@ impl<T> Core<T> {
         }
         self.record(&state);
         drop(state);
+        let completed_work = removed.is_some();
         drop(removed);
+        if completed_work {
+            self.metrics
+                .record_work_completed_at(std::time::Instant::now());
+        }
         self.metrics.notify();
     }
 

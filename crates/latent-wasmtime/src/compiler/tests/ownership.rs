@@ -138,6 +138,7 @@ fn unexpected_finish_panic_fails_waiters_closes_admission_and_releases_dead_work
     assert!(complete(future).is_err());
     complete(pool.quiesce()).unwrap();
     let _ = pool.stop_and_join();
+    assert!(pool.observer().last_work_completed_at().is_some());
     let snapshot = pool.observer().snapshot();
     assert!(snapshot.failed);
     assert!(!snapshot.accepting);

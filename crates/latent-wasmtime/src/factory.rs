@@ -30,7 +30,10 @@ impl WasmtimeComponentEngineFactory {
     }
 
     /// Closes compiler admission now, then waits for worker-owned work to end.
-    /// The caller applies its own deadline and retains this owner on timeout.
+    /// This wait does not preempt native compilation. A caller can compare
+    /// `CompilerObserver::last_work_completed_at` with its original deadline to
+    /// distinguish late native work from idle worker retirement. A timed-out
+    /// caller must retain this owner until actual completion and final join.
     /// Successful quiescence precedes, and does not replace, final thread joins.
     pub fn quiesce_compiler(&self) -> latent_core::BoxFuture<'_, Result<(), PlatformError>> {
         self.shared.compiler.as_ref().map_or_else(

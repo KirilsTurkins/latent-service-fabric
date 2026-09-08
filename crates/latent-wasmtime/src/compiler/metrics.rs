@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use crate::{PreparationCompilerSnapshot, PreparationObserver, WasmtimeConfig};
 
@@ -7,6 +8,7 @@ use crate::{PreparationCompilerSnapshot, PreparationObserver, WasmtimeConfig};
 pub struct CompilerObserver {
     pub(super) state: Arc<Mutex<PreparationCompilerSnapshot>>,
     notifier: Option<crate::preparation_observer::PreparationNotifier>,
+    last_work_completion: Arc<Mutex<Option<Instant>>>,
 }
 
 impl CompilerObserver {
@@ -14,6 +16,7 @@ impl CompilerObserver {
         Self {
             state: Arc::new(Mutex::new(PreparationCompilerSnapshot::default())),
             notifier: None,
+            last_work_completion: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -40,6 +43,26 @@ impl CompilerObserver {
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    /// Latest native job completion after its input/result/reservation owners
+    /// were disposed. Idle worker retirement and unstarted cancellation do not
+    /// change this value. The clock is the process monotonic `Instant` clock.
+    #[must_use]
+    pub fn last_work_completed_at(&self) -> Option<Instant> {
+        *self
+            .last_work_completion
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    pub(super) fn record_work_completed_at(&self, completed: Instant) {
+        let mut latest = self
+            .last_work_completion
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        // Concurrent workers may reach this mutex in a different order.
+        *latest = Some(latest.map_or(completed, |previous| previous.max(completed)));
     }
 
     pub(super) fn update(&self, apply: impl FnOnce(&mut PreparationCompilerSnapshot)) {
