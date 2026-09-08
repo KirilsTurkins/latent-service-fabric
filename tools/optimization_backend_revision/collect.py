@@ -8,7 +8,7 @@ import tempfile
 import time
 
 from tools import run_optimization_benchmarks as legacy
-from tools.artifact_identity_runner.helpers import command
+from tools.artifact_identity_runner.helpers import DirectoryLimits, command
 from tools.optimization_evidence.common import read_json
 from tools.optimization_revision_runner.collect import write
 from tools.optimization_revision_runner.build import source
@@ -69,15 +69,20 @@ def execute(args, repo):
             suite["runs"].append(row)
             write(output / "suite.json", suite)
             try:
-                with tempfile.TemporaryDirectory(prefix="backend-revision-data-owned-", dir=target) as data:
-                    env = dict(os.environ, LSF_PHASE1_COMPARISON_PLAN=str(current / "plan.json"),
-                               LSF_PHASE1_COMPARISON_IDENTITY=str(current / "identity.json"),
-                               LSF_PHASE1_COMPARISON_OUTPUT=str(current), LSF_PHASE1_COMPARISON_DATA_ROOT=data,
-                               LSF_ECHO_COMPONENT=str(output / builds["harness"]["echo"]["component"]["path"]))
-                    seconds = cold_model.maximum_seconds(args.profile) if cold else int(selected["maximum_run_seconds"])
-                    command(argv, current / "collector.log", seconds, repo, deadline, env,
-                            watched=current, remaining=32 * 1024**2)
-                write(current / "parent-cleanup.json", {"removed": True})
+                data = None
+                try:
+                    with tempfile.TemporaryDirectory(prefix="backend-revision-data-owned-", dir=target) as data:
+                        env = dict(os.environ, LSF_PHASE1_COMPARISON_PLAN=str(current / "plan.json"),
+                                   LSF_PHASE1_COMPARISON_IDENTITY=str(current / "identity.json"),
+                                   LSF_PHASE1_COMPARISON_OUTPUT=str(current), LSF_PHASE1_COMPARISON_DATA_ROOT=data,
+                                   LSF_ECHO_COMPONENT=str(output / builds["harness"]["echo"]["component"]["path"]))
+                        seconds = cold_model.maximum_seconds(args.profile) if cold else int(selected["maximum_run_seconds"])
+                        options = {"maximum": 1024**2, "directory_limits": DirectoryLimits(2, 64, 80, 16 * 1024**2)} if cold else {}
+                        command(argv, current / "collector.log", seconds, repo, deadline, env,
+                                watched=current, remaining=32 * 1024**2, **options)
+                finally:
+                    if data is not None:
+                        write(current / "parent-cleanup.json", {"removed": not os.path.lexists(data)})
                 row.update(status="passed", reason=None)
             finally:
                 row["finished_micros"] = str(time.monotonic_ns() // 1000)
