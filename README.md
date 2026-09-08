@@ -80,6 +80,7 @@ configured standalone node's supported RPC surface.
 | Management services | Typed release uploads, atomic versioned deployments, tenant-scoped indexed reads/routes, and operator-authorized node inventory through generated RPCs; [management services](docs/reference/management-services.md) |
 | Standalone node | Versioned local configuration, Linux loopback listener, fixed runtime/control workers, measured pressure/readiness, durable restart and verified shutdown; [standalone node](docs/reference/standalone-node.md) |
 | Operator CLI | Private explicit profiles, bounded local preflight, one RPC per command, exact versions/identity, structured output and exit codes, and generated echo package inputs; [operator CLI](docs/reference/operator-cli.md) |
+| Bounded conformance | Real CLI/node scenarios, selected adapter/RPC parity, owned child resource probes and validated diagnostic reports; [selected profile](docs/testing/phase-1-conformance.md) |
 
 The Phase 1 completion gate remains open work. See
 [the roadmap](docs/roadmap.md) for issue links and phase boundaries.

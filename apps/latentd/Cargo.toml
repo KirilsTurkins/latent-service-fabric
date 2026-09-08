@@ -38,6 +38,7 @@ tonic.workspace = true
 tower.workspace = true
 
 [dev-dependencies]
+latent-testkit = { path = "../../crates/latent-testkit" }
 tempfile.workspace = true
 
 [[test]]

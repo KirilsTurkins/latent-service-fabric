@@ -43,6 +43,20 @@ single-host observational evidence and does not authorize Phase 1 by itself;
 the full gate authorizes only after also verifying source identity, archive
 integrity, profiling, and a fresh baseline.
 
+## Phase 1 selected deterministic evidence
+
+The [bounded conformance profile](phase-1-conformance.md) exercises the actual
+standalone CLI/node, typed generic and capability fixtures, tenant-scoped
+observations, adapter/RPC pairs, child PID resources and verified shutdown.
+Its versioned report distinguishes passed selected cases from unrun heavy gate
+evidence. It does not establish a calibrated Phase 1 RSS plateau, zero-idle
+scaling at 100,000 registrations or complete end-to-end gate coverage.
+
+Current scheduler, activation lifecycle, wire, Wasmtime and standalone owner
+suites additionally exercise their implemented fairness, route pinning, budget,
+context and restart boundaries. The Phase 0 paragraphs below describe historical
+evidence, not the limits of the current implementation.
+
 ## Dormant-service scaling — not yet proven
 
 Register 100, 1,000, 10,000, and 100,000 dormant releases. Process count,
@@ -68,7 +82,7 @@ leases, state/effect resources,
 production telemetry, and new Phase 1 subsystems require their own reclamation
 tests.
 
-## Isolation — target invariants
+## Isolation — scope-specific evidence
 
 - one guest trap cannot corrupt another activation;
 - one activation cannot access another handle table or memory;
@@ -82,11 +96,15 @@ containment and fresh-store/resource-reclamation behavior. It does not
 establish multi-tenant namespace isolation, secret handling, production
 capability isolation, or AOT-key rejection.
 
-## Route pinning — future
+## Route pinning — implemented, full gate pending
 
 An in-flight activation finishes on its pinned release after a route switch.
-New calls select only revisions in the new snapshot. Phase 0 has no production
-route table or snapshot path.
+New calls select only revisions in the new snapshot. The Phase 1 deployment and
+activation lifecycle owner suites exercise immutable snapshot pinning and
+publication. The bounded CLI profile holds an active call across a deployment
+policy revision and verifies the old receipt and a new call's changed pin. The
+standalone restart suite separately checks unchanged committed route identity.
+Phase 0 has no production route table or snapshot path.
 
 ## Budget hierarchy — future
 
@@ -100,8 +118,10 @@ Tests must cover response loss after state commit or provider dispatch.
 Automatic retries are permitted only when the operation contract and idempotency
 model allow them. Phase 0 has no durable state/effect commit path.
 
-## Local/remote equivalence — future
+## Local/remote equivalence — selected pairs implemented
 
 Domain output, platform errors, identity, deadlines, budgets, tracing, state
 semantics, and accounting must match whether a binding is inline, isolated
-local, or remote. Phase 0 exercises only the local Wasmtime path.
+local, or remote. The bounded Phase 1 profile compares eight direct adapter/RPC
+pairs; complete backend/context/tracing equivalence remains gate work. Phase 0
+exercises only the local Wasmtime path.

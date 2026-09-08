@@ -2,6 +2,8 @@
 
 mod load;
 mod observations;
+#[cfg(all(test, target_os = "linux"))]
+mod parity;
 mod shutdown;
 mod start;
 pub mod transport;

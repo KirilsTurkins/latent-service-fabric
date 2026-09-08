@@ -1,13 +1,40 @@
 //! Portable process resource snapshots with richer Linux `/proc` probes.
 
+mod child;
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(any(target_os = "linux", test))]
+#[path = "resources/linux/parse.rs"]
+mod parse;
+mod serialized;
+
+pub use child::{ChildProcessProbe, ChildProcessResources, ProbeLimits, ProcessIdentity};
+
 use std::io;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProcessResources {
     pub process_id: u32,
+    #[serde(
+        serialize_with = "serialized::optional_u64",
+        deserialize_with = "serialized::deserialize_optional_u64"
+    )]
     pub resident_memory_bytes: Option<u64>,
+    #[serde(
+        serialize_with = "serialized::optional_u64",
+        deserialize_with = "serialized::deserialize_optional_u64"
+    )]
     pub thread_count: Option<u64>,
+    #[serde(
+        serialize_with = "serialized::optional_u64",
+        deserialize_with = "serialized::deserialize_optional_u64"
+    )]
     pub open_file_descriptors: Option<u64>,
+    #[serde(
+        serialize_with = "serialized::optional_u64",
+        deserialize_with = "serialized::deserialize_optional_u64"
+    )]
     pub socket_count: Option<u64>,
 }
 

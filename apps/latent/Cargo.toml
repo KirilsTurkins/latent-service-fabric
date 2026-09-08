@@ -24,6 +24,8 @@ latent-rpc = { path = "../../crates/latent-rpc" }
 latent-wire = { path = "../../crates/latent-wire" }
 
 [dev-dependencies]
+sha2.workspace = true
+latent-testkit = { path = "../../crates/latent-testkit" }
 tokio = { workspace = true, features = ["test-util"] }
 tempfile.workspace = true
 

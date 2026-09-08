@@ -39,12 +39,14 @@ pub struct ManualClock {
 }
 
 impl ManualClock {
+    #[must_use]
     pub fn from_nanos(now_nanos: u64) -> Self {
         Self {
             now_nanos: Arc::new(AtomicU64::new(now_nanos)),
         }
     }
 
+    #[must_use]
     pub fn now_nanos(&self) -> u64 {
         self.now_nanos.load(Ordering::SeqCst)
     }
@@ -53,6 +55,10 @@ impl ManualClock {
         self.now_nanos.store(now_nanos, Ordering::SeqCst);
     }
 
+    #[expect(
+        clippy::must_use_candidate,
+        reason = "Advancing the shared clock is the operation; reading its new value is optional"
+    )]
     pub fn advance_nanos(&self, delta: u64) -> u64 {
         let previous = self
             .now_nanos
@@ -89,10 +95,12 @@ impl TempWorkspace {
         })
     }
 
+    #[must_use]
     pub fn path(&self) -> &Path {
         &self.path
     }
 
+    #[must_use]
     pub fn persist(mut self) -> PathBuf {
         self.remove_on_drop = false;
         self.path.clone()
