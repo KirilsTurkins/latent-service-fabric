@@ -1,18 +1,18 @@
 # Latent Service Fabric
 
 Latent Service Fabric (LSF) is a component-native execution-fabric engineering
-project. Its Phase 0 spike establishes a bounded local feasibility proof for
-executing independently deployable service capsules without assigning persistent
-processes, sockets, threads, heaps, or connection pools to idle services.
+project. Its delivered Phase 1 runs independently deployable stateless service
+capsules on a standalone Linux node without assigning persistent processes,
+sockets, threads, guest heaps, or connection pools to idle services.
 
-A deployed service is represented by immutable code, contracts, policy, state metadata, and routing metadata. Resources are allocated only when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells.
+A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-> Phase 1 is in progress. The standalone Linux node composes durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, and invocation/management RPCs. The operator CLI supports the local publish-to-invoke workflow; the completion gate remains pending. The retained August 30 native-Linux Phase 0 full-gate receipt authorizes that work; it does not establish production readiness or completion of Phase 1.
+> Phase 1 is delivered: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [completion review](docs/phase-1-completion.md) links clean deterministic CI, actual 100,000-registration scale, three mixed soaks, seven benchmark runs and seven controlled historical/current pairs. These are scoped engineering results, not a production SLO or a claim that productionization adds no overhead. Final repository integration and issue closure are recorded in that review.
 
 ## Core invariant
 
 ```text
-resident resources = fixed node runtime + active activations + bounded shared caches
+resident state = fixed node runtime + bounded catalog metadata + active activations + bounded shared caches
 ```
 
 The number of operating-system processes, threads, sockets, and execution cells is node-defined and must not scale with the number of deployed services.
@@ -29,7 +29,7 @@ The number of operating-system processes, threads, sockets, and execution cells 
 
 ```text
 apps/                 Standalone latentd node, operator CLI, explicit Phase 0 spike, and control-plane placeholder
-crates/               Rust interfaces, Phase 0 runtime, and implemented Phase 1 foundations
+crates/               Rust interfaces, delivered Phase 1 subsystems, and isolated Phase 0 regression paths
 wit/                  WIT packages for platform capabilities
 api/proto/            Protobuf service definitions
 schemas/              JSON Schemas for declarative resources
@@ -40,11 +40,11 @@ rfcs/                  Future design proposals
 research/              Experimental tracks kept outside the production core
 docs/                  Architecture, protocol, operations, and security documentation
 tests/                 Cross-phase test specifications; executable tests also live with crates/apps/tools
-benchmarks/            Benchmark definitions and checked-in Phase 0 evidence
+benchmarks/            Benchmark definitions and retained Phase 0 / Phase 1 evidence
 tools/                 Pinned validation, generation, spike, benchmark, and gate tooling
 ```
 
-## Intended binaries
+## Binaries
 
 - `latentd`: standalone Linux node through `serve --config PATH`, plus the finite local `phase0-spike invoke-once` harness and `verify-recovery` containment proof.
 - `latent-control`: clustered control-plane application placeholder.
@@ -57,7 +57,7 @@ The [operator CLI reference](docs/reference/operator-cli.md) and
 complete local client workflow.
 The explicit Phase 0 spike retains its separate measured scope.
 
-## Available Phase 1 foundations
+## Delivered Phase 1 features
 
 These implementations are usable through Rust APIs, focused tests, and the
 configured standalone node's supported RPC surface.
@@ -81,9 +81,11 @@ configured standalone node's supported RPC surface.
 | Standalone node | Versioned local configuration, Linux loopback listener, fixed runtime/control workers, measured pressure/readiness, durable restart and verified shutdown; [standalone node](docs/reference/standalone-node.md) |
 | Operator CLI | Private explicit profiles, bounded local preflight, one RPC per command, exact versions/identity, structured output and exit codes, and generated echo package inputs; [operator CLI](docs/reference/operator-cli.md) |
 | Bounded conformance | Real CLI/node scenarios, selected adapter/RPC parity, owned child resource probes and validated diagnostic reports; [selected profile](docs/testing/phase-1-conformance.md) |
+| Full measurements and comparison | Fixed-topology scale through 100,000 registrations, three mixed soaks, seven independent benchmarks and seven historical/current pairs; [full report](benchmarks/phase1/measurements/2026-09-08-container-linux-d72c99b6/REPORT.md), [controlled comparison](benchmarks/phase1/paired/2026-09-08-container-linux-e7e06f7/REPORT.md) |
 
-The Phase 1 completion gate remains open work. See
-[the roadmap](docs/roadmap.md) for issue links and phase boundaries.
+The [completion review](docs/phase-1-completion.md) maps the delivered behavior to
+all Phase 1 acceptance criteria and records measurement limits. See
+[the roadmap](docs/roadmap.md) for issue links and future phase boundaries.
 
 ## Phase 0 result
 

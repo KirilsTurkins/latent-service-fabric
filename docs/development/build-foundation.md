@@ -84,7 +84,7 @@ Generated build products belong in ignored locations such as Cargo `OUT_DIR`, `t
 - `BorrowedBackendHarness`, `InvocationConformanceSuite`, `ScopedNodeHarness`, and `ObservedInvariantProbe` for selected checks using supplied managers, backends, inventory and telemetry sources; and
 - versioned conformance records, fixed case definitions, shared work counters, and bounded serialization for the [selected Phase 1 profile](../testing/phase-1-conformance.md).
 
-A test creates these utilities explicitly. Merely linking a service crate creates no thread, process, socket, listener, or runtime. The bounded profile records selected behavior and child resources; it does not complete the unrun scaling, soak, calibrated-baseline or full-equivalence requirements.
+A test creates these utilities explicitly. Merely linking a service crate creates no thread, process, socket, listener, or runtime. The bounded profile records selected behavior and child resources; scaling, soak, calibrated-baseline and broader equivalence evidence remain outside that selected profile. The [Phase 1 completion report](../phase-1-completion.md) combines its coverage with the retained full measurements, controlled comparison and owning suites.
 
 ## Clean-checkout sequence
 

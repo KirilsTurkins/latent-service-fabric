@@ -1,7 +1,7 @@
 # Test invariants
 
-This document separates the Phase 0 invariants exercised by the executable
-spike from target invariants that remain Phase 1 or later work. The retained
+This document separates the historical Phase 0 executable invariants, delivered
+Phase 1 evidence, and target invariants that remain later-phase work. The retained
 clean-checkout [completion receipt](../../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
 authorizes Phase 1 for the current canonical execution identity. It does not
 claim production readiness or Phase 1 API compatibility. See
@@ -61,7 +61,7 @@ suites additionally exercise their implemented fairness, route pinning, budget,
 context and restart boundaries. The Phase 0 paragraphs below describe historical
 evidence, not the limits of the current implementation.
 
-## Dormant-service scaling — not yet proven
+## Dormant-service scaling — observed at all four Phase 1 scales
 
 Register 100, 1,000, 10,000, and 100,000 dormant releases. Process count,
 configured operating-system/runtime thread topology, socket count, and
@@ -74,9 +74,13 @@ be used to infer the 100,000 dormant-service invariant.
 The [Phase 1 scale collector](phase-1-measurements.md) registers all four target
 scales through the actual durable stores and samples the real standalone
 composition. Its default 2/4-registration smoke run validates the collector;
-full-scale acceptance requires retained full-profile results.
+it does not substitute for the
+[retained full-profile observations](../../benchmarks/phase1/measurements/2026-09-08-container-linux-d72c99b6/REPORT.md#dormant-catalogs-at-four-scales).
+At 100, 1,000, 10,000 and 100,000 releases/deployments, fixed node topology and
+idle cell capacity remain constant, with no stores or prepared code created.
+Catalog metadata RSS grows and is reported separately from execution resources.
 
-## Reclamation — partially proven
+## Reclamation — bounded evidence at recorded configurations
 
 After repeated calls, resident memory must return near the fixed-runtime plus
 bounded-cache baseline. File descriptors, handles, timers, provider leases,
@@ -87,9 +91,15 @@ composition and records a matched, fully documented native-Linux plateau for
 the selected configuration. It does not prove arbitrary-duration leak freedom,
 production SLOs, a capacity guarantee, or Phase 1 API behavior, and it does
 not authorize Phase 1 by itself; the complete retained gate does. Provider
-leases, state/effect resources,
-production telemetry, and new Phase 1 subsystems require their own reclamation
-tests.
+leases and state/effect resources require later-phase reclamation tests.
+
+The [three retained Phase 1 soaks](../../benchmarks/phase1/measurements/2026-09-08-container-linux-d72c99b6/REPORT.md#three-mixed-workload-reclamation-runs)
+each include 1,000 warmup and 100,000 measured mixed calls. They check current
+stores, host state, cancellation, quotas, leases, journal and telemetry owners
+at idle boundaries, and satisfy the declared RSS/descriptor-growth allowances.
+The [completion report](../phase-1-completion.md) links timer/drop/helper ownership
+tests and states the unenumerated general OS-timer limit. These finite results
+do not extend to arbitrary-duration leak freedom or future providers.
 
 ## Isolation — scope-specific evidence
 
@@ -105,7 +115,7 @@ containment and fresh-store/resource-reclamation behavior. It does not
 establish multi-tenant namespace isolation, secret handling, production
 capability isolation, or AOT-key rejection.
 
-## Route pinning — implemented, full gate pending
+## Route pinning — implemented and validated
 
 An in-flight activation finishes on its pinned release after a route switch.
 New calls select only revisions in the new snapshot. The Phase 1 deployment and
@@ -113,6 +123,8 @@ activation lifecycle owner suites exercise immutable snapshot pinning and
 publication. The bounded CLI profile holds an active call across a deployment
 policy revision and verifies the old receipt and a new call's changed pin. The
 standalone restart suite separately checks unchanged committed route identity.
+The [Phase 1 completion report](../phase-1-completion.md) maps this evidence to
+the collective gate decision.
 Phase 0 has no production route table or snapshot path.
 
 ## Budget hierarchy — future

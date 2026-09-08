@@ -1,0 +1,1 @@
+{"category":"success","command":"release list","data":{"nextPageToken":null,"releases":[]},"error":null,"outcomeKnown":true,"requestDispatched":true,"schemaVersion":"latent.cli.result.v1"}

@@ -1,0 +1,70 @@
+{
+  "schema": "latent.phase1.measurement-identity.v1",
+  "source": {
+    "commit": "aee91e53432e4cbb070ee3f2d2d882b1853fe179",
+    "tree": "f717a2f31c4bf4d0bebe0ae1079874d171307b4c",
+    "dirty": false,
+    "cargo_lock_sha256": "sha256:4fef007f3c6b800f845659d62a319334a1e7428efc0e3fecc7182c88b9cc6669"
+  },
+  "build": {
+    "profile": "debug",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "wasmtime": "47.0.3",
+    "target": "x86_64-unknown-linux-gnu",
+    "overrides": {
+      "collector_surface": "libtest",
+      "recipe": "cargo-test-debug"
+    }
+  },
+  "environment": {
+    "os": "Linux",
+    "arch": "x86_64",
+    "kernel": "Linux runnervmejwal 6.17.0-1022-azure #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+    "cpu_model": "AMD EPYC 7763 64-Core Processor",
+    "logical_cpus": "4",
+    "memory_total_bytes": "16766414848",
+    "virtualization": {
+      "systemd_detect_virt": "microsoft",
+      "systemd_detect_virt_container": "none",
+      "systemd_detect_virt_vm": "microsoft",
+      "wsl_detected": false,
+      "docker_marker": false,
+      "container_marker": false,
+      "cpu_max": null,
+      "memory_max": null,
+      "cpuset_effective": "0-3"
+    },
+    "allocator": {
+      "LD_PRELOAD": "unset",
+      "MALLOC_CONF": "unset"
+    },
+    "cpu_policy": {},
+    "load_before": [
+      2.84619140625,
+      3.05322265625,
+      1.5859375
+    ]
+  },
+  "binary": {
+    "sha256": "sha256:e91efc78e2fb7c1fc2ce8514b9d81505fa3ab7b6f18f2265d3bde5499af4344e",
+    "bytes": "409246672"
+  },
+  "fixtures": [
+    {
+      "name": "echo",
+      "sha256": "sha256:a45c2680dcbb6f5a67c532459cc2ff14daaa5b893f793b92eecec31c7488a694",
+      "bytes": "24754"
+    },
+    {
+      "name": "generic",
+      "sha256": "sha256:9a13eed96ca7f2d217b5f6262694c2c5fc4398067a773d53371481613d254105",
+      "bytes": "28056"
+    },
+    {
+      "name": "capabilities",
+      "sha256": "sha256:ac09292307eed8921e370575709f42febf3fd824cb4c4ac60a5c40384e5c3fa2",
+      "bytes": "40670"
+    }
+  ]
+}

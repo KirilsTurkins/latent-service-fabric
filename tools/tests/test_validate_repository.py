@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import tempfile
 import textwrap
 import unittest
@@ -128,6 +129,77 @@ class SourceTraversalTests(unittest.TestCase):
                     for error in validator.ERRORS
                 )
             )
+
+
+class RetainedEmptyEvidenceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        validator.ERRORS.clear()
+        self.addCleanup(validator.ERRORS.clear)
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.package = self.root / "benchmarks/phase1/conformance/retained-ci"
+        self.package.mkdir(parents=True)
+        self.receipt = self.package / "run/cli.stderr"
+        self.receipt.parent.mkdir()
+        self.receipt.write_bytes(b"")
+        self.manifest = self.package / "files.manifest.json"
+        self.document = {"schema": "latent.phase1.retained-files.v1", "total_bytes": "0", "files": [
+            {"path": "run/cli.stderr", "bytes": "0",
+             "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}]}
+        self.write_manifest()
+
+    def write_manifest(self) -> None:
+        self.manifest.write_text(json.dumps(self.document), encoding="utf-8")
+
+    def test_manifest_bound_empty_receipt_preserves_original_bytes(self) -> None:
+        validator.validate_nonempty_files(self.root)
+        self.assertEqual(validator.ERRORS, [])
+        self.assertEqual(self.receipt.read_bytes(), b"")
+
+    def test_unbound_empty_evidence_and_empty_source_remain_rejected(self) -> None:
+        (self.package / "unbound.stdout").write_bytes(b"")
+        (self.root / "empty.rs").write_bytes(b"")
+        validator.validate_nonempty_files(self.root)
+        self.assertEqual(len(validator.ERRORS), 2)
+        self.assertTrue(all("empty file:" in error for error in validator.ERRORS))
+
+    def test_wrong_hash_or_declared_size_does_not_exempt_empty_file(self) -> None:
+        for change in ({"sha256": "sha256:" + "0" * 64}, {"bytes": "1"}):
+            with self.subTest(change=change):
+                validator.ERRORS.clear()
+                row = self.document["files"][0]
+                original = dict(row)
+                row.update(change)
+                self.write_manifest()
+                validator.validate_nonempty_files(self.root)
+                self.assertTrue(any("empty file:" in error for error in validator.ERRORS))
+                row.clear()
+                row.update(original)
+
+    def test_nonempty_tampering_of_declared_empty_receipt_is_rejected(self) -> None:
+        self.receipt.write_bytes(b"unexpected output")
+        validator.validate_nonempty_files(self.root)
+        self.assertTrue(any("changed empty receipt" in error for error in validator.ERRORS))
+
+    def test_traversal_or_duplicate_reference_never_grants_exemption(self) -> None:
+        for references in ([dict(self.document["files"][0], path="../run/cli.stderr")],
+                           self.document["files"] * 2):
+            with self.subTest(references=references):
+                validator.ERRORS.clear()
+                original = self.document["files"]
+                self.document["files"] = references
+                self.write_manifest()
+                validator.validate_nonempty_files(self.root)
+                self.assertTrue(any("invalid retained evidence manifest" in error for error in validator.ERRORS))
+                self.assertTrue(any("empty file:" in error for error in validator.ERRORS))
+                self.document["files"] = original
+
+    def test_manifests_outside_conformance_cannot_exempt_source(self) -> None:
+        self.manifest.unlink()
+        (self.root / "files.manifest.json").write_text(json.dumps(self.document), encoding="utf-8")
+        validator.validate_nonempty_files(self.root)
+        self.assertTrue(any("empty file:" in error for error in validator.ERRORS))
 
 
 class WorkspaceDependencyTests(unittest.TestCase):

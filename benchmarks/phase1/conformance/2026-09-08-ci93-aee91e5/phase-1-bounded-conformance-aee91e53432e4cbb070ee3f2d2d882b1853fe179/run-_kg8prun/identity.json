@@ -1,0 +1,46 @@
+{
+  "source_commit": "aee91e53432e4cbb070ee3f2d2d882b1853fe179",
+  "source_tree": "f717a2f31c4bf4d0bebe0ae1079874d171307b4c",
+  "source_dirty": false,
+  "cargo_lock_sha256": "sha256:4fef007f3c6b800f845659d62a319334a1e7428efc0e3fecc7182c88b9cc6669",
+  "config_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "binaries": [
+    {
+      "name": "latent",
+      "sha256": "sha256:c2452709abda5a80b9f56d21e13374640b780f77da4f057f34e58ed2a539250f",
+      "bytes": "103070824"
+    },
+    {
+      "name": "latentd",
+      "sha256": "sha256:acfb60fa49cbaa2faa9aeb51b69c51fc440e0593115086787bf69dcbfc7ef68f",
+      "bytes": "380712528"
+    },
+    {
+      "name": "adapter-test",
+      "sha256": "sha256:e91efc78e2fb7c1fc2ce8514b9d81505fa3ab7b6f18f2265d3bde5499af4344e",
+      "bytes": "409246672"
+    },
+    {
+      "name": "process-test",
+      "sha256": "sha256:65ef7efa9b5c74b16a8da04af61dcb8d4b784ab5f60a5caf1fb46f6b9fb494b9",
+      "bytes": "58019992"
+    }
+  ],
+  "fixtures": [
+    {
+      "name": "echo",
+      "sha256": "sha256:a45c2680dcbb6f5a67c532459cc2ff14daaa5b893f793b92eecec31c7488a694",
+      "bytes": "24754"
+    },
+    {
+      "name": "generic",
+      "sha256": "sha256:9a13eed96ca7f2d217b5f6262694c2c5fc4398067a773d53371481613d254105",
+      "bytes": "28056"
+    },
+    {
+      "name": "capabilities",
+      "sha256": "sha256:ac09292307eed8921e370575709f42febf3fd824cb4c4ac60a5c40384e5c3fa2",
+      "bytes": "40670"
+    }
+  ]
+}
