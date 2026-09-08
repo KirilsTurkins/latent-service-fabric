@@ -37,6 +37,8 @@ class OwnedProcess:
         self.deadline_ns = self.started_ns + int(timeout * 1_000_000_000)
         if overall_deadline_ns is not None:
             self.deadline_ns = min(self.deadline_ns, overall_deadline_ns)
+        if self.started_ns >= self.deadline_ns:
+            raise TimeoutError("owned process deadline expired before spawn")
         self.log = log.open("xb")
         try:
             self.child = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
