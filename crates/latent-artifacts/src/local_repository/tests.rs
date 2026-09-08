@@ -7,6 +7,8 @@ mod integrity_publication;
 #[cfg(unix)]
 #[path = "lock_release_tests.rs"]
 mod lock_release;
+#[path = "owned_preparation_tests.rs"]
+mod owned_preparation;
 #[path = "preparation_tests.rs"]
 mod preparation;
 #[path = "regression_tests.rs"]

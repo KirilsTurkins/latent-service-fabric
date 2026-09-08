@@ -13,7 +13,7 @@ async fn budget_bridge_delegates_repository_acquisition_without_materializing_ag
     use latent_core::{BoxFuture, ContractId, PlatformError};
     use latent_executor::{
         ExecutionBackend, ExecutionCancellation, ExecutionRequest, GuestOutcome, PreparationKey,
-        PreparedActivation, PreparedComponent, PreparedUse,
+        PreparedActivation, PreparedComponent, PreparedReadiness, PreparedUse,
     };
     use latent_node::{ActivationBudgetRegistry, BudgetedExecutionBackend};
     use std::sync::Arc;
@@ -41,6 +41,36 @@ async fn budget_bridge_delegates_repository_acquisition_without_materializing_ag
                     ),
                     imports: vec![ContractId("optional-contract".to_owned())],
                 })
+            })
+        }
+        fn prepare_ready_from_repository<'a>(
+            &'a self,
+            _: Arc<dyn ArtifactRepository>,
+            key: PreparationKey,
+        ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
+            Box::pin(async move {
+                Ok(PreparedReadiness::new(
+                    PreparedComponent {
+                        key,
+                        backend: self.backend_id().to_owned(),
+                        opaque_handle: "ready-fixture".to_owned(),
+                        metadata: Default::default(),
+                    },
+                    vec![ContractId("optional-ready-contract".to_owned())],
+                    LiveGuard::new(&self.0),
+                ))
+            })
+        }
+        fn materialize_ready(
+            &self,
+            ready: PreparedReadiness,
+        ) -> Result<PreparedActivation, PlatformError> {
+            let (descriptor, imports, owner) = ready
+                .into_parts::<LiveGuard>()
+                .expect("forwarded readiness");
+            Ok(PreparedActivation {
+                prepared: PreparedUse::new(descriptor, owner),
+                imports,
             })
         }
         fn prepare<'a>(
@@ -81,6 +111,21 @@ async fn budget_bridge_delegates_repository_acquisition_without_materializing_ag
     assert_eq!(repository.entered.load(Ordering::Relaxed), 0);
     assert_eq!(active.load(Ordering::Relaxed), 1);
     drop(prepared);
+    assert_eq!(active.load(Ordering::Relaxed), 0);
+    let ready = bridge
+        .prepare_ready_from_repository(Arc::new(repository), key.clone())
+        .await
+        .unwrap();
+    assert_eq!(active.load(Ordering::Relaxed), 1);
+    let activation = bridge
+        .materialize_ready(ready)
+        .expect("both overrides forwarded");
+    assert_eq!(activation.prepared.descriptor().key, key);
+    assert_eq!(
+        activation.imports,
+        [ContractId("optional-ready-contract".to_owned())]
+    );
+    drop(activation);
     assert_eq!(active.load(Ordering::Relaxed), 0);
 }
 
@@ -158,4 +203,79 @@ async fn mismatched_preparation_releases_affine_owner_before_invocation() {
         assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 0);
         harness.assert_idle();
     }
+}
+
+#[tokio::test]
+async fn pending_code_retains_admission_without_occupying_a_cell() {
+    use super::support::{pending, tenant};
+    use latent_core::{ActivationPhase, CancelDisposition};
+    use latent_scheduler::CellClass;
+    use std::pin::Pin;
+
+    let harness = Harness::standard();
+    harness.backend.prepare_gate.close();
+    let mut cold = harness.manager.start(request("waiting-code")).unwrap();
+    pending(Pin::new(&mut cold)).await;
+    assert_eq!(
+        harness.status("waiting-code").phase,
+        ActivationPhase::Queued
+    );
+    let pool = harness.scheduler.observations(CellClass::Tiny);
+    assert_eq!(pool.active_leases, 0);
+    assert_eq!(pool.queue_depth, 0);
+    assert_eq!(harness.quotas.usage().unwrap().active_activations, 1);
+    assert_eq!(harness.backend.live_prepared.load(Ordering::Relaxed), 1);
+
+    // The blocked caller remains unpolled. A different ready request can use
+    // the free cell immediately, without waiting for that caller's completion.
+    harness.backend.prepare_gate.open();
+    assert!(matches!(
+        finish(harness.manager.start(request("ready-code")).unwrap())
+            .await
+            .outcome,
+        ActivationOutcome::Succeeded(_)
+    ));
+    assert_eq!(
+        harness.status("waiting-code").phase,
+        ActivationPhase::Queued
+    );
+    assert_eq!(
+        harness
+            .manager
+            .cancel_for(&tenant(), cold.activation_id(), "cancel code wait")
+            .unwrap(),
+        CancelDisposition::Accepted
+    );
+    let receipt = finish(cold).await;
+    let ActivationOutcome::Failed { error, .. } = receipt.outcome else {
+        panic!("cancellation must win before materialization");
+    };
+    assert_eq!(error.code, PlatformErrorCode::Cancelled);
+    assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 1);
+    harness.assert_idle();
+}
+
+#[tokio::test]
+async fn code_wait_uses_original_deadline_and_releases_unassigned_quota() {
+    use super::support::pending;
+    use latent_scheduler::CellClass;
+    use std::pin::Pin;
+    use std::time::Duration;
+
+    let harness = Harness::standard();
+    harness.backend.prepare_gate.close();
+    let mut cold = harness.manager.start(request("code-expired")).unwrap();
+    pending(Pin::new(&mut cold)).await;
+    harness.clock.advance(Duration::from_secs(60));
+    harness.backend.prepare_gate.open();
+    let receipt = finish(cold).await;
+    let ActivationOutcome::Failed { error, .. } = receipt.outcome else {
+        panic!("preparation cannot renew the admission deadline");
+    };
+    assert_eq!(error.code, PlatformErrorCode::DeadlineExceeded);
+    assert_eq!(harness.backend.entered.load(Ordering::Relaxed), 0);
+    let pool = harness.scheduler.observations(CellClass::Tiny);
+    assert_eq!(pool.active_leases, 0);
+    assert_eq!(pool.quarantined, 0);
+    harness.assert_idle();
 }

@@ -265,10 +265,7 @@ async fn effective_ids_drive_deterministic_selection_and_catalog_state_stays_pin
     harness.artifacts.gate.close();
     let mut first = Box::pin(harness.manager.start(request("route-a")).expect("first"));
     pending(first.as_mut()).await;
-    assert_eq!(
-        harness.status("route-a").phase,
-        ActivationPhase::Materializing
-    );
+    assert_eq!(harness.status("route-a").phase, ActivationPhase::Queued);
     harness.catalog.generation.store(2, Ordering::Release);
     harness.artifacts.gate.open();
     let first = finish(first).await;

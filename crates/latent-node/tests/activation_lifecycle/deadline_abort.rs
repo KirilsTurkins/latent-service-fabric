@@ -77,7 +77,7 @@ async fn expiry_during_fetch_preparation_and_execution_finalizes_the_original_ac
             if stage == 2 {
                 ActivationPhase::Running
             } else {
-                ActivationPhase::Materializing
+                ActivationPhase::Queued
             }
         );
         handle.abort_due_to_deadline();
