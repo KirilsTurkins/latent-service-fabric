@@ -62,13 +62,15 @@ pub(super) async fn sequential(
         let mut row = call::invoke(
             node.channel(),
             clock,
-            phase.into(),
-            index,
-            0,
-            clock.elapsed(),
-            format!("cold-{phase}-{index:04}"),
-            release.into(),
-            false,
+            call::InvokeOptions {
+                phase: phase.into(),
+                index,
+                key: 0,
+                scheduled: clock.elapsed(),
+                id: format!("cold-{phase}-{index:04}"),
+                release: release.into(),
+                overload: false,
+            },
         )
         .await?;
         call::retain(node.channel(), clock, &mut row).await?;
@@ -80,16 +82,29 @@ pub(super) async fn sequential(
     Ok(())
 }
 
+pub(super) struct BurstOptions<'a> {
+    pub phase: &'static str,
+    pub cold_keys: &'a [u32],
+    pub cancel: bool,
+}
+
+#[expect(
+    clippy::too_many_lines,
+    reason = "Offer ordering, task collection and deferred status reads must remain one auditable matched benchmark sequence."
+)]
 pub(super) async fn burst(
     node: &mut Node,
     writer: &mut Writer,
     clock: call::Clock,
     plan: &Plan,
-    phase: &'static str,
-    cold_keys: &[u32],
     releases: &[String],
-    cancel: bool,
+    options: BurstOptions<'_>,
 ) -> Result<()> {
+    let BurstOptions {
+        phase,
+        cold_keys,
+        cancel,
+    } = options;
     // Complete the large snapshot and its file write before anchoring offers.
     writer.sample(&json!({"kind":"phase-start","phase":phase,
         "observer":observation::snapshot(&node.owner.backend.preparation_observer(),clock)?,
@@ -177,13 +192,15 @@ pub(super) async fn burst(
                 call::invoke(
                     channel,
                     clock,
-                    phase.into(),
-                    index,
-                    key,
-                    due,
-                    id,
-                    release,
-                    true,
+                    call::InvokeOptions {
+                        phase: phase.into(),
+                        index,
+                        key,
+                        scheduled: due,
+                        id,
+                        release,
+                        overload: true,
+                    },
                 )
                 .await?,
             );
@@ -193,13 +210,15 @@ pub(super) async fn burst(
                     call::invoke(
                         channel,
                         clock,
-                        phase.into(),
-                        index,
-                        key,
-                        due,
-                        id,
-                        release,
-                        false,
+                        call::InvokeOptions {
+                            phase: phase.into(),
+                            index,
+                            key,
+                            scheduled: due,
+                            id,
+                            release,
+                            overload: false,
+                        },
                     )
                     .await?,
                     warm,
