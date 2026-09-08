@@ -1,1 +1,3 @@
 * -text
+# Original diagnostic whitespace is part of each checksum-bound receipt.
+*.log -whitespace
