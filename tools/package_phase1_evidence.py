@@ -22,7 +22,13 @@ except ImportError:
                                         verify_package)
 
 
-def create_archive(source, stage, policy):
+def checked_compression_level(value):
+    require(type(value) is int and 1 <= value <= 9, 'compression level must be an integer from 1 through 9')
+    return value
+
+
+def create_archive(source, stage, policy, compression_level=6):
+    compression_level = checked_compression_level(compression_level)
     kind = evidence_kind(source)
     files = {relative_path(path.relative_to(source).as_posix()): path
              for path in paths.regular_files(source, 'measurement source')}
@@ -34,7 +40,7 @@ def create_archive(source, stage, policy):
     references = []
     archive_path = stage / ARCHIVE
     with archive_path.open('xb') as output:
-        with gzip.GzipFile(filename='', mode='wb', fileobj=output, compresslevel=6, mtime=0) as compressed:
+        with gzip.GzipFile(filename='', mode='wb', fileobj=output, compresslevel=compression_level, mtime=0) as compressed:
             with tarfile.open(fileobj=compressed, mode='w|', format=tarfile.USTAR_FORMAT) as archive:
                 for name, path in sorted(files.items()):
                     original = file_reference(path, path.parent)
@@ -45,6 +51,9 @@ def create_archive(source, stage, policy):
                     info.mtime = 0
                     with path.open('rb') as stream:
                         archive.addfile(info, stream)
+    compressed_bytes = archive_path.stat().st_size
+    require(compressed_bytes <= MAX_COMPRESSED,
+            f'compressed evidence exceeds bound: {archive_path}; actual={compressed_bytes} bytes, maximum={MAX_COMPRESSED} bytes')
     manifest = {'schema': 'latent.phase1.archive-manifest.v1',
                 'archive': file_reference(archive_path, stage, MAX_COMPRESSED),
                 'files': references, 'total_bytes': str(sum(int(row['bytes']) for row in references))}
@@ -58,7 +67,8 @@ def create_archive(source, stage, policy):
     return manifest
 
 
-def package(source, output, policy):
+def package(source, output, policy, compression_level=6):
+    compression_level = checked_compression_level(compression_level)
     source = paths.existing_directory_path(source, 'measurement source')
     output = paths.absent_output_path(output)
     require(not output.is_relative_to(source) and not source.is_relative_to(output),
@@ -67,7 +77,7 @@ def package(source, output, policy):
     with tempfile.TemporaryDirectory(prefix='.latent-phase1-package-', dir=output.parent) as temporary:
         stage = Path(temporary) / 'package'
         stage.mkdir()
-        manifest = create_archive(source, stage, policy)
+        manifest = create_archive(source, stage, policy, compression_level)
         verify_package(stage)
         stage.rename(output)
     return manifest
@@ -78,9 +88,11 @@ def main():
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--policy', type=Path, default=Path(__file__).resolve().parents[1] / 'benchmarks/phase1/measurement-policy.json')
+    parser.add_argument('--compression-level', type=int, choices=range(1, 10), default=6,
+                        help='gzip level 1 through 9; default 6 preserves existing archive output')
     args = parser.parse_args()
     try:
-        manifest = package(args.source, args.output, args.policy)
+        manifest = package(args.source, args.output, args.policy, args.compression_level)
     except (ValueError, OSError, tarfile.TarError, EOFError) as error:
         parser.exit(2, f'Phase 1 packaging failed: {error}\n')
     print(f"Packaged and replayed {len(manifest['files'])} unchanged evidence files.")
