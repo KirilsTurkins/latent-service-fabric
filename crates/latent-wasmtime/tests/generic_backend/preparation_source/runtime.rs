@@ -128,13 +128,15 @@ async fn delegated_reads_epochs_imports_and_evicted_factory_ownership_remain_dis
         .prepare_from_repository(&other_repository, &key)
         .await
         .unwrap();
+    // Publication canonicalizes the manifest. Preserve that decoded order,
+    // including imports absent from this component's actual host surface.
     assert_eq!(
         different
             .imports
             .iter()
             .map(|id| id.0.as_str())
             .collect::<Vec<_>>(),
-        ["latent:log/log@0.1.0", "latent:context/context@0.1.0"]
+        ["latent:context/context@0.1.0", "latent:log/log@0.1.0"]
     );
     assert_ne!(
         different.prepared.descriptor().opaque_handle,
