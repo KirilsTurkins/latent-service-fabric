@@ -14,7 +14,7 @@ The foundation provides:
 - repository validation for path-dependency cycles, exhaustive code-generation inputs, generated-output ownership, and generated-source boundaries;
 - pull-request CI for formatting, compilation, Clippy, tests, contracts, and SDK surfaces.
 
-It does **not** implement an RPC listener, service process, execution cell, scheduler, or service-owned runtime. Code generation runs only as a Cargo build step and writes only to `OUT_DIR`.
+Code generation runs only as a Cargo build step and writes generated Rust to `OUT_DIR`; linking its output allocates no runtime resources. The implemented scheduler, execution cells, adapters, and Linux service process are separate consumers of this foundation. See [the current API surface](../api-surface.md) and [standalone node](../reference/standalone-node.md) for their runtime ownership and startup boundaries.
 
 ## Pinned Rust inputs
 
@@ -61,13 +61,13 @@ It emits bindings into `OUT_DIR` and exposes:
 - `latent_component_bindings::host::echo`;
 - `latent_component_bindings::guest::runtime` on Wasm targets.
 
-`latent-wasmtime` consumes the shared echo host bindings. `latent-toolchain-smoke` consumes the shared aggregate runtime bindings. The executable echo guest fixture still invokes `wit-bindgen` from the authoritative echo WIT in its component crate because canonical ABI exports must be generated in the final guest crate.
+`latent-wasmtime` consumes the shared aggregate-runtime host bindings for its allowed context, log, and clock imports, and the shared echo host bindings for the retained Phase 0 signature check. Generic guest calls use Wasmtime's validated dynamic export indices. `latent-toolchain-smoke` consumes the shared aggregate runtime bindings for compile probes; its executable fixtures generate canonical ABI exports in their final guest crates from maintained WIT.
 
 ## Generated-output boundary
 
 No generated Rust is committed under `api/proto`, `wit`, or an example `wit` directory. The foundation validator requires the two generation owners above, rejects the superseded duplicate build scripts, and rejects unlisted Protobuf files or generated language sources inside contract-authority directories.
 
-Generated files may exist only in ignored build locations such as Cargo `OUT_DIR`, `target/contracts/`, SDK compiler output directories, and `target/capsules/`.
+Generated build products belong in ignored locations such as Cargo `OUT_DIR`, `target/contracts/`, SDK compiler output directories, and `target/capsules/`. The explicit test-fixture exception is `crates/latent-wasmtime/src/values/types.wasm`, a small type-only Component Model binary checked in beside authoritative `types.wat`. This lets ordinary codec unit tests inspect types without an external parser. The contract gate regenerates the binary with pinned `wasm-tools`, compares its bytes with the checked-in fixture, and validates it.
 
 ## Dependency graph boundary
 
@@ -75,14 +75,16 @@ Generated files may exist only in ignored build locations such as Cargo `OUT_DIR
 
 ## Test foundation
 
-`latent-testkit` exposes reusable primitives without starting service-owned resources:
+`latent-testkit` exposes reusable primitives whose resources are created only by explicit calls:
 
 - `DeterministicIds`, `ManualClock`, `TempWorkspace`, and the calling-thread `block_on` executor;
 - `AsyncTestRuntime`, an explicitly constructed Tokio current-thread runtime with no worker pool;
-- `ProcessHarness` and `CapturedProcess` for deterministic CLI/integration command construction and captured output;
-- `CurrentProcessProbe` and `ProcessResources` for portable process identity and Linux `/proc` RSS, thread, file-descriptor, and socket observations.
+- `ProcessHarness` and `CapturedProcess` for command construction and output, plus `OwnedProcess` for capped asynchronous pipe capture, child watchdogs, and explicit wait/termination that reaps the child and joins its readers;
+- `CurrentProcessProbe` for portable current-process observations, and `ChildProcessProbe` for bounded Linux measurements tied to a retained child's PID/start time and owned socket inodes;
+- `BorrowedBackendHarness`, `InvocationConformanceSuite`, `ScopedNodeHarness`, and `ObservedInvariantProbe` for selected checks using supplied managers, backends, inventory and telemetry sources; and
+- versioned conformance records, fixed case definitions, shared work counters, and bounded serialization for the [selected Phase 1 profile](../testing/phase-1-conformance.md).
 
-A test creates these utilities explicitly. Merely linking a service crate creates no thread, process, socket, listener, or runtime.
+A test creates these utilities explicitly. Merely linking a service crate creates no thread, process, socket, listener, or runtime. The bounded profile records selected behavior and child resources; it does not complete the unrun scaling, soak, calibrated-baseline or full-equivalence requirements.
 
 ## Clean-checkout sequence
 
