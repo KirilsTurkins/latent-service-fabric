@@ -37,6 +37,8 @@ members = [
     "crates/latent-testkit",
     "sdk/rust",
     "tools/toolchain-smoke",
+    "tools/optimization-workloads",
+    "tools/optimization-bench",
 ]
 
 [workspace.package]

@@ -206,5 +206,217 @@ class PairedArchiveTests(unittest.TestCase):
         self.assertFalse(self.output.exists())
 
 
+class OptimizationArchiveTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix='optimization-archive-test-')
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.source = self.root / 'source'
+        self.source.mkdir()
+        self.output = self.root / 'package'
+        self.aggregate = {
+            'schema': 'latent.optimization.aggregate.v1', 'profile': 'full',
+            'status': 'complete', 'population_complete': True, 'attempt_count_complete': True,
+            'validated_attempts': '4', 'test_statistic': '12.5',
+        }
+
+    def minimal_inputs(self):
+        # This reduced archive has fake executable bytes. Successful full-suite
+        # replay is mocked only in tests of archive dispatch/equality; the real
+        # replay rejection test below uses the existing semantic suite fixture.
+        (self.source / 'suite.json').write_bytes(b'{"test":"extracted suite"}\n')
+        (self.source / 'binary').write_bytes(b'fixture executable\x00')
+        (self.source / 'empty.log').write_bytes(b'')
+
+    def large_aggregate(self):
+        # Distribution/count rows model the full retained report: individually
+        # small values, under 8 MiB, but more than 200,000 total JSON nodes.
+        row = {'attempts': '400', 'successes': '396', 'failures': '4',
+               'latency_nanos': {'minimum': '12000', 'p50': '15000',
+                                 'p95': '19000', 'p99': '21000', 'maximum': '22000'}}
+        return {**self.aggregate, 'rows': [row] * 20_001}
+
+    def test_large_optimization_aggregate_dispatch_and_replay_use_its_structural_bound(self):
+        self.minimal_inputs()
+        value = self.large_aggregate()
+        path = self.source / 'aggregate.json'
+        path.write_bytes(verify.canonical(value))
+        self.assertLess(path.stat().st_size, verify.MAX_AGGREGATE_BYTES)
+        with self.assertRaisesRegex(ValueError, 'json-structure-limit'):
+            verify.read_json(path)
+        self.assertEqual(verify.evidence_kind(self.source), 'optimization')
+        with patch.object(verify, 'validate_optimization_suite', return_value=value) as replay:
+            verify.verify_optimization(self.source)
+            replay.assert_called_once_with(self.source / 'suite.json')
+
+    def test_optimization_aggregate_keeps_exact_eight_mib_archive_byte_cap(self):
+        self.minimal_inputs()
+        path = self.source / 'aggregate.json'
+        encoded = verify.canonical(self.aggregate)
+        path.write_bytes(encoded + b' ' * (verify.MAX_AGGREGATE_BYTES - len(encoded)))
+        self.assertEqual(verify.evidence_kind(self.source), 'optimization')
+        with path.open('ab') as stream:
+            stream.write(b' ')
+        with patch.object(verify, 'validate_optimization_suite') as replay:
+            for operation in (verify.evidence_kind, verify.verify_optimization):
+                with self.subTest(operation=operation.__name__):
+                    with self.assertRaisesRegex(ValueError, 'json-byte-bound'):
+                        operation(self.source)
+            replay.assert_not_called()
+
+    def test_legacy_dispatch_preserves_node_and_string_limits(self):
+        path = self.source / 'aggregate.json'
+        for schema in ('latent.phase1.measurement-aggregate.v1',
+                       'latent.phase1.paired-aggregate.v1', None):
+            for value, reason in (
+                    (self.large_aggregate(), 'json-structure-limit'),
+                    ({'text': 'x' * (64 * 1024 + 1)}, 'invalid-string')):
+                with self.subTest(schema=schema, reason=reason):
+                    value['schema'] = schema
+                    path.write_bytes(verify.canonical(value))
+                    with self.assertRaisesRegex(ValueError, reason):
+                        verify.evidence_kind(self.source)
+
+    def archive(self, aggregate=None):
+        (self.source / 'aggregate.json').write_bytes(verify.canonical(
+            self.aggregate if aggregate is None else aggregate) + b'\n')
+        self.output.mkdir()
+        references = []
+        with (self.output / verify.ARCHIVE).open('xb') as output:
+            with gzip.GzipFile(filename='', mode='wb', fileobj=output, mtime=0) as compressed:
+                with tarfile.open(fileobj=compressed, mode='w|', format=tarfile.USTAR_FORMAT) as archive:
+                    for path in sorted(self.source.rglob('*')):
+                        if not path.is_file():
+                            continue
+                        reference = verify.file_reference(path, self.source)
+                        references.append(reference)
+                        member = tarfile.TarInfo(reference['path'])
+                        member.size = int(reference['bytes'])
+                        member.mode = 0o644
+                        with path.open('rb') as source:
+                            archive.addfile(member, source)
+        manifest = {
+            'schema': 'latent.phase1.archive-manifest.v1',
+            'archive': verify.file_reference(self.output / verify.ARCHIVE, self.output),
+            'files': references, 'total_bytes': str(sum(int(row['bytes']) for row in references)),
+        }
+        (self.output / verify.MANIFEST).write_bytes(verify.canonical(manifest))
+        (self.output / (verify.ARCHIVE + '.sha256')).write_text(
+            manifest['archive']['sha256'][7:] + '  ' + verify.ARCHIVE + '\n',
+            encoding='ascii', newline='\n')
+        (self.output / 'aggregate.json').write_bytes((self.source / 'aggregate.json').read_bytes())
+        return manifest
+
+    def test_optimization_dispatch_replays_extracted_suite_and_retains_empty_logs(self):
+        self.minimal_inputs()
+        manifest = self.archive()
+        def replay(path):
+            self.assertEqual(path.name, 'suite.json')
+            self.assertNotEqual(path.parent, self.source)
+            self.assertEqual(path.read_bytes(), (self.source / 'suite.json').read_bytes())
+            self.assertEqual((path.parent / 'empty.log').read_bytes(), b'')
+            self.assertEqual((path.parent / 'binary').read_bytes(), b'fixture executable\x00')
+            return self.aggregate
+        with patch.object(verify, 'validate_optimization_suite', side_effect=replay) as called:
+            self.assertEqual(verify.verify_package(self.output), manifest)
+            called.assert_called_once()
+        self.assertEqual(next(row['bytes'] for row in manifest['files'] if row['path'] == 'empty.log'), '0')
+        self.assertFalse((self.output / 'comparison.json').exists())
+        self.assertFalse((self.output / 'measurement-policy.json').exists())
+
+    def test_optimization_packager_replays_before_publishing_without_policy(self):
+        self.minimal_inputs()
+        (self.source / 'aggregate.json').write_bytes(verify.canonical(self.aggregate) + b'\n')
+        before = {path.name: path.read_bytes() for path in self.source.iterdir()}
+
+        def replay(path):
+            self.assertFalse(self.output.exists(), 'publication must follow replay')
+            self.assertNotEqual(path.parent, self.source)
+            self.assertEqual(before, {entry.name: entry.read_bytes() for entry in path.parent.iterdir()})
+            return self.aggregate
+
+        # Only the expensive full-population semantic fixture is substituted;
+        # archive creation, safe extraction, byte identities and publication run.
+        with patch.object(verify, 'validate_optimization_suite', side_effect=replay) as called:
+            manifest = package.package(self.source, self.output, self.root / 'absent-policy.json')
+            called.assert_called_once()
+        self.assertTrue(self.output.is_dir())
+        self.assertEqual({row['path'] for row in manifest['files']}, set(before))
+        self.assertEqual(before, {path.name: path.read_bytes() for path in self.source.iterdir()})
+        self.assertFalse((self.output / 'comparison.json').exists())
+        self.assertFalse((self.output / 'measurement-policy.json').exists())
+
+    def test_optimization_packager_does_not_publish_replayed_aggregate_mismatch(self):
+        self.minimal_inputs()
+        (self.source / 'aggregate.json').write_bytes(verify.canonical(
+            {**self.aggregate, 'test_statistic': '0'}))
+        with patch.object(verify, 'validate_optimization_suite', return_value=self.aggregate):
+            with self.assertRaisesRegex(ValueError, 'differs from replayed'):
+                package.package(self.source, self.output, self.root / 'absent-policy.json')
+        self.assertFalse(self.output.exists())
+
+    def test_rehashed_aggregate_statistic_cannot_replace_replayed_value(self):
+        self.minimal_inputs()
+        self.archive({**self.aggregate, 'test_statistic': '0'})
+        # Archive, member, sidecar and outer-copy hashes all match the changed
+        # bytes. Only replay equality can detect this semantic substitution.
+        with patch.object(verify, 'validate_optimization_suite', return_value=self.aggregate):
+            with self.assertRaisesRegex(ValueError, 'differs from replayed'):
+                verify.verify_package(self.output)
+
+    def test_full_population_flags_are_checked_even_when_aggregate_matches(self):
+        for changes in ({'profile': 'smoke'}, {'status': 'incomplete'}, {'status': 'failed'},
+                        {'population_complete': False}, {'population_complete': 1},
+                        {'attempt_count_complete': False}, {'attempt_count_complete': 1}):
+            with self.subTest(changes=changes):
+                value = {**self.aggregate, **changes}
+                (self.source / 'aggregate.json').write_bytes(verify.canonical(value))
+                (self.source / 'suite.json').write_bytes(b'{}')
+                with patch.object(verify, 'validate_optimization_suite', return_value=value):
+                    with self.assertRaisesRegex(ValueError, 'complete full-population'):
+                        verify.verify_optimization(self.source)
+
+    def test_shape_only_is_explicit_and_never_invokes_semantic_replay(self):
+        self.minimal_inputs()
+        self.archive({**self.aggregate, 'profile': 'smoke', 'status': 'incomplete'})
+        with patch.object(verify, 'validate_optimization_suite', side_effect=ValueError('missing actual population')) as replay:
+            verify.verify_package(self.output, replay=False)
+            replay.assert_not_called()
+            with self.assertRaisesRegex(ValueError, 'missing actual population'):
+                verify.verify_package(self.output)
+
+    def test_missing_suite_is_rejected_even_for_shape_only_verification(self):
+        self.archive()
+        with self.assertRaisesRegex(ValueError, 'omits suite'):
+            verify.verify_package(self.output, replay=False)
+
+    def test_unknown_aggregate_schema_does_not_masquerade_as_supported(self):
+        self.minimal_inputs()
+        self.archive({**self.aggregate, 'schema': 'latent.optimization.aggregate.future'})
+        with self.assertRaisesRegex(ValueError, 'unsupported evidence schema'):
+            verify.verify_package(self.output, replay=False)
+
+    def test_rehashed_raw_semantic_corruption_fails_real_suite_replay(self):
+        from tools.tests.test_optimization_evidence import Fixture
+        from tools.optimization_evidence.suite import validate_suite
+        from tools.optimization_evidence.common import canonical
+        fixture = Fixture(self.source)
+        retained = validate_suite(self.source / 'suite.json')
+        batch = fixture.suite['runs'][0]['batches'][0]
+        row_path = self.source / batch['attempts']['path']
+        rows = [json.loads(line) for line in row_path.read_bytes().splitlines()]
+        rows[0]['response']['payload_sha256'] = 'sha256:' + '0' * 64
+        fixture.replace(batch['attempts'], b''.join(canonical(row) + b'\n' for row in rows))
+        self.archive(retained)
+        # No replay mocks: suite references and the enclosing archive have
+        # correct new hashes, while the response no longer matches its input.
+        with self.assertRaisesRegex(ValueError, 'false-semantic-success'):
+            verify.verify_package(self.output)
+        unpublished = self.root / 'unpublished'
+        with self.assertRaisesRegex(ValueError, 'false-semantic-success'):
+            package.package(self.source, unpublished, self.root / 'absent-policy.json')
+        self.assertFalse(unpublished.exists())
+
+
 if __name__ == '__main__':
     unittest.main()

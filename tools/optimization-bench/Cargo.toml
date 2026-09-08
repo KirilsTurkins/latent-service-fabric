@@ -1,0 +1,24 @@
+[package]
+name = "latent-optimization-bench"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Bounded external load client and native reference for LSF optimization measurements."
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-optimization-workloads = { path = "../optimization-workloads" }
+latent-rpc = { path = "../../crates/latent-rpc" }
+latent-wire = { path = "../../crates/latent-wire" }
+clap.workspace = true
+prost.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tonic.workspace = true
+tokio = { workspace = true, features = ["net", "signal", "rt-multi-thread", "io-util"] }

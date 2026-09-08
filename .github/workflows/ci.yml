@@ -153,6 +153,18 @@ jobs:
           path: target/phase1-measurements/
           if-no-files-found: warn
           retention-days: 14
+      - name: Validate standalone optimization benchmark smoke
+        run: |
+          unset CARGO_INCREMENTAL
+          python3 tools/run_optimization_benchmarks.py --profile smoke
+      - name: Retain optimization benchmark smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-1-optimization-smoke-${{ github.sha }}
+          path: target/optimization-benchmarks/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Record echo capsule build evidence
         run: |
           cat target/capsules/echo/build.json

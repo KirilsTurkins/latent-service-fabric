@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package Phase 1 measurement or paired evidence unchanged, including executed binaries."""
+"""Package Phase 1 measurement, paired or optimization evidence with mandatory replay."""
 from __future__ import annotations
 
 import argparse
@@ -23,10 +23,10 @@ except ImportError:
 
 
 def create_archive(source, stage, policy):
-    paired = evidence_kind(source) == 'paired'
+    kind = evidence_kind(source)
     files = {relative_path(path.relative_to(source).as_posix()): path
              for path in paths.regular_files(source, 'measurement source')}
-    if not paired:
+    if kind == 'measurement':
         require('measurement-policy.json' not in files, 'source already contains a policy copy')
         files['measurement-policy.json'] = paths.existing_regular_file_path(policy, 'measurement policy')
     require(len(files) <= MAX_FILES, 'too many evidence files')
@@ -50,7 +50,8 @@ def create_archive(source, stage, policy):
                 'files': references, 'total_bytes': str(sum(int(row['bytes']) for row in references))}
     (stage / MANIFEST).write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n', encoding='utf-8', newline='\n')
     (stage / (ARCHIVE + '.sha256')).write_text(manifest['archive']['sha256'][7:] + '  ' + ARCHIVE + '\n', encoding='ascii', newline='\n')
-    outer_files = ('aggregate.json',) if paired else ('aggregate.json', 'comparison.json', 'measurement-policy.json')
+    outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
+                   if kind == 'measurement' else ('aggregate.json',))
     for name in outer_files:
         require(name in files, 'required outer measurement evidence missing')
         shutil.copyfile(files[name], stage / name)

@@ -1,0 +1,17 @@
+package optimization:benchmark@0.1.0;
+
+interface workloads {
+    record transform-value {
+        label: string,
+        bytes: list<u8>,
+        values: list<u32>,
+    }
+
+    echo: func(message: string) -> string;
+    compute: func(seed: u32, rounds: u32) -> u32;
+    transform: func(value: transform-value) -> transform-value;
+}
+
+world service {
+    export workloads;
+}
