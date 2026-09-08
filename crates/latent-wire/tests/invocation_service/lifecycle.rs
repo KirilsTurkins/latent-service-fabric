@@ -13,7 +13,7 @@ async fn pending_id_supports_scoped_status_and_all_cancellation_dispositions() {
     harness.artifacts.gate.close();
     let mut invocation = Box::pin(adapter.invoke(authenticated(request("pending"))));
     pending(invocation.as_mut()).await;
-    assert_eq!(status(&adapter, "pending").await.phase, "materializing");
+    assert_eq!(status(&adapter, "pending").await.phase, "queued");
     for administrator in [false, true] {
         let foreign_status = finish(adapter.get_activation(scoped(
             proto::GetActivationRequest {
