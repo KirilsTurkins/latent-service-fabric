@@ -65,7 +65,11 @@ def execute(args, repo):
             log = output / "builds" / variant / "symbols.log"
             argv = [suite["tools"]["nm"]["path"], "--defined-only", "--demangle", str(output / binary["path"])]
             owner = command(argv, log, 120, output, deadline, maximum=16 * 1024**2)
-            suite["symbols"][variant] = {"command": argv, "process": owner, "log": reference(log, output)}
+            raw_log = output / "builds" / variant / "symbols-raw.log"
+            raw_argv = [suite["tools"]["nm"]["path"], "--defined-only", str(output / binary["path"])]
+            raw_owner = command(raw_argv, raw_log, 120, output, deadline, maximum=16 * 1024**2)
+            suite["symbols"][variant] = {"command": argv, "process": owner, "log": reference(log, output),
+                                        "raw": {"command": raw_argv, "process": raw_owner, "log": reference(raw_log, output)}}
         (output / "plans").mkdir()
         (output / "identities").mkdir()
         for repetition, variant, mode, capacity, pattern in model.population(args.profile):
