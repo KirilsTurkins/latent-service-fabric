@@ -8,7 +8,7 @@ use tonic::transport::Channel;
 use super::{Result, INPUT};
 
 #[derive(Clone, Copy)]
-pub(super) struct Clock {
+pub(in crate::standalone::measurements::comparison) struct Clock {
     pub origin: Instant,
     pub unix_nanos: u128,
     pub uncertainty_nanos: u128,
@@ -33,7 +33,10 @@ impl Clock {
     }
 }
 
-pub(super) fn auth<T>(value: T, timeout: Duration) -> Result<tonic::Request<T>> {
+pub(in crate::standalone::measurements::comparison) fn auth<T>(
+    value: T,
+    timeout: Duration,
+) -> Result<tonic::Request<T>> {
     let mut request = tonic::Request::new(value);
     request.metadata_mut().insert(
         "authorization",
@@ -43,7 +46,9 @@ pub(super) fn auth<T>(value: T, timeout: Duration) -> Result<tonic::Request<T>> 
     Ok(request)
 }
 
-pub(super) fn consumption(value: Option<&proto::BudgetConsumption>) -> Value {
+pub(in crate::standalone::measurements::comparison) fn consumption(
+    value: Option<&proto::BudgetConsumption>,
+) -> Value {
     value.map_or(Value::Null, |value| json!({"cpu_fuel":value.cpu_fuel.to_string(),
         "peak_memory_bytes":value.peak_memory_bytes.to_string(),"wall_time_micros":value.wall_time_micros.to_string(),
         "log_bytes":value.log_bytes.to_string(),"child_calls":value.child_calls.to_string(),
@@ -52,7 +57,7 @@ pub(super) fn consumption(value: Option<&proto::BudgetConsumption>) -> Value {
         "blob_write_bytes":value.blob_write_bytes.to_string(),"effect_count":value.effect_count.to_string()}))
 }
 
-pub(super) fn status(
+pub(in crate::standalone::measurements::comparison) fn status(
     value: std::result::Result<tonic::Response<proto::ActivationStatus>, tonic::Status>,
 ) -> Value {
     match value {
@@ -76,7 +81,7 @@ pub(super) fn status(
     }
 }
 
-pub(super) struct InvokeOptions {
+pub(in crate::standalone::measurements::comparison) struct InvokeOptions {
     pub phase: String,
     pub index: u32,
     pub key: u32,
@@ -86,14 +91,23 @@ pub(super) struct InvokeOptions {
     pub overload: bool,
 }
 
+pub(in crate::standalone::measurements::comparison) async fn invoke(
+    channel: Channel,
+    clock: Clock,
+    options: InvokeOptions,
+) -> Result<Value> {
+    invoke_at_generation(channel, clock, options, 8).await
+}
+
 #[expect(
     clippy::too_many_lines,
     reason = "Keep request construction, response validation and the final observation timestamp inside the unchanged measured boundary."
 )]
-pub(super) async fn invoke(
+pub(in crate::standalone::measurements::comparison) async fn invoke_at_generation(
     channel: Channel,
     clock: Clock,
     options: InvokeOptions,
+    route_generation: u64,
 ) -> Result<Value> {
     let InvokeOptions {
         phase,
@@ -184,7 +198,7 @@ pub(super) async fn invoke(
                         && response.activation_id == id
                         && (outcome != "success"
                             || (response.release_digest == release
-                                && response.route_generation == 8
+                                && response.route_generation == route_generation
                                 && !response.revision_id.is_empty()
                                 && response.consumption.as_ref().is_some_and(|value| value
                                     .cpu_fuel
@@ -219,7 +233,11 @@ pub(super) async fn invoke(
     Ok(row)
 }
 
-pub(super) async fn retain(channel: Channel, clock: Clock, row: &mut Value) -> Result<()> {
+pub(in crate::standalone::measurements::comparison) async fn retain(
+    channel: Channel,
+    clock: Clock,
+    row: &mut Value,
+) -> Result<()> {
     let id = row["activation_id"]
         .as_str()
         .ok_or("cold activation identity missing")?
