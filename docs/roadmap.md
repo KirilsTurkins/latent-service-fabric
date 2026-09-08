@@ -19,7 +19,7 @@ execution identity, profiling, resource soak, and fresh-baseline checks
 together. Phase 1 builds on the retained runtime and invariants; Phase 0 does
 not claim production readiness or Phase 1 API compatibility.
 
-## Phase 1: single-node stateless fabric — delivered
+## Phase 1: single-node stateless fabric — complete
 
 The following features and their acceptance evidence are delivered:
 
@@ -45,7 +45,7 @@ The following features and their acceptance evidence are delivered:
 
 The [completion review](phase-1-completion.md) maps the collective evidence to
 all fifteen [gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16)
-criteria and records the final merged-CI/issue-closure checkpoint for the
+criteria and records the completion decision and merged CI evidence for the
 [Phase 1 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/1).
 Status is recorded as of September 8, 2026. The standalone node and operator CLI
 support the local release-to-invocation workflow through generated RPC clients;

@@ -1,6 +1,6 @@
-# Phase 1 completion review
+# Phase 1 completion report
 
-**Delivery status: DELIVERED — final repository integration and gate closure in review.**
+**Phase 1 status: COMPLETE — September 8, 2026.**
 
 The single-node stateless features are implemented. The full scale, soak and
 benchmark suite passed and is retained with its exact executed binary and raw
@@ -11,8 +11,8 @@ evidence to [gate #16](https://github.com/KirilsTurkins/latent-service-fabric/is
 and the [Phase 1 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/1).
 
 The delivered engineering scope is the configured single-node stateless fabric,
-with the measured limits below. Final repository integration, CI and issue-state
-reconciliation are recorded at the end of this review; they do not require
+with the measured limits below. The completion decision and integration evidence
+are recorded at the end of this report; they do not require
 relabeling an individual collector's deliberately incomplete gate field.
 The full, paired, clean CI and separate-filesystem receipts are retained.
 The August [Phase 0 authorization](phase-0-completion.md) and its raw evidence
@@ -65,10 +65,10 @@ remain necessary alongside the selected profile.
 | 9 | Persistent relative ceilings remain valid after wall passage and intersect caller deadlines | Demonstrated by `persistent-wall-ceiling` and [its observations](../apps/latent/tests/phase1_conformance/cases/wall/observe.rs): node age exceeds five seconds, persisted deployment age exceeds one second, and a caller deadline wins when earlier. Stored relative policy remains unchanged. The node case measures the composed transport/admission ceiling. |
 | 10 | Direct-adapter/RPC outcome, structured-error, context, deadline, budget, trace and accounting equivalence | Demonstrated by [eight outcome pairs](../apps/latentd/src/standalone/parity/cases.rs) and [three capability pairs](../apps/latentd/src/standalone/parity/capabilities.rs) through one real manager/backend and one reused cell. Each receipt/status/span/log is bound to its own identity and consumption; distinct clock/trace values are not erased to manufacture equality. |
 | 11 | Management bounds/pagination/unsupported cluster methods and no shared caller/node filesystem | Management behavior is demonstrated by [release](../crates/latent-wire/tests/management_service/release/pagination.rs), [deployment](../crates/latent-wire/tests/management_service/deployment/pagination.rs) and [inspection](../crates/latent-wire/tests/management_service/inspection.rs) tests plus CLI workflows. The [separate-mount-namespace receipt](../benchmarks/phase1/conformance/2026-09-08-namespace-proof/README.md) passed and is retained unchanged. |
-| 12 | Required deterministic CI, failure artifacts and explicit heavy jobs/schemas | Implemented by [contracts validation](../tools/validate_contracts.sh), [required CI](../.github/workflows/ci.yml), [explicit measurement workflow](../.github/workflows/phase1-measurements.yml) and [measurement documentation](testing/phase-1-measurements.md). PR #93's [retained clean receipts](../benchmarks/phase1/conformance/2026-09-08-ci93-aee91e5/README.md) passed replay; final comparison-branch CI remains a closure item. |
+| 12 | Required deterministic CI, failure artifacts and explicit heavy jobs/schemas | Implemented by [contracts validation](../tools/validate_contracts.sh), [required CI](../.github/workflows/ci.yml), [explicit measurement workflow](../.github/workflows/phase1-measurements.yml) and [measurement documentation](testing/phase-1-measurements.md). PR #93's [retained clean receipts](../benchmarks/phase1/conformance/2026-09-08-ci93-aee91e5/README.md) passed replay; PR #95 also passed all six checks and independent artifact replay. |
 | 13 | Completion report with environment/configuration/topology, measures, Phase 0 comparison and raw links | Delivered by this review, the [full measurement report](../benchmarks/phase1/measurements/2026-09-08-container-linux-d72c99b6/REPORT.md), [controlled paired report](../benchmarks/phase1/paired/2026-09-08-container-linux-e7e06f7/REPORT.md), retained raw archives and replay tools. Startup and other unmatched boundaries remain explicitly identified rather than fabricated. |
 | 14 | Retained Phase 0 regression paths isolated from product dispatch | Demonstrated by the explicit [Phase 0 adapter](../crates/latent-wasmtime/src/phase0.rs), generic backend tests and [opaque product payload test](../crates/latent-node/tests/activation_lifecycle/outcomes.rs). Historical CLI/JSON and containment conventions are not generic product dispatch rules. |
-| 15 | Roadmap completion only after all criteria and dependencies | Delivered features and collective evidence are recorded in [the roadmap](roadmap.md). Final merge/CI/dependency review and issue closure are the remaining integration checkpoint below; no PR status substitutes for these receipts. |
+| 15 | Roadmap completion only after all criteria and dependencies | All functional dependencies, including #94, are merged and closed. This report supplies the remaining documentation criterion and records the collective acceptance decision in [the roadmap](roadmap.md). Gate #16 and epic #1 record the final integration and closure. |
 
 The audit's small correctness follow-ups are also implemented: SDK identity and
 cancellation (#65); artifact root durability and metadata integrity (#66/#68);
@@ -242,17 +242,33 @@ keeps every measured call and alternates process order. These descriptive
 productionization observations establish neither statistical significance nor
 an SLO or isolated causal cost. They do not rewrite the August native reference.
 
-## Final integration checkpoint
+## Completion decision and integration evidence
 
-As of September 8, 2026, full measurement and paired acceptance evidence has
-passed and the CI/namespace receipts are durably retained. The final
-[#94 implementation PR](https://github.com/KirilsTurkins/latent-service-fabric/pull/95)
-and completion-documentation integration still require their final merged CI
-and issue/dependency reconciliation. Record those merge/check identities before
-closing #16 and #1; this checkpoint concerns repository delivery, not missing
-measurement populations. The individual bounded, measurement and paired
-reports retain `phase1_completion: incomplete` because no one profile alone
-decides the collective gate.
+The collective evidence satisfies all fifteen Phase 1 gate criteria within the
+documented stateless scope. Functional dependencies are merged into
+`development` and closed, including the audit corrections and the controlled
+comparison. This report and the updated roadmap supply the final documentation
+criteria. [Gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16)
+and [epic #1](https://github.com/KirilsTurkins/latent-service-fabric/issues/1)
+record the final report PR, CI, merge and dependency reconciliation.
+
+The final functional [PR #95](https://github.com/KirilsTurkins/latent-service-fabric/pull/95)
+merged as `ff10ccd746951681d1e71d493ec82a1f8200b896` after all six checks passed:
+[main CI](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34229271704)
+and [runtime regression](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34229271702).
+Its clean tested synthetic merge is `a8a5fcdab26e6d1605195e37853d9f5b0acf02f4`,
+tree `5f9399d3bd20f8128c1d9ba5cea6cbbb14d24204`, identical to the PR head's tree.
+Independent downloaded-artifact replay passed: 19 conformance cases, 54 Invokes,
+148 commands and 17.867 seconds, plus all three measurement smoke collectors
+(0/24/85 Invokes). Schemas, all 152 raw measurement rows, source/lock identity,
+downloaded Echo bytes and cleanup receipts passed verification. The downloaded
+CI artifacts did not include the collector executable; the full and paired
+archives separately retain their exact executed binaries.
+
+The individual bounded, measurement and paired reports retain
+`phase1_completion: incomplete` because no one profile alone decides the
+collective gate. Their original bytes and measured source identities remain
+unchanged by this completion decision.
 
 Earlier dated audit notes and measurement-report observations preserve what was
 known when collected. The retained full and paired reports and this acceptance

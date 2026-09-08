@@ -53,7 +53,7 @@ capabilities and lifecycle management, telemetry, and invocation and management
 RPCs. The [operator CLI](../reference/operator-cli.md) drives the local
 release-to-invocation workflow through generated clients. The
 [Phase 1 completion review](../phase-1-completion.md) records the delivered
-stateless surface, acceptance evidence and final integration checkpoint.
+stateless surface, acceptance evidence and completion decision.
 [Bounded conformance](../testing/phase-1-conformance.md) covers selected scenarios.
 The [full measurements](../../benchmarks/phase1/measurements/2026-09-08-container-linux-d72c99b6/REPORT.md)
 show fixed node topology through 100,000 releases/deployments and bounded
