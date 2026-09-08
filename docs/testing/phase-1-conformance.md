@@ -137,7 +137,7 @@ pagination, source-file removal before restart, cancellation and interrupted
 response ambiguity. Their passing assertions do not substitute for unmeasured
 scale or calibrated resource evidence.
 
-## Full gate remains open
+## Selected-profile boundary and collective completion
 
 Every report retains `phase1_completion: incomplete`, even when
 `deterministic_status: passed`. The following required heavy evidence is
@@ -149,8 +149,9 @@ Every report retains `phase1_completion: incomplete`, even when
 - a calibrated initial Phase 1 benchmark baseline; and
 - comparable Phase 0 performance deltas for the changed composition.
 
-Full gate acceptance still requires the complete #16 evidence review, measured
-heavy results and benchmark/comparison artifacts. The finite fairness cycle and
+The [Phase 1 completion report](../phase-1-completion.md) combines this selected
+profile with retained full measurements and controlled historical/current
+comparison evidence. The finite fairness cycle and
 selected capability comparisons do not establish arbitrary-duration fairness,
 leak freedom or performance guarantees. The checked-in manifest and report
 schema are test definitions, not measured benchmark results.
