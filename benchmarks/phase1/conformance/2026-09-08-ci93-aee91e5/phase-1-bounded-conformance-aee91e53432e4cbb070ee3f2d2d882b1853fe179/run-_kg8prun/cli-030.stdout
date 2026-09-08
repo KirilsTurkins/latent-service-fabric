@@ -1,0 +1,1 @@
+{"category":"success","command":"activation cancel","data":{"activationId":"explicit-cancel","disposition":"already_terminal","terminalState":"cancelled"},"error":null,"outcomeKnown":true,"requestDispatched":true,"schemaVersion":"latent.cli.result.v1"}

@@ -4,9 +4,10 @@ All eleven full-profile processes passed: one dormant-catalog scale run, three
 mixed-workload soaks and seven independent benchmark runs. The suite attempted
 **362,080 Invokes and 939,916 counted commands**. The retained
 [aggregate](aggregate.json) reports measurement status `complete`; its separate
-`phase1_completion` remains `incomplete`. The controlled historical/current
-comparison in issue #94 and the final Phase 1 completion decision are separate
-from this receipt.
+`phase1_completion` remains `incomplete`. The separate
+[controlled historical/current comparison](../../paired/2026-09-08-container-linux-e7e06f7/REPORT.md)
+and the [Phase 1 completion report](../../../../docs/phase-1-completion.md)
+combine this receipt with the other required evidence.
 
 The [raw archive](raw-evidence.tar.gz) retains every original evidence file,
 including the exact executed ELF, all three component fixtures, normalized
@@ -162,8 +163,11 @@ The [general historical comparison](comparison.json) preserves all **189
 August Phase 0 reference. Host, fixture/ABI, grant and measurement-boundary
 differences remain explicit. The old native advisory bands cannot establish
 “no detectable regression” for this container suite. Issue #94's separate
-controlled same-environment historical/current warm-echo protocol remains
-pending in this report; this receipt alone does not close the Phase 1 gate.
+controlled same-environment historical/current warm-echo protocol
+[passed all seven pairs](../../paired/2026-09-08-container-linux-e7e06f7/REPORT.md),
+with the original binaries, components and all attempts retained. It reports
+the measured production changes and their methodological limits separately;
+this receipt alone does not close the Phase 1 gate.
 
 ## Verify and replay without executing workloads
 

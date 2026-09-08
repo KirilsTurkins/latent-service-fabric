@@ -441,9 +441,74 @@ def validate_required_docs() -> None:
 
 
 def validate_nonempty_files(root: Path = ROOT) -> None:
+    retained_empty = retained_empty_evidence(root)
     for path in iter_source_files(root):
-        if path.stat().st_size == 0:
+        if path.stat().st_size == 0 and path not in retained_empty:
             fail(f"empty file: {path.relative_to(root)}")
+
+
+def retained_empty_evidence(root: Path) -> set[Path]:
+    """Admit only explicitly hashed empty receipts in local conformance packages."""
+    empty_digest = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    permitted: set[Path] = set()
+
+    def unique_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate field")
+            result[key] = value
+        return result
+
+    for manifest in sorted((root / "benchmarks/phase1/conformance").glob("*/files.manifest.json")):
+        try:
+            if manifest.is_symlink() or manifest.parent.is_symlink() or not manifest.is_file():
+                raise ValueError("linked manifest")
+            with manifest.open("rb") as stream:
+                encoded = stream.read(4 * 1024 * 1024 + 1)
+            if len(encoded) > 4 * 1024 * 1024:
+                raise ValueError("manifest exceeds bound")
+            document = json.loads(encoded, object_pairs_hook=unique_fields)
+            if (not isinstance(document, dict)
+                    or set(document) != {"schema", "files", "total_bytes"}
+                    or document["schema"] != "latent.phase1.retained-files.v1"
+                    or not isinstance(document["files"], list)
+                    or not 0 < len(document["files"]) <= 5000):
+                raise ValueError("invalid manifest")
+            selected: set[Path] = set()
+            names: set[str] = set()
+            total = 0
+            for row in document["files"]:
+                if not isinstance(row, dict) or set(row) != {"path", "bytes", "sha256"}:
+                    raise ValueError("invalid reference")
+                name = row["path"]
+                if (not isinstance(name, str) or len(name) > 1024
+                        or re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", name) is None
+                        or any(part in (".", "..") for part in name.split("/"))
+                        or name.casefold() in names
+                        or not isinstance(row["bytes"], str)
+                        or re.fullmatch(r"0|[1-9][0-9]{0,19}", row["bytes"]) is None
+                        or not isinstance(row["sha256"], str)
+                        or re.fullmatch(r"sha256:[0-9a-f]{64}", row["sha256"]) is None):
+                    raise ValueError("invalid reference")
+                names.add(name.casefold())
+                total += int(row["bytes"])
+                if row["bytes"] != "0":
+                    continue
+                path = manifest.parent
+                for part in name.split("/"):
+                    path /= part
+                    if path.is_symlink():
+                        raise ValueError("linked empty receipt")
+                if row["sha256"] != empty_digest or not path.is_file() or path.stat().st_size != 0:
+                    raise ValueError("changed empty receipt")
+                selected.add(path)
+            if document["total_bytes"] != str(total):
+                raise ValueError("manifest total mismatch")
+            permitted.update(selected)
+        except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+            fail(f"invalid retained evidence manifest {manifest.relative_to(root)}: {exc}")
+    return permitted
 
 
 def main() -> int:

@@ -1,0 +1,1 @@
+{"category":"success","command":"activation cancel","data":{"activationId":"queued-tests-second","disposition":"accepted","terminalState":null},"error":null,"outcomeKnown":true,"requestDispatched":true,"schemaVersion":"latent.cli.result.v1"}

@@ -7,10 +7,10 @@ Latent Service Fabric is a component-native execution fabric in which deployed s
 ## Resource invariant
 
 ```text
-resident resources = fixed node runtime + active activations + bounded global caches
+resident state = fixed node runtime + bounded catalog metadata + active activations + bounded global caches
 ```
 
-A deployed but inactive service owns no process, operating-system thread, listener, heap, runtime instance, database connection pool, HTTP client pool, timer loop, or telemetry exporter.
+A deployed but inactive service owns no process, operating-system thread, listener, guest heap, runtime instance, database connection pool, HTTP client pool, timer loop, or telemetry exporter.
 
 Artifact storage, contract indexes, route indexes, policy metadata, and bounded cache entries are permitted to grow with registered service count. Execution allocation is not.
 
@@ -52,9 +52,14 @@ scheduling, [generic Wasmtime execution](../runtime/wasmtime.md), activation
 capabilities and lifecycle management, telemetry, and invocation and management
 RPCs. The [operator CLI](../reference/operator-cli.md) drives the local
 release-to-invocation workflow through generated clients. The
-[Phase 1 roadmap](../roadmap.md) tracks delivered features and remaining work;
-[bounded conformance](../testing/phase-1-conformance.md) covers selected scenarios,
-while the full Phase 1 completion gate remains pending.
+[Phase 1 completion review](../phase-1-completion.md) records the delivered
+stateless surface, acceptance evidence and final integration checkpoint.
+[Bounded conformance](../testing/phase-1-conformance.md) covers selected scenarios.
+The [full measurements](../../benchmarks/phase1/measurements/2026-09-08-container-linux-d72c99b6/REPORT.md)
+show fixed node topology through 100,000 releases/deployments and bounded
+reclamation across three mixed soaks; catalog metadata RSS grows and is reported
+separately. The [controlled comparison](../../benchmarks/phase1/paired/2026-09-08-container-linux-e7e06f7/REPORT.md)
+records actual productionization overhead and its measurement boundaries.
 
 ```text
 Service = stable logical name
@@ -121,7 +126,7 @@ latentd supervisor
 └── optional native compatibility host
 ```
 
-The count is configured by node policy, not by deployed service count. Phase 0 uses one process and a fixed in-process cell pool; stronger trust-class process isolation remains later work.
+The count is configured by node policy, not by deployed service count. Phase 0 and the delivered Phase 1 standalone node each use one process and fixed in-process cells; stronger trust-class process isolation remains later work.
 
 ## Technology direction
 
@@ -133,4 +138,4 @@ The count is configured by node policy, not by deployed service count. Phase 0 u
 - A transport abstraction suitable for WIT-native remote invocation.
 - Explicit state transactions and durable effect intents.
 
-These are recorded in ADRs and remain replaceable behind the Rust trait boundaries where explicitly stated. Phase 1 must apply the retain/harden/generalize/rewrite/delete handoff in [`../phase-0-completion.md`](../phase-0-completion.md).
+These are recorded in ADRs and remain replaceable behind the Rust trait boundaries where explicitly stated. Phase 1 applies the retain/harden/generalize/rewrite/delete handoff in [`../phase-0-completion.md`](../phase-0-completion.md); the [completion review](../phase-1-completion.md) identifies the retained isolated regression paths and current product surface.

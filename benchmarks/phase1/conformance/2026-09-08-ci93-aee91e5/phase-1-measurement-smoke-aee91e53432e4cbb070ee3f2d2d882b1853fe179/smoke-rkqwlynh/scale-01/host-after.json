@@ -1,0 +1,29 @@
+{
+  "os": "Linux",
+  "arch": "x86_64",
+  "kernel": "Linux runnervmejwal 6.17.0-1022-azure #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+  "cpu_model": "AMD EPYC 7763 64-Core Processor",
+  "logical_cpus": "4",
+  "memory_total_bytes": "16766414848",
+  "virtualization": {
+    "systemd_detect_virt": "microsoft",
+    "systemd_detect_virt_container": "none",
+    "systemd_detect_virt_vm": "microsoft",
+    "wsl_detected": false,
+    "docker_marker": false,
+    "container_marker": false,
+    "cpu_max": null,
+    "memory_max": null,
+    "cpuset_effective": "0-3"
+  },
+  "allocator": {
+    "LD_PRELOAD": "unset",
+    "MALLOC_CONF": "unset"
+  },
+  "cpu_policy": {},
+  "load_before": [
+    2.84619140625,
+    3.05322265625,
+    1.5859375
+  ]
+}

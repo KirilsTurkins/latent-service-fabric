@@ -1,0 +1,16 @@
+{
+  "files": [
+    {
+      "bytes": "16719",
+      "path": "issue15-namespace-proof.py",
+      "sha256": "sha256:a2e7211aaed038b852fc6b6a4a911d45560930ba2268e874026ea895ecd0bf2a"
+    },
+    {
+      "bytes": "6526",
+      "path": "issue15-namespace-proof.log",
+      "sha256": "sha256:22ead5ea8d5c4d4c3aac25afc51a620d91c6a2e8e5531a77c3f724831c5a7cda"
+    }
+  ],
+  "schema": "latent.phase1.retained-files.v1",
+  "total_bytes": "23245"
+}

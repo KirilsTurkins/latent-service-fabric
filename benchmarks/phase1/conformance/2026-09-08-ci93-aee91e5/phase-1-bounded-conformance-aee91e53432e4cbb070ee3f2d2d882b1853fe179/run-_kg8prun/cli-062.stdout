@@ -1,0 +1,1 @@
+{"category":"not-found","command":"activation get","data":{},"error":{"code":"not-found","details":[],"message":"The platform reported a failure.","retryable":false},"outcomeKnown":true,"requestDispatched":true,"schemaVersion":"latent.cli.result.v1"}
