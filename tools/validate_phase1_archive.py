@@ -23,6 +23,7 @@ try:
     from .validate_phase1_paired import replay as validate_paired
     from .optimization_evidence.common import read_json as read_optimization_json
     from .optimization_evidence.suite import validate_suite as validate_optimization_suite
+    from .artifact_identity_evidence import validate_suite as validate_artifact_identity_suite
 except ImportError:
     import package_phase0_evidence as paths
     import phase0_evidence
@@ -31,6 +32,7 @@ except ImportError:
     from validate_phase1_paired import replay as validate_paired
     from tools.optimization_evidence.common import read_json as read_optimization_json
     from tools.optimization_evidence.suite import validate_suite as validate_optimization_suite
+    from tools.artifact_identity_evidence import validate_suite as validate_artifact_identity_suite
 
 ARCHIVE = 'raw-evidence.tar.gz'
 MANIFEST = 'raw-evidence.manifest.json'
@@ -123,6 +125,8 @@ def evidence_kind(directory):
     require(isinstance(aggregate, dict), 'invalid aggregate object')
     if aggregate.get('schema') == 'latent.optimization.aggregate.v1':
         return 'optimization'
+    if aggregate.get('schema') == 'latent.artifact-identity.aggregate.v1':
+        return 'artifact-identity'
     del aggregate
     # Other formats still satisfy every original structural/string limit.
     aggregate = read_json(path, MAX_AGGREGATE_BYTES)
@@ -150,6 +154,22 @@ def verify_optimization(directory):
             and regenerated.get('population_complete') is True
             and regenerated.get('attempt_count_complete') is True,
             'optimization archive requires complete full-population evidence')
+
+
+def verify_artifact_identity(directory):
+    retained = read_optimization_json(
+        paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
+        MAX_AGGREGATE_BYTES)
+    suite = paths.existing_regular_file_path(directory / 'suite.json', 'artifact identity suite')
+    regenerated = validate_artifact_identity_suite(suite)
+    require(canonical(retained) == canonical(regenerated),
+            'artifact identity aggregate differs from replayed evidence')
+    require(regenerated.get('schema') == 'latent.artifact-identity.aggregate.v1'
+            and regenerated.get('profile') == 'full'
+            and regenerated.get('status') == 'passed'
+            and regenerated.get('population_complete') is True
+            and regenerated.get('full_comparison_qualified') is True,
+            'artifact identity archive requires a qualified full comparison')
 
 
 def verify_package(directory, *, replay=True):
@@ -209,8 +229,8 @@ def verify_package(directory, *, replay=True):
         kind = evidence_kind(extracted)
         outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
                        if kind == 'measurement' else ('aggregate.json',))
-        if kind == 'optimization':
-            require('suite.json' in expected, 'optimization archive omits suite')
+        if kind in ('optimization', 'artifact-identity'):
+            require('suite.json' in expected, f'{kind} archive omits suite')
         for name in outer_files:
             require(name in expected and file_reference(root / name, root) == expected[name],
                     'outer evidence differs from archived evidence')
@@ -219,6 +239,8 @@ def verify_package(directory, *, replay=True):
                 validate_paired(extracted / 'aggregate.json')
             elif kind == 'optimization':
                 verify_optimization(extracted)
+            elif kind == 'artifact-identity':
+                verify_artifact_identity(extracted)
             else:
                 validate_aggregate(extracted / 'aggregate.json')
                 validate_comparison(extracted / 'comparison.json')

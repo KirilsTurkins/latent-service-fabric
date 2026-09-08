@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+import gzip
 
 from tools.optimization_evidence.artifacts import Artifacts as BaseArtifacts
 from tools.optimization_evidence.common import (
@@ -12,6 +13,7 @@ from tools.optimization_evidence.common import (
 MAX_FILE = 256 * 1024 * 1024
 MAX_TOTAL = 1024 * 1024 * 1024
 MAX_FILES = 4096
+MAX_FOLDED_BYTES = 64 * 1024 * 1024
 ARMS = ("control", "candidate")
 OPERATIONS = ("hash", "artifact-open", "catalog-open")
 MODES = ("normal", "allocation")
@@ -35,13 +37,14 @@ class Artifacts(BaseArtifacts):
 
 def folded(path):
     """Sum exact whole-process allocation/peak weights, never rounded SI text."""
-    result, total, bytes_read = [], 0, 0
-    with path.open("rb") as stream:
+    rows, total, bytes_read = 0, 0, 0
+    opener = gzip.open if path.suffix == ".gz" else open
+    with opener(path, "rb") as stream:
         while encoded := stream.readline(64 * 1024 + 1):
             bytes_read += len(encoded)
-            require(bytes_read <= 16 * 1024 * 1024 and len(encoded) <= 64 * 1024,
+            require(bytes_read <= MAX_FOLDED_BYTES and len(encoded) <= 64 * 1024,
                     "profile-text-bound")
-            require(encoded.endswith(b"\n") and len(result) < 100_000, "profile-row-bound")
+            require(encoded.endswith(b"\n") and rows < 100_000, "profile-row-bound")
             try:
                 stack, weight = encoded[:-1].decode("utf-8").rsplit(" ", 1)
             except (ValueError, UnicodeError) as error:
@@ -51,9 +54,9 @@ def folded(path):
             amount = uint(weight)
             total += amount
             require(total <= 2**64 - 1, "profile-total-overflow")
-            result.append((stack, amount))
-    require(bool(result), "empty-allocation-profile")
-    return {"rows": str(len(result)), "total": str(total)}
+            rows += 1
+    require(rows > 0, "empty-allocation-profile")
+    return {"rows": str(rows), "total": str(total)}
 
 
 def decimal_distribution(values):

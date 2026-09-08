@@ -418,5 +418,101 @@ class OptimizationArchiveTests(unittest.TestCase):
         self.assertFalse(unpublished.exists())
 
 
+class ArtifactIdentityArchiveTests(unittest.TestCase):
+    # Reuse only the format-neutral tar/manifest fixture, not another format's
+    # tests or semantic validator. These archives deliberately contain fake
+    # executable bytes; full valid replay is substituted at the dispatch seam.
+    archive = OptimizationArchiveTests.archive
+
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix='artifact-identity-archive-test-')
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.source = self.root / 'source'
+        self.source.mkdir()
+        self.output = self.root / 'package'
+        self.aggregate = {
+            'schema': 'latent.artifact-identity.aggregate.v1', 'profile': 'full',
+            'status': 'passed', 'population_complete': True, 'full_comparison_qualified': True,
+            'validated_runs': '252', 'pairs': '7', 'statistics': [{'metric': 'elapsed_nanos', 'value': '12'}],
+        }
+        (self.source / 'suite.json').write_bytes(b'{"schema":"latent.artifact-identity.suite.v1"}\n')
+        (self.source / 'probe').write_bytes(b'fixture executable\x00')
+        (self.source / 'profile.folded').write_bytes(b'probe;content_digest 64\n')
+        (self.source / 'empty.log').write_bytes(b'')
+
+    def test_artifact_identity_round_trip_replays_before_publish_without_policy(self):
+        (self.source / 'aggregate.json').write_bytes(verify.canonical(self.aggregate))
+        before = {entry.name: entry.read_bytes() for entry in self.source.iterdir()}
+
+        def replay(path):
+            self.assertEqual(path.name, 'suite.json')
+            self.assertNotEqual(path.parent, self.source)
+            self.assertFalse(self.output.exists())
+            self.assertEqual(before, {entry.name: entry.read_bytes() for entry in path.parent.iterdir()})
+            return self.aggregate
+
+        with patch.object(verify, 'validate_artifact_identity_suite', side_effect=replay) as called:
+            manifest = package.package(self.source, self.output, self.root / 'no-policy.json')
+            called.assert_called_once()
+        self.assertEqual({row['path'] for row in manifest['files']}, set(before))
+        self.assertEqual(before, {entry.name: entry.read_bytes() for entry in self.source.iterdir()})
+        self.assertFalse((self.output / 'measurement-policy.json').exists())
+        self.assertFalse((self.output / 'comparison.json').exists())
+        self.assertEqual(verify.evidence_kind(self.output), 'artifact-identity')
+
+    def test_rehashed_artifact_statistic_fails_semantic_equality_and_is_not_published(self):
+        forged = {**self.aggregate, 'statistics': [{'metric': 'elapsed_nanos', 'value': '0'}]}
+        self.archive(forged)
+        with patch.object(verify, 'validate_artifact_identity_suite', return_value=self.aggregate):
+            with self.assertRaisesRegex(ValueError, 'differs from replayed'):
+                verify.verify_package(self.output)
+            unpublished = self.root / 'unpublished'
+            with self.assertRaisesRegex(ValueError, 'differs from replayed'):
+                package.package(self.source, unpublished, self.root / 'no-policy.json')
+            self.assertFalse(unpublished.exists())
+
+    def test_artifact_identity_requires_full_qualified_population(self):
+        for changes in ({'profile': 'smoke'}, {'status': 'failed'}, {'status': 'complete'},
+                        {'population_complete': False}, {'population_complete': 1},
+                        {'full_comparison_qualified': False}, {'full_comparison_qualified': 1}):
+            with self.subTest(changes=changes):
+                value = {**self.aggregate, **changes}
+                (self.source / 'aggregate.json').write_bytes(verify.canonical(value))
+                with patch.object(verify, 'validate_artifact_identity_suite', return_value=value):
+                    with self.assertRaisesRegex(ValueError, 'qualified full comparison'):
+                        verify.verify_artifact_identity(self.source)
+
+    def test_artifact_identity_missing_suite_fails_even_shape_only(self):
+        (self.source / 'suite.json').unlink()
+        self.archive()
+        with self.assertRaisesRegex(ValueError, 'omits suite'):
+            verify.verify_package(self.output, replay=False)
+
+    def test_artifact_identity_preserves_archive_byte_bounds_and_outer_hash_checks(self):
+        self.archive()
+        with patch.object(verify, 'MAX_COMPRESSED', 1):
+            with self.assertRaisesRegex(ValueError, 'exceeds bound'):
+                verify.verify_package(self.output, replay=False)
+        (self.output / 'aggregate.json').write_bytes(b'{"forged":true}')
+        with self.assertRaisesRegex(ValueError, 'outer evidence'):
+            verify.verify_package(self.output, replay=False)
+
+    def test_rehashed_failed_collection_cannot_be_promoted_by_forged_aggregate(self):
+        from tools.artifact_identity_runner.model import suite
+        # Real replay, no mocks: even with valid new archive/member checksums,
+        # the declared passed aggregate cannot conceal a failed collection.
+        failed = suite('full', 'a' * 40, 'b' * 40)
+        (self.source / 'suite.json').write_bytes(verify.canonical(failed))
+        self.archive()
+        verify.verify_package(self.output, replay=False)
+        with self.assertRaisesRegex(ValueError, 'collection-did-not-pass'):
+            verify.verify_package(self.output)
+        unpublished = self.root / 'unpublished'
+        with self.assertRaisesRegex(ValueError, 'collection-did-not-pass'):
+            package.package(self.source, unpublished, self.root / 'no-policy.json')
+        self.assertFalse(unpublished.exists())
+
+
 if __name__ == '__main__':
     unittest.main()

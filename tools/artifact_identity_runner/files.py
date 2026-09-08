@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import gzip
 import json
 from pathlib import Path
 import shutil
@@ -35,6 +36,28 @@ def retain(source: Path, destination: Path, output: Path) -> dict:
     if fingerprint(source) != fingerprint(destination):
         raise ValueError("retained-copy-mismatch")
     return reference(destination, output)
+
+
+def compress_folded(path: Path, output: Path) -> dict:
+    """Retain every stack/weight in deterministic gzip, with bounded replay."""
+    original = fingerprint(path, 64 * 1024 * 1024)
+    destination = path.with_suffix(path.suffix + ".gz")
+    with path.open("rb") as source, destination.open("xb") as raw:
+        with gzip.GzipFile(fileobj=raw, mode="wb", filename="", mtime=0) as compressed:
+            shutil.copyfileobj(source, compressed, 65536)
+    digest, size = hashlib.sha256(), 0
+    with gzip.open(destination, "rb") as restored:
+        while chunk := restored.read(65536):
+            size += len(chunk)
+            if size > 64 * 1024 * 1024:
+                raise ValueError("folded-expanded-byte-bound")
+            digest.update(chunk)
+    if ("sha256:" + digest.hexdigest(), size) != original:
+        raise ValueError("folded-compression-mismatch")
+    result = reference(destination, output)
+    # This exact file was created by the owned profile helper in this run.
+    path.unlink()
+    return result
 
 
 def write_json(path: Path, value: object) -> None:

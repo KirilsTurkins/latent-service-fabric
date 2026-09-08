@@ -8,7 +8,7 @@ import time
 from optimization_runner.cgroups import cgroup
 from optimization_runner.processes import OwnedProcess
 from . import resources
-from .files import fingerprint, reference, total_bytes, warm, write_json
+from .files import compress_folded, fingerprint, reference, total_bytes, warm, write_json
 from .helpers import command, directory_bytes
 from .model import MAX_FILE_BYTES, MAX_TOTAL_BYTES, run_record
 
@@ -31,11 +31,12 @@ def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
     for kind in ("allocations", "peak"):
         path = prefix.parent / f"{kind}.folded"
         command([printer, "--file", str(raw), "--flamegraph-cost-type", kind,
+                 "--print-peaks", "0", "--print-allocators", "0", "--print-temporary", "0",
                  "--print-flamegraph", str(path)], prefix.parent / f"{kind}.log",
                 120, output, deadline, watched=prefix.parent, remaining=remaining)
         if path.stat().st_size == 0:
             raise ValueError("heaptrack-profile-empty")
-        refs[kind] = reference(path, output)
+        refs[kind] = compress_folded(path, output)
     return refs
 
 

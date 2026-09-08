@@ -106,7 +106,7 @@ def allocation(record, suite, artifacts):
         require(receipt is not None, "missing-profile-helper-receipt")
         helper(artifacts.json(receipt), suite["tools"][tool]["sha256"], refs[name], artifacts)
     for name in ("allocations", "peak"):
-        log = artifacts.rows.get(refs[name]["path"].removesuffix(".folded") + ".log")
+        log = artifacts.rows.get(refs[name]["path"].removesuffix(".gz").removesuffix(".folded") + ".log")
         require(log is not None, "missing-folded-helper-log")
         receipt = artifacts.rows.get(log["path"] + ".process.json")
         require(receipt is not None, "missing-folded-helper-receipt")

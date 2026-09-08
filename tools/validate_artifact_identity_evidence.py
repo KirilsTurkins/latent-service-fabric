@@ -26,7 +26,7 @@ def main():
                 output.write(canonical(result) + b"\n")
         print(json.dumps({key: result[key] for key in ("schema", "profile", "status", "validated_runs", "full_comparison_qualified")}, sort_keys=True))
         return 0
-    except (OSError, ValueError, TypeError, KeyError) as error:
+    except (OSError, ValueError, TypeError, KeyError, EOFError) as error:
         print(f"Artifact identity evidence validation failed: {error}", file=sys.stderr)
         return 1
 
