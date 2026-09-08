@@ -66,6 +66,7 @@ impl<T: Send + Sync + 'static> PreparationWait<T> {
                 .ok_or_else(|| capacity_error("compiler-job-no-longer-pending"))?
         };
         let task = build(reservation);
+        let submitted_nanos = self.core.observer.elapsed_nanos();
         let mut state = self.core.lock();
         if !state.accepting {
             drop(state);
@@ -78,6 +79,7 @@ impl<T: Send + Sync + 'static> PreparationWait<T> {
             return Err(capacity_error("compiler-job-no-longer-pending"));
         };
         job.task = Some(task);
+        job.submitted_nanos = submitted_nanos;
         drop(state);
         self.core.wake.notify_all();
         Ok(())

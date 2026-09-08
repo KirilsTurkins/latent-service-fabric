@@ -5,7 +5,7 @@ use super::cpu;
 use super::model::{
     PreparationStage, PreparationStageObservation, PreparationThreadCpu, RunningPreparation,
 };
-use super::state::{wake, Inner, MAXIMUM_STAGE_OBSERVATIONS};
+use super::state::{wake, Inner};
 
 pub(crate) struct PreparationJob {
     inner: Arc<Inner>,
@@ -30,7 +30,20 @@ impl PreparationJob {
         let started = inner.elapsed_nanos();
         let mut state = inner.lock();
         let job_id = state.next_job;
-        state.next_job = state.next_job.saturating_add(1);
+        let Some(next_job) = state.next_job.checked_add(1) else {
+            state.dropped_running = state.dropped_running.saturating_add(1);
+            let waker = state.changed();
+            drop(state);
+            wake(waker);
+            return Self {
+                inner,
+                job_id: 0,
+                digest,
+                whole: None,
+                observed: false,
+            };
+        };
+        state.next_job = next_job;
         state.active_jobs = state.active_jobs.saturating_add(1);
         if state.running.len() < state.maximum_running {
             state.running.push(RunningPreparation {
@@ -85,6 +98,39 @@ impl PreparationJob {
             before,
             self.inner.elapsed_nanos(),
         )
+    }
+
+    pub(crate) fn suppress_thread_cpu(&mut self) {
+        if let Some(whole) = &mut self.whole {
+            whole.suppress_thread_cpu();
+        }
+    }
+
+    pub(crate) fn record_queue_wait(&self, started: u64, finished: u64) {
+        if !self.observed {
+            return;
+        }
+        let mut state = self.inner.lock();
+        let totals = &mut state.stages[PreparationStage::QueueWait.index()];
+        totals.started = totals.started.saturating_add(1);
+        totals.completed = totals.completed.saturating_add(1);
+        totals.elapsed_nanos = totals
+            .elapsed_nanos
+            .saturating_add(finished.saturating_sub(started));
+        totals.thread_cpu_unavailable = totals.thread_cpu_unavailable.saturating_add(1);
+        state.record(PreparationStageObservation {
+            sequence: 0,
+            job_id: self.job_id,
+            component_digest: self.digest,
+            stage: PreparationStage::QueueWait,
+            started_nanos: started,
+            finished_nanos: finished,
+            succeeded: true,
+            thread_cpu: None,
+        });
+        let waker = state.changed();
+        drop(state);
+        wake(waker);
     }
 
     pub(crate) fn complete(mut self) {
@@ -167,6 +213,10 @@ impl PreparationStageGuard {
         }
     }
 
+    pub(crate) fn suppress_thread_cpu(&mut self) {
+        self.before = None;
+    }
+
     pub(crate) fn complete(mut self) {
         self.succeeded = true;
     }
@@ -178,7 +228,9 @@ impl Drop for PreparationStageGuard {
             return;
         }
         let finished = self.inner.elapsed_nanos();
-        let thread_cpu = cpu::interval(self.before, cpu::sample());
+        let thread_cpu = self
+            .before
+            .and_then(|before| cpu::interval(Some(before), cpu::sample()));
         let mut state = self.inner.lock();
         let totals = &mut state.stages[self.stage.index()];
         if self.succeeded {
@@ -200,14 +252,8 @@ impl Drop for PreparationStageGuard {
         } else {
             totals.thread_cpu_unavailable = totals.thread_cpu_unavailable.saturating_add(1);
         }
-        let sequence = state.next_observation;
-        state.next_observation = state.next_observation.saturating_add(1);
-        if state.observations.len() == MAXIMUM_STAGE_OBSERVATIONS {
-            state.observations.pop_front();
-            state.dropped_observations = state.dropped_observations.saturating_add(1);
-        }
-        state.observations.push_back(PreparationStageObservation {
-            sequence,
+        state.record(PreparationStageObservation {
+            sequence: 0,
             job_id: self.job_id,
             component_digest: self.digest,
             stage: self.stage,

@@ -127,14 +127,22 @@ impl WasmtimeBackend {
                     let key = key.clone();
                     let authentication = identity.clone();
                     future.start(move |reservation| {
-                        Box::new(move || {
-                            context.compile_input(input, key, handle, authentication, reservation)
+                        Box::new(move |queue| {
+                            context.compile_input(
+                                input,
+                                key,
+                                handle,
+                                authentication,
+                                reservation,
+                                queue,
+                            )
                         })
                     })?;
                 } else {
                     // Only the distinct job owns the directory/root lock.
                     drop(source);
                 }
+                drop(repository);
                 future.await?
             }
         };

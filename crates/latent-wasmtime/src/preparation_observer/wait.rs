@@ -46,10 +46,20 @@ impl Future for Changed {
                 true,
             )));
         }
-        let id = *this.registration.get_or_insert_with(|| {
-            state.next_waiter = state.next_waiter.saturating_add(1);
-            state.next_waiter
-        });
+        let id = if let Some(id) = this.registration {
+            id
+        } else {
+            let Some(next) = state.next_waiter.checked_add(1) else {
+                return Poll::Ready(Err(crate::containment::platform_error(
+                    PlatformErrorCode::Unavailable,
+                    "preparation-observer-generation-exhausted",
+                    false,
+                )));
+            };
+            state.next_waiter = next;
+            this.registration = Some(next);
+            next
+        };
         let previous = state.waiter.replace((id, incoming));
         drop(state);
         drop(previous);

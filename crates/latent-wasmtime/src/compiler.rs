@@ -5,6 +5,8 @@ mod metrics;
 mod ready;
 mod shutdown;
 mod state;
+#[cfg(test)]
+mod tests;
 mod wait;
 mod worker;
 
@@ -45,7 +47,12 @@ pub(crate) struct CompilationResult<T> {
     pub(crate) observation: PreparationJob,
 }
 
-type Task<T> = Box<dyn FnOnce() -> Result<CompilationResult<T>, PlatformError> + Send>;
+pub(crate) struct QueueWindow {
+    pub(crate) started_nanos: u64,
+    pub(crate) finished_nanos: u64,
+}
+
+type Task<T> = Box<dyn FnOnce(QueueWindow) -> Result<CompilationResult<T>, PlatformError> + Send>;
 
 pub(crate) enum Acquisition<T: Send + Sync + 'static> {
     Ready(ReadyPin<T>),

@@ -63,11 +63,14 @@ impl<T> Core<T> {
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             let permit = data.permit.take();
-            data.result = Some(Err(capacity_error("compiler-stopping")));
+            let previous = data
+                .result
+                .replace(Err(capacity_error("compiler-stopping")));
             if let Some(waker) = data.waker.take() {
                 wakers.push(waker);
             }
             drop(data);
+            drop(previous);
             drop(permit);
         }
         super::wake(wakers);
@@ -99,7 +102,7 @@ impl<T: Send + Sync + 'static> CompilerPool<T> {
             std::process::abort();
         }
         self.core.stop();
-        let mut failed = false;
+        let mut failed = self.core.metrics.snapshot().failed;
         for worker in self.workers.drain(..) {
             if worker.join().is_err() {
                 failed = true;
@@ -109,6 +112,7 @@ impl<T: Send + Sync + 'static> CompilerPool<T> {
                 .update(|s| s.workers_joined = s.workers_joined.saturating_add(1));
         }
         self.core.metrics.notify();
+        failed |= self.core.metrics.snapshot().failed;
         if failed {
             self.core.metrics.update(|s| s.failed = true);
             return Err(capacity_error("compiler-thread-panicked"));

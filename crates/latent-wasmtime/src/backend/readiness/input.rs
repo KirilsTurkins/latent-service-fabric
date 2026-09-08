@@ -10,7 +10,7 @@ use crate::backend::preparation::{
 };
 use crate::backend::{prepared_handle, PreparationContext, PreparedRuntime};
 use crate::cache::{PrepareAccess, PrepareReservation};
-use crate::compiler::CompilationResult;
+use crate::compiler::{CompilationResult, QueueWindow};
 use crate::preparation_metadata::MetadataIdentity;
 use crate::PreparationStage;
 
@@ -33,8 +33,10 @@ impl PreparationContext {
         mut handle: String,
         authentication: Option<ArtifactPreparationIdentity>,
         mut reservation: PrepareReservation<PreparedRuntime>,
+        queue: QueueWindow,
     ) -> Result<CompilationResult<PreparedRuntime>, PlatformError> {
         let job = self.observer.begin(&key.release);
+        job.record_queue_wait(queue.started_nanos, queue.finished_nanos);
         // This input owner (including its source/root lock) remains in this
         // stack frame until all synchronous validation and compilation finish.
         let (artifact, prevalidated, integrity) = match &input {

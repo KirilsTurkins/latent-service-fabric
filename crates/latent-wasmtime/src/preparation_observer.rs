@@ -109,6 +109,10 @@ impl PreparationObserver {
         })
     }
 
+    pub(crate) fn elapsed_nanos(&self) -> u64 {
+        self.inner.elapsed_nanos()
+    }
+
     pub(crate) fn begin(&self, release: &ReleaseDigest) -> PreparationJob {
         PreparationJob::new(Arc::clone(&self.inner), digest(&release.0))
     }

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use latent_core::PlatformError;
 
 use super::state::{Core, Phase, Waiter};
-use super::{capacity_error, CompilationResult, ReadyPin};
+use super::{capacity_error, CompilationResult, QueueWindow, ReadyPin};
 use crate::PreparationStage;
 
 pub(super) fn run<T: Send + Sync + 'static>(core: Arc<Core<T>>, worker: usize) {
@@ -34,11 +34,12 @@ fn run_loop<T: Send + Sync + 'static>(core: &Arc<Core<T>>, worker: usize) {
                 {
                     job.phase = Phase::Running(worker);
                     let id = job.id;
+                    let submitted_nanos = job.submitted_nanos;
                     let task = job.task.take().expect("assigned task exists");
                     core.metrics
                         .update(|s| s.jobs_started = s.jobs_started.saturating_add(1));
                     core.record(&state);
-                    break Some((id, task));
+                    break Some((id, task, submitted_nanos));
                 }
                 state = core
                     .wake
@@ -46,11 +47,15 @@ fn run_loop<T: Send + Sync + 'static>(core: &Arc<Core<T>>, worker: usize) {
                     .unwrap_or_else(std::sync::PoisonError::into_inner);
             }
         };
-        let Some((id, task)) = work else {
+        let Some((id, task, submitted_nanos)) = work else {
             return;
         };
+        let queue = QueueWindow {
+            started_nanos: submitted_nanos,
+            finished_nanos: core.observer.elapsed_nanos(),
+        };
         core.metrics.notify();
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(task))
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| task(queue)))
             .unwrap_or_else(|_| Err(capacity_error("compiler-job-panicked")));
         finish(&core, worker, id, result);
     }
@@ -67,6 +72,10 @@ fn finish<T: Send + Sync + 'static>(
         .as_ref()
         .ok()
         .map(|compiled| compiled.observation.stage(PreparationStage::CacheAdoption));
+    let costs = result
+        .as_ref()
+        .ok()
+        .map(|compiled| (core.costs)(&compiled.runtime));
     let mut state = core.lock();
     let index = state
         .jobs
@@ -86,7 +95,7 @@ fn finish<T: Send + Sync + 'static>(
                 Err(capacity_error("compiler-job-abandoned"))
             } else {
                 let published = if let Some(reservation) = compiled.reservation.take() {
-                    let (metadata, image) = (core.costs)(&compiled.runtime);
+                    let (metadata, image) = costs.expect("successful result has measured costs");
                     reservation.publish_deferred(Arc::clone(&compiled.runtime), image, metadata)
                 } else {
                     Ok(Vec::new())

@@ -143,14 +143,17 @@ impl WasmtimeComponentEngineFactory {
         )
     }
 
-    /// Consumes this factory and stops and joins its epoch worker once all
-    /// backends and prepared-use owners have been dropped.
+    /// Consumes this factory and stops and joins its compiler and epoch workers
+    /// once all backends and affine ready/prepared-use owners have been dropped.
     ///
     /// Returns `Unavailable` if another runtime owner remains. That owner keeps
-    /// the worker running, and its final drop will stop and join the worker.
-    /// The factory is consumed on both success and failure. Joining requires no
-    /// runtime lock and wakes the worker immediately instead of waiting for the
-    /// configured tick interval; completion still depends on OS scheduling.
+    /// the workers owned; its final drop stops and joins them. The factory is
+    /// consumed on success and failure. Joins hold no runtime lock and wake idle
+    /// workers immediately; active native compilation must return before joining.
+    ///
+    /// Final destruction from one of its own compiler workers aborts the process:
+    /// a trusted host callback must retain an external factory owner until join,
+    /// because synchronous destruction cannot join its own thread.
     pub fn shutdown(self) -> Result<(), PlatformError> {
         let Self { shared, .. } = self;
         let mut shared = Arc::try_unwrap(shared).map_err(|_| {

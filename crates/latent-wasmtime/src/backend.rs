@@ -55,8 +55,9 @@ pub(crate) struct PreparedRuntime {
 
 /// Immutable compiled state and bounded diagnostics owned by one node factory.
 pub(crate) struct SharedRuntime {
-    // Drop the ticker before cached components and their engine references. All
-    // backends and prepared-use owners retain this same runtime until idle.
+    // Join compiler jobs before the ticker, components and engine references.
+    // Backends and affine ready/prepared owners retain this runtime until idle.
+    pub(crate) compiler: Option<crate::compiler::CompilerPool<PreparedRuntime>>,
     epoch_ticker: EpochTicker,
     cache: Arc<PreparedCache<PreparedRuntime>>,
     instances: Arc<ActiveInstanceGate>,
@@ -70,7 +71,6 @@ pub(crate) struct SharedRuntime {
     preparation: Arc<PreparationCounters>,
     pub(crate) preparation_observer: PreparationObserver,
     preparation_context: Arc<PreparationContext>,
-    pub(crate) compiler: Option<crate::compiler::CompilerPool<PreparedRuntime>>,
 }
 impl SharedRuntime {
     pub(crate) fn new(
@@ -128,10 +128,12 @@ impl SharedRuntime {
     pub(crate) fn shutdown(&mut self) -> Result<(), PlatformError> {
         // Unique ownership is established by the factory before this call. No
         // cache, diagnostics, or backend lock is held while joining the worker.
-        if let Some(compiler) = &mut self.compiler {
-            compiler.stop_and_join()?;
-        }
-        self.epoch_ticker.stop_and_join()
+        let compiler = self
+            .compiler
+            .as_mut()
+            .map_or(Ok(()), crate::compiler::CompilerPool::stop_and_join);
+        let epoch = self.epoch_ticker.stop_and_join();
+        compiler.and(epoch)
     }
 
     #[cfg(test)]

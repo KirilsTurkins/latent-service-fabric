@@ -36,6 +36,7 @@ pub(super) struct Job<T> {
     pub(super) waiters: Vec<Arc<Waiter<T>>>,
     pub(super) reservation: Option<PrepareReservation<T>>,
     pub(super) task: Option<Task<T>>,
+    pub(super) submitted_nanos: u64,
     pub(super) documents: usize,
     pub(super) abandoned: bool,
 }

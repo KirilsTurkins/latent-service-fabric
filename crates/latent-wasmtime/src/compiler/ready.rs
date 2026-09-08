@@ -74,6 +74,7 @@ impl ReadyPermit {
             self.gate
                 .metrics
                 .update(|state| state.ready_rejected = state.ready_rejected.saturating_add(1));
+            drop(state);
             return Err(capacity_error("preparation-ready-bytes"));
         }
         state.1 += metadata;
