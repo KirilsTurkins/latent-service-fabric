@@ -17,6 +17,8 @@ use super::{
     unix_millis, Result,
 };
 
+const OBSERVATION_HOLD_MILLIS: u64 = 100;
+
 pub(super) async fn run(
     plan: Plan,
     prepared: Prepared,
@@ -50,6 +52,7 @@ pub(super) async fn run(
         "schema":"latent.optimization.client-readiness.v1","run_id":plan.run_id,"arm":plan.arm,
         "client_process_id":std::process::id(),"server_process_id":plan.server_process_id,
         "runtime_workers":plan.runtime_workers,"maximum_in_flight":plan.concurrency,
+        "observation_hold_millis":OBSERVATION_HOLD_MILLIS,
         "started_unix_millis":started_unix.to_string(),"connected_unix_millis":unix_millis()?.to_string(),
         "connect_nanos":connect_nanos.to_string(),"startup_to_ready_nanos":nanos(started.elapsed()).to_string(),
         "plan_sha256":plan_digest,"public_plan":prepared.public_plan,
@@ -89,9 +92,16 @@ pub(super) async fn run(
     let summary = json!({
         "schema":"latent.optimization.client-summary.v1","status":"complete","readiness":readiness,
         "warmup":warmup,"measured":measured,"client_elapsed_nanos":nanos(started.elapsed()).to_string(),
-        "active_tasks_at_completion":0
+        "active_tasks_at_completion":0,"observation_hold_millis":OBSERVATION_HOLD_MILLIS
     });
     output.document("summary.json", &summary)?;
+    // All reported phase/RPC/client intervals are finalized before this fixed
+    // observer window. The parent can sample the still-live client without
+    // inserting filesystem probes or artificial waits into an attempt.
+    signal(
+        &json!({"event":"measurement-complete","run_id":context.plan.run_id,"process_id":std::process::id()}),
+    )?;
+    tokio::time::sleep(Duration::from_millis(OBSERVATION_HOLD_MILLIS)).await;
     Ok(())
 }
 

@@ -2,11 +2,11 @@
 
 wit_bindgen::generate!({
     path: "examples/optimization_capsule",
-    world: "lsf:optimization/service@0.1.0",
+    world: "optimization:benchmark/service@0.1.0",
     generate_all,
 });
 
-use exports::lsf::optimization::workloads::{Guest, TransformValue};
+use exports::optimization::benchmark::workloads::{Guest, TransformValue};
 use latent_optimization_workloads as logic;
 
 struct OptimizationCapsule;

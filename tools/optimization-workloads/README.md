@@ -1,8 +1,8 @@
 # Optimization comparison workloads
 
 This package supplies identical pure Rust logic to the native reference and the
-`lsf:optimization/service@0.1.0` component. Both export the
-`lsf:optimization/workloads@0.1.0` interface:
+`optimization:benchmark/service@0.1.0` component. Both export the
+`optimization:benchmark/workloads@0.1.0` interface:
 
 - `echo(message: string) -> string` preserves the UTF-8 message, including empty input.
 - `compute(seed: u32, rounds: u32) -> u32` uses the documented wrapping recurrence in `compute`; zero rounds returns the seed.

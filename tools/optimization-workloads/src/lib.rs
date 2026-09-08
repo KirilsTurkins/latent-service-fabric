@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize};
 
 pub use framing::invoke;
 
-pub const CONTRACT: &str = "lsf:optimization/workloads@0.1.0";
-pub const WORLD: &str = "lsf:optimization/service@0.1.0";
+pub const CONTRACT: &str = "optimization:benchmark/workloads@0.1.0";
+pub const WORLD: &str = "optimization:benchmark/service@0.1.0";
 pub const MEDIA_TYPE: &str = "application/vnd.latent.wit-values.v1+json";
 pub const MAX_PAYLOAD_BYTES: usize = 1024 * 1024;
 pub const MAX_TEXT_BYTES: usize = 1024 * 1024;

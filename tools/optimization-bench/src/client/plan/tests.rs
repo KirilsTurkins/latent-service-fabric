@@ -5,7 +5,7 @@ pub(in super::super) fn fixture() -> Plan {
     serde_json::from_value(json!({
         "schema":"latent.optimization.client-plan.v1","run_id":"test-run","arm":"lsf",
         "server_process_id":123,"endpoint":"http://127.0.0.1:1","token_file":"private-token",
-        "tenant":"tests","services":["alpha","beta"],"contract":"lsf:optimization/workloads@0.1.0",
+        "tenant":"tests","services":["alpha","beta"],"contract":"optimization:benchmark/workloads@0.1.0",
         "route":null,"function":"echo","payload":["test"],"warmup_attempts":2,"measured_attempts":4,
         "batch_size":2,"concurrency":2,"runtime_workers":2,"schedule":{"mode":"closed-loop"},
         "budget_millis":1000,"cpu_fuel":10000000,"memory_bytes":16777216,"log_bytes":0,

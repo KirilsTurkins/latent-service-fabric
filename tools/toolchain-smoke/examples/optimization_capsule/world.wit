@@ -1,4 +1,4 @@
-package lsf:optimization@0.1.0;
+package optimization:benchmark@0.1.0;
 
 interface workloads {
     record transform-value {
