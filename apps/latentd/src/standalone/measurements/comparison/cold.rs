@@ -72,8 +72,12 @@ fn phase1_cold_preparation_collector() {
         node.reconnect().await?;
         fixture::publish(&mut node, fixtures, &directory).await
     });
+    let mut effective_options = evidence::options(&node);
+    effective_options["pool_capacity"] = json!("4");
+    effective_options["queue_capacity"] = json!("64");
+    effective_options["control_workers"] = json!("4");
     let header = json!({"schema":"latent.optimization.cold-arm.v1","plan":plan,"identity":identity,
-        "configuration":node.config,"semantic_input":evidence::input(),"clock":clock.record(),
+        "configuration":node.config,"effective_options":effective_options,"semantic_input":evidence::input(),"clock":clock.record(),
         "startup":node.startup,"fixtures":setup.as_ref().ok(),"initial_observer":observation::snapshot(&observer,clock).unwrap(),
         "configured_runtimes":{"invocation":2,"control":4,"client":2},
         "population":{"attempts":plan.attempts().to_string(),"commands":plan.commands().to_string()}});

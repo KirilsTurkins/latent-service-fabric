@@ -90,8 +90,18 @@ pub(super) async fn burst(
     releases: &[String],
     cancel: bool,
 ) -> Result<()> {
-    let origin = clock.elapsed();
+    // Complete the large snapshot and its file write before anchoring offers.
+    writer.sample(&json!({"kind":"phase-start","phase":phase,
+        "observer":observation::snapshot(&node.owner.backend.preparation_observer(),clock)?,
+        "node":node.sample(phase)?}))?;
+    let anchor_recorded = clock.elapsed();
+    let origin = anchor_recorded + 10_000_000;
     let cold_due = origin + plan.cold_offset().as_nanos();
+    writer.sample(&json!({"kind":"phase-anchor","phase":phase,"recorded_nanos":anchor_recorded.to_string(),
+        "offer_lead_nanos":"10000000","origin_nanos":origin.to_string(),"cold_due_nanos":cold_due.to_string()}))?;
+    if clock.elapsed() >= origin {
+        return Err("cold schedule anchor write exceeded lead".into());
+    }
     let mut offers = Vec::with_capacity(plan.stream() as usize + cold_keys.len());
     for index in 0..plan.stream() {
         offers.push((origin + u128::from(index) * 2_000_000, 0, index, true));
@@ -100,9 +110,6 @@ pub(super) async fn burst(
         offers.push((cold_due, *key, u32::try_from(index)?, false));
     }
     offers.sort_by_key(|&(due, key, index, _)| (due, key == 0, index));
-    writer.sample(&json!({"kind":"phase-start","phase":phase,"origin_nanos":origin.to_string(),
-        "cold_due_nanos":cold_due.to_string(),"observer":observation::snapshot(&node.owner.backend.preparation_observer(),clock)?,
-        "node":node.sample(phase)?}))?;
     let mut tasks = JoinSet::new();
     let mut warm_active = 0;
     let mut valid = true;
@@ -209,8 +216,13 @@ pub(super) async fn burst(
         }
         valid &= record(node, writer, row)?;
     }
-    writer.sample(&json!({"kind":"phase-end","phase":phase,"finished_nanos":clock.elapsed().to_string(),
-        "observer":observation::snapshot(&node.owner.backend.preparation_observer(),clock)?,"node":node.sample(phase)?}))?;
+    let drained = observation::drain(&node.owner.backend.preparation_observer(), clock).await?;
+    let sample = node.sample(phase)?;
+    super::super::super::soak::assert_idle(&sample)?;
+    writer.sample(
+        &json!({"kind":"phase-end","phase":phase,"finished_nanos":clock.elapsed().to_string(),
+        "observer":drained,"node":sample}),
+    )?;
     if !valid {
         return Err("cold retained response association failed".into());
     }
