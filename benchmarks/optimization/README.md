@@ -50,7 +50,13 @@ five distinct valid component binaries with identical code and different custom
 sections, so it exercises actual cache replacement.
 
 Each attempt retains identity, outcome, response identity/hash, deadline and
-timings, including failures and outliers. Resource snapshots distinguish the
+timings, including failures and outliers. RPC latency begins after request
+construction and includes channel readiness, encoding, network and server work;
+client response hashing and output writing occur afterward. Scheduled-to-complete
+latency also includes dispatch delay and retains undispatched offers. Successful
+responses, all dispatched attempts and individual failure classes have separate
+distributions. Paired successful-call deltas never substitute fast rejections
+for successful responses. Resource snapshots distinguish the
 server and client;100 ms RSS observations are sampled maxima. Shared local
 cgroup CPU/memory/pressure counters are retained as raw observations and are not
 attributed wholly to one service. CPU ticks and wall latency are distinct.

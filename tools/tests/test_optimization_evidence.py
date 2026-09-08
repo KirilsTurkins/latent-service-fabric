@@ -237,7 +237,7 @@ class OptimizationEvidenceTests(unittest.TestCase):
         self.assertEqual(warm["warmup"]["counts"]["attempts"], "4")
         self.assertEqual(warm["measured"]["latency_nanos"]["count"], "12")
         self.assertEqual(warm["measured"]["latency_nanos"]["median"], "2000000")
-        self.assertEqual(result["comparisons"][0]["pairs"][0]["lsf_minus_native_median_latency_nanos"], "0")
+        self.assertEqual(result["comparisons"][0]["pairs"][0]["lsf_minus_native_successful_response_median_latency_nanos"], "0")
 
     def test_missing_attempt_and_duplicate_attempt_are_rejected_after_rehash(self):
         batch = self.fixture.suite["runs"][0]["batches"][0]
@@ -352,6 +352,49 @@ class OptimizationEvidenceTests(unittest.TestCase):
         self.assertEqual(measured["counts"]["successful"], "11")
         self.assertEqual(measured["counts"]["outcomes"]["platform-failure"], "1")
         self.assertEqual(measured["latency_nanos"]["count"], "12")
+
+    def test_fast_failures_cannot_improve_successful_response_latency(self):
+        batch = self.fixture.suite["runs"][1]["batches"][5]
+        rows = self.rows(batch)
+        measured = [row for row in rows if row["phase"] == "measured"]
+        for row in measured[:7]:
+            row.update(outcome="transport-failure", code="grpc-4", semantic_match=None,
+                       rpc_received=False, response=None, latency_nanos="20000",
+                       completed_nanos=str(int(row["dispatch_nanos"]) + 20_000), overshoot_nanos="0")
+        self.change_rows(batch, rows)
+        self.recount(batch, rows)
+        comparison = self.validate()["comparisons"][5]
+        pair = comparison["pairs"][0]
+        self.assertEqual(pair["lsf"]["all_dispatched_latency_nanos"]["median"], "20000")
+        self.assertEqual(pair["lsf"]["successful_response_latency_nanos"]["median"], "2000000")
+        self.assertEqual(pair["lsf"]["outcome_latency_nanos"]["transport-failure"]["count"], "7")
+        self.assertEqual(pair["lsf"]["successful_response_fraction"], "0.416667")
+        self.assertEqual(pair["lsf_minus_native_successful_response_median_latency_nanos"], "0")
+        # No successful population means no successful latency comparison,
+        # even though every request has a retained fast transport failure.
+        for row in measured[7:]:
+            row.update(outcome="transport-failure", code="grpc-4", semantic_match=None,
+                       rpc_received=False, response=None, latency_nanos="20000",
+                       completed_nanos=str(int(row["dispatch_nanos"]) + 20_000), overshoot_nanos="0")
+        self.change_rows(batch, rows)
+        self.recount(batch, rows)
+        comparison = self.validate()["comparisons"][5]
+        self.assertIsNone(comparison["pairs"][0]["lsf_minus_native_successful_response_median_latency_nanos"])
+        self.assertEqual(comparison["successful_response_pairs"], "0")
+        self.assertIsNone(comparison["paired_successful_response_median_latency_differences_nanos"])
+
+    def test_offered_latency_includes_undispatched_deadline_and_dispatch_lag(self):
+        from tools.optimization_evidence.attempts import metrics
+        batch = self.fixture.suite["runs"][0]["batches"][5]
+        row = self.rows(batch)[0]
+        row.update(outcome="client-deadline-before-dispatch", dispatch_nanos=None,
+                   dispatch_lag_nanos=None, latency_nanos=None, rpc_received=False,
+                   response=None, semantic_match=None, completed_nanos="9000000",
+                   scheduled_nanos="2000000", overshoot_nanos="6000000")
+        value = metrics([row])
+        self.assertIsNone(value["all_dispatched_latency_nanos"])
+        self.assertEqual(value["all_offered_elapsed_nanos"]["median"], "7000000")
+        self.assertEqual(value["counts"]["undispatched"], "1")
 
     def test_warmup_outlier_is_retained_but_not_in_measured_percentiles(self):
         batch = self.fixture.suite["runs"][0]["batches"][0]

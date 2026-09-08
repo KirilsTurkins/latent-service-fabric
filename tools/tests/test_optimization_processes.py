@@ -14,6 +14,37 @@ from optimization_runner.processes import OwnedProcess
 
 @unittest.skipUnless(platform.system() == "Linux", "Linux process ownership protocol")
 class ProcessOwnershipTests(unittest.TestCase):
+    def test_periodic_exited_probe_preserves_last_observation_but_live_probe_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            child = OwnedProcess([sys.executable, "-c", "raise SystemExit(7)"],
+                                 Path(directory) / "exited.log", "test", 5, Path(directory))
+            try:
+                while not child.exited():
+                    time.sleep(0.005)
+                previous = child.after
+                with patch("optimization_runner.processes.snapshot", side_effect=PermissionError("exited proc")):
+                    self.assertIs(child.sample(allow_exited=True), previous)
+                    with self.assertRaises(RuntimeError):
+                        child.sample()
+                with self.assertRaises(RuntimeError):
+                    child.wait()
+                self.assertEqual(child.receipt["exit_code"], 7)
+            finally:
+                child.close()
+            self.assertTrue(child.receipt["reaped"])
+
+    def test_live_observation_error_is_not_hidden_and_wait_still_cleans_up(self):
+        with tempfile.TemporaryDirectory() as directory:
+            child = OwnedProcess([sys.executable, "-c", "import time; time.sleep(30)"],
+                                 Path(directory) / "live.log", "test", 5, Path(directory))
+            child.last_sample_ns -= 100_000_000
+            with patch("optimization_runner.processes.snapshot", side_effect=PermissionError("live proc")):
+                with self.assertRaises(PermissionError):
+                    child.wait()
+            self.assertTrue(child.receipt["reaped"])
+            self.assertTrue(child.receipt["output_closed"])
+            self.assertFalse(Path(f"/proc/{child.child.pid}").exists())
+
     def test_constructor_rolls_back_started_child_when_identity_capture_fails(self):
         import subprocess
         children = []

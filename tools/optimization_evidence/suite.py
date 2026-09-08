@@ -178,6 +178,8 @@ def validate_suite(path: Path) -> dict:
             "Smoke validates collection and replay but is not the full seven-pair reference.",
             "Warmup attempts remain retained and are excluded from measured latency populations.",
             "All offered attempts remain in counts; observed failures and undispatched offers are not deleted.",
+            "Paired latency differences are conditional on successful responses in both arms; inspect success fractions alongside them.",
+            "All-offered elapsed time includes scheduled dispatch lag and undispatched offers; all-dispatched latency also includes failures.",
             "Throughput uses the whole overlapping batch interval; per-call reciprocals are not throughput.",
             "Cold first-response observation includes client launch and connect; it is not isolated preparation.",
             "Native reference omits LSF routing, admission, sandbox and budget-accounting capabilities.",
@@ -198,12 +200,14 @@ def comparisons(runs, cases):
             if (repetition, "native") not in indexed or (repetition, "lsf") not in indexed:
                 continue
             selected = {arm: indexed[repetition, arm]["batches"][index]["measured"] for arm in ("native", "lsf")}
-            left, right = (selected[arm]["latency_nanos"] for arm in ("native", "lsf"))
+            left, right = (selected[arm]["successful_response_latency_nanos"] for arm in ("native", "lsf"))
             difference = None if left is None or right is None else str(Decimal(right["median"]) - Decimal(left["median"]))
             pairs.append({"repetition": repetition, "native": selected["native"], "lsf": selected["lsf"],
-                          "lsf_minus_native_median_latency_nanos": difference})
-        differences = [Decimal(pair["lsf_minus_native_median_latency_nanos"]) for pair in pairs
-                       if pair["lsf_minus_native_median_latency_nanos"] is not None]
-        result.append({"id": case["id"], "pairs": pairs,
-                       "paired_median_latency_differences_nanos": distribution(differences) if differences else None})
+                          "comparison_population": "successful-responses-only-conditional-on-success",
+                          "lsf_minus_native_successful_response_median_latency_nanos": difference})
+        differences = [Decimal(pair["lsf_minus_native_successful_response_median_latency_nanos"]) for pair in pairs
+                       if pair["lsf_minus_native_successful_response_median_latency_nanos"] is not None]
+        result.append({"id": case["id"], "pairs": pairs, "successful_response_pairs": str(len(differences)),
+                       "paired_successful_response_median_latency_differences_nanos":
+                           distribution(differences) if differences else None})
     return result

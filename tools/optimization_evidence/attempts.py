@@ -156,9 +156,25 @@ def metrics(rows):
     successful = sum(row["outcome"] == "success" for row in rows)
     budget_success = sum(row["outcome"] == "success" and row["overshoot_nanos"] == "0" for row in rows)
     latency = [uint(row["latency_nanos"]) for row in rows if row["latency_nanos"] is not None]
+    successful_latency = [uint(row["latency_nanos"]) for row in rows if row["outcome"] == "success"]
+    by_outcome = {}
+    for outcome in OUTCOMES:
+        values = [uint(row["latency_nanos"]) for row in rows
+                  if row["outcome"] == outcome and row["latency_nanos"] is not None]
+        by_outcome[outcome] = distribution(values) if values else None
+    all_dispatched = distribution(latency) if latency else None
     return {
         "counts": counts(rows),
-        "latency_nanos": distribution(latency) if latency else None,
+        # Retain the original field as an explicitly labelled alias. It must
+        # never be used as a conditional successful-response latency contrast.
+        "latency_nanos": all_dispatched,
+        "latency_population": "all-dispatched-including-failures",
+        "all_dispatched_latency_nanos": all_dispatched,
+        "successful_response_latency_nanos": distribution(successful_latency) if successful_latency else None,
+        "outcome_latency_nanos": by_outcome,
+        "all_offered_elapsed_nanos": distribution([
+            uint(row["completed_nanos"]) - uint(row["scheduled_nanos"]) for row in rows]) if rows else None,
+        "successful_response_fraction": ratio(successful, len(rows)),
         "dispatch_lag_nanos": distribution([uint(row["dispatch_lag_nanos"]) for row in rows
                                             if row["dispatch_lag_nanos"] is not None]) if latency else None,
         "overshoot_nanos": distribution([uint(row["overshoot_nanos"]) for row in rows]) if rows else None,

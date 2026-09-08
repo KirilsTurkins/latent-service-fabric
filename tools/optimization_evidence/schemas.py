@@ -179,6 +179,33 @@ def documents():
         "plan": ref("plan"), "identity": ref("identity"), "runs": array(ref("run"), 14),
         "artifacts": array(ref("artifact"), 4096, 1),
     })
+    decimal = {"type": "string", "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$", "maxLength": 128}
+    definitions["distribution"] = obj({
+        "count": uint, **{key: decimal for key in ("minimum", "median", "maximum", "p95", "p99", "mean",
+                                                  "median_absolute_deviation", "standard_deviation")},
+    })
+    metric_properties = {
+        "counts": ref("counts"), "latency_population": {"const": "all-dispatched-including-failures"},
+        **{key: nullable(ref("distribution")) for key in
+           ("latency_nanos", "all_dispatched_latency_nanos", "successful_response_latency_nanos",
+            "all_offered_elapsed_nanos", "dispatch_lag_nanos", "overshoot_nanos")},
+        "outcome_latency_nanos": obj({key: nullable(ref("distribution")) for key in OUTCOMES}),
+        **{key: nullable(decimal) for key in ("successful_response_fraction", "successes_per_second", "attempts_per_second")},
+        "budget_successes": uint, "budget_misses": uint,
+    }
+    definitions["phase_metrics"] = obj({
+        **metric_properties, "batches": array(obj({"index": uint, **metric_properties}), 10000),
+    })
+    definitions["comparison"] = obj({
+        "id": string, "successful_response_pairs": uint,
+        "paired_successful_response_median_latency_differences_nanos": nullable(ref("distribution")),
+        "pairs": array(obj({
+            "repetition": {"type": "integer", "minimum": 1, "maximum": 7},
+            "native": ref("phase_metrics"), "lsf": ref("phase_metrics"),
+            "comparison_population": {"const": "successful-responses-only-conditional-on-success"},
+            "lsf_minus_native_successful_response_median_latency_nanos": nullable(decimal),
+        }), 7),
+    })
     # Aggregate numeric and correlation semantics are checked by exact replay.
     # Its open metric values are bounded JSON; top-level claims remain closed.
     definitions["aggregate"] = obj({
@@ -187,7 +214,7 @@ def documents():
         "scope": {"const": "standalone-native-code-versus-lsf-productionization-bundle"},
         "suite_sha256": digest, "plan_sha256": digest, "identity": ref("identity"),
         "population_complete": boolean, "validated_attempts": uint, "validated_processes": uint, "attempt_count_complete": boolean,
-        "runs": array(ref("json"), 14), "comparisons": array(ref("json"), 16, 16),
+        "runs": array(ref("json"), 14), "comparisons": array(ref("comparison"), 16, 16),
         "limitations": array(string, 32, 1),
     })
     names = {"plan": "plan", "client-plan": "client_plan", "client-readiness": "readiness",

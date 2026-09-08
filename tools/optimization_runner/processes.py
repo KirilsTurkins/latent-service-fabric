@@ -111,10 +111,23 @@ class OwnedProcess:
                         raise ValueError("owned process event limit")
                     self.events.append({"observed_ns": time.monotonic_ns(), "record": event})
         if time.monotonic_ns() - self.last_sample_ns >= 100_000_000:
-            self.sample()
+            self.sample(allow_exited=True)
 
-    def sample(self) -> dict:
-        current = snapshot(self.child.pid)
+    def sample(self, *, allow_exited: bool = False) -> dict:
+        if self.exited():
+            if allow_exited:
+                return self.after
+            raise RuntimeError("live resource observation requested after child exit")
+        try:
+            current = snapshot(self.child.pid)
+        except (PermissionError, FileNotFoundError, ProcessLookupError):
+            # Unprivileged Linux can deny /proc/<zombie>/io. A periodic probe
+            # may retain its previous observation only after confirming exit.
+            if allow_exited and self.exited():
+                return self.after
+            raise
+        if not allow_exited and self.exited():
+            raise RuntimeError("child exited during required live resource observation")
         if current["start_time_ticks"] != self.receipt["start_time_ticks"]:
             raise ValueError("owned process identity changed")
         self.after = current
@@ -137,21 +150,22 @@ class OwnedProcess:
         raise TimeoutError("server readiness deadline")
 
     def wait(self, companion: OwnedProcess | None = None, on_measurement_complete=None) -> None:
-        while not self.exited() or self.selector.get_map():
-            self.poll()
-            if companion:
-                companion.poll()
-                if companion.exited():
-                    raise RuntimeError("server exited during client load")
-            if self.completed_resources is None and any(
-                    event["record"].get("event") == "measurement-complete" for event in self.events):
-                self.sample()
-                self.completed_resources = self.resources()
-                if on_measurement_complete:
-                    on_measurement_complete()
-            time.sleep(0.005)
-        self.sample()
-        self.close()
+        try:
+            while not self.exited() or self.selector.get_map():
+                self.poll()
+                if companion:
+                    companion.poll()
+                    if companion.exited():
+                        raise RuntimeError("server exited during client load")
+                if self.completed_resources is None and any(
+                        event["record"].get("event") == "measurement-complete" for event in self.events):
+                    self.sample()
+                    self.completed_resources = self.resources()
+                    if on_measurement_complete:
+                        on_measurement_complete()
+                time.sleep(0.005)
+        finally:
+            self.close()
         if self.receipt["exit_code"] != 0:
             raise RuntimeError(f"owned {self.receipt['role']} exited {self.receipt['exit_code']}")
 

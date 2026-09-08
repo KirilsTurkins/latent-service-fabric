@@ -2243,6 +2243,608 @@
       ],
       "additionalProperties": false
     },
+    "distribution": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "minimum": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "median": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "maximum": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "p95": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "p99": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "mean": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "median_absolute_deviation": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "standard_deviation": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "count",
+        "minimum",
+        "median",
+        "maximum",
+        "p95",
+        "p99",
+        "mean",
+        "median_absolute_deviation",
+        "standard_deviation"
+      ],
+      "additionalProperties": false
+    },
+    "phase_metrics": {
+      "type": "object",
+      "properties": {
+        "counts": {
+          "$ref": "#/$defs/counts"
+        },
+        "latency_population": {
+          "const": "all-dispatched-including-failures"
+        },
+        "latency_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "all_dispatched_latency_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "successful_response_latency_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "all_offered_elapsed_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dispatch_lag_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "overshoot_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome_latency_nanos": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "declared-error": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "platform-failure": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "transport-failure": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "client-timeout": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "client-overload": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "client-deadline-before-dispatch": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "invalid-response": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "success",
+            "declared-error",
+            "platform-failure",
+            "transport-failure",
+            "client-timeout",
+            "client-overload",
+            "client-deadline-before-dispatch",
+            "invalid-response"
+          ],
+          "additionalProperties": false
+        },
+        "successful_response_fraction": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "successes_per_second": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attempts_per_second": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "budget_successes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "budget_misses": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "batches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "counts": {
+                "$ref": "#/$defs/counts"
+              },
+              "latency_population": {
+                "const": "all-dispatched-including-failures"
+              },
+              "latency_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "all_dispatched_latency_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "successful_response_latency_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "all_offered_elapsed_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "dispatch_lag_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "overshoot_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "outcome_latency_nanos": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "declared-error": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "platform-failure": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "transport-failure": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "client-timeout": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "client-overload": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "client-deadline-before-dispatch": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "invalid-response": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "success",
+                  "declared-error",
+                  "platform-failure",
+                  "transport-failure",
+                  "client-timeout",
+                  "client-overload",
+                  "client-deadline-before-dispatch",
+                  "invalid-response"
+                ],
+                "additionalProperties": false
+              },
+              "successful_response_fraction": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "successes_per_second": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "attempts_per_second": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "budget_successes": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "budget_misses": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              }
+            },
+            "required": [
+              "index",
+              "counts",
+              "latency_population",
+              "latency_nanos",
+              "all_dispatched_latency_nanos",
+              "successful_response_latency_nanos",
+              "all_offered_elapsed_nanos",
+              "dispatch_lag_nanos",
+              "overshoot_nanos",
+              "outcome_latency_nanos",
+              "successful_response_fraction",
+              "successes_per_second",
+              "attempts_per_second",
+              "budget_successes",
+              "budget_misses"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 10000,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "counts",
+        "latency_population",
+        "latency_nanos",
+        "all_dispatched_latency_nanos",
+        "successful_response_latency_nanos",
+        "all_offered_elapsed_nanos",
+        "dispatch_lag_nanos",
+        "overshoot_nanos",
+        "outcome_latency_nanos",
+        "successful_response_fraction",
+        "successes_per_second",
+        "attempts_per_second",
+        "budget_successes",
+        "budget_misses",
+        "batches"
+      ],
+      "additionalProperties": false
+    },
+    "comparison": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "successful_response_pairs": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "paired_successful_response_median_latency_differences_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "repetition": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 7
+              },
+              "native": {
+                "$ref": "#/$defs/phase_metrics"
+              },
+              "lsf": {
+                "$ref": "#/$defs/phase_metrics"
+              },
+              "comparison_population": {
+                "const": "successful-responses-only-conditional-on-success"
+              },
+              "lsf_minus_native_successful_response_median_latency_nanos": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "repetition",
+              "native",
+              "lsf",
+              "comparison_population",
+              "lsf_minus_native_successful_response_median_latency_nanos"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 7,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "id",
+        "successful_response_pairs",
+        "paired_successful_response_median_latency_differences_nanos",
+        "pairs"
+      ],
+      "additionalProperties": false
+    },
     "aggregate": {
       "type": "object",
       "properties": {
@@ -2301,7 +2903,7 @@
         "comparisons": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/json"
+            "$ref": "#/$defs/comparison"
           },
           "maxItems": 16,
           "minItems": 16
