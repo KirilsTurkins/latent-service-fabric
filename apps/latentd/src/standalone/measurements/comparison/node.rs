@@ -40,7 +40,25 @@ impl Node {
         threads: RuntimeThreads,
         origin: Instant,
     ) -> Result<Self> {
-        let mut config = configuration(directory);
+        Self::start_configured(
+            2 + u64::from(plan.count()) * 2,
+            configuration(directory),
+            fixture,
+            control,
+            threads,
+            origin,
+        )
+        .await
+    }
+
+    pub async fn start_configured(
+        maximum_commands: u64,
+        mut config: Value,
+        fixture: Fixture,
+        control: tokio::runtime::Handle,
+        threads: RuntimeThreads,
+        origin: Instant,
+    ) -> Result<Self> {
         let parsed: crate::config::NodeConfig = serde_json::from_value(config.clone())?;
         let settings = parsed.derive().map_err(platform)?;
         let runtime_config = settings.wasmtime.clone();
@@ -79,7 +97,7 @@ impl Node {
             runtime_config,
             startup,
             work: WorkCounts::default(),
-            maximum_commands: 2 + u64::from(plan.count()) * 2,
+            maximum_commands,
             channel,
             artifacts,
             journal,
@@ -89,7 +107,7 @@ impl Node {
         })
     }
 
-    fn command(&mut self, invoke: bool) -> Result<()> {
+    pub fn command(&mut self, invoke: bool) -> Result<()> {
         if self.work.commands >= self.maximum_commands {
             self.work.budget_exhausted = true;
             return Err("comparison command budget exceeded".into());
@@ -98,6 +116,21 @@ impl Node {
         if invoke {
             self.work.invoke_attempts += 1;
         }
+        Ok(())
+    }
+
+    pub fn channel(&self) -> Channel {
+        self.channel.clone()
+    }
+
+    /// Create the channel on the caller's runtime, including its connection task.
+    pub async fn reconnect(&mut self) -> Result<()> {
+        self.channel =
+            tonic::transport::Endpoint::from_shared(format!("http://{}", self.owner.endpoint()))?
+                .connect_timeout(Duration::from_secs(5))
+                .timeout(Duration::from_secs(5))
+                .connect()
+                .await?;
         Ok(())
     }
 
