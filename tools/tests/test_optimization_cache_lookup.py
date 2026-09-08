@@ -130,7 +130,7 @@ class AllocationAttributionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="lookup-allocation-") as directory:
             path = Path(directory) / "profile.txt"
             path.write_bytes(data)
-            return allocations.replay_attribution(path, "latent-wasmtime-cache-lookup")
+            return allocations.replay_attribution(path, "latent-wasmtime-cache-lookup", (model.SYMBOL,))
 
     def test_actual_named_frames_are_counted_from_allocation_events(self):
         whole, state = self.replay(recording())
@@ -155,7 +155,7 @@ class AllocationAttributionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="lookup-folded-") as directory:
             path = Path(directory) / "allocations.folded"
             path.write_bytes(("main;" + model.SYMBOL + " 2\nmain;setup 7\n").encode())
-            self.assertEqual(allocations.folded_attribution(path), (9, 2))
+            self.assertEqual(allocations.folded_attribution(path, (model.SYMBOL,)), (9, 2))
             path.write_bytes(b"main;setup 9\n")
             self.assertEqual(allocations.folded_attribution(path), (9, 0))
 

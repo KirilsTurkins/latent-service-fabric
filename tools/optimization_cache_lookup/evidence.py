@@ -107,7 +107,7 @@ def validate_suite(path):
     require(isinstance(suite["symbols"], dict) and set(suite["symbols"]) <= {"control", "candidate"}, "lookup-symbol-proof-set")
     require(not suite["runs"] or set(suite["symbols"]) == {"control", "candidate"}, "lookup-symbol-proof-missing")
     for variant, proof in suite["symbols"].items():
-        fields(proof, "command process log")
+        fields(proof, "command process log raw")
         allocations.symbol_proof(proof, build["builds"][variant]["executables"]["lookup"], suite["tools"]["nm"], artifacts)
     expected = list(model.population(suite["profile"]))
     require(isinstance(suite["runs"], list) and len(suite["runs"]) <= len(expected), "lookup-run-count")
