@@ -7,10 +7,11 @@ STAGES = ("repository_fetch_verified", "metadata_validation", "component_new", "
 
 
 class Observer:
-    def __init__(self, pid, digests, variant):
+    def __init__(self, pid, digests, variant, allow_ring_overwrites=False):
         self.pid, self.digests, self.variant = pid, digests, variant
         self.records, self.jobs, self.last = {}, {}, None
         self.anchors = []
+        self.allow_ring_overwrites = allow_ring_overwrites
 
     def check(self, value, final=False):
         fields(value, "collector_started_nanos collector_finished_nanos snapshot")
@@ -21,7 +22,8 @@ class Observer:
                "dropped_running_entries dropped_stage_observations compiler stages running recent_stages")
         require(current["enabled"] is True and current["maximum_running_entries"] == "4"
                 and current["maximum_stage_observations"] == "256"
-                and current["dropped_running_entries"] == current["dropped_stage_observations"] == "0", "cold-observation-loss")
+                and current["dropped_running_entries"] == "0"
+                and (self.allow_ring_overwrites or current["dropped_stage_observations"] == "0"), "cold-observation-loss")
         require(uint(current["active_jobs"]) <= 4, "cold-active-job-bound")
         offset = uint(current["observed_nanos"])
         self.anchors.append((began - offset, finished - offset))
@@ -39,18 +41,33 @@ class Observer:
             require(row["stage"] in STAGES and uint(row["started_nanos"]) <= offset, "cold-running-stage-window")
             if row["thread"] is not None:
                 self.thread(row["thread"])
-        require(isinstance(current["recent_stages"], list) and len(current["recent_stages"]) <= 256, "cold-stage-record-bound")
+        self.record_rows(current["recent_stages"], offset)
+        if self.allow_ring_overwrites:
+            next_sequence = max((uint(row["sequence"]) + 1 for row in current["recent_stages"]), default=0)
+            require(uint(current["dropped_stage_observations"]) == max(0, next_sequence - 256), "cache-ring-overwrite-count")
+        self.compiler_check(current["compiler"], current["stages"], final)
+        if final:
+            require(current["active_jobs"] == "0" and current["running"] == [], "cold-final-job-ownership")
+            require(sorted(self.records) == list(range(len(self.records))), "cold-stage-sequence-gap")
+            self.final_totals(current["stages"])
+            require(sorted(self.jobs) == list(range(len(self.jobs))), "cold-job-sequence-gap")
+            for job in self.jobs:
+                rows = [row for row in self.records.values() if uint(row["job_id"]) == job]
+                require(sum(row["stage"] == "whole_job" for row in rows) == 1, "cold-job-without-whole-interval")
+        self.last = current
+
+    def record_rows(self, rows, observed_nanos):
+        require(isinstance(rows, list) and len(rows) <= 256, "cold-stage-record-bound")
         prior = -1
-        for row in current["recent_stages"]:
+        for row in rows:
             fields(row, "sequence job_id component_digest stage started_nanos finished_nanos succeeded thread_cpu")
             sequence = uint(row["sequence"])
             require(prior < sequence and row["stage"] in STAGES and type(row["succeeded"]) is bool, "cold-stage-order")
             prior = sequence
             self.job(row)
-            require(uint(row["started_nanos"]) <= uint(row["finished_nanos"]) <= offset, "cold-stage-window")
+            require(uint(row["started_nanos"]) <= uint(row["finished_nanos"]) <= observed_nanos, "cold-stage-window")
             if row["thread_cpu"] is not None:
-                require(row["stage"] != "queue_wait",
-                        "cold-cross-thread-stage-claims-cpu")
+                require(row["stage"] != "queue_wait", "cold-cross-thread-stage-claims-cpu")
                 cpu = fields(row["thread_cpu"], "before after")
                 for reading in cpu.values():
                     fields(reading, "identity user_ticks system_ticks")
@@ -60,12 +77,13 @@ class Observer:
                     require(uint(cpu["after"][key]) >= uint(cpu["before"][key]), "cold-cpu-regressed")
             require(sequence not in self.records or self.records[sequence] == row, "cold-stage-history-rewritten")
             self.records[sequence] = row
-        if current["compiler"] is None:
+
+    def compiler_check(self, compiler, stages, final=False):
+        if compiler is None:
             require(self.variant == "control", "cold-candidate-pool-unobserved")
-            require(all(uint(item) == 0 for key, item in current["stages"][-1].items() if key != "stage"), "cold-control-fabricated-queue")
+            require(all(uint(item) == 0 for key, item in stages[-1].items() if key != "stage"), "cold-control-fabricated-queue")
         else:
             require(self.variant == "candidate", "cold-control-has-treatment-pool")
-            compiler = current["compiler"]
             require(isinstance(compiler,dict) and set(compiler) == FIELDS, "cold-compiler-fields")
             for name,item in compiler.items():
                 if name in ("accepting","failed"):
@@ -91,27 +109,20 @@ class Observer:
             if final:
                 validate_compiler_shutdown({key:item if type(item) is bool else uint(item)
                                            for key,item in compiler.items()}, require)
-        if final:
-            require(current["active_jobs"] == "0" and current["running"] == [], "cold-final-job-ownership")
-            require(sorted(self.records) == list(range(len(self.records))), "cold-stage-sequence-gap")
-            for total in current["stages"]:
-                rows = [row for row in self.records.values() if row["stage"] == total["stage"]]
-                require(uint(total["started"]) == len(rows)
-                        and uint(total["completed"]) == sum(row["succeeded"] for row in rows)
-                        and uint(total["failed"]) == sum(not row["succeeded"] for row in rows)
-                        and uint(total["thread_cpu_samples"]) == sum(row["thread_cpu"] is not None for row in rows)
-                        and uint(total["thread_cpu_unavailable"]) == sum(row["thread_cpu"] is None for row in rows)
-                        and uint(total["elapsed_nanos"]) == sum(uint(row["finished_nanos"]) - uint(row["started_nanos"]) for row in rows),
-                        "cold-final-stage-total-not-raw")
-                for key in ("user_ticks", "system_ticks"):
-                    actual = sum(uint(row["thread_cpu"]["after"][key]) - uint(row["thread_cpu"]["before"][key])
-                                 for row in rows if row["thread_cpu"] is not None)
-                    require(uint(total["thread_cpu_" + key]) == actual, "cold-cpu-total-not-raw")
-            require(sorted(self.jobs) == list(range(len(self.jobs))), "cold-job-sequence-gap")
-            for job in self.jobs:
-                rows = [row for row in self.records.values() if uint(row["job_id"]) == job]
-                require(sum(row["stage"] == "whole_job" for row in rows) == 1, "cold-job-without-whole-interval")
-        self.last = current
+    def final_totals(self, stages):
+        for total in stages:
+            rows = [row for row in self.records.values() if row["stage"] == total["stage"]]
+            require(uint(total["started"]) == len(rows)
+                    and uint(total["completed"]) == sum(row["succeeded"] for row in rows)
+                    and uint(total["failed"]) == sum(not row["succeeded"] for row in rows)
+                    and uint(total["thread_cpu_samples"]) == sum(row["thread_cpu"] is not None for row in rows)
+                    and uint(total["thread_cpu_unavailable"]) == sum(row["thread_cpu"] is None for row in rows)
+                    and uint(total["elapsed_nanos"]) == sum(uint(row["finished_nanos"]) - uint(row["started_nanos"]) for row in rows),
+                    "cold-final-stage-total-not-raw")
+            for key in ("user_ticks", "system_ticks"):
+                actual = sum(uint(row["thread_cpu"]["after"][key]) - uint(row["thread_cpu"]["before"][key])
+                             for row in rows if row["thread_cpu"] is not None)
+                require(uint(total["thread_cpu_" + key]) == actual, "cold-cpu-total-not-raw")
 
     def thread(self, row):
         fields(row, "process_id thread_id start_time_ticks")

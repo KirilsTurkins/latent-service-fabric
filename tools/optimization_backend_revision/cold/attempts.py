@@ -9,7 +9,7 @@ from tools.phase1_paired.metrics import timing
 PAYLOAD = ('[{"ok":"' + INPUT + '"}]').encode()
 
 
-def validate(row, origin_unix, components, expected, pins):
+def validate(row, origin_unix, components, expected, pins, route_generation="8"):
     fields(row, "kind phase index key activation_id release_digest scheduled_nanos deadline_nanos deadline_unix_millis "
            "absolute_deadline_quantization_nanos dispatch_nanos dispatch_lag_nanos grpc_timeout_header rpc_received response "
            "outcome completed_nanos overshoot_nanos retained_status retained_observed_nanos backend_timing retained_valid",
@@ -71,10 +71,10 @@ def validate(row, origin_unix, components, expected, pins):
     if row["outcome"] == "success":
         require(retained["activation_id"] == row["activation_id"] and retained["grpc_code"] == 0
                 and retained["terminal_state"] == "completed" and retained["outcome"] == "success"
-                and retained["consumption"] == response["consumption"] and response["route_generation"] == "8", "cold-crossed-terminal")
+                and retained["consumption"] == response["consumption"] and response["route_generation"] == route_generation, "cold-crossed-terminal")
         pin = response["revision_id"]
         require(isinstance(retained["metadata"],dict) and all(retained["metadata"].get(name) == item for name,item in
-                (("release",response["release_digest"]),("revision",pin),("route-generation","8"))), "cold-retained-pin-crossed")
+                (("release",response["release_digest"]),("revision",pin),("route-generation",route_generation))), "cold-retained-pin-crossed")
         require(0 < uint(response["consumption"]["cpu_fuel"]) < 10_000_000_000
                 and 0 < uint(response["consumption"]["log_bytes"]) <= 16384
                 and uint(response["consumption"]["wall_time_micros"]) <= 1_000_000, "cold-success-accounting")
@@ -86,9 +86,9 @@ def validate(row, origin_unix, components, expected, pins):
         require(retained["activation_id"] == row["activation_id"] and retained["consumption"] == response["consumption"]
                 and retained["code"] == response["code"] and retained["terminal_state"] is not None, "cold-failure-accounting-crossed")
         if response["release_digest"]:
-            require(response["release_digest"] == components[key] and response["route_generation"] == "8"
+            require(response["release_digest"] == components[key] and response["route_generation"] == route_generation
                     and all(retained["metadata"].get(name) == item for name,item in
-                    (("release",response["release_digest"]),("revision",response["revision_id"]),("route-generation","8"))),
+                    (("release",response["release_digest"]),("revision",response["revision_id"]),("route-generation",route_generation))),
                     "cold-failure-pin-crossed")
     else:
         require(retained.get("grpc_code") in (0,5), "cold-terminal-observation-failed")
