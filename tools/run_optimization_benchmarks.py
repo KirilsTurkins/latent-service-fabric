@@ -271,6 +271,7 @@ def run(profile: str, output: Path, target: Path) -> None:
     if profile == "smoke":
         build["overrides"]["recipe"] = "cargo-build-debug"
     build["overrides"]["optimization_recipe_sha256"] = digest(ROOT / "tools/build_optimization_bench.sh")[0]
+    build["overrides"]["recipe_sha256"] = digest(ROOT / "tools/phase0_build_environment.sh")[0]
     source_files = sorted((ROOT / "tools/optimization-workloads").rglob("*.rs"))
     source_files += [ROOT / "tools/toolchain-smoke/examples/optimization_capsule/component.rs",
                      ROOT / "tools/toolchain-smoke/examples/optimization_capsule/world.wit"]

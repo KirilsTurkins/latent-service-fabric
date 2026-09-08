@@ -93,7 +93,7 @@ def node_config(directory: Path, data_directory: Path) -> Path:
         "limits": {"maximumPayloadBytes": 1_048_576, "maximumConnections": 32},
         "cache": {"entries": 4, "preparations": 1},
         "catalogs": {"releaseEntries": 16, "deployments": 16},
-        "retention": {"terminalEntries": 1024, "terminalTtlMillis": 30_000},
+        "retention": {"terminalEntries": 1024, "terminalTtlMillis": 30_000, "bytes": 512 * 1024 * 1024},
         "shutdownGraceMillis": 1000,
         "credentials": [{"token": TOKEN, "subject": "optimization-reference", "tenant": TENANT, "role": "operator"}],
     })

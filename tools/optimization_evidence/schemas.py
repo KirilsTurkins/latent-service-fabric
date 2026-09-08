@@ -110,7 +110,7 @@ def documents():
     })
     definitions["process"] = obj({
         "process_id": number, "start_time_ticks": uint,
-        "role": {"enum": ["native-server", "lsf-server", "load-client"]},
+        "role": {"enum": ["native-server", "lsf-server", "lsf-seed", "load-client"]},
         "executable_sha256": digest, "reaped": boolean, "output_closed": boolean,
         "exit_code": nullable({"type": "integer", "minimum": -255, "maximum": 255}),
     })
@@ -128,6 +128,35 @@ def documents():
         }),
         "executables": obj({key: ref("artifact") for key in ("native", "lsf", "client", "control", "cli")}, ("control", "cli")),
         "components": array(ref("artifact"), 5, 5), "workload_sources": array(ref("artifact"), 32, 1),
+        "build_inputs": array(ref("artifact"), 8, 8), "source_checks": array(ref("artifact"), 2, 2),
+    })
+    definitions["snapshot"] = obj({
+        "process_id": number, "start_time_ticks": uint,
+        **{key: uint for key in ("rss_bytes", "cpu_user_ticks", "cpu_system_ticks", "read_bytes", "write_bytes")},
+        "threads": number, "fd_count": number,
+    })
+    definitions["samples"] = obj({
+        **{key: ref("snapshot") for key in ("before", "after", "last_live")},
+        "peak_rss_bytes": uint, "sample_interval_millis": {"const": 100},
+        "peak_semantics": {"const": "maximum-observed-rss-not-instantaneous-peak"},
+    })
+    controllers = ("cpu.max", "cpu.stat", "memory.max", "memory.current", "memory.stat",
+                   "memory.events", "cpu.pressure", "memory.pressure", "io.pressure")
+    definitions["cgroup"] = obj({
+        "scope": {"const": "runner-cgroup-shared"}, "process_membership": {"type": "string", "maxLength": 16384},
+        **{key: nullable({"type": "string", "maxLength": 65536}) for key in controllers},
+        "resolution": obj({
+            "status": {"enum": ["resolved", "unsupported"]},
+            **{key: nullable(string) for key in ("path", "mount_id", "mount_root", "mount_point", "device", "inode")},
+        }),
+        "errors": {"type": "object", "properties": {
+            key: {"enum": ["missing", "permission-denied", "oversized", "invalid", "unavailable", "ambiguous", "membership-changed"]}
+            for key in (*controllers, "process_membership", "mountinfo", "resolution")
+        }, "additionalProperties": False},
+    })
+    definitions["resources"] = obj({
+        "server": ref("samples"), "client": ref("samples"),
+        "cgroup": obj({"before": ref("cgroup"), "after": ref("cgroup")}),
     })
     definitions["lifecycle"] = obj({
         **{key: uint for key in ("process_start_to_ready_micros", "process_start_to_first_response_observed_micros",
@@ -157,13 +186,13 @@ def documents():
         "status": {"enum": ["complete", "incomplete", "failed"]},
         "scope": {"const": "standalone-native-code-versus-lsf-productionization-bundle"},
         "suite_sha256": digest, "plan_sha256": digest, "identity": ref("identity"),
-        "population_complete": boolean, "validated_attempts": uint, "attempt_count_complete": boolean,
+        "population_complete": boolean, "validated_attempts": uint, "validated_processes": uint, "attempt_count_complete": boolean,
         "runs": array(ref("json"), 14), "comparisons": array(ref("json"), 16, 16),
         "limitations": array(string, 32, 1),
     })
     names = {"plan": "plan", "client-plan": "client_plan", "client-readiness": "readiness",
              "attempt": "attempt", "client-summary": "summary", "process": "process",
-             "suite": "suite", "aggregate": "aggregate"}
+             "suite": "suite", "aggregate": "aggregate", "resources": "resources"}
     return {name + ".schema.json": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "https://latent.fabric/schemas/optimization/" + name + ".schema.json",

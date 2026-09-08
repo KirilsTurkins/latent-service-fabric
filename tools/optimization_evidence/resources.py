@@ -1,5 +1,7 @@
 """Parent-observed ownership and sampled resource semantics."""
 
+import re
+
 from .common import digest, fields, integer, require, text, uint
 
 
@@ -51,21 +53,50 @@ def samples(value, owner):
 
 
 def cgroup(value):
-    fields(value, "scope process_membership cpu.max cpu.stat memory.max memory.current memory.stat memory.events cpu.pressure memory.pressure io.pressure")
+    names = ("cpu.max", "cpu.stat", "memory.max", "memory.current", "memory.stat",
+             "memory.events", "cpu.pressure", "memory.pressure", "io.pressure")
+    fields(value, "scope process_membership resolution errors " + " ".join(names))
     require(value["scope"] == "runner-cgroup-shared", "unmatched-cgroup-attribution")
-    text(value["process_membership"], 16384)
-    for name, item in value.items():
-        if name not in ("scope", "process_membership") and item is not None:
-            text(item, 64 * 1024, empty=True)
+    text(value["process_membership"], 16384, empty=True)
+    errors = value["errors"]
+    require(isinstance(errors, dict) and set(errors) <= set(names) | {"process_membership", "mountinfo", "resolution"}
+            and all(reason in {"missing", "permission-denied", "oversized", "invalid", "unavailable",
+                               "ambiguous", "membership-changed"} for reason in errors.values()),
+            "unbounded-cgroup-error")
+    resolution = fields(value["resolution"], "status path mount_id mount_root mount_point device inode")
+    require(resolution["status"] in ("resolved", "unsupported"), "invalid-cgroup-resolution")
+    if resolution["status"] == "unsupported":
+        require(all(item is None for key, item in resolution.items() if key != "status")
+                and all(value[name] is None for name in names)
+                and any(key in errors for key in ("process_membership", "mountinfo", "resolution")),
+                "fabricated-unavailable-cgroup-counter")
+        return
+    for name in ("path", "mount_root", "mount_point"):
+        item = text(resolution[name])
+        require(item.startswith("/") and all(part not in (".", "..") for part in item.split("/")),
+                "invalid-cgroup-path")
+    for name in ("mount_id", "inode"):
+        require(uint(resolution[name]) > 0, "missing-cgroup-identity")
+    require(isinstance(resolution["device"], str) and re.fullmatch(r"[0-9]+:[0-9]+", resolution["device"]),
+            "invalid-cgroup-device")
+    for name in names:
+        if value[name] is None:
+            require(name in errors, "unexplained-missing-cgroup-counter")
+        else:
+            text(value[name], 64 * 1024, empty=True)
+            require(name not in errors, "cgroup-error-has-measured-counter")
 
 
 def resources(value, server_owner, client_owner):
     fields(value, "server client cgroup")
     result = {"server": samples(value["server"], server_owner),
               "client": samples(value["client"], client_owner)}
+    require(all(uint(value[role]["after"]["rss_bytes"]) > 0 for role in ("server", "client")),
+            "missing-live-completion-resource-sample")
     pair = fields(value["cgroup"], "before after")
     for name in ("before", "after"):
         cgroup(pair[name])
-    require(pair["before"]["process_membership"] == pair["after"]["process_membership"],
-            "changed-cgroup-membership")
+    if all(pair[name]["resolution"]["status"] == "resolved" for name in ("before", "after")):
+        require(pair["before"]["process_membership"] == pair["after"]["process_membership"]
+                and pair["before"]["resolution"] == pair["after"]["resolution"], "changed-cgroup-membership")
     return result

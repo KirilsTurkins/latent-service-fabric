@@ -16,7 +16,7 @@ READY_FIELDS = ("schema run_id arm client_process_id server_process_id runtime_w
 def replay(artifacts, batch, template, arm, server_owner, client_owner, components, activation_ids):
     plan = artifacts.json(batch["plan"], 2 * 1024 * 1024)
     fields(plan, PLAN_FIELDS)
-    require({key: value for key, value in plan.items() if key not in DYNAMIC} == template,
+    require(canonical({key: value for key, value in plan.items() if key not in DYNAMIC}) == canonical(template),
             "changed-client-plan")
     require(plan["arm"] == arm and plan["server_process_id"] == server_owner[0], "crossed-client-server")
     run_id = text(plan["run_id"], 48)

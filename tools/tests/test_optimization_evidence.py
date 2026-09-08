@@ -22,16 +22,25 @@ class Fixture:
         executables = {name: self.write(f"binaries/{name}", name.encode()) for name in ("native", "lsf", "client")}
         components = [self.write(f"components/{index}.wasm", b"\0asm" + bytes([index])) for index in range(5)]
         sources = [self.write("sources/shared.rs", b"// synthetic test source\n")]
+        source = {"commit": "a" * 40, "tree": "b" * 40, "dirty": True, "cargo_lock_sha256": sha256(b"Cargo.lock")}
+        build_inputs = [self.write("sources/" + name, name.encode()) for name in
+                        ("Cargo.lock", "Cargo.toml", "rust-toolchain.toml", "tools/build_optimization_bench.sh",
+                         "tools/phase0_build_environment.sh", "tools/optimization-bench/Cargo.toml",
+                         "tools/optimization-workloads/Cargo.toml", "tools/toolchain-smoke/Cargo.toml")]
+        checks = [self.write(name, source) for name in ("source-after-build.json", "source-after-run.json")]
         self.suite = {
             "schema": "latent.optimization.suite.v1", "profile": "smoke", "plan": selected,
             "identity": {
-                "source": {"commit": "a" * 40, "tree": "b" * 40, "dirty": True, "cargo_lock_sha256": sha256(b"lock")},
+                "source": source,
                 "build": {"profile": "debug", "rustc": "rustc fixture", "cargo": "cargo fixture", "wasmtime": "47.0.3",
-                          "target": "x86_64-unknown-linux-gnu", "overrides": {"fixture": True}},
+                          "target": "x86_64-unknown-linux-gnu", "overrides": {
+                              "recipe_sha256": build_inputs[4]["sha256"],
+                              "optimization_recipe_sha256": build_inputs[3]["sha256"]}},
                 "environment": {"os": "Linux", "arch": "x86_64", "kernel": "synthetic", "cpu_model": "synthetic",
                                 "logical_cpus": "4", "memory_total_bytes": "1000000", "virtualization": {},
                                 "allocator": {}, "cpu_policy": {}, "load_before": [0, 0, 0]},
                 "executables": executables, "components": components, "workload_sources": sources,
+                "build_inputs": build_inputs, "source_checks": checks,
             }, "runs": [], "artifacts": [],
         }
         for arm_index, arm in enumerate(("native", "lsf")):
@@ -46,6 +55,9 @@ class Fixture:
                         {"schemaVersion": "latent.standalone.status.v1", "event": "stopped", "clean": True,
                          "report": {**dict.fromkeys(ZERO_SHUTDOWN, 0), "clean": True, "telemetryFlushed": True,
                                     "epochHelperJoined": True, "quarantinedCells": 0, "telemetryRetainedEntries": 2}})
+            if arm == "lsf":
+                self.write(prefix + "seed-cleanup.json", {"server": self.owner("lsf-seed", executables["lsf"]["sha256"]),
+                                                        "server_shutdown": shutdown})
             self.suite["runs"].append({
                 "repetition": 1, "arm": arm, "scenario": "cold-restart", "status": "passed", "reason": None,
                 "started_micros": str(arm_index * 10_000_000), "finished_micros": str((arm_index + 1) * 10_000_000),
@@ -154,7 +166,10 @@ class Fixture:
             phases[phase] = self.phase(current, origin, plan["batch_size"])
         cgroup = {**dict.fromkeys(("cpu.max", "cpu.stat", "memory.max", "memory.current", "memory.stat",
                                   "memory.events", "cpu.pressure", "memory.pressure", "io.pressure")),
-                  "scope": "runner-cgroup-shared", "process_membership": "0::/fixture"}
+                  "scope": "runner-cgroup-shared", "process_membership": "0::/fixture",
+                  "resolution": {"status": "unsupported", **dict.fromkeys(("path", "mount_id", "mount_root", "mount_point",
+                                                                         "device", "inode"))},
+                  "errors": {"resolution": "unavailable"}}
         summary = {"schema": "latent.optimization.client-summary.v1", "status": "complete", "readiness": ready,
                    **phases, "client_elapsed_nanos": str(3000 + sum(int(v["phase_elapsed_nanos"]) for v in phases.values())),
                    "active_tasks_at_completion": 0, "observation_hold_millis": 100}
@@ -184,7 +199,7 @@ class Fixture:
                 "execution": {"maximumCpuFuel": 10_000_000_000, "maximumWallTimeMillis": 5000, "maximumLogBytes": 16_384},
                 "limits": {"maximumPayloadBytes": 1_048_576, "maximumConnections": 32},
                 "cache": {"entries": 4, "preparations": 1}, "catalogs": {"releaseEntries": 16, "deployments": 16},
-                "retention": {"terminalEntries": 1024, "terminalTtlMillis": 30_000}, "shutdownGraceMillis": 1000,
+                "retention": {"terminalEntries": 1024, "terminalTtlMillis": 30_000, "bytes": 536_870_912}, "shutdownGraceMillis": 1000,
                 "credentials": [{"token": TOKEN, "subject": "optimization-reference", "tenant": TENANT, "role": "operator"}]}
 
 

@@ -1,10 +1,10 @@
 """Source, build and retained executable identities for the actual two arms."""
 
-from .common import GIT_HASH, digest, fields, integer, require, text, uint
+from .common import GIT_HASH, canonical, digest, fields, integer, require, text, uint
 
 
 def identity(value, artifacts, full):
-    fields(value, "source build environment executables components workload_sources")
+    fields(value, "source build environment executables components workload_sources build_inputs source_checks")
     source = fields(value["source"], "commit tree dirty cargo_lock_sha256")
     for key in ("commit", "tree"):
         require(isinstance(source[key], str) and GIT_HASH.fullmatch(source[key]), "invalid-source-identity")
@@ -48,6 +48,26 @@ def identity(value, artifacts, full):
         artifacts.path(item)
         require(item["path"] not in seen and uint(item["bytes"]) > 0, "duplicate-workload-source")
         seen.add(item["path"])
+    required = ("Cargo.lock", "Cargo.toml", "rust-toolchain.toml", "tools/build_optimization_bench.sh",
+                "tools/phase0_build_environment.sh", "tools/optimization-bench/Cargo.toml",
+                "tools/optimization-workloads/Cargo.toml", "tools/toolchain-smoke/Cargo.toml")
+    inputs = value["build_inputs"]
+    require(isinstance(inputs, list) and len(inputs) == len(required), "missing-build-provenance")
+    indexed = {}
+    for item in inputs:
+        artifacts.path(item)
+        require(item["path"].startswith("sources/") and item["path"][8:] not in indexed, "duplicate-build-input")
+        indexed[item["path"][8:]] = item
+    require(set(indexed) == set(required), "changed-build-inputs")
+    require(indexed["Cargo.lock"]["sha256"] == source["cargo_lock_sha256"]
+            and indexed["tools/build_optimization_bench.sh"]["sha256"] == build["overrides"].get("optimization_recipe_sha256")
+            and indexed["tools/phase0_build_environment.sh"]["sha256"] == build["overrides"].get("recipe_sha256"),
+            "unbound-build-recipe")
+    checks = value["source_checks"]
+    require(isinstance(checks, list) and len(checks) == 2, "missing-source-stability-checks")
+    for item, suffix in zip(checks, ("source-after-build.json", "source-after-run.json"), strict=True):
+        require(item["path"].endswith(suffix) and canonical(artifacts.json(item)) == canonical(source),
+                "source-changed-during-execution")
 
 
 def plan(value):
@@ -56,5 +76,5 @@ def plan(value):
     from tools.optimization_runner.plans import plan as preset
     fields(value, "schema profile repetitions scenarios cases maximum_run_seconds maximum_artifact_bytes")
     require(value["profile"] in ("smoke", "full"), "invalid-profile")
-    require(value == preset(value["profile"]), "changed-benchmark-population")
+    require(canonical(value) == canonical(preset(value["profile"])), "changed-benchmark-population")
     integer(value["repetitions"], 1, 7)

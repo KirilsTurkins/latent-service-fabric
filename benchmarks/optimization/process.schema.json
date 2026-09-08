@@ -1309,6 +1309,7 @@
           "enum": [
             "native-server",
             "lsf-server",
+            "lsf-seed",
             "load-client"
           ]
         },
@@ -1520,6 +1521,22 @@
           },
           "maxItems": 32,
           "minItems": 1
+        },
+        "build_inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          },
+          "maxItems": 8,
+          "minItems": 8
+        },
+        "source_checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          },
+          "maxItems": 2,
+          "minItems": 2
         }
       },
       "required": [
@@ -1528,7 +1545,483 @@
         "environment",
         "executables",
         "components",
-        "workload_sources"
+        "workload_sources",
+        "build_inputs",
+        "source_checks"
+      ],
+      "additionalProperties": false
+    },
+    "snapshot": {
+      "type": "object",
+      "properties": {
+        "process_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "start_time_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "rss_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "cpu_user_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "cpu_system_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "read_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "write_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "threads": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "fd_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      },
+      "required": [
+        "process_id",
+        "start_time_ticks",
+        "rss_bytes",
+        "cpu_user_ticks",
+        "cpu_system_ticks",
+        "read_bytes",
+        "write_bytes",
+        "threads",
+        "fd_count"
+      ],
+      "additionalProperties": false
+    },
+    "samples": {
+      "type": "object",
+      "properties": {
+        "before": {
+          "$ref": "#/$defs/snapshot"
+        },
+        "after": {
+          "$ref": "#/$defs/snapshot"
+        },
+        "last_live": {
+          "$ref": "#/$defs/snapshot"
+        },
+        "peak_rss_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "sample_interval_millis": {
+          "const": 100
+        },
+        "peak_semantics": {
+          "const": "maximum-observed-rss-not-instantaneous-peak"
+        }
+      },
+      "required": [
+        "before",
+        "after",
+        "last_live",
+        "peak_rss_bytes",
+        "sample_interval_millis",
+        "peak_semantics"
+      ],
+      "additionalProperties": false
+    },
+    "cgroup": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "const": "runner-cgroup-shared"
+        },
+        "process_membership": {
+          "type": "string",
+          "maxLength": 16384
+        },
+        "cpu.max": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cpu.stat": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.max": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.current": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.stat": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.events": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cpu.pressure": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.pressure": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "io.pressure": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolution": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "resolved",
+                "unsupported"
+              ]
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mount_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mount_root": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mount_point": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "device": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "inode": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "path",
+            "mount_id",
+            "mount_root",
+            "mount_point",
+            "device",
+            "inode"
+          ],
+          "additionalProperties": false
+        },
+        "errors": {
+          "type": "object",
+          "properties": {
+            "cpu.max": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "cpu.stat": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.max": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.current": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.stat": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.events": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "cpu.pressure": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.pressure": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "io.pressure": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "process_membership": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "mountinfo": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "resolution": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "scope",
+        "process_membership",
+        "cpu.max",
+        "cpu.stat",
+        "memory.max",
+        "memory.current",
+        "memory.stat",
+        "memory.events",
+        "cpu.pressure",
+        "memory.pressure",
+        "io.pressure",
+        "resolution",
+        "errors"
+      ],
+      "additionalProperties": false
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "server": {
+          "$ref": "#/$defs/samples"
+        },
+        "client": {
+          "$ref": "#/$defs/samples"
+        },
+        "cgroup": {
+          "type": "object",
+          "properties": {
+            "before": {
+              "$ref": "#/$defs/cgroup"
+            },
+            "after": {
+              "$ref": "#/$defs/cgroup"
+            }
+          },
+          "required": [
+            "before",
+            "after"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "server",
+        "client",
+        "cgroup"
       ],
       "additionalProperties": false
     },
@@ -1790,6 +2283,10 @@
           "type": "string",
           "pattern": "^(0|[1-9][0-9]{0,19})$"
         },
+        "validated_processes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
         "attempt_count_complete": {
           "type": "boolean"
         },
@@ -1829,6 +2326,7 @@
         "identity",
         "population_complete",
         "validated_attempts",
+        "validated_processes",
         "attempt_count_complete",
         "runs",
         "comparisons",

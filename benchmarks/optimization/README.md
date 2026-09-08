@@ -55,6 +55,21 @@ server and client;100 ms RSS observations are sampled maxima. Shared local
 cgroup CPU/memory/pressure counters are retained as raw observations and are not
 attributed wholly to one service. CPU ticks and wall latency are distinct.
 
+After completing and persisting its timed work, the client holds for100 ms so
+the parent can sample its live memory before it exits. The parent ends the
+resource interval when it receives that completion event. This observation
+window is excluded from request and batch timings. Controller counters come
+from the resolved runner cgroup; the recorded leaf limits do not establish
+effective limits imposed by ancestors.
+
+The fixture uses four cells and64 queue slots. Its512 MiB journal allowance
+accommodates conservative accounting for68 reservations; this is a finite
+retention ceiling, not a512 MiB allocation or RSS measurement. The runner clips
+all measured child lifetimes to a shared execution deadline and reserves their
+bounded output before starting each batch. Build time has a separate one-hour
+watchdog. Source, lockfile and recipe identities are checked before/after build
+and again after collection.
+
 The native reference has authentication, bounded invocation admission and
 deadline checks. LSF additionally performs catalog/routing, fresh Wasm isolation,
 capability enforcement, fuel/memory accounting, scheduling and lifecycle/status

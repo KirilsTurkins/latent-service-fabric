@@ -58,7 +58,7 @@ def configuration(value, arm):
         "limits": {"maximumPayloadBytes": 1_048_576, "maximumConnections": 32},
         "cache": {"entries": 4, "preparations": 1},
         "catalogs": {"releaseEntries": 16, "deployments": 16},
-        "retention": {"terminalEntries": 1024, "terminalTtlMillis": 30_000},
+        "retention": {"terminalEntries": 1024, "terminalTtlMillis": 30_000, "bytes": 536_870_912},
         "shutdownGraceMillis": 1000,
         "credentials": [{"token": TOKEN, "subject": "optimization-reference", "tenant": TENANT, "role": "operator"}],
     }
@@ -129,6 +129,15 @@ def validate_suite(path: Path) -> dict:
         server_owner = resources.process(receipt, run["arm"] + "-server", executable_refs[run["arm"]]["sha256"])
         require(server_owner not in identities and resources.clean(receipt), "reused-or-unclean-server")
         identities.add(server_owner)
+        if run["arm"] == "lsf":
+            name = run["server_process"]["path"].rsplit("/", 1)[0] + "/seed-cleanup.json"
+            require(name in artifacts.rows, "missing-durable-provisioning-cleanup")
+            seed = artifacts.json(artifacts.rows[name])
+            fields(seed, "server server_shutdown")
+            seed_owner = resources.process(seed["server"], "lsf-seed", executable_refs["lsf"]["sha256"])
+            require(seed_owner not in identities and resources.clean(seed["server"]), "unreclaimed-provisioning-owner")
+            identities.add(seed_owner)
+            shutdown(seed["server_shutdown"], "lsf")
         configuration(artifacts.json(run["configuration"]), run["arm"])
         lifecycle(run["lifecycle"], run["arm"], finish - start)
         replayed, client_receipts = [], []
@@ -162,7 +171,8 @@ def validate_suite(path: Path) -> dict:
         "scope": "standalone-native-code-versus-lsf-productionization-bundle",
         "suite_sha256": suite_digest[0], "plan_sha256": sha256(canonical(suite["plan"])),
         "identity": suite["identity"], "population_complete": population_complete,
-        "validated_attempts": str(attempts), "attempt_count_complete": not any(run["status"] == "failed" for run in runs),
+        "validated_attempts": str(attempts), "validated_processes": str(len(identities)),
+        "attempt_count_complete": not any(run["status"] == "failed" for run in runs),
         "runs": result, "comparisons": comparisons(result, case_templates),
         "limitations": [
             "Smoke validates collection and replay but is not the full seven-pair reference.",
