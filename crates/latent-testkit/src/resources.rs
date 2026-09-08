@@ -1,6 +1,7 @@
 //! Portable process resource snapshots with richer Linux `/proc` probes.
 
 mod child;
+mod current;
 #[cfg(target_os = "linux")]
 mod linux;
 #[cfg(any(target_os = "linux", test))]
@@ -9,6 +10,7 @@ mod parse;
 mod serialized;
 
 pub use child::{ChildProcessProbe, ChildProcessResources, ProbeLimits, ProcessIdentity};
+pub use current::CurrentProcessOwnerProbe;
 
 use std::io;
 

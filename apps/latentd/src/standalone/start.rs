@@ -24,13 +24,13 @@ use super::{
 };
 use crate::config::NodeSettings;
 
-struct Catalogs {
-    artifacts: Arc<DirectoryArtifactRepository>,
-    deployments: Arc<DirectoryDeploymentRepository>,
+pub(super) struct Catalogs {
+    pub(super) artifacts: Arc<DirectoryArtifactRepository>,
+    pub(super) deployments: Arc<DirectoryDeploymentRepository>,
 }
 
 impl Catalogs {
-    async fn open(settings: &NodeSettings) -> Result<Self, PlatformError> {
+    pub(super) async fn open(settings: &NodeSettings) -> Result<Self, PlatformError> {
         let artifacts = Arc::new(DirectoryArtifactRepository::open(
             settings.data_directory.join("releases"),
             settings.artifacts,
@@ -63,6 +63,23 @@ impl StandaloneNode {
             ));
         }
         let catalogs = Catalogs::open(&settings).await?;
+        Box::pin(Self::start_with_catalogs(
+            settings,
+            catalogs,
+            control_runtime,
+            threads,
+        ))
+        .await
+    }
+
+    // Production startup and the isolated measurement collector share every
+    // runtime/service owner. The collector may retain catalog ports for timing.
+    pub(super) async fn start_with_catalogs(
+        settings: NodeSettings,
+        catalogs: Catalogs,
+        control_runtime: tokio::runtime::Handle,
+        threads: RuntimeThreads,
+    ) -> Result<Self, PlatformError> {
         let mut node = Self::compose(&settings, &catalogs)?;
         let invocation = InvocationServiceAdapter::with_services(
             Arc::new(LocalInvocationRuntime::with_limits(

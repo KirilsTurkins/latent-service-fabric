@@ -1,0 +1,1850 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.invalid/phase1/raw.schema.json",
+  "title": "Phase 1 raw evidence",
+  "description": "Structural schema. Python validation additionally verifies bounded files, hashes, profile presets, conservation, process ownership, scope and compatible measurement populations.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "header"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "profile",
+            "workload",
+            "repetition",
+            "plan",
+            "config",
+            "identity"
+          ],
+          "properties": {
+            "profile": {
+              "enum": [
+                "smoke",
+                "full"
+              ]
+            },
+            "workload": {
+              "enum": [
+                "scale",
+                "soak",
+                "benchmark"
+              ]
+            },
+            "repetition": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "plan": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "schema",
+                "profile",
+                "kind",
+                "repetition",
+                "scale_counts",
+                "route_samples",
+                "warmup_invocations",
+                "measured_invocations",
+                "batch_size",
+                "concurrency",
+                "benchmark_samples",
+                "maximum_run_seconds",
+                "maximum_output_bytes"
+              ],
+              "properties": {
+                "schema": {
+                  "const": "latent.phase1.measurement-plan.v1"
+                },
+                "profile": {
+                  "enum": [
+                    "smoke",
+                    "full"
+                  ]
+                },
+                "kind": {
+                  "enum": [
+                    "scale",
+                    "soak",
+                    "benchmark"
+                  ]
+                },
+                "repetition": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 21
+                },
+                "scale_counts": {
+                  "oneOf": [
+                    {
+                      "const": [
+                        2,
+                        4
+                      ]
+                    },
+                    {
+                      "const": [
+                        100,
+                        1000,
+                        10000,
+                        100000
+                      ]
+                    }
+                  ]
+                },
+                "route_samples": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "warmup_invocations": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "measured_invocations": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "batch_size": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "concurrency": {
+                  "const": 2
+                },
+                "benchmark_samples": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "maximum_run_seconds": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "maximum_output_bytes": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                }
+              }
+            },
+            "config": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "identity": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "schema",
+                "source",
+                "build",
+                "environment",
+                "binary",
+                "fixtures"
+              ],
+              "properties": {
+                "schema": {
+                  "const": "latent.phase1.measurement-identity.v1"
+                },
+                "source": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "commit",
+                    "tree",
+                    "dirty",
+                    "cargo_lock_sha256"
+                  ],
+                  "properties": {
+                    "commit": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}$"
+                    },
+                    "tree": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}$"
+                    },
+                    "dirty": {
+                      "type": "boolean"
+                    },
+                    "cargo_lock_sha256": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    }
+                  }
+                },
+                "build": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "profile",
+                    "rustc",
+                    "cargo",
+                    "wasmtime",
+                    "target",
+                    "overrides"
+                  ],
+                  "properties": {
+                    "profile": {
+                      "enum": [
+                        "debug",
+                        "release"
+                      ]
+                    },
+                    "rustc": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "cargo": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "wasmtime": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "target": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "overrides": {
+                      "type": "object",
+                      "maxProperties": 64
+                    }
+                  }
+                },
+                "environment": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "os",
+                    "arch",
+                    "kernel",
+                    "cpu_model",
+                    "logical_cpus",
+                    "memory_total_bytes",
+                    "virtualization",
+                    "allocator",
+                    "cpu_policy",
+                    "load_before"
+                  ],
+                  "properties": {
+                    "os": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "arch": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "kernel": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "cpu_model": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    "logical_cpus": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "memory_total_bytes": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "virtualization": {
+                      "type": "object",
+                      "maxProperties": 4096
+                    },
+                    "allocator": {
+                      "type": "object",
+                      "maxProperties": 4096
+                    },
+                    "cpu_policy": {
+                      "type": "object",
+                      "maxProperties": 4096
+                    },
+                    "load_before": {
+                      "type": "array",
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "items": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                },
+                "binary": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "sha256",
+                    "bytes"
+                  ],
+                  "properties": {
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    },
+                    "bytes": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    }
+                  }
+                },
+                "fixtures": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 3,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "name",
+                      "sha256",
+                      "bytes"
+                    ],
+                    "properties": {
+                      "name": {
+                        "enum": [
+                          "echo",
+                          "generic",
+                          "capabilities"
+                        ]
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      "bytes": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,19})$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "summary"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "reason",
+            "event_count",
+            "elapsed_nanos",
+            "shutdown",
+            "work",
+            "workload_result"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "passed",
+                "failed"
+              ]
+            },
+            "reason": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                }
+              ]
+            },
+            "event_count": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "elapsed_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "shutdown": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "work": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "commands",
+                "invoke_attempts",
+                "budget_exhausted"
+              ],
+              "properties": {
+                "commands": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "invoke_attempts": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "budget_exhausted": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "workload_result": {
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "data-cleanup"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "removed"
+          ],
+          "properties": {
+            "removed": {
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "scale-baseline"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "label",
+            "started_micros",
+            "finished_micros",
+            "resources",
+            "inventory",
+            "backend",
+            "ownership",
+            "work"
+          ],
+          "properties": {
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "started_micros": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "finished_micros": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "resources": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "inventory": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "backend": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "ownership": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "work": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "commands",
+                "invoke_attempts",
+                "budget_exhausted"
+              ],
+              "properties": {
+                "commands": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "invoke_attempts": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "budget_exhausted": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "scale-checkpoint"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "registered_releases",
+            "registered_deployments",
+            "publish_elapsed_nanos",
+            "apply_elapsed_nanos",
+            "route_lookup",
+            "sample"
+          ],
+          "properties": {
+            "registered_releases": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "registered_deployments": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "publish_elapsed_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "apply_elapsed_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "route_lookup": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "boundary",
+                "unit",
+                "samples",
+                "sample_count"
+              ],
+              "properties": {
+                "boundary": {
+                  "const": "directory-deployment-resolver.resolve"
+                },
+                "unit": {
+                  "const": "ns"
+                },
+                "samples": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 10000,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,19})$"
+                  }
+                },
+                "sample_count": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                }
+              }
+            },
+            "sample": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "label",
+                "started_micros",
+                "finished_micros",
+                "resources",
+                "inventory",
+                "backend",
+                "ownership",
+                "work"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "started_micros": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "finished_micros": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "resources": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "inventory": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "backend": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "ownership": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "work": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "commands",
+                    "invoke_attempts",
+                    "budget_exhausted"
+                  ],
+                  "properties": {
+                    "commands": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "invoke_attempts": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "budget_exhausted": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "scale-summary"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "registered_releases",
+            "registered_deployments",
+            "checkpoint_count",
+            "route_samples",
+            "dormant_topology_constant"
+          ],
+          "properties": {
+            "registered_releases": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "registered_deployments": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "checkpoint_count": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "route_samples": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "dormant_topology_constant": {
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "publication"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "release_digest",
+            "deployment_id",
+            "publish_elapsed_nanos",
+            "apply_elapsed_nanos"
+          ],
+          "properties": {
+            "release_digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "deployment_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "publish_elapsed_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "apply_elapsed_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "checkpoint"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase",
+            "resources"
+          ],
+          "properties": {
+            "phase": {
+              "enum": [
+                "before-warmup",
+                "after-warmup",
+                "sample-complete",
+                "final"
+              ]
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "label",
+                "started_micros",
+                "finished_micros",
+                "resources",
+                "inventory",
+                "backend",
+                "ownership",
+                "work"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "started_micros": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "finished_micros": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "resources": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "inventory": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "backend": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "ownership": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "work": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "commands",
+                    "invoke_attempts",
+                    "budget_exhausted"
+                  ],
+                  "properties": {
+                    "commands": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "invoke_attempts": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "budget_exhausted": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "soak-batch"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "stage",
+            "batch_index",
+            "first_invocation",
+            "attempts",
+            "concurrency",
+            "outcome_counts",
+            "rpc_latency_micros",
+            "consumed_cpu_fuel",
+            "consumed_log_bytes",
+            "peak_memory_bytes",
+            "resources"
+          ],
+          "properties": {
+            "stage": {
+              "enum": [
+                "warmup",
+                "measured"
+              ]
+            },
+            "batch_index": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "first_invocation": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "attempts": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "concurrency": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "outcome_counts": {
+              "type": "object",
+              "maxProperties": 12,
+              "additionalProperties": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              }
+            },
+            "rpc_latency_micros": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1000,
+              "items": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              }
+            },
+            "consumed_cpu_fuel": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "consumed_log_bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "peak_memory_bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "label",
+                "started_micros",
+                "finished_micros",
+                "resources",
+                "inventory",
+                "backend",
+                "ownership",
+                "work"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "started_micros": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "finished_micros": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "resources": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "inventory": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "backend": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "ownership": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "work": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "commands",
+                    "invoke_attempts",
+                    "budget_exhausted"
+                  ],
+                  "properties": {
+                    "commands": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "invoke_attempts": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "budget_exhausted": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "benchmark-input"
+        },
+        "payload": {
+          "type": "object",
+          "maxProperties": 4096
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "benchmark-prepare"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sample",
+            "operation",
+            "elapsed_micros",
+            "cache_before",
+            "cache_after"
+          ],
+          "properties": {
+            "sample": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "operation": {
+              "enum": [
+                "initial",
+                "cold",
+                "cache_hit"
+              ]
+            },
+            "elapsed_micros": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "cache_before": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "cache_after": {
+              "type": "object",
+              "maxProperties": 4096
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "benchmark-call"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "boundary",
+            "sample",
+            "invocation"
+          ],
+          "properties": {
+            "boundary": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "sample": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "invocation": {
+              "type": "object",
+              "maxProperties": 4096
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "benchmark-queue"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sample",
+            "active_before_release",
+            "queued_before_release",
+            "resources"
+          ],
+          "properties": {
+            "sample": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "active_before_release": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "queued_before_release": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "label",
+                "started_micros",
+                "finished_micros",
+                "resources",
+                "inventory",
+                "backend",
+                "ownership",
+                "work"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "started_micros": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "finished_micros": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "resources": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "inventory": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "backend": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "ownership": {
+                  "type": "object",
+                  "maxProperties": 4096
+                },
+                "work": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "commands",
+                    "invoke_attempts",
+                    "budget_exhausted"
+                  ],
+                  "properties": {
+                    "commands": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "invoke_attempts": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "budget_exhausted": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "benchmark-batch"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "boundary",
+            "sample",
+            "attempted_invocations",
+            "successful_invocations",
+            "cancelled_invocations",
+            "elapsed_micros",
+            "offered_concurrency",
+            "includes_retained_status_validation",
+            "scheduler"
+          ],
+          "properties": {
+            "boundary": {
+              "enum": [
+                "offered_capacity_rpc",
+                "cancel_released_queue_rpc"
+              ]
+            },
+            "sample": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "attempted_invocations": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "successful_invocations": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "cancelled_invocations": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "elapsed_micros": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "offered_concurrency": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "includes_retained_status_validation": {
+              "const": true
+            },
+            "scheduler": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "granted_before",
+                "granted_after",
+                "total_wait_micros_before",
+                "total_wait_micros_after",
+                "grants",
+                "wait_sum_micros"
+              ],
+              "properties": {
+                "granted_before": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "granted_after": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "total_wait_micros_before": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "total_wait_micros_after": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "grants": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "wait_sum_micros": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "startup"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "unit",
+            "catalog_open_nanos",
+            "node_start_nanos",
+            "client_connect_nanos",
+            "boundaries",
+            "excluded"
+          ],
+          "properties": {
+            "unit": {
+              "const": "ns"
+            },
+            "catalog_open_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "node_start_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "client_connect_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "boundaries": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "catalog_open",
+                "node_start",
+                "client_connect"
+              ],
+              "properties": {
+                "catalog_open": {
+                  "const": "directory-artifact-and-deployment-open"
+                },
+                "node_start": {
+                  "const": "standalone-start-with-open-catalogs-to-accepting"
+                },
+                "client_connect": {
+                  "const": "persistent-loopback-tonic-channel-connect"
+                }
+              }
+            },
+            "excluded": {
+              "const": [
+                "fixture-loading",
+                "runtime-construction"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "fixture-inputs"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fixtures"
+          ],
+          "properties": {
+            "fixtures": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "tenant",
+                  "service",
+                  "component_sha256",
+                  "component_bytes",
+                  "capsule",
+                  "contracts",
+                  "deployment"
+                ],
+                "properties": {
+                  "name": {
+                    "enum": [
+                      "echo",
+                      "generic",
+                      "capabilities"
+                    ]
+                  },
+                  "tenant": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096
+                  },
+                  "service": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096
+                  },
+                  "component_sha256": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  "component_bytes": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,19})$"
+                  },
+                  "capsule": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "path",
+                      "sha256",
+                      "bytes"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4096
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      "bytes": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,19})$"
+                      }
+                    }
+                  },
+                  "contracts": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "path",
+                      "sha256",
+                      "bytes"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4096
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      "bytes": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,19})$"
+                      }
+                    }
+                  },
+                  "deployment": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "path",
+                      "sha256",
+                      "bytes"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4096
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      "bytes": {
+                        "type": "string",
+                        "pattern": "^(0|[1-9][0-9]{0,19})$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "benchmark-route"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sample",
+            "boundary",
+            "elapsed_nanos",
+            "tenant",
+            "service",
+            "contract",
+            "function",
+            "revision_id",
+            "release_digest",
+            "route_generation"
+          ],
+          "properties": {
+            "sample": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "boundary": {
+              "const": "directory-deployment-resolver.resolve"
+            },
+            "elapsed_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "tenant": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "service": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "contract": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "function": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "revision_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "release_digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "route_generation": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "kind",
+        "payload"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement.raw.v1"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "kind": {
+          "const": "benchmark-management"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sample",
+            "publish_mode",
+            "apply_mode",
+            "publish_elapsed_nanos",
+            "apply_elapsed_nanos",
+            "previous_object_generation",
+            "object_generation",
+            "catalog_generation",
+            "release_digest",
+            "deployment_id",
+            "persisted_generation_matches",
+            "persisted_record_sha256"
+          ],
+          "properties": {
+            "sample": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "publish_mode": {
+              "const": "idempotent-existing-release"
+            },
+            "apply_mode": {
+              "const": "same-manifest-new-generation"
+            },
+            "publish_elapsed_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "apply_elapsed_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "previous_object_generation": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "object_generation": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "catalog_generation": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "release_digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "deployment_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "persisted_generation_matches": {
+              "const": true
+            },
+            "persisted_record_sha256": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

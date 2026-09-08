@@ -27,7 +27,8 @@ PARITY_TEST = "standalone::parity::adapter_and_rpc_have_equivalent_selected_outc
 PROCESS_TEST = "phase1_bounded_child_conformance"
 
 
-def bounded_run(command: list[str], log: Path, timeout: float, env: dict[str, str]) -> bytes:
+def bounded_run(command: list[str], log: Path, timeout: float, env: dict[str, str],
+                receipt: dict | None = None) -> bytes:
     """Bound pipes, wall time and the entire disposable driver process group."""
     deadline = time.monotonic() + timeout
     output = bytearray()
@@ -37,6 +38,18 @@ def bounded_run(command: list[str], log: Path, timeout: float, env: dict[str, st
                                  start_new_session=True)
         assert child.stdout is not None
         try:
+            if receipt is not None:
+                # The unreaped child is still owned here, so its PID cannot be
+                # recycled between spawn, identity capture and the final wait.
+                with Path(f"/proc/{child.pid}/stat").open("rb") as status:
+                    stat = status.read(64 * 1024 + 1)
+                if len(stat) > 64 * 1024:
+                    raise RuntimeError("owned child stat exceeded identity bound")
+                fields = stat.rpartition(b") ")[2].split()
+                if len(fields) < 20 or not fields[19].isdigit():
+                    raise RuntimeError("owned child start-time identity unavailable")
+                receipt.update({"process_id": child.pid, "start_time_ticks": fields[19].decode("ascii"),
+                                "reaped": False, "output_closed": False, "exit_code": None})
             os.set_blocking(child.stdout.fileno(), False)
             selector.register(child.stdout, selectors.EVENT_READ)
             while selector.get_map():
@@ -53,20 +66,28 @@ def bounded_run(command: list[str], log: Path, timeout: float, env: dict[str, st
                     output.extend(data)
                     sink.write(data)
                     sink.flush()
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise RuntimeError(f"driver deadline exceeded: {log.name}")
-            code = child.wait(timeout=remaining)
-            if code:
-                raise RuntimeError(f"driver exited {code}: {log.name}")
+            # Observe exit without reaping the process-group leader. Keeping
+            # its PID reserved makes the subsequent group kill safe even after
+            # a successful driver exit with surviving descendant writers.
+            while True:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise RuntimeError(f"driver deadline exceeded: {log.name}")
+                if os.waitid(os.P_PID, child.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT) is not None:
+                    break
+                time.sleep(min(remaining, 0.01))
         finally:
             # Also handles a failed test that left its owned node behind.
             try:
                 os.killpg(child.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
-            child.wait(timeout=5)
+            code = child.wait(timeout=5)
             child.stdout.close()
+            if receipt is not None:
+                receipt.update({"reaped": True, "output_closed": True, "exit_code": child.returncode})
+        if code:
+            raise RuntimeError(f"driver exited {code}: {log.name}")
     return bytes(output)
 
 

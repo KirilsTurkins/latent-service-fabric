@@ -71,6 +71,11 @@ bounded caches, and disk storage may grow only within their documented models.
 Phase 0 does not register those service counts. Its one-service result must not
 be used to infer the 100,000 dormant-service invariant.
 
+The [Phase 1 scale collector](phase-1-measurements.md) registers all four target
+scales through the actual durable stores and samples the real standalone
+composition. Its default 2/4-registration smoke run validates the collector;
+full-scale acceptance requires retained full-profile results.
+
 ## Reclamation — partially proven
 
 After repeated calls, resident memory must return near the fixed-runtime plus

@@ -155,3 +155,6 @@ LSF_GENERIC_FIXTURES="${GENERIC_FIXTURES}" \
 
 # Selected Phase 1 evidence: hard64 attempted Invokes, no scale/soak/calibration.
 python3 tools/run_phase1_conformance.py --target-root "${TARGET_ROOT}"
+
+# Separate tiny collector validation. Full100k profiles remain explicit opt-ins.
+python3 tools/run_phase1_measurements.py --profile smoke --target-root "${TARGET_ROOT}"

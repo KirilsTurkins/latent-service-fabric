@@ -35,7 +35,8 @@ fn capture_at(
     let status = reads.file(&path.join("status"), limits.maximum_file_bytes)?;
     let (rss, threads) = parse::status(&status)?;
     let tasks = files::numeric_entries(&path.join("task"), limits.maximum_tasks)?;
-    let (fd_count, socket_fds, socket_inodes) = sockets(&path, &mut reads)?;
+    let self_owned = proc_root == Path::new("/proc") && expected.process_id == std::process::id();
+    let (fd_count, socket_fds, socket_inodes) = sockets(&path, &mut reads, self_owned)?;
     let mut listeners = BTreeSet::new();
     for name in ["tcp", "tcp6"] {
         let bytes = reads.file(
@@ -49,7 +50,7 @@ fn capture_at(
         )?);
     }
     let descendants = tree::descendants(proc_root, expected, &tasks, &mut reads)?;
-    let final_sockets = sockets(&path, &mut reads)?;
+    let final_sockets = sockets(&path, &mut reads, self_owned)?;
     if final_sockets.0 != fd_count
         || final_sockets.1 != socket_fds
         || final_sockets.2 != socket_inodes
@@ -84,7 +85,14 @@ fn capture_at(
     })
 }
 
-fn sockets(path: &Path, reads: &mut Reads) -> io::Result<(u64, u64, BTreeSet<u64>)> {
+fn sockets(
+    path: &Path,
+    reads: &mut Reads,
+    self_owned: bool,
+) -> io::Result<(u64, u64, BTreeSet<u64>)> {
+    if self_owned {
+        return own_sockets(path, reads);
+    }
     let fd_path = path.join("fd");
     let entries = files::numeric_entries(&fd_path, reads.limits.maximum_file_descriptors)?;
     let mut sockets = BTreeSet::new();
@@ -105,6 +113,33 @@ fn sockets(path: &Path, reads: &mut Reads) -> io::Result<(u64, u64, BTreeSet<u64
         ));
     }
     Ok((count(entries.len()), socket_fds, sockets))
+}
+
+fn own_sockets(path: &Path, reads: &mut Reads) -> io::Result<(u64, u64, BTreeSet<u64>)> {
+    // Keep this directory open until its entry has been observed. Closing it
+    // before read_link makes its own numeric entry disappear during self-sampling.
+    let mut directory = std::fs::read_dir(path.join("fd"))?;
+    let mut descriptors = 0_u64;
+    let mut socket_fds = 0_u64;
+    let mut sockets = BTreeSet::new();
+    for entry in directory.by_ref() {
+        if descriptors > count(reads.limits.maximum_file_descriptors) {
+            return Err(files::limit());
+        }
+        let entry = entry?;
+        let link = std::fs::read_link(entry.path())?;
+        let bytes = link.as_os_str().as_encoded_bytes();
+        reads.charge(bytes.len())?;
+        descriptors += 1;
+        if let Some(inode) = parse::socket_inode(bytes)? {
+            sockets.insert(inode);
+            socket_fds += 1;
+        }
+    }
+    // Exactly one non-socket descriptor belongs to this read_dir operation.
+    let descriptors = descriptors.checked_sub(1).ok_or_else(files::limit)?;
+    drop(directory);
+    Ok((descriptors, socket_fds, sockets))
 }
 
 fn read_identity(path: &Path, reads: &mut Reads) -> io::Result<ProcessIdentity> {

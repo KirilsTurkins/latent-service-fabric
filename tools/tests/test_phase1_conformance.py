@@ -288,7 +288,7 @@ def fixture_report(root: Path) -> dict:
         "shutdowns": [{"node_instance": 1, "process_id": 123, "start_time_ticks": "456",
                        "exit_success": True, "reaped": True, "readers_joined": True, "report": cleanup}],
         "artifacts": [{"path": "raw.jsonl", "sha256": sha256(raw), "bytes": str(len(raw))}],
-        "deferred_evidence": [{"id": identifier, "status": "not_run", "reason": "not-authorized-heavy-work"}
+        "deferred_evidence": [{"id": identifier, "status": "not_run", "reason": "outside-bounded-profile"}
                               for identifier in manifest["deferred_evidence"]],
         "deterministic_status": "passed", "phase1_completion": "incomplete",
     }

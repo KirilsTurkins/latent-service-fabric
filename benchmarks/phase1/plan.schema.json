@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.invalid/phase1/plan.schema.json",
+  "title": "Phase 1 plan evidence",
+  "description": "Structural schema. Python validation additionally verifies bounded files, hashes, profile presets, conservation, process ownership, scope and compatible measurement populations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "kind",
+    "repetition",
+    "scale_counts",
+    "route_samples",
+    "warmup_invocations",
+    "measured_invocations",
+    "batch_size",
+    "concurrency",
+    "benchmark_samples",
+    "maximum_run_seconds",
+    "maximum_output_bytes"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.phase1.measurement-plan.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "scale",
+        "soak",
+        "benchmark"
+      ]
+    },
+    "repetition": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 21
+    },
+    "scale_counts": {
+      "oneOf": [
+        {
+          "const": [
+            2,
+            4
+          ]
+        },
+        {
+          "const": [
+            100,
+            1000,
+            10000,
+            100000
+          ]
+        }
+      ]
+    },
+    "route_samples": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "warmup_invocations": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "measured_invocations": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "batch_size": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "concurrency": {
+      "const": 2
+    },
+    "benchmark_samples": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "maximum_run_seconds": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "maximum_output_bytes": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    }
+  }
+}

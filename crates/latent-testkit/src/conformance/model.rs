@@ -190,7 +190,7 @@ impl ConformanceReport {
                 .map(|id| DeferredEvidence {
                     id,
                     status: EvidenceStatus::NotRun,
-                    reason: "not-authorized-heavy-work".to_owned(),
+                    reason: "outside-bounded-profile".to_owned(),
                 })
                 .collect(),
             deterministic_status: EvidenceStatus::Failed,
@@ -360,7 +360,7 @@ impl ConformanceReport {
                     .filter(|entry| {
                         Some(entry.id.as_str()) == id.as_str()
                             && entry.status == EvidenceStatus::NotRun
-                            && entry.reason == "not-authorized-heavy-work"
+                            && entry.reason == "outside-bounded-profile"
                     })
                     .count()
                     == 1

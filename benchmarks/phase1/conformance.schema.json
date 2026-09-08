@@ -19,7 +19,7 @@
     "samples": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/sample"}},
     "shutdowns": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/shutdown"}},
     "artifacts": {"type": "array", "maxItems": 512, "items": {"$ref": "#/$defs/artifact"}},
-    "deferred_evidence": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "reason"], "properties": {"id": {"type": "string"}, "status": {"const": "not_run"}, "reason": {"const": "not-authorized-heavy-work"}}}},
+    "deferred_evidence": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "reason"], "properties": {"id": {"type": "string"}, "status": {"const": "not_run"}, "reason": {"enum": ["outside-bounded-profile", "not-authorized-heavy-work"]}}}},
     "deterministic_status": {"enum": ["passed", "failed"]},
     "phase1_completion": {"const": "incomplete"}
   },
