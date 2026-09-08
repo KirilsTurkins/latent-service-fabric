@@ -1,0 +1,1636 @@
+{
+  "archive": {
+    "bytes": "92674126",
+    "path": "raw-evidence.tar.gz",
+    "sha256": "sha256:e3542a047af52ab99f923a3a99cfe5988c084ea8c631be06934c630931bbfb85"
+  },
+  "files": [
+    {
+      "bytes": "182084",
+      "path": "aggregate.json",
+      "sha256": "sha256:6d1ceb24387db330deb295627ebf5da757ed93ee606ee44f4ac1002c5df730a6"
+    },
+    {
+      "bytes": "43508",
+      "path": "backend-builds.json",
+      "sha256": "sha256:d05468fa7c7dcb4f009820f946cf4ff0214a43bc6ef8ea1708563038fb5df2a4"
+    },
+    {
+      "bytes": "273519",
+      "path": "builds/candidate/build.log",
+      "sha256": "sha256:104c468ac6b97af6aacac5946d26e567c8402b8d0bcd06b50f7848e9a78c4078"
+    },
+    {
+      "bytes": "228",
+      "path": "builds/candidate/build.log.process.json",
+      "sha256": "sha256:0aede69c33f01622e5e706d06a390d35e1630743fedafb7e95b9cd7bbc0e51a1"
+    },
+    {
+      "bytes": "198104864",
+      "path": "builds/candidate/latentd-backend-collector",
+      "sha256": "sha256:10d40f58d869f864e91ffcc836fbd31fc047eb20b47e76d2a88c042b27e033db"
+    },
+    {
+      "bytes": "51",
+      "path": "builds/candidate/source/.cargo/config.toml",
+      "sha256": "sha256:aabd2af12e26033cb8de9b63841b54574718406e4479b47e41bc0d92fc6f14e0"
+    },
+    {
+      "bytes": "63274",
+      "path": "builds/candidate/source/Cargo.lock",
+      "sha256": "sha256:fe3e93138d2ab6995d5583569a66dcd8361e7539f51b32ffadfcc8eafb422790"
+    },
+    {
+      "bytes": "2686",
+      "path": "builds/candidate/source/Cargo.toml",
+      "sha256": "sha256:7ff486dc88c97f06f482fab0d0e162f14d1c825161d6a7bc8b4f3438ec799c72"
+    },
+    {
+      "bytes": "243",
+      "path": "builds/candidate/source/apps/latent-control/Cargo.toml",
+      "sha256": "sha256:ce861a7e92c00b275eac948ffa0e27260b11638fb6909b718e41f226b932cb0e"
+    },
+    {
+      "bytes": "1058",
+      "path": "builds/candidate/source/apps/latent/Cargo.toml",
+      "sha256": "sha256:26ce3942d5a33ec94dbe35b6ce72d4425e9190005ed2b1bd2670b7547a0d7c55"
+    },
+    {
+      "bytes": "1833",
+      "path": "builds/candidate/source/apps/latentd/Cargo.toml",
+      "sha256": "sha256:602c9d9408422a4d7d2dd0a6ad6f9bb1cf760baf25562a60882e227706e353ce"
+    },
+    {
+      "bytes": "4871",
+      "path": "builds/candidate/source/apps/latentd/src/standalone/measurements/comparison/call.rs",
+      "sha256": "sha256:b12153e916f52db62ee2607d53b32e2ad2c01a6e686deaa76a01b79971fa2ea6"
+    },
+    {
+      "bytes": "4098",
+      "path": "builds/candidate/source/apps/latentd/src/standalone/measurements/comparison/evidence.rs",
+      "sha256": "sha256:10af8c34f794b8168d36443f9ff6e268fceabd885f1ea2aae5502b0b2fe3f4ef"
+    },
+    {
+      "bytes": "7429",
+      "path": "builds/candidate/source/apps/latentd/src/standalone/measurements/comparison/node.rs",
+      "sha256": "sha256:1e656ee96d54917c5494ab98da718acf7455232c0ae5f7c51b443e21cd4f38ee"
+    },
+    {
+      "bytes": "2968",
+      "path": "builds/candidate/source/apps/latentd/src/standalone/measurements/comparison/node/publication.rs",
+      "sha256": "sha256:dddf921c57e5b1e8fcd6400d38d6affd00c7c2fd0cab425e2e02ea89a41106c5"
+    },
+    {
+      "bytes": "2056",
+      "path": "builds/candidate/source/apps/latentd/src/standalone/measurements/comparison/plan.rs",
+      "sha256": "sha256:dbfec891ac5bc6bce30fea7c0d27ffd5446863fc600cf5ae2326b9826d31dc7a"
+    },
+    {
+      "bytes": "5629",
+      "path": "builds/candidate/source/apps/latentd/src/standalone/measurements/comparison/revision.rs",
+      "sha256": "sha256:e31a0b108658e19b1dacd2ead95c1896af2744b128d5ca832eac0b6a4a1904db"
+    },
+    {
+      "bytes": "4495",
+      "path": "builds/candidate/source/apps/latentd/src/standalone/measurements/comparison/writer.rs",
+      "sha256": "sha256:e963b19ff234ad725a6dbcf15a0029e5cee2693342c52e8e71dc7209eebbd749"
+    },
+    {
+      "bytes": "358",
+      "path": "builds/candidate/source/crates/latent-activation/Cargo.toml",
+      "sha256": "sha256:4b119cec5b4134aa42a4211d69fad3a3378f912aaf7064794c9b5d8dbbbc70a1"
+    },
+    {
+      "bytes": "389",
+      "path": "builds/candidate/source/crates/latent-admission/Cargo.toml",
+      "sha256": "sha256:feb7f173df730a727bd17ba3c7b8021787b0c3711ef4f68f62d7db60154ad01d"
+    },
+    {
+      "bytes": "455",
+      "path": "builds/candidate/source/crates/latent-artifacts/Cargo.toml",
+      "sha256": "sha256:e0eb32e9d4e469e59309dad56161550b7418d60906c3088558a8eef4e3701b17"
+    },
+    {
+      "bytes": "300",
+      "path": "builds/candidate/source/crates/latent-audit/Cargo.toml",
+      "sha256": "sha256:6c6adfe86156a4d9fdd3a675eee4f0bdbef176aa2fa865f36ab479572e45c384"
+    },
+    {
+      "bytes": "300",
+      "path": "builds/candidate/source/crates/latent-blobs/Cargo.toml",
+      "sha256": "sha256:da9c0bb7a08140b523bba5a51cae03c686a174a89402a77b626b02905f888776"
+    },
+    {
+      "bytes": "314",
+      "path": "builds/candidate/source/crates/latent-capabilities/Cargo.toml",
+      "sha256": "sha256:824b1d46315e4d5119123fc50df486981bff4d990ef54669aa3b6438bce8305b"
+    },
+    {
+      "bytes": "394",
+      "path": "builds/candidate/source/crates/latent-commit/Cargo.toml",
+      "sha256": "sha256:92ca72af7ae85aa2696a7bfc565f131cd68db7f73e0084fd4fd5a786a09483c7"
+    },
+    {
+      "bytes": "467",
+      "path": "builds/candidate/source/crates/latent-component-bindings/Cargo.toml",
+      "sha256": "sha256:8da76cc21ee4f2ae78cb71c47d64725acc824c46b7a1ef9bbe3a474ed5c9122c"
+    },
+    {
+      "bytes": "308",
+      "path": "builds/candidate/source/crates/latent-contracts/Cargo.toml",
+      "sha256": "sha256:7db8000eec5005479a9c37001e487442dd21e1c13e10e352c6ceb5d414781292"
+    },
+    {
+      "bytes": "902",
+      "path": "builds/candidate/source/crates/latent-control-store/Cargo.toml",
+      "sha256": "sha256:d8d059e8facf27a2d5f13d2553ddad302ac4bc116c76cc21804871f1909211cb"
+    },
+    {
+      "bytes": "240",
+      "path": "builds/candidate/source/crates/latent-core/Cargo.toml",
+      "sha256": "sha256:26feb9aa454bd13da07e3af2cb32d076f175b6c9ed92bb7ce78444745538a13c"
+    },
+    {
+      "bytes": "304",
+      "path": "builds/candidate/source/crates/latent-effects/Cargo.toml",
+      "sha256": "sha256:b482165c521b5e7038534e5cd7298bd11f6d1f969f4ea23a4d1953becf7e2f0f"
+    },
+    {
+      "bytes": "412",
+      "path": "builds/candidate/source/crates/latent-executor/Cargo.toml",
+      "sha256": "sha256:c1541bb9cc277f6fc22a5fadd5221d0424520c61b93d7460bc619d6464b2c9d2"
+    },
+    {
+      "bytes": "306",
+      "path": "builds/candidate/source/crates/latent-identity/Cargo.toml",
+      "sha256": "sha256:455c3a1af4ee37b906cf28c60668f53a2efc1681fbeb531f367b25a9bac4ad6a"
+    },
+    {
+      "bytes": "458",
+      "path": "builds/candidate/source/crates/latent-ingress/Cargo.toml",
+      "sha256": "sha256:9a0644d2fe23f01710dd68fb765e5c1c0e84efd3adc1fbba9eb138576ba187df"
+    },
+    {
+      "bytes": "424",
+      "path": "builds/candidate/source/crates/latent-manifest/Cargo.toml",
+      "sha256": "sha256:b258bd6c2694f8c0a49f68bc8e81031a07f506f295f91904f59ab5be32fd4f48"
+    },
+    {
+      "bytes": "842",
+      "path": "builds/candidate/source/crates/latent-node/Cargo.toml",
+      "sha256": "sha256:3289f26ef936a9c5cb174eed83ec9788b47dc6a292b31b864df98dd97a8cb0c6"
+    },
+    {
+      "bytes": "348",
+      "path": "builds/candidate/source/crates/latent-oci/Cargo.toml",
+      "sha256": "sha256:947cda9e3d60f6cb7750e86c05fd55921f250af3cb11fec5f1367d1a2aca3a17"
+    },
+    {
+      "bytes": "352",
+      "path": "builds/candidate/source/crates/latent-policy/Cargo.toml",
+      "sha256": "sha256:44026200b4fe0e76a6b8a6a7c902b89c8dc601bfbf865f9f0c27c81566266760"
+    },
+    {
+      "bytes": "354",
+      "path": "builds/candidate/source/crates/latent-routing/Cargo.toml",
+      "sha256": "sha256:916d82a421ef0b31dfb6da8c6925f47ad10174cc710e604364129bf921bb38e0"
+    },
+    {
+      "bytes": "533",
+      "path": "builds/candidate/source/crates/latent-rpc/Cargo.toml",
+      "sha256": "sha256:e40d468e1aa9eea29c793484e868fb2fcb0100497724d7398c528f9fdafb784e"
+    },
+    {
+      "bytes": "601",
+      "path": "builds/candidate/source/crates/latent-scheduler/Cargo.toml",
+      "sha256": "sha256:ca0f5fbc355430b13389a80eb67857878aa5a5128d2e07dd314bec7944164145"
+    },
+    {
+      "bytes": "304",
+      "path": "builds/candidate/source/crates/latent-signing/Cargo.toml",
+      "sha256": "sha256:e6296bee6c97244c0f26f627ed717de62d03c94aafdc7de572f4f05f73c6ce87"
+    },
+    {
+      "bytes": "300",
+      "path": "builds/candidate/source/crates/latent-state/Cargo.toml",
+      "sha256": "sha256:2c52c94fc6e406bb20576feac7a0c6f8e38ecac1c5d964f2b3746022c1c0a0e8"
+    },
+    {
+      "bytes": "460",
+      "path": "builds/candidate/source/crates/latent-telemetry/Cargo.toml",
+      "sha256": "sha256:6b3cb085a6054ceca81fcb2a9a2552729d5db3902ee1a7c25b398ec2f15c35c3"
+    },
+    {
+      "bytes": "807",
+      "path": "builds/candidate/source/crates/latent-testkit/Cargo.toml",
+      "sha256": "sha256:d1932cecd8a72bf74f5705a91079513b0820934327bbae541240c49cdcb4e378"
+    },
+    {
+      "bytes": "410",
+      "path": "builds/candidate/source/crates/latent-triggers/Cargo.toml",
+      "sha256": "sha256:bc0b053cdda2183f83931e6e4fd9fb9e12c9150ff29e7e6b143d1bbf69fcb29f"
+    },
+    {
+      "bytes": "1026",
+      "path": "builds/candidate/source/crates/latent-wasmtime/Cargo.toml",
+      "sha256": "sha256:5c7baebcf4302efb53c65105cd1905951fc09dbbb2f0cc758ade68a6cfb8fe97"
+    },
+    {
+      "bytes": "1112",
+      "path": "builds/candidate/source/crates/latent-wire/Cargo.toml",
+      "sha256": "sha256:9215d439789ccc757c3e613bf8b9e2625047c47f26a9da3708b7202b35cb92a4"
+    },
+    {
+      "bytes": "400",
+      "path": "builds/candidate/source/crates/latent-workflows/Cargo.toml",
+      "sha256": "sha256:1a0f0814d45ce14d28629e8bdb36ddc0cbac36525aaabde8821cfda6ff1a5676"
+    },
+    {
+      "bytes": "394",
+      "path": "builds/candidate/source/crates/latent-wrpc/Cargo.toml",
+      "sha256": "sha256:fb0ba69bc3423b7fd1583e7a096a99174ec11e81c2a7751377fcd7bdcc79eede"
+    },
+    {
+      "bytes": "4014",
+      "path": "builds/candidate/source/examples/echo-contract/README.md",
+      "sha256": "sha256:b3687de7a30f51cb1530eebb7dec8c30a371a7d40ef8841915a2f24d75bb732d"
+    },
+    {
+      "bytes": "1294",
+      "path": "builds/candidate/source/examples/echo-contract/capsule.json",
+      "sha256": "sha256:92a55f1185902458d3e5418ab464ce651a12779fc90bf5ab3433e2eb2a5ca85d"
+    },
+    {
+      "bytes": "1349",
+      "path": "builds/candidate/source/examples/echo-contract/contracts.json",
+      "sha256": "sha256:8112cc552e347f41ff6a9803c3de8b088660150b8678c6732bd93437b95b4fde"
+    },
+    {
+      "bytes": "1104",
+      "path": "builds/candidate/source/examples/echo-contract/deployment.json",
+      "sha256": "sha256:2f14e5feb3eabfb56c4ec5e445f5fa02c42aa8f201828b78812ea399b36f9f3a"
+    },
+    {
+      "bytes": "424",
+      "path": "builds/candidate/source/examples/echo-contract/http-trigger.json",
+      "sha256": "sha256:88df85b8f3160e8765a1a05a8eb60a5bf8b58c7d5e3dd0d32e0ee7e6a598ad52"
+    },
+    {
+      "bytes": "1394",
+      "path": "builds/candidate/source/examples/echo-contract/publish-release.json",
+      "sha256": "sha256:5db0bdd31af984a4b9ec688a5883c935cb4c30efd2e357bb3e7da47a616dd2bb"
+    },
+    {
+      "bytes": "302",
+      "path": "builds/candidate/source/examples/echo-contract/wit/echo.wit",
+      "sha256": "sha256:5a36463c6f335b2fa8a3c169242f7d01bacd9dd33589b439ecc869e89ca293c6"
+    },
+    {
+      "bytes": "140",
+      "path": "builds/candidate/source/rust-toolchain.toml",
+      "sha256": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc"
+    },
+    {
+      "bytes": "350",
+      "path": "builds/candidate/source/sdk/rust/Cargo.toml",
+      "sha256": "sha256:551b8aeee415ed626cf9713eff8876e208754d837efa8fc46b501c5c15a37da8"
+    },
+    {
+      "bytes": "22919",
+      "path": "builds/candidate/source/tools/build_echo_capsule.py",
+      "sha256": "sha256:fc5aa2ae27316e3971c6a505ed1d87ed8e79401b2abe74c9b26c266f66e722be"
+    },
+    {
+      "bytes": "1149",
+      "path": "builds/candidate/source/tools/optimization-bench/Cargo.toml",
+      "sha256": "sha256:3542a8c750ec93be9d4c18605aa222fe0abde74a6e3804360cee6d69490c57b8"
+    },
+    {
+      "bytes": "379",
+      "path": "builds/candidate/source/tools/optimization-workloads/Cargo.toml",
+      "sha256": "sha256:278cc5210b46b595fda073ba305d04acff5de6d9a92d73d3aba0ec1ad7ea1b75"
+    },
+    {
+      "bytes": "8481",
+      "path": "builds/candidate/source/tools/phase0_build_environment.sh",
+      "sha256": "sha256:16266aee2b730aac007d2ef6b7e5a74f8ce7391c69a0ffc1849011f30884414d"
+    },
+    {
+      "bytes": "1762",
+      "path": "builds/candidate/source/tools/toolchain-smoke/Cargo.toml",
+      "sha256": "sha256:4cdff5bd282412c18a5a25535d5db1b82aa8cacabb939b9c92347bcff05ded65"
+    },
+    {
+      "bytes": "1920",
+      "path": "builds/candidate/source/tools/toolchain-smoke/examples/echo_capsule/component.rs",
+      "sha256": "sha256:edd5dc52cad5c8caf953747e1cce72ee2519451327a9a941ad5e45723bf0dabe"
+    },
+    {
+      "bytes": "758",
+      "path": "builds/candidate/source/tools/toolchain-smoke/examples/echo_capsule/logic.rs",
+      "sha256": "sha256:c372b4032d0f059a625506d8b1a24cb257b9525d78809f842548d84bea9bd5b5"
+    },
+    {
+      "bytes": "800",
+      "path": "builds/candidate/source/tools/toolchain.toml",
+      "sha256": "sha256:037aeccae7415eb12318baa5ff86609e78c968679f216e512bf319f2261c1e4f"
+    },
+    {
+      "bytes": "274378",
+      "path": "builds/control/build.log",
+      "sha256": "sha256:3d4412d1947acebc428f434901d6cabd4bdc577d6869fe2d73fc12f5aa08d541"
+    },
+    {
+      "bytes": "228",
+      "path": "builds/control/build.log.process.json",
+      "sha256": "sha256:400ab75a4fc7595e519a840d03ea84db2cadd0ed53cd713e5628634ba0783c5e"
+    },
+    {
+      "bytes": "198071328",
+      "path": "builds/control/latentd-backend-collector",
+      "sha256": "sha256:2b8f605eee833742a462432d1f89cd30fbccaaf3e13b1a7569e4cec8e1b6d034"
+    },
+    {
+      "bytes": "51",
+      "path": "builds/control/source/.cargo/config.toml",
+      "sha256": "sha256:aabd2af12e26033cb8de9b63841b54574718406e4479b47e41bc0d92fc6f14e0"
+    },
+    {
+      "bytes": "63274",
+      "path": "builds/control/source/Cargo.lock",
+      "sha256": "sha256:fe3e93138d2ab6995d5583569a66dcd8361e7539f51b32ffadfcc8eafb422790"
+    },
+    {
+      "bytes": "2686",
+      "path": "builds/control/source/Cargo.toml",
+      "sha256": "sha256:7ff486dc88c97f06f482fab0d0e162f14d1c825161d6a7bc8b4f3438ec799c72"
+    },
+    {
+      "bytes": "243",
+      "path": "builds/control/source/apps/latent-control/Cargo.toml",
+      "sha256": "sha256:ce861a7e92c00b275eac948ffa0e27260b11638fb6909b718e41f226b932cb0e"
+    },
+    {
+      "bytes": "1058",
+      "path": "builds/control/source/apps/latent/Cargo.toml",
+      "sha256": "sha256:26ce3942d5a33ec94dbe35b6ce72d4425e9190005ed2b1bd2670b7547a0d7c55"
+    },
+    {
+      "bytes": "1833",
+      "path": "builds/control/source/apps/latentd/Cargo.toml",
+      "sha256": "sha256:602c9d9408422a4d7d2dd0a6ad6f9bb1cf760baf25562a60882e227706e353ce"
+    },
+    {
+      "bytes": "4871",
+      "path": "builds/control/source/apps/latentd/src/standalone/measurements/comparison/call.rs",
+      "sha256": "sha256:b12153e916f52db62ee2607d53b32e2ad2c01a6e686deaa76a01b79971fa2ea6"
+    },
+    {
+      "bytes": "4098",
+      "path": "builds/control/source/apps/latentd/src/standalone/measurements/comparison/evidence.rs",
+      "sha256": "sha256:10af8c34f794b8168d36443f9ff6e268fceabd885f1ea2aae5502b0b2fe3f4ef"
+    },
+    {
+      "bytes": "7429",
+      "path": "builds/control/source/apps/latentd/src/standalone/measurements/comparison/node.rs",
+      "sha256": "sha256:1e656ee96d54917c5494ab98da718acf7455232c0ae5f7c51b443e21cd4f38ee"
+    },
+    {
+      "bytes": "2968",
+      "path": "builds/control/source/apps/latentd/src/standalone/measurements/comparison/node/publication.rs",
+      "sha256": "sha256:dddf921c57e5b1e8fcd6400d38d6affd00c7c2fd0cab425e2e02ea89a41106c5"
+    },
+    {
+      "bytes": "2056",
+      "path": "builds/control/source/apps/latentd/src/standalone/measurements/comparison/plan.rs",
+      "sha256": "sha256:dbfec891ac5bc6bce30fea7c0d27ffd5446863fc600cf5ae2326b9826d31dc7a"
+    },
+    {
+      "bytes": "5629",
+      "path": "builds/control/source/apps/latentd/src/standalone/measurements/comparison/revision.rs",
+      "sha256": "sha256:e31a0b108658e19b1dacd2ead95c1896af2744b128d5ca832eac0b6a4a1904db"
+    },
+    {
+      "bytes": "4495",
+      "path": "builds/control/source/apps/latentd/src/standalone/measurements/comparison/writer.rs",
+      "sha256": "sha256:e963b19ff234ad725a6dbcf15a0029e5cee2693342c52e8e71dc7209eebbd749"
+    },
+    {
+      "bytes": "358",
+      "path": "builds/control/source/crates/latent-activation/Cargo.toml",
+      "sha256": "sha256:4b119cec5b4134aa42a4211d69fad3a3378f912aaf7064794c9b5d8dbbbc70a1"
+    },
+    {
+      "bytes": "389",
+      "path": "builds/control/source/crates/latent-admission/Cargo.toml",
+      "sha256": "sha256:feb7f173df730a727bd17ba3c7b8021787b0c3711ef4f68f62d7db60154ad01d"
+    },
+    {
+      "bytes": "455",
+      "path": "builds/control/source/crates/latent-artifacts/Cargo.toml",
+      "sha256": "sha256:e0eb32e9d4e469e59309dad56161550b7418d60906c3088558a8eef4e3701b17"
+    },
+    {
+      "bytes": "300",
+      "path": "builds/control/source/crates/latent-audit/Cargo.toml",
+      "sha256": "sha256:6c6adfe86156a4d9fdd3a675eee4f0bdbef176aa2fa865f36ab479572e45c384"
+    },
+    {
+      "bytes": "300",
+      "path": "builds/control/source/crates/latent-blobs/Cargo.toml",
+      "sha256": "sha256:da9c0bb7a08140b523bba5a51cae03c686a174a89402a77b626b02905f888776"
+    },
+    {
+      "bytes": "314",
+      "path": "builds/control/source/crates/latent-capabilities/Cargo.toml",
+      "sha256": "sha256:824b1d46315e4d5119123fc50df486981bff4d990ef54669aa3b6438bce8305b"
+    },
+    {
+      "bytes": "394",
+      "path": "builds/control/source/crates/latent-commit/Cargo.toml",
+      "sha256": "sha256:92ca72af7ae85aa2696a7bfc565f131cd68db7f73e0084fd4fd5a786a09483c7"
+    },
+    {
+      "bytes": "467",
+      "path": "builds/control/source/crates/latent-component-bindings/Cargo.toml",
+      "sha256": "sha256:8da76cc21ee4f2ae78cb71c47d64725acc824c46b7a1ef9bbe3a474ed5c9122c"
+    },
+    {
+      "bytes": "308",
+      "path": "builds/control/source/crates/latent-contracts/Cargo.toml",
+      "sha256": "sha256:7db8000eec5005479a9c37001e487442dd21e1c13e10e352c6ceb5d414781292"
+    },
+    {
+      "bytes": "902",
+      "path": "builds/control/source/crates/latent-control-store/Cargo.toml",
+      "sha256": "sha256:d8d059e8facf27a2d5f13d2553ddad302ac4bc116c76cc21804871f1909211cb"
+    },
+    {
+      "bytes": "240",
+      "path": "builds/control/source/crates/latent-core/Cargo.toml",
+      "sha256": "sha256:26feb9aa454bd13da07e3af2cb32d076f175b6c9ed92bb7ce78444745538a13c"
+    },
+    {
+      "bytes": "304",
+      "path": "builds/control/source/crates/latent-effects/Cargo.toml",
+      "sha256": "sha256:b482165c521b5e7038534e5cd7298bd11f6d1f969f4ea23a4d1953becf7e2f0f"
+    },
+    {
+      "bytes": "412",
+      "path": "builds/control/source/crates/latent-executor/Cargo.toml",
+      "sha256": "sha256:c1541bb9cc277f6fc22a5fadd5221d0424520c61b93d7460bc619d6464b2c9d2"
+    },
+    {
+      "bytes": "306",
+      "path": "builds/control/source/crates/latent-identity/Cargo.toml",
+      "sha256": "sha256:455c3a1af4ee37b906cf28c60668f53a2efc1681fbeb531f367b25a9bac4ad6a"
+    },
+    {
+      "bytes": "458",
+      "path": "builds/control/source/crates/latent-ingress/Cargo.toml",
+      "sha256": "sha256:9a0644d2fe23f01710dd68fb765e5c1c0e84efd3adc1fbba9eb138576ba187df"
+    },
+    {
+      "bytes": "424",
+      "path": "builds/control/source/crates/latent-manifest/Cargo.toml",
+      "sha256": "sha256:b258bd6c2694f8c0a49f68bc8e81031a07f506f295f91904f59ab5be32fd4f48"
+    },
+    {
+      "bytes": "842",
+      "path": "builds/control/source/crates/latent-node/Cargo.toml",
+      "sha256": "sha256:3289f26ef936a9c5cb174eed83ec9788b47dc6a292b31b864df98dd97a8cb0c6"
+    },
+    {
+      "bytes": "348",
+      "path": "builds/control/source/crates/latent-oci/Cargo.toml",
+      "sha256": "sha256:947cda9e3d60f6cb7750e86c05fd55921f250af3cb11fec5f1367d1a2aca3a17"
+    },
+    {
+      "bytes": "352",
+      "path": "builds/control/source/crates/latent-policy/Cargo.toml",
+      "sha256": "sha256:44026200b4fe0e76a6b8a6a7c902b89c8dc601bfbf865f9f0c27c81566266760"
+    },
+    {
+      "bytes": "354",
+      "path": "builds/control/source/crates/latent-routing/Cargo.toml",
+      "sha256": "sha256:916d82a421ef0b31dfb6da8c6925f47ad10174cc710e604364129bf921bb38e0"
+    },
+    {
+      "bytes": "533",
+      "path": "builds/control/source/crates/latent-rpc/Cargo.toml",
+      "sha256": "sha256:e40d468e1aa9eea29c793484e868fb2fcb0100497724d7398c528f9fdafb784e"
+    },
+    {
+      "bytes": "601",
+      "path": "builds/control/source/crates/latent-scheduler/Cargo.toml",
+      "sha256": "sha256:ca0f5fbc355430b13389a80eb67857878aa5a5128d2e07dd314bec7944164145"
+    },
+    {
+      "bytes": "304",
+      "path": "builds/control/source/crates/latent-signing/Cargo.toml",
+      "sha256": "sha256:e6296bee6c97244c0f26f627ed717de62d03c94aafdc7de572f4f05f73c6ce87"
+    },
+    {
+      "bytes": "300",
+      "path": "builds/control/source/crates/latent-state/Cargo.toml",
+      "sha256": "sha256:2c52c94fc6e406bb20576feac7a0c6f8e38ecac1c5d964f2b3746022c1c0a0e8"
+    },
+    {
+      "bytes": "460",
+      "path": "builds/control/source/crates/latent-telemetry/Cargo.toml",
+      "sha256": "sha256:6b3cb085a6054ceca81fcb2a9a2552729d5db3902ee1a7c25b398ec2f15c35c3"
+    },
+    {
+      "bytes": "807",
+      "path": "builds/control/source/crates/latent-testkit/Cargo.toml",
+      "sha256": "sha256:d1932cecd8a72bf74f5705a91079513b0820934327bbae541240c49cdcb4e378"
+    },
+    {
+      "bytes": "410",
+      "path": "builds/control/source/crates/latent-triggers/Cargo.toml",
+      "sha256": "sha256:bc0b053cdda2183f83931e6e4fd9fb9e12c9150ff29e7e6b143d1bbf69fcb29f"
+    },
+    {
+      "bytes": "1026",
+      "path": "builds/control/source/crates/latent-wasmtime/Cargo.toml",
+      "sha256": "sha256:5c7baebcf4302efb53c65105cd1905951fc09dbbb2f0cc758ade68a6cfb8fe97"
+    },
+    {
+      "bytes": "1112",
+      "path": "builds/control/source/crates/latent-wire/Cargo.toml",
+      "sha256": "sha256:9215d439789ccc757c3e613bf8b9e2625047c47f26a9da3708b7202b35cb92a4"
+    },
+    {
+      "bytes": "400",
+      "path": "builds/control/source/crates/latent-workflows/Cargo.toml",
+      "sha256": "sha256:1a0f0814d45ce14d28629e8bdb36ddc0cbac36525aaabde8821cfda6ff1a5676"
+    },
+    {
+      "bytes": "394",
+      "path": "builds/control/source/crates/latent-wrpc/Cargo.toml",
+      "sha256": "sha256:fb0ba69bc3423b7fd1583e7a096a99174ec11e81c2a7751377fcd7bdcc79eede"
+    },
+    {
+      "bytes": "4014",
+      "path": "builds/control/source/examples/echo-contract/README.md",
+      "sha256": "sha256:b3687de7a30f51cb1530eebb7dec8c30a371a7d40ef8841915a2f24d75bb732d"
+    },
+    {
+      "bytes": "1294",
+      "path": "builds/control/source/examples/echo-contract/capsule.json",
+      "sha256": "sha256:92a55f1185902458d3e5418ab464ce651a12779fc90bf5ab3433e2eb2a5ca85d"
+    },
+    {
+      "bytes": "1349",
+      "path": "builds/control/source/examples/echo-contract/contracts.json",
+      "sha256": "sha256:8112cc552e347f41ff6a9803c3de8b088660150b8678c6732bd93437b95b4fde"
+    },
+    {
+      "bytes": "1104",
+      "path": "builds/control/source/examples/echo-contract/deployment.json",
+      "sha256": "sha256:2f14e5feb3eabfb56c4ec5e445f5fa02c42aa8f201828b78812ea399b36f9f3a"
+    },
+    {
+      "bytes": "424",
+      "path": "builds/control/source/examples/echo-contract/http-trigger.json",
+      "sha256": "sha256:88df85b8f3160e8765a1a05a8eb60a5bf8b58c7d5e3dd0d32e0ee7e6a598ad52"
+    },
+    {
+      "bytes": "1394",
+      "path": "builds/control/source/examples/echo-contract/publish-release.json",
+      "sha256": "sha256:5db0bdd31af984a4b9ec688a5883c935cb4c30efd2e357bb3e7da47a616dd2bb"
+    },
+    {
+      "bytes": "302",
+      "path": "builds/control/source/examples/echo-contract/wit/echo.wit",
+      "sha256": "sha256:5a36463c6f335b2fa8a3c169242f7d01bacd9dd33589b439ecc869e89ca293c6"
+    },
+    {
+      "bytes": "140",
+      "path": "builds/control/source/rust-toolchain.toml",
+      "sha256": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc"
+    },
+    {
+      "bytes": "350",
+      "path": "builds/control/source/sdk/rust/Cargo.toml",
+      "sha256": "sha256:551b8aeee415ed626cf9713eff8876e208754d837efa8fc46b501c5c15a37da8"
+    },
+    {
+      "bytes": "22919",
+      "path": "builds/control/source/tools/build_echo_capsule.py",
+      "sha256": "sha256:fc5aa2ae27316e3971c6a505ed1d87ed8e79401b2abe74c9b26c266f66e722be"
+    },
+    {
+      "bytes": "1149",
+      "path": "builds/control/source/tools/optimization-bench/Cargo.toml",
+      "sha256": "sha256:3542a8c750ec93be9d4c18605aa222fe0abde74a6e3804360cee6d69490c57b8"
+    },
+    {
+      "bytes": "379",
+      "path": "builds/control/source/tools/optimization-workloads/Cargo.toml",
+      "sha256": "sha256:278cc5210b46b595fda073ba305d04acff5de6d9a92d73d3aba0ec1ad7ea1b75"
+    },
+    {
+      "bytes": "8481",
+      "path": "builds/control/source/tools/phase0_build_environment.sh",
+      "sha256": "sha256:16266aee2b730aac007d2ef6b7e5a74f8ce7391c69a0ffc1849011f30884414d"
+    },
+    {
+      "bytes": "1762",
+      "path": "builds/control/source/tools/toolchain-smoke/Cargo.toml",
+      "sha256": "sha256:4cdff5bd282412c18a5a25535d5db1b82aa8cacabb939b9c92347bcff05ded65"
+    },
+    {
+      "bytes": "1920",
+      "path": "builds/control/source/tools/toolchain-smoke/examples/echo_capsule/component.rs",
+      "sha256": "sha256:edd5dc52cad5c8caf953747e1cce72ee2519451327a9a941ad5e45723bf0dabe"
+    },
+    {
+      "bytes": "758",
+      "path": "builds/control/source/tools/toolchain-smoke/examples/echo_capsule/logic.rs",
+      "sha256": "sha256:c372b4032d0f059a625506d8b1a24cb257b9525d78809f842548d84bea9bd5b5"
+    },
+    {
+      "bytes": "800",
+      "path": "builds/control/source/tools/toolchain.toml",
+      "sha256": "sha256:037aeccae7415eb12318baa5ff86609e78c968679f216e512bf319f2261c1e4f"
+    },
+    {
+      "bytes": "5391",
+      "path": "builds/harness/build.log",
+      "sha256": "sha256:787d2b28d152cbfac925011add9ead66bdf91fff441e4bbc452a0a459afa4ee0"
+    },
+    {
+      "bytes": "228",
+      "path": "builds/harness/build.log.process.json",
+      "sha256": "sha256:d9b1c5479a833dc156ce99ff4b3f8c2f20704754057cd76b0db30214eeb7e7a5"
+    },
+    {
+      "bytes": "51",
+      "path": "builds/harness/source/.cargo/config.toml",
+      "sha256": "sha256:aabd2af12e26033cb8de9b63841b54574718406e4479b47e41bc0d92fc6f14e0"
+    },
+    {
+      "bytes": "63274",
+      "path": "builds/harness/source/Cargo.lock",
+      "sha256": "sha256:fe3e93138d2ab6995d5583569a66dcd8361e7539f51b32ffadfcc8eafb422790"
+    },
+    {
+      "bytes": "2686",
+      "path": "builds/harness/source/Cargo.toml",
+      "sha256": "sha256:7ff486dc88c97f06f482fab0d0e162f14d1c825161d6a7bc8b4f3438ec799c72"
+    },
+    {
+      "bytes": "243",
+      "path": "builds/harness/source/apps/latent-control/Cargo.toml",
+      "sha256": "sha256:ce861a7e92c00b275eac948ffa0e27260b11638fb6909b718e41f226b932cb0e"
+    },
+    {
+      "bytes": "1058",
+      "path": "builds/harness/source/apps/latent/Cargo.toml",
+      "sha256": "sha256:26ce3942d5a33ec94dbe35b6ce72d4425e9190005ed2b1bd2670b7547a0d7c55"
+    },
+    {
+      "bytes": "1833",
+      "path": "builds/harness/source/apps/latentd/Cargo.toml",
+      "sha256": "sha256:602c9d9408422a4d7d2dd0a6ad6f9bb1cf760baf25562a60882e227706e353ce"
+    },
+    {
+      "bytes": "4871",
+      "path": "builds/harness/source/apps/latentd/src/standalone/measurements/comparison/call.rs",
+      "sha256": "sha256:b12153e916f52db62ee2607d53b32e2ad2c01a6e686deaa76a01b79971fa2ea6"
+    },
+    {
+      "bytes": "4098",
+      "path": "builds/harness/source/apps/latentd/src/standalone/measurements/comparison/evidence.rs",
+      "sha256": "sha256:10af8c34f794b8168d36443f9ff6e268fceabd885f1ea2aae5502b0b2fe3f4ef"
+    },
+    {
+      "bytes": "7429",
+      "path": "builds/harness/source/apps/latentd/src/standalone/measurements/comparison/node.rs",
+      "sha256": "sha256:1e656ee96d54917c5494ab98da718acf7455232c0ae5f7c51b443e21cd4f38ee"
+    },
+    {
+      "bytes": "2968",
+      "path": "builds/harness/source/apps/latentd/src/standalone/measurements/comparison/node/publication.rs",
+      "sha256": "sha256:dddf921c57e5b1e8fcd6400d38d6affd00c7c2fd0cab425e2e02ea89a41106c5"
+    },
+    {
+      "bytes": "2056",
+      "path": "builds/harness/source/apps/latentd/src/standalone/measurements/comparison/plan.rs",
+      "sha256": "sha256:dbfec891ac5bc6bce30fea7c0d27ffd5446863fc600cf5ae2326b9826d31dc7a"
+    },
+    {
+      "bytes": "5629",
+      "path": "builds/harness/source/apps/latentd/src/standalone/measurements/comparison/revision.rs",
+      "sha256": "sha256:e31a0b108658e19b1dacd2ead95c1896af2744b128d5ca832eac0b6a4a1904db"
+    },
+    {
+      "bytes": "4495",
+      "path": "builds/harness/source/apps/latentd/src/standalone/measurements/comparison/writer.rs",
+      "sha256": "sha256:e963b19ff234ad725a6dbcf15a0029e5cee2693342c52e8e71dc7209eebbd749"
+    },
+    {
+      "bytes": "358",
+      "path": "builds/harness/source/crates/latent-activation/Cargo.toml",
+      "sha256": "sha256:4b119cec5b4134aa42a4211d69fad3a3378f912aaf7064794c9b5d8dbbbc70a1"
+    },
+    {
+      "bytes": "389",
+      "path": "builds/harness/source/crates/latent-admission/Cargo.toml",
+      "sha256": "sha256:feb7f173df730a727bd17ba3c7b8021787b0c3711ef4f68f62d7db60154ad01d"
+    },
+    {
+      "bytes": "455",
+      "path": "builds/harness/source/crates/latent-artifacts/Cargo.toml",
+      "sha256": "sha256:e0eb32e9d4e469e59309dad56161550b7418d60906c3088558a8eef4e3701b17"
+    },
+    {
+      "bytes": "300",
+      "path": "builds/harness/source/crates/latent-audit/Cargo.toml",
+      "sha256": "sha256:6c6adfe86156a4d9fdd3a675eee4f0bdbef176aa2fa865f36ab479572e45c384"
+    },
+    {
+      "bytes": "300",
+      "path": "builds/harness/source/crates/latent-blobs/Cargo.toml",
+      "sha256": "sha256:da9c0bb7a08140b523bba5a51cae03c686a174a89402a77b626b02905f888776"
+    },
+    {
+      "bytes": "314",
+      "path": "builds/harness/source/crates/latent-capabilities/Cargo.toml",
+      "sha256": "sha256:824b1d46315e4d5119123fc50df486981bff4d990ef54669aa3b6438bce8305b"
+    },
+    {
+      "bytes": "394",
+      "path": "builds/harness/source/crates/latent-commit/Cargo.toml",
+      "sha256": "sha256:92ca72af7ae85aa2696a7bfc565f131cd68db7f73e0084fd4fd5a786a09483c7"
+    },
+    {
+      "bytes": "467",
+      "path": "builds/harness/source/crates/latent-component-bindings/Cargo.toml",
+      "sha256": "sha256:8da76cc21ee4f2ae78cb71c47d64725acc824c46b7a1ef9bbe3a474ed5c9122c"
+    },
+    {
+      "bytes": "308",
+      "path": "builds/harness/source/crates/latent-contracts/Cargo.toml",
+      "sha256": "sha256:7db8000eec5005479a9c37001e487442dd21e1c13e10e352c6ceb5d414781292"
+    },
+    {
+      "bytes": "902",
+      "path": "builds/harness/source/crates/latent-control-store/Cargo.toml",
+      "sha256": "sha256:d8d059e8facf27a2d5f13d2553ddad302ac4bc116c76cc21804871f1909211cb"
+    },
+    {
+      "bytes": "240",
+      "path": "builds/harness/source/crates/latent-core/Cargo.toml",
+      "sha256": "sha256:26feb9aa454bd13da07e3af2cb32d076f175b6c9ed92bb7ce78444745538a13c"
+    },
+    {
+      "bytes": "304",
+      "path": "builds/harness/source/crates/latent-effects/Cargo.toml",
+      "sha256": "sha256:b482165c521b5e7038534e5cd7298bd11f6d1f969f4ea23a4d1953becf7e2f0f"
+    },
+    {
+      "bytes": "412",
+      "path": "builds/harness/source/crates/latent-executor/Cargo.toml",
+      "sha256": "sha256:c1541bb9cc277f6fc22a5fadd5221d0424520c61b93d7460bc619d6464b2c9d2"
+    },
+    {
+      "bytes": "306",
+      "path": "builds/harness/source/crates/latent-identity/Cargo.toml",
+      "sha256": "sha256:455c3a1af4ee37b906cf28c60668f53a2efc1681fbeb531f367b25a9bac4ad6a"
+    },
+    {
+      "bytes": "458",
+      "path": "builds/harness/source/crates/latent-ingress/Cargo.toml",
+      "sha256": "sha256:9a0644d2fe23f01710dd68fb765e5c1c0e84efd3adc1fbba9eb138576ba187df"
+    },
+    {
+      "bytes": "424",
+      "path": "builds/harness/source/crates/latent-manifest/Cargo.toml",
+      "sha256": "sha256:b258bd6c2694f8c0a49f68bc8e81031a07f506f295f91904f59ab5be32fd4f48"
+    },
+    {
+      "bytes": "842",
+      "path": "builds/harness/source/crates/latent-node/Cargo.toml",
+      "sha256": "sha256:3289f26ef936a9c5cb174eed83ec9788b47dc6a292b31b864df98dd97a8cb0c6"
+    },
+    {
+      "bytes": "348",
+      "path": "builds/harness/source/crates/latent-oci/Cargo.toml",
+      "sha256": "sha256:947cda9e3d60f6cb7750e86c05fd55921f250af3cb11fec5f1367d1a2aca3a17"
+    },
+    {
+      "bytes": "352",
+      "path": "builds/harness/source/crates/latent-policy/Cargo.toml",
+      "sha256": "sha256:44026200b4fe0e76a6b8a6a7c902b89c8dc601bfbf865f9f0c27c81566266760"
+    },
+    {
+      "bytes": "354",
+      "path": "builds/harness/source/crates/latent-routing/Cargo.toml",
+      "sha256": "sha256:916d82a421ef0b31dfb6da8c6925f47ad10174cc710e604364129bf921bb38e0"
+    },
+    {
+      "bytes": "533",
+      "path": "builds/harness/source/crates/latent-rpc/Cargo.toml",
+      "sha256": "sha256:e40d468e1aa9eea29c793484e868fb2fcb0100497724d7398c528f9fdafb784e"
+    },
+    {
+      "bytes": "601",
+      "path": "builds/harness/source/crates/latent-scheduler/Cargo.toml",
+      "sha256": "sha256:ca0f5fbc355430b13389a80eb67857878aa5a5128d2e07dd314bec7944164145"
+    },
+    {
+      "bytes": "304",
+      "path": "builds/harness/source/crates/latent-signing/Cargo.toml",
+      "sha256": "sha256:e6296bee6c97244c0f26f627ed717de62d03c94aafdc7de572f4f05f73c6ce87"
+    },
+    {
+      "bytes": "300",
+      "path": "builds/harness/source/crates/latent-state/Cargo.toml",
+      "sha256": "sha256:2c52c94fc6e406bb20576feac7a0c6f8e38ecac1c5d964f2b3746022c1c0a0e8"
+    },
+    {
+      "bytes": "460",
+      "path": "builds/harness/source/crates/latent-telemetry/Cargo.toml",
+      "sha256": "sha256:6b3cb085a6054ceca81fcb2a9a2552729d5db3902ee1a7c25b398ec2f15c35c3"
+    },
+    {
+      "bytes": "807",
+      "path": "builds/harness/source/crates/latent-testkit/Cargo.toml",
+      "sha256": "sha256:d1932cecd8a72bf74f5705a91079513b0820934327bbae541240c49cdcb4e378"
+    },
+    {
+      "bytes": "410",
+      "path": "builds/harness/source/crates/latent-triggers/Cargo.toml",
+      "sha256": "sha256:bc0b053cdda2183f83931e6e4fd9fb9e12c9150ff29e7e6b143d1bbf69fcb29f"
+    },
+    {
+      "bytes": "1026",
+      "path": "builds/harness/source/crates/latent-wasmtime/Cargo.toml",
+      "sha256": "sha256:5c7baebcf4302efb53c65105cd1905951fc09dbbb2f0cc758ade68a6cfb8fe97"
+    },
+    {
+      "bytes": "1112",
+      "path": "builds/harness/source/crates/latent-wire/Cargo.toml",
+      "sha256": "sha256:9215d439789ccc757c3e613bf8b9e2625047c47f26a9da3708b7202b35cb92a4"
+    },
+    {
+      "bytes": "400",
+      "path": "builds/harness/source/crates/latent-workflows/Cargo.toml",
+      "sha256": "sha256:1a0f0814d45ce14d28629e8bdb36ddc0cbac36525aaabde8821cfda6ff1a5676"
+    },
+    {
+      "bytes": "394",
+      "path": "builds/harness/source/crates/latent-wrpc/Cargo.toml",
+      "sha256": "sha256:fb0ba69bc3423b7fd1583e7a096a99174ec11e81c2a7751377fcd7bdcc79eede"
+    },
+    {
+      "bytes": "4014",
+      "path": "builds/harness/source/examples/echo-contract/README.md",
+      "sha256": "sha256:b3687de7a30f51cb1530eebb7dec8c30a371a7d40ef8841915a2f24d75bb732d"
+    },
+    {
+      "bytes": "1294",
+      "path": "builds/harness/source/examples/echo-contract/capsule.json",
+      "sha256": "sha256:92a55f1185902458d3e5418ab464ce651a12779fc90bf5ab3433e2eb2a5ca85d"
+    },
+    {
+      "bytes": "1349",
+      "path": "builds/harness/source/examples/echo-contract/contracts.json",
+      "sha256": "sha256:8112cc552e347f41ff6a9803c3de8b088660150b8678c6732bd93437b95b4fde"
+    },
+    {
+      "bytes": "1104",
+      "path": "builds/harness/source/examples/echo-contract/deployment.json",
+      "sha256": "sha256:2f14e5feb3eabfb56c4ec5e445f5fa02c42aa8f201828b78812ea399b36f9f3a"
+    },
+    {
+      "bytes": "424",
+      "path": "builds/harness/source/examples/echo-contract/http-trigger.json",
+      "sha256": "sha256:88df85b8f3160e8765a1a05a8eb60a5bf8b58c7d5e3dd0d32e0ee7e6a598ad52"
+    },
+    {
+      "bytes": "1394",
+      "path": "builds/harness/source/examples/echo-contract/publish-release.json",
+      "sha256": "sha256:5db0bdd31af984a4b9ec688a5883c935cb4c30efd2e357bb3e7da47a616dd2bb"
+    },
+    {
+      "bytes": "302",
+      "path": "builds/harness/source/examples/echo-contract/wit/echo.wit",
+      "sha256": "sha256:5a36463c6f335b2fa8a3c169242f7d01bacd9dd33589b439ecc869e89ca293c6"
+    },
+    {
+      "bytes": "140",
+      "path": "builds/harness/source/rust-toolchain.toml",
+      "sha256": "sha256:7527c74e92bfb75a72d184650b0a06c3d645f43536541007782abf9618f26bcc"
+    },
+    {
+      "bytes": "350",
+      "path": "builds/harness/source/sdk/rust/Cargo.toml",
+      "sha256": "sha256:551b8aeee415ed626cf9713eff8876e208754d837efa8fc46b501c5c15a37da8"
+    },
+    {
+      "bytes": "22919",
+      "path": "builds/harness/source/tools/build_echo_capsule.py",
+      "sha256": "sha256:fc5aa2ae27316e3971c6a505ed1d87ed8e79401b2abe74c9b26c266f66e722be"
+    },
+    {
+      "bytes": "1149",
+      "path": "builds/harness/source/tools/optimization-bench/Cargo.toml",
+      "sha256": "sha256:3542a8c750ec93be9d4c18605aa222fe0abde74a6e3804360cee6d69490c57b8"
+    },
+    {
+      "bytes": "379",
+      "path": "builds/harness/source/tools/optimization-workloads/Cargo.toml",
+      "sha256": "sha256:278cc5210b46b595fda073ba305d04acff5de6d9a92d73d3aba0ec1ad7ea1b75"
+    },
+    {
+      "bytes": "8481",
+      "path": "builds/harness/source/tools/phase0_build_environment.sh",
+      "sha256": "sha256:16266aee2b730aac007d2ef6b7e5a74f8ce7391c69a0ffc1849011f30884414d"
+    },
+    {
+      "bytes": "1762",
+      "path": "builds/harness/source/tools/toolchain-smoke/Cargo.toml",
+      "sha256": "sha256:4cdff5bd282412c18a5a25535d5db1b82aa8cacabb939b9c92347bcff05ded65"
+    },
+    {
+      "bytes": "1920",
+      "path": "builds/harness/source/tools/toolchain-smoke/examples/echo_capsule/component.rs",
+      "sha256": "sha256:edd5dc52cad5c8caf953747e1cce72ee2519451327a9a941ad5e45723bf0dabe"
+    },
+    {
+      "bytes": "758",
+      "path": "builds/harness/source/tools/toolchain-smoke/examples/echo_capsule/logic.rs",
+      "sha256": "sha256:c372b4032d0f059a625506d8b1a24cb257b9525d78809f842548d84bea9bd5b5"
+    },
+    {
+      "bytes": "800",
+      "path": "builds/harness/source/tools/toolchain.toml",
+      "sha256": "sha256:037aeccae7415eb12318baa5ff86609e78c968679f216e512bf319f2261c1e4f"
+    },
+    {
+      "bytes": "899",
+      "path": "echo/build.json",
+      "sha256": "sha256:4acc109b87a38862104611f38adb5f02f15ffb47a207707074655ca6ac3a6e8c"
+    },
+    {
+      "bytes": "1392",
+      "path": "echo/capsule.json",
+      "sha256": "sha256:231cb1972ac24c8060b7a142fba1e6df634e56ed76419eaaa6e44998e9fab2c6"
+    },
+    {
+      "bytes": "1349",
+      "path": "echo/contracts.json",
+      "sha256": "sha256:8e2d862da2819d6a5a43266af2c8e79eb8f98e16f4492ae325f2a995081b003e"
+    },
+    {
+      "bytes": "1104",
+      "path": "echo/deployment.json",
+      "sha256": "sha256:61cfd00162c9d6b1cb656cc1a36015748ea1262206e17e757922dd65e3a6c42a"
+    },
+    {
+      "bytes": "24754",
+      "path": "echo/echo-capsule.wasm",
+      "sha256": "sha256:23a911cd79e41ee98bb6431fde46844500109589eeaa9d0b25225a692109e233"
+    },
+    {
+      "bytes": "2710329",
+      "path": "runs/pair-01-candidate/candidate.json",
+      "sha256": "sha256:5878873767abac5619682f28e349ccfdfa5a3e9c382d0e5ddf3a7e185c92ab1a"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-01-candidate/collector.log",
+      "sha256": "sha256:6c6940750409072ffd2dfa5933a2b8b87b3a66acd6b2f6734261a58f0997e3d3"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-01-candidate/collector.log.process.json",
+      "sha256": "sha256:8b391c9fe811bafca4f9c723b84f1a4dd09d51db8306fb02d991495586156b42"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-01-candidate/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-01-candidate/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-01-candidate/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2027",
+      "path": "runs/pair-01-candidate/identity.json",
+      "sha256": "sha256:256fe1323bdbf821e461247f1b4e5e15758787d93f09a004aeab211432f99f18"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-01-candidate/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-01-candidate/plan.json",
+      "sha256": "sha256:e032f8fdd6ccb24e1dc50df534ab5b74d03f0751320a60fa797f837dc879101d"
+    },
+    {
+      "bytes": "2710301",
+      "path": "runs/pair-01-control/candidate.json",
+      "sha256": "sha256:58380aa396caaaad891ff46742187af4357bb1bdeb88567b3c28197944cba36d"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-01-control/collector.log",
+      "sha256": "sha256:11ef947df7fd1c3bfeaa427bf61e9b433fbbabbcb3db94fc27a84a64d57734bc"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-01-control/collector.log.process.json",
+      "sha256": "sha256:b9c649c376a05f6891c8f4e5c7c17e62dee36b49857da838af5c5a3ae5abd886"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-01-control/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-01-control/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-01-control/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2027",
+      "path": "runs/pair-01-control/identity.json",
+      "sha256": "sha256:06ff0e4d2186c210fcace5ded88cf4c59509521baef56ead5fa5b9be34abb9b4"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-01-control/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-01-control/plan.json",
+      "sha256": "sha256:e032f8fdd6ccb24e1dc50df534ab5b74d03f0751320a60fa797f837dc879101d"
+    },
+    {
+      "bytes": "2710305",
+      "path": "runs/pair-02-candidate/candidate.json",
+      "sha256": "sha256:77a73784089934e3e5e03a4d99f2713aa188abd64e8c6e9f7d4a351b855132a6"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-02-candidate/collector.log",
+      "sha256": "sha256:3c1a1daf9a029008b6819a36d5f195f053b421428db263e92bbdb6d8043d3b37"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-02-candidate/collector.log.process.json",
+      "sha256": "sha256:47a8cc6cc9dc2ca3d2d80027e1ee8cb0c049bbf6a871aca93d404359f3381657"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-02-candidate/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-02-candidate/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-02-candidate/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2032",
+      "path": "runs/pair-02-candidate/identity.json",
+      "sha256": "sha256:df0ee6ffc1cf9e4e96985ffdf4f323b54cae2b653334c170f95bf03f2571c537"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-02-candidate/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-02-candidate/plan.json",
+      "sha256": "sha256:4046849658278163820baccee7202f3b7ed5ce02b69d07e63397c508338bb22f"
+    },
+    {
+      "bytes": "2710561",
+      "path": "runs/pair-02-control/candidate.json",
+      "sha256": "sha256:1a0cf243c0f908234cd6d23d008d834d4257b52dc4d5530be2eadc2c0a7b3288"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-02-control/collector.log",
+      "sha256": "sha256:5129bcd332706e8f1fd6c31d9fd5df21cd97aa7981b764e015de93d7dc409286"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-02-control/collector.log.process.json",
+      "sha256": "sha256:3c90f7db898fcc48e066fcf58aa8046799814dad98618248eb56df6f232cc36b"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-02-control/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-02-control/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-02-control/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2032",
+      "path": "runs/pair-02-control/identity.json",
+      "sha256": "sha256:ee033d63aa7168ac371704069a8198346c7387856f38ae44c5cdeba1d7412093"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-02-control/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-02-control/plan.json",
+      "sha256": "sha256:4046849658278163820baccee7202f3b7ed5ce02b69d07e63397c508338bb22f"
+    },
+    {
+      "bytes": "2710241",
+      "path": "runs/pair-03-candidate/candidate.json",
+      "sha256": "sha256:0a20a74859edf2dac5f98e30b9db60102c209ef1c8edc7a00f5517b7714b348b"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-03-candidate/collector.log",
+      "sha256": "sha256:2afd88affee16b85b5c47374efd53900f850d0aa1c955f568f2979757d942101"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-03-candidate/collector.log.process.json",
+      "sha256": "sha256:6adc32d7c6d0446dd6b34d88e3413f4df9af9906fd8c5a601bef4f006b0686dc"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-03-candidate/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-03-candidate/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-03-candidate/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2033",
+      "path": "runs/pair-03-candidate/identity.json",
+      "sha256": "sha256:4cd745dc854048b9c3147712e0958659cad8d630b51daeca27f0f15ced55b933"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-03-candidate/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-03-candidate/plan.json",
+      "sha256": "sha256:b063f35c27b46451de5e32b2e0d834f784b292484fa6419c2a5a9d975ac50d2a"
+    },
+    {
+      "bytes": "2710322",
+      "path": "runs/pair-03-control/candidate.json",
+      "sha256": "sha256:f717ea8db2faca6a1571603075408cbd8a49bd8230372ce163745d325462764f"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-03-control/collector.log",
+      "sha256": "sha256:63c1e1b5582043ab03f083b078bba6d43f327df735214351a8e60713311b6bde"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-03-control/collector.log.process.json",
+      "sha256": "sha256:5c0e9caa9cf24496092635b887fa8b05d6b1dcbf6517eb4c00103a227f75f6f4"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-03-control/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-03-control/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-03-control/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2026",
+      "path": "runs/pair-03-control/identity.json",
+      "sha256": "sha256:8601087b415745e854ae673e0ee0be2af8b3f61822640a7fab67fa037a1ed6b1"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-03-control/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-03-control/plan.json",
+      "sha256": "sha256:b063f35c27b46451de5e32b2e0d834f784b292484fa6419c2a5a9d975ac50d2a"
+    },
+    {
+      "bytes": "2710445",
+      "path": "runs/pair-04-candidate/candidate.json",
+      "sha256": "sha256:ea081f34a3067ccb83e7e56d5245aee624f60d4d8e353c1007da93788de2ebcb"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-04-candidate/collector.log",
+      "sha256": "sha256:56094988d8bc6fd2c09eb3b0f95adc2642014e59f416277f3e98e02df33ffeb0"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-04-candidate/collector.log.process.json",
+      "sha256": "sha256:6d0e6fdca157418c68f0120626e5e0382d934e9706af681596ad9f596be1ff51"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-04-candidate/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-04-candidate/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-04-candidate/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2033",
+      "path": "runs/pair-04-candidate/identity.json",
+      "sha256": "sha256:4cd745dc854048b9c3147712e0958659cad8d630b51daeca27f0f15ced55b933"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-04-candidate/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-04-candidate/plan.json",
+      "sha256": "sha256:265f2b6f023f972e549d1ff393acf86193c5c1a91a7d50b644b5aebcf95a1c08"
+    },
+    {
+      "bytes": "2710662",
+      "path": "runs/pair-04-control/candidate.json",
+      "sha256": "sha256:96343b8069396556d22c5bff3e69329dd856f4ec80d97d584ceee1c9ab4e41d1"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-04-control/collector.log",
+      "sha256": "sha256:7243853f0b73c0e60c18f9095739dae98f477dec07699aaeebe05bf12dc6a7f7"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-04-control/collector.log.process.json",
+      "sha256": "sha256:8d1ae2b2a1ce91899bb8aeebba2d17f515fcbee48392959dd27c6c05a05a5d7b"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-04-control/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-04-control/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-04-control/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2030",
+      "path": "runs/pair-04-control/identity.json",
+      "sha256": "sha256:c7f5b41bd182cf0568b4b402653272942022649868255ad883d9ea9663852f40"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-04-control/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-04-control/plan.json",
+      "sha256": "sha256:265f2b6f023f972e549d1ff393acf86193c5c1a91a7d50b644b5aebcf95a1c08"
+    },
+    {
+      "bytes": "2710619",
+      "path": "runs/pair-05-candidate/candidate.json",
+      "sha256": "sha256:3caa8f8862bbc3474314f7b7c547cfcc3383e7abc14703a1d0f412c637b4996b"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-05-candidate/collector.log",
+      "sha256": "sha256:efdd8cb47b34e5532b47caf0d146fd82c5c6e6592094d1e9d53a84378baec006"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-05-candidate/collector.log.process.json",
+      "sha256": "sha256:94a07e6dea00470b73102a123a929ed16a5a1306eb7b2893ad28fd76d8aea94a"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-05-candidate/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-05-candidate/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-05-candidate/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2027",
+      "path": "runs/pair-05-candidate/identity.json",
+      "sha256": "sha256:7d488d4fb22a40901163f0645941a74cb9bf80a33a35c479af19f39a7b6319db"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-05-candidate/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-05-candidate/plan.json",
+      "sha256": "sha256:20bd8e6216667698d2c6f5ef00422399dcc9cdabc46d9686b584d30f534f9f83"
+    },
+    {
+      "bytes": "2710999",
+      "path": "runs/pair-05-control/candidate.json",
+      "sha256": "sha256:dbf7860afbc49c17bcf6d228810bc3e63cf73b4a21b204e46515b0b6dccae0e5"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-05-control/collector.log",
+      "sha256": "sha256:a3fe236c27135df848f9509ebb44c51a13abe43d10e271379b5fabdddea0df5e"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-05-control/collector.log.process.json",
+      "sha256": "sha256:4483964a9918a856dd1ff52820d83f9cba06e7e0ddcfedec87b1f1110d6f34ec"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-05-control/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-05-control/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-05-control/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2030",
+      "path": "runs/pair-05-control/identity.json",
+      "sha256": "sha256:c7f5b41bd182cf0568b4b402653272942022649868255ad883d9ea9663852f40"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-05-control/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-05-control/plan.json",
+      "sha256": "sha256:20bd8e6216667698d2c6f5ef00422399dcc9cdabc46d9686b584d30f534f9f83"
+    },
+    {
+      "bytes": "2710458",
+      "path": "runs/pair-06-candidate/candidate.json",
+      "sha256": "sha256:15bcabc217b7ef47dadd9c8fdfd3f0d83a6f47780f3bba00e9844fd44608ae26"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-06-candidate/collector.log",
+      "sha256": "sha256:2afd88affee16b85b5c47374efd53900f850d0aa1c955f568f2979757d942101"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-06-candidate/collector.log.process.json",
+      "sha256": "sha256:cf9cf2968fadb93c04c6dc1afff522e6105cd6dfd834b964181288689a8801cb"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-06-candidate/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-06-candidate/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-06-candidate/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2028",
+      "path": "runs/pair-06-candidate/identity.json",
+      "sha256": "sha256:982bbc5a7b41113ec289818c2aea1e534624275300c2cca5e162f790065421ab"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-06-candidate/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-06-candidate/plan.json",
+      "sha256": "sha256:d51f62bf6b17e67a409fe783b2f7340ef245b95036bc7f5604c1d7a8ded48a81"
+    },
+    {
+      "bytes": "2710433",
+      "path": "runs/pair-06-control/candidate.json",
+      "sha256": "sha256:6f4641ea16e2d02ede4038bf7286dc246862eea9d06194752bf17c68591ad048"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-06-control/collector.log",
+      "sha256": "sha256:1a98c3e40141559c9f7fd9b6772b357ab0fe9300124c750c0adf79b8373e87e0"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-06-control/collector.log.process.json",
+      "sha256": "sha256:90dd1fa43925add55cab4055f131c53c1f936066a05b4ae63701637c592c6635"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-06-control/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-06-control/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-06-control/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2028",
+      "path": "runs/pair-06-control/identity.json",
+      "sha256": "sha256:cfa38fceea5ebe64d6db1e16475920d62844295cd570ffeddbe687e1bb164bcb"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-06-control/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-06-control/plan.json",
+      "sha256": "sha256:d51f62bf6b17e67a409fe783b2f7340ef245b95036bc7f5604c1d7a8ded48a81"
+    },
+    {
+      "bytes": "2710652",
+      "path": "runs/pair-07-candidate/candidate.json",
+      "sha256": "sha256:b92746e3342b7a0bafd5fb025df9bfcc295a96fc9568438161b55b3ea8b78b8c"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-07-candidate/collector.log",
+      "sha256": "sha256:3f2172fd4322f2c9eb9aa2131d54c1f8e50f98077caec0e7d7f89527e519ab94"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-07-candidate/collector.log.process.json",
+      "sha256": "sha256:01f6d11286a6869aab5b12d088abdfc153164a646c6669b797d4b27c0420c1db"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-07-candidate/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-07-candidate/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-07-candidate/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2033",
+      "path": "runs/pair-07-candidate/identity.json",
+      "sha256": "sha256:0914091a7087d387dc406112cb749f82894cd08ce385c93c56bfe2c5b26fb773"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-07-candidate/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-07-candidate/plan.json",
+      "sha256": "sha256:5bf010359e19dc838e6a3d5d5649232e5fb976c7911cc762662f569a0cac1ef1"
+    },
+    {
+      "bytes": "2710657",
+      "path": "runs/pair-07-control/candidate.json",
+      "sha256": "sha256:8fe578f24c68b5e7a79af1c23841e0a49715e144c386d5a166482cb4510cb783"
+    },
+    {
+      "bytes": "207",
+      "path": "runs/pair-07-control/collector.log",
+      "sha256": "sha256:5129bcd332706e8f1fd6c31d9fd5df21cd97aa7981b764e015de93d7dc409286"
+    },
+    {
+      "bytes": "228",
+      "path": "runs/pair-07-control/collector.log.process.json",
+      "sha256": "sha256:a7896f130ff236c163696778ddf7428136a7c2a50943c2d29963d2c6c8f0173c"
+    },
+    {
+      "bytes": "1041",
+      "path": "runs/pair-07-control/echo-capsule.json",
+      "sha256": "sha256:ff1a26786d823142e97ffcdaea1ecc31625c5f667e889e86e86b87a33537dcbe"
+    },
+    {
+      "bytes": "679",
+      "path": "runs/pair-07-control/echo-contracts.json",
+      "sha256": "sha256:b398e506acb06115b1de7b2fc620d3d79d7cd148599f93f3182e835f2fba68d0"
+    },
+    {
+      "bytes": "776",
+      "path": "runs/pair-07-control/echo-deployment.json",
+      "sha256": "sha256:c2073b8d0b12d2f89de2aa3a6eec93051e506b41d611de1ebb05802be41960fe"
+    },
+    {
+      "bytes": "2033",
+      "path": "runs/pair-07-control/identity.json",
+      "sha256": "sha256:f1b6b0d6a927d829ea5490f3a75ccc5f2f804e981dd06ddec12bf4a77906c56d"
+    },
+    {
+      "bytes": "17",
+      "path": "runs/pair-07-control/parent-cleanup.json",
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598"
+    },
+    {
+      "bytes": "179",
+      "path": "runs/pair-07-control/plan.json",
+      "sha256": "sha256:5bf010359e19dc838e6a3d5d5649232e5fb976c7911cc762662f569a0cac1ef1"
+    },
+    {
+      "bytes": "145089",
+      "path": "suite.json",
+      "sha256": "sha256:5589daca12e3eea8f16221c59750b2a4f9e29e148818b9986f6ea5acb34fe2f8"
+    }
+  ],
+  "schema": "latent.phase1.archive-manifest.v1",
+  "total_bytes": "435640936"
+}

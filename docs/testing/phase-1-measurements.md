@@ -135,6 +135,19 @@ warmup population. It performs no manual preparation before that call. Its
 keeps it separate from the historical/current comparison. Cold materialization
 is visible in that RPC interval, not in a fabricated backend-total interval.
 
+The retained [verified warm activation comparison](../../benchmarks/optimization/warm-activation/2026-09-08-container-linux-56303c5/REPORT.md)
+contains seven paired external-client runs and a separate seven-pair backend
+diagnostic. It reports warm latency gains, cache-refill regressions and the
+remaining tight-budget failures. Its two archives replay independently; these
+observations do not replace the original Phase 1 scale and soak evidence.
+
+`tools/package_phase1_evidence.py` retains gzip level 6 by default and accepts
+`--compression-level 9` for denser lossless packaging. `--split-archive` stores
+the same gzip stream in two to four parts of at most 50 MB, bounded to 198 MB
+total. Ordinary archives retain their 99 MB cap. Both forms keep the 1 GiB
+expanded and 5,000-file limits and require full evidence replay; the validator
+checks ordered part identities and the reconstructed archive before extraction.
+
 The two-call batch records offered concurrency. The queue batch proves two
 running holders and three queued waiters, then cancels the holders to release
 the waiters. Scheduler observations are actual grant/wait counter deltas for
