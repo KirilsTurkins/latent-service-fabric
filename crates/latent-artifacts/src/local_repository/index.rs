@@ -12,7 +12,7 @@ use super::{
     corrupt, error, resource_exhausted, DirectoryArtifactRepositoryConfig, PlatformError,
     PlatformErrorCode,
 };
-use crate::{ArtifactCatalogEntry, ArtifactDescriptor, CapsuleArtifact};
+use crate::{ArtifactCatalogEntry, ArtifactDescriptor, CapsuleArtifact, VerifiedArtifactMetadata};
 
 pub(super) type Rows = BTreeSet<ReleaseDigest>;
 
@@ -103,8 +103,32 @@ impl CatalogIndex {
         artifact: CapsuleArtifact,
         config: DirectoryArtifactRepositoryConfig,
     ) -> Result<ArtifactDescriptor, PlatformError> {
-        let cost = sizing::measure(&artifact.descriptor, &artifact.manifest, config)?;
-        self.preflight(&artifact.descriptor, &artifact.manifest, config)
+        let CapsuleArtifact {
+            descriptor,
+            manifest,
+            ..
+        } = artifact;
+        self.insert_parts(descriptor, manifest, config)
+    }
+
+    pub(super) fn insert_verified(
+        &mut self,
+        metadata: VerifiedArtifactMetadata,
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<ArtifactDescriptor, PlatformError> {
+        let (descriptor, manifest, contracts) = metadata.into_parts();
+        drop(contracts);
+        self.insert_parts(descriptor, manifest, config)
+    }
+
+    fn insert_parts(
+        &mut self,
+        descriptor: ArtifactDescriptor,
+        manifest: CapsuleManifest,
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<ArtifactDescriptor, PlatformError> {
+        let cost = sizing::measure(&descriptor, &manifest, config)?;
+        self.preflight(&descriptor, &manifest, config)
             .map_err(|failure| {
                 if failure.code == PlatformErrorCode::AlreadyExists {
                     corrupt("duplicate release digest or reference has conflicting metadata")
@@ -112,17 +136,9 @@ impl CatalogIndex {
                     failure
                 }
             })?;
-        if self
-            .by_digest
-            .contains_key(&artifact.descriptor.release_digest)
-        {
-            return Ok(artifact.descriptor);
+        if self.by_digest.contains_key(&descriptor.release_digest) {
+            return Ok(descriptor);
         }
-        let CapsuleArtifact {
-            descriptor,
-            manifest,
-            ..
-        } = artifact;
         let mut value = ArtifactCatalogEntry {
             descriptor,
             tenant: manifest.metadata.tenant,

@@ -4,6 +4,9 @@
 
 mod content_hash;
 mod local_repository;
+mod verified_metadata;
+
+pub use verified_metadata::VerifiedArtifactMetadata;
 
 pub use local_repository::contract_metadata::{
     decode_contract_metadata, encode_contract_metadata, ContractMetadataLimits,
@@ -152,6 +155,21 @@ pub trait ArtifactRepository: Send + Sync {
         &'a self,
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>>;
+
+    /// Reads metadata after verifying the component's content identity and length.
+    /// The default fetches and checks the full artifact; local implementations may
+    /// stream component verification without retaining its bytes. This is a fresh
+    /// integrity check, not an authenticated prepared-cache lookup.
+    fn fetch_verified_metadata<'a>(
+        &'a self,
+        digest: &'a ReleaseDigest,
+    ) -> BoxFuture<'a, Result<VerifiedArtifactMetadata, PlatformError>> {
+        Box::pin(async move {
+            let metadata = VerifiedArtifactMetadata::from_artifact(self.fetch(digest).await?)?;
+            metadata.verify_requested(digest)?;
+            Ok(metadata)
+        })
+    }
 
     fn publish<'a>(
         &'a self,

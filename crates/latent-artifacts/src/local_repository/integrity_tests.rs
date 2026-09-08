@@ -40,7 +40,7 @@ fn assert_corrupt<T>(result: Result<T, PlatformError>, message: &str) {
     assert!(!failure.retryable);
 }
 
-fn assert_fetch_retry_and_reopen_reject(
+pub(super) fn assert_fetch_retry_and_reopen_reject(
     repo: DirectoryArtifactRepository,
     expected: &CapsuleArtifact,
     path: &Path,
@@ -50,6 +50,10 @@ fn assert_fetch_retry_and_reopen_reject(
     let root = repo.root().to_owned();
     assert_corrupt(
         block_on(repo.fetch(&expected.descriptor.release_digest)),
+        message,
+    );
+    assert_corrupt(
+        block_on(repo.fetch_verified_metadata(&expected.descriptor.release_digest)),
         message,
     );
     assert_corrupt(block_on(repo.publish(expected.clone())), message);

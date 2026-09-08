@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package Phase 1 measurement, paired or optimization evidence with mandatory replay."""
+"""Package Phase 1 measurement, paired and optimization evidence with mandatory replay."""
 from __future__ import annotations
 
 import argparse

@@ -110,3 +110,59 @@ Original Phase0 and Phase1 evidence remains immutable under `benchmarks/phase0`
 and `benchmarks/phase1`. Engineering targets and their final evaluation belong to
 the extension epic and final gate; protocol validation alone is not an
 optimization result or a production capacity claim.
+
+## Artifact identity and catalog recovery
+
+The retained [2026-09-08 comparison](artifact-identity/2026-09-08-container-linux-95a53b1/REPORT.md)
+completed all 252 full measurements. With 64 MiB components, median artifact
+recovery fell from 309 ms to 53 ms and combined recovery/catalog loading from
+861 ms to 104 ms. Candidate profiled peak heap for these operations was 0.12 MiB
+and 0.20 MiB respectively. The report distinguishes normal CPU/RSS from separately
+profiled heap usage and links the complete replayable evidence.
+
+The [artifact identity comparison](https://github.com/KirilsTurkins/latent-service-fabric/issues/99)
+uses the identical auxiliary Rust probe on clean control and candidate commits.
+On Linux with Heaptrack 1.4 and zstd installed, set `CONTROL_REF` and
+`CANDIDATE_REF` to their full commit hashes, and `COMPONENT`, `CAPSULE` and
+`CONTRACTS` to one matching generated optimization component and its metadata:
+
+```sh
+python3 tools/run_artifact_identity_benchmarks.py --profile full \
+  --control-ref "$CONTROL_REF" --candidate-ref "$CANDIDATE_REF" \
+  --component "$COMPONENT" --capsule "$CAPSULE" --contracts "$CONTRACTS" \
+  --output target/artifact-identity/full-reference
+python3 tools/validate_artifact_identity_evidence.py \
+  target/artifact-identity/full-reference/suite.json \
+  --check-aggregate target/artifact-identity/full-reference/aggregate.json
+```
+
+Fixture generation runs separately, validates the actual component, and appends
+legal custom sections to produce exact 16 MiB and 64 MiB variants alongside the
+original small fixture. Each fixture has one published release and deployment.
+Seven alternating pairs cover byte-slice hashing, artifact repository recovery,
+and combined artifact recovery plus deployment catalog reopening/compilation.
+Normal and separately instrumented allocation runs total 252 measured processes.
+`--profile smoke` uses one pair and the small fixture to check the protocol.
+
+Hash input reads occur before its timer; full hash runs repeat the operation up
+to 4,096 times to amortize short durations. Repository operations run once per
+process. Timing excludes post-operation identity checks and the 100 ms live
+observation hold. CPU is whole-process user/system time, RSS includes process
+libraries and input buffers, and Heaptrack allocation/peak records come from
+separate processes. Files receive a declared sequential read before every run;
+this is best-effort warm filesystem evidence, not a cold-disk benchmark.
+
+Package a qualified full comparison into a new destination and replay it without
+executing any retained binary:
+
+```sh
+python3 tools/package_phase1_evidence.py \
+  --source target/artifact-identity/full-reference \
+  --output target/artifact-identity/reference-package
+python3 tools/validate_phase1_archive.py target/artifact-identity/reference-package
+```
+
+The archive retains original binaries, fixtures, profiles and receipts with exact
+hashes. Packaging requires successful full-population replay and does not add a
+measurement policy or a historical comparison from another protocol. Existing
+Phase 0, Phase 1 and optimization baseline evidence remains unchanged.

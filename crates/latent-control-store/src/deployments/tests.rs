@@ -8,6 +8,7 @@ mod recovery;
 mod resources;
 mod root_identity;
 mod scoped_routes;
+mod verified_metadata;
 mod versioned;
 
 use std::sync::atomic::Ordering;
