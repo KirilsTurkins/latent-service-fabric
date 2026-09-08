@@ -46,11 +46,15 @@ cluster behavior, or production telemetry/SLOs.
 
 ## Service model
 
-The [Phase 1 roadmap](../roadmap.md) tracks implementation beyond the Phase 0
-evidence: schema-backed manifests, budget/cancellation primitives, a durable
-local release catalog, and an immutable deployment/routing catalog are now
-implemented through Rust APIs. Standalone node composition, service adapters,
-generic dispatch, and the full Phase 1 gate remain pending.
+The current [standalone Linux node](../reference/standalone-node.md) composes
+durable release and deployment catalogs, immutable routing, admission, fair
+scheduling, [generic Wasmtime execution](../runtime/wasmtime.md), activation
+capabilities and lifecycle management, telemetry, and invocation and management
+RPCs. The [operator CLI](../reference/operator-cli.md) drives the local
+release-to-invocation workflow through generated clients. The
+[Phase 1 roadmap](../roadmap.md) tracks delivered features and remaining work;
+[bounded conformance](../testing/phase-1-conformance.md) covers selected scenarios,
+while the full Phase 1 completion gate remains pending.
 
 ```text
 Service = stable logical name
@@ -77,9 +81,11 @@ Stores desired state, validates releases, compiles bindings and routes, evaluate
 
 Receives triggers and direct calls, resolves exact revisions from a local snapshot, performs admission, schedules activations, materializes code, binds capabilities, executes guest code, commits state, persists effect intents, and returns results.
 
-These plane descriptions are target architecture unless a linked
-implementation document says otherwise. Phase 0 implements only the local
-component preparation, execution, containment, and reclamation slice.
+These plane descriptions include later-phase capabilities. Phase 1 implements
+the local stateless routing and execution path, management RPCs, and CLI. OCI
+distribution, clustered control, durable state/effects, and general trigger
+adapters remain later work. Phase 0 implements only the local component
+preparation, execution, containment, and reclamation slice.
 
 ## Physical topology
 
@@ -96,7 +102,11 @@ Ingress ─────────────► latentd nodes ◄────
                          └── telemetry collector
 ```
 
-Standalone mode is intended to embed the control plane into one `latentd` process and use local storage. Production mode is intended to separate the clustered control plane from data-plane nodes. Neither topology is a Phase 0 product surface.
+The diagram shows the intended clustered topology. Current standalone mode
+embeds local desired-state catalogs and the supported management services in
+one Linux `latentd` process, using durable local storage. A separate clustered
+control plane, PostgreSQL storage, and OCI distribution remain later work.
+Neither topology was a Phase 0 product surface.
 
 ## Fixed process model
 

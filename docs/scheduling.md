@@ -159,8 +159,9 @@ saturate and retain no history keyed by activation, tenant, or service.
 Queue and pool observations are individually coherent and sampled separately;
 the combined result is not an atomic cross-layer snapshot. The observation path
 uses bounded live bookkeeping and pool counters without scanning service or
-deployment catalogs. This surface can feed future node telemetry; it does not
-implement the #13 exporter/inventory pipeline.
+deployment catalogs. `SchedulerInventorySource` exposes these snapshots to the
+[implemented node inventory](telemetry.md#inventory), which the
+[standalone node](reference/standalone-node.md) serves through management RPCs.
 
 Scheduler-generated errors carry the existing platform code and one
 `scheduler.limit` detail with a stable `reason`, excluding caller payloads and
