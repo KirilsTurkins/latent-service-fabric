@@ -2,10 +2,10 @@
 
 `latent_node::LocalActivationManager` composes the stateless Phase 1 lifecycle:
 request validation, pinned routing and policy, admission, fair scheduling,
-artifact retrieval, owned preparation, capability binding, contained execution,
+repository-backed owned preparation, capability binding, contained execution,
 accounting, and terminal publication. Its dependencies are Rust ports and
 node-owned services. Public invocation/management adapters and the standalone
-node remain separate work.
+node compose this manager through separate modules.
 
 ## Start and identity
 
@@ -115,12 +115,26 @@ Host log charges and observed CPU/memory consumption survive failures and drops;
 the owner finalizes only after execution resources and cell disposition settle.
 Cancellation takes precedence over deadline expiration at terminal publication.
 
-The backend's `prepare_for_use` returns an affine `PreparedUse` that pins the
-immutable prepared runtime through cache eviction. `invoke_prepared_contained`
-consumes that owner; completion, future drop, and panic release its guard.
+The manager calls `ExecutionBackend::prepare_from_repository` with the pinned
+release's preparation key. It receives a `PreparedActivation`: an affine
+`PreparedUse` and the manifest's complete declared import list, including optional
+imports. The use pins the immutable prepared runtime through cache eviction.
+`invoke_prepared_contained` consumes that owner; completion, future drop, and
+panic release its guard. Direct callers can still use `prepare_for_use` with
+owned artifact bytes.
 An activation never calls global prepared-cache release as its cleanup step.
 The manager binds only the prepared component's explicitly declared imports;
-the backend validates the supported capability surface.
+the backend validates the supported capability surface. Each activation gets
+fresh capability handles, host context, store and component instance.
+
+For the directory repository, preparation can reuse a verified immutable
+snapshot through a sealed source whose identity lookup and fetch belong to the
+same repository owner. A warm cache hit performs no component read/hash or full
+manifest/contract traversal. A miss fetches and verifies stored content through
+that source before compiling and adopting it. Repositories without this source
+use the fully verified fetch path. These are preparation optimizations, not a
+replacement for routing, tenant checks, admission or activation accounting; see
+[Wasmtime preparation](runtime/wasmtime.md#node-policy-and-shared-preparation).
 
 Artifact/preparation failure releases a cell that never entered execution.
 Before backend entry, dropped built-in assignments can synchronously reclaim

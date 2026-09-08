@@ -164,9 +164,10 @@ impl WasmtimeBackend {
         let digest = match integrity {
             ComponentIntegrity::Verify => self.validate_component_bytes(artifact)?,
             ComponentIntegrity::VerifiedBySource => {
-                if artifact.component_bytes.is_empty()
-                    || artifact.component_bytes.len() > self.config.maximum_component_bytes
-                {
+                if artifact.component_bytes.is_empty() {
+                    return Err(empty_component());
+                }
+                if artifact.component_bytes.len() > self.config.maximum_component_bytes {
                     return Err(platform_error(
                         PlatformErrorCode::ResourceExhausted,
                         "component artifact exceeds the configured byte limit",
@@ -211,9 +212,10 @@ impl WasmtimeBackend {
                 false,
             ));
         }
-        if identity.component_bytes() == 0
-            || identity.component_bytes() > self.config.maximum_component_bytes as u64
-        {
+        if identity.component_bytes() == 0 {
+            return Err(empty_component());
+        }
+        if identity.component_bytes() > self.config.maximum_component_bytes as u64 {
             return Err(platform_error(
                 PlatformErrorCode::ResourceExhausted,
                 "component artifact exceeds the configured byte limit",
@@ -330,6 +332,14 @@ fn metadata_overflow() -> PlatformError {
     platform_error(
         PlatformErrorCode::ResourceExhausted,
         "prepared metadata accounting overflowed",
+        false,
+    )
+}
+
+fn empty_component() -> PlatformError {
+    platform_error(
+        PlatformErrorCode::CorruptArtifact,
+        "component artifact is empty",
         false,
     )
 }

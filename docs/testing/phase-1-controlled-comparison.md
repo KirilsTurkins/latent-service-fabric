@@ -86,7 +86,15 @@ associations and fixed controls.
 ## Read the observations
 
 Each metric names its control and candidate boundaries. Preparation measures the
-actual component prepare API after engine construction, once per process. Warm
+actual preparation API after engine construction, once per process. Current
+collector revisions call `prepare_from_repository` and record
+`preparation_scope: repository-acquisition-including-verified-refill`, including
+the checked repository refill. The historical arm still uses its original
+direct-artifact preparation API. Earlier retained candidate archives keep their
+original boundary and exact source; they do not acquire this new scope on replay.
+The separate #100 current/current diagnostic instead warms through its first
+real RPC, as described in [measurement scopes](phase-1-measurements.md).
+Warm
 backend setup, guest call, host calls, reclamation, classification, reusable proof
 and backend total have separately retained intervals. The guest-call interval
 includes automatic canonical post-return in both runtimes. Host-call time is a
@@ -99,6 +107,8 @@ persistent loopback RPC through terminal receipt. It is labelled separately from
 backend intervals. Startup segments have different exclusions and remain
 unmatched. Historical summed cleanup, current gaps between named intervals and
 legacy residuals are never summed into a fabricated comparable cleanup metric.
+In particular, `backend_total_micros` excludes repository acquisition and
+activation materialization; those occur before backend execution begins.
 
 Each pair retains per-arm distributions and median/p95/p99 differences. Across
 pairs, summaries use independent process representatives and report variability
