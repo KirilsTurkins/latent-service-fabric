@@ -35,9 +35,9 @@ def execute(args, repo):
     target.mkdir(parents=True, exist_ok=True)
     # Validate all build identities/hashes before starting any workload.
     from .evidence import artifact_set
-    from .builds import validate
-    validate(builds, artifact_set(output, builds), args.profile)
     cold = getattr(args, "experiment", "warm") == "cold"
+    from .builds import validate_experiment
+    validate_experiment(builds, artifact_set(output, builds), args.profile,"cold" if cold else "warm")
     began = time.monotonic_ns()
     deadline = began + ((4500 if cold else 9000) if args.profile == "full" else 300) * 10**9
     suite = {"schema": "latent.optimization.cold-suite.v1" if cold else "latent.optimization.backend-revision-suite.v1", "profile": args.profile,

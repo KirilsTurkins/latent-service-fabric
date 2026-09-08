@@ -31,7 +31,7 @@ def summarize(rows, observer, controls, snapshots):
         selected = [row for row in observer.records.values() if row["stage"] == stage]
         cpu = [row["thread_cpu"] for row in selected if row["thread_cpu"] is not None]
         stages.append({"stage":stage,"observations":str(len(selected)),
-                       "cpu_population":"unavailable-across-pool-threads" if observer.variant == "candidate" and stage in ("queue_wait","whole_job")
+                       "cpu_population":"unavailable-across-pool-threads" if stage == "queue_wait"
                                         else "paired-readings-of-the-actual-executing-task",
                        "elapsed_nanos":distribution([uint(row["finished_nanos"])-uint(row["started_nanos"]) for row in selected]) if selected else None,
                        "thread_cpu_samples":str(len(cpu)),"thread_cpu_unavailable":str(len(selected)-len(cpu)),
@@ -87,7 +87,7 @@ def aggregate(suite, checksum, builds, records, complete, failed):
                 "Warm overlap means the RPC interval intersects a conservatively mapped actual Component::new interval; its sample count is explicit.",
                 "CPU fields are actual task ticks with retained clock resolution, not wall time; zero ticks are quantized observations.",
                 "QueueWait spans submitted-ready to worker pickup, including assigned-slot wake delay; it is per job, not a queued-waiter latency distribution.",
-                "Pooled WholeJob and QueueWait cross tasks and have unavailable CPU; their CPU cannot be compared with the synchronous WholeJob readings.",
+                "WholeJob measures the preparation body after worker pickup (inline in control); valid same-task CPU readings are retained. QueueWait has unavailable CPU and is separate.",
                 "Whole-job and nested stages overlap and cannot be summed. Component::new includes Wasmtime internal validation.",
                 "Compiler job IDs bind releases and stage intervals; RPC IDs bind callers. No per-caller prepare-ready interval is inferred from those separate groups.",
                 "Successful latency contrasts are conditional on success; all offered warm requests, failures, producer lag and overshoot remain separate populations.",

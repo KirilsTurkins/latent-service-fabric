@@ -49,7 +49,7 @@ class Observer:
             self.job(row)
             require(uint(row["started_nanos"]) <= uint(row["finished_nanos"]) <= offset, "cold-stage-window")
             if row["thread_cpu"] is not None:
-                require(not (self.variant == "candidate" and row["stage"] in ("queue_wait","whole_job")),
+                require(row["stage"] != "queue_wait",
                         "cold-cross-thread-stage-claims-cpu")
                 cpu = fields(row["thread_cpu"], "before after")
                 for reading in cpu.values():

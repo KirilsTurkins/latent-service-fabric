@@ -120,6 +120,26 @@ class ColdRevisionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"cpu-total-not-raw"):
             validate_suite(self.path)
 
+    def test_worker_whole_job_can_have_actual_same_task_cpu(self):
+        def mutate(raw):
+            captures=[raw["initial_observer"],raw["final_observer"]]
+            captures.extend(row["observer"] for row in raw["samples"] if "observer" in row)
+            captures.extend(row["trigger"]["observation"] for row in raw["samples"] if row["kind"] == "cancellation")
+            for capture in captures:
+                snapshot=capture["snapshot"]
+                rows=snapshot["recent_stages"]
+                whole=[row for row in rows if row["stage"] == "whole_job"]
+                for row in whole:
+                    donor=next(item for item in rows if item["job_id"] == row["job_id"] and item["stage"] == "component_new")
+                    row["thread_cpu"]=copy.deepcopy(donor["thread_cpu"])
+                total=next(row for row in snapshot["stages"] if row["stage"] == "whole_job")
+                total.update(thread_cpu_samples=str(len(whole)),thread_cpu_unavailable="0",thread_cpu_user_ticks=str(len(whole)))
+        self.change(mutate)
+        result=validate_suite(self.path)
+        stage=next(row for row in result["runs"][1]["preparation_stages"] if row["stage"] == "whole_job")
+        self.assertEqual(stage["thread_cpu_samples"],"8")
+        self.assertEqual(stage["thread_cpu_unavailable"],"0")
+
     def test_undispatched_warm_offer_remains_in_population_and_not_success_latency(self):
         def mutate(raw):
             row=next(row for row in raw["samples"] if row.get("phase") == "same-key" and row.get("key") == "0")

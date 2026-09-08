@@ -6,6 +6,20 @@ from tools.optimization_revision_runner.backend import CONTROLS, RECIPE
 from tools.optimization_revision_runner.build import validate_refs
 
 
+def validate_experiment(value,artifacts,profile,experiment):
+    require(experiment in ("warm","cold"), "backend-experiment-selection")
+    validate(value,artifacts,profile)
+    if experiment == "cold":
+        from tools.optimization_revision_runner.backend import COLD_CONTROLS
+        controlled=[]
+        for build in (*value["builds"].values(),value["harness"]):
+            require(all(name in build["inputs"] for name in COLD_CONTROLS), "cold-cpu-source-proof-missing")
+            controlled.append({name:(build["inputs"][name]["sha256"],build["inputs"][name]["bytes"])
+                               for name in COLD_CONTROLS})
+        require(controlled[0] == controlled[1] == controlled[2], "cold-cpu-source-controls-differ")
+    return value
+
+
 def validate(value, artifacts, profile):
     fields(value, "schema requested_refs build builds harness cleanup")
     require(value["schema"] == "latent.optimization.backend-builds.v1", "invalid-backend-build-schema")

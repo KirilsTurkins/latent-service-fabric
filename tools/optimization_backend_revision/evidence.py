@@ -53,15 +53,7 @@ def validate_suite(path):
     builds = read_json(build_path)
     artifacts = artifact_set(path.parent, builds, suite["artifacts"])
     artifacts.path(suite["builds"])
-    build_check.validate(builds, artifacts, suite["profile"])
-    if cold:
-        from tools.optimization_revision_runner.backend import COLD_CONTROLS
-        controlled = []
-        for build in (*builds["builds"].values(),builds["harness"]):
-            require(all(name in build["inputs"] for name in COLD_CONTROLS), "cold-cpu-source-proof-missing")
-            controlled.append({name:(build["inputs"][name]["sha256"],build["inputs"][name]["bytes"])
-                               for name in COLD_CONTROLS})
-        require(controlled[0] == controlled[1] == controlled[2], "cold-cpu-source-controls-differ")
+    build_check.validate_experiment(builds, artifacts, suite["profile"],"cold" if cold else "warm")
     require(builds["harness"]["source"] == suite["runner_source"], "backend-harness-source-mismatch")
     expected = list(model.population(suite["profile"]))
     require(isinstance(suite["runs"], list) and len(suite["runs"]) <= len(expected), "backend-run-count")
