@@ -4,8 +4,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
 use latent_artifacts::{
-    content_digest, ArtifactRepository, CapsuleArtifact, ContractDescriptor, FieldDescriptor,
-    ValueType,
+    content_digest, ArtifactRepository, ContractDescriptor, FieldDescriptor, ValueType,
+    VerifiedArtifactMetadata,
 };
 use latent_core::{
     DeploymentId, Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration,
@@ -166,15 +166,15 @@ pub(super) async fn compile_versioned(
         ));
     }
     let codec = JsonManifestCodec::default();
-    // Group references, not cloned artifacts. At most one release's full metadata
-    // is alive, even when every deployment references a different large release.
+    // Group references, not cloned artifacts. At most one release's verified
+    // metadata is alive; repository verification owns any component bytes.
     let mut ordered = deployments.values().collect::<Vec<_>>();
     ordered.sort_unstable_by(|left, right| {
         left.release
             .cmp(&right.release)
             .then_with(|| left.id.cmp(&right.id))
     });
-    let mut release: Option<(ReleaseDigest, CapsuleArtifact)> = None;
+    let mut release: Option<(ReleaseDigest, VerifiedArtifactMetadata)> = None;
     let mut fingerprints = BTreeMap::new();
     let mut scopes = BTreeMap::new();
     let mut contracts = BTreeMap::new();
@@ -233,34 +233,34 @@ pub(super) async fn compile_versioned(
             // Drop before awaiting the next fetch, not after its result is allocated.
             drop(release.take());
             fingerprints.clear();
-            let mut artifact = artifacts.fetch(&deployment.release).await?;
-            let digest_matches = artifact
-                .descriptor
-                .release_digest
-                .0
-                .eq_ignore_ascii_case(&deployment.release.0)
+            let artifact = artifacts
+                .fetch_verified_metadata(&deployment.release)
+                .await?;
+            let digest_matches = artifact.verified_digest() == &deployment.release
                 && artifact
-                    .manifest
-                    .component_digest
+                    .descriptor()
+                    .release_digest
                     .0
                     .eq_ignore_ascii_case(&deployment.release.0)
-                && content_digest(&artifact.component_bytes) == deployment.release;
+                && artifact
+                    .manifest()
+                    .component_digest
+                    .0
+                    .eq_ignore_ascii_case(&deployment.release.0);
             if !digest_matches {
                 return Err(error(
                     PlatformErrorCode::CorruptArtifact,
                     "release-digest-mismatch",
                 ));
             }
-            // Never retain component bytes in the route catalog, or prepare/instantiate them.
-            drop(std::mem::take(&mut artifact.component_bytes));
             release = Some((deployment.release.clone(), artifact));
         }
         let artifact = &release.as_ref().expect("current release was fetched").1;
         Phase1ManifestValidator
-            .validate_deployment_against_capsule(deployment, &artifact.manifest)
+            .validate_deployment_against_capsule(deployment, artifact.manifest())
             .map_err(manifest_error)?;
         let mut descriptors = BTreeMap::new();
-        for descriptor in &artifact.contracts {
+        for descriptor in artifact.contracts() {
             if descriptors.insert(&descriptor.id, descriptor).is_some() {
                 return Err(error(
                     PlatformErrorCode::AlreadyExists,
@@ -270,7 +270,7 @@ pub(super) async fn compile_versioned(
         }
         let mut callable = BTreeSet::new();
         let mut exported = BTreeMap::new();
-        for export in &artifact.manifest.exports {
+        for export in &artifact.manifest().exports {
             if !valid_identifier(&export.contract.0, config.max_identifier_bytes) {
                 return Err(error(
                     PlatformErrorCode::IncompatibleContract,
@@ -363,7 +363,7 @@ pub(super) async fn compile_versioned(
             &mut admission_policies,
             revision_id.clone(),
             deployment,
-            &artifact.manifest.execution,
+            &artifact.manifest().execution,
             &mut metadata_budget,
         )?;
         let revision = Arc::new(RevisionRoute {

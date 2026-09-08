@@ -1,5 +1,6 @@
 mod admission;
 mod fixtures;
+mod verified_metadata;
 #[cfg(unix)]
 mod lock_release;
 mod pagination;

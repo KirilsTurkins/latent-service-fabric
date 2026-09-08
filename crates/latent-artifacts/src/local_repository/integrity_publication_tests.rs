@@ -58,6 +58,12 @@ fn assert_invisible(repo: &DirectoryArtifactRepository, value: &CapsuleArtifact)
         PlatformErrorCode::NotFound
     );
     assert_eq!(
+        block_on(repo.fetch_verified_metadata(&value.descriptor.release_digest))
+            .expect_err("unverified metadata must not become fetchable")
+            .code,
+        PlatformErrorCode::NotFound
+    );
+    assert_eq!(
         block_on(repo.resolve(&ArtifactQuery {
             reference: Some(value.descriptor.reference.clone()),
             release_digest: Some(value.descriptor.release_digest.clone()),

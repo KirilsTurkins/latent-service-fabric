@@ -1,3 +1,4 @@
+mod component_reader;
 pub(crate) mod contract_metadata;
 mod index;
 mod integrity;
@@ -26,7 +27,11 @@ use latent_manifest::{
     JsonManifestCodec, ManifestCodec, ManifestValidator, Phase1ManifestValidator,
 };
 
-use crate::{ArtifactDescriptor, ArtifactPage, ArtifactQuery, ArtifactRepository, CapsuleArtifact};
+use crate::{
+    ArtifactDescriptor, ArtifactPage, ArtifactQuery, ArtifactRepository, CapsuleArtifact,
+    VerifiedArtifactMetadata,
+};
+use component_reader::{read_component, Retention};
 use index::CatalogIndex;
 use integrity::CompletionRecord;
 use metadata_codec::{decode_metadata, encode_metadata};
@@ -96,7 +101,8 @@ struct PublicationState {
 }
 
 struct VerifiedEntry {
-    artifact: CapsuleArtifact,
+    metadata: VerifiedArtifactMetadata,
+    component_bytes: Vec<u8>,
     completion: CompletionRecord,
 }
 
@@ -238,8 +244,10 @@ impl DirectoryArtifactRepository {
 
         let mut next = CatalogIndex::default();
         for path in complete_entries {
-            let artifact = self.load_complete_entry(&path)?.artifact;
-            next.insert(artifact, self.config)?;
+            let metadata = self
+                .load_complete_entry(&path, Retention::Metadata)?
+                .metadata;
+            next.insert_verified(metadata, self.config)?;
         }
         // Reconcile completed entries from an interrupted publication before
         // exposing the rebuilt index or allowing further mutations.
@@ -250,7 +258,11 @@ impl DirectoryArtifactRepository {
         Ok(())
     }
 
-    fn load_complete_entry(&self, path: &Path) -> Result<VerifiedEntry, PlatformError> {
+    fn load_complete_entry(
+        &self,
+        path: &Path,
+        retention: Retention,
+    ) -> Result<VerifiedEntry, PlatformError> {
         let completion = CompletionRecord::read(path)?;
         let metadata_bytes = read_bounded_file(
             &path.join(METADATA_FILE),
@@ -290,23 +302,29 @@ impl DirectoryArtifactRepository {
         }
         drop(canonical);
         drop(manifest_bytes);
-        let component_bytes = read_bounded_file(
+        let component = read_component(
             &path.join(COMPONENT_FILE),
             self.config.max_component_bytes,
-            "component artifact",
+            retention,
         )?;
-        verify_component_identity(&descriptor, &manifest.component_digest, &component_bytes)?;
+        verify_component_digest(
+            &descriptor,
+            &manifest.component_digest,
+            &component.digest,
+            component.size,
+        )?;
         let expected_dir = digest_hex(&descriptor.release_digest)?;
         if path.file_name().and_then(|value| value.to_str()) != Some(expected_dir.as_str()) {
             return Err(corrupt("release directory does not match its digest"));
         }
         Ok(VerifiedEntry {
-            artifact: CapsuleArtifact {
+            metadata: VerifiedArtifactMetadata::from_verified_parts(
                 descriptor,
                 manifest,
                 contracts,
-                component_bytes,
-            },
+                component.digest,
+            ),
+            component_bytes: component.bytes,
             completion,
         })
     }
@@ -442,20 +460,26 @@ impl DirectoryArtifactRepository {
     }
 
     /// Only verified identical persisted bytes are eligible for publication adoption.
-    /// Drops the loaded component and contracts before directory sync/index work.
+    /// Streams the component without retaining it before directory sync/index work.
     fn read_for_adoption(
         &self,
         path: &Path,
         expected: &CompletionRecord,
     ) -> Result<Option<CapsuleArtifact>, PlatformError> {
-        let mut verified = self.load_complete_entry(path)?;
+        let verified = self.load_complete_entry(path, Retention::Metadata)?;
         if &verified.completion != expected {
             return Ok(None);
         }
-        // Retain only bounded metadata across the durability and index boundary.
-        verified.artifact.component_bytes = Vec::new();
-        verified.artifact.contracts = Vec::new();
-        Ok(Some(verified.artifact))
+        // Adoption needs only descriptor/manifest. Release decoded contracts
+        // before directory synchronization and index locking, as before.
+        let (descriptor, manifest, contracts) = verified.metadata.into_parts();
+        drop(contracts);
+        Ok(Some(CapsuleArtifact {
+            descriptor,
+            manifest,
+            contracts: Vec::new(),
+            component_bytes: Vec::new(),
+        }))
     }
 
     fn publish_sync(&self, artifact: CapsuleArtifact) -> Result<ArtifactDescriptor, PlatformError> {
@@ -597,9 +621,39 @@ impl ArtifactRepository for DirectoryArtifactRepository {
                     "release digest not found",
                 ));
             }
-            Ok(self
-                .load_complete_entry(&self.entry_path(digest)?)?
-                .artifact)
+            let verified =
+                self.load_complete_entry(&self.entry_path(digest)?, Retention::Component)?;
+            let (descriptor, manifest, contracts) = verified.metadata.into_parts();
+            Ok(CapsuleArtifact {
+                descriptor,
+                manifest,
+                contracts,
+                component_bytes: verified.component_bytes,
+            })
+        })
+    }
+
+    fn fetch_verified_metadata<'a>(
+        &'a self,
+        digest: &'a ReleaseDigest,
+    ) -> BoxFuture<'a, Result<VerifiedArtifactMetadata, PlatformError>> {
+        Box::pin(async move {
+            if !self
+                .index
+                .read()
+                .map_err(lock_error)?
+                .by_digest
+                .contains_key(digest)
+            {
+                return Err(error(
+                    PlatformErrorCode::NotFound,
+                    "release digest not found",
+                ));
+            }
+            let verified =
+                self.load_complete_entry(&self.entry_path(digest)?, Retention::Metadata)?;
+            verified.metadata.verify_requested(digest)?;
+            Ok(verified.metadata)
         })
     }
 
@@ -723,12 +777,26 @@ fn verify_component_identity(
     component_bytes: &[u8],
 ) -> Result<(), PlatformError> {
     let actual = release_digest(component_bytes);
-    if &actual != manifest_digest || &actual != &descriptor.release_digest {
+    verify_component_digest(
+        descriptor,
+        manifest_digest,
+        &actual,
+        component_bytes.len() as u64,
+    )
+}
+
+fn verify_component_digest(
+    descriptor: &ArtifactDescriptor,
+    manifest_digest: &ReleaseDigest,
+    actual: &ReleaseDigest,
+    size: u64,
+) -> Result<(), PlatformError> {
+    if actual != manifest_digest || actual != &descriptor.release_digest {
         return Err(corrupt(
             "manifest, release, and component content digests must agree",
         ));
     }
-    if descriptor.size_bytes != component_bytes.len() as u64 {
+    if descriptor.size_bytes != size {
         return Err(corrupt(
             "artifact descriptor size does not match component bytes",
         ));

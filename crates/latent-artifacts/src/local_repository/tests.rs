@@ -11,6 +11,8 @@ mod lock_release;
 mod regressions;
 #[path = "root_durability_tests.rs"]
 mod root_durability;
+#[path = "verified_metadata_tests.rs"]
+mod verified_metadata;
 #[path = "visibility_tests.rs"]
 mod visibility;
 
