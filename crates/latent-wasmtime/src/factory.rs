@@ -103,6 +103,12 @@ impl WasmtimeComponentEngineFactory {
         self.shared.log_sink.clone()
     }
 
+    /// Returns diagnostics ownership without retaining the engine or helpers.
+    #[must_use]
+    pub fn preparation_observer(&self) -> crate::PreparationObserver {
+        self.shared.preparation_observer.clone()
+    }
+
     #[must_use]
     pub fn create_backend_instance(&self) -> WasmtimeBackend {
         WasmtimeBackend::new(

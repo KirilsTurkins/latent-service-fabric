@@ -29,6 +29,7 @@ use crate::host::accounting::InvocationAccounting;
 use crate::host::{
     validate_request_context, ActivationHostContext, BoundedLogSink, HostCallTiming, HostState,
 };
+use crate::preparation_observer::{PreparationJob, PreparationObserver, PreparationStage};
 use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0InvocationTiming};
 use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
 
@@ -64,6 +65,7 @@ pub(crate) struct SharedRuntime {
     resources: RuntimeResourceCounters,
     timings: Mutex<InvocationTimingStore>,
     preparation: PreparationCounters,
+    pub(crate) preparation_observer: PreparationObserver,
 }
 impl SharedRuntime {
     pub(crate) fn new(
@@ -87,6 +89,7 @@ impl SharedRuntime {
             resources: RuntimeResourceCounters::default(),
             timings: Mutex::new(InvocationTimingStore::new(256)),
             preparation: PreparationCounters::default(),
+            preparation_observer: PreparationObserver::new(config.maximum_concurrent_preparations),
         })
     }
 
@@ -110,6 +113,11 @@ pub struct WasmtimeBackend {
     shared: Arc<SharedRuntime>,
 }
 impl WasmtimeBackend {
+    /// Bounded stage observations that do not retain a runtime owner.
+    #[must_use]
+    pub fn preparation_observer(&self) -> PreparationObserver {
+        self.shared.preparation_observer.clone()
+    }
     pub(crate) fn new(
         engine: Engine,
         profile: WasmtimeEngineProfile,
@@ -165,7 +173,11 @@ impl WasmtimeBackend {
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.prepare_runtime_with_integrity(artifact, key, ComponentIntegrity::Verify)
+        let job = self.shared.preparation_observer.begin(&key.release);
+        let runtime =
+            self.prepare_runtime_with_integrity(artifact, key, ComponentIntegrity::Verify, &job)?;
+        job.complete();
+        Ok(runtime)
     }
 
     fn prepare_runtime_with_integrity(
@@ -173,7 +185,9 @@ impl WasmtimeBackend {
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
         integrity: ComponentIntegrity,
+        job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
+        let validation = job.stage(PreparationStage::MetadataValidation);
         let identity = self.metadata_identity(artifact)?;
         self.validate_key(artifact, key)?;
         self.validate_manifest(artifact)?;
@@ -181,6 +195,7 @@ impl WasmtimeBackend {
         let handle = prepared_handle(key, &component_digest, &identity.digest);
         let metadata_bytes = preparation::retained_metadata_bytes(identity.bytes, None)?;
         let reserved_metadata = self.reserved_metadata(metadata_bytes)?;
+        validation.complete();
         // The reservation lives through all synchronous compilation and validation,
         // including unwind. No store or component instance is created here.
         let reservation = match self.shared.cache.begin(
@@ -201,6 +216,7 @@ impl WasmtimeBackend {
                 authentication: None,
             },
             reservation,
+            job,
         )
     }
     fn validate_component_bytes(

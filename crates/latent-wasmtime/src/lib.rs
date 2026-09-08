@@ -12,6 +12,7 @@ mod factory;
 mod host;
 mod phase0;
 mod preparation_metadata;
+mod preparation_observer;
 mod services;
 mod surface;
 mod telemetry;
@@ -35,6 +36,11 @@ pub use host::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
 pub use phase0::{
     Phase0WasmtimeBackend, Phase0WasmtimeEngineFactory, BACKEND_ID, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
     ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD,
+};
+pub use preparation_observer::{
+    PreparationCompilerSnapshot, PreparationObserver, PreparationObserverSnapshot,
+    PreparationStage, PreparationStageObservation, PreparationStageTotals, PreparationThreadCpu,
+    PreparationThreadCpuInterval, PreparationThreadIdentity, RunningPreparation,
 };
 pub use services::WasmtimeHostServices;
 pub use surface::{CONTEXT_IMPORT, LOG_IMPORT, MONOTONIC_CLOCK_IMPORT, WALL_CLOCK_IMPORT};

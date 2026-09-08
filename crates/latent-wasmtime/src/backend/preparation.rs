@@ -1,22 +1,22 @@
 //! Repository-authenticated acquisition under the existing affine capacity gates.
 
+mod compilation;
 mod counters;
 pub use counters::PreparationActivitySnapshot;
 pub(super) use counters::PreparationCounters;
 
 use std::mem::size_of;
-use std::sync::Arc;
 
 use latent_artifacts::{ArtifactPreparationIdentity, ArtifactRepository, CapsuleArtifact};
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedActivation};
-use wasmtime::component::Component;
 
-use super::{bounded_error, PreparedRuntime, WasmtimeBackend};
-use crate::cache::{PrepareAccess, PrepareReservation};
+use super::WasmtimeBackend;
+use crate::cache::PrepareAccess;
 use crate::config::PHASE0_BACKEND_ID;
 use crate::containment::platform_error;
-use crate::{preparation_metadata, surface};
+use crate::preparation_metadata;
+use crate::preparation_observer::PreparationStage;
 
 pub(super) struct Compilation {
     pub(super) handle: String,
@@ -74,6 +74,8 @@ impl WasmtimeBackend {
         let permit = self.shared.instances.try_acquire()?;
         let Some(identity) = identity.filter(|_| self.config.prepared_cache_enabled) else {
             counters::add(&self.shared.preparation.repository_fetches, 1);
+            let job = self.shared.preparation_observer.begin(&key.release);
+            let fetch = job.stage(PreparationStage::RepositoryFetchVerified);
             // Even a stamp-ineligible source owns its fallback read; an outer
             // repository adapter cannot redirect it to another repository.
             let (artifact, integrity) = match source {
@@ -86,8 +88,10 @@ impl WasmtimeBackend {
                     ComponentIntegrity::Verify,
                 ),
             };
+            fetch.complete();
             self.validate_repository_manifest(&artifact)?;
-            let runtime = self.prepare_runtime_with_integrity(&artifact, key, integrity)?;
+            let runtime = self.prepare_runtime_with_integrity(&artifact, key, integrity, &job)?;
+            job.complete();
             return Ok(self.activation_use(runtime, permit));
         };
         self.validate_identity(&identity, key)?;
@@ -116,10 +120,14 @@ impl WasmtimeBackend {
         };
         counters::add(&self.shared.preparation.authenticated_misses, 1);
         counters::add(&self.shared.preparation.repository_fetches, 1);
+        let job = self.shared.preparation_observer.begin(&key.release);
+        let fetch = job.stage(PreparationStage::RepositoryFetchVerified);
         let artifact = source
             .expect("identity always belongs to a selected source")
             .fetch(&key.release)
             .await?;
+        fetch.complete();
+        let validation = job.stage(PreparationStage::MetadataValidation);
         self.validate_repository_manifest(&artifact)?;
         counters::add(&self.shared.preparation.metadata_fingerprints, 1);
         identity.verify_metadata(
@@ -131,6 +139,7 @@ impl WasmtimeBackend {
         self.validate_manifest(&artifact)?;
         let component_digest =
             self.component_identity(&artifact, key, ComponentIntegrity::VerifiedBySource)?;
+        validation.complete();
         let runtime = self.compile_runtime(
             &artifact,
             key,
@@ -141,7 +150,9 @@ impl WasmtimeBackend {
                 authentication: Some(identity),
             },
             reservation,
+            &job,
         )?;
+        job.complete();
         Ok(self.activation_use(runtime, permit))
     }
 
@@ -238,77 +249,6 @@ impl WasmtimeBackend {
         metadata_bytes
             .checked_add(self.config.maximum_artifact_metadata_bytes)
             .ok_or_else(metadata_overflow)
-    }
-
-    pub(super) fn compile_runtime(
-        &self,
-        artifact: &CapsuleArtifact,
-        key: &PreparationKey,
-        input: Compilation,
-        reservation: PrepareReservation<PreparedRuntime>,
-    ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        let component =
-            Component::new(&self.engine, &artifact.component_bytes).map_err(|error| {
-                platform_error(
-                    PlatformErrorCode::CorruptArtifact,
-                    &format!("component validation failed: {}", bounded_error(&error)),
-                    false,
-                )
-            })?;
-        let surface = surface::validate(&component, &self.engine, artifact, &self.config)?;
-        let metadata_bytes = input
-            .metadata_bytes
-            .checked_add(surface.retained_bytes)
-            .ok_or_else(metadata_overflow)?;
-        let pre = self.link_component(&component)?;
-        if self.profile.id == PHASE0_BACKEND_ID {
-            crate::phase0::validate_prepared(&pre)?;
-        }
-        let image = component.image_range();
-        let image_bytes = image.end.addr().saturating_sub(image.start.addr());
-        let descriptor = self.prepared_descriptor(
-            artifact,
-            key.clone(),
-            input.handle.clone(),
-            input.component_digest,
-        );
-        let runtime = Arc::new(PreparedRuntime {
-            pre,
-            declared_budget: artifact.manifest.execution.resource_budget_ceiling.clone(),
-            surface,
-            descriptor,
-            authentication: input.authentication,
-            // The existing full metadata charge includes these manifest fields.
-            imports: artifact
-                .manifest
-                .imports
-                .iter()
-                .map(|import| import.contract.clone())
-                .collect(),
-        });
-        if self.config.prepared_cache_enabled {
-            reservation.publish_with_metadata(Arc::clone(&runtime), image_bytes, metadata_bytes)?;
-        } else {
-            if image_bytes > self.config.prepared_cache_maximum_compiled_image_bytes {
-                return Err(platform_error(
-                    PlatformErrorCode::ResourceExhausted,
-                    "compiled component image exceeds the configured limit",
-                    false,
-                ));
-            }
-            let mut slot = self.lock_uncached_prepared();
-            if slot.is_some() {
-                return Err(platform_error(
-                    PlatformErrorCode::StateConflict,
-                    "cache-disabled preparation is still owned by an active runner",
-                    true,
-                ));
-            }
-            *slot = Some((input.handle, Arc::clone(&runtime)));
-            drop(slot);
-            drop(reservation);
-        }
-        Ok(runtime)
     }
 }
 
