@@ -3,6 +3,7 @@
 mod control;
 mod lifecycle;
 mod observation;
+mod preparation;
 mod run;
 
 use std::future::Future;

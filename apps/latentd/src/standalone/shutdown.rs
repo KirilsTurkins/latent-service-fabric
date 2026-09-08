@@ -1,5 +1,6 @@
 use latent_core::Metadata;
 use latent_telemetry::{LogRecord, LogSeverity};
+use latent_wasmtime::PreparationCompilerSnapshot;
 use serde::Serialize;
 
 use super::{error, transport, Duration, PlatformError, PlatformErrorCode, StandaloneNode};
@@ -34,6 +35,9 @@ pub struct ShutdownReport {
     pub telemetry_retained_entries: usize,
     pub telemetry_flushed: bool,
     pub epoch_helper_joined: bool,
+    /// Separate compiler ownership population; thread joins are observed after
+    /// consuming factory shutdown, never inferred from quiescent user code.
+    pub compiler: PreparationCompilerSnapshot,
 }
 
 impl ShutdownReport {
@@ -60,6 +64,7 @@ impl ShutdownReport {
             && self.live_instances == 0
             && self.live_temporary_buffers == 0
             && self.live_cancellation_probes == 0
+            && compiler_reclaimed(&self.compiler)
     }
 }
 
@@ -77,6 +82,11 @@ impl StandaloneNode {
             }
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
+        // Seal compiler admission at the drain cutoff, before transport or
+        // sampler cleanup can hide a native job that finishes after its grace.
+        let factory = self.factory.take().expect("owned engine factory");
+        let compiler_observer = factory.compiler_observer();
+        let compiler_quiescence = factory.quiesce_compiler();
         self.scheduler.shutdown();
         let mut failure = self
             .transport
@@ -93,6 +103,23 @@ impl StandaloneNode {
             .await
         {
             failure.get_or_insert(error);
+        }
+        // Native jobs cannot be preempted. Their owned completion must precede
+        // observations and final joins, even when it makes shutdown unsuccessful.
+        // Idle thread wake/exit scheduling is not additional invocation work.
+        if let Err(error) = compiler_quiescence.await {
+            failure.get_or_insert(error);
+        }
+        if compiler_observer
+            .last_work_completed_at()
+            .is_some_and(|completed| completed > drain_deadline.into_std())
+        {
+            failure.get_or_insert_with(|| {
+                error(
+                    PlatformErrorCode::DeadlineExceeded,
+                    "compiler work exceeded shutdown grace",
+                )
+            });
         }
         let mut report = self.shutdown_observations(handle.snapshot());
         if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
@@ -127,7 +154,6 @@ impl StandaloneNode {
             report.telemetry_flushed = true;
             report.telemetry_retained_entries = self.sink.snapshot().entries;
         }
-        let factory = self.factory.take().expect("owned engine factory");
         // Inventory, manager, and backend are the remaining runtime owners. Their
         // destruction precedes the factory's unique-owner shutdown barrier.
         drop(self);
@@ -136,11 +162,17 @@ impl StandaloneNode {
         } else if let Ok(report) = &mut report {
             report.epoch_helper_joined = true;
         }
+        if let Ok(report) = &mut report {
+            report.compiler = compiler_observer.snapshot();
+        }
         if let Some(error) = failure {
             return Err(error);
         }
         let mut report = report?;
-        report.clean = report.reclaimed() && report.telemetry_flushed && report.epoch_helper_joined;
+        report.clean = report.reclaimed()
+            && report.telemetry_flushed
+            && report.epoch_helper_joined
+            && report.compiler.workers_joined == report.compiler.maximum_workers as u64;
         Ok(report)
     }
 
@@ -188,6 +220,22 @@ impl StandaloneNode {
             telemetry_retained_entries: 0,
             telemetry_flushed: false,
             epoch_helper_joined: false,
+            compiler: self.backend.compiler_snapshot(),
         })
     }
+}
+
+fn compiler_reclaimed(compiler: &PreparationCompilerSnapshot) -> bool {
+    !compiler.accepting
+        && !compiler.failed
+        && compiler.assigned_jobs == 0
+        && compiler.running_jobs == 0
+        && compiler.queued_jobs == 0
+        && compiler.waiting_callers == 0
+        && compiler.ready_preparations == 0
+        && compiler.ready_metadata_bytes == 0
+        && compiler.ready_compiled_image_bytes == 0
+        && compiler.reserved_document_bytes == 0
+        && compiler.workers_live == 0
+        && compiler.workers_quiescent == compiler.maximum_workers as u64
 }

@@ -187,7 +187,7 @@ fn invalid_capacity_and_retention_combinations_fail_before_startup() {
         |value| value.workers.control = 0,
         |value| value.catalogs.release_entries = usize::MAX,
         |value| value.execution.maximum_cpu_fuel = u64::MAX,
-        |value| value.cache.preparations = 3,
+        |value| value.cache.preparations = 1025,
     ];
     for mutate in mutations {
         let mut invalid = config.clone();
@@ -236,4 +236,39 @@ fn zero_log_budget_preserves_exact_denial_across_rpc_and_admission() {
     assert_eq!(settings.invocation.max_log_bytes, 0);
     assert_eq!(settings.admission.budget_ceiling.log_bytes, 0);
     assert!(settings.wasmtime.invocation_log_maximum_bytes > 0);
+}
+
+#[test]
+fn compiler_jobs_are_independent_of_cells_and_control_threads_but_bounded_by_admission() {
+    let (_directory, mut config) = config();
+    config.cache.preparations = 4;
+    config.cache.compiler_workers = Some(2);
+    config.workers.control = 1;
+    config.cells[0].capacity = 1;
+    let settings = config
+        .derive()
+        .expect("bounded compiler jobs independent of cells");
+    assert_eq!(settings.wasmtime.maximum_active_instances, 1);
+    assert_eq!(settings.wasmtime.maximum_concurrent_preparations, 4);
+    assert_eq!(settings.wasmtime.compiler_workers, Some(2));
+    assert_eq!(settings.wasmtime.maximum_preparation_waiters, 17);
+    assert_eq!(settings.wasmtime.maximum_waiters_per_preparation, 17);
+    assert_eq!(settings.wasmtime.maximum_ready_preparations, 17);
+    let documents = settings.artifacts.max_metadata_bytes
+        + latent_manifest::ManifestLimits::default().max_document_bytes
+        + 64 * 1024;
+    assert_eq!(
+        settings.wasmtime.maximum_preparation_document_bytes,
+        documents * 4
+    );
+    for workers in [0, 5, 9, usize::MAX] {
+        config.cache.compiler_workers = Some(workers);
+        assert!(config.derive().is_err());
+    }
+    config.cache.compiler_workers = None;
+    config.cache.preparations = 18;
+    assert!(
+        config.derive().is_err(),
+        "jobs cannot exceed total admitted population"
+    );
 }

@@ -1,10 +1,12 @@
 mod component_reader;
 pub(crate) mod contract_metadata;
+mod document_reader;
 mod index;
 mod integrity;
 mod metadata;
 mod metadata_codec;
 mod paging;
+mod preparation_read;
 mod root_durability;
 mod sha256;
 
@@ -13,7 +15,7 @@ mod tests;
 
 use std::collections::hash_map::RandomState;
 use std::fs::{self, File, OpenOptions};
-use std::io::{Read, Write};
+use std::io::Write;
 use std::ops::Bound::{Excluded, Unbounded};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, RwLock};
@@ -30,11 +32,13 @@ use latent_manifest::{
 use crate::preparation::{repository_stamp, RepositoryEpoch};
 use crate::verification_statistics::{add, VerificationStatistics};
 use crate::{
-    ArtifactDescriptor, ArtifactPage, ArtifactPreparationIdentity, ArtifactPreparationSource,
-    ArtifactQuery, ArtifactRepository, ArtifactVerificationSnapshot, CapsuleArtifact,
-    PreparationMetadataFingerprint, VerifiedArtifactMetadata,
+    ArtifactDescriptor, ArtifactPage, ArtifactPreparationIdentity, ArtifactPreparationReadLimits,
+    ArtifactPreparationSource, ArtifactQuery, ArtifactRepository, ArtifactVerificationSnapshot,
+    CapsuleArtifact, OwnedArtifactPreparationSource, PreparationMetadataFingerprint,
+    VerifiedArtifactMetadata,
 };
 use component_reader::{read_component, Retention};
+use document_reader::read_bounded_file;
 use index::CatalogIndex;
 use integrity::CompletionRecord;
 use metadata_codec::{decode_metadata, encode_metadata};
@@ -327,26 +331,35 @@ impl DirectoryArtifactRepository {
         path: &Path,
         retention: Retention,
     ) -> Result<VerifiedEntry, PlatformError> {
+        self.load_complete_entry_with_limits(path, retention, self.repository_read_limits())
+    }
+
+    fn load_complete_entry_with_limits(
+        &self,
+        path: &Path,
+        retention: Retention,
+        limits: ArtifactPreparationReadLimits,
+    ) -> Result<VerifiedEntry, PlatformError> {
         let completion = CompletionRecord::read(path)?;
         let metadata_bytes = read_bounded_file(
             &path.join(METADATA_FILE),
-            self.config.max_metadata_bytes,
+            limits.maximum_metadata_document_bytes,
             "catalog metadata",
         )?;
         completion.verify_metadata(&metadata_bytes)?;
         let (descriptor, contracts) =
-            decode_metadata(&metadata_bytes, self.config.max_metadata_bytes)?;
+            decode_metadata(&metadata_bytes, limits.maximum_metadata_document_bytes)?;
         drop(metadata_bytes);
         self.validate_descriptor_bounds(&descriptor)?;
         completion.verify_component_association(&descriptor)?;
-        if descriptor.size_bytes > self.config.max_component_bytes as u64 {
+        if descriptor.size_bytes > limits.maximum_component_bytes as u64 {
             return Err(resource_exhausted(
                 "stored component exceeds configured component byte limit",
             ));
         }
         let manifest_bytes = read_bounded_file(
             &path.join(MANIFEST_FILE),
-            self.codec.limits().max_document_bytes,
+            limits.maximum_manifest_document_bytes,
             "capsule manifest",
         )?;
         completion.verify_manifest(&manifest_bytes)?;
@@ -368,7 +381,7 @@ impl DirectoryArtifactRepository {
         drop(manifest_bytes);
         let component = read_component(
             &path.join(COMPONENT_FILE),
-            self.config.max_component_bytes,
+            limits.maximum_component_bytes,
             retention,
             &self.verification_statistics,
         )?;
@@ -627,6 +640,10 @@ impl DirectoryArtifactRepository {
 }
 
 impl ArtifactRepository for DirectoryArtifactRepository {
+    fn owned_preparation_source(self: Arc<Self>) -> Option<OwnedArtifactPreparationSource> {
+        Some(OwnedArtifactPreparationSource::new(self))
+    }
+
     fn preparation_source(&self) -> Option<ArtifactPreparationSource<'_>> {
         Some(ArtifactPreparationSource::new(self))
     }
@@ -681,30 +698,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         &'a self,
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>> {
-        Box::pin(async move {
-            add(&self.verification_statistics.full_fetch_attempts, 1);
-            if !self
-                .index
-                .read()
-                .map_err(lock_error)?
-                .by_digest
-                .contains_key(digest)
-            {
-                return Err(error(
-                    PlatformErrorCode::NotFound,
-                    "release digest not found",
-                ));
-            }
-            let verified =
-                self.load_complete_entry(&self.entry_path(digest)?, Retention::Component)?;
-            let (descriptor, manifest, contracts) = verified.metadata.into_parts();
-            Ok(CapsuleArtifact {
-                descriptor,
-                manifest,
-                contracts,
-                component_bytes: verified.component_bytes,
-            })
-        })
+        Box::pin(async move { self.fetch_with_limits(digest, self.repository_read_limits()) })
     }
 
     fn fetch_verified_metadata<'a>(
@@ -892,35 +886,6 @@ fn digest_hex(digest: &ReleaseDigest) -> Result<String, PlatformError> {
         ));
     }
     Ok(hex.to_ascii_lowercase())
-}
-
-fn read_bounded_file(path: &Path, limit: usize, label: &str) -> Result<Vec<u8>, PlatformError> {
-    let file = File::open(path).map_err(|_| corrupt("completed release is missing data"))?;
-    let length = file
-        .metadata()
-        .map_err(|_| corrupt("completed release data metadata cannot be read"))?
-        .len();
-    if length > limit as u64 {
-        return Err(resource_exhausted(format!(
-            "stored {label} exceeds configured byte limit"
-        )));
-    }
-    let capacity = usize::try_from(length)
-        .map_err(|_| resource_exhausted("stored release file length cannot fit in memory"))?;
-    let read_limit = u64::try_from(limit)
-        .map_err(|_| resource_exhausted("configured file limit cannot fit in u64"))?
-        .saturating_add(1);
-    let mut reader = file.take(read_limit);
-    let mut bytes = Vec::with_capacity(capacity);
-    reader
-        .read_to_end(&mut bytes)
-        .map_err(|_| corrupt("completed release data cannot be read"))?;
-    if bytes.len() > limit {
-        return Err(resource_exhausted(format!(
-            "stored {label} exceeds configured byte limit"
-        )));
-    }
-    Ok(bytes)
 }
 
 fn write_synced(path: &Path, bytes: &[u8]) -> Result<(), PlatformError> {

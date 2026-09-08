@@ -3,7 +3,7 @@ use std::sync::Arc;
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_admission::{AdmissionPermit, AdmissionRequest};
 use latent_core::{
-    ActivationBudget, ActivationPhase, BudgetConsumption, CapabilityId, Metadata, PlatformError,
+    ActivationBudget, ActivationPhase, BudgetConsumption, Metadata, PlatformError,
     PlatformErrorCode,
 };
 use latent_executor::{
@@ -103,6 +103,9 @@ impl Inner {
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
         lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;
         let expiry = budget.deadline().monotonic();
+        // Keep the original admission reservation and deadline while code is
+        // prepared. A cold request does not occupy an execution cell.
+        let (key, ready) = self.prepare_ready(&envelope, &token, &budget).await?;
         let scheduled = stage(
             self.dependencies
                 .scheduler
@@ -132,7 +135,7 @@ impl Inner {
         }
         lifecycle.scheduled = Some(scheduled);
         lifecycle.advance(ActivationPhase::Materializing, Metadata::new())?;
-        let (prepared, imports) = self.materialize(&envelope, &token, &budget).await?;
+        let (prepared, imports) = self.materialize(&envelope, &token, &budget, &key, ready)?;
         self.execute(envelope, lifecycle, token, budget, prepared, imports)
             .await
     }
@@ -267,54 +270,5 @@ impl Inner {
         lifecycle.budget = Some(budget.clone());
         lifecycle.advance(ActivationPhase::Admitted, Metadata::new())?;
         Ok(permit)
-    }
-
-    async fn materialize(
-        &self,
-        envelope: &ActivationEnvelope,
-        token: &CancellationToken,
-        budget: &ActivationBudget,
-    ) -> Result<(PreparedUse, Vec<BoundImport>), PlatformError> {
-        let release = &envelope
-            .resolved_revision
-            .as_ref()
-            .expect("pinned revision")
-            .release;
-        let expiry = budget.deadline().monotonic();
-        let key = self.dependencies.backend.preparation_key(release)?;
-        if &key.release != release {
-            return Err(error(
-                PlatformErrorCode::IncompatibleContract,
-                "backend preparation key changed the pinned release",
-            ));
-        }
-        let activation = stage(
-            self.dependencies
-                .backend
-                .prepare_from_repository(self.dependencies.artifacts.as_ref(), &key),
-            token,
-            expiry,
-            &self.clock,
-        )
-        .await?;
-        let prepared = activation.prepared;
-        if prepared.descriptor().key != key
-            || prepared.descriptor().backend != self.dependencies.backend.backend_id()
-        {
-            return Err(error(
-                PlatformErrorCode::IncompatibleContract,
-                "prepared ownership does not match the requested release or backend",
-            ));
-        }
-        let imports = activation
-            .imports
-            .into_iter()
-            .map(|import| BoundImport {
-                capability: CapabilityId(import.0.clone()),
-                contract: import.0,
-                opaque_handle: envelope.activation_id.0.clone(),
-            })
-            .collect();
-        Ok((prepared, imports))
     }
 }

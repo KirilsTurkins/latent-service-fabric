@@ -40,6 +40,7 @@ impl Default for CacheConfig {
             metadata_bytes: 8 * MIB,
             compiled_image_bytes: 128 * MIB,
             preparations: 1,
+            compiler_workers: None,
         }
     }
 }

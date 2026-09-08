@@ -9,7 +9,10 @@ mod preparation_fingerprint;
 mod verification_statistics;
 mod verified_metadata;
 
-pub use preparation::{ArtifactPreparationIdentity, ArtifactPreparationSource};
+pub use preparation::{
+    ArtifactPreparationIdentity, ArtifactPreparationReadBounds, ArtifactPreparationReadLimits,
+    ArtifactPreparationSource, OwnedArtifactPreparationSource,
+};
 pub use preparation_fingerprint::{
     preparation_metadata_fingerprint, PreparationMetadataFingerprint,
 };
@@ -30,6 +33,7 @@ use latent_core::{
     PublisherId, ReleaseDigest, ServiceId, TenantId,
 };
 use latent_manifest::CapsuleManifest;
+use std::sync::Arc;
 
 /// Computes the canonical SHA-256 content identity shared by local catalogs.
 #[must_use]
@@ -136,6 +140,15 @@ pub struct DerivedArtifactDescriptor {
 }
 
 pub trait ArtifactRepository: Send + Sync {
+    /// Transfers preparation reads and identity lookup to one sealed, owned
+    /// source. Workers may retain it after the requesting future is dropped.
+    /// Selecting this source also selects its fetch for stamp-ineligible paths;
+    /// never combine its identity with this trait object's separate `fetch`.
+    /// Generic implementations preserve their checked asynchronous fetch path.
+    fn owned_preparation_source(self: Arc<Self>) -> Option<OwnedArtifactPreparationSource> {
+        None
+    }
+
     /// Delegates preparation identity AND full reads to one sealed repository
     /// source. Consumers selecting this capability must also use its fetch for
     /// cold and stamp-ineligible paths, never combine it with this trait's fetch.

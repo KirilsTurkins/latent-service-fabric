@@ -20,6 +20,27 @@ pub struct WasmtimeComponentEngineFactory {
 }
 
 impl WasmtimeComponentEngineFactory {
+    /// Independent counters remain available after the factory is consumed.
+    #[must_use]
+    pub fn compiler_observer(&self) -> crate::CompilerObserver {
+        self.shared
+            .compiler
+            .as_ref()
+            .map_or_else(crate::CompilerObserver::disabled, |pool| pool.observer())
+    }
+
+    /// Closes compiler admission now, then waits for worker-owned work to end.
+    /// This wait does not preempt native compilation. A caller can compare
+    /// `CompilerObserver::last_work_completed_at` with its original deadline to
+    /// distinguish late native work from idle worker retirement. A timed-out
+    /// caller must retain this owner until actual completion and final join.
+    /// Successful quiescence precedes, and does not replace, final thread joins.
+    pub fn quiesce_compiler(&self) -> latent_core::BoxFuture<'_, Result<(), PlatformError>> {
+        self.shared.compiler.as_ref().map_or_else(
+            || Box::pin(async { Ok(()) }) as latent_core::BoxFuture<'_, Result<(), PlatformError>>,
+            crate::compiler::CompilerPool::quiesce,
+        )
+    }
     pub fn new(config: WasmtimeConfig) -> Result<Self, PlatformError> {
         Self::with_mode(config, DispatchMode::Generic)
     }
@@ -72,8 +93,14 @@ impl WasmtimeComponentEngineFactory {
             &engine,
             Duration::from_millis(config.epoch_tick_interval_millis),
         )?;
-        let shared = Arc::new(SharedRuntime::new(&config, services, epoch_ticker)?);
         let profile = config.profile(mode);
+        let shared = Arc::new(SharedRuntime::new(
+            &config,
+            services,
+            epoch_ticker,
+            engine.clone(),
+            profile.clone(),
+        )?);
         Ok(Self {
             engine,
             config,
@@ -103,6 +130,12 @@ impl WasmtimeComponentEngineFactory {
         self.shared.log_sink.clone()
     }
 
+    /// Returns diagnostics ownership without retaining the engine or helpers.
+    #[must_use]
+    pub fn preparation_observer(&self) -> crate::PreparationObserver {
+        self.shared.preparation_observer.clone()
+    }
+
     #[must_use]
     pub fn create_backend_instance(&self) -> WasmtimeBackend {
         WasmtimeBackend::new(
@@ -113,14 +146,17 @@ impl WasmtimeComponentEngineFactory {
         )
     }
 
-    /// Consumes this factory and stops and joins its epoch worker once all
-    /// backends and prepared-use owners have been dropped.
+    /// Consumes this factory and stops and joins its compiler and epoch workers
+    /// once all backends and affine ready/prepared-use owners have been dropped.
     ///
     /// Returns `Unavailable` if another runtime owner remains. That owner keeps
-    /// the worker running, and its final drop will stop and join the worker.
-    /// The factory is consumed on both success and failure. Joining requires no
-    /// runtime lock and wakes the worker immediately instead of waiting for the
-    /// configured tick interval; completion still depends on OS scheduling.
+    /// the workers owned; its final drop stops and joins them. The factory is
+    /// consumed on success and failure. Joins hold no runtime lock and wake idle
+    /// workers immediately; active native compilation must return before joining.
+    ///
+    /// Final destruction from one of its own compiler workers aborts the process:
+    /// a trusted host callback must retain an external factory owner until join,
+    /// because synchronous destruction cannot join its own thread.
     pub fn shutdown(self) -> Result<(), PlatformError> {
         let Self { shared, .. } = self;
         let mut shared = Arc::try_unwrap(shared).map_err(|_| {

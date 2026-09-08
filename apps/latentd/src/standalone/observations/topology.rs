@@ -65,11 +65,14 @@ impl NodeTopologySource for TopologySource {
         .into_iter()
         .map(|class| u64::from(self.scheduler.observations(class).active_leases))
         .sum();
+        let compiler = self.backend.compiler_snapshot();
         let observed = Observed {
             invocation_threads: count(self.invocation_threads.load(Ordering::Acquire)),
             control_threads: count(self.control_threads.load(Ordering::Acquire)),
             transport: self.transport.snapshot(),
             resources: self.backend.resource_snapshot(),
+            compiler_maximum_workers: count(compiler.maximum_workers),
+            compiler_workers_live: compiler.workers_live,
             cell_leases,
             instances: count(self.backend.active_instance_reservations()),
         };
@@ -98,6 +101,8 @@ struct Observed {
     control_threads: u64,
     transport: TransportSnapshot,
     resources: RuntimeResourceSnapshot,
+    compiler_maximum_workers: u64,
+    compiler_workers_live: u64,
     cell_leases: u64,
     instances: u64,
 }
@@ -133,7 +138,7 @@ fn rows(limits: Limits, observed: Observed) -> impl Iterator<Item = Row> {
         .chain(service_rows())
 }
 
-fn node_rows(limits: Limits, observed: Observed) -> [Row; 8] {
+fn node_rows(limits: Limits, observed: Observed) -> [Row; 9] {
     use ResourceOwnership::NodeFixed;
     [
         row("standalone-node", "process", NodeFixed, 1, Some(1)),
@@ -153,6 +158,13 @@ fn node_rows(limits: Limits, observed: Observed) -> [Row; 8] {
         ),
         // Configuration is known, but no OS-thread observation is exposed here.
         row("wasmtime-epoch", "thread", NodeFixed, 1, None),
+        row(
+            "wasmtime-compiler",
+            "thread",
+            NodeFixed,
+            observed.compiler_maximum_workers,
+            Some(observed.compiler_workers_live),
+        ),
         // Accepting=false also covers a bound but gated listener. Neither that
         // gate nor a retained transport handle proves the listener is alive.
         row("grpc-listener", "listener", NodeFixed, 1, None),

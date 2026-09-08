@@ -1,5 +1,11 @@
 //! Sealed preparation provenance bound to one concrete repository owner.
 
+mod owned;
+
+pub use owned::{
+    ArtifactPreparationReadBounds, ArtifactPreparationReadLimits, OwnedArtifactPreparationSource,
+};
+
 use std::hash::{Hash, Hasher};
 use std::mem::size_of_val;
 use std::sync::Arc;

@@ -222,11 +222,23 @@ impl<T> PrepareReservation<T> {
     /// Charges the discovered immutable metadata footprint while retaining the
     /// full reservation until compilation and validation have completed.
     pub(crate) fn publish_with_metadata(
-        mut self,
+        self,
         runtime: Arc<T>,
         compiled_image_bytes: usize,
         actual_metadata_bytes: usize,
     ) -> Result<(), PlatformError> {
+        drop(self.publish_deferred(runtime, compiled_image_bytes, actual_metadata_bytes)?);
+        Ok(())
+    }
+
+    /// Publication is atomic; caller destroys returned evictions outside its
+    /// own registry lock as well as the cache lock.
+    pub(crate) fn publish_deferred(
+        mut self,
+        runtime: Arc<T>,
+        compiled_image_bytes: usize,
+        actual_metadata_bytes: usize,
+    ) -> Result<Vec<Arc<T>>, PlatformError> {
         if compiled_image_bytes > self.cache.limits.maximum_compiled_image_bytes {
             return Err(capacity_error());
         }
@@ -252,7 +264,7 @@ impl<T> PrepareReservation<T> {
                     .front()
                     .expect("eviction requires a resident entry")
                     .clone();
-                evicted.push(state.remove(&oldest).expect("resident LRU entry"));
+                evicted.push(state.remove(&oldest).expect("resident LRU entry").runtime);
                 state.evictions = state.evictions.saturating_add(1);
             }
             state.source_bytes += cost.source_bytes;
@@ -271,8 +283,40 @@ impl<T> PrepareReservation<T> {
             state.finish_preparing(&self.handle);
             self.active = false;
         }
-        drop(evicted);
-        Ok(())
+        Ok(evicted)
+    }
+
+    /// Rebind a pre-read reservation after fully verified metadata determines
+    /// an untrusted source's ordinary cache identity, without a second slot.
+    pub(crate) fn rekey(mut self, handle: String) -> Result<PrepareAccess<T>, PlatformError> {
+        if handle.is_empty() || handle.len() > MAXIMUM_HANDLE_BYTES {
+            return Err(capacity_error());
+        }
+        let mut state = self.cache.lock();
+        if handle == self.handle {
+            drop(state);
+            return Ok(PrepareAccess::Compile(self));
+        }
+        if let Some(runtime) = state.get(&handle) {
+            state.finish_preparing(&self.handle);
+            self.active = false;
+            return Ok(PrepareAccess::Hit(runtime));
+        }
+        if state.preparing.contains_key(&handle) {
+            return Err(platform_error(
+                PlatformErrorCode::Unavailable,
+                "component preparation is already in progress",
+                true,
+            ));
+        }
+        let cost = state
+            .preparing
+            .remove(&self.handle)
+            .expect("live preparation reservation");
+        state.preparing.insert(handle.clone(), cost);
+        self.handle = handle;
+        drop(state);
+        Ok(PrepareAccess::Compile(self))
     }
 }
 

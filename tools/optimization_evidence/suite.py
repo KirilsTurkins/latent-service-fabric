@@ -6,6 +6,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from tools.optimization_runner.plans import SERVICES, TENANT, TOKEN
+from tools.phase1_compiler_shutdown import validate_compiler_shutdown
 from . import client, identity, resources
 from .artifacts import Artifacts
 from .common import DOCUMENT_BYTES, canonical, distribution, fields, hash_file, integer, read_json, require, sha256, text, uint
@@ -32,7 +33,9 @@ def shutdown(value, arm):
     fields(value, "schemaVersion event clean report")
     require(value["schemaVersion"] == "latent.standalone.status.v1", "invalid-lsf-shutdown-schema")
     report = fields(value["report"], "clean telemetryFlushed epochHelperJoined quarantinedCells telemetryRetainedEntries "
-                    + " ".join(ZERO_SHUTDOWN))
+                    + " ".join(ZERO_SHUTDOWN), "compiler")
+    if "compiler" in report:
+        validate_compiler_shutdown(report["compiler"], require)
     require(report["clean"] is True and report["telemetryFlushed"] is True
             and report["epochHelperJoined"] is True, "unacknowledged-lsf-cleanup")
     for name in ZERO_SHUTDOWN:

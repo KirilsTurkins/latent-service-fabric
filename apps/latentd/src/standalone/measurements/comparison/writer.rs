@@ -14,11 +14,25 @@ pub(super) struct Writer {
     file: BufWriter<File>,
     written: usize,
     count: u32,
+    maximum_samples: u32,
     finished: bool,
 }
 
 impl Writer {
     pub fn new(directory: &Path, header: &Value) -> Result<Self> {
+        Self::named(directory, "candidate.json", 440, header)
+    }
+
+    pub fn named(
+        directory: &Path,
+        name: &str,
+        maximum_samples: u32,
+        header: &Value,
+    ) -> Result<Self> {
+        if !matches!(name, "candidate.json" | "cold.json") || !(1..=2048).contains(&maximum_samples)
+        {
+            return Err("comparison writer limits".into());
+        }
         let mut bytes = record(header)?;
         if bytes.pop() != Some(b'}') || bytes.first() != Some(&b'{') {
             return Err("comparison header is not an object".into());
@@ -27,11 +41,12 @@ impl Writer {
         let file = OpenOptions::new()
             .write(true)
             .create_new(true)
-            .open(directory.join("candidate.json"))?;
+            .open(directory.join(name))?;
         let mut writer = Self {
             file: BufWriter::with_capacity(64 * 1024, file),
             written: 0,
             count: 0,
+            maximum_samples,
             finished: false,
         };
         writer.append(&bytes)?;
@@ -39,7 +54,7 @@ impl Writer {
     }
 
     pub fn sample(&mut self, sample: &Value) -> Result<()> {
-        if self.finished || self.count >= 440 {
+        if self.finished || self.count >= self.maximum_samples {
             return Err("comparison sample count bound".into());
         }
         let bytes = record(sample)?;

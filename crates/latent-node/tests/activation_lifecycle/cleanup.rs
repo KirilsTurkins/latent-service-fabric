@@ -71,7 +71,7 @@ async fn cancellation_during_fetch_preparation_and_execution_reaches_terminal_an
             if stage == 2 {
                 ActivationPhase::Running
             } else {
-                ActivationPhase::Materializing
+                ActivationPhase::Queued
             }
         );
         assert_eq!(

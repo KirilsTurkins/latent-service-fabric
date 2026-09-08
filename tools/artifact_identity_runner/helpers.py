@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
 import selectors
 import signal
+import stat
 import subprocess
 import time
 
@@ -13,21 +15,59 @@ from .model import MAX_FILE_BYTES, MAX_TOTAL_BYTES
 from .resources import process_stat
 
 
-def directory_bytes(directory: Path) -> int:
+@dataclass(frozen=True)
+class DirectoryLimits:
+    maximum_depth: int = 0
+    maximum_files: int = 16
+    maximum_entries: int = 16
+    maximum_file_bytes: int = MAX_FILE_BYTES
+
+    def __post_init__(self):
+        values = (self.maximum_depth, self.maximum_files, self.maximum_entries, self.maximum_file_bytes)
+        if (any(type(value) is not int for value in values) or not 0 <= self.maximum_depth <= 2
+                or not 1 <= self.maximum_files <= 64 or not self.maximum_files <= self.maximum_entries <= 80
+                or not 1 <= self.maximum_file_bytes <= MAX_FILE_BYTES):
+            raise ValueError("helper-directory-limits")
+
+
+def directory_bytes(directory: Path, limits: DirectoryLimits | None = None) -> int:
+    limits = limits or DirectoryLimits()
+    root = directory.lstat()
+    if not stat.S_ISDIR(root.st_mode) or getattr(root, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+        raise ValueError("helper-artifact-count-or-type")
     total = 0
-    for index, path in enumerate(directory.iterdir()):
-        if index >= 16 or path.is_symlink() or not path.is_file():
-            raise ValueError("helper-artifact-count-or-type")
-        size = path.stat().st_size
-        if size > MAX_FILE_BYTES:
-            raise ValueError("helper-artifact-byte-bound")
-        total += size
+    files = entries = 0
+    pending = [(directory, 0)]
+    while pending:
+        current, depth = pending.pop()
+        with os.scandir(current) as children:
+            for child in children:
+                entries += 1
+                if entries > limits.maximum_entries:
+                    raise ValueError("helper-artifact-count-or-type")
+                value = child.stat(follow_symlinks=False)
+                if stat.S_ISLNK(value.st_mode) or getattr(value, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+                    raise ValueError("helper-artifact-count-or-type")
+                if stat.S_ISDIR(value.st_mode):
+                    if depth >= limits.maximum_depth:
+                        raise ValueError("helper-artifact-depth-bound" if limits.maximum_depth else "helper-artifact-count-or-type")
+                    pending.append((Path(child.path), depth + 1))
+                elif stat.S_ISREG(value.st_mode):
+                    files += 1
+                    if files > limits.maximum_files:
+                        raise ValueError("helper-artifact-count-or-type")
+                    if value.st_size > limits.maximum_file_bytes:
+                        raise ValueError("helper-artifact-byte-bound")
+                    total += value.st_size
+                else:
+                    raise ValueError("helper-artifact-count-or-type")
     return total
 
 
 def command(argv: list[str], log: Path, timeout: int, cwd: Path, deadline: int,
             env: dict | None = None, maximum: int = 16 * 1024 * 1024,
-            watched: Path | None = None, remaining: int = MAX_TOTAL_BYTES) -> dict:
+            watched: Path | None = None, remaining: int = MAX_TOTAL_BYTES,
+            directory_limits: DirectoryLimits | None = None) -> dict:
     checksum = fingerprint(Path(argv[0]))[0]
     until = min(deadline, time.monotonic_ns() + timeout * 1_000_000_000)
     receipt = {"process_id": None, "start_time_ticks": None, "role": "artifact-identity-helper",
@@ -57,8 +97,10 @@ def command(argv: list[str], log: Path, timeout: int, cwd: Path, deadline: int,
                     if count > maximum:
                         raise ValueError("helper-output-bound")
                     destination.write(block)
-                if watched is not None and directory_bytes(watched) > remaining:
+                if watched is not None and directory_bytes(watched, directory_limits) > remaining:
                     raise ValueError("helper-total-output-bound")
+            if watched is not None and directory_bytes(watched, directory_limits) > remaining:
+                raise ValueError("helper-total-output-bound")
     finally:
         if child is not None:
             # Keep the leader unreaped until its exclusively owned group closes.

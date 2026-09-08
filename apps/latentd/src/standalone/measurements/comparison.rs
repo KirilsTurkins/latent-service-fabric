@@ -1,5 +1,6 @@
 //! Controlled semantic echo arm; separate from the full measurement profiles.
 mod call;
+mod cold;
 mod evidence;
 mod node;
 mod plan;

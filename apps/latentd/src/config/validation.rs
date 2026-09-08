@@ -141,9 +141,17 @@ fn retained(config: &NodeConfig, capacity: &Capacity) -> Result<(), PlatformErro
     range(
         config.cache.preparations,
         1,
-        (capacity.cells as usize).min(config.workers.control),
+        capacity.reservations as usize,
         "cache.preparations",
     )?;
+    if let Some(workers) = config.cache.compiler_workers {
+        range(
+            workers,
+            1,
+            config.cache.preparations.min(8),
+            "cache.compilerWorkers",
+        )?;
+    }
     range(
         config.catalogs.release_entries,
         1,

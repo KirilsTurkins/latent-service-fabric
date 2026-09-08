@@ -24,6 +24,11 @@ pub(super) fn wasmtime(
         prepared_cache_maximum_metadata_bytes: config.cache.metadata_bytes,
         prepared_cache_maximum_compiled_image_bytes: config.cache.compiled_image_bytes,
         maximum_concurrent_preparations: config.cache.preparations,
+        compiler_workers: config.cache.compiler_workers,
+        maximum_preparation_waiters: capacity.reservations as usize,
+        maximum_waiters_per_preparation: capacity.reservations as usize,
+        maximum_ready_preparations: capacity.reservations as usize,
+        maximum_preparation_document_bytes: preparation_documents(config)?,
         // Capture remains positive even if the effective grant denies logging.
         invocation_log_maximum_bytes: 16 * 1024,
         ..WasmtimeConfig::default()
@@ -91,4 +96,16 @@ pub(super) fn management(
     };
     limits.validate().map_err(|_| invalid("management"))?;
     Ok(limits)
+}
+
+fn preparation_documents(config: &NodeConfig) -> Result<usize, PlatformError> {
+    // These are the same repository/codec defaults used by standalone startup.
+    // The limit covers encoded inputs plus fixed reader/job allowance, not the
+    // allocator's transient JSON decoder or Wasmtime compiler heap usage.
+    latent_artifacts::DirectoryArtifactRepositoryConfig::default()
+        .max_metadata_bytes
+        .checked_add(latent_manifest::ManifestLimits::default().max_document_bytes)
+        .and_then(|bytes| bytes.checked_add(64 * 1024))
+        .and_then(|bytes| bytes.checked_mul(config.cache.preparations))
+        .ok_or_else(|| invalid("cache.preparations"))
 }

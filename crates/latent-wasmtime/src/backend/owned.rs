@@ -19,7 +19,7 @@ pub(super) struct WasmtimePreparedUse {
     // permit when an unused owner is dropped, including during unwind.
     pub(super) runtime: Arc<PreparedRuntime>,
     pub(super) permit: ActiveInstancePermit,
-    shared: Arc<SharedRuntime>,
+    pub(super) shared: Arc<SharedRuntime>,
 }
 
 impl WasmtimeBackend {

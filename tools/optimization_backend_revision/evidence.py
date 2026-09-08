@@ -13,6 +13,7 @@ from tools.optimization_revision_evidence.identity import environment, source
 from tools.phase1_paired.candidate import parse
 from tools.phase1_paired.aggregate import delta
 from . import builds as build_check, model
+from .cold import model as cold_model
 
 
 class Artifacts(BaseArtifacts):
@@ -38,12 +39,13 @@ def validate_suite(path):
     suite = read_json(path)
     require(hash_file(path, DOCUMENT_BYTES) == checksum, "backend-suite-changed-during-read")
     fields(suite, "schema profile plan builds runner_source runner_source_after status reason elapsed_nanos runs artifacts")
-    require(suite["schema"] == "latent.optimization.backend-revision-suite.v1"
-            and suite["profile"] in ("smoke", "full") and suite["plan"] == model.plan(suite["profile"]),
+    cold = suite["schema"] == "latent.optimization.cold-suite.v1"
+    require(suite["schema"] in ("latent.optimization.backend-revision-suite.v1","latent.optimization.cold-suite.v1")
+            and suite["profile"] in ("smoke", "full") and suite["plan"] == (cold_model.plan(suite["profile"]) if cold else model.plan(suite["profile"])),
             "changed-backend-suite-plan")
     require(suite["status"] in ("passed", "failed")
             and suite["reason"] == (None if suite["status"] == "passed" else "collection-failed"), "backend-suite-status")
-    require(uint(suite["elapsed_nanos"]) <= (9000 if suite["profile"] == "full" else 300) * 10**9,
+    require(uint(suite["elapsed_nanos"]) <= ((4500 if cold else 9000) if suite["profile"] == "full" else 300) * 10**9,
             "backend-suite-wall-bound")
     source(suite["runner_source"])
     require(suite["runner_source"] == suite["runner_source_after"], "backend-runner-source-changed")
@@ -51,7 +53,7 @@ def validate_suite(path):
     builds = read_json(build_path)
     artifacts = artifact_set(path.parent, builds, suite["artifacts"])
     artifacts.path(suite["builds"])
-    build_check.validate(builds, artifacts, suite["profile"])
+    build_check.validate_experiment(builds, artifacts, suite["profile"],"cold" if cold else "warm")
     require(builds["harness"]["source"] == suite["runner_source"], "backend-harness-source-mismatch")
     expected = list(model.population(suite["profile"]))
     require(isinstance(suite["runs"], list) and len(suite["runs"]) <= len(expected), "backend-run-count")
@@ -67,10 +69,20 @@ def validate_suite(path):
         require(prior <= start <= finish and (finish - start) * 1000 <= uint(suite["elapsed_nanos"]), "overlapping-backend-arms")
         prior = finish
         selected = artifacts.json(row["plan"])
-        require(selected == model.plan(suite["profile"], row["repetition"]), "changed-backend-run-plan")
+        expected_plan = cold_model.plan(suite["profile"],row["repetition"],row["variant"]) if cold else model.plan(suite["profile"],row["repetition"])
+        require(selected == expected_plan, "changed-backend-run-plan")
         identity = artifacts.json(row["identity"])
         require(identity == model.identity(builds, row["variant"], row["host_before"]), "crossed-backend-identity")
-        before, after = environment(row["host_before"]), environment(row["host_after"])
+        if cold:
+            before,after = ({key:item for key,item in row[name].items() if key != "clock_ticks_per_second"}
+                            for name in ("host_before","host_after"))
+            before,after = environment(before),environment(after)
+            ticks = row["host_before"].get("clock_ticks_per_second")
+            require(type(ticks) is int and 1 <= ticks <= 1_000_000
+                    and row["host_after"].get("clock_ticks_per_second") == ticks, "cold-host-tick-resolution")
+            before["clock_ticks_per_second"] = after["clock_ticks_per_second"] = ticks
+        else:
+            before, after = environment(row["host_before"]), environment(row["host_after"])
         stable_host = before if stable_host is None else stable_host
         require(before == after == stable_host, "backend-host-controls-changed")
         for name in ("cgroup_before", "cgroup_after"):
@@ -81,7 +93,7 @@ def validate_suite(path):
                     "backend-cgroup-membership-changed")
         command = row["command"]
         require(isinstance(command, list) and len(command) == 6
-                and command[1:] == ["--exact", model.COLLECTOR, "--ignored", "--nocapture", "--test-threads=1"],
+                and command[1:] == ["--exact", cold_model.COLLECTOR if cold else model.COLLECTOR, "--ignored", "--nocapture", "--test-threads=1"],
                 "changed-backend-collector-command")
         binary = builds["builds"][row["variant"]]["executables"]["backend"]
         require(isinstance(command[0], str) and command[0].endswith("/" + binary["path"]), "crossed-backend-command-binary")
@@ -97,12 +109,19 @@ def validate_suite(path):
         artifacts.path(row["log"])
         raw_path = artifacts.path(row["raw"])
         raw = artifacts.json(row["raw"])
-        parsed = parse(raw, selected, identity, artifacts, raw_path, revision=True)
+        if cold:
+            from .cold.parse import parse as parse_cold
+            parsed = parse_cold(raw,selected,identity,artifacts,raw_path,builds["harness"]["echo"],row["variant"])
+        else:
+            parsed = parse(raw, selected, identity, artifacts, raw_path, revision=True)
         require(tuple(parsed["process_identity"]) == (owner[0], int(owner[1])), "backend-probe-is-not-supervised-child")
         parsed["process_identity"] = {"process_id": owner[0], "start_time_ticks": owner[1]}
         records.append({"repetition": row["repetition"], "variant": row["variant"], "status": "passed", **parsed})
     complete = suite["status"] == "passed" and len(records) == len(expected) and not failed
     require(suite["status"] != "passed" or complete, "passed-backend-suite-hides-failed-or-missing-arm")
+    if cold:
+        from .cold.aggregate import aggregate as aggregate_cold
+        return aggregate_cold(suite,checksum[0],builds,records,complete,failed)
     return aggregate(suite, checksum[0], builds, records, complete, failed)
 
 

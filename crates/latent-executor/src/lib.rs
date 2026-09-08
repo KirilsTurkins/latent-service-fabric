@@ -5,8 +5,10 @@
 use std::sync::Arc;
 
 mod prepared_activation;
+mod prepared_readiness;
 mod prepared_use;
 pub use prepared_activation::PreparedActivation;
+pub use prepared_readiness::PreparedReadiness;
 pub use prepared_use::PreparedUse;
 
 use latent_activation::ActivationEnvelope;
@@ -232,6 +234,33 @@ pub trait ExecutionBackend: Send + Sync {
         key: &'a PreparationKey,
     ) -> BoxFuture<'a, Result<PreparedActivation, PlatformError>> {
         Box::pin(prepared_activation::prepare(self, repository, key))
+    }
+
+    /// Acquires immutable code readiness before assigning an execution cell.
+    /// A backend may retain this owned repository during bounded background work.
+    /// The compatibility default wraps the original prepared owner intact; it
+    /// cannot promise that an external backend defers instance reservations.
+    fn prepare_ready_from_repository<'a>(
+        &'a self,
+        repository: Arc<dyn ArtifactRepository>,
+        key: PreparationKey,
+    ) -> BoxFuture<'a, Result<PreparedReadiness, PlatformError>> {
+        Box::pin(async move {
+            self.prepare_from_repository(repository.as_ref(), &key)
+                .await
+                .map(PreparedReadiness::from_activation)
+        })
+    }
+
+    /// Converts the same readiness pin into activation ownership after a cell
+    /// is assigned. It must not repeat repository lookup or compilation.
+    fn materialize_ready(
+        &self,
+        ready: PreparedReadiness,
+    ) -> Result<PreparedActivation, PlatformError> {
+        ready
+            .into_activation()
+            .map_err(|_| owned_preparation_unsupported())
     }
 
     /// Consumes one prepared-state owner. The returned future owns synchronous

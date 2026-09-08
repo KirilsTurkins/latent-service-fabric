@@ -136,11 +136,12 @@ ownership. An executing activation may retain its bounded runtime pin until
 cleanup, so resident cache counters exclude those active evicted pins.
 
 Activation orchestration obtains the engine key through
-`ExecutionBackend::preparation_key` and calls `prepare_from_repository`. The
-returned `PreparedActivation` carries all manifest-declared imports, including
-optional ones, alongside its affine `PreparedUse`. That use retains the exact
-immutable runtime and one shared instance
-reservation from materialization through `invoke_prepared_contained`. Invocation
+`ExecutionBackend::preparation_key` and calls `prepare_ready_from_repository`
+before requesting an execution cell. `PreparedReadiness` pins immutable code and
+all manifest imports without an active-instance permit or Store. After assignment,
+`materialize_ready` acquires one shared instance reservation and transfers that
+same code pin into `PreparedActivation`. Its affine `PreparedUse` retains the
+exact runtime and instance reservation through `invoke_prepared_contained`. Invocation
 consumes this owner without looking in the cache again, so eviction or explicit
 legacy `release` cannot invalidate an already prepared use. Dropping an unused
 owner releases its pin synchronously. The backend rejects tokens from another
@@ -150,8 +151,10 @@ Direct `prepare_for_use` callers retain the checked owned-artifact path.
 `active_instance_reservations` reports both materializing prepared uses and
 running invocations against `maximum_instance_reservations`; the same reservation
 is transferred into execution. Resident cache limits remain separate. Evicted
-runtime pins are bounded by this shared reservation count and each runtime's
-validated source, metadata, and compiled-image ceilings. These counters do not
+runtime pins held by active uses are bounded by this shared reservation count and
+each runtime's validated source, metadata, and compiled-image ceilings. Pins
+waiting for a cell instead obey the separate ready count, metadata and image
+allowances described below. These counters do not
 claim to measure total process memory. Legacy `prepare` still returns only a
 descriptor, which can become absent after eviction; legacy `release` removes
 cache ownership and is not activation cleanup.
@@ -164,22 +167,57 @@ drop observation cannot charge the same work twice. The activation manager must
 drop the backend future before finalizing its budget and disposing of its cell;
 an abandoned future does not itself produce a reusable-cell proof.
 
-At most two preparations compile concurrently by default. Duplicate in-flight
-work or a full compilation allowance returns retryable `unavailable` without
-an internal wait queue. In-flight source and metadata bytes are reported
-separately. Cold repository reads and compilation remain synchronous work during
-materialization after scheduler assignment. Moving that work to a bounded
-blocking stage and coalescing duplicate compilation remain
-[#101](https://github.com/KirilsTurkins/latent-service-fabric/issues/101);
-cache/LRU changes remain
+Generic readiness uses fixed factory-owned compiler workers. The total distinct
+job bound `maximum_concurrent_preparations` includes assigned and queued jobs.
+`compiler_workers` defaults to the smaller of two and that bound, with a hard
+worker limit of eight; remaining job slots form the queue. The standalone node
+defaults to one total job and one compiler worker. Authenticated same-key requests
+join one job, within separate global and per-key waiter bounds. Warm cache hits
+bypass a saturated compiler queue while still obeying ready-owner limits.
+
+The owned directory source selects one concrete repository for identity, bounds
+and blocking reads, including stamp-ineligible reads. It enforces reserved
+component and encoded metadata/manifest limits before growing input buffers.
+Its repository/root lock remains owned until the actual job finishes; resident
+cache entries and ready pins do not retain it. External repositories without
+this source use their normal awaited fetch and verified owned-artifact fallback;
+the runtime cannot force arbitrary external repository code to yield or bound
+its private allocations.
+
+Cancelling one waiter removes only its registration. A queued job with no live
+waiters is removed without I/O. A running job with no live waiters becomes
+abandoned, keeps its reservations until native compilation returns, and discards
+its late result. Readiness transfers no renewed deadline or replacement budget.
+Queue, worker, waiter, ready-owner and document limits are finite and separately
+observed. Ready image/metadata charges conservatively account for each pin, even
+when pins share code; they are distinct from resident-cache and active-instance
+populations. Neither accounting nor input caps claim a total compiler heap/RSS
+bound. Detailed stage/CPU observations are opt-in measurement instrumentation.
+
+The borrowed `prepare_from_repository` and direct preparation APIs remain
+compatible synchronous paths. The generic node readiness path supplies the
+bounded worker behavior; the Phase 0 facade retains its original execution model.
+Cache eviction/LRU improvements are tracked separately in
 [#102](https://github.com/KirilsTurkins/latent-service-fabric/issues/102).
-The verified warm path changes none of those limits or scheduling semantics.
 A shared instance gate defaults to 64 active component instances
 across the factory's backends, and each store also has explicit instance,
 memory, table, and table-element limits. Pooling exposes its component/core
 instance and allocation bounds in the same policy. All of these resources are
 node-owned; preparation does not allocate a service-specific cell, listener,
 or execution worker.
+
+Rust embedders must retain an external factory/runtime owner until compiler
+callbacks have returned. Final pool destruction or consuming shutdown from one
+of that pool's own worker callbacks cannot synchronously join the current thread.
+This unsupported reentrant teardown aborts the process before invoking stop
+callbacks or consuming any join handles. It supplies no graceful-cleanup proof.
+The standalone node retains the factory through borrowed compiler quiescence and
+then joins all workers from its shutdown owner. An isolated child test exercises
+the exceptional embedding boundary without terminating the test supervisor.
+Caught compiler panic payloads are disposed before job completion is recorded.
+If a trusted host payload's destructor itself panics, cleanup aborts the process
+without attempting recursive panic-payload destruction or reporting clean shutdown.
+A separate supervised child verifies this fatal cleanup boundary.
 
 The factory owns the engine and one weak-engine epoch ticker. Any additional
 Wasmtime compilation/runtime helpers belong to that bounded node runtime, not

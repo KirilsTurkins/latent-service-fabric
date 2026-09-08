@@ -1,5 +1,6 @@
 //! Explicit node policy shared by generic execution and the Phase 0 facade.
 
+mod compiler;
 mod engine;
 mod profile;
 #[cfg(test)]
@@ -90,6 +91,13 @@ pub struct WasmtimeConfig {
     /// Compiled image address ranges, not total compiler heap or process RSS.
     pub prepared_cache_maximum_compiled_image_bytes: usize,
     pub maximum_concurrent_preparations: usize,
+    /// Fixed generic compiler workers; None resolves to min(2, job capacity).
+    pub compiler_workers: Option<usize>,
+    pub maximum_preparation_waiters: usize,
+    pub maximum_waiters_per_preparation: usize,
+    pub maximum_ready_preparations: usize,
+    /// Aggregate reserved encoded documents and fixed reader scratch.
+    pub maximum_preparation_document_bytes: usize,
     /// Shared across all backends created by one factory, including on-demand.
     pub maximum_active_instances: usize,
     pub maximum_instances_per_store: usize,
@@ -137,6 +145,11 @@ impl Default for WasmtimeConfig {
             prepared_cache_maximum_metadata_bytes: 8 * 1024 * 1024,
             prepared_cache_maximum_compiled_image_bytes: 128 * 1024 * 1024,
             maximum_concurrent_preparations: 2,
+            compiler_workers: None,
+            maximum_preparation_waiters: 64,
+            maximum_waiters_per_preparation: 64,
+            maximum_ready_preparations: 64,
+            maximum_preparation_document_bytes: 64 * 1024 * 1024,
             maximum_active_instances: 64,
             maximum_instances_per_store: 128,
             maximum_memories_per_store: 16,
@@ -191,6 +204,7 @@ impl WasmtimeConfig {
             self.validate_pooling()?;
         }
         self.cache_limits().validate()?;
+        self.validate_compiler()?;
         self.context_policy.validate()?;
         self.value_codec_limits.validate()
     }
