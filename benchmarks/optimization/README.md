@@ -113,6 +113,13 @@ optimization result or a production capacity claim.
 
 ## Artifact identity and catalog recovery
 
+The retained [2026-09-08 comparison](artifact-identity/2026-09-08-container-linux-95a53b1/REPORT.md)
+completed all 252 full measurements. With 64 MiB components, median artifact
+recovery fell from 309 ms to 53 ms and combined recovery/catalog loading from
+861 ms to 104 ms. Candidate profiled peak heap for these operations was 0.12 MiB
+and 0.20 MiB respectively. The report distinguishes normal CPU/RSS from separately
+profiled heap usage and links the complete replayable evidence.
+
 The [artifact identity comparison](https://github.com/KirilsTurkins/latent-service-fabric/issues/99)
 uses the identical auxiliary Rust probe on clean control and candidate commits.
 On Linux with Heaptrack 1.4 and zstd installed, set `CONTROL_REF` and
