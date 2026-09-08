@@ -127,3 +127,76 @@ fn coalesced_results_respect_ready_image_bytes_even_after_cache_eviction() {
         Acquisition::Waiting { owner: true, .. }
     ));
 }
+
+#[test]
+fn ordinary_job_errors_and_panics_fan_out_then_unrelated_work_recovers() {
+    use latent_core::PlatformErrorCode;
+    use std::sync::mpsc;
+    let (_directory, _repository, identity) = source();
+    let pool = pool(&config());
+    for panic_job in [false, true] {
+        let (first, _) = waiting(&pool, "failure", Some(identity.clone()));
+        let (started_send, started) = mpsc::channel();
+        let (release, released) = mpsc::channel();
+        first
+            .start(move |reservation| {
+                Box::new(move |_queue| {
+                    let _owned_reservation = reservation;
+                    started_send.send(()).unwrap();
+                    released.recv_timeout(Duration::from_secs(5)).unwrap();
+                    assert!(!panic_job, "controlled ordinary task panic");
+                    Err(crate::containment::platform_error(
+                        PlatformErrorCode::CorruptArtifact,
+                        "controlled-task-error",
+                        false,
+                    ))
+                })
+            })
+            .unwrap();
+        started.recv_timeout(Duration::from_secs(5)).unwrap();
+        let mut followers = vec![first];
+        for _ in 0..7 {
+            let (follower, owner) = waiting(&pool, "failure", Some(identity.clone()));
+            assert!(!owner);
+            followers.push(follower);
+        }
+        release.send(()).unwrap();
+        for follower in followers {
+            let error = complete(follower)
+                .err()
+                .expect("every follower sees the failure");
+            assert_eq!(
+                error.code,
+                if panic_job {
+                    PlatformErrorCode::Unavailable
+                } else {
+                    PlatformErrorCode::CorruptArtifact
+                }
+            );
+        }
+        idle(&pool);
+        assert_eq!(pool.core.cache.snapshot().preparing, 0);
+        assert_eq!(pool.observer().snapshot().ready_preparations, 0);
+        assert!(pool.observer().snapshot().accepting);
+        assert!(!pool.observer().snapshot().failed);
+        let (healthy, _) = waiting(
+            &pool,
+            if panic_job {
+                "after-panic"
+            } else {
+                "after-error"
+            },
+            None,
+        );
+        let (started, release) = blocked(&pool, &healthy);
+        started.recv_timeout(Duration::from_secs(5)).unwrap();
+        release.send(()).unwrap();
+        let recovered = complete(healthy).unwrap();
+        assert_eq!(*recovered.runtime, 7);
+        drop(recovered);
+        idle(&pool);
+    }
+    let snapshot = pool.observer().snapshot();
+    assert_eq!((snapshot.jobs_failed, snapshot.jobs_completed), (2, 2));
+    assert_eq!(snapshot.coalesced_waiters, 14);
+}
