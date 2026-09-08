@@ -60,6 +60,11 @@ class ColdRevisionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"dormant-execution-cache"):
             validate_suite(self.path)
 
+    def test_rehashed_publication_cannot_replace_global_object_generation_with_one(self):
+        self.change(lambda raw: raw["fixtures"][1]["publication"].update(object_generation="1"))
+        with self.assertRaisesRegex(ValueError,"publication-stamp"):
+            validate_suite(self.path)
+
     def test_candidate_cannot_delete_optional_compiler_proof(self):
         self.change(lambda raw: raw["shutdown"].pop("compiler"))
         with self.assertRaisesRegex(ValueError,"compiler-proof-absent"):

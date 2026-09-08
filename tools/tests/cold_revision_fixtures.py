@@ -78,7 +78,7 @@ class Fixture(WarmFixture):
             artifact = {role:retain(f"echo-{role}.json",value) for role,value in documents.items()}
             artifact.update(component_sha256=release,component_bytes=str(len(data)),stored_descriptor_reference="local:release:"+release)
             fixtures.append({"key":str(key),"directory":directory,"component":retain("echo-component.wasm",data),"artifact":artifact,
-                             "publication":{"release_digest":release,"deployment_id":f"cold-key-{key}","object_generation":"1","catalog_generation":str(key+1)},
+                             "publication":{"release_digest":release,"deployment_id":f"cold-key-{key}","object_generation":str(key+1),"catalog_generation":str(key+1)},
                              "target":{"tenant":"examples","service":f"cold-key-{key}","contract":"examples:echo/api@0.1.0","function":"echo"}})
         records=[]
         now=10_000_000

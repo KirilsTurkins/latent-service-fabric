@@ -55,7 +55,7 @@ def fixtures(value, artifacts, directory, echo):
             require(budget["cpuFuel"] == 10_000_000_000 and budget["memoryBytes"] == 16_777_216
                     and budget["logBytes"] == 16384 and budget.get("wallTimeLimitMillis") in (None,1000), "cold-persisted-grants")
         require(row["publication"] == {"release_digest":digest,"deployment_id":f"cold-key-{index}",
-                "object_generation":"1","catalog_generation":str(index+1)}, "cold-publication-stamp")
+                "object_generation":str(index+1),"catalog_generation":str(index+1)}, "cold-publication-stamp")
         require(row["target"] == {"tenant":"examples","service":f"cold-key-{index}","contract":"examples:echo/api@0.1.0","function":"echo"}, "cold-target-changed")
     require(len(set(releases)) == 8, "cold-components-not-distinct")
     return releases
