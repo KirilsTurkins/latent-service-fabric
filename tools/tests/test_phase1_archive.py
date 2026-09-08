@@ -228,6 +228,55 @@ class OptimizationArchiveTests(unittest.TestCase):
         (self.source / 'binary').write_bytes(b'fixture executable\x00')
         (self.source / 'empty.log').write_bytes(b'')
 
+    def large_aggregate(self):
+        # Distribution/count rows model the full retained report: individually
+        # small values, under 8 MiB, but more than 200,000 total JSON nodes.
+        row = {'attempts': '400', 'successes': '396', 'failures': '4',
+               'latency_nanos': {'minimum': '12000', 'p50': '15000',
+                                 'p95': '19000', 'p99': '21000', 'maximum': '22000'}}
+        return {**self.aggregate, 'rows': [row] * 20_001}
+
+    def test_large_optimization_aggregate_dispatch_and_replay_use_its_structural_bound(self):
+        self.minimal_inputs()
+        value = self.large_aggregate()
+        path = self.source / 'aggregate.json'
+        path.write_bytes(verify.canonical(value))
+        self.assertLess(path.stat().st_size, verify.MAX_AGGREGATE_BYTES)
+        with self.assertRaisesRegex(ValueError, 'json-structure-limit'):
+            verify.read_json(path)
+        self.assertEqual(verify.evidence_kind(self.source), 'optimization')
+        with patch.object(verify, 'validate_optimization_suite', return_value=value) as replay:
+            verify.verify_optimization(self.source)
+            replay.assert_called_once_with(self.source / 'suite.json')
+
+    def test_optimization_aggregate_keeps_exact_eight_mib_archive_byte_cap(self):
+        self.minimal_inputs()
+        path = self.source / 'aggregate.json'
+        encoded = verify.canonical(self.aggregate)
+        path.write_bytes(encoded + b' ' * (verify.MAX_AGGREGATE_BYTES - len(encoded)))
+        self.assertEqual(verify.evidence_kind(self.source), 'optimization')
+        with path.open('ab') as stream:
+            stream.write(b' ')
+        with patch.object(verify, 'validate_optimization_suite') as replay:
+            for operation in (verify.evidence_kind, verify.verify_optimization):
+                with self.subTest(operation=operation.__name__):
+                    with self.assertRaisesRegex(ValueError, 'json-byte-bound'):
+                        operation(self.source)
+            replay.assert_not_called()
+
+    def test_legacy_dispatch_preserves_node_and_string_limits(self):
+        path = self.source / 'aggregate.json'
+        for schema in ('latent.phase1.measurement-aggregate.v1',
+                       'latent.phase1.paired-aggregate.v1', None):
+            for value, reason in (
+                    (self.large_aggregate(), 'json-structure-limit'),
+                    ({'text': 'x' * (64 * 1024 + 1)}, 'invalid-string')):
+                with self.subTest(schema=schema, reason=reason):
+                    value['schema'] = schema
+                    path.write_bytes(verify.canonical(value))
+                    with self.assertRaisesRegex(ValueError, reason):
+                        verify.evidence_kind(self.source)
+
     def archive(self, aggregate=None):
         (self.source / 'aggregate.json').write_bytes(verify.canonical(
             self.aggregate if aggregate is None else aggregate) + b'\n')

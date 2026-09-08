@@ -21,6 +21,7 @@ try:
     from .phase1_evidence.replay import validate_aggregate, validate_comparison
     from .phase1_evidence.common import canonical, read_json
     from .validate_phase1_paired import replay as validate_paired
+    from .optimization_evidence.common import read_json as read_optimization_json
     from .optimization_evidence.suite import validate_suite as validate_optimization_suite
 except ImportError:
     import package_phase0_evidence as paths
@@ -28,6 +29,7 @@ except ImportError:
     from phase1_evidence.replay import validate_aggregate, validate_comparison
     from phase1_evidence.common import canonical, read_json
     from validate_phase1_paired import replay as validate_paired
+    from tools.optimization_evidence.common import read_json as read_optimization_json
     from tools.optimization_evidence.suite import validate_suite as validate_optimization_suite
 
 ARCHIVE = 'raw-evidence.tar.gz'
@@ -35,6 +37,7 @@ MANIFEST = 'raw-evidence.manifest.json'
 MAX_COMPRESSED = 99_000_000
 MAX_EXPANDED = 1024 * 1024 * 1024
 MAX_FILES = 5000
+MAX_AGGREGATE_BYTES = 8 * 1024 * 1024
 CHUNK = 64 * 1024
 
 
@@ -113,13 +116,20 @@ def verify_policy(policy, aggregate):
 
 
 def evidence_kind(directory):
-    aggregate = read_json(paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'))
+    path = paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate')
+    # Full optimization aggregates exceed the legacy 200,000-node ceiling.
+    # Inspect with that format's bounded parser, retaining the archive byte cap.
+    aggregate = read_optimization_json(path, MAX_AGGREGATE_BYTES)
+    require(isinstance(aggregate, dict), 'invalid aggregate object')
+    if aggregate.get('schema') == 'latent.optimization.aggregate.v1':
+        return 'optimization'
+    del aggregate
+    # Other formats still satisfy every original structural/string limit.
+    aggregate = read_json(path, MAX_AGGREGATE_BYTES)
     require(isinstance(aggregate, dict), 'invalid aggregate object')
     schema = aggregate.get('schema')
     if schema == 'latent.phase1.paired-aggregate.v1':
         return 'paired'
-    if schema == 'latent.optimization.aggregate.v1':
-        return 'optimization'
     # Shape-only archive verification remains available for legacy callers.
     # A missing schema never passes the mandatory semantic publication replay.
     require(schema in (None, 'latent.phase1.measurement-aggregate.v1'), 'unsupported evidence schema')
@@ -127,7 +137,9 @@ def evidence_kind(directory):
 
 
 def verify_optimization(directory):
-    retained = read_json(paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'))
+    retained = read_optimization_json(
+        paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
+        MAX_AGGREGATE_BYTES)
     suite = paths.existing_regular_file_path(directory / 'suite.json', 'optimization suite')
     regenerated = validate_optimization_suite(suite)
     require(canonical(retained) == canonical(regenerated),
