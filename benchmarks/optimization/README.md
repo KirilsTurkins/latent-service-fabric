@@ -8,6 +8,16 @@ those functions; the native reference uses their JSON framing adapter. The same
 external client sends the same protobuf requests over one persistent connection
 per case. Native means native code in the recorded environment, not bare metal.
 
+The [clean pre-optimization reference](reference/2026-09-08-container-linux-8bbc1fd/REPORT.md)
+retains seven alternating pairs and all 88,326 attempts. Its report includes
+unmet latency/budget targets and links to the separately retained rejected
+configuration attempt. Verify the complete archive with:
+
+```sh
+python3 tools/validate_phase1_archive.py \
+  benchmarks/optimization/reference/2026-09-08-container-linux-8bbc1fd
+```
+
 Run the bounded smoke profile on Linux, including a declared Linux container:
 
 ```sh
