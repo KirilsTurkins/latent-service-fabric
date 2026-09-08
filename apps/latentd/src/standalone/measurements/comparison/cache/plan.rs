@@ -59,8 +59,8 @@ impl Plan {
             20
         }
     }
-    pub fn duration(&self) -> Duration {
-        Duration::from_secs(300)
+    pub fn duration() -> Duration {
+        Duration::from_mins(5)
     }
     pub fn configuration(&self, path: &Path) -> Value {
         let mut config = self.cold().configuration(path);

@@ -88,7 +88,7 @@ pub(super) fn collect() {
     let result = match setup {
         Ok(_) => client.block_on(async {
             tokio::time::timeout(
-                plan.duration(),
+                plan::Plan::duration(),
                 Box::pin(super::run(
                     &mut node,
                     &mut writer,

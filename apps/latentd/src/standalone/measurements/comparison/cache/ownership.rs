@@ -30,10 +30,6 @@ pub(super) async fn release(
     result.map_err(super::super::super::platform)
 }
 
-#[expect(
-    clippy::too_many_lines,
-    reason = "The affine ready and active owners remain visible through every recorded lifetime transition."
-)]
 pub(super) async fn run(
     node: &mut Node,
     writer: &mut Writer,
