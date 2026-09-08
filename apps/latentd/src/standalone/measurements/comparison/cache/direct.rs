@@ -1,15 +1,15 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use latent_activation::ActivationEnvelope;
+use latent_activation::{ActivationEnvelope, TraceContext};
 use latent_core::{
-    ActivationId, CapabilityId, CellId, ContractId, FunctionId, InvocationPrincipal,
-    InvocationTarget, Metadata, PrincipalKind, ResourceBudget, ServiceId, SpanId, TenantId,
-    TraceContext, TraceId,
+    ActivationId, CapabilityId, CellId, ContractId, FunctionId, InvocationPrincipal, Metadata,
+    PrincipalKind, ResourceBudget, ServiceId, SpanId, TenantId, TraceId,
 };
 use latent_executor::{
     BoundImport, ExecutionBackend, ExecutionCancellation, ExecutionCell, ExecutionCleanup,
     ExecutionRequest, GuestOutcome, PreparedActivation,
 };
+use latent_routing::InvocationTarget;
 use latent_wasmtime::WasmtimeBackend;
 use serde_json::{json, Value};
 
