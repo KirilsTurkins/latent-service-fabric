@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/budget-lifecycle-suite.schema.json",
+  "$comment": "Bounded structural envelope. Mandatory exact source/build, fixture, clock, event association, population and cleanup replay uses tools.optimization_backend_revision.evidence.validate_suite. Smoke never qualifies as full evidence.",
+  "$defs": {
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "$ref": "#/$defs/json"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/json"
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "required": [
+    "schema",
+    "profile",
+    "plan",
+    "builds",
+    "runner_source",
+    "runner_source_after",
+    "status",
+    "reason",
+    "elapsed_nanos",
+    "runs",
+    "artifacts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.budget-lifecycle-suite.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "plan": {
+      "oneOf": [
+        {
+          "const": {
+            "schema": "latent.optimization.budget-lifecycle-plan.v1",
+            "profile": "smoke",
+            "repetition": 1
+          }
+        },
+        {
+          "const": {
+            "schema": "latent.optimization.budget-lifecycle-plan.v1",
+            "profile": "full",
+            "repetition": 1
+          }
+        }
+      ]
+    },
+    "builds": {
+      "$ref": "#/$defs/artifact"
+    },
+    "runner_source": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "runner_source_after": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed"
+      ]
+    },
+    "reason": {
+      "enum": [
+        null,
+        "collection-failed"
+      ]
+    },
+    "elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 14,
+      "items": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "passed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "const": null
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reason": {
+            "const": "collection-failed"
+          }
+        }
+      }
+    }
+  ]
+}

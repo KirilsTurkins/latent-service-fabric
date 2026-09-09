@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import os
+from contextlib import contextmanager
 from pathlib import Path
 import tempfile
 import time
@@ -12,11 +14,22 @@ from tools.optimization_runner.processes import OwnedProcess
 from .model import run_id
 
 
-def collect(repetition, variant, selected, binaries, publications, output, target, result):
+@contextmanager
+def owned_data(target, result):
+    state = None
+    try:
+        with tempfile.TemporaryDirectory(prefix="revision-node-owned-", dir=target) as state:
+            yield state
+    finally:
+        if state is not None:
+            result["data_removed"] = not os.path.lexists(state)
+
+
+def collect(repetition, variant, selected, binaries, publications, output, target, result, *, configure=None):
     directory = output / f"pair-{repetition:02}-{variant}"
     directory.mkdir()
-    with tempfile.TemporaryDirectory(prefix="revision-node-owned-", dir=target) as state:
-        config = fixtures.node_config(directory, Path(state) / "data")
+    with owned_data(target, result) as state:
+        config = (configure or fixtures.node_config)(directory, Path(state) / "data")
         result["configuration"] = legacy.ref(config, output)
         legacy.seed(binaries[variant], binaries["cli"], config, publications, directory)
         server = OwnedProcess([str(binaries[variant]), "serve", "--config", str(config)],
@@ -73,4 +86,3 @@ def collect(repetition, variant, selected, binaries, publications, output, targe
                                                         "server_shutdown": stopped})
             result.update(server_process=legacy.ref(directory / "server-process.json", output),
                           cleanup=legacy.ref(directory / "cleanup.json", output))
-    result["data_removed"] = True

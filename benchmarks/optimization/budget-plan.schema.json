@@ -1,0 +1,358 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/budget-plan.schema.json",
+  "oneOf": [
+    {
+      "const": {
+        "schema": "latent.optimization.budget-plan.v1",
+        "profile": "smoke",
+        "repetitions": 1,
+        "scenarios": [
+          "cold-restart"
+        ],
+        "cases": [
+          {
+            "id": "prewarm-echo",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 0,
+              "measured_attempts": 1,
+              "batch_size": 1,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 1000,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          },
+          {
+            "id": "budget-1ms",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 4,
+              "measured_attempts": 12,
+              "batch_size": 12,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 1,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          },
+          {
+            "id": "budget-2ms",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 4,
+              "measured_attempts": 12,
+              "batch_size": 12,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 2,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          },
+          {
+            "id": "budget-5ms",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 4,
+              "measured_attempts": 12,
+              "batch_size": 12,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 5,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          },
+          {
+            "id": "budget-10ms",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 4,
+              "measured_attempts": 12,
+              "batch_size": 12,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 10,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          }
+        ],
+        "setup_cases": [
+          "prewarm-echo"
+        ],
+        "maximum_run_seconds": "600",
+        "maximum_build_seconds": "10800",
+        "maximum_artifact_bytes": "1073741824",
+        "build_profile": "release",
+        "pair_order": "odd-control-candidate-even-candidate-control",
+        "timer_observation": "unavailable-external-daemon-use-separate-lifecycle-diagnostic"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.budget-plan.v1",
+        "profile": "full",
+        "repetitions": 7,
+        "scenarios": [
+          "cold-restart"
+        ],
+        "cases": [
+          {
+            "id": "prewarm-echo",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 0,
+              "measured_attempts": 1,
+              "batch_size": 1,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 1000,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          },
+          {
+            "id": "budget-1ms",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 40,
+              "measured_attempts": 400,
+              "batch_size": 100,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 1,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          },
+          {
+            "id": "budget-2ms",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 40,
+              "measured_attempts": 400,
+              "batch_size": 100,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 2,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          },
+          {
+            "id": "budget-5ms",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 40,
+              "measured_attempts": 400,
+              "batch_size": 100,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 5,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          },
+          {
+            "id": "budget-10ms",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 40,
+              "measured_attempts": 400,
+              "batch_size": 100,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 10,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          }
+        ],
+        "setup_cases": [
+          "prewarm-echo"
+        ],
+        "maximum_run_seconds": "3600",
+        "maximum_build_seconds": "10800",
+        "maximum_artifact_bytes": "1073741824",
+        "build_profile": "release",
+        "pair_order": "odd-control-candidate-even-candidate-control",
+        "timer_observation": "unavailable-external-daemon-use-separate-lifecycle-diagnostic"
+      }
+    }
+  ]
+}

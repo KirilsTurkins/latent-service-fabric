@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a separate nine-case LSF-before/after profile; smoke never claims full evidence."""
+"""Run paired LSF revision profiles with bounded smoke/full populations."""
 from __future__ import annotations
 
 import argparse
@@ -18,16 +18,29 @@ from tools.optimization_revision_runner.model import CONTROL
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--experiment", choices=("warm", "budget"), default="warm")
     parser.add_argument("--profile", choices=("smoke", "full"), default="smoke")
-    parser.add_argument("--control-ref", default=CONTROL)
-    parser.add_argument("--candidate-ref", required=True)
-    parser.add_argument("--harness-ref", required=True)
+    parser.add_argument("--control-ref")
+    parser.add_argument("--candidate-ref")
+    parser.add_argument("--harness-ref")
     parser.add_argument("--target-root", type=Path,
                         help="build parent outside Cargo-configured ancestors; default: a private system temporary directory")
-    parser.add_argument("--output", type=Path, required=True, help="new directory; retained on failure")
+    parser.add_argument("--output", type=Path, help="new directory; retained on failure")
+    parser.add_argument("--build-only", action="store_true", help="budget only: retain collectors/inputs without measuring")
+    parser.add_argument("--builds", type=Path, help="budget only: collect beside a fresh copied revision-builds.json")
     parser.add_argument("--backend-build-output", type=Path, help="optional fresh sibling for separate backend collector inputs")
     try:
         args = parser.parse_args(argv)
+        if args.builds:
+            if args.experiment != "budget" or any((args.build_only, args.output, args.control_ref, args.candidate_ref,
+                                                   args.harness_ref, args.backend_build_output)):
+                parser.error("--builds requires budget mode and cannot be combined with output/build/ref options")
+        elif not all((args.candidate_ref, args.harness_ref, args.output)):
+            parser.error("fresh builds require --candidate-ref, --harness-ref and --output")
+        elif args.control_ref is None:
+            args.control_ref = CONTROL
+        if args.build_only and args.experiment != "budget":
+            parser.error("--build-only is available only for the separate budget experiment")
         owner = (nullcontext(args.target_root) if args.target_root is not None
                  else tempfile.TemporaryDirectory(prefix="lsf-revision-parent-"))
         with owner as target:

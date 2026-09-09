@@ -215,6 +215,10 @@ def evidence_kind(directory):
         return 'artifact-identity'
     if aggregate.get('schema') == 'latent.optimization.revision-aggregate.v1':
         return 'revision'
+    if aggregate.get('schema') == 'latent.optimization.budget-aggregate.v1':
+        return 'budget'
+    if aggregate.get('schema') == 'latent.optimization.budget-lifecycle-aggregate.v1':
+        return 'budget-lifecycle'
     if aggregate.get('schema') == 'latent.optimization.backend-revision-aggregate.v1':
         return 'backend-revision'
     if aggregate.get('schema') == 'latent.optimization.cold-aggregate.v1':
@@ -267,13 +271,13 @@ def verify_artifact_identity(directory):
             'artifact identity archive requires a qualified full comparison')
 
 
-def verify_revision(directory, *, backend=False, cold=False):
-    kind = 'cold' if cold else 'backend-revision' if backend else 'revision'
+def verify_revision(directory, *, backend=False, cold=False, budget=False, lifecycle=False):
+    kind = 'budget-lifecycle' if lifecycle else 'budget' if budget else 'cold' if cold else 'backend-revision' if backend else 'revision'
     retained = read_optimization_json(
         paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
         MAX_AGGREGATE_BYTES)
     suite = paths.existing_regular_file_path(directory / 'suite.json', f'{kind} suite')
-    validator = validate_backend_revision_suite if backend or cold else validate_revision_suite
+    validator = validate_backend_revision_suite if backend or cold or lifecycle else validate_revision_suite
     regenerated = validator(suite)
     require(canonical(retained) == canonical(regenerated),
             f'{kind} aggregate differs from replayed evidence')
@@ -363,7 +367,7 @@ def verify_archive(root, manifest, archive_path, *, replay):
         kind = evidence_kind(extracted)
         outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
                        if kind == 'measurement' else ('aggregate.json',))
-        if kind in ('optimization', 'artifact-identity', 'revision', 'backend-revision', 'cold',
+        if kind in ('optimization', 'artifact-identity', 'revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold',
                     'cache-lookup', 'cache-behavior'):
             require('suite.json' in expected, f'{kind} archive omits suite')
         for name in outer_files:
@@ -376,8 +380,9 @@ def verify_archive(root, manifest, archive_path, *, replay):
                 verify_optimization(extracted)
             elif kind == 'artifact-identity':
                 verify_artifact_identity(extracted)
-            elif kind in ('revision', 'backend-revision', 'cold'):
-                verify_revision(extracted, backend=kind == 'backend-revision', cold=kind == 'cold')
+            elif kind in ('revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold'):
+                verify_revision(extracted, backend=kind == 'backend-revision', cold=kind == 'cold', budget=kind == 'budget',
+                                lifecycle=kind == 'budget-lifecycle')
             elif kind in ('cache-lookup', 'cache-behavior'):
                 verify_cache(extracted, kind)
             else:
