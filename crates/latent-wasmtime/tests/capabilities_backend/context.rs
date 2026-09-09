@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use latent_core::{ActivationClock, ActivationId, Metadata, SpanId, TraceId};
+use latent_core::{ActivationClock, ActivationId, Metadata, ServiceId, SpanId, TenantId, TraceId};
 use latent_executor::GuestOutcome;
 use latent_wasmtime::ContextExposurePolicy;
 use serde_json::json;
@@ -17,6 +17,12 @@ async fn default_context_filters_sensitive_maps_and_reuses_cell_without_identity
         grant.wall_time_limit_millis = Some(1000);
         let cancellation = Cancellation::new(id, &grant, clock.sample());
         let mut request = request(&prepared, &cancellation, "snapshot", &json!([]));
+        let tenant = TenantId(format!("tenant-{marker}"));
+        let service = ServiceId(format!("service-{marker}"));
+        request.activation.principal.tenant = Some(tenant.clone());
+        request.activation.principal.service = Some(service.clone());
+        request.activation.target.tenant = tenant;
+        request.activation.target.service = service;
         request.activation.root_activation_id = ActivationId(format!("root-{marker}"));
         request.activation.parent_activation_id = Some(ActivationId(format!("parent-{marker}")));
         request.activation.principal.subject = format!("subject-{marker}");
@@ -45,8 +51,14 @@ async fn default_context_filters_sensitive_maps_and_reuses_cell_without_identity
         assert_eq!(value["parent"], json!({"some": format!("parent-{marker}")}));
         assert_eq!(value["principal"]["subject"], format!("subject-{marker}"));
         assert_eq!(value["principal"]["kind"], "service");
-        assert_eq!(value["principal"]["tenant"], json!({"some": "tests"}));
-        assert_eq!(value["principal"]["service"], json!({"some": "caller"}));
+        assert_eq!(
+            value["principal"]["tenant"],
+            json!({"some": format!("tenant-{marker}")})
+        );
+        assert_eq!(
+            value["principal"]["service"],
+            json!({"some": format!("service-{marker}")})
+        );
         assert_eq!(value["principal"]["claims"], json!([]));
         assert_eq!(value["trace"]["trace-id"], format!("trace-{marker}"));
         assert_eq!(value["trace"]["span-id"], format!("span-{marker}"));
@@ -56,6 +68,12 @@ async fn default_context_filters_sensitive_maps_and_reuses_cell_without_identity
         assert_eq!(value["deadline"], json!({"some": "11000"}));
         assert_eq!(value["remaining"]["log-bytes"], grant.log_bytes.to_string());
         let encoded = output.to_string();
+        if marker == "second" {
+            assert!(
+                !encoded.contains("first"),
+                "previous activation context leaked across tenant reuse"
+            );
+        }
         for secret in [
             "private-claim",
             "private-baggage",
