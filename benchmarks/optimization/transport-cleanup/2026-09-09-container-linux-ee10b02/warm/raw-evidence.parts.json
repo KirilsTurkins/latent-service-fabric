@@ -1,0 +1,25 @@
+{
+  "archive": {
+    "bytes": "102995837",
+    "path": "raw-evidence.tar.gz",
+    "sha256": "sha256:f50869f16b023bcdd9527b5f1f5dbf710100cfaebb1f4cd8d0818584d40ae952"
+  },
+  "parts": [
+    {
+      "bytes": "50000000",
+      "path": "raw-evidence.tar.gz.part-0001",
+      "sha256": "sha256:c4d9088b229006b6906fc3011f56795259f4759c23e9fea3e6d881bb558932da"
+    },
+    {
+      "bytes": "50000000",
+      "path": "raw-evidence.tar.gz.part-0002",
+      "sha256": "sha256:cf9f46d5c74b581fe7cf253a754e221427a91c887668a3c755f961095b233352"
+    },
+    {
+      "bytes": "2995837",
+      "path": "raw-evidence.tar.gz.part-0003",
+      "sha256": "sha256:72292f5e2d8e608f102b620eacec9e053d599ef8313fb4c2c65af0c89d1dee01"
+    }
+  ],
+  "schema": "latent.phase1.archive-parts.v1"
+}

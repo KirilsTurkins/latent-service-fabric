@@ -241,6 +241,11 @@ tracks bounded cleanup and capacity recovery after a running transport disconnec
 
 ## Transport interruption recovery
 
+The [retained transport-cleanup comparison](transport-cleanup/2026-09-09-container-linux-ee10b02/README.md)
+shows 30/30 successful recovery calls versus 5/30 in the control, without a node
+restart. Its seven warm pairs have mixed timing changes and retain the observed
+RSS increase; both complete evidence packages passed Linux and Windows replay.
+
 The [#119 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/119)
 uses `--experiment recovery` on the existing revision runners. Its external warm
 profile retains 6,174 offers across seven pairs to observe ordinary request
