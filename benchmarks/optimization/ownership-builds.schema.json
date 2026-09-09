@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/ownership-builds.schema.json",
+  "$comment": "Bounded structural envelope. Mandatory exact source/build, fixture, ownership, clock, allocation and offered-population replay uses tools.optimization_revision_evidence.validate_suite for ownership-rpc or tools.optimization_backend_revision.evidence.validate_suite for ownership. Smoke never qualifies as full evidence.",
+  "$defs": {
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "$ref": "#/$defs/json"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/json"
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "required": [
+    "schema",
+    "requested_refs",
+    "build",
+    "builds",
+    "harness",
+    "cleanup",
+    "fixture_generation"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.ownership-builds.v1"
+    },
+    "requested_refs": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "build": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "builds": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "harness": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "cleanup": {
+      "const": {
+        "owned_worktree_removed": true
+      }
+    },
+    "fixture_generation": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    }
+  }
+}

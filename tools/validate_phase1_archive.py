@@ -219,7 +219,7 @@ def evidence_kind(directory):
         return 'budget'
     if aggregate.get('schema') == 'latent.optimization.budget-lifecycle-aggregate.v1':
         return 'budget-lifecycle'
-    for kind in ('transport-warm', 'recovery'):
+    for kind in ('transport-warm', 'recovery', 'ownership-rpc', 'ownership'):
         if aggregate.get('schema') == f'latent.optimization.{kind}-aggregate.v1':
             return kind
     if aggregate.get('schema') == 'latent.optimization.backend-revision-aggregate.v1':
@@ -274,15 +274,17 @@ def verify_artifact_identity(directory):
             'artifact identity archive requires a qualified full comparison')
 
 
-def verify_revision(directory, *, backend=False, cold=False, budget=False, lifecycle=False, transport=False, recovery=False):
-    require(sum(bool(value) for value in (backend, cold, budget, lifecycle, transport, recovery)) <= 1,
+def verify_revision(directory, *, backend=False, cold=False, budget=False, lifecycle=False, transport=False, recovery=False,
+                    ownership=None):
+    require(ownership in (None, 'ownership-rpc', 'ownership'), 'invalid ownership archive dispatch')
+    require(sum(bool(value) for value in (backend, cold, budget, lifecycle, transport, recovery, ownership)) <= 1,
             'ambiguous revision archive dispatch')
-    kind = 'recovery' if recovery else 'transport-warm' if transport else 'budget-lifecycle' if lifecycle else 'budget' if budget else 'cold' if cold else 'backend-revision' if backend else 'revision'
+    kind = ownership or ('recovery' if recovery else 'transport-warm' if transport else 'budget-lifecycle' if lifecycle else 'budget' if budget else 'cold' if cold else 'backend-revision' if backend else 'revision')
     retained = read_optimization_json(
         paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
         MAX_AGGREGATE_BYTES)
     suite = paths.existing_regular_file_path(directory / 'suite.json', f'{kind} suite')
-    validator = validate_backend_revision_suite if backend or cold or lifecycle or recovery else validate_revision_suite
+    validator = validate_backend_revision_suite if backend or cold or lifecycle or recovery or ownership == 'ownership' else validate_revision_suite
     regenerated = validator(suite)
     require(canonical(retained) == canonical(regenerated),
             f'{kind} aggregate differs from replayed evidence')
@@ -372,7 +374,7 @@ def verify_archive(root, manifest, archive_path, *, replay):
         kind = evidence_kind(extracted)
         outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
                        if kind == 'measurement' else ('aggregate.json',))
-        if kind in ('optimization', 'artifact-identity', 'revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery',
+        if kind in ('optimization', 'artifact-identity', 'revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership',
                     'cache-lookup', 'cache-behavior'):
             require('suite.json' in expected, f'{kind} archive omits suite')
         for name in outer_files:
@@ -385,9 +387,10 @@ def verify_archive(root, manifest, archive_path, *, replay):
                 verify_optimization(extracted)
             elif kind == 'artifact-identity':
                 verify_artifact_identity(extracted)
-            elif kind in ('revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery'):
+            elif kind in ('revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership'):
                 verify_revision(extracted, backend=kind == 'backend-revision', cold=kind == 'cold', budget=kind == 'budget',
-                                lifecycle=kind == 'budget-lifecycle', transport=kind == 'transport-warm', recovery=kind == 'recovery')
+                                lifecycle=kind == 'budget-lifecycle', transport=kind == 'transport-warm', recovery=kind == 'recovery',
+                                ownership=kind if kind in ('ownership-rpc', 'ownership') else None)
             elif kind in ('cache-lookup', 'cache-behavior'):
                 verify_cache(extracted, kind)
             else:
