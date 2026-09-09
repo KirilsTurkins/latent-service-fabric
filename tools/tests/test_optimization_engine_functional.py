@@ -28,7 +28,7 @@ def replay(value):
         ordinal = int(row["ordinal"])
         call = calls.validate(row, expected[ordinal - 1], ordinal, value["fixtures"],
                               int(value["clock"]["unix_origin_nanos"]), elapsed, pins,
-                              int(value["clock"]["clock_anchor_uncertainty_nanos"]))
+                              int(value["clock"]["clock_anchor_uncertainty_nanos"]), legacy_clock=True)
         status = statuses[row["activation_id"]]
         calls.status(status, call, elapsed)
         normalized[row["activation_id"]] = call
@@ -70,6 +70,15 @@ class EngineActualFunctionalTests(unittest.TestCase):
                 self.assertEqual(proof["guest_logs"], "10")
                 self.assertTrue(proof["four_live_before_fifth"] and proof["fifth_queued_without_store"]
                                 and proof["three_live_after_fifth_success"])
+
+    def test_immutable_old_graph_requires_explicit_legacy_clock_opt_in(self):
+        for label, value in self.inputs.items():
+            row = next(row for row in value["samples"] if row["kind"] == "invoke")
+            ordinal = int(row["ordinal"])
+            with self.subTest(profile=label), self.assertRaises(EvidenceError):
+                calls.validate(row, schedule.expected("smoke")[ordinal - 1], ordinal, value["fixtures"],
+                               int(value["clock"]["unix_origin_nanos"]), int(value["elapsed_nanos"]), {},
+                               int(value["clock"]["clock_anchor_uncertainty_nanos"]))
 
     def test_rehashed_fault_identity_kind_and_consumption_crossings_reject(self):
         mutations = ({"activation_id": "engine-fn-13"}, {"tenant": "engine-b"},

@@ -2,7 +2,7 @@ use super::{publication::Target, Clock, Result};
 use latent_artifacts::content_digest;
 use latent_wire::invocation::{proto, InvocationServiceClient};
 use serde_json::{json, Value};
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tonic::transport::Channel;
 pub(super) const MEDIA: &str = "application/vnd.latent.wit-values.v1+json";
 
@@ -61,7 +61,8 @@ pub(super) async fn invoke(channel: Channel, clock: Clock, offer: Offer) -> Resu
         .scheduled
         .checked_add(5_000_000_000)
         .ok_or("engine deadline overflow")?;
-    let (absolute, floor_loss, total_loss) = absolute_deadline(clock, deadline)?;
+    let deadline_sample = DeadlineClockSample::capture(clock)?;
+    let (absolute, floor_loss, total_loss) = absolute_deadline(&deadline_sample, deadline)?;
     let marker = if offer.target.tenant == "engine-a" {
         "a"
     } else {
@@ -71,7 +72,7 @@ pub(super) async fn invoke(channel: Channel, clock: Clock, offer: Offer) -> Resu
     let mut row = json!({"kind":"invoke","ordinal":offer.ordinal.to_string(),"command_ordinal":offer.command_ordinal.to_string(),"phase":offer.phase,"phase_kind":offer.phase_kind,"index":offer.index.to_string(),"activation_id":offer.id,
         "target":{"tenant":offer.target.tenant,"service":offer.target.service,"contract":offer.target.contract,"function":offer.function},"release_digest":offer.target.release_digest,"route_generation":"8",
         "request":{"payload":{"utf8":std::str::from_utf8(&payload)?,"sha256":content_digest(&payload).0,"bytes":payload.len().to_string()},"budget":budget(&offer.grant),"root":format!("engine-root-{marker}"),"parent":format!("engine-parent-{marker}"),"metadata":{"guest.marker":marker,"internal.secret":format!("private-{marker}")}},
-        "scheduled_nanos":offer.scheduled.to_string(),"deadline_nanos":deadline.to_string(),"deadline_unix_millis":absolute.to_string(),"absolute_deadline_floor_loss_nanos":floor_loss.to_string(),"absolute_deadline_total_loss_nanos":total_loss.to_string(),"dispatch_nanos":Value::Null,"dispatch_lag_nanos":Value::Null,"grpc_timeout_header":Value::Null,"grpc_status":Value::Null,"rpc_received":false,"response":Value::Null,"valid_response":false});
+        "scheduled_nanos":offer.scheduled.to_string(),"deadline_nanos":deadline.to_string(),"deadline_unix_millis":absolute.to_string(),"deadline_clock_sample":deadline_sample.record(),"absolute_deadline_floor_loss_nanos":floor_loss.to_string(),"absolute_deadline_total_loss_nanos":total_loss.to_string(),"dispatch_nanos":Value::Null,"dispatch_lag_nanos":Value::Null,"grpc_timeout_header":Value::Null,"grpc_status":Value::Null,"rpc_received":false,"response":Value::Null,"valid_response":false});
     let dispatch = clock.elapsed();
     if dispatch >= deadline {
         row["outcome"] = json!("client-deadline-before-dispatch");
@@ -137,18 +138,42 @@ pub(super) async fn invoke(channel: Channel, clock: Clock, offer: Offer) -> Resu
     row["overshoot_nanos"] = json!(completed.saturating_sub(deadline).to_string());
     Ok(row)
 }
-fn absolute_deadline(clock: Clock, deadline: u128) -> Result<(u128, u128, u128)> {
-    // The wall sample occurred after the monotonic origin. Use its conservative
-    // lower bound, then round down: a caller at the exact five-second maximum
-    // must not become 5001 ms when ingress samples a whole Unix millisecond.
-    let projected = clock
-        .unix_nanos
-        .checked_sub(clock.uncertainty_nanos)
-        .and_then(|origin| origin.checked_add(deadline))
+// Every field is measured in nanoseconds; started/finished use the collector origin.
+struct DeadlineClockSample {
+    started: u128,
+    finished: u128,
+    unix: u128,
+}
+impl DeadlineClockSample {
+    fn capture(clock: Clock) -> Result<Self> {
+        let started = clock.elapsed();
+        let unix = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
+        let finished = clock.elapsed();
+        Ok(Self {
+            started,
+            finished,
+            unix,
+        })
+    }
+    fn record(&self) -> Value {
+        json!({"started_nanos":self.started.to_string(),"finished_nanos":self.finished.to_string(),"unix_nanos":self.unix.to_string()})
+    }
+}
+fn absolute_deadline(sample: &DeadlineClockSample, deadline: u128) -> Result<(u128, u128, u128)> {
+    // Resample wall time for every offer: its relation to the monotonic clock
+    // can change during an owner. Charge the full sampling bracket and floor
+    // the projection, preserving the original monotonic deadline and budget.
+    // Expired offers retain a receipt and take the existing no-dispatch path.
+    let bracket = sample
+        .finished
+        .checked_sub(sample.started)
+        .ok_or("engine deadline clock sample reversed")?;
+    let projected = sample
+        .unix
+        .checked_add(deadline.saturating_sub(sample.finished))
         .ok_or("engine absolute deadline overflow")?;
     let floor_loss = projected % 1_000_000;
-    let total_loss = clock
-        .uncertainty_nanos
+    let total_loss = bracket
         .checked_add(floor_loss)
         .ok_or("engine deadline loss overflow")?;
     Ok((projected / 1_000_000, floor_loss, total_loss))
@@ -229,42 +254,101 @@ fn response(offer: &Offer, row: &mut Value, response: &proto::InvokeResponse) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Instant;
 
     #[test]
     fn absolute_projection_stays_within_the_maximum_at_millisecond_boundaries() {
         for offset in [0, 1, 999_999, 1_000_000, 1_000_001] {
-            for uncertainty in [0, 1, 999, 1_000_001] {
-                let origin = 10_000_000_000 + offset;
-                let clock = Clock {
-                    origin: Instant::now(),
-                    unix_nanos: origin + uncertainty,
-                    uncertainty_nanos: uncertainty,
+            for bracket in [0, 1, 999, 1_000_001] {
+                let sample = DeadlineClockSample {
+                    started: 2_000_000_000,
+                    finished: 2_000_000_000 + bracket,
+                    unix: 10_000_000_000 + offset,
                 };
+                let deadline = sample.started + 5_000_000_000;
                 let (absolute, floor_loss, total_loss) =
-                    absolute_deadline(clock, 5_000_000_000).unwrap();
-                assert_eq!(absolute - origin / 1_000_000, 5000);
-                assert_eq!(floor_loss, origin % 1_000_000);
-                assert_eq!(total_loss, uncertainty + floor_loss);
+                    absolute_deadline(&sample, deadline).unwrap();
+                assert!(absolute - sample.unix / 1_000_000 <= 5000);
+                assert!(floor_loss < 1_000_000);
+                assert_eq!(total_loss, bracket + floor_loss);
                 assert_eq!(
                     absolute * 1_000_000 + total_loss,
-                    clock.unix_nanos + 5_000_000_000
+                    sample.unix + deadline - sample.started
                 );
+                assert!(absolute * 1_000_000 <= sample.unix + deadline - sample.finished);
             }
         }
     }
 
     #[test]
-    fn absolute_projection_rejects_unrepresentable_anchors() {
-        let mut clock = Clock {
-            origin: Instant::now(),
-            unix_nanos: 0,
-            uncertainty_nanos: 1,
+    fn fresh_sample_handles_wall_moves_without_restarting_the_budget() {
+        let original_wall = 10_000_000_000;
+        let deadline = 7_000_000_000;
+        let mut sample = DeadlineClockSample {
+            started: 2_250_000_000,
+            finished: 2_250_000_000,
+            unix: original_wall + 2_250_000_000,
         };
-        assert!(absolute_deadline(clock, 1).is_err());
-        clock.unix_nanos = u128::MAX;
-        clock.uncertainty_nanos = 0;
-        assert!(absolute_deadline(clock, 1).is_err());
+        for actual_wall in [sample.unix - 3_000_000, sample.unix + 3_000_000] {
+            sample.unix = actual_wall;
+            let (absolute, floor_loss, total_loss) = absolute_deadline(&sample, deadline).unwrap();
+            assert_eq!(absolute - actual_wall / 1_000_000, 4750);
+            assert_eq!(
+                absolute * 1_000_000,
+                actual_wall + deadline - sample.finished
+            );
+            assert_eq!((floor_loss, total_loss), (0, 0));
+            assert_ne!(absolute * 1_000_000, original_wall + deadline);
+        }
+    }
+
+    #[test]
+    fn fresh_sample_avoids_the_stale_origin_maximum_violation() {
+        let old_unix_origin = 10_000_000_000;
+        let sample = DeadlineClockSample {
+            started: 2_000_000_000,
+            finished: 2_000_000_000,
+            unix: old_unix_origin + 2_000_000_000 - 3_000_000,
+        };
+        let deadline = sample.started + 5_000_000_000;
+        let old_absolute = (old_unix_origin + deadline) / 1_000_000;
+        assert_eq!(old_absolute - sample.unix / 1_000_000, 5003);
+        let (absolute, _, _) = absolute_deadline(&sample, deadline).unwrap();
+        assert_eq!(absolute - sample.unix / 1_000_000, 5000);
+    }
+
+    #[test]
+    fn expired_sample_keeps_its_receipt_without_adding_time() {
+        let sample = DeadlineClockSample {
+            started: 5_000_000_000,
+            finished: 5_000_000_123,
+            unix: 10_000_000_456,
+        };
+        for deadline in [0, sample.started, sample.finished] {
+            assert_eq!(
+                absolute_deadline(&sample, deadline).unwrap(),
+                (10_000, 456, 579)
+            );
+        }
+        assert_eq!(
+            sample.record(),
+            json!({"started_nanos":"5000000000","finished_nanos":"5000000123","unix_nanos":"10000000456"})
+        );
+    }
+
+    #[test]
+    fn absolute_projection_rejects_reversed_or_overflowing_samples() {
+        let mut sample = DeadlineClockSample {
+            started: 1,
+            finished: 0,
+            unix: 0,
+        };
+        assert!(absolute_deadline(&sample, 1).is_err());
+        sample.started = 0;
+        sample.unix = u128::MAX;
+        assert!(absolute_deadline(&sample, 1).is_err());
+        sample.finished = u128::MAX;
+        sample.unix = 1;
+        assert!(absolute_deadline(&sample, 0).is_err());
     }
 
     #[test]
