@@ -329,3 +329,35 @@ first incomplete collection exceeded the original limits. Other experiments,
 including codec RPC, retain the 1 GiB/4,000,000-record defaults. Archive selection
 binds the bounded outer codec aggregate to the archived kind and full replay;
 256 MiB files and the existing compressed transport caps remain unchanged.
+
+## Engine profile experiments
+
+The [retained engine-profile comparison](engine-profiles/2026-09-09-container-linux-fbb6e26/README.md)
+contains 6,160 external RPC calls and 27,790 matrix calls, including every
+intentional fault. Pooling/speed reduced warm setup by a paired 16–29 us across
+the four workloads, with all seven pairs lower. It increased first-call latency,
+sampled RSS and compiled-image charges while reducing virtual-memory high-water
+usage. Speed-and-size did not reduce image charges for these fixtures. The
+on-demand/speed default remains unchanged; the report retains mixed external
+tails, execution-order effects and all earlier failed attempts.
+
+The [#106 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/106)
+uses `--experiment engine` on the existing exact-revision runners. A separate
+external warm Echo comparison retains 32 calls in smoke or 6,160 across seven
+full pairs. The matrix uses one old default and four candidate allocator/compiler
+profiles per block, with fixed rotation and reversal. Each owner retains
+52/794 Invokes in smoke/full, including all 24 functional calls; full matrix
+collection contains 35 owners and 27,790 Invokes. Three configuration contrasts
+share each block's actual candidate D0 baseline.
+
+| Evidence | Plan | Builds | Suite | Aggregate |
+| --- | --- | --- | --- | --- |
+| External warm RPC | [plan](engine-warm-plan.schema.json) | [builds](engine-warm-builds.schema.json) | [suite](engine-warm-suite.schema.json) | [aggregate](engine-warm-aggregate.schema.json) |
+| Engine profile matrix | [plan](engine-plan.schema.json) | [builds](engine-builds.schema.json) | [suite](engine-suite.schema.json) | [aggregate](engine-aggregate.schema.json) |
+
+The [collection and replay method](../../docs/testing/phase-1-measurements.md#engine-profile-experiments)
+defines fixed source/configuration controls, functional reset and reclamation
+proofs, and distinct RPC, backend, CPU and memory boundaries. Measurement-local
+virtual/resident observations retain unavailable reasons. Both evidence kinds
+keep the 1 GiB root and existing archive caps. These protocol schemas do not
+establish measured performance results or a universal SLO.

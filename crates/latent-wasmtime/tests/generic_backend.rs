@@ -9,6 +9,10 @@ mod cold_readiness;
 mod containment;
 #[path = "generic_backend/dispatch.rs"]
 mod dispatch;
+#[path = "generic_backend/engine_memory.rs"]
+mod engine_memory;
+#[path = "generic_backend/engine_profiles.rs"]
+mod engine_profiles;
 #[path = "generic_backend/owned_preparation.rs"]
 mod owned_preparation;
 #[path = "generic_backend/preparation.rs"]

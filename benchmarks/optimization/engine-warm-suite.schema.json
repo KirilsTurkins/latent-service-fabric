@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "engine-warm-suite evidence envelope",
+  "description": "Closed bounded envelope. Complete source, ordering, configuration, outcome and ownership qualification requires the matching semantic replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "plan",
+    "requested_refs",
+    "status",
+    "reason",
+    "elapsed_nanos",
+    "measurement_elapsed_nanos",
+    "identity",
+    "cleanup",
+    "runs",
+    "artifacts",
+    "builds",
+    "clock_ticks_per_second"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.engine-warm-suite.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "plan": {
+      "oneOf": [
+        {
+          "const": {
+            "schema": "latent.optimization.engine-warm-plan.v1",
+            "profile": "smoke",
+            "repetitions": 1,
+            "scenarios": [
+              "cold-restart"
+            ],
+            "cases": [
+              {
+                "id": "warm-echo",
+                "client_plan": {
+                  "schema": "latent.optimization.client-plan.v1",
+                  "tenant": "optimization",
+                  "services": [
+                    "optimization/workloads"
+                  ],
+                  "contract": "optimization:benchmark/workloads@0.1.0",
+                  "route": null,
+                  "function": "echo",
+                  "payload": [
+                    "optimization-reference-v1"
+                  ],
+                  "warmup_attempts": 4,
+                  "measured_attempts": 12,
+                  "batch_size": 12,
+                  "concurrency": 1,
+                  "runtime_workers": 2,
+                  "schedule": {
+                    "mode": "closed-loop"
+                  },
+                  "budget_millis": 1000,
+                  "cpu_fuel": 10000000000,
+                  "memory_bytes": 67108864,
+                  "log_bytes": 16384,
+                  "connect_timeout_millis": 5000,
+                  "response_timeout_millis": 5000,
+                  "maximum_output_bytes": 33554432
+                }
+              }
+            ],
+            "setup_cases": [],
+            "maximum_run_seconds": "7200",
+            "maximum_build_seconds": "7200",
+            "maximum_artifact_bytes": "1073741824",
+            "build_profile": "release",
+            "pair_order": "odd-control-candidate-even-candidate-control",
+            "timer_observation": "unavailable-external-daemon-not-instrumented"
+          }
+        },
+        {
+          "const": {
+            "schema": "latent.optimization.engine-warm-plan.v1",
+            "profile": "full",
+            "repetitions": 7,
+            "scenarios": [
+              "cold-restart"
+            ],
+            "cases": [
+              {
+                "id": "warm-echo",
+                "client_plan": {
+                  "schema": "latent.optimization.client-plan.v1",
+                  "tenant": "optimization",
+                  "services": [
+                    "optimization/workloads"
+                  ],
+                  "contract": "optimization:benchmark/workloads@0.1.0",
+                  "route": null,
+                  "function": "echo",
+                  "payload": [
+                    "optimization-reference-v1"
+                  ],
+                  "warmup_attempts": 40,
+                  "measured_attempts": 400,
+                  "batch_size": 100,
+                  "concurrency": 1,
+                  "runtime_workers": 2,
+                  "schedule": {
+                    "mode": "closed-loop"
+                  },
+                  "budget_millis": 1000,
+                  "cpu_fuel": 10000000000,
+                  "memory_bytes": 67108864,
+                  "log_bytes": 16384,
+                  "connect_timeout_millis": 5000,
+                  "response_timeout_millis": 5000,
+                  "maximum_output_bytes": 33554432
+                }
+              }
+            ],
+            "setup_cases": [],
+            "maximum_run_seconds": "7200",
+            "maximum_build_seconds": "7200",
+            "maximum_artifact_bytes": "1073741824",
+            "build_profile": "release",
+            "pair_order": "odd-control-candidate-even-candidate-control",
+            "timer_observation": "unavailable-external-daemon-not-instrumented"
+          }
+        }
+      ]
+    },
+    "requested_refs": {
+      "type": "object"
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed"
+      ]
+    },
+    "reason": {
+      "enum": [
+        null,
+        "collection-failed"
+      ]
+    },
+    "elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "measurement_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "identity": {
+      "type": "object"
+    },
+    "cleanup": {
+      "type": "object"
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 0,
+      "maxItems": 14
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256",
+          "bytes"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "maxLength": 20
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 4096
+    },
+    "builds": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "sha256",
+            "bytes"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            },
+            "bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$",
+              "maxLength": 20
+            }
+          }
+        }
+      ]
+    },
+    "clock_ticks_per_second": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000
+    }
+  }
+}

@@ -3,6 +3,7 @@ mod budget;
 mod cache;
 mod call;
 mod cold;
+mod engine;
 mod evidence;
 mod node;
 mod ownership;

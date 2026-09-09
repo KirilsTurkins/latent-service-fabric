@@ -2,18 +2,29 @@ use std::time::Duration;
 
 use latent_core::PlatformError;
 use latent_node::{LocalActivationJournalConfig, LocalActivationManagerConfig};
-use latent_wasmtime::WasmtimeConfig;
+use latent_wasmtime::{CompilerOptimization, InstanceAllocator, WasmtimeConfig};
 use latent_wire::invocation::InvocationLimits;
 use latent_wire::management::ManagementLimits;
 
 use super::validation::Capacity;
-use super::{invalid, NodeConfig, CONTEXT_BYTES, IDENTIFIER_BYTES, JOURNAL_RECORD_BYTES, MIB};
+use super::{
+    invalid, EngineAllocator, EngineOptimization, NodeConfig, CONTEXT_BYTES, IDENTIFIER_BYTES,
+    JOURNAL_RECORD_BYTES, MIB,
+};
 
 pub(super) fn wasmtime(
     config: &NodeConfig,
     capacity: &Capacity,
 ) -> Result<WasmtimeConfig, PlatformError> {
     let mut runtime = WasmtimeConfig {
+        instance_allocator: match config.engine.allocator {
+            EngineAllocator::OnDemand => InstanceAllocator::OnDemand,
+            EngineAllocator::Pooling => InstanceAllocator::Pooling,
+        },
+        compiler_optimization: match config.engine.optimization {
+            EngineOptimization::Speed => CompilerOptimization::Speed,
+            EngineOptimization::SpeedAndSize => CompilerOptimization::SpeedAndSize,
+        },
         maximum_component_bytes: config.limits.maximum_component_bytes,
         maximum_memory_bytes: capacity.maximum_memory,
         maximum_fuel: config.execution.maximum_cpu_fuel,
@@ -33,6 +44,11 @@ pub(super) fn wasmtime(
         invocation_log_maximum_bytes: 16 * 1024,
         ..WasmtimeConfig::default()
     };
+    if runtime.instance_allocator == InstanceAllocator::Pooling {
+        // Capacity has passed checked aggregation across every cell class.
+        // Keep the inactive on-demand pool setting at its historical default.
+        runtime.pooling_maximum_instances = capacity.cells;
+    }
     runtime.value_codec_limits.max_input_bytes = config.limits.maximum_payload_bytes;
     runtime.value_codec_limits.max_output_bytes = config.limits.maximum_payload_bytes;
     runtime.validate().map_err(|_| invalid("wasmtime"))?;

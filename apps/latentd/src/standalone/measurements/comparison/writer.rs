@@ -38,6 +38,7 @@ impl Writer {
                 | "budget.json"
                 | "recovery.json"
                 | "ownership.json"
+                | "engine.json"
         ) || !(1..=2048).contains(&maximum_samples)
         {
             return Err("comparison writer limits".into());
@@ -56,7 +57,9 @@ impl Writer {
             written: 0,
             count: 0,
             maximum_samples,
-            maximum_bytes: if name == "ownership.json" {
+            maximum_bytes: if name == "engine.json" {
+                32 * 1024 * 1024
+            } else if name == "ownership.json" {
                 8 * 1024 * 1024
             } else {
                 MAXIMUM_DOCUMENT_BYTES

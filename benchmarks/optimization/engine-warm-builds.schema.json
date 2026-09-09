@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "engine-warm-builds evidence envelope",
+  "description": "Closed bounded envelope. Complete source, ordering, configuration, outcome and ownership qualification requires the matching semantic replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "reason",
+    "elapsed_nanos",
+    "requested_refs",
+    "identity",
+    "cleanup",
+    "artifacts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.engine-warm-builds.v1"
+    },
+    "status": {
+      "const": "passed"
+    },
+    "reason": {
+      "const": null
+    },
+    "elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "requested_refs": {
+      "type": "object"
+    },
+    "identity": {
+      "type": "object"
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owned_worktree_removed"
+      ],
+      "properties": {
+        "owned_worktree_removed": {
+          "const": true
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256",
+          "bytes"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "maxLength": 20
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 4096
+    }
+  }
+}

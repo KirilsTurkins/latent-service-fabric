@@ -1,6 +1,7 @@
 //! Versioned standalone configuration, validated before opening node resources.
 
 mod derive;
+mod engine;
 mod input;
 mod model;
 mod policy;
@@ -15,8 +16,9 @@ use std::time::Duration;
 use latent_core::{PlatformError, PlatformErrorCode};
 
 pub use model::{
-    CacheConfig, CatalogConfig, CellConfig, CredentialConfig, CredentialRole, ExecutionConfig,
-    LimitConfig, NodeConfig, RetentionConfig, TelemetryConfig, WorkerConfig,
+    CacheConfig, CatalogConfig, CellConfig, CredentialConfig, CredentialRole, EngineAllocator,
+    EngineConfig, EngineOptimization, ExecutionConfig, LimitConfig, NodeConfig, RetentionConfig,
+    TelemetryConfig, WorkerConfig,
 };
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].

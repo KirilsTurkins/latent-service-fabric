@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "engine-warm-plan evidence envelope",
+  "description": "Closed bounded envelope. Complete source, ordering, configuration, outcome and ownership qualification requires the matching semantic replay.",
+  "oneOf": [
+    {
+      "const": {
+        "schema": "latent.optimization.engine-warm-plan.v1",
+        "profile": "smoke",
+        "repetitions": 1,
+        "scenarios": [
+          "cold-restart"
+        ],
+        "cases": [
+          {
+            "id": "warm-echo",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 4,
+              "measured_attempts": 12,
+              "batch_size": 12,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 1000,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          }
+        ],
+        "setup_cases": [],
+        "maximum_run_seconds": "7200",
+        "maximum_build_seconds": "7200",
+        "maximum_artifact_bytes": "1073741824",
+        "build_profile": "release",
+        "pair_order": "odd-control-candidate-even-candidate-control",
+        "timer_observation": "unavailable-external-daemon-not-instrumented"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.engine-warm-plan.v1",
+        "profile": "full",
+        "repetitions": 7,
+        "scenarios": [
+          "cold-restart"
+        ],
+        "cases": [
+          {
+            "id": "warm-echo",
+            "client_plan": {
+              "schema": "latent.optimization.client-plan.v1",
+              "tenant": "optimization",
+              "services": [
+                "optimization/workloads"
+              ],
+              "contract": "optimization:benchmark/workloads@0.1.0",
+              "route": null,
+              "function": "echo",
+              "payload": [
+                "optimization-reference-v1"
+              ],
+              "warmup_attempts": 40,
+              "measured_attempts": 400,
+              "batch_size": 100,
+              "concurrency": 1,
+              "runtime_workers": 2,
+              "schedule": {
+                "mode": "closed-loop"
+              },
+              "budget_millis": 1000,
+              "cpu_fuel": 10000000000,
+              "memory_bytes": 67108864,
+              "log_bytes": 16384,
+              "connect_timeout_millis": 5000,
+              "response_timeout_millis": 5000,
+              "maximum_output_bytes": 33554432
+            }
+          }
+        ],
+        "setup_cases": [],
+        "maximum_run_seconds": "7200",
+        "maximum_build_seconds": "7200",
+        "maximum_artifact_bytes": "1073741824",
+        "build_profile": "release",
+        "pair_order": "odd-control-candidate-even-candidate-control",
+        "timer_observation": "unavailable-external-daemon-not-instrumented"
+      }
+    }
+  ]
+}

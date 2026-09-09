@@ -1265,6 +1265,7 @@ dependencies = [
  "latent-executor",
  "latent-manifest",
  "latent-node",
+ "latent-optimization-workloads",
  "latent-routing",
  "latent-scheduler",
  "latent-telemetry",
@@ -1278,6 +1279,8 @@ dependencies = [
  "tokio",
  "tonic",
  "tower",
+ "wasm-encoder 0.252.0",
+ "wasmparser 0.252.0",
 ]
 
 [[package]]

@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "engine-plan evidence envelope",
+  "description": "Closed bounded envelope. Complete source, ordering, configuration, outcome and ownership qualification requires the matching semantic replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "repetition",
+    "sequence_ordinal",
+    "variant",
+    "engine_profile_id",
+    "requested_engine"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.engine-plan.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "repetition": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7
+    },
+    "sequence_ordinal": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4
+    },
+    "variant": {
+      "enum": [
+        "control",
+        "candidate"
+      ]
+    },
+    "engine_profile_id": {
+      "enum": [
+        "D0",
+        "P0",
+        "D1",
+        "P1"
+      ]
+    },
+    "requested_engine": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "allocator",
+            "optimization"
+          ],
+          "properties": {
+            "allocator": {
+              "enum": [
+                "on-demand",
+                "pooling"
+              ]
+            },
+            "optimization": {
+              "enum": [
+                "speed",
+                "speed-and-size"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "repetition": {
+            "const": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "variant": {
+            "const": "control"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "engine_profile_id": {
+            "const": "D0"
+          },
+          "requested_engine": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "requested_engine": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "allocator",
+              "optimization"
+            ],
+            "properties": {
+              "allocator": {
+                "enum": [
+                  "on-demand",
+                  "pooling"
+                ]
+              },
+              "optimization": {
+                "enum": [
+                  "speed",
+                  "speed-and-size"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "variant": {
+            "const": "candidate"
+          },
+          "engine_profile_id": {
+            "const": "D0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "requested_engine": {
+            "const": {
+              "allocator": "on-demand",
+              "optimization": "speed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "variant": {
+            "const": "candidate"
+          },
+          "engine_profile_id": {
+            "const": "P0"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "requested_engine": {
+            "const": {
+              "allocator": "pooling",
+              "optimization": "speed"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "variant": {
+            "const": "candidate"
+          },
+          "engine_profile_id": {
+            "const": "D1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "requested_engine": {
+            "const": {
+              "allocator": "on-demand",
+              "optimization": "speed-and-size"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "variant": {
+            "const": "candidate"
+          },
+          "engine_profile_id": {
+            "const": "P1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "requested_engine": {
+            "const": {
+              "allocator": "pooling",
+              "optimization": "speed-and-size"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

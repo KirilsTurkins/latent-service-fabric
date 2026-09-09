@@ -32,8 +32,8 @@ pub use cache::{
 };
 pub use compiler::CompilerObserver;
 pub use config::{
-    InstanceAllocator, Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig,
-    GENERIC_BACKEND_ID, WASMTIME_VERSION,
+    CompilerOptimization, InstanceAllocator, Phase0InstanceAllocator, Phase0WasmtimeConfig,
+    WasmtimeConfig, GENERIC_BACKEND_ID, WASMTIME_VERSION,
 };
 pub use containment::RuntimeResourceSnapshot;
 pub use factory::WasmtimeComponentEngineFactory;
