@@ -108,12 +108,25 @@ class RecoveryFixtureTests(unittest.TestCase):
         for variant in ("control", "candidate"):
             fixture = Fixture(Path(self.temporary.name), variant)
             records.append({"repetition": 1, "variant": variant, "status": "passed", **fixture.replay()})
-        value = aggregate.aggregate({"profile": "smoke"}, "sha256:" + "a" * 64, {}, records, True, False)
         schema_path = Path(__file__).resolve().parents[2] / "benchmarks/optimization/recovery-aggregate.schema.json"
         schema = json.loads(schema_path.read_bytes())
         jsonschema.Draft202012Validator.check_schema(schema)
-        jsonschema.Draft202012Validator(schema).validate(json.loads(canonical(value)))
-        self.assertEqual((value["status"], value["validated_calls"], value["validated_commands"]), ("incomplete", "122", "250"))
+        validator = jsonschema.Draft202012Validator(schema)
+        # Exercise both structural envelopes with the replayed graph population;
+        # this does not qualify the functional-debug fixture as full evidence.
+        for profile, status in (("smoke", "incomplete"), ("full", "complete")):
+            with self.subTest(profile=profile):
+                value = aggregate.aggregate({"profile": profile}, "sha256:" + "a" * 64, {},
+                                            copy.deepcopy(records), True, False)
+                value = json.loads(canonical(value))
+                validator.validate(value)
+                self.assertEqual((value["status"], value["validated_calls"], value["validated_commands"]),
+                                 (status, "122", "250"))
+                if profile == "full":
+                    for field, wrong in (("validated_calls", "322"), ("validated_commands", "798")):
+                        with self.subTest(field=field), self.assertRaises(jsonschema.ValidationError) as failure:
+                            validator.validate(dict(value, **{field: wrong}))
+                        self.assertEqual(list(failure.exception.absolute_path), [field])
 
     def test_five_running_witness_cannot_be_erased_after_rehash(self):
         self.fixture.offers()[49]["running_witness"] = None

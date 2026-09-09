@@ -176,10 +176,10 @@
             "const": true
           },
           "validated_calls": {
-            "const": "322"
+            "const": "122"
           },
           "validated_commands": {
-            "const": "798"
+            "const": "250"
           }
         }
       }
