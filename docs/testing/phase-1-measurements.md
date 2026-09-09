@@ -650,7 +650,7 @@ population qualification and require fresh output roots for retries.
 
 The first full codec attempt stopped after 59 children at the original root
 reservation; its retained profiles also exceeded the original record limit.
-The observed maximum was 9,831,105 records in an approximately 59 MiB text
+The observed maximum was 9,831,105 records in a 59,457,687-byte text
 profile, and complete paired repetitions retained approximately 188 MB each.
 That incomplete attempt remains diagnostic evidence. The explicit larger
 codec limits preserve all 168 children and 449,680 operations. Subsequent

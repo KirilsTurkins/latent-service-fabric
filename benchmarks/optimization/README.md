@@ -295,6 +295,14 @@ the retained populations and qualified results.
 
 ## Typed codec experiments
 
+The [retained typed-codec comparison](typed-codec/2026-09-09-container-linux-9a2749f/README.md)
+reports lower warm Echo p50 and server CPU against its matched control, with
+mixed payload/tail results and higher sampled RSS. Its separate codec batches
+show lower decode CPU for structured values while preserving small string
+regressions. The report separates batch averages, RPC quantiles, selected
+allocator traffic and process memory, and retains the first incomplete
+collection's limit failure.
+
 The [#105 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/105)
 uses `--experiment codec` on the existing revision runners. Five unchanged
 external cases retain 140 calls in smoke or 25,256 across seven full pairs.
