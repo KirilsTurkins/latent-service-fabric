@@ -60,6 +60,16 @@ def oracle(call, records):
         require(len(logs) == 1 and logs[0]["record"]["message"] == schedule.DIRTY
                 and logs[0]["record"]["level"] == "info" and len(logs[0]["record"]["fields"]) == 3,
                 "engine-memory-dirty-witness-missing")
+    elif expected["target_index"] == 0 and name == "echo":
+        # The maintained Echo guest emits one bounded result log, including
+        # the input's UTF-8 byte length. Host correlation fields are checked
+        # independently by calls.guest_logs before this fixture oracle.
+        require(len(logs) == 1 and logs[0]["record"]["message"] == "echo invocation"
+                and logs[0]["record"]["level"] == "info", "engine-echo-result-log-missing")
+        attrs = logs[0]["record"]["fields"]
+        require(len(attrs) == 6 and attrs.get("activation_id") == row["activation_id"]
+                and attrs.get("message_bytes") == str(len(expected["payload"][0].encode("utf-8")))
+                and attrs.get("outcome") == "success", "engine-echo-result-log-crossed")
     elif name == "snapshot":
         require(isinstance(output, list) and len(output) == 1 and logs == [], "engine-context-result-shape")
         value = output[0]
