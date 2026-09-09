@@ -6,12 +6,12 @@ from tools.optimization_evidence.attempts import CONSUMPTION
 from tools.optimization_evidence.common import fields, integer, require, sha256, text, uint
 from tools.optimization_evidence.workload import framed
 from tools.phase1_paired.common import TIMINGS
-from . import policy, schedule
+from . import faults, policy, schedule
 
 BASE = ("kind ordinal command_ordinal phase phase_kind index activation_id target release_digest route_generation request "
-        "scheduled_nanos deadline_nanos deadline_unix_millis absolute_deadline_quantization_nanos dispatch_nanos "
+        "scheduled_nanos deadline_nanos deadline_unix_millis absolute_deadline_floor_loss_nanos absolute_deadline_total_loss_nanos dispatch_nanos "
         "dispatch_lag_nanos grpc_timeout_header rpc_received response valid_response outcome completed_nanos overshoot_nanos "
-        "timing guest_logs native_after_response diagnostic_token semantic_validated")
+        "timing guest_logs native_after_response diagnostic_token semantic_validated grpc_status native_fault")
 
 
 def blob(value, payload=None, *, response=False):
@@ -30,7 +30,43 @@ def blob(value, payload=None, *, response=False):
     return decoded
 
 
-def validate(row, expected, ordinal, fixtures, origin, elapsed, pins):
+def clock(row, origin, elapsed, uncertainty):
+    scheduled, dispatch, completed, deadline = (uint(row[key]) for key in
+                                               ("scheduled_nanos", "dispatch_nanos", "completed_nanos", "deadline_nanos"))
+    require(0 <= scheduled <= dispatch <= completed <= elapsed and deadline == scheduled + 5_000_000_000
+            and dispatch < deadline and uint(row["dispatch_lag_nanos"]) == dispatch - scheduled
+            and uint(row["overshoot_nanos"]) == max(0, completed - deadline), "engine-offer-clock-crossed")
+    require(type(origin) is int and type(uncertainty) is int and 0 <= uncertainty <= origin,
+            "engine-clock-anchor-underflow")
+    conservative = origin - uncertainty + deadline
+    absolute, floor_loss = divmod(conservative, 1_000_000)
+    require(uint(row["deadline_unix_millis"]) == absolute
+            and uint(row["absolute_deadline_floor_loss_nanos"]) == floor_loss
+            and uint(row["absolute_deadline_total_loss_nanos"]) == uncertainty + floor_loss,
+            "engine-outer-deadline-crossed")
+    header = row["grpc_timeout_header"]
+    require(isinstance(header, str) and re.fullmatch(r"[0-9]{1,8}[HMSmun]", header), "engine-timeout-header")
+    unit = {"H": 3_600_000_000_000, "M": 60_000_000_000, "S": 1_000_000_000, "m": 1_000_000, "u": 1000, "n": 1}[header[-1]]
+    require(0 <= deadline - dispatch - int(header[:-1]) * unit < unit, "engine-timeout-not-remaining-outer-budget")
+    return scheduled, dispatch, completed
+
+
+def transport_status(row):
+    value = row["grpc_status"]
+    if row["outcome"] != "transport-failure":
+        require(value is None, "engine-transport-status-without-failure")
+        return
+    fields(value, "code message message_bytes message_truncated")
+    integer(value["code"], 0, 16)
+    message = text(value["message"], 2048, empty=True).encode("utf-8")
+    original = uint(value["message_bytes"])
+    require(type(value["message_truncated"]) is bool and original >= len(message)
+            and value["message_truncated"] == (original > len(message))
+            and (not value["message_truncated"] or original > 2048 and 2045 <= len(message) <= 2048),
+            "engine-transport-message-bound-or-truncation")
+
+
+def validate(row, expected, ordinal, fixtures, origin, elapsed, pins, uncertainty):
     fields(row, BASE + (" cleanup_log" if expected["phase"] == "functional" else ""))
     require(row["kind"] == "invoke" and row["ordinal"] == str(ordinal)
             and all(row[name] == expected[name] for name in ("phase", "phase_kind", "activation_id"))
@@ -46,19 +82,8 @@ def validate(row, expected, ordinal, fixtures, origin, elapsed, pins):
             and request["parent"] == f"engine-parent-{marker}"
             and request["metadata"] == {"guest.marker": marker, "internal.secret": f"private-{marker}"}, "engine-request-context-crossed")
     blob(request["payload"], expected["payload"])
-    scheduled, dispatch, completed, deadline = (uint(row[key]) for key in
-                                               ("scheduled_nanos", "dispatch_nanos", "completed_nanos", "deadline_nanos"))
-    require(0 <= scheduled <= dispatch <= completed <= elapsed and deadline == scheduled + 5_000_000_000
-            and dispatch < deadline and uint(row["dispatch_lag_nanos"]) == dispatch - scheduled
-            and uint(row["overshoot_nanos"]) == max(0, completed - deadline), "engine-offer-clock-crossed")
-    absolute = (origin + deadline + 999_999) // 1_000_000
-    require(uint(row["deadline_unix_millis"]) == absolute
-            and uint(row["absolute_deadline_quantization_nanos"]) == absolute * 1_000_000 - origin - deadline,
-            "engine-outer-deadline-crossed")
-    header = row["grpc_timeout_header"]
-    require(isinstance(header, str) and re.fullmatch(r"[0-9]{1,8}[HMSmun]", header), "engine-timeout-header")
-    unit = {"H": 3_600_000_000_000, "M": 60_000_000_000, "S": 1_000_000_000, "m": 1_000_000, "u": 1000, "n": 1}[header[-1]]
-    require(0 <= deadline - dispatch - int(header[:-1]) * unit < unit, "engine-timeout-not-remaining-outer-budget")
+    scheduled, dispatch, completed = clock(row, origin, elapsed, uncertainty)
+    transport_status(row)
     require(row["rpc_received"] is True and row["valid_response"] is True and row["semantic_validated"] is True
             and row["outcome"] == ("success" if expected["code"] is None else "platform-failure"), "engine-qualified-offer-not-semantic")
     response = fields(row["response"], "activation_id release_digest revision_id route_generation code details payload consumption")
@@ -86,6 +111,7 @@ def validate(row, expected, ordinal, fixtures, origin, elapsed, pins):
             and numbers["log_bytes"] <= uint(expected["budget"]["log_bytes"])
             and all(numbers[name] == 0 for name in numbers if name not in ("cpu_fuel", "peak_memory_bytes", "wall_time_micros", "log_bytes")),
             "engine-consumption-outside-grant")
+    faults.validate(row, expected, elapsed)
     timing = fields(row["timing"], " ".join(TIMINGS))
     measured = {name: uint(item) for name, item in timing.items()}
     require(measured["host_call_micros"] <= measured["guest_call_micros"]
@@ -145,4 +171,5 @@ def status(command, call, elapsed):
     require(isinstance(metadata, dict) and all(metadata.get(key) == item for key, item in
             (("release", row["release_digest"]), ("revision", row["response"]["revision_id"]), ("route-generation", "8"))),
             "engine-status-release-crossed")
+    faults.status(row, command)
     return response

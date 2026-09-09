@@ -1,5 +1,7 @@
-use super::{call::Offer, fixture::DIRTY, Node, Result};
-use latent_core::{DeadlineDiagnosticObservation, DeadlineDiagnosticObserver};
+use super::{call::Offer, fixture::DIRTY, Clock, Node, Result};
+use latent_core::{
+    ActivationId, DeadlineDiagnosticObservation, DeadlineDiagnosticObserver, TenantId,
+};
 use serde_json::{json, Value};
 
 pub(super) fn logs(node: &Node, id: &str) -> Result<Vec<Value>> {
@@ -7,6 +9,53 @@ pub(super) fn logs(node: &Node, id: &str) -> Result<Vec<Value>> {
         let encoded=serde_json::to_vec(&entry)?;
         Ok(json!({"record":entry,"encoded_bytes":encoded.len().to_string(),"sha256":latent_artifacts::content_digest(&encoded).0}))
     }).collect()
+}
+pub(super) fn native_fault(node: &Node, offer: &Offer, clock: Clock) -> Result<Value> {
+    if offer.phase != "functional" || !matches!(offer.index, 10 | 12) {
+        return Ok(Value::Null);
+    }
+    let started = clock.elapsed();
+    let retained = node
+        .owner
+        .manager
+        .status(
+            &TenantId(offer.target.tenant.clone()),
+            &ActivationId(offer.id.clone()),
+        )
+        .map_err(super::super::super::platform)?;
+    let Some(retained) = retained else {
+        return Ok(Value::Null);
+    };
+    // This trusted conversion preserves native details; the public RPC adapter
+    // deliberately removes opaque engine diagnostics. Never project messages.
+    let retained = latent_wire::invocation::activation_status_to_proto(&retained)?;
+    let failure = match &retained.terminal_outcome {
+        Some(
+            latent_wire::invocation::proto::activation_status::TerminalOutcome::PlatformFailure(
+                error,
+            ),
+        ) => Some(error),
+        _ => None,
+    };
+    let detail = failure.and_then(|error| error.detail_items.first());
+    let kind = detail.map(|value| value.kind.as_str()).filter(|kind| {
+        matches!(
+            *kind,
+            "activation.fuel-exhausted" | "activation.memory-exhausted"
+        )
+    });
+    let cell = detail
+        .and_then(|value| value.fields.get("cell_id"))
+        .filter(|value| value.len() <= 512);
+    let consumption = super::super::cold::call::consumption(retained.final_consumption.as_ref());
+    Ok(
+        json!({"source":"tenant-scoped-local-manager","capture_started_nanos":started.to_string(),"capture_finished_nanos":clock.elapsed().to_string(),
+        "tenant":offer.target.tenant,"activation_id":retained.activation_id,"phase":retained.phase,"terminal_state":retained.terminal_state,
+        "terminal_at_unix_millis":retained.terminal_at_unix_millis.map(|value|value.to_string()),
+        "release_digest":retained.metadata.get("release"),"revision_id":retained.metadata.get("revision"),"route_generation":retained.metadata.get("route-generation"),
+        "code":failure.map(|error|&error.code),"detail_count":failure.map(|error|error.detail_items.len().to_string()),"kind":kind,"cell_id":cell,
+        "detail_field_count":detail.map(|value|value.fields.len().to_string()),"consumption":consumption}),
+    )
 }
 pub(super) fn check(offer: &Offer, row: &Value, observer: &DeadlineDiagnosticObserver) -> bool {
     if row["valid_response"] != true {
@@ -80,16 +129,35 @@ pub(super) fn check(offer: &Offer, row: &Value, observer: &DeadlineDiagnosticObs
                 && logs[0]["record"]["fields"]["probe"] == offer.payload[1][0]["value"]
         }
         "spin" if offer.expected_code == Some("resource-exhausted") => {
-            detail(row, "activation.fuel-exhausted") && logs.is_empty()
+            resource_fault(row, "activation.fuel-exhausted") && logs.is_empty()
         }
-        "grow" => detail(row, "activation.memory-exhausted") && logs.is_empty(),
+        "grow" => resource_fault(row, "activation.memory-exhausted") && logs.is_empty(),
         _ => logs.is_empty(),
     }
 }
-fn detail(row: &Value, kind: &str) -> bool {
-    row["response"]["details"]
-        .as_array()
-        .is_some_and(|v| v.iter().any(|d| d["kind"] == kind))
+fn resource_fault(row: &Value, kind: &str) -> bool {
+    let fault = &row["native_fault"];
+    fault["source"] == "tenant-scoped-local-manager"
+        && fault["tenant"] == row["target"]["tenant"]
+        && fault["activation_id"] == row["activation_id"]
+        && fault["phase"] == "running"
+        && fault["terminal_state"] == "resource_exhausted"
+        && fault["terminal_at_unix_millis"]
+            .as_str()
+            .is_some_and(|value| value.parse::<u64>().is_ok())
+        && fault["release_digest"] == row["response"]["release_digest"]
+        && fault["revision_id"] == row["response"]["revision_id"]
+        && fault["route_generation"] == row["response"]["route_generation"]
+        && fault["code"] == "resource-exhausted"
+        && fault["code"] == row["response"]["code"]
+        && fault["kind"] == kind
+        && fault["detail_count"] == "1"
+        && fault["detail_field_count"] == "1"
+        && fault["cell_id"]
+            .as_str()
+            .is_some_and(|value| !value.is_empty() && value.len() <= 512)
+        && fault["consumption"] == row["response"]["consumption"]
+        && row["response"]["details"] == json!([])
 }
 fn snapshot(offer: &Offer, value: &Value, observer: &DeadlineDiagnosticObserver) -> bool {
     let marker = if offer.target.tenant == "engine-a" {
@@ -130,7 +198,7 @@ fn snapshot(offer: &Offer, value: &Value, observer: &DeadlineDiagnosticObserver)
         && value["principal"]["kind"] == "administrator"
         && value["principal"]["subject"] == format!("engine-subject-{marker}")
         && value["principal"]["tenant"] == json!({"some":offer.target.tenant})
-        && value["principal"]["service"].is_null()
+        && value["principal"]["service"] == json!({"none":null})
         && value["principal"]["claims"] == json!([])
         && value["metadata"] == json!([["guest.marker", marker]])
         && value["trace"]["trace-flags"] == 0
@@ -140,7 +208,7 @@ fn snapshot(offer: &Offer, value: &Value, observer: &DeadlineDiagnosticObserver)
         && value["deadline"]
             == deadline
                 .unix_millis()
-                .map_or(Value::Null, |v| json!({"some":v.to_string()}))
+                .map_or_else(|| json!({"none":null}), |v| json!({"some":v.to_string()}))
         && within("cpu-fuel", budget.cpu_fuel)
         && within("memory-bytes", budget.memory_bytes)
         && within("log-bytes", budget.log_bytes)
