@@ -24,9 +24,31 @@ pub(crate) struct Function {
 }
 
 pub(crate) struct Surface {
-    pub functions: BTreeMap<(String, String), Function>,
+    functions: Vec<((String, String), Function)>,
     pub imports: BTreeSet<String>,
     pub retained_bytes: usize,
+}
+
+impl Surface {
+    pub(crate) fn function(&self, contract: &str, function: &str) -> Option<&Function> {
+        lookup_function(&self.functions, contract, function)
+    }
+}
+
+fn lookup_function<'a, T>(
+    functions: &'a [((String, String), T)],
+    contract: &str,
+    function: &str,
+) -> Option<&'a T> {
+    let index = functions
+        .binary_search_by(|((candidate_contract, candidate_function), _)| {
+            candidate_contract
+                .as_str()
+                .cmp(contract)
+                .then_with(|| candidate_function.as_str().cmp(function))
+        })
+        .ok()?;
+    Some(&functions[index].1)
 }
 
 pub(crate) fn validate(
@@ -132,13 +154,18 @@ pub(crate) fn validate(
         ));
     }
     Ok(Surface {
-        functions,
+        // Keep cold duplicate/descriptor validation and its conservative charge;
+        // retain the same sorted keys for borrowed allocation-free invocation.
+        functions: functions.into_iter().collect(),
         imports,
         retained_bytes,
     })
 }
 
 type ActualFunctions = BTreeMap<String, (ComponentFunc, Function)>;
+
+#[cfg(test)]
+mod tests;
 
 fn validate_imports(
     component_type: &wasmtime::component::types::Component,

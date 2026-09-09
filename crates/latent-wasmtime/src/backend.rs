@@ -34,6 +34,8 @@ use crate::preparation_observer::{PreparationJob, PreparationObserver, Preparati
 use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0InvocationTiming};
 use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
 
+#[cfg(test)]
+mod dispatch_tests;
 mod input;
 mod owned;
 mod preparation;
@@ -402,7 +404,10 @@ impl WasmtimeBackend {
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
-        let mut store = AccountedStore::new(self.invocation_store(&request, &stop, accounting)?);
+        let mut store = AccountedStore::new(self.invocation_store(request, &stop, accounting)?);
+        // Decoding and every borrowed validation have completed. The Store now
+        // owns only the moved context; destroy the actual raw input before call.
+        raw_input.release(InvocationInputDropReason::BeforeGuestCall);
 
         let component_instance_guard = self.shared.resources.component_instance();
         let mut output = vec![Val::Bool(false); function.results.len()];
@@ -471,9 +476,6 @@ impl WasmtimeBackend {
         drop(stop);
         drop(cancellation_guard);
         timing.reusable_proof_micros = elapsed_micros(reusable_proof_started);
-        // Neutral instrumentation preserves the original request input's scope.
-        // Both actual vector destruction and its observation happen here.
-        raw_input.release(InvocationInputDropReason::OwnerScopeExit);
         outcome
     }
 
@@ -496,15 +498,14 @@ impl WasmtimeBackend {
                 false,
             ));
         }
-        Self::validate_bound_imports(request, &runtime.surface.imports)?;
+        Self::validate_bound_imports(&request.imports, &runtime.surface.imports)?;
         self.validate_invocation_budget(&request.budget, &runtime.declared_budget)?;
         let function = runtime
             .surface
-            .functions
-            .get(&(
-                request.activation.target.contract.0.clone(),
-                request.activation.target.function.0.clone(),
-            ))
+            .function(
+                &request.activation.target.contract.0,
+                &request.activation.target.function.0,
+            )
             .ok_or_else(|| {
                 platform_error(
                     PlatformErrorCode::InvalidArgument,
@@ -517,7 +518,7 @@ impl WasmtimeBackend {
 
     fn invocation_store(
         &self,
-        request: &ExecutionRequest,
+        request: ExecutionRequest,
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
     ) -> Result<Store<HostState>, PlatformError> {
@@ -541,18 +542,8 @@ impl WasmtimeBackend {
             ));
         }
 
-        let host_context = ActivationHostContext::new(
-            request.activation.activation_id.clone(),
-            request.activation.root_activation_id.clone(),
-            request.activation.parent_activation_id.clone(),
-            request.activation.principal.clone(),
-            request.activation.trace.trace_id.0.clone(),
-            request.activation.trace.span_id.0.clone(),
-            request.activation.trace.trace_flags,
-            request.activation.trace.baggage.clone(),
-            accounting.deadline().unix_millis(),
-            request.activation.metadata.clone(),
-        );
+        let host_context =
+            ActivationHostContext::from_request(request, accounting.deadline().unix_millis());
         let initial_fuel = accounting.initial_fuel();
         let host_state = HostState::with_config(
             host_context,
@@ -600,21 +591,21 @@ impl WasmtimeBackend {
     }
 
     fn validate_bound_imports(
-        request: &ExecutionRequest,
+        imports: &[latent_executor::BoundImport],
         required: &BTreeSet<String>,
     ) -> Result<(), PlatformError> {
-        let actual = request
-            .imports
-            .iter()
-            .map(|import| import.contract.as_str())
-            .collect::<BTreeSet<_>>();
-        if request.imports.len() != required.len()
-            || actual.len() != required.len()
-            || !required.iter().all(|name| actual.contains(name.as_str()))
-            || request
-                .imports
-                .iter()
-                .any(|import| import.opaque_handle.is_empty())
+        // Validated component surfaces admit at most the four known host
+        // interfaces. Count each required contract exactly once without a
+        // temporary allocated set, preserving arbitrary binding order.
+        if imports.len() != required.len()
+            || !required.iter().all(|name| {
+                imports
+                    .iter()
+                    .filter(|import| import.contract == *name)
+                    .count()
+                    == 1
+            })
+            || imports.iter().any(|import| import.opaque_handle.is_empty())
         {
             return Err(platform_error(
                 PlatformErrorCode::IncompatibleContract,

@@ -10,6 +10,7 @@ pub(crate) mod accounting;
 mod clock;
 mod context;
 mod logging;
+mod owned_context;
 pub(crate) mod policy;
 pub(crate) use logging::InvocationLogBuffer;
 pub use logging::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
