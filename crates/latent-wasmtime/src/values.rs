@@ -4,6 +4,7 @@ mod decode;
 mod encode;
 mod parse;
 mod signature;
+mod typed;
 
 use latent_core::{DeclaredError, PlatformError, PlatformErrorCode};
 use wasmtime::component::{Type, Val};
@@ -104,10 +105,42 @@ fn decode_params_dispatch(
     media_type: &str,
     limits: ValueCodecLimits,
 ) -> (Result<Vec<Val>, PlatformError>, DecodePath) {
-    (
-        decode_params_legacy(types, payload, media_type, limits),
-        DecodePath::LegacyOnly,
-    )
+    if let Err(error) = limits.validate() {
+        return (Err(error), DecodePath::PreflightRejected);
+    }
+    if media_type != MEDIA_TYPE {
+        return (
+            Err(failure(
+                PlatformErrorCode::InvalidArgument,
+                "unsupported-invocation-media-type",
+            )),
+            DecodePath::PreflightRejected,
+        );
+    }
+    if let Err(error) = parse::preflight(payload, limits) {
+        return (Err(error), DecodePath::PreflightRejected);
+    }
+    match typed::params(types, payload, limits) {
+        Ok(values) => (Ok(values), DecodePath::TypedSuccess),
+        Err(error) => {
+            // Partial typed values have already been dropped. The legacy path
+            // preserves rejection precedence without retaining two value trees.
+            drop(error);
+            match decode_params_legacy(types, payload, media_type, limits) {
+                Err(error) => (Err(error), DecodePath::LegacyError),
+                Ok(values) => {
+                    drop(values);
+                    (
+                        Err(failure(
+                            PlatformErrorCode::Internal,
+                            "typed-value-codec-compatibility-failure",
+                        )),
+                        DecodePath::TypedRejectedLegacyAccepted,
+                    )
+                }
+            }
+        }
+    }
 }
 
 #[cfg(test)]
