@@ -310,7 +310,7 @@ fn tag(value: Value) -> Result<(String, Value), PlatformError> {
     object.into_iter().next().ok_or_else(invalid_input)
 }
 
-fn decimal(value: &str, signed: bool) -> bool {
+pub(super) fn decimal(value: &str, signed: bool) -> bool {
     let magnitude = if signed {
         value.strip_prefix('-').unwrap_or(value)
     } else {
@@ -360,7 +360,7 @@ fn finite_decimal(value: &str) -> bool {
     index == bytes.len()
 }
 
-fn parse_float32(value: &str) -> Result<f32, PlatformError> {
+pub(super) fn parse_float32(value: &str) -> Result<f32, PlatformError> {
     match value {
         "nan" => Ok(f32::NAN),
         "inf" => Ok(f32::INFINITY),
@@ -374,7 +374,7 @@ fn parse_float32(value: &str) -> Result<f32, PlatformError> {
     }
 }
 
-fn parse_float64(value: &str) -> Result<f64, PlatformError> {
+pub(super) fn parse_float64(value: &str) -> Result<f64, PlatformError> {
     match value {
         "nan" => Ok(f64::NAN),
         "inf" => Ok(f64::INFINITY),

@@ -83,6 +83,49 @@ pub(crate) fn decode_params(
     media_type: &str,
     limits: ValueCodecLimits,
 ) -> Result<Vec<Val>, PlatformError> {
+    decode_params_dispatch(types, payload, media_type, limits).0
+}
+
+// Local diagnostic metadata lets the explicit codec probe identify the path
+// without a global observer or any per-call synchronization.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(dead_code)]
+pub(super) enum DecodePath {
+    LegacyOnly,
+    PreflightRejected,
+    TypedSuccess,
+    LegacyError,
+    TypedRejectedLegacyAccepted,
+}
+
+fn decode_params_dispatch(
+    types: &[Type],
+    payload: &[u8],
+    media_type: &str,
+    limits: ValueCodecLimits,
+) -> (Result<Vec<Val>, PlatformError>, DecodePath) {
+    (
+        decode_params_legacy(types, payload, media_type, limits),
+        DecodePath::LegacyOnly,
+    )
+}
+
+#[cfg(test)]
+pub(super) fn decode_params_diagnostic(
+    types: &[Type],
+    payload: &[u8],
+    media_type: &str,
+    limits: ValueCodecLimits,
+) -> (Result<Vec<Val>, PlatformError>, DecodePath) {
+    decode_params_dispatch(types, payload, media_type, limits)
+}
+
+pub(super) fn decode_params_legacy(
+    types: &[Type],
+    payload: &[u8],
+    media_type: &str,
+    limits: ValueCodecLimits,
+) -> Result<Vec<Val>, PlatformError> {
     limits.validate()?;
     if media_type != MEDIA_TYPE {
         return Err(failure(
