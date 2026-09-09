@@ -90,31 +90,40 @@ def files(root: Path) -> list[Path]:
     return sorted(result)
 
 
-def inventory(root: Path, output: Path) -> dict:
+def total_limit(maximum_total_bytes: int) -> int:
+    """Closed storage budgets: historical 1 GiB or explicit codec-only 2 GiB."""
+    if type(maximum_total_bytes) is not int or maximum_total_bytes not in (1024**3, 2 * 1024**3):
+        raise ValueError("unsupported-artifact-total-byte-bound")
+    return maximum_total_bytes
+
+
+def inventory(root: Path, output: Path, *, maximum_total_bytes: int = MAX_TOTAL_BYTES) -> dict:
+    maximum_total_bytes = total_limit(maximum_total_bytes)
     result, total = {}, 0
     for path in files(root):
         item = reference(path, output)
         total += int(item["bytes"])
-        if total > MAX_TOTAL_BYTES:
+        if total > maximum_total_bytes:
             raise ValueError("artifact-total-bound")
         result[path.relative_to(root).as_posix()] = item
     return result
 
 
-def total_bytes(root: Path) -> int:
+def total_bytes(root: Path, *, maximum_total_bytes: int = MAX_TOTAL_BYTES) -> int:
     """Enforce storage limits without repeatedly hashing previous run evidence."""
+    maximum_total_bytes = total_limit(maximum_total_bytes)
     total = 0
     for path in files(root):
         size = path.stat().st_size
         total += size
-        if size > MAX_FILE_BYTES or total > MAX_TOTAL_BYTES:
+        if size > MAX_FILE_BYTES or total > maximum_total_bytes:
             raise ValueError("artifact-storage-bound")
     return total
 
 
-def warm(root: Path, expected: dict, output: Path) -> dict:
+def warm(root: Path, expected: dict, output: Path, *, maximum_total_bytes: int = MAX_TOTAL_BYTES) -> dict:
     # Hash while performing the declared sequential read; never evict OS caches.
-    observed = inventory(root, output)
+    observed = inventory(root, output, maximum_total_bytes=maximum_total_bytes)
     if observed != expected:
         raise ValueError("fixture-mutated")
     return {"policy": "best-effort-sequential-64k-read-before-every-child",

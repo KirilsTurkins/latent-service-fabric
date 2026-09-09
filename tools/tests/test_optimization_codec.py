@@ -1,12 +1,14 @@
 """Bounded model/projection regressions; synthetic unit rows are not release evidence."""
 import copy
+from contextlib import ExitStack
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
-from tools.optimization_codec import aggregate, allocations, builds, evidence, events, model
+from tools.optimization_codec import aggregate, allocations, builds, collect, evidence, events, model
 from tools.optimization_codec.fixtures import fixtures
 from tools.optimization_codec.parse import parse
 from tools.optimization_cache_lookup.files import Artifacts, inventory
@@ -152,6 +154,60 @@ class ClosedPlanSchemas(unittest.TestCase):
             self.rejects("codec-rpc-suite", suite, lambda row: row.update(status="passed", reason=None))
 
 
+class AggregateSchemas(unittest.TestCase):
+    def test_actual_rpc_aggregate_projection_matches_envelope_and_rejects_crossed_scope(self):
+        import jsonschema
+        from tools.optimization_revision_evidence.suite import finish_aggregate
+
+        schema = json.loads((ROOT / "benchmarks/optimization/codec-rpc-aggregate.schema.json").read_bytes())
+        validator = jsonschema.Draft202012Validator(schema)
+        # Exercise the actual shared dispatch and codec aggregate generator. These
+        # supplied counters are synthetic envelope inputs, not a validated suite.
+        for profile in ("smoke", "full"):
+            selected = codec.plan(profile)
+            arms = 2 * selected["repetitions"]
+            calls = arms * sum(row["client_plan"]["warmup_attempts"] + row["client_plan"]["measured_attempts"]
+                               for row in selected["cases"])
+            suite = {"schema": codec.SCHEMA, "profile": profile, "plan": selected,
+                     "identity": {}, "clock_ticks_per_second": 100}
+            value = finish_aggregate(suite, "sha256:" + "a" * 64, [],
+                                     set(range(arms * (2 + len(selected["cases"])))), calls, False, True)
+            self.assertEqual(value["scope"], "lsf-revisions-shared-external-client-typed-codec")
+            self.assertEqual(value["status"], "complete" if profile == "full" else "incomplete")
+            self.assertEqual(len(value["comparisons"]), 5)
+            validator.validate(value)
+            for crossed in ("lsf-revisions-shared-external-client-request-payload-codec",
+                            "lsf-revisions-shared-external-client-request-payload-ownership"):
+                with self.subTest(profile=profile, scope=crossed), self.assertRaises(jsonschema.ValidationError):
+                    validator.validate(dict(value, scope=crossed))
+            if profile == "full":
+                for key, changed in (("population_complete", False), ("attempt_count_complete", False),
+                                     ("validated_attempts", "0"), ("validated_processes", "0")):
+                    with self.subTest(field=key), self.assertRaises(jsonschema.ValidationError):
+                        validator.validate(dict(value, **{key: changed}))
+            failed = finish_aggregate(suite, "sha256:" + "a" * 64, [], set(), 0, True, False)
+            validator.validate(failed)
+
+    def test_actual_empty_codec_projection_and_all_eight_schema_documents(self):
+        import jsonschema
+
+        for prefix in ("codec", "codec-rpc"):
+            for kind in ("plan", "builds", "suite", "aggregate"):
+                schema = json.loads((ROOT / f"benchmarks/optimization/{prefix}-{kind}.schema.json").read_bytes())
+                jsonschema.Draft202012Validator.check_schema(schema)
+        schema = json.loads((ROOT / "benchmarks/optimization/codec-aggregate.schema.json").read_bytes())
+        validator = jsonschema.Draft202012Validator(schema)
+        for profile in ("smoke", "full"):
+            suite = {"profile": profile, "plan": model.suite_plan(profile)}
+            value = aggregate.aggregate(suite, "sha256:" + "a" * 64, {}, [], False, True)
+            validator.validate(value)
+            self.assertEqual(value["status"], "failed")
+            self.assertEqual(value["validated_codec_operations"], "0")
+            self.assertFalse(value["population_complete"])
+            with self.assertRaises(jsonschema.ValidationError):
+                validator.validate(dict(value, scope="lsf-revisions-shared-external-client-typed-codec"))
+
+
 class Fixture:
     def __init__(self, root, variant="control"):
         self.root=root;self.selected=model.plan("smoke",variant=variant)
@@ -236,6 +292,7 @@ class Reuse(unittest.TestCase):
             self.assertEqual(allocations.attribute(1,2,3,4,5,6),{"status":"unavailable"})
         self.assertEqual(observed.call_args.args,(1,2,3,4,5,6))
         self.assertEqual(observed.call_args.kwargs["symbols"],model.SYMBOLS)
+        self.assertEqual(observed.call_args.kwargs["maximum_records"],12_000_000)
         self.assertIn("decode-or-encode",observed.call_args.kwargs["scope"])
 
     def test_archive_codec_dispatch_requires_full_replay_and_exact_aggregate(self):
@@ -252,6 +309,154 @@ class Reuse(unittest.TestCase):
                 (root/"aggregate.json").write_bytes(canonical(changed))
                 with patch.object(archive,name,return_value=changed),self.assertRaises(ValueError):archive.verify_revision(root,codec=kind)
         with self.assertRaises(ValueError):archive.verify_revision(None,ownership="ownership",codec="codec")
+
+
+class CodecLimitBindings(unittest.TestCase):
+    """Synthetic boundary receipts exercise policy plumbing, not release qualification."""
+
+    def test_suite_declares_exact_limits_and_rejects_rehashed_limit_changes(self):
+        import jsonschema
+
+        validator = jsonschema.Draft202012Validator(json.loads(
+            (ROOT / "benchmarks/optimization/codec-suite.schema.json").read_bytes()))
+        ref = {"path": "backend-builds.json", "bytes": "2", "sha256": "sha256:" + "a" * 64}
+        for profile in ("smoke", "full"):
+            selected = model.suite_plan(profile)
+            self.assertEqual(selected["maximum_artifact_bytes"], "2147483648")
+            self.assertEqual(selected["maximum_profile_records"], 12_000_000)
+            self.assertEqual(selected["maximum_folded_expanded_bytes"], "134217728")
+            suite = {"schema": model.SCHEMA, "profile": profile, "plan": selected,
+                     "builds": ref, "runner_source": {}, "runner_source_after": {},
+                     "status": "failed", "reason": "collection-failed", "elapsed_nanos": "0",
+                     "tools": {}, "symbols": {}, "runs": [], "artifacts": [ref]}
+            validator.validate(suite)
+            for field, value in (("maximum_artifact_bytes", "1073741824"),
+                                 ("maximum_artifact_bytes", "2147483649"),
+                                 ("maximum_profile_records", 4_000_000),
+                                 ("maximum_profile_records", 12_000_001),
+                                 ("maximum_profile_records", True),
+                                 ("maximum_folded_expanded_bytes", "134217729")):
+                changed = copy.deepcopy(suite)
+                changed["plan"][field] = value
+                with self.subTest(profile=profile, field=field, value=value):
+                    with self.assertRaises(jsonschema.ValidationError):
+                        validator.validate(changed)
+                    with tempfile.TemporaryDirectory() as directory:
+                        path = Path(directory) / "suite.json"
+                        path.write_bytes(canonical(changed))
+                        with self.assertRaisesRegex(ValueError, "codec-suite-schema-or-plan"):
+                            evidence.validate_suite(path)
+
+    def test_collector_keeps_reservation_and_passes_explicit_limit_to_owned_child(self):
+        # Stub process execution and source verification only. The real collector
+        # writes/revises its failed suite and applies its reservation decision.
+        for retained, starts in ((1536 * 1024**2, True), (1792 * 1024**2 + 1, False)):
+            with self.subTest(retained=retained), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                path = root / "backend-builds.json"
+                path.write_bytes(canonical({"builds": {variant: {"executables": {"codec": {"path": variant}}}
+                                                       for variant in ("control", "candidate")}}))
+                rows = [{"bytes": str(retained)}]
+
+                def command(argv, log, *args, **kwargs):
+                    log.parent.mkdir(parents=True, exist_ok=True)
+                    log.write_bytes(b"synthetic symbol log\n")
+                    return {}
+
+                with ExitStack() as stack:
+                    stack.enter_context(patch.object(collect.platform, "system", return_value="Linux"))
+                    stack.enter_context(patch.object(collect.os, "sysconf", return_value=100, create=True))
+                    stack.enter_context(patch.dict(collect.os.environ, {}, clear=True))
+                    registry = stack.enter_context(patch.object(collect, "Artifacts"))
+                    inventory_call = stack.enter_context(patch.object(collect, "inventory", return_value=rows))
+                    stack.enter_context(patch.object(collect.builds, "validate"))
+                    stack.enter_context(patch.object(collect.builds, "identity", return_value={}))
+                    stack.enter_context(patch.object(collect, "source", return_value={"clean": True}))
+                    # The actual clean-source check compares the retained harness.
+                    value = json.loads(path.read_bytes())
+                    value["harness"] = {"source": {"clean": True}}
+                    path.write_bytes(canonical(value))
+                    stack.enter_context(patch.object(collect, "tool", side_effect=lambda name, *args:
+                                                     {"path": "/tools/" + name, "version": "1.4.0"}))
+                    stack.enter_context(patch.object(collect, "command", side_effect=command))
+                    stack.enter_context(patch.object(collect, "host", return_value={}))
+                    stack.enter_context(patch.object(collect, "cgroup", return_value={}))
+                    child = stack.enter_context(patch.object(collect, "collect_probe", side_effect=ValueError("unit-stop")))
+                    stack.enter_context(patch.object(evidence, "validate_suite", return_value={
+                        "status": "failed", "population_complete": False}))
+                    self.assertEqual(collect.execute(SimpleNamespace(builds=path, profile="full"), ROOT), 1)
+                self.assertEqual(child.call_count, int(starts))
+                self.assertEqual(registry.call_args.args, (root, rows))
+                self.assertEqual(registry.call_args.kwargs, {"maximum_total_bytes": 2 * 1024**3})
+                self.assertTrue(all(call.kwargs == {"maximum_total_bytes": 2 * 1024**3}
+                                    for call in inventory_call.call_args_list))
+                if starts:
+                    self.assertEqual(child.call_args.kwargs["maximum_total_bytes"], 2 * 1024**3)
+                    self.assertEqual(child.call_args.kwargs["maximum_folded_bytes"], 128 * 1024**2)
+                retained_suite = json.loads((root / "suite.json").read_bytes())
+                self.assertEqual(retained_suite["status"], "failed")
+                self.assertEqual(len(retained_suite["runs"]), int(starts))
+                failure = json.loads((root / "failure.json").read_bytes())
+                self.assertEqual(failure["message"], "unit-stop" if starts else "codec-output-reservation-bound")
+
+    def test_profiled_codec_whole_replay_uses_same_explicit_record_limit(self):
+        selected = model.plan("smoke", mode="allocation")
+        binary = {"path": "builds/control/codec"}
+        row = {"variant": "control", "mode": "allocation", "log": {"path": "runs/child/probe.log"},
+               "command": ["/tools/heaptrack", "--output", "/root/runs/child/heaptrack", "/root/builds/control/codec",
+                           "--exact", model.COLLECTOR, "--ignored", "--nocapture", "--test-threads=1"],
+               "raw": {}, "host_before": {}, "cpu": None}
+        suite = {"tools": {"heaptrack": {"path": "/tools/heaptrack"}, "nm": {}}, "symbols": {"control": {}}}
+        build = {"builds": {"control": {"executables": {"codec": binary}, "inputs": {model.TYPE_FIXTURE: {}}}}}
+        projected = {key: "0" for key in ("validated_codec_operations", "validated_preflight_operations",
+                                          "validated_warmup_operations", "validated_measured_operations")}
+        whole = {key: "0" for key in ("allocation_count", "allocated_bytes", "peak_live_bytes",
+                                      "remaining_live_bytes", "remaining_allocations")}
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(evidence, "probe_resources", return_value=((123, 1), {})))
+            stack.enter_context(patch.object(evidence.events, "parse", return_value=({}, {})))
+            stack.enter_context(patch.object(evidence.builds, "identity", return_value={}))
+            stack.enter_context(patch.object(evidence, "parse", return_value=dict(projected, process_id=123)))
+            whole_call = stack.enter_context(patch.object(evidence, "allocation", return_value=whole))
+            stack.enter_context(patch.object(evidence.allocations, "attribute", return_value={"status": "unavailable"}))
+            _, result = evidence.run(row, selected, suite, build, Mock())
+        self.assertEqual(whole_call.call_args.kwargs, {"maximum_folded_bytes": 128 * 1024**2,
+                                                      "maximum_records": 12_000_000})
+        self.assertEqual(result["allocation_attribution"]["status"], "unavailable")
+
+    def test_codec_manifest_accepts_larger_total_but_never_larger_binary(self):
+        class ReachedBuildValidation(Exception):
+            pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            build = root / "backend-builds.json"
+            build.write_bytes(b"{}")
+            ref = reference(build, root)
+            # Virtual sizes avoid gigabyte fixtures. Only file hashing is mocked;
+            # the actual manifest bounds run before the semantic build boundary.
+            rows = [ref] + [{"path": f"builds/control/codec-{index}", "bytes": str(256 * 1024**2),
+                             "sha256": "sha256:" + "a" * 64} for index in range(6)]
+            suite = {"schema": model.SCHEMA, "profile": "full", "plan": model.suite_plan("full"),
+                     "builds": ref, "runner_source": {}, "runner_source_after": {},
+                     "status": "failed", "reason": "collection-failed", "elapsed_nanos": "0",
+                     "tools": {}, "symbols": {}, "runs": [], "artifacts": rows}
+            path = root / "suite.json"
+            path.write_bytes(canonical(suite))
+            with self.assertRaisesRegex(ValueError, "cache-artifact-byte-bound"):
+                Artifacts(root, rows)
+            with patch.object(evidence, "source"), \
+                 patch("tools.optimization_evidence.artifacts.verify_artifact",
+                       side_effect=lambda parent, row, maximum: parent / row["path"]), \
+                 patch.object(evidence.builds, "validate", side_effect=ReachedBuildValidation) as reached:
+                with self.assertRaises(ReachedBuildValidation):
+                    evidence.validate_suite(path)
+                reached.assert_called_once()
+                rows[1]["bytes"] = str(256 * 1024**2 + 1)
+                path.write_bytes(canonical(suite))
+                with self.assertRaisesRegex(ValueError, "cache-artifact-byte-bound"):
+                    evidence.validate_suite(path)
+                reached.assert_called_once()
 
 
 if __name__ == "__main__":

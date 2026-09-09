@@ -61,11 +61,14 @@ def proofs(value, binary, tool, artifacts, *, symbols=SYMBOLS):
 
 
 def attribute(record, binary, proof, tool, artifacts, whole, *, symbols=SYMBOLS,
-              scope="allocations-with-verified-constructor-or-direct-poll-frame-union"):
+              scope="allocations-with-verified-constructor-or-direct-poll-frame-union",
+              maximum_records=heaptrack.MAX_RECORDS):
+    maximum_records = heaptrack.record_limit(maximum_records)
     verified = proofs(proof, binary, tool, artifacts, symbols=symbols)
     groups = [() if row is None else (row["demangled"], row["raw"]) for row in verified]
     raw, state = common.replay_attribution(artifacts.path(record["profile_refs"]["interpreted"]),
-                                           record["command"][3], groups, state_type=Attribution)
+                                           record["command"][3], groups, state_type=Attribution,
+                                           maximum_records=maximum_records)
     require(raw == whole, "ownership-allocation-whole-replay-crossed")
     total, selected = common.folded_attribution(artifacts.path(record["profile_refs"]["allocations"]), state.folded_labels,
                                                maximum_bytes=MAX_FOLDED_BYTES)

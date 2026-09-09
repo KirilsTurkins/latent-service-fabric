@@ -50,7 +50,8 @@ def run(row, selected, suite, build, artifacts):
                        normal_completion_rss_bytes=Decimal(memory["completion"]["rss_bytes"]))
     else:
         require(row["cpu"] is None, "codec-instrumented-cpu-is-not-normal")
-        whole = allocation(row, suite, artifacts, maximum_folded_bytes=model.MAX_FOLDED_BYTES)
+        whole = allocation(row, suite, artifacts, maximum_folded_bytes=model.MAX_FOLDED_BYTES,
+                           maximum_records=model.MAX_PROFILE_RECORDS)
         attribution = allocations.attribute(row, binary, suite["symbols"][row["variant"]], suite["tools"]["nm"], artifacts, whole)
         metrics = {"whole_process_" + name: Decimal(whole[name]) for name in
                    ("allocation_count", "allocated_bytes", "peak_live_bytes", "remaining_live_bytes", "remaining_allocations")}
@@ -84,12 +85,11 @@ def validate_suite(path):
     source(suite["runner_source"])
     require(suite["runner_source"] == suite["runner_source_after"], "codec-harness-source-changed")
     build = read_json(verify_artifact(path.parent, suite["builds"], model.MAX_DOCUMENT_BYTES))
-    binaries = {value["executables"]["codec"]["path"] for value in build["builds"].values()}
-    artifacts = Artifacts(path.parent, suite["artifacts"], binaries)
+    artifacts = Artifacts(path.parent, suite["artifacts"], maximum_total_bytes=model.MAX_TOTAL_BYTES)
     artifacts.path(suite["builds"])
     builds.validate(build, artifacts, suite["profile"])
     require(build["harness"]["source"] == suite["runner_source"], "codec-harness-build-crossed")
-    actual_files = {item["path"] for item in inventory(path.parent)}
+    actual_files = {item["path"] for item in inventory(path.parent, maximum_total_bytes=model.MAX_TOTAL_BYTES)}
     require(actual_files == set(artifacts.rows), "codec-unregistered-evidence-file")
     tools(suite["tools"], artifacts, suite["status"] == "passed" or bool(suite["runs"]))
     require(isinstance(suite["symbols"], dict) and set(suite["symbols"]) <= {"control", "candidate"}, "codec-symbol-proof-set")

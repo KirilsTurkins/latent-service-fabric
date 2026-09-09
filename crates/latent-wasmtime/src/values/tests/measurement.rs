@@ -103,6 +103,8 @@ fn collect() -> ProbeResult<()> {
         origin,
         identity,
     )?;
+    // Wire counts are JSON strings; comparing them to integers changes the check.
+    #[allow(clippy::cmp_owned)]
     let passed = [&decode, &encode].iter().all(|row| {
         row["failure"].is_null()
             && row["measured_successes"] == input.plan.measured_iterations.to_string()
@@ -171,8 +173,8 @@ fn fixed_fixtures_preserve_independent_bytes_and_canonical_semantics() {
         ),
         (
             "string-near-limit",
-            122884,
-            122884,
+            122_884,
+            122_884,
             1,
             "a9484011a23775c3aa1db93bdf18a55657c5b5a040a2ee661f167600f849a6c7",
             "a9484011a23775c3aa1db93bdf18a55657c5b5a040a2ee661f167600f849a6c7",

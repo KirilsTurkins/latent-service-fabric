@@ -48,6 +48,8 @@ MAX_COMPRESSED = 99_000_000
 MAX_SPLIT_COMPRESSED = 198_000_000
 MAX_PART_BYTES = 50_000_000
 MAX_EXPANDED = 1024 * 1024 * 1024
+MAX_CODEC_EXPANDED = 2 * 1024 * 1024 * 1024
+MAX_CODEC_FILE_BYTES = 256 * 1024 * 1024
 MAX_FILES = 5000
 MAX_AGGREGATE_BYTES = 8 * 1024 * 1024
 CHUNK = 64 * 1024
@@ -168,6 +170,8 @@ def archive_input(root, manifest):
 
 
 def load_manifest(root):
+    kind = evidence_kind(root)
+    maximum, file_maximum = archive_bounds(kind)
     path = paths.existing_regular_file_path(root / MANIFEST, 'archive manifest')
     with path.open('rb') as stream:
         encoded = stream.read(4 * 1024 * 1024 + 1)
@@ -183,14 +187,22 @@ def load_manifest(root):
         require(isinstance(row, dict) and set(row) == {'path', 'bytes', 'sha256'}, 'invalid file reference')
         relative_path(row['path'])
         require(re.fullmatch(r'sha256:[0-9a-f]{64}', row['sha256']), 'invalid file digest')
-        require(size(row['bytes']) <= MAX_EXPANDED, 'file exceeds expanded bound')
+        bound = MAX_EXPANDED if row is value['archive'] else file_maximum
+        require(size(row['bytes']) <= bound, 'file exceeds expanded bound')
     require(value['archive']['path'] == ARCHIVE, 'unexpected archive name')
     for row in value['files']:
         folded = row['path'].casefold()
         require(folded not in observed, 'duplicate archive path')
         observed.add(folded)
         total += size(row['bytes'])
-    require(total == size(value['total_bytes']) and total <= MAX_EXPANDED, 'expanded byte bound')
+    require(total == size(value['total_bytes']) and total <= maximum, 'expanded byte bound')
+    # The bounded outer discriminator may grant a larger extraction allowance
+    # only when its exact bytes are also a declared archive member.
+    if kind == 'codec':
+        aggregate = next((row for row in value['files'] if row['path'] == 'aggregate.json'), None)
+        require(aggregate is not None
+                and file_reference(root / 'aggregate.json', root, MAX_AGGREGATE_BYTES) == aggregate,
+                'outer aggregate is not bound to archive manifest')
     return value
 
 
@@ -240,6 +252,12 @@ def evidence_kind(directory):
     # A missing schema never passes the mandatory semantic publication replay.
     require(schema in (None, 'latent.phase1.measurement-aggregate.v1'), 'unsupported evidence schema')
     return 'measurement'
+
+
+def archive_bounds(kind):
+    """The bounded codec discriminator is the sole 2 GiB archive policy."""
+    return ((MAX_CODEC_EXPANDED, MAX_CODEC_FILE_BYTES) if kind == 'codec'
+            else (MAX_EXPANDED, MAX_EXPANDED))
 
 
 def verify_optimization(directory):
@@ -327,6 +345,9 @@ def verify_package(directory, *, replay=True):
 
 
 def verify_archive(root, manifest, archive_path, *, replay):
+    outer_kind = evidence_kind(root)
+    maximum, file_maximum = archive_bounds(outer_kind)
+    require(size(manifest['total_bytes']) <= maximum, 'expanded byte bound')
     expected = {row['path']: row for row in manifest['files']}
     # Inspect fixed-size headers before a general tar parser can allocate a PAX
     # body. Packages use plain USTAR only. All expansion, padding and trailing
@@ -368,11 +389,13 @@ def verify_archive(root, manifest, archive_path, *, replay):
     with tempfile.TemporaryDirectory(prefix='latent-phase1-archive-') as temporary:
         extracted = Path(temporary) / 'raw'
         with gzip.open(archive_path, 'rb') as stream:
-            files = phase0_evidence.extract_tar_stream(stream, extracted, 'Phase 1 evidence')
+            options = {'maximum_bytes': MAX_CODEC_EXPANDED} if outer_kind == 'codec' else {}
+            files = phase0_evidence.extract_tar_stream(stream, extracted, 'Phase 1 evidence', **options)
         require(files == seen, 'extraction differs from verified archive')
         for name, row in expected.items():
-            require(file_reference(extracted / name, extracted) == row, 'round-trip checksum mismatch')
+            require(file_reference(extracted / name, extracted, file_maximum) == row, 'round-trip checksum mismatch')
         kind = evidence_kind(extracted)
+        require(kind == outer_kind, 'outer evidence kind differs from archive')
         outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
                        if kind == 'measurement' else ('aggregate.json',))
         if kind in ('optimization', 'artifact-identity', 'revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec',

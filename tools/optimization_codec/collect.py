@@ -29,8 +29,8 @@ def execute(args, repo):
     if any(os.path.lexists(output / name) for name in ("suite.json", "aggregate.json", "runs")):
         raise ValueError("codec-output-already-measured")
     build = read_json(path)
-    binaries = {item["executables"]["codec"]["path"] for item in build["builds"].values()}
-    builds.validate(build, Artifacts(output, inventory(output), binaries), args.profile)
+    builds.validate(build, Artifacts(output, inventory(output, maximum_total_bytes=model.MAX_TOTAL_BYTES),
+                                     maximum_total_bytes=model.MAX_TOTAL_BYTES), args.profile)
     initial_source = source(repo)
     if initial_source != build["harness"]["source"] or initial_source["clean"] is not True:
         raise ValueError("codec-runner-source-is-not-clean-harness")
@@ -60,7 +60,8 @@ def execute(args, repo):
         (output / "plans").mkdir()
         (output / "identities").mkdir()
         for repetition, variant, mode, family in model.population(args.profile):
-            if sum(int(row["bytes"]) for row in inventory(output)) + 256 * 1024**2 > 1024**3:
+            if (sum(int(row["bytes"]) for row in inventory(output, maximum_total_bytes=model.MAX_TOTAL_BYTES))
+                    + 256 * 1024**2 > model.MAX_TOTAL_BYTES):
                 raise ValueError("codec-output-reservation-bound")
             name = f"pair-{repetition:02}-{variant}-{family}-{mode}"
             directory = output / "runs" / name
@@ -90,7 +91,8 @@ def execute(args, repo):
                 # The collector creates the fixed codec input; no repository fixture is warmed.
                 collect_probe(row, directory, binary, None, output, deadline,
                               suite["tools"]["heaptrack_print"]["path"], suite["tools"]["zstd"]["path"], environment,
-                              normal_timeout=90, maximum_folded_bytes=model.MAX_FOLDED_BYTES)
+                              normal_timeout=90, maximum_folded_bytes=model.MAX_FOLDED_BYTES,
+                              maximum_total_bytes=model.MAX_TOTAL_BYTES)
             except BaseException:
                 row.update(status="failed", reason="collector-failed")
                 raise
@@ -108,7 +110,7 @@ def execute(args, repo):
     finally:
         suite["elapsed_nanos"] = str(time.monotonic_ns() - began)
         suite["runner_source_after"] = source(repo)
-        suite["artifacts"] = inventory(output)
+        suite["artifacts"] = inventory(output, maximum_total_bytes=model.MAX_TOTAL_BYTES)
         write(output / "suite.json", suite)
     from .evidence import validate_suite
     result = validate_suite(output / "suite.json")

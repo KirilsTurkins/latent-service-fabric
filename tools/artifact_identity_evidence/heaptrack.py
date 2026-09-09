@@ -187,8 +187,16 @@ class Replay:
         }
 
 
-def replay(path):
+def record_limit(maximum_records):
+    """Only the historical cap and explicit codec replay extension are supported."""
+    require(type(maximum_records) is int and maximum_records in (4_000_000, 12_000_000),
+            "unsupported-record-bound")
+    return maximum_records
+
+
+def replay(path, *, maximum_records=MAX_RECORDS):
     """Replay a retained regular interpreted text file, without subprocesses."""
+    maximum_records = record_limit(maximum_records)
     path = Path(path)
     require(not path.is_symlink() and stat.S_ISREG(path.stat().st_mode), "not-regular-file")
     require(path.stat().st_size <= MAX_BYTES, "byte-bound")
@@ -200,7 +208,7 @@ def replay(path):
             records += 1
             require(total <= MAX_BYTES, "byte-bound")
             require(len(encoded) <= MAX_LINE_BYTES and encoded.endswith(b"\n"), "line-bound-or-truncated")
-            require(records <= MAX_RECORDS, "record-bound")
+            require(records <= maximum_records, "record-bound")
             require(b"\0" not in encoded and b"\r" not in encoded, "invalid-record-byte")
             state.record(encoded[:-1])
     return state.result()
