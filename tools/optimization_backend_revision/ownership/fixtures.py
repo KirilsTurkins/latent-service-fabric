@@ -31,7 +31,7 @@ def load(reference, artifacts, components):
                 and contracts["format_version"] == 1, "ownership-fixture-metadata-identity")
         contract = {"optimization": "optimization:benchmark/workloads@0.1.0", "capabilities": "tests:capabilities/api@0.1.0",
                     "generic": "tests:generic/values@0.1.0"}[row["id"]]
-        require(capsule["exports"] == ([contract, "tests:generic/alternate@0.1.0"] if row["id"] == "generic" else [contract]),
+        require(capsule["exports"] == (["tests:generic/alternate@0.1.0", contract] if row["id"] == "generic" else [contract]),
                 "ownership-fixture-export-contract")
         require(any(interface["id"] == contract for item in contracts["contracts"] for interface in item["interfaces"]),
                 "ownership-fixture-contract-missing")
