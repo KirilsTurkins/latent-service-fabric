@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from tools.optimization_evidence.common import decode
 from tools.optimization_evidence.resources import cgroup, clean, process, samples
-from .common import digest, fields, folded, integer, require, uint
+from .common import MAX_FOLDED_BYTES, digest, fields, folded, folded_limit, integer, require, uint
 from .heaptrack import replay
 from .identity import helper
 
@@ -97,7 +97,8 @@ def probe_resources(record, binary, tools):
     return key, item
 
 
-def allocation(record, suite, artifacts):
+def allocation(record, suite, artifacts, *, maximum_folded_bytes=MAX_FOLDED_BYTES):
+    maximum_folded_bytes = folded_limit(maximum_folded_bytes)
     refs = fields(record["profile_refs"], "raw report interpreted allocations peak")
     for ref in refs.values():
         artifacts.path(ref)
@@ -113,8 +114,9 @@ def allocation(record, suite, artifacts):
         helper(artifacts.json(receipt), suite["tools"]["heaptrack_print"]["sha256"], log, artifacts)
     raw = replay(artifacts.path(refs["interpreted"]))
     require(raw["command"] == " ".join(record["command"][3:]), "crossed-allocation-command")
-    require(folded(artifacts.path(refs["allocations"]))["total"] == raw["allocation_count"]
-            and folded(artifacts.path(refs["peak"]))["total"] == raw["peak_live_bytes"], "allocation-profile-totals-mismatch")
+    require(folded(artifacts.path(refs["allocations"]), maximum_bytes=maximum_folded_bytes)["total"] == raw["allocation_count"]
+            and folded(artifacts.path(refs["peak"]), maximum_bytes=maximum_folded_bytes)["total"] == raw["peak_live_bytes"],
+            "allocation-profile-totals-mismatch")
     return raw
 
 

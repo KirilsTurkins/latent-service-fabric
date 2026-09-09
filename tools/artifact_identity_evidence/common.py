@@ -35,14 +35,22 @@ class Artifacts(BaseArtifacts):
         super().__init__(root, rows, large)
 
 
-def folded(path):
+def folded_limit(maximum_bytes):
+    """Only the historical bound and explicit ownership extension are supported."""
+    require(type(maximum_bytes) is int and maximum_bytes in (64 * 1024**2, 128 * 1024**2),
+            "unsupported-folded-byte-bound")
+    return maximum_bytes
+
+
+def folded(path, *, maximum_bytes=MAX_FOLDED_BYTES):
     """Sum exact whole-process allocation/peak weights, never rounded SI text."""
+    maximum_bytes = folded_limit(maximum_bytes)
     rows, total, bytes_read = 0, 0, 0
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rb") as stream:
         while encoded := stream.readline(64 * 1024 + 1):
             bytes_read += len(encoded)
-            require(bytes_read <= MAX_FOLDED_BYTES and len(encoded) <= 64 * 1024,
+            require(bytes_read <= maximum_bytes and len(encoded) <= 64 * 1024,
                     "profile-text-bound")
             require(encoded.endswith(b"\n") and rows < 100_000, "profile-row-bound")
             try:

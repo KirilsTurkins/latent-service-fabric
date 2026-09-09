@@ -97,7 +97,7 @@ def execute(args, repo):
                                        LSF_OWNERSHIP_FIXTURES=str(output / "ownership-fixtures.json"))
                     collect_probe(row, directory, binary, None, output, deadline,
                                   suite["tools"]["heaptrack_print"]["path"], suite["tools"]["zstd"]["path"],
-                                  environment, normal_timeout=90)
+                                  environment, normal_timeout=90, maximum_folded_bytes=model.MAX_FOLDED_BYTES)
             except BaseException:
                 row.update(status="failed", reason="collector-failed")
                 raise

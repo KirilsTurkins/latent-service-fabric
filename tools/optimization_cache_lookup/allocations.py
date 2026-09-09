@@ -6,7 +6,7 @@ import gzip
 import re
 
 from tools.artifact_identity_evidence import heaptrack
-from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES
+from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit
 from tools.artifact_identity_evidence.identity import helper
 from tools.optimization_evidence.common import fields, require, uint
 from .model import SYMBOL
@@ -121,14 +121,15 @@ def replay_attribution(path, binary_name, symbols=(), *, state_type=Attribution)
     return state.result(), state
 
 
-def folded_attribution(path, labels=()):
+def folded_attribution(path, labels=(), *, maximum_bytes=MAX_FOLDED_BYTES):
+    maximum_bytes = folded_limit(maximum_bytes)
     opener = gzip.open if path.suffix == ".gz" else open
     total = rows = observed = count = 0
     with opener(path, "rb") as source:
         while encoded := source.readline(65537):
             total += len(encoded)
             rows += 1
-            require(total <= MAX_FOLDED_BYTES and rows <= 100000 and len(encoded) <= 65536
+            require(total <= maximum_bytes and rows <= 100000 and len(encoded) <= 65536
                     and encoded.endswith(b"\n"), "lookup-folded-bound")
             stack, amount = encoded[:-1].decode("utf-8").rsplit(" ", 1)
             frames = stack.split(";")

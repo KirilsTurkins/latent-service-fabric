@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 
 from .model import MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES
+from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit
 
 
 def fingerprint(path: Path, maximum: int = MAX_FILE_BYTES) -> tuple[str, int]:
@@ -38,9 +39,10 @@ def retain(source: Path, destination: Path, output: Path) -> dict:
     return reference(destination, output)
 
 
-def compress_folded(path: Path, output: Path) -> dict:
+def compress_folded(path: Path, output: Path, *, maximum_bytes: int = MAX_FOLDED_BYTES) -> dict:
     """Retain every stack/weight in deterministic gzip, with bounded replay."""
-    original = fingerprint(path, 64 * 1024 * 1024)
+    maximum_bytes = folded_limit(maximum_bytes)
+    original = fingerprint(path, maximum_bytes)
     destination = path.with_suffix(path.suffix + ".gz")
     with path.open("rb") as source, destination.open("xb") as raw:
         with gzip.GzipFile(fileobj=raw, mode="wb", filename="", mtime=0) as compressed:
@@ -49,7 +51,7 @@ def compress_folded(path: Path, output: Path) -> dict:
     with gzip.open(destination, "rb") as restored:
         while chunk := restored.read(65536):
             size += len(chunk)
-            if size > 64 * 1024 * 1024:
+            if size > maximum_bytes:
                 raise ValueError("folded-expanded-byte-bound")
             digest.update(chunk)
     if ("sha256:" + digest.hexdigest(), size) != original:

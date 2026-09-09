@@ -213,7 +213,8 @@
             ],
             "maximum_run_seconds": "7200",
             "maximum_artifact_bytes": "1073741824",
-            "maximum_artifact_files": 4096
+            "maximum_artifact_files": 4096,
+            "maximum_folded_expanded_bytes": "134217728"
           }
         },
         {
@@ -340,7 +341,8 @@
             ],
             "maximum_run_seconds": "7200",
             "maximum_artifact_bytes": "1073741824",
-            "maximum_artifact_files": 4096
+            "maximum_artifact_files": 4096,
+            "maximum_folded_expanded_bytes": "134217728"
           }
         }
       ]
