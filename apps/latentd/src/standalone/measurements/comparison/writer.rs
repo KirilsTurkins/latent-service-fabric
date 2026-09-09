@@ -15,6 +15,7 @@ pub(super) struct Writer {
     written: usize,
     count: u32,
     maximum_samples: u32,
+    maximum_bytes: usize,
     finished: bool,
 }
 
@@ -31,7 +32,12 @@ impl Writer {
     ) -> Result<Self> {
         if !matches!(
             name,
-            "candidate.json" | "cold.json" | "cache.json" | "budget.json" | "recovery.json"
+            "candidate.json"
+                | "cold.json"
+                | "cache.json"
+                | "budget.json"
+                | "recovery.json"
+                | "ownership.json"
         ) || !(1..=2048).contains(&maximum_samples)
         {
             return Err("comparison writer limits".into());
@@ -50,6 +56,11 @@ impl Writer {
             written: 0,
             count: 0,
             maximum_samples,
+            maximum_bytes: if name == "ownership.json" {
+                8 * 1024 * 1024
+            } else {
+                MAXIMUM_DOCUMENT_BYTES
+            },
             finished: false,
         };
         writer.append(&bytes)?;
@@ -93,7 +104,7 @@ impl Writer {
         let next = self
             .written
             .checked_add(bytes.len())
-            .filter(|next| *next <= MAXIMUM_DOCUMENT_BYTES)
+            .filter(|next| *next <= self.maximum_bytes)
             .ok_or("comparison document byte limit")?;
         self.file.write_all(bytes)?;
         self.file.flush()?;

@@ -5,6 +5,8 @@ mod call;
 mod cold;
 mod evidence;
 mod node;
+mod ownership;
+mod ownership_supervision;
 mod plan;
 mod recovery;
 mod revision;

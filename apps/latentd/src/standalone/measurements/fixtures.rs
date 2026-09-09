@@ -1,5 +1,5 @@
-mod capabilities;
-mod generic;
+pub(super) mod capabilities;
+pub(super) mod generic;
 
 use super::{platform, Result};
 use latent_artifacts::{
@@ -121,7 +121,7 @@ impl Fixture {
     }
 }
 
-fn build(
+pub(super) fn build(
     tenant: &str,
     service: &str,
     contract: &str,
