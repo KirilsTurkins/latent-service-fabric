@@ -267,6 +267,14 @@ fixtures do not qualify as release benchmark results.
 
 ## Request ownership experiments
 
+The [retained request-ownership comparison](request-ownership/2026-09-09-container-linux-2bd2452/README.md)
+proves raw-vector release before guest dispatch and lower near-limit context
+setup time. It accepts an explicit ownership tradeoff: across two RPC campaigns,
+warm Echo's paired p50 increases by 37.451 us (9/14 pairs higher), and observed
+warm server CPU rises 5.7%. All twelve selected allocation attributions remain
+unavailable. The report retains both campaigns, the whole-process allocation
+results and the unresolved warm-performance concern carried into #105/#106.
+
 The [#104 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/104)
 uses `--experiment ownership` on the existing revision runners. It separates
 three unchanged external payload cases from direct Wasmtime invocations, two
@@ -282,4 +290,5 @@ prewarm invocation or candidate-adapted input.
 The [collection and replay method](../../docs/testing/phase-1-measurements.md#request-ownership-experiments)
 defines the exact source controls, control-generated context fixtures and the
 distinct timing, logical ownership, allocator and process-memory boundaries.
-These links describe the method and structural envelopes, not measured results.
+The schemas bound structure; strict replay and the linked report establish
+the retained populations and qualified results.
