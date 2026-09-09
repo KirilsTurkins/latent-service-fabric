@@ -84,9 +84,15 @@ impl ActivationObserver for CrossWallBoundary {
     }
 }
 
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn submillisecond_transport_precision_reaches_the_shared_execution_ledger() {
     let clock = Arc::new(Clock::default());
+    // The scheduler reads Tokio's clock. Anchor the injected clock to the same
+    // paused origin so host scheduling cannot spend this precision-test budget.
+    clock.set(ClockSample::new(
+        clock.sample().unix_millis(),
+        tokio::time::Instant::now().into_std(),
+    ));
     let arrival = clock.sample();
     let observer = Arc::new(CrossWallBoundary(Arc::clone(&clock)));
     let harness = Harness::with_observer(clock, observer);
@@ -94,10 +100,14 @@ async fn submillisecond_transport_precision_reaches_the_shared_execution_ledger(
     let mut input = authenticated(request("precise-wire-deadline"));
     input.set_timeout(Duration::from_micros(1800));
     let response = finish(adapter.invoke(input)).await.unwrap().into_inner();
-    assert!(matches!(
-        response.result,
-        Some(latent_wire::invocation::proto::invoke_response::Result::Success(_))
-    ));
+    assert!(
+        matches!(
+            response.result,
+            Some(latent_wire::invocation::proto::invoke_response::Result::Success(_))
+        ),
+        "precision fixture must succeed: {:?}",
+        response.result
+    );
     assert_eq!(
         *harness.backend.deadlines.lock().unwrap(),
         vec![Some(arrival.monotonic() + Duration::from_micros(1800))],
