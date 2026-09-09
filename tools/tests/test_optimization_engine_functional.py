@@ -35,6 +35,8 @@ def replay(value):
         if row["phase"] == "functional":
             source.bind_call(call, status)
             functional += 1
+        else:
+            diagnostic.oracle(call, [])
     proof = proofs.functional(value["samples"], normalized, statuses, cancels, source, elapsed)
     return normalized, functional, proof
 
@@ -84,6 +86,30 @@ class EngineActualFunctionalTests(unittest.TestCase):
         row["native_fault"]["consumption"]["cpu_fuel"] = "49999"
         with self.assertRaisesRegex(EvidenceError, "fault-receipt-crossed"):
             replay(value)
+
+    def test_rehashed_ordinary_echo_logs_bind_guest_result_and_input_bytes(self):
+        mutations = ({"message": "not the echo result"}, {"level": "warn"},
+                     {"fields": {"activation_id": "another-call"}},
+                     {"fields": {"message_bytes": "24"}}, {"fields": {"outcome": "empty-message"}},
+                     {"fields": {"extra": "unrecorded-guest-field"}})
+        for activation in ("engine-echo-0000", "engine-concurrent-echo-0000"):
+            for mutation in mutations:
+                value, row = self.changed(activation=activation)
+                log = row["guest_logs"][0]
+                if "fields" in mutation:
+                    log["record"]["fields"].update(mutation["fields"])
+                else:
+                    log["record"].update(mutation)
+                record = log["record"]
+                encoded = calls.framed({"activation_id": record["activation_id"], "level": record["level"],
+                                        "message": record["message"], "fields": dict(sorted(record["fields"].items()))})
+                log.update(encoded_bytes=str(len(encoded)), sha256=sha256(encoded))
+                row["response"]["consumption"]["log_bytes"] = str(len(encoded))
+                status = next(item for item in value["samples"] if item["kind"] == "command"
+                              and item["operation"] == "get-activation" and item["target"] == activation)
+                status["response"]["consumption"]["log_bytes"] = str(len(encoded))
+                with self.subTest(activation=activation, mutation=mutation), self.assertRaisesRegex(EvidenceError, "engine-echo-result-log"):
+                    replay(value)
 
     def test_fault_erasure_invention_and_public_redaction_crossings_reject(self):
         for label in IDENTITIES:
