@@ -29,8 +29,10 @@ impl Writer {
         maximum_samples: u32,
         header: &Value,
     ) -> Result<Self> {
-        if !matches!(name, "candidate.json" | "cold.json" | "cache.json")
-            || !(1..=2048).contains(&maximum_samples)
+        if !matches!(
+            name,
+            "candidate.json" | "cold.json" | "cache.json" | "budget.json"
+        ) || !(1..=2048).contains(&maximum_samples)
         {
             return Err("comparison writer limits".into());
         }

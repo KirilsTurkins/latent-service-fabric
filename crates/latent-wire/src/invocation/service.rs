@@ -81,11 +81,32 @@ impl<R: InvocationRuntime + ?Sized + 'static> InvocationService for InvocationSe
             &self.limits,
             self.services.principals.as_ref(),
         )?;
+        let sample = self.services.clock.sample();
+        if let (Some(observer), Some(token)) = (
+            self.services.clock.deadline_diagnostic_observer(),
+            context.deadline_diagnostic_token(),
+        ) {
+            if let Some(id) = request.get_ref().activation_id.as_deref() {
+                let _ = observer.bind(token, id);
+            }
+            observer.record(
+                token,
+                latent_core::DeadlineDiagnosticObservation::BodyDecoded {
+                    observed_at: sample.monotonic(),
+                    request_deadline_unix_millis: request.get_ref().deadline_unix_millis,
+                    request_wall_time_limit_millis: request
+                        .get_ref()
+                        .budget
+                        .as_ref()
+                        .and_then(|budget| budget.wall_time_limit_millis),
+                },
+            );
+        }
         let deadline = deadline::plan(
             &request,
             context.transport_deadline_unix_millis(),
             context.transport_expires_at(),
-            self.services.clock.sample(),
+            sample,
             &self.limits,
         )?;
         let trace = self.services.traces.next_trace().map_err(platform_status)?;

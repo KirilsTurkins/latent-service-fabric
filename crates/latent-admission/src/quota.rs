@@ -125,7 +125,7 @@ pub(crate) struct ReservationSpec<'a> {
     pub queue_class: &'a str,
     pub cell_class: &'a str,
     pub grant: &'a EffectiveActivationBudget,
-    pub timing: crate::timing::ReservationTiming,
+    pub timing: crate::timing::ReservationTiming<'a>,
 }
 
 impl LocalQuotaProvider {

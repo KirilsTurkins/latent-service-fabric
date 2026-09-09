@@ -63,7 +63,7 @@ impl AdmissionPermit {
         mut revision: ResolvedRevision,
         grant: EffectiveActivationBudget,
         obligations: AdmissionObligations,
-        timing: crate::timing::ReservationTiming,
+        timing: crate::timing::ReservationTiming<'_>,
     ) -> Result<Self, PlatformError> {
         // Caller-supplied metadata is not propagated as execution policy.
         revision.attributes.clear();

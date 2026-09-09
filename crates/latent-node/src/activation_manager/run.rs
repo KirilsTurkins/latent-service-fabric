@@ -260,8 +260,23 @@ impl Inner {
             attributes: Metadata::new(),
         };
         // The supplied sample is node-owned, never read from invocation metadata.
-        let permit = admission.admit_at(request, self.clock.sample())?;
+        let observer = self.clock.deadline_diagnostic_observer();
+        let sample = self.clock.sample();
+        let permit = match observer {
+            Some(observer) => admission.admit_at_with_diagnostics(request, sample, observer),
+            None => admission.admit_at(request, sample),
+        }?;
         let budget = ActivationBudget::new(permit.effective_budget().clone());
+        if let Some(observer) = self.clock.deadline_diagnostic_observer() {
+            observer.record_for_activation(
+                &envelope.activation_id.0,
+                latent_core::DeadlineDiagnosticObservation::AdmittedLedger {
+                    observed_at: self.clock.monotonic_now(),
+                    deadline: permit.deadline().clone(),
+                    budget: permit.granted_budget().clone(),
+                },
+            );
+        }
         envelope.budget = permit.granted_budget().clone();
         envelope.deadline_unix_millis = permit.deadline().unix_millis();
         envelope.priority = permit.obligations().priority;

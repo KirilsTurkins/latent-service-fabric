@@ -61,10 +61,22 @@ pub(super) fn authenticate(
         .unix_millis()
         .checked_add(millis)
         .ok_or_else(invalid_timeout)?;
-    request.extensions_mut().insert(
-        AuthenticatedInvocationContext::new(credential.principal.clone())
-            .with_transport_deadline_at(unix, expiry),
-    );
+    let mut context = AuthenticatedInvocationContext::new(credential.principal.clone())
+        .with_transport_deadline_at(unix, expiry);
+    if request.uri().path() == "/latent.invocation.v1.InvocationService/Invoke" {
+        if let Some(observer) = clock.deadline_diagnostic_observer() {
+            if let Some(token) =
+                observer.begin(latent_core::DeadlineDiagnosticObservation::Ingress {
+                    observed_at: sample.monotonic(),
+                    expires_at: Some(expiry),
+                    deadline_unix_millis: Some(unix),
+                })
+            {
+                context = context.with_deadline_diagnostic_token(token);
+            }
+        }
+    }
+    request.extensions_mut().insert(context);
     Ok(())
 }
 

@@ -13,6 +13,7 @@ pub struct AuthenticatedInvocationContext {
     principal: InvocationPrincipal,
     transport_deadline_unix_millis: Option<u64>,
     transport_expires_at: Option<Instant>,
+    deadline_diagnostic_token: Option<latent_core::DeadlineDiagnosticToken>,
 }
 impl AuthenticatedInvocationContext {
     #[must_use]
@@ -21,6 +22,7 @@ impl AuthenticatedInvocationContext {
             principal,
             transport_deadline_unix_millis: None,
             transport_expires_at: None,
+            deadline_diagnostic_token: None,
         }
     }
     #[must_use]
@@ -44,6 +46,19 @@ impl AuthenticatedInvocationContext {
     #[must_use]
     pub const fn transport_expires_at(&self) -> Option<Instant> {
         self.transport_expires_at
+    }
+    /// Associates this authenticated arrival with a bounded local diagnostic.
+    #[must_use]
+    pub fn with_deadline_diagnostic_token(
+        mut self,
+        token: latent_core::DeadlineDiagnosticToken,
+    ) -> Self {
+        self.deadline_diagnostic_token = Some(token);
+        self
+    }
+    #[must_use]
+    pub const fn deadline_diagnostic_token(&self) -> Option<latent_core::DeadlineDiagnosticToken> {
+        self.deadline_diagnostic_token
     }
     #[must_use]
     pub fn principal(&self) -> &InvocationPrincipal {

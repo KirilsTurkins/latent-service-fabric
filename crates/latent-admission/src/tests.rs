@@ -19,6 +19,7 @@ use latent_routing::{
 
 use super::*;
 
+mod diagnostics;
 mod stress;
 type PolicyMutation = (fn(&mut RevisionAdmissionPolicy), &'static str);
 

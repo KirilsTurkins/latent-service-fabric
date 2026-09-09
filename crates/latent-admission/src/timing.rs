@@ -1,6 +1,9 @@
 use std::time::{Duration, Instant};
 
-use latent_core::{EffectiveActivationBudget, PlatformError, PlatformErrorCode};
+use latent_core::{
+    DeadlineDiagnosticDecision, DeadlineDiagnosticObservation, DeadlineDiagnosticObserver,
+    DeadlineDiagnosticToken, EffectiveActivationBudget, PlatformError, PlatformErrorCode,
+};
 
 use crate::{rejection, NodeAdmissionPolicy};
 
@@ -20,13 +23,14 @@ impl AdmissionClock {
 }
 
 #[derive(Clone, Copy)]
-pub(crate) struct ReservationTiming {
+pub(crate) struct ReservationTiming<'a> {
     pub clock: AdmissionClock,
     pub observed_queue_delay_millis: u64,
     pub load_observed_at: Instant,
+    pub diagnostic: Option<(&'a DeadlineDiagnosticObserver, DeadlineDiagnosticToken)>,
 }
 
-impl ReservationTiming {
+impl ReservationTiming<'_> {
     /// Invoked inside the quota critical section, after any lock contention.
     /// Live admissions resample monotonic time without extending the original
     /// deadline; `admit_at` deliberately uses its frozen test/embedding clock.
@@ -38,7 +42,22 @@ impl ReservationTiming {
         parallelism: u32,
     ) -> Result<(), PlatformError> {
         let now = self.clock.now();
+        let record = |required, decision| {
+            if let Some((observer, token)) = self.diagnostic {
+                observer.record(
+                    token,
+                    DeadlineDiagnosticObservation::AdmissionCheck {
+                        observed_at: now,
+                        deadline: grant.deadline.clone(),
+                        remaining: grant.deadline.remaining_at(now),
+                        required,
+                        decision,
+                    },
+                );
+            }
+        };
         if grant.deadline.is_expired_at(now) {
+            record(None, DeadlineDiagnosticDecision::DeadlineExceeded);
             return Err(rejection(
                 PlatformErrorCode::DeadlineExceeded,
                 "request",
@@ -52,6 +71,7 @@ impl ReservationTiming {
                 age > Duration::from_millis(policy.overload.maximum_sample_age_millis)
             })
         {
+            record(None, DeadlineDiagnosticDecision::LoadStale);
             return Err(rejection(
                 PlatformErrorCode::Unavailable,
                 "node",
@@ -59,21 +79,23 @@ impl ReservationTiming {
                 "load-sample-not-current",
             ));
         }
-        let waves = u64::from(current_cell) / u64::from(parallelism);
-        let required_millis = waves
-            .checked_mul(policy.deadline.estimated_service_time_millis)
-            .map(|estimate| estimate.max(self.observed_queue_delay_millis))
-            .and_then(|wait| wait.checked_add(policy.deadline.minimum_execution_time_millis))
-            .and_then(|wait| wait.checked_add(policy.deadline.safety_margin_millis))
-            .ok_or_else(|| {
-                rejection(
-                    PlatformErrorCode::AdmissionRejected,
-                    "node",
-                    "deadline",
-                    "queue-estimate-overflow",
-                )
-            })?;
+        let required = required_wait(
+            policy,
+            current_cell,
+            parallelism,
+            self.observed_queue_delay_millis,
+        )
+        .ok_or_else(|| {
+            record(None, DeadlineDiagnosticDecision::QueueEstimateOverflow);
+            rejection(
+                PlatformErrorCode::AdmissionRejected,
+                "node",
+                "deadline",
+                "queue-estimate-overflow",
+            )
+        })?;
         let remaining = grant.deadline.remaining_at(now).ok_or_else(|| {
+            record(Some(required), DeadlineDiagnosticDecision::MissingDeadline);
             rejection(
                 PlatformErrorCode::InvalidArgument,
                 "request",
@@ -81,7 +103,8 @@ impl ReservationTiming {
                 "missing-effective-deadline",
             )
         })?;
-        if remaining <= Duration::from_millis(required_millis) {
+        if remaining <= required {
+            record(Some(required), DeadlineDiagnosticDecision::QueueInfeasible);
             return Err(rejection(
                 PlatformErrorCode::AdmissionRejected,
                 "node",
@@ -89,6 +112,22 @@ impl ReservationTiming {
                 "queue-deadline-infeasible",
             ));
         }
+        record(Some(required), DeadlineDiagnosticDecision::Accepted);
         Ok(())
     }
+}
+
+fn required_wait(
+    policy: &NodeAdmissionPolicy,
+    current_cell: u32,
+    parallelism: u32,
+    observed_queue_delay_millis: u64,
+) -> Option<Duration> {
+    let waves = u64::from(current_cell) / u64::from(parallelism);
+    waves
+        .checked_mul(policy.deadline.estimated_service_time_millis)
+        .map(|estimate| estimate.max(observed_queue_delay_millis))
+        .and_then(|wait| wait.checked_add(policy.deadline.minimum_execution_time_millis))
+        .and_then(|wait| wait.checked_add(policy.deadline.safety_margin_millis))
+        .map(Duration::from_millis)
 }

@@ -46,9 +46,20 @@ pub(super) async fn deadline(deadline: Option<Instant>, clock: &dyn ActivationCl
         }
         // Active invocations only. The same injected monotonic domain controls
         // expiry; the bounded wakeup also supports deterministic clock changes.
+        let observation = clock.deadline_wait_observer();
+        let wait = observation.map(latent_core::DeadlineWaitObserver::arm);
         tokio::time::sleep(remaining.min(Duration::from_millis(5))).await;
+        if let Some(wait) = wait {
+            wait.complete();
+        }
+        if let Some(observation) = observation {
+            observation.recheck();
+        }
     }
 }
+
+#[cfg(test)]
+mod tests;
 
 pub(super) async fn stage<T>(
     future: impl Future<Output = Result<T, PlatformError>>,
