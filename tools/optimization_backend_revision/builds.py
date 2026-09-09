@@ -21,8 +21,20 @@ def validate_experiment(value,artifacts,profile,experiment):
 
 
 def validate(value, artifacts, profile):
+    return validate_graph(value, artifacts, profile)
+
+
+def validate_budget(value, artifacts, profile):
+    from tools.optimization_revision_runner import budget_build
+    return validate_graph(value, artifacts, profile, schema=budget_build.SCHEMA,
+                          source_controls=budget_build.CONTROLS, fixture_field="component",
+                          harness_command=budget_build.GENERIC_COMMAND)
+
+
+def validate_graph(value, artifacts, profile, *, schema="latent.optimization.backend-builds.v1",
+                   source_controls=CONTROLS, fixture_field="echo", harness_command=None):
     fields(value, "schema requested_refs build builds harness cleanup")
-    require(value["schema"] == "latent.optimization.backend-builds.v1", "invalid-backend-build-schema")
+    require(value["schema"] == schema, "invalid-backend-build-schema")
     validate_refs(value["requested_refs"], profile)
     require(value["cleanup"] == {"owned_worktree_removed": True}, "backend-build-worktree-not-removed")
     fields(value["builds"], "control candidate")
@@ -40,15 +52,18 @@ def validate(value, artifacts, profile):
     paths, controls = set(), []
     for label, build in (*value["builds"].items(), ("harness", value["harness"])):
         fields(build, "source source_after inputs command process log source_path target_path "
-               + ("echo" if label == "harness" else "executables"))
+               + (fixture_field if label == "harness" else "executables"))
         source(build["source"])
         require(build["source"] == build["source_after"]
                 and build["source"]["commit"] == value["requested_refs"][label], "backend-source-build-mismatch")
         paths.add((text(build["source_path"]), text(build["target_path"])))
         argv = build["command"]
         if label == "harness":
-            require(isinstance(argv, list) and len(argv) == 3 and argv[1:] == ["tools/build_echo_capsule.py", "--verify-reproducible"],
-                    "backend-echo-build-command")
+            if harness_command is None:
+                require(isinstance(argv, list) and len(argv) == 3 and argv[1:] == ["tools/build_echo_capsule.py", "--verify-reproducible"],
+                        "backend-echo-build-command")
+            else:
+                require(argv == harness_command, "backend-generic-build-command")
         else:
             require(argv == ["/bin/bash", "-eu", "-o", "pipefail", "-c", RECIPE], "backend-collector-build-command")
         owner = build["process"]
@@ -62,7 +77,7 @@ def validate(value, artifacts, profile):
         for name, row in inputs.items():
             require(row["path"] == f"builds/{label}/source/{name}", "backend-input-path")
             artifacts.path(row)
-        required = (*CONTROLS, "rust-toolchain.toml", ".cargo/config.toml", "tools/phase0_build_environment.sh")
+        required = (*source_controls, "rust-toolchain.toml", ".cargo/config.toml", "tools/phase0_build_environment.sh")
         shared = {}
         for prefix in required:
             selected = {name: (row["sha256"], row["bytes"]) for name, row in inputs.items()
@@ -79,6 +94,12 @@ def validate(value, artifacts, profile):
             require(uint(row["bytes"]) > 0, "empty-backend-executable")
             artifacts.path(row)
     require(len(paths) == 1 and controls[0] == controls[1] == controls[2], "backend-collector-inputs-or-paths-differ")
+    if fixture_field == "component":
+        component = value["harness"]["component"]
+        require(8 <= uint(component["bytes"]) <= 16 * 1024**2, "budget-generic-component-bound")
+        with artifacts.path(component).open("rb") as raw:
+            require(raw.read(8) == b"\0asm\r\0\1\0", "budget-generic-not-a-component")
+        return value
     echo = fields(value["harness"]["echo"], "component capsule contracts deployment build")
     for row in echo.values():
         artifacts.path(row)
