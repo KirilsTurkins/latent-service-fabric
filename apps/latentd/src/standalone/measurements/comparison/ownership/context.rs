@@ -98,10 +98,10 @@ pub(super) fn charge(value: InvocationContextCharge) -> Value {
         "remaining_bytes":value.remaining_bytes.to_string()})
 }
 
-pub(super) fn generate(
-    backend: &WasmtimeBackend,
-    template: &Template,
-) -> Result<(Vec<(Context, Value)>, Vec<Value>)> {
+type ChargedContexts = Vec<(Context, Value)>;
+type GenerationResult = (ChargedContexts, Vec<Value>);
+
+pub(super) fn generate(backend: &WasmtimeBackend, template: &Template) -> Result<GenerationResult> {
     let control = Control::new(request::identifier(0))?;
     let mut checks = Vec::new();
     let mut values = Vec::new();
@@ -145,7 +145,7 @@ pub(super) fn generate(
             _ => {
                 high = middle
                     .checked_sub(1)
-                    .ok_or("context fixture search underflow")?
+                    .ok_or("context fixture search underflow")?;
             }
         }
     }

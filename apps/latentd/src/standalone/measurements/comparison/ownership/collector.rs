@@ -3,7 +3,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use latent_executor::ExecutionBackend;
-use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory};
+use latent_wasmtime::{InvocationInputObserver, WasmtimeBackend, WasmtimeComponentEngineFactory};
 use serde_json::{json, Value};
 
 use super::{
@@ -30,6 +30,12 @@ impl Work {
     "invoke_attempts":self.invocations.to_string(),"proof_attempts":self.proofs.to_string(),
     "context_validation_checks":self.context_checks.to_string()})
     }
+}
+
+struct Recording<'a> {
+    writer: &'a mut Writer,
+    work: &'a mut Work,
+    origin: Instant,
 }
 
 pub(super) struct Completed {
@@ -74,121 +80,73 @@ pub(super) async fn run(
     let factory = WasmtimeComponentEngineFactory::new(config).map_err(super::platform)?;
     let backend = factory.create_backend_instance();
     let observer = factory.invocation_input_observer();
-    let compiler = factory.compiler_observer();
-    let runtimes = factory.prepared_runtime_observer();
-    let profile = factory.profile();
     let mut writer = Writer::named(
         directory,
         "ownership.json",
         512,
-        &json!({
-            "schema":"latent.optimization.ownership-arm.v1","plan":plan,"identity":identity,
-            "fixture_manifest_sha256":latent_artifacts::content_digest(input).0,
-            "process_id":std::process::id(),"runtime_workers":2,"observation_hold_millis":100,
-            "engine_profile":{"id":profile.id,"wasmtime_version":profile.wasmtime_version,"target_triple":profile.target_triple,
-                "cpu_feature_set":profile.cpu_feature_set,"pooling_allocator":profile.pooling_allocator,
-                "copy_on_write_images":profile.copy_on_write_images,"async_support":profile.async_support,
-                "fuel_enabled":profile.fuel_enabled,"epoch_interruption_enabled":profile.epoch_interruption_enabled,
-                "configuration":profile.configuration},
-            "configuration_debug":format!("{:?}",config::runtime()),"budget":observation::budget(&config::budget()),
-            "boundaries":{"composition":"direct-wasmtime-factory","preparation":"explicit-before-invocation-population",
-                "construction":"owned-request-and-boxed-backend-future","invoke":"poll-through-contained-report-and-future-drop",
-                "backend_total_excludes":"outer-context-validation","reclamation":"two-actual-drop-spans-excluding-classification",
-                "allocation_selection":"union-of-construction-and-poll-including-warmup","context_capacity":"logical-Rust-capacity-not-allocator-usable-size"},
-            "initial_resources":observation::resources(backend.resource_snapshot()),"initial_cache":backend.cache_accounting_snapshot(),
-            "initial_observer":observation::input(&observer,origin)?
-        }),
+        &header(&factory, &backend, &observer, plan, identity, input, origin)?,
     )?;
     let mut work = Work::default();
     let mut templates = BTreeMap::new();
     let mut checks = Vec::new();
     let result = async {
-        let selected: Vec<&str> = match plan.mode {
-            Mode::Fixtures => vec!["capabilities"],
-            Mode::Normal => vec!["optimization", "capabilities", "generic"],
-            Mode::Allocation => vec![plan::component(&plan.shapes[0])],
+        let mut recording = Recording {
+            writer: &mut writer,
+            work: &mut work,
+            origin,
         };
-        for id in selected {
-            let row = artifacts
-                .iter()
-                .find(|v| v.id == id)
-                .ok_or("ownership selected artifact missing")?;
-            let template = prepare(
-                &factory,
-                &backend,
-                row,
-                root,
-                &mut writer,
-                &mut work,
-                origin,
-            )
-            .await?;
-            templates.insert(id.to_owned(), template);
-        }
+        templates = prepare_all(plan, &factory, &backend, &artifacts, root, &mut recording).await?;
         if backend.resource_snapshot().stores_created != 0 {
             return Err("ownership preparation created Store".into());
         }
         if let Some(generated) = generated.as_mut() {
-            let (contexts, probes) = context::generate(&backend, &templates["capabilities"])?;
-            work.context_checks = u32::try_from(probes.len())?;
-            checks = probes;
-            for (value, charge) in contexts {
-                let artifact = files::retain(
-                    root,
-                    &directory.join(format!("{}.json", value.shape)),
-                    &serde_json::to_vec(&value)?,
-                )?;
-                generated.contexts.push(ContextFile {
-                    shape: value.shape,
-                    artifact,
-                    charge,
-                });
-            }
+            checks = freeze_contexts(
+                generated,
+                &backend,
+                &templates["capabilities"],
+                root,
+                directory,
+            )?;
+            recording.work.context_checks = u32::try_from(checks.len())?;
         }
         super::ready(plan, identity, input, origin)?;
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         if let Some(manifest) = manifest.as_ref() {
-            normal(
-                &backend,
-                &templates,
-                manifest,
-                plan,
-                root,
-                &mut writer,
-                &mut work,
-                origin,
-            )
-            .await?;
+            normal(&backend, &templates, manifest, plan, root, &mut recording).await?;
             if plan.mode == Mode::Normal {
-                observer
-                    .enable(&[
-                        request::identifier(work.invocations),
-                        request::identifier(work.invocations + 1),
-                    ])
-                    .map_err(super::platform)?;
-                for drop_pending in [false, true] {
-                    let ordinal = work.invocations;
-                    work.invocations += 1;
-                    work.proofs += 1;
-                    proof::run(
-                        &backend,
-                        &templates["generic"],
-                        &observer,
-                        ordinal,
-                        drop_pending,
-                        &mut writer,
-                        origin,
-                    )
-                    .await?;
-                }
+                proofs(&backend, &templates["generic"], &observer, &mut recording).await?;
             }
         }
         observation::idle(&backend)
     }
     .await;
+    let (mut footer, reclaimed) = shutdown(factory, backend, templates, &observer, origin)?;
+    let passed = result.is_ok() && reclaimed;
+    footer["status"] = json!(if passed { "passed" } else { "failed" });
+    footer["reason"] = json!((!passed).then_some("ownership-collector-failed"));
+    footer["elapsed_nanos"] = json!(observation::elapsed(origin));
+    footer["work"] = work.value();
+    footer["context_checks"] = json!(checks);
+    Ok(Completed {
+        writer,
+        footer,
+        generated,
+        passed,
+    })
+}
+
+fn shutdown(
+    factory: WasmtimeComponentEngineFactory,
+    backend: WasmtimeBackend,
+    templates: BTreeMap<String, Template>,
+    observer: &InvocationInputObserver,
+    origin: Instant,
+) -> Result<(Value, bool)> {
+    let compiler = factory.compiler_observer();
+    let runtimes = factory.prepared_runtime_observer();
     let before_shutdown = json!({"resources":observation::resources(backend.resource_snapshot()),
         "cache":backend.cache_accounting_snapshot(),"compiler":backend.compiler_snapshot(),
-        "input":observation::input(&observer,origin)?});
+        "input":observation::input(observer,origin)?});
     drop(templates);
     drop(backend);
     let shutdown_started = observation::elapsed(origin);
@@ -204,20 +162,129 @@ pub(super) async fn run(
         && joined.workers_live == 0
         && !joined.failed
         && runtimes.snapshot().is_some_and(|v| v.live.runtimes == 0);
-    let passed = result.is_ok() && shutdown.is_ok() && zero;
-    let final_inputs = observation::input(&observer, origin)?;
-    let footer = json!({"status":if passed {"passed"} else {"failed"},"reason":(!passed).then_some("ownership-collector-failed"),
-        "elapsed_nanos":observation::elapsed(origin),"work":work.value(),"context_checks":checks,
+    let final_inputs = observation::input(observer, origin)?;
+    let footer = json!({
         "before_factory_shutdown":before_shutdown,"factory_shutdown":{"succeeded":shutdown.is_ok(),
             "started_nanos":shutdown_started,"finished_nanos":shutdown_finished},
         "compiler_after_shutdown":joined,"prepared_runtimes_after_shutdown":runtimes.snapshot(),
         "raw_inputs_after_shutdown":final_inputs});
-    Ok(Completed {
-        writer,
-        footer,
-        generated,
-        passed,
-    })
+    Ok((footer, shutdown.is_ok() && zero))
+}
+
+fn header(
+    factory: &WasmtimeComponentEngineFactory,
+    backend: &WasmtimeBackend,
+    observer: &InvocationInputObserver,
+    plan: &Plan,
+    identity: &Value,
+    input: &[u8],
+    origin: Instant,
+) -> Result<Value> {
+    let profile = factory.profile();
+    Ok(json!({
+        "schema":"latent.optimization.ownership-arm.v1","plan":plan,"identity":identity,
+        "fixture_manifest_sha256":latent_artifacts::content_digest(input).0,
+        "process_id":std::process::id(),"runtime_workers":2,"observation_hold_millis":100,
+        "engine_profile":{"id":profile.id,"wasmtime_version":profile.wasmtime_version,"target_triple":profile.target_triple,
+            "cpu_feature_set":profile.cpu_feature_set,"pooling_allocator":profile.pooling_allocator,
+            "copy_on_write_images":profile.copy_on_write_images,"async_support":profile.async_support,
+            "fuel_enabled":profile.fuel_enabled,"epoch_interruption_enabled":profile.epoch_interruption_enabled,
+            "configuration":profile.configuration},
+        "configuration_debug":format!("{:?}",config::runtime()),"budget":observation::budget(&config::budget()),
+        "boundaries":{"composition":"direct-wasmtime-factory","preparation":"explicit-before-invocation-population",
+            "construction":"owned-request-and-boxed-backend-future","invoke":"poll-through-contained-report-and-future-drop",
+            "backend_total_excludes":"outer-context-validation","reclamation":"two-actual-drop-spans-excluding-classification",
+            "allocation_selection":"union-of-construction-and-poll-including-warmup","context_capacity":"logical-Rust-capacity-not-allocator-usable-size"},
+        "initial_resources":observation::resources(backend.resource_snapshot()),"initial_cache":backend.cache_accounting_snapshot(),
+        "initial_observer":observation::input(observer,origin)?
+    }))
+}
+
+fn freeze_contexts(
+    generated: &mut Generated,
+    backend: &WasmtimeBackend,
+    template: &Template,
+    root: &Path,
+    directory: &Path,
+) -> Result<Vec<Value>> {
+    let (contexts, probes) = context::generate(backend, template)?;
+    for (value, charge) in contexts {
+        let artifact = files::retain(
+            root,
+            &directory.join(format!("{}.json", value.shape)),
+            &serde_json::to_vec(&value)?,
+        )?;
+        generated.contexts.push(ContextFile {
+            shape: value.shape,
+            artifact,
+            charge,
+        });
+    }
+    Ok(probes)
+}
+
+async fn proofs(
+    backend: &WasmtimeBackend,
+    template: &Template,
+    observer: &InvocationInputObserver,
+    recording: &mut Recording<'_>,
+) -> Result<()> {
+    observer
+        .enable(&[
+            request::identifier(recording.work.invocations),
+            request::identifier(recording.work.invocations + 1),
+        ])
+        .map_err(super::platform)?;
+    for drop_pending in [false, true] {
+        let ordinal = recording.work.invocations;
+        recording.work.invocations += 1;
+        recording.work.proofs += 1;
+        proof::run(
+            backend,
+            template,
+            observer,
+            ordinal,
+            drop_pending,
+            recording.writer,
+            recording.origin,
+        )
+        .await?;
+    }
+    Ok(())
+}
+
+async fn prepare_all(
+    plan: &Plan,
+    factory: &WasmtimeComponentEngineFactory,
+    backend: &WasmtimeBackend,
+    artifacts: &[Artifact],
+    root: &Path,
+    recording: &mut Recording<'_>,
+) -> Result<BTreeMap<String, Template>> {
+    let selected: Vec<&str> = match plan.mode {
+        Mode::Fixtures => vec!["capabilities"],
+        Mode::Normal => vec!["optimization", "capabilities", "generic"],
+        Mode::Allocation => vec![plan::component(&plan.shapes[0])],
+    };
+    let mut templates = BTreeMap::new();
+    for id in selected {
+        let row = artifacts
+            .iter()
+            .find(|v| v.id == id)
+            .ok_or("ownership selected artifact missing")?;
+        let template = prepare(
+            factory,
+            backend,
+            row,
+            root,
+            recording.writer,
+            recording.work,
+            recording.origin,
+        )
+        .await?;
+        templates.insert(id.to_owned(), template);
+    }
+    Ok(templates)
 }
 
 async fn prepare(
@@ -274,9 +341,7 @@ async fn normal(
     manifest: &Manifest,
     plan: &Plan,
     root: &Path,
-    writer: &mut Writer,
-    work: &mut Work,
-    origin: Instant,
+    recording: &mut Recording<'_>,
 ) -> Result<()> {
     for shape in &plan.shapes {
         let template = &templates[plan::component(shape)];
@@ -288,7 +353,7 @@ async fn normal(
                     template, &context, b"[]", &control, "snapshot",
                 ))
                 .map_err(super::platform)?;
-            work.context_checks += 1;
+            recording.work.context_checks += 1;
             if context::charge(observed) != *expected
                 || shape == "context-near-limit"
                     && !(512..=1024).contains(&observed.remaining_bytes)
@@ -300,8 +365,8 @@ async fn normal(
             (context::Context::small(), manifest.payload(root, shape)?)
         };
         for iteration in 0..plan.count() {
-            let ordinal = work.invocations;
-            work.invocations += 1;
+            let ordinal = recording.work.invocations;
+            recording.work.invocations += 1;
             let phase = if iteration < plan.warmup_per_shape {
                 "warmup"
             } else {
@@ -318,8 +383,8 @@ async fn normal(
                     context: &context,
                     payload: &payload,
                 },
-                writer,
-                origin,
+                recording.writer,
+                recording.origin,
             )
             .await?;
         }
