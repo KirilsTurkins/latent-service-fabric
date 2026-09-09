@@ -61,7 +61,7 @@ class EngineFailedSmokeTests(unittest.TestCase):
                 diagnostic.oracle(call, records)
 
 
-class EngineDeadlineProjectionTests(unittest.TestCase):
+class EngineLegacyDeadlineProjectionTests(unittest.TestCase):
     def offer(self, origin, uncertainty):
         # Projection arithmetic unit; no forged successful RPC/source receipt.
         absolute, remainder = divmod(origin - uncertainty + 5_000_000_000, 1_000_000)
@@ -75,7 +75,7 @@ class EngineDeadlineProjectionTests(unittest.TestCase):
         for origin, uncertainty in ((1_000_001, 2), (1_000_000, 0), (1_999_999, 649),
                                     (1_788_987_889_384_972_573, 649)):
             row = self.offer(origin, uncertainty)
-            calls.clock(row, origin, 300000, uncertainty)
+            calls.clock(row, origin, 300000, uncertainty, legacy_clock=True)
             projected = int(row["deadline_unix_millis"]) * 1_000_000
             self.assertLessEqual(projected, origin - uncertainty + 5_000_000_000)
             self.assertLess(int(row["absolute_deadline_floor_loss_nanos"]), 1_000_000)
@@ -91,9 +91,9 @@ class EngineDeadlineProjectionTests(unittest.TestCase):
             row = dict(original)
             row[key] = str(int(row[key]) + 1)
             with self.subTest(key=key), self.assertRaisesRegex(EvidenceError, "outer-deadline-crossed"):
-                calls.clock(row, 1_000_001, 300000, 2)
+                calls.clock(row, 1_000_001, 300000, 2, legacy_clock=True)
         with self.assertRaisesRegex(EvidenceError, "anchor-underflow"):
-            calls.clock(original, 1, 300000, 2)
+            calls.clock(original, 1, 300000, 2, legacy_clock=True)
 
     def test_actual_old_ceil_request_is_not_accepted_as_new_floor_evidence(self):
         path = Path(__file__).parent / "fixtures/engine-smoke02-failed.json.gz"
@@ -106,7 +106,77 @@ class EngineDeadlineProjectionTests(unittest.TestCase):
         row["absolute_deadline_total_loss_nanos"] = str(uncertainty + conservative % 1_000_000)
         self.assertEqual(row["grpc_code"], 3)
         with self.assertRaisesRegex(EvidenceError, "outer-deadline-crossed"):
-            calls.clock(row, origin, int(value["elapsed_nanos"]), uncertainty)
+            calls.clock(row, origin, int(value["elapsed_nanos"]), uncertainty, legacy_clock=True)
+
+
+class EngineFreshDeadlineProjectionTests(unittest.TestCase):
+    ORIGIN = 1_788_987_889_384_972_573
+    UNCERTAINTY = 649
+
+    def offer(self, unix=None, interval=20000):
+        # Projection-only unit: no successful RPC or source/build receipt is
+        # fabricated. The wall sample is independent of the campaign anchor.
+        scheduled, start = 1_100_000_000, 1_100_010_000
+        finish, dispatch, completed = start + interval, scheduled + 100000, scheduled + 200000
+        deadline = scheduled + 5_000_000_000
+        unix = self.ORIGIN + start if unix is None else unix
+        absolute, remainder = divmod(unix + max(0, deadline - finish), 1_000_000)
+        return {"scheduled_nanos": str(scheduled), "dispatch_nanos": str(dispatch), "completed_nanos": str(completed),
+                "deadline_nanos": str(deadline), "deadline_unix_millis": str(absolute),
+                "deadline_clock_sample": {"started_nanos": str(start), "finished_nanos": str(finish), "unix_nanos": str(unix)},
+                "absolute_deadline_floor_loss_nanos": str(remainder),
+                "absolute_deadline_total_loss_nanos": str(interval + remainder),
+                "dispatch_lag_nanos": "100000", "overshoot_nanos": "0", "grpc_timeout_header": "4999900u"}
+
+    def check(self, row, **options):
+        return calls.clock(row, self.ORIGIN, 1_200_000_000, self.UNCERTAINTY, **options)
+
+    def test_fresh_floor_and_bracket_loss_at_millisecond_boundaries(self):
+        for unix, interval in ((1_000_000, 0), (1_000_001, 1), (1_999_999, 20000), (self.ORIGIN, 90000)):
+            row = self.offer(unix, interval)
+            self.check(row)
+            sample = row["deadline_clock_sample"]
+            projected = int(row["deadline_unix_millis"]) * 1_000_000
+            conservative = unix + int(row["deadline_nanos"]) - int(sample["finished_nanos"])
+            self.assertLessEqual(projected, conservative)
+            self.assertLess(conservative - projected, 1_000_000)
+            self.assertEqual(unix + int(row["deadline_nanos"]) - int(sample["started_nanos"]) - projected,
+                             int(row["absolute_deadline_total_loss_nanos"]))
+
+    def test_three_millisecond_backward_wall_drift_uses_actual_offer_sample(self):
+        row = self.offer(self.ORIGIN + 1_100_010_000 - 3_000_000)
+        self.check(row)
+        legacy_absolute = (self.ORIGIN - self.UNCERTAINTY + int(row["deadline_nanos"])) // 1_000_000
+        self.assertGreaterEqual(legacy_absolute - int(row["deadline_unix_millis"]), 3)
+        row["deadline_unix_millis"] = str(legacy_absolute)
+        with self.assertRaisesRegex(EvidenceError, "outer-deadline-crossed"):
+            self.check(row)
+
+    def test_sample_clock_chronology_and_wall_projection_crossings_reject(self):
+        changes = ({"started_nanos": "1099999999"}, {"finished_nanos": "1100009999"},
+                   {"finished_nanos": "1100100001"}, {"unix_nanos": "0"},
+                   {"started_nanos": True}, {"unix_nanos": "-1"}, {"unexpected": "1"})
+        for mutation in changes:
+            row = self.offer()
+            row["deadline_clock_sample"].update(mutation)
+            with self.subTest(mutation=mutation), self.assertRaises(EvidenceError):
+                self.check(row)
+        for key in ("deadline_unix_millis", "absolute_deadline_floor_loss_nanos", "absolute_deadline_total_loss_nanos"):
+            row = self.offer()
+            row[key] = str(int(row[key]) + 1)
+            with self.subTest(field=key), self.assertRaisesRegex(EvidenceError, "outer-deadline-crossed"):
+                self.check(row)
+
+    def test_fresh_sample_required_without_implicit_legacy_fallback(self):
+        row = self.offer()
+        with self.assertRaisesRegex(EvidenceError, "legacy-clock-with-fresh-sample"):
+            self.check(row, legacy_clock=True)
+        del row["deadline_clock_sample"]
+        with self.assertRaisesRegex(EvidenceError, "fresh-deadline-clock-missing"):
+            self.check(row)
+        for invalid in (None, 1, "legacy"):
+            with self.subTest(mode=invalid), self.assertRaisesRegex(EvidenceError, "clock-mode"):
+                self.check(row, legacy_clock=invalid)
 
 
 class EngineTransportStatusTests(unittest.TestCase):

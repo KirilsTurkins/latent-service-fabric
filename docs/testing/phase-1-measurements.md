@@ -753,14 +753,29 @@ namespace. That failed attempt remains retained; the corrected common fixture
 recipe requires new clean build receipts and a fresh smoke output directory.
 
 Each matrix request keeps a five-second monotonic transport window, while its
-native wall grant is explicit per case. Its absolute Unix deadline floors the
-anchored deadline after subtracting the recorded clock-anchor uncertainty;
-the raw row retains the additional floor loss (less than one millisecond) and
-their combined loss. This prevents an upward rounding step from exceeding the
-node's unchanged five-second request limit. Guest deadline snapshots must match
+native wall grant is explicit per case. Before dispatch it brackets a fresh
+live Unix-clock read with monotonic `started_nanos` and `finished_nanos`, retained
+alongside `unix_nanos` in `deadline_clock_sample`. Replay requires scheduled
+time <= sample start <= sample finish <= dispatch. The absolute Unix deadline is
+`floor((unix_nanos + max(0, deadline_nanos - finished_nanos)) / 1_000_000)`.
+The raw row retains the floor remainder (less than one millisecond) and the
+sample bracket duration plus that remainder as total projection loss. This
+uses the actual offer's wall clock instead of extrapolating the campaign's
+initial wall/monotonic anchor; it does not change the node's five-second limit,
+gRPC remaining-time header, or native grant. Guest deadline snapshots must match
 the actual admitted ledger, which can expire earlier than transport. WIT absent
 options use `{"none":null}`. A second failed matrix smoke exposed the old ceiling
 and absent-option oracle mistakes and remains excluded from qualified results.
+Full matrix04 later retained three owners and 2,382 offered Invokes / 4,827
+commands: control D0 and candidate D0 passed, while P0 retained 448 successes
+followed by 346 `InvalidArgument` transport failures reporting an absolute
+deadline above the configured maximum. Its clean shutdown and failed raw graph
+remain retained; the partial run is excluded from full results. The fresh
+per-offer clock projection replaces the stale campaign-anchor projection in
+new evidence, without changing the population. Production replay requires the
+new sample. An explicit keyword-only legacy-clock opt-in is used only by tests
+for unchanged dirty snapshot11 fixtures; production suite parsing never enables
+it or silently falls back when a fresh sample is absent.
 Transport failures retain their actual status code and at most 2,048 UTF-8 bytes
 of the message, with its original byte count and explicit truncation flag.
 The fuel and memory fault cases additionally retain one bounded, tenant-scoped

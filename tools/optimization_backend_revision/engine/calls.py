@@ -30,7 +30,8 @@ def blob(value, payload=None, *, response=False):
     return decoded
 
 
-def clock(row, origin, elapsed, uncertainty):
+def clock(row, origin, elapsed, uncertainty, *, legacy_clock=False):
+    require(type(legacy_clock) is bool, "engine-clock-mode")
     scheduled, dispatch, completed, deadline = (uint(row[key]) for key in
                                                ("scheduled_nanos", "dispatch_nanos", "completed_nanos", "deadline_nanos"))
     require(0 <= scheduled <= dispatch <= completed <= elapsed and deadline == scheduled + 5_000_000_000
@@ -38,11 +39,21 @@ def clock(row, origin, elapsed, uncertainty):
             and uint(row["overshoot_nanos"]) == max(0, completed - deadline), "engine-offer-clock-crossed")
     require(type(origin) is int and type(uncertainty) is int and 0 <= uncertainty <= origin,
             "engine-clock-anchor-underflow")
-    conservative = origin - uncertainty + deadline
+    if legacy_clock:
+        # Explicit historical dirty-fixture replay only. Production parse never
+        # opts in and a mixed old/new row cannot silently choose this formula.
+        require("deadline_clock_sample" not in row, "engine-legacy-clock-with-fresh-sample")
+        conservative, interval = origin - uncertainty + deadline, uncertainty
+    else:
+        require("deadline_clock_sample" in row, "engine-fresh-deadline-clock-missing")
+        sample = fields(row["deadline_clock_sample"], "started_nanos finished_nanos unix_nanos")
+        start, finish, unix = (uint(sample[key]) for key in ("started_nanos", "finished_nanos", "unix_nanos"))
+        require(scheduled <= start <= finish <= dispatch, "engine-deadline-clock-outside-offer")
+        conservative, interval = unix + max(0, deadline - finish), finish - start
     absolute, floor_loss = divmod(conservative, 1_000_000)
     require(uint(row["deadline_unix_millis"]) == absolute
             and uint(row["absolute_deadline_floor_loss_nanos"]) == floor_loss
-            and uint(row["absolute_deadline_total_loss_nanos"]) == uncertainty + floor_loss,
+            and uint(row["absolute_deadline_total_loss_nanos"]) == interval + floor_loss,
             "engine-outer-deadline-crossed")
     header = row["grpc_timeout_header"]
     require(isinstance(header, str) and re.fullmatch(r"[0-9]{1,8}[HMSmun]", header), "engine-timeout-header")
@@ -66,8 +77,10 @@ def transport_status(row):
             "engine-transport-message-bound-or-truncation")
 
 
-def validate(row, expected, ordinal, fixtures, origin, elapsed, pins, uncertainty):
-    fields(row, BASE + (" cleanup_log" if expected["phase"] == "functional" else ""))
+def validate(row, expected, ordinal, fixtures, origin, elapsed, pins, uncertainty, *, legacy_clock=False):
+    require(type(legacy_clock) is bool, "engine-clock-mode")
+    fields(row, BASE + ("" if legacy_clock else " deadline_clock_sample")
+           + (" cleanup_log" if expected["phase"] == "functional" else ""))
     require(row["kind"] == "invoke" and row["ordinal"] == str(ordinal)
             and all(row[name] == expected[name] for name in ("phase", "phase_kind", "activation_id"))
             and row["index"] == str(expected["index"]), "engine-offer-population-crossed")
@@ -82,7 +95,7 @@ def validate(row, expected, ordinal, fixtures, origin, elapsed, pins, uncertaint
             and request["parent"] == f"engine-parent-{marker}"
             and request["metadata"] == {"guest.marker": marker, "internal.secret": f"private-{marker}"}, "engine-request-context-crossed")
     blob(request["payload"], expected["payload"])
-    scheduled, dispatch, completed = clock(row, origin, elapsed, uncertainty)
+    scheduled, dispatch, completed = clock(row, origin, elapsed, uncertainty, legacy_clock=legacy_clock)
     transport_status(row)
     require(row["rpc_received"] is True and row["valid_response"] is True and row["semantic_validated"] is True
             and row["outcome"] == ("success" if expected["code"] is None else "platform-failure"), "engine-qualified-offer-not-semantic")
