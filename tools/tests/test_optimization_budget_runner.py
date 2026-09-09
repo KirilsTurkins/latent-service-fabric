@@ -1,5 +1,6 @@
 """Budget-only reuse guards and one-pass build ownership, without actual Git or builds."""
 from pathlib import Path
+import json
 from types import SimpleNamespace
 import tempfile
 import unittest
@@ -10,6 +11,26 @@ from tools.optimization_revision_runner import backend, budget, budget_build, bu
 
 
 class BudgetRunnerTests(unittest.TestCase):
+    def test_actual_config_is_written_once_and_existing_attempt_is_preserved(self):
+        from tools.optimization_runner import fixtures
+        from tools.optimization_revision_evidence.budget import configuration
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = budget.node_config(root, root / "data")
+            original = path.read_bytes()
+            value = json.loads(original)
+            configuration(value)
+            self.assertEqual(value["workers"], {"runtime": 2, "control": 4})
+            self.assertEqual(value["cache"], {"entries": 4, "preparations": 4, "compilerWorkers": 2})
+            with self.assertRaises(FileExistsError):
+                budget.node_config(root, root / "other-data")
+            self.assertEqual(path.read_bytes(), original)
+            legacy_root = root / "legacy"
+            legacy_root.mkdir()
+            legacy = json.loads(fixtures.node_config(legacy_root, root / "legacy-data").read_bytes())
+            self.assertEqual(legacy["workers"], {"runtime": 2, "control": 2})
+            self.assertEqual(legacy["cache"], {"entries": 4, "preparations": 1})
+
     def test_data_cleanup_receipt_survives_failed_seed_or_client(self):
         with tempfile.TemporaryDirectory() as temporary:
             result, observed = {"data_removed": False, "status": "failed"}, None
