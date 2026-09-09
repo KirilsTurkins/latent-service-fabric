@@ -11,10 +11,12 @@ from . import resources
 from .files import compress_folded, fingerprint, reference, total_bytes, warm, write_json
 from .helpers import command, directory_bytes
 from .model import MAX_FILE_BYTES, MAX_TOTAL_BYTES, run_record
+from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit
 
 
 def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
-                    deadline: int, remaining: int) -> dict:
+                    deadline: int, remaining: int, *, maximum_folded_bytes: int = MAX_FOLDED_BYTES) -> dict:
+    maximum_folded_bytes = folded_limit(maximum_folded_bytes)
     matches = list(prefix.parent.glob(prefix.name + "*.zst"))
     if len(matches) != 1:
         raise ValueError("heaptrack-raw-count")
@@ -36,18 +38,19 @@ def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
                 120, output, deadline, watched=prefix.parent, remaining=remaining)
         if path.stat().st_size == 0:
             raise ValueError("heaptrack-profile-empty")
-        refs[kind] = compress_folded(path, output)
+        refs[kind] = compress_folded(path, output, maximum_bytes=maximum_folded_bytes)
     return refs
 
 
 def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, output: Path,
             deadline: int, heaptrack_print: str, decompressor: str, environment: dict | None = None,
-            *, normal_timeout: int = 60) -> None:
+            *, normal_timeout: int = 60, maximum_folded_bytes: int = MAX_FOLDED_BYTES) -> None:
     """Update a pre-retained receipt even when acquisition or verification fails."""
     import resource  # Linux-only execution; the population/model remains portable.
 
     if type(normal_timeout) is not int or normal_timeout not in (60, 90):
         raise ValueError("unsupported-normal-probe-timeout")
+    maximum_folded_bytes = folded_limit(maximum_folded_bytes)
     directory.mkdir(parents=True)
     if fixture is not None:
         record["warmup"] = warm(output / fixture["root"], fixture["files"], output)
@@ -132,7 +135,7 @@ def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, o
         raise ValueError("probe-exit-failed")
     if mode == "allocation":
         record["profile_refs"] = profile_reports(directory / "heaptrack", heaptrack_print, decompressor,
-                                                output, deadline, remaining)
+                                                output, deadline, remaining, maximum_folded_bytes=maximum_folded_bytes)
     record.update(status="passed", reason=None)
 
 

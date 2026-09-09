@@ -508,6 +508,17 @@ of frame peaks. Missing symbols or unresolved frames produce unavailable
 attribution, not zero. Logical Rust capacity, allocated bytes, selected live
 heap, guest linear memory and process RSS remain separate quantities.
 
+The ownership suite declares a 128 MiB expanded limit per folded stream. The
+first release smoke produced a valid 93,464,548-byte folded allocation report
+and stopped at the inherited 64 MiB compression bound after its collector and
+profiler completed. That failed attempt remains retained. Ownership collection,
+lossless compression, whole-process totals and selected-frame replay now use
+the same explicit limit; historical experiments keep 64 MiB. The 64 KiB line,
+100,000-row, 512-frame, 256 MiB file and 1 GiB evidence-root limits are unchanged.
+Extraction compresses and verifies each complete folded stream before removing
+its temporary expanded copy. Retained gzip streams remain subject to the root
+limit; a later overflow fails the collection and cannot discard a shape.
+
 Normal process CPU uses serial `RUSAGE_CHILDREN` deltas around the owned child
 and includes setup, validation and observation holds; it is not per-call CPU.
 Normal RSS includes actual live samples and the kernel high-water mark.

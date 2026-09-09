@@ -8,6 +8,7 @@ SHAPES = ("warm-echo", "payload-64k", "payload-near-limit",
           "context-small", "context-64k", "context-near-limit")
 ARTIFACTS = ("optimization", "capabilities", "generic")
 MAX_DOCUMENT_BYTES = 8 * 1024**2
+MAX_FOLDED_BYTES = 128 * 1024**2
 MAX_TOTAL_BYTES = 1024**3
 MAX_FILES = 4096
 STAGE_SECONDS = 7200
@@ -39,7 +40,7 @@ def suite_plan(profile):
             "shapes": list(SHAPES), "normal": plan(profile),
             "allocation": [plan(profile, mode="allocation", shape=shape) for shape in SHAPES],
             "maximum_run_seconds": "7200", "maximum_artifact_bytes": str(MAX_TOTAL_BYTES),
-            "maximum_artifact_files": MAX_FILES}
+            "maximum_artifact_files": MAX_FILES, "maximum_folded_expanded_bytes": str(MAX_FOLDED_BYTES)}
 
 
 def population(profile):

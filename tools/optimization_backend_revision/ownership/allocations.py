@@ -5,7 +5,7 @@ import re
 from tools.artifact_identity_evidence import heaptrack
 from tools.optimization_cache_lookup import allocations as common
 from tools.optimization_evidence.common import require
-from .model import SYMBOLS
+from .model import MAX_FOLDED_BYTES, SYMBOLS
 
 
 class Attribution(common.Attribution):
@@ -66,7 +66,8 @@ def attribute(record, binary, proof, tool, artifacts, whole):
     raw, state = common.replay_attribution(artifacts.path(record["profile_refs"]["interpreted"]),
                                            record["command"][3], groups, state_type=Attribution)
     require(raw == whole, "ownership-allocation-whole-replay-crossed")
-    total, selected = common.folded_attribution(artifacts.path(record["profile_refs"]["allocations"]), state.folded_labels)
+    total, selected = common.folded_attribution(artifacts.path(record["profile_refs"]["allocations"]), state.folded_labels,
+                                               maximum_bytes=MAX_FOLDED_BYTES)
     union = state.statistics[2]
     require(total == int(raw["allocation_count"]) and selected == union["allocation_count"] == state.named_count,
             "ownership-folded-union-attribution-crossed")

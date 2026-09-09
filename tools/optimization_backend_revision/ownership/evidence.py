@@ -117,7 +117,7 @@ def validate_suite(path):
                 summary.update(cpu=cpu, timing=aggregate.normal(result))
             else:
                 require(row["cpu"] is None, "ownership-profiled-cpu-presented-as-normal")
-                whole = allocation(row, suite, artifacts)
+                whole = allocation(row, suite, artifacts, maximum_folded_bytes=model.MAX_FOLDED_BYTES)
                 attributed = allocations.attribute(row, binary, suite["symbols"][row["variant"]], suite["tools"]["nm"], artifacts, whole)
                 summary.update(cpu=None, timing=None, whole_process_allocations=whole, allocation_attribution=attributed)
         records.append(summary)
