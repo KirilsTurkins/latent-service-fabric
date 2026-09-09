@@ -22,7 +22,15 @@ pub enum InvocationInputDropReason {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct InvocationInputIdentity {
     pub token: u8,
+    #[serde(serialize_with = "serialize_activation_id")]
     pub activation_id: ActivationId,
+}
+
+fn serialize_activation_id<S: serde::Serializer>(
+    id: &ActivationId,
+    serializer: S,
+) -> Result<S::Ok, S::Error> {
+    serializer.serialize_str(&id.0)
 }
 
 /// Actual raw-vector observations; capacities are Rust-visible bytes, not RSS.
