@@ -159,18 +159,24 @@ impl Harness {
     }
 
     pub fn stop(&mut self) {
+        drop(self.stop_report());
+    }
+
+    pub fn stop_report(&mut self) -> Value {
         let node = self.node.take().expect("live node");
         node.signal("-TERM");
         let output = node.wait();
         assert_eq!(output.code, Some(0), "{}", output.stderr);
         assert!(output.stderr.is_empty());
-        let records = output
+        let mut records = output
             .stdout
             .lines()
             .map(|line| serde_json::from_str::<Value>(line).expect("node status"))
             .collect::<Vec<_>>();
         assert_eq!(records.len(), 2);
-        assert_clean(&records[1]);
+        let stopped = records.pop().expect("stopped receipt");
+        assert_clean(&stopped);
+        stopped
     }
 }
 

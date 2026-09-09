@@ -78,8 +78,9 @@ pub fn scenario() {
             assert_eq!(inventory.cache_summary.entries, 0);
             assert!(inventory.cache_entries.is_empty());
             assert!(inventory.topology.available && inventory.topology.complete);
-            assert_eq!(inventory.topology.entries.len(), 20);
+            assert_eq!(inventory.topology.entries.len(), 22);
             assert_compiler_topology(&inventory.topology.entries);
+            assert_cleanup_topology(&inventory.topology.entries);
             for row in inventory
                 .topology
                 .entries
@@ -115,4 +116,22 @@ fn assert_compiler_topology(entries: &[NodeTopologyEntry]) {
     assert!(compiler
         .active_count
         .is_some_and(|live| live <= compiler.configured_count));
+}
+
+fn assert_cleanup_topology(entries: &[NodeTopologyEntry]) {
+    for (name, kind, configured, active) in [
+        ("invocation-cleanup-driver", "task", 1, 1),
+        // The fixture has one cell plus two queue slots and no Invoke requests.
+        ("invocation-cleanup-slots", "continuation", 3, 0),
+    ] {
+        let mut matching = entries.iter().filter(|row| row.name == name);
+        let row = matching.next().expect("actual cleanup topology");
+        assert!(matching.next().is_none(), "duplicate cleanup row: {name}");
+        assert_eq!(row.kind, kind);
+        assert_eq!(row.ownership, ResourceOwnership::NodeFixed);
+        assert_eq!(
+            (row.configured_count, row.active_count),
+            (configured, Some(active))
+        );
+    }
 }
