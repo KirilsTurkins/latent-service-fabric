@@ -97,7 +97,7 @@
       ]
     },
     "scope": {
-      "const": "lsf-revisions-shared-external-client-request-payload-codec"
+      "const": "lsf-revisions-shared-external-client-typed-codec"
     },
     "suite_sha256": {
       "type": "string",

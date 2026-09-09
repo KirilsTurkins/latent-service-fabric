@@ -8,7 +8,7 @@ import time
 from tools.optimization_runner.cgroups import cgroup
 from tools.optimization_runner.processes import OwnedProcess
 from . import resources
-from .files import compress_folded, fingerprint, reference, total_bytes, warm, write_json
+from .files import compress_folded, fingerprint, reference, total_bytes, total_limit, warm, write_json
 from .helpers import command, directory_bytes
 from .model import MAX_FILE_BYTES, MAX_TOTAL_BYTES, run_record
 from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit
@@ -44,19 +44,22 @@ def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
 
 def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, output: Path,
             deadline: int, heaptrack_print: str, decompressor: str, environment: dict | None = None,
-            *, normal_timeout: int = 60, maximum_folded_bytes: int = MAX_FOLDED_BYTES) -> None:
+            *, normal_timeout: int = 60, maximum_folded_bytes: int = MAX_FOLDED_BYTES,
+            maximum_total_bytes: int = MAX_TOTAL_BYTES) -> None:
     """Update a pre-retained receipt even when acquisition or verification fails."""
-    import resource  # Linux-only execution; the population/model remains portable.
-
+    maximum_total_bytes = total_limit(maximum_total_bytes)
     if type(normal_timeout) is not int or normal_timeout not in (60, 90):
         raise ValueError("unsupported-normal-probe-timeout")
     maximum_folded_bytes = folded_limit(maximum_folded_bytes)
+    import resource  # Linux-only execution; argument validation remains portable.
+
     directory.mkdir(parents=True)
     if fixture is not None:
-        record["warmup"] = warm(output / fixture["root"], fixture["files"], output)
+        record["warmup"] = warm(output / fixture["root"], fixture["files"], output,
+                                maximum_total_bytes=maximum_total_bytes)
     if reference(output / binary["path"], output) != binary:
         raise ValueError("retained-binary-mutated")
-    remaining = MAX_TOTAL_BYTES - total_bytes(output)
+    remaining = maximum_total_bytes - total_bytes(output, maximum_total_bytes=maximum_total_bytes)
     mode = record["mode"]
     usage = resource.getrusage(resource.RUSAGE_CHILDREN) if mode == "normal" else None
     owner = None

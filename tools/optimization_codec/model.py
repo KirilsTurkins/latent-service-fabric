@@ -9,7 +9,8 @@ FAMILIES = ("scalar-params", "byte-list", "nested-record", "string-64k", "string
 SCHEMA = "latent.optimization.codec-suite.v1"
 TYPE_FIXTURE = "crates/latent-wasmtime/src/values/types.wasm"
 MAX_DOCUMENT_BYTES, MAX_FOLDED_BYTES = 8 * 1024**2, 128 * 1024**2
-MAX_TOTAL_BYTES, MAX_FILES, STAGE_SECONDS = 1024**3, 4096, 7200
+MAX_TOTAL_BYTES, MAX_FILES, STAGE_SECONDS = 2 * 1024**3, 4096, 7200
+MAX_PROFILE_RECORDS = 12_000_000
 LIMITS = dict(max_input_bytes=1024**2, max_output_bytes=1024**2, max_depth=32,
               max_nodes=16384, max_string_bytes=256*1024, max_collection_items=4096,
               max_type_nodes=4096, max_type_name_bytes=256, max_lifted_bytes=16*1024**2,
@@ -35,6 +36,7 @@ def suite_plan(profile):
             "pair_order": "odd-control-candidate-even-candidate-control",
             "maximum_run_seconds": str(STAGE_SECONDS), "maximum_artifact_bytes": str(MAX_TOTAL_BYTES),
             "maximum_artifact_files": MAX_FILES, "maximum_folded_expanded_bytes": str(MAX_FOLDED_BYTES),
+            "maximum_profile_records": MAX_PROFILE_RECORDS,
             "normal_timeout_seconds": 90, "allocation_timeout_seconds": 180, "extraction_timeout_seconds": 120,
             "symbols": list(SYMBOLS), "boundary": "separate-actual-codec-and-result-drop-batches-no-guest-invocation"}
 

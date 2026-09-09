@@ -144,9 +144,11 @@ observations do not replace the original Phase 1 scale and soak evidence.
 `tools/package_phase1_evidence.py` retains gzip level 6 by default and accepts
 `--compression-level 9` for denser lossless packaging. `--split-archive` stores
 the same gzip stream in two to four parts of at most 50 MB, bounded to 198 MB
-total. Ordinary archives retain their 99 MB cap. Both forms keep the 1 GiB
-expanded and 5,000-file limits and require full evidence replay; the validator
-checks ordered part identities and the reconstructed archive before extraction.
+total. Ordinary archives retain their 99 MB cap. Both forms keep the 5,000-file
+limit and require full evidence replay. The expanded default remains 1 GiB;
+only the explicitly identified [codec-only evidence](#typed-codec-experiments)
+permits 2 GiB. The validator checks ordered part identities, the reconstructed
+archive and the aggregate that selects the bound before extraction.
 
 The two-call batch records offered concurrency. The queue batch proves two
 running holders and three queued waiters, then cancels the holders to release
@@ -638,9 +640,30 @@ bounds. Per-build commands have 3,600 s, normal children 90 s, profiled children
 180 s and extraction tools 120 s, each clipped to its enclosing stage. The
 codec suite explicitly permits 128 MiB expanded folded streams; historical
 defaults stay at 64 MiB. The existing 64 KiB line, 100,000-row, 512-frame,
-256 MiB file and 1 GiB root limits remain. Raw codec documents are bounded to
-8 MiB. Failures retain their completed work and owned cleanup receipts, fail
+256 MiB file and 4,096 retained-file limits remain. Codec alone declares a
+2 GiB evidence-root limit and 12,000,000 interpreted profile records; other
+experiments retain the 1 GiB root and 4,000,000-record defaults. The 250,000-entry
+profile table limits remain unchanged. Whole-profile and selected-origin
+replay enforce the same declared record limit. Raw codec documents are bounded
+to 8 MiB. Failures retain their completed work and owned cleanup receipts, fail
 population qualification and require fresh output roots for retries.
+
+The first full codec attempt stopped after 59 children at the original root
+reservation; its retained profiles also exceeded the original record limit.
+The observed maximum was 9,831,105 records in an approximately 59 MiB text
+profile, and complete paired repetitions retained approximately 188 MB each.
+That incomplete attempt remains diagnostic evidence. The explicit larger
+codec limits preserve all 168 children and 449,680 operations. Subsequent
+collection uses fresh roots and exact source/build receipts; the already
+completed external RPC population retains its original identity and protocol.
+
+Archive packaging selects the 2 GiB expanded allowance only from the bounded
+outer codec aggregate, binds those exact bytes to the archived aggregate, and
+requires the same archived kind and complete semantic replay. All codec members
+remain bounded to 256 MiB; the archive entry cap is 5,000. Other evidence kinds,
+including codec RPC, keep 1 GiB. The 99 MB monolithic and 198 MB split compressed
+limits are unchanged; a size overflow fails publication rather than dropping
+evidence or adding an unbounded archive option.
 
 From a clean identified harness, supply full 40-character refs:
 

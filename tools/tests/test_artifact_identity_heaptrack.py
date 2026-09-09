@@ -142,13 +142,14 @@ class HeaptrackReplayTests(unittest.TestCase):
         for name, value, contents, reason in (
             ("MAX_BYTES", len(recording()) - 1, recording(), "byte-bound"),
             ("MAX_LINE_BYTES", 16, recording(), "line-bound-or-truncated"),
-            ("MAX_RECORDS", 4, recording(), "record-bound"),
             ("MAX_TABLE_ENTRIES", 2, recording(), "table-bound"),
             ("MAX_TABLE_ENTRIES", 3, recording(b"a 0 0\na 0 0\n"), "table-bound"),
         ):
             with self.subTest(name=name):
                 with patch.object(heaptrack, name, value):
                     self.rejects(contents, reason)
+        with patch.object(heaptrack, "record_limit", return_value=4):
+            self.rejects(recording(), "record-bound")
 
     def test_invalid_record_bytes_and_non_regular_inputs_are_rejected(self):
         self.rejects(recording().replace(b" m\n", b" \0\n"), "invalid-record-byte")

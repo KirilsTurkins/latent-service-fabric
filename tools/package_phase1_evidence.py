@@ -15,13 +15,13 @@ try:
     from .validate_phase1_archive import (ARCHIVE, MANIFEST, MAX_COMPRESSED, MAX_EXPANDED,
                                          MAX_FILES, evidence_kind, file_reference, relative_path, require,
                                          verify_package, CHUNK, MAX_SPLIT_COMPRESSED, PARTS_MANIFEST,
-                                         split_layout)
+                                         split_layout, archive_bounds)
 except ImportError:
     import package_phase0_evidence as paths
     from validate_phase1_archive import (ARCHIVE, MANIFEST, MAX_COMPRESSED, MAX_EXPANDED,
                                         MAX_FILES, evidence_kind, file_reference, relative_path, require,
                                         verify_package, CHUNK, MAX_SPLIT_COMPRESSED, PARTS_MANIFEST,
-                                        split_layout)
+                                        split_layout, archive_bounds)
 
 
 def checked_compression_level(value):
@@ -56,20 +56,21 @@ def create_archive(source, stage, policy, compression_level=6, *, split_archive=
     compression_level = checked_compression_level(compression_level)
     require(type(split_archive) is bool, 'split archive option must be a boolean')
     kind = evidence_kind(source)
+    maximum_expanded, maximum_file = archive_bounds(kind)
     files = {relative_path(path.relative_to(source).as_posix()): path
              for path in paths.regular_files(source, 'measurement source')}
     if kind == 'measurement':
         require('measurement-policy.json' not in files, 'source already contains a policy copy')
         files['measurement-policy.json'] = paths.existing_regular_file_path(policy, 'measurement policy')
     require(len(files) <= MAX_FILES, 'too many evidence files')
-    require(sum(path.stat().st_size for path in files.values()) <= MAX_EXPANDED, 'evidence exceeds expanded bound')
+    require(sum(path.stat().st_size for path in files.values()) <= maximum_expanded, 'evidence exceeds expanded bound')
     references = []
     archive_path = stage / ARCHIVE
     with archive_path.open('xb') as output:
         with gzip.GzipFile(filename='', mode='wb', fileobj=output, compresslevel=compression_level, mtime=0) as compressed:
             with tarfile.open(fileobj=compressed, mode='w|', format=tarfile.USTAR_FORMAT) as archive:
                 for name, path in sorted(files.items()):
-                    original = file_reference(path, path.parent)
+                    original = file_reference(path, path.parent, maximum_file)
                     references.append({**original, 'path': name})
                     info = tarfile.TarInfo(name)
                     info.size = int(original['bytes'])

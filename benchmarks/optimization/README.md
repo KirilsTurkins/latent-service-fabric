@@ -314,3 +314,10 @@ CPU/elapsed boundaries and selected allocation-origin attribution. Batch
 averages are separate from RPC latency quantiles; unavailable frame attribution
 is never reported as zero. These schemas describe the protocol and do not
 establish a measured performance result.
+
+Codec-only evidence explicitly allows a 2 GiB retained root and 12,000,000
+interpreted profile records, preserving its full fixed population after the
+first incomplete collection exceeded the original limits. Other experiments,
+including codec RPC, retain the 1 GiB/4,000,000-record defaults. Archive selection
+binds the bounded outer codec aggregate to the archived kind and full replay;
+256 MiB files and the existing compressed transport caps remain unchanged.
