@@ -65,7 +65,7 @@ impl Fixture {
         )
     }
 
-    fn generic() -> Result<Self> {
+    pub fn generic() -> Result<Self> {
         let mut manifest = template()?;
         manifest["component"]["world"] = json!("tests:generic/service@0.1.0");
         manifest["exports"] = json!([

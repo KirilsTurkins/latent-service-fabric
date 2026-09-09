@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use latent_core::{
-    ActivationClock, BoxFuture, BudgetError, ClockSample, EffectiveActivationBudget,
-    IncomingDeadline, PlatformError, PlatformErrorCode, PrincipalKind,
+    ActivationClock, BoxFuture, BudgetError, ClockSample, DeadlineDiagnosticObserver,
+    EffectiveActivationBudget, IncomingDeadline, PlatformError, PlatformErrorCode, PrincipalKind,
 };
 use latent_routing::revision_policy::{ExecutionBackendKind, StateModel};
 use latent_routing::{RevisionAdmissionPolicy, RevisionPolicySource};
@@ -112,7 +112,12 @@ impl LocalAdmissionController {
             request,
             load,
             ClockSample::system_now(),
-            AdmissionClock::Live,
+            ReservationTiming {
+                clock: AdmissionClock::Live,
+                observed_queue_delay_millis: load.queue_delay_millis,
+                load_observed_at: load.observed_at,
+                diagnostic: None,
+            },
             None,
         )
     }
@@ -129,7 +134,38 @@ impl LocalAdmissionController {
             request,
             load,
             sample,
-            AdmissionClock::Fixed(sample.monotonic()),
+            ReservationTiming {
+                clock: AdmissionClock::Fixed(sample.monotonic()),
+                observed_queue_delay_millis: load.queue_delay_millis,
+                load_observed_at: load.observed_at,
+                diagnostic: None,
+            },
+            None,
+        )
+    }
+
+    /// Observe the frozen admission seam without changing its clock semantics.
+    /// Only an activation already bound to this observer produces a record.
+    pub fn admit_at_with_diagnostics(
+        &self,
+        request: AdmissionRequest,
+        sample: ClockSample,
+        observer: &DeadlineDiagnosticObserver,
+    ) -> Result<AdmissionPermit, PlatformError> {
+        let diagnostic = observer
+            .token_for_activation(&request.activation_id.0)
+            .map(|token| (observer, token));
+        let load = self.load.snapshot().map_err(|_| unavailable_load())?;
+        self.admit_observed_at(
+            request,
+            load,
+            sample,
+            ReservationTiming {
+                clock: AdmissionClock::Fixed(sample.monotonic()),
+                observed_queue_delay_millis: load.queue_delay_millis,
+                load_observed_at: load.observed_at,
+                diagnostic,
+            },
             None,
         )
     }
@@ -144,12 +180,22 @@ impl LocalAdmissionController {
         incoming: Option<&IncomingDeadline>,
         clock: &dyn ActivationClock,
     ) -> Result<AdmissionPermit, PlatformError> {
+        let diagnostic = clock.deadline_diagnostic_observer().and_then(|observer| {
+            observer
+                .token_for_activation(&request.activation_id.0)
+                .map(|token| (observer, token))
+        });
         let load = self.load.snapshot().map_err(|_| unavailable_load())?;
         self.admit_observed_at(
             request,
             load,
             clock.sample(),
-            AdmissionClock::Injected(clock),
+            ReservationTiming {
+                clock: AdmissionClock::Injected(clock),
+                observed_queue_delay_millis: load.queue_delay_millis,
+                load_observed_at: load.observed_at,
+                diagnostic,
+            },
             incoming,
         )
     }
@@ -159,7 +205,7 @@ impl LocalAdmissionController {
         request: AdmissionRequest,
         load: NodeLoadSnapshot,
         sample: ClockSample,
-        clock: AdmissionClock<'_>,
+        timing: ReservationTiming<'_>,
         incoming: Option<&IncomingDeadline>,
     ) -> Result<AdmissionPermit, PlatformError> {
         let node = self.quotas.policy();
@@ -227,11 +273,7 @@ impl LocalAdmissionController {
             request.revision,
             grant,
             obligations,
-            ReservationTiming {
-                clock,
-                observed_queue_delay_millis: load.queue_delay_millis,
-                load_observed_at: load.observed_at,
-            },
+            timing,
         )
     }
 }

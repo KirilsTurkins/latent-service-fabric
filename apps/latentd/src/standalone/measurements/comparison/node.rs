@@ -53,11 +53,36 @@ impl Node {
 
     pub async fn start_configured(
         maximum_commands: u64,
+        config: Value,
+        fixture: Fixture,
+        control: tokio::runtime::Handle,
+        threads: RuntimeThreads,
+        origin: Instant,
+    ) -> Result<Self> {
+        Self::start_with_clock(
+            maximum_commands,
+            config,
+            fixture,
+            control,
+            threads,
+            origin,
+            std::sync::Arc::new(latent_core::SystemActivationClock),
+        )
+        .await
+    }
+
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "The bounded collector shares production composition and injects only its observing clock."
+    )]
+    pub async fn start_with_clock(
+        maximum_commands: u64,
         mut config: Value,
         fixture: Fixture,
         control: tokio::runtime::Handle,
         threads: RuntimeThreads,
         origin: Instant,
+        clock: std::sync::Arc<dyn latent_core::ActivationClock>,
     ) -> Result<Self> {
         let parsed: crate::config::NodeConfig = serde_json::from_value(config.clone())?;
         let settings = parsed.derive().map_err(platform)?;
@@ -69,8 +94,8 @@ impl Node {
         let catalog_open = started.elapsed().as_nanos().to_string();
         let artifacts = catalogs.artifacts.clone();
         let started = Instant::now();
-        let owner = Box::pin(StandaloneNode::start_with_catalogs(
-            settings, catalogs, control, threads,
+        let owner = Box::pin(StandaloneNode::start_with_catalogs_and_clock(
+            settings, catalogs, control, threads, clock,
         ))
         .await
         .map_err(platform)?;

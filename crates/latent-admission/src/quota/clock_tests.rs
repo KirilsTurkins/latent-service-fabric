@@ -49,6 +49,7 @@ fn injected_feasibility_clock_is_read_while_the_actual_quota_mutex_is_held() {
                 clock: AdmissionClock::Injected(&clock),
                 observed_queue_delay_millis: 0,
                 load_observed_at: sample.monotonic(),
+                diagnostic: None,
             },
         })
         .unwrap();

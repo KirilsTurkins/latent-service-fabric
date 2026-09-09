@@ -7,6 +7,7 @@ use wasmtime::ResourceLimiter;
 use super::*;
 
 mod deadlines;
+mod diagnostic;
 mod runtime_observation;
 mod support;
 use support::request;

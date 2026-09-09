@@ -273,6 +273,16 @@ impl Inner {
             self.clock.as_ref(),
         )?;
         let budget = ActivationBudget::new(permit.effective_budget().clone());
+        if let Some(observer) = self.clock.deadline_diagnostic_observer() {
+            observer.record_for_activation(
+                &envelope.activation_id.0,
+                latent_core::DeadlineDiagnosticObservation::AdmittedLedger {
+                    observed_at: self.clock.monotonic_now(),
+                    deadline: permit.deadline().clone(),
+                    budget: permit.granted_budget().clone(),
+                },
+            );
+        }
         envelope.budget = permit.granted_budget().clone();
         envelope.deadline_unix_millis = permit.deadline().unix_millis();
         envelope.priority = permit.obligations().priority;

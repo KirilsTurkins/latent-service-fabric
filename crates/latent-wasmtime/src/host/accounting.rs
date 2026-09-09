@@ -66,6 +66,16 @@ impl InvocationAccounting {
             (ActivationBudget::new(grant), deadline)
         };
         let now = clock.monotonic_now();
+        if let Some(observer) = clock.deadline_diagnostic_observer() {
+            observer.record_for_activation(
+                &request.activation.activation_id.0,
+                latent_core::DeadlineDiagnosticObservation::ExecutionDeadline {
+                    observed_at: now,
+                    deadline: deadline.clone(),
+                    budget: budget.granted().clone(),
+                },
+            );
+        }
         check_deadline(&deadline, now)?;
         let initial_fuel = budget.remaining_at(now).cpu_fuel;
         if initial_fuel == 0 {

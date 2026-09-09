@@ -20,6 +20,11 @@ pub trait ActivationClock: Send + Sync {
     fn deadline_wait_observer(&self) -> Option<&crate::DeadlineWaitObserver> {
         None
     }
+
+    /// Optional bounded witnesses of the actual admission and runtime decisions.
+    fn deadline_diagnostic_observer(&self) -> Option<&crate::DeadlineDiagnosticObserver> {
+        None
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]

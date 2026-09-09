@@ -1,6 +1,9 @@
 use std::sync::Mutex;
 
-use latent_core::{ActivationClock, IncomingDeadline, SystemActivationClock};
+use latent_core::{
+    ActivationClock, DeadlineDiagnosticDecision, DeadlineDiagnosticObservation,
+    DeadlineDiagnosticObserver, IncomingDeadline, SystemActivationClock,
+};
 
 use super::*;
 
@@ -9,6 +12,7 @@ struct TestClock {
     now: Mutex<Instant>,
     samples: AtomicUsize,
     reads: AtomicUsize,
+    diagnostic: Option<DeadlineDiagnosticObserver>,
 }
 
 impl TestClock {
@@ -18,6 +22,7 @@ impl TestClock {
             now: Mutex::new(sample.monotonic()),
             samples: AtomicUsize::new(0),
             reads: AtomicUsize::new(0),
+            diagnostic: None,
         }
     }
 
@@ -36,6 +41,10 @@ impl ActivationClock for TestClock {
     fn monotonic_now(&self) -> Instant {
         self.reads.fetch_add(1, Ordering::Relaxed);
         *self.now.lock().unwrap()
+    }
+
+    fn deadline_diagnostic_observer(&self) -> Option<&DeadlineDiagnosticObserver> {
+        self.diagnostic.as_ref()
     }
 }
 
@@ -210,6 +219,183 @@ fn ordinary_custom_clocks_do_not_opt_into_system_deadline_waiting() {
     let clock = TestClock::new(ClockSample::new(1000, Instant::now()));
     assert!(!clock.uses_system_monotonic());
     assert!(clock.deadline_wait_observer().is_none());
+    assert!(clock.deadline_diagnostic_observer().is_none());
     assert!(SystemActivationClock.uses_system_monotonic());
     assert!(SystemActivationClock.deadline_wait_observer().is_none());
+    assert!(SystemActivationClock
+        .deadline_diagnostic_observer()
+        .is_none());
+}
+
+#[test]
+fn diagnostics_retain_the_actual_live_decision_without_an_extra_clock_read() {
+    for (nanos, expected) in [
+        (999_999, DeadlineDiagnosticDecision::Accepted),
+        (1_000_000, DeadlineDiagnosticDecision::QueueInfeasible),
+        (2_000_000, DeadlineDiagnosticDecision::DeadlineExceeded),
+    ] {
+        let h = short_budget_harness();
+        let observer = bound_observer(h.sample, "observed");
+        let mut clock = TestClock::new(h.sample);
+        clock.diagnostic = Some(observer.clone());
+        let clock = Arc::new(clock);
+        let work = Duration::from_nanos(nanos);
+        let controller = advancing_controller(&h, &clock, work);
+        let incoming =
+            IncomingDeadline::new(h.sample.monotonic() + Duration::from_millis(2), 10_002);
+        let result = controller.admit_with_clock(
+            Harness::request("observed"),
+            Some(&incoming),
+            clock.as_ref(),
+        );
+        assert_eq!(
+            result.is_ok(),
+            expected == DeadlineDiagnosticDecision::Accepted
+        );
+        let snapshot = observer.snapshot();
+        assert!(!snapshot.overflowed);
+        assert_eq!(snapshot.records.len(), 2);
+        let DeadlineDiagnosticObservation::AdmissionCheck {
+            observed_at,
+            deadline,
+            remaining,
+            required,
+            decision,
+        } = &snapshot.records[1].observation
+        else {
+            panic!("expected actual admission decision");
+        };
+        assert_eq!(*observed_at, h.sample.monotonic() + work);
+        assert_eq!(deadline.monotonic(), Some(incoming.monotonic()));
+        assert_eq!(*remaining, Some(Duration::from_millis(2) - work));
+        assert_eq!(
+            *required,
+            (nanos < 2_000_000).then_some(Duration::from_millis(1))
+        );
+        assert_eq!(*decision, expected);
+        assert_eq!(clock.samples.load(Ordering::Relaxed), 1);
+        assert_eq!(clock.reads.load(Ordering::Relaxed), 1);
+        drop(result);
+        h.assert_empty();
+    }
+}
+
+#[test]
+fn diagnostic_frozen_seam_preserves_legacy_admission_and_ignores_unknown_ids() {
+    let h = short_budget_harness();
+    let observer = bound_observer(h.sample, "observed");
+    let clock = Arc::new(TestClock::new(h.sample));
+    let controller = advancing_controller(&h, &clock, Duration::from_millis(50));
+    let mut request = Harness::request("observed");
+    request.requested_budget.wall_time_limit_millis = Some(2);
+    let plain = controller.admit_at(request.clone(), h.sample).unwrap();
+    let expected_deadline = plain.deadline().clone();
+    drop(plain);
+    let observed = controller
+        .admit_at_with_diagnostics(request, h.sample, &observer)
+        .unwrap();
+    assert_eq!(observed.deadline(), &expected_deadline);
+    drop(observed);
+    let snapshot = observer.snapshot();
+    assert_eq!(snapshot.records.len(), 2);
+    assert_eq!(
+        snapshot.records[1].observation,
+        DeadlineDiagnosticObservation::AdmissionCheck {
+            observed_at: h.sample.monotonic(),
+            deadline: expected_deadline,
+            remaining: Some(Duration::from_millis(2)),
+            required: Some(Duration::from_millis(1)),
+            decision: DeadlineDiagnosticDecision::Accepted,
+        }
+    );
+    drop(
+        controller
+            .admit_at_with_diagnostics(Harness::request("ordinary"), h.sample, &observer)
+            .unwrap(),
+    );
+    assert_eq!(observer.snapshot(), snapshot);
+    assert_eq!(clock.reads.load(Ordering::Relaxed), 0);
+    h.assert_empty();
+}
+
+fn bound_observer(sample: ClockSample, id: &str) -> DeadlineDiagnosticObserver {
+    let observer = DeadlineDiagnosticObserver::new(sample.monotonic());
+    let token = observer
+        .begin(DeadlineDiagnosticObservation::Ingress {
+            observed_at: sample.monotonic(),
+            expires_at: None,
+            deadline_unix_millis: None,
+        })
+        .unwrap();
+    assert!(observer.bind(token, id));
+    observer
+}
+
+#[test]
+fn diagnostics_distinguish_unevaluated_queue_bounds_from_an_absent_deadline() {
+    use crate::timing::{AdmissionClock, ReservationTiming};
+
+    let sample = ClockSample::new(10_000, Instant::now());
+    for expected in [
+        DeadlineDiagnosticDecision::LoadStale,
+        DeadlineDiagnosticDecision::QueueEstimateOverflow,
+        DeadlineDiagnosticDecision::MissingDeadline,
+    ] {
+        let observer = bound_observer(sample, "rejected");
+        let mut node = node_policy();
+        let mut grant_budget = budget();
+        let now = sample.monotonic() + Duration::from_millis(1);
+        match expected {
+            DeadlineDiagnosticDecision::LoadStale => {
+                node.overload.maximum_sample_age_millis = 0;
+            }
+            DeadlineDiagnosticDecision::QueueEstimateOverflow => {
+                node.deadline.estimated_service_time_millis = u64::MAX;
+            }
+            DeadlineDiagnosticDecision::MissingDeadline => {
+                grant_budget.wall_time_limit_millis = None;
+            }
+            _ => unreachable!(),
+        }
+        let grant = latent_core::EffectiveActivationBudget::admit_at(
+            &grant_budget,
+            &grant_budget,
+            &grant_budget,
+            None,
+            sample,
+        )
+        .unwrap();
+        let timing = ReservationTiming {
+            clock: AdmissionClock::Fixed(now),
+            observed_queue_delay_millis: 0,
+            load_observed_at: sample.monotonic(),
+            diagnostic: Some((
+                &observer,
+                observer.token_for_activation("rejected").unwrap(),
+            )),
+        };
+        let error = timing.validate(&node, &grant, 2, 1).unwrap_err();
+        let snapshot = observer.snapshot();
+        assert!(!snapshot.overflowed);
+        assert_eq!(snapshot.records.len(), 2);
+        let missing = expected == DeadlineDiagnosticDecision::MissingDeadline;
+        assert_eq!(
+            snapshot.records[1].observation,
+            DeadlineDiagnosticObservation::AdmissionCheck {
+                observed_at: now,
+                deadline: grant.deadline,
+                remaining: (!missing).then_some(Duration::from_millis(999)),
+                required: missing.then_some(Duration::from_millis(210)),
+                decision: expected,
+            }
+        );
+        assert_eq!(
+            error.code,
+            match expected {
+                DeadlineDiagnosticDecision::LoadStale => Code::Unavailable,
+                DeadlineDiagnosticDecision::QueueEstimateOverflow => Code::AdmissionRejected,
+                _ => Code::InvalidArgument,
+            }
+        );
+    }
 }

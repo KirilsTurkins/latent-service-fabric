@@ -4,6 +4,7 @@
 
 pub mod budget;
 pub mod clock;
+pub mod deadline_diagnostic_observer;
 pub mod deadline_wait_observer;
 pub mod error;
 pub mod identity;
@@ -16,6 +17,11 @@ pub use budget::{
     ResourceBudget,
 };
 pub use clock::{ActivationClock, SystemActivationClock};
+pub use deadline_diagnostic_observer::{
+    DeadlineDiagnosticDecision, DeadlineDiagnosticIdentity, DeadlineDiagnosticObservation,
+    DeadlineDiagnosticObserver, DeadlineDiagnosticRecord, DeadlineDiagnosticSnapshot,
+    DeadlineDiagnosticToken,
+};
 pub use deadline_wait_observer::{DeadlineWaitGuard, DeadlineWaitObserver, DeadlineWaitSnapshot};
 pub use error::{DeclaredError, ErrorDetail, PlatformError, PlatformErrorCode};
 pub use identity::{InvocationPrincipal, PrincipalKind};

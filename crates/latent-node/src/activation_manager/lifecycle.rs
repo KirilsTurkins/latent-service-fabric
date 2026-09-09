@@ -109,6 +109,15 @@ impl Lifecycle {
             .as_mut()
             .expect("live lifecycle journal")
             .advance(phase, attributes)?;
+        if let Some(observer) = self.clock.deadline_diagnostic_observer() {
+            observer.record_for_activation(
+                &self.activation_id().0,
+                latent_core::DeadlineDiagnosticObservation::LifecyclePhase {
+                    observed_at: self.clock.monotonic_now(),
+                    phase,
+                },
+            );
+        }
         if let Some(observation) = &mut self.observation {
             observation.advance(
                 stamp,
@@ -147,6 +156,7 @@ impl Lifecycle {
         if let Some(budget) = &self.budget {
             let now = self.clock.monotonic_now();
             let deadline = budget.check_deadline_at(now).err();
+            self.record_deadline_decision(now, budget.deadline().monotonic(), deadline.is_some());
             let finalized = budget.finalize_at(Some(&outcome_consumption(&outcome)), now);
             let consumption = finalized.consumption().clone();
             outcome = if let Some(error) = deadline.or_else(|| finalized.violation().cloned()) {
@@ -154,17 +164,19 @@ impl Lifecycle {
             } else {
                 replace_consumption(outcome, consumption)
             };
-        } else if self
-            .incoming_deadline
-            .is_some_and(|deadline| self.clock.monotonic_now() >= deadline.monotonic())
-        {
+        } else if let Some(deadline) = self.incoming_deadline {
+            let now = self.clock.monotonic_now();
+            let expired = now >= deadline.monotonic();
+            self.record_deadline_decision(now, Some(deadline.monotonic()), expired);
             // Resolution/admission failure and unpolled abandonment can precede
             // ledger construction. They still retain the original ingress limit;
             // an accepted explicit cancellation keeps its registry winner below.
-            outcome = failure_for_platform_error(
-                super::control::deadline_error(),
-                outcome_consumption(&outcome),
-            );
+            if expired {
+                outcome = failure_for_platform_error(
+                    super::control::deadline_error(),
+                    outcome_consumption(&outcome),
+                );
+            }
         }
         let journal = self.journal.as_ref().expect("one terminal publication");
         if let Err(failure) = journal.validate_terminal(&outcome) {
@@ -189,6 +201,15 @@ impl Lifecycle {
             .take()
             .expect("live terminal reservation")
             .finish_with_stamp(outcome);
+        if let Some(observer) = self.clock.deadline_diagnostic_observer() {
+            observer.record_for_activation(
+                &self.activation_id().0,
+                latent_core::DeadlineDiagnosticObservation::TerminalWinner {
+                    observed_at: self.clock.monotonic_now(),
+                    terminal_state: outcome_terminal_state(&outcome),
+                },
+            );
+        }
         drop(self.cancellation.take());
         if let Some(observation) = &mut self.observation {
             if cancellation_accepted {
@@ -197,6 +218,28 @@ impl Lifecycle {
             observation.terminal(&outcome, stamp, self.resolved.as_ref());
         }
         outcome
+    }
+
+    fn record_deadline_decision(
+        &self,
+        now: std::time::Instant,
+        expires_at: Option<std::time::Instant>,
+        expired: bool,
+    ) {
+        if let Some(observer) = self.clock.deadline_diagnostic_observer() {
+            observer.record_for_activation(
+                &self.activation_id().0,
+                latent_core::DeadlineDiagnosticObservation::TerminalDecision {
+                    observed_at: now,
+                    expires_at,
+                    decision: if expired {
+                        latent_core::DeadlineDiagnosticDecision::DeadlineExceeded
+                    } else {
+                        latent_core::DeadlineDiagnosticDecision::Accepted
+                    },
+                },
+            );
+        }
     }
 }
 
