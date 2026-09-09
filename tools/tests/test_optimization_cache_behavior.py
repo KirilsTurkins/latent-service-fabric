@@ -5,6 +5,7 @@ import unittest
 
 from tools.tests.cache_behavior_fixtures import Fixture
 from tools.optimization_backend_revision.cache import model
+from tools.optimization_backend_revision.cache.aggregate import resource_summary
 
 
 class BehaviorReplayTests(unittest.TestCase):
@@ -22,6 +23,28 @@ class BehaviorReplayTests(unittest.TestCase):
         self.assertEqual(sum(concurrent["outcomes"].values()), 20)
         self.assertEqual(concurrent["outcomes"]["transport-failure"], 2)
         self.assertTrue(result["runtime_accounting_available"])
+        self.assertEqual(int(result["preparation_stage_record_count"]), sum(int(row["observations"]) for row in result["preparation_stages"]))
+        snapshots = [row["node"] for row in self.fixture.raw["samples"] if "node" in row] + [self.fixture.raw["before_shutdown"]]
+        self.assertEqual(result["resources"]["sample_count"], str(len(snapshots)))
+        self.assertEqual(result["resources"]["counters"]["rss_bytes"]["maximum_observed"],
+                         str(max(int(row["resources"]["process"]["residentMemoryBytes"]) for row in snapshots)))
+        self.assertNotIn("compiler_job_records", result)
+        self.assertNotIn("node_samples", result)
+
+    def test_resource_summary_keeps_intermediate_highs_and_lower_final_rss(self):
+        first = deepcopy(self.fixture.checkpoint("empty")["node"])
+        middle, last = deepcopy(first), deepcopy(first)
+        for row, value, label in ((first, 100, "first"), (middle, 900, "middle"), (last, 200, "last")):
+            row["label"] = label
+            row["resources"]["process"]["residentMemoryBytes"] = str(value)
+        middle["resources"]["process"]["openFileDescriptors"] = "100"
+        result = resource_summary([first, middle, last])
+        self.assertEqual(result["counters"]["rss_bytes"], {
+            "first": "100", "last": "200", "minimum_observed": "100", "maximum_observed": "900"})
+        self.assertEqual(result["counters"]["open_file_descriptors"]["maximum_observed"], "100")
+        self.assertEqual(result["counters"]["descendants"]["maximum_observed"], "0")
+        self.assertEqual((result["first_label"], result["last_label"]), ("first", "last"))
+        self.assertEqual(result["sampling"], "fixed-checkpoints-not-continuous-or-kernel-high-water")
 
     def test_actual_control_ledger_is_unavailable(self):
         with tempfile.TemporaryDirectory() as root:

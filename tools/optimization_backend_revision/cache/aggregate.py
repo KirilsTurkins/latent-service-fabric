@@ -8,6 +8,29 @@ from tools.phase1_paired.aggregate import delta
 from ..cold.observer import STAGES
 
 
+def resource_summary(snapshots):
+    """Summarize every validated checkpoint; exact observations stay in raw."""
+    require(bool(snapshots), "cache-resource-samples-missing")
+    counters = {
+        "rss_bytes": [uint(row["resources"]["process"]["residentMemoryBytes"]) for row in snapshots],
+        "process_threads": [uint(row["resources"]["process"]["threadCount"]) for row in snapshots],
+        "tasks": [uint(row["resources"]["taskCount"]) for row in snapshots],
+        "open_file_descriptors": [uint(row["resources"]["process"]["openFileDescriptors"]) for row in snapshots],
+        "process_sockets": [uint(row["resources"]["process"]["socketCount"]) for row in snapshots],
+        "unique_sockets": [uint(row["resources"]["uniqueSocketCount"]) for row in snapshots],
+        "listening_tcp_sockets": [uint(row["resources"]["listeningTcpSocketCount"]) for row in snapshots],
+        "descendants": [len(row["resources"]["descendants"]) for row in snapshots],
+    }
+    return {"sample_count": str(len(snapshots)),
+            "scope": "normal-node-process-including-common-libtest-and-client-runtimes",
+            "sampling": "fixed-checkpoints-not-continuous-or-kernel-high-water",
+            "first_label": snapshots[0]["label"], "last_label": snapshots[-1]["label"],
+            "first_started_micros": snapshots[0]["started_micros"], "last_finished_micros": snapshots[-1]["finished_micros"],
+            "counters": {name: {"first": str(values[0]), "last": str(values[-1]),
+                                "minimum_observed": str(min(values)), "maximum_observed": str(max(values))}
+                         for name, values in counters.items()}}
+
+
 def summarize(rows, observer, snapshots, events):
     checkpoints = {row["label"]: row for row in events if row["kind"] == "checkpoint"}
     boundaries = {"warmup": ("empty", "after-warmup"), "baseline": ("after-warmup", "after-baseline"),
@@ -56,9 +79,10 @@ def summarize(rows, observer, snapshots, events):
                        "thread_cpu_user_ticks": str(sum(uint(row["after"]["user_ticks"]) - uint(row["before"]["user_ticks"]) for row in cpu)),
                        "thread_cpu_system_ticks": str(sum(uint(row["after"]["system_ticks"]) - uint(row["before"]["system_ticks"]) for row in cpu))})
     return {"phase_metrics": phases, "preparation_stages": stages, "compiler": observer.last["compiler"],
-            "compiler_job_records": list(observer.records.values()), "node_samples": snapshots,
+            "preparation_stage_record_count": str(len(observer.records)), "preparation_job_count": str(len(observer.jobs)),
+            "resources": resource_summary(snapshots),
             "observer_clock_offset_interval_nanos": [str(lower), str(upper)],
-            "unattributed_compilation_records": [row for row in compiled if row["sequence"] not in attributed]}
+            "unattributed_compilation_count": str(sum(row["sequence"] not in attributed for row in compiled))}
 
 
 def aggregate(suite, checksum, builds, records, complete, failed):
@@ -107,6 +131,7 @@ def aggregate(suite, checksum, builds, records, complete, failed):
                 "All offered requests, producer lag, failures and overshoot remain in their declared populations; successful latency is conditional on success.",
                 "Phase throughput spans first offer to last completion and includes intervening retained-status and fixed observer-export coordination.",
                 "Preparation records are exported at fixed groups of at most 16 sequential calls; ring overwrites do not justify missing archived records.",
+                "All preparation records and node probes are validated in archived cache.json; the aggregate retains derived counts and fixed-checkpoint resource summaries, not duplicate raw arrays.",
                 "Actual task CPU ticks are separate from elapsed; nested preparation stages overlap and cannot be summed.",
                 "Warm/cold overlap is conservatively tied to actual other-component compile intervals; no per-caller prepare-ready latency is inferred.",
                 "Control unique-runtime accounting is unavailable; candidate source-associated bytes, metadata charges and image spans are not RSS or uniquely mapped physical bytes.",
