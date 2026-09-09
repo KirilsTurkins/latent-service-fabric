@@ -292,3 +292,25 @@ defines the exact source controls, control-generated context fixtures and the
 distinct timing, logical ownership, allocator and process-memory boundaries.
 The schemas bound structure; strict replay and the linked report establish
 the retained populations and qualified results.
+
+## Typed codec experiments
+
+The [#105 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/105)
+uses `--experiment codec` on the existing revision runners. Five unchanged
+external cases retain 140 calls in smoke or 25,256 across seven full pairs.
+A separate no-guest codec collector covers six fixed value families in normal
+and profiled children: 24 children/432 codec operations in smoke, or
+168 children/449,680 operations in full. Preflight, warmup and measured calls
+remain separately counted.
+
+| Evidence | Plan | Builds | Suite | Aggregate |
+| --- | --- | --- | --- | --- |
+| External RPC | [plan](codec-rpc-plan.schema.json) | [builds](codec-rpc-builds.schema.json) | [suite](codec-rpc-suite.schema.json) | [aggregate](codec-rpc-aggregate.schema.json) |
+| Codec batches and allocations | [plan](codec-plan.schema.json) | [builds](codec-builds.schema.json) | [suite](codec-suite.schema.json) | [aggregate](codec-aggregate.schema.json) |
+
+The [collection and replay method](../../docs/testing/phase-1-measurements.md#typed-codec-experiments)
+defines exact source controls, independent fixture reconstruction, actual batch
+CPU/elapsed boundaries and selected allocation-origin attribution. Batch
+averages are separate from RPC latency quantiles; unavailable frame attribution
+is never reported as zero. These schemas describe the protocol and do not
+establish a measured performance result.

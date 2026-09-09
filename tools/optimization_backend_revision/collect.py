@@ -22,6 +22,9 @@ from .recovery import model as recovery_model
 
 
 def execute(args, repo):
+    if getattr(args, "experiment", "warm") == "codec":
+        from tools.optimization_codec.collect import execute as execute_codec
+        return execute_codec(args, repo)
     if getattr(args, "experiment", "warm") == "ownership":
         from .ownership.collect import execute as execute_ownership
         return execute_ownership(args, repo)

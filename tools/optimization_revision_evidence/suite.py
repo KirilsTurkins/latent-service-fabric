@@ -27,17 +27,19 @@ def validate_suite(path: Path) -> dict:
     is_budget = suite.get("schema") == "latent.optimization.budget-suite.v1"
     is_recovery = suite.get("schema") == "latent.optimization.transport-warm-suite.v1"
     is_ownership = suite.get("schema") == "latent.optimization.ownership-rpc-suite.v1"
-    is_fixed = is_budget or is_recovery or is_ownership
+    is_codec = suite.get("schema") == "latent.optimization.codec-rpc-suite.v1"
+    is_fixed = is_budget or is_recovery or is_ownership or is_codec
     from tools.optimization_revision_runner import budget as budget_model
     from tools.optimization_revision_runner import recovery as recovery_model
     from tools.optimization_revision_runner import ownership as ownership_model
-    from . import budget, budget_builds, recovery, recovery_builds, ownership, ownership_builds
-    selected_model = ownership_model if is_ownership else recovery_model if is_recovery else budget_model
-    build_api = ownership_builds if is_ownership else recovery_builds if is_recovery else budget_builds
+    from tools.optimization_revision_runner import codec as codec_model
+    from . import budget, budget_builds, recovery, recovery_builds, ownership, ownership_builds, codec, codec_builds
+    selected_model = codec_model if is_codec else ownership_model if is_ownership else recovery_model if is_recovery else budget_model
+    build_api = codec_builds if is_codec else ownership_builds if is_ownership else recovery_builds if is_recovery else budget_builds
     fields(suite, "schema profile plan requested_refs status reason elapsed_nanos measurement_elapsed_nanos identity cleanup runs artifacts",
            "builds clock_ticks_per_second" if is_fixed else "")
     require(suite["schema"] in ("latent.optimization.revision-suite.v1", budget_model.SCHEMA,
-                               recovery_model.SCHEMA, ownership_model.SCHEMA), "invalid-revision-suite-schema")
+                               recovery_model.SCHEMA, ownership_model.SCHEMA, codec_model.SCHEMA), "invalid-revision-suite-schema")
     require(suite["plan"] == (selected_model.plan if is_fixed else plan)(suite["profile"]), "changed-revision-population")
     validate_refs(suite["requested_refs"], suite["profile"])
     require(suite["status"] in ("passed", "failed")
@@ -116,7 +118,7 @@ def validate_suite(path: Path) -> dict:
         shutdown(seed["server_shutdown"], "lsf")
         if is_recovery:
             recovery.cleanup(seed["server_shutdown"], run["variant"])
-        if is_ownership:
+        if is_ownership or is_codec:
             ownership.cleanup(seed["server_shutdown"], run["variant"])
         if is_fixed:
             budget.configuration(artifacts.json(run["configuration"]))
@@ -134,7 +136,7 @@ def validate_suite(path: Path) -> dict:
             value["cache"], cache_end = cache.validate(artifacts.json(batch["cache_observation"]), artifacts, server,
                                                      artifacts.json(batch["plan"]), batch["id"], start, finish, cache_end)
             if is_fixed:
-                (ownership.cache_warmth if is_ownership else budget.cache_warmth)(value["cache"], batch["id"])
+                (ownership.cache_warmth if is_ownership or is_codec else budget.cache_warmth)(value["cache"], batch["id"])
             value["id"] = batch["id"]
             attempts += int(value["warmup"]["counts"]["attempts"]) + int(value["measured"]["counts"]["attempts"])
             failed = failed or value["correctness_failures"] != "0"
@@ -148,7 +150,7 @@ def validate_suite(path: Path) -> dict:
         extra = {}
         if is_recovery:
             extra["transport_cleanup"] = recovery.cleanup(cleanup["server_shutdown"], run["variant"])
-        if is_ownership:
+        if is_ownership or is_codec:
             extra["transport_cleanup"] = ownership.cleanup(cleanup["server_shutdown"], run["variant"])
         result.append({"repetition": run["repetition"], "variant": run["variant"], "status": "passed",
                        "lifecycle": run["lifecycle"], "batches": replayed, **extra})
@@ -172,6 +174,10 @@ def finish_aggregate(suite, checksum, runs, owners, attempts, failed, complete):
         from .ownership import aggregate as ownership_aggregate
         value["clock_ticks_per_second"] = suite["clock_ticks_per_second"]
         return ownership_aggregate(value)
+    if suite["schema"] == "latent.optimization.codec-rpc-suite.v1":
+        from .codec import aggregate as codec_aggregate
+        value["clock_ticks_per_second"] = suite["clock_ticks_per_second"]
+        return codec_aggregate(value)
     return value
 
 

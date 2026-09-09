@@ -27,6 +27,7 @@ def main():
             "latent.optimization.budget-lifecycle-aggregate.v1": ("validated_calls", "calls"),
             "latent.optimization.recovery-aggregate.v1": ("validated_calls", "calls"),
             "latent.optimization.ownership-aggregate.v1": ("validated_attempts", "invocations"),
+            "latent.optimization.codec-aggregate.v1": ("validated_codec_operations", "codec operations"),
         }
         require(result["schema"] in display, "unsupported-backend-aggregate-display-schema")
         count, unit = display[result["schema"]]

@@ -1,0 +1,476 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/codec-rpc-plan.schema.json",
+  "$comment": "Bounded structural envelope. Mandatory codec/RPC replay checks exact source, fixed bytes, clock/process ownership, all operations and allocation origins; smoke is not full evidence.",
+  "$defs": {
+    "client": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "tenant",
+        "services",
+        "contract",
+        "route",
+        "function",
+        "payload",
+        "warmup_attempts",
+        "measured_attempts",
+        "batch_size",
+        "concurrency",
+        "runtime_workers",
+        "schedule",
+        "budget_millis",
+        "cpu_fuel",
+        "memory_bytes",
+        "log_bytes",
+        "connect_timeout_millis",
+        "response_timeout_millis",
+        "maximum_output_bytes"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.client-plan.v1"
+        },
+        "tenant": {
+          "const": "optimization"
+        },
+        "services": {
+          "const": [
+            "optimization/workloads"
+          ]
+        },
+        "contract": {
+          "const": "optimization:benchmark/workloads@0.1.0"
+        },
+        "route": {
+          "const": null
+        },
+        "function": {
+          "enum": [
+            "echo",
+            "compute",
+            "transform"
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2
+        },
+        "warmup_attempts": {
+          "enum": [4,40]
+        },
+        "measured_attempts": {
+          "enum": [2,12,40,400]
+        },
+        "batch_size": {
+          "enum": [12,100]
+        },
+        "concurrency": {
+          "const": 1
+        },
+        "runtime_workers": {
+          "const": 2
+        },
+        "schedule": {
+          "const": {
+            "mode": "closed-loop"
+          }
+        },
+        "budget_millis": {
+          "const": 1000
+        },
+        "cpu_fuel": {
+          "const": 10000000000
+        },
+        "memory_bytes": {
+          "const": 67108864
+        },
+        "log_bytes": {
+          "const": 16384
+        },
+        "connect_timeout_millis": {
+          "const": 5000
+        },
+        "response_timeout_millis": {
+          "const": 5000
+        },
+        "maximum_output_bytes": {
+          "const": 33554432
+        }
+      }
+    },
+    "warm-echo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "client_plan"
+      ],
+      "properties": {
+        "id": {
+          "const": "warm-echo"
+        },
+        "client_plan": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/client"
+            },
+            {
+              "properties": {
+                "function": {
+                  "const": "echo"
+                },
+                "payload": {
+                  "const": [
+                    "optimization-reference-v1"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "compute": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "client_plan"
+      ],
+      "properties": {
+        "id": {
+          "const": "compute"
+        },
+        "client_plan": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/client"
+            },
+            {
+              "properties": {
+                "function": {
+                  "const": "compute"
+                },
+                "payload": {
+                  "const": [17,10000]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "client_plan"
+      ],
+      "properties": {
+        "id": {
+          "const": "transform"
+        },
+        "client_plan": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/client"
+            },
+            {
+              "properties": {
+                "function": {
+                  "const": "transform"
+                },
+                "payload": {
+                  "const": [
+                    {
+                      "label": "structured-reference",
+                      "bytes": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255],
+                      "values": [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63]
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "payload-64k": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "client_plan"
+      ],
+      "properties": {
+        "id": {
+          "const": "payload-64k"
+        },
+        "client_plan": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/client"
+            },
+            {
+              "properties": {
+                "function": {
+                  "const": "echo"
+                },
+                "payload": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 65536,
+                    "maxLength": 65536,
+                    "pattern": "^x{65536}$"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "payload-near-limit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "client_plan"
+      ],
+      "properties": {
+        "id": {
+          "const": "payload-near-limit"
+        },
+        "client_plan": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/client"
+            },
+            {
+              "properties": {
+                "function": {
+                  "const": "echo"
+                },
+                "payload": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 1,
+                  "items": {
+                    "type": "string",
+                    "minLength": 122880,
+                    "maxLength": 122880,
+                    "pattern": "^x{122880}$"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "profile",
+        "repetitions",
+        "scenarios",
+        "cases",
+        "setup_cases",
+        "maximum_run_seconds",
+        "maximum_build_seconds",
+        "maximum_artifact_bytes",
+        "build_profile",
+        "pair_order",
+        "timer_observation"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.codec-rpc-plan.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "repetitions": {
+          "enum": [1,7]
+        },
+        "scenarios": {
+          "const": [
+            "cold-restart"
+          ]
+        },
+        "cases": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/warm-echo"
+            },
+            {
+              "$ref": "#/$defs/compute"
+            },
+            {
+              "$ref": "#/$defs/transform"
+            },
+            {
+              "$ref": "#/$defs/payload-64k"
+            },
+            {
+              "$ref": "#/$defs/payload-near-limit"
+            }
+          ],
+          "items": false
+        },
+        "setup_cases": {
+          "const": []
+        },
+        "maximum_run_seconds": {
+          "const": "7200"
+        },
+        "maximum_build_seconds": {
+          "const": "7200"
+        },
+        "maximum_artifact_bytes": {
+          "const": "1073741824"
+        },
+        "build_profile": {
+          "const": "release"
+        },
+        "pair_order": {
+          "const": "odd-control-candidate-even-candidate-control"
+        },
+        "timer_observation": {
+          "const": "unavailable-external-daemon-not-instrumented"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "repetitions": {
+                "const": 1
+              },
+              "cases": {
+                "items": {
+                  "if": {
+                    "properties": {
+                      "id": {
+                        "const": "payload-near-limit"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "client_plan": {
+                        "properties": {
+                          "warmup_attempts": {
+                            "const": 4
+                          },
+                          "measured_attempts": {
+                            "const": 2
+                          },
+                          "batch_size": {
+                            "const": 12
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "client_plan": {
+                        "properties": {
+                          "warmup_attempts": {
+                            "const": 4
+                          },
+                          "measured_attempts": {
+                            "const": 12
+                          },
+                          "batch_size": {
+                            "const": 12
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "repetitions": {
+                "const": 7
+              },
+              "cases": {
+                "items": {
+                  "if": {
+                    "properties": {
+                      "id": {
+                        "const": "payload-near-limit"
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "client_plan": {
+                        "properties": {
+                          "warmup_attempts": {
+                            "const": 4
+                          },
+                          "measured_attempts": {
+                            "const": 40
+                          },
+                          "batch_size": {
+                            "const": 100
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "client_plan": {
+                        "properties": {
+                          "warmup_attempts": {
+                            "const": 40
+                          },
+                          "measured_attempts": {
+                            "const": 400
+                          },
+                          "batch_size": {
+                            "const": 100
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$ref": "#/$defs/plan"
+}

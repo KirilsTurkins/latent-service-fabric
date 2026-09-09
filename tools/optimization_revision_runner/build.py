@@ -122,6 +122,8 @@ def collect(repo: Path, refs: dict, output: Path, target_parent: Path, deadline:
                 from . import recovery_build as budget_backend
             elif selected.EXPERIMENT == "ownership":
                 from . import ownership_build as budget_backend
+            elif selected.EXPERIMENT == "codec":
+                from . import codec_build as budget_backend
             elif selected.EXPERIMENT == "budget":
                 from . import budget_build as budget_backend
             else:
@@ -153,14 +155,18 @@ def collect(repo: Path, refs: dict, output: Path, target_parent: Path, deadline:
             suite["identity"]["builds"][label] = build_one(root, target, label, output, deadline, **options)
             if backend_receipt is not None:
                 if label == "harness":
-                    backend_receipt["harness"] = (backend.build_echo if budget_backend is None else budget_backend.generic)(
-                        root, target, backend_output, deadline)
+                    if selected is not None and selected.EXPERIMENT == "codec":
+                        backend_receipt["harness"] = budget_backend.harness(root, target, backend_output, deadline)
+                    else:
+                        backend_receipt["harness"] = (backend.build_echo if budget_backend is None else budget_backend.generic)(
+                            root, target, backend_output, deadline)
                 else:
                     if budget_backend is None:
                         backend_receipt["builds"][label] = backend.build_backend(root, target, label, backend_output, deadline)
                     else:
                         backend_receipt["builds"][label] = backend.build_libtest(
-                            root, target, label, backend_output, deadline, "backend", budget_backend.CONTROLS)
+                            root, target, label, backend_output, deadline,
+                            "codec" if selected.EXPERIMENT == "codec" else "backend", budget_backend.CONTROLS)
                 from .collect import write
                 write(backend_output / "backend-builds.json", backend_receipt)
             save()
