@@ -28,11 +28,11 @@ GENERIC_RECIPE = (
 GENERIC_COMMAND = ["/bin/bash", "-eu", "-o", "pipefail", "-c", GENERIC_RECIPE]
 
 
-def generic(root, target, output, deadline):
+def generic(root, target, output, deadline, *, controls=CONTROLS):
     directory = output / "builds" / "harness"
     directory.mkdir(parents=True)
     before = source(root)
-    inputs = backend.inputs(root, "harness", output, CONTROLS)
+    inputs = backend.inputs(root, "harness", output, controls)
     owner = command(GENERIC_COMMAND, directory / "build.log", 3600, root, deadline,
                     dict(os.environ, CARGO_TARGET_DIR=str(target)))
     component = legacy.retain(target / "capsules/generic/generic-capsule.wasm", output,

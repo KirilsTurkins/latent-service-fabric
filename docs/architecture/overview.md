@@ -14,6 +14,13 @@ A deployed but inactive service owns no process, operating-system thread, listen
 
 Artifact storage, contract indexes, route indexes, policy metadata, and bounded cache entries are permitted to grow with registered service count. Execution allocation is not.
 
+The standalone node also owns one fixed async cleanup supervisor with slots
+bounded by its admitted activation capacity. After a transport disconnect, it
+continues polling the same activation owner under its original deadline, keeping
+quota and cell ownership through bounded cleanup. It adds no per-service worker
+or per-disconnect task. Cell reuse still requires affirmative cleanup proof;
+uncertain cleanup remains quarantined.
+
 ## Phase 0 evidence boundary
 
 Phase 0 implements one deliberately narrow local composition. Its evidence

@@ -28,11 +28,15 @@ The adapter validates a request and supplies its trusted principal and trace in
 `ActivationRequest` with `retry_attempt = 0`. The protocol has no caller retry
 field; arbitrary metadata does not change it.
 
-`LocalInvocationRuntime::invoke` calls `LocalActivationManager::start`
+`LocalInvocationRuntime::invoke` calls `LocalActivationManager::start_with_deadline`
 synchronously before returning its future. The resulting handle owns the exact
 accepted identity, pinned route, accounting, preparation, cell cleanup, and
 terminal publication. The adapter creates no parallel status map, detached
 execution task, or second activation lifecycle.
+
+Standalone supplies `LocalInvocationRuntime::with_cleanup` with a bounded
+node-owned supervisor. The bridge reserves a continuation slot before accepting
+an identity, so a closed or full supervisor rejects before activation work.
 
 Once accepted, a caller-supplied activation ID supports status and cancellation
 while the unary Invoke is still pending. An absent ID requests manager assignment.
@@ -99,12 +103,20 @@ checks the remaining allowance again after synchronous acceptance: if a Received
 observation consumes the deadline, the accepted handle expires before its first
 lifecycle poll, so no route or cell work begins.
 
-Each invocation has an independent typed interruption token. Explicit
-cancellation and deadline expiry remain distinct causes, with the first accepted
-cause preserved. Dropping the RPC future drops its owned manager handle and
-performs terminal publication and cleanup. A transport deadline consumes the
-same handle with a deadline disposition, including before its first poll; it
-never looks up an ID later and risks cancelling a replacement owner.
+Each invocation has an independent typed transport-interruption token, preserving
+its first disconnect or deadline cause. With standalone's cleanup supervisor,
+dropping the RPC future marks and transfers the exact manager handle for bounded
+cooperative cleanup. Status may remain active after the transport has ended;
+terminal publication follows actual cleanup or conservative abandonment. The
+original execution deadline and accounting remain unchanged. Accepted explicit
+Cancel retains priority over that deadline; a raw disconnect does not become an
+accepted Cancel and cannot override an expired deadline.
+
+`LocalInvocationRuntime::new` and `with_limits` retain unsupervised compatibility:
+dropping the RPC future immediately drops its manager handle. A transport timeout
+uses that same owner's deadline-abort path, including before its first poll.
+Both modes preserve identity ownership; neither looks up an ID later to stop a
+replacement activation. Missing reusable-cell proof still causes quarantine.
 
 A cancellation, timeout, or lost response does not prove execution never began.
 The caller may query the known ID; the adapter and SDK contracts add no automatic

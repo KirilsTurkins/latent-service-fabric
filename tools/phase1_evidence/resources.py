@@ -7,8 +7,10 @@ from typing import Any
 from .common import fields, integer, require, text, uint
 try:
     from ..phase1_compiler_shutdown import validate_compiler_shutdown
+    from ..phase1_cleanup_shutdown import validate_cleanup_shutdown
 except ImportError:
     from phase1_compiler_shutdown import validate_compiler_shutdown
+    from phase1_cleanup_shutdown import validate_cleanup_shutdown
 
 ZERO_SHUTDOWN_FIELDS = (
     "activeConnections activeRpcs activeControlJobs activeActivations cancellationRegistrations "
@@ -21,9 +23,11 @@ ZERO_SHUTDOWN_FIELDS = (
 
 def shutdown(value: Any, cells: int = 2) -> None:
     fields(value, " ".join(ZERO_SHUTDOWN_FIELDS) +
-           " clean quarantinedCells telemetryRetainedEntries telemetryFlushed epochHelperJoined", "compiler")
+           " clean quarantinedCells telemetryRetainedEntries telemetryFlushed epochHelperJoined", "compiler cleanup")
     if "compiler" in value:
         validate_compiler_shutdown(value["compiler"], require)
+    if "cleanup" in value:
+        validate_cleanup_shutdown(value["cleanup"], require)
     require(all(value[key] is True for key in ("clean", "telemetryFlushed", "epochHelperJoined")), "unclean-shutdown")
     require(all(type(value[key]) is int and value[key] == 0 for key in ZERO_SHUTDOWN_FIELDS), "live-transient-owners")
     integer(value["quarantinedCells"], 0, cells)

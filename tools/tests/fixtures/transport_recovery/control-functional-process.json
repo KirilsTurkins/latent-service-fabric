@@ -1,0 +1,1 @@
+{"qualification": "functional-debug-only", "command": ["/workspace/project/target/debug/deps/latentd-f2805f69a8e977ce", "--exact", "standalone::measurements::comparison::recovery::phase1_recovery_collector", "--ignored", "--nocapture", "--test-threads=1"], "pid": 28509, "exit_code": 0, "reaped": true, "stop_reason": null, "elapsed_seconds": 1.8120002330106217}

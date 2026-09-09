@@ -81,7 +81,13 @@ async fn serve(
         .shutdown_grace
         .checked_mul(2)
         .and_then(|duration| duration.checked_add(settings.transport.shutdown_timeout))
-        .and_then(|duration| duration.checked_add(settings.manager.cleanup_grace))
+        .and_then(|duration| {
+            settings
+                .manager
+                .cleanup_grace
+                .checked_mul(2)
+                .and_then(|cleanup| duration.checked_add(cleanup))
+        })
         .and_then(|duration| duration.checked_add(settings.telemetry.shutdown_timeout))
         .and_then(|duration| duration.checked_add(Duration::from_secs(1)))
         .ok_or_else(|| Failure::new("configuration", PlatformErrorCode::InvalidArgument))?;

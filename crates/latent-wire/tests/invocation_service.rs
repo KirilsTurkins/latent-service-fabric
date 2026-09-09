@@ -4,6 +4,8 @@
 mod backend;
 #[path = "invocation_service/catalog.rs"]
 mod catalog;
+#[path = "invocation_service/cleanup.rs"]
+mod cleanup;
 #[path = "invocation_service/deadlines.rs"]
 mod deadlines;
 #[path = "invocation_service/identity.rs"]

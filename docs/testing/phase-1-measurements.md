@@ -339,3 +339,107 @@ diagnostic transport allowance does not demonstrate that
 [#119](https://github.com/KirilsTurkins/latent-service-fabric/issues/119) is fixed:
 bounded owned cleanup and capacity recovery are a separate requirement, while
 quarantine remains necessary when safe reuse lacks proof.
+
+## Transport interruption recovery
+
+Issue [#119](https://github.com/KirilsTurkins/latent-service-fabric/issues/119)
+adds the explicit `--experiment recovery` profile. It reuses the exact-reference
+builder, unchanged external client, process supervision and bounded archive
+transport. The original budget profiles and receipts retain their original
+meaning. Set the three full SHA references from a clean harness checkout; the
+common collectors, recorder, fixture, client and build inputs must match across
+the selected references. Use new output directories throughout:
+
+```sh
+python3 tools/run_optimization_revision_benchmarks.py --experiment recovery --profile full \
+  --control-ref "$CONTROL_REF" --candidate-ref "$CANDIDATE_REF" --harness-ref "$HARNESS_REF" \
+  --target-root /workspace/optimization-recovery-builds \
+  --output target/optimization-recovery/build-only-warm \
+  --backend-build-output target/optimization-recovery/build-only-recovery --build-only
+
+python3 - <<'PY'
+from pathlib import Path
+from shutil import copytree
+root = Path("target/optimization-recovery")
+for kind in ("warm", "recovery"):
+    for profile in ("smoke", "full"):
+        copytree(root / f"build-only-{kind}", root / f"{kind}-{profile}")
+PY
+
+python3 tools/run_optimization_revision_benchmarks.py --experiment recovery --profile smoke \
+  --builds target/optimization-recovery/warm-smoke/revision-builds.json \
+  --target-root /workspace/optimization-recovery-data
+python3 tools/run_optimization_backend_revision.py --experiment recovery --profile smoke \
+  --builds target/optimization-recovery/recovery-smoke/backend-builds.json \
+  --target-root /workspace/optimization-recovery-data
+```
+
+After both smoke suites replay successfully, run the fresh full copies serially:
+
+```sh
+python3 tools/run_optimization_revision_benchmarks.py --experiment recovery --profile full \
+  --builds target/optimization-recovery/warm-full/revision-builds.json \
+  --target-root /workspace/optimization-recovery-data
+python3 tools/run_optimization_backend_revision.py --experiment recovery --profile full \
+  --builds target/optimization-recovery/recovery-full/backend-builds.json \
+  --target-root /workspace/optimization-recovery-data
+python3 tools/validate_optimization_revision_evidence.py \
+  target/optimization-recovery/warm-full/suite.json \
+  --aggregate target/optimization-recovery/warm-full/aggregate.json
+python3 tools/validate_optimization_backend_revision.py \
+  target/optimization-recovery/recovery-full/suite.json \
+  --aggregate target/optimization-recovery/recovery-full/aggregate.json
+```
+
+Package each full root independently with `tools/package_phase1_evidence.py`;
+`--compression-level 9 --split-archive` is available within the existing caps.
+Replay each published directory with `tools/validate_phase1_archive.py`, which
+extracts bounded temporary files and never executes the retained binaries.
+Failed attempts remain separate; retries require fresh build-only copies.
+
+The warm profile offers one explicit prewarm, then 40 warmup and 400 measured
+Echo calls per arm, all at 1,000 ms. Seven alternating pairs retain 6,174 offers;
+only the 5,600 measured offers enter the main latency populations. Smoke retains
+17 offers per arm. Measured owners are 14 servers and 28 clients; the validator
+also counts 14 seed servers. Successful-response latency, all-offered completion
+time and all failure counts remain separate. Server/client CPU and RSS include
+warmup and observer overhead; external timer counts are unavailable.
+
+The recovery diagnostic has exactly one pair for either profile, 61 offers and
+125 commands per arm. It prewarms the generic component, repeats expiry and
+attempted disconnect at each of 1/2/5/10 ms three times, and follows every such
+attempt with a healthy identify request. Five further 1,000 ms spin calls wait
+for actual Running observations before aborting and joining the client task;
+each is followed by another identify. One positive explicit Cancel and final
+identify complete the fixed population. All original envelopes remain in raw
+evidence. A short request rejected before Running is not counted as Running
+interruption coverage, and a response racing the planned abort remains a
+response. The longer positive cases do not establish 1 ms Running execution.
+
+Both variants retain the same four cells, 64 queue slots, cache configuration
+and separate fixed invocation/control/client runtimes. The old reference may
+lose reusable capacity, but still attempts all sixty-one requests. Candidate
+qualification requires the five actual Running drops, all thirty successful
+recovery calls and full reusable capacity without restarting the node.
+
+The bounded recorder retains at most 64 identities and 2,048 events. Exact
+token/slot/generation events mark the start of transferring the owned lifecycle
+and reserved cleanup slot, before queue commit or polling by the driver. Their
+`cancelled` cause denotes raw transport disconnect, not an accepted Cancel RPC.
+Terminal decisions, actual native cleanup logs and final affine ownership are
+checked separately; a handoff event or increased counter alone cannot prove
+safe reuse. A terminal publication can precede destruction of the completed
+future and refund of its supervisor slot. Transient snapshots preserve those
+live charges; final cleanup requires the driver joined, no live slots and every
+handoff completed without timeout, panic or fallback. The control's absent
+supervisor fields mean unavailable observation, not zero work.
+
+The actual cleanup grace is 100 ms; its fixed handoff ceiling is 200 ms. The
+independent 250 ms acknowledgement observation does not extend the guest budget
+or cleanup allowance. Original deadline lineage, actual abort/join timestamps,
+terminal winners and correlated release/revision/generation identities remain
+in `recovery.json`. CPU ticks cover the diagnostic population, controls and
+drain, not individual requests. Manager sleep counters cover their own guards,
+not all runtime, transport or OS timers. Sampled whole-process RSS and retained
+bounded telemetry history are distinct from live ownership. This single pair
+proves a finite recovery population; it is not a statistical performance claim.

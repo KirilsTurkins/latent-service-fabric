@@ -238,3 +238,29 @@ runaway and short-cancel cases use a 1,000 ms transport allowance around their
 retain their short transport deadlines. This distinction does not resolve
 [#119](https://github.com/KirilsTurkins/latent-service-fabric/issues/119), which
 tracks bounded cleanup and capacity recovery after a running transport disconnect.
+
+## Transport interruption recovery
+
+The [retained transport-cleanup comparison](transport-cleanup/2026-09-09-container-linux-ee10b02/README.md)
+shows 30/30 successful recovery calls versus 5/30 in the control, without a node
+restart. Its seven warm pairs have mixed timing changes and retain the observed
+RSS increase; both complete evidence packages passed Linux and Windows replay.
+
+The [#119 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/119)
+uses `--experiment recovery` on the existing revision runners. Its external warm
+profile retains 6,174 offers across seven pairs to observe ordinary request
+overhead. A separate single recovery pair retains 122 offers, including repeated
+short expiry/disconnect attempts, five planned Running-triggered disconnect cases per arm,
+explicit cancellation and thirty same-process recovery calls per arm. Neither
+arm restarts its four-cell node or enlarges the pool during this population.
+
+| Evidence | Plan | Builds | Suite | Aggregate |
+| --- | --- | --- | --- | --- |
+| External warm RPC | [plan](transport-warm-plan.schema.json) | [builds](transport-warm-builds.schema.json) | [suite](transport-warm-suite.schema.json) | [aggregate](transport-warm-aggregate.schema.json) |
+| Recovery diagnostic | [plan](recovery-plan.schema.json) | [builds](recovery-builds.schema.json) | [suite](recovery-suite.schema.json) | [aggregate](recovery-aggregate.schema.json) |
+
+The [collection and replay method](../../docs/testing/phase-1-measurements.md#transport-interruption-recovery)
+defines source controls, fixed populations and the separate transport, native
+cleanup and resource boundaries. Structural schemas do not replace strict raw
+replay. Historical budget evidence remains unchanged, and functional debug
+fixtures do not qualify as release benchmark results.

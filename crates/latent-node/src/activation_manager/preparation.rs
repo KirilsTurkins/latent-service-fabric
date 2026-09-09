@@ -9,6 +9,8 @@ use latent_executor::{
 use crate::CancellationToken;
 
 use super::control::{cancelled, deadline_error, error, stage};
+use super::probes::ActivationControl;
+use super::transport_stop::TransportStop;
 use super::Inner;
 
 impl Inner {
@@ -17,6 +19,7 @@ impl Inner {
         envelope: &ActivationEnvelope,
         token: &CancellationToken,
         budget: &ActivationBudget,
+        transport: &TransportStop,
     ) -> Result<(PreparationKey, PreparedReadiness), PlatformError> {
         let release = &envelope
             .resolved_revision
@@ -38,6 +41,7 @@ impl Inner {
             token,
             budget.deadline().monotonic(),
             &self.clock,
+            transport,
         )
         .await?;
         self.verify_preparation(ready.descriptor(), &key)?;
@@ -47,16 +51,19 @@ impl Inner {
     pub(super) fn materialize(
         &self,
         envelope: &ActivationEnvelope,
-        token: &CancellationToken,
+        control: &ActivationControl,
         budget: &ActivationBudget,
         key: &PreparationKey,
         ready: PreparedReadiness,
     ) -> Result<(PreparedUse, Vec<BoundImport>), PlatformError> {
-        if token.is_cancelled() {
-            return Err(cancelled(token));
+        if control.token().is_cancelled() {
+            return Err(cancelled(control.token()));
         }
         if budget.deadline().is_expired_at(self.clock.monotonic_now()) {
             return Err(deadline_error());
+        }
+        if let Some(failure) = control.transport().failure() {
+            return Err(failure);
         }
         self.verify_preparation(ready.descriptor(), key)?;
         let activation = self.dependencies.backend.materialize_ready(ready)?;

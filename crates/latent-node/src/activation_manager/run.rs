@@ -21,25 +21,26 @@ use crate::CancellationToken;
 
 use super::control::{cancelled, deadline_error, error, execution, stage};
 use super::lifecycle::Lifecycle;
+use super::probes::ActivationControl;
 use super::Inner;
 
 struct ExecutionControl {
-    token: CancellationToken,
+    probe: Arc<ActivationControl>,
     accounting: ActivationBudget,
 }
 
 impl ExecutionCancellation for ExecutionControl {
     fn activation_id(&self) -> &latent_core::ActivationId {
-        self.token.activation_id()
+        self.probe.token().activation_id()
     }
     fn is_cancelled(&self) -> bool {
-        self.token.is_cancelled()
+        self.probe.stopped()
     }
     fn reason(&self) -> Option<String> {
-        self.token.reason()
+        self.probe.reason()
     }
     fn probe(&self) -> Option<Arc<dyn ExecutionCancellationProbe>> {
-        self.token.probe()
+        Some(self.probe.clone())
     }
     fn budget_accounting(&self) -> Option<&ActivationBudget> {
         Some(&self.accounting)
@@ -96,6 +97,7 @@ impl Inner {
         lifecycle: &mut Lifecycle,
     ) -> Result<ActivationOutcome, PlatformError> {
         let token = lifecycle.registration().token();
+        let transport = Arc::clone(&lifecycle.transport_stop);
         if token.is_cancelled() {
             return Err(cancelled(&token));
         }
@@ -105,23 +107,33 @@ impl Inner {
         {
             return Err(deadline_error());
         }
+        if let Some(failure) = transport.failure() {
+            return Err(failure);
+        }
         let permit = self.resolve_and_admit(&mut envelope, lifecycle, &token)?;
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
         lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;
         let expiry = budget.deadline().monotonic();
         // Keep the original admission reservation and deadline while code is
         // prepared. A cold request does not occupy an execution cell.
-        let (key, ready) = self.prepare_ready(&envelope, &token, &budget).await?;
+        let (key, ready) = self
+            .prepare_ready(&envelope, &token, &budget, &transport)
+            .await?;
+        let control = Arc::new(ActivationControl::new(
+            lifecycle.registration(),
+            transport.clone(),
+        ));
         let scheduled = stage(
             self.dependencies
                 .scheduler
                 .enqueue(AdmittedSchedulingRequest {
                     permit,
-                    cancellation: Arc::new(lifecycle.registration().handle()),
+                    cancellation: control.clone(),
                 }),
             &token,
             expiry,
             &self.clock,
+            &transport,
         )
         .await?;
         lifecycle.assigned = true;
@@ -141,8 +153,8 @@ impl Inner {
         }
         lifecycle.scheduled = Some(scheduled);
         lifecycle.advance(ActivationPhase::Materializing, Metadata::new())?;
-        let (prepared, imports) = self.materialize(&envelope, &token, &budget, &key, ready)?;
-        self.execute(envelope, lifecycle, token, budget, prepared, imports)
+        let (prepared, imports) = self.materialize(&envelope, &control, &budget, &key, ready)?;
+        self.execute(envelope, lifecycle, control, budget, prepared, imports)
             .await
     }
 
@@ -150,17 +162,20 @@ impl Inner {
         &self,
         envelope: ActivationEnvelope,
         lifecycle: &mut Lifecycle,
-        token: CancellationToken,
+        control: Arc<ActivationControl>,
         budget: ActivationBudget,
         prepared: PreparedUse,
         imports: Vec<BoundImport>,
     ) -> Result<ActivationOutcome, PlatformError> {
         let expiry = budget.deadline().monotonic();
-        if token.is_cancelled() {
-            return Err(cancelled(&token));
+        if control.token().is_cancelled() {
+            return Err(cancelled(control.token()));
         }
         if budget.deadline().is_expired_at(self.clock.monotonic_now()) {
             return Err(deadline_error());
+        }
+        if let Some(failure) = control.transport().failure() {
+            return Err(failure);
         }
         let scheduled = lifecycle
             .scheduled
@@ -187,7 +202,7 @@ impl Inner {
             budget: budget.granted().clone(),
         };
         let cancellation = ExecutionControl {
-            token: token.clone(),
+            probe: control.clone(),
             accounting: budget,
         };
         lifecycle.advance(ActivationPhase::Running, Metadata::new())?;
@@ -196,10 +211,11 @@ impl Inner {
             self.dependencies
                 .backend
                 .invoke_prepared_contained(request, prepared, &cancellation),
-            &token,
+            control.token(),
             expiry,
             &self.clock,
             self.config.cleanup_grace,
+            control.transport(),
         )
         .await;
         let disposition = match report.cleanup {

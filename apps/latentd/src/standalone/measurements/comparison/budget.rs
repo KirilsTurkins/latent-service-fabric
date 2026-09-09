@@ -1,9 +1,9 @@
 //! Separate bounded diagnostic population for short deadline ownership.
-mod call;
-mod collector;
-mod cpu;
+pub(super) mod call;
+pub(super) mod collector;
+pub(super) mod cpu;
 mod delayed;
-mod observation;
+pub(super) mod observation;
 mod plan;
 mod sequence;
 

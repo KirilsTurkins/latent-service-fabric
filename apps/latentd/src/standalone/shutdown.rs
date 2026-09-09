@@ -1,6 +1,7 @@
 use latent_core::Metadata;
 use latent_telemetry::{LogRecord, LogSeverity};
 use latent_wasmtime::PreparationCompilerSnapshot;
+use latent_wire::invocation::ActivationCleanupSnapshot;
 use serde::Serialize;
 
 use super::{error, transport, Duration, PlatformError, PlatformErrorCode, StandaloneNode};
@@ -38,6 +39,7 @@ pub struct ShutdownReport {
     /// Separate compiler ownership population; thread joins are observed after
     /// consuming factory shutdown, never inferred from quiescent user code.
     pub compiler: PreparationCompilerSnapshot,
+    pub cleanup: ActivationCleanupSnapshot,
 }
 
 impl ShutdownReport {
@@ -65,16 +67,29 @@ impl ShutdownReport {
             && self.live_temporary_buffers == 0
             && self.live_cancellation_probes == 0
             && compiler_reclaimed(&self.compiler)
+            && cleanup_reclaimed(&self.cleanup)
     }
 }
 
 impl StandaloneNode {
     /// Stops admission, gives accepted activations a bounded drain interval, then
     /// cancels outstanding owners and verifies cleanup before joining helpers.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "one ordered teardown keeps forced cleanup, resource observations and native joins together"
+    )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
         self.load.stop_accepting();
-        let handle = self.transport.as_ref().expect("live transport").handle();
-        handle.stop_accepting();
+        let handle = self
+            .transport
+            .as_ref()
+            .map(super::transport::Transport::handle);
+        if let Some(handle) = &handle {
+            handle.stop_accepting();
+        }
+        let cleanup = self.cleanup.take().expect("owned cleanup driver");
+        let cleanup_handle = cleanup.handle();
+        cleanup.stop_accepting();
         let drain_deadline = tokio::time::Instant::now() + self.shutdown_grace;
         while self.manager.journal().snapshot().active != 0 {
             if tokio::time::Instant::now() >= drain_deadline {
@@ -82,27 +97,35 @@ impl StandaloneNode {
             }
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
+        // This phase begins after natural drain. One cutoff covers all forced
+        // handoffs and driver scheduling; no invocation deadline is renewed.
+        let forced_deadline =
+            forced_cleanup_deadline(tokio::time::Instant::now(), self.cleanup_grace)?;
         // Seal compiler admission at the drain cutoff, before transport or
         // sampler cleanup can hide a native job that finishes after its grace.
         let factory = self.factory.take().expect("owned engine factory");
         let compiler_observer = factory.compiler_observer();
         let compiler_quiescence = factory.quiesce_compiler();
         self.scheduler.shutdown();
-        let mut failure = self
-            .transport
-            .take()
-            .expect("owned transport")
-            .shutdown()
-            .await
-            .err();
-        if let Err(error) = self
-            .sampler
-            .take()
-            .expect("owned sampler")
-            .shutdown(self.shutdown_grace)
-            .await
-        {
+        let transport = self.transport.take();
+        let (transport_result, cleanup_result) = tokio::join!(
+            Box::pin(async {
+                if let Some(transport) = transport {
+                    transport.shutdown().await.map(|_| ())
+                } else {
+                    Ok(())
+                }
+            }),
+            Box::pin(cleanup.shutdown(forced_deadline))
+        );
+        let mut failure = transport_result.err();
+        if let Err(error) = cleanup_result {
             failure.get_or_insert(error);
+        }
+        if let Some(sampler) = self.sampler.take() {
+            if let Err(error) = sampler.shutdown(self.shutdown_grace).await {
+                failure.get_or_insert(error);
+            }
         }
         // Native jobs cannot be preempted. Their owned completion must precede
         // observations and final joins, even when it makes shutdown unsuccessful.
@@ -121,7 +144,13 @@ impl StandaloneNode {
                 )
             });
         }
-        let mut report = self.shutdown_observations(handle.snapshot());
+        let mut report = self.shutdown_observations(
+            handle.as_ref().map_or_else(
+                transport::TransportSnapshot::default,
+                transport::TransportHandle::snapshot,
+            ),
+            cleanup_handle.snapshot(),
+        );
         if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
             failure.get_or_insert_with(|| {
                 error(
@@ -179,6 +208,7 @@ impl StandaloneNode {
     fn shutdown_observations(
         &self,
         transport: transport::TransportSnapshot,
+        cleanup: ActivationCleanupSnapshot,
     ) -> Result<ShutdownReport, PlatformError> {
         let quota = self.quotas.usage()?;
         let mut active_leases = 0_u64;
@@ -221,9 +251,42 @@ impl StandaloneNode {
             telemetry_flushed: false,
             epoch_helper_joined: false,
             compiler: self.backend.compiler_snapshot(),
+            cleanup,
         })
     }
 }
+
+fn forced_cleanup_deadline(
+    now: tokio::time::Instant,
+    grace: Duration,
+) -> Result<tokio::time::Instant, PlatformError> {
+    grace
+        .checked_mul(2)
+        .and_then(|duration| now.checked_add(duration))
+        .ok_or_else(|| {
+            error(
+                PlatformErrorCode::InvalidArgument,
+                "cleanup deadline exceeds its bound",
+            )
+        })
+}
+
+fn cleanup_reclaimed(cleanup: &ActivationCleanupSnapshot) -> bool {
+    !cleanup.accepting
+        && !cleanup.driver_alive
+        && cleanup.driver_joined
+        && cleanup.reserved == 0
+        && cleanup.queued == 0
+        && cleanup.running == 0
+        && cleanup.timed_out == 0
+        && cleanup.panicked == 0
+        && cleanup.fallbacks == 0
+        && cleanup.handoffs == cleanup.completed
+        && !cleanup.failed
+}
+
+#[cfg(test)]
+mod tests;
 
 fn compiler_reclaimed(compiler: &PreparationCompilerSnapshot) -> bool {
     !compiler.accepting

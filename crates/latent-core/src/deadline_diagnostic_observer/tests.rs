@@ -170,3 +170,55 @@ fn pre_origin_and_absent_times_remain_distinct_from_zero() {
     assert!(snapshot.origin > before);
     assert!(!snapshot.overflowed);
 }
+
+#[test]
+fn explicit_population_keeps_all_records_without_changing_default_limits() {
+    let origin = Instant::now();
+    let expanded = DeadlineDiagnosticObserver::with_limits(origin, 64, 2_048).unwrap();
+    for index in 0..64 {
+        let token = expanded.begin(ingress(origin)).unwrap();
+        assert!(expanded.bind(token, &format!("recovery-{index}")));
+        for _ in 0..31 {
+            expanded.record(token, decoded(origin));
+        }
+    }
+    let snapshot = expanded.snapshot();
+    assert!(!snapshot.overflowed);
+    assert_eq!(snapshot.identities.len(), 64);
+    assert_eq!(snapshot.records.len(), 2_048);
+    for (index, row) in snapshot.records.iter().enumerate() {
+        assert_eq!(row.sequence, u64::try_from(index).unwrap());
+    }
+    expanded.record(snapshot.identities[0].token, decoded(origin));
+    assert!(expanded.begin(ingress(origin)).is_none());
+    assert!(expanded.snapshot().overflowed);
+    assert_eq!(expanded.snapshot().records, snapshot.records);
+    let default = DeadlineDiagnosticObserver::new(origin);
+    for _ in 0..23 {
+        assert!(default.begin(ingress(origin)).is_some());
+    }
+    assert!(default.begin(ingress(origin)).is_none());
+}
+
+#[test]
+fn diagnostic_limits_reject_invalid_bounds_and_preserve_owner_binding() {
+    let origin = Instant::now();
+    for (identities, records) in [(0, 1), (65, 2_048), (1, 2_049), (2, 1)] {
+        assert_eq!(
+            DeadlineDiagnosticObserver::with_limits(origin, identities, records)
+                .unwrap_err()
+                .code,
+            PlatformErrorCode::InvalidArgument
+        );
+    }
+    let small = DeadlineDiagnosticObserver::with_limits(origin, 1, 1).unwrap();
+    let large = DeadlineDiagnosticObserver::with_limits(origin, 64, 2_048).unwrap();
+    let foreign = small.begin(ingress(origin)).unwrap();
+    let own = large.begin(ingress(origin)).unwrap();
+    assert_eq!(foreign.id(), own.id());
+    assert!(!large.bind(foreign, "crossed"));
+    large.record(foreign, decoded(origin));
+    assert_eq!(large.snapshot().records.len(), 1);
+    assert!(large.bind(own, "own"));
+    assert!(small.begin(ingress(origin)).is_none());
+}

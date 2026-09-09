@@ -4,7 +4,7 @@ use super::{cold::call::Clock, Result};
 
 /// Whole owned process, including its client/control workers. These ticks never
 /// become per-invocation CPU or an allocation of CPU to a particular stage.
-pub(super) fn sample(clock: Clock) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn sample(clock: Clock) -> Result<Value> {
     let started = clock.elapsed();
     let bytes = super::super::super::read(std::path::Path::new("/proc/self/stat"), 8192)?;
     let text = std::str::from_utf8(&bytes)?;

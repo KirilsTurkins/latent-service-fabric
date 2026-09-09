@@ -84,9 +84,9 @@ through one bounded, authenticated loopback listener on Linux.
 | `latent-state` | state backend and entity lease manager |
 | `latent-effects` | effect store, dispatcher, and provider |
 | `latent-workflows` | continuation store and workflow runtime |
-| `latent-wire` | Generated `InvocationServiceAdapter`, `LocalInvocationRuntime`, `ManagementServiceAdapter`, scoped principal/trace services and lossless converters; codec, duplex channel, request multiplexer seams |
+| `latent-wire` | Generated `InvocationServiceAdapter`, `LocalInvocationRuntime`, bounded `ActivationCleanupOwner`/`ActivationCleanupHandle` and `ActivationCleanupSnapshot`, `ManagementServiceAdapter`, scoped principal/trace services and lossless converters; codec, duplex channel, request multiplexer seams |
 | `latent-wrpc` | remote client/server and connection factory |
-| `latent-node` | `LocalActivationManager`, immediate-ID `ActivationHandle`, `ActivationReceipt`, scoped status/cancel, bounded `LocalActivationJournal`; retained Phase 0/budget adapters and node registration/inventory/watch seams |
+| `latent-node` | `LocalActivationManager`, immediate-ID `ActivationHandle` with trusted `interrupt_for_cleanup`/`ActivationTransportInterruption`, `ActivationReceipt`, scoped status/cancel, bounded `LocalActivationJournal`; retained Phase 0/budget adapters and node registration/inventory/watch seams |
 | `latent-control-store` | `DeploymentStore` versioned mutations, committed receipts and bounded tenant/service pages; `DirectoryDeploymentRepository` implements persistence, route compilation/publication, and resolution |
 | `latent-telemetry` | `TelemetryRuntime`, bounded `TelemetryHandle`, `StructuredLocalSink`, typed payload-free `ActivationObserver`, `SharedActivationObserver`, and borrowed `GuestLogObserver` |
 | `latent-audit` | audit store and publisher |

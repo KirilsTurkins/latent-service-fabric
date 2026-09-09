@@ -129,6 +129,15 @@ impl Harness {
         maximum_terminal: usize,
         observer: Option<Arc<dyn latent_telemetry::ActivationObserver>>,
     ) -> Self {
+        Self::with_pool(parallelism, maximum_terminal, observer, None)
+    }
+
+    pub fn with_pool(
+        parallelism: u32,
+        maximum_terminal: usize,
+        observer: Option<Arc<dyn latent_telemetry::ActivationObserver>>,
+        pool: Option<Arc<dyn latent_scheduler::CellPool>>,
+    ) -> Self {
         let clock = Arc::new(Clock(Mutex::new(ClockSample::system_now())));
         let ids = Arc::new(Ids::default());
         let catalog = Arc::new(CatalogSource::default());
@@ -146,15 +155,20 @@ impl Harness {
             .expect("load"),
         );
         let admission = LocalAdmissionController::new(catalog.clone(), quotas.clone(), load);
+        let scheduler_config = LocalSchedulerConfig {
+            node: NodeId("lifecycle-node".to_owned()),
+            queue_capacity_per_class: BTreeMap::from([(CellClass::Tiny, 8)]),
+            starvation_after: Duration::from_secs(1),
+        };
         let scheduler = Arc::new(
-            LocalScheduler::new(
-                LocalSchedulerConfig {
-                    node: NodeId("lifecycle-node".to_owned()),
-                    queue_capacity_per_class: BTreeMap::from([(CellClass::Tiny, 8)]),
-                    starvation_after: Duration::from_secs(1),
-                },
-                quotas.clone(),
-            )
+            match pool {
+                Some(pool) => LocalScheduler::with_pools(
+                    scheduler_config,
+                    quotas.clone(),
+                    BTreeMap::from([(CellClass::Tiny, pool)]),
+                ),
+                None => LocalScheduler::new(scheduler_config, quotas.clone()),
+            }
             .expect("scheduler"),
         );
         let manager = LocalActivationManager::with_services(

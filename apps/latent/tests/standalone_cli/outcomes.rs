@@ -1,3 +1,5 @@
+#[path = "outcomes/cleanup.rs"]
+mod cleanup;
 #[path = "outcomes/releases.rs"]
 mod releases;
 
@@ -81,7 +83,7 @@ fn cli_separates_domain_trap_deadline_and_cancel_results_then_recovers() {
     interrupt_cli(&harness, &package, &empty);
     let recovered = invoke("identify", "generic-recovered", &empty, &[], 0, "success");
     assert_payload(&recovered, &json!([11]));
-    harness.stop();
+    cleanup::assert_joined(&harness.stop_report());
 }
 
 fn arguments<'a>(
@@ -192,7 +194,7 @@ fn interrupt_cli(harness: &Harness, package: &Package, input: &std::path::Path) 
     for _ in 0..20 {
         assert!(
             Instant::now() < deadline,
-            "server has not finalized the abandoned owner"
+            "server has not finalized the transferred owner"
         );
         let status = harness.call("generic", &["activation", "get", id], 0, "success");
         if status["data"]["terminalState"] == "cancelled" {
@@ -209,22 +211,17 @@ fn interrupt_cli(harness: &Harness, package: &Package, input: &std::path::Path) 
         terminal,
         "separate status recovers the original ID without reinvocation"
     );
-    let inventory = harness.call(
-        "operator",
-        &["node", "get", super::support::NODE_ID],
-        0,
-        "success",
-    );
+    let inventory = cleanup::wait_idle(harness);
     let value = &inventory["data"]["inventory"];
     assert_eq!(value["cellCapacity"][0]["total"], 2);
     assert_eq!(
-        value["cellCapacity"][0]["quarantined"], 1,
-        "running owner abandonment requires conservative disposition"
+        value["cellCapacity"][0]["quarantined"], 0,
+        "acknowledged native cleanup preserves both cells"
     );
     assert_eq!(value["cellCapacity"][0]["active"], 0);
     assert_eq!(
-        value["cellCapacity"][0]["available"], 1,
-        "a second fixed cell remains usable"
+        value["cellCapacity"][0]["available"], 2,
+        "the interrupted cell is reusable before the healthy follow-up"
     );
     assert_eq!(value["queueDepth"], "0");
     assert_eq!(value["cacheSummary"]["preparing"], "0");

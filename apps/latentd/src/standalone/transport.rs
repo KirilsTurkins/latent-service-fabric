@@ -122,15 +122,35 @@ impl Transport {
         {
             self.handle.force_close();
         }
-        tokio::time::timeout_at(deadline, self.handle.shared.idle())
-            .await
-            .map_err(|_| unavailable("standalone transport cleanup did not finish"))?;
-        let mut serving = self.serving.take().expect("owned server task");
-        let result = tokio::time::timeout_at(deadline, &mut serving).await;
+        // Reserve part of the same finite shutdown allowance for an abort join.
+        // Keep the JoinHandle in self across every await: cancellation of this
+        // shutdown future must still run Transport's conservative Drop.
+        let join_deadline = deadline - maximum / 4;
+        let result = tokio::time::timeout_at(join_deadline, async {
+            self.handle.shared.idle().await;
+            self.serving.as_mut().expect("owned server task").await
+        })
+        .await;
         if let Ok(Ok(Ok(()))) = result {
+            self.serving.take();
             Ok(self.handle.snapshot())
         } else {
-            serving.abort();
+            self.handle.force_close();
+            if result.is_err() {
+                self.serving.as_ref().expect("owned server task").abort();
+                if tokio::time::timeout_at(
+                    deadline,
+                    self.serving.as_mut().expect("owned server task"),
+                )
+                .await
+                .is_ok()
+                {
+                    self.serving.take();
+                }
+            } else {
+                // A completed error/panic is already joined; never poll it twice.
+                self.serving.take();
+            }
             Err(unavailable("standalone server did not stop cleanly"))
         }
     }

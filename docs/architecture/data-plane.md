@@ -55,4 +55,10 @@ Guest code returns output, state mutations, and effect intents. State and outbox
 
 ## Reclamation
 
-On completion, cancellation, trap, deadline, or permanent failure, the store and activation-scoped capability handles are dropped, dirty pages are reclaimed, and the cell returns to the generic pool.
+On completion, cancellation, trap, deadline, or permanent failure, the store and
+activation-scoped capability handles are dropped and activation resources are
+reclaimed. Returning a cell to the generic pool requires affirmative backend
+cleanup proof and successful pool disposition; uncertain cleanup quarantines it.
+After transport loss, standalone's bounded supervisor continues the same
+activation owner under its original deadline to obtain that proof. A terminal
+outcome alone does not establish reuse safety.

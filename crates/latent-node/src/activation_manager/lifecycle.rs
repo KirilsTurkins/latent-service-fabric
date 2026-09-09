@@ -1,4 +1,3 @@
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
@@ -18,6 +17,7 @@ use crate::CancellationRegistration;
 
 use super::control::error;
 use super::observation::{Observation, ObservationServices};
+use super::transport_stop::{ActivationTransportInterruption, TransportStop};
 
 /// Owns cleanup and terminal publication once. Every execution future borrows
 /// this guard and is destroyed before its Drop can finalize accounting.
@@ -25,7 +25,7 @@ pub(super) struct Lifecycle {
     journal: Option<JournalOwner>,
     cancellation: Option<CancellationRegistration>,
     clock: Arc<dyn ActivationClock>,
-    deadline_abort: Arc<AtomicBool>,
+    pub(super) transport_stop: Arc<TransportStop>,
     pub(super) incoming_deadline: Option<IncomingDeadline>,
     pub(super) budget: Option<ActivationBudget>,
     pub(super) resolved: Option<ResolvedRevision>,
@@ -41,14 +41,14 @@ impl Lifecycle {
         journal: JournalOwner,
         cancellation: CancellationRegistration,
         clock: Arc<dyn ActivationClock>,
-        deadline_abort: Arc<AtomicBool>,
+        transport_stop: Arc<TransportStop>,
         incoming_deadline: Option<IncomingDeadline>,
     ) -> Self {
         Self {
             journal: Some(journal),
             cancellation: Some(cancellation),
             clock,
-            deadline_abort,
+            transport_stop,
             incoming_deadline,
             budget: None,
             resolved: None,
@@ -153,6 +153,12 @@ impl Lifecycle {
     }
 
     fn publish(&mut self, mut outcome: ActivationOutcome) -> ActivationOutcome {
+        if let Some(stop) = self.transport_stop.failure() {
+            // Raw interruption is provisional, not an accepted explicit Cancel.
+            // Existing deadline/finalization checks and the registry winner below
+            // keep their authority. Cleanup disposition was already observed.
+            outcome = failure_for_platform_error(stop, outcome_consumption(&outcome));
+        }
         if let Some(budget) = &self.budget {
             let now = self.clock.monotonic_now();
             let deadline = budget.check_deadline_at(now).err();
@@ -253,7 +259,9 @@ impl Drop for Lifecycle {
         self.reclaim();
         let code = if std::thread::panicking() {
             PlatformErrorCode::Internal
-        } else if self.deadline_abort.load(Ordering::Acquire) {
+        } else if self.transport_stop.cause()
+            == Some(ActivationTransportInterruption::DeadlineExceeded)
+        {
             PlatformErrorCode::DeadlineExceeded
         } else {
             PlatformErrorCode::Cancelled

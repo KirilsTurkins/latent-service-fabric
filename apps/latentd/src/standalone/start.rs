@@ -9,8 +9,8 @@ use latent_node::{
 use latent_routing::{ResolvedRevision, RevisionAdmissionPolicy, RevisionPolicySource};
 use latent_wasmtime::{TelemetryLogSink, WasmtimeHostServices};
 use latent_wire::invocation::{
-    InvocationServiceAdapter, InvocationServiceServices, LocalInvocationRuntime,
-    LocalPrincipalPolicy,
+    ActivationCleanupOwner, InvocationServiceAdapter, InvocationServiceServices,
+    LocalInvocationRuntime, LocalPrincipalPolicy,
 };
 use latent_wire::management::{
     LocalManagementPolicy, ManagementServiceAdapter, ManagementServices,
@@ -98,14 +98,36 @@ impl StandaloneNode {
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
         let mut node = Self::compose(&settings, &catalogs, clock)?;
+        if let Err(failure) =
+            Box::pin(node.start_services(&settings, catalogs, control_runtime, threads)).await
+        {
+            // Keep every created async owner inside the startup lifetime. The
+            // original startup failure remains a failure even if cleanup joins.
+            let _ = node.shutdown().await;
+            return Err(failure);
+        }
+        Ok(node)
+    }
+
+    async fn start_services(
+        &mut self,
+        settings: &NodeSettings,
+        catalogs: Catalogs,
+        control_runtime: tokio::runtime::Handle,
+        threads: RuntimeThreads,
+    ) -> Result<(), PlatformError> {
         let invocation = InvocationServiceAdapter::with_services(
-            Arc::new(LocalInvocationRuntime::with_limits(
-                node.manager.clone(),
+            Arc::new(LocalInvocationRuntime::with_cleanup(
+                self.manager.clone(),
                 settings.invocation.clone(),
+                self.cleanup
+                    .as_ref()
+                    .expect("owned cleanup driver")
+                    .handle(),
             )?),
             settings.invocation.clone(),
             InvocationServiceServices {
-                clock: Arc::clone(&node.clock),
+                clock: Arc::clone(&self.clock),
                 ..InvocationServiceServices::default()
             },
         )?;
@@ -114,15 +136,15 @@ impl StandaloneNode {
                 artifacts: catalogs.artifacts,
                 deployments: catalogs.deployments.clone(),
                 routes: catalogs.deployments.clone(),
-                inventory: node.inventory.clone(),
+                inventory: self.inventory.clone(),
                 principals: Arc::new(LocalPrincipalPolicy),
                 authorization: Arc::new(LocalManagementPolicy),
-                clock: Arc::clone(&node.clock),
+                clock: Arc::clone(&self.clock),
             },
             settings.management.clone(),
         )?;
-        node.sampler = Some(load::LoadSampler::start(
-            Arc::clone(&node.load),
+        self.sampler = Some(load::LoadSampler::start(
+            Arc::clone(&self.load),
             settings.load_sample_interval,
             &control_runtime,
         ));
@@ -130,38 +152,42 @@ impl StandaloneNode {
             settings.transport.clone(),
             invocation,
             management,
-            Arc::clone(&node.clock),
+            Arc::clone(&self.clock),
             control_runtime,
         )
         .await?;
+        self.transport = Some(transport);
+        let transport = self.transport.as_ref().expect("owned started transport");
         let topology = Arc::new(observations::TopologySource::new(
-            &settings,
-            node.backend.clone(),
-            node.scheduler.clone(),
+            settings,
+            self.backend.clone(),
+            self.scheduler.clone(),
             transport.handle(),
-            threads.invocation,
-            threads.control,
+            self.cleanup
+                .as_ref()
+                .expect("owned cleanup driver")
+                .handle(),
+            threads,
         ));
         let mut descriptor = settings.node.clone();
         descriptor.endpoint = format!("http://{}", transport.local_addr());
-        node.inventory
+        self.inventory
             .install(Arc::new(StandaloneInventoryReporter::new(
                 settings.inventory.clone(),
                 descriptor,
                 StandaloneInventorySources {
-                    scheduler: node.scheduler.clone(),
+                    scheduler: self.scheduler.clone(),
                     routes: catalogs.deployments,
-                    quotas: node.quotas.clone(),
-                    load: node.load.clone(),
-                    cache: Arc::new(observations::CacheSource::new(node.backend.clone())),
+                    quotas: self.quotas.clone(),
+                    load: self.load.clone(),
+                    cache: Arc::new(observations::CacheSource::new(self.backend.clone())),
                     topology,
-                    clock: Arc::clone(&node.clock),
+                    clock: Arc::clone(&self.clock),
                 },
             )?))?;
-        node.load.start_accepting();
+        self.load.start_accepting();
         transport.handle().start_accepting()?;
-        node.transport = Some(transport);
-        Ok(node)
+        Ok(())
     }
 
     fn compose(
@@ -212,6 +238,12 @@ impl StandaloneNode {
         )?;
         Ok(Self {
             transport: None,
+            cleanup: Some(ActivationCleanupOwner::start_with_observer(
+                settings.manager.journal.maximum_active,
+                settings.manager.cleanup_grace,
+                &tokio::runtime::Handle::current(),
+                clock.deadline_diagnostic_observer().cloned(),
+            )?),
             sampler: None,
             telemetry_runtime: Some(telemetry_runtime),
             factory: Some(factory),
@@ -227,6 +259,7 @@ impl StandaloneNode {
             clock,
             classes: settings.inventory.cell_classes.clone(),
             shutdown_grace: settings.shutdown_grace,
+            cleanup_grace: settings.manager.cleanup_grace,
         })
     }
 }

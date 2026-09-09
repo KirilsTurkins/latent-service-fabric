@@ -12,8 +12,8 @@ from tools.optimization_backend_revision.collect import execute
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", choices=("smoke", "full"), default="smoke")
-    parser.add_argument("--experiment", choices=("warm", "cold", "cache", "budget"), default="warm",
-                        help="cold selects #101; cache selects #102; budget selects the separate 23-offer #103 lifecycle")
+    parser.add_argument("--experiment", choices=("warm", "cold", "cache", "budget", "recovery"), default="warm",
+                        help="cold #101; cache #102; budget #103 (23 offers); recovery #119 (61 offers)")
     parser.add_argument("--builds", type=Path, required=True, help="backend-builds.json; its parent receives the new suite")
     parser.add_argument("--target-root", type=Path, default=ROOT / "target")
     try:

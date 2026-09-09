@@ -118,7 +118,10 @@ def collect(repo: Path, refs: dict, output: Path, target_parent: Path, deadline:
         from . import backend
         backend_output.mkdir(parents=True, exist_ok=False)
         if selected is not None:
-            from . import budget_build as budget_backend
+            if selected.EXPERIMENT == "recovery":
+                from . import recovery_build as budget_backend
+            else:
+                from . import budget_build as budget_backend
         backend_controls = backend.CONTROLS if budget_backend is None else budget_backend.CONTROLS
         for name in backend_controls:
             if len({git(repo, "rev-parse", f"{ref}:{name}") for ref in refs.values()}) != 1:
