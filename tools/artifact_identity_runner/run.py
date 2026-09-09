@@ -5,8 +5,8 @@ from decimal import Decimal
 from pathlib import Path
 import time
 
-from optimization_runner.cgroups import cgroup
-from optimization_runner.processes import OwnedProcess
+from tools.optimization_runner.cgroups import cgroup
+from tools.optimization_runner.processes import OwnedProcess
 from . import resources
 from .files import compress_folded, fingerprint, reference, total_bytes, warm, write_json
 from .helpers import command, directory_bytes
@@ -41,10 +41,13 @@ def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
 
 
 def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, output: Path,
-            deadline: int, heaptrack_print: str, decompressor: str, environment: dict | None = None) -> None:
+            deadline: int, heaptrack_print: str, decompressor: str, environment: dict | None = None,
+            *, normal_timeout: int = 60) -> None:
     """Update a pre-retained receipt even when acquisition or verification fails."""
     import resource  # Linux-only execution; the population/model remains portable.
 
+    if type(normal_timeout) is not int or normal_timeout not in (60, 90):
+        raise ValueError("unsupported-normal-probe-timeout")
     directory.mkdir(parents=True)
     if fixture is not None:
         record["warmup"] = warm(output / fixture["root"], fixture["files"], output)
@@ -62,7 +65,7 @@ def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, o
         if time.monotonic_ns() >= deadline:
             raise TimeoutError("probe-deadline-before-spawn")
         owner = OwnedProcess(record["command"], directory / "probe.log", "identity-" + mode,
-                             60 if mode == "normal" else 180, output,
+                             normal_timeout if mode == "normal" else 180, output,
                              env=environment, overall_deadline_ns=deadline)
         record["process"] = owner.receipt
         while not owner.exited() or owner.selector.get_map():

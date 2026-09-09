@@ -22,6 +22,9 @@ from .recovery import model as recovery_model
 
 
 def execute(args, repo):
+    if getattr(args, "experiment", "warm") == "ownership":
+        from .ownership.collect import execute as execute_ownership
+        return execute_ownership(args, repo)
     if platform.system() != "Linux":
         raise ValueError("backend-diagnostic-requires-linux")
     build_path = args.builds.resolve()

@@ -120,8 +120,12 @@ def collect(repo: Path, refs: dict, output: Path, target_parent: Path, deadline:
         if selected is not None:
             if selected.EXPERIMENT == "recovery":
                 from . import recovery_build as budget_backend
-            else:
+            elif selected.EXPERIMENT == "ownership":
+                from . import ownership_build as budget_backend
+            elif selected.EXPERIMENT == "budget":
                 from . import budget_build as budget_backend
+            else:
+                raise ValueError("unsupported-selected-backend-build")
         backend_controls = backend.CONTROLS if budget_backend is None else budget_backend.CONTROLS
         for name in backend_controls:
             if len({git(repo, "rev-parse", f"{ref}:{name}") for ref in refs.values()}) != 1:
@@ -160,3 +164,8 @@ def collect(repo: Path, refs: dict, output: Path, target_parent: Path, deadline:
                 from .collect import write
                 write(backend_output / "backend-builds.json", backend_receipt)
             save()
+        if backend_receipt is not None and selected is not None and selected.EXPERIMENT == "ownership":
+            backend_receipt["fixture_generation"] = budget_backend.generate(
+                backend_output, backend_receipt, deadline, suite["profile"])
+            from .collect import write
+            write(backend_output / "backend-builds.json", backend_receipt)

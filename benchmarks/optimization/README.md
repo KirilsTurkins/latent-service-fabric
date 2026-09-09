@@ -264,3 +264,22 @@ defines source controls, fixed populations and the separate transport, native
 cleanup and resource boundaries. Structural schemas do not replace strict raw
 replay. Historical budget evidence remains unchanged, and functional debug
 fixtures do not qualify as release benchmark results.
+
+## Request ownership experiments
+
+The [#104 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/104)
+uses `--experiment ownership` on the existing revision runners. It separates
+three unchanged external payload cases from direct Wasmtime invocations, two
+observed pending-future proofs and independently profiled allocation children.
+Full collection retains 16,096 calls; smoke retains 164. There is no additional
+prewarm invocation or candidate-adapted input.
+
+| Evidence | Plan | Builds | Suite | Aggregate |
+| --- | --- | --- | --- | --- |
+| External payload RPC | [plan](ownership-rpc-plan.schema.json) | [builds](ownership-rpc-builds.schema.json) | [suite](ownership-rpc-suite.schema.json) | [aggregate](ownership-rpc-aggregate.schema.json) |
+| Direct ownership and allocations | [plan](ownership-plan.schema.json) | [builds](ownership-builds.schema.json) | [suite](ownership-suite.schema.json) | [aggregate](ownership-aggregate.schema.json) |
+
+The [collection and replay method](../../docs/testing/phase-1-measurements.md#request-ownership-experiments)
+defines the exact source controls, control-generated context fixtures and the
+distinct timing, logical ownership, allocator and process-memory boundaries.
+These links describe the method and structural envelopes, not measured results.

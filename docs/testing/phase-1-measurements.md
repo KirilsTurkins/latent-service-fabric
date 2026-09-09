@@ -443,3 +443,112 @@ drain, not individual requests. Manager sleep counters cover their own guards,
 not all runtime, transport or OS timers. Sampled whole-process RSS and retained
 bounded telemetry history are distinct from live ownership. This single pair
 proves a finite recovery population; it is not a statistical performance claim.
+## Request ownership experiments
+
+The fixed `--experiment ownership` profile compares exact control/candidate
+revisions with byte-identical common collectors and an identified shared harness.
+Both revisions include the supported generic prepared cache and transport
+cleanup. The external client is unchanged. A build-only pass builds the two
+servers and two `latentd` libtest collectors at the same owned source/target
+paths, plus the shared client/CLI and three maintained components. No unused
+native server, Echo collector or additional Rust benchmark client is built.
+
+The two evidence packages have distinct boundaries:
+
+| Population | Smoke calls | Full calls | Boundary |
+| --- | ---: | ---: | --- |
+| External `warm-echo`, `payload-64k`, `payload-near-limit` | 76 | 12,936 | Actual loopback RPC, including retained warmup; no additional prewarm |
+| Six direct shapes and two pending-future proofs | 52 | 3,052 | One Wasmtime factory per child; no node, listener or RPC |
+| Six independent allocation pairs | 36 | 108 | One shape per Heaptrack child, including its explicit warmup |
+| Total | 164 | 16,096 | All calls remain retained |
+
+There are seven normal pairs in full and one in smoke. Direct shapes use the
+three payloads above and small, 64 KiB and near-limit contexts. Each normal child
+prepares optimization, capabilities and generic exactly once, then executes
+four warmup plus 32 measured calls per shape in full (one plus three in smoke)
+and two generic pending-future proofs. Each allocation child prepares only its
+selected component and runs one warmup plus eight measured calls in full (one
+plus two in smoke). Allocation profiles use one pair per shape, not seven
+normal timing repetitions. Every returned output is validated outside the
+timed invocation interval.
+
+Inputs are generated once by the retained neutral control. Fixture generation
+performs exactly one capabilities preparation, at most 20 borrowed context
+charge checks, zero Invokes and zero guest Stores, then joins its factory and
+compiler workers. It retains the actual charge and 512–1,024 B of near-limit
+headroom. Fixed-width invocation IDs preserve sizing across calls. The candidate
+uses these exact files; Python does not reproduce the Rust charge formula or
+resize inputs after observing results. Direct contexts deliberately exceed
+ordinary RPC metadata limits and are not presented as remotely accepted input.
+
+Request construction includes the owned request and boxed backend future.
+Direct invocation runs from the first poll through its contained report and
+future destruction. The retained backend timing excludes outer context
+validation. Its reclamation spans measure actual destruction separately from
+outcome classification. The capabilities output contains dynamic deadline and
+remaining-budget values: replay checks the actual retained output, exposed
+claims/baggage/metadata and its bounded budget rather than demanding identical
+whole-output hashes between revisions.
+
+Raw-input observation is disabled for normal timing and profiled calls. The two
+proof IDs enable a fixed 8-identity/64-event recorder, observe actual guest
+dispatch and `Pending`, then either signal cancellation through acknowledgement
+or destroy the pending future. Replay binds raw capacity, release reason and
+invocation retirement to that exact ID and capture interval. Direct future
+destruction proves backend reclamation. A separate maintained standalone test
+covers the real transport handoff and affirmative cell reuse.
+
+Heaptrack 1.4 profiles remain separate from normal CPU/RSS observations. Exact
+raw and demangled `nm` records bind constructor and monomorphic poll symbols to
+the same retained executable by code address and type. Interpreted and folded
+allocation streams must agree. An allocation containing both selected frames
+counts once in their union; later frees refund its original selected ownership.
+Peak selected bytes are the maximum simultaneously live bytes, never the sum
+of frame peaks. Missing symbols or unresolved frames produce unavailable
+attribution, not zero. Logical Rust capacity, allocated bytes, selected live
+heap, guest linear memory and process RSS remain separate quantities.
+
+Normal process CPU uses serial `RUSAGE_CHILDREN` deltas around the owned child
+and includes setup, validation and observation holds; it is not per-call CPU.
+Normal RSS includes actual live samples and the kernel high-water mark.
+Profiled probe resources are explicitly instrumented, and the Heaptrack wrapper
+has a distinct owned PID. Both readiness and completion have a fixed 100 ms
+hold outside timed invocations. Build-only and each subsequent smoke/full
+collection have independent 7,200 s deadlines. A build command is bounded to
+3,600 s, a normal child to 90 s, a profiled child to 180 s and an extraction tool
+to 120 s, always clipped to its enclosing stage's remaining time. Reports retain
+actual stage and total elapsed times; 7,200 s is not a shared campaign bound.
+
+From the clean, identified measurement harness, supply full 40-character refs:
+
+```sh
+python tools/run_optimization_revision_benchmarks.py --experiment ownership \
+  --profile full --control-ref "$CONTROL_SHA" --candidate-ref "$CANDIDATE_SHA" \
+  --harness-ref "$HARNESS_SHA" --target-root /workspace/ownership-builds \
+  --output target/ownership/build-only-rpc \
+  --backend-build-output target/ownership/build-only-direct --build-only
+
+# Make all four fresh copies before collection. Existing destinations are errors.
+test ! -e target/ownership/rpc-smoke && cp -a target/ownership/build-only-rpc target/ownership/rpc-smoke
+test ! -e target/ownership/rpc-full && cp -a target/ownership/build-only-rpc target/ownership/rpc-full
+test ! -e target/ownership/direct-smoke && cp -a target/ownership/build-only-direct target/ownership/direct-smoke
+test ! -e target/ownership/direct-full && cp -a target/ownership/build-only-direct target/ownership/direct-full
+
+python tools/run_optimization_revision_benchmarks.py --experiment ownership --profile smoke \
+  --builds target/ownership/rpc-smoke/revision-builds.json --target-root /workspace/ownership-data
+python tools/run_optimization_backend_revision.py --experiment ownership --profile smoke \
+  --builds target/ownership/direct-smoke/backend-builds.json --target-root /workspace/ownership-data
+python tools/run_optimization_revision_benchmarks.py --experiment ownership --profile full \
+  --builds target/ownership/rpc-full/revision-builds.json --target-root /workspace/ownership-data
+python tools/run_optimization_backend_revision.py --experiment ownership --profile full \
+  --builds target/ownership/direct-full/backend-builds.json --target-root /workspace/ownership-data
+```
+
+Each suite replays independently through the existing revision/backend validator
+CLI and the existing Phase 1 archive packager. The direct package retains all
+raw ownership documents, full allocation traces, exact executable/source inputs
+and helper receipts under the existing 1 GiB/file-count/8 MiB document limits.
+Use the existing explicit split transport when needed; historical archives and
+their limits remain unchanged. Failed attempts are retained and cannot qualify
+as a complete population. Functional debug fixtures are semantic parser inputs,
+not release performance evidence.

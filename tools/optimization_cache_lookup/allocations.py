@@ -27,7 +27,7 @@ def nm_rows(path):
                 yield int(match[1], 16), match[2], match[3]
 
 
-def symbol_proof(row, binary, tool, artifacts):
+def symbol_proof(row, binary, tool, artifacts, *, frame=FRAME):
     fields(row, "command process log raw")
     require(isinstance(row["command"], list) and len(row["command"]) == 4
             and all(isinstance(value, str) for value in row["command"]), "lookup-symbol-command-shape")
@@ -37,7 +37,7 @@ def symbol_proof(row, binary, tool, artifacts):
     raw = fields(row["raw"], "command process log")
     require(raw["command"] == [tool["path"], "--defined-only", row["command"][-1]], "lookup-raw-symbol-command-crossed")
     helper(raw["process"], tool["sha256"], raw["log"], artifacts)
-    matches = [entry for entry in nm_rows(artifacts.path(row["log"])) if FRAME.fullmatch(entry[2])]
+    matches = [entry for entry in nm_rows(artifacts.path(row["log"])) if frame.fullmatch(entry[2])]
     # Absence/ambiguity remains unavailable, never inferred zero. The raw proof
     # must still be bounded and valid even in that case.
     if len(matches) != 1:
@@ -107,9 +107,9 @@ class Attribution(heaptrack.Replay):
                 self.unresolved_count += 1
 
 
-def replay_attribution(path, binary_name, symbols=()):
+def replay_attribution(path, binary_name, symbols=(), *, state_type=Attribution):
     require(not path.is_symlink() and path.is_file() and path.stat().st_size <= heaptrack.MAX_BYTES, "lookup-profile-input-bound")
-    state, total, records = Attribution(binary_name, symbols), 0, 0
+    state, total, records = state_type(binary_name, symbols), 0, 0
     with path.open("rb") as source:
         while encoded := source.readline(heaptrack.MAX_LINE_BYTES + 1):
             total += len(encoded)
