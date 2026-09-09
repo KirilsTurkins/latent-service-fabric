@@ -71,10 +71,6 @@ impl Node {
         .await
     }
 
-    #[expect(
-        clippy::too_many_arguments,
-        reason = "The bounded collector shares production composition and injects only its observing clock."
-    )]
     pub async fn start_with_clock(
         maximum_commands: u64,
         mut config: Value,

@@ -35,7 +35,7 @@ impl ActivationClock for ObservingClock {
     }
 }
 
-fn fixture(directory: &Path, node: &Node, publication: Value) -> Result<Value> {
+fn fixture(directory: &Path, node: &Node, publication: &Value) -> Result<Value> {
     let value = &node.fixture;
     let codec = JsonManifestCodec::default();
     let capsule = codec
@@ -115,7 +115,7 @@ pub(super) fn collect() {
         node.reconnect().await?;
         let publication = node.publish().await?;
         node.published().await?;
-        fixture(&directory, &node, publication)
+        fixture(&directory, &node, &publication)
     });
     let mut options = super::super::evidence::options(&node);
     options["memory_bytes"] = json!("67108864");
@@ -133,7 +133,7 @@ pub(super) fn collect() {
     let result = match setup {
         Ok(_) => client.block_on(async {
             tokio::time::timeout(
-                Duration::from_secs(180),
+                Duration::from_mins(3),
                 Box::pin(sequence::run(
                     &mut node,
                     clock,
@@ -188,10 +188,12 @@ pub(super) fn collect() {
     let coverage = state.offers.len() == 23
         && diagnostic.snapshot().identities.len() == 23
         && state.offers.iter().all(|row| {
-            !row["diagnostic_token"].is_null()
-                && !(row["case"] == "queued"
-                    && matches!(row["budget_millis"].as_str(), Some("5" | "10"))
-                    && row["queue_witness"].is_null())
+            if row["diagnostic_token"].is_null() {
+                return false;
+            }
+            !(row["case"] == "queued"
+                && matches!(row["budget_millis"].as_str(), Some("5" | "10"))
+                && row["queue_witness"].is_null())
         });
     let passed = result.is_ok()
         && clean
