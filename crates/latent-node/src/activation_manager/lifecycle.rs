@@ -154,6 +154,17 @@ impl Lifecycle {
             } else {
                 replace_consumption(outcome, consumption)
             };
+        } else if self
+            .incoming_deadline
+            .is_some_and(|deadline| self.clock.monotonic_now() >= deadline.monotonic())
+        {
+            // Resolution/admission failure and unpolled abandonment can precede
+            // ledger construction. They still retain the original ingress limit;
+            // an accepted explicit cancellation keeps its registry winner below.
+            outcome = failure_for_platform_error(
+                super::control::deadline_error(),
+                outcome_consumption(&outcome),
+            );
         }
         let journal = self.journal.as_ref().expect("one terminal publication");
         if let Err(failure) = journal.validate_terminal(&outcome) {

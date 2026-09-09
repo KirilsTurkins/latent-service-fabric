@@ -96,6 +96,39 @@ fn legacy_precise_token_is_validated_without_extending_its_unix_projection() {
 }
 
 #[test]
+fn token_only_deadline_survives_a_forward_wall_jump() {
+    let mut request = request();
+    let clock = Clock::new();
+    let grant = EffectiveActivationBudget::admit_with_deadline_at(
+        &request.budget,
+        &request.budget,
+        &request.budget,
+        &IncomingDeadline::new(clock.admitted + Duration::from_micros(1_800), 10_002),
+        ClockSample::new(9_000_000, clock.admitted),
+    )
+    .unwrap();
+    let cancellation = Cancellation {
+        id: request.activation.activation_id.clone(),
+        budget: None,
+        deadline: Some(grant.deadline.clone()),
+    };
+    for supplied in [Some(10_002), Some(10_003), None] {
+        request.activation.deadline_unix_millis = supplied;
+        let accounting = InvocationAccounting::new(&request, &cancellation, &clock).unwrap();
+        assert_eq!(accounting.deadline(), &grant.deadline);
+        assert_eq!(accounting.budget().deadline(), &grant.deadline);
+    }
+    request.activation.deadline_unix_millis = Some(10_001);
+    assert_eq!(
+        InvocationAccounting::new(&request, &cancellation, &clock)
+            .unwrap_err()
+            .code,
+        PlatformErrorCode::DeadlineExceeded
+    );
+    assert_eq!(clock.samples.load(Ordering::Relaxed), 0);
+}
+
+#[test]
 fn relative_ceiling_after_a_wall_jump_preserves_the_managers_grant_projection() {
     let mut request = request();
     request.budget.wall_time_limit_millis = Some(1);

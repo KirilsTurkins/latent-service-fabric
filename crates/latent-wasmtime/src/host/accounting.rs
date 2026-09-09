@@ -160,13 +160,11 @@ fn grant(
             )
         },
     );
-    let absolute = match (
-        request.activation.deadline_unix_millis,
-        original.and_then(EffectiveDeadline::unix_millis),
-    ) {
-        (Some(first), Some(second)) => Some(first.min(second)),
-        (first, second) => first.or(second),
-    };
+    let absolute = request.activation.deadline_unix_millis.filter(|requested| {
+        original
+            .and_then(EffectiveDeadline::unix_millis)
+            .is_none_or(|current| *requested < current)
+    });
     let mut grant = EffectiveActivationBudget::admit_at(
         &request.budget,
         &request.budget,
@@ -176,8 +174,9 @@ fn grant(
     )
     .map_err(|error| error.to_platform_error())?;
     if let Some(original) = original {
-        // Legacy direct callers still validate their grant, but an admitted
-        // precise token can never be extended by its Unix projection.
+        // A token's Unix value is diagnostic: after a wall-clock jump it may
+        // precede its admission sample. Only a new stricter explicit request
+        // above is converted; the admitted precise token remains authoritative.
         tighten(&mut grant.deadline, original);
     }
     grant

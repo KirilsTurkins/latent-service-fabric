@@ -124,3 +124,42 @@ async fn terminal_decision_enforces_exact_expiry_without_a_timer_wakeup() {
         harness.assert_idle();
     }
 }
+
+#[tokio::test(start_paused = true)]
+async fn preadmission_drop_and_failed_resolution_keep_the_ingress_deadline() {
+    for resolve in [false, true] {
+        let harness = Harness::standard();
+        let arrival = harness.clock.sample();
+        let expiry = arrival.monotonic() + Duration::from_millis(2);
+        let end = ClockSample::new(arrival.unix_millis() + 2, expiry);
+        let handle = harness
+            .manager
+            .start_with_deadline(
+                request("preadmission-expiry"),
+                Some(IncomingDeadline::new(expiry, end.unix_millis())),
+            )
+            .unwrap();
+        if resolve {
+            let clock = std::sync::Arc::clone(&harness.clock);
+            *harness.catalog.resolve_hook.lock().unwrap() = Some(std::sync::Arc::new(move || {
+                clock.set(end);
+                Err(super::support::error(
+                    latent_core::PlatformErrorCode::RouteUnavailable,
+                    "delayed resolution failure",
+                ))
+            }));
+            let _ = finish(handle).await;
+        } else {
+            harness.clock.set(end);
+            drop(handle);
+        }
+        let status = harness.status("preadmission-expiry");
+        assert_eq!(
+            status.terminal_state,
+            Some(ActivationTerminalState::DeadlineExceeded)
+        );
+        assert_eq!(status.final_consumption.unwrap().cpu_fuel, 0);
+        assert_eq!(harness.backend.preparation_calls.load(Ordering::Relaxed), 0);
+        harness.assert_idle();
+    }
+}
