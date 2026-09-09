@@ -104,6 +104,7 @@ impl PreparationContext {
             },
             &job,
         )?;
+        reservation.track_runtime(&runtime)?;
         Ok(CompilationResult {
             runtime,
             reservation: Some(reservation),

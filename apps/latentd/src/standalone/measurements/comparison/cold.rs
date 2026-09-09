@@ -1,9 +1,9 @@
 //! Matched synchronous/worker cold observation; no measured compiler barriers.
-mod call;
-mod fixture;
-mod observation;
-mod plan;
-mod schedule;
+pub(super) mod call;
+pub(super) mod fixture;
+pub(super) mod observation;
+pub(super) mod plan;
+pub(super) mod schedule;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;

@@ -96,11 +96,11 @@ from startup failure diagnostics.
 | `limits.maximumPayloadBytes` | `1048576` | Invocation/codec input and output ceiling, up to 1 MiB. |
 | `limits.maximumConnections` | `32` | Accepted transport connections, 1–1024. |
 | `cache.entries` | `8` | Retained prepared components, 1–4096. |
-| `cache.sourceBytes` | `67108864` | Retained source ceiling, at least one maximum component and at most 1 GiB. |
-| `cache.metadataBytes` | `8388608` | Retained preparation metadata, 1 MiB–1 GiB. |
+| `cache.sourceBytes` | `67108864` | Associated component-byte ceiling for resident code, at least one maximum component and at most 1 GiB; not retained source buffers. |
+| `cache.metadataBytes` | `8388608` | Resident preparation metadata accounting ceiling, 1 MiB–1 GiB. |
 | `cache.compiledImageBytes` | `134217728` | Retained compiled image ranges, at most 1 GiB. |
 | `cache.preparations` | `1` | Total distinct compiler jobs, assigned plus queued; at most the admitted population (cells plus queue capacity). |
-| `cache.compilerWorkers` | `min(2, cache.preparations)` | Fixed compiler threads, 1?8 and no greater than total compiler jobs. Remaining job slots form the bounded compiler queue. |
+| `cache.compilerWorkers` | `min(2, cache.preparations)` | Fixed compiler threads, 1 to 8 and no greater than total compiler jobs. Remaining job slots form the bounded compiler queue. |
 | `catalogs.releaseEntries` | `4096` | Completed-release index count, at most 100000. |
 | `catalogs.releaseIndexBytes` | `67108864` | Release index allocation ceiling, 1 MiB–1 GiB. |
 | `catalogs.deployments` | `4096` | Deployment count, at most 100000. |
@@ -160,9 +160,25 @@ redacted before telemetry submission.
 
 The configured node shares one quota ledger, scheduler, manager, clock and
 Wasmtime preparation cache. Each activation receives a fresh store and owned
-cleanup obligations. The cache holds prepared code and bounded metadata; cache
-bytes do not measure process RSS, compiler scratch memory, or evicted code pinned
-by an active invocation. Publication validates durable artifacts; it does not
+cleanup obligations. The resident cache uses expected O(1) borrowed-key lookup
+and recency promotion, shared `Arc<str>` keys and a reusable arena bounded by
+`cache.entries`. Its entry and byte admission gates remain in force.
+
+RPC inventory retains its resident-cache counters. The backend and factory Rust
+APIs additionally expose `cache_accounting_snapshot()` and an independent
+`prepared_runtime_observer()`: unique runtimes are counted once across
+`unpublished`, `resident` and `evicted_live`, with `live` reporting their total.
+Evicted code can remain owned by ready or active pins, or temporary compiler
+owners. Conservative `ReadyGate` charges still apply separately to every ready
+owner, including owners sharing one runtime. Source bytes describe associated
+component content; metadata bytes are bounded accounting estimates, and compiled
+image bytes are address spans. None measures process RSS, physical pages or
+compiler scratch memory. The observer retains only counters and can verify final
+runtime release after factory destruction. See the
+[runtime accounting contract](../runtime/wasmtime.md#node-policy-and-shared-preparation)
+for the API and unavailable-value semantics.
+
+Publication validates durable artifacts; it does not
 promise that every published component's imports, types, metadata or declared
 resources fit this particular runtime.
 

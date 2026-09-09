@@ -1,4 +1,5 @@
 //! Controlled semantic echo arm; separate from the full measurement profiles.
+mod cache;
 mod call;
 mod cold;
 mod evidence;

@@ -3,31 +3,48 @@
 //! Cached values must contain only immutable prepared state. Invocation-owned
 //! stores, instances and host context belong to the backend's activation scope.
 
+mod accounting;
+mod diagnostics;
 mod instances;
 mod limits;
+#[cfg(all(test, target_os = "linux"))]
+mod measurement;
+mod recency;
+#[cfg(test)]
+mod recency_tests;
+mod reservation;
 #[cfg(test)]
 mod tests;
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use latent_core::{PlatformError, PlatformErrorCode};
 
 use crate::containment::platform_error;
+use accounting::{LedgerGuard, PreparedResidency};
+pub use accounting::{
+    PreparedCacheAccountingSnapshot, PreparedRuntimeObserver, PreparedRuntimePopulation,
+    PreparedRuntimeSnapshot,
+};
+pub(crate) use accounting::{
+    PreparedRuntimeCharge, PreparedRuntimeCost, PreparedRuntimeLedger, TrackedPreparedValue,
+};
 pub(crate) use instances::{ActiveInstanceGate, ActiveInstancePermit};
 pub(crate) use limits::CacheLimits;
 pub use limits::PreparedCacheSnapshot;
+use recency::Recency;
 
 const MAXIMUM_HANDLE_BYTES: usize = 256;
 
 pub(crate) struct PreparedCache<T> {
     limits: CacheLimits,
     state: Mutex<State<T>>,
+    runtime_observer: PreparedRuntimeObserver,
 }
 
 struct State<T> {
-    entries: HashMap<String, Entry<T>>,
-    lru: VecDeque<String>,
+    entries: Recency<T>,
     source_bytes: usize,
     metadata_bytes: usize,
     compiled_image_bytes: usize,
@@ -45,6 +62,7 @@ struct Entry<T> {
     source_bytes: usize,
     metadata_bytes: usize,
     compiled_image_bytes: usize,
+    residency: Option<PreparedResidency<T>>,
 }
 
 #[derive(Clone, Copy)]
@@ -66,6 +84,7 @@ pub(crate) struct PrepareReservation<T> {
     cache: Arc<PreparedCache<T>>,
     handle: String,
     active: bool,
+    residency: Option<PreparedResidency<T>>,
 }
 
 impl<T> PreparedCache<T> {
@@ -73,9 +92,9 @@ impl<T> PreparedCache<T> {
         limits.validate()?;
         Ok(Self {
             limits,
+            runtime_observer: PreparedRuntimeObserver::default(),
             state: Mutex::new(State {
-                entries: HashMap::new(),
-                lru: VecDeque::new(),
+                entries: Recency::default(),
                 source_bytes: 0,
                 metadata_bytes: 0,
                 compiled_image_bytes: 0,
@@ -147,6 +166,7 @@ impl<T> PreparedCache<T> {
             cache: Arc::clone(self),
             handle,
             active: true,
+            residency: None,
         }))
     }
 
@@ -154,16 +174,33 @@ impl<T> PreparedCache<T> {
         if handle.len() > MAXIMUM_HANDLE_BYTES {
             return false;
         }
+        // Predicates can be trusted-host callbacks. Invoke them outside all
+        // locks, then require the exact same runtime at removal linearization.
+        let runtime = self
+            .lock()
+            .entries
+            .peek(handle)
+            .map(|entry| Arc::clone(&entry.runtime));
+        let Some(runtime) = runtime else {
+            return false;
+        };
+        if !matches(&runtime) {
+            return false;
+        }
         let removed = {
             let mut state = self.lock();
             if !state
                 .entries
-                .get(handle)
-                .is_some_and(|entry| matches(&entry.runtime))
+                .peek(handle)
+                .is_some_and(|entry| Arc::ptr_eq(&entry.runtime, &runtime))
             {
                 return false;
             }
-            let removed = state.remove(handle);
+            let mut ledger = self.runtime_observer.lock();
+            let removed = state.entries.remove(handle);
+            if let Some(entry) = &removed {
+                state.retire(entry, ledger.as_mut());
+            }
             state.invalidations = state
                 .invalidations
                 .saturating_add(u64::from(removed.is_some()));
@@ -174,25 +211,7 @@ impl<T> PreparedCache<T> {
     }
 
     pub(crate) fn snapshot(&self) -> PreparedCacheSnapshot {
-        let state = self.lock();
-        PreparedCacheSnapshot {
-            entries: state.entries.len(),
-            source_bytes: state.source_bytes,
-            maximum_entries: self.limits.maximum_entries,
-            maximum_source_bytes: self.limits.maximum_source_bytes,
-            metadata_bytes: state.metadata_bytes,
-            maximum_metadata_bytes: self.limits.maximum_metadata_bytes,
-            compiled_image_bytes: state.compiled_image_bytes,
-            maximum_compiled_image_bytes: self.limits.maximum_compiled_image_bytes,
-            preparing: state.preparing.len(),
-            maximum_concurrent_preparations: self.limits.maximum_concurrent_preparations,
-            preparing_source_bytes: state.preparing_source_bytes,
-            preparing_metadata_bytes: state.preparing_metadata_bytes,
-            hits: state.hits,
-            misses: state.misses,
-            evictions: state.evictions,
-            invalidations: state.invalidations,
-        }
+        self.lock().snapshot(self.limits)
     }
 
     fn lock(&self) -> MutexGuard<'_, State<T>> {
@@ -202,157 +221,43 @@ impl<T> PreparedCache<T> {
     }
 }
 
-impl<T> PrepareReservation<T> {
-    #[cfg(test)]
-    pub(crate) fn publish(
-        self,
-        runtime: Arc<T>,
-        compiled_image_bytes: usize,
-    ) -> Result<(), PlatformError> {
-        let metadata_bytes = self
-            .cache
-            .lock()
-            .preparing
-            .get(&self.handle)
-            .expect("live preparation reservation")
-            .metadata_bytes;
-        self.publish_with_metadata(runtime, compiled_image_bytes, metadata_bytes)
-    }
-
-    /// Charges the discovered immutable metadata footprint while retaining the
-    /// full reservation until compilation and validation have completed.
-    pub(crate) fn publish_with_metadata(
-        self,
-        runtime: Arc<T>,
-        compiled_image_bytes: usize,
-        actual_metadata_bytes: usize,
-    ) -> Result<(), PlatformError> {
-        drop(self.publish_deferred(runtime, compiled_image_bytes, actual_metadata_bytes)?);
-        Ok(())
-    }
-
-    /// Publication is atomic; caller destroys returned evictions outside its
-    /// own registry lock as well as the cache lock.
-    pub(crate) fn publish_deferred(
-        mut self,
-        runtime: Arc<T>,
-        compiled_image_bytes: usize,
-        actual_metadata_bytes: usize,
-    ) -> Result<Vec<Arc<T>>, PlatformError> {
-        if compiled_image_bytes > self.cache.limits.maximum_compiled_image_bytes {
-            return Err(capacity_error());
-        }
-        let mut evicted = Vec::new();
-        {
-            let mut state = self.cache.lock();
-            let cost = *state
-                .preparing
-                .get(&self.handle)
-                .expect("live preparation reservation");
-            if actual_metadata_bytes > cost.metadata_bytes {
-                return Err(capacity_error());
-            }
-            let limits = &self.cache.limits;
-            while state.entries.len() >= limits.maximum_entries
-                || cost.source_bytes > limits.maximum_source_bytes - state.source_bytes
-                || actual_metadata_bytes > limits.maximum_metadata_bytes - state.metadata_bytes
-                || compiled_image_bytes
-                    > limits.maximum_compiled_image_bytes - state.compiled_image_bytes
-            {
-                let oldest = state
-                    .lru
-                    .front()
-                    .expect("eviction requires a resident entry")
-                    .clone();
-                evicted.push(state.remove(&oldest).expect("resident LRU entry").runtime);
-                state.evictions = state.evictions.saturating_add(1);
-            }
-            state.source_bytes += cost.source_bytes;
-            state.metadata_bytes += actual_metadata_bytes;
-            state.compiled_image_bytes += compiled_image_bytes;
-            state.entries.insert(
-                self.handle.clone(),
-                Entry {
-                    runtime,
-                    source_bytes: cost.source_bytes,
-                    metadata_bytes: actual_metadata_bytes,
-                    compiled_image_bytes,
-                },
-            );
-            state.lru.push_back(self.handle.clone());
-            state.finish_preparing(&self.handle);
-            self.active = false;
-        }
-        Ok(evicted)
-    }
-
-    /// Rebind a pre-read reservation after fully verified metadata determines
-    /// an untrusted source's ordinary cache identity, without a second slot.
-    pub(crate) fn rekey(mut self, handle: String) -> Result<PrepareAccess<T>, PlatformError> {
-        if handle.is_empty() || handle.len() > MAXIMUM_HANDLE_BYTES {
-            return Err(capacity_error());
-        }
-        let mut state = self.cache.lock();
-        if handle == self.handle {
-            drop(state);
-            return Ok(PrepareAccess::Compile(self));
-        }
-        if let Some(runtime) = state.get(&handle) {
-            state.finish_preparing(&self.handle);
-            self.active = false;
-            return Ok(PrepareAccess::Hit(runtime));
-        }
-        if state.preparing.contains_key(&handle) {
-            return Err(platform_error(
-                PlatformErrorCode::Unavailable,
-                "component preparation is already in progress",
-                true,
-            ));
-        }
-        let cost = state
-            .preparing
-            .remove(&self.handle)
-            .expect("live preparation reservation");
-        state.preparing.insert(handle.clone(), cost);
-        self.handle = handle;
-        drop(state);
-        Ok(PrepareAccess::Compile(self))
-    }
-}
-
-impl<T> Drop for PrepareReservation<T> {
-    fn drop(&mut self) {
-        if self.active {
-            self.cache.lock().finish_preparing(&self.handle);
-        }
-    }
-}
-
 impl<T> State<T> {
     fn get(&mut self, handle: &str) -> Option<Arc<T>> {
-        let Some(entry) = self.entries.get(handle) else {
+        let Some(runtime) = self.entries.get(handle) else {
             self.misses = self.misses.saturating_add(1);
             return None;
         };
         self.hits = self.hits.saturating_add(1);
-        let runtime = Arc::clone(&entry.runtime);
-        self.remove_lru(handle);
-        self.lru.push_back(handle.to_owned());
         Some(runtime)
     }
 
-    fn remove(&mut self, handle: &str) -> Option<Entry<T>> {
-        let entry = self.entries.remove(handle)?;
+    fn retire(&mut self, entry: &Entry<T>, ledger: Option<&mut LedgerGuard<'_>>) {
         self.source_bytes -= entry.source_bytes;
         self.metadata_bytes -= entry.metadata_bytes;
         self.compiled_image_bytes -= entry.compiled_image_bytes;
-        self.remove_lru(handle);
-        Some(entry)
+        if let Some(token) = &entry.residency {
+            token.evict(ledger.expect("tracked entry belongs to tracked cache"));
+        }
     }
 
-    fn remove_lru(&mut self, handle: &str) {
-        if let Some(position) = self.lru.iter().position(|candidate| candidate == handle) {
-            self.lru.remove(position);
+    fn snapshot(&self, limits: CacheLimits) -> PreparedCacheSnapshot {
+        PreparedCacheSnapshot {
+            entries: self.entries.len(),
+            source_bytes: self.source_bytes,
+            maximum_entries: limits.maximum_entries,
+            maximum_source_bytes: limits.maximum_source_bytes,
+            metadata_bytes: self.metadata_bytes,
+            maximum_metadata_bytes: limits.maximum_metadata_bytes,
+            compiled_image_bytes: self.compiled_image_bytes,
+            maximum_compiled_image_bytes: limits.maximum_compiled_image_bytes,
+            preparing: self.preparing.len(),
+            maximum_concurrent_preparations: limits.maximum_concurrent_preparations,
+            preparing_source_bytes: self.preparing_source_bytes,
+            preparing_metadata_bytes: self.preparing_metadata_bytes,
+            hits: self.hits,
+            misses: self.misses,
+            evictions: self.evictions,
+            invalidations: self.invalidations,
         }
     }
 
@@ -363,6 +268,29 @@ impl<T> State<T> {
             .expect("live preparation reservation");
         self.preparing_source_bytes -= cost.source_bytes;
         self.preparing_metadata_bytes -= cost.metadata_bytes;
+    }
+}
+
+impl<T> Drop for PreparedCache<T> {
+    fn drop(&mut self) {
+        let entries = {
+            let state = self
+                .state
+                .get_mut()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut ledger = self.runtime_observer.lock();
+            for entry in state.entries.values() {
+                if let Some(token) = &entry.residency {
+                    token.evict(ledger.as_mut().expect("tracked cache ledger"));
+                }
+            }
+            state.source_bytes = 0;
+            state.metadata_bytes = 0;
+            state.compiled_image_bytes = 0;
+            std::mem::take(&mut state.entries)
+        };
+        // Every native field and runtime-owned refund runs after guards end.
+        drop(entries);
     }
 }
 

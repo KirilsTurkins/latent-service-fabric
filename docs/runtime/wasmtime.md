@@ -71,6 +71,14 @@ drops the instance, store, host state, temporary values, and live cancellation
 probe before returning `ExecutionCleanup::Reusable`. Callers must honor the
 explicit cleanup proof; an outcome by itself does not authorize cell reuse.
 
+Native trap errors can retain compiled images through their backtraces. Normal
+completion classifies and destroys these errors after dropping stores and
+temporary buffers, but before dropping the final invocation runtime pin and
+instance permit. `activation_resource_reclamation_micros` sums those two actual
+drop intervals; the intervening classification belongs to
+`outcome_classification_micros`. These timing fields preserve separate boundaries
+without counting classification twice.
+
 No WASI filesystem, environment, network, process, or other ambient authority
 is installed. The supported host imports are activation context, structured
 logging, and monotonic/wall clocks. Their disclosure policy, shared live budget,
@@ -129,11 +137,43 @@ the [catalog contract](../development/local-release-catalog.md#verified-preparat
 defines their eligibility and verification counters.
 
 The cache defaults to eight entries, 64 MiB of source bytes, 8 MiB of bounded
-metadata accounting, and 128 MiB of compiled image address ranges. These are separate
-admission dimensions; compiled-image accounting is not a measurement of all
-compiler heap allocations or process RSS. Eviction and `release` remove cache
-ownership. An executing activation may retain its bounded runtime pin until
-cleanup, so resident cache counters exclude those active evicted pins.
+metadata accounting, and 128 MiB of compiled image address ranges. These remain
+separate admission dimensions. A resident hit borrows its `&str` key, performs
+an expected O(1) hash lookup with respect to entry count, and promotes the entry
+by updating a fixed number of recency links. The index and recency slot share
+one `Arc<str>` key allocation. A reusable slot arena grows within the configured
+entry ceiling and reuses vacant slots; hits neither scan the recency order nor
+allocate a new key. This describes the cache operation, not the cost of the
+complete preparation or invocation path. The implementation is tracked in
+[#102](https://github.com/KirilsTurkins/latent-service-fabric/issues/102).
+
+`cache_accounting_snapshot()` on `WasmtimeBackend` and
+`WasmtimeComponentEngineFactory` combines the existing resident-cache snapshot
+with unique runtime accounting. Each distinct prepared runtime contributes its
+cost once, regardless of how many ready, active or temporary owners share it:
+
+| Runtime population | Ownership represented |
+| --- | --- |
+| `unpublished` | Constructed runtimes not admitted to the cache, including uncached Phase 0 uses. |
+| `resident` | Runtimes currently owned by a resident cache entry. |
+| `evicted_live` | Former residents still held by ready, active, compiler or deferred-eviction owners. This is not an active-invocation count. |
+| `live` | The total of the three disjoint populations above. |
+
+Each population reports `runtimes`, `source_bytes`, `metadata_bytes` and
+`compiled_image_bytes`. Source bytes describe associated component content, not
+a retained source `Vec`. Metadata is the backend's bounded accounting estimate;
+image bytes are Wasmtime `Component::image_range` spans. The counters count
+these charges exactly once per runtime; they do not measure allocator overhead,
+compiler scratch, physical pages or process RSS. Eviction and `release` transfer
+a surviving runtime from resident to evicted-live accounting. The final runtime
+owner refunds its charge after its native fields are destroyed. A recompiled
+runtime is a separate lifetime even when an older pin names the same release.
+
+The backend and factory also expose `prepared_runtime_observer()`. Its cloneable observer
+retains only counter state, so `snapshot()` remains usable after cache/factory
+destruction without keeping runtimes or workers alive. An unavailable ledger is
+reported as `None`, not as zero usage. Destroying the cache removes residency;
+surviving pins remain charged until their actual final drop.
 
 Activation orchestration obtains the engine key through
 `ExecutionBackend::preparation_key` and calls `prepare_ready_from_repository`
@@ -190,15 +230,17 @@ abandoned, keeps its reservations until native compilation returns, and discards
 its late result. Readiness transfers no renewed deadline or replacement budget.
 Queue, worker, waiter, ready-owner and document limits are finite and separately
 observed. Ready image/metadata charges conservatively account for each pin, even
-when pins share code; they are distinct from resident-cache and active-instance
-populations. Neither accounting nor input caps claim a total compiler heap/RSS
-bound. Detailed stage/CPU observations are opt-in measurement instrumentation.
+when pins share code; this `ReadyGate` admission accounting is separate from the
+unique runtime ledger, resident-cache limits and active-instance population.
+Materializing a ready pin transfers the same unique runtime without adding a
+second lifetime charge. Neither accounting nor input caps claim a total compiler
+heap/RSS bound. Detailed stage/CPU observations are opt-in measurement instrumentation.
 
 The borrowed `prepare_from_repository` and direct preparation APIs remain
 compatible synchronous paths. The generic node readiness path supplies the
 bounded worker behavior; the Phase 0 facade retains its original execution model.
-Cache eviction/LRU improvements are tracked separately in
-[#102](https://github.com/KirilsTurkins/latent-service-fabric/issues/102).
+Cache-disabled preparation remains restricted to the Phase 0 profiling facade;
+the Generic factory rejects that configuration before creating its engine.
 A shared instance gate defaults to 64 active component instances
 across the factory's backends, and each store also has explicit instance,
 memory, table, and table-element limits. Pooling exposes its component/core

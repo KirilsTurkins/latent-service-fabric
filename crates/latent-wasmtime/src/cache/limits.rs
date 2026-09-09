@@ -1,4 +1,5 @@
 use latent_core::{PlatformError, PlatformErrorCode};
+use serde::Serialize;
 
 use crate::containment::platform_error;
 
@@ -49,7 +50,7 @@ impl CacheLimits {
 /// An invocation can pin an evicted value until its instance permit is released.
 /// Compiled image bytes exclude compiler heap, temporary compilation work and
 /// process RSS. Preparing bytes are separately bounded by the admitted slots.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PreparedCacheSnapshot {
     pub entries: usize,
     pub source_bytes: usize,

@@ -35,6 +35,9 @@ mod owned;
 mod preparation;
 mod preparation_context;
 mod readiness;
+mod reclamation;
+#[cfg(test)]
+mod result_lifetime_tests;
 use preparation_context::PreparationContext;
 mod store;
 use owned::WasmtimePreparedUse;
@@ -51,6 +54,20 @@ pub(crate) struct PreparedRuntime {
     authentication: Option<ArtifactPreparationIdentity>,
     metadata_bytes: usize,
     image_bytes: usize,
+    // Runtime-owned costs retire only after all native and metadata fields.
+    lifetime_charge: crate::cache::PreparedRuntimeCharge,
+}
+
+impl PreparedRuntime {
+    pub(crate) fn descriptor(&self) -> &PreparedComponent {
+        &self.descriptor
+    }
+}
+
+impl crate::cache::TrackedPreparedValue for PreparedRuntime {
+    fn runtime_charge(&self) -> &crate::cache::PreparedRuntimeCharge {
+        &self.lifetime_charge
+    }
 }
 
 /// Immutable compiled state and bounded diagnostics owned by one node factory.
@@ -73,6 +90,14 @@ pub(crate) struct SharedRuntime {
     preparation_context: Arc<PreparationContext>,
 }
 impl SharedRuntime {
+    pub(crate) fn cache_accounting_snapshot(&self) -> crate::PreparedCacheAccountingSnapshot {
+        self.cache.accounting_snapshot()
+    }
+
+    pub(crate) fn prepared_runtime_observer(&self) -> crate::PreparedRuntimeObserver {
+        self.cache.prepared_runtime_observer()
+    }
+
     pub(crate) fn new(
         config: &WasmtimeConfig,
         services: WasmtimeHostServices,
@@ -80,7 +105,7 @@ impl SharedRuntime {
         engine: Engine,
         profile: WasmtimeEngineProfile,
     ) -> Result<Self, PlatformError> {
-        let cache = Arc::new(PreparedCache::new(config.cache_limits())?);
+        let cache = Arc::new(PreparedCache::new_tracked(config.cache_limits())?);
         let preparation = Arc::new(PreparationCounters::default());
         let preparation_observer = PreparationObserver::new(config.maximum_concurrent_preparations);
         let uncached_prepared = Arc::new(Mutex::new(None));
@@ -92,6 +117,9 @@ impl SharedRuntime {
             observer: preparation_observer.clone(),
             uncached: Arc::clone(&uncached_prepared),
             next_untrusted: std::sync::atomic::AtomicU64::new(0),
+            runtime_ledger: cache
+                .runtime_ledger()
+                .expect("factory tracks runtime lifetimes"),
         });
         let compiler = if profile.id == crate::config::GENERIC_BACKEND_ID {
             Some(crate::compiler::CompilerPool::new(
@@ -178,6 +206,24 @@ impl WasmtimeBackend {
     #[must_use]
     pub fn cache_snapshot(&self) -> PreparedCacheSnapshot {
         self.shared.cache.snapshot()
+    }
+    /// Returns the actual descriptor only when exactly one resident matches.
+    /// This bounded diagnostic scan performs no fetch, promotion or hit/miss
+    /// accounting. Different source identities can share a preparation key;
+    /// such an ambiguous lookup returns `None`.
+    #[must_use]
+    pub fn cached_preparation(&self, key: &PreparationKey) -> Option<PreparedComponent> {
+        self.shared.cache.cached_preparation(key)
+    }
+    /// Measured residency with optional unique prepared-runtime costs.
+    #[must_use]
+    pub fn cache_accounting_snapshot(&self) -> crate::PreparedCacheAccountingSnapshot {
+        self.shared.cache_accounting_snapshot()
+    }
+    /// Retains diagnostic counters without retaining the cache or native owners.
+    #[must_use]
+    pub fn prepared_runtime_observer(&self) -> crate::PreparedRuntimeObserver {
+        self.shared.prepared_runtime_observer()
     }
     #[must_use]
     pub fn stores_created(&self) -> u64 {
@@ -410,26 +456,19 @@ impl WasmtimeBackend {
         drop(host_state_guard);
         drop(input);
         drop(output);
-        drop(runtime);
-        drop(instance_permit);
         drop(temporary_buffer_guard);
         timing.activation_resource_reclamation_micros = elapsed_micros(reclamation_started);
 
-        let classification_started = Instant::now();
-        let outcome = if let Some(error) = accounting_error {
-            Ok(GuestOutcome::Trapped {
-                trap: latent_executor::GuestTrap {
-                    code: "budget-accounting-failed".to_owned(),
-                    message: bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
-                    guest_backtrace: Vec::new(),
-                    metadata: Metadata::new(),
-                },
+        let outcome = reclamation::finish(runtime, instance_permit, timing, || {
+            classify_call_result(
+                call_result,
+                encoded,
+                &stop,
+                memory_exhausted,
                 consumption,
-            })
-        } else {
-            classify_call_result(call_result, encoded, &stop, memory_exhausted, consumption)
-        };
-        timing.outcome_classification_micros = elapsed_micros(classification_started);
+                accounting_error,
+            )
+        });
 
         let reusable_proof_started = Instant::now();
         drop(stop);
@@ -834,7 +873,21 @@ fn classify_call_result(
     stop: &StopControl,
     memory_exhausted: bool,
     consumption: BudgetConsumption,
+    accounting_error: Option<PlatformError>,
 ) -> Result<GuestOutcome, PlatformError> {
+    if let Some(error) = accounting_error {
+        // Even a superseded trap can own native backtrace/image state.
+        drop(call_result);
+        return Ok(GuestOutcome::Trapped {
+            trap: latent_executor::GuestTrap {
+                code: "budget-accounting-failed".to_owned(),
+                message: bounded_text(&error.message, MAX_DIAGNOSTIC_BYTES),
+                guest_backtrace: Vec::new(),
+                metadata: Metadata::new(),
+            },
+            consumption,
+        });
+    }
     match call_result {
         Ok(()) => match encoded.expect("successful call encoded its values") {
             Ok(values::EncodedResult::Returned(output)) => Ok(GuestOutcome::Returned {

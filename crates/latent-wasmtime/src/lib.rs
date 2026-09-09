@@ -25,7 +25,10 @@ use latent_core::{BoxFuture, Metadata, PlatformError, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 
 pub use backend::{PreparationActivitySnapshot, WasmtimeBackend};
-pub use cache::PreparedCacheSnapshot;
+pub use cache::{
+    PreparedCacheAccountingSnapshot, PreparedCacheSnapshot, PreparedRuntimeObserver,
+    PreparedRuntimePopulation, PreparedRuntimeSnapshot,
+};
 pub use compiler::CompilerObserver;
 pub use config::{
     InstanceAllocator, Phase0InstanceAllocator, Phase0WasmtimeConfig, WasmtimeConfig,

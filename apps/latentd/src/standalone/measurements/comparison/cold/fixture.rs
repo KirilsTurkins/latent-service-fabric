@@ -7,7 +7,9 @@ use serde_json::{json, Value};
 use super::super::{evidence, node::Node};
 use super::{Fixture, Result};
 
-pub(super) fn variants(base: &Fixture) -> Result<Vec<Fixture>> {
+pub(in crate::standalone::measurements::comparison) fn variants(
+    base: &Fixture,
+) -> Result<Vec<Fixture>> {
     let mut result = Vec::with_capacity(8);
     for index in 0_u8..8 {
         let service = format!("cold-key-{index}");
@@ -50,7 +52,7 @@ pub(super) fn variants(base: &Fixture) -> Result<Vec<Fixture>> {
     Ok(result)
 }
 
-pub(super) async fn publish(
+pub(in crate::standalone::measurements::comparison) async fn publish(
     node: &mut Node,
     fixtures: Vec<Fixture>,
     directory: &Path,

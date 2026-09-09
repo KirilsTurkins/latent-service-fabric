@@ -12,7 +12,10 @@ fn decimal_numbers(value: &mut Value) {
     }
 }
 
-pub(super) fn snapshot(observer: &PreparationObserver, clock: Clock) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn snapshot(
+    observer: &PreparationObserver,
+    clock: Clock,
+) -> Result<Value> {
     let began = clock.elapsed();
     let snapshot = observer.snapshot();
     let finished = clock.elapsed();
@@ -28,7 +31,7 @@ fn project(snapshot: PreparationObserverSnapshot, began: u128, finished: u128) -
     )
 }
 
-pub(super) async fn compilation(
+pub(in crate::standalone::measurements::comparison) async fn compilation(
     observer: PreparationObserver,
     digest: String,
     clock: Clock,
@@ -68,7 +71,10 @@ pub(super) async fn compilation(
 }
 
 /// Drain already-started compiler work without another RPC or a polling sleep.
-pub(super) async fn drain(observer: &PreparationObserver, clock: Clock) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) async fn drain(
+    observer: &PreparationObserver,
+    clock: Clock,
+) -> Result<Value> {
     tokio::time::timeout(std::time::Duration::from_secs(5), async {
         for _ in 0..128 {
             let began = clock.elapsed();

@@ -16,6 +16,7 @@ from tools.optimization_runner.processes import cgroup
 from tools.phase1_measurement_environment import host
 from . import model
 from .cold import model as cold_model
+from .cache import model as cache_model
 
 
 def execute(args, repo):
@@ -36,31 +37,40 @@ def execute(args, repo):
     # Validate all build identities/hashes before starting any workload.
     from .evidence import artifact_set
     cold = getattr(args, "experiment", "warm") == "cold"
+    cache = getattr(args, "experiment", "warm") == "cache"
+    selected_model = cache_model if cache else cold_model if cold else model
     from .builds import validate_experiment
-    validate_experiment(builds, artifact_set(output, builds), args.profile,"cold" if cold else "warm")
+    if cache:
+        from tools.optimization_cache_lookup.builds import validate as validate_builds
+        from tools.optimization_cache_lookup.files import inventory as cache_inventory
+        validate_builds(builds, artifact_set(output, builds), args.profile, "behavior")
+    else:
+        validate_experiment(builds, artifact_set(output, builds), args.profile,"cold" if cold else "warm")
     began = time.monotonic_ns()
-    deadline = began + ((4500 if cold else 9000) if args.profile == "full" else 300) * 10**9
-    suite = {"schema": "latent.optimization.cold-suite.v1" if cold else "latent.optimization.backend-revision-suite.v1", "profile": args.profile,
-             "plan": cold_model.plan(args.profile) if cold else model.plan(args.profile), "builds": legacy.ref(build_path, output),
+    scan = cache_inventory if cache else inventory
+    maximum_bytes = 1024**3 if cache else 2 * 1024**3
+    deadline = began + ((3600 if cache else 4500 if cold else 9000) if args.profile == "full" else (600 if cache else 300)) * 10**9
+    suite = {"schema": "latent.optimization.cache-behavior-suite.v1" if cache else "latent.optimization.cold-suite.v1" if cold else "latent.optimization.backend-revision-suite.v1", "profile": args.profile,
+             "plan": selected_model.plan(args.profile), "builds": legacy.ref(build_path, output),
              "runner_source": observed_source, "runner_source_after": None,
              "status": "failed", "reason": "collection-failed", "elapsed_nanos": "0", "runs": [], "artifacts": []}
     write(output / "suite.json", suite)
     try:
         for repetition, variant in model.population(args.profile):
-            rows = inventory(output)
-            if sum(int(row["bytes"]) for row in rows) + 32 * 1024**2 > 2 * 1024**3:
+            rows = scan(output)
+            if sum(int(row["bytes"]) for row in rows) + 32 * 1024**2 > maximum_bytes:
                 raise ValueError("backend-output-reservation-bound")
             current = output / "runs" / f"pair-{repetition:02}-{variant}"
             current.mkdir(parents=True)
             before = host()
-            if cold:
+            if cold or cache:
                 before["clock_ticks_per_second"] = os.sysconf("SC_CLK_TCK")
             supplied = model.identity(builds, variant, before)
             write(current / "identity.json", supplied)
-            selected = cold_model.plan(args.profile, repetition, variant) if cold else model.plan(args.profile, repetition)
+            selected = selected_model.plan(args.profile, repetition, variant) if cold or cache else model.plan(args.profile, repetition)
             write(current / "plan.json", selected)
             binary = output / builds["builds"][variant]["executables"]["backend"]["path"]
-            argv = [str(binary), "--exact", cold_model.COLLECTOR if cold else model.COLLECTOR, "--ignored", "--nocapture", "--test-threads=1"]
+            argv = [str(binary), "--exact", selected_model.COLLECTOR, "--ignored", "--nocapture", "--test-threads=1"]
             row = {"repetition": repetition, "variant": variant, "status": "failed", "reason": "collector-failed",
                    "command": argv, "started_micros": str(time.monotonic_ns() // 1000), "finished_micros": None,
                    "identity": legacy.ref(current / "identity.json", output), "plan": legacy.ref(current / "plan.json", output),
@@ -76,8 +86,8 @@ def execute(args, repo):
                                    LSF_PHASE1_COMPARISON_IDENTITY=str(current / "identity.json"),
                                    LSF_PHASE1_COMPARISON_OUTPUT=str(current), LSF_PHASE1_COMPARISON_DATA_ROOT=data,
                                    LSF_ECHO_COMPONENT=str(output / builds["harness"]["echo"]["component"]["path"]))
-                        seconds = cold_model.maximum_seconds(args.profile) if cold else int(selected["maximum_run_seconds"])
-                        options = {"maximum": 1024**2, "directory_limits": DirectoryLimits(2, 64, 80, 16 * 1024**2)} if cold else {}
+                        seconds = selected_model.maximum_seconds(args.profile) if cold or cache else int(selected["maximum_run_seconds"])
+                        options = {"maximum": 1024**2, "directory_limits": DirectoryLimits(2, 64, 80, 16 * 1024**2)} if cold or cache else {}
                         command(argv, current / "collector.log", seconds, repo, deadline, env,
                                 watched=current, remaining=32 * 1024**2, **options)
                 finally:
@@ -87,9 +97,9 @@ def execute(args, repo):
             finally:
                 row["finished_micros"] = str(time.monotonic_ns() // 1000)
                 row["host_after"], row["cgroup_after"] = host(), cgroup()
-                if cold:
+                if cold or cache:
                     row["host_after"]["clock_ticks_per_second"] = os.sysconf("SC_CLK_TCK")
-                for name, filename in (("raw", "cold.json" if cold else "candidate.json"), ("process", "collector.log.process.json"),
+                for name, filename in (("raw", "cache.json" if cache else "cold.json" if cold else "candidate.json"), ("process", "collector.log.process.json"),
                                        ("log", "collector.log"), ("cleanup", "parent-cleanup.json")):
                     if (current / filename).is_file():
                         row[name] = legacy.ref(current / filename, output)
@@ -100,7 +110,7 @@ def execute(args, repo):
     finally:
         suite["elapsed_nanos"] = str(time.monotonic_ns() - began)
         suite["runner_source_after"] = source(repo)
-        suite["artifacts"] = inventory(output)
+        suite["artifacts"] = scan(output)
         write(output / "suite.json", suite)
     from .evidence import validate_suite
     result = validate_suite(output / "suite.json")

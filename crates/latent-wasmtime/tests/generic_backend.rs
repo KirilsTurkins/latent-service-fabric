@@ -1,5 +1,8 @@
 //! Small real-component regressions; fixture construction is in the contracts gate.
 
+#[path = "generic_backend/cache_lifetimes.rs"]
+mod cache_lifetimes;
+
 #[path = "generic_backend/cold_readiness.rs"]
 mod cold_readiness;
 #[path = "generic_backend/containment.rs"]

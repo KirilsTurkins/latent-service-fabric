@@ -39,11 +39,19 @@ The facade converts the legacy echo request to the shared bounded value codec, a
 
 A valid guest log write is offered immediately to the bounded node sink while the activation is running. Sink rejection returns the WIT `unavailable` error and refunds the uncommitted log reservation; accepted records remain subject to bounded node retention. Logs are not deferred until instance teardown. The instance, store, host state, decoded values, and activation-owned guards are reclaimed before the backend returns a reusable cleanup proof, so a later invocation starts with fresh guest state.
 
+The current shared backend consumes native trap errors during result classification before releasing the final invocation runtime pin and instance permit: an error backtrace can itself retain compiled code. `activation_resource_reclamation_micros` sums the store/buffer drop interval and the later runtime/permit drop interval. Classification between them is measured separately by `outcome_classification_micros`. This documents the maintained facade's current timing boundaries and does not reinterpret archived measurements.
+
 ## Prepared cache
 
 Preparation retains immutable compiled component state, the linker pre-instance, validated dynamic export indices and signatures, and the declared resource ceiling. It retains no guest store or instance. The shared least-recently-used cache has separate entry, source-component-byte, metadata-byte, and compiled-image-byte limits. Compilation uses a bounded, nonqueueing reservation with separate in-flight source and metadata accounting. `ExecutionBackend::release` removes a resident entry, and `PreparedCacheSnapshot` exposes these limits and counters.
 
-Compiled-image accounting uses Wasmtime's reported `Component::image_range`; it does not measure total compiler heap or process RSS. Resident cache accounting excludes an evicted runtime still pinned by an active prepared use. Such a pin remains owned until that use finishes, and the shared active-instance limit bounds these uses. Retained Phase 0 measurements remain historical evidence for their original configuration and source revision.
+The current cache borrows `&str` keys for expected O(1) hits and recency promotion with respect to entry count. Its index and recency slots share `Arc<str>` keys; the bounded arena reuses vacant slots without scanning the recency order or allocating a key on a hit. These are implementation properties, not measured performance gains for the historical Phase 0 runs.
+
+The facade backend also exposes the shared `cache_accounting_snapshot()` and `prepared_runtime_observer()` APIs. Besides resident counters, they report each unique runtime once in `unpublished`, `resident` or `evicted_live`; `live` is the total. Ready, active or temporary owners can retain an evicted runtime until final drop. A recompiled runtime has its own charge even while an older runtime for that release remains pinned. The independent observer retains only counters and remains readable after factory/cache destruction. See the [generic runtime accounting contract](../runtime/wasmtime.md#node-policy-and-shared-preparation) for the fields and separate conservative ready-owner admission charges.
+
+Source bytes describe associated component content, not retained source buffers. Metadata bytes are bounded accounting estimates, and compiled-image bytes use Wasmtime's reported `Component::image_range` spans. None measures physical pages, total compiler heap or process RSS. Unique charges retire only after the runtime's native fields are destroyed.
+
+`prepared_cache_enabled=false` remains a Phase 0 profiling option. It selects one shared uncached slot and creates no reusable resident entry; its runtime is accounted as unpublished until final release. A second preparation while that slot is occupied is rejected, and explicit release makes it available again. The Generic factory rejects this option before creating an engine. Retained Phase 0 measurements remain historical evidence for their original configuration and source revision.
 
 ## Validation
 

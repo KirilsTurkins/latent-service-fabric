@@ -40,13 +40,14 @@ def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
     return refs
 
 
-def collect(record: dict, directory: Path, binary: dict, fixture: dict, output: Path,
-            deadline: int, heaptrack_print: str, decompressor: str) -> None:
+def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, output: Path,
+            deadline: int, heaptrack_print: str, decompressor: str, environment: dict | None = None) -> None:
     """Update a pre-retained receipt even when acquisition or verification fails."""
     import resource  # Linux-only execution; the population/model remains portable.
 
     directory.mkdir(parents=True)
-    record["warmup"] = warm(output / fixture["root"], fixture["files"], output)
+    if fixture is not None:
+        record["warmup"] = warm(output / fixture["root"], fixture["files"], output)
     if reference(output / binary["path"], output) != binary:
         raise ValueError("retained-binary-mutated")
     remaining = MAX_TOTAL_BYTES - total_bytes(output)
@@ -62,7 +63,7 @@ def collect(record: dict, directory: Path, binary: dict, fixture: dict, output: 
             raise TimeoutError("probe-deadline-before-spawn")
         owner = OwnedProcess(record["command"], directory / "probe.log", "identity-" + mode,
                              60 if mode == "normal" else 180, output,
-                             overall_deadline_ns=deadline)
+                             env=environment, overall_deadline_ns=deadline)
         record["process"] = owner.receipt
         while not owner.exited() or owner.selector.get_map():
             owner.poll()

@@ -181,3 +181,24 @@ This separate `--experiment cold` protocol uses matched release binaries and a
 common in-process RPC client/observer. It is distinct from the standalone
 external-client baseline. The report provides exact source/build identities,
 collection and replay commands, limitations and the complete raw archive.
+
+## Prepared cache lookup and runtime ownership
+
+The [retained prepared-cache comparison](prepared-cache/2026-09-09-container-linux-7e03a2f/report.md)
+contains 168 lookup probe processes and 14 real-node behavior processes. Lookup
+elapsed time and thread CPU are lower in 41/42 normal pairs; separately verified
+measured-hit allocations change from one allocation / 14 bytes to zero. The
+five-component/four-slot experiment confirms held-runtime accounting and final
+retirement. Warm baseline p50 changes from 0.725 ms to 0.709 ms, while churn
+latency is mixed and observed node RSS is slightly higher.
+
+The report separates lookup, complete invocation, allocator and process-resource
+boundaries. Both archives retain complete raw evidence and passed Linux and
+independent Windows replay. Replay them without executing retained binaries:
+
+```sh
+python3 tools/validate_phase1_archive.py \
+  benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/lookup
+python3 tools/validate_phase1_archive.py \
+  benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior
+```
