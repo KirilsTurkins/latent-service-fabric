@@ -20,10 +20,20 @@ def main():
         result = validate_suite(args.suite)
         if args.aggregate:
             require(canonical(read_json(args.aggregate)) == canonical(result), "backend-aggregate-does-not-replay")
+        display = {
+            "latent.optimization.backend-revision-aggregate.v1": ("validated_calls", "calls"),
+            "latent.optimization.cold-aggregate.v1": ("validated_calls", "calls"),
+            "latent.optimization.cache-behavior-aggregate.v1": ("validated_calls", "calls"),
+            "latent.optimization.budget-lifecycle-aggregate.v1": ("validated_calls", "calls"),
+            "latent.optimization.recovery-aggregate.v1": ("validated_calls", "calls"),
+            "latent.optimization.ownership-aggregate.v1": ("validated_attempts", "invocations"),
+        }
+        require(result["schema"] in display, "unsupported-backend-aggregate-display-schema")
+        count, unit = display[result["schema"]]
         if args.output:
             with args.output.open("xb") as destination:
                 destination.write(canonical(result) + b"\n")
-        print(f"{result['status']}: {result['validated_calls']} calls; population_complete={result['population_complete']}")
+        print(f"{result['status']}: {result[count]} {unit}; population_complete={result['population_complete']}")
         return 1 if result["status"] == "failed" else 0
     except (OSError, ValueError, KeyError, TypeError) as error:
         print(f"Backend revision evidence invalid: {error}", file=sys.stderr)
