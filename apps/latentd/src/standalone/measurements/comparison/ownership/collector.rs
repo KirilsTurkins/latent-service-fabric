@@ -3,7 +3,7 @@ use std::path::Path;
 use std::time::Instant;
 
 use latent_executor::ExecutionBackend;
-use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory, WasmtimeEngineFactory};
+use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory};
 use serde_json::{json, Value};
 
 use super::{
