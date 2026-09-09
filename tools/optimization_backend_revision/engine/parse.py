@@ -48,7 +48,7 @@ def parse(value, selected, identity, manifest, manifest_ref, artifacts, director
         require(uint(startup[key]) <= elapsed, "engine-startup-outside-process")
     clock = fields(value["clock"], "unix_origin_nanos clock_anchor_uncertainty_nanos")
     origin = uint(clock["unix_origin_nanos"])
-    uint(clock["clock_anchor_uncertainty_nanos"])
+    uncertainty = uint(clock["clock_anchor_uncertainty_nanos"])
     releases = fixture_checks.publication(value["fixtures"], manifest, artifacts, directory, value["engine_profile"])
     rows = value["samples"]
     require(isinstance(rows, list) and len(rows) <= model.MAX_SAMPLES
@@ -80,7 +80,7 @@ def parse(value, selected, identity, manifest, manifest_ref, artifacts, director
     pins, normalized = {}, []
     for row in sorted(invoke_rows, key=lambda row: uint(row["ordinal"])):
         ordinal = uint(row["ordinal"])
-        normalized.append(calls.validate(row, expected[ordinal - 1], ordinal, value["fixtures"], origin, elapsed, pins))
+        normalized.append(calls.validate(row, expected[ordinal - 1], ordinal, value["fixtures"], origin, elapsed, pins, uncertainty))
     by_id = {call["row"]["activation_id"]: call for call in normalized}
     invoke_commands = [uint(call["row"]["command_ordinal"]) for call in normalized]
     require(invoke_commands == sorted(invoke_commands), "engine-invoke-submission-command-order")

@@ -752,6 +752,23 @@ Invoke, because tenant-only metadata did not match the original export
 namespace. That failed attempt remains retained; the corrected common fixture
 recipe requires new clean build receipts and a fresh smoke output directory.
 
+Each matrix request keeps a five-second monotonic transport window, while its
+native wall grant is explicit per case. Its absolute Unix deadline floors the
+anchored deadline after subtracting the recorded clock-anchor uncertainty;
+the raw row retains the additional floor loss (less than one millisecond) and
+their combined loss. This prevents an upward rounding step from exceeding the
+node's unchanged five-second request limit. Guest deadline snapshots must match
+the actual admitted ledger, which can expire earlier than transport. WIT absent
+options use `{"none":null}`. A second failed matrix smoke exposed the old ceiling
+and absent-option oracle mistakes and remains excluded from qualified results.
+Transport failures retain their actual status code and at most 2,048 UTF-8 bytes
+of the message, with its original byte count and explicit truncation flag.
+The fuel and memory fault cases additionally retain one bounded, tenant-scoped
+local-manager status capture after their RPC responses. Replay binds its native
+fault kind, cell identity and consumption to the same activation, release,
+revision and subsequent public terminal status. Public resource-error details
+remain redacted; their absence does not erase the separate native witness.
+
 Each owner also retains all 24 functional Invokes, 24 terminal status queries
 and five accepted Cancel commands. These calls check tenant context and trace
 isolation, real clocks and log-byte accounting, mutable-global reset, fuel,

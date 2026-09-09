@@ -68,7 +68,7 @@ def oracle(call, records):
         require(value["activation"] == row["activation_id"] and value["root"] == f"engine-root-{marker}"
                 and value["parent"] == {"some": f"engine-parent-{marker}"}
                 and value["principal"] == {"kind": "administrator", "subject": f"engine-subject-{marker}",
-                    "tenant": {"some": f"engine-{marker}"}, "service": None, "claims": []}
+                    "tenant": {"some": f"engine-{marker}"}, "service": {"none": None}, "claims": []}
                 and value["metadata"] == [["guest.marker", marker]]
                 and value["deadline"] == {"some": ledger["deadline"]["unix_millis"]}
                 and "private-" not in json.dumps(value), "engine-context-authority-or-deadline-crossed")
@@ -96,4 +96,4 @@ def oracle(call, records):
         require(not logs, "engine-unexpected-guest-log")
     if expected["code"] == "resource-exhausted":
         kind = "activation.fuel-exhausted" if name == "spin" else "activation.memory-exhausted"
-        require(any(item["kind"] == kind for item in row["response"]["details"]), "engine-resource-fault-detail-crossed")
+        require(row["native_fault"]["kind"] == kind and row["response"]["details"] == [], "engine-resource-fault-detail-crossed")

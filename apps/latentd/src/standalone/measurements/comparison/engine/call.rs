@@ -61,7 +61,7 @@ pub(super) async fn invoke(channel: Channel, clock: Clock, offer: Offer) -> Resu
         .scheduled
         .checked_add(5_000_000_000)
         .ok_or("engine deadline overflow")?;
-    let absolute = (clock.unix_nanos + deadline).div_ceil(1_000_000);
+    let (absolute, floor_loss, total_loss) = absolute_deadline(clock, deadline)?;
     let marker = if offer.target.tenant == "engine-a" {
         "a"
     } else {
@@ -71,7 +71,7 @@ pub(super) async fn invoke(channel: Channel, clock: Clock, offer: Offer) -> Resu
     let mut row = json!({"kind":"invoke","ordinal":offer.ordinal.to_string(),"command_ordinal":offer.command_ordinal.to_string(),"phase":offer.phase,"phase_kind":offer.phase_kind,"index":offer.index.to_string(),"activation_id":offer.id,
         "target":{"tenant":offer.target.tenant,"service":offer.target.service,"contract":offer.target.contract,"function":offer.function},"release_digest":offer.target.release_digest,"route_generation":"8",
         "request":{"payload":{"utf8":std::str::from_utf8(&payload)?,"sha256":content_digest(&payload).0,"bytes":payload.len().to_string()},"budget":budget(&offer.grant),"root":format!("engine-root-{marker}"),"parent":format!("engine-parent-{marker}"),"metadata":{"guest.marker":marker,"internal.secret":format!("private-{marker}")}},
-        "scheduled_nanos":offer.scheduled.to_string(),"deadline_nanos":deadline.to_string(),"deadline_unix_millis":absolute.to_string(),"absolute_deadline_quantization_nanos":(absolute*1_000_000-clock.unix_nanos-deadline).to_string(),"dispatch_nanos":Value::Null,"dispatch_lag_nanos":Value::Null,"grpc_timeout_header":Value::Null,"rpc_received":false,"response":Value::Null,"valid_response":false});
+        "scheduled_nanos":offer.scheduled.to_string(),"deadline_nanos":deadline.to_string(),"deadline_unix_millis":absolute.to_string(),"absolute_deadline_floor_loss_nanos":floor_loss.to_string(),"absolute_deadline_total_loss_nanos":total_loss.to_string(),"dispatch_nanos":Value::Null,"dispatch_lag_nanos":Value::Null,"grpc_timeout_header":Value::Null,"grpc_status":Value::Null,"rpc_received":false,"response":Value::Null,"valid_response":false});
     let dispatch = clock.elapsed();
     if dispatch >= deadline {
         row["outcome"] = json!("client-deadline-before-dispatch");
@@ -122,7 +122,7 @@ pub(super) async fn invoke(channel: Channel, clock: Clock, offer: Offer) -> Resu
             Ok(Ok(value)) => response(&offer, &mut row, &value.into_inner()),
             Ok(Err(error)) => {
                 row["outcome"] = json!("transport-failure");
-                row["grpc_code"] = json!(error.code() as i32);
+                row["grpc_status"] = status(&error);
             }
             Err(_) => row["outcome"] = json!("client-timeout"),
         }
@@ -136,6 +136,30 @@ pub(super) async fn invoke(channel: Channel, clock: Clock, offer: Offer) -> Resu
         .parse::<u128>()?;
     row["overshoot_nanos"] = json!(completed.saturating_sub(deadline).to_string());
     Ok(row)
+}
+fn absolute_deadline(clock: Clock, deadline: u128) -> Result<(u128, u128, u128)> {
+    // The wall sample occurred after the monotonic origin. Use its conservative
+    // lower bound, then round down: a caller at the exact five-second maximum
+    // must not become 5001 ms when ingress samples a whole Unix millisecond.
+    let projected = clock
+        .unix_nanos
+        .checked_sub(clock.uncertainty_nanos)
+        .and_then(|origin| origin.checked_add(deadline))
+        .ok_or("engine absolute deadline overflow")?;
+    let floor_loss = projected % 1_000_000;
+    let total_loss = clock
+        .uncertainty_nanos
+        .checked_add(floor_loss)
+        .ok_or("engine deadline loss overflow")?;
+    Ok((projected / 1_000_000, floor_loss, total_loss))
+}
+fn status(error: &tonic::Status) -> Value {
+    let message = error.message();
+    let mut end = message.len().min(2048);
+    while !message.is_char_boundary(end) {
+        end -= 1;
+    }
+    json!({"code":error.code() as i32,"message":&message[..end],"message_bytes":message.len().to_string(),"message_truncated":end<message.len()})
 }
 fn response(offer: &Offer, row: &mut Value, response: &proto::InvokeResponse) {
     let mut details = Value::Null;
@@ -200,4 +224,60 @@ fn response(offer: &Offer, row: &mut Value, response: &proto::InvokeResponse) {
             && !response.revision_id.is_empty()
     );
     row["response"] = json!({"activation_id":response.activation_id,"release_digest":response.release_digest,"revision_id":response.revision_id,"route_generation":response.route_generation.to_string(),"code":code,"details":details,"payload":payload,"consumption":consumption});
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Instant;
+
+    #[test]
+    fn absolute_projection_stays_within_the_maximum_at_millisecond_boundaries() {
+        for offset in [0, 1, 999_999, 1_000_000, 1_000_001] {
+            for uncertainty in [0, 1, 999, 1_000_001] {
+                let origin = 10_000_000_000 + offset;
+                let clock = Clock {
+                    origin: Instant::now(),
+                    unix_nanos: origin + uncertainty,
+                    uncertainty_nanos: uncertainty,
+                };
+                let (absolute, floor_loss, total_loss) =
+                    absolute_deadline(clock, 5_000_000_000).unwrap();
+                assert_eq!(absolute - origin / 1_000_000, 5000);
+                assert_eq!(floor_loss, origin % 1_000_000);
+                assert_eq!(total_loss, uncertainty + floor_loss);
+                assert_eq!(
+                    absolute * 1_000_000 + total_loss,
+                    clock.unix_nanos + 5_000_000_000
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn absolute_projection_rejects_unrepresentable_anchors() {
+        let mut clock = Clock {
+            origin: Instant::now(),
+            unix_nanos: 0,
+            uncertainty_nanos: 1,
+        };
+        assert!(absolute_deadline(clock, 1).is_err());
+        clock.unix_nanos = u128::MAX;
+        clock.uncertainty_nanos = 0;
+        assert!(absolute_deadline(clock, 1).is_err());
+    }
+
+    #[test]
+    fn transport_status_retains_bounded_utf8_and_original_length() {
+        let message = format!("{}éz", "x".repeat(2047));
+        let value = status(&tonic::Status::invalid_argument(&message));
+        assert_eq!(value["code"], 3);
+        assert_eq!(value["message"], "x".repeat(2047));
+        assert_eq!(value["message_bytes"], "2050");
+        assert_eq!(value["message_truncated"], true);
+        let short = status(&tonic::Status::invalid_argument("deadline exceeds maximum"));
+        assert_eq!(short["message"], "deadline exceeds maximum");
+        assert_eq!(short["message_bytes"], "24");
+        assert_eq!(short["message_truncated"], false);
+    }
 }

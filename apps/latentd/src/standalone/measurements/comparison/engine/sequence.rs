@@ -83,6 +83,7 @@ impl State {
         row["diagnostic_token"] = json!(observer
             .token_for_activation(&offer.id)
             .map(|v| v.id().to_string()));
+        row["native_fault"] = super::oracle::native_fault(node, offer, clock)?;
         let semantic = super::oracle::check(offer, &row, observer);
         row["semantic_validated"] = json!(semantic);
         self.passed &= semantic;
