@@ -19,6 +19,7 @@ use latent_routing::{
 
 use super::*;
 
+mod incoming;
 mod stress;
 type PolicyMutation = (fn(&mut RevisionAdmissionPolicy), &'static str);
 
@@ -26,7 +27,7 @@ fn names(values: &[&str]) -> BTreeSet<String> {
     values.iter().map(|value| (*value).to_owned()).collect()
 }
 
-fn budget() -> ResourceBudget {
+pub(super) fn budget() -> ResourceBudget {
     ResourceBudget {
         cpu_fuel: 100,
         memory_bytes: 65_536,
@@ -51,7 +52,7 @@ fn limits() -> QuotaLimits {
     }
 }
 
-fn node_policy() -> NodeAdmissionPolicy {
+pub(super) fn node_policy() -> NodeAdmissionPolicy {
     let mut ceiling = budget();
     ceiling.cpu_fuel = 10_000;
     ceiling.memory_bytes = 8_388_608;

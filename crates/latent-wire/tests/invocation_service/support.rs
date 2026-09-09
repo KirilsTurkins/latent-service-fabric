@@ -86,6 +86,10 @@ impl Default for Clock {
 }
 
 impl Clock {
+    pub fn set(&self, sample: ClockSample) {
+        *self.0.lock().expect("clock") = sample;
+    }
+
     pub fn advance(&self, duration: Duration) {
         let mut sample = self.0.lock().expect("clock");
         *sample = ClockSample::new(

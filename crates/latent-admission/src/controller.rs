@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use latent_core::{
-    BoxFuture, BudgetError, ClockSample, EffectiveActivationBudget, PlatformError,
-    PlatformErrorCode, PrincipalKind,
+    ActivationClock, BoxFuture, BudgetError, ClockSample, DeadlineDiagnosticObserver,
+    EffectiveActivationBudget, IncomingDeadline, PlatformError, PlatformErrorCode, PrincipalKind,
 };
 use latent_routing::revision_policy::{ExecutionBackendKind, StateModel};
 use latent_routing::{RevisionAdmissionPolicy, RevisionPolicySource};
@@ -112,7 +112,13 @@ impl LocalAdmissionController {
             request,
             load,
             ClockSample::system_now(),
-            AdmissionClock::Live,
+            ReservationTiming {
+                clock: AdmissionClock::Live,
+                observed_queue_delay_millis: load.queue_delay_millis,
+                load_observed_at: load.observed_at,
+                diagnostic: None,
+            },
+            None,
         )
     }
 
@@ -128,7 +134,69 @@ impl LocalAdmissionController {
             request,
             load,
             sample,
-            AdmissionClock::Fixed(sample.monotonic()),
+            ReservationTiming {
+                clock: AdmissionClock::Fixed(sample.monotonic()),
+                observed_queue_delay_millis: load.queue_delay_millis,
+                load_observed_at: load.observed_at,
+                diagnostic: None,
+            },
+            None,
+        )
+    }
+
+    /// Observe the frozen admission seam without changing its clock semantics.
+    /// Only an activation already bound to this observer produces a record.
+    pub fn admit_at_with_diagnostics(
+        &self,
+        request: AdmissionRequest,
+        sample: ClockSample,
+        observer: &DeadlineDiagnosticObserver,
+    ) -> Result<AdmissionPermit, PlatformError> {
+        let diagnostic = observer
+            .token_for_activation(&request.activation_id.0)
+            .map(|token| (observer, token));
+        let load = self.load.snapshot().map_err(|_| unavailable_load())?;
+        self.admit_observed_at(
+            request,
+            load,
+            sample,
+            ReservationTiming {
+                clock: AdmissionClock::Fixed(sample.monotonic()),
+                observed_queue_delay_millis: load.queue_delay_millis,
+                load_observed_at: load.observed_at,
+                diagnostic,
+            },
+            None,
+        )
+    }
+
+    /// Admits with one coherent sample and a live monotonic feasibility check
+    /// inside the quota critical section. The borrowed clock must use the same
+    /// domain as any incoming deadline and provide a bounded, nonblocking read.
+    /// No clock reference is retained by the resulting permit.
+    pub fn admit_with_clock(
+        &self,
+        request: AdmissionRequest,
+        incoming: Option<&IncomingDeadline>,
+        clock: &dyn ActivationClock,
+    ) -> Result<AdmissionPermit, PlatformError> {
+        let diagnostic = clock.deadline_diagnostic_observer().and_then(|observer| {
+            observer
+                .token_for_activation(&request.activation_id.0)
+                .map(|token| (observer, token))
+        });
+        let load = self.load.snapshot().map_err(|_| unavailable_load())?;
+        self.admit_observed_at(
+            request,
+            load,
+            clock.sample(),
+            ReservationTiming {
+                clock: AdmissionClock::Injected(clock),
+                observed_queue_delay_millis: load.queue_delay_millis,
+                load_observed_at: load.observed_at,
+                diagnostic,
+            },
+            incoming,
         )
     }
 
@@ -137,7 +205,8 @@ impl LocalAdmissionController {
         request: AdmissionRequest,
         load: NodeLoadSnapshot,
         sample: ClockSample,
-        clock: AdmissionClock,
+        timing: ReservationTiming<'_>,
+        incoming: Option<&IncomingDeadline>,
     ) -> Result<AdmissionPermit, PlatformError> {
         let node = self.quotas.policy();
         let tenant = validate_request(&request, node)?;
@@ -170,20 +239,7 @@ impl LocalAdmissionController {
                     "trust-class-not-authorized",
                 )
             })?;
-        let deployment_ceiling = policy
-            .deployment_ceiling
-            .intersect(&policy.execution.resource_budget_ceiling);
-        let grant = EffectiveActivationBudget::admit_at(
-            &request.requested_budget,
-            &deployment_ceiling,
-            &node.budget_ceiling,
-            request.deadline_unix_millis,
-            sample,
-        )
-        .map_err(|error| budget_rejection(&error))?;
-        grant
-            .require_executable_capacity()
-            .map_err(|error| budget_rejection(&error))?;
+        let grant = effective_grant(&request, &policy, node, incoming, sample)?;
         let class = select_class(
             &policy,
             node,
@@ -217,11 +273,7 @@ impl LocalAdmissionController {
             request.revision,
             grant,
             obligations,
-            ReservationTiming {
-                clock,
-                observed_queue_delay_millis: load.queue_delay_millis,
-                load_observed_at: load.observed_at,
-            },
+            timing,
         )
     }
 }
@@ -233,6 +285,39 @@ impl AdmissionController for LocalAdmissionController {
     ) -> BoxFuture<'_, Result<AdmissionPermit, PlatformError>> {
         Box::pin(async move { self.admit_now(request) })
     }
+}
+
+fn effective_grant(
+    request: &AdmissionRequest,
+    policy: &RevisionAdmissionPolicy,
+    node: &NodeAdmissionPolicy,
+    incoming: Option<&IncomingDeadline>,
+    sample: ClockSample,
+) -> Result<EffectiveActivationBudget, PlatformError> {
+    let deployment_ceiling = policy
+        .deployment_ceiling
+        .intersect(&policy.execution.resource_budget_ceiling);
+    let grant = match incoming {
+        Some(incoming) => EffectiveActivationBudget::admit_with_deadline_at(
+            &request.requested_budget,
+            &deployment_ceiling,
+            &node.budget_ceiling,
+            incoming,
+            sample,
+        ),
+        None => EffectiveActivationBudget::admit_at(
+            &request.requested_budget,
+            &deployment_ceiling,
+            &node.budget_ceiling,
+            request.deadline_unix_millis,
+            sample,
+        ),
+    }
+    .map_err(|error| budget_rejection(&error))?;
+    grant
+        .require_executable_capacity()
+        .map_err(|error| budget_rejection(&error))?;
+    Ok(grant)
 }
 
 fn validate_request<'a>(

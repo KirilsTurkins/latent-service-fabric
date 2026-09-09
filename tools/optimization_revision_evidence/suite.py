@@ -24,9 +24,13 @@ def validate_suite(path: Path) -> dict:
     checksum = hash_file(path, DOCUMENT_BYTES)
     suite = read_json(path)
     require(hash_file(path, DOCUMENT_BYTES) == checksum, "revision-suite-changed-during-read")
-    fields(suite, "schema profile plan requested_refs status reason elapsed_nanos measurement_elapsed_nanos identity cleanup runs artifacts")
-    require(suite["schema"] == "latent.optimization.revision-suite.v1", "invalid-revision-suite-schema")
-    require(suite["plan"] == plan(suite["profile"]), "changed-revision-population")
+    is_budget = suite.get("schema") == "latent.optimization.budget-suite.v1"
+    from tools.optimization_revision_runner import budget as budget_model
+    from . import budget, budget_builds
+    fields(suite, "schema profile plan requested_refs status reason elapsed_nanos measurement_elapsed_nanos identity cleanup runs artifacts",
+           "builds clock_ticks_per_second" if is_budget else "")
+    require(suite["schema"] in ("latent.optimization.revision-suite.v1", budget_model.SCHEMA), "invalid-revision-suite-schema")
+    require(suite["plan"] == (budget_model.plan if is_budget else plan)(suite["profile"]), "changed-revision-population")
     validate_refs(suite["requested_refs"], suite["profile"])
     require(suite["status"] in ("passed", "failed")
             and suite["reason"] == (None if suite["status"] == "passed" else "collection-failed"), "revision-status")
@@ -37,6 +41,10 @@ def validate_suite(path: Path) -> dict:
     builds = suite["identity"].get("builds", {})
     executable_paths = {row["path"] for build in builds.values() for row in build.get("executables", {}).values()}
     artifacts = Artifacts(path.parent, suite["artifacts"], executable_paths)
+    if is_budget:
+        from tools.optimization_revision_runner.collect import artifact_rows
+        require({row["path"] for row in artifact_rows(path.parent)} == set(artifacts.rows),
+                "budget-unregistered-evidence-file")
     require(sum(uint(row["bytes"]) for row in suite["artifacts"]) <= int(suite["plan"]["maximum_artifact_bytes"]),
             "revision-artifact-budget-exceeded")
     fields(suite["cleanup"], "owned_worktree_removed")
@@ -46,8 +54,16 @@ def validate_suite(path: Path) -> dict:
     require(len(suite["runs"]) <= len(expected), "extra-revision-pairs")
     if suite["status"] == "failed" and set(builds) != {"control", "candidate", "harness"}:
         require(not suite["runs"], "measurements-with-incomplete-build-provenance")
-        return aggregate(suite, checksum[0], [], set(), 0, True, False)
-    identity.validate(suite["identity"], suite["requested_refs"], artifacts)
+        return finish_aggregate(suite, checksum[0], [], set(), 0, True, False)
+    (budget_builds.identity_check if is_budget else identity.validate)(suite["identity"], suite["requested_refs"], artifacts)
+    if is_budget:
+        require(type(suite["clock_ticks_per_second"]) is int and 1 <= suite["clock_ticks_per_second"] <= 1_000_000,
+                "budget-process-cpu-clock-resolution")
+        built = budget_builds.validate(artifacts.json(suite["builds"]), artifacts, suite["profile"])
+        require(built["requested_refs"] == suite["requested_refs"] and built["cleanup"] == suite["cleanup"],
+                "crossed-budget-build-receipt")
+        for key in ("runner_source", "runner_source_after", "build", "builds", "components", "publications", "harness_sources"):
+            require(built["identity"][key] == suite["identity"][key], "budget-retained-build-identity-changed")
     require(suite["cleanup"]["owned_worktree_removed"] is True, "owned-build-worktree-not-removed")
     components = dict(zip(SERVICES, (row["sha256"] for row in suite["identity"]["components"]), strict=True))
     owners, activations, result = set(), set(), []
@@ -67,9 +83,16 @@ def validate_suite(path: Path) -> dict:
             fields(batch, BATCH_FIELDS + " cache_observation")
             require(batch["id"] == template["id"], "changed-revision-case-order")
         if run["status"] == "failed":
+            partial = {}
+            if is_budget:
+                budget.failed_ownership(run, artifacts, builds, owners)
+                batches, known = budget.failed_batches(run, artifacts, builds, components, activations, templates)
+                attempts += known
+                partial = {"batches": batches, "validated_attempts": str(known),
+                           "partial_client_artifacts_retained": True}
             failed = True
             result.append({"repetition": run["repetition"], "variant": run["variant"], "status": "failed",
-                           "validated_attempts": "0", "attempt_count_complete": False})
+                           "validated_attempts": "0", "attempt_count_complete": False, **partial})
             continue
         require(len(run["batches"]) == len(templates) and run["data_removed"] is True, "incomplete-revision-run")
         before, after = (identity.environment(run[key]) for key in ("environment_before", "environment_after"))
@@ -83,7 +106,10 @@ def validate_suite(path: Path) -> dict:
         fields(seed, "server server_shutdown")
         unique_owner(seed["server"], "lsf-seed", executable["sha256"], owners)
         shutdown(seed["server_shutdown"], "lsf")
-        configuration(artifacts.json(run["configuration"]), "lsf")
+        if is_budget:
+            budget.configuration(artifacts.json(run["configuration"]))
+        else:
+            configuration(artifacts.json(run["configuration"]), "lsf")
         lifecycle(run["lifecycle"], "lsf", finish - start)
         replayed, clients, cache_end = [], [], start
         for batch, template in zip(run["batches"], templates, strict=True):
@@ -95,6 +121,8 @@ def validate_suite(path: Path) -> dict:
             value["resources"] = resources.resources(artifacts.json(batch["resources"]), server, client_owner)
             value["cache"], cache_end = cache.validate(artifacts.json(batch["cache_observation"]), artifacts, server,
                                                      artifacts.json(batch["plan"]), batch["id"], start, finish, cache_end)
+            if is_budget:
+                budget.cache_warmth(value["cache"], batch["id"])
             value["id"] = batch["id"]
             attempts += int(value["warmup"]["counts"]["attempts"]) + int(value["measured"]["counts"]["attempts"])
             failed = failed or value["correctness_failures"] != "0"
@@ -110,7 +138,16 @@ def validate_suite(path: Path) -> dict:
     complete = (suite["status"] == "passed" and len(result) == len(expected)
                 and all(row["status"] == "passed" for row in result))
     require(suite["status"] != "passed" or complete, "passed-suite-hides-missing-pair")
-    return aggregate(suite, checksum[0], result, owners, attempts, failed, complete)
+    return finish_aggregate(suite, checksum[0], result, owners, attempts, failed, complete)
+
+
+def finish_aggregate(suite, checksum, runs, owners, attempts, failed, complete):
+    value = aggregate(suite, checksum, runs, owners, attempts, failed, complete)
+    if suite["schema"] == "latent.optimization.budget-suite.v1":
+        from .budget import aggregate as budget_aggregate
+        value["clock_ticks_per_second"] = suite["clock_ticks_per_second"]
+        return budget_aggregate(value)
+    return value
 
 
 def unique_owner(value, role, checksum, owners):

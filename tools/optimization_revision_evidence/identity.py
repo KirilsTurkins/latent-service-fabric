@@ -27,7 +27,8 @@ def environment(value):
     return {key: item for key, item in value.items() if key != "load_before"}
 
 
-def validate(value, refs, artifacts):
+def validate(value, refs, artifacts, *, source_controls=SOURCE_CONTROLS, harness_command=HARNESS_COMMAND,
+             extra_harness_sources=()):
     fields(value, "runner_source runner_source_after build builds components publications harness_sources environment cgroup")
     source(value["runner_source"])
     require(value["runner_source"] == value["runner_source_after"]
@@ -60,7 +61,7 @@ def validate(value, refs, artifacts):
         text(build["source_path"])
         text(build["target_path"])
         paths.add((build["source_path"], build["target_path"]))
-        expected = HARNESS_COMMAND if label == "harness" else ["/bin/bash", "-eu", "-o", "pipefail", "-c", SERVER_RECIPE]
+        expected = harness_command if label == "harness" else ["/bin/bash", "-eu", "-o", "pipefail", "-c", SERVER_RECIPE]
         require(build["command"] == expected, "revision-build-command-changed")
         owner = build["process"]
         process(owner, "artifact-identity-helper", owner["executable_sha256"])
@@ -78,7 +79,7 @@ def validate(value, refs, artifacts):
         require(inputs.get("Cargo.lock", {}).get("sha256") == build["source"]["cargo_lock_sha256"],
                 "unbound-revision-lockfile")
         selected = {}
-        for prefix in SOURCE_CONTROLS:
+        for prefix in source_controls:
             found = {name: (row["sha256"], row["bytes"]) for name, row in inputs.items()
                      if name == prefix or name.startswith(prefix + "/")}
             require(found, "missing-shared-build-control")
@@ -95,7 +96,7 @@ def validate(value, refs, artifacts):
     require(isinstance(harness_sources, dict) and 1 <= len(harness_sources) <= 1024, "missing-runner-sources")
     for name in ("tools/run_optimization_revision_benchmarks.py", "tools/run_optimization_benchmarks.py",
                  "tools/optimization_revision_runner/model.py", "tools/optimization_revision_evidence/suite.py",
-                 "tools/optimization_evidence/client.py", "tools/optimization_runner/fixtures.py"):
+                 "tools/optimization_evidence/client.py", "tools/optimization_runner/fixtures.py", *extra_harness_sources):
         require(name in harness_sources, "missing-executed-harness-source")
     for name, row in harness_sources.items():
         require(row["path"] == "harness-source/" + name, "crossed-runner-source-path")

@@ -44,9 +44,9 @@ pub(super) fn plan(
             "deadline exceeds the configured maximum",
         ));
     }
-    // Re-express a previously pinned transport duration for the manager's
-    // absolute-deadline API after a wall-clock move. The monotonic expiry is
-    // retained exactly; no body/dispatch delay replenishes its allowance.
+    // Keep a diagnostic/compatibility Unix projection after a wall-clock move.
+    // The local manager receives expires_at independently and does not convert
+    // this projection back into a new monotonic allowance.
     let context = if context_expires_at.is_some() {
         context_delay
             .map(|delay| unix_after(sample, delay))

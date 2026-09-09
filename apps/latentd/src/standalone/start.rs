@@ -80,7 +80,24 @@ impl StandaloneNode {
         control_runtime: tokio::runtime::Handle,
         threads: RuntimeThreads,
     ) -> Result<Self, PlatformError> {
-        let mut node = Self::compose(&settings, &catalogs)?;
+        Self::start_with_catalogs_and_clock(
+            settings,
+            catalogs,
+            control_runtime,
+            threads,
+            Arc::new(SystemActivationClock),
+        )
+        .await
+    }
+
+    pub(super) async fn start_with_catalogs_and_clock(
+        settings: NodeSettings,
+        catalogs: Catalogs,
+        control_runtime: tokio::runtime::Handle,
+        threads: RuntimeThreads,
+        clock: Arc<dyn ActivationClock>,
+    ) -> Result<Self, PlatformError> {
+        let mut node = Self::compose(&settings, &catalogs, clock)?;
         let invocation = InvocationServiceAdapter::with_services(
             Arc::new(LocalInvocationRuntime::with_limits(
                 node.manager.clone(),
@@ -147,8 +164,11 @@ impl StandaloneNode {
         Ok(node)
     }
 
-    fn compose(settings: &NodeSettings, catalogs: &Catalogs) -> Result<Self, PlatformError> {
-        let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
+    fn compose(
+        settings: &NodeSettings,
+        catalogs: &Catalogs,
+        clock: Arc<dyn ActivationClock>,
+    ) -> Result<Self, PlatformError> {
         let sink = Arc::new(StructuredLocalSink::new(settings.local_sink)?);
         let (telemetry, telemetry_runtime) =
             TelemetryRuntime::spawn(settings.telemetry, sink.clone())?;

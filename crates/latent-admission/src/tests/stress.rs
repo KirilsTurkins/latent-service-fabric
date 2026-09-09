@@ -133,6 +133,7 @@ fn final_timing_check_rejects_stale_observations_and_exact_expiry() {
         clock: AdmissionClock::Fixed(sample.monotonic() + Duration::from_millis(101)),
         observed_queue_delay_millis: 0,
         load_observed_at: sample.monotonic(),
+        diagnostic: None,
     };
     assert_eq!(
         stale.validate(&node, &grant, 0, 1).unwrap_err().code,

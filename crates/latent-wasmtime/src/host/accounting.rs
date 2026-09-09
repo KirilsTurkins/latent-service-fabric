@@ -42,15 +42,22 @@ impl InvocationAccounting {
                 return Err(invalid("execution-budget-grant-mismatch"));
             }
             ensure_live(budget)?;
-            let mut deadline = grant(request, Some(budget.deadline()), clock)?.deadline;
-            if let Some(supplied) = cancellation.effective_deadline() {
-                if supplied.monotonic().is_some_and(|supplied| {
+            let mut deadline = budget.deadline().clone();
+            if request
+                .activation
+                .deadline_unix_millis
+                .is_some_and(|requested| {
                     deadline
-                        .monotonic()
-                        .is_none_or(|current| supplied < current)
-                }) {
-                    deadline = supplied.clone();
-                }
+                        .unix_millis()
+                        .is_none_or(|current| requested < current)
+                })
+            {
+                // Only a genuinely tighter explicit request needs conversion.
+                // The ordinary path preserves the original precise deadline.
+                deadline = grant(request, Some(&deadline), clock)?.deadline;
+            }
+            if let Some(supplied) = cancellation.effective_deadline() {
+                tighten(&mut deadline, supplied);
             }
             (budget.clone(), deadline)
         } else {
@@ -59,6 +66,16 @@ impl InvocationAccounting {
             (ActivationBudget::new(grant), deadline)
         };
         let now = clock.monotonic_now();
+        if let Some(observer) = clock.deadline_diagnostic_observer() {
+            observer.record_for_activation(
+                &request.activation.activation_id.0,
+                latent_core::DeadlineDiagnosticObservation::ExecutionDeadline {
+                    observed_at: now,
+                    deadline: deadline.clone(),
+                    budget: budget.granted().clone(),
+                },
+            );
+        }
         check_deadline(&deadline, now)?;
         let initial_fuel = budget.remaining_at(now).cpu_fuel;
         if initial_fuel == 0 {
@@ -110,14 +127,11 @@ impl InvocationAccounting {
             .to_platform_error());
         }
         self.budget
-            .consume_cpu_fuel(fuel)
+            .observe_runtime_usage(fuel, confirmed_peak_memory)
             .map_err(|error| error.to_platform_error())?;
-        // Advance immediately after a successful charge: a later memory error
-        // cannot cause a retried observation to charge this fuel twice.
+        // Both ledger dimensions commit together. Failed observations leave
+        // both watermarks unchanged, so a valid retry charges exactly once.
         self.last_remaining_fuel = remaining_fuel;
-        self.budget
-            .observe_peak_memory(confirmed_peak_memory)
-            .map_err(|error| error.to_platform_error())?;
         self.confirmed_peak_memory = self.confirmed_peak_memory.max(confirmed_peak_memory);
         Ok(())
     }
@@ -156,14 +170,12 @@ fn grant(
             )
         },
     );
-    let absolute = match (
-        request.activation.deadline_unix_millis,
-        original.and_then(EffectiveDeadline::unix_millis),
-    ) {
-        (Some(first), Some(second)) => Some(first.min(second)),
-        (first, second) => first.or(second),
-    };
-    let grant = EffectiveActivationBudget::admit_at(
+    let absolute = request.activation.deadline_unix_millis.filter(|requested| {
+        original
+            .and_then(EffectiveDeadline::unix_millis)
+            .is_none_or(|current| *requested < current)
+    });
+    let mut grant = EffectiveActivationBudget::admit_at(
         &request.budget,
         &request.budget,
         &request.budget,
@@ -171,10 +183,26 @@ fn grant(
         sample,
     )
     .map_err(|error| error.to_platform_error())?;
+    if let Some(original) = original {
+        // A token's Unix value is diagnostic: after a wall-clock jump it may
+        // precede its admission sample. Only a new stricter explicit request
+        // above is converted; the admitted precise token remains authoritative.
+        tighten(&mut grant.deadline, original);
+    }
     grant
         .require_executable_capacity()
         .map_err(|error| error.to_platform_error())?;
     Ok(grant)
+}
+
+fn tighten(deadline: &mut EffectiveDeadline, supplied: &EffectiveDeadline) {
+    if supplied.monotonic().is_some_and(|supplied| {
+        deadline
+            .monotonic()
+            .is_none_or(|current| supplied < current)
+    }) {
+        *deadline = supplied.clone();
+    }
 }
 
 fn ensure_live(budget: &ActivationBudget) -> Result<(), PlatformError> {

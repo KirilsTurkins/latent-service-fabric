@@ -16,10 +16,13 @@ use latent_routing::{
 use super::model;
 use super::support::{error, Gate, LiveGuard};
 
+type ResolveHook = Arc<dyn Fn() -> Result<(), PlatformError> + Send + Sync>;
+
 pub struct CatalogSource {
     pub generation: AtomicU8,
     pub global_policy_reads: AtomicUsize,
     pub keys: Arc<Mutex<Vec<String>>>,
+    pub resolve_hook: Arc<Mutex<Option<ResolveHook>>>,
 }
 
 impl Default for CatalogSource {
@@ -28,6 +31,7 @@ impl Default for CatalogSource {
             generation: AtomicU8::new(1),
             global_policy_reads: AtomicUsize::new(0),
             keys: Arc::default(),
+            resolve_hook: Arc::default(),
         }
     }
 }
@@ -37,6 +41,7 @@ impl ActivationCatalogSource for CatalogSource {
         Ok(Arc::new(Catalog {
             generation: self.generation.load(Ordering::Acquire),
             keys: Arc::clone(&self.keys),
+            resolve_hook: Arc::clone(&self.resolve_hook),
         }))
     }
 }
@@ -57,6 +62,7 @@ impl RevisionPolicySource for CatalogSource {
 struct Catalog {
     generation: u8,
     keys: Arc<Mutex<Vec<String>>>,
+    resolve_hook: Arc<Mutex<Option<ResolveHook>>>,
 }
 
 impl RouteResolver for Catalog {
@@ -65,6 +71,10 @@ impl RouteResolver for Catalog {
         target: &InvocationTarget,
         routing_key: Option<&str>,
     ) -> Result<ResolvedRevision, PlatformError> {
+        let hook = self.resolve_hook.lock().expect("resolution hook").clone();
+        if let Some(hook) = hook {
+            hook()?;
+        }
         if target.service.0 != "echo" {
             return Err(error(
                 PlatformErrorCode::RouteUnavailable,
