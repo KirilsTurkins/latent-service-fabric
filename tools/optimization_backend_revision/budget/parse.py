@@ -59,9 +59,9 @@ def fixture(value, artifacts, parent, component):
     return release
 
 
-def cpu(value, identity, offers, checkpoints):
+def cpu(value, identity, offers, checkpoints, *, scope="owned-process-diagnostic-population-and-controls"):
     fields(value, "scope clock_ticks_per_second before after")
-    require(value["scope"] == "owned-process-diagnostic-population-and-controls"
+    require(value["scope"] == scope
             and value["clock_ticks_per_second"] == identity["environment"]["clock_ticks_per_second"], "budget-process-cpu-scope")
     frequency = integer(value["clock_ticks_per_second"], 1, 1_000_000)
     for row in (value["before"], value["after"]):

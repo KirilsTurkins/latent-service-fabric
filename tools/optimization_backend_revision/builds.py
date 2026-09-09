@@ -31,6 +31,13 @@ def validate_budget(value, artifacts, profile):
                           harness_command=budget_build.GENERIC_COMMAND)
 
 
+def validate_recovery(value, artifacts, profile):
+    from tools.optimization_revision_runner import recovery_build
+    return validate_graph(value, artifacts, profile, schema=recovery_build.SCHEMA,
+                          source_controls=recovery_build.CONTROLS, fixture_field="component",
+                          harness_command=recovery_build.GENERIC_COMMAND)
+
+
 def validate_graph(value, artifacts, profile, *, schema="latent.optimization.backend-builds.v1",
                    source_controls=CONTROLS, fixture_field="echo", harness_command=None):
     fields(value, "schema requested_refs build builds harness cleanup")
