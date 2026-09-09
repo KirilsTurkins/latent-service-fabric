@@ -55,6 +55,12 @@ pub struct StandaloneNode {
 }
 
 impl StandaloneNode {
+    /// The comparison control has no supervised post-transport continuation.
+    #[must_use]
+    pub fn cleanup_snapshot(&self) -> Option<latent_wire::invocation::ActivationCleanupSnapshot> {
+        None
+    }
+
     #[must_use]
     pub fn endpoint(&self) -> SocketAddr {
         self.transport

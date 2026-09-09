@@ -10,7 +10,10 @@ use serde_json::{json, Value};
 use super::super::cold::call::Clock;
 use super::Result;
 
-pub(super) fn diagnostic(observer: &DeadlineDiagnosticObserver, clock: Clock) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn diagnostic(
+    observer: &DeadlineDiagnosticObserver,
+    clock: Clock,
+) -> Result<Value> {
     let began = clock.elapsed();
     let snapshot = observer.snapshot();
     let finished = clock.elapsed();
@@ -32,7 +35,9 @@ pub(super) fn diagnostic(observer: &DeadlineDiagnosticObserver, clock: Clock) ->
         "overflowed":snapshot.overflowed,"identities":identities,"records":records}))
 }
 
-pub(super) fn waits(observer: &DeadlineWaitObserver) -> Value {
+pub(in crate::standalone::measurements::comparison) fn waits(
+    observer: &DeadlineWaitObserver,
+) -> Value {
     let value = observer.snapshot();
     json!({"supported":value.supported,"armed":value.armed.to_string(),
         "completed":value.completed.to_string(),"dropped":value.dropped.to_string(),
@@ -113,6 +118,16 @@ fn observation(value: &DeadlineDiagnosticObservation, clock: Clock) -> Result<Va
         } => (
             observed_at,
             json!({"kind":"terminal-winner","terminal_state":terminal(*terminal_state)?}),
+        ),
+        Event::TransportHandoff {
+            observed_at,
+            slot,
+            generation,
+            cause,
+        } => (
+            observed_at,
+            json!({"kind":"transport-handoff","slot":slot.to_string(),
+                "generation":generation.to_string(),"cause":decision(*cause)}),
         ),
     };
     record["observed_at_nanos"] = Value::String(at(*observed_at, clock)?);

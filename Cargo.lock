@@ -1227,6 +1227,7 @@ dependencies = [
  "latent-scheduler",
  "latent-telemetry",
  "prost",
+ "serde",
  "tokio",
  "tonic",
  "tower",

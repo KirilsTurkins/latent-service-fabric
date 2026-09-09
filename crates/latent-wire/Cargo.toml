@@ -21,6 +21,7 @@ latent-control-store = { path = "../latent-control-store" }
 latent-manifest = { path = "../latent-manifest" }
 latent-admission = { path = "../latent-admission" }
 prost.workspace = true
+serde.workspace = true
 tokio.workspace = true
 tonic.workspace = true
 

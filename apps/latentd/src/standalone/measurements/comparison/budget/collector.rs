@@ -13,9 +13,9 @@ use super::super::super::{
 };
 use super::{cold::call::Clock, observation, plan::Plan, sequence, Node, Result, Writer};
 
-struct ObservingClock {
-    diagnostic: DeadlineDiagnosticObserver,
-    waits: DeadlineWaitObserver,
+pub(in crate::standalone::measurements::comparison) struct ObservingClock {
+    pub diagnostic: DeadlineDiagnosticObserver,
+    pub waits: DeadlineWaitObserver,
 }
 impl ActivationClock for ObservingClock {
     fn sample(&self) -> ClockSample {
@@ -35,7 +35,11 @@ impl ActivationClock for ObservingClock {
     }
 }
 
-fn fixture(directory: &Path, node: &Node, publication: &Value) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn fixture(
+    directory: &Path,
+    node: &Node,
+    publication: &Value,
+) -> Result<Value> {
     let value = &node.fixture;
     let codec = JsonManifestCodec::default();
     let capsule = codec
