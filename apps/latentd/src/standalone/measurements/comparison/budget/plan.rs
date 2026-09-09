@@ -33,10 +33,8 @@ impl Plan {
         }
         .configuration(path);
         config["nodeId"] = json!("budget-lifecycle");
-        config["execution"]["maximumWallTimeMillis"] = json!(1000);
         config["cache"]["entries"] = json!(4);
         config["retention"]["terminalEntries"] = json!(64);
-        config["retention"]["bytes"] = json!(20_971_520);
         config["credentials"][0]["tenant"] = json!("tests");
         config
     }
