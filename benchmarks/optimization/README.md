@@ -202,3 +202,39 @@ python3 tools/validate_phase1_archive.py \
 python3 tools/validate_phase1_archive.py \
   benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior
 ```
+
+## Precise budget experiments
+
+The [retained precise-budget comparison](precise-budgets/2026-09-09-container-linux-e25b609/README.md)
+completed 24,976 offers across separate external and lifecycle populations.
+At 2 ms, useful successes rose from 2,634/2,800 to 2,794/2,800, meeting the 99%
+target. The report retains the unsuccessful 1 ms population, mixed tail latency,
+remaining native interruption delay and the separate disconnect-cleanup limit.
+
+The [#103 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/103)
+uses `--experiment budget` on the existing revision and backend runners. Both
+variants execute LSF. A shared external client measures useful short-budget
+work; a separate 23-offer node diagnostic records actual deadline lineage,
+queueing, interruption, cancellation and owned wait guards. The
+[collection method](../../docs/testing/phase-1-measurements.md#short-budget-revision-experiments)
+describes one exact-source build, fresh smoke/full copies and independent replay.
+
+Full collection has 24,654 external offers and 322 diagnostic offers across
+seven alternating pairs. External prewarm and warmup remain retained but are
+excluded from the four measured populations. The 2 ms target requires at least
+2,772 of all 2,800 measured offers per variant to return a semantically correct
+response observed on time. Successful replay and target attainment are separate
+results; failures and late successes remain in the denominator.
+
+| Evidence | Plan | Builds | Suite | Aggregate |
+| --- | --- | --- | --- | --- |
+| External RPC | [plan](budget-plan.schema.json) | [builds](budget-builds.schema.json) | [suite](budget-suite.schema.json) | [aggregate](budget-aggregate.schema.json) |
+| Lifecycle diagnostic | [plan](budget-lifecycle-plan.schema.json) | [builds](budget-lifecycle-builds.schema.json) | [suite](budget-lifecycle-suite.schema.json) | [aggregate](budget-lifecycle-aggregate.schema.json) |
+
+The schemas provide structural bounds; replay additionally checks all offered
+attempts, source/artifact identities, deadlines, ownership and cleanup. Diagnostic
+runaway and short-cancel cases use a 1,000 ms transport allowance around their
+1/2/5/10 ms native wall grants. External requests and queued/delayed-body cases
+retain their short transport deadlines. This distinction does not resolve
+[#119](https://github.com/KirilsTurkins/latent-service-fabric/issues/119), which
+tracks bounded cleanup and capacity recovery after a running transport disconnect.

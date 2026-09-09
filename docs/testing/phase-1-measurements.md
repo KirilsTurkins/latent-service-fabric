@@ -222,3 +222,120 @@ matching warm-echo populations; the published Phase 0 aggregate pools some
 outcomes. Keep the candidate aggregate under the comparison output's parent.
 The comparison copies and hashes its Phase 0 reference there. Validation
 recomputes derived statistics from bound inputs, including on replay.
+
+## Short-budget revision experiments
+
+Issue [#103](https://github.com/KirilsTurkins/latent-service-fabric/issues/103)
+adds a separate `--experiment budget` profile to the existing revision runners.
+The external experiment uses the unchanged optimization client and component
+against two LSF revisions. The lifecycle experiment uses the same bounded
+23-offer diagnostic collector and generic component on both revisions. Their
+[schemas](../../benchmarks/optimization/README.md#precise-budget-experiments),
+raw populations and aggregates are separate from the earlier warm, cold and
+cache profiles.
+
+Start from the clean declared harness checkout. Set `CONTROL_REF`,
+`CANDIDATE_REF` and `HARNESS_REF` to full 40-character commits whose common
+collector, client, fixture and build-policy inputs match. The build-only mode
+builds each server and optional diagnostic binary once, plus the shared client,
+CLI and required components. Its build parent must be outside the repository
+and any ancestor with a hidden Cargo configuration. All output paths below must
+be absent before use.
+
+```sh
+python3 tools/run_optimization_revision_benchmarks.py --experiment budget --profile full \
+  --control-ref "$CONTROL_REF" --candidate-ref "$CANDIDATE_REF" --harness-ref "$HARNESS_REF" \
+  --target-root /workspace/optimization-budget-builds \
+  --output target/optimization-budget/build-only-external \
+  --backend-build-output target/optimization-budget/build-only-lifecycle --build-only
+
+# Copy both complete build graphs before either smoke writes observations.
+python3 - <<'PY'
+from pathlib import Path
+from shutil import copytree
+root = Path("target/optimization-budget")
+for kind in ("external", "lifecycle"):
+    for profile in ("smoke", "full"):
+        copytree(root / f"build-only-{kind}", root / f"{kind}-{profile}")
+PY
+
+python3 tools/run_optimization_revision_benchmarks.py --experiment budget --profile smoke \
+  --builds target/optimization-budget/external-smoke/revision-builds.json \
+  --target-root /workspace/optimization-budget-data
+python3 tools/run_optimization_backend_revision.py --experiment budget --profile smoke \
+  --builds target/optimization-budget/lifecycle-smoke/backend-builds.json \
+  --target-root /workspace/optimization-budget-data
+```
+
+Both smoke suites must pass complete semantic replay before full collection.
+Smoke checks 65 external and 23 diagnostic offers per variant; it does not
+qualify the performance target. Run the fresh full copies serially:
+
+```sh
+python3 tools/run_optimization_revision_benchmarks.py --experiment budget --profile full \
+  --builds target/optimization-budget/external-full/revision-builds.json \
+  --target-root /workspace/optimization-budget-data
+python3 tools/run_optimization_backend_revision.py --experiment budget --profile full \
+  --builds target/optimization-budget/lifecycle-full/backend-builds.json \
+  --target-root /workspace/optimization-budget-data
+python3 tools/validate_optimization_revision_evidence.py \
+  target/optimization-budget/external-full/suite.json \
+  --aggregate target/optimization-budget/external-full/aggregate.json
+python3 tools/validate_optimization_backend_revision.py \
+  target/optimization-budget/lifecycle-full/suite.json \
+  --aggregate target/optimization-budget/lifecycle-full/aggregate.json
+```
+
+Prebuilt collection validates the exact retained build graph and executed
+harness identity. It refuses reused measurement directories. Preserve failed
+attempts; use a fresh copy of the untouched build-only graph for a retry.
+Package each qualified full root independently with
+`tools/package_phase1_evidence.py` and replay each package with
+`tools/validate_phase1_archive.py`. The existing archive bounds and explicit
+split transport apply; replay never executes retained binaries.
+
+Each full external arm has one explicit prewarm, then 40 warmup and 400 measured
+offers at each of 1, 2, 5 and 10 ms: 1,761 offers per arm and 24,654 across seven
+pairs. The explicit prewarm and all warmup remain in raw evidence. The target
+is at least 99% semantically successful, client-observed on-time responses among
+all 2,800 measured 2 ms offers per variant. Failed, undispatched and late offers
+are not removed. Complete replay establishes evidence validity; the aggregate's
+separate target result establishes whether that threshold was attained.
+
+Conditional successful-response latency, all-dispatched latency and all-offered
+elapsed time remain distinct. Throughput uses first scheduled offer through last
+completed attempt. Server and client CPU/RSS are observed separately over the
+batch including warmup and observer overhead, so these are not measured-only
+per-call CPU costs. RSS is a sampled maximum; cgroup counters describe the shared
+runner. External timer counts are unavailable.
+
+The lifecycle diagnostic contributes 23 offers and 57 commands per process,
+322 offers and 798 commands across seven pairs. It requires actual queued
+targets behind four running holders, delayed body release after observed ingress
+expiry, running interruption, positive running cancellation, recovery and owned
+cleanup. A phase label or early rejection cannot substitute for those witnesses.
+The recorder bounds identities to 23 and events to 512; missing lineage or
+overflow cannot qualify. Terminal-decision times are actual checked instants;
+lifecycle and terminal-winner events observe transitions after they commit.
+
+Runaway and short-cancel diagnostics retain 1/2/5/10 ms native wall grants but
+allow 1,000 ms for both transport and caller absolute deadlines. This permits
+native interruption to acknowledge cleanup. Queued/delayed-body diagnostics and
+the external population keep matching short transport deadlines. Outer response
+overshoot, actual admitted-deadline decision overshoot and client response after
+native expiry are separate observations; missing observations remain unavailable.
+
+Wait counters cover only the observed manager-owned sleep guards, not all
+Tokio, transport or operating-system timers. Process CPU ticks span the complete
+diagnostic population, controls and drain, including the node, client and
+observers; they are not divided into per-offer CPU. Bounded retained telemetry
+history is distinguished from live ownership and joined threads. Seven pairs
+provide descriptive measurements rather than a production SLO or significance
+test.
+
+A failed same-deadline functional diagnostic exposed serving-capacity loss after
+running transport disconnects. Its failed evidence remains retained. The longer
+diagnostic transport allowance does not demonstrate that
+[#119](https://github.com/KirilsTurkins/latent-service-fabric/issues/119) is fixed:
+bounded owned cleanup and capacity recovery are a separate requirement, while
+quarantine remains necessary when safe reuse lacks proof.
