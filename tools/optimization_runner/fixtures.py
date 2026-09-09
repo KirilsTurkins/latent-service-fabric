@@ -85,7 +85,13 @@ def materialize(component: Path, directory: Path) -> list[dict]:
 
 def node_config(directory: Path, data_directory: Path) -> Path:
     path = directory / "node.json"
-    write(path, {
+    write(path, node_configuration(data_directory))
+    return path
+
+
+def node_configuration(data_directory: Path) -> dict:
+    """Construct the fixed defaults before the owned config is written once."""
+    return {
         "formatVersion": 1, "dataDirectory": str(data_directory), "nodeId": "optimization-node", "bind": "127.0.0.1:0",
         "workers": {"runtime": 2, "control": 2},
         "cells": [{"class": "standard", "capacity": 4, "queueCapacity": 64, "maximumMemoryBytes": 67_108_864}],
@@ -96,8 +102,7 @@ def node_config(directory: Path, data_directory: Path) -> Path:
         "retention": {"terminalEntries": 1024, "terminalTtlMillis": 30_000, "bytes": 512 * 1024 * 1024},
         "shutdownGraceMillis": 1000,
         "credentials": [{"token": TOKEN, "subject": "optimization-reference", "tenant": TENANT, "role": "operator"}],
-    })
-    return path
+    }
 
 
 def cli_config(directory: Path, endpoint: str, name: str) -> Path:

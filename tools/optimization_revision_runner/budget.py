@@ -42,11 +42,10 @@ def plan(profile: str) -> dict:
 
 
 def node_config(directory, data_directory):
-    import json
     from tools.optimization_runner import fixtures
-    path = fixtures.node_config(directory, data_directory)
-    value = json.loads(path.read_bytes())
+    value = fixtures.node_configuration(data_directory)
     value["workers"]["control"] = 4
     value["cache"].update(preparations=4, compilerWorkers=2)
+    path = directory / "node.json"
     fixtures.write(path, value)
     return path
