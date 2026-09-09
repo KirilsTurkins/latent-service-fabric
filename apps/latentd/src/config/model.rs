@@ -22,6 +22,8 @@ pub struct NodeConfig {
     #[serde(default)]
     pub execution: ExecutionConfig,
     #[serde(default)]
+    pub engine: EngineConfig,
+    #[serde(default)]
     pub limits: LimitConfig,
     #[serde(default)]
     pub cache: CacheConfig,
@@ -58,6 +60,29 @@ pub struct ExecutionConfig {
     pub maximum_cpu_fuel: u64,
     pub maximum_wall_time_millis: u64,
     pub maximum_log_bytes: u64,
+}
+
+/// Bounded engine choices; omitted settings preserve the standalone defaults.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct EngineConfig {
+    pub allocator: EngineAllocator,
+    pub optimization: EngineOptimization,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum EngineAllocator {
+    #[default]
+    OnDemand,
+    Pooling,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum EngineOptimization {
+    #[default]
+    Speed,
+    SpeedAndSize,
 }
 
 #[derive(Clone, Deserialize)]

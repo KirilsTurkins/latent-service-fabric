@@ -2,6 +2,8 @@
 
 mod compiler;
 mod engine;
+mod layout;
+mod pooling;
 mod profile;
 #[cfg(test)]
 mod tests;
@@ -54,6 +56,23 @@ impl InstanceAllocator {
 /// Compatibility name retained for the Phase 0 profiling facade.
 pub type Phase0InstanceAllocator = InstanceAllocator;
 
+/// Safe Cranelift optimization policies; neither choice changes containment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompilerOptimization {
+    Speed,
+    SpeedAndSize,
+}
+
+impl CompilerOptimization {
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Speed => "speed",
+            Self::SpeedAndSize => "speed-and-size",
+        }
+    }
+}
+
 /// Hard node limits for compilation, retained preparation and fresh stores.
 ///
 /// Component Model async execution, fuel and epoch interruption are required;
@@ -84,6 +103,7 @@ pub struct WasmtimeConfig {
     /// Interval and interval-times-ticks are both bounded to one second.
     pub epoch_tick_interval_millis: u64,
     pub instance_allocator: InstanceAllocator,
+    pub compiler_optimization: CompilerOptimization,
     pub copy_on_write_images: bool,
     pub pooling_maximum_instances: u32,
     pub maximum_artifact_metadata_bytes: usize,
@@ -139,6 +159,7 @@ impl Default for WasmtimeConfig {
             epoch_deadline_ticks: 1,
             epoch_tick_interval_millis: 5,
             instance_allocator: InstanceAllocator::OnDemand,
+            compiler_optimization: CompilerOptimization::Speed,
             copy_on_write_images: true,
             pooling_maximum_instances: 1,
             maximum_artifact_metadata_bytes: 1024 * 1024,
@@ -243,6 +264,7 @@ impl WasmtimeConfig {
         {
             return Err(invalid_config());
         }
+        self.validate_pooling_products()?;
         Ok(())
     }
 }

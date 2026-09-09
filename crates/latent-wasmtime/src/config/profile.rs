@@ -67,6 +67,7 @@ impl WasmtimeConfig {
             ("value-codec".to_owned(), "canonical-json-v1".to_owned()),
         ]);
         self.include_resource_policy(&mut fields);
+        self.include_engine_policy(&mut fields);
         if mode == DispatchMode::Generic {
             for (name, value) in [
                 ("compiler-workers", self.effective_compiler_workers()),
@@ -188,7 +189,6 @@ impl WasmtimeConfig {
             "pooling-maximum-tables-per-component",
             self.pooling_maximum_tables_per_component
         );
-        include!("pooling-linear-memory-keep-resident-bytes", 0);
         include!("hostcall-fuel-bytes", self.hostcall_fuel);
     }
 

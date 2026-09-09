@@ -4,6 +4,8 @@ use latent_core::{PlatformError, PrincipalKind, TenantId};
 use latent_scheduler::CellClass;
 use tempfile::TempDir;
 
+mod engine;
+
 use super::{input, CellConfig, CredentialRole, NodeConfig, NodeSettings, MIB};
 
 const TOKEN: &str = "example-local-token-replace-with-32-random-bytes";

@@ -92,6 +92,8 @@ from startup failure diagnostics.
 | `execution.maximumCpuFuel` | `100000000` | Per-activation node fuel ceiling, 1–10 billion. |
 | `execution.maximumWallTimeMillis` | `1000` | Activation wall-time and transport request ceiling, 2–300000 ms. |
 | `execution.maximumLogBytes` | `16384` | Per-activation log allowance, 0–16384 bytes; zero denies logs. |
+| `engine.allocator` | `"on-demand"` | `"on-demand"` or `"pooling"`. Pooling derives its component and stack slots from the checked total execution-cell capacity. |
+| `engine.optimization` | `"speed"` | Cranelift `"speed"` or `"speed-and-size"`; both retain fuel, epoch interruption and async execution. |
 | `limits.maximumComponentBytes` | `16777216` | Upload, repository and backend component ceiling, up to 64 MiB. |
 | `limits.maximumPayloadBytes` | `1048576` | Invocation/codec input and output ceiling, up to 1 MiB. |
 | `limits.maximumConnections` | `32` | Accepted transport connections, 1–1024. |
@@ -172,6 +174,19 @@ Wasmtime preparation cache. Each activation receives a fresh store and owned
 cleanup obligations. The resident cache uses expected O(1) borrowed-key lookup
 and recency promotion, shared `Arc<str>` keys and a reusable arena bounded by
 `cache.entries`. Its entry and byte admission gates remain in force.
+
+The optional `engine` object selects allocator and compiler policy. Omitting it
+preserves on-demand allocation and speed optimization. Pooling reserves bounded
+component, core-instance, memory, table and async-stack capacity from the total
+execution-cell count; it never permits additional active invocations. Every
+activation still receives a fresh store and instance. Linear memories are reset
+on reuse, unused warm pool slots and retained page budgets are zero, and
+decommit batches contain one slot. Async-stack zeroing remains disabled; the
+guest-memory reset guarantee does not describe cleared native stack bytes.
+Pool reservations, compiled image spans and process RSS measure different
+resources. Pooling also changes memory reservation and guard policy, so its
+performance comparison includes those layout choices. Compiler and resolved
+layout/reset settings participate in preparation compatibility identity.
 
 RPC inventory retains its resident-cache counters. The backend and factory Rust
 APIs additionally expose `cache_accounting_snapshot()` and an independent

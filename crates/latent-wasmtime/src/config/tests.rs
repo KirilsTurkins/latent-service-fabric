@@ -1,5 +1,7 @@
 use super::*;
 
+mod engine_policy;
+
 #[test]
 fn legacy_alias_preserves_the_existing_default_policy() {
     let config = Phase0WasmtimeConfig::default();
@@ -21,6 +23,7 @@ fn legacy_alias_preserves_the_existing_default_policy() {
     assert_eq!(config.epoch_tick_interval_millis, 5);
     assert_eq!(config.instance_allocator, Phase0InstanceAllocator::OnDemand);
     assert_eq!(config.pooling_maximum_instances, 1);
+    assert_eq!(config.compiler_optimization, CompilerOptimization::Speed);
 }
 
 #[test]
@@ -68,6 +71,7 @@ fn changes_to_execution_and_preparation_bounds_change_compatibility() {
         |c| c.epoch_deadline_ticks += 1,
         |c| c.copy_on_write_images = false,
         |c| c.instance_allocator = InstanceAllocator::Pooling,
+        |c| c.compiler_optimization = CompilerOptimization::SpeedAndSize,
         |c| c.pooling_maximum_core_instances_per_component += 1,
         |c| c.value_codec_limits.max_output_bytes /= 2,
         |c| c.value_codec_limits.max_decoded_value_bytes /= 2,
