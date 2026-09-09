@@ -1265,6 +1265,7 @@ dependencies = [
  "latent-executor",
  "latent-manifest",
  "latent-node",
+ "latent-optimization-workloads",
  "latent-routing",
  "latent-scheduler",
  "latent-telemetry",

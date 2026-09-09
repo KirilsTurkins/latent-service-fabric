@@ -110,6 +110,14 @@ while read -r family contract; do
     wasm-tools validate "${component}"
 done < "${CAPABILITIES_FIXTURES}/denied-imports.txt"
 
+ENGINE_MEMORY_COMPONENT="${TARGET_ROOT}/capsules/engine-memory/engine-memory-capsule.wasm"
+mkdir -p "$(dirname "${ENGINE_MEMORY_COMPONENT}")"
+wasm-tools parse tools/toolchain-smoke/examples/engine_memory/component.wat \
+    -o "${ENGINE_MEMORY_COMPONENT}"
+wasm-tools validate "${ENGINE_MEMORY_COMPONENT}"
+wasm-tools component wit "${ENGINE_MEMORY_COMPONENT}" --json \
+    > "${OUTPUT}/wit/engine-memory-component.json"
+
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
 LSF_ECHO_CAPSULE="${TARGET_ROOT}/capsules/echo/capsule.json" \
 LSF_OVERSIZED_LOG_COMPONENT="${OVERSIZED_LOG_COMPONENT}" \
@@ -121,6 +129,7 @@ LSF_CONTAINMENT_COMPONENT="${CONTAINMENT_COMPONENT}" \
 
 LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \
 LSF_GENERIC_FIXTURES="${GENERIC_FIXTURES}" \
+LSF_ENGINE_MEMORY_COMPONENT="${ENGINE_MEMORY_COMPONENT}" \
 LSF_ECHO_COMPONENT="${TARGET_ROOT}/capsules/echo/echo-capsule.wasm" \
     cargo test -p latent-wasmtime --test generic_backend --locked -- \
         --ignored --nocapture --test-threads=1

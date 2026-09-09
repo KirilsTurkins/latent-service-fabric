@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "engine-warm-aggregate evidence envelope",
+  "description": "Closed bounded envelope. Complete source, ordering, configuration, outcome and ownership qualification requires the matching semantic replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "scope",
+    "profile",
+    "status",
+    "population_complete",
+    "attempt_count_complete",
+    "validated_attempts",
+    "validated_processes",
+    "suite_sha256",
+    "plan_sha256",
+    "clock_ticks_per_second",
+    "identity",
+    "runs",
+    "comparisons",
+    "limitations"
+  ],
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "complete"}}, "required": ["status"]},
+      "then": {"properties": {"profile": {"const": "full"}, "population_complete": {"const": true},
+        "attempt_count_complete": {"const": true}, "validated_attempts": {"const": "6160"},
+        "validated_processes": {"const": "42"}, "runs": {"minItems": 14, "maxItems": 14},
+        "comparisons": {"minItems": 1, "maxItems": 1}}}
+    }
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.engine-warm-aggregate.v1"
+    },
+    "scope": {
+      "const": "lsf-revisions-shared-external-client-engine-default-preservation"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "failed"
+      ]
+    },
+    "population_complete": {
+      "type": "boolean"
+    },
+    "attempt_count_complete": {
+      "type": "boolean"
+    },
+    "validated_attempts": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "validated_processes": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "suite_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "clock_ticks_per_second": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000
+    },
+    "identity": {
+      "type": "object"
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 0,
+      "maxItems": 14
+    },
+    "comparisons": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 0,
+      "maxItems": 1
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "maxItems": 32
+    }
+  }
+}

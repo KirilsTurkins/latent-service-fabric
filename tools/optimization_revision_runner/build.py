@@ -124,6 +124,8 @@ def collect(repo: Path, refs: dict, output: Path, target_parent: Path, deadline:
                 from . import ownership_build as budget_backend
             elif selected.EXPERIMENT == "codec":
                 from . import codec_build as budget_backend
+            elif selected.EXPERIMENT == "engine":
+                from . import engine_build as budget_backend
             elif selected.EXPERIMENT == "budget":
                 from . import budget_build as budget_backend
             else:
@@ -160,6 +162,8 @@ def collect(repo: Path, refs: dict, output: Path, target_parent: Path, deadline:
                     else:
                         backend_receipt["harness"] = (backend.build_echo if budget_backend is None else budget_backend.generic)(
                             root, target, backend_output, deadline)
+                    if selected is not None and selected.EXPERIMENT == "engine":
+                        backend_receipt["fixtures"] = legacy.ref(backend_output / "engine-fixtures.json", backend_output)
                 else:
                     if budget_backend is None:
                         backend_receipt["builds"][label] = backend.build_backend(root, target, label, backend_output, deadline)

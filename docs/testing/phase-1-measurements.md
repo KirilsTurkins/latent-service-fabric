@@ -700,3 +700,112 @@ and replay each publication with `tools/validate_phase1_archive.py`. Packaging
 requires full semantic replay and exact derived aggregate equality. Replay
 never executes retained binaries. Structural schema envelopes do not replace
 source, fixture, timing, allocation and complete-population validation.
+
+## Engine profile experiments
+
+`--experiment engine` uses the existing exact-revision builders, owned process
+supervision and archive replay. It has two independent populations. The external
+warm Echo comparison uses the unchanged public client against the old and new
+default daemon: 32 offered calls in smoke, or 6,160 calls across seven full
+pairs (560 warmup and 5,600 measured). The engine field is omitted in both
+external node configurations. This is the matched follow-up to the warm costs
+retained in the #104 and #105 reports; historical medians are not subtracted
+from this comparison.
+
+The separate matrix starts five fresh node owners per block:
+
+| Row | Source | Allocator | Compiler optimization |
+| --- | --- | --- | --- |
+| O | Control containing merged #105 | Existing omitted default | Existing speed default |
+| D0 | Candidate | On demand | Speed |
+| P0 | Candidate | Pooling | Speed |
+| D1 | Candidate | On demand | Speed and size |
+| P1 | Candidate | Pooling | Speed and size |
+
+Starting with `O D0 P0 D1 P1`, block `b` rotates left by `(b-1) mod 5` and
+reverses the whole sequence for even blocks. Smoke uses the first block; full
+uses seven blocks and 35 owners. Candidate D0 minus control O tests explicit
+default preservation. P0, D1 and P1 each compare with the same actual candidate
+D0 in that block; they are not three independently measured baseline owners.
+Paired deltas and direction counts accompany the medians of process quantiles.
+Seven blocks and small order strata support descriptive comparisons, not a
+universal latency guarantee.
+
+Each owner retains 52 Invokes/125 wire commands in smoke, or 794 Invokes/1,609
+commands in full. Full matrix totals are 27,790 Invokes and 56,315 commands.
+Ordinary phases are sequential Echo, fixed compute, 4 MiB memory initialization
+and four-wide Echo, each with explicit warmup and measured populations. Eight
+release publications and eight deployment applications precede the first
+declared Echo warmup. There are no hidden preparation Invokes. The first Echo
+call is fresh-engine work; later first uses of other components are separately
+observed compilations within that owner.
+
+Each owner also retains all 24 functional Invokes, 24 terminal status queries
+and five accepted Cancel commands. These calls check tenant context and trace
+isolation, real clocks and log-byte accounting, mutable-global reset, fuel,
+memory and deadline faults, and memory reset following a trap and cancellation.
+The memory fixture checks every byte for zero before dirtying its fixed region.
+Four known Running tasks must remain Pending while a fifth request is queued;
+after one accepted cancellation the fifth succeeds while the remaining three
+holders are still live. This proves scheduler capacity and reclamation. It
+does not identify a particular physical Wasmtime pool slot. Separate native
+single-slot correctness tests cover that boundary.
+
+Every response, retained status, guest log and functional source observation
+is bound to its actual activation, tenant, release, revision and route generation.
+The diagnostic records at most 24 identities and 1,024 events and is enabled
+only during functional work. Both sources include precise deadline accounting
+and the bounded transport cleanup driver. Qualification requires the actual
+native owners and reservations to drain, zero quarantined cells, all compiler,
+epoch, runtime and cleanup-driver joins, and zero final unique compiled-runtime
+charges. Retained bounded telemetry history is not an active native owner.
+
+All rows retain four cells, a 64-entry queue, an eight-entry prepared cache,
+four preparation jobs and two compiler workers. The 512 MiB journal allowance
+is a retention-accounting bound, not allocated resident memory. Pooling uses
+four slots, a 64 MiB maximum linear memory, zero guards/growth reservation,
+zero warm unused slots, decommit batch size one and zero keep-resident thresholds.
+The on-demand row preserves the pinned 64-bit Wasmtime layout: 4 GiB reservation,
+32 MiB guard and 2 GiB growth reservation. The 5 ms epoch interval, fuel yielding,
+stack limits, copy-on-write policy and context exposure remain fixed. A pooling
+contrast therefore includes its declared allocator and memory-layout policy.
+
+Per-RPC timestamps stop at response receipt before validation and status calls.
+Batch throughput includes the explicitly retained status, validation and write
+work. Backend setup, guest call, post-return accounting and reclamation keep
+their existing instrumented boundaries. Preparation stages retain actual worker
+CPU observations. Matrix process CPU includes the node, in-process client,
+controls and observation; external RPC keeps server and client CPU separate.
+Neither coarse process ticks nor batch throughput become per-call CPU values.
+
+Bounded measurement-local `/proc/self/status` and `smaps_rollup` captures retain
+VmSize, VmPeak, RSS, VmHWM, PSS and private/shared clean/dirty byte fields.
+Each capture has an actual process/start identity and monotonic bracket. Missing,
+denied, malformed or unsupported fields retain null plus a fixed reason, never
+zero. Status, smaps, sampled process RSS and unique compiled-image charges are
+different measurements. Virtual reservation is not committed RSS, and a maximum
+over checkpoints is not an unsampled process peak. No Heaptrack population is
+part of this experiment.
+
+Build-only and each external collection have independent 7,200 s bounds. Each
+matrix owner has 300 s and each matrix collection 10,800 s; functional work is
+additionally bounded to 30 s per owner. Matrix raw JSON is limited to 32 MiB,
+individual rows to 256 KiB, 2,048 sample rows and 64 memory captures. A matrix
+root retains the existing 1 GiB/4,096-file limits; each new owner reserves 40 MiB
+within the remaining root. Archive publication keeps 5,000 entries, 256 MiB
+files, 99 MB monolithic or 198 MB split compressed transport. Failed populations
+retain their evidence and cannot qualify as a complete publication.
+
+From a clean identified harness, build once with `--experiment engine
+--build-only --profile full`, full `--control-ref`, `--candidate-ref` and
+`--harness-ref`, a fresh external `--output`, and a fresh
+`--backend-build-output`. The builder retains five fixed component inputs and
+two exact-source backend libtests. Before any measurement, copy both build-only
+roots to separate, previously absent smoke/full directories. Run the external
+CLI with `--builds <external-root>/revision-builds.json`, and the backend CLI
+with `--builds <matrix-root>/backend-builds.json`, using `--experiment engine`,
+the selected profile and an owned `--target-root`. Smoke must pass before full.
+Never overwrite an existing measured root. Validate each full suite with its
+existing revision/backend validation CLI and `--aggregate`, then package and
+replay the two evidence roots independently. Structural schemas supplement
+mandatory exact-source, complete-population and archive semantic replay.

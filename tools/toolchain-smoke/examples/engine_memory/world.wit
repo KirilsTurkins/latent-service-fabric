@@ -1,0 +1,11 @@
+package tests:engine-memory@0.1.0;
+
+interface memory {
+    enum mode { success, trap, cancel }
+    run: func(mode: mode) -> u32;
+}
+
+world service {
+    import latent:log/log@0.1.0;
+    export memory;
+}
