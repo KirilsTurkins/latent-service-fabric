@@ -9,7 +9,23 @@ use latent_executor::{
 };
 use latent_routing::{InvocationTarget, ResolvedRevision};
 
-use super::validate_request_context;
+use super::{context_charge, validate_request_context};
+
+#[test]
+fn diagnostic_charge_matches_the_existing_validator_at_its_exact_boundary() {
+    let request = request();
+    let charge = context_charge(&request, LIMIT).expect("bounded context");
+    assert_eq!(charge.maximum_bytes, LIMIT);
+    assert_eq!(charge.charged_bytes + charge.remaining_bytes, LIMIT);
+    assert!(charge.charged_bytes > 0);
+    let exact = context_charge(&request, charge.charged_bytes).expect("exact validated charge");
+    assert_eq!(exact.charged_bytes, charge.charged_bytes);
+    assert_eq!(exact.remaining_bytes, 0);
+    validate_request_context(&request, exact.maximum_bytes).expect("same validation path");
+    let diagnostic = context_charge(&request, exact.maximum_bytes - 1).unwrap_err();
+    let validation = validate_request_context(&request, exact.maximum_bytes - 1).unwrap_err();
+    assert_eq!(diagnostic, validation);
+}
 
 const LIMIT: usize = 16 * 1024;
 

@@ -27,10 +27,14 @@ use crate::host::accounting::InvocationAccounting;
 use crate::host::{
     validate_request_context, ActivationHostContext, BoundedLogSink, HostCallTiming, HostState,
 };
+use crate::invocation_input_observer::{
+    InputTrace, InvocationInputDropReason, InvocationInputObserver, InvocationInputPhase,
+};
 use crate::preparation_observer::{PreparationJob, PreparationObserver, PreparationStage};
 use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0InvocationTiming};
 use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
 
+mod input;
 mod owned;
 mod preparation;
 mod preparation_context;
@@ -87,6 +91,7 @@ pub(crate) struct SharedRuntime {
     timings: Mutex<InvocationTimingStore>,
     preparation: Arc<PreparationCounters>,
     pub(crate) preparation_observer: PreparationObserver,
+    pub(crate) invocation_input_observer: InvocationInputObserver,
     preparation_context: Arc<PreparationContext>,
 }
 impl SharedRuntime {
@@ -148,6 +153,7 @@ impl SharedRuntime {
             timings: Mutex::new(InvocationTimingStore::new(256)),
             preparation,
             preparation_observer,
+            invocation_input_observer: InvocationInputObserver::new(),
             preparation_context,
             compiler,
         })
@@ -323,30 +329,13 @@ impl WasmtimeBackend {
         )
     }
 
-    async fn invoke_inner(
-        &self,
-        request: ExecutionRequest,
-        cancellation: &dyn ExecutionCancellation,
-        prepared: Option<WasmtimePreparedUse>,
-    ) -> Result<GuestOutcome, PlatformError> {
-        validate_request_context(&request, self.config.maximum_artifact_metadata_bytes)?;
-        let activation_id = request.activation.activation_id.clone();
-        let started = Instant::now();
-        let mut timing = Phase0InvocationTiming::default();
-        let outcome = self
-            .invoke_inner_timed(request, cancellation, &mut timing, prepared)
-            .await;
-        timing.backend_total_micros = elapsed_micros(started);
-        self.lock_timings().insert(activation_id.0, timing);
-        outcome
-    }
-
     async fn invoke_inner_timed(
         &self,
-        request: ExecutionRequest,
+        mut request: ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
         timing: &mut Phase0InvocationTiming,
         prepared: Option<WasmtimePreparedUse>,
+        input_trace: Option<&InputTrace>,
     ) -> Result<GuestOutcome, PlatformError> {
         let setup_started = Instant::now();
         let _active_invocation = self.shared.resources.active_invocation();
@@ -370,9 +359,13 @@ impl WasmtimeBackend {
             self.invocation_runtime(prepared, &request.prepared.opaque_handle)?;
         let function = self.requested_function(&runtime, &request)?;
         let temporary_buffer_guard = self.shared.resources.temporary_buffer();
+        let raw_input = input::RawInvocationInput::new(
+            std::mem::take(&mut request.activation.input),
+            input_trace,
+        );
         let input = values::decode_params(
             &function.params,
-            &request.activation.input,
+            raw_input.bytes(),
             &request.activation.input_media_type,
             self.config.value_codec_limits,
         )?;
@@ -413,6 +406,9 @@ impl WasmtimeBackend {
 
         let component_instance_guard = self.shared.resources.component_instance();
         let mut output = vec![Val::Bool(false); function.results.len()];
+        if let Some(trace) = input_trace {
+            trace.stage(InvocationInputPhase::BeforeCallExport);
+        }
         let call_result = call_export(
             &runtime,
             function,
@@ -421,6 +417,7 @@ impl WasmtimeBackend {
             &mut output,
             timing,
             setup_started,
+            input_trace,
         )
         .await;
         // Wasmtime 47's safe dynamic call completes canonical ABI post-return
@@ -474,6 +471,9 @@ impl WasmtimeBackend {
         drop(stop);
         drop(cancellation_guard);
         timing.reusable_proof_micros = elapsed_micros(reusable_proof_started);
+        // Neutral instrumentation preserves the original request input's scope.
+        // Both actual vector destruction and its observation happen here.
+        raw_input.release(InvocationInputDropReason::OwnerScopeExit);
         outcome
     }
 
@@ -838,6 +838,10 @@ fn bounded_error(error: &wasmtime::Error) -> String {
     bounded_text(&error.to_string(), MAX_DIAGNOSTIC_BYTES)
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "The optional neutral input trace accompanies the existing call and timing arguments without changing their boundaries."
+)]
 async fn call_export(
     runtime: &PreparedRuntime,
     function: &surface::Function,
@@ -846,13 +850,19 @@ async fn call_export(
     output: &mut [Val],
     timing: &mut Phase0InvocationTiming,
     setup_started: Instant,
+    input_trace: Option<&InputTrace>,
 ) -> wasmtime::Result<()> {
     match runtime.pre.instantiate_async(&mut *store).await {
         Ok(instance) => {
             timing.backend_setup_micros = elapsed_micros(setup_started);
             let guest_call_started = Instant::now();
             let result = match instance.get_func(&mut *store, function.index) {
-                Some(func) => func.call_async(&mut *store, input, output).await,
+                Some(func) => {
+                    if let Some(trace) = input_trace {
+                        trace.stage(InvocationInputPhase::GuestCallStart);
+                    }
+                    func.call_async(&mut *store, input, output).await
+                }
                 None => Err(wasmtime::Error::msg(
                     "validated component function index is absent",
                 )),

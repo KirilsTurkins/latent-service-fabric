@@ -1,5 +1,7 @@
 //! Concrete ownership bridge with optional bounded post-transport cleanup.
 mod owned;
+#[cfg(test)]
+mod ownership_tests;
 use super::ActivationCleanupHandle;
 use super::{
     authenticated_tenant, CancellationCommand, InvocationCancellation, InvocationCommand,

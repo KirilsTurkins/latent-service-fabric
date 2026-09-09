@@ -11,6 +11,7 @@ mod config;
 mod containment;
 mod factory;
 mod host;
+mod invocation_input_observer;
 mod phase0;
 mod preparation_metadata;
 mod preparation_observer;
@@ -38,6 +39,10 @@ pub use containment::RuntimeResourceSnapshot;
 pub use factory::WasmtimeComponentEngineFactory;
 pub use host::policy::ContextExposurePolicy;
 pub use host::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
+pub use invocation_input_observer::{
+    InvocationContextCharge, InvocationInputDropReason, InvocationInputIdentity,
+    InvocationInputObserver, InvocationInputPhase, InvocationInputRecord, InvocationInputSnapshot,
+};
 pub use phase0::{
     Phase0WasmtimeBackend, Phase0WasmtimeEngineFactory, BACKEND_ID, ECHO_DOMAIN_ERROR_MEDIA_TYPE,
     ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD,

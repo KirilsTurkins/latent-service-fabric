@@ -18,7 +18,7 @@ use crate::config::WasmtimeConfig;
 use accounting::InvocationAccounting;
 use policy::ContextExposurePolicy;
 
-mod request_context;
+pub(crate) mod request_context;
 pub(crate) use request_context::validate_request_context;
 
 #[derive(Debug)]

@@ -20,6 +20,12 @@ pub struct WasmtimeComponentEngineFactory {
 }
 
 impl WasmtimeComponentEngineFactory {
+    /// Independent opt-in input observations, available after factory shutdown.
+    #[must_use]
+    pub fn invocation_input_observer(&self) -> crate::InvocationInputObserver {
+        self.shared.invocation_input_observer.clone()
+    }
+
     /// Measured residency with optional unique prepared-runtime costs.
     #[must_use]
     pub fn cache_accounting_snapshot(&self) -> crate::PreparedCacheAccountingSnapshot {

@@ -7,6 +7,33 @@ use super::*;
 const CHILD_SCENARIO: &str = "LSF_WASMTIME_EPOCH_TEST";
 const COMPLETED: &str = "epoch-scenario-completed";
 
+#[test]
+fn input_observer_is_shared_without_retaining_factory_or_workers() {
+    supervise(
+        "factory::tests::input_observer_is_shared_without_retaining_factory_or_workers",
+        || {
+            let factory =
+                WasmtimeComponentEngineFactory::new(WasmtimeConfig::default()).expect("factory");
+            let observer = factory.invocation_input_observer();
+            let backend = factory.create_backend_instance();
+            backend
+                .invocation_input_observer()
+                .enable(&[latent_core::ActivationId("proof".to_owned())])
+                .expect("one bounded session");
+            assert!(observer.snapshot().enabled);
+            drop(backend);
+            factory
+                .shutdown()
+                .expect("observer owns no runtime or worker");
+            let snapshot = observer.snapshot();
+            assert!(snapshot.enabled);
+            assert!(!snapshot.overflowed);
+            assert_eq!(snapshot.live_invocations, 0);
+            assert!(snapshot.records.is_empty());
+        },
+    );
+}
+
 struct SupervisedChild(Child);
 
 impl Drop for SupervisedChild {

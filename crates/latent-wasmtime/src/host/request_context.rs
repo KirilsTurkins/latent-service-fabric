@@ -7,6 +7,7 @@ use latent_executor::ExecutionRequest;
 
 use super::ActivationHostContext;
 use crate::containment::platform_error;
+use crate::InvocationContextCharge;
 
 // Covers sparse BTreeMap nodes, map entry/string storage, and the owned copy.
 // Payload bytes are charged separately by the generic value codec.
@@ -17,6 +18,13 @@ pub(crate) fn validate_request_context(
     request: &ExecutionRequest,
     maximum_bytes: usize,
 ) -> Result<(), PlatformError> {
+    context_charge(request, maximum_bytes).map(|_| ())
+}
+
+pub(crate) fn context_charge(
+    request: &ExecutionRequest,
+    maximum_bytes: usize,
+) -> Result<InvocationContextCharge, PlatformError> {
     let mut budget = ContextBudget(maximum_bytes);
     budget.charge(size_of::<ExecutionRequest>() + size_of::<ActivationHostContext>())?;
     let activation = &request.activation;
@@ -97,7 +105,11 @@ pub(crate) fn validate_request_context(
         budget.string(&import.contract)?;
         budget.string(&import.opaque_handle)?;
     }
-    Ok(())
+    Ok(InvocationContextCharge {
+        maximum_bytes,
+        charged_bytes: maximum_bytes - budget.0,
+        remaining_bytes: budget.0,
+    })
 }
 
 fn charge_target(
