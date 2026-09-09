@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 use std::task::{Context, Poll};
 use std::time::Instant;
 
@@ -11,8 +11,9 @@ use latent_core::{
     ReleaseDigest,
 };
 use latent_executor::{
-    ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest,
-    GuestInterruptionKind, GuestOutcome, GuestTrap, PreparationKey, PreparedComponent, PreparedUse,
+    ExecutionBackend, ExecutionCancellation, ExecutionCancellationProbe, ExecutionReport,
+    ExecutionRequest, GuestInterruptionKind, GuestOutcome, GuestTrap, PreparationKey,
+    PreparedComponent, PreparedUse,
 };
 
 use super::support::{error, Gate, LiveGuard};
@@ -37,6 +38,7 @@ pub struct Backend {
     pub live_prepared: Arc<AtomicUsize>,
     pub requests: Mutex<Vec<ExecutionRequest>>,
     pub deadlines: Mutex<Vec<Option<Instant>>>,
+    pub probes: Mutex<Vec<Weak<dyn ExecutionCancellationProbe>>>,
 }
 
 impl Default for Backend {
@@ -52,6 +54,7 @@ impl Default for Backend {
             live_prepared: Arc::default(),
             requests: Mutex::new(Vec::new()),
             deadlines: Mutex::new(Vec::new()),
+            probes: Mutex::new(Vec::new()),
         }
     }
 }
@@ -118,6 +121,8 @@ impl ExecutionBackend for Backend {
                 .budget_accounting()
                 .expect("manager shares its ledger");
             assert_eq!(accounting.granted(), &request.budget);
+            let probe = cancellation.probe().expect("live independent stop probe");
+            self.probes.lock().unwrap().push(Arc::downgrade(&probe));
             self.deadlines
                 .lock()
                 .expect("deadlines")

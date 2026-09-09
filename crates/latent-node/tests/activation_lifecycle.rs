@@ -27,3 +27,10 @@ mod deadline_abort;
 
 #[path = "activation_lifecycle/precise_deadline.rs"]
 mod precise_deadline;
+
+#[path = "activation_lifecycle/transport_cleanup.rs"]
+mod transport_cleanup;
+#[path = "activation_lifecycle/transport_cleanup_failures.rs"]
+mod transport_cleanup_failures;
+#[path = "activation_lifecycle/transport_cleanup_pool.rs"]
+mod transport_cleanup_pool;

@@ -6,6 +6,7 @@ mod cold;
 mod evidence;
 mod node;
 mod plan;
+mod recovery;
 mod revision;
 mod writer;
 

@@ -121,7 +121,7 @@ async fn run(
         Workload::Benchmark => Box::pin(benchmark::run(&node, &plan, &mut writer)).await,
     };
     let work = serde_json::to_value(node.work())?;
-    let shutdown = node.shutdown().await?;
+    let shutdown = Box::pin(node.shutdown()).await?;
     data.close()?;
     writer.write("data-cleanup", &json!({"removed":true}))?;
     let clean = shutdown.clean && shutdown.telemetry_flushed && shutdown.epoch_helper_joined;

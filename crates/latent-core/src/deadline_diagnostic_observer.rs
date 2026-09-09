@@ -10,7 +10,8 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 use crate::{
-    ActivationPhase, ActivationTerminalState, EffectiveDeadline, PlatformErrorCode, ResourceBudget,
+    ActivationPhase, ActivationTerminalState, EffectiveDeadline, PlatformError, PlatformErrorCode,
+    ResourceBudget,
 };
 
 static NEXT_OWNER: AtomicU64 = AtomicU64::new(1);
@@ -90,6 +91,14 @@ pub enum DeadlineDiagnosticObservation {
         observed_at: Instant,
         terminal_state: ActivationTerminalState,
     },
+    /// Actual transfer of an existing lifecycle into its reserved supervisor
+    /// slot. Cancelled denotes raw disconnect here, not an accepted Cancel RPC.
+    TransportHandoff {
+        observed_at: Instant,
+        slot: u64,
+        generation: u64,
+        cause: DeadlineDiagnosticDecision,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,6 +126,8 @@ pub struct DeadlineDiagnosticSnapshot {
 #[derive(Debug)]
 struct State {
     owner: Option<u64>,
+    maximum_identities: usize,
+    maximum_records: usize,
     snapshot: DeadlineDiagnosticSnapshot,
 }
 
@@ -130,25 +141,52 @@ impl DeadlineDiagnosticObserver {
     pub const MAXIMUM_IDENTITIES: usize = 23;
     pub const MAXIMUM_RECORDS: usize = 512;
     pub const MAXIMUM_IDENTIFIER_BYTES: usize = 256;
+    pub const MAXIMUM_CONFIGURED_IDENTITIES: usize = 64;
+    pub const MAXIMUM_CONFIGURED_RECORDS: usize = 2_048;
 
     #[must_use]
     pub fn new(origin: Instant) -> Self {
+        Self::with_limits(origin, Self::MAXIMUM_IDENTITIES, Self::MAXIMUM_RECORDS)
+            .expect("fixed diagnostic limits are valid")
+    }
+
+    /// Explicit finite diagnostic populations can opt into larger bounds. The
+    /// ordinary constructor and its original population remain unchanged.
+    pub fn with_limits(
+        origin: Instant,
+        maximum_identities: usize,
+        maximum_records: usize,
+    ) -> Result<Self, PlatformError> {
+        if maximum_identities == 0
+            || maximum_identities > Self::MAXIMUM_CONFIGURED_IDENTITIES
+            || maximum_records < maximum_identities
+            || maximum_records > Self::MAXIMUM_CONFIGURED_RECORDS
+        {
+            return Err(PlatformError {
+                code: PlatformErrorCode::InvalidArgument,
+                message: "deadline diagnostic limits are invalid".to_owned(),
+                retryable: false,
+                details: Vec::new(),
+            });
+        }
         let owner = NEXT_OWNER
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
                 next.checked_add(1)
             })
             .ok();
-        Self {
+        Ok(Self {
             inner: Arc::new(Mutex::new(State {
                 owner,
+                maximum_identities,
+                maximum_records,
                 snapshot: DeadlineDiagnosticSnapshot {
                     origin,
                     overflowed: owner.is_none(),
-                    identities: Vec::with_capacity(Self::MAXIMUM_IDENTITIES),
-                    records: Vec::with_capacity(Self::MAXIMUM_RECORDS),
+                    identities: Vec::with_capacity(maximum_identities),
+                    records: Vec::with_capacity(maximum_records),
                 },
             })),
-        }
+        })
     }
 
     /// Allocate before decoding the body, for Invoke only. The token can cross
@@ -157,8 +195,8 @@ impl DeadlineDiagnosticObserver {
     pub fn begin(&self, ingress: DeadlineDiagnosticObservation) -> Option<DeadlineDiagnosticToken> {
         let mut state = self.lock();
         if !matches!(ingress, DeadlineDiagnosticObservation::Ingress { .. })
-            || state.snapshot.identities.len() == Self::MAXIMUM_IDENTITIES
-            || state.snapshot.records.len() == Self::MAXIMUM_RECORDS
+            || state.snapshot.identities.len() == state.maximum_identities
+            || state.snapshot.records.len() == state.maximum_records
         {
             state.snapshot.overflowed = true;
             return None;
@@ -172,7 +210,7 @@ impl DeadlineDiagnosticObserver {
             token,
             activation_id: None,
         });
-        push(&mut state.snapshot, token, ingress);
+        push(&mut state, token, ingress);
         Some(token)
     }
 
@@ -219,7 +257,7 @@ impl DeadlineDiagnosticObserver {
             state.snapshot.overflowed = true;
             return;
         }
-        push(&mut state.snapshot, token, observation);
+        push(&mut state, token, observation);
     }
 
     pub fn record_for_activation(
@@ -255,11 +293,12 @@ fn valid_token(state: &State, token: DeadlineDiagnosticToken) -> bool {
 }
 
 fn push(
-    snapshot: &mut DeadlineDiagnosticSnapshot,
+    state: &mut State,
     token: DeadlineDiagnosticToken,
     observation: DeadlineDiagnosticObservation,
 ) {
-    if snapshot.records.len() == DeadlineDiagnosticObserver::MAXIMUM_RECORDS {
+    let snapshot = &mut state.snapshot;
+    if snapshot.records.len() == state.maximum_records {
         snapshot.overflowed = true;
         return;
     }

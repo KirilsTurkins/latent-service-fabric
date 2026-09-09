@@ -19,6 +19,7 @@ fn fixture(compiler_workers_live: u64) -> impl Iterator<Item = Row> {
             control_jobs: 2,
             cells: 4,
             instances: 4,
+            cleanup_slots: 68,
         },
         Observed {
             invocation_threads: 2,
@@ -43,6 +44,8 @@ fn fixture(compiler_workers_live: u64) -> impl Iterator<Item = Row> {
             compiler_workers_live,
             cell_leases: 3,
             instances: 4,
+            cleanup_driver_alive: 1,
+            cleanup_slots: 6,
         },
     )
 }
@@ -52,11 +55,11 @@ fn fixed_topology_distinguishes_measurements_unknowns_and_architectural_zeros() 
     let reporter = reporter(
         Arc::new(EmptyCacheInventorySource),
         Arc::new(FixedRows(2)),
-        20,
+        22,
     );
     let inventory = reporter.snapshot_now().expect("fixed topology");
     assert!(inventory.topology.available && inventory.topology.complete);
-    assert_eq!(inventory.topology.entries.len(), 20);
+    assert_eq!(inventory.topology.entries.len(), 22);
     let lookup = |name: &str| {
         inventory
             .topology
@@ -103,6 +106,9 @@ fn fixed_topology_distinguishes_measurements_unknowns_and_architectural_zeros() 
     assert_eq!(lookup("accepted-connections").active_count, Some(3));
     assert_eq!(lookup("in-flight-rpcs").active_count, Some(5));
     assert_eq!(lookup("control-jobs").active_count, Some(1));
+    assert_eq!(lookup("invocation-cleanup-driver").active_count, Some(1));
+    assert_eq!(lookup("invocation-cleanup-slots").configured_count, 68);
+    assert_eq!(lookup("invocation-cleanup-slots").active_count, Some(6));
     assert_eq!(lookup("execution-cell-leases").active_count, Some(3));
     assert_eq!(
         lookup("prepared-instance-reservations").active_count,
@@ -126,7 +132,7 @@ fn fixed_topology_distinguishes_measurements_unknowns_and_architectural_zeros() 
 
 #[test]
 fn short_topology_selection_is_bounded_and_explicitly_incomplete() {
-    for maximum_rows in [2, 19] {
+    for maximum_rows in [2, 21] {
         let reporter = reporter(
             Arc::new(EmptyCacheInventorySource),
             Arc::new(FixedRows(2)),
@@ -149,7 +155,7 @@ fn retired_compiler_workers_report_observed_zero_with_configuration_retained() {
     let reporter = reporter(
         Arc::new(EmptyCacheInventorySource),
         Arc::new(FixedRows(0)),
-        20,
+        22,
     );
     let inventory = reporter.snapshot_now().expect("retired worker topology");
     let compiler = inventory

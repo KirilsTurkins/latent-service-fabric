@@ -4,11 +4,13 @@ mod control;
 mod lifecycle;
 mod observation;
 mod preparation;
+mod probes;
 mod run;
+mod transport_stop;
 
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Duration;
@@ -38,6 +40,8 @@ use control::{error, CatchPanic};
 use lifecycle::Lifecycle;
 pub use observation::ActivationObservationSnapshot;
 use observation::{Counters, ObservationServices};
+pub use transport_stop::ActivationTransportInterruption;
+use transport_stop::TransportStop;
 
 static NEXT_OBSERVATION_OWNER: AtomicU64 = AtomicU64::new(1);
 
@@ -101,7 +105,7 @@ pub struct ActivationReceipt {
 pub struct ActivationHandle {
     activation_id: ActivationId,
     completion: Pin<Box<dyn Future<Output = ActivationReceipt> + Send>>,
-    deadline_abort: Arc<AtomicBool>,
+    transport_stop: Arc<TransportStop>,
 }
 
 impl ActivationHandle {
@@ -116,8 +120,21 @@ impl ActivationHandle {
     /// cancellation or completed publication retains its existing winner.
     /// This never looks up an activation by a possibly reused caller ID.
     pub fn abort_due_to_deadline(self) {
-        self.deadline_abort.store(true, Ordering::Release);
-        drop(self);
+        drop(self.interrupt_for_cleanup(ActivationTransportInterruption::DeadlineExceeded));
+    }
+
+    /// Marks this exact owner for a bounded, externally owned cleanup driver.
+    /// The returned handle retains its original future, deadline and accounting;
+    /// it must still be polled to obtain backend cleanup and cell disposition.
+    /// A transport stop never installs an explicit cancellation winner.
+    ///
+    /// Call only for a trusted local transport interruption and outside ownership
+    /// locks: marking may wake the task that last polled this handle. Repeated
+    /// marks retain the first cause. Dropping the result remains fail-closed.
+    #[must_use = "retain and drive this exact interrupted lifecycle through cleanup"]
+    pub fn interrupt_for_cleanup(self, cause: ActivationTransportInterruption) -> Self {
+        self.transport_stop.mark(cause);
+        self
     }
 }
 
@@ -229,12 +246,12 @@ impl LocalActivationManager {
         let (journal, cancellation) = self.inner.journal.begin_with(&envelope, || {
             self.inner.cancellations.register(activation_id.clone())
         })?;
-        let deadline_abort = Arc::new(AtomicBool::new(false));
+        let transport_stop = Arc::new(TransportStop::default());
         let mut lifecycle = Lifecycle::new(
             journal,
             cancellation,
             Arc::clone(&self.inner.clock),
-            Arc::clone(&deadline_abort),
+            Arc::clone(&transport_stop),
             deadline,
         );
         lifecycle.begin_observation(self.inner.observations.as_ref(), &envelope);
@@ -264,7 +281,7 @@ impl LocalActivationManager {
         Ok(ActivationHandle {
             activation_id,
             completion,
-            deadline_abort,
+            transport_stop,
         })
     }
 

@@ -2,6 +2,7 @@ mod deadline;
 mod gates;
 mod network;
 mod ownership;
+mod shutdown;
 
 use std::future::Future;
 use std::sync::Arc;

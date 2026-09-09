@@ -1,5 +1,6 @@
-//! Concrete ownership bridge; it adds no queue, task, status cache, or budget ledger.
+//! Concrete ownership bridge with optional bounded post-transport cleanup.
 mod owned;
+use super::ActivationCleanupHandle;
 use super::{
     authenticated_tenant, CancellationCommand, InvocationCancellation, InvocationCommand,
     InvocationLimits, InvocationResponse, InvocationRuntime, StatusQuery,
@@ -16,6 +17,7 @@ use owned::LocalInvocation;
 pub struct LocalInvocationRuntime {
     manager: LocalActivationManager,
     limits: InvocationLimits,
+    cleanup: Option<ActivationCleanupHandle>,
 }
 impl LocalInvocationRuntime {
     #[must_use]
@@ -31,7 +33,26 @@ impl LocalInvocationRuntime {
         limits: InvocationLimits,
     ) -> Result<Self, PlatformError> {
         limits.validate()?;
-        Ok(Self { manager, limits })
+        Ok(Self {
+            manager,
+            limits,
+            cleanup: None,
+        })
+    }
+
+    /// Reserve a bounded continuation slot before accepting each identity.
+    /// The caller must retain and shut down the corresponding cleanup owner.
+    pub fn with_cleanup(
+        manager: LocalActivationManager,
+        limits: InvocationLimits,
+        cleanup: ActivationCleanupHandle,
+    ) -> Result<Self, PlatformError> {
+        limits.validate()?;
+        Ok(Self {
+            manager,
+            limits,
+            cleanup: Some(cleanup),
+        })
     }
 }
 impl InvocationRuntime for LocalInvocationRuntime {
@@ -42,12 +63,21 @@ impl InvocationRuntime for LocalInvocationRuntime {
     ) -> BoxFuture<'_, Result<InvocationResponse, PlatformError>> {
         // In particular, do not move start() into an async block: identity must
         // be reserved before this method returns an unpolled future.
+        let slot = match self
+            .cleanup
+            .as_ref()
+            .map(ActivationCleanupHandle::try_reserve)
+            .transpose()
+        {
+            Ok(slot) => slot,
+            Err(error) => return Box::pin(std::future::ready(Err(error))),
+        };
         let started = self.manager.start_with_deadline(
             activation_request(command),
             cancellation.deadline().copied(),
         );
         match started {
-            Ok(handle) => Box::pin(LocalInvocation::new(handle, cancellation)),
+            Ok(handle) => Box::pin(LocalInvocation::new(handle, cancellation, slot)),
             Err(error) => Box::pin(std::future::ready(Err(error))),
         }
     }

@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 use latent_core::{ActivationClock, PlatformError, PlatformErrorCode};
 use latent_executor::ExecutionReport;
 
+use super::transport_stop::TransportStop;
 use crate::CancellationToken;
 
 pub(super) fn error(code: PlatformErrorCode, message: &str) -> PlatformError {
@@ -64,17 +65,21 @@ pub(super) async fn deadline(deadline: Option<Instant>, clock: &dyn ActivationCl
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod transport_tests;
 
 pub(super) async fn stage<T>(
     future: impl Future<Output = Result<T, PlatformError>>,
     token: &CancellationToken,
     expiry: Option<Instant>,
     clock: &Arc<dyn ActivationClock>,
+    transport: &TransportStop,
 ) -> Result<T, PlatformError> {
     tokio::select! {
         biased;
         () = token.cancelled() => Err(cancelled(token)),
         () = deadline(expiry, clock.as_ref()) => Err(deadline_error()),
+        () = transport.interrupted() => Err(transport.failure().expect("sticky transport stop")),
         result = future => result,
     }
 }
@@ -85,12 +90,14 @@ pub(super) async fn execution(
     expiry: Option<Instant>,
     clock: &Arc<dyn ActivationClock>,
     grace: Duration,
+    transport: &TransportStop,
 ) -> ExecutionReport {
     tokio::pin!(future);
     let interruption = tokio::select! {
         biased;
         () = token.cancelled() => cancelled(token),
         () = deadline(expiry, clock.as_ref()) => deadline_error(),
+        () = transport.interrupted() => transport.failure().expect("sticky transport stop"),
         report = &mut future => return report,
     };
     match tokio::time::timeout(grace, &mut future).await {

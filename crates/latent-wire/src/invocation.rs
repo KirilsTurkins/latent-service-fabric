@@ -2,6 +2,7 @@
 
 mod authentication;
 mod cancellation;
+mod cleanup;
 mod conversion;
 mod deadline;
 mod errors;
@@ -21,6 +22,7 @@ use latent_routing::InvocationTarget;
 pub(crate) use authentication::{authenticated_tenant, take_context};
 pub use authentication::{AuthenticatedInvocationContext, LocalPrincipalPolicy, PrincipalPolicy};
 pub use cancellation::{InvocationCancellation, InvocationInterruption};
+pub use cleanup::{ActivationCleanupHandle, ActivationCleanupOwner, ActivationCleanupSnapshot};
 pub use conversion::{
     activation_status_from_proto, activation_status_to_proto, budget_from_proto, budget_to_proto,
     cancel_disposition_from_proto, cancel_disposition_to_proto, consumption_from_proto,

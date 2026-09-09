@@ -7,7 +7,7 @@ use latent_executor::ExecutionCleanup;
 use super::*;
 use crate::ActivationCancellationRegistry;
 
-struct Clock {
+pub(super) struct Clock {
     observer: DeadlineWaitObserver,
     origin: Instant,
     elapsed_millis: AtomicU64,
@@ -15,7 +15,7 @@ struct Clock {
 }
 
 impl Clock {
-    fn new(system: bool) -> Self {
+    pub(super) fn new(system: bool) -> Self {
         Self {
             observer: DeadlineWaitObserver::new(),
             origin: tokio::time::Instant::now().into_std(),
@@ -49,7 +49,7 @@ impl ActivationClock for Clock {
     }
 }
 
-fn poll<F: Future>(future: Pin<&mut F>) -> Poll<F::Output> {
+pub(super) fn poll<F: Future>(future: Pin<&mut F>) -> Poll<F::Output> {
     future.poll(&mut Context::from_waker(Waker::noop()))
 }
 
@@ -133,8 +133,9 @@ async fn ready_work_drops_its_wait_and_preexisting_cancellation_keeps_precedence
         .unwrap();
     let token = registration.token();
     let expiry = source.monotonic_now() + Duration::from_secs(1);
+    let transport = TransportStop::default();
     assert_eq!(
-        stage(async { Ok(7) }, &token, Some(expiry), &clock)
+        stage(async { Ok(7) }, &token, Some(expiry), &clock, &transport)
             .await
             .unwrap(),
         7
@@ -147,6 +148,7 @@ async fn ready_work_drops_its_wait_and_preexisting_cancellation_keeps_precedence
         &token,
         Some(source.monotonic_now()),
         &clock,
+        &transport,
     )
     .await
     .unwrap_err();
@@ -165,11 +167,13 @@ async fn cancelling_a_pending_stage_drops_its_sleep_without_a_deadline_wakeup() 
         .register(ActivationId("cancel-stage".to_owned()))
         .unwrap();
     let token = registration.token();
+    let transport = TransportStop::default();
     let mut pending = Box::pin(stage(
         pending::<Result<(), PlatformError>>(),
         &token,
         Some(source.monotonic_now() + Duration::from_secs(1)),
         &clock,
+        &transport,
     ));
     assert!(poll(pending.as_mut()).is_pending());
     assert_eq!(source.observer.snapshot().live, 1);
@@ -192,6 +196,7 @@ async fn panicking_stage_drops_the_sleep_before_catch_returns() {
         .register(ActivationId("panic-stage".to_owned()))
         .unwrap();
     let token = registration.token();
+    let transport = TransportStop::default();
     let failing = std::future::poll_fn(|_| -> Poll<Result<(), PlatformError>> {
         panic!("injected stage panic");
     });
@@ -200,6 +205,7 @@ async fn panicking_stage_drops_the_sleep_before_catch_returns() {
         &token,
         Some(source.monotonic_now() + Duration::from_secs(1)),
         &clock,
+        &transport,
     ))
     .await;
     assert!(outcome.is_err());
@@ -230,6 +236,7 @@ async fn execution_deadline_keeps_the_existing_cleanup_grace_and_drops_inner_wor
         .register(ActivationId("cleanup-stage".to_owned()))
         .unwrap();
     let token = registration.token();
+    let transport = TransportStop::default();
     let dropped = Arc::new(AtomicBool::new(false));
     let expiry = source.monotonic_now() + Duration::from_millis(10);
     let mut running = Box::pin(execution(
@@ -238,6 +245,7 @@ async fn execution_deadline_keeps_the_existing_cleanup_grace_and_drops_inner_wor
         Some(expiry),
         &clock,
         Duration::from_millis(5),
+        &transport,
     ));
     assert!(poll(running.as_mut()).is_pending());
     tokio::time::advance(Duration::from_millis(11)).await;

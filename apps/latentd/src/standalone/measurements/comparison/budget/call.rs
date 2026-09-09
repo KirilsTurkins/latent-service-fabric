@@ -11,7 +11,7 @@ use super::{
 };
 
 #[derive(Clone)]
-pub(super) struct Offer {
+pub(in crate::standalone::measurements::comparison) struct Offer {
     pub ordinal: u32,
     pub case: &'static str,
     pub budget_millis: u64,
@@ -28,12 +28,12 @@ impl Offer {
     }
 }
 
-pub(super) fn payload(bytes: &[u8]) -> Value {
+pub(in crate::standalone::measurements::comparison) fn payload(bytes: &[u8]) -> Value {
     json!({"sha256":content_digest(bytes).0,"bytes":bytes.len().to_string(),
         "media_type":super::super::super::fixtures::MEDIA})
 }
 
-pub(super) fn request(
+pub(in crate::standalone::measurements::comparison) fn request(
     offer: &Offer,
     clock: Clock,
 ) -> Result<(tonic::Request<proto::InvokeRequest>, Value)> {
@@ -93,7 +93,7 @@ pub(super) fn request(
     Ok((request, row))
 }
 
-pub(super) fn response(
+pub(in crate::standalone::measurements::comparison) fn response(
     offer: &Offer,
     clock: Clock,
     mut row: Value,
@@ -162,7 +162,11 @@ pub(super) fn response(
     row
 }
 
-pub(super) async fn invoke(channel: Channel, clock: Clock, offer: Offer) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) async fn invoke(
+    channel: Channel,
+    clock: Clock,
+    offer: Offer,
+) -> Result<Value> {
     let (request, row) = request(&offer, clock)?;
     let result = InvocationServiceClient::new(channel).invoke(request).await;
     Ok(response(&offer, clock, row, result))

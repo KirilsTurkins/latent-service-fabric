@@ -5,6 +5,7 @@ use latent_core::{Metadata, PlatformError};
 use latent_node::{NodeTopologyEntry, NodeTopologySource, NodeTopologyWriter, ResourceOwnership};
 use latent_scheduler::{CellClass, LocalScheduler};
 use latent_wasmtime::{RuntimeResourceSnapshot, WasmtimeBackend};
+use latent_wire::invocation::ActivationCleanupHandle;
 
 use crate::config::NodeSettings;
 use crate::standalone::transport::{TransportHandle, TransportSnapshot};
@@ -14,6 +15,7 @@ pub(in crate::standalone) struct TopologySource {
     backend: Arc<WasmtimeBackend>,
     scheduler: Arc<LocalScheduler>,
     transport: TransportHandle,
+    cleanup: ActivationCleanupHandle,
     invocation_threads: Arc<AtomicUsize>,
     control_threads: Arc<AtomicUsize>,
 }
@@ -24,8 +26,8 @@ impl TopologySource {
         backend: Arc<WasmtimeBackend>,
         scheduler: Arc<LocalScheduler>,
         transport: TransportHandle,
-        invocation_threads: Arc<AtomicUsize>,
-        control_threads: Arc<AtomicUsize>,
+        cleanup: ActivationCleanupHandle,
+        threads: crate::standalone::RuntimeThreads,
     ) -> Self {
         Self {
             limits: Limits {
@@ -42,12 +44,14 @@ impl TopologySource {
                     .map(|class| u64::from(class.parallelism))
                     .sum(),
                 instances: count(backend.maximum_instance_reservations()),
+                cleanup_slots: count(settings.manager.journal.maximum_active),
             },
             backend,
             scheduler,
             transport,
-            invocation_threads,
-            control_threads,
+            cleanup,
+            invocation_threads: threads.invocation,
+            control_threads: threads.control,
         }
     }
 }
@@ -66,6 +70,7 @@ impl NodeTopologySource for TopologySource {
         .map(|class| u64::from(self.scheduler.observations(class).active_leases))
         .sum();
         let compiler = self.backend.compiler_snapshot();
+        let cleanup = self.cleanup.snapshot();
         let observed = Observed {
             invocation_threads: count(self.invocation_threads.load(Ordering::Acquire)),
             control_threads: count(self.control_threads.load(Ordering::Acquire)),
@@ -75,6 +80,8 @@ impl NodeTopologySource for TopologySource {
             compiler_workers_live: compiler.workers_live,
             cell_leases,
             instances: count(self.backend.active_instance_reservations()),
+            cleanup_driver_alive: u64::from(cleanup.driver_alive),
+            cleanup_slots: count(cleanup.reserved) + count(cleanup.queued) + count(cleanup.running),
         };
         write_rows(writer, rows(self.limits, observed))
     }
@@ -93,6 +100,7 @@ struct Limits {
     control_jobs: u64,
     cells: u64,
     instances: u64,
+    cleanup_slots: u64,
 }
 
 #[derive(Clone, Copy)]
@@ -105,6 +113,8 @@ struct Observed {
     compiler_workers_live: u64,
     cell_leases: u64,
     instances: u64,
+    cleanup_driver_alive: u64,
+    cleanup_slots: u64,
 }
 
 struct Row {
@@ -138,7 +148,7 @@ fn rows(limits: Limits, observed: Observed) -> impl Iterator<Item = Row> {
         .chain(service_rows())
 }
 
-fn node_rows(limits: Limits, observed: Observed) -> [Row; 9] {
+fn node_rows(limits: Limits, observed: Observed) -> [Row; 11] {
     use ResourceOwnership::NodeFixed;
     [
         row("standalone-node", "process", NodeFixed, 1, Some(1)),
@@ -188,6 +198,20 @@ fn node_rows(limits: Limits, observed: Observed) -> [Row; 9] {
             NodeFixed,
             limits.control_jobs,
             Some(count(observed.transport.active_control_jobs)),
+        ),
+        row(
+            "invocation-cleanup-driver",
+            "task",
+            NodeFixed,
+            1,
+            Some(observed.cleanup_driver_alive),
+        ),
+        row(
+            "invocation-cleanup-slots",
+            "continuation",
+            NodeFixed,
+            limits.cleanup_slots,
+            Some(observed.cleanup_slots),
         ),
     ]
 }

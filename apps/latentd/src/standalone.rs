@@ -24,6 +24,7 @@ use latent_telemetry::{
     SharedActivationObserver, StructuredLocalSink, TelemetryHandle, TelemetryRuntime,
 };
 use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory};
+use latent_wire::invocation::{ActivationCleanupOwner, ActivationCleanupSnapshot};
 
 pub use shutdown::ShutdownReport;
 
@@ -37,6 +38,7 @@ pub struct RuntimeThreads {
 /// Retain this owner until explicit shutdown has joined its services and helpers.
 pub struct StandaloneNode {
     transport: Option<transport::Transport>,
+    cleanup: Option<ActivationCleanupOwner>,
     sampler: Option<load::LoadSampler>,
     telemetry_runtime: Option<TelemetryRuntime>,
     factory: Option<WasmtimeComponentEngineFactory>,
@@ -52,9 +54,17 @@ pub struct StandaloneNode {
     clock: Arc<dyn ActivationClock>,
     classes: Vec<CellClass>,
     shutdown_grace: Duration,
+    cleanup_grace: Duration,
 }
 
 impl StandaloneNode {
+    /// Actual bounded continuation ownership; absence is retained for older
+    /// compositions used as comparison controls.
+    #[must_use]
+    pub fn cleanup_snapshot(&self) -> Option<ActivationCleanupSnapshot> {
+        self.cleanup.as_ref().map(ActivationCleanupOwner::snapshot)
+    }
+
     #[must_use]
     pub fn endpoint(&self) -> SocketAddr {
         self.transport
