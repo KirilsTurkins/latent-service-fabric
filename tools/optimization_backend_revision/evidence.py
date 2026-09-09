@@ -45,6 +45,9 @@ def validate_suite(path):
     checksum = hash_file(path, DOCUMENT_BYTES)
     suite = read_json(path)
     require(hash_file(path, DOCUMENT_BYTES) == checksum, "backend-suite-changed-during-read")
+    if suite.get("schema") == "latent.optimization.codec-suite.v1":
+        from tools.optimization_codec.evidence import validate_suite as validate_codec
+        return validate_codec(path)
     if suite.get("schema") == "latent.optimization.ownership-suite.v1":
         from .ownership.evidence import validate_suite as validate_ownership
         return validate_ownership(path)

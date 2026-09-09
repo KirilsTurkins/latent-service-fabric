@@ -144,9 +144,11 @@ observations do not replace the original Phase 1 scale and soak evidence.
 `tools/package_phase1_evidence.py` retains gzip level 6 by default and accepts
 `--compression-level 9` for denser lossless packaging. `--split-archive` stores
 the same gzip stream in two to four parts of at most 50 MB, bounded to 198 MB
-total. Ordinary archives retain their 99 MB cap. Both forms keep the 1 GiB
-expanded and 5,000-file limits and require full evidence replay; the validator
-checks ordered part identities and the reconstructed archive before extraction.
+total. Ordinary archives retain their 99 MB cap. Both forms keep the 5,000-file
+limit and require full evidence replay. The expanded default remains 1 GiB;
+only the explicitly identified [codec-only evidence](#typed-codec-experiments)
+permits 2 GiB. The validator checks ordered part identities, the reconstructed
+archive and the aggregate that selects the bound before extraction.
 
 The two-call batch records offered concurrency. The queue batch proves two
 running holders and three queued waiters, then cancels the holders to release
@@ -563,3 +565,138 @@ Use the existing explicit split transport when needed; historical archives and
 their limits remain unchanged. Failed attempts are retained and cannot qualify
 as a complete population. Functional debug fixtures are semantic parser inputs,
 not release performance evidence.
+
+## Typed codec experiments
+
+The fixed `--experiment codec` mode reuses the exact-revision builder, unchanged
+external client, owned process supervisor and archive replay. A build-only pass
+builds two standalone servers and two `latent-wasmtime` libtest collectors, plus
+the shared client/CLI and optimization component. The common collector, type
+fixture, CPU reader, dependency lock and build recipe must match across refs.
+The production codec and its test registration are outside that equality set.
+
+The external package retains `warm-echo`, `compute`, `transform`, `payload-64k`
+and `payload-near-limit` with their existing client semantics and populations:
+140 offered calls in smoke, or 25,256 across seven alternating pairs in full.
+Warmup remains retained and separate from measured outcomes. Successful-response
+latency, all-offered completion time, throughput and whole server/client CPU and
+RSS remain separate observations. A codec-only gain cannot establish an RPC
+gain or resolve the warm regression retained in the request-ownership report.
+
+The separate codec package runs six fixed families. Input and canonical output
+bytes are independently reconstructed by Python and Rust; neither arm adapts
+them to observed results. Each child owns and drops its engine, component and
+selected types. It constructs no guest Store or instance and performs no Invoke.
+
+| Family | Input bytes | Canonical output bytes | Full measured calls per direction |
+| --- | ---: | ---: | ---: |
+| Scalar parameters | 131 | 123 | 4,096 |
+| Byte list | 14,627 | 14,627 | 573 |
+| Nested record | 2,850 | 2,850 | 2,943 |
+| 64 KiB string | 65,540 | 65,540 | 127 |
+| Near-limit string | 122,884 | 122,884 | 68 |
+| Escaped Unicode | 98,308 | 49,156 | 85 |
+
+Each child performs three decode and three encode semantic preflight calls
+outside timing: the stable public path, its diagnostic path and the explicit
+legacy implementation. All must match the fixed canonical output. Both arms
+retain legacy-produced values as the encoding input, keeping their allocation
+capacity provenance common. The observed preflight path is `legacy-only` for
+the control and `typed-success` for the candidate. Successful candidate batches
+rely on the source invariant that accepted input cannot silently fall back to a
+successful legacy decode; strict replay does not invent per-call path events.
+
+Each direction then performs two warmup and four measured calls in smoke, or
+20 warmup and the table's measured count in full. Normal and separately profiled
+children use the same calls, with one pair per family/mode in smoke and seven in
+full: 24 and 168 owned children respectively. Total codec operations are 432 in
+smoke and 449,680 in full. The full total includes 1,008 preflight, 6,720 warmup
+and 441,952 measured operations; these are not guest invocation counts.
+
+`measured_decode_and_drop` and `measured_encode_and_drop` each run once per child
+and contain the complete measured loop. Their boundaries include the actual
+codec, `black_box`, constant-time outcome/arity or output-length checks and
+result destruction. Warmup and semantic preflight bypass these named frames.
+There is no per-call hashing or re-encoding inside the timed loop. Retained
+batch elapsed time and actual `CLOCK_THREAD_CPUTIME_ID` readings support batch
+totals and arithmetic per-operation averages, not individual latency quantiles.
+Coarse `/proc` readings bind the same actual task before and after each batch.
+Both clocks must remain monotonic across decode and encode. Readings bracket
+the batch, so their scope includes the small clock-reading boundary overhead.
+
+Normal process CPU and RSS additionally include type setup, preflight, warmup,
+validation, teardown and the two fixed 100 ms observation holds. Heaptrack
+profiles are independent children. Raw and demangled `nm` proofs bind both
+selected symbols by actual code address/type to the retained executable.
+Interpreted and folded streams must agree; an allocation containing both frames
+counts once in their union, and later frees refund its original ownership.
+Missing or unresolved frames mean unavailable attribution, not zero. Available
+selected totals can be divided by the declared contained codec-call count;
+simultaneous peak bytes cannot be summed across frames or divided into a
+per-operation peak. Whole-process allocation totals remain separately labeled.
+
+Build-only and each later smoke/full collection have independent 7,200 s
+bounds. Per-build commands have 3,600 s, normal children 90 s, profiled children
+180 s and extraction tools 120 s, each clipped to its enclosing stage. The
+codec suite explicitly permits 128 MiB expanded folded streams; historical
+defaults stay at 64 MiB. The existing 64 KiB line, 100,000-row, 512-frame,
+256 MiB file and 4,096 retained-file limits remain. Codec alone declares a
+2 GiB evidence-root limit and 12,000,000 interpreted profile records; other
+experiments retain the 1 GiB root and 4,000,000-record defaults. The 250,000-entry
+profile table limits remain unchanged. Whole-profile and selected-origin
+replay enforce the same declared record limit. Raw codec documents are bounded
+to 8 MiB. Failures retain their completed work and owned cleanup receipts, fail
+population qualification and require fresh output roots for retries.
+
+The first full codec attempt stopped after 59 children at the original root
+reservation; its retained profiles also exceeded the original record limit.
+The observed maximum was 9,831,105 records in a 59,457,687-byte text
+profile, and complete paired repetitions retained approximately 188 MB each.
+That incomplete attempt remains diagnostic evidence. The explicit larger
+codec limits preserve all 168 children and 449,680 operations. Subsequent
+collection uses fresh roots and exact source/build receipts; the already
+completed external RPC population retains its original identity and protocol.
+
+Archive packaging selects the 2 GiB expanded allowance only from the bounded
+outer codec aggregate, binds those exact bytes to the archived aggregate, and
+requires the same archived kind and complete semantic replay. All codec members
+remain bounded to 256 MiB; the archive entry cap is 5,000. Other evidence kinds,
+including codec RPC, keep 1 GiB. The 99 MB monolithic and 198 MB split compressed
+limits are unchanged; a size overflow fails publication rather than dropping
+evidence or adding an unbounded archive option.
+
+From a clean identified harness, supply full 40-character refs:
+
+```sh
+python tools/run_optimization_revision_benchmarks.py --experiment codec \
+  --profile full --control-ref "$CONTROL_SHA" --candidate-ref "$CANDIDATE_SHA" \
+  --harness-ref "$HARNESS_SHA" --target-root /workspace/codec-builds \
+  --output target/codec/build-only-rpc \
+  --backend-build-output target/codec/build-only-direct --build-only
+
+# Copy all four fresh roots before collection; existing destinations are errors.
+test ! -e target/codec/rpc-smoke && cp -a target/codec/build-only-rpc target/codec/rpc-smoke
+test ! -e target/codec/rpc-full && cp -a target/codec/build-only-rpc target/codec/rpc-full
+test ! -e target/codec/direct-smoke && cp -a target/codec/build-only-direct target/codec/direct-smoke
+test ! -e target/codec/direct-full && cp -a target/codec/build-only-direct target/codec/direct-full
+
+python tools/run_optimization_revision_benchmarks.py --experiment codec --profile smoke \
+  --builds target/codec/rpc-smoke/revision-builds.json --target-root /workspace/codec-data
+python tools/run_optimization_backend_revision.py --experiment codec --profile smoke \
+  --builds target/codec/direct-smoke/backend-builds.json --target-root /workspace/codec-data
+python tools/run_optimization_revision_benchmarks.py --experiment codec --profile full \
+  --builds target/codec/rpc-full/revision-builds.json --target-root /workspace/codec-data
+python tools/run_optimization_backend_revision.py --experiment codec --profile full \
+  --builds target/codec/direct-full/backend-builds.json --target-root /workspace/codec-data
+
+python tools/validate_optimization_revision_evidence.py target/codec/rpc-full/suite.json \
+  --aggregate target/codec/rpc-full/aggregate.json
+python tools/validate_optimization_backend_revision.py target/codec/direct-full/suite.json \
+  --aggregate target/codec/direct-full/aggregate.json
+```
+
+Package the two full roots independently with `tools/package_phase1_evidence.py`
+and replay each publication with `tools/validate_phase1_archive.py`. Packaging
+requires full semantic replay and exact derived aggregate equality. Replay
+never executes retained binaries. Structural schema envelopes do not replace
+source, fixture, timing, allocation and complete-population validation.

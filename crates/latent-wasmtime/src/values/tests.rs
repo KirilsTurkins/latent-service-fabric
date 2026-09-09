@@ -8,6 +8,9 @@ use super::*;
 
 mod bounds;
 mod composites;
+mod differential;
+#[cfg(target_os = "linux")]
+mod measurement;
 mod scalars;
 
 fn types() -> &'static BTreeMap<String, Type> {

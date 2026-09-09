@@ -4,3 +4,5 @@
 *.jpg binary
 *.jpeg binary
 *.zip binary
+*.gz binary
+*.gz.part-* binary

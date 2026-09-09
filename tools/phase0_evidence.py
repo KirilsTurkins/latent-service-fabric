@@ -228,14 +228,21 @@ def _tar_member_relative(member: tarfile.TarInfo, label: str) -> str | None:
     return _safe_relative_path(member.name, label)
 
 
-def extract_tar_stream(stream: BinaryIO, destination: Path, label: str) -> set[str]:
+def extract_tar_stream(stream: BinaryIO, destination: Path, label: str, *,
+                       maximum_bytes: int | None = None) -> set[str]:
     """Safely extract a tar stream and return its regular-file paths.
 
     The function deliberately does not use ``TarFile.extractall``: every
     member is checked before a destination is opened, and all links, devices,
-    duplicate normalized paths, and escaping paths are rejected.
+    duplicate normalized paths, and escaping paths are rejected. The default
+    remains 1 GiB; the Phase 1 codec dispatcher may explicitly select 2 GiB.
     """
 
+    if maximum_bytes is None:
+        maximum_bytes = MAX_ARCHIVE_BYTES
+    else:
+        _require(type(maximum_bytes) is int and maximum_bytes in (1_073_741_824, 2_147_483_648),
+                 f"{label} invalid explicit extraction limit")
     _require(not destination.exists(), f"{label} destination already exists: {destination}")
     destination.mkdir(parents=True)
     root = destination.resolve()
@@ -272,8 +279,8 @@ def extract_tar_stream(stream: BinaryIO, destination: Path, label: str) -> set[s
                 _require(member.size >= 0, f"{label} member has an invalid size: {relative!r}")
                 extracted_bytes += member.size
                 _require(
-                    extracted_bytes <= MAX_ARCHIVE_BYTES,
-                    f"{label} exceeds the {MAX_ARCHIVE_BYTES}-byte extraction limit",
+                    extracted_bytes <= maximum_bytes,
+                    f"{label} exceeds the {maximum_bytes}-byte extraction limit",
                 )
                 destination_path.parent.mkdir(parents=True, exist_ok=True)
                 source = archive.extractfile(member)

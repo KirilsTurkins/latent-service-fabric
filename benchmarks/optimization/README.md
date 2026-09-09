@@ -292,3 +292,40 @@ defines the exact source controls, control-generated context fixtures and the
 distinct timing, logical ownership, allocator and process-memory boundaries.
 The schemas bound structure; strict replay and the linked report establish
 the retained populations and qualified results.
+
+## Typed codec experiments
+
+The [retained typed-codec comparison](typed-codec/2026-09-09-container-linux-9a2749f/README.md)
+reports lower warm Echo p50 and server CPU against its matched control, with
+mixed payload/tail results and higher sampled RSS. Its separate codec batches
+show lower decode CPU for structured values while preserving small string
+regressions. The report separates batch averages, RPC quantiles, selected
+allocator traffic and process memory, and retains the first incomplete
+collection's limit failure.
+
+The [#105 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/105)
+uses `--experiment codec` on the existing revision runners. Five unchanged
+external cases retain 140 calls in smoke or 25,256 across seven full pairs.
+A separate no-guest codec collector covers six fixed value families in normal
+and profiled children: 24 children/432 codec operations in smoke, or
+168 children/449,680 operations in full. Preflight, warmup and measured calls
+remain separately counted.
+
+| Evidence | Plan | Builds | Suite | Aggregate |
+| --- | --- | --- | --- | --- |
+| External RPC | [plan](codec-rpc-plan.schema.json) | [builds](codec-rpc-builds.schema.json) | [suite](codec-rpc-suite.schema.json) | [aggregate](codec-rpc-aggregate.schema.json) |
+| Codec batches and allocations | [plan](codec-plan.schema.json) | [builds](codec-builds.schema.json) | [suite](codec-suite.schema.json) | [aggregate](codec-aggregate.schema.json) |
+
+The [collection and replay method](../../docs/testing/phase-1-measurements.md#typed-codec-experiments)
+defines exact source controls, independent fixture reconstruction, actual batch
+CPU/elapsed boundaries and selected allocation-origin attribution. Batch
+averages are separate from RPC latency quantiles; unavailable frame attribution
+is never reported as zero. These schemas describe the protocol and do not
+establish a measured performance result.
+
+Codec-only evidence explicitly allows a 2 GiB retained root and 12,000,000
+interpreted profile records, preserving its full fixed population after the
+first incomplete collection exceeded the original limits. Other experiments,
+including codec RPC, retain the 1 GiB/4,000,000-record defaults. Archive selection
+binds the bounded outer codec aggregate to the archived kind and full replay;
+256 MiB files and the existing compressed transport caps remain unchanged.

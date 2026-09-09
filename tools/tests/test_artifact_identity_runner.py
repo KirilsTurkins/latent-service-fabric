@@ -157,7 +157,7 @@ class FixtureBoundsTests(unittest.TestCase):
             item.write_bytes(b"abcd")
             with self.assertRaisesRegex(ValueError, "file-bound"):
                 files.fingerprint(item, 3)
-            with patch.object(files, "MAX_TOTAL_BYTES", 3), self.assertRaisesRegex(ValueError, "storage-bound"):
+            with patch.object(files, "total_limit", return_value=3), self.assertRaisesRegex(ValueError, "storage-bound"):
                 files.total_bytes(root)
             (root / "two").write_bytes(b"")
             with patch.object(files, "MAX_FILES", 1), self.assertRaisesRegex(ValueError, "count-bound"):

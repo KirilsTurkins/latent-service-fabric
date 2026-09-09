@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/codec-plan.schema.json",
+  "$comment": "Structural bounds only; tools.optimization_codec.evidence.validate_suite performs required exact-source, semantic, ownership and allocation replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "repetition",
+    "variant",
+    "mode",
+    "family",
+    "warmup_iterations",
+    "measured_iterations",
+    "observation_hold_millis",
+    "maximum_output_bytes"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.codec-plan.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "repetition": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 7
+    },
+    "variant": {
+      "enum": [
+        "control",
+        "candidate"
+      ]
+    },
+    "mode": {
+      "enum": [
+        "normal",
+        "allocation"
+      ]
+    },
+    "family": {
+      "enum": [
+        "scalar-params",
+        "byte-list",
+        "nested-record",
+        "string-64k",
+        "string-near-limit",
+        "escaped-unicode"
+      ]
+    },
+    "warmup_iterations": {
+      "enum": [2,20]
+    },
+    "measured_iterations": {
+      "type": "integer",
+      "minimum": 4,
+      "maximum": 4096
+    },
+    "observation_hold_millis": {
+      "const": 100
+    },
+    "maximum_output_bytes": {
+      "const": "8388608"
+    }
+  },
+  "$defs": {
+    "full_work": {
+      "oneOf": [
+        {
+          "properties": {
+            "family": {
+              "const": "scalar-params"
+            },
+            "measured_iterations": {
+              "const": 4096
+            }
+          }
+        },
+        {
+          "properties": {
+            "family": {
+              "const": "byte-list"
+            },
+            "measured_iterations": {
+              "const": 573
+            }
+          }
+        },
+        {
+          "properties": {
+            "family": {
+              "const": "nested-record"
+            },
+            "measured_iterations": {
+              "const": 2943
+            }
+          }
+        },
+        {
+          "properties": {
+            "family": {
+              "const": "string-64k"
+            },
+            "measured_iterations": {
+              "const": 127
+            }
+          }
+        },
+        {
+          "properties": {
+            "family": {
+              "const": "string-near-limit"
+            },
+            "measured_iterations": {
+              "const": 68
+            }
+          }
+        },
+        {
+          "properties": {
+            "family": {
+              "const": "escaped-unicode"
+            },
+            "measured_iterations": {
+              "const": 85
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "repetition": {
+            "const": 1
+          },
+          "warmup_iterations": {
+            "const": 2
+          },
+          "measured_iterations": {
+            "const": 4
+          }
+        }
+      },
+      "else": {
+        "allOf": [
+          {
+            "properties": {
+              "warmup_iterations": {
+                "const": 20
+              }
+            }
+          },
+          {
+            "$ref": "#/$defs/full_work"
+          }
+        ]
+      }
+    }
+  ]
+}

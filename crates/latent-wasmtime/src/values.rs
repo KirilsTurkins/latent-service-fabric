@@ -4,6 +4,7 @@ mod decode;
 mod encode;
 mod parse;
 mod signature;
+mod typed;
 
 use latent_core::{DeclaredError, PlatformError, PlatformErrorCode};
 use wasmtime::component::{Type, Val};
@@ -78,6 +79,81 @@ pub(crate) enum EncodedResult {
 }
 
 pub(crate) fn decode_params(
+    types: &[Type],
+    payload: &[u8],
+    media_type: &str,
+    limits: ValueCodecLimits,
+) -> Result<Vec<Val>, PlatformError> {
+    decode_params_dispatch(types, payload, media_type, limits).0
+}
+
+// Local diagnostic metadata lets the explicit codec probe identify the path
+// without a global observer or any per-call synchronization.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(dead_code)]
+pub(super) enum DecodePath {
+    LegacyOnly,
+    PreflightRejected,
+    TypedSuccess,
+    LegacyError,
+    TypedRejectedLegacyAccepted,
+}
+
+fn decode_params_dispatch(
+    types: &[Type],
+    payload: &[u8],
+    media_type: &str,
+    limits: ValueCodecLimits,
+) -> (Result<Vec<Val>, PlatformError>, DecodePath) {
+    if let Err(error) = limits.validate() {
+        return (Err(error), DecodePath::PreflightRejected);
+    }
+    if media_type != MEDIA_TYPE {
+        return (
+            Err(failure(
+                PlatformErrorCode::InvalidArgument,
+                "unsupported-invocation-media-type",
+            )),
+            DecodePath::PreflightRejected,
+        );
+    }
+    if let Err(error) = parse::preflight(payload, limits) {
+        return (Err(error), DecodePath::PreflightRejected);
+    }
+    match typed::params(types, payload, limits) {
+        Ok(values) => (Ok(values), DecodePath::TypedSuccess),
+        Err(error) => {
+            // Partial typed values have already been dropped. The legacy path
+            // preserves rejection precedence without retaining two value trees.
+            drop(error);
+            match decode_params_legacy(types, payload, media_type, limits) {
+                Err(error) => (Err(error), DecodePath::LegacyError),
+                Ok(values) => {
+                    drop(values);
+                    (
+                        Err(failure(
+                            PlatformErrorCode::Internal,
+                            "typed-value-codec-compatibility-failure",
+                        )),
+                        DecodePath::TypedRejectedLegacyAccepted,
+                    )
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+pub(super) fn decode_params_diagnostic(
+    types: &[Type],
+    payload: &[u8],
+    media_type: &str,
+    limits: ValueCodecLimits,
+) -> (Result<Vec<Val>, PlatformError>, DecodePath) {
+    decode_params_dispatch(types, payload, media_type, limits)
+}
+
+pub(super) fn decode_params_legacy(
     types: &[Type],
     payload: &[u8],
     media_type: &str,

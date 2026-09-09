@@ -54,17 +54,21 @@ class Attribution(common.Attribution):
                             "ownership-selected-allocation-free-without-owner")
 
 
-def proofs(value, binary, tool, artifacts):
+def proofs(value, binary, tool, artifacts, *, symbols=SYMBOLS):
     return [common.symbol_proof(value, binary, tool, artifacts,
                                 frame=re.compile(re.escape(symbol) + r"(?:::h[0-9a-f]{16})?\Z"))
-            for symbol in SYMBOLS]
+            for symbol in symbols]
 
 
-def attribute(record, binary, proof, tool, artifacts, whole):
-    verified = proofs(proof, binary, tool, artifacts)
+def attribute(record, binary, proof, tool, artifacts, whole, *, symbols=SYMBOLS,
+              scope="allocations-with-verified-constructor-or-direct-poll-frame-union",
+              maximum_records=heaptrack.MAX_RECORDS):
+    maximum_records = heaptrack.record_limit(maximum_records)
+    verified = proofs(proof, binary, tool, artifacts, symbols=symbols)
     groups = [() if row is None else (row["demangled"], row["raw"]) for row in verified]
     raw, state = common.replay_attribution(artifacts.path(record["profile_refs"]["interpreted"]),
-                                           record["command"][3], groups, state_type=Attribution)
+                                           record["command"][3], groups, state_type=Attribution,
+                                           maximum_records=maximum_records)
     require(raw == whole, "ownership-allocation-whole-replay-crossed")
     total, selected = common.folded_attribution(artifacts.path(record["profile_refs"]["allocations"]), state.folded_labels,
                                                maximum_bytes=MAX_FOLDED_BYTES)
@@ -76,9 +80,9 @@ def attribute(record, binary, proof, tool, artifacts, whole):
         return {name: str(amount) if available else None for name, amount in value.items()}
     return {"status": "available" if available else "unavailable",
             "reason": None if available else "missing-or-ambiguous-symbol" if any(row is None for row in verified)
-            else "unresolved-allocation-frame", "symbols": list(SYMBOLS), "verified_symbols": verified,
-            "scope": "allocations-with-verified-constructor-or-direct-poll-frame-union",
-            "union": project(union), "frames": {symbol: project(row) for symbol, row in zip(SYMBOLS, state.statistics)},
+            else "unresolved-allocation-frame", "symbols": list(symbols), "verified_symbols": verified,
+            "scope": scope,
+            "union": project(union), "frames": {symbol: project(row) for symbol, row in zip(symbols, state.statistics)},
             "unresolved_allocation_count": str(state.unresolved_count),
             "observed_named_allocation_count": str(state.named_count),
             "peak_scope": "maximum-simultaneously-live-origin-attributed-bytes-not-sum-of-frame-peaks"}

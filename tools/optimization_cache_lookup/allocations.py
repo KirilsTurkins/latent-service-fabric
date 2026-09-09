@@ -107,14 +107,16 @@ class Attribution(heaptrack.Replay):
                 self.unresolved_count += 1
 
 
-def replay_attribution(path, binary_name, symbols=(), *, state_type=Attribution):
+def replay_attribution(path, binary_name, symbols=(), *, state_type=Attribution,
+                       maximum_records=heaptrack.MAX_RECORDS):
+    maximum_records = heaptrack.record_limit(maximum_records)
     require(not path.is_symlink() and path.is_file() and path.stat().st_size <= heaptrack.MAX_BYTES, "lookup-profile-input-bound")
     state, total, records = state_type(binary_name, symbols), 0, 0
     with path.open("rb") as source:
         while encoded := source.readline(heaptrack.MAX_LINE_BYTES + 1):
             total += len(encoded)
             records += 1
-            require(total <= heaptrack.MAX_BYTES and records <= heaptrack.MAX_RECORDS
+            require(total <= heaptrack.MAX_BYTES and records <= maximum_records
                     and len(encoded) <= heaptrack.MAX_LINE_BYTES and encoded.endswith(b"\n")
                     and b"\0" not in encoded and b"\r" not in encoded, "lookup-profile-stream-bound")
             state.record(encoded[:-1])
@@ -142,10 +144,12 @@ def folded_attribution(path, labels=(), *, maximum_bytes=MAX_FOLDED_BYTES):
     return count, observed
 
 
-def attribute(record, binary, proof, tool, artifacts, whole):
+def attribute(record, binary, proof, tool, artifacts, whole, *, maximum_records=heaptrack.MAX_RECORDS):
+    maximum_records = heaptrack.record_limit(maximum_records)
     verified = symbol_proof(proof, binary, tool, artifacts)
     names = () if verified is None else (verified["demangled"], verified["raw"])
-    raw, state = replay_attribution(artifacts.path(record["profile_refs"]["interpreted"]), record["command"][3], names)
+    raw, state = replay_attribution(artifacts.path(record["profile_refs"]["interpreted"]), record["command"][3], names,
+                                    maximum_records=maximum_records)
     require(raw == whole, "lookup-profile-replay-disagrees")
     total, named = folded_attribution(artifacts.path(record["profile_refs"]["allocations"]), state.folded_labels)
     require(total == int(raw["allocation_count"]) and named == state.named_count, "lookup-folded-frame-attribution-mismatch")
