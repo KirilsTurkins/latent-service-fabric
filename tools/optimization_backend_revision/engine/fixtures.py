@@ -1,7 +1,7 @@
 """One immutable five-component manifest; tenant variants are collector outputs."""
 from tools.optimization_evidence.common import fields, read_json, require, sha256, uint
 from tools.optimization_runner.fixtures import contracts
-from . import model
+from . import model, namespace
 
 
 def load(reference, artifacts, components):
@@ -27,15 +27,6 @@ def load(reference, artifacts, components):
     return value
 
 
-def leb(number):
-    output = bytearray()
-    while True:
-        byte, number = number & 127, number >> 7
-        output.append(byte | (128 if number else 0))
-        if not number:
-            return bytes(output)
-
-
 def publication(rows, manifest, artifacts, parent, profile):
     from .schedule import TARGETS
     require(isinstance(rows, list) and len(rows) == 8, "engine-publication-population")
@@ -45,11 +36,7 @@ def publication(rows, manifest, artifacts, parent, profile):
         fields(row, "index directory target artifact component publication preparation_key")
         require(row["index"] == str(index) and row["directory"] == f"fixtures/target-{index}", "engine-fixture-order")
         directory = parent / row["directory"]
-        base = artifacts.path(components[family]["component"]).read_bytes()
-        if tenant == "engine-b":
-            name = b"latent.engine-fixture.tenant-b"
-            section = leb(len(name)) + name + (family + "/v1").encode("ascii")
-            base += b"\0" + leb(len(section)) + section
+        base = namespace.component(artifacts.path(components[family]["component"]).read_bytes(), family, tenant)
         require(row["component"]["path"] == "component.wasm"
                 and artifacts.nested(directory, row["component"]).read_bytes() == base, "engine-tenant-component-not-exact")
         digest = sha256(base)
@@ -69,19 +56,22 @@ def publication(rows, manifest, artifacts, parent, profile):
                 and capsule["metadata"]["tenant"] == deployment["metadata"]["tenant"] == tenant
                 and capsule["metadata"]["name"] == deployment["spec"]["service"] == service
                 and deployment["metadata"]["name"] == tenant + "-" + service, "engine-fixture-scope-crossed")
-        world = {"echo": "examples:echo", "optimization": "optimization:benchmark", "generic": "tests:generic",
-                 "capabilities": "tests:capabilities", "engine-memory": "tests:engine-memory"}[family] + "/service@0.1.0"
-        exports = [contract] if family != "generic" else ["tests:generic/alternate@0.1.0", "tests:generic/values@0.1.0"]
+        original, package, _ = namespace.PACKAGES[family]
+        world = f"{tenant}:{package}/service@0.1.0"
+        exports = namespace.exports(family, tenant)
         require(capsule["component"]["world"] == world and sorted(capsule["exports"]) == sorted(exports), "engine-fixture-world-or-exports-crossed")
         for budget in (capsule["execution"]["limits"], deployment["spec"]["resources"]):
             require(budget["cpuFuel"] == 10_000_000_000 and budget["memoryBytes"] == 67_108_864
                     and budget["logBytes"] == 16384 and budget["wallTimeLimitMillis"] == 5000, "engine-persisted-grant-crossed")
         fields(metadata, "format_version contracts")
         require(metadata["format_version"] == 1 and isinstance(metadata["contracts"], list)
-                and any(item.get("id") == contract for item in metadata["contracts"]), "engine-contract-surface-crossed")
+                and sorted(item.get("id", "") for item in metadata["contracts"]) == sorted(exports),
+                "engine-contract-surface-crossed")
+        require(namespace.contracts(metadata, tenant, tenant) == metadata, "engine-contract-digest-crossed")
+        normalized = namespace.contracts(metadata, tenant, original)
         if family == "optimization":
-            require(metadata == contracts(), "engine-optimization-metadata-crossed")
-        require(shared.setdefault(family, metadata) == metadata, "engine-tenant-contracts-diverged")
+            require(normalized == contracts(), "engine-optimization-metadata-crossed")
+        require(shared.setdefault(family, normalized) == normalized, "engine-tenant-contracts-diverged")
         receipt = fields(row["publication"], "release_digest deployment_id object_generation catalog_generation")
         require(receipt["release_digest"] == digest and receipt["deployment_id"] == tenant + "-" + service
                 and receipt["catalog_generation"] == str(index + 1) and uint(receipt["object_generation"]) > 0,

@@ -6,14 +6,14 @@ from . import model
 
 MEDIA = "application/vnd.latent.wit-values.v1+json"
 DIRTY = "engine-memory-dirty-4194304-a5"
-TARGETS = (("engine-a", "engine-echo", "examples:echo/api@0.1.0", "echo"),
-           ("engine-a", "engine-compute", "optimization:benchmark/workloads@0.1.0", "optimization"),
-           ("engine-a", "engine-generic", "tests:generic/values@0.1.0", "generic"),
-           ("engine-b", "engine-generic", "tests:generic/values@0.1.0", "generic"),
-           ("engine-a", "engine-capabilities", "tests:capabilities/api@0.1.0", "capabilities"),
-           ("engine-b", "engine-capabilities", "tests:capabilities/api@0.1.0", "capabilities"),
-           ("engine-a", "engine-memory", "tests:engine-memory/memory@0.1.0", "engine-memory"),
-           ("engine-b", "engine-memory", "tests:engine-memory/memory@0.1.0", "engine-memory"))
+TARGETS = (("engine-a", "engine-echo", "engine-a:echo/api@0.1.0", "echo"),
+           ("engine-a", "engine-compute", "engine-a:benchmark/workloads@0.1.0", "optimization"),
+           ("engine-a", "engine-generic", "engine-a:generic/values@0.1.0", "generic"),
+           ("engine-b", "engine-generic", "engine-b:generic/values@0.1.0", "generic"),
+           ("engine-a", "engine-capabilities", "engine-a:capabilities/api@0.1.0", "capabilities"),
+           ("engine-b", "engine-capabilities", "engine-b:capabilities/api@0.1.0", "capabilities"),
+           ("engine-a", "engine-memory", "engine-a:engine-memory/memory@0.1.0", "engine-memory"),
+           ("engine-b", "engine-memory", "engine-b:engine-memory/memory@0.1.0", "engine-memory"))
 
 
 def grant(name="G"):

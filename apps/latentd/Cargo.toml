@@ -42,6 +42,8 @@ latent-optimization-workloads = { path = "../../tools/optimization-workloads" }
 latent-testkit = { path = "../../crates/latent-testkit" }
 tempfile.workspace = true
 tokio = { workspace = true, features = ["test-util"] }
+wasm-encoder.workspace = true
+wasmparser.workspace = true
 
 [[test]]
 name = "phase0_spike_e2e"

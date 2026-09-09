@@ -4,6 +4,7 @@ mod collector;
 mod files;
 mod fixture;
 mod functional;
+mod namespace;
 mod observation;
 mod oracle;
 mod plan;

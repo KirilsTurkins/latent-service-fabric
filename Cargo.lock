@@ -1279,6 +1279,8 @@ dependencies = [
  "tokio",
  "tonic",
  "tower",
+ "wasm-encoder 0.252.0",
+ "wasmparser 0.252.0",
 ]
 
 [[package]]

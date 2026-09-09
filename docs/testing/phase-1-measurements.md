@@ -740,6 +740,18 @@ declared Echo warmup. There are no hidden preparation Invokes. The first Echo
 call is fresh-engine work; later first uses of other components are separately
 observed compilations within that owner.
 
+The eight tenant publications derive from five retained, unchanged component
+inputs. A bounded binary transform renames only their outer exported instance
+names to `engine-a:` or `engine-b:`. Nested components, guest code, imports and
+all other sections remain byte-exact; the existing tenant-B custom marker is
+appended afterward. Capsule worlds, exports and owned contract/interface
+identities use the same namespace, with canonical metadata digests recomputed.
+Replay independently checks the exact binary delta and metadata association.
+The first matrix smoke attempt stopped at its first publication, before any
+Invoke, because tenant-only metadata did not match the original export
+namespace. That failed attempt remains retained; the corrected common fixture
+recipe requires new clean build receipts and a fresh smoke output directory.
+
 Each owner also retains all 24 functional Invokes, 24 terminal status queries
 and five accepted Cancel commands. These calls check tenant context and trace
 isolation, real clocks and log-byte accounting, mutable-global reset, fuel,
