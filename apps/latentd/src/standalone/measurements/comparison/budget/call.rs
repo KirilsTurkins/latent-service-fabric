@@ -38,10 +38,18 @@ pub(super) fn request(
     clock: Clock,
 ) -> Result<(tonic::Request<proto::InvokeRequest>, Value)> {
     let scheduled = clock.elapsed();
-    let deadline = scheduled + u128::from(offer.budget_millis) * 1_000_000;
+    // Keep the RPC owner alive while native interruption returns its cleanup
+    // acknowledgement. Queue/body cases separately exercise short outer limits.
+    let transport_budget_millis = if matches!(offer.case, "runaway" | "cancel") {
+        1_000
+    } else {
+        offer.budget_millis
+    };
+    let deadline = scheduled + u128::from(transport_budget_millis) * 1_000_000;
     let absolute = (clock.unix_nanos + deadline).div_ceil(1_000_000);
     let mut row = json!({"kind":"invoke","ordinal":offer.ordinal.to_string(),"case":offer.case,
         "budget_millis":offer.budget_millis.to_string(),"function":offer.function,"activation_id":offer.id(),
+        "transport_budget_millis":transport_budget_millis.to_string(),
         "release_digest":offer.release,"scheduled_nanos":scheduled.to_string(),"deadline_nanos":deadline.to_string(),
         "deadline_unix_millis":absolute.to_string(),
         "absolute_deadline_quantization_nanos":(absolute*1_000_000-clock.unix_nanos-deadline).to_string(),

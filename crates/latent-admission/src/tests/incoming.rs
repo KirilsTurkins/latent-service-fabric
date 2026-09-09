@@ -267,7 +267,10 @@ fn diagnostics_retain_the_actual_live_decision_without_an_extra_clock_read() {
         };
         assert_eq!(*observed_at, h.sample.monotonic() + work);
         assert_eq!(deadline.monotonic(), Some(incoming.monotonic()));
-        assert_eq!(*remaining, Some(Duration::from_millis(2) - work));
+        assert_eq!(
+            *remaining,
+            Some(Duration::from_millis(2).checked_sub(work).unwrap())
+        );
         assert_eq!(
             *required,
             (nanos < 2_000_000).then_some(Duration::from_millis(1))
@@ -291,11 +294,11 @@ fn diagnostic_frozen_seam_preserves_legacy_admission_and_ignores_unknown_ids() {
     let plain = controller.admit_at(request.clone(), h.sample).unwrap();
     let expected_deadline = plain.deadline().clone();
     drop(plain);
-    let observed = controller
+    let instrumented_grant = controller
         .admit_at_with_diagnostics(request, h.sample, &observer)
         .unwrap();
-    assert_eq!(observed.deadline(), &expected_deadline);
-    drop(observed);
+    assert_eq!(instrumented_grant.deadline(), &expected_deadline);
+    drop(instrumented_grant);
     let snapshot = observer.snapshot();
     assert_eq!(snapshot.records.len(), 2);
     assert_eq!(
