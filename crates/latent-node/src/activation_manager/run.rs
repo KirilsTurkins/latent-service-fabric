@@ -99,6 +99,12 @@ impl Inner {
         if token.is_cancelled() {
             return Err(cancelled(&token));
         }
+        if lifecycle
+            .incoming_deadline
+            .is_some_and(|deadline| self.clock.monotonic_now() >= deadline.monotonic())
+        {
+            return Err(deadline_error());
+        }
         let permit = self.resolve_and_admit(&mut envelope, lifecycle, &token)?;
         let budget = lifecycle.budget.as_ref().expect("admitted budget").clone();
         lifecycle.advance(ActivationPhase::Queued, Metadata::new())?;
@@ -259,8 +265,13 @@ impl Inner {
             priority: envelope.priority,
             attributes: Metadata::new(),
         };
-        // The supplied sample is node-owned, never read from invocation metadata.
-        let permit = admission.admit_at(request, self.clock.sample())?;
+        // Policy and quota work may consume part of a short allowance. Resample
+        // the same live clock at reservation without reanchoring ingress expiry.
+        let permit = admission.admit_with_clock(
+            request,
+            lifecycle.incoming_deadline.as_ref(),
+            self.clock.as_ref(),
+        )?;
         let budget = ActivationBudget::new(permit.effective_budget().clone());
         envelope.budget = permit.granted_budget().clone();
         envelope.deadline_unix_millis = permit.deadline().unix_millis();

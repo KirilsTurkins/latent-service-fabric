@@ -4,7 +4,9 @@ use super::{
     InvocationService, InvocationServiceServer, InvocationTraceSource, LocalPrincipalPolicy,
     PrincipalPolicy, StatusQuery, SystemInvocationTraceSource,
 };
-use latent_core::{ActivationClock, BoxFuture, PlatformError, SystemActivationClock};
+use latent_core::{
+    ActivationClock, BoxFuture, IncomingDeadline, PlatformError, SystemActivationClock,
+};
 use prost::Message;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
@@ -107,7 +109,15 @@ impl<R: InvocationRuntime + ?Sized + 'static> InvocationService for InvocationSe
                 "the invocation deadline has expired",
             ));
         }
-        let cancellation = InvocationCancellation::new();
+        let cancellation = match deadline.expires_at {
+            Some(expires_at) => InvocationCancellation::with_deadline(IncomingDeadline::new(
+                expires_at,
+                deadline
+                    .effective_unix_millis
+                    .expect("bounded deadline projection"),
+            )),
+            None => InvocationCancellation::new(),
+        };
         // Keep the owner outside select: Tokio destroys moved branch futures
         // before invoking a handler, which would lose the deadline drop cause.
         let mut invocation = PendingInvocation {

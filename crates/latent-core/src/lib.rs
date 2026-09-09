@@ -4,6 +4,7 @@
 
 pub mod budget;
 pub mod clock;
+pub mod deadline_wait_observer;
 pub mod error;
 pub mod identity;
 pub mod ids;
@@ -11,9 +12,11 @@ pub mod lifecycle;
 
 pub use budget::{
     ActivationBudget, BudgetConsumption, BudgetDimension, BudgetError, BudgetFinalization,
-    BudgetReservation, ClockSample, EffectiveActivationBudget, EffectiveDeadline, ResourceBudget,
+    BudgetReservation, ClockSample, EffectiveActivationBudget, EffectiveDeadline, IncomingDeadline,
+    ResourceBudget,
 };
 pub use clock::{ActivationClock, SystemActivationClock};
+pub use deadline_wait_observer::{DeadlineWaitGuard, DeadlineWaitObserver, DeadlineWaitSnapshot};
 pub use error::{DeclaredError, ErrorDetail, PlatformError, PlatformErrorCode};
 pub use identity::{InvocationPrincipal, PrincipalKind};
 pub use ids::*;

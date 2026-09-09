@@ -42,7 +42,10 @@ impl InvocationRuntime for LocalInvocationRuntime {
     ) -> BoxFuture<'_, Result<InvocationResponse, PlatformError>> {
         // In particular, do not move start() into an async block: identity must
         // be reserved before this method returns an unpolled future.
-        let started = self.manager.start(activation_request(command));
+        let started = self.manager.start_with_deadline(
+            activation_request(command),
+            cancellation.deadline().copied(),
+        );
         match started {
             Ok(handle) => Box::pin(LocalInvocation::new(handle, cancellation)),
             Err(error) => Box::pin(std::future::ready(Err(error))),

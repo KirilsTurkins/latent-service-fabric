@@ -1,4 +1,7 @@
 use crate::timing::AdmissionClock;
+
+#[cfg(test)]
+mod clock_tests;
 use latent_core::EffectiveDeadline;
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -125,7 +128,7 @@ pub(crate) struct ReservationSpec<'a> {
     pub queue_class: &'a str,
     pub cell_class: &'a str,
     pub grant: &'a EffectiveActivationBudget,
-    pub timing: crate::timing::ReservationTiming,
+    pub timing: crate::timing::ReservationTiming<'a>,
 }
 
 impl LocalQuotaProvider {
@@ -269,7 +272,7 @@ impl LocalQuotaProvider {
         &self,
         activation_id: &ActivationId,
         deadline: &EffectiveDeadline,
-        clock: AdmissionClock,
+        clock: AdmissionClock<'_>,
     ) -> Result<(), PlatformError> {
         let mut state = self.lock()?;
         // Check after lock contention, before returning queue capacity or

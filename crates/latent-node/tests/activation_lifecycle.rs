@@ -24,3 +24,6 @@ mod observations;
 
 #[path = "activation_lifecycle/deadline_abort.rs"]
 mod deadline_abort;
+
+#[path = "activation_lifecycle/precise_deadline.rs"]
+mod precise_deadline;

@@ -9,6 +9,17 @@ use crate::ClockSample;
 pub trait ActivationClock: Send + Sync {
     fn sample(&self) -> ClockSample;
     fn monotonic_now(&self) -> Instant;
+
+    /// Whether monotonic observations use the process's ordinary system clock.
+    /// Custom clocks opt in only when system-timer waiting is appropriate.
+    fn uses_system_monotonic(&self) -> bool {
+        false
+    }
+
+    /// Optional bounded observation of the manager's deadline-wait boundary.
+    fn deadline_wait_observer(&self) -> Option<&crate::DeadlineWaitObserver> {
+        None
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -21,5 +32,9 @@ impl ActivationClock for SystemActivationClock {
 
     fn monotonic_now(&self) -> Instant {
         Instant::now()
+    }
+
+    fn uses_system_monotonic(&self) -> bool {
+        true
     }
 }

@@ -63,7 +63,7 @@ impl AdmissionPermit {
         mut revision: ResolvedRevision,
         grant: EffectiveActivationBudget,
         obligations: AdmissionObligations,
-        timing: crate::timing::ReservationTiming,
+        timing: crate::timing::ReservationTiming<'_>,
     ) -> Result<Self, PlatformError> {
         // Caller-supplied metadata is not propagated as execution policy.
         revision.attributes.clear();
@@ -176,7 +176,7 @@ impl AdmissionPermit {
 
     fn start_execution_with_clock(
         self,
-        clock: crate::timing::AdmissionClock,
+        clock: crate::timing::AdmissionClock<'_>,
     ) -> Result<ExecutionPermit, PlatformError> {
         self.quotas
             .start(&self.activation_id, &self.grant.deadline, clock)?;

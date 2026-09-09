@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use latent_core::{
-    BoxFuture, BudgetError, ClockSample, EffectiveActivationBudget, PlatformError,
-    PlatformErrorCode, PrincipalKind,
+    ActivationClock, BoxFuture, BudgetError, ClockSample, EffectiveActivationBudget,
+    IncomingDeadline, PlatformError, PlatformErrorCode, PrincipalKind,
 };
 use latent_routing::revision_policy::{ExecutionBackendKind, StateModel};
 use latent_routing::{RevisionAdmissionPolicy, RevisionPolicySource};
@@ -113,6 +113,7 @@ impl LocalAdmissionController {
             load,
             ClockSample::system_now(),
             AdmissionClock::Live,
+            None,
         )
     }
 
@@ -129,6 +130,27 @@ impl LocalAdmissionController {
             load,
             sample,
             AdmissionClock::Fixed(sample.monotonic()),
+            None,
+        )
+    }
+
+    /// Admits with one coherent sample and a live monotonic feasibility check
+    /// inside the quota critical section. The borrowed clock must use the same
+    /// domain as any incoming deadline and provide a bounded, nonblocking read.
+    /// No clock reference is retained by the resulting permit.
+    pub fn admit_with_clock(
+        &self,
+        request: AdmissionRequest,
+        incoming: Option<&IncomingDeadline>,
+        clock: &dyn ActivationClock,
+    ) -> Result<AdmissionPermit, PlatformError> {
+        let load = self.load.snapshot().map_err(|_| unavailable_load())?;
+        self.admit_observed_at(
+            request,
+            load,
+            clock.sample(),
+            AdmissionClock::Injected(clock),
+            incoming,
         )
     }
 
@@ -137,7 +159,8 @@ impl LocalAdmissionController {
         request: AdmissionRequest,
         load: NodeLoadSnapshot,
         sample: ClockSample,
-        clock: AdmissionClock,
+        clock: AdmissionClock<'_>,
+        incoming: Option<&IncomingDeadline>,
     ) -> Result<AdmissionPermit, PlatformError> {
         let node = self.quotas.policy();
         let tenant = validate_request(&request, node)?;
@@ -170,20 +193,7 @@ impl LocalAdmissionController {
                     "trust-class-not-authorized",
                 )
             })?;
-        let deployment_ceiling = policy
-            .deployment_ceiling
-            .intersect(&policy.execution.resource_budget_ceiling);
-        let grant = EffectiveActivationBudget::admit_at(
-            &request.requested_budget,
-            &deployment_ceiling,
-            &node.budget_ceiling,
-            request.deadline_unix_millis,
-            sample,
-        )
-        .map_err(|error| budget_rejection(&error))?;
-        grant
-            .require_executable_capacity()
-            .map_err(|error| budget_rejection(&error))?;
+        let grant = effective_grant(&request, &policy, node, incoming, sample)?;
         let class = select_class(
             &policy,
             node,
@@ -233,6 +243,39 @@ impl AdmissionController for LocalAdmissionController {
     ) -> BoxFuture<'_, Result<AdmissionPermit, PlatformError>> {
         Box::pin(async move { self.admit_now(request) })
     }
+}
+
+fn effective_grant(
+    request: &AdmissionRequest,
+    policy: &RevisionAdmissionPolicy,
+    node: &NodeAdmissionPolicy,
+    incoming: Option<&IncomingDeadline>,
+    sample: ClockSample,
+) -> Result<EffectiveActivationBudget, PlatformError> {
+    let deployment_ceiling = policy
+        .deployment_ceiling
+        .intersect(&policy.execution.resource_budget_ceiling);
+    let grant = match incoming {
+        Some(incoming) => EffectiveActivationBudget::admit_with_deadline_at(
+            &request.requested_budget,
+            &deployment_ceiling,
+            &node.budget_ceiling,
+            incoming,
+            sample,
+        ),
+        None => EffectiveActivationBudget::admit_at(
+            &request.requested_budget,
+            &deployment_ceiling,
+            &node.budget_ceiling,
+            request.deadline_unix_millis,
+            sample,
+        ),
+    }
+    .map_err(|error| budget_rejection(&error))?;
+    grant
+        .require_executable_capacity()
+        .map_err(|error| budget_rejection(&error))?;
+    Ok(grant)
 }
 
 fn validate_request<'a>(

@@ -21,8 +21,8 @@ use latent_activation::{
 use latent_admission::LocalAdmissionController;
 use latent_artifacts::ArtifactRepository;
 use latent_core::{
-    ActivationClock, ActivationId, BoxFuture, BudgetConsumption, CancelDisposition, PlatformError,
-    PlatformErrorCode, SystemActivationClock, TenantId,
+    ActivationClock, ActivationId, BoxFuture, BudgetConsumption, CancelDisposition,
+    IncomingDeadline, PlatformError, PlatformErrorCode, SystemActivationClock, TenantId,
 };
 use latent_executor::ExecutionBackend;
 use latent_routing::{ActivationCatalogSource, ResolvedRevision};
@@ -205,6 +205,17 @@ impl LocalActivationManager {
     /// Authenticate before calling this method. Context and lineage fields never
     /// replace the principal/target tenant check performed by the request builder.
     pub fn start(&self, request: ActivationRequest) -> Result<ActivationHandle, PlatformError> {
+        self.start_with_deadline(request, None)
+    }
+
+    /// Start with an already-intersected trusted transport deadline in this manager's
+    /// injected clock domain. Identity reservation remains synchronous; the incoming
+    /// constraint is never reconstructed from its diagnostic wall-clock projection.
+    pub fn start_with_deadline(
+        &self,
+        request: ActivationRequest,
+        deadline: Option<IncomingDeadline>,
+    ) -> Result<ActivationHandle, PlatformError> {
         let envelope = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             self.inner.requests.build(request)
         }))
@@ -224,6 +235,7 @@ impl LocalActivationManager {
             cancellation,
             Arc::clone(&self.inner.clock),
             Arc::clone(&deadline_abort),
+            deadline,
         );
         lifecycle.begin_observation(self.inner.observations.as_ref(), &envelope);
         let inner = Arc::clone(&self.inner);

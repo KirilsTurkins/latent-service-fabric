@@ -1,4 +1,5 @@
 //! A first-wins transport interruption cause, separate from lifecycle ownership.
+use latent_core::IncomingDeadline;
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::Arc;
 use tokio::sync::Notify;
@@ -12,6 +13,7 @@ pub enum InvocationInterruption {
 struct State {
     cause: AtomicU8,
     notification: Notify,
+    deadline: Option<IncomingDeadline>,
 }
 /// Cloning this signal does not clone or detach an activation. The runtime
 /// future retains its affine owner and inspects the cause before dropping it.
@@ -31,6 +33,21 @@ impl InvocationCancellation {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+    /// Carry a trusted local deadline without renewing it when this signal is cloned.
+    /// The originating adapter must already intersect caller and transport constraints.
+    #[must_use]
+    pub fn with_deadline(deadline: IncomingDeadline) -> Self {
+        Self {
+            inner: Arc::new(State {
+                deadline: Some(deadline),
+                ..State::default()
+            }),
+        }
+    }
+    #[must_use]
+    pub fn deadline(&self) -> Option<&IncomingDeadline> {
+        self.inner.deadline.as_ref()
     }
     #[must_use]
     pub fn cause(&self) -> Option<InvocationInterruption> {

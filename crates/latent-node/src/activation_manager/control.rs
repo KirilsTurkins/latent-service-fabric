@@ -44,11 +44,26 @@ pub(super) async fn deadline(deadline: Option<Instant>, clock: &dyn ActivationCl
         if remaining.is_zero() {
             return;
         }
-        // Active invocations only. The same injected monotonic domain controls
-        // expiry; the bounded wakeup also supports deterministic clock changes.
-        tokio::time::sleep(remaining.min(Duration::from_millis(5))).await;
+        let observation = clock.deadline_wait_observer();
+        let wait = observation.map(latent_core::DeadlineWaitObserver::arm);
+        if clock.uses_system_monotonic() {
+            // A system-clock deadline shares Tokio's monotonic time domain.
+            tokio::time::sleep_until(tokio::time::Instant::from_std(deadline)).await;
+        } else {
+            // Arbitrary injected clocks can move independently of Tokio.
+            tokio::time::sleep(remaining.min(Duration::from_millis(5))).await;
+        }
+        if let Some(wait) = wait {
+            wait.complete();
+        }
+        if let Some(observation) = observation {
+            observation.recheck();
+        }
     }
 }
+
+#[cfg(test)]
+mod tests;
 
 pub(super) async fn stage<T>(
     future: impl Future<Output = Result<T, PlatformError>>,

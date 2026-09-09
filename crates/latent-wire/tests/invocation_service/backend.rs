@@ -26,6 +26,7 @@ pub struct Backend {
     pub live_calls: Arc<AtomicUsize>,
     pub live_prepared: Arc<AtomicUsize>,
     pub requests: Mutex<Vec<ExecutionRequest>>,
+    pub deadlines: Mutex<Vec<Option<Instant>>>,
 }
 
 impl Default for Backend {
@@ -37,6 +38,7 @@ impl Default for Backend {
             live_calls: Arc::default(),
             live_prepared: Arc::default(),
             requests: Mutex::new(Vec::new()),
+            deadlines: Mutex::new(Vec::new()),
         }
     }
 }
@@ -91,6 +93,10 @@ impl ExecutionBackend for Backend {
                 &request.activation.activation_id
             );
             assert_eq!(accounting.granted(), &request.budget);
+            self.deadlines
+                .lock()
+                .expect("deadlines")
+                .push(accounting.deadline().monotonic());
             self.requests
                 .lock()
                 .expect("requests")

@@ -1,32 +1,34 @@
 use std::time::{Duration, Instant};
 
-use latent_core::{EffectiveActivationBudget, PlatformError, PlatformErrorCode};
+use latent_core::{ActivationClock, EffectiveActivationBudget, PlatformError, PlatformErrorCode};
 
 use crate::{rejection, NodeAdmissionPolicy};
 
 #[derive(Clone, Copy)]
-pub(crate) enum AdmissionClock {
+pub(crate) enum AdmissionClock<'a> {
     Live,
     Fixed(Instant),
+    Injected(&'a dyn ActivationClock),
 }
 
-impl AdmissionClock {
+impl AdmissionClock<'_> {
     pub(crate) fn now(self) -> Instant {
         match self {
             Self::Live => Instant::now(),
             Self::Fixed(now) => now,
+            Self::Injected(clock) => clock.monotonic_now(),
         }
     }
 }
 
 #[derive(Clone, Copy)]
-pub(crate) struct ReservationTiming {
-    pub clock: AdmissionClock,
+pub(crate) struct ReservationTiming<'a> {
+    pub clock: AdmissionClock<'a>,
     pub observed_queue_delay_millis: u64,
     pub load_observed_at: Instant,
 }
 
-impl ReservationTiming {
+impl ReservationTiming<'_> {
     /// Invoked inside the quota critical section, after any lock contention.
     /// Live admissions resample monotonic time without extending the original
     /// deadline; `admit_at` deliberately uses its frozen test/embedding clock.

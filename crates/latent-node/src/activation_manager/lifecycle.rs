@@ -4,7 +4,8 @@ use std::sync::Arc;
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{
     ActivationBudget, ActivationClock, ActivationId, ActivationPhase, ActivationTerminalState,
-    BudgetConsumption, CancelDisposition, Metadata, PlatformError, PlatformErrorCode,
+    BudgetConsumption, CancelDisposition, IncomingDeadline, Metadata, PlatformError,
+    PlatformErrorCode,
 };
 use latent_routing::ResolvedRevision;
 use latent_scheduler::ScheduledActivation;
@@ -25,6 +26,7 @@ pub(super) struct Lifecycle {
     cancellation: Option<CancellationRegistration>,
     clock: Arc<dyn ActivationClock>,
     deadline_abort: Arc<AtomicBool>,
+    pub(super) incoming_deadline: Option<IncomingDeadline>,
     pub(super) budget: Option<ActivationBudget>,
     pub(super) resolved: Option<ResolvedRevision>,
     pub(super) scheduled: Option<ScheduledActivation>,
@@ -40,12 +42,14 @@ impl Lifecycle {
         cancellation: CancellationRegistration,
         clock: Arc<dyn ActivationClock>,
         deadline_abort: Arc<AtomicBool>,
+        incoming_deadline: Option<IncomingDeadline>,
     ) -> Self {
         Self {
             journal: Some(journal),
             cancellation: Some(cancellation),
             clock,
             deadline_abort,
+            incoming_deadline,
             budget: None,
             resolved: None,
             scheduled: None,
