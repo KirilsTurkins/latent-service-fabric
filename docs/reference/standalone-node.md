@@ -126,6 +126,15 @@ encoded document reservations are separately bounded by the number of jobs times
 the repository and manifest document ceilings plus fixed read allowance. These
 input and ownership charges do not measure transient decoder or compiler heap.
 
+One fixed async cleanup driver runs on the invocation runtime. Its continuation
+slots equal total cells plus queue capacity, with the same 1024-slot ceiling,
+and are reserved before activation acceptance. A disconnected or timed-out RPC
+hands over its existing activation owner; no invocation is restarted and no
+deadline is renewed. Standalone's backend cleanup grace is fixed at 100 ms,
+giving each handoff a 200 ms absolute cap that includes scheduling and pool
+disposition. These are derived limits, not additional JSON settings. Missing
+cleanup proof preserves cell quarantine; a cap overrun is reported as failure.
+
 The fixed trust class is `internal`, matching the existing deployment examples.
 The runtime supports stateless single-threaded and reentrant components. Host
 architecture and operating system are measured by the executable; configuration
@@ -237,16 +246,25 @@ committed state blindly.
 
 Ctrl-C or SIGTERM closes acceptance, allows the configured activation drain
 interval, then closes compiler admission at that cutoff, cancels outstanding
-owners, and shuts down transport and sampling.
+RPC owners, and shuts down transport and sampling. Existing continuation
+reservations can still transfer their exact owners after admission closes.
+The cleanup driver drains concurrently with transport cancellation, using one
+200 ms forced-cleanup cutoff after natural drain. Transport retains its separate
+shutdown allowance; neither extends an activation's execution deadline.
+Successful shutdown requires the driver to join before final resource
+observations. Startup failures after service creation also run this shutdown path.
 The node checks actual transport/control ownership, journal/cancellation state,
 quota reservations, queued work, cell leases, backend instance reservations,
 pending preparations and their source/metadata charges, ready pins, compiler
 queues, waiter registrations, encoded document reservations, and live stores,
-instances and host state. It closes compiler admission and waits for actual worker
+instances and host state. Cleanup observations also require zero reserved,
+queued and running continuations, a joined driver, and no failed handoffs.
+It closes compiler admission and waits for actual worker
 quiescence before these observations, then flushes telemetry and joins every
 compiler worker and the epoch helper.
-Quarantined cells remain visible in the report. The command then shuts down both runtime owners and
-requires their observed thread counts to reach zero.
+Quarantined cells remain visible in the report; a clean ownership report alone
+does not prove that all configured cells are reusable. The command then shuts down
+both runtime owners and requires their observed thread counts to reach zero.
 
 A clean exit emits a final bounded, flushed `stopped` JSON record with the
 `ShutdownReport`. No clean record is emitted when cleanup fails or its watchdog

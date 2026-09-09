@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/recovery-aggregate.schema.json",
+  "$comment": "Bounded structural envelope. Mandatory exact source/build, fixture, clock, event association, population and cleanup replay uses tools.optimization_backend_revision.evidence.validate_suite. Smoke never qualifies as full evidence.",
+  "$defs": {
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "$ref": "#/$defs/json"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/json"
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "required": [
+    "schema",
+    "profile",
+    "status",
+    "suite_sha256",
+    "builds",
+    "population_complete",
+    "attempt_count_complete",
+    "validated_calls",
+    "validated_commands",
+    "observed_failed_invoke_attempts",
+    "retained_failed_offer_rows",
+    "runs",
+    "limitations",
+    "contrasts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.recovery-aggregate.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "failed"
+      ]
+    },
+    "suite_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "builds": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "population_complete": {
+      "type": "boolean"
+    },
+    "attempt_count_complete": {
+      "type": "boolean"
+    },
+    "validated_calls": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "validated_commands": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "observed_failed_invoke_attempts": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "retained_failed_offer_rows": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096,
+        "additionalProperties": {
+          "$ref": "#/$defs/json"
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "string",
+        "maxLength": 2048
+      }
+    },
+    "contrasts": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "complete"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          },
+          "population_complete": {
+            "const": true
+          },
+          "attempt_count_complete": {
+            "const": true
+          },
+          "validated_calls": {
+            "const": "322"
+          },
+          "validated_commands": {
+            "const": "798"
+          }
+        }
+      }
+    }
+  ]
+}

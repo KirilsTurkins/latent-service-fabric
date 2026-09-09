@@ -23,18 +23,22 @@ def write(path, value):
 def execute(args, repo: Path) -> int:
     if platform.system() != "Linux":
         raise ValueError("revision-comparison-requires-linux")
-    from . import budget
-    from tools.optimization_revision_evidence import budget_builds
-    is_budget = getattr(args, "experiment", "warm") == "budget"
+    from . import budget, recovery
+    from tools.optimization_revision_evidence import budget_builds, recovery_builds
+    experiment = getattr(args, "experiment", "warm")
+    if experiment not in ("warm", "budget", "recovery"):
+        raise ValueError("unknown-revision-experiment")
+    selected_model = {"budget": budget, "recovery": recovery}.get(experiment)
+    build_api = recovery_builds if experiment == "recovery" else budget_builds
     build_only = getattr(args, "build_only", False)
     build_path = getattr(args, "builds", None)
-    if (build_only or build_path) and not is_budget:
+    if (build_only or build_path) and selected_model is None:
         raise ValueError("build-only-and-prebuilt-require-budget-experiment")
-    prebuilt = budget_builds.load(build_path.resolve(), args.profile) if build_path else None
+    prebuilt = build_api.load(build_path.resolve(), args.profile) if build_path else None
     refs = prebuilt["requested_refs"] if prebuilt else {name: getattr(args, name + "_ref") for name in ("control", "candidate", "harness")}
     build.validate_refs(refs, args.profile)
     runner_source = build.source(repo)
-    if runner_source["commit"] != refs["harness"] or (is_budget and not runner_source["clean"]):
+    if runner_source["commit"] != refs["harness"] or (selected_model is not None and not runner_source["clean"]):
         raise ValueError("executed-runner-must-match-clean-harness-ref")
     if any(os.environ.get(name) for name in ("LD_PRELOAD", "LD_AUDIT", "MALLOC_CONF", "MALLOC_ARENA_MAX")):
         raise ValueError("inherited-runtime-allocation-override")
@@ -48,8 +52,8 @@ def execute(args, repo: Path) -> int:
     else:
         output.mkdir(parents=True, exist_ok=False)
     target.mkdir(parents=True, exist_ok=True)
-    selected, began = (budget.plan if is_budget else plan)(args.profile), time.monotonic_ns()
-    suite = {"schema": budget.SCHEMA if is_budget else "latent.optimization.revision-suite.v1", "profile": args.profile, "plan": selected,
+    selected, began = (selected_model.plan if selected_model is not None else plan)(args.profile), time.monotonic_ns()
+    suite = {"schema": selected_model.SCHEMA if selected_model is not None else "latent.optimization.revision-suite.v1", "profile": args.profile, "plan": selected,
              "requested_refs": refs, "status": "failed", "reason": "collection-incomplete",
              "elapsed_nanos": "0", "measurement_elapsed_nanos": "0",
              "identity": {"runner_source": runner_source, "runner_source_after": None,
@@ -57,7 +61,7 @@ def execute(args, repo: Path) -> int:
                           "publications": [], "harness_sources": {}, "environment": host(), "cgroup": cgroup()},
              "cleanup": {"owned_worktree_removed": False}, "runs": [], "artifacts": []}
     suite["identity"]["build"]["overrides"]["collector_surface"] = "separate-standalone-server-and-load-client"
-    if is_budget:
+    if selected_model is not None:
         suite["builds"] = None
         suite["clock_ticks_per_second"] = os.sysconf("SC_CLK_TCK")
     if prebuilt:
@@ -68,7 +72,7 @@ def execute(args, repo: Path) -> int:
         suite["cleanup"] = prebuilt["cleanup"]
         suite["builds"] = legacy.ref(build_path.resolve(), output)
     save = lambda: write(output / ("revision-builds.json" if build_only else "suite.json"),
-                         budget_builds.receipt(suite) if build_only else suite)
+                         build_api.receipt(suite) if build_only else suite)
     save()
     measured_start = None
     try:
@@ -77,23 +81,23 @@ def execute(args, repo: Path) -> int:
                                            or output.is_relative_to(backend_output)):
             raise ValueError("backend-output-must-be-a-separate-directory")
         if not prebuilt:
-            options = {"selected": budget} if is_budget else {}
+            options = {"selected": selected_model} if selected_model is not None else {}
             build.collect(repo, refs, output, target, began + int(selected["maximum_build_seconds"]) * 10**9,
                           suite, save, backend_output, **options)
             initialize_inputs(repo, output, suite)
-            if is_budget:
-                built = budget_builds.receipt(suite)
+            if selected_model is not None:
+                built = build_api.receipt(suite)
                 built.update(status="passed", reason=None, elapsed_nanos=str(time.monotonic_ns() - began),
                              artifacts=artifact_rows(output, exclude=("revision-builds.json",)))
                 built["identity"]["runner_source_after"] = build.source(repo)
                 write(output / "revision-builds.json", built)
-                budget_builds.load(output / "revision-builds.json", args.profile)
+                build_api.load(output / "revision-builds.json", args.profile)
                 suite["builds"] = legacy.ref(output / "revision-builds.json", output)
         if build_only:
             suite.update(status="passed", reason=None)
         else:
             measured_start = time.monotonic_ns()
-            measure(args, repo, output, target, suite, selected, save, is_budget)
+            measure(args, repo, output, target, suite, selected, save, selected_model)
             suite.update(status="passed", reason=None)
     except BaseException as error:
         suite.update(status="failed", reason="collection-failed")
@@ -109,7 +113,7 @@ def execute(args, repo: Path) -> int:
     if build_only:
         if suite["status"] != "passed":
             return 1
-        budget_builds.load(output / "revision-builds.json", args.profile)
+        build_api.load(output / "revision-builds.json", args.profile)
         return 0
     from tools.optimization_revision_evidence import validate_suite
     aggregate = validate_suite(output / "suite.json")
@@ -131,8 +135,7 @@ def initialize_inputs(repo, output, suite):
         name: legacy.retain(repo / name, output, "harness-source/" + name) for name in names}
 
 
-def measure(args, repo, output, target, suite, selected, save, is_budget):
-    from . import budget
+def measure(args, repo, output, target, suite, selected, save, selected_model):
     legacy._limits = legacy.Limits(output, selected)
     harness = suite["identity"]["builds"]["harness"]
     publications = [{name: output / row["path"] for name, row in package.items()}
@@ -149,7 +152,7 @@ def measure(args, repo, output, target, suite, selected, save, is_budget):
         suite["runs"].append(current)
         save()
         try:
-            options = {"configure": budget.node_config} if is_budget else {}
+            options = {"configure": selected_model.node_config} if selected_model is not None else {}
             run.collect(repetition, variant, selected, binaries, publications, output, target, current, **options)
         finally:
             current["finished_micros"] = current["finished_micros"] or str(time.monotonic_ns() // 1000)

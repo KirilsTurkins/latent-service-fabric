@@ -16,6 +16,7 @@ from . import builds as build_check, model
 from .cold import model as cold_model
 from .cache import model as cache_model
 from .budget import model as budget_model
+from .recovery import model as recovery_model
 
 
 class Artifacts(BaseArtifacts):
@@ -34,7 +35,7 @@ def artifact_set(root, builds, rows=None):
     if builds["schema"] == "latent.optimization.cache-builds.v1":
         from tools.optimization_cache_lookup.files import Artifacts as CacheArtifacts
         return CacheArtifacts(root, rows, binaries)
-    maximum = 1024**3 if builds["schema"] == "latent.optimization.budget-lifecycle-builds.v1" else 2 * 1024**3
+    maximum = 1024**3 if builds["schema"] in ("latent.optimization.budget-lifecycle-builds.v1", "latent.optimization.recovery-builds.v1") else 2 * 1024**3
     require(sum(uint(row["bytes"]) for row in rows) <= maximum, "backend-artifact-byte-bound")
     return Artifacts(root, rows, binaries)
 
@@ -48,14 +49,17 @@ def validate_suite(path):
     cold = suite["schema"] == "latent.optimization.cold-suite.v1"
     cache = suite["schema"] == "latent.optimization.cache-behavior-suite.v1"
     budget = suite["schema"] == budget_model.SCHEMA
-    selected_model = budget_model if budget else cache_model if cache else cold_model if cold else model
+    recovery = suite["schema"] == recovery_model.SCHEMA
+    generic = budget or recovery
+    observed = cold or cache or generic
+    selected_model = recovery_model if recovery else budget_model if budget else cache_model if cache else cold_model if cold else model
     require(suite["schema"] in ("latent.optimization.backend-revision-suite.v1","latent.optimization.cold-suite.v1",
-                                "latent.optimization.cache-behavior-suite.v1", budget_model.SCHEMA)
+                                "latent.optimization.cache-behavior-suite.v1", budget_model.SCHEMA, recovery_model.SCHEMA)
             and suite["profile"] in ("smoke", "full") and suite["plan"] == selected_model.plan(suite["profile"]),
             "changed-backend-suite-plan")
     require(suite["status"] in ("passed", "failed")
             and suite["reason"] == (None if suite["status"] == "passed" else "collection-failed"), "backend-suite-status")
-    wall = (3600 if cache or budget else 4500 if cold else 9000) if suite["profile"] == "full" else (600 if cache else 300)
+    wall = 600 if recovery else (3600 if cache or budget else 4500 if cold else 9000) if suite["profile"] == "full" else (600 if cache else 300)
     require(uint(suite["elapsed_nanos"]) <= wall * 10**9,
             "backend-suite-wall-bound")
     source(suite["runner_source"])
@@ -64,8 +68,8 @@ def validate_suite(path):
     builds = read_json(build_path)
     artifacts = artifact_set(path.parent, builds, suite["artifacts"])
     artifacts.path(suite["builds"])
-    if budget:
-        build_check.validate_budget(builds, artifacts, suite["profile"])
+    if generic:
+        (build_check.validate_recovery if recovery else build_check.validate_budget)(builds, artifacts, suite["profile"])
         from .collect import inventory
         require({row["path"] for row in inventory(path.parent)} == set(artifacts.rows), "budget-unregistered-evidence-file")
     elif cache:
@@ -76,7 +80,7 @@ def validate_suite(path):
     else:
         build_check.validate_experiment(builds, artifacts, suite["profile"],"cold" if cold else "warm")
     require(builds["harness"]["source"] == suite["runner_source"], "backend-harness-source-mismatch")
-    expected = list(model.population(suite["profile"]))
+    expected = list((recovery_model.population if recovery else model.population)(suite["profile"]))
     require(isinstance(suite["runs"], list) and len(suite["runs"]) <= len(expected), "backend-run-count")
     owners, records, prior, stable_host = set(), [], 0, None
     failed = suite["status"] == "failed"
@@ -90,11 +94,11 @@ def validate_suite(path):
         require(prior <= start <= finish and (finish - start) * 1000 <= uint(suite["elapsed_nanos"]), "overlapping-backend-arms")
         prior = finish
         selected = artifacts.json(row["plan"])
-        expected_plan = selected_model.plan(suite["profile"],row["repetition"],row["variant"]) if cold or cache or budget else model.plan(suite["profile"],row["repetition"])
+        expected_plan = selected_model.plan(suite["profile"],row["repetition"],row["variant"]) if observed else model.plan(suite["profile"],row["repetition"])
         require(selected == expected_plan, "changed-backend-run-plan")
         identity = artifacts.json(row["identity"])
-        require(identity == (budget_model.identity if budget else model.identity)(builds, row["variant"], row["host_before"]), "crossed-backend-identity")
-        if cold or cache or budget:
+        require(identity == (budget_model.identity if generic else model.identity)(builds, row["variant"], row["host_before"]), "crossed-backend-identity")
+        if observed:
             before,after = ({key:item for key,item in row[name].items() if key != "clock_ticks_per_second"}
                             for name in ("host_before","host_after"))
             before,after = environment(before),environment(after)
@@ -119,16 +123,19 @@ def validate_suite(path):
         binary = builds["builds"][row["variant"]]["executables"]["backend"]
         require(isinstance(command[0], str) and command[0].endswith("/" + binary["path"]), "crossed-backend-command-binary")
         if row["status"] == "failed":
-            if (cache or budget) and row["process"] is not None:
+            if (cache or generic) and row["process"] is not None:
                 receipt = artifacts.json(row["process"])
                 process(receipt, "artifact-identity-helper", identity["binary"]["sha256"])
                 require(receipt["reaped"] is True and receipt["output_closed"] is True, "cache-failed-child-not-reaped")
-            if (cache or budget) and row["cleanup"] is not None:
+            if (cache or generic) and row["cleanup"] is not None:
                 require(artifacts.json(row["cleanup"]) == {"removed": True}, "cache-failed-data-not-removed")
             failed = True
             detail = {}
-            if budget and row["raw"] is not None:
-                from .budget.failed import summarize as summarize_failed
+            if generic and row["raw"] is not None:
+                if recovery:
+                    from .recovery.failed import summarize as summarize_failed
+                else:
+                    from .budget.failed import summarize as summarize_failed
                 detail = summarize_failed(artifacts.json(row["raw"]), selected, identity)
             records.append({"repetition": row["repetition"], "variant": row["variant"], "status": "failed", **detail})
             continue
@@ -140,7 +147,10 @@ def validate_suite(path):
         artifacts.path(row["log"])
         raw_path = artifacts.path(row["raw"])
         raw = artifacts.json(row["raw"])
-        if budget:
+        if recovery:
+            from .recovery.parse import parse as parse_recovery
+            parsed = parse_recovery(raw, selected, identity, artifacts, raw_path, builds["harness"]["component"], row["variant"])
+        elif budget:
             from .budget.parse import parse as parse_budget
             parsed = parse_budget(raw, selected, identity, artifacts, raw_path, builds["harness"]["component"], row["variant"])
         elif cache:
@@ -156,6 +166,9 @@ def validate_suite(path):
         records.append({"repetition": row["repetition"], "variant": row["variant"], "status": "passed", **parsed})
     complete = suite["status"] == "passed" and len(records) == len(expected) and not failed
     require(suite["status"] != "passed" or complete, "passed-backend-suite-hides-failed-or-missing-arm")
+    if recovery:
+        from .recovery.aggregate import aggregate as aggregate_recovery
+        return aggregate_recovery(suite, checksum[0], builds, records, complete, failed)
     if budget:
         from .budget.aggregate import aggregate as aggregate_budget
         return aggregate_budget(suite, checksum[0], builds, records, complete, failed)

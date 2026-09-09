@@ -25,6 +25,10 @@ declared guest error, and platform failure have distinct classifications. Handle
 abandonment and contained poll/destructor panics use that same terminal path.
 Cleanup observations distinguish confirmed release/quarantine, reclamation before
 execution, abandonment, failure, and cases without an acquired cell.
+Standalone transport disconnects keep that same observation lifetime while the
+bounded cleanup supervisor drives the original owner. A raw disconnect emits no
+accepted explicit-cancellation observation; its terminal result does not by
+itself prove that the cell was safely reused.
 
 Each lifecycle stage produces correlated logs/events. Terminal observation emits
 one complete activation span using the supplied span identity; intermediate

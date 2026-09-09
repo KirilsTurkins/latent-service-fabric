@@ -18,6 +18,7 @@ from . import model
 from .cold import model as cold_model
 from .cache import model as cache_model
 from .budget import model as budget_model
+from .recovery import model as recovery_model
 
 
 def execute(args, repo):
@@ -40,9 +41,17 @@ def execute(args, repo):
     cold = getattr(args, "experiment", "warm") == "cold"
     cache = getattr(args, "experiment", "warm") == "cache"
     budget = getattr(args, "experiment", "warm") == "budget"
-    selected_model = budget_model if budget else cache_model if cache else cold_model if cold else model
+    recovery = getattr(args, "experiment", "warm") == "recovery"
+    if recovery and not observed_source["clean"]:
+        raise ValueError("recovery-runner-requires-clean-executed-harness")
+    generic = budget or recovery
+    observed = cold or cache or generic
+    selected_model = recovery_model if recovery else budget_model if budget else cache_model if cache else cold_model if cold else model
     from .builds import validate_experiment
-    if budget:
+    if recovery:
+        from .builds import validate_recovery
+        validate_recovery(builds, artifact_set(output, builds), args.profile)
+    elif budget:
         from .builds import validate_budget
         validate_budget(builds, artifact_set(output, builds), args.profile)
     elif cache:
@@ -53,26 +62,26 @@ def execute(args, repo):
         validate_experiment(builds, artifact_set(output, builds), args.profile,"cold" if cold else "warm")
     began = time.monotonic_ns()
     scan = cache_inventory if cache else inventory
-    maximum_bytes = 1024**3 if cache or budget else 2 * 1024**3
-    deadline = began + ((3600 if cache or budget else 4500 if cold else 9000) if args.profile == "full" else (600 if cache else 300)) * 10**9
-    suite = {"schema": budget_model.SCHEMA if budget else "latent.optimization.cache-behavior-suite.v1" if cache else "latent.optimization.cold-suite.v1" if cold else "latent.optimization.backend-revision-suite.v1", "profile": args.profile,
+    maximum_bytes = 1024**3 if cache or generic else 2 * 1024**3
+    deadline = began + (600 if recovery else (3600 if cache or budget else 4500 if cold else 9000) if args.profile == "full" else (600 if cache else 300)) * 10**9
+    suite = {"schema": recovery_model.SCHEMA if recovery else budget_model.SCHEMA if budget else "latent.optimization.cache-behavior-suite.v1" if cache else "latent.optimization.cold-suite.v1" if cold else "latent.optimization.backend-revision-suite.v1", "profile": args.profile,
              "plan": selected_model.plan(args.profile), "builds": legacy.ref(build_path, output),
              "runner_source": observed_source, "runner_source_after": None,
              "status": "failed", "reason": "collection-failed", "elapsed_nanos": "0", "runs": [], "artifacts": []}
     write(output / "suite.json", suite)
     try:
-        for repetition, variant in model.population(args.profile):
+        for repetition, variant in (recovery_model.population if recovery else model.population)(args.profile):
             rows = scan(output)
             if sum(int(row["bytes"]) for row in rows) + 32 * 1024**2 > maximum_bytes:
                 raise ValueError("backend-output-reservation-bound")
             current = output / "runs" / f"pair-{repetition:02}-{variant}"
             current.mkdir(parents=True)
             before = host()
-            if cold or cache or budget:
+            if observed:
                 before["clock_ticks_per_second"] = os.sysconf("SC_CLK_TCK")
-            supplied = (budget_model.identity if budget else model.identity)(builds, variant, before)
+            supplied = (budget_model.identity if generic else model.identity)(builds, variant, before)
             write(current / "identity.json", supplied)
-            selected = selected_model.plan(args.profile, repetition, variant) if cold or cache or budget else model.plan(args.profile, repetition)
+            selected = selected_model.plan(args.profile, repetition, variant) if observed else model.plan(args.profile, repetition)
             write(current / "plan.json", selected)
             binary = output / builds["builds"][variant]["executables"]["backend"]["path"]
             argv = [str(binary), "--exact", selected_model.COLLECTOR, "--ignored", "--nocapture", "--test-threads=1"]
@@ -90,10 +99,10 @@ def execute(args, repo):
                         env = dict(os.environ, LSF_PHASE1_COMPARISON_PLAN=str(current / "plan.json"),
                                    LSF_PHASE1_COMPARISON_IDENTITY=str(current / "identity.json"),
                                    LSF_PHASE1_COMPARISON_OUTPUT=str(current), LSF_PHASE1_COMPARISON_DATA_ROOT=data)
-                        env["LSF_GENERIC_COMPONENT" if budget else "LSF_ECHO_COMPONENT"] = str(output / (
-                            builds["harness"]["component"] if budget else builds["harness"]["echo"]["component"])["path"])
-                        seconds = selected_model.maximum_seconds(args.profile) if cold or cache or budget else int(selected["maximum_run_seconds"])
-                        options = {"maximum": 1024**2, "directory_limits": DirectoryLimits(2, 64, 80, 16 * 1024**2)} if cold or cache or budget else {}
+                        env["LSF_GENERIC_COMPONENT" if generic else "LSF_ECHO_COMPONENT"] = str(output / (
+                            builds["harness"]["component"] if generic else builds["harness"]["echo"]["component"])["path"])
+                        seconds = selected_model.maximum_seconds(args.profile) if observed else int(selected["maximum_run_seconds"])
+                        options = {"maximum": 1024**2, "directory_limits": DirectoryLimits(2, 64, 80, 16 * 1024**2)} if observed else {}
                         command(argv, current / "collector.log", seconds, repo, deadline, env,
                                 watched=current, remaining=32 * 1024**2, **options)
                 finally:
@@ -103,9 +112,9 @@ def execute(args, repo):
             finally:
                 row["finished_micros"] = str(time.monotonic_ns() // 1000)
                 row["host_after"], row["cgroup_after"] = host(), cgroup()
-                if cold or cache or budget:
+                if observed:
                     row["host_after"]["clock_ticks_per_second"] = os.sysconf("SC_CLK_TCK")
-                for name, filename in (("raw", "budget.json" if budget else "cache.json" if cache else "cold.json" if cold else "candidate.json"), ("process", "collector.log.process.json"),
+                for name, filename in (("raw", "recovery.json" if recovery else "budget.json" if budget else "cache.json" if cache else "cold.json" if cold else "candidate.json"), ("process", "collector.log.process.json"),
                                        ("log", "collector.log"), ("cleanup", "parent-cleanup.json")):
                     if (current / filename).is_file():
                         row[name] = legacy.ref(current / filename, output)
@@ -117,7 +126,7 @@ def execute(args, repo):
         suite["elapsed_nanos"] = str(time.monotonic_ns() - began)
         suite["runner_source_after"] = source(repo)
         suite["artifacts"] = scan(output)
-        if budget and sum(int(row["bytes"]) for row in suite["artifacts"]) > maximum_bytes:
+        if generic and sum(int(row["bytes"]) for row in suite["artifacts"]) > maximum_bytes:
             suite.update(status="failed", reason="collection-failed")
         write(output / "suite.json", suite)
     from .evidence import validate_suite

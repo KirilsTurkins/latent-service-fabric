@@ -59,13 +59,13 @@ def decision(value):
 
 
 class Diagnostic:
-    def __init__(self, value):
+    def __init__(self, value, *, maximum_identities=23, maximum_records=512):
         fields(value, "collector_started_nanos collector_finished_nanos origin_nanos overflowed identities records")
         begin, finish = uint(value["collector_started_nanos"]), uint(value["collector_finished_nanos"])
         origin = instant(value["origin_nanos"])
         require(origin <= begin <= finish and value["overflowed"] is False, "budget-diagnostic-capture-or-overflow")
-        require(isinstance(value["identities"], list) and len(value["identities"]) <= 23
-                and isinstance(value["records"], list) and len(value["records"]) <= 512, "budget-diagnostic-capacity")
+        require(isinstance(value["identities"], list) and len(value["identities"]) <= maximum_identities
+                and isinstance(value["records"], list) and len(value["records"]) <= maximum_records, "budget-diagnostic-capacity")
         self.value, self.identities, self.records, self.by_token = value, {}, {}, {}
         ids = set()
         for expected, row in enumerate(value["identities"]):

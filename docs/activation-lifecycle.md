@@ -16,10 +16,12 @@ or completing the invocation. Awaiting the handle yields an `ActivationReceipt`
 with that ID, the pinned `ResolvedRevision` when resolution succeeded, and the
 typed `ActivationOutcome`. Early failures can have no resolved revision.
 
-No detached task is spawned. The caller polls the handle on its runtime.
-Dropping it, including before the first poll, abandons the accepted invocation
-and terminalizes its record through the same lifecycle owner. The handle must
-remain alive while a caller expects the invocation to continue.
+The manager spawns no task; its caller owns and polls the handle. Dropping it,
+including before the first poll, abandons the accepted invocation and
+terminalizes its record through the same lifecycle owner. The standalone node
+instead transfers that exact handle to its bounded cleanup supervisor after an
+RPC disconnect or transport timeout. The handle and its resources remain owned
+until cleanup finishes or the continuation reaches its cap.
 
 The request preserves optional activation, root, and parent IDs until validation.
 Missing activation IDs come from the manager's node-owned `ActivationIdSource`;
@@ -113,7 +115,10 @@ shared activation budget, and affine scheduler assignment. The execution
 backend obtains the same ledger through `ExecutionCancellation::budget_accounting`.
 Host log charges and observed CPU/memory consumption survive failures and drops;
 the owner finalizes only after execution resources and cell disposition settle.
-Cancellation takes precedence over deadline expiration at terminal publication.
+Accepted explicit cancellation takes precedence over deadline expiration at
+terminal publication. A raw transport disconnect does not install that explicit
+cancellation winner: the original deadline still takes precedence over the
+transport stop, and both take precedence over an ordinary guest result.
 
 After admission, the manager calls `ExecutionBackend::prepare_ready_from_repository`
 with the owned repository and pinned release's preparation key. The affine
@@ -165,6 +170,19 @@ pool/backend implementations must honor their synchronous ownership and cleanup
 contracts. This grace does not preempt a running native compiler job: cancellation
 removes the activation's waiter, while the factory retains the worker and its
 reservations until compilation returns and final shutdown joins the thread.
+
+The trusted `ActivationHandle::interrupt_for_cleanup` port marks
+`ActivationTransportInterruption::Disconnected` or `DeadlineExceeded` and returns
+the same handle for continued polling. It preserves the original invocation,
+budget, deadline, and any already-started cleanup wait. Standalone reserves a
+continuation slot before accepting the identity and uses one fixed async driver;
+it neither retries the invocation nor starts a task per disconnect. Its handoff
+cap is twice `cleanup_grace`, including driver scheduling and both cleanup
+stages. An overrun is failed cleanup evidence. Reuse still requires the backend's
+positive cleanup proof and successful pool disposition; uncertain cleanup remains
+quarantined. Direct handle Drop and the default unsupervised invocation bridge
+retain their existing abandonment behavior. See
+[standalone shutdown](reference/standalone-node.md#durable-restart-and-shutdown-evidence).
 
 ## Bounded status and validation
 
