@@ -27,10 +27,16 @@ use crate::host::accounting::InvocationAccounting;
 use crate::host::{
     validate_request_context, ActivationHostContext, BoundedLogSink, HostCallTiming, HostState,
 };
+use crate::invocation_input_observer::{
+    InputTrace, InvocationInputDropReason, InvocationInputObserver, InvocationInputPhase,
+};
 use crate::preparation_observer::{PreparationJob, PreparationObserver, PreparationStage};
 use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0InvocationTiming};
 use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
 
+#[cfg(test)]
+mod dispatch_tests;
+mod input;
 mod owned;
 mod preparation;
 mod preparation_context;
@@ -87,6 +93,7 @@ pub(crate) struct SharedRuntime {
     timings: Mutex<InvocationTimingStore>,
     preparation: Arc<PreparationCounters>,
     pub(crate) preparation_observer: PreparationObserver,
+    pub(crate) invocation_input_observer: InvocationInputObserver,
     preparation_context: Arc<PreparationContext>,
 }
 impl SharedRuntime {
@@ -148,6 +155,7 @@ impl SharedRuntime {
             timings: Mutex::new(InvocationTimingStore::new(256)),
             preparation,
             preparation_observer,
+            invocation_input_observer: InvocationInputObserver::new(),
             preparation_context,
             compiler,
         })
@@ -323,30 +331,13 @@ impl WasmtimeBackend {
         )
     }
 
-    async fn invoke_inner(
-        &self,
-        request: ExecutionRequest,
-        cancellation: &dyn ExecutionCancellation,
-        prepared: Option<WasmtimePreparedUse>,
-    ) -> Result<GuestOutcome, PlatformError> {
-        validate_request_context(&request, self.config.maximum_artifact_metadata_bytes)?;
-        let activation_id = request.activation.activation_id.clone();
-        let started = Instant::now();
-        let mut timing = Phase0InvocationTiming::default();
-        let outcome = self
-            .invoke_inner_timed(request, cancellation, &mut timing, prepared)
-            .await;
-        timing.backend_total_micros = elapsed_micros(started);
-        self.lock_timings().insert(activation_id.0, timing);
-        outcome
-    }
-
     async fn invoke_inner_timed(
         &self,
-        request: ExecutionRequest,
+        mut request: ExecutionRequest,
         cancellation: &dyn ExecutionCancellation,
         timing: &mut Phase0InvocationTiming,
         prepared: Option<WasmtimePreparedUse>,
+        input_trace: Option<&InputTrace>,
     ) -> Result<GuestOutcome, PlatformError> {
         let setup_started = Instant::now();
         let _active_invocation = self.shared.resources.active_invocation();
@@ -370,9 +361,13 @@ impl WasmtimeBackend {
             self.invocation_runtime(prepared, &request.prepared.opaque_handle)?;
         let function = self.requested_function(&runtime, &request)?;
         let temporary_buffer_guard = self.shared.resources.temporary_buffer();
+        let raw_input = input::RawInvocationInput::new(
+            std::mem::take(&mut request.activation.input),
+            input_trace,
+        );
         let input = values::decode_params(
             &function.params,
-            &request.activation.input,
+            raw_input.bytes(),
             &request.activation.input_media_type,
             self.config.value_codec_limits,
         )?;
@@ -409,10 +404,16 @@ impl WasmtimeBackend {
         let contained_execution_started = self.shared.clock.monotonic_now();
         let host_state_guard = self.shared.resources.host_state();
         let store_guard = self.shared.resources.store();
-        let mut store = AccountedStore::new(self.invocation_store(&request, &stop, accounting)?);
+        let mut store = AccountedStore::new(self.invocation_store(request, &stop, accounting)?);
+        // Decoding and every borrowed validation have completed. The Store now
+        // owns only the moved context; destroy the actual raw input before call.
+        raw_input.release(InvocationInputDropReason::BeforeGuestCall);
 
         let component_instance_guard = self.shared.resources.component_instance();
         let mut output = vec![Val::Bool(false); function.results.len()];
+        if let Some(trace) = input_trace {
+            trace.stage(InvocationInputPhase::BeforeCallExport);
+        }
         let call_result = call_export(
             &runtime,
             function,
@@ -421,6 +422,7 @@ impl WasmtimeBackend {
             &mut output,
             timing,
             setup_started,
+            input_trace,
         )
         .await;
         // Wasmtime 47's safe dynamic call completes canonical ABI post-return
@@ -496,15 +498,14 @@ impl WasmtimeBackend {
                 false,
             ));
         }
-        Self::validate_bound_imports(request, &runtime.surface.imports)?;
+        Self::validate_bound_imports(&request.imports, &runtime.surface.imports)?;
         self.validate_invocation_budget(&request.budget, &runtime.declared_budget)?;
         let function = runtime
             .surface
-            .functions
-            .get(&(
-                request.activation.target.contract.0.clone(),
-                request.activation.target.function.0.clone(),
-            ))
+            .function(
+                &request.activation.target.contract.0,
+                &request.activation.target.function.0,
+            )
             .ok_or_else(|| {
                 platform_error(
                     PlatformErrorCode::InvalidArgument,
@@ -517,7 +518,7 @@ impl WasmtimeBackend {
 
     fn invocation_store(
         &self,
-        request: &ExecutionRequest,
+        request: ExecutionRequest,
         stop: &Arc<StopControl>,
         accounting: InvocationAccounting,
     ) -> Result<Store<HostState>, PlatformError> {
@@ -541,18 +542,8 @@ impl WasmtimeBackend {
             ));
         }
 
-        let host_context = ActivationHostContext::new(
-            request.activation.activation_id.clone(),
-            request.activation.root_activation_id.clone(),
-            request.activation.parent_activation_id.clone(),
-            request.activation.principal.clone(),
-            request.activation.trace.trace_id.0.clone(),
-            request.activation.trace.span_id.0.clone(),
-            request.activation.trace.trace_flags,
-            request.activation.trace.baggage.clone(),
-            accounting.deadline().unix_millis(),
-            request.activation.metadata.clone(),
-        );
+        let host_context =
+            ActivationHostContext::from_request(request, accounting.deadline().unix_millis());
         let initial_fuel = accounting.initial_fuel();
         let host_state = HostState::with_config(
             host_context,
@@ -600,21 +591,21 @@ impl WasmtimeBackend {
     }
 
     fn validate_bound_imports(
-        request: &ExecutionRequest,
+        imports: &[latent_executor::BoundImport],
         required: &BTreeSet<String>,
     ) -> Result<(), PlatformError> {
-        let actual = request
-            .imports
-            .iter()
-            .map(|import| import.contract.as_str())
-            .collect::<BTreeSet<_>>();
-        if request.imports.len() != required.len()
-            || actual.len() != required.len()
-            || !required.iter().all(|name| actual.contains(name.as_str()))
-            || request
-                .imports
-                .iter()
-                .any(|import| import.opaque_handle.is_empty())
+        // Validated component surfaces admit at most the four known host
+        // interfaces. Count each required contract exactly once without a
+        // temporary allocated set, preserving arbitrary binding order.
+        if imports.len() != required.len()
+            || !required.iter().all(|name| {
+                imports
+                    .iter()
+                    .filter(|import| import.contract == *name)
+                    .count()
+                    == 1
+            })
+            || imports.iter().any(|import| import.opaque_handle.is_empty())
         {
             return Err(platform_error(
                 PlatformErrorCode::IncompatibleContract,
@@ -838,6 +829,10 @@ fn bounded_error(error: &wasmtime::Error) -> String {
     bounded_text(&error.to_string(), MAX_DIAGNOSTIC_BYTES)
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "The optional neutral input trace accompanies the existing call and timing arguments without changing their boundaries."
+)]
 async fn call_export(
     runtime: &PreparedRuntime,
     function: &surface::Function,
@@ -846,13 +841,19 @@ async fn call_export(
     output: &mut [Val],
     timing: &mut Phase0InvocationTiming,
     setup_started: Instant,
+    input_trace: Option<&InputTrace>,
 ) -> wasmtime::Result<()> {
     match runtime.pre.instantiate_async(&mut *store).await {
         Ok(instance) => {
             timing.backend_setup_micros = elapsed_micros(setup_started);
             let guest_call_started = Instant::now();
             let result = match instance.get_func(&mut *store, function.index) {
-                Some(func) => func.call_async(&mut *store, input, output).await,
+                Some(func) => {
+                    if let Some(trace) = input_trace {
+                        trace.stage(InvocationInputPhase::GuestCallStart);
+                    }
+                    func.call_async(&mut *store, input, output).await
+                }
                 None => Err(wasmtime::Error::msg(
                     "validated component function index is absent",
                 )),

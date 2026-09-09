@@ -39,8 +39,8 @@ def validate_recovery(value, artifacts, profile):
 
 
 def validate_graph(value, artifacts, profile, *, schema="latent.optimization.backend-builds.v1",
-                   source_controls=CONTROLS, fixture_field="echo", harness_command=None):
-    fields(value, "schema requested_refs build builds harness cleanup")
+                   source_controls=CONTROLS, fixture_field="echo", harness_command=None, extra_fields=""):
+    fields(value, "schema requested_refs build builds harness cleanup " + extra_fields)
     require(value["schema"] == schema, "invalid-backend-build-schema")
     validate_refs(value["requested_refs"], profile)
     require(value["cleanup"] == {"owned_worktree_removed": True}, "backend-build-worktree-not-removed")
@@ -101,6 +101,18 @@ def validate_graph(value, artifacts, profile, *, schema="latent.optimization.bac
             require(uint(row["bytes"]) > 0, "empty-backend-executable")
             artifacts.path(row)
     require(len(paths) == 1 and controls[0] == controls[1] == controls[2], "backend-collector-inputs-or-paths-differ")
+    if fixture_field == "components":
+        components = value["harness"]["components"]
+        require(isinstance(components, list) and len(components) == 3
+                and [row.get("id") for row in components] == ["optimization", "capabilities", "generic"],
+                "ownership-fixture-components")
+        for item in components:
+            fields(item, "id component")
+            row = item["component"]
+            require(8 <= uint(row["bytes"]) <= 16 * 1024**2, "ownership-fixture-component-bound")
+            with artifacts.path(row).open("rb") as raw:
+                require(raw.read(8) == b"\0asm\r\0\1\0", "ownership-fixture-not-component")
+        return value
     if fixture_field == "component":
         component = value["harness"]["component"]
         require(8 <= uint(component["bytes"]) <= 16 * 1024**2, "budget-generic-component-bound")

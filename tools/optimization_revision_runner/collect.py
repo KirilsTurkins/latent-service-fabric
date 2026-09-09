@@ -23,13 +23,13 @@ def write(path, value):
 def execute(args, repo: Path) -> int:
     if platform.system() != "Linux":
         raise ValueError("revision-comparison-requires-linux")
-    from . import budget, recovery
-    from tools.optimization_revision_evidence import budget_builds, recovery_builds
+    from . import budget, ownership, recovery
+    from tools.optimization_revision_evidence import budget_builds, ownership_builds, recovery_builds
     experiment = getattr(args, "experiment", "warm")
-    if experiment not in ("warm", "budget", "recovery"):
+    if experiment not in ("warm", "budget", "recovery", "ownership"):
         raise ValueError("unknown-revision-experiment")
-    selected_model = {"budget": budget, "recovery": recovery}.get(experiment)
-    build_api = recovery_builds if experiment == "recovery" else budget_builds
+    selected_model = {"budget": budget, "recovery": recovery, "ownership": ownership}.get(experiment)
+    build_api = {"recovery": recovery_builds, "ownership": ownership_builds}.get(experiment, budget_builds)
     build_only = getattr(args, "build_only", False)
     build_path = getattr(args, "builds", None)
     if (build_only or build_path) and selected_model is None:

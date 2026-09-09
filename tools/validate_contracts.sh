@@ -153,6 +153,12 @@ LSF_GENERIC_FIXTURES="${GENERIC_FIXTURES}" \
     cargo test -p latent --test standalone_cli --locked -- \
         --ignored --nocapture --test-threads=1
 
+# Two actual RPC Invokes prove input disposal and same-cell reuse after handoff.
+LSF_GENERIC_COMPONENT="${GENERIC_COMPONENT}" \
+    cargo test -p latentd --lib --locked -- \
+        standalone::measurements::comparison::ownership_supervision::transferred_backend_input_retires_before_same_cell_reuse \
+        --exact --ignored --nocapture --test-threads=1
+
 # Selected Phase 1 evidence: hard64 attempted Invokes, no scale/soak/calibration.
 python3 tools/run_phase1_conformance.py --target-root "${TARGET_ROOT}"
 

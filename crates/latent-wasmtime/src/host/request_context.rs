@@ -1,4 +1,4 @@
-//! Borrowed allocation accounting before copying activation-owned host context.
+//! Borrowed allocation accounting before retaining activation-owned host context.
 
 use std::mem::size_of;
 
@@ -7,16 +7,31 @@ use latent_executor::ExecutionRequest;
 
 use super::ActivationHostContext;
 use crate::containment::platform_error;
+use crate::InvocationContextCharge;
 
 // Covers sparse BTreeMap nodes, map entry/string storage, and the owned copy.
 // Payload bytes are charged separately by the generic value codec.
 const MAP_ENTRY_BYTES: usize = 4096;
 const IMPORT_ENTRY_BYTES: usize = 256;
 
+/// The existing per-string allowance also bounds a newly moved backing buffer.
+pub(super) fn string_bytes(length: usize) -> Option<usize> {
+    length
+        .checked_add(size_of::<String>())
+        .and_then(|bytes| bytes.checked_mul(2))
+}
+
 pub(crate) fn validate_request_context(
     request: &ExecutionRequest,
     maximum_bytes: usize,
 ) -> Result<(), PlatformError> {
+    context_charge(request, maximum_bytes).map(|_| ())
+}
+
+pub(crate) fn context_charge(
+    request: &ExecutionRequest,
+    maximum_bytes: usize,
+) -> Result<InvocationContextCharge, PlatformError> {
     let mut budget = ContextBudget(maximum_bytes);
     budget.charge(size_of::<ExecutionRequest>() + size_of::<ActivationHostContext>())?;
     let activation = &request.activation;
@@ -97,7 +112,11 @@ pub(crate) fn validate_request_context(
         budget.string(&import.contract)?;
         budget.string(&import.opaque_handle)?;
     }
-    Ok(())
+    Ok(InvocationContextCharge {
+        maximum_bytes,
+        charged_bytes: maximum_bytes - budget.0,
+        remaining_bytes: budget.0,
+    })
 }
 
 fn charge_target(
@@ -130,11 +149,7 @@ impl ContextBudget {
     }
 
     fn string(&mut self, value: &str) -> Result<(), PlatformError> {
-        let bytes = value
-            .len()
-            .checked_add(size_of::<String>())
-            .and_then(|bytes| bytes.checked_mul(2))
-            .ok_or_else(exhausted)?;
+        let bytes = string_bytes(value.len()).ok_or_else(exhausted)?;
         self.charge(bytes)
     }
 

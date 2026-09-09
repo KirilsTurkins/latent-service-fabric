@@ -31,7 +31,7 @@ class ProfileCompressionTests(unittest.TestCase):
             path = Path(temporary) / "peak.folded.gz"
             data = gzip.compress(b"stack 1\n" * 1000, mtime=0)
             path.write_bytes(data)
-            with patch.object(common, "MAX_FOLDED_BYTES", 128):
+            with patch.object(common, "folded_limit", return_value=128):
                 with self.assertRaisesRegex(ValueError, "profile-text-bound"):
                     common.folded(path)
             path.write_bytes(data[:-4])

@@ -10,6 +10,7 @@ pub(crate) mod accounting;
 mod clock;
 mod context;
 mod logging;
+mod owned_context;
 pub(crate) mod policy;
 pub(crate) use logging::InvocationLogBuffer;
 pub use logging::{BoundedLogSink, CapturedLog, LogSinkError, StructuredLogSink};
@@ -18,7 +19,7 @@ use crate::config::WasmtimeConfig;
 use accounting::InvocationAccounting;
 use policy::ContextExposurePolicy;
 
-mod request_context;
+pub(crate) mod request_context;
 pub(crate) use request_context::validate_request_context;
 
 #[derive(Debug)]

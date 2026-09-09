@@ -6,7 +6,7 @@ import gzip
 import re
 
 from tools.artifact_identity_evidence import heaptrack
-from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES
+from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit
 from tools.artifact_identity_evidence.identity import helper
 from tools.optimization_evidence.common import fields, require, uint
 from .model import SYMBOL
@@ -27,7 +27,7 @@ def nm_rows(path):
                 yield int(match[1], 16), match[2], match[3]
 
 
-def symbol_proof(row, binary, tool, artifacts):
+def symbol_proof(row, binary, tool, artifacts, *, frame=FRAME):
     fields(row, "command process log raw")
     require(isinstance(row["command"], list) and len(row["command"]) == 4
             and all(isinstance(value, str) for value in row["command"]), "lookup-symbol-command-shape")
@@ -37,7 +37,7 @@ def symbol_proof(row, binary, tool, artifacts):
     raw = fields(row["raw"], "command process log")
     require(raw["command"] == [tool["path"], "--defined-only", row["command"][-1]], "lookup-raw-symbol-command-crossed")
     helper(raw["process"], tool["sha256"], raw["log"], artifacts)
-    matches = [entry for entry in nm_rows(artifacts.path(row["log"])) if FRAME.fullmatch(entry[2])]
+    matches = [entry for entry in nm_rows(artifacts.path(row["log"])) if frame.fullmatch(entry[2])]
     # Absence/ambiguity remains unavailable, never inferred zero. The raw proof
     # must still be bounded and valid even in that case.
     if len(matches) != 1:
@@ -107,9 +107,9 @@ class Attribution(heaptrack.Replay):
                 self.unresolved_count += 1
 
 
-def replay_attribution(path, binary_name, symbols=()):
+def replay_attribution(path, binary_name, symbols=(), *, state_type=Attribution):
     require(not path.is_symlink() and path.is_file() and path.stat().st_size <= heaptrack.MAX_BYTES, "lookup-profile-input-bound")
-    state, total, records = Attribution(binary_name, symbols), 0, 0
+    state, total, records = state_type(binary_name, symbols), 0, 0
     with path.open("rb") as source:
         while encoded := source.readline(heaptrack.MAX_LINE_BYTES + 1):
             total += len(encoded)
@@ -121,14 +121,15 @@ def replay_attribution(path, binary_name, symbols=()):
     return state.result(), state
 
 
-def folded_attribution(path, labels=()):
+def folded_attribution(path, labels=(), *, maximum_bytes=MAX_FOLDED_BYTES):
+    maximum_bytes = folded_limit(maximum_bytes)
     opener = gzip.open if path.suffix == ".gz" else open
     total = rows = observed = count = 0
     with opener(path, "rb") as source:
         while encoded := source.readline(65537):
             total += len(encoded)
             rows += 1
-            require(total <= MAX_FOLDED_BYTES and rows <= 100000 and len(encoded) <= 65536
+            require(total <= maximum_bytes and rows <= 100000 and len(encoded) <= 65536
                     and encoded.endswith(b"\n"), "lookup-folded-bound")
             stack, amount = encoded[:-1].decode("utf-8").rsplit(" ", 1)
             frames = stack.split(";")

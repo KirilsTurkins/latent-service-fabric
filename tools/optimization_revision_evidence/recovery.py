@@ -38,8 +38,8 @@ def aggregate(value):
     return value
 
 
-def comparisons(rows):
-    rows = [row for row in rows if row["id"] == "warm-echo"]
+def comparisons(rows, *, identifiers=("warm-echo",)):
+    rows = [row for row in rows if identifiers is None or row["id"] in identifiers]
     for row in rows:
         differences = {}
         for pair in row["pairs"]:

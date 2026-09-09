@@ -1,0 +1,419 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/ownership-plan.schema.json",
+  "$comment": "Bounded structural envelope. Mandatory exact source/build, fixture, ownership, clock, allocation and offered-population replay uses tools.optimization_revision_evidence.validate_suite for ownership-rpc or tools.optimization_backend_revision.evidence.validate_suite for ownership. Smoke never qualifies as full evidence.",
+  "oneOf": [
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "smoke",
+        "mode": "fixtures",
+        "repetition": 1,
+        "shapes": [],
+        "warmup_per_shape": 0,
+        "measured_per_shape": 0,
+        "proofs": [],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "smoke",
+        "mode": "normal",
+        "repetition": 1,
+        "shapes": [
+          "warm-echo",
+          "payload-64k",
+          "payload-near-limit",
+          "context-small",
+          "context-64k",
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 3,
+        "proofs": [
+          "cancel-pending",
+          "drop-pending"
+        ],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "smoke",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "warm-echo"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 2,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "smoke",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "payload-64k"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 2,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "smoke",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "payload-near-limit"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 2,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "smoke",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "context-small"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 2,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "smoke",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "context-64k"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 2,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "smoke",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 2,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "fixtures",
+        "repetition": 1,
+        "shapes": [],
+        "warmup_per_shape": 0,
+        "measured_per_shape": 0,
+        "proofs": [],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "normal",
+        "repetition": 1,
+        "shapes": [
+          "warm-echo",
+          "payload-64k",
+          "payload-near-limit",
+          "context-small",
+          "context-64k",
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 4,
+        "measured_per_shape": 32,
+        "proofs": [
+          "cancel-pending",
+          "drop-pending"
+        ],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "normal",
+        "repetition": 2,
+        "shapes": [
+          "warm-echo",
+          "payload-64k",
+          "payload-near-limit",
+          "context-small",
+          "context-64k",
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 4,
+        "measured_per_shape": 32,
+        "proofs": [
+          "cancel-pending",
+          "drop-pending"
+        ],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "normal",
+        "repetition": 3,
+        "shapes": [
+          "warm-echo",
+          "payload-64k",
+          "payload-near-limit",
+          "context-small",
+          "context-64k",
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 4,
+        "measured_per_shape": 32,
+        "proofs": [
+          "cancel-pending",
+          "drop-pending"
+        ],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "normal",
+        "repetition": 4,
+        "shapes": [
+          "warm-echo",
+          "payload-64k",
+          "payload-near-limit",
+          "context-small",
+          "context-64k",
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 4,
+        "measured_per_shape": 32,
+        "proofs": [
+          "cancel-pending",
+          "drop-pending"
+        ],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "normal",
+        "repetition": 5,
+        "shapes": [
+          "warm-echo",
+          "payload-64k",
+          "payload-near-limit",
+          "context-small",
+          "context-64k",
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 4,
+        "measured_per_shape": 32,
+        "proofs": [
+          "cancel-pending",
+          "drop-pending"
+        ],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "normal",
+        "repetition": 6,
+        "shapes": [
+          "warm-echo",
+          "payload-64k",
+          "payload-near-limit",
+          "context-small",
+          "context-64k",
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 4,
+        "measured_per_shape": 32,
+        "proofs": [
+          "cancel-pending",
+          "drop-pending"
+        ],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "normal",
+        "repetition": 7,
+        "shapes": [
+          "warm-echo",
+          "payload-64k",
+          "payload-near-limit",
+          "context-small",
+          "context-64k",
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 4,
+        "measured_per_shape": 32,
+        "proofs": [
+          "cancel-pending",
+          "drop-pending"
+        ],
+        "maximum_run_seconds": "90",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "warm-echo"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 8,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "payload-64k"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 8,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "payload-near-limit"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 8,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "context-small"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 8,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "context-64k"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 8,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    },
+    {
+      "const": {
+        "schema": "latent.optimization.ownership-plan.v1",
+        "profile": "full",
+        "mode": "allocation",
+        "repetition": 1,
+        "shapes": [
+          "context-near-limit"
+        ],
+        "warmup_per_shape": 1,
+        "measured_per_shape": 8,
+        "proofs": [],
+        "maximum_run_seconds": "180",
+        "maximum_output_bytes": "8388608"
+      }
+    }
+  ]
+}

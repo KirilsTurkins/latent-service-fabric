@@ -4,7 +4,7 @@ use latent_artifacts::{
     FunctionDescriptor, InterfaceDescriptor, ValueType,
 };
 use latent_core::{ContractId, FunctionId, InterfaceId, Metadata};
-pub(super) fn contracts() -> Vec<u8> {
+pub(in crate::standalone::measurements) fn contracts() -> Vec<u8> {
     let mut functions = ["identify", "bump", "trap", "spin", "grow"]
         .into_iter()
         .map(|name| function(name, Vec::new(), Some(ValueType::U32)))
