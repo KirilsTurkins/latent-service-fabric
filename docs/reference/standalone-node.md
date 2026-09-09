@@ -188,6 +188,15 @@ resources. Pooling also changes memory reservation and guard policy, so its
 performance comparison includes those layout choices. Compiler and resolved
 layout/reset settings participate in preparation compatibility identity.
 
+Use the [measured engine profiles](../../benchmarks/optimization/engine-profiles/2026-09-09-container-linux-fbb6e26/README.md)
+to assess a configuration change. In the retained four-workload comparison,
+pooling/speed reduced warm setup by 16–29 us, with higher compilation cost,
+sampled RSS and compiled-image charges. Its lower virtual-memory high-water
+usage does not imply lower resident memory. Pooling is an option for repeated
+prepared invocations when that tradeoff fits the workload. Speed-and-size did
+not reduce compiled-image charges in these fixtures. On-demand/speed remains
+the default.
+
 RPC inventory retains its resident-cache counters. The backend and factory Rust
 APIs additionally expose `cache_accounting_snapshot()` and an independent
 `prepared_runtime_observer()`: unique runtimes are counted once across
