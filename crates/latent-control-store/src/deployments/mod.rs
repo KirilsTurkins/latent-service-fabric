@@ -141,7 +141,10 @@ impl DirectoryDeploymentRepository {
                 let deployments = record.deployments(config)?;
                 let versions = record.object_generations(&deployments)?;
                 (
-                    deployments,
+                    deployments
+                        .into_iter()
+                        .map(|(id, manifest)| (id, Arc::new(manifest)))
+                        .collect(),
                     versions,
                     RouteGeneration(record.payload.generation),
                     record.payload.generated_at_unix_millis,
@@ -156,10 +159,11 @@ impl DirectoryDeploymentRepository {
             generated_at,
             artifacts.as_ref(),
             config,
+            None,
         )
         .await?;
         if let Some(record) = restored {
-            if record.payload.snapshot != persistence::snapshot_value(&catalog.snapshot) {
+            if record.payload.snapshot != persistence::catalog_snapshot_value(&catalog) {
                 return Err(error(
                     PlatformErrorCode::CorruptArtifact,
                     "persisted-route-mismatch",
@@ -245,7 +249,7 @@ impl DirectoryDeploymentRepository {
         if let Some(precondition) = precondition {
             precondition.check(&current)?;
         }
-        if current.snapshot.generation != expected {
+        if current.generation != expected {
             return Err(error(
                 PlatformErrorCode::StateConflict,
                 "stale-route-generation",
@@ -265,7 +269,7 @@ impl DirectoryDeploymentRepository {
         // Rename is the visibility commit point. Even an uncertain directory fsync must
         // install the same complete state in memory, rather than continuing on the old state.
         let durable = self.sync_parent();
-        let generation = next.snapshot.generation.0;
+        let generation = next.generation.0;
         let old = {
             let mut current = self
                 .current
@@ -300,8 +304,8 @@ impl RouteCompiler for DirectoryDeploymentRepository {
     ) -> BoxFuture<'a, Result<RouteSnapshot, PlatformError>> {
         Box::pin(async move {
             let current = self.read_catalog();
-            let matches = previous.map_or(current.snapshot.generation.0 == 0, |old| {
-                old == &current.snapshot
+            let matches = previous.map_or(current.generation.0 == 0, |old| {
+                current.matches_snapshot(old)
             });
             if !matches {
                 return Err(error(
@@ -312,13 +316,14 @@ impl RouteCompiler for DirectoryDeploymentRepository {
             let next = compile_versioned(
                 current.deployments.clone(),
                 current.versions.clone(),
-                next_generation(current.snapshot.generation)?,
+                next_generation(current.generation)?,
                 now()?,
                 self.artifacts.as_ref(),
                 self.config,
+                Some(&current),
             )
             .await?;
-            Ok(next.snapshot)
+            Ok(next.snapshot())
         })
     }
 }
@@ -327,7 +332,7 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
     fn publish<'a>(&'a self, snapshot: RouteSnapshot) -> BoxFuture<'a, Result<(), PlatformError>> {
         Box::pin(async move {
             let current = self.read_catalog();
-            if snapshot.generation != next_generation(current.snapshot.generation)? {
+            if snapshot.generation != next_generation(current.generation)? {
                 return Err(error(
                     PlatformErrorCode::StateConflict,
                     "stale-route-generation",
@@ -340,22 +345,23 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
                 snapshot.generated_at_unix_millis,
                 self.artifacts.as_ref(),
                 self.config,
+                Some(&current),
             )
             .await?;
-            if compiled.snapshot != snapshot {
+            if !compiled.matches_snapshot(&snapshot) {
                 return Err(error(
                     PlatformErrorCode::InvalidArgument,
                     "uncompiled-route-snapshot",
                 ));
             }
-            self.commit(current.snapshot.generation, compiled)
+            self.commit(current.generation, compiled)
         })
     }
 }
 
 impl RouteSnapshotSource for DirectoryDeploymentRepository {
     fn current<'a>(&'a self) -> BoxFuture<'a, Result<RouteSnapshot, PlatformError>> {
-        Box::pin(async move { Ok(self.read_catalog().snapshot.clone()) })
+        Box::pin(async move { Ok(self.read_catalog().snapshot()) })
     }
 
     fn watch<'a>(
@@ -364,14 +370,14 @@ impl RouteSnapshotSource for DirectoryDeploymentRepository {
     ) -> BoxFuture<'a, Result<Vec<RouteSnapshot>, PlatformError>> {
         Box::pin(async move {
             let current = self.read_catalog();
-            if after > current.snapshot.generation {
+            if after > current.generation {
                 return Err(error(
                     PlatformErrorCode::InvalidArgument,
                     "future-route-generation",
                 ));
             }
-            Ok(if after < current.snapshot.generation {
-                vec![current.snapshot.clone()]
+            Ok(if after < current.generation {
+                vec![current.snapshot()]
             } else {
                 Vec::new()
             })
@@ -401,7 +407,7 @@ impl CompiledRouteStore for DirectoryDeploymentRepository {
     ) -> BoxFuture<'a, Result<Option<RouteSnapshot>, PlatformError>> {
         Box::pin(async move {
             let current = self.read_catalog();
-            Ok((generation == current.snapshot.generation).then(|| current.snapshot.clone()))
+            Ok((generation == current.generation).then(|| current.snapshot()))
         })
     }
 }
@@ -457,7 +463,7 @@ impl RouteResolver for PinnedRouteResolver {
     }
 
     fn generation(&self) -> RouteGeneration {
-        self.catalog.snapshot.generation
+        self.catalog.generation
     }
 }
 

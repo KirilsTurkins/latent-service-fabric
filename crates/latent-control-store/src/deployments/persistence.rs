@@ -9,6 +9,7 @@ use latent_manifest::{
     __serde::{Deserialize, Serialize},
     __serde_json as json, DeploymentManifest, JsonManifestCodec, ManifestCodec,
 };
+#[cfg(test)]
 use latent_routing::RouteSnapshot;
 
 use super::compiler::CompiledCatalog;
@@ -219,10 +220,10 @@ pub(super) fn encode(
         })
         .collect::<Result<Vec<_>, PlatformError>>()?;
     let payload = Payload {
-        generation: catalog.snapshot.generation.0,
-        generated_at_unix_millis: catalog.snapshot.generated_at_unix_millis,
+        generation: catalog.generation.0,
+        generated_at_unix_millis: catalog.generated_at_unix_millis,
         deployments,
-        snapshot: snapshot_value(&catalog.snapshot),
+        snapshot: catalog_snapshot_value(catalog),
         object_generations: Some(
             catalog
                 .versions
@@ -285,6 +286,40 @@ impl Write for LimitedBytes {
     }
 }
 
+/// Direct canonical traversal avoids a second owned public route snapshot.
+pub(super) fn catalog_snapshot_value(catalog: &CompiledCatalog) -> json::Value {
+    let services = catalog
+        .route_views()
+        .map(|route| {
+            let revisions = route
+                .revisions()
+                .map(|record| {
+                    json::json!({
+                        "revision": record.revision.0,
+                        "release": record.deployment.release.0,
+                        "weight": record.deployment.route_weight,
+                        "attributes": record.attributes,
+                    })
+                })
+                .collect::<Vec<_>>();
+            json::json!({
+                "route": route.id(),
+                "tenant": route.tenant().0,
+                "service": route.service().0,
+                "revisions": revisions,
+            })
+        })
+        .collect::<Vec<_>>();
+    json::json!({
+        "generation": catalog.generation.0,
+        "generated_at_unix_millis": catalog.generated_at_unix_millis,
+        "services": services,
+        "bindings": [],
+        "policy_digests": [],
+    })
+}
+
+#[cfg(test)]
 pub(super) fn snapshot_value(snapshot: &RouteSnapshot) -> json::Value {
     let services = snapshot
         .services

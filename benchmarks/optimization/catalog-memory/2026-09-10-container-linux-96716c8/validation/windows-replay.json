@@ -1,0 +1,19 @@
+{
+  "schema": "latent.catalog.windows-archive-replay.v1",
+  "started_utc": "2026-09-10T20:26:54.748102+00:00",
+  "command": [
+    "C:\\Users\\turkins\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "tools/validate_phase1_archive.py",
+    "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue107-publication-03"
+  ],
+  "repository": "C:\\Users\\turkins\\Desktop\\latent-fabric-catalog-memory",
+  "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+  "platform": "win32",
+  "validator_sha256": "a2b4f3cbd55e6b341d4f019555dedcc4f5131c2bd6f4bcd289096a79641b1e0b",
+  "logical_archive_sha256": "d9209cedec5f08354c8f00e7608c0bb5723dd6996c1a0ab9fec27434f4920cbf",
+  "status": "passed",
+  "exit_code": 0,
+  "elapsed_nanos": "322201534700",
+  "finished_utc": "2026-09-10T20:32:16.949975+00:00",
+  "log_sha256": "50cd8d7696e8d15f10cf7dc874e14bc56de62df516c2e6c3ca1acc9818f54c7b"
+}

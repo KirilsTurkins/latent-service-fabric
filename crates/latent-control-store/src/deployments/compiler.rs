@@ -1,126 +1,44 @@
 mod admission;
+mod fingerprint;
+mod index;
+mod records;
+mod search;
+#[cfg(test)]
+mod tests;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-use latent_artifacts::{
-    content_digest, ArtifactRepository, ContractDescriptor, FieldDescriptor, ValueType,
-    VerifiedArtifactMetadata,
-};
-use latent_core::{
-    DeploymentId, Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration,
-    RouteId,
-};
+use latent_artifacts::{ArtifactRepository, VerifiedArtifactMetadata};
+use latent_core::{Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration};
 use latent_manifest::{
-    __serde_json as json, DeploymentManifest, JsonManifestCodec, ManifestCodec, ManifestValidator,
+    __serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidator,
     Phase1ManifestValidator,
-};
-use latent_routing::{
-    InvocationTarget, ResolvedRevision, RevisionRoute, RouteSnapshot, ServiceRoute,
 };
 
 use super::pagination::DeploymentIndex;
 use super::{deployment_revision_id, error, manifest_error, DirectoryDeploymentRepositoryConfig};
-
-type RouteKey = (String, String, String);
-type EndpointKey = (RouteKey, String, String);
-
-struct WeightedSet {
-    total: u64,
-    revisions: Vec<(u64, Arc<RevisionRoute>)>,
-}
+use fingerprint::contract_fingerprint;
+pub(super) use index::RouteView;
+use index::{EndpointRow, RouteRow, WeightedCandidate};
+pub(super) use records::{DesiredDeployments, ObjectVersions, RecordIndex, RevisionRecord};
 
 pub(super) struct CompiledCatalog {
-    pub deployments: BTreeMap<DeploymentId, DeploymentManifest>,
-    pub versions: BTreeMap<DeploymentId, u64>,
+    pub deployments: DesiredDeployments,
+    pub versions: ObjectVersions,
+    pub generation: RouteGeneration,
+    pub generated_at_unix_millis: u64,
+    pub records: Box<[Arc<RevisionRecord>]>,
     pub paging_index: DeploymentIndex,
-    pub snapshot: RouteSnapshot,
-    routes: BTreeSet<RouteKey>,
-    endpoints: BTreeMap<EndpointKey, WeightedSet>,
-    admission_policies: BTreeMap<latent_core::RevisionId, latent_routing::RevisionAdmissionPolicy>,
-}
-
-impl CompiledCatalog {
-    pub(super) fn resolve(
-        &self,
-        target: &InvocationTarget,
-        routing_key: Option<&str>,
-        config: DirectoryDeploymentRepositoryConfig,
-    ) -> Result<ResolvedRevision, PlatformError> {
-        let route = target.route.as_deref().unwrap_or("default");
-        let key = routing_key.unwrap_or("");
-        let identifiers = [
-            target.tenant.0.as_str(),
-            target.service.0.as_str(),
-            target.contract.0.as_str(),
-            target.function.0.as_str(),
-            route,
-        ];
-        if identifiers
-            .iter()
-            .any(|id| !valid_identifier(id, config.max_identifier_bytes))
-            || key.len() > config.max_routing_key_bytes
-        {
-            return Err(error(
-                PlatformErrorCode::InvalidArgument,
-                "invalid-invocation-target",
-            ));
-        }
-        let route_key = (
-            target.tenant.0.clone(),
-            target.service.0.clone(),
-            route.to_owned(),
-        );
-        if !self.routes.contains(&route_key) {
-            return Err(error(
-                PlatformErrorCode::RouteUnavailable,
-                "route-not-found",
-            ));
-        }
-        let endpoint_key = (
-            route_key,
-            target.contract.0.clone(),
-            target.function.0.clone(),
-        );
-        let candidates = self.endpoints.get(&endpoint_key).ok_or_else(|| {
-            error(
-                PlatformErrorCode::IncompatibleContract,
-                "contract-or-function-not-exported",
-            )
-        })?;
-        let mut framed = b"lsf-route-selection-v1\0".to_vec();
-        for part in [
-            target.tenant.0.as_str(),
-            target.service.0.as_str(),
-            route,
-            target.contract.0.as_str(),
-            target.function.0.as_str(),
-            key,
-        ] {
-            framed.extend_from_slice(&(part.len() as u64).to_be_bytes());
-            framed.extend_from_slice(part.as_bytes());
-        }
-        let digest = content_digest(&framed);
-        let hash = u64::from_str_radix(&digest.0[7..23], 16)
-            .expect("content_digest returns canonical SHA-256 hexadecimal");
-        let bucket = hash % candidates.total;
-        let index = candidates
-            .revisions
-            .partition_point(|(end, _)| *end <= bucket);
-        let revision = &candidates.revisions[index].1;
-        Ok(ResolvedRevision {
-            target: target.clone(),
-            revision: revision.revision.clone(),
-            release: revision.release.clone(),
-            route_generation: self.snapshot.generation,
-            attributes: revision.attributes.clone(),
-        })
-    }
+    routes: Box<[RouteRow]>,
+    route_revisions: Box<[RecordIndex]>,
+    endpoints: Box<[EndpointRow]>,
+    candidates: Box<[WeightedCandidate]>,
 }
 
 #[cfg(test)]
 pub(super) async fn compile(
-    deployments: BTreeMap<DeploymentId, DeploymentManifest>,
+    deployments: BTreeMap<latent_core::DeploymentId, latent_manifest::DeploymentManifest>,
     generation: RouteGeneration,
     generated_at_unix_millis: u64,
     artifacts: &dyn ArtifactRepository,
@@ -131,23 +49,28 @@ pub(super) async fn compile(
         .map(|id| (id.clone(), generation.0))
         .collect();
     compile_versioned(
-        deployments,
+        deployments
+            .into_iter()
+            .map(|(id, manifest)| (id, Arc::new(manifest)))
+            .collect(),
         versions,
         generation,
         generated_at_unix_millis,
         artifacts,
         config,
+        None,
     )
     .await
 }
 
 pub(super) async fn compile_versioned(
-    deployments: BTreeMap<DeploymentId, DeploymentManifest>,
-    versions: BTreeMap<DeploymentId, u64>,
+    mut deployments: DesiredDeployments,
+    versions: ObjectVersions,
     generation: RouteGeneration,
     generated_at_unix_millis: u64,
     artifacts: &dyn ArtifactRepository,
     config: DirectoryDeploymentRepositoryConfig,
+    previous: Option<&CompiledCatalog>,
 ) -> Result<CompiledCatalog, PlatformError> {
     if deployments.len() > config.max_deployments {
         return Err(error(
@@ -168,8 +91,12 @@ pub(super) async fn compile_versioned(
     let codec = JsonManifestCodec::default();
     // Group references, not cloned artifacts. At most one release's verified
     // metadata is alive; repository verification owns any component bytes.
-    let mut ordered = deployments.values().collect::<Vec<_>>();
-    ordered.sort_unstable_by(|left, right| {
+    let mut ordered = deployments
+        .values()
+        .enumerate()
+        .map(|(index, manifest)| (RecordIndex(index), manifest))
+        .collect::<Vec<_>>();
+    ordered.sort_unstable_by(|(_, left), (_, right)| {
         left.release
             .cmp(&right.release)
             .then_with(|| left.id.cmp(&right.id))
@@ -178,17 +105,17 @@ pub(super) async fn compile_versioned(
     let mut fingerprints = BTreeMap::new();
     let mut scopes = BTreeMap::new();
     let mut contracts = BTreeMap::new();
-    let mut services: BTreeMap<RouteKey, ServiceRoute> = BTreeMap::new();
-    let mut endpoints: BTreeMap<EndpointKey, Vec<Arc<RevisionRoute>>> = BTreeMap::new();
-    let mut admission_policies = BTreeMap::new();
-    let mut route_entries = 0_usize;
+    let mut indexes = index::Builder::default();
+    let mut revision_ids = BTreeSet::new();
     let mut metadata_budget = config.max_state_bytes;
     for id in versions.keys() {
         charge(&mut metadata_budget, 128)?;
         charge(&mut metadata_budget, id.0.len())?;
     }
 
-    for deployment in ordered {
+    // The existing per-version allowance also covers bounded record/order slots.
+    let mut records = vec![None; deployments.len()];
+    for (position, deployment) in ordered {
         Phase1ManifestValidator
             .validate_deployment(deployment)
             .map_err(manifest_error)?;
@@ -359,112 +286,57 @@ pub(super) async fn compile_versioned(
         let exports_json = json::to_string(&exported)
             .map_err(|_| error(PlatformErrorCode::Internal, "contract-encoding-failed"))?;
         let revision_id = deployment_revision_id(deployment)?;
-        admission::retain_policy(
-            &mut admission_policies,
-            revision_id.clone(),
-            deployment,
-            &artifact.manifest().execution,
-            &mut metadata_budget,
-        )?;
-        let revision = Arc::new(RevisionRoute {
+        admission::charge_policy(&revision_id, deployment, &mut metadata_budget)?;
+        if !revision_ids.insert(revision_id.clone()) {
+            return Err(error(
+                PlatformErrorCode::AlreadyExists,
+                "duplicate-revision-policy",
+            ));
+        }
+        let candidate = RevisionRecord {
+            deployment: Arc::clone(deployment),
             revision: revision_id,
-            release: deployment.release.clone(),
-            weight: deployment.route_weight,
             attributes: Metadata::from([
                 ("lsf.deployment".to_owned(), deployment_json),
                 ("lsf.exports".to_owned(), exports_json),
             ]),
-        });
-        for route in ["default", deployment.id.0.as_str()] {
-            for value in revision.attributes.values() {
-                charge(&mut metadata_budget, value.len())?;
-            }
-            let route_key = (
-                tenant.0.clone(),
-                deployment.service.0.clone(),
-                route.to_owned(),
-            );
-            services
-                .entry(route_key.clone())
-                .or_insert_with(|| ServiceRoute {
-                    id: RouteId(route.to_owned()),
-                    tenant: tenant.clone(),
-                    service: deployment.service.clone(),
-                    revisions: Vec::new(),
-                })
-                .revisions
-                .push((*revision).clone());
-            for (contract, function) in &callable {
-                route_entries = route_entries.checked_add(1).ok_or_else(|| {
-                    error(PlatformErrorCode::ResourceExhausted, "route-index-limit")
-                })?;
-                if route_entries > config.max_route_entries {
-                    return Err(error(
-                        PlatformErrorCode::ResourceExhausted,
-                        "route-index-limit",
-                    ));
-                }
-                endpoints
-                    .entry((route_key.clone(), contract.clone(), function.clone()))
-                    .or_default()
-                    .push(Arc::clone(&revision));
-            }
-        }
+            execution: artifact.manifest().execution.clone(),
+        };
+        // Fresh verification and every canonical derivation precede reuse.
+        let record = previous
+            .and_then(|catalog| catalog.record_by_id(&deployment.id))
+            .filter(|record| record.as_ref() == &candidate)
+            .map_or_else(|| Arc::new(candidate), Arc::clone);
+        indexes.insert(position, &record, &callable, config, &mut metadata_budget)?;
+        records[position.0] = Some(record);
     }
     drop(release);
     drop(fingerprints);
     drop(contracts);
-    let routes = services.keys().cloned().collect();
-    let services = services
-        .into_values()
-        .map(|mut service| {
-            service
-                .revisions
-                .sort_by(|left, right| left.revision.cmp(&right.revision));
-            service
-        })
-        .collect();
-    let mut weighted = BTreeMap::new();
-    for (key, mut revisions) in endpoints {
-        revisions.sort_by(|left, right| left.revision.cmp(&right.revision));
-        let mut total = 0_u64;
-        let mut cumulative = Vec::with_capacity(revisions.len());
-        for revision in revisions {
-            total = total
-                .checked_add(u64::from(revision.weight))
-                .ok_or_else(|| {
-                    error(
-                        PlatformErrorCode::ResourceExhausted,
-                        "route-weight-overflow",
-                    )
-                })?;
-            cumulative.push((total, revision));
-        }
-        weighted.insert(
-            key,
-            WeightedSet {
-                total,
-                revisions: cumulative,
-            },
-        );
+    let records = records
+        .into_iter()
+        .map(|record| record.expect("every deployment was verified"))
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    // Equal explicit reapply may have allocated a new manifest. Keep exactly the
+    // finalized record's Arc in both owners; object versions remain independent.
+    for (deployment, record) in deployments.values_mut().zip(records.iter()) {
+        *deployment = Arc::clone(&record.deployment);
     }
-    let paging_index = DeploymentIndex::build(&deployments, &versions, config, metadata_budget)?;
+    let packed = indexes.finish(&records)?;
+    let paging_index = DeploymentIndex::build(&records, &versions, config, metadata_budget)?;
     charge(&mut metadata_budget, paging_index.retained_bytes())?;
     let catalog = CompiledCatalog {
         deployments,
         versions,
+        generation,
+        generated_at_unix_millis,
+        records,
         paging_index,
-        snapshot: RouteSnapshot {
-            generation,
-            generated_at_unix_millis,
-            services,
-            // Binding/policy evaluation is outside this deployment-only compiler.
-            bindings: Vec::new(),
-            policy_digests: Vec::new(),
-        },
-        routes,
-        endpoints: weighted,
-        admission_policies,
+        routes: packed.routes,
+        route_revisions: packed.route_revisions,
+        endpoints: packed.endpoints,
+        candidates: packed.candidates,
     };
     // Check exact persisted size, including JSON escaping, before publication.
     super::persistence::encode(&catalog, config)?;
@@ -493,98 +365,4 @@ fn charge_fingerprint(remaining: &mut usize, fields: &[&str]) -> Result<(), Plat
         charge(remaining, field.len())?;
     }
     Ok(())
-}
-
-fn contract_fingerprint(contract: &ContractDescriptor) -> Result<String, PlatformError> {
-    let canonical = contract_value(contract);
-    let bytes = json::to_vec(&canonical)
-        .map_err(|_| error(PlatformErrorCode::Internal, "contract-encoding-failed"))?;
-    Ok(content_digest(&bytes).0)
-}
-
-fn contract_value(contract: &ContractDescriptor) -> json::Value {
-    let mut interfaces = contract
-        .interfaces
-        .iter()
-        .map(|interface| {
-            let mut functions = interface
-                .functions
-                .iter()
-                .map(|function| {
-                    json::json!({
-                        "id": function.id.0,
-                        "name": function.name,
-                        "asynchronous": function.asynchronous,
-                        "parameters": function.parameters.iter().map(field_value).collect::<Vec<_>>(),
-                        "results": function.results.iter().map(field_value).collect::<Vec<_>>(),
-                        "documentation": function.documentation,
-                        "attributes": function.attributes,
-                    })
-                })
-                .collect::<Vec<_>>();
-            functions.sort_by(|left, right| left["id"].as_str().cmp(&right["id"].as_str()));
-            json::json!({
-                "id": interface.id.0,
-                "digest": interface.digest,
-                "documentation": interface.documentation,
-                "functions": functions,
-            })
-        })
-        .collect::<Vec<_>>();
-    interfaces.sort_by(|left, right| left["id"].as_str().cmp(&right["id"].as_str()));
-    let mut dependencies = contract
-        .dependencies
-        .iter()
-        .map(|id| id.0.as_str())
-        .collect::<Vec<_>>();
-    dependencies.sort_unstable();
-    json::json!({
-        "id": contract.id.0,
-        "package": contract.package_name,
-        "version": contract.semantic_version,
-        "digest": contract.digest,
-        "dependencies": dependencies,
-        "interfaces": interfaces,
-    })
-}
-
-fn field_value(field: &FieldDescriptor) -> json::Value {
-    json::json!({
-        "name": field.name,
-        "type": type_value(&field.value_type),
-        "documentation": field.documentation,
-    })
-}
-
-fn type_value(value: &ValueType) -> json::Value {
-    use ValueType::{List, Option, Result, Tuple};
-    match value {
-        List(inner) => json::json!(["list", type_value(inner)]),
-        Option(inner) => json::json!(["option", type_value(inner)]),
-        Result { ok, error } => json::json!([
-            "result",
-            ok.as_deref().map(type_value),
-            error.as_deref().map(type_value),
-        ]),
-        Tuple(values) => json::json!(["tuple", values.iter().map(type_value).collect::<Vec<_>>()]),
-        ValueType::Record(name) => json::json!(["record", name]),
-        ValueType::Variant(name) => json::json!(["variant", name]),
-        ValueType::Resource(name) => json::json!(["resource", name]),
-        ValueType::Future(inner) => json::json!(["future", type_value(inner)]),
-        ValueType::Stream(inner) => json::json!(["stream", type_value(inner)]),
-        ValueType::Bool => json::json!("bool"),
-        ValueType::U8 => json::json!("u8"),
-        ValueType::U16 => json::json!("u16"),
-        ValueType::U32 => json::json!("u32"),
-        ValueType::U64 => json::json!("u64"),
-        ValueType::S8 => json::json!("s8"),
-        ValueType::S16 => json::json!("s16"),
-        ValueType::S32 => json::json!("s32"),
-        ValueType::S64 => json::json!("s64"),
-        ValueType::F32 => json::json!("f32"),
-        ValueType::F64 => json::json!("f64"),
-        ValueType::Char => json::json!("char"),
-        ValueType::String => json::json!("string"),
-        ValueType::Bytes => json::json!("bytes"),
-    }
 }

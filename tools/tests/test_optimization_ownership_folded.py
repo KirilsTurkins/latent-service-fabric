@@ -27,7 +27,7 @@ class FoldedBoundsTests(unittest.TestCase):
     def test_only_explicit_finite_caps_are_accepted_before_io(self):
         self.assertEqual(common.folded_limit(LEGACY), LEGACY)
         self.assertEqual(common.folded_limit(OWNERSHIP), OWNERSHIP)
-        for value in (None, True, 0, -1, LEGACY + 1, OWNERSHIP + 1, 256 * 1024**2, float(LEGACY), str(OWNERSHIP)):
+        for value in (None, True, 0, -1, LEGACY + 1, OWNERSHIP + 1, 256 * 1024**2 + 1, float(LEGACY), str(OWNERSHIP)):
             for action in (lambda: files.compress_folded(None, None, maximum_bytes=value),
                            lambda: common.folded(None, maximum_bytes=value),
                            lambda: lookup.folded_attribution(None, maximum_bytes=value),

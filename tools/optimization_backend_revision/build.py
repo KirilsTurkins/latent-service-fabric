@@ -13,6 +13,9 @@ from tools.phase1_measurement_environment import build_configuration
 
 def matching_controls(repo,refs,experiment):
     names=(*backend.CONTROLS,"rust-toolchain.toml",".cargo/config.toml","tools/phase0_build_environment.sh")
+    if experiment == "catalog":
+        from .catalog.builds import CONTROLS
+        names=(*CONTROLS,"rust-toolchain.toml",".cargo/config.toml","tools/phase0_build_environment.sh")
     if experiment == "cold":
         names=(*names,*backend.COLD_CONTROLS)
     for name in names:
@@ -20,7 +23,7 @@ def matching_controls(repo,refs,experiment):
             raise ValueError("backend-collector-source-controls-differ:"+name)
 
 
-def collect(repo,refs,output,target,deadline,receipt):
+def collect(repo,refs,output,target,deadline,receipt,*,extra_controls=()):
     def cleaned(removed):
         receipt["cleanup"]["owned_worktree_removed"]=removed
         write(output/"backend-builds.json",receipt)
@@ -34,16 +37,18 @@ def collect(repo,refs,output,target,deadline,receipt):
             if observed["commit"] != refs[label] or observed["clean"] is not True:
                 raise ValueError("backend-source-ref-mismatch")
             if label == "harness":
-                receipt["harness"]=backend.build_echo(root,build_target,output,deadline)
+                receipt["harness"]=(backend.build_echo(root,build_target,output,deadline,extra_controls)
+                                    if extra_controls else backend.build_echo(root,build_target,output,deadline))
             else:
-                receipt["builds"][label]=backend.build_backend(root,build_target,label,output,deadline)
+                receipt["builds"][label]=(backend.build_libtest(root,build_target,label,output,deadline,"backend",extra_controls)
+                                          if extra_controls else backend.build_backend(root,build_target,label,output,deadline))
             write(output/"backend-builds.json",receipt)
 
 
 def execute(args,repo: Path):
     if platform.system() != "Linux":
         raise ValueError("backend-build-requires-linux")
-    if args.experiment not in ("warm","cold") or args.profile not in ("smoke","full"):
+    if args.experiment not in ("warm","cold","catalog") or args.profile not in ("smoke","full"):
         raise ValueError("backend-build-selection")
     refs={name:getattr(args,name+"_ref") for name in ("control","candidate","harness")}
     shared.validate_refs(refs,args.profile)
@@ -59,12 +64,16 @@ def execute(args,repo: Path):
     target.mkdir(parents=True,exist_ok=True)
     settings=build_configuration("full")
     settings["overrides"]["collector_surface"]="libtest"
-    receipt={"schema":"latent.optimization.backend-builds.v1","requested_refs":refs,"build":settings,
+    receipt={"schema":"latent.optimization.catalog-builds.v1" if args.experiment == "catalog" else "latent.optimization.backend-builds.v1","requested_refs":refs,"build":settings,
              "builds":{},"harness":None,"cleanup":{"owned_worktree_removed":False}}
     write(output/"backend-builds.json",receipt)
     began=time.monotonic_ns()
     try:
-        collect(repo,refs,output,target,began+10_800*10**9,receipt)
+        if args.experiment == "catalog":
+            from .catalog.builds import CONTROLS
+            collect(repo,refs,output,target,began+10_800*10**9,receipt,extra_controls=CONTROLS)
+        else:
+            collect(repo,refs,output,target,began+10_800*10**9,receipt)
         if shared.source(repo) != before:
             raise ValueError("backend-executed-harness-source-changed")
         from .builds import validate_experiment

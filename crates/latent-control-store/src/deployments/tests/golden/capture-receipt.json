@@ -1,0 +1,29 @@
+{
+  "source_commit": "2a3bd3c753ff17b2adb8e27e8bd2fa580c52f46b",
+  "production_changes": false,
+  "capture_source_sha256": "9ad0996242a62a76c110dc1cc5a25e502532b0034d58a859b8edd24eb7f19105",
+  "test": "deployments::tests::original_golden::original_catalog_golden_capture",
+  "passed": 1,
+  "files": [
+    {
+      "path": "catalog-v2.json",
+      "bytes": 8836,
+      "sha256": "6d0c3bb0497293153c6a344c5f1a51a2763e40a71daed38b0f2ccae775f66a92"
+    },
+    {
+      "path": "choices.json",
+      "bytes": 41156,
+      "sha256": "ba7e7db308be7d2305e7122ecb2d3c91a97043bf06e4e399c7fce58b2f0b933b"
+    },
+    {
+      "path": "failures.json",
+      "bytes": 318,
+      "sha256": "ef5e874505396e64208f177ac1c9389a10f2ddeb7297881dcf6ee679c63ef2b9"
+    },
+    {
+      "path": "snapshot.json",
+      "bytes": 6750,
+      "sha256": "e6720bca8d669c70711bd2f8d95e5a1704ed60f0992da22d38a8433075206b12"
+    }
+  ]
+}

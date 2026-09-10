@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Catalog backend-only build receipt",
+  "description": "Exact source, process, artifact and common-input bindings require the matching semantic build replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "requested_refs", "build", "builds", "harness", "cleanup"],
+  "properties": {
+    "schema": {"const": "latent.optimization.catalog-builds.v1"},
+    "requested_refs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["control", "candidate", "harness"],
+      "properties": {
+        "control": {"$ref": "#/$defs/commit"},
+        "candidate": {"$ref": "#/$defs/commit"},
+        "harness": {"$ref": "#/$defs/commit"}
+      }
+    },
+    "build": {"type": "object"},
+    "builds": {
+      "type": "object", "additionalProperties": false, "required": ["control", "candidate"],
+      "properties": {"control": {"type": "object"}, "candidate": {"type": "object"}}
+    },
+    "harness": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "source_after", "inputs", "command", "process", "log", "source_path", "target_path", "echo"],
+      "properties": {
+        "source": {"type": "object"}, "source_after": {"type": "object"},
+        "inputs": {"type": "object", "minProperties": 1, "maxProperties": 512},
+        "command": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "string"}},
+        "process": {"type": "object"}, "log": {"$ref": "#/$defs/artifact"},
+        "source_path": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "target_path": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "echo": {
+          "type": "object", "additionalProperties": false,
+          "required": ["component", "capsule", "contracts", "deployment", "build"],
+          "properties": {
+            "component": {"$ref": "#/$defs/artifact"}, "capsule": {"$ref": "#/$defs/artifact"},
+            "contracts": {"$ref": "#/$defs/artifact"}, "deployment": {"$ref": "#/$defs/artifact"},
+            "build": {"$ref": "#/$defs/artifact"}
+          }
+        }
+      }
+    },
+    "cleanup": {
+      "type": "object", "additionalProperties": false, "required": ["owned_worktree_removed"],
+      "properties": {"owned_worktree_removed": {"const": true}}
+    }
+  },
+  "$defs": {
+    "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "artifact": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "bytes": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,19})$"}
+      }
+    }
+  }
+}

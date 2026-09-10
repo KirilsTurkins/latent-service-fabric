@@ -1,16 +1,16 @@
 //! Bounded management pages over an immutable catalog's tenant-scoped indexes.
 
-use std::collections::{hash_map::RandomState, BTreeMap};
+use std::collections::hash_map::RandomState;
 use std::hash::BuildHasher;
-use std::ops::Bound::{Excluded, Unbounded};
+use std::mem::size_of;
+use std::sync::Arc;
 
+use super::compiler::{ObjectVersions, RecordIndex, RevisionRecord};
+use super::{error, DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig};
+use crate::VersionedDeployment;
 use latent_core::{
     DeploymentId, PlatformError, PlatformErrorCode, RouteGeneration, ServiceId, TenantId,
 };
-use latent_manifest::{DeploymentManifest, JsonManifestCodec, ManifestCodec};
-
-use super::{error, DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig};
-use crate::VersionedDeployment;
 
 #[cfg(test)]
 pub(super) mod instrumentation;
@@ -32,20 +32,19 @@ pub struct DeploymentPage {
     pub catalog_generation: RouteGeneration,
 }
 
-type Rows = BTreeMap<DeploymentId, usize>;
-
-/// Retains keys and encoded byte counts, never duplicate deployment manifests.
+/// Generation-local positions; all identifiers remain in the shared records.
 #[derive(Default)]
 pub(super) struct DeploymentIndex {
-    by_tenant: BTreeMap<TenantId, Rows>,
-    by_service: BTreeMap<(TenantId, ServiceId), Rows>,
+    by_tenant: Box<[RecordIndex]>,
+    by_service: Box<[RecordIndex]>,
+    encoded_bytes: Box<[usize]>,
     retained_bytes: usize,
 }
 
 impl DeploymentIndex {
     pub(super) fn build(
-        deployments: &BTreeMap<DeploymentId, DeploymentManifest>,
-        versions: &BTreeMap<DeploymentId, u64>,
+        records: &[Arc<RevisionRecord>],
+        versions: &ObjectVersions,
         config: DirectoryDeploymentRepositoryConfig,
         max_retained_bytes: usize,
     ) -> Result<Self, PlatformError> {
@@ -55,76 +54,119 @@ impl DeploymentIndex {
                 "invalid-catalog-limits",
             ));
         }
-        if deployments.len() != versions.len() {
+        if records.len() != versions.len()
+            || records
+                .windows(2)
+                .any(|pair| pair[0].deployment.id >= pair[1].deployment.id)
+        {
             return Err(invalid_versions());
         }
-        let codec = JsonManifestCodec::default();
-        let mut index = Self::default();
-        for (id, manifest) in deployments {
-            let tenant = manifest
+        // The three exact-capacity arrays are charged before their allocation.
+        let retained_bytes = records
+            .len()
+            .checked_mul(2 * size_of::<RecordIndex>() + size_of::<usize>())
+            .and_then(|bytes| bytes.checked_add(size_of::<Self>()))
+            .filter(|bytes| *bytes <= max_retained_bytes)
+            .ok_or_else(|| {
+                error(
+                    PlatformErrorCode::ResourceExhausted,
+                    "catalog-state-byte-limit",
+                )
+            })?;
+        let mut by_tenant = Vec::with_capacity(records.len());
+        let mut encoded_bytes = Vec::with_capacity(records.len());
+        for (position, record) in records.iter().enumerate() {
+            let manifest = &record.deployment;
+            manifest
                 .metadata
                 .tenant
                 .as_ref()
                 .ok_or_else(invalid_versions)?;
             let version = versions
-                .get(id)
+                .get(&manifest.id)
                 .filter(|version| **version != 0)
                 .ok_or_else(invalid_versions)?;
-            // Conservatively includes both B-tree entries and their cloned key storage.
-            // Shared tenant/service keys are charged again for each row, never undercounted.
-            let keys = [
-                id.0.len(),
-                id.0.len(),
-                tenant.0.len(),
-                tenant.0.len(),
-                manifest.service.0.len(),
-            ];
-            let charged = keys
-                .into_iter()
-                .try_fold(4096_usize, usize::checked_add)
-                .and_then(|bytes| index.retained_bytes.checked_add(bytes))
-                .ok_or_else(page_byte_limit)?;
-            if charged > max_retained_bytes {
-                return Err(error(
-                    PlatformErrorCode::ResourceExhausted,
-                    "catalog-state-byte-limit",
-                ));
-            }
-            let encoded = codec
-                .encode_deployment(manifest)
-                .map_err(super::manifest_error)?;
+            // Compiler-owned canonical bytes are the same codec output used by
+            // persistence. Object stamps belong to this generation, not the Arc.
+            let encoded = record
+                .attributes
+                .get("lsf.deployment")
+                .ok_or_else(invalid_versions)?;
+            let digits = usize::try_from(version.ilog10() + 1).map_err(|_| page_byte_limit())?;
             // Exact compact JSON record accounting, independent of RPC transport framing.
             let bytes = encoded
                 .len()
                 .checked_add(b"{\"manifest\":,\"generation\":}".len())
-                .and_then(|bytes| bytes.checked_add(version.to_string().len()))
+                .and_then(|bytes| bytes.checked_add(digits))
                 .ok_or_else(page_byte_limit)?;
-            drop(encoded);
-            index.retained_bytes = charged;
-            index
-                .by_tenant
-                .entry(tenant.clone())
-                .or_default()
-                .insert(id.clone(), bytes);
-            index
-                .by_service
-                .entry((tenant.clone(), manifest.service.clone()))
-                .or_default()
-                .insert(id.clone(), bytes);
+            by_tenant.push(RecordIndex(position));
+            encoded_bytes.push(bytes);
         }
-        Ok(index)
+        let mut by_service = by_tenant.clone();
+        by_tenant.sort_unstable_by(|left, right| {
+            let left = row_key(records, *left);
+            let right = row_key(records, *right);
+            (left.0, left.2).cmp(&(right.0, right.2))
+        });
+        by_service.sort_unstable_by_key(|index| row_key(records, *index));
+        Ok(Self {
+            by_tenant: by_tenant.into_boxed_slice(),
+            by_service: by_service.into_boxed_slice(),
+            encoded_bytes: encoded_bytes.into_boxed_slice(),
+            retained_bytes,
+        })
     }
 
     pub(super) fn retained_bytes(&self) -> usize {
         self.retained_bytes
     }
 
-    fn rows(&self, tenant: &TenantId, service: Option<&ServiceId>) -> Option<&Rows> {
-        match service {
-            Some(service) => self.by_service.get(&(tenant.clone(), service.clone())),
-            None => self.by_tenant.get(tenant),
-        }
+    pub(super) fn selected<'a>(
+        &'a self,
+        records: &[Arc<RevisionRecord>],
+        tenant: &TenantId,
+        service: Option<&ServiceId>,
+        after: Option<&DeploymentId>,
+    ) -> &'a [RecordIndex] {
+        let rows = if service.is_some() {
+            &self.by_service
+        } else {
+            &self.by_tenant
+        };
+        let scope = |index: &RecordIndex| {
+            let key = row_key(records, *index);
+            key.0.cmp(tenant.0.as_str()).then_with(|| {
+                service.map_or(std::cmp::Ordering::Equal, |service| {
+                    key.1.cmp(service.0.as_str())
+                })
+            })
+        };
+        let start = rows.partition_point(|index| scope(index).is_lt());
+        let end = rows.partition_point(|index| !scope(index).is_gt());
+        let selected = &rows[start..end];
+        let offset = after.map_or(0, |after| {
+            selected.partition_point(|index| records[index.0].deployment.id <= *after)
+        });
+        &selected[offset..]
     }
+
+    pub(super) fn encoded_row_bytes(&self, index: RecordIndex) -> usize {
+        self.encoded_bytes[index.0]
+    }
+}
+
+fn row_key(records: &[Arc<RevisionRecord>], index: RecordIndex) -> (&str, &str, &str) {
+    let manifest = &records[index.0].deployment;
+    (
+        &manifest
+            .metadata
+            .tenant
+            .as_ref()
+            .expect("indexed tenant was checked")
+            .0,
+        &manifest.service.0,
+        &manifest.id.0,
+    )
 }
 
 pub(super) fn valid_page_config(config: DirectoryDeploymentRepositoryConfig) -> bool {
@@ -164,7 +206,7 @@ impl DirectoryDeploymentRepository {
             .map(|raw| decode_token(raw, request, self.config, &self.pagination_fingerprint))
             .transpose()?;
         let catalog = self.read_catalog();
-        let generation = catalog.snapshot.generation;
+        let generation = catalog.generation;
         if cursor
             .as_ref()
             .is_some_and(|cursor| cursor.generation != generation)
@@ -179,22 +221,19 @@ impl DirectoryDeploymentRepository {
             next_page_token: None,
             catalog_generation: generation,
         };
-        let Some(rows) = catalog
-            .paging_index
-            .rows(&request.tenant, request.service.as_ref())
-        else {
-            return Ok(page);
-        };
-        let start = cursor
-            .as_ref()
-            .map_or(Unbounded, |cursor| Excluded(&cursor.last_id));
+        let rows = catalog.paging_index.selected(
+            &catalog.records,
+            &request.tenant,
+            request.service.as_ref(),
+            cursor.as_ref().map(|cursor| &cursor.last_id),
+        );
         let page_size = usize::try_from(request.page_size).map_err(|_| page_byte_limit())?;
         let mut used_bytes = 0_usize;
         let mut has_more = false;
-        for (id, bytes) in rows.range((start, Unbounded)) {
+        for index in rows {
             #[cfg(test)]
             instrumentation::selected();
-            let next_bytes = used_bytes.checked_add(*bytes);
+            let next_bytes = used_bytes.checked_add(catalog.paging_index.encoded_row_bytes(*index));
             if page.deployments.len() == page_size
                 || next_bytes.is_none_or(|bytes| bytes > self.config.max_page_bytes)
             {
@@ -204,12 +243,15 @@ impl DirectoryDeploymentRepository {
                 has_more = true;
                 break;
             }
-            let manifest = catalog.deployments.get(id).ok_or_else(invalid_versions)?;
-            let version = *catalog.versions.get(id).ok_or_else(invalid_versions)?;
+            let manifest = &catalog.record(*index).deployment;
+            let version = *catalog
+                .versions
+                .get(&manifest.id)
+                .ok_or_else(invalid_versions)?;
             #[cfg(test)]
             instrumentation::cloned();
             page.deployments.push(VersionedDeployment {
-                manifest: manifest.clone(),
+                manifest: (**manifest).clone(),
                 generation: version,
             });
             used_bytes = next_bytes.expect("accepted row fits the page byte budget");

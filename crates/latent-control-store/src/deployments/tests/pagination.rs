@@ -404,3 +404,63 @@ fn maximum_length_tenant_service_and_ids_produce_usable_bounded_tokens() {
     assert_eq!(probe.stats().cloned, 1);
     assert_eq!(releases.fetches.load(Ordering::Relaxed), fetches);
 }
+
+#[test]
+fn reused_manifest_crossing_nine_to_ten_recomputes_exact_page_row_cost() {
+    let (root, releases, store) = seeded(Limits::default());
+    let id = DeploymentId("a-00".to_owned());
+    let manifest = run(store.get(&id)).unwrap().unwrap();
+    for _ in 2..=9 {
+        run(store.apply(manifest.clone())).unwrap();
+    }
+    let encoded = JsonManifestCodec::default()
+        .encode_deployment(&manifest)
+        .unwrap();
+    let row_nine = format!(
+        "{{\"manifest\":{},\"generation\":9}}",
+        String::from_utf8(encoded).unwrap()
+    )
+    .len();
+    drop(store);
+    let limits = Limits {
+        max_page_bytes: row_nine,
+        ..Limits::default()
+    };
+    let store = run(Store::open(root.0.clone(), releases.clone(), limits)).unwrap();
+    let first = run(store.list_page(request("alice", Some("echo"), 1, None))).unwrap();
+    assert_eq!(first.deployments[0].generation, 9);
+    let before = store.read_catalog();
+    run(store.apply(manifest)).unwrap();
+    let after = store.read_catalog();
+    assert!(Arc::ptr_eq(
+        before.record_by_id(&id).unwrap(),
+        after.record_by_id(&id).unwrap()
+    ));
+    assert_eq!(before.versions[&id], 9);
+    assert_eq!(after.versions[&id], 10);
+    assert_rejected_before_selection(
+        &store,
+        request("alice", Some("echo"), 1, first.next_page_token.as_deref()),
+        Code::StateConflict,
+        "expired-deployment-page-token",
+    );
+    let probe = PageProbe::new();
+    let failure = run(store.list_page(request("alice", Some("echo"), 1, None))).unwrap_err();
+    assert_eq!(failure.message, "deployment-page-byte-limit");
+    assert_eq!(probe.stats().selected, 1);
+    assert_eq!(probe.stats().cloned, 0);
+    drop(probe);
+    drop((before, after, store));
+    let store = run(Store::open(
+        root.0.clone(),
+        releases.clone(),
+        Limits {
+            max_page_bytes: row_nine + 1,
+            ..limits
+        },
+    ))
+    .unwrap();
+    let accepted = run(store.list_page(request("alice", Some("echo"), 1, None))).unwrap();
+    assert_ids(&accepted, &["a-00"]);
+    assert_eq!(accepted.deployments[0].generation, 10);
+}

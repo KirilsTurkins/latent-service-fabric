@@ -1,0 +1,8 @@
+field,value,unit
+absolute_met,true,boolean
+candidate_rss_bytes,1117204480,bytes
+control_rss_bytes,2718257152,bytes
+maximum_candidate_rss_bytes,1750000000,bytes
+minimum_relative_reduction_percent,25,percent
+relative_met,true,boolean
+scope,matched-distinct-100000-after-apply-request-drop-before-resolver-oracle,scope

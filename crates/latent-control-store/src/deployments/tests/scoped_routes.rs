@@ -1,6 +1,9 @@
 use super::*;
 use crate::{RouteReadLimits, ScopedRouteRequest};
 
+#[path = "scoped_routes/projection.rs"]
+mod projection;
+
 fn request(tenant: &str) -> ScopedRouteRequest {
     ScopedRouteRequest {
         tenant: TenantId(tenant.to_owned()),
@@ -67,17 +70,16 @@ fn selected_capacity_limits_do_not_visit_unrelated_revision_metadata() {
     {
         let mut current = store.current.write().unwrap();
         let catalog = Arc::get_mut(&mut current).unwrap();
-        let mut oversized = String::with_capacity(256 * 1024);
-        oversized.push('x');
-        catalog
-            .snapshot
-            .services
+        let record = catalog
+            .records
             .iter_mut()
-            .find(|service| service.tenant.0 == "bob")
+            .find(|record| record.deployment.metadata.tenant.as_ref().unwrap().0 == "bob")
+            .unwrap();
+        // Unlike record spare capacity, these bytes would be copied into the DTO.
+        Arc::get_mut(record)
             .unwrap()
-            .revisions[0]
             .attributes
-            .insert("large".to_owned(), oversized);
+            .insert("large".to_owned(), "x".repeat(256 * 1024));
     }
     let mut alice = request("alice");
     alice.limits.maximum_services = 2;

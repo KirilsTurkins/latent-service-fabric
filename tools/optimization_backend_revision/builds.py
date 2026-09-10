@@ -7,6 +7,9 @@ from tools.optimization_revision_runner.build import validate_refs
 
 
 def validate_experiment(value,artifacts,profile,experiment):
+    if experiment == "catalog":
+        from .catalog.builds import validate as validate_catalog
+        return validate_catalog(value,artifacts,profile)
     require(experiment in ("warm","cold"), "backend-experiment-selection")
     validate(value,artifacts,profile)
     if experiment == "cold":

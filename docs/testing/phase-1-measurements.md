@@ -853,3 +853,97 @@ Never overwrite an existing measured root. Validate each full suite with its
 existing revision/backend validation CLI and `--aggregate`, then package and
 replay the two evidence roots independently. Structural schemas supplement
 mandatory exact-source, complete-population and archive semantic replay.
+
+## Catalog memory experiments
+
+The #107 catalog experiment builds two exact-source `latentd` libtest collectors
+and one maintained Echo component. Their collector/helper source and build
+configuration are identical; the production catalog implementation differs.
+No external RPC client, guest invocation, guest Store or compilation preparation
+belongs to this population. Both variants retain the default on-demand/speed
+engine, two runtime workers, one control worker and the same catalog limits.
+
+Distinct-service and shared-service shapes publish unique releases using the
+retained Echo bytes and `latent.scale.identity.v1` custom-section recipe.
+Default selection preserves revision ordering, route spelling, weighted hash
+framing and canonical deployment attributes. Normal timing measures the public
+resolver call through its returned owned result; validation and result Drop
+follow the clock. Every expected success and miss remains counted and replayed.
+
+| Population | Smoke | Full |
+| --- | --- | --- |
+| Growth checkpoints | 2, 4, 16 | 100, 1,000, 10,000, 100,000 |
+| Matched pairs per shape | 3 | 1 |
+| Initial/reopen processes | 24 | 8 |
+| Timed normal resolves | 6,912 | 192,000 |
+| Normal API operations, including pins and policies | 7,332 | 592,080 |
+| Separate tiny allocation processes | 16 | 16 |
+| Measured resolves in allocation frames | 1,024 | 4,096 |
+| Total API operations | 8,900 | 596,720 |
+
+Each repetition runs distinct control first and shared candidate first.
+An initial owner publishes its releases in bounded chunks, samples artifact-only
+idle before constructing deployment requests, and applies each growth delta
+once. Primary post-publication idle precedes all resolver inputs, result buffers
+and correctness-oracle tables. Later samples follow their release. The final
+weight update retains an old pin, verifies old and new policy/route attributes,
+and measures both the overlapping generations and the old pin's release.
+
+After the initial process exits, the parent hashes its durable catalog and binds
+the original process, data-directory device/inode and exclusive owner marker to
+the reopen input. The new process opens that unchanged directory with the same
+executable. It samples reopened idle before four resolves, one pin and two policy
+reads. The parent removes its owned root after the pair finishes. Generated
+release files are excluded from the evidence archive; retained recipes, hashes,
+operation digests and cleanup receipts describe the measured data.
+
+A source-owned thread observes RSS, high-water RSS and process CPU ticks with a
+requested 100 ms interval. Every observation retains its actual clock bracket
+and process/start identity. Report actual cadence and the number of samples
+wholly inside each apply window; absent samples cannot establish a peak.
+Checkpoint status/smaps observations, allocator retention, conservative capacity
+charges and process resident memory remain separate quantities.
+
+Allocation children each build only sixteen releases. Their selected case has
+one semantic preflight, sixteen warmup calls and 64/256 smoke/full calls in one
+noninlined public-resolve-and-Drop frame. Four cases cover default and named
+success, route miss and export miss. Heaptrack and actual binary symbols bind
+allocation origins; unavailable attribution stays unavailable. The 100k growth
+and reopen population is never allocation-profiled.
+
+The first release smoke completed all 24 normal children and its first tiny
+allocation child, then failed while exporting a 171,422,982-byte folded profile
+against the original 64 MiB limit. That failed attempt remains retained. Catalog
+suite plans now explicitly declare a 256 MiB expanded limit for each folded
+stream, applied to lossless gzip compression and both whole-process and selected
+replay. Historical 64 MiB defaults and ownership/codec 128 MiB selections remain
+unchanged, as do the 256 MiB file, 1 GiB evidence-root, row and stack bounds.
+
+Build from a clean identified harness using
+`tools/build_optimization_backend_revision.py --experiment catalog --profile full`
+with full `--control-ref`, `--candidate-ref`, `--harness-ref`, a fresh `--output`
+and an owned external `--target-root`. Copy the untouched build-only directory
+to fresh smoke/full directories before measurement. Run
+`tools/run_optimization_backend_revision.py --experiment catalog --profile smoke
+--builds <smoke-root>/backend-builds.json --target-root <owned-data-parent>`.
+Full collection uses the corresponding full directory and `--profile full`
+only after the complete smoke suite passes. Do not overwrite a measured root.
+Validate the suite with `tools/validate_optimization_backend_revision.py`, then
+package and semantically replay the complete archive with kind `catalog`.
+
+Full initial processes have 3,600 s bounds and reopen processes 1,800 s;
+the normal stage has 21,600 s. Smoke normal processes have 90 s bounds.
+Allocation children have 180 s and their stage 7,200 s. Evidence retains the
+standard 1 GiB root, 4,096 files, 32 MiB raw documents, 256 KiB rows and 2,048
+sample records. Verify at least 16 GiB free physical backing storage before
+the full run; a container filesystem's reported free space does not establish
+its host backing capacity. Report the matched 25% RSS reduction and distinct
+reference-shape 1,750,000,000-byte ceiling independently. One full pair per shape
+supports a descriptive comparison, without a narrow confidence interval.
+
+The [retained catalog comparison](../../benchmarks/optimization/catalog-memory/2026-09-10-container-linux-96716c8/README.md)
+contains the completed 24-collector, 596,720-operation campaign. Its distinct
+100k primary RSS targets were met, while shared 100k resolver latency and update
+time regressed and reopened memory remained higher than primary idle memory.
+The report preserves every scale and case, the separate tiny allocation scope,
+failed attempts, exact source identities and the bounded publication recipe.

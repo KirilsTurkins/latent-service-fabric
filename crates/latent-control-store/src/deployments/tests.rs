@@ -1,5 +1,6 @@
 mod admission;
 mod fixtures;
+mod golden;
 #[cfg(unix)]
 mod lock_release;
 mod pagination;
