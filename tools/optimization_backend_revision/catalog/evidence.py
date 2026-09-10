@@ -176,7 +176,7 @@ def validate_suite(path):
             require(checked["effective_engine"] == stable_engine, "catalog-engine-policy-crossed")
             result.update(aggregate.summarize(checked), allocation_attribution=None, whole_process_allocations=None)
             if row["mode"] == "allocation":
-                whole = allocation(row, suite, artifacts)
+                whole = allocation(row, suite, artifacts, maximum_folded_bytes=model.MAX_FOLDED_BYTES)
                 result["whole_process_allocations"] = whole
                 result["allocation_attribution"] = allocations.attribute(row, binary, suite["symbols"][row["variant"]],
                     suite["tools"]["nm"], artifacts, whole, model.counts(suite["profile"], "allocation")["measured_resolves"])

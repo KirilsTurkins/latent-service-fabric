@@ -911,6 +911,14 @@ success, route miss and export miss. Heaptrack and actual binary symbols bind
 allocation origins; unavailable attribution stays unavailable. The 100k growth
 and reopen population is never allocation-profiled.
 
+The first release smoke completed all 24 normal children and its first tiny
+allocation child, then failed while exporting a 171,422,982-byte folded profile
+against the original 64 MiB limit. That failed attempt remains retained. Catalog
+suite plans now explicitly declare a 256 MiB expanded limit for each folded
+stream, applied to lossless gzip compression and both whole-process and selected
+replay. Historical 64 MiB defaults and ownership/codec 128 MiB selections remain
+unchanged, as do the 256 MiB file, 1 GiB evidence-root, row and stack bounds.
+
 Build from a clean identified harness using
 `tools/build_optimization_backend_revision.py --experiment catalog --profile full`
 with full `--control-ref`, `--candidate-ref`, `--harness-ref`, a fresh `--output`
