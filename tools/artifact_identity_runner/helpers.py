@@ -26,17 +26,23 @@ class DirectoryLimits:
         values = (self.maximum_depth, self.maximum_files, self.maximum_entries, self.maximum_file_bytes)
         if (any(type(value) is not int for value in values) or not 0 <= self.maximum_depth <= 2
                 or not 1 <= self.maximum_files <= 64 or not self.maximum_files <= self.maximum_entries <= 80
-                or not 1 <= self.maximum_file_bytes <= MAX_FILE_BYTES):
+                or not 1 <= self.maximum_file_bytes <= 512 * 1024**2):
             raise ValueError("helper-directory-limits")
 
 
-def directory_bytes(directory: Path, limits: DirectoryLimits | None = None) -> int:
+def directory_bytes(directory: Path, limits: DirectoryLimits | None = None, *,
+                    minimum_file_sizes: dict[Path, int] | None = None) -> int:
     limits = limits or DirectoryLimits()
+    minimum_file_sizes = minimum_file_sizes or {}
+    if (len(minimum_file_sizes) > limits.maximum_files
+            or any(not isinstance(path, Path) or type(size) is not int or size < 0
+                   for path, size in minimum_file_sizes.items())):
+        raise ValueError("helper-artifact-minimum-size")
     root = directory.lstat()
     if not stat.S_ISDIR(root.st_mode) or getattr(root, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
         raise ValueError("helper-artifact-count-or-type")
     total = 0
-    files = entries = 0
+    files = entries = matched_minimums = 0
     pending = [(directory, 0)]
     while pending:
         current, depth = pending.pop()
@@ -56,11 +62,17 @@ def directory_bytes(directory: Path, limits: DirectoryLimits | None = None) -> i
                     files += 1
                     if files > limits.maximum_files:
                         raise ValueError("helper-artifact-count-or-type")
-                    if value.st_size > limits.maximum_file_bytes:
+                    path = Path(child.path)
+                    matched_minimums += path in minimum_file_sizes
+                    # Directory entries can lag an open writer, including on Windows.
+                    size = max(value.st_size, minimum_file_sizes.get(path, 0))
+                    if size > limits.maximum_file_bytes:
                         raise ValueError("helper-artifact-byte-bound")
-                    total += value.st_size
+                    total += size
                 else:
                     raise ValueError("helper-artifact-count-or-type")
+    if matched_minimums != len(minimum_file_sizes):
+        raise ValueError("helper-artifact-count-or-type")
     return total
 
 

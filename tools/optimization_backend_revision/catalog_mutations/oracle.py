@@ -19,7 +19,7 @@ def decimals(value):
 
 class Oracle:
     def __init__(self, fixture, count, shape):
-        require(type(count) is int and count in (4, 8, 100, 1000, 10000) and shape in model.SHAPES,
+        require(type(count) is int and count in (4, 100, 1000, 10000) and shape in model.SHAPES,
                 "catalog-mutation-oracle-population")
         self.fixture, self.count, self.shape = fixture, count, shape
         self.ordered = sorted((fixture.revision(index, shape), index) for index in range(count)) if shape == "shared" else []

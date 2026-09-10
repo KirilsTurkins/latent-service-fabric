@@ -16,7 +16,7 @@ MAX_DOCUMENT_BYTES = 32 * 1024**2
 MAX_ROW_BYTES = 256 * 1024
 MAX_SAMPLES = 2048
 MAX_LOG_BYTES = 1024**2
-MAX_FOLDED_BYTES = 256 * 1024**2
+MAX_FOLDED_BYTES = 512 * 1024**2
 MAX_PROFILE_RECORDS = 4_000_000
 BUILD_SECONDS = 10800
 ALLOCATION_SECONDS = 7200
@@ -41,7 +41,8 @@ def scales(profile):
 
 
 def allocation_size(profile):
-    return 8 if full(profile) else 4
+    full(profile)
+    return 4
 
 
 def profiled(mode):

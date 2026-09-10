@@ -49,7 +49,7 @@ impl Plan {
             &[4]
         };
         let position = if self.profiled() {
-            if self.populated_size != if self.profile == "full" { 8 } else { 4 } {
+            if self.populated_size != 4 {
                 return Err("catalog mutation profile population".into());
             }
             0
@@ -188,12 +188,12 @@ mod tests {
     fn fixed_populations_count_every_current_policy_pin_and_fresh_reopen() {
         for (profile, sizes, expected_normal, expected_total) in [
             ("smoke", &[4][..], 186, 372),
-            ("full", &[100, 1000, 10000][..], 44_910, 45_112),
+            ("full", &[100, 1000, 10000][..], 44_910, 45_096),
         ] {
             let mut ordinal = 0;
             let mut normal = 0;
             let mut total = 0;
-            let allocation = if profile == "full" { 8 } else { 4 };
+            let allocation = 4;
             for (populations, modes) in [
                 (sizes, ["initial", "reopen"]),
                 (&[allocation][..], ["allocation", "allocation-reopen"]),
