@@ -364,8 +364,16 @@ establish measured performance results or a universal SLO.
 
 ## Catalog memory experiments
 
+The [retained catalog comparison](catalog-memory/2026-09-10-container-linux-96716c8/README.md)
+passed 596,720 counted operations and met the distinct-service 100k idle-memory
+targets: RSS fell 58.90%, from 2.72 GB to 1.12 GB. The shared-service reduction
+was 14.19%, and its 100k resolver latencies and weight-update time increased.
+The report retains those tradeoffs, higher reopened RSS, sampled compilation
+peaks and the separate sixteen-release allocation profiles.
+
 The [#107 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/107)
-uses `--experiment catalog` on the backend build, run and validation tools.
+uses `--experiment catalog` on the backend build and run tools; the validator
+dispatches from the suite schema.
 Both sources publish the same distinct releases, with separate distinct-service
 and shared-service shapes. Full collection grows each catalog through 100,
 1,000, 10,000 and 100,000 deployments, then updates a pinned generation and

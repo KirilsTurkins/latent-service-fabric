@@ -1,0 +1,11 @@
+# Preserve the exact measured, hashed, and executed bytes across checkouts.
+analysis/** -text
+catalog/** -text
+attempts/** -text
+validation/** -text
+publication-receipt.json -text
+publish.py -text
+extract.py -text
+# These original Windows captures retain CRLF as part of their bytes.
+attempts/issue107-packaging-attempt-02.json whitespace=trailing-space,space-before-tab,cr-at-eol
+validation/windows-replay.log whitespace=trailing-space,space-before-tab,cr-at-eol

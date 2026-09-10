@@ -940,3 +940,10 @@ the full run; a container filesystem's reported free space does not establish
 its host backing capacity. Report the matched 25% RSS reduction and distinct
 reference-shape 1,750,000,000-byte ceiling independently. One full pair per shape
 supports a descriptive comparison, without a narrow confidence interval.
+
+The [retained catalog comparison](../../benchmarks/optimization/catalog-memory/2026-09-10-container-linux-96716c8/README.md)
+contains the completed 24-collector, 596,720-operation campaign. Its distinct
+100k primary RSS targets were met, while shared 100k resolver latency and update
+time regressed and reopened memory remained higher than primary idle memory.
+The report preserves every scale and case, the separate tiny allocation scope,
+failed attempts, exact source identities and the bounded publication recipe.

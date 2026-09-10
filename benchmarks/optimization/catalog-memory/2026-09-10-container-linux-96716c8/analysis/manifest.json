@@ -1,0 +1,89 @@
+{
+  "schema": "latent.optimization.catalog-report-files.v1",
+  "input": {
+    "name": "aggregate.json",
+    "bytes": "663676",
+    "sha256": "sha256:9a74ed5a75a047a8869538945e8c41be43e8b0f42e6f0fa3de002fa0b85ba71c"
+  },
+  "files": [
+    {
+      "path": "report-data.json",
+      "bytes": "3142576",
+      "sha256": "sha256:753e5a6cee8dc4bf4027eb427205db78880adab990656bb22fb165efd8c42724"
+    },
+    {
+      "path": "normal-contrasts.csv",
+      "bytes": "91417",
+      "sha256": "sha256:4dadbce672dcfefbba85f2eb444cde48a1279845e45ec10192dca2037e944610"
+    },
+    {
+      "path": "checkpoint-memory.csv",
+      "bytes": "150822",
+      "sha256": "sha256:96619081dd22f264f1e0ab19e2272259a8ee202fdd98a981a2080e428891ada9"
+    },
+    {
+      "path": "boundary-memory.csv",
+      "bytes": "39890",
+      "sha256": "sha256:dbb13e02ecbc022a5986d9712e7c87b42341526bdc3865d6d66d631e956a3c3b"
+    },
+    {
+      "path": "apply-samples.csv",
+      "bytes": "5542",
+      "sha256": "sha256:d4461a5c03cee6c590d308abac836442e0ad8bc104f8d72fc33eb50c5df253f4"
+    },
+    {
+      "path": "resolver-distributions.csv",
+      "bytes": "204469",
+      "sha256": "sha256:8bb654c9667bc52d18af0a15d815da7fd7e7b7804a8b29bd70a1648a7395dbb3"
+    },
+    {
+      "path": "run-costs.csv",
+      "bytes": "21209",
+      "sha256": "sha256:e37ab82a7cf0f4f9905497b26d76403fea540737caefee46ebf4883783822986"
+    },
+    {
+      "path": "source-sampler.csv",
+      "bytes": "3505",
+      "sha256": "sha256:046e2e0ea9396bb15ab628cedd466eb6c00061ff3b31189e311697d58317a10f"
+    },
+    {
+      "path": "pin-policy-proofs.csv",
+      "bytes": "32856",
+      "sha256": "sha256:1d7b51da0a63b2ab37a044be7ffde22f7505312411bbd8d0e256045f8be88a86"
+    },
+    {
+      "path": "allocation-contrasts.csv",
+      "bytes": "13519",
+      "sha256": "sha256:4a9a9134543f09f5f2186b64c6e65176a06a1e6de28c5ce168d77e49fdf58c51"
+    },
+    {
+      "path": "allocation-arms.csv",
+      "bytes": "31217",
+      "sha256": "sha256:1b6b9a8cc58c96c161b6dde82beaa6be3aec1afc1e357ad71f63d53275d704e0"
+    },
+    {
+      "path": "target-observations.csv",
+      "bytes": "316",
+      "sha256": "sha256:907430f5487dadfaaa96bbcc56c8343292634c91fc11e8c61247a6f8de7c4364"
+    },
+    {
+      "path": "ownership-and-verification.csv",
+      "bytes": "155043",
+      "sha256": "sha256:38a6adaaf74419724973b31e114cf919b93cbf1bd9b01b7e4131c00b1848cfdf"
+    }
+  ],
+  "table_rows": {
+    "normal-contrasts": 474,
+    "checkpoint-memory": 1404,
+    "boundary-memory": 432,
+    "apply-samples": 36,
+    "resolver-distributions": 1152,
+    "run-costs": 96,
+    "source-sampler": 24,
+    "pin-policy-proofs": 64,
+    "allocation-contrasts": 80,
+    "allocation-arms": 160,
+    "target-observations": 7,
+    "ownership-and-verification": 24
+  }
+}
