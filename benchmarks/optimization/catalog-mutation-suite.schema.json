@@ -469,6 +469,7 @@
         "maximum_artifact_bytes",
         "maximum_artifact_files",
         "maximum_folded_expanded_bytes",
+        "maximum_temporary_folded_bytes",
         "maximum_profile_records",
         "maximum_document_bytes",
         "maximum_row_bytes",
@@ -528,6 +529,9 @@
           "const": 4096
         },
         "maximum_folded_expanded_bytes": {
+          "const": "536870912"
+        },
+        "maximum_temporary_folded_bytes": {
           "const": "536870912"
         },
         "maximum_profile_records": {

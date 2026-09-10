@@ -7,9 +7,38 @@ from unittest.mock import Mock, patch
 
 from tools.artifact_identity_runner import run
 from tools.artifact_identity_runner.files import reference
+from tools.optimization_backend_revision.catalog_mutations import collect, model
 
 
 class CatalogMutationProfileRunnerTests(unittest.TestCase):
+    def test_both_profile_owners_forward_only_the_declared_temporary_folded_allowance(self):
+        class ReachedProbe(Exception):
+            pass
+
+        for mode in ("allocation", "allocation-reopen"):
+            selection = next(row for row in model.population("smoke") if row["mode"] == mode)
+            with self.subTest(mode=mode), TemporaryDirectory() as temporary:
+                output = Path(temporary)
+                binary = {"path": "builds/control/backend", "bytes": "1", "sha256": "sha256:" + "1" * 64}
+                build = {"builds": {"control": {"executables": {"backend": binary}}},
+                         "harness": {"echo": {"component": {"path": "fixtures/echo.wasm"}}}}
+                suite = {"runs": [], "tools": {name: {"path": name}
+                         for name in ("heaptrack", "heaptrack_print", "zstd")}}
+                with patch.object(collect, "_host", return_value={}), patch.object(collect, "cgroup", return_value={}), \
+                     patch.object(model, "identity", return_value={}), patch.object(collect, "inventory", return_value=[]), \
+                     patch.object(collect, "collect_probe", side_effect=ReachedProbe) as probe:
+                    with self.assertRaises(ReachedProbe):
+                        collect._child(selection, SimpleNamespace(profile="smoke"), output, build, suite, output,
+                                       output / "data", output / "group", {"path": "owner.json"}, 10**30, lambda: None)
+                probe.assert_called_once()
+                arguments, options = probe.call_args
+                self.assertEqual(arguments[0]["mode"], mode)
+                self.assertEqual(options["probe_mode"], "allocation")
+                self.assertEqual(options["maximum_folded_bytes"], 512 * 1024**2)
+                self.assertEqual(options["temporary_folded_bytes"], 512 * 1024**2)
+                self.assertNotIn("maximum_total_bytes", options)
+                self.assertEqual(model.MAX_TOTAL_BYTES, 1024**3)
+
     def test_reopen_exports_profiles_without_changing_the_logical_owner(self):
         with TemporaryDirectory() as temporary:
             output = Path(temporary)

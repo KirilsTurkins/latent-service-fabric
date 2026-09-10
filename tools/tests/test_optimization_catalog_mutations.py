@@ -97,6 +97,8 @@ class CatalogMutationPlanTests(unittest.TestCase):
             value = model.suite_plan(profile)
             self.assertEqual(value["maximum_artifact_bytes"], "1073741824")
             self.assertEqual(value["maximum_folded_expanded_bytes"], "536870912")
+            self.assertEqual(value["maximum_temporary_folded_bytes"], "536870912")
+            self.assertNotIn("maximum_temporary_folded_bytes", legacy_catalog.suite_plan(profile))
             self.assertEqual(value["maximum_profile_records"], 4000000)
             self.assertEqual(model.run_seconds(profile, "allocation"), 180)
             self.assertEqual(model.run_seconds(profile, "allocation-reopen"), 180)
@@ -145,6 +147,28 @@ class CatalogMutationPlanTests(unittest.TestCase):
                         crossed[field]["commands"] = retired_allocation if field == "allocation_totals" else retired_total
                     with self.subTest(schema=name, profile=profile, field=field), self.assertRaises(jsonschema.ValidationError):
                         validator.validate(crossed)
+
+    def test_temporary_folded_allowance_is_required_exact_and_not_a_retained_root_increase(self):
+        import jsonschema
+        root = Path(__file__).resolve().parents[2]
+        for name in ("suite", "aggregate"):
+            schema = json.loads((root / f"benchmarks/optimization/catalog-mutation-{name}.schema.json").read_text())
+            validator = jsonschema.Draft202012Validator({"$schema": schema["$schema"],
+                "$defs": schema["$defs"], "$ref": "#/$defs/plan"})
+            for profile in ("smoke", "full"):
+                valid = model.suite_plan(profile)
+                validator.validate(valid)
+                for bad in (None, True, 536870912, "0", "268435456", "536870913", "1073741824"):
+                    crossed = deepcopy(valid)
+                    if bad is None:
+                        del crossed["maximum_temporary_folded_bytes"]
+                    else:
+                        crossed["maximum_temporary_folded_bytes"] = bad
+                    with self.subTest(schema=name, profile=profile, value=bad), self.assertRaises(jsonschema.ValidationError):
+                        validator.validate(crossed)
+                crossed = {**valid, "maximum_artifact_bytes": "1610612736"}
+                with self.subTest(schema=name, profile=profile, retained_root=True), self.assertRaises(jsonschema.ValidationError):
+                    validator.validate(crossed)
 
 
 if __name__ == "__main__":

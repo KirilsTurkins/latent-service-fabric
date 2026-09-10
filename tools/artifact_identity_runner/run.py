@@ -11,12 +11,16 @@ from . import resources
 from .files import compress_folded, fingerprint, reference, total_bytes, total_limit, warm, write_json
 from .helpers import DirectoryLimits, command, directory_bytes
 from .model import MAX_FILE_BYTES, MAX_TOTAL_BYTES, run_record
-from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit
+from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit, folded_scratch_limit
 
 
 def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
-                    deadline: int, remaining: int, *, maximum_folded_bytes: int = MAX_FOLDED_BYTES) -> dict:
+                    deadline: int, remaining: int, *, maximum_folded_bytes: int = MAX_FOLDED_BYTES,
+                    temporary_folded_bytes: int = 0) -> dict:
     maximum_folded_bytes = folded_limit(maximum_folded_bytes)
+    temporary_folded_bytes = folded_scratch_limit(maximum_folded_bytes, temporary_folded_bytes)
+    if temporary_folded_bytes and (type(remaining) is not int or not 0 <= remaining <= MAX_TOTAL_BYTES):
+        raise ValueError("folded-scratch-retained-budget-bound")
     matches = list(prefix.parent.glob(prefix.name + "*.zst"))
     if len(matches) != 1:
         raise ValueError("heaptrack-raw-count")
@@ -39,23 +43,31 @@ def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
                  "--print-peaks", "0", "--print-allocators", "0", "--print-temporary", "0",
                  "--print-flamegraph", str(path)], prefix.parent / f"{kind}.log",
                 120, output, report_deadline, watched=prefix.parent, remaining=remaining,
-                directory_limits=DirectoryLimits(maximum_file_bytes=max(MAX_FILE_BYTES, maximum_folded_bytes)))
+                directory_limits=DirectoryLimits(maximum_file_bytes=max(MAX_FILE_BYTES, maximum_folded_bytes)),
+                **({"temporary_file": path} if temporary_folded_bytes else {}))
         if path.stat().st_size == 0:
             raise ValueError("heaptrack-profile-empty")
         refs[kind] = compress_folded(path, output, maximum_bytes=maximum_folded_bytes,
-                                     deadline=report_deadline, remaining=remaining)
+                                     deadline=report_deadline, remaining=remaining,
+                                     **({"temporary_folded_bytes": temporary_folded_bytes} if temporary_folded_bytes else {}))
+        if temporary_folded_bytes and directory_bytes(prefix.parent) > remaining:
+            raise ValueError("folded-retained-total-bound")
     return refs
 
 
 def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, output: Path,
             deadline: int, heaptrack_print: str, decompressor: str, environment: dict | None = None,
             *, normal_timeout: int = 60, maximum_folded_bytes: int = MAX_FOLDED_BYTES,
-            maximum_total_bytes: int = MAX_TOTAL_BYTES, probe_mode: str | None = None) -> None:
+            maximum_total_bytes: int = MAX_TOTAL_BYTES, probe_mode: str | None = None,
+            temporary_folded_bytes: int = 0) -> None:
     """Update a pre-retained receipt even when acquisition or verification fails."""
     maximum_total_bytes = total_limit(maximum_total_bytes)
     if type(normal_timeout) is not int or normal_timeout not in (60, 90):
         raise ValueError("unsupported-normal-probe-timeout")
     maximum_folded_bytes = folded_limit(maximum_folded_bytes)
+    temporary_folded_bytes = folded_scratch_limit(maximum_folded_bytes, temporary_folded_bytes)
+    if temporary_folded_bytes and maximum_total_bytes != MAX_TOTAL_BYTES:
+        raise ValueError("folded-scratch-retained-budget-bound")
     if probe_mode not in (None, "allocation"):
         raise ValueError("unsupported-probe-mode-override")
     import resource  # Linux-only execution; argument validation remains portable.
@@ -147,7 +159,9 @@ def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, o
         raise ValueError("probe-exit-failed")
     if mode == "allocation":
         record["profile_refs"] = profile_reports(directory / "heaptrack", heaptrack_print, decompressor,
-                                                output, deadline, remaining, maximum_folded_bytes=maximum_folded_bytes)
+                                                output, deadline, remaining, maximum_folded_bytes=maximum_folded_bytes,
+                                                **({"temporary_folded_bytes": temporary_folded_bytes}
+                                                   if temporary_folded_bytes else {}))
     record.update(status="passed", reason=None)
 
 
