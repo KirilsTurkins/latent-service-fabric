@@ -9,7 +9,7 @@ mod observation;
 mod oracle;
 mod plan;
 mod publication;
-mod resources;
+pub(super) mod resources;
 mod sequence;
 
 use super::cold::call::Clock;

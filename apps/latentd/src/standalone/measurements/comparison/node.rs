@@ -25,6 +25,7 @@ pub(super) struct Node {
     pub maximum_commands: u64,
     channel: Channel,
     pub(super) artifacts: std::sync::Arc<latent_artifacts::DirectoryArtifactRepository>,
+    pub(super) deployments: std::sync::Arc<latent_control_store::DirectoryDeploymentRepository>,
     journal: LocalActivationJournalConfig,
     correlations: usize,
     probe: CurrentProcessOwnerProbe,
@@ -89,6 +90,7 @@ impl Node {
         let catalogs = Catalogs::open(&settings).await.map_err(platform)?;
         let catalog_open = started.elapsed().as_nanos().to_string();
         let artifacts = catalogs.artifacts.clone();
+        let deployments = catalogs.deployments.clone();
         let started = Instant::now();
         let owner = Box::pin(StandaloneNode::start_with_catalogs_and_clock(
             settings, catalogs, control, threads, clock,
@@ -121,6 +123,7 @@ impl Node {
             maximum_commands,
             channel,
             artifacts,
+            deployments,
             journal,
             correlations,
             probe: CurrentProcessOwnerProbe::bind(ProbeLimits::default())?,
@@ -206,10 +209,12 @@ impl Node {
             owner,
             channel,
             artifacts,
+            deployments,
             ..
         } = self;
         drop(channel);
         drop(artifacts);
+        drop(deployments);
         owner.shutdown().await.map_err(platform)
     }
 }

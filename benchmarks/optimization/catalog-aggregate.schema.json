@@ -1,0 +1,940 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Catalog aggregate evidence envelope",
+  "description": "Closed bounded envelope. Exact source, owner order, every operation, same-root reopen, resource ownership and allocation attribution require the matching semantic replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "status",
+    "population_complete",
+    "attempt_count_complete",
+    "qualifying_full_population",
+    "scope",
+    "suite",
+    "builds",
+    "plan",
+    "sources",
+    "validated_commands",
+    "validated_resolves",
+    "validated_collectors",
+    "planned_collectors",
+    "elapsed_nanos",
+    "normal_elapsed_nanos",
+    "allocation_elapsed_nanos",
+    "validated_invocations",
+    "runs",
+    "normal_pairs",
+    "allocation_pairs",
+    "targets"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.catalog-aggregate.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "failed"
+      ]
+    },
+    "population_complete": {
+      "type": "boolean"
+    },
+    "attempt_count_complete": {
+      "type": "boolean"
+    },
+    "qualifying_full_population": {
+      "type": "boolean"
+    },
+    "scope": {
+      "const": "zero-invoke-catalog-publication-public-resolve-pin-reopen-and-separate-tiny-allocation"
+    },
+    "suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "const": "suite.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "builds": {
+      "$ref": "#/$defs/artifact"
+    },
+    "plan": {
+      "$ref": "#/$defs/plan"
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control",
+        "candidate"
+      ],
+      "properties": {
+        "control": {
+          "type": "object"
+        },
+        "candidate": {
+          "type": "object"
+        }
+      }
+    },
+    "validated_commands": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "validated_resolves": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "validated_collectors": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "planned_collectors": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "normal_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "allocation_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "validated_invocations": {
+      "const": "0"
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 0,
+      "maxItems": 40
+    },
+    "normal_pairs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 0,
+      "maxItems": 6
+    },
+    "allocation_pairs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 0,
+      "maxItems": 8
+    },
+    "targets": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "maximum_candidate_rss_bytes",
+            "minimum_relative_reduction_percent",
+            "control_rss_bytes",
+            "candidate_rss_bytes",
+            "absolute_met",
+            "relative_met"
+          ],
+          "properties": {
+            "scope": {
+              "const": "matched-distinct-100000-after-apply-request-drop-before-resolver-oracle"
+            },
+            "maximum_candidate_rss_bytes": {
+              "const": "1750000000"
+            },
+            "minimum_relative_reduction_percent": {
+              "const": "25"
+            },
+            "control_rss_bytes": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$",
+                  "maxLength": 20
+                }
+              ]
+            },
+            "candidate_rss_bytes": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$",
+                  "maxLength": 20
+                }
+              ]
+            },
+            "absolute_met": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "relative_met": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              },
+              "rows": {
+                "minItems": 40,
+                "maxItems": 40
+              },
+              "normal_pairs_per_shape": {
+                "const": 3
+              }
+            }
+          },
+          "runs": {
+            "maxItems": 40
+          },
+          "planned_collectors": {
+            "const": "40"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          },
+          "population_complete": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "validated_commands": {
+            "const": "8900"
+          },
+          "validated_resolves": {
+            "const": "8292"
+          },
+          "validated_collectors": {
+            "const": "40"
+          },
+          "attempt_count_complete": {
+            "const": true
+          },
+          "qualifying_full_population": {
+            "const": false
+          },
+          "runs": {
+            "minItems": 40,
+            "maxItems": 40
+          },
+          "normal_pairs": {
+            "minItems": 6,
+            "maxItems": 6
+          },
+          "allocation_pairs": {
+            "minItems": 8,
+            "maxItems": 8
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "full"
+              },
+              "rows": {
+                "minItems": 24,
+                "maxItems": 24
+              },
+              "normal_pairs_per_shape": {
+                "const": 1
+              }
+            }
+          },
+          "runs": {
+            "maxItems": 24
+          },
+          "planned_collectors": {
+            "const": "24"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          },
+          "population_complete": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "validated_commands": {
+            "const": "596720"
+          },
+          "validated_resolves": {
+            "const": "196396"
+          },
+          "validated_collectors": {
+            "const": "24"
+          },
+          "attempt_count_complete": {
+            "const": true
+          },
+          "qualifying_full_population": {
+            "const": true
+          },
+          "runs": {
+            "minItems": 24,
+            "maxItems": 24
+          },
+          "normal_pairs": {
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "allocation_pairs": {
+            "minItems": 8,
+            "maxItems": 8
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "complete"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          },
+          "population_complete": {
+            "const": true
+          },
+          "qualifying_full_population": {
+            "const": true
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repetition",
+        "variant",
+        "shape",
+        "mode",
+        "sequence_ordinal",
+        "case"
+      ],
+      "properties": {
+        "repetition": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "variant": {
+          "enum": [
+            "control",
+            "candidate"
+          ]
+        },
+        "shape": {
+          "enum": [
+            "distinct",
+            "shared"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "initial",
+            "reopen",
+            "allocation"
+          ]
+        },
+        "sequence_ordinal": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 39
+        },
+        "case": {
+          "enum": [
+            null,
+            "default-success",
+            "named-success",
+            "route-miss",
+            "export-miss"
+          ]
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "profile",
+        "normal_pairs_per_shape",
+        "rows",
+        "scales",
+        "cases_per_checkpoint",
+        "per_owner",
+        "totals",
+        "order",
+        "maximum_normal_seconds",
+        "maximum_allocation_seconds",
+        "maximum_artifact_bytes",
+        "maximum_artifact_files",
+        "maximum_document_bytes",
+        "maximum_row_bytes",
+        "maximum_samples",
+        "sampler_interval_millis",
+        "measured_symbols",
+        "allocation_frame_invocations",
+        "normal_boundary",
+        "allocation_boundary"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.catalog-suite-plan.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "normal_pairs_per_shape": {
+          "enum": [
+            1,
+            3
+          ]
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/selection"
+          },
+          "minItems": 24,
+          "maxItems": 40
+        },
+        "scales": {
+          "enum": [
+            [
+              2,
+              4,
+              16
+            ],
+            [
+              100,
+              1000,
+              10000,
+              100000
+            ]
+          ]
+        },
+        "cases_per_checkpoint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "default-success",
+            "named-success",
+            "route-miss",
+            "export-miss"
+          ],
+          "properties": {
+            "default-success": {
+              "enum": [
+                32,
+                5000
+              ]
+            },
+            "named-success": {
+              "enum": [
+                32,
+                5000
+              ]
+            },
+            "route-miss": {
+              "enum": [
+                64,
+                1000
+              ]
+            },
+            "export-miss": {
+              "enum": [
+                64,
+                1000
+              ]
+            }
+          }
+        },
+        "per_owner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "initial",
+            "reopen",
+            "allocation"
+          ],
+          "properties": {
+            "initial": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "invokes",
+                "commands",
+                "publications",
+                "applies",
+                "resolves",
+                "policies",
+                "pins",
+                "measured_resolves",
+                "warmup_resolves",
+                "preflight_resolves"
+              ],
+              "properties": {
+                "invokes": {
+                  "const": 0
+                },
+                "commands": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "publications": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "applies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "policies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "pins": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "measured_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "warmup_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "preflight_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                }
+              }
+            },
+            "reopen": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "invokes",
+                "commands",
+                "publications",
+                "applies",
+                "resolves",
+                "policies",
+                "pins",
+                "measured_resolves",
+                "warmup_resolves",
+                "preflight_resolves"
+              ],
+              "properties": {
+                "invokes": {
+                  "const": 0
+                },
+                "commands": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "publications": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "applies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "policies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "pins": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "measured_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "warmup_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "preflight_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                }
+              }
+            },
+            "allocation": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "invokes",
+                "commands",
+                "publications",
+                "applies",
+                "resolves",
+                "policies",
+                "pins",
+                "measured_resolves",
+                "warmup_resolves",
+                "preflight_resolves"
+              ],
+              "properties": {
+                "invokes": {
+                  "const": 0
+                },
+                "commands": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "publications": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "applies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "policies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "pins": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "measured_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "warmup_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "preflight_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                }
+              }
+            }
+          }
+        },
+        "totals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "invokes",
+            "commands",
+            "publications",
+            "applies",
+            "resolves",
+            "policies",
+            "pins",
+            "measured_resolves",
+            "warmup_resolves",
+            "preflight_resolves",
+            "collector_processes"
+          ],
+          "properties": {
+            "invokes": {
+              "const": 0
+            },
+            "commands": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "publications": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "applies": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "resolves": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "policies": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "pins": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "measured_resolves": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "warmup_resolves": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "preflight_resolves": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "collector_processes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            }
+          }
+        },
+        "order": {
+          "const": "distinct-control-first-shared-candidate-first-initial-reopen-adjacent"
+        },
+        "maximum_normal_seconds": {
+          "enum": [
+            "3600",
+            "21600"
+          ]
+        },
+        "maximum_allocation_seconds": {
+          "const": "7200"
+        },
+        "maximum_artifact_bytes": {
+          "const": "1073741824"
+        },
+        "maximum_artifact_files": {
+          "const": 4096
+        },
+        "maximum_document_bytes": {
+          "const": "33554432"
+        },
+        "maximum_row_bytes": {
+          "const": "262144"
+        },
+        "maximum_samples": {
+          "const": 2048
+        },
+        "sampler_interval_millis": {
+          "const": 100
+        },
+        "measured_symbols": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "default-success",
+            "named-success",
+            "route-miss",
+            "export-miss"
+          ],
+          "properties": {
+            "default-success": {
+              "const": "latentd::standalone::measurements::comparison::catalog::frames::measured_default_success_and_drop"
+            },
+            "named-success": {
+              "const": "latentd::standalone::measurements::comparison::catalog::frames::measured_named_success_and_drop"
+            },
+            "route-miss": {
+              "const": "latentd::standalone::measurements::comparison::catalog::frames::measured_route_miss_and_drop"
+            },
+            "export-miss": {
+              "const": "latentd::standalone::measurements::comparison::catalog::frames::measured_export_miss_and_drop"
+            }
+          }
+        },
+        "allocation_frame_invocations": {
+          "const": 1
+        },
+        "normal_boundary": {
+          "const": "directory-deployment-resolver.resolve-to-return-before-validation-and-drop"
+        },
+        "allocation_boundary": {
+          "const": "public-resolve-and-result-drop-batch"
+        }
+      }
+    }
+  }
+}

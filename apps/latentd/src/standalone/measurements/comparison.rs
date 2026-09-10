@@ -2,6 +2,7 @@
 mod budget;
 mod cache;
 mod call;
+mod catalog;
 mod cold;
 mod engine;
 mod evidence;

@@ -22,6 +22,9 @@ from .recovery import model as recovery_model
 
 
 def execute(args, repo):
+    if getattr(args, "experiment", "warm") == "catalog":
+        from .catalog.collect import execute as execute_catalog
+        return execute_catalog(args, repo)
     if getattr(args, "experiment", "warm") == "engine":
         from .engine.collect import execute as execute_engine
         return execute_engine(args, repo)

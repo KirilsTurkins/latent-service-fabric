@@ -361,3 +361,25 @@ proofs, and distinct RPC, backend, CPU and memory boundaries. Measurement-local
 virtual/resident observations retain unavailable reasons. Both evidence kinds
 keep the 1 GiB root and existing archive caps. These protocol schemas do not
 establish measured performance results or a universal SLO.
+
+## Catalog memory experiments
+
+The [#107 protocol](https://github.com/KirilsTurkins/latent-service-fabric/issues/107)
+uses `--experiment catalog` on the backend build, run and validation tools.
+Both sources publish the same distinct releases, with separate distinct-service
+and shared-service shapes. Full collection grows each catalog through 100,
+1,000, 10,000 and 100,000 deployments, then updates a pinned generation and
+reopens the same durable state in a new process. It has one matched pair per
+shape; smoke has three tiny pairs per shape.
+
+| Evidence | Plan | Builds | Suite | Aggregate |
+| --- | --- | --- | --- | --- |
+| Catalog growth, reopen and resolver allocations | [plan](catalog-plan.schema.json) | [builds](catalog-builds.schema.json) | [suite](catalog-suite.schema.json) | [aggregate](catalog-aggregate.schema.json) |
+
+The [collection method](../../docs/testing/phase-1-measurements.md#catalog-memory-experiments)
+separates primary idle RSS, artifact-only memory, pinned generations, sampled
+compilation peaks, public resolver latency and tiny allocation profiles.
+The full campaign contains 596,720 counted API operations and zero Invokes.
+The 25% RSS reduction and 1.75 GB reference-shape ceiling are separate targets;
+successful semantic replay does not establish either target or a universal
+infrastructure capacity claim.

@@ -100,7 +100,10 @@ fn parse(text: &str, fields: &[(&str, &str)]) -> Value {
             .collect(),
     )
 }
-pub(super) fn capture(label: &str, clock: Clock) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn capture(
+    label: &str,
+    clock: Clock,
+) -> Result<Value> {
     let started = clock.elapsed();
     let before = if cfg!(target_os = "linux") {
         identity()
