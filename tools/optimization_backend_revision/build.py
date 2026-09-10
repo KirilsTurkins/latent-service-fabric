@@ -16,6 +16,9 @@ def matching_controls(repo,refs,experiment):
     if experiment == "catalog":
         from .catalog.builds import CONTROLS
         names=(*CONTROLS,"rust-toolchain.toml",".cargo/config.toml","tools/phase0_build_environment.sh")
+    if experiment == "catalog-mutations":
+        from .catalog_mutations.builds import CONTROLS
+        names=(*CONTROLS,"rust-toolchain.toml",".cargo/config.toml","tools/phase0_build_environment.sh")
     if experiment == "cold":
         names=(*names,*backend.COLD_CONTROLS)
     for name in names:
@@ -48,7 +51,7 @@ def collect(repo,refs,output,target,deadline,receipt,*,extra_controls=()):
 def execute(args,repo: Path):
     if platform.system() != "Linux":
         raise ValueError("backend-build-requires-linux")
-    if args.experiment not in ("warm","cold","catalog") or args.profile not in ("smoke","full"):
+    if args.experiment not in ("warm","cold","catalog","catalog-mutations") or args.profile not in ("smoke","full"):
         raise ValueError("backend-build-selection")
     refs={name:getattr(args,name+"_ref") for name in ("control","candidate","harness")}
     shared.validate_refs(refs,args.profile)
@@ -64,12 +67,18 @@ def execute(args,repo: Path):
     target.mkdir(parents=True,exist_ok=True)
     settings=build_configuration("full")
     settings["overrides"]["collector_surface"]="libtest"
-    receipt={"schema":"latent.optimization.catalog-builds.v1" if args.experiment == "catalog" else "latent.optimization.backend-builds.v1","requested_refs":refs,"build":settings,
+    schema = {"catalog": "latent.optimization.catalog-builds.v1",
+              "catalog-mutations": "latent.optimization.catalog-mutation-builds.v1"}.get(
+                  args.experiment, "latent.optimization.backend-builds.v1")
+    receipt={"schema":schema,"requested_refs":refs,"build":settings,
              "builds":{},"harness":None,"cleanup":{"owned_worktree_removed":False}}
     write(output/"backend-builds.json",receipt)
     began=time.monotonic_ns()
     try:
-        if args.experiment == "catalog":
+        if args.experiment == "catalog-mutations":
+            from .catalog_mutations.builds import CONTROLS
+            collect(repo,refs,output,target,began+10_800*10**9,receipt,extra_controls=CONTROLS)
+        elif args.experiment == "catalog":
             from .catalog.builds import CONTROLS
             collect(repo,refs,output,target,began+10_800*10**9,receipt,extra_controls=CONTROLS)
         else:

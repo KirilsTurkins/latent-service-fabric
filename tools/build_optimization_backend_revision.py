@@ -15,7 +15,7 @@ from tools.optimization_revision_runner.build import preflight_build_parent
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile",choices=("smoke","full"),default="smoke")
-    parser.add_argument("--experiment",choices=("warm","cold","catalog"),default="warm")
+    parser.add_argument("--experiment",choices=("warm","cold","catalog","catalog-mutations"),default="warm")
     for name in ("control","candidate","harness"):
         parser.add_argument("--"+name+"-ref",required=True,help="full immutable commit SHA")
     parser.add_argument("--output",type=Path,required=True,help="fresh retained backend-builds directory")

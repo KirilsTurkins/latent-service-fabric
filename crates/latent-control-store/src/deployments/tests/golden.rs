@@ -28,7 +28,12 @@ fn catalog_preserves_original_bytes_and_weighted_assignments() {
         Limits::default(),
     ))
     .unwrap();
-    let bytes = persistence::encode(&catalog, Limits::default()).unwrap();
+    let bytes = persistence::encode(
+        &catalog,
+        Limits::default(),
+        &mut super::super::observation::Work::default(),
+    )
+    .unwrap();
     let mut choices = Vec::new();
     for tenant in ["alice", "bob"] {
         for route in [

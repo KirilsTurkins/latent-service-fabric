@@ -13,6 +13,7 @@ use super::super::{fixtures::Fixture, node::projection, platform};
 use super::{Plan, Result};
 use crate::standalone::{start::Catalogs, RuntimeThreads, ShutdownReport, StandaloneNode};
 
+pub(super) mod observed;
 mod publication;
 
 pub(super) struct Node {

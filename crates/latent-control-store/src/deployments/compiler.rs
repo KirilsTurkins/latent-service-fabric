@@ -16,8 +16,11 @@ use latent_manifest::{
     Phase1ManifestValidator,
 };
 
+use super::observation::{count, Work};
 use super::pagination::DeploymentIndex;
-use super::{deployment_revision_id, error, manifest_error, DirectoryDeploymentRepositoryConfig};
+use super::{
+    deployment_revision_id_observed, error, manifest_error, DirectoryDeploymentRepositoryConfig,
+};
 use fingerprint::contract_fingerprint;
 pub(super) use index::RouteView;
 use index::{EndpointRow, RouteRow, WeightedCandidate};
@@ -59,10 +62,15 @@ pub(super) async fn compile(
         artifacts,
         config,
         None,
+        &mut Work::default(),
     )
     .await
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the local observer adds no policy or compilation input"
+)]
 pub(super) async fn compile_versioned(
     mut deployments: DesiredDeployments,
     versions: ObjectVersions,
@@ -71,276 +79,303 @@ pub(super) async fn compile_versioned(
     artifacts: &dyn ArtifactRepository,
     config: DirectoryDeploymentRepositoryConfig,
     previous: Option<&CompiledCatalog>,
+    work: &mut Work,
 ) -> Result<CompiledCatalog, PlatformError> {
-    if deployments.len() > config.max_deployments {
-        return Err(error(
-            PlatformErrorCode::ResourceExhausted,
-            "deployment-count-limit",
-        ));
-    }
-    if versions.len() != deployments.len()
-        || versions.iter().any(|(id, stamp)| {
-            *stamp == 0 || *stamp > generation.0 || !deployments.contains_key(id)
-        })
-    {
-        return Err(error(
-            PlatformErrorCode::CorruptArtifact,
-            "invalid-persisted-catalog",
-        ));
-    }
-    let codec = JsonManifestCodec::default();
-    // Group references, not cloned artifacts. At most one release's verified
-    // metadata is alive; repository verification owns any component bytes.
-    let mut ordered = deployments
-        .values()
-        .enumerate()
-        .map(|(index, manifest)| (RecordIndex(index), manifest))
-        .collect::<Vec<_>>();
-    ordered.sort_unstable_by(|(_, left), (_, right)| {
-        left.release
-            .cmp(&right.release)
-            .then_with(|| left.id.cmp(&right.id))
-    });
-    let mut release: Option<(ReleaseDigest, VerifiedArtifactMetadata)> = None;
-    let mut fingerprints = BTreeMap::new();
-    let mut scopes = BTreeMap::new();
-    let mut contracts = BTreeMap::new();
-    let mut indexes = index::Builder::default();
-    let mut revision_ids = BTreeSet::new();
-    let mut metadata_budget = config.max_state_bytes;
-    for id in versions.keys() {
-        charge(&mut metadata_budget, 128)?;
-        charge(&mut metadata_budget, id.0.len())?;
-    }
-
-    // The existing per-version allowance also covers bounded record/order slots.
-    let mut records = vec![None; deployments.len()];
-    for (position, deployment) in ordered {
-        Phase1ManifestValidator
-            .validate_deployment(deployment)
-            .map_err(manifest_error)?;
-        let encoded = codec
-            .encode_deployment(deployment)
-            .map_err(manifest_error)?;
-        charge(&mut metadata_budget, encoded.len())?;
-        if deployment.id.0 == "default" {
+    count!(work, compiler_calls, 1);
+    work.generation(generation.0);
+    let result = async {
+        if deployments.len() > config.max_deployments {
             return Err(error(
-                PlatformErrorCode::AlreadyExists,
-                "reserved-default-route",
+                PlatformErrorCode::ResourceExhausted,
+                "deployment-count-limit",
             ));
         }
-        let tenant = deployment
-            .metadata
-            .tenant
-            .as_ref()
-            .ok_or_else(|| error(PlatformErrorCode::InvalidArgument, "missing-tenant"))?;
-        for id in [&tenant.0, &deployment.service.0, &deployment.id.0] {
-            if !valid_identifier(id, config.max_identifier_bytes) {
-                return Err(error(
-                    PlatformErrorCode::InvalidArgument,
-                    "invalid-route-identifier",
-                ));
-            }
-        }
-        let scope_key = (tenant.clone(), deployment.service.clone());
-        if let Some(namespace) =
-            scopes.insert(scope_key.clone(), deployment.metadata.namespace.clone())
+        if versions.len() != deployments.len()
+            || versions.iter().any(|(id, stamp)| {
+                *stamp == 0 || *stamp > generation.0 || !deployments.contains_key(id)
+            })
         {
-            if namespace != deployment.metadata.namespace {
-                return Err(error(
-                    PlatformErrorCode::PermissionDenied,
-                    "namespace-route-conflict",
-                ));
-            }
+            return Err(error(
+                PlatformErrorCode::CorruptArtifact,
+                "invalid-persisted-catalog",
+            ));
         }
-        if release
-            .as_ref()
-            .is_none_or(|(digest, _)| digest != &deployment.release)
-        {
-            // Drop before awaiting the next fetch, not after its result is allocated.
-            drop(release.take());
-            fingerprints.clear();
-            let artifact = artifacts
-                .fetch_verified_metadata(&deployment.release)
-                .await?;
-            let digest_matches = artifact.verified_digest() == &deployment.release
-                && artifact
-                    .descriptor()
-                    .release_digest
-                    .0
-                    .eq_ignore_ascii_case(&deployment.release.0)
-                && artifact
-                    .manifest()
-                    .component_digest
-                    .0
-                    .eq_ignore_ascii_case(&deployment.release.0);
-            if !digest_matches {
-                return Err(error(
-                    PlatformErrorCode::CorruptArtifact,
-                    "release-digest-mismatch",
-                ));
-            }
-            release = Some((deployment.release.clone(), artifact));
+        let codec = JsonManifestCodec::default();
+        // Group references, not cloned artifacts. At most one release's verified
+        // metadata is alive; repository verification owns any component bytes.
+        let mut ordered = deployments
+            .values()
+            .enumerate()
+            .map(|(index, manifest)| (RecordIndex(index), manifest))
+            .collect::<Vec<_>>();
+        ordered.sort_unstable_by(|(_, left), (_, right)| {
+            left.release
+                .cmp(&right.release)
+                .then_with(|| left.id.cmp(&right.id))
+        });
+        let mut release: Option<(ReleaseDigest, VerifiedArtifactMetadata)> = None;
+        let mut fingerprints = BTreeMap::new();
+        let mut scopes = BTreeMap::new();
+        let mut contracts = BTreeMap::new();
+        let mut indexes = index::Builder::default();
+        let mut revision_ids = BTreeSet::new();
+        let mut metadata_budget = config.max_state_bytes;
+        for id in versions.keys() {
+            charge(&mut metadata_budget, 128)?;
+            charge(&mut metadata_budget, id.0.len())?;
         }
-        let artifact = &release.as_ref().expect("current release was fetched").1;
-        Phase1ManifestValidator
-            .validate_deployment_against_capsule(deployment, artifact.manifest())
-            .map_err(manifest_error)?;
-        let mut descriptors = BTreeMap::new();
-        for descriptor in artifact.contracts() {
-            if descriptors.insert(&descriptor.id, descriptor).is_some() {
+
+        // The existing per-version allowance also covers bounded record/order slots.
+        let mut records = vec![None; deployments.len()];
+        for (position, deployment) in ordered {
+            Phase1ManifestValidator
+                .validate_deployment(deployment)
+                .map_err(manifest_error)?;
+            count!(work, compiler_deployment_encodes, 1);
+            let encoded = codec
+                .encode_deployment(deployment)
+                .map_err(manifest_error)?;
+            charge(&mut metadata_budget, encoded.len())?;
+            if deployment.id.0 == "default" {
                 return Err(error(
                     PlatformErrorCode::AlreadyExists,
-                    "duplicate-contract-id",
+                    "reserved-default-route",
                 ));
             }
-        }
-        let mut callable = BTreeSet::new();
-        let mut exported = BTreeMap::new();
-        for export in &artifact.manifest().exports {
-            if !valid_identifier(&export.contract.0, config.max_identifier_bytes) {
-                return Err(error(
-                    PlatformErrorCode::IncompatibleContract,
-                    "invalid-contract-id",
-                ));
-            }
-            let descriptor = descriptors.get(&export.contract).ok_or_else(|| {
-                error(
-                    PlatformErrorCode::IncompatibleContract,
-                    "missing-export-contract-metadata",
-                )
-            })?;
-            // Canonical trees and their encoded bytes are temporary for one contract.
-            // Both caches retain only computed SHA-256 fingerprints, never documentation
-            // or type trees. The canonical bytes (and persisted schema IDs) are unchanged.
-            let schema = match fingerprints.get(&export.contract) {
-                Some(schema) => String::clone(schema),
-                None => {
-                    let schema = contract_fingerprint(descriptor)?;
-                    charge_fingerprint(&mut metadata_budget, &[&export.contract.0, &schema])?;
-                    fingerprints.insert(export.contract.clone(), schema.clone());
-                    schema
-                }
-            };
-            let contract_key = (scope_key.clone(), export.contract.clone());
-            if let Some(previous) = contracts.get(&contract_key) {
-                if previous != &schema {
+            let tenant = deployment
+                .metadata
+                .tenant
+                .as_ref()
+                .ok_or_else(|| error(PlatformErrorCode::InvalidArgument, "missing-tenant"))?;
+            for id in [&tenant.0, &deployment.service.0, &deployment.id.0] {
+                if !valid_identifier(id, config.max_identifier_bytes) {
                     return Err(error(
-                        PlatformErrorCode::IncompatibleContract,
-                        "conflicting-contract-metadata",
+                        PlatformErrorCode::InvalidArgument,
+                        "invalid-route-identifier",
                     ));
                 }
-            } else {
-                charge_fingerprint(
-                    &mut metadata_budget,
-                    &[
-                        &tenant.0,
-                        &deployment.service.0,
-                        &export.contract.0,
-                        &schema,
-                    ],
-                )?;
-                contracts.insert(contract_key, schema.clone());
             }
-            let mut interface_ids = BTreeSet::new();
-            let mut functions = BTreeSet::new();
-            for interface in &descriptor.interfaces {
-                if !interface_ids.insert(&interface.id) {
+            let scope_key = (tenant.clone(), deployment.service.clone());
+            if let Some(namespace) =
+                scopes.insert(scope_key.clone(), deployment.metadata.namespace.clone())
+            {
+                if namespace != deployment.metadata.namespace {
+                    return Err(error(
+                        PlatformErrorCode::PermissionDenied,
+                        "namespace-route-conflict",
+                    ));
+                }
+            }
+            if release
+                .as_ref()
+                .is_none_or(|(digest, _)| digest != &deployment.release)
+            {
+                // Drop before awaiting the next fetch, not after its result is allocated.
+                drop(release.take());
+                fingerprints.clear();
+                let artifact = artifacts
+                    .fetch_verified_metadata(&deployment.release)
+                    .await?;
+                let digest_matches = artifact.verified_digest() == &deployment.release
+                    && artifact
+                        .descriptor()
+                        .release_digest
+                        .0
+                        .eq_ignore_ascii_case(&deployment.release.0)
+                    && artifact
+                        .manifest()
+                        .component_digest
+                        .0
+                        .eq_ignore_ascii_case(&deployment.release.0);
+                if !digest_matches {
+                    return Err(error(
+                        PlatformErrorCode::CorruptArtifact,
+                        "release-digest-mismatch",
+                    ));
+                }
+                release = Some((deployment.release.clone(), artifact));
+            }
+            let artifact = &release.as_ref().expect("current release was fetched").1;
+            Phase1ManifestValidator
+                .validate_deployment_against_capsule(deployment, artifact.manifest())
+                .map_err(manifest_error)?;
+            let mut descriptors = BTreeMap::new();
+            for descriptor in artifact.contracts() {
+                if descriptors.insert(&descriptor.id, descriptor).is_some() {
                     return Err(error(
                         PlatformErrorCode::AlreadyExists,
-                        "duplicate-interface-id",
+                        "duplicate-contract-id",
                     ));
                 }
-                for function in &interface.functions {
-                    if !valid_identifier(&function.id.0, config.max_identifier_bytes) {
+            }
+            let mut callable = BTreeSet::new();
+            let mut exported = BTreeMap::new();
+            for export in &artifact.manifest().exports {
+                if !valid_identifier(&export.contract.0, config.max_identifier_bytes) {
+                    return Err(error(
+                        PlatformErrorCode::IncompatibleContract,
+                        "invalid-contract-id",
+                    ));
+                }
+                let descriptor = descriptors.get(&export.contract).ok_or_else(|| {
+                    error(
+                        PlatformErrorCode::IncompatibleContract,
+                        "missing-export-contract-metadata",
+                    )
+                })?;
+                // Canonical trees and their encoded bytes are temporary for one contract.
+                // Both caches retain only computed SHA-256 fingerprints, never documentation
+                // or type trees. The canonical bytes (and persisted schema IDs) are unchanged.
+                let schema = match fingerprints.get(&export.contract) {
+                    Some(schema) => String::clone(schema),
+                    None => {
+                        let schema = contract_fingerprint(descriptor, work)?;
+                        charge_fingerprint(&mut metadata_budget, &[&export.contract.0, &schema])?;
+                        fingerprints.insert(export.contract.clone(), schema.clone());
+                        schema
+                    }
+                };
+                let contract_key = (scope_key.clone(), export.contract.clone());
+                if let Some(previous) = contracts.get(&contract_key) {
+                    if previous != &schema {
                         return Err(error(
                             PlatformErrorCode::IncompatibleContract,
-                            "invalid-function-id",
+                            "conflicting-contract-metadata",
                         ));
                     }
-                    if !functions.insert(function.id.0.clone()) {
+                } else {
+                    charge_fingerprint(
+                        &mut metadata_budget,
+                        &[
+                            &tenant.0,
+                            &deployment.service.0,
+                            &export.contract.0,
+                            &schema,
+                        ],
+                    )?;
+                    contracts.insert(contract_key, schema.clone());
+                }
+                let mut interface_ids = BTreeSet::new();
+                let mut functions = BTreeSet::new();
+                for interface in &descriptor.interfaces {
+                    if !interface_ids.insert(&interface.id) {
                         return Err(error(
                             PlatformErrorCode::AlreadyExists,
-                            "duplicate-function-id",
+                            "duplicate-interface-id",
                         ));
                     }
-                    callable.insert((export.contract.0.clone(), function.id.0.clone()));
+                    for function in &interface.functions {
+                        if !valid_identifier(&function.id.0, config.max_identifier_bytes) {
+                            return Err(error(
+                                PlatformErrorCode::IncompatibleContract,
+                                "invalid-function-id",
+                            ));
+                        }
+                        if !functions.insert(function.id.0.clone()) {
+                            return Err(error(
+                                PlatformErrorCode::AlreadyExists,
+                                "duplicate-function-id",
+                            ));
+                        }
+                        callable.insert((export.contract.0.clone(), function.id.0.clone()));
+                    }
                 }
+                if functions.is_empty() {
+                    return Err(error(
+                        PlatformErrorCode::IncompatibleContract,
+                        "export-has-no-functions",
+                    ));
+                }
+                exported.insert(
+                    export.contract.0.clone(),
+                    json::json!({
+                        "schema": schema,
+                        "functions": functions,
+                    }),
+                );
             }
-            if functions.is_empty() {
+            let deployment_json = String::from_utf8(encoded)
+                .map_err(|_| error(PlatformErrorCode::Internal, "deployment-encoding-failed"))?;
+            let exports_json = json::to_string(&exported)
+                .map_err(|_| error(PlatformErrorCode::Internal, "contract-encoding-failed"))?;
+            let revision_id = deployment_revision_id_observed(deployment, work)?;
+            admission::charge_policy(&revision_id, deployment, &mut metadata_budget)?;
+            if !revision_ids.insert(revision_id.clone()) {
                 return Err(error(
-                    PlatformErrorCode::IncompatibleContract,
-                    "export-has-no-functions",
+                    PlatformErrorCode::AlreadyExists,
+                    "duplicate-revision-policy",
                 ));
             }
-            exported.insert(
-                export.contract.0.clone(),
-                json::json!({
-                    "schema": schema,
-                    "functions": functions,
-                }),
-            );
+            count!(work, record_derivations, 1);
+            let candidate = RevisionRecord {
+                deployment: Arc::clone(deployment),
+                revision: revision_id,
+                attributes: Metadata::from([
+                    ("lsf.deployment".to_owned(), deployment_json),
+                    ("lsf.exports".to_owned(), exports_json),
+                ]),
+                execution: artifact.manifest().execution.clone(),
+            };
+            // Fresh verification and every canonical derivation precede reuse.
+            let record = previous
+                .and_then(|catalog| catalog.record_by_id(&deployment.id))
+                .filter(|record| record.as_ref() == &candidate)
+                .map_or_else(
+                    || Arc::new(candidate),
+                    |record| {
+                        count!(work, record_payload_reuses, 1);
+                        Arc::clone(record)
+                    },
+                );
+            indexes.insert(
+                position,
+                &record,
+                &callable,
+                config,
+                &mut metadata_budget,
+                work,
+            )?;
+            records[position.0] = Some(record);
         }
-        let deployment_json = String::from_utf8(encoded)
-            .map_err(|_| error(PlatformErrorCode::Internal, "deployment-encoding-failed"))?;
-        let exports_json = json::to_string(&exported)
-            .map_err(|_| error(PlatformErrorCode::Internal, "contract-encoding-failed"))?;
-        let revision_id = deployment_revision_id(deployment)?;
-        admission::charge_policy(&revision_id, deployment, &mut metadata_budget)?;
-        if !revision_ids.insert(revision_id.clone()) {
-            return Err(error(
-                PlatformErrorCode::AlreadyExists,
-                "duplicate-revision-policy",
-            ));
+        drop(release);
+        drop(fingerprints);
+        drop(contracts);
+        let records = records
+            .into_iter()
+            .map(|record| record.expect("every deployment was verified"))
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        // Equal explicit reapply may have allocated a new manifest. Keep exactly the
+        // finalized record's Arc in both owners; object versions remain independent.
+        for (deployment, record) in deployments.values_mut().zip(records.iter()) {
+            *deployment = Arc::clone(&record.deployment);
         }
-        let candidate = RevisionRecord {
-            deployment: Arc::clone(deployment),
-            revision: revision_id,
-            attributes: Metadata::from([
-                ("lsf.deployment".to_owned(), deployment_json),
-                ("lsf.exports".to_owned(), exports_json),
-            ]),
-            execution: artifact.manifest().execution.clone(),
+        let packed = indexes.finish(&records)?;
+        let paging_index = DeploymentIndex::build(&records, &versions, config, metadata_budget)?;
+        charge(&mut metadata_budget, paging_index.retained_bytes())?;
+        let catalog = CompiledCatalog {
+            deployments,
+            versions,
+            generation,
+            generated_at_unix_millis,
+            records,
+            paging_index,
+            routes: packed.routes,
+            route_revisions: packed.route_revisions,
+            endpoints: packed.endpoints,
+            candidates: packed.candidates,
         };
-        // Fresh verification and every canonical derivation precede reuse.
-        let record = previous
-            .and_then(|catalog| catalog.record_by_id(&deployment.id))
-            .filter(|record| record.as_ref() == &candidate)
-            .map_or_else(|| Arc::new(candidate), Arc::clone);
-        indexes.insert(position, &record, &callable, config, &mut metadata_budget)?;
-        records[position.0] = Some(record);
+        // Check exact persisted size, including JSON escaping, before publication.
+        super::persistence::encode(&catalog, config, work)?;
+        Ok(catalog)
     }
-    drop(release);
-    drop(fingerprints);
-    drop(contracts);
-    let records = records
-        .into_iter()
-        .map(|record| record.expect("every deployment was verified"))
-        .collect::<Vec<_>>()
-        .into_boxed_slice();
-    // Equal explicit reapply may have allocated a new manifest. Keep exactly the
-    // finalized record's Arc in both owners; object versions remain independent.
-    for (deployment, record) in deployments.values_mut().zip(records.iter()) {
-        *deployment = Arc::clone(&record.deployment);
+    .await;
+    if result.is_ok() {
+        count!(work, compiler_completed, 1);
+    } else {
+        count!(work, compiler_failed, 1);
     }
-    let packed = indexes.finish(&records)?;
-    let paging_index = DeploymentIndex::build(&records, &versions, config, metadata_budget)?;
-    charge(&mut metadata_budget, paging_index.retained_bytes())?;
-    let catalog = CompiledCatalog {
-        deployments,
-        versions,
-        generation,
-        generated_at_unix_millis,
-        records,
-        paging_index,
-        routes: packed.routes,
-        route_revisions: packed.route_revisions,
-        endpoints: packed.endpoints,
-        candidates: packed.candidates,
-    };
-    // Check exact persisted size, including JSON escaping, before publication.
-    super::persistence::encode(&catalog, config)?;
-    Ok(catalog)
+    result
 }
 
 fn valid_identifier(value: &str, maximum: usize) -> bool {

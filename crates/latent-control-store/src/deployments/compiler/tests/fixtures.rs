@@ -84,6 +84,7 @@ pub(super) fn compile(
         .map(|value| (value.id.clone(), Arc::new(value)))
         .collect::<BTreeMap<_, _>>();
     let versions = desired.keys().map(|id| (id.clone(), generation)).collect();
+    let mut work = crate::deployments::observation::Work::default();
     let future = compile_versioned(
         desired,
         versions,
@@ -92,6 +93,7 @@ pub(super) fn compile(
         releases,
         DirectoryDeploymentRepositoryConfig::default(),
         previous,
+        &mut work,
     );
     let mut future = std::pin::pin!(future);
     match future

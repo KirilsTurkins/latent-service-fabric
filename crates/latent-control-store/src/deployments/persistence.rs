@@ -13,6 +13,7 @@ use latent_manifest::{
 use latent_routing::RouteSnapshot;
 
 use super::compiler::CompiledCatalog;
+use super::observation::{count, maximum, Work};
 use super::{error, DirectoryDeploymentRepositoryConfig, OwnerLock};
 
 #[cfg(test)]
@@ -180,6 +181,7 @@ fn create_durable_root(root: &Path) -> Result<PathBuf, PlatformError> {
 pub(super) fn load(
     root: &Path,
     config: DirectoryDeploymentRepositoryConfig,
+    work: &mut Work,
 ) -> Result<Option<Record>, PlatformError> {
     let file = match File::open(root.join(STATE_FILE)) {
         Ok(file) => file,
@@ -197,7 +199,12 @@ pub(super) fn load(
         return Err(byte_limit());
     }
     let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
-    let payload = bounded_json(&record.payload, config.max_state_bytes)?;
+    let payload = bounded_json(
+        &record.payload,
+        config.max_state_bytes,
+        work,
+        Serialization::LoadPayload,
+    )?;
     if !matches!(record.format_version, 1 | 2) || content_digest(&payload).0 != record.checksum {
         return Err(corrupt());
     }
@@ -207,53 +214,117 @@ pub(super) fn load(
 pub(super) fn encode(
     catalog: &CompiledCatalog,
     config: DirectoryDeploymentRepositoryConfig,
+    work: &mut Work,
 ) -> Result<Vec<u8>, PlatformError> {
-    let codec = JsonManifestCodec::default();
-    let deployments = catalog
-        .deployments
-        .values()
-        .map(|deployment| {
-            let bytes = codec
-                .encode_deployment(deployment)
-                .map_err(super::manifest_error)?;
-            json::from_slice(&bytes).map_err(|_| corrupt())
-        })
-        .collect::<Result<Vec<_>, PlatformError>>()?;
-    let payload = Payload {
-        generation: catalog.generation.0,
-        generated_at_unix_millis: catalog.generated_at_unix_millis,
-        deployments,
-        snapshot: catalog_snapshot_value(catalog),
-        object_generations: Some(
-            catalog
-                .versions
-                .iter()
-                .map(|(id, generation)| StoredObjectGeneration {
-                    id: id.0.clone(),
-                    generation: *generation,
-                })
-                .collect(),
-        ),
-    };
-    let payload_bytes = bounded_json(&payload, config.max_state_bytes)?;
-    let checksum = content_digest(&payload_bytes).0;
-    drop(payload_bytes);
-    let record = Record {
-        format_version: 2,
-        checksum,
-        payload,
-    };
-    bounded_json(&record, config.max_state_bytes)
+    count!(work, encoder_calls, 1);
+    let result = (|| {
+        let codec = JsonManifestCodec::default();
+        let deployments = catalog
+            .deployments
+            .values()
+            .map(|deployment| {
+                count!(work, persistence_deployment_encodes, 1);
+                let bytes = codec
+                    .encode_deployment(deployment)
+                    .map_err(super::manifest_error)?;
+                json::from_slice(&bytes).map_err(|_| corrupt())
+            })
+            .collect::<Result<Vec<_>, PlatformError>>()?;
+        let payload = Payload {
+            generation: catalog.generation.0,
+            generated_at_unix_millis: catalog.generated_at_unix_millis,
+            deployments,
+            snapshot: catalog_snapshot_value(catalog),
+            object_generations: Some(
+                catalog
+                    .versions
+                    .iter()
+                    .map(|(id, generation)| StoredObjectGeneration {
+                        id: id.0.clone(),
+                        generation: *generation,
+                    })
+                    .collect(),
+            ),
+        };
+        let payload_bytes = bounded_json(
+            &payload,
+            config.max_state_bytes,
+            work,
+            Serialization::Payload,
+        )?;
+        let checksum = content_digest(&payload_bytes).0;
+        drop(payload_bytes);
+        let record = Record {
+            format_version: 2,
+            checksum,
+            payload,
+        };
+        bounded_json(
+            &record,
+            config.max_state_bytes,
+            work,
+            Serialization::Envelope,
+        )
+    })();
+    if result.is_ok() {
+        count!(work, encoder_completed, 1);
+    } else {
+        count!(work, encoder_failed, 1);
+    }
+    result
 }
 
 /// Stops serialization at the byte budget, rather than allocating an oversized transaction.
-fn bounded_json<T: Serialize>(value: &T, limit: usize) -> Result<Vec<u8>, PlatformError> {
+fn bounded_json<T: Serialize>(
+    value: &T,
+    limit: usize,
+    work: &mut Work,
+    kind: Serialization,
+) -> Result<Vec<u8>, PlatformError> {
     let mut output = LimitedBytes {
         bytes: Vec::new(),
         limit,
     };
-    json::to_writer(&mut output, value).map_err(|_| byte_limit())?;
+    kind.started(work);
+    let result = json::to_writer(&mut output, value);
+    kind.buffer(work, output.bytes.len(), output.bytes.capacity());
+    result.map_err(|_| byte_limit())?;
     Ok(output.bytes)
+}
+
+#[derive(Clone, Copy)]
+enum Serialization {
+    Payload,
+    Envelope,
+    LoadPayload,
+}
+
+impl Serialization {
+    fn started(&self, work: &mut Work) {
+        match self {
+            Self::Payload => count!(work, payload_serializations, 1),
+            Self::Envelope => count!(work, envelope_serializations, 1),
+            Self::LoadPayload => count!(work, load_payload_serializations, 1),
+        }
+    }
+    fn buffer(&self, work: &mut Work, bytes: usize, capacity: usize) {
+        // Observed lengths include a failed serializer's partial buffer.
+        match self {
+            Self::Payload => {
+                count!(work, payload_buffer_bytes, bytes);
+                maximum!(work, payload_capacity_max, capacity);
+            }
+            Self::Envelope => {
+                count!(work, encoded_buffer_bytes, bytes);
+                maximum!(work, encoded_capacity_max, capacity);
+            }
+            Self::LoadPayload => {
+                count!(work, load_payload_buffer_bytes, bytes);
+                maximum!(work, load_payload_capacity_max, capacity);
+            }
+        }
+        let _ = (bytes, capacity);
+    }
 }
 
 struct LimitedBytes {
@@ -354,15 +425,37 @@ pub(super) fn snapshot_value(snapshot: &RouteSnapshot) -> json::Value {
     })
 }
 
-pub(super) fn stage(root: &Path, bytes: &[u8]) -> Result<(), PlatformError> {
+pub(super) fn stage(root: &Path, bytes: &[u8], work: &mut Work) -> Result<(), PlatformError> {
+    count!(work, stage_calls, 1);
+    count!(work, stage_requested_bytes, bytes.len());
     remove_pending(root)?;
     let mut pending = OpenOptions::new()
         .create_new(true)
         .write(true)
         .open(root.join(PENDING_FILE))
         .map_err(io_error)?;
-    pending.write_all(bytes).map_err(io_error)?;
-    pending.sync_all().map_err(io_error)
+    write_stage(&mut pending, bytes, work)?;
+    if let Err(failure) = pending.sync_all() {
+        count!(work, stage_sync_failures, 1);
+        return Err(io_error(failure));
+    }
+    count!(work, stage_completed, 1);
+    count!(work, stage_synced_bytes, bytes.len());
+    Ok(())
+}
+
+fn write_stage(
+    writer: &mut impl Write,
+    bytes: &[u8],
+    work: &mut Work,
+) -> Result<(), PlatformError> {
+    if let Err(failure) = writer.write_all(bytes) {
+        count!(work, stage_write_failures, 1);
+        work.written(None);
+        return Err(io_error(failure));
+    }
+    work.written(Some(bytes.len()));
+    Ok(())
 }
 
 pub(super) fn replace(root: &Path) -> Result<(), PlatformError> {
@@ -469,3 +562,7 @@ fn corrupt() -> PlatformError {
         "invalid-persisted-catalog",
     )
 }
+
+#[cfg(all(test, feature = "catalog-observation"))]
+#[path = "tests/observation_io.rs"]
+mod observation_tests;

@@ -30,6 +30,7 @@ def main():
             "latent.optimization.codec-aggregate.v1": ("validated_codec_operations", "codec operations"),
             "latent.optimization.engine-aggregate.v1": ("validated_attempts", "invocations"),
             "latent.optimization.catalog-aggregate.v1": ("validated_commands", "catalog operations"),
+            "latent.optimization.catalog-mutation-aggregate.v1": ("validated_commands", "catalog operations"),
         }
         require(result["schema"] in display, "unsupported-backend-aggregate-display-schema")
         count, unit = display[result["schema"]]

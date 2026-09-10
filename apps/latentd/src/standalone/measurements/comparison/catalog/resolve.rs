@@ -156,7 +156,10 @@ impl Oracle {
     }
 }
 
-fn validate_miss(case: &str, result: &Outcome) -> Result<()> {
+pub(in crate::standalone::measurements::comparison) fn validate_miss(
+    case: &str,
+    result: &Outcome,
+) -> Result<()> {
     let (code, message) = if case == "route-miss" {
         (PlatformErrorCode::RouteUnavailable, "route-not-found")
     } else {
@@ -182,7 +185,10 @@ fn validate_miss(case: &str, result: &Outcome) -> Result<()> {
 }
 
 // The original public resolver's framed SHA-256 oracle, independent of either index.
-fn selection_hash(target: &InvocationTarget, key: &str) -> u64 {
+pub(in crate::standalone::measurements::comparison) fn selection_hash(
+    target: &InvocationTarget,
+    key: &str,
+) -> u64 {
     let mut frame = b"lsf-route-selection-v1\0".to_vec();
     for part in [
         target.tenant.0.as_str(),
@@ -203,7 +209,7 @@ fn selection_hash(target: &InvocationTarget, key: &str) -> u64 {
     u64::from_be_bytes(digest[..8].try_into().expect("SHA prefix"))
 }
 
-pub(super) fn outcome(result: &Outcome) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn outcome(result: &Outcome) -> Result<Value> {
     Ok(match result {
         Ok(value) => json!({"result":{"revision":value.revision.0,"release":value.release.0,
             "generation":value.route_generation.0.to_string(),

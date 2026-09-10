@@ -12,23 +12,23 @@ use sha2::{Digest, Sha256};
 use super::{Clock, Plan, Result};
 use crate::standalone::measurements::read;
 
-pub(super) struct Sampler {
+pub(in crate::standalone::measurements::comparison) struct Sampler {
     stop: Sender<()>,
     owner: Option<JoinHandle<Result<Value>>>,
 }
 
 impl Sampler {
-    pub fn start(directory: &Path, plan: &Plan, clock: Clock) -> Result<Self> {
+    pub(super) fn start(directory: &Path, plan: &Plan, clock: Clock) -> Result<Self> {
+        Self::start_for_mode(directory, plan.mode == "reopen", clock)
+    }
+
+    pub fn start_for_mode(directory: &Path, reopen: bool, clock: Clock) -> Result<Self> {
         let path = directory.join("sampler.jsonl");
         let file = OpenOptions::new()
             .write(true)
             .create_new(true)
             .open(&path)?;
-        let maximum = if plan.mode == "reopen" {
-            20_000
-        } else {
-            40_000
-        };
+        let maximum = if reopen { 20_000 } else { 40_000 };
         let (stop, receiver) = mpsc::channel();
         let (ready, started) = mpsc::sync_channel(1);
         let owner = std::thread::Builder::new()

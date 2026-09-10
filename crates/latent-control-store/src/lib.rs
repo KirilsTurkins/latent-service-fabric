@@ -12,6 +12,12 @@ pub use deployments::{
     DirectoryDeploymentRepositoryConfig, PinnedRouteResolver,
 };
 
+#[cfg(feature = "catalog-observation")]
+pub use deployments::{
+    CatalogWorkCounts, CatalogWorkObserver, CatalogWorkOperation, CatalogWorkOutcome,
+    CatalogWorkReceipt, CatalogWorkSnapshot,
+};
+
 use latent_artifacts::ArtifactDescriptor;
 use latent_audit::AuditEvent;
 use latent_core::{

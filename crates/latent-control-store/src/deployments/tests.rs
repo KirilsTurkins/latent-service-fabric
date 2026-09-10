@@ -3,6 +3,8 @@ mod fixtures;
 mod golden;
 #[cfg(unix)]
 mod lock_release;
+#[cfg(feature = "catalog-observation")]
+mod observation;
 mod pagination;
 mod recovery;
 #[cfg(target_os = "linux")]

@@ -2,6 +2,7 @@
 
 mod compiler;
 mod mutations;
+mod observation;
 mod pagination;
 mod persistence;
 mod scoped_routes;
@@ -33,6 +34,12 @@ use latent_routing::{
 use crate::CompiledRouteStore;
 use compiler::{compile_versioned, CompiledCatalog};
 use mutations::{CommitOutcome, ObjectPrecondition};
+use observation::{count, CatalogWorkOperation as WorkOperation, Source, Work};
+#[cfg(feature = "catalog-observation")]
+pub use observation::{
+    CatalogWorkCounts, CatalogWorkObserver, CatalogWorkOperation, CatalogWorkOutcome,
+    CatalogWorkReceipt, CatalogWorkSnapshot,
+};
 pub use pagination::{DeploymentPage, DeploymentPageRequest};
 
 impl latent_routing::ActivationCatalogSource for DirectoryDeploymentRepository {
@@ -95,6 +102,7 @@ pub struct DirectoryDeploymentRepository {
     generation: AtomicU64,
     writer: Mutex<()>,
     pagination_fingerprint: RandomState,
+    observation: Source,
     _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_before_rename: std::sync::atomic::AtomicBool,
@@ -119,80 +127,109 @@ impl DirectoryDeploymentRepository {
         artifacts: Arc<dyn ArtifactRepository>,
         config: DirectoryDeploymentRepositoryConfig,
     ) -> Result<Self, PlatformError> {
-        if config.max_deployments == 0
-            || config.max_state_bytes < 1024
-            || config.max_state_bytes > isize::MAX as usize
-            || config.max_route_entries == 0
-            || config.max_identifier_bytes == 0
-            || config.max_routing_key_bytes == 0
-            || !pagination::valid_page_config(config)
-        {
-            return Err(error(
-                PlatformErrorCode::InvalidArgument,
-                "invalid-catalog-limits",
-            ));
-        }
-        let root = root.into();
-        let (root, owner_lock) = persistence::own_root(&root)?;
-        let restored = persistence::load(&root, config)?;
-        let needs_initial_state = restored.is_none();
-        let (deployments, versions, generation, generated_at) = match &restored {
-            Some(record) => {
-                let deployments = record.deployments(config)?;
-                let versions = record.object_generations(&deployments)?;
-                (
-                    deployments
-                        .into_iter()
-                        .map(|(id, manifest)| (id, Arc::new(manifest)))
-                        .collect(),
-                    versions,
-                    RouteGeneration(record.payload.generation),
-                    record.payload.generated_at_unix_millis,
-                )
-            }
-            None => (BTreeMap::new(), BTreeMap::new(), RouteGeneration(0), 0),
-        };
-        let catalog = compile_versioned(
-            deployments,
-            versions,
-            generation,
-            generated_at,
-            artifacts.as_ref(),
-            config,
-            None,
-        )
-        .await?;
-        if let Some(record) = restored {
-            if record.payload.snapshot != persistence::catalog_snapshot_value(&catalog) {
+        Self::open_inner(root, artifacts, config, Source::default()).await
+    }
+
+    /// Opens with optional bounded work receipts, including recovery and failed initialization.
+    /// The observer retains neither this repository nor any artifact or catalog payload.
+    #[cfg(feature = "catalog-observation")]
+    pub async fn open_observed(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        observer: CatalogWorkObserver,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(root, artifacts, config, Source::observed(observer)).await
+    }
+
+    async fn open_inner(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        observation: Source,
+    ) -> Result<Self, PlatformError> {
+        let mut work = observation.begin(WorkOperation::Open);
+        let result = async {
+            if config.max_deployments == 0
+                || config.max_state_bytes < 1024
+                || config.max_state_bytes > isize::MAX as usize
+                || config.max_route_entries == 0
+                || config.max_identifier_bytes == 0
+                || config.max_routing_key_bytes == 0
+                || !pagination::valid_page_config(config)
+            {
                 return Err(error(
-                    PlatformErrorCode::CorruptArtifact,
-                    "persisted-route-mismatch",
+                    PlatformErrorCode::InvalidArgument,
+                    "invalid-catalog-limits",
                 ));
             }
+            let root = root.into();
+            let (root, owner_lock) = persistence::own_root(&root)?;
+            let restored = persistence::load(&root, config, &mut work)?;
+            let needs_initial_state = restored.is_none();
+            let (deployments, versions, generation, generated_at) = match &restored {
+                Some(record) => {
+                    let deployments = record.deployments(config)?;
+                    let versions = record.object_generations(&deployments)?;
+                    (
+                        deployments
+                            .into_iter()
+                            .map(|(id, manifest)| (id, Arc::new(manifest)))
+                            .collect(),
+                        versions,
+                        RouteGeneration(record.payload.generation),
+                        record.payload.generated_at_unix_millis,
+                    )
+                }
+                None => (BTreeMap::new(), BTreeMap::new(), RouteGeneration(0), 0),
+            };
+            let catalog = compile_versioned(
+                deployments,
+                versions,
+                generation,
+                generated_at,
+                artifacts.as_ref(),
+                config,
+                None,
+                &mut work,
+            )
+            .await?;
+            if let Some(record) = restored {
+                if record.payload.snapshot != persistence::catalog_snapshot_value(&catalog) {
+                    return Err(error(
+                        PlatformErrorCode::CorruptArtifact,
+                        "persisted-route-mismatch",
+                    ));
+                }
+            }
+            let repository = Self {
+                root,
+                config,
+                artifacts,
+                generation: AtomicU64::new(generation.0),
+                current: RwLock::new(Arc::new(catalog)),
+                writer: Mutex::new(()),
+                pagination_fingerprint: RandomState::new(),
+                observation: observation.clone(),
+                _owner_lock: owner_lock,
+                #[cfg(test)]
+                fail_before_rename: std::sync::atomic::AtomicBool::new(false),
+                #[cfg(test)]
+                fail_parent_sync: std::sync::atomic::AtomicBool::new(false),
+            };
+            // A durable empty catalog makes subsequent loss distinguishable from first startup.
+            if needs_initial_state {
+                let bytes = persistence::encode(&repository.read_catalog(), config, &mut work)?;
+                persistence::stage(&repository.root, &bytes, &mut work)?;
+                persistence::replace(&repository.root)?;
+            }
+            // Also completes initialization interrupted after the first state rename.
+            persistence::sync_root(&repository.root)?;
+            Ok(repository)
         }
-        let repository = Self {
-            root,
-            config,
-            artifacts,
-            generation: AtomicU64::new(generation.0),
-            current: RwLock::new(Arc::new(catalog)),
-            writer: Mutex::new(()),
-            pagination_fingerprint: RandomState::new(),
-            _owner_lock: owner_lock,
-            #[cfg(test)]
-            fail_before_rename: std::sync::atomic::AtomicBool::new(false),
-            #[cfg(test)]
-            fail_parent_sync: std::sync::atomic::AtomicBool::new(false),
-        };
-        // A durable empty catalog makes subsequent loss distinguishable from first startup.
-        if needs_initial_state {
-            let bytes = persistence::encode(&repository.read_catalog(), config)?;
-            persistence::stage(&repository.root, &bytes)?;
-            persistence::replace(&repository.root)?;
-        }
-        // Also completes initialization interrupted after the first state rename.
-        persistence::sync_root(&repository.root)?;
-        Ok(repository)
+        .await;
+        work.finish(&result);
+        result
     }
 
     /// Acquires an immutable read view without waiting on a writer.
@@ -230,8 +267,9 @@ impl DirectoryDeploymentRepository {
         &self,
         expected: RouteGeneration,
         next: CompiledCatalog,
+        work: &mut Work,
     ) -> Result<(), PlatformError> {
-        self.commit_checked(expected, next, None)?.durability
+        self.commit_checked(expected, next, None, work)?.durability
     }
 
     fn commit_checked(
@@ -239,6 +277,7 @@ impl DirectoryDeploymentRepository {
         expected: RouteGeneration,
         next: CompiledCatalog,
         precondition: Option<&ObjectPrecondition>,
+        work: &mut Work,
     ) -> Result<CommitOutcome, PlatformError> {
         // No await, compilation, or artifact access occurs with this writer guard held.
         let _writer = self
@@ -255,9 +294,9 @@ impl DirectoryDeploymentRepository {
                 "stale-route-generation",
             ));
         }
-        let bytes = persistence::encode(&next, self.config)?;
+        let bytes = persistence::encode(&next, self.config, work)?;
         let next = Arc::new(next);
-        persistence::stage(&self.root, &bytes)?;
+        persistence::stage(&self.root, &bytes, work)?;
         #[cfg(test)]
         if self.fail_before_rename.swap(false, Ordering::SeqCst) {
             return Err(error(
@@ -303,27 +342,34 @@ impl RouteCompiler for DirectoryDeploymentRepository {
         previous: Option<&'a RouteSnapshot>,
     ) -> BoxFuture<'a, Result<RouteSnapshot, PlatformError>> {
         Box::pin(async move {
-            let current = self.read_catalog();
-            let matches = previous.map_or(current.generation.0 == 0, |old| {
-                current.matches_snapshot(old)
-            });
-            if !matches {
-                return Err(error(
-                    PlatformErrorCode::StateConflict,
-                    "stale-route-generation",
-                ));
+            let mut work = self.observation.begin(WorkOperation::CompileSnapshot);
+            let result = async {
+                let current = self.read_catalog();
+                let matches = previous.map_or(current.generation.0 == 0, |old| {
+                    current.matches_snapshot(old)
+                });
+                if !matches {
+                    return Err(error(
+                        PlatformErrorCode::StateConflict,
+                        "stale-route-generation",
+                    ));
+                }
+                let next = compile_versioned(
+                    current.deployments.clone(),
+                    current.versions.clone(),
+                    next_generation(current.generation)?,
+                    now()?,
+                    self.artifacts.as_ref(),
+                    self.config,
+                    Some(&current),
+                    &mut work,
+                )
+                .await?;
+                Ok(next.snapshot())
             }
-            let next = compile_versioned(
-                current.deployments.clone(),
-                current.versions.clone(),
-                next_generation(current.generation)?,
-                now()?,
-                self.artifacts.as_ref(),
-                self.config,
-                Some(&current),
-            )
-            .await?;
-            Ok(next.snapshot())
+            .await;
+            work.finish(&result);
+            result
         })
     }
 }
@@ -331,30 +377,40 @@ impl RouteCompiler for DirectoryDeploymentRepository {
 impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
     fn publish<'a>(&'a self, snapshot: RouteSnapshot) -> BoxFuture<'a, Result<(), PlatformError>> {
         Box::pin(async move {
-            let current = self.read_catalog();
-            if snapshot.generation != next_generation(current.generation)? {
-                return Err(error(
-                    PlatformErrorCode::StateConflict,
-                    "stale-route-generation",
-                ));
+            let mut work = self.observation.begin(WorkOperation::PublishSnapshot);
+            let result = {
+                let work = &mut work;
+                async move {
+                    let current = self.read_catalog();
+                    if snapshot.generation != next_generation(current.generation)? {
+                        return Err(error(
+                            PlatformErrorCode::StateConflict,
+                            "stale-route-generation",
+                        ));
+                    }
+                    let compiled = compile_versioned(
+                        current.deployments.clone(),
+                        current.versions.clone(),
+                        snapshot.generation,
+                        snapshot.generated_at_unix_millis,
+                        self.artifacts.as_ref(),
+                        self.config,
+                        Some(&current),
+                        work,
+                    )
+                    .await?;
+                    if !compiled.matches_snapshot(&snapshot) {
+                        return Err(error(
+                            PlatformErrorCode::InvalidArgument,
+                            "uncompiled-route-snapshot",
+                        ));
+                    }
+                    self.commit(current.generation, compiled, work)
+                }
             }
-            let compiled = compile_versioned(
-                current.deployments.clone(),
-                current.versions.clone(),
-                snapshot.generation,
-                snapshot.generated_at_unix_millis,
-                self.artifacts.as_ref(),
-                self.config,
-                Some(&current),
-            )
-            .await?;
-            if !compiled.matches_snapshot(&snapshot) {
-                return Err(error(
-                    PlatformErrorCode::InvalidArgument,
-                    "uncompiled-route-snapshot",
-                ));
-            }
-            self.commit(current.generation, compiled)
+            .await;
+            work.finish(&result);
+            result
         })
     }
 }
@@ -472,12 +528,20 @@ impl RouteResolver for PinnedRouteResolver {
 pub fn deployment_revision_id(
     deployment: &DeploymentManifest,
 ) -> Result<RevisionId, PlatformError> {
+    deployment_revision_id_observed(deployment, &mut Work::default())
+}
+
+fn deployment_revision_id_observed(
+    deployment: &DeploymentManifest,
+    work: &mut Work,
+) -> Result<RevisionId, PlatformError> {
     Phase1ManifestValidator
         .validate_deployment(deployment)
         .map_err(manifest_error)?;
     let mut identity = deployment.clone();
     identity.route_weight = 1;
     identity.release.0.make_ascii_lowercase();
+    count!(work, revision_identity_encodes, 1);
     let bytes = JsonManifestCodec::default()
         .encode_deployment(&identity)
         .map_err(manifest_error)?;

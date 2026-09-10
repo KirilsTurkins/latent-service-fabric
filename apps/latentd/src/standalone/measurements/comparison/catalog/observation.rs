@@ -69,12 +69,12 @@ impl Counts {
     }
 }
 
-pub(super) fn error(value: &PlatformError) -> Value {
+pub(in crate::standalone::measurements::comparison) fn error(value: &PlatformError) -> Value {
     json!({"code":format!("{:?}",value.code),"message":value.message,"retryable":value.retryable,
         "details":value.details.iter().map(|detail|json!({"kind":detail.kind,"fields":detail.fields})).collect::<Vec<_>>()})
 }
 
-pub(super) fn decimals(value: &mut Value) {
+pub(in crate::standalone::measurements::comparison) fn decimals(value: &mut Value) {
     match value {
         Value::Number(number) => *value = json!(number.to_string()),
         Value::Array(rows) => rows.iter_mut().for_each(decimals),
@@ -83,7 +83,7 @@ pub(super) fn decimals(value: &mut Value) {
     }
 }
 
-pub(super) fn verification(node: &Node) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn verification(node: &Node) -> Result<Value> {
     let v = node.artifacts.verification_snapshot();
     let values = [
         v.full_fetch_attempts,
@@ -104,7 +104,7 @@ pub(super) fn verification(node: &Node) -> Result<Value> {
     )
 }
 
-pub(super) fn checkpoint(
+pub(in crate::standalone::measurements::comparison) fn checkpoint(
     node: &Node,
     writer: &mut Writer,
     clock: Clock,

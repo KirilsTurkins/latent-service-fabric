@@ -9,6 +9,8 @@ use super::{
     RevisionRecord,
 };
 
+use super::super::observation::{count, Work};
+
 type RouteKey = (String, String, String);
 type EndpointKey = (ContractId, FunctionId);
 
@@ -59,6 +61,7 @@ impl Builder {
         callable: &BTreeSet<(String, String)>,
         config: DirectoryDeploymentRepositoryConfig,
         remaining: &mut usize,
+        work: &mut Work,
     ) -> Result<(), PlatformError> {
         let deployment = &record.deployment;
         let tenant = deployment
@@ -79,11 +82,16 @@ impl Builder {
                     deployment.service.0.clone(),
                     name.to_owned(),
                 ))
-                .or_insert_with(|| StagedRoute {
-                    scope_record: position,
-                    named,
-                    revisions: Vec::new(),
-                    endpoints: BTreeMap::new(),
+                .or_insert_with(|| {
+                    if !named {
+                        count!(work, scopes_staged, 1);
+                    }
+                    StagedRoute {
+                        scope_record: position,
+                        named,
+                        revisions: Vec::new(),
+                        endpoints: BTreeMap::new(),
+                    }
                 });
             if position.0 < route.scope_record.0 {
                 route.scope_record = position;
@@ -99,6 +107,7 @@ impl Builder {
                     .entry((ContractId(contract.clone()), FunctionId(function.clone())))
                     .or_default()
                     .push(position);
+                count!(work, route_memberships_staged, 1);
             }
         }
         Ok(())

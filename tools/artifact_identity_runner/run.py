@@ -45,12 +45,14 @@ def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
 def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, output: Path,
             deadline: int, heaptrack_print: str, decompressor: str, environment: dict | None = None,
             *, normal_timeout: int = 60, maximum_folded_bytes: int = MAX_FOLDED_BYTES,
-            maximum_total_bytes: int = MAX_TOTAL_BYTES) -> None:
+            maximum_total_bytes: int = MAX_TOTAL_BYTES, probe_mode: str | None = None) -> None:
     """Update a pre-retained receipt even when acquisition or verification fails."""
     maximum_total_bytes = total_limit(maximum_total_bytes)
     if type(normal_timeout) is not int or normal_timeout not in (60, 90):
         raise ValueError("unsupported-normal-probe-timeout")
     maximum_folded_bytes = folded_limit(maximum_folded_bytes)
+    if probe_mode not in (None, "allocation"):
+        raise ValueError("unsupported-probe-mode-override")
     import resource  # Linux-only execution; argument validation remains portable.
 
     directory.mkdir(parents=True)
@@ -60,7 +62,9 @@ def collect(record: dict, directory: Path, binary: dict, fixture: dict | None, o
     if reference(output / binary["path"], output) != binary:
         raise ValueError("retained-binary-mutated")
     remaining = maximum_total_bytes - total_bytes(output, maximum_total_bytes=maximum_total_bytes)
-    mode = record["mode"]
+    # A catalog allocation-reopen remains a distinct logical owner selection.
+    # Its explicitly selected low-level process/profiler kind is still allocation.
+    mode = record["mode"] if probe_mode is None else probe_mode
     usage = resource.getrusage(resource.RUSAGE_CHILDREN) if mode == "normal" else None
     owner = None
     first = completion = last = None
