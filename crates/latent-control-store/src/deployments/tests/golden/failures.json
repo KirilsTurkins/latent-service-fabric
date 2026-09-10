@@ -1,0 +1,17 @@
+[
+  {
+    "code": "RouteUnavailable",
+    "message": "route-not-found",
+    "retryable": false
+  },
+  {
+    "code": "RouteUnavailable",
+    "message": "route-not-found",
+    "retryable": false
+  },
+  {
+    "code": "IncompatibleContract",
+    "message": "contract-or-function-not-exported",
+    "retryable": false
+  }
+]

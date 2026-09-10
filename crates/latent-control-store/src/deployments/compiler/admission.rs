@@ -1,24 +1,19 @@
 //! Small trusted policy records compiled alongside the immutable route indexes.
 
-use std::collections::BTreeMap;
-
 use latent_core::{PlatformError, PlatformErrorCode, RevisionId};
-use latent_manifest::{DeploymentManifest, ExecutionRequirements};
+use latent_manifest::DeploymentManifest;
 use latent_routing::{ResolvedRevision, RevisionAdmissionPolicy, RevisionPolicySource};
 
 use super::super::PinnedRouteResolver;
 use super::{charge, error, valid_identifier};
 
-pub(super) fn retain_policy(
-    policies: &mut BTreeMap<RevisionId, RevisionAdmissionPolicy>,
-    revision: RevisionId,
+pub(super) fn charge_policy(
+    revision: &RevisionId,
     deployment: &DeploymentManifest,
-    execution: &ExecutionRequirements,
     remaining: &mut usize,
 ) -> Result<(), PlatformError> {
-    // Charge the fixed record, key, and conservative B-tree bookkeeping before
-    // cloning. Only placement strings and fixed-size execution requirements are
-    // retained; never component bytes, contract trees, or a full artifact.
+    // Preserve the original policy/tree allowance while the immutable record
+    // borrows placement from its own manifest instead of retaining a second copy.
     charge(
         remaining,
         512 + std::mem::size_of::<RevisionAdmissionPolicy>(),
@@ -35,17 +30,6 @@ pub(super) fn retain_policy(
             charge(remaining, std::mem::size_of::<String>())?;
             charge(remaining, value.len())?;
         }
-    }
-    let policy = RevisionAdmissionPolicy {
-        deployment_ceiling: deployment.resources.clone(),
-        execution: execution.clone(),
-        placement: deployment.placement.clone(),
-    };
-    if policies.insert(revision, policy).is_some() {
-        return Err(error(
-            PlatformErrorCode::AlreadyExists,
-            "duplicate-revision-policy",
-        ));
     }
     Ok(())
 }
@@ -71,23 +55,15 @@ impl RevisionPolicySource for PinnedRouteResolver {
                 ));
             }
         }
-        if revision.route_generation != self.catalog.snapshot.generation {
+        if revision.route_generation != self.catalog.generation {
             return Err(missing_policy());
         }
-        let key = (
-            (
-                target.tenant.0.clone(),
-                target.service.0.clone(),
-                route.to_owned(),
-            ),
-            target.contract.0.clone(),
-            target.function.0.clone(),
-        );
-        let candidates = self
+        let route = self.catalog.find_route(target).ok_or_else(missing_policy)?;
+        let endpoint = self
             .catalog
-            .endpoints
-            .get(&key)
+            .find_endpoint(route, target)
             .ok_or_else(missing_policy)?;
+        let candidates = &self.catalog.candidates[endpoint.candidates.clone()];
         // Compilation sorts candidate revisions by their stable identities. No
         // scan across services, caller metadata parsing, or re-resolution with a
         // different routing key is performed at this boundary.
@@ -95,17 +71,22 @@ impl RevisionPolicySource for PinnedRouteResolver {
         // identifier limit. Their exact stored values below are the authority;
         // comparisons inspect at most the corresponding stored identity length.
         let index = candidates
-            .revisions
-            .binary_search_by(|(_, candidate)| candidate.revision.cmp(&revision.revision))
+            .binary_search_by(|candidate| {
+                self.catalog
+                    .record(candidate.record)
+                    .revision
+                    .cmp(&revision.revision)
+            })
             .map_err(|_| missing_policy())?;
-        if candidates.revisions[index].1.release != revision.release {
+        let record = self.catalog.record(candidates[index].record);
+        if record.deployment.release != revision.release {
             return Err(missing_policy());
         }
-        self.catalog
-            .admission_policies
-            .get(&revision.revision)
-            .cloned()
-            .ok_or_else(missing_policy)
+        Ok(RevisionAdmissionPolicy {
+            deployment_ceiling: record.deployment.resources.clone(),
+            execution: record.execution.clone(),
+            placement: record.deployment.placement.clone(),
+        })
     }
 }
 

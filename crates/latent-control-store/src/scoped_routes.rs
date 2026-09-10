@@ -1,6 +1,9 @@
 //! Complete tenant projections with bounded materialization and scoped integrity.
 
 mod digest;
+mod projection;
+
+pub(crate) use projection::{finish_projection, ProjectionCost};
 
 use std::mem::size_of;
 
@@ -112,31 +115,6 @@ fn validate_tenant(tenant: &TenantId, limits: RouteReadLimits) -> Result<(), Pla
     Ok(())
 }
 
-pub(crate) fn project(
-    request: ScopedRouteRequest,
-    snapshot: &RouteSnapshot,
-    services: &[ServiceRoute],
-) -> Result<ScopedRouteSnapshot, PlatformError> {
-    if !snapshot.bindings.is_empty() || !snapshot.policy_digests.is_empty() {
-        return Err(unsupported());
-    }
-    let retained_bytes = check_selection(&request.tenant, services, request.limits)?;
-    let snapshot = RouteSnapshot {
-        generation: snapshot.generation,
-        generated_at_unix_millis: snapshot.generated_at_unix_millis,
-        services: services.to_vec(),
-        bindings: Vec::new(),
-        policy_digests: Vec::new(),
-    };
-    let snapshot_digest = digest::calculate(&request.tenant, &snapshot);
-    Ok(ScopedRouteSnapshot {
-        tenant: request.tenant,
-        snapshot,
-        snapshot_digest,
-        retained_bytes,
-    })
-}
-
 fn check_selection(
     tenant: &TenantId,
     services: &[ServiceRoute],
@@ -206,6 +184,10 @@ impl Cost {
         Ok(())
     }
     fn string(&mut self, text: &String, generated: bool) -> Result<(), PlatformError> {
+        self.text(text, text.capacity(), generated)
+    }
+
+    fn text(&mut self, text: &str, capacity: usize, generated: bool) -> Result<(), PlatformError> {
         let bound = if generated {
             self.limits.maximum_string_bytes.max(83)
         } else {
@@ -214,7 +196,7 @@ impl Cost {
         if text.len() > bound {
             return Err(exhausted());
         }
-        self.items(text.capacity(), 1)
+        self.items(capacity, 1)
     }
 }
 

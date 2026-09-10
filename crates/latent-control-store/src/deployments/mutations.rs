@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::sync::Arc;
 
 use latent_core::{
     BoxFuture, DeploymentId, ErrorDetail, Metadata, PlatformError, PlatformErrorCode,
@@ -63,7 +64,7 @@ impl DirectoryDeploymentRepository {
         deployments: Vec<DeploymentManifest>,
     ) -> Result<RouteGeneration, PlatformError> {
         if deployments.is_empty() {
-            return Ok(self.read_catalog().snapshot.generation);
+            return Ok(self.read_catalog().generation);
         }
         if deployments.len() > self.config.max_deployments {
             return Err(error(
@@ -72,7 +73,7 @@ impl DirectoryDeploymentRepository {
             ));
         }
         let previous = self.read_catalog();
-        let generation = next_generation(previous.snapshot.generation)?;
+        let generation = next_generation(previous.generation)?;
         let mut next = previous.deployments.clone();
         let mut versions = previous.versions.clone();
         let mut seen = BTreeSet::new();
@@ -84,9 +85,9 @@ impl DirectoryDeploymentRepository {
                     "duplicate-deployment-id",
                 ));
             }
-            check_scope(next.get(&deployment.id), &deployment)?;
+            check_scope(next.get(&deployment.id).map(Arc::as_ref), &deployment)?;
             versions.insert(deployment.id.clone(), generation.0);
-            next.insert(deployment.id.clone(), deployment);
+            next.insert(deployment.id.clone(), Arc::new(deployment));
         }
         let compiled = compile_versioned(
             next,
@@ -95,9 +96,10 @@ impl DirectoryDeploymentRepository {
             now()?,
             self.artifacts.as_ref(),
             self.config,
+            Some(&previous),
         )
         .await?;
-        self.commit(previous.snapshot.generation, compiled)?;
+        self.commit(previous.generation, compiled)?;
         Ok(generation)
     }
 
@@ -113,7 +115,10 @@ impl DirectoryDeploymentRepository {
         }
         let deployment = normalize(deployment)?;
         let previous = self.read_catalog();
-        check_scope(previous.deployments.get(&deployment.id), &deployment)?;
+        check_scope(
+            previous.deployments.get(&deployment.id).map(Arc::as_ref),
+            &deployment,
+        )?;
         let precondition = ObjectPrecondition {
             tenant: tenant.clone(),
             id: deployment.id.clone(),
@@ -121,7 +126,7 @@ impl DirectoryDeploymentRepository {
             operation: Operation::Apply,
         };
         precondition.check(&previous)?;
-        let generation = next_generation(previous.snapshot.generation)?;
+        let generation = next_generation(previous.generation)?;
         let receipt = DeploymentApplyReceipt {
             deployment: VersionedDeployment {
                 manifest: deployment.clone(),
@@ -132,7 +137,7 @@ impl DirectoryDeploymentRepository {
         let mut next = previous.deployments.clone();
         let mut versions = previous.versions.clone();
         versions.insert(deployment.id.clone(), generation.0);
-        next.insert(deployment.id.clone(), deployment);
+        next.insert(deployment.id.clone(), Arc::new(deployment));
         let compiled = compile_versioned(
             next,
             versions,
@@ -140,10 +145,10 @@ impl DirectoryDeploymentRepository {
             now()?,
             self.artifacts.as_ref(),
             self.config,
+            Some(&previous),
         )
         .await?;
-        let outcome =
-            self.commit_checked(previous.snapshot.generation, compiled, Some(&precondition))?;
+        let outcome = self.commit_checked(previous.generation, compiled, Some(&precondition))?;
         after_commit();
         outcome.durability.map_err(|failure| {
             committed_error(failure, &receipt.deployment, generation, "apply")
@@ -166,8 +171,13 @@ impl DirectoryDeploymentRepository {
             operation: Operation::Delete,
         };
         precondition.check(&previous)?;
-        let manifest = previous.deployments.get(id).ok_or_else(not_found)?.clone();
-        let generation = next_generation(previous.snapshot.generation)?;
+        let manifest = previous
+            .deployments
+            .get(id)
+            .ok_or_else(not_found)?
+            .as_ref()
+            .clone();
+        let generation = next_generation(previous.generation)?;
         let receipt = DeploymentDeleteReceipt {
             deleted: VersionedDeployment {
                 manifest,
@@ -186,10 +196,10 @@ impl DirectoryDeploymentRepository {
             now()?,
             self.artifacts.as_ref(),
             self.config,
+            Some(&previous),
         )
         .await?;
-        let outcome =
-            self.commit_checked(previous.snapshot.generation, compiled, Some(&precondition))?;
+        let outcome = self.commit_checked(previous.generation, compiled, Some(&precondition))?;
         after_commit();
         outcome
             .durability
@@ -244,7 +254,7 @@ impl DeploymentStore for DirectoryDeploymentRepository {
                 .get(id)
                 .filter(|manifest| manifest.metadata.tenant.as_ref() == Some(tenant))
                 .map(|manifest| VersionedDeployment {
-                    manifest: manifest.clone(),
+                    manifest: manifest.as_ref().clone(),
                     generation: catalog.versions[id],
                 }))
         })
@@ -277,11 +287,24 @@ impl DeploymentStore for DirectoryDeploymentRepository {
         &'a self,
         id: &'a DeploymentId,
     ) -> BoxFuture<'a, Result<Option<DeploymentManifest>, PlatformError>> {
-        Box::pin(async move { Ok(self.read_catalog().deployments.get(id).cloned()) })
+        Box::pin(async move {
+            Ok(self
+                .read_catalog()
+                .deployments
+                .get(id)
+                .map(|manifest| manifest.as_ref().clone()))
+        })
     }
 
     fn list(&self) -> BoxFuture<'_, Result<Vec<DeploymentManifest>, PlatformError>> {
-        Box::pin(async move { Ok(self.read_catalog().deployments.values().cloned().collect()) })
+        Box::pin(async move {
+            Ok(self
+                .read_catalog()
+                .deployments
+                .values()
+                .map(|manifest| manifest.as_ref().clone())
+                .collect())
+        })
     }
 
     fn delete<'a>(&'a self, id: &'a DeploymentId) -> BoxFuture<'a, Result<(), PlatformError>> {
