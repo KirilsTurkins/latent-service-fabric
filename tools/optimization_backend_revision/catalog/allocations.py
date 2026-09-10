@@ -22,7 +22,7 @@ def attribute(record, binary, symbols, tool, artifacts, whole, measured_calls):
                                           record["command"][3], [names], state_type=Attribution)
     require(raw == whole, "catalog-allocation-whole-replay-crossed")
     total, selected = common.folded_attribution(artifacts.path(record["profile_refs"]["allocations"]),
-                                               state.folded_labels)
+                                               state.folded_labels, maximum_bytes=model.MAX_FOLDED_BYTES)
     observed = state.statistics[2]
     require(total == int(raw["allocation_count"])
             and selected == observed["allocation_count"] == state.named_count,

@@ -383,3 +383,8 @@ The full campaign contains 596,720 counted API operations and zero Invokes.
 The 25% RSS reduction and 1.75 GB reference-shape ceiling are separate targets;
 successful semantic replay does not establish either target or a universal
 infrastructure capacity claim.
+
+Catalog alone declares a 256 MiB expanded folded-profile limit with lossless
+gzip replay. Its first release smoke retained a 171,422,982-byte folded export
+that exceeded the original 64 MiB limit. Other experiment limits and the catalog
+256 MiB file / 1 GiB evidence-root bounds remain unchanged.

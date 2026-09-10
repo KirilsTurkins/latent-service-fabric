@@ -547,6 +547,7 @@
         "maximum_normal_seconds",
         "maximum_allocation_seconds",
         "maximum_artifact_bytes",
+        "maximum_folded_expanded_bytes",
         "maximum_artifact_files",
         "maximum_document_bytes",
         "maximum_row_bytes",
@@ -975,6 +976,9 @@
         },
         "allocation_boundary": {
           "const": "public-resolve-and-result-drop-batch"
+        },
+        "maximum_folded_expanded_bytes": {
+          "const": "268435456"
         }
       }
     }

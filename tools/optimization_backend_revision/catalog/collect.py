@@ -85,7 +85,7 @@ def _child(selection, args, repo, build, suite, output, root, group, marker_ref,
             env["LSF_PHASE1_COMPARISON_OUTPUT"] = str(probe_dir)
             collect_probe(row, probe_dir, binary, None, output, deadline,
                           suite["tools"]["heaptrack_print"]["path"], suite["tools"]["zstd"]["path"], env,
-                          normal_timeout=90)
+                          normal_timeout=90, maximum_folded_bytes=model.MAX_FOLDED_BYTES)
         else:
             row["process"] = command(argv, current / "collector.log", model.run_seconds(args.profile, selection["mode"]),
                 repo, deadline, env, maximum=model.MAX_LOG_BYTES, watched=current, remaining=NORMAL_RESERVATION,
