@@ -36,8 +36,9 @@ class Artifacts(BaseArtifacts):
 
 
 def folded_limit(maximum_bytes):
-    """Historical default and explicitly selected ownership/codec/catalog caps."""
-    require(type(maximum_bytes) is int and maximum_bytes in (64 * 1024**2, 128 * 1024**2, 256 * 1024**2),
+    """Historical default plus explicitly selected, finite experiment caps."""
+    require(type(maximum_bytes) is int and maximum_bytes in
+            (64 * 1024**2, 128 * 1024**2, 256 * 1024**2, 512 * 1024**2),
             "unsupported-folded-byte-bound")
     return maximum_bytes
 

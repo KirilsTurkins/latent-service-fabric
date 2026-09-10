@@ -6,6 +6,7 @@ import gzip
 import json
 from pathlib import Path
 import shutil
+import time
 
 from .model import MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES
 from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit
@@ -39,25 +40,131 @@ def retain(source: Path, destination: Path, output: Path) -> dict:
     return reference(destination, output)
 
 
-def compress_folded(path: Path, output: Path, *, maximum_bytes: int = MAX_FOLDED_BYTES) -> dict:
-    """Retain every stack/weight in deterministic gzip, with bounded replay."""
+class _FoldedGuard:
+    def __init__(self, path, maximum_bytes, deadline, remaining):
+        if deadline is not None and (type(deadline) is not int or deadline < 0):
+            raise ValueError("folded-compression-deadline-bound")
+        if remaining is not None and (type(remaining) is not int or not 0 <= remaining <= 2 * 1024**3):
+            raise ValueError("folded-compression-remaining-bound")
+        # helpers imports this module's file primitives; defer this import until use.
+        from .helpers import DirectoryLimits, directory_bytes
+        self.directory, self.deadline, self.remaining = path.parent, deadline, remaining
+        self.directory_bytes = directory_bytes
+        self.limits = DirectoryLimits(maximum_file_bytes=max(MAX_FILE_BYTES, maximum_bytes))
+        self.minimum_file_sizes = {}
+
+    def check(self, additional=0):
+        if self.deadline is not None and time.monotonic_ns() >= self.deadline:
+            raise TimeoutError("folded-compression-deadline")
+        if self.remaining is not None:
+            current = self.directory_bytes(self.directory, self.limits,
+                                           minimum_file_sizes=self.minimum_file_sizes)
+            if current + additional > self.remaining:
+                raise ValueError("folded-compression-total-bound")
+
+
+class _FoldedOutput:
+    def __init__(self, raw, guard, path):
+        self.raw, self.guard, self.path, self.written = raw, guard, path, 0
+        self.error, self.aborted = None, False
+        self.guard.minimum_file_sizes[path] = 0
+
+    def abort(self):
+        self.aborted = True
+
+    def check(self):
+        if self.error is not None:
+            raise self.error
+
+    def write(self, data):
+        if not self.aborted:
+            try:
+                if self.written + len(data) > MAX_FILE_BYTES:
+                    raise ValueError("folded-compressed-file-bound")
+                self.guard.check(len(data))
+                written = self.raw.write(data)
+                if type(written) is not int or not 0 <= written <= len(data):
+                    raise OSError("folded-compression-short-write")
+                self.written += written
+                self.guard.minimum_file_sizes[self.path] = self.written
+                if written != len(data):
+                    raise OSError("folded-compression-short-write")
+                self.guard.check()
+            except BaseException as error:
+                self.error, self.aborted = error, True
+        # Gzip must drain its bounded internal buffer even after an output error.
+        # The caller checks the latched error after every operation; cleanup writes
+        # are discarded and cannot replace the original exception or grow the file.
+        return len(data)
+
+    def flush(self):
+        if not self.aborted:
+            try:
+                self.guard.check()
+                self.raw.flush()
+                self.guard.check()
+            except BaseException as error:
+                self.error, self.aborted = error, True
+
+    def tell(self):
+        return self.written
+
+
+def compress_folded(path: Path, output: Path, *, maximum_bytes: int = MAX_FOLDED_BYTES,
+                    deadline: int | None = None, remaining: int | None = None) -> dict:
+    """Retain every stack/weight; optional profile guards include gzip coexistence."""
     maximum_bytes = folded_limit(maximum_bytes)
+    guard = _FoldedGuard(path, maximum_bytes, deadline, remaining)
+    guard.check()
     original = fingerprint(path, maximum_bytes)
+    guard.check()
     destination = path.with_suffix(path.suffix + ".gz")
-    with path.open("rb") as source, destination.open("xb") as raw:
-        with gzip.GzipFile(fileobj=raw, mode="wb", filename="", mtime=0) as compressed:
-            shutil.copyfileobj(source, compressed, 65536)
+    # Track accepted bytes as well as directory sizes: Windows may report stale
+    # entry sizes even for this unbuffered, still-open destination.
+    with path.open("rb") as source, destination.open("xb", buffering=0) as raw:
+        sink, compressed = _FoldedOutput(raw, guard, destination), None
+        try:
+            compressed = gzip.GzipFile(fileobj=sink, mode="wb", filename="", mtime=0)
+            sink.check()
+            consumed = 0
+            while True:
+                guard.check()
+                chunk = source.read(65536)
+                guard.check()
+                if not chunk:
+                    break
+                consumed += len(chunk)
+                if consumed > maximum_bytes:
+                    raise ValueError("folded-expanded-byte-bound")
+                compressed.write(chunk)
+                sink.check()
+                guard.check()
+            compressed.close()
+            sink.check()
+        except BaseException:
+            sink.abort()
+            if compressed is not None:
+                compressed.close()
+            raise
+    guard.check()
     digest, size = hashlib.sha256(), 0
     with gzip.open(destination, "rb") as restored:
-        while chunk := restored.read(65536):
+        while True:
+            guard.check()
+            chunk = restored.read(65536)
+            guard.check()
+            if not chunk:
+                break
             size += len(chunk)
             if size > maximum_bytes:
                 raise ValueError("folded-expanded-byte-bound")
             digest.update(chunk)
     if ("sha256:" + digest.hexdigest(), size) != original:
         raise ValueError("folded-compression-mismatch")
+    guard.check()
     result = reference(destination, output)
-    # This exact file was created by the owned profile helper in this run.
+    guard.check()
+    # Retain the original and any partial gzip on every earlier failure.
     path.unlink()
     return result
 

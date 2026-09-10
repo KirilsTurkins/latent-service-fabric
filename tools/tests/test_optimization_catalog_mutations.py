@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 import unittest
 
-from tools.optimization_backend_revision.catalog_mutations import model
+from tools.optimization_backend_revision.catalog import model as legacy_catalog
+from tools.optimization_backend_revision.catalog_mutations import model, oracle
 
 
 class CatalogMutationPlanTests(unittest.TestCase):
@@ -26,7 +27,7 @@ class CatalogMutationPlanTests(unittest.TestCase):
 
     def test_fixed_full_and_smoke_public_operation_populations(self):
         for profile, owners, normal_owners, normal_commands, allocation_commands, commands in (
-                ("smoke", 16, 8, 186, 186, 372), ("full", 32, 24, 44910, 202, 45112)):
+                ("smoke", 16, 8, 186, 186, 372), ("full", 32, 24, 44910, 186, 45096)):
             with self.subTest(profile=profile):
                 plan = model.suite_plan(profile)
                 self.assertEqual(plan["totals"]["collector_processes"], owners)
@@ -91,14 +92,15 @@ class CatalogMutationPlanTests(unittest.TestCase):
                 model.counts("full", "initial", "distinct", value)
 
     def test_profile_and_finite_bounds_are_explicit(self):
+        self.assertEqual(legacy_catalog.MAX_FOLDED_BYTES, 256 * 1024**2)
         for profile in ("smoke", "full"):
             value = model.suite_plan(profile)
             self.assertEqual(value["maximum_artifact_bytes"], "1073741824")
-            self.assertEqual(value["maximum_folded_expanded_bytes"], "268435456")
+            self.assertEqual(value["maximum_folded_expanded_bytes"], "536870912")
             self.assertEqual(value["maximum_profile_records"], 4000000)
             self.assertEqual(model.run_seconds(profile, "allocation"), 180)
             self.assertEqual(model.run_seconds(profile, "allocation-reopen"), 180)
-            self.assertEqual(value["allocation_size"], 4 if profile == "smoke" else 8)
+            self.assertEqual(value["allocation_size"], 4)
         for bad in (None, True, "FULL", "diagnostic"):
             with self.subTest(profile=bad), self.assertRaises(ValueError):
                 model.population(bad)
@@ -108,7 +110,9 @@ class CatalogMutationPlanTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         validator = jsonschema.Draft202012Validator(json.loads(
             (root / "benchmarks/optimization/catalog-mutation-plan.schema.json").read_text()))
-        for profile, retired in (("smoke", 16), ("full", 128)):
+        for profile, retired in (("smoke", 8), ("smoke", 16), ("full", 8), ("full", 128)):
+            with self.subTest(profile=profile, retired=retired), self.assertRaises(ValueError):
+                oracle.Oracle(None, retired, "distinct")
             for row in model.population(profile):
                 if not model.profiled(row["mode"]):
                     continue
@@ -128,13 +132,15 @@ class CatalogMutationPlanTests(unittest.TestCase):
             validator = jsonschema.Draft202012Validator({"$schema": schema["$schema"],
                 "$defs": schema["$defs"], "$ref": "#/$defs/plan"})
             for profile, retired_size, retired_allocation, retired_total in (
-                    ("smoke", 16, 234, 420), ("full", 128, 682, 45592)):
+                    ("smoke", 16, 234, 420), ("full", 8, 202, 45112), ("full", 128, 682, 45592)):
                 valid = model.suite_plan(profile)
                 validator.validate(valid)
-                for field in ("allocation_size", "allocation_totals", "totals"):
+                for field in ("allocation_size", "allocation_totals", "totals", "maximum_folded_expanded_bytes"):
                     crossed = deepcopy(valid)
                     if field == "allocation_size":
                         crossed[field] = retired_size
+                    elif field == "maximum_folded_expanded_bytes":
+                        crossed[field] = "268435456"
                     else:
                         crossed[field]["commands"] = retired_allocation if field == "allocation_totals" else retired_total
                     with self.subTest(schema=name, profile=profile, field=field), self.assertRaises(jsonschema.ValidationError):

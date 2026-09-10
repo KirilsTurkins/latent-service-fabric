@@ -89,11 +89,19 @@ class FoldedBoundsTests(unittest.TestCase):
                     if "--print-flamegraph" in argv:
                         Path(argv[-1]).write_bytes(b"selected 1\n")
                 options = {} if chosen is None else {"maximum_folded_bytes": chosen}
-                with patch.object(run, "command", side_effect=command), \
+                now = 1_000_000_000
+                deadline = now + (60 if chosen is None else 240) * 1_000_000_000
+                cutoff = min(deadline, now + 120 * 1_000_000_000)
+                with patch.object(run.time, "monotonic_ns", return_value=now), \
+                        patch.object(run, "command", side_effect=command) as commands, \
                         patch.object(run, "compress_folded", wraps=files.compress_folded) as compress:
-                    run.profile_reports(root / "heaptrack", "printer", "zstd", root, 0, 1024, **options)
+                    run.profile_reports(root / "heaptrack", "printer", "zstd", root, deadline, 1024, **options)
+                self.assertEqual([call.args[4] for call in commands.call_args_list],
+                                 [deadline, deadline, cutoff, cutoff])
+                self.assertEqual([call.kwargs["remaining"] for call in commands.call_args_list], [1024] * 4)
                 self.assertEqual([call.kwargs for call in compress.call_args_list],
-                                 [{"maximum_bytes": chosen or LEGACY}] * 2)
+                                 [{"maximum_bytes": chosen or LEGACY,
+                                   "deadline": cutoff, "remaining": 1024}] * 2)
 
     def test_whole_and_selected_replay_receive_the_declared_limit(self):
         refs = {name: {"path": name + (".folded.gz" if name in ("allocations", "peak") else "")}

@@ -9,7 +9,7 @@ from tools.optimization_runner.cgroups import cgroup
 from tools.optimization_runner.processes import OwnedProcess
 from . import resources
 from .files import compress_folded, fingerprint, reference, total_bytes, total_limit, warm, write_json
-from .helpers import command, directory_bytes
+from .helpers import DirectoryLimits, command, directory_bytes
 from .model import MAX_FILE_BYTES, MAX_TOTAL_BYTES, run_record
 from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit
 
@@ -32,13 +32,18 @@ def profile_reports(prefix: Path, printer: str, decompressor: str, output: Path,
     refs["interpreted"] = reference(interpreted, output)
     for kind in ("allocations", "peak"):
         path = prefix.parent / f"{kind}.folded"
+        report_deadline = min(deadline, time.monotonic_ns() + 120 * 1_000_000_000)
+        # Only this temporary expanded export uses the selected larger watch.
+        # Its gzip reference and every retained file keep the ordinary bound.
         command([printer, "--file", str(raw), "--flamegraph-cost-type", kind,
                  "--print-peaks", "0", "--print-allocators", "0", "--print-temporary", "0",
                  "--print-flamegraph", str(path)], prefix.parent / f"{kind}.log",
-                120, output, deadline, watched=prefix.parent, remaining=remaining)
+                120, output, report_deadline, watched=prefix.parent, remaining=remaining,
+                directory_limits=DirectoryLimits(maximum_file_bytes=max(MAX_FILE_BYTES, maximum_folded_bytes)))
         if path.stat().st_size == 0:
             raise ValueError("heaptrack-profile-empty")
-        refs[kind] = compress_folded(path, output, maximum_bytes=maximum_folded_bytes)
+        refs[kind] = compress_folded(path, output, maximum_bytes=maximum_folded_bytes,
+                                     deadline=report_deadline, remaining=remaining)
     return refs
 
 
