@@ -100,7 +100,9 @@ pub(super) fn compile(
         .as_mut()
         .poll(&mut Context::from_waker(Waker::noop()))
     {
-        Poll::Ready(result) => result,
+        Poll::Ready(result) => {
+            result.map(crate::deployments::persistence::EncodedCatalog::into_catalog)
+        }
         Poll::Pending => panic!("fixture metadata is immediately ready"),
     }
 }

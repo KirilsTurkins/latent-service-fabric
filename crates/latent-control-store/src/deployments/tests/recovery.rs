@@ -254,7 +254,12 @@ fn generation_exhaustion_never_wraps_to_zero() {
     store
         .commit(
             RouteGeneration(0),
-            exhausted,
+            persistence::encode(
+                exhausted,
+                Limits::default(),
+                &mut super::super::observation::Work::default(),
+            )
+            .unwrap(),
             &mut super::super::observation::Work::default(),
         )
         .unwrap();

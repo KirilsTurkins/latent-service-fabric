@@ -28,6 +28,8 @@ Evaluates publisher trust, capability grants, placement, resource ceilings, tena
 
 Builds a fully resolved immutable `RouteSnapshot` containing service routes, weighted revisions, bindings, and policy digests. Every snapshot has a monotonically increasing generation and content digest.
 
+The standalone deployment compiler verifies every referenced release on every compilation. After fresh verification it can reuse immutable record derivations and remap unchanged packed tenant/service scopes, using an optional bounded metadata memo. It still visits the full desired state and streams a complete canonical durable record into one bounded buffer; commit consumes those exact bytes after generation checks. These choices preserve object versions, weighted routing and crash recovery. See [deployment routing and update cost](../deployment-routing.md#limits-and-update-cost).
+
 ### Node inventory
 
 Tracks node identity, architecture, CPU features, trust classes, cell capacity, queue pressure, cache locality, region/zone, state-affinity information, and route-generation lag.

@@ -28,12 +28,14 @@ fn catalog_preserves_original_bytes_and_weighted_assignments() {
         Limits::default(),
     ))
     .unwrap();
-    let bytes = persistence::encode(
-        &catalog,
+    let encoded = persistence::encode(
+        catalog,
         Limits::default(),
         &mut super::super::observation::Work::default(),
     )
     .unwrap();
+    let bytes = encoded.bytes();
+    let catalog = encoded.catalog();
     let mut choices = Vec::new();
     for tenant in ["alice", "bob"] {
         for route in [
@@ -72,8 +74,8 @@ fn catalog_preserves_original_bytes_and_weighted_assignments() {
             .unwrap_err();
         failures.push(json::json!({"code": format!("{:?}", failed.code), "message": failed.message, "retryable": failed.retryable}));
     }
-    assert_eq!(bytes.as_slice(), include_bytes!("golden/catalog-v2.json"));
-    let snapshot = json::to_vec(&persistence::catalog_snapshot_value(&catalog)).unwrap();
+    assert_eq!(bytes, include_bytes!("golden/catalog-v2.json"));
+    let snapshot = json::to_vec(&persistence::catalog_snapshot_value(catalog)).unwrap();
     assert_eq!(snapshot.as_slice(), include_bytes!("golden/snapshot.json"));
     let expected_choices: json::Value =
         json::from_slice(include_bytes!("golden/choices.json")).unwrap();

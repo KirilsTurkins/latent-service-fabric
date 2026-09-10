@@ -62,7 +62,7 @@ fn assert_staged_file(root: &TempRoot, receipt: &CatalogWorkReceipt, name: &str)
 }
 
 #[test]
-fn observed_initialization_apply_and_reapply_count_the_existing_two_encodes() {
+fn observed_initialization_apply_and_reapply_count_one_final_buffer() {
     let root = TempRoot::new();
     let releases = Arc::new(Releases::default());
     let digest = releases.add("observation-known-work");
@@ -76,7 +76,7 @@ fn observed_initialization_apply_and_reapply_count_the_existing_two_encodes() {
     );
     assert_eq!(
         (open.counts.encoder_calls, open.counts.encoder_completed),
-        (2, 2)
+        (1, 1)
     );
     assert_staged_file(&root, &open, "catalog.json");
     let one = deployment("blue", "alice", &digest);
@@ -125,17 +125,19 @@ fn observed_initialization_apply_and_reapply_count_the_existing_two_encodes() {
             count.encoder_completed,
             count.encoder_failed
         ),
-        (2, 2, 0)
+        (1, 1, 0)
     );
-    assert_eq!(count.persistence_deployment_encodes, 4);
+    assert_eq!(count.persistence_deployment_encodes, 0);
     assert_eq!(
         (
             count.payload_serializations,
             count.envelope_serializations,
             count.load_payload_serializations
         ),
-        (2, 2, 0)
+        (1, 1, 0)
     );
+    assert_eq!(count.payload_buffer_bytes, 0);
+    assert_eq!(count.payload_capacity_max, 0);
     assert_staged_file(&root, &applied, "catalog.json");
     let first_record = Arc::clone(&store.read_catalog().records[0]);
     run(store.apply_versioned(&TenantId("alice".into()), one, Some(1))).unwrap();
@@ -143,9 +145,9 @@ fn observed_initialization_apply_and_reapply_count_the_existing_two_encodes() {
     assert_eq!(reapplied.compiled_generation, Some(2));
     assert_eq!(reapplied.counts.normalization_deployment_encodes, 1);
     assert_eq!(reapplied.counts.record_payload_reuses, 2);
-    assert_eq!(reapplied.counts.record_derivations, 2);
-    assert_eq!(reapplied.counts.record_derivation_reuses, 0);
-    assert_eq!(reapplied.counts.persistence_deployment_encodes, 4);
+    assert_eq!(reapplied.counts.record_derivations, 0);
+    assert_eq!(reapplied.counts.record_derivation_reuses, 2);
+    assert_eq!(reapplied.counts.persistence_deployment_encodes, 0);
     assert!(Arc::ptr_eq(&first_record, &store.read_catalog().records[0]));
     assert_eq!(releases.fetches.load(Ordering::Relaxed), 2);
     assert_staged_file(&root, &reapplied, "catalog.json");
@@ -166,10 +168,10 @@ fn reopen_counts_load_validation_separately_and_reads_and_oracles_do_not_change_
     let reopened = receipt(&observer, 3, Operation::Open, Outcome::ReturnedOk);
     assert_eq!(reopened.compiled_generation, Some(1));
     assert_eq!(reopened.counts.encoder_calls, 1);
-    assert_eq!(reopened.counts.persistence_deployment_encodes, 1);
+    assert_eq!(reopened.counts.persistence_deployment_encodes, 0);
     assert_eq!(reopened.counts.load_payload_serializations, 1);
-    assert!(reopened.counts.load_payload_buffer_bytes > 0);
-    assert!(reopened.counts.load_payload_capacity_max >= reopened.counts.load_payload_buffer_bytes);
+    assert_eq!(reopened.counts.load_payload_buffer_bytes, 0);
+    assert_eq!(reopened.counts.load_payload_capacity_max, 0);
     assert_eq!(reopened.counts.stage_calls, 0);
     assert_eq!(reopened.counts.stage_written_bytes, Some(0));
     assert_eq!(snapshot(&store), expected);
@@ -272,7 +274,7 @@ fn explicit_compile_publish_delete_and_empty_batch_keep_distinct_receipts() {
             published.counts.encoder_calls,
             published.counts.stage_calls
         ),
-        (1, 2, 1)
+        (1, 1, 1)
     );
     run(store.delete_versioned(
         &TenantId("alice".into()),
@@ -288,7 +290,7 @@ fn explicit_compile_publish_delete_and_empty_batch_keep_distinct_receipts() {
     );
     assert_eq!(deleted.compiled_generation, Some(3));
     assert_eq!(deleted.counts.compiler_deployment_encodes, 0);
-    assert_eq!(deleted.counts.encoder_calls, 2);
+    assert_eq!(deleted.counts.encoder_calls, 1);
     assert_eq!(
         run(store.apply_many(Vec::new())).unwrap(),
         RouteGeneration(3)

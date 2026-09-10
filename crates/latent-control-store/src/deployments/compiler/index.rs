@@ -53,16 +53,43 @@ pub(super) struct Packed {
     pub candidates: Box<[WeightedCandidate]>,
 }
 
+#[derive(Default)]
+pub(super) struct IndexBudget {
+    entries: usize,
+}
+impl IndexBudget {
+    pub(super) fn charge_record(
+        &mut self,
+        record: &RevisionRecord,
+        callable_count: usize,
+        config: DirectoryDeploymentRepositoryConfig,
+        remaining: &mut usize,
+    ) -> Result<(), PlatformError> {
+        for _ in 0..2 {
+            // Keep default attributes/memberships before named attributes/memberships.
+            for value in record.attributes.values() {
+                charge(remaining, value.len())?;
+            }
+            self.entries = self
+                .entries
+                .checked_add(callable_count)
+                .ok_or_else(index_limit)?;
+            if self.entries > config.max_route_entries {
+                return Err(index_limit());
+            }
+        }
+        Ok(())
+    }
+}
+
 impl Builder {
-    pub(super) fn insert(
+    pub(super) fn insert_checked(
         &mut self,
         position: RecordIndex,
         record: &RevisionRecord,
         callable: &BTreeSet<(String, String)>,
-        config: DirectoryDeploymentRepositoryConfig,
-        remaining: &mut usize,
         work: &mut Work,
-    ) -> Result<(), PlatformError> {
+    ) {
         let deployment = &record.deployment;
         let tenant = deployment
             .metadata
@@ -70,11 +97,6 @@ impl Builder {
             .as_ref()
             .expect("validated tenant");
         for (name, named) in [("default", false), (deployment.id.0.as_str(), true)] {
-            // Preserve the original conservative allowance even though public
-            // default/named route copies are no longer retained.
-            for value in record.attributes.values() {
-                charge(remaining, value.len())?;
-            }
             let route = self
                 .routes
                 .entry((
@@ -98,10 +120,7 @@ impl Builder {
             }
             route.revisions.push(position);
             for (contract, function) in callable {
-                self.entries = self.entries.checked_add(1).ok_or_else(index_limit)?;
-                if self.entries > config.max_route_entries {
-                    return Err(index_limit());
-                }
+                self.entries += 1; // Already checked by the ordered IndexBudget pass.
                 route
                     .endpoints
                     .entry((ContractId(contract.clone()), FunctionId(function.clone())))
@@ -110,7 +129,6 @@ impl Builder {
                 count!(work, route_memberships_staged, 1);
             }
         }
-        Ok(())
     }
 
     pub(super) fn finish(self, records: &[Arc<RevisionRecord>]) -> Result<Packed, PlatformError> {

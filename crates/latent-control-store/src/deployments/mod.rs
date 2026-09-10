@@ -41,6 +41,7 @@ pub use observation::{
     CatalogWorkReceipt, CatalogWorkSnapshot,
 };
 pub use pagination::{DeploymentPage, DeploymentPageRequest};
+use persistence::EncodedCatalog;
 
 impl latent_routing::ActivationCatalogSource for DirectoryDeploymentRepository {
     fn pin(&self) -> Result<Arc<dyn latent_routing::ActivationCatalog>, PlatformError> {
@@ -195,13 +196,15 @@ impl DirectoryDeploymentRepository {
             )
             .await?;
             if let Some(record) = restored {
-                if record.payload.snapshot != persistence::catalog_snapshot_value(&catalog) {
+                if record.payload.snapshot != persistence::catalog_snapshot_value(catalog.catalog())
+                {
                     return Err(error(
                         PlatformErrorCode::CorruptArtifact,
                         "persisted-route-mismatch",
                     ));
                 }
             }
+            let (catalog, bytes) = catalog.into_parts();
             let repository = Self {
                 root,
                 config,
@@ -219,10 +222,10 @@ impl DirectoryDeploymentRepository {
             };
             // A durable empty catalog makes subsequent loss distinguishable from first startup.
             if needs_initial_state {
-                let bytes = persistence::encode(&repository.read_catalog(), config, &mut work)?;
                 persistence::stage(&repository.root, &bytes, &mut work)?;
                 persistence::replace(&repository.root)?;
             }
+            drop(bytes);
             // Also completes initialization interrupted after the first state rename.
             persistence::sync_root(&repository.root)?;
             Ok(repository)
@@ -266,7 +269,7 @@ impl DirectoryDeploymentRepository {
     fn commit(
         &self,
         expected: RouteGeneration,
-        next: CompiledCatalog,
+        next: EncodedCatalog,
         work: &mut Work,
     ) -> Result<(), PlatformError> {
         self.commit_checked(expected, next, None, work)?.durability
@@ -275,7 +278,7 @@ impl DirectoryDeploymentRepository {
     fn commit_checked(
         &self,
         expected: RouteGeneration,
-        next: CompiledCatalog,
+        next: EncodedCatalog,
         precondition: Option<&ObjectPrecondition>,
         work: &mut Work,
     ) -> Result<CommitOutcome, PlatformError> {
@@ -294,7 +297,7 @@ impl DirectoryDeploymentRepository {
                 "stale-route-generation",
             ));
         }
-        let bytes = persistence::encode(&next, self.config, work)?;
+        let (next, bytes) = next.into_parts();
         let next = Arc::new(next);
         persistence::stage(&self.root, &bytes, work)?;
         #[cfg(test)]
@@ -365,7 +368,7 @@ impl RouteCompiler for DirectoryDeploymentRepository {
                     &mut work,
                 )
                 .await?;
-                Ok(next.snapshot())
+                Ok(next.into_catalog().snapshot())
             }
             .await;
             work.finish(&result);
@@ -399,7 +402,7 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
                         work,
                     )
                     .await?;
-                    if !compiled.matches_snapshot(&snapshot) {
+                    if !compiled.catalog().matches_snapshot(&snapshot) {
                         return Err(error(
                             PlatformErrorCode::InvalidArgument,
                             "uncompiled-route-snapshot",

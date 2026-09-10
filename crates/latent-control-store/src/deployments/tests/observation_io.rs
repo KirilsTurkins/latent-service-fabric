@@ -40,12 +40,16 @@ fn actual_partial_write_failure_keeps_unknown_staged_bytes() {
 fn serializer_failure_counts_the_actual_partial_buffer_and_stops_at_limit() {
     let observer = CatalogWorkObserver::new();
     let mut work = Source::observed(observer.clone()).begin(CatalogWorkOperation::Open);
-    let result = bounded_json(
-        &"more than four bytes",
-        4,
-        &mut work,
-        Serialization::Envelope,
-    );
+    let releases = crate::deployments::tests::fixtures::Releases::default();
+    let catalog = crate::deployments::tests::fixtures::run(crate::deployments::compiler::compile(
+        std::collections::BTreeMap::new(),
+        latent_core::RouteGeneration(0),
+        0,
+        &releases,
+        DirectoryDeploymentRepositoryConfig::default(),
+    ))
+    .unwrap();
+    let result = encode_bytes(&catalog, 40, &mut work);
     assert_eq!(
         result.as_ref().unwrap_err().message,
         "catalog-state-byte-limit"
@@ -54,7 +58,10 @@ fn serializer_failure_counts_the_actual_partial_buffer_and_stops_at_limit() {
     drop(work);
     let counts = observer.snapshot().last.unwrap().counts;
     assert_eq!(counts.envelope_serializations, 1);
-    assert_eq!(counts.encoded_buffer_bytes, 1); // actual opening quote before rejected content
-    assert!((1..=4).contains(&counts.encoded_capacity_max));
+    assert!(counts.encoded_buffer_bytes > 0);
+    assert!(counts.encoded_buffer_bytes <= 40);
+    assert!((1..=40).contains(&counts.encoded_capacity_max));
+    assert_eq!(counts.payload_serializations, 0);
+    assert_eq!(counts.payload_buffer_bytes, 0);
     assert_eq!(counts.stage_calls, 0);
 }
