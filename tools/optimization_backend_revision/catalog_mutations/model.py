@@ -41,7 +41,7 @@ def scales(profile):
 
 
 def allocation_size(profile):
-    return 128 if full(profile) else 16
+    return 8 if full(profile) else 4
 
 
 def profiled(mode):

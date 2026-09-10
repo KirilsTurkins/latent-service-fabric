@@ -162,9 +162,8 @@
           "type": "integer",
           "enum": [
             4,
-            16,
+            8,
             100,
-            128,
             1000,
             10000
           ]
@@ -240,9 +239,8 @@
           "type": "integer",
           "enum": [
             4,
-            16,
+            8,
             100,
-            128,
             1000,
             10000
           ]
@@ -588,7 +586,7 @@
                 ]
               },
               "allocation_size": {
-                "const": 16
+                "const": 4
               },
               "normal_totals": {
                 "const": {
@@ -611,7 +609,7 @@
               },
               "allocation_totals": {
                 "const": {
-                  "publications": 64,
+                  "publications": 16,
                   "seed_batches": 4,
                   "applies": 12,
                   "deletes": 4,
@@ -619,7 +617,7 @@
                   "resolves": 56,
                   "policies": 50,
                   "pins": 24,
-                  "commands": 234,
+                  "commands": 186,
                   "invokes": 0,
                   "measured_mutations": 16,
                   "reopen_observations": 4,
@@ -630,7 +628,7 @@
               },
               "totals": {
                 "const": {
-                  "publications": 80,
+                  "publications": 32,
                   "seed_batches": 8,
                   "applies": 24,
                   "deletes": 8,
@@ -638,7 +636,7 @@
                   "resolves": 112,
                   "policies": 100,
                   "pins": 48,
-                  "commands": 420,
+                  "commands": 372,
                   "invokes": 0,
                   "measured_mutations": 32,
                   "reopen_observations": 8,
@@ -675,7 +673,7 @@
                 ]
               },
               "allocation_size": {
-                "const": 128
+                "const": 8
               },
               "normal_totals": {
                 "const": {
@@ -698,7 +696,7 @@
               },
               "allocation_totals": {
                 "const": {
-                  "publications": 512,
+                  "publications": 32,
                   "seed_batches": 4,
                   "applies": 12,
                   "deletes": 4,
@@ -706,7 +704,7 @@
                   "resolves": 56,
                   "policies": 50,
                   "pins": 24,
-                  "commands": 682,
+                  "commands": 202,
                   "invokes": 0,
                   "measured_mutations": 16,
                   "reopen_observations": 4,
@@ -717,7 +715,7 @@
               },
               "totals": {
                 "const": {
-                  "publications": 44912,
+                  "publications": 44432,
                   "seed_batches": 16,
                   "applies": 48,
                   "deletes": 16,
@@ -725,7 +723,7 @@
                   "resolves": 224,
                   "policies": 200,
                   "pins": 96,
-                  "commands": 45592,
+                  "commands": 45112,
                   "invokes": 0,
                   "measured_mutations": 64,
                   "reopen_observations": 16,

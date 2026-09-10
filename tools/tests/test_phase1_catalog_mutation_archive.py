@@ -16,7 +16,7 @@ class CatalogMutationArchiveTests(unittest.TestCase):
             source.mkdir()
             value = {"schema": "latent.optimization.catalog-mutation-aggregate.v1", "profile": "full",
                      "status": "complete", "population_complete": True, "attempt_count_complete": True,
-                     "validated_commands": "45592"}
+                     "validated_commands": "45112"}
             (source / "aggregate.json").write_bytes(verify.canonical(value))
             (source / "suite.json").write_bytes(verify.canonical({"schema": "latent.optimization.catalog-mutation-suite.v1"}))
             (source / "raw.log").write_bytes(b"retained raw transport fixture\n")
@@ -43,10 +43,10 @@ class CatalogMutationArchiveTests(unittest.TestCase):
                 source.mkdir()
                 value = {"schema": "latent.optimization.catalog-mutation-aggregate.v1", "profile": "full",
                          "status": "complete", "population_complete": failure != "partial",
-                         "attempt_count_complete": failure != "partial", "validated_commands": "45592"}
+                         "attempt_count_complete": failure != "partial", "validated_commands": "45112"}
                 (source / "aggregate.json").write_bytes(verify.canonical(value))
                 (source / "suite.json").write_bytes(b"{}")
-                replayed = dict(value, validated_commands="45591") if failure == "changed" else value
+                replayed = dict(value, validated_commands="45111") if failure == "changed" else value
                 with patch.object(verify, "validate_backend_revision_suite", return_value=replayed), \
                      self.assertRaises(ValueError):
                     package.package(source, output, parent / "absent-policy.json")

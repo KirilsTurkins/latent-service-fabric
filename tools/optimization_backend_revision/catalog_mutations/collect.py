@@ -204,6 +204,9 @@ def execute(args, repo):
             suite["allocation_elapsed_nanos"] = str(ended - allocation_began)
         suite["elapsed_nanos"] = str(ended - began)
         suite["runner_source_after"] = source(repo)
+        # A failed export may itself exceed inventory bounds. Retain final owner,
+        # source and timing receipts before the bounded inventory can reject it.
+        save()
         suite["artifacts"] = inventory(output)
         save()
     from .evidence import validate_suite

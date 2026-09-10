@@ -11,7 +11,7 @@
     "repetition": {"type": "integer", "const": 1},
     "variant": {"enum": ["control", "candidate"]},
     "shape": {"enum": ["distinct", "shared"]},
-    "populated_size": {"type": "integer", "enum": [4, 16, 100, 128, 1000, 10000]},
+    "populated_size": {"type": "integer", "enum": [4, 8, 100, 1000, 10000]},
     "mode": {"enum": ["initial", "reopen", "allocation", "allocation-reopen"]},
     "sequence_ordinal": {"type": "integer", "minimum": 0, "maximum": 31}
   },
@@ -28,7 +28,7 @@
       "properties": {
         "profile": {"const": "smoke"},
         "mode": {"enum": ["allocation", "allocation-reopen"]},
-        "populated_size": {"const": 16},
+        "populated_size": {"const": 4},
         "sequence_ordinal": {"minimum": 8, "maximum": 15}
       }
     },
@@ -44,7 +44,7 @@
       "properties": {
         "profile": {"const": "full"},
         "mode": {"enum": ["allocation", "allocation-reopen"]},
-        "populated_size": {"const": 128},
+        "populated_size": {"const": 8},
         "sequence_ordinal": {"minimum": 24, "maximum": 31}
       }
     }

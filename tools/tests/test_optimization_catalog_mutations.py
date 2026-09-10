@@ -1,4 +1,5 @@
 """Closed mutation populations; no constructed performance evidence."""
+from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
@@ -25,7 +26,7 @@ class CatalogMutationPlanTests(unittest.TestCase):
 
     def test_fixed_full_and_smoke_public_operation_populations(self):
         for profile, owners, normal_owners, normal_commands, allocation_commands, commands in (
-                ("smoke", 16, 8, 186, 234, 420), ("full", 32, 24, 44910, 682, 45592)):
+                ("smoke", 16, 8, 186, 186, 372), ("full", 32, 24, 44910, 202, 45112)):
             with self.subTest(profile=profile):
                 plan = model.suite_plan(profile)
                 self.assertEqual(plan["totals"]["collector_processes"], owners)
@@ -97,9 +98,47 @@ class CatalogMutationPlanTests(unittest.TestCase):
             self.assertEqual(value["maximum_profile_records"], 4000000)
             self.assertEqual(model.run_seconds(profile, "allocation"), 180)
             self.assertEqual(model.run_seconds(profile, "allocation-reopen"), 180)
+            self.assertEqual(value["allocation_size"], 4 if profile == "smoke" else 8)
         for bad in (None, True, "FULL", "diagnostic"):
             with self.subTest(profile=bad), self.assertRaises(ValueError):
                 model.population(bad)
+
+    def test_retired_allocation_sizes_reject_without_crossing_normal_populations(self):
+        import jsonschema
+        root = Path(__file__).resolve().parents[2]
+        validator = jsonschema.Draft202012Validator(json.loads(
+            (root / "benchmarks/optimization/catalog-mutation-plan.schema.json").read_text()))
+        for profile, retired in (("smoke", 16), ("full", 128)):
+            for row in model.population(profile):
+                if not model.profiled(row["mode"]):
+                    continue
+                crossed = {**row, "populated_size": retired}
+                with self.subTest(profile=profile, mode=row["mode"], ordinal=row["sequence_ordinal"]):
+                    with self.assertRaises(ValueError):
+                        model.plan(profile, **crossed)
+                    with self.assertRaises(jsonschema.ValidationError):
+                        validator.validate({"schema": "latent.optimization.catalog-mutation-plan.v1",
+                                            "profile": profile, **crossed})
+
+    def test_suite_and_aggregate_plans_reject_retired_allocation_counts(self):
+        import jsonschema
+        root = Path(__file__).resolve().parents[2]
+        for name in ("suite", "aggregate"):
+            schema = json.loads((root / f"benchmarks/optimization/catalog-mutation-{name}.schema.json").read_text())
+            validator = jsonschema.Draft202012Validator({"$schema": schema["$schema"],
+                "$defs": schema["$defs"], "$ref": "#/$defs/plan"})
+            for profile, retired_size, retired_allocation, retired_total in (
+                    ("smoke", 16, 234, 420), ("full", 128, 682, 45592)):
+                valid = model.suite_plan(profile)
+                validator.validate(valid)
+                for field in ("allocation_size", "allocation_totals", "totals"):
+                    crossed = deepcopy(valid)
+                    if field == "allocation_size":
+                        crossed[field] = retired_size
+                    else:
+                        crossed[field]["commands"] = retired_allocation if field == "allocation_totals" else retired_total
+                    with self.subTest(schema=name, profile=profile, field=field), self.assertRaises(jsonschema.ValidationError):
+                        validator.validate(crossed)
 
 
 if __name__ == "__main__":
