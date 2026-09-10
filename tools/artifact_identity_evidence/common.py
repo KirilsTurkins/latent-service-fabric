@@ -43,6 +43,14 @@ def folded_limit(maximum_bytes):
     return maximum_bytes
 
 
+def folded_scratch_limit(maximum_bytes, temporary_bytes):
+    """Validate scratch after the caller validates its ordinary export preset."""
+    require(type(temporary_bytes) is int and temporary_bytes in (0, 512 * 1024**2)
+            and (temporary_bytes == 0 or maximum_bytes == temporary_bytes),
+            "unsupported-folded-scratch-bound")
+    return temporary_bytes
+
+
 def folded(path, *, maximum_bytes=MAX_FOLDED_BYTES):
     """Sum exact whole-process allocation/peak weights, never rounded SI text."""
     maximum_bytes = folded_limit(maximum_bytes)

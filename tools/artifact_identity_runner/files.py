@@ -9,7 +9,7 @@ import shutil
 import time
 
 from .model import MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES
-from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit
+from tools.artifact_identity_evidence.common import MAX_FOLDED_BYTES, folded_limit, folded_scratch_limit
 
 
 def fingerprint(path: Path, maximum: int = MAX_FILE_BYTES) -> tuple[str, int]:
@@ -41,7 +41,7 @@ def retain(source: Path, destination: Path, output: Path) -> dict:
 
 
 class _FoldedGuard:
-    def __init__(self, path, maximum_bytes, deadline, remaining):
+    def __init__(self, path, maximum_bytes, deadline, remaining, temporary_bytes=0):
         if deadline is not None and (type(deadline) is not int or deadline < 0):
             raise ValueError("folded-compression-deadline-bound")
         if remaining is not None and (type(remaining) is not int or not 0 <= remaining <= 2 * 1024**3):
@@ -52,13 +52,15 @@ class _FoldedGuard:
         self.directory_bytes = directory_bytes
         self.limits = DirectoryLimits(maximum_file_bytes=max(MAX_FILE_BYTES, maximum_bytes))
         self.minimum_file_sizes = {}
+        self.temporary_file = path if temporary_bytes else None
 
     def check(self, additional=0):
         if self.deadline is not None and time.monotonic_ns() >= self.deadline:
             raise TimeoutError("folded-compression-deadline")
         if self.remaining is not None:
             current = self.directory_bytes(self.directory, self.limits,
-                                           minimum_file_sizes=self.minimum_file_sizes)
+                                           minimum_file_sizes=self.minimum_file_sizes,
+                                           temporary_file=self.temporary_file)
             if current + additional > self.remaining:
                 raise ValueError("folded-compression-total-bound")
 
@@ -111,10 +113,14 @@ class _FoldedOutput:
 
 
 def compress_folded(path: Path, output: Path, *, maximum_bytes: int = MAX_FOLDED_BYTES,
-                    deadline: int | None = None, remaining: int | None = None) -> dict:
+                    deadline: int | None = None, remaining: int | None = None,
+                    temporary_folded_bytes: int = 0) -> dict:
     """Retain every stack/weight; optional profile guards include gzip coexistence."""
     maximum_bytes = folded_limit(maximum_bytes)
-    guard = _FoldedGuard(path, maximum_bytes, deadline, remaining)
+    temporary_folded_bytes = folded_scratch_limit(maximum_bytes, temporary_folded_bytes)
+    if temporary_folded_bytes and (type(remaining) is not int or not 0 <= remaining <= MAX_TOTAL_BYTES):
+        raise ValueError("folded-scratch-retained-budget-bound")
+    guard = _FoldedGuard(path, maximum_bytes, deadline, remaining, temporary_folded_bytes)
     guard.check()
     original = fingerprint(path, maximum_bytes)
     guard.check()

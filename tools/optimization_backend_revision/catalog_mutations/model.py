@@ -17,6 +17,7 @@ MAX_ROW_BYTES = 256 * 1024
 MAX_SAMPLES = 2048
 MAX_LOG_BYTES = 1024**2
 MAX_FOLDED_BYTES = 512 * 1024**2
+MAX_FOLDED_SCRATCH_BYTES = 512 * 1024**2
 MAX_PROFILE_RECORDS = 4_000_000
 BUILD_SECONDS = 10800
 ALLOCATION_SECONDS = 7200
@@ -147,6 +148,7 @@ def suite_plan(profile):
             "maximum_allocation_seconds": str(ALLOCATION_SECONDS),
             "maximum_artifact_bytes": str(MAX_TOTAL_BYTES), "maximum_artifact_files": MAX_FILES,
             "maximum_folded_expanded_bytes": str(MAX_FOLDED_BYTES),
+            "maximum_temporary_folded_bytes": str(MAX_FOLDED_SCRATCH_BYTES),
             "maximum_profile_records": MAX_PROFILE_RECORDS,
             "maximum_document_bytes": str(MAX_DOCUMENT_BYTES), "maximum_row_bytes": str(MAX_ROW_BYTES),
             "maximum_samples": MAX_SAMPLES, "sampler_interval_millis": 100,
