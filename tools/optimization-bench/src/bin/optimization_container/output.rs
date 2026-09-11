@@ -3,9 +3,9 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::time::Instant;
 
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
-use super::{Result, command::App};
+use super::{command::App, Result};
 
 pub(super) struct Events {
     file: File,

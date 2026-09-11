@@ -2,16 +2,16 @@ use std::fs::File;
 use std::process::ExitStatus;
 use std::time::{Duration, Instant};
 
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use tokio::net::TcpListener;
 use tokio::process::Child;
 use tokio::sync::mpsc;
 use tokio::task::{JoinHandle, JoinSet};
 
 use super::{
-    Result, child,
+    child,
     command::{self, Args},
-    forward, observe, output, streams,
+    forward, observe, output, streams, Result,
 };
 
 pub(super) async fn run(args: &Args, origin: Instant) -> Result<()> {
@@ -238,7 +238,7 @@ impl Signals {
     fn new() -> Result<Self> {
         #[cfg(unix)]
         {
-            use tokio::signal::unix::{SignalKind, signal};
+            use tokio::signal::unix::{signal, SignalKind};
             Ok(Self {
                 stop: StopSignals {
                     terminate: signal(SignalKind::terminate())
