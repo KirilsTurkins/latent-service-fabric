@@ -13,6 +13,8 @@
     "completed_paired_run",
     "full_population_completed",
     "acceptance_qualified",
+    "acceptance_scope",
+    "exact_effective_cpu_match",
     "logical_offers",
     "validated_pairs",
     "source",
@@ -40,6 +42,7 @@
     "platform_comparisons",
     "node_resource_points",
     "node_resource_intervals",
+    "cpu_limit_cohorts",
     "units",
     "limitations"
   ],
@@ -66,6 +69,12 @@
       "type": "boolean"
     },
     "acceptance_qualified": {
+      "type": "boolean"
+    },
+    "acceptance_scope": {
+      "const": "complete-descriptive-deployment-comparison"
+    },
+    "exact_effective_cpu_match": {
       "type": "boolean"
     },
     "logical_offers": {
@@ -342,6 +351,15 @@
       "items": {
         "type": "object",
         "maxProperties": 4096
+      }
+    },
+    "cpu_limit_cohorts": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 42,
+      "items": {
+        "type": "object",
+        "maxProperties": 16
       }
     },
     "units": {

@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 
 from tools.optimization_docker.engine import API_VERSION, Engine
 from tools.optimization_docker.owned import encoded, identifier, stamp
-from tools.optimization_evidence.common import decode, require, sha256
+from tools.optimization_evidence.common import decode, fields, require, sha256
 
 MAX_RESPONSE = 8 * 1024**2
 
@@ -153,6 +153,49 @@ def multiplexed(raw):
     return bytes(stdout), bytes(stderr)
 
 
+def cleanup_owner(item):
+    """Only a previously inspected, exited, never-restarted CRI container."""
+    labels, metadata = item["labels"], item["metadata"]
+    require(item["state"] == "CONTAINER_EXITED" and type(metadata["attempt"]) is int
+            and metadata["attempt"] == 0 and metadata["name"] == labels["io.kubernetes.container.name"],
+            "kubernetes-cleanup-log-cri-identity")
+    return {"namespace": labels["io.kubernetes.pod.namespace"], "pod_name": labels["io.kubernetes.pod.name"],
+            "pod_uid": labels["io.kubernetes.pod.uid"], "container_name": metadata["name"], "container_id": item["id"]}
+
+
+def cleanup_log_path(argv, policy, *, worker_owner=None):
+    fields(policy, "namespace pod_name pod_uid container_name container_id")
+    namespace, pod, uid, name, container = (policy[key] for key in
+        ("namespace", "pod_name", "pod_uid", "container_name", "container_id"))
+    require(all(isinstance(value, str) for value in (namespace, pod, uid, name, container))
+            and re.fullmatch(r"lsf-112-[a-f0-9]{12}-[a-z0-9][a-z0-9-]{0,31}", namespace)
+            and len(namespace) <= 63 and (worker_owner is None or namespace.startswith(worker_owner + "-"))
+            and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", uid)
+            and re.fullmatch(r"[0-9a-f]{64}", container) and name in ("lsf", "native", "client")
+            and argv == ["crictl", "rm", container], "kubernetes-cleanup-log-policy")
+    if name == "client":
+        require(re.fullmatch(r"client-p[0-6]", pod), "kubernetes-cleanup-log-pod")
+    else:
+        require(re.fullmatch(r"p[0-6]-g[0-5]-" + name + r"-(?:[0-9]|[12][0-9]|3[01])", pod)
+                and (name != "lsf" or pod.endswith("-0")), "kubernetes-cleanup-log-pod")
+    return f"/var/log/pods/{namespace}_{pod}_{uid}/{name}/0.log"
+
+
+def cleanup_log_warning(argv, stdout, stderr, policy, *, worker_owner=None):
+    """One retained missing-log warning is compatible only with rm exit zero."""
+    path = cleanup_log_path(argv, policy, worker_owner=worker_owner)
+    require(stdout == (policy["container_id"] + "\n").encode(), "kubernetes-cleanup-log-stdout")
+    if not stderr:
+        return None
+    message = (f'removing log file {path} for container "{policy["container_id"]}" failed: '
+               f'remove {path}: no such file or directory')
+    expected = re.escape(json.dumps(message, ensure_ascii=True).encode())
+    require(isinstance(stderr, bytes) and len(stderr) <= 2048
+            and re.fullmatch(rb'time="[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?Z" level=error msg='
+                             + expected + rb'\n', stderr), "kubernetes-cleanup-log-stderr")
+    return {"kind": "owned-container-log-already-absent", "owner": dict(policy), "path": path}
+
+
 class Worker:
     """Only the recorded owned kind worker may execute finite observer commands."""
     def __init__(self, engine: Engine, container_id: str, owner: str, journal: Journal):
@@ -167,10 +210,13 @@ class Worker:
         self.journal.append({"provider": "docker", "operation": "worker-identity",
                              "response": blob(engine.last_body), "receipt": receipt})
 
-    def command(self, argv, *, timeout=20, expected=(0,)):
+    def command(self, argv, *, timeout=20, expected=(0,), cleanup_log_owner=None):
         require(isinstance(argv, list) and 1 <= len(argv) <= 64
                 and all(isinstance(arg, str) and "\0" not in arg and len(arg) <= 16384 for arg in argv)
                 and type(timeout) is int and 1 <= timeout <= 60, "kubernetes-worker-command")
+        if cleanup_log_owner is not None:
+            require(expected == (0,), "kubernetes-cleanup-log-exit-policy")
+            cleanup_log_path(argv, cleanup_log_owner, worker_owner=self.owner)
         # The remote timeout owns its child even if the API connection disappears.
         command = ["timeout", "--signal=TERM", "--kill-after=5s", str(timeout) + "s", *argv]
         request = {"AttachStdin": False, "AttachStdout": True, "AttachStderr": True,
@@ -191,7 +237,10 @@ class Worker:
                     and final["Running"] is False and type(final["ExitCode"]) is int
                     and final["ExitCode"] in expected, "kubernetes-worker-exec-not-clean")
             stdout, stderr = multiplexed(raw)
-            require(not stderr, "kubernetes-worker-exec-stderr")
+            if cleanup_log_owner is None:
+                require(not stderr, "kubernetes-worker-exec-stderr")
+            else:
+                cleanup_log_warning(argv, stdout, stderr, cleanup_log_owner, worker_owner=self.owner)
         except BaseException as error:
             failure = type(error).__name__
             if getattr(error, "receipt", None) is not None:
@@ -201,7 +250,7 @@ class Worker:
             row = self.journal.append({"provider": "docker", "operation": "worker-exec",
                 "container_id": self.container_id, "argv": argv, "timeout_seconds": timeout,
                 "started_nanos": start, "finished_nanos": stamp(), "records": records,
-                "failure": failure})
+                "failure": failure, **({"cleanup_log_owner": cleanup_log_owner} if cleanup_log_owner is not None else {})})
         return stdout, row["ordinal"]
 
     def json(self, argv, **kwargs):

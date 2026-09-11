@@ -254,9 +254,12 @@ def _limit(value):
     return uint(value)
 
 
-def _ancestry(value, leaf, identity, controls):
+def _ancestry(value, leaf, identity, controls, *, native32_systemd_rounding=False):
     require(isinstance(value, list) and 2 <= len(value) <= 16, "kubernetes-cgroup-ancestry-bound")
+    require(type(native32_systemd_rounding) is bool, "kubernetes-cgroup-cpu-policy")
     expected, rows, pod_index = PurePosixPath(leaf), [], None
+    requested_cpu = {"quota": str(controls["cpu_quota"]), "period": str(controls["cpu_period"])}
+    leaf_cpu, rounded = None, False
     effective = {"cpu": None, "memory.max": None, "memory.swap.max": None, "pids.max": None}
     for index, row in enumerate(value):
         fields(row, "path files")
@@ -277,8 +280,14 @@ def _ancestry(value, leaf, identity, controls):
             require(len(tokens) == 2 and uint(tokens[1]) > 0, "kubernetes-cgroup-cpu")
             cpu = None if tokens[0] == "max" else Fraction(uint(tokens[0]), uint(tokens[1]))
             if index == 0:
-                require(tokens == [str(controls["cpu_quota"]), str(controls["cpu_period"])],
+                rounded = tokens != [requested_cpu["quota"], requested_cpu["period"]]
+                require(not rounded or native32_systemd_rounding
+                        and requested_cpu == {"quota": "12500", "period": "100000"}
+                        and tokens == ["13000", "100000"]
+                        and path.parent.name == "kubelet-kubepods-pod" + identity["uid"].replace("-", "_") + ".slice"
+                        and path.parent.parent == ROOT / "kubelet.slice" / "kubelet-kubepods.slice",
                         "kubernetes-cgroup-leaf-cpu")
+                leaf_cpu = {"quota": tokens[0], "period": tokens[1]}
         if cpu is not None:
             effective["cpu"] = cpu if effective["cpu"] is None else min(cpu, effective["cpu"])
         for name in ("memory.max", "memory.swap.max", "pids.max"):
@@ -303,13 +312,16 @@ def _ancestry(value, leaf, identity, controls):
             pod_index = index
         rows.append({"path": str(path), "limits": limits, "files": files})
     require(rows[-1]["path"] == str(ROOT) and pod_index is not None, "kubernetes-cgroup-ancestry-incomplete")
-    require(effective == {"cpu": Fraction(controls["cpu_quota"], controls["cpu_period"]),
+    require(leaf_cpu is not None and (not rounded or rows[pod_index]["limits"]["cpu.max"] == "13000 100000"),
+            "kubernetes-cgroup-rounded-pod-cpu")
+    require(effective == {"cpu": Fraction(int(leaf_cpu["quota"]), int(leaf_cpu["period"])),
                           "memory.max": controls["memory"], "memory.swap.max": 0, "pids.max": POD_PIDS},
             "kubernetes-cgroup-effective-limits")
     return {"ancestors": rows, "pod_index": pod_index, "leaf_pids_max": rows[0]["limits"]["pids.max"],
             "effective_pids_max": str(POD_PIDS), "effective_memory_max": str(controls["memory"]),
-            "effective_swap_max": "0", "effective_cpu": {"quota": str(controls["cpu_quota"]),
-                                                         "period": str(controls["cpu_period"])}}
+            "effective_swap_max": "0", "effective_cpu": leaf_cpu, "requested_cpu": requested_cpu,
+            "effective_cpu_matches_requested": not rounded,
+            "cpu_limit_policy": "native-d32-systemd-rounded-cap" if rounded else "exact-requested"}
 
 
 def _oci_path(spec, leaf, identifier):
@@ -358,12 +370,19 @@ def validate(directory: Path, *, arm: str, density: int, pod_ready: dict, pod_fi
         leaf = _membership(row["wrapper"]["cgroup"])
         require(leaf == _membership(row["child"]["cgroup"]), "kubernetes-worker-crossed-cgroup")
         _oci_path(runtime_spec, leaf, identity["container_id"])
-        ancestries.append(_ancestry(row["cgroups"], leaf, identity, controls))
+        ancestries.append(_ancestry(row["cgroups"], leaf, identity, controls,
+                                    native32_systemd_rounding=arm == "native" and density == 32))
     leaf_pids = ancestries[0]["leaf_pids_max"] if ancestries else None
     require(all(row["leaf_pids_max"] == leaf_pids for row in ancestries), "kubernetes-leaf-pids-changed")
+    observed_controls = dict(controls)
+    if ancestries:
+        cpu = ancestries[0]["effective_cpu"]
+        require(all(row["effective_cpu"] == cpu for row in ancestries), "kubernetes-effective-cpu-changed")
+        observed_controls.update(cpu_quota=int(cpu["quota"]), cpu_period=int(cpu["period"]))
     result = wrapper.validate_observations(directory, arm=arm, density=density, container_id=identity["container_id"],
-        identity=identity, controls=controls, expected_snapshots=expected_snapshots,
+        identity=identity, controls=observed_controls, expected_snapshots=expected_snapshots,
         expected_connections=expected_connections, leaf_pids_max=leaf_pids)
+    result["requested_controls"] = controls
     fixed = None
     for row, mounted, ancestry in zip(observations, result["snapshots"], ancestries):
         owner = _process(row["wrapper"], mounted["wrapper"], identity["host_wrapper_pid_at_ready"])

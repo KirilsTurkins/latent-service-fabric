@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from tools.optimization_evidence.common import EvidenceError, canonical, sha256
-from tools.optimization_kubernetes import model, replay
+from tools.optimization_kubernetes import evidence, model, replay
 
 
 class SuiteIndexTests(unittest.TestCase):
@@ -33,7 +33,16 @@ class SuiteIndexTests(unittest.TestCase):
         before = {path.name: path.read_bytes() for path in self.root.iterdir()}
         self.assertEqual(result["groups"], self.groups)
         self.assertEqual(self.load()["groups"], self.groups)
+        evidence._suite_index(self.root, result)
         self.assertEqual(before, {path.name: path.read_bytes() for path in self.root.iterdir()})
+
+    def test_component_gate_rebinds_original_index_after_expansion(self):
+        expanded = self.load()
+        evidence._suite_index(self.root, expanded)
+        path = self.root / "group-0-0.json"
+        path.write_bytes(path.read_bytes() + b"\n")
+        with self.assertRaises(EvidenceError):
+            evidence._suite_index(self.root, expanded)
 
     def test_missing_extra_reordered_or_boolean_identity_rejects(self):
         mutations = []

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from decimal import Decimal
+from fractions import Fraction
 import json
 from pathlib import Path
 
@@ -26,7 +27,7 @@ CROSS_WINDOW = ("cgroup.cpu.usage_usec", "cgroup.cpu.user_usec", "cgroup.cpu.sys
 TABLES = ("phase_rows", "phase_comparisons", "resource_points", "resource_comparisons", "idle_windows",
     "idle_window_comparisons", "lifecycle_owners", "lifecycle_cohorts", "lifecycle_comparisons",
     "client_resource_points", "client_intervals", "client_cpu_comparisons", "platform_comparisons",
-    "node_resource_points", "node_resource_intervals")
+    "node_resource_points", "node_resource_intervals", "cpu_limit_cohorts")
 
 
 def _spread(values):
@@ -226,6 +227,46 @@ def _docker_lifecycle(rows):
              "metrics": {aliases.get(name, name): value for name, value in row["metrics"].items()}} for row in rows]
 
 
+def cpu_limit_cohorts(groups):
+    """Keep requested CPU and kernel-enforced capacity separate from CPU usage."""
+    rows = []
+    for group in groups:
+        count = group["density"] if group["arm"] == "native" else 1
+        require(len(group["owners"]) == count, "kubernetes-aggregate-cpu-owner-population")
+        requested = effective = Fraction(0)
+        for owner in group["owners"]:
+            snapshots = owner["resources"]["snapshots"]
+            require(len(snapshots) == 6, "kubernetes-aggregate-cpu-snapshot-population")
+            observed = []
+            for snapshot in snapshots:
+                limits = snapshot["provider"]["cgroup"]
+                values = []
+                for key in ("requested_cpu", "effective_cpu"):
+                    value = limits[key]
+                    quota, period = uint(value["quota"]), uint(value["period"])
+                    require(quota > 0 and period > 0, "kubernetes-aggregate-cpu-finite")
+                    values.append(Fraction(quota, period))
+                require(type(limits["effective_cpu_matches_requested"]) is bool
+                        and limits["effective_cpu_matches_requested"] == (values[0] == values[1]),
+                        "kubernetes-aggregate-cpu-match-flag")
+                observed.append(tuple(values))
+            require(all(value == observed[0] for value in observed), "kubernetes-aggregate-cpu-limit-changed")
+            requested += observed[0][0]
+            effective += observed[0][1]
+        require(requested == 4, "kubernetes-aggregate-cpu-requested-total")
+        delta = effective - requested
+        percent = delta * 100 / requested
+        rows.append({**{key: group[key] for key in ("pair", "group", "arm", "density")},
+            "application_owners": count, "snapshots_per_owner": 6,
+            "scope": "sum-of-owner-effective-caps-not-cpu-usage",
+            "requested_millicpus": ratio(requested.numerator * 1000, requested.denominator),
+            "effective_millicpus": ratio(effective.numerator * 1000, effective.denominator),
+            "effective_minus_requested_millicpus": ratio(delta.numerator * 1000, delta.denominator),
+            "percent_above_requested": ratio(percent.numerator, percent.denominator),
+            "effective_cpu_matches_requested": effective == requested})
+    return rows
+
+
 def _aggregate(derived, original):
     require(derived["status"] == "passed", "kubernetes-aggregate-unvalidated-input")
     profile = derived["profile"]
@@ -259,6 +300,7 @@ def _aggregate(derived, original):
     owners, cohorts = lifecycle_rows(groups, clients)
     client_points, client_intervals = client_rows(clients)
     node_points, node_intervals = node_rows(derived["background"])
+    cpu_limits = cpu_limit_cohorts(groups)
     lifecycle_units = {name: "ns" for name in cohorts[0]["metrics"]}
     client_units = {"cpu_total_nanos": "ns"}
     cross = []
@@ -277,6 +319,8 @@ def _aggregate(derived, original):
     original_bytes = canonical(original) + b"\n"
     result = {"schema": SCHEMA, "status": "complete", "profile": profile, "plan": plan,
         "completed_paired_run": True, "full_population_completed": profile == "full", "acceptance_qualified": profile == "full",
+        "acceptance_scope": "complete-descriptive-deployment-comparison",
+        "exact_effective_cpu_match": all(row["effective_cpu_matches_requested"] for row in cpu_limits),
         "logical_offers": offers, "validated_pairs": repetitions, "source": derived["source"],
         "build_source": derived["build_source"], "suite_sha256": derived["suite_sha256"],
         "images": derived["images"], "counts": derived["counts"],
@@ -296,6 +340,7 @@ def _aggregate(derived, original):
         "client_resource_points": client_points, "client_intervals": client_intervals,
         "client_cpu_comparisons": _compact(docker.comparisons(client_intervals, ("density", "from_stage", "to_stage"), client_units)),
         "platform_comparisons": cross, "node_resource_points": node_points, "node_resource_intervals": node_intervals,
+        "cpu_limit_cohorts": cpu_limits,
         "units": {"phase_metrics": phase_units, "resource_metrics": resource_units, "lifecycle_metrics": lifecycle_units,
                   "client_interval_metrics": client_units,
                   "client_point_metrics": {"cpu_total_nanos": "ns", "memory_working_set_bytes": "bytes"},
@@ -304,7 +349,8 @@ def _aggregate(derived, original):
             "Seven full pairs are descriptive; same pair indices across separate Docker/Kubernetes campaigns are not randomized platform pairs.",
             "First, warmup and measured phases remain separate; arm summaries describe per-pair statistics, not pooled offer latencies.",
             "ClusterIP routing, Pod scheduling, startup probes, CNI, containerd, node services and observation differences remain in the platform contrast.",
-            "Matched aggregate CPU/memory has partitioned native per-service quotas versus pooled LSF resources; global C4 cannot borrow idle native partitions.",
+            "Declared aggregate CPU/memory matches, with partitioned native per-service quotas versus pooled LSF resources; global C4 cannot borrow idle native partitions.",
+            "Kernel CPU caps are reported separately in cpu_limit_cohorts. The systemd D32 native 125m request can enforce 130m per owner: 4.16 versus 4.0 CPUs (+4%). This is not an exactly matched effective CPU experiment, and caps are not measured CPU usage.",
             "Pod creation and Docker container start are different parent-observed lifecycle boundaries, with images already present.",
             "Kubernetes submits the cohort before waiting for readiness; original Docker provisioning is sequential. Both include connections and intentional 250ms barriers.",
             "Endpoint readiness and observed worker Service forwarding rules are separate boundaries. Read-only forwarding polls precede client connection and remain in cold lifecycle costs.",

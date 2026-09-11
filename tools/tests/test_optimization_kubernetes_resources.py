@@ -84,7 +84,94 @@ class KubernetesFixture:
             worker=WORKER, observations=self.observations, expected_connections=2)
 
 
+def rounded_systemd_fixture(fixture):
+    """Model the retained D32 leaf/Pod observations without changing its spec."""
+    pod_name = "kubelet-kubepods-pod" + UID.replace("-", "_") + ".slice"
+    pod = resources.ROOT / "kubelet.slice" / "kubelet-kubepods.slice" / pod_name
+    leaf = pod / ("cri-containerd-" + CONTAINER_ID + ".scope")
+    for value in (fixture.cri_ready, fixture.cri_final):
+        value["info"]["runtimeSpec"]["linux"]["cgroupsPath"] = pod_name + ":cri-containerd:" + CONTAINER_ID
+    for observation, event in zip(fixture.observations, fixture.fixture.events[2:-1]):
+        original = observation["cgroups"]
+        observation["cgroups"] = [{"path": str(path), "files": deepcopy(original[index if index < 3 else -1]["files"])}
+            for index, path in enumerate((leaf, pod, pod.parent, pod.parent.parent, resources.ROOT))]
+        for index in (0, 1):
+            observation["cgroups"][index]["files"]["cpu.max"] = raw("13000 100000\n")
+        for process in ("wrapper", "child"):
+            observation[process]["cgroup"] = raw("0::" + str(leaf).removeprefix(str(resources.ROOT)) + "\n")
+        event["detail"]["cgroup"]["files"]["cpu.max"] = raw("13000 100000\n")
+    fixture.fixture.write()
+
+
 class KubernetesResources(unittest.TestCase):
+    def test_d32_systemd_cap_is_reported_as_actual_four_percent_difference(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = KubernetesFixture(Path(directory))
+            rounded_systemd_fixture(fixture)
+            original = deepcopy((fixture.pod_ready, fixture.cri_ready, fixture.cri_final, fixture.observations))
+            result = fixture.validate()
+            self.assertEqual(result["requested_controls"]["cpu_quota"], 12500)
+            self.assertEqual(result["effective_controls"]["cpu_quota"], 13000)
+            for row in result["snapshots"]:
+                cpu = row["provider"]["cgroup"]
+                self.assertEqual(cpu["effective_cpu"], {"quota": "13000", "period": "100000"})
+                self.assertEqual(cpu["requested_cpu"], {"quota": "12500", "period": "100000"})
+                self.assertFalse(cpu["effective_cpu_matches_requested"])
+                self.assertEqual(cpu["cpu_limit_policy"], "native-d32-systemd-rounded-cap")
+                self.assertEqual(row["cgroup"]["files"]["cpu.max"]["value"], "13000 100000\n")
+            self.assertEqual((fixture.pod_ready, fixture.cri_ready, fixture.cri_final, fixture.observations), original)
+
+    def test_exact_d32_still_reports_requested_effective_equality(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = KubernetesFixture(Path(directory)).validate()
+            for row in result["snapshots"]:
+                cpu = row["provider"]["cgroup"]
+                self.assertEqual(cpu["effective_cpu"], cpu["requested_cpu"])
+                self.assertTrue(cpu["effective_cpu_matches_requested"])
+
+    def test_rounding_policy_has_no_tolerance_for_other_cpu_values_or_densities(self):
+        for arm, density in (("native", 8), ("native", 1), ("lsf", 32)):
+            with self.subTest(arm=arm, density=density), tempfile.TemporaryDirectory() as directory:
+                fixture = KubernetesFixture(Path(directory), arm, density)
+                rounded_systemd_fixture(fixture)
+                with self.assertRaisesRegex(EvidenceError, "leaf-cpu"):
+                    fixture.validate()
+        for value in ("12600 100000\n", "14000 100000\n", "26000 200000\n"):
+            with self.subTest(value=value), tempfile.TemporaryDirectory() as directory:
+                fixture = KubernetesFixture(Path(directory))
+                rounded_systemd_fixture(fixture)
+                fixture.observations[0]["cgroups"][0]["files"]["cpu.max"] = raw(value)
+                with self.assertRaisesRegex(EvidenceError, "leaf-cpu"):
+                    fixture.validate()
+
+    def test_rounded_cap_requires_stable_six_snapshots_exact_pod_and_mounted_agreement(self):
+        for change in ("snapshot", "pod", "ancestor", "mounted", "cri"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as directory:
+                fixture = KubernetesFixture(Path(directory))
+                rounded_systemd_fixture(fixture)
+                if change == "snapshot":
+                    fixture.observations[-1]["cgroups"][0]["files"]["cpu.max"] = raw("12500 100000\n")
+                elif change == "pod":
+                    fixture.observations[0]["cgroups"][1]["files"]["cpu.max"] = raw("12500 100000\n")
+                elif change == "ancestor":
+                    fixture.observations[0]["cgroups"][2]["files"]["cpu.max"] = raw("12000 100000\n")
+                elif change == "mounted":
+                    fixture.fixture.events[2]["detail"]["cgroup"]["files"]["cpu.max"] = raw("12500 100000\n")
+                    fixture.fixture.write()
+                else:
+                    fixture.cri_ready["info"]["runtimeSpec"]["linux"]["resources"]["cpu"]["quota"] = 13000
+                with self.assertRaises(EvidenceError):
+                    fixture.validate()
+
+    def test_docker_validation_does_not_accept_kubernetes_rounding(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Fixture(Path(directory), arm="native", density=32)
+            for event in fixture.events[2:-1]:
+                event["detail"]["cgroup"]["files"]["cpu.max"] = raw("13000 100000\n")
+            fixture.write()
+            with self.assertRaisesRegex(EvidenceError, "wrapper-effective-cpu"):
+                fixture.validate()
+
     def test_actual_crictl_rfc3339_nanos_preserve_precision_and_offset(self):
         actual = "2026-09-11T13:31:06.778695268Z"
         value = resources.cri_timestamp(actual)

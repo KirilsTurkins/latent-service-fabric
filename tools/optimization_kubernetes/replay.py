@@ -8,6 +8,7 @@ import tarfile
 from tools.optimization_docker import build, evidence as docker
 from tools.optimization_evidence.common import canonical, fields, read_json, require, sha256, uint, verify_artifact
 from . import model, services, transport_evidence
+from .transport import cleanup_owner
 
 
 def load_suite(root):
@@ -56,7 +57,7 @@ def _source(suite, root, built):
     inputs = suite["collector_inputs"]
     require(isinstance(inputs, dict) and 1 <= len(inputs) <= 3500, "kubernetes-replay-source-count")
     required = {"tools/run_optimization_kubernetes.py", *("tools/optimization_kubernetes/" + name for name in (
-        "collect.py", "applications.py", "session.py", "model.py", "services.py", "transport.py",
+        "collect.py", "applications.py", "session.py", "model.py", "services.py", "proxy.py", "transport.py",
         "attach.py", "files.py", "node.py", "observer.sh"))}
     require(required <= inputs.keys(), "kubernetes-replay-collector-closure")
     for name, reference in inputs.items():
@@ -154,14 +155,9 @@ def _transfers(suite, root, journal, used, build_root, docker_root):
         used.add(row["call"])
 
 
-def _cleanup(suite, root, journal, used):
+def _cleanup_objects(suite, journal, used):
+    """Prove original Pod/namespace deletion independently of later runtime cleanup."""
     value = suite["cleanup"]
-    docker.equal(read_json(root / "cleanup.json"), value, "kubernetes-replay-cleanup-sidecar")
-    require(value["schema"] == model.PREFIX + "cleanup.v1" and value["errors"] == []
-            and value["namespace"] == suite["namespace"] and value["namespace_uid"] == suite["namespace_uid"]
-            and value["namespace_absent"] is True and value["remote_removed"] is True
-            and value["remaining_pods"] == {} and value["private_tls_removed"] is True,
-            "kubernetes-replay-incomplete-cleanup")
     expected = {row["create"]["pod"]["metadata"]["uid"]: row["create"]["pod"]["metadata"]["name"]
                 for row in suite["clients"] + [app for group in suite["groups"] for app in group["owners"]]}
     require(len(value["pods"]) == len(expected)
@@ -193,8 +189,20 @@ def _cleanup(suite, root, journal, used):
         used.add(ordinal)
     require(deleted and journal["rows"][value["namespace_calls"][-1]]["raw"]["status"] == 404,
             "kubernetes-replay-namespace-absence")
+    return expected
+
+
+def _cleanup(suite, root, journal, used):
+    value = suite["cleanup"]
+    docker.equal(read_json(root / "cleanup.json"), value, "kubernetes-replay-cleanup-sidecar")
+    require(value["schema"] == model.PREFIX + "cleanup.v1" and value["errors"] == []
+            and value["namespace"] == suite["namespace"] and value["namespace_uid"] == suite["namespace_uid"]
+            and value["namespace_absent"] is True and value["remote_removed"] is True
+            and value["remaining_pods"] == {} and value["private_tls_removed"] is True,
+            "kubernetes-replay-incomplete-cleanup")
+    expected = _cleanup_objects(suite, journal, used)
     require(len(value["cri_calls"]) == 4, "kubernetes-replay-runtime-cleanup-count")
-    removable = {}
+    removable, removable_records, removal_windows = {}, {}, {}
     for index, ordinal in enumerate(value["cri_calls"]):
         command = ["crictl", "ps", "-a", "-o", "json"] if index < 2 else ["crictl", "pods", "-o", "json"]
         call = transport_evidence.get(journal, ordinal, provider="docker", operation="worker-exec", argv=command)
@@ -212,14 +220,28 @@ def _cleanup(suite, root, journal, used):
                         and row.get("state") == ("CONTAINER_EXITED" if index < 2 else "SANDBOX_NOTREADY"),
                         "kubernetes-replay-runtime-owner")
                 removable[row["id"]] = "rm" if index < 2 else "rmp"
+                removable_records[row["id"]] = row
+                removal_windows[row["id"]] = (ordinal, value["cri_calls"][index + 1])
         used.add(ordinal)
     require(len(value["cri_removed"]) == len(removable)
             and {row["id"]: row["operation"] for row in value["cri_removed"]} == removable,
             "kubernetes-replay-runtime-remove-population")
     for row in value["cri_removed"]:
         require(row["operation"] in ("rm", "rmp"), "kubernetes-replay-runtime-remove-operation")
-        transport_evidence.get(journal, row["call"], provider="docker", operation="worker-exec",
-                               argv=["crictl", row["operation"], row["id"]])
+        call = transport_evidence.get(journal, row["call"], provider="docker", operation="worker-exec",
+                                      argv=["crictl", row["operation"], row["id"]])
+        if "cleanup_log_owner" in call:
+            policy = cleanup_owner(removable_records[row["id"]])
+            docker.equal(call["cleanup_log_owner"], policy, "kubernetes-replay-cleanup-log-owner")
+            require(row["operation"] == "rm" and removal_windows[row["id"]][0] < row["call"]
+                    < removal_windows[row["id"]][1], "kubernetes-replay-cleanup-log-absence-order")
+            owners = suite["clients"] + [app for group in suite["groups"] for app in group["owners"]]
+            selected = [owner for owner in owners if owner["create"]["pod"]["metadata"]["uid"] == policy["pod_uid"]]
+            require(len(selected) == 1, "kubernetes-replay-cleanup-log-pod")
+            actual = selected[0]["pod_ready"] if "pod_ready" in selected[0] else selected[0]["ready"]["pod"]
+            status = actual["status"]["containerStatuses"][0]
+            require(status["containerID"] == "containerd://" + policy["container_id"]
+                    and status["name"] == policy["container_name"], "kubernetes-replay-cleanup-log-container")
         used.add(row["call"])
     call = transport_evidence.get(journal, value["remote_remove_call"], provider="docker", operation="worker-exec")
     argv = call["raw"]["argv"]
@@ -254,15 +276,21 @@ def validate(root, build_root, docker_root, bootstrap_root):
             "kubernetes-replay-bootstrap")
     require(suite["images"] == {arm: item["tag"] for arm, item in bootstrap["images"].items()},
             "kubernetes-replay-imported-image-set")
+    from . import cleanup_completion_evidence
+    completion = cleanup_completion_evidence.load(root, suite)
     journal = transport_evidence.validate(root / "api.ndjson",
         worker_container_id=bootstrap["nodes"]["worker"]["container_id"],
         node_container_ids={role: row["container_id"] for role, row in bootstrap["nodes"].items()},
-        started_nanos=suite["started_nanos"], finished_nanos=suite["finished_nanos"])
+        started_nanos=suite["started_nanos"], finished_nanos=suite["finished_nanos"],
+        recovered_smoke03_cleanup=completion is not None)
     derived = evidence.validate(root, suite=suite, journal=journal, bootstrap=bootstrap,
                                 build_root=build_root, docker_root=docker_root)
     used = set(derived.pop("transport_calls_used"))
     _transfers(suite, root, journal, used, build_root, docker_root)
-    _cleanup(suite, root, journal, used)
+    if completion is None:
+        _cleanup(suite, root, journal, used)
+    else:
+        cleanup_completion_evidence.validate(root, suite, journal, bootstrap, used, completion)
     from . import closure
     closure.validate(suite, root, journal, bootstrap, used)
     docker_derived = docker.validate(docker_root, build_root)
@@ -273,4 +301,6 @@ def validate(root, build_root, docker_root, bootstrap_root):
         background=suite["background"], cleanup=suite["cleanup"],
         started_nanos=suite["started_nanos"], finished_nanos=suite["finished_nanos"],
         transport={"bytes": journal["bytes"], "sha256": journal["sha256"], "calls": len(journal["rows"])})
+    if completion is not None:
+        derived["cleanup_completion"] = completion
     return derived, docker_derived

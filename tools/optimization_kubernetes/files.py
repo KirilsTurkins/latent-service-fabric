@@ -1,6 +1,7 @@
 """Small verified worker transfers; large images keep their separate setup receipt."""
 from __future__ import annotations
 
+import os
 from pathlib import Path, PurePosixPath
 import stat
 import tarfile
@@ -11,6 +12,61 @@ from tools.optimization_docker.owned import stamp
 from tools.optimization_evidence.common import require
 
 MAX_TRANSFER = 40 * 1024**2
+MAX_CAMPAIGN_ENTRIES = 6144
+MAX_CAMPAIGN_DEPTH = 8
+MAX_CAMPAIGN_FILE_BYTES = 256 * 1024**2
+MAX_CAMPAIGN_BYTES = 1024**3
+
+
+def _campaign_metadata(path):
+    info = path.lstat()
+    require(not stat.S_ISLNK(info.st_mode)
+            and not getattr(info, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT,
+            "kubernetes-campaign-entry-type")
+    require(stat.S_ISDIR(info.st_mode) or stat.S_ISREG(info.st_mode), "kubernetes-campaign-entry-type")
+    return info
+
+
+def campaign_inventory(root: Path) -> dict:
+    """Whole-campaign bookkeeping only; fixture/transfer limits stay unchanged.
+
+    Entries include the root. Depth counts directory levels below that root,
+    matching the existing fixture walk. All returned file hashes are observed.
+    """
+    root = Path(root).absolute()
+    require(".." not in root.parts, "kubernetes-campaign-root-path")
+    for path in (*reversed(root.parents), root):
+        require(stat.S_ISDIR(_campaign_metadata(path).st_mode), "kubernetes-campaign-directory-type")
+    rows, total, entries = [], 0, 1
+    require(entries <= MAX_CAMPAIGN_ENTRIES, "kubernetes-campaign-entry-bound")
+    pending = [(root, 0)]
+    while pending:
+        current, depth = pending.pop()
+        info = _campaign_metadata(current)
+        require(stat.S_ISDIR(info.st_mode), "kubernetes-campaign-directory-type")
+        rows.append({"path": current.relative_to(root).as_posix(), "kind": "directory",
+                     "mode": format(stat.S_IMODE(info.st_mode), "04o")})
+        with os.scandir(current) as children:
+            for child in children:
+                entries += 1
+                require(entries <= MAX_CAMPAIGN_ENTRIES, "kubernetes-campaign-entry-bound")
+                path = Path(child.path)
+                value = _campaign_metadata(path)
+                if stat.S_ISDIR(value.st_mode):
+                    require(depth < MAX_CAMPAIGN_DEPTH, "kubernetes-campaign-depth-bound")
+                    pending.append((path, depth + 1))
+                    continue
+                require(value.st_size <= MAX_CAMPAIGN_FILE_BYTES, "kubernetes-campaign-file-bound")
+                require(total + value.st_size <= MAX_CAMPAIGN_BYTES, "kubernetes-campaign-total-bound")
+                checksum, size = fingerprint(path, MAX_CAMPAIGN_FILE_BYTES)
+                after = _campaign_metadata(path)
+                require(size == value.st_size and all(getattr(value, field) == getattr(after, field)
+                        for field in ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns")),
+                        "kubernetes-campaign-file-changed")
+                total += size
+                rows.append({"path": path.relative_to(root).as_posix(), "kind": "file", "sha256": checksum,
+                             "bytes": str(size), "mode": format(stat.S_IMODE(value.st_mode), "04o")})
+    return {"entries": sorted(rows, key=lambda row: row["path"]), "bytes": str(total)}
 
 
 def create_archive(directory: Path, destination: Path):

@@ -21,6 +21,32 @@ def contrast(before, after):
 
 
 class KubernetesAggregateTests(unittest.TestCase):
+    def test_requested_and_effective_cpu_caps_remain_distinct(self):
+        def owner(requested, effective):
+            limits = {"requested_cpu": {"quota": str(requested), "period": "100000"},
+                      "effective_cpu": {"quota": str(effective), "period": "100000"},
+                      "effective_cpu_matches_requested": requested == effective}
+            return {"resources": {"snapshots": [
+                {"provider": {"cgroup": copy.deepcopy(limits)}} for _ in range(6)]}}
+        groups = [{"pair": 0, "group": 4, "arm": "lsf", "density": 32,
+                   "owners": [owner(400000, 400000)]},
+                  {"pair": 0, "group": 5, "arm": "native", "density": 32,
+                   "owners": [owner(12500, 13000) for _ in range(32)]}]
+        unchanged = copy.deepcopy(groups)
+        lsf, native = aggregate.cpu_limit_cohorts(groups)
+        self.assertEqual(groups, unchanged)
+        self.assertTrue(lsf["effective_cpu_matches_requested"])
+        self.assertFalse(native["effective_cpu_matches_requested"])
+        self.assertEqual(native["requested_millicpus"], "4000")
+        self.assertEqual(native["effective_millicpus"], "4160")
+        self.assertEqual(native["effective_minus_requested_millicpus"], "160")
+        self.assertEqual(native["percent_above_requested"], "4")
+        self.assertEqual(native["scope"], "sum-of-owner-effective-caps-not-cpu-usage")
+        limits = groups[1]["owners"][0]["resources"]["snapshots"][5]["provider"]["cgroup"]
+        limits["effective_cpu"]["quota"] = "14000"
+        with self.assertRaisesRegex(EvidenceError, "cpu-limit-changed"):
+            aggregate.cpu_limit_cohorts(groups)
+
     def test_seven_pairs_are_differenced_before_summaries(self):
         before = rows(["0", "0", "100", "100", "100", "101", "101"])
         after = rows(["50", "50", "51", "51", "51", "200", "200"])

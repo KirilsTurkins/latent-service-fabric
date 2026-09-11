@@ -90,8 +90,24 @@ requests equal limits, using the following fixed quantities:
 | Each native application, D32 | 125m | 64 MiB |
 | Persistent client | 2000m | 256 MiB |
 
-Native application totals match LSF's four CPUs and 2 GiB, including wrappers.
-The distribution differs: global C4 cannot borrow the idle CPU/memory partitions
+Declared native application requests and limits total LSF's four CPUs and 2 GiB,
+including wrappers. Effective enforcement is recorded separately. In smoke03,
+all 32 native D32 Pods requested `125m` and their CRI runtime specifications
+recorded `12500 100000`, while every observed leaf and Pod ancestor recorded
+`cpu.max = 13000 100000`. The effective native cohort ceiling was therefore
+4.16 CPUs versus LSF's 4.0 CPUs, a 4% difference in permitted CPU, not observed
+CPU use. The ordinary pinned runtime is retained; this is a comparison with
+matched requested resources and an explicit effective CPU difference at D32.
+Replay preserves both values and accepts only the specifically evidenced
+configuration, without normalizing the observations or applying a general
+tolerance.
+
+The observed rounding is consistent with the upstream report that the runc
+systemd driver rounds fractional CPU percentages upward and can restore that
+rounded quota after another resource update. The campaign observations do not
+isolate which update caused the change. See [runc issue 4622](https://github.com/opencontainers/runc/issues/4622).
+
+The distribution also differs: global C4 cannot borrow the idle CPU/memory partitions
 of other native Pods. LSF pools the cohort allocation. Compare these deployment
 and isolation choices, rather than attributing the entire difference to a
 Kubernetes transport cost. The native implementation performs the same business
@@ -103,7 +119,7 @@ Pod/container/ancestor PID controls. This common per-Pod setting does not match
 Docker's divided native PID limits or separate client PID limit; report those
 differences. There is no invented PID-limit or file-descriptor field in these
 Pod manifests. Retain actual process FD limits and counts. Do not claim equal
-PID/FD enforcement from matched CPU/memory quantities.
+PID/FD enforcement from matched requested CPU/memory quantities.
 
 Pods use `restartPolicy: Never`, a 40-second termination grace, no host network,
 PID or IPC namespace, no shared Pod process namespace, and no automounted service
@@ -200,6 +216,12 @@ dropping failed rows or shrinking density.
 Completed `suite.json` stores ordered identity/hash references to the original
 `group-P-G.json` files; replay verifies each reference before expanding its group
 in memory, keeping the existing per-document decoder limits unchanged.
+Whole-campaign Kubernetes bookkeeping uses an explicit 6,144-entry inventory cap
+(including the root directory), eight directory levels, 256 MiB per file and
+1 GiB total; small fixture/transfer checks and the unchanged nested Docker plan's
+4,096-entry limit retain their original scopes. Smoke-03 retained 903 files and
+178 subdirectories, and the full campaign's repeated owner/client/transfer
+records require this separately bounded inventory.
 
 The Windows [setup helper](../../tools/optimization_kubernetes/setup.py) creates
 the unique owned cluster and imports the pinned original images. Its fresh root

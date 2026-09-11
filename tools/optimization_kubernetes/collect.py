@@ -16,7 +16,7 @@ from tools.optimization_revision_runner.build import source
 from . import files, model, node, proxy, services
 from .applications import Application, idle_window
 from .session import Session
-from .transport import Journal, Kubernetes, Worker, private_tls
+from .transport import Journal, Kubernetes, Worker, cleanup_owner, private_tls
 
 
 def _current_slices(rows, current, known, *, owner, run_id, embedded_items=False):
@@ -128,7 +128,7 @@ class Campaign:
         self.progress_journal.append({"kind": kind, "observed_nanos": stamp(), "value": value})
 
     def reserve(self):
-        inventory = fixtures.inventory(self.root)
+        inventory = files.campaign_inventory(self.root)
         require(int(inventory["bytes"]) <= model.MAX_TOTAL_BYTES - 64 * 1024**2,
                 "kubernetes-evidence-reserve")
 
@@ -425,7 +425,8 @@ class Campaign:
                             and any(row["uid"] == labels.get("io.kubernetes.pod.uid")
                                     and row["name"] == labels.get("io.kubernetes.pod.name")
                                     for row in self.delete_receipts), "kubernetes-cleanup-cri-owner")
-                    _, call = self.worker.command(["crictl", removal, identifier])
+                    policy = {"cleanup_log_owner": cleanup_owner(item)} if removal == "rm" else {}
+                    _, call = self.worker.command(["crictl", removal, identifier], **policy)
                     result["cri_removed"].append({"id": identifier, "operation": removal, "call": call})
                 after, call = self.worker.json(command)
                 result["cri_calls"].append(call)

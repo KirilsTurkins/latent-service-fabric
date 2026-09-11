@@ -7,7 +7,9 @@ from pathlib import Path
 import stat
 import tarfile
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 from tools.optimization_docker import fixtures
 from tools.optimization_evidence.common import EvidenceError, sha256
@@ -136,6 +138,120 @@ class KubernetesFiles(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 files.copy_file(source, target)
             self.assertEqual(target.read_bytes(), data)
+
+
+class KubernetesCampaignInventory(unittest.TestCase):
+    def test_inventory_matches_existing_file_bytes_modes_and_empty_directories(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "empty").mkdir()
+            (root / "nested").mkdir()
+            (root / "nested" / "original.bin").write_bytes(b"\x00original\r\n\xff")
+            (root / "zero").write_bytes(b"")
+            expected = fixtures.inventory(root)
+            self.assertEqual(files.campaign_inventory(root), expected)
+            self.assertEqual(expected["entries"][0]["path"], ".")
+            self.assertEqual((root / "nested" / "original.bin").read_bytes(), b"\x00original\r\n\xff")
+
+    def test_count_includes_root_and_does_not_change_small_fixture_limit(self):
+        self.assertEqual(files.MAX_CAMPAIGN_ENTRIES, 6144)
+        self.assertEqual(fixtures.MAXIMUM_FILES, 4096)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in ("a", "b", "c"):
+                (root / name).write_bytes(b"")
+            with patch.object(files, "MAX_CAMPAIGN_ENTRIES", 4), patch.object(fixtures, "MAXIMUM_FILES", 2):
+                self.assertEqual(len(files.campaign_inventory(root)["entries"]), 4)
+                with self.assertRaisesRegex(ValueError, "docker-template-entry-bound"):
+                    fixtures.inventory(root)
+                (root / "empty-directory").mkdir()
+                with self.assertRaisesRegex(EvidenceError, "campaign-entry-bound"):
+                    files.campaign_inventory(root)
+
+    def test_directory_depth_is_bounded_without_changing_file_content(self):
+        self.assertEqual(files.MAX_CAMPAIGN_DEPTH, 8)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = current = Path(temporary)
+            for _ in range(files.MAX_CAMPAIGN_DEPTH):
+                current /= "nested"
+                current.mkdir()
+            (current / "data").write_bytes(b"leaf")
+            self.assertEqual(files.campaign_inventory(root)["bytes"], "4")
+            (current / "too-deep").mkdir()
+            with self.assertRaisesRegex(EvidenceError, "campaign-depth-bound"):
+                files.campaign_inventory(root)
+            self.assertEqual((current / "data").read_bytes(), b"leaf")
+
+    def test_file_and_total_byte_caps_reject_with_scaled_physical_files(self):
+        self.assertEqual(files.MAX_CAMPAIGN_FILE_BYTES, 256 * 1024**2)
+        self.assertEqual(files.MAX_CAMPAIGN_BYTES, 1024**3)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "a").write_bytes(b"abc")
+            with patch.object(files, "MAX_CAMPAIGN_FILE_BYTES", 2), \
+                 patch.object(files, "fingerprint", wraps=files.fingerprint) as hashed, \
+                 self.assertRaisesRegex(EvidenceError, "campaign-file-bound"):
+                files.campaign_inventory(root)
+            hashed.assert_not_called()
+            (root / "b").write_bytes(b"1234")
+            with patch.object(files, "MAX_CAMPAIGN_FILE_BYTES", 4), patch.object(files, "MAX_CAMPAIGN_BYTES", 7):
+                self.assertEqual(files.campaign_inventory(root)["bytes"], "7")
+            with patch.object(files, "MAX_CAMPAIGN_BYTES", 6), \
+                 self.assertRaisesRegex(EvidenceError, "campaign-total-bound"):
+                files.campaign_inventory(root)
+            self.assertEqual((root / "a").read_bytes(), b"abc")
+            self.assertEqual((root / "b").read_bytes(), b"1234")
+
+    def test_symlink_reparse_and_special_metadata_reject_before_hashing(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "ordinary"
+            target.write_bytes(b"original")
+            original_lstat = Path.lstat
+            invalid = ((stat.S_IFLNK | 0o777, 0), (stat.S_IFREG | 0o600, stat.FILE_ATTRIBUTE_REPARSE_POINT),
+                       (stat.S_IFIFO | 0o600, 0), (stat.S_IFSOCK | 0o600, 0))
+            for mode, attributes in invalid:
+                def observed(path):
+                    return (SimpleNamespace(st_mode=mode, st_file_attributes=attributes) if path == target
+                            else original_lstat(path))
+                with self.subTest(mode=mode, attributes=attributes), patch.object(Path, "lstat", observed), \
+                     patch.object(files, "fingerprint") as hashed, \
+                     self.assertRaisesRegex(EvidenceError, "campaign-entry-type"):
+                    files.campaign_inventory(root)
+                hashed.assert_not_called()
+            self.assertEqual(target.read_bytes(), b"original")
+
+    def test_linked_parent_non_directory_root_and_parent_traversal_reject(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            child = root / "child"
+            child.mkdir()
+            (root / "ordinary").write_bytes(b"x")
+            with self.assertRaisesRegex(EvidenceError, "campaign-directory-type"):
+                files.campaign_inventory(root / "ordinary")
+            with self.assertRaisesRegex(EvidenceError, "campaign-root-path"):
+                files.campaign_inventory(child / "..")
+            original_lstat = Path.lstat
+            def observed(path):
+                return (SimpleNamespace(st_mode=stat.S_IFDIR | 0o700,
+                                        st_file_attributes=stat.FILE_ATTRIBUTE_REPARSE_POINT) if path == root
+                        else original_lstat(path))
+            with patch.object(Path, "lstat", observed), self.assertRaisesRegex(EvidenceError, "campaign-entry-type"):
+                files.campaign_inventory(child)
+
+    def test_changed_file_during_hash_does_not_return_a_mixed_inventory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "changing"
+            target.write_bytes(b"before")
+            original = files.fingerprint
+            def changed(path, maximum):
+                result = original(path, maximum)
+                path.write_bytes(b"after-growth")
+                return result
+            with patch.object(files, "fingerprint", side_effect=changed), \
+                 self.assertRaisesRegex(EvidenceError, "campaign-file-changed"):
+                files.campaign_inventory(root)
 
 
 if __name__ == "__main__":

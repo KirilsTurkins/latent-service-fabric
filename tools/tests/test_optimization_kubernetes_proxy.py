@@ -124,6 +124,24 @@ class ProxyTests(TestCase):
 
 
 class ProxyReplayTests(TestCase):
+    def test_historical_port_is_only_the_original_failed_smoke02_group(self):
+        replay = object.__new__(evidence.Replay)
+        original = {"pair": 0, "group": 0, "owners": [], "graph_ready_nanos": "10"}
+        replay.suite = {"profile": "smoke", "source": {"commit": "7a655e7967dbde1431f0ff8a5b928443a5986832"},
+            "failure": {"type": "EvidenceError", "reason": "kubernetes-client-ack-order-identity"}, "groups": [original]}
+        replay._historical_group(original, 0, 0)
+        baseline = deepcopy(replay.suite)
+        for key, value in (("profile", "full"), ("failure", None),
+                           ("source", {"commit": "a" * 40}), ("groups", [original, original])):
+            replay.suite = {**baseline, key: value}
+            with self.subTest(key=key), self.assertRaises(EvidenceError):
+                replay.client_barriers({"pair": 0}, [original], {}, require_proxy=False)
+        replay.suite = baseline
+        with self.assertRaises(EvidenceError):
+            replay._historical_group({**original, "proxy_ready_nanos": "11"}, 0, 0)
+        with self.assertRaises(EvidenceError):
+            replay.client_barriers({"pair": 1}, [original], {}, require_proxy=False)
+
     def fixture(self):
         nat, filtered = tables()
         replay = object.__new__(evidence.Replay)

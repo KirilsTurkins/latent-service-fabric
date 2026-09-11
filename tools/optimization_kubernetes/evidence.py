@@ -52,6 +52,17 @@ def _counter(value):
     return uint(value) if isinstance(value, str) else integer(value, 0, 2**64 - 1)
 
 
+def _suite_index(root, suite):
+    """Bind expanded groups back to the original compact suite and group bytes."""
+    references = []
+    for group in suite["groups"]:
+        identity = {key: group[key] for key in ("pair", "group", "arm", "density")}
+        name = f"group-{group['pair']}-{group['group']}.json"
+        raw = _read(root, name, 16 * 1024**2)
+        references.append({**identity, "artifact": {"path": name, "bytes": str(len(raw)), "sha256": sha256(raw)}})
+    _json(root, "suite.json", {**suite, "groups": references}, 16 * 1024**2)
+
+
 def _image(pod, cri, arm, bootstrap):
     original = bootstrap["images"][arm]
     require(pod["spec"]["containers"][0]["image"] == original["tag"], "kubernetes-evidence-original-image-tag")
@@ -388,17 +399,20 @@ class Replay:
             previous = observed
         return ready
 
+    def _historical_group(self, parent, pair, ordinal):
+        require(self.suite["profile"] == "smoke" and self.suite["source"]["commit"]
+                == "7a655e7967dbde1431f0ff8a5b928443a5986832"
+                and self.suite["failure"] == {"type": "EvidenceError", "reason": "kubernetes-client-ack-order-identity"}
+                and pair == 0 and ordinal == 0 and len(self.suite["groups"]) == 1
+                and parent == self.suite["groups"][0]
+                and "proxy_attempts" not in parent and "proxy_ready_nanos" not in parent,
+                "kubernetes-evidence-historical-failed-proxy-policy")
+
     def group(self, parent, pair, expected, *, require_proxy=True):
         ordinal, arm, density = expected["ordinal"], expected["arm"], expected["density"]
         require(type(require_proxy) is bool, "kubernetes-evidence-proxy-policy")
         if not require_proxy:
-            require(self.suite["profile"] == "smoke" and self.suite["source"]["commit"]
-                    == "7a655e7967dbde1431f0ff8a5b928443a5986832"
-                    and self.suite["failure"] == {"type": "EvidenceError", "reason": "kubernetes-client-ack-order-identity"}
-                    and pair == 0 and ordinal == 0 and len(self.suite["groups"]) == 1
-                    and parent == self.suite["groups"][0]
-                    and "proxy_attempts" not in parent and "proxy_ready_nanos" not in parent,
-                    "kubernetes-evidence-historical-failed-proxy-policy")
+            self._historical_group(parent, pair, ordinal)
         require(parent["pair"] == pair and parent["group"] == ordinal and parent["arm"] == arm
                 and parent["density"] == density, "kubernetes-evidence-group-order")
         start, end = uint(parent["started_nanos"]), uint(parent["finished_nanos"])
@@ -696,7 +710,14 @@ class Replay:
         self.deleted(parent["delete"], final)
         return {"parent": parent, "evidence": derived, "resources": points, "lifecycle": lifecycle}
 
-    def client_barriers(self, parent, groups, derived):
+    def client_barriers(self, parent, groups, derived, *, require_proxy=True):
+        require(type(require_proxy) is bool, "kubernetes-evidence-proxy-policy")
+        if not require_proxy:
+            require(parent["pair"] == 0 and isinstance(groups, list) and len(groups) == 1,
+                    "kubernetes-evidence-historical-client-proxy-policy")
+            group = groups[0]
+            original = {**group, "owners": [owner["parent"] for owner in group["owners"]]}
+            self._historical_group(original, group["pair"], group["group"])
         commands = [decode(row["line"].encode(), 64 * 1024) for row in parent["commands"]]
         acks = {row["ack"]["command_ordinal"]: row for row in parent["acknowledgements"]
                 if row["ack"]["event"] not in ("ready", "first-response")}
@@ -707,7 +728,8 @@ class Replay:
             finish = next(index for index, command in enumerate(commands)
                           if command["group"] == ordinal and command["command"] == "finish-group")
             _same(commands[begin]["targets"], group["targets"], "kubernetes-evidence-client-service-targets")
-            require(uint(group["proxy_ready_nanos"]) <= uint(parent["commands"][begin]["sent_nanos"])
+            ready = group["proxy_ready_nanos"] if require_proxy else group["graph_ready_nanos"]
+            require(uint(ready) <= uint(parent["commands"][begin]["sent_nanos"])
                     and uint(acks[finish]["received_nanos"]) <= uint(group["finished_nanos"]),
                     "kubernetes-evidence-client-group-clock")
             for position, window in enumerate(group["windows"]):
@@ -775,7 +797,7 @@ def validate(root: Path, *, suite: dict, journal: dict, bootstrap: dict, build_r
     require(suite["failure"] is None, "kubernetes-evidence-failed-campaign")
     _same(suite["plan"], model.plan(suite["profile"], owner=suite["owner"]), "kubernetes-evidence-plan")
     _json(root, "plan.json", suite["plan"])
-    _json(root, "suite.json", suite, 128 * 1024**2)
+    _suite_index(root, suite)
     original = _ref(docker_root, suite["docker_suite"], expected="suite.json", maximum=64 * 1024**2)
     require(decode(original, 64 * 1024**2)["profile"] == "full", "kubernetes-evidence-original-full")
     built = build.validate_receipt(read_json(build_root / "docker-builds.json"), build_root)

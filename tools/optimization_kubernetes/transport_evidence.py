@@ -19,6 +19,7 @@ from tools.optimization_docker.engine import API_VERSION
 from tools.optimization_evidence.common import (
     EvidenceError, decode, digest, fields, integer, require, sha256, text, uint, unique_object,
 )
+from .transport import cleanup_log_warning
 
 MAX_BYTES = 256 * 1024**2
 MAX_ROWS = 20_000
@@ -27,6 +28,10 @@ MAX_RESPONSE = 8 * 1024**2
 MAX_TRANSFER = 40 * 1024**2
 HTTP_FIELDS = ("method path begin_nanos end_nanos status request_bytes request_sha256 response_bytes "
                "response_sha256 response_complete connection_closed failure")
+SMOKE03_JOURNAL_SHA256 = "sha256:3e7bb1dca8517d7bba56bf444c65f108a75412574db8c8b633c48a842e96c36b"
+SMOKE03_CLEANUP_OWNER = {"namespace": "lsf-112-8c22b65b1529-smoke-03", "pod_name": "p0-g5-native-27",
+    "pod_uid": "ebd99f76-bb98-49b5-bc53-e201eddba370", "container_name": "native",
+    "container_id": "a60882dd6e5b3de7de7b99c5a1faf1b9f1885b50fda5efb466e39606298405fb"}
 
 
 def _wire(value):
@@ -206,9 +211,18 @@ def _node_stats(row, nodes, lower, upper):
     return {"response_bytes": response, "response_json": value}, start, end
 
 
-def _exec(row, container, lower, upper):
-    fields(row, "ordinal provider operation container_id argv timeout_seconds started_nanos finished_nanos records failure")
-    require(row["container_id"] == container and row["failure"] is None, "kubernetes-journal-exec-owner")
+def _exec(row, container, lower, upper, *, owner=None, recovered_smoke03=False):
+    fields(row, "ordinal provider operation container_id argv timeout_seconds started_nanos finished_nanos records failure"
+           + (" cleanup_log_owner" if "cleanup_log_owner" in row else ""))
+    policy = row.get("cleanup_log_owner")
+    if recovered_smoke03:
+        require(row["ordinal"] == 2641 and row["failure"] == "EvidenceError" and "cleanup_log_owner" not in row
+                and owner == "lsf-112-8c22b65b1529", "kubernetes-journal-historical-cleanup-record")
+        policy = SMOKE03_CLEANUP_OWNER
+    else:
+        require(row["failure"] is None, "kubernetes-journal-exec-owner")
+    require(row["container_id"] == container and ("cleanup_log_owner" not in row or policy is not None),
+            "kubernetes-journal-exec-owner")
     start, end = _window(row["started_nanos"], row["finished_nanos"], lower, upper)
     timeout = integer(row["timeout_seconds"], 1, 60)
     argv = row["argv"]
@@ -242,9 +256,18 @@ def _exec(row, container, lower, upper):
             and final.get("Running") is False and type(final.get("ExitCode")) is int and final["ExitCode"] == 0,
             "kubernetes-journal-exec-not-reaped")
     stdout, stderr = _multiplexed(output)
-    require(not stderr, "kubernetes-journal-exec-stderr")
+    warning = None
+    if policy is None:
+        require(not stderr, "kubernetes-journal-exec-stderr")
+    else:
+        require(owner is not None, "kubernetes-journal-cleanup-log-owner")
+        warning = cleanup_log_warning(argv, stdout, stderr, policy, worker_owner=owner)
+    if recovered_smoke03:
+        require(warning is not None, "kubernetes-journal-historical-cleanup-warning-missing")
     return {"request_json": request, "request_bytes": _wire(request), "response_bytes": output,
-            "stdout": stdout, "stderr": stderr, "exec_id": exec_id, "final_inspect": final}, start, end
+            "stdout": stdout, "stderr": stderr, "exec_id": exec_id, "final_inspect": final,
+            **({"cleanup_log_owner": dict(policy), "cleanup_log_warning": warning} if policy is not None else {}),
+            **({"recovered_failure": row["failure"]} if recovered_smoke03 else {})}, start, end
 
 
 def _upload(row, container, owner, lower, upper):
@@ -313,9 +336,10 @@ def _line(data):
 
 
 def validate(path: Path, *, worker_container_id: str, started_nanos: str, finished_nanos: str,
-             node_container_ids: dict | None = None) -> dict:
+             node_container_ids: dict | None = None, recovered_smoke03_cleanup=False) -> dict:
     """Verify original bytes and successful transport; never execute their source."""
     container = _id(worker_container_id)
+    require(type(recovered_smoke03_cleanup) is bool, "kubernetes-journal-recovered-cleanup-policy")
     if node_container_ids is not None:
         fields(node_container_ids, "control-plane worker")
         nodes = {role: _id(value) for role, value in node_container_ids.items()}
@@ -352,7 +376,8 @@ def validate(path: Path, *, worker_container_id: str, started_nanos: str, finish
                     else:
                         require(owner is not None, "kubernetes-journal-worker-not-bound")
                         if operation == "worker-exec":
-                            derived, start, end = _exec(row, container, previous, upper)
+                            derived, start, end = _exec(row, container, previous, upper, owner=owner,
+                                recovered_smoke03=recovered_smoke03_cleanup and row["ordinal"] == 2641)
                         elif operation == "worker-upload":
                             derived, start, end = _upload(row, container, owner, previous, upper)
                         elif operation == "node-stats":
@@ -369,7 +394,15 @@ def validate(path: Path, *, worker_container_id: str, started_nanos: str, finish
                 and total == before.st_size and owner is not None, "kubernetes-journal-file-changed")
     except OSError as error:
         raise EvidenceError("kubernetes-journal-file-unreadable") from error
-    return {"bytes": str(total), "sha256": "sha256:" + hasher.hexdigest(), "rows": rows}
+    checksum = "sha256:" + hasher.hexdigest()
+    recovered = {}
+    if recovered_smoke03_cleanup:
+        require(checksum == SMOKE03_JOURNAL_SHA256 and total == 32909467 and len(rows) == 2642
+                and rows[-1].get("recovered_failure") == "EvidenceError",
+                "kubernetes-journal-historical-cleanup-byte-identity")
+        recovered = {"recovered_cleanup": {"ordinal": 2641, "original_failure": "EvidenceError",
+            "warning": rows[-1]["cleanup_log_warning"], "requires_separate_final_absence_proof": True}}
+    return {"bytes": str(total), "sha256": checksum, "rows": rows, **recovered}
 
 
 def get(result, ordinal, *, provider, operation=None, method=None, path=None, argv=None,

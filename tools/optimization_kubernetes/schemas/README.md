@@ -21,9 +21,19 @@ acceptance of those rows does not prove the actual forwarding rules or connectiv
 The suite stores closed group identity/hash references to `group-P-G.json`; replay
 verifies their exact population, paths, bytes and identity before loading each
 bounded full group (`$defs/group`) without raising the shared decoder limits.
+The collector's whole-campaign walk separately caps Kubernetes bookkeeping at
+6,144 entries including its root; it does not change the nested original Docker
+plan's 4,096-entry setting or small fixture/transfer inventory limits.
 Nested API, process, resource, source-input, metric and credential-removal records
 keep their existing semantic validators. Credentials in the bootstrap are only
 path/length/hash metadata; actual private files must never be archived.
+
+Requested and effective resources are separate facts. The native D32 cohort
+requests four CPUs, but the observed `13000 100000` leaf and Pod quotas give it
+an effective 4.16-CPU ceiling versus LSF's 4.0. Qualification preserves that
+declared limitation and the actual values; it does not assert equal effective
+CPU or allow a general tolerance. The [runbook](../../../docs/testing/kubernetes-comparison.md#pod-controls-and-resource-scope)
+records the exact scope and upstream systemd-rounding explanation.
 
 Run the [offline replay and archive workflow](../../../docs/testing/kubernetes-comparison.md#offline-archive-and-original-docker-dependency).
 Schema acceptance does not prove original byte hashes, the Docker dependency,
