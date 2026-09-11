@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-activation."
+description = "Bounded activation request construction, lifecycle values, and manager contracts."
 
 [lints]
 workspace = true

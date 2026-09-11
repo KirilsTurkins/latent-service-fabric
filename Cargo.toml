@@ -42,14 +42,14 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 edition = "2021"
 rust-version = "1.94.1"
 license = "Apache-2.0"
 authors = ["Latent Service Fabric contributors"]
 repository = "https://github.com/KirilsTurkins/latent-service-fabric"
 homepage = "https://github.com/KirilsTurkins/latent-service-fabric"
-description = "Interface-first architecture scaffold for the Latent Service Fabric"
+description = "Single-node stateless execution fabric for WebAssembly components"
 
 [workspace.dependencies]
 base64 = "=0.22.1"
