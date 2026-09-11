@@ -8,7 +8,7 @@ use latent_artifacts::package::{
 };
 use std::collections::BTreeMap;
 
-pub(super) fn reference() -> OciReference {
+pub(crate) fn reference() -> OciReference {
     OciReference {
         registry: "registry.example".into(),
         repository: "tenant/site".into(),
@@ -28,9 +28,9 @@ fn descriptor(path: &str, role: &str, media_type: &str, bytes: &[u8]) -> LayerDe
     }
 }
 
-pub(super) type UploadFixture = (OciManifestBytes, Vec<u8>, Vec<(LayerDescriptor, Vec<u8>)>);
+pub(crate) type UploadFixture = (OciManifestBytes, Vec<u8>, Vec<(LayerDescriptor, Vec<u8>)>);
 
-pub(super) fn fixture(kind: PackageKind) -> UploadFixture {
+pub(crate) fn fixture(kind: PackageKind) -> UploadFixture {
     let content: Vec<(LayerRole, &str, &str, &[u8])> = match kind {
         PackageKind::BrowserAssets => {
             vec![(LayerRole::Asset, "index.html", "text/html", b"hello")]
@@ -128,7 +128,7 @@ pub(super) fn fixture(kind: PackageKind) -> UploadFixture {
     )
 }
 
-pub(super) fn evidence_fixture(kind: EvidenceKind) -> UploadFixture {
+pub(crate) fn evidence_fixture(kind: EvidenceKind) -> UploadFixture {
     let limits = PackageLimits::default();
     let payload = b"unverified evidence".to_vec();
     let layer = descriptor(
