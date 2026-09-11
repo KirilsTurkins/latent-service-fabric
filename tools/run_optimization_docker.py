@@ -54,7 +54,7 @@ def main():
     from tools.optimization_docker import aggregate, evidence
     derived = evidence.validate(args.root, args.build_root)
     aggregate.write(derived, args.output)
-    print(json.dumps({"qualified": derived["qualified"], "output": str(args.output)}))
+    print(json.dumps({"status": derived["status"], "profile": derived["profile"], "output": str(args.output)}))
     return 0
 
 
