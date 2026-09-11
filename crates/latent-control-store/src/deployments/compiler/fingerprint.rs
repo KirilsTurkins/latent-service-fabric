@@ -2,10 +2,15 @@ use latent_artifacts::{content_digest, ContractDescriptor, FieldDescriptor, Valu
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_manifest::__serde_json as json;
 
+use super::super::observation::{count, Work};
 use super::error;
 
-pub(super) fn contract_fingerprint(contract: &ContractDescriptor) -> Result<String, PlatformError> {
+pub(super) fn contract_fingerprint(
+    contract: &ContractDescriptor,
+    work: &mut Work,
+) -> Result<String, PlatformError> {
     let canonical = contract_value(contract);
+    count!(work, contract_schema_encodes, 1);
     let bytes = json::to_vec(&canonical)
         .map_err(|_| error(PlatformErrorCode::Internal, "contract-encoding-failed"))?;
     Ok(content_digest(&bytes).0)

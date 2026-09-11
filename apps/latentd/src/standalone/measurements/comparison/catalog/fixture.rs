@@ -6,12 +6,19 @@ use serde_json::{json, Value};
 use super::super::super::fixtures::Fixture;
 use super::{Plan, Result};
 
-pub(super) fn id(index: u32) -> String {
+pub(in crate::standalone::measurements::comparison) fn id(index: u32) -> String {
     format!("scale-{index:06}")
 }
 
 pub(super) fn service(plan: &Plan, index: u32) -> String {
-    if plan.shape == "shared" {
+    service_for_shape(&plan.shape, index)
+}
+
+pub(in crate::standalone::measurements::comparison) fn service_for_shape(
+    shape: &str,
+    index: u32,
+) -> String {
+    if shape == "shared" {
         "scale-shared".to_owned()
     } else {
         id(index)
@@ -27,24 +34,43 @@ fn append_identity(component: &mut Vec<u8>, index: u32) {
     component.extend_from_slice(&index.to_le_bytes());
 }
 
-pub(super) fn release(fixture: &Fixture, index: u32) -> ReleaseDigest {
+pub(in crate::standalone::measurements::comparison) fn release(
+    fixture: &Fixture,
+    index: u32,
+) -> ReleaseDigest {
     let mut bytes = fixture.artifact.component_bytes.clone();
     append_identity(&mut bytes, index);
     content_digest(&bytes)
 }
 
 pub(super) fn deployment(fixture: &Fixture, plan: &Plan, index: u32) -> DeploymentManifest {
+    deployment_for_shape(fixture, &plan.shape, index)
+}
+
+pub(in crate::standalone::measurements::comparison) fn deployment_for_shape(
+    fixture: &Fixture,
+    shape: &str,
+    index: u32,
+) -> DeploymentManifest {
     let mut deployment = fixture.deployment.clone();
     let name = id(index);
     deployment.id = DeploymentId(name.clone());
     deployment.metadata.name = name;
-    deployment.service = ServiceId(service(plan, index));
+    deployment.service = ServiceId(service_for_shape(shape, index));
     deployment.release = release(fixture, index);
     deployment.route_weight = 1;
     deployment
 }
 
 pub(super) fn artifact(fixture: &Fixture, plan: &Plan, index: u32) -> CapsuleArtifact {
+    artifact_for_shape(fixture, &plan.shape, index)
+}
+
+pub(in crate::standalone::measurements::comparison) fn artifact_for_shape(
+    fixture: &Fixture,
+    shape: &str,
+    index: u32,
+) -> CapsuleArtifact {
     let mut artifact = fixture.artifact.clone();
     append_identity(&mut artifact.component_bytes, index);
     let digest = content_digest(&artifact.component_bytes);
@@ -52,11 +78,13 @@ pub(super) fn artifact(fixture: &Fixture, plan: &Plan, index: u32) -> CapsuleArt
     artifact.descriptor.release_digest = digest.clone();
     artifact.descriptor.size_bytes = artifact.component_bytes.len() as u64;
     artifact.manifest.component_digest = digest;
-    artifact.manifest.metadata.name = service(plan, index);
+    artifact.manifest.metadata.name = service_for_shape(shape, index);
     artifact
 }
 
-pub(super) fn template(fixture: &Fixture) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn template(
+    fixture: &Fixture,
+) -> Result<Value> {
     let codec = JsonManifestCodec::default();
     Ok(json!({"component_digest":fixture.release_digest,
         "component_bytes":fixture.artifact.component_bytes.len().to_string(),

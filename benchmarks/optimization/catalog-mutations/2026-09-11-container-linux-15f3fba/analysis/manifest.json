@@ -1,0 +1,71 @@
+{
+  "inputs": {
+    "aggregate": {
+      "bytes": "3376985",
+      "sha256": "sha256:0b98604dde42a6b32d987ff28e631193b7d9c8e79a0fc0401818508ca3a60cc6"
+    },
+    "suite": {
+      "bytes": "553825",
+      "sha256": "sha256:feadfca6735e3ef84f76a5ed153d9e1a1feabcd8599df2b0b56687396952b519"
+    }
+  },
+  "files": [
+    {
+      "path": "allocation-contrasts.csv",
+      "bytes": "13830",
+      "sha256": "sha256:eff2555f4c504a05f3304081e72c54373220c820465cfa9cd4fcc234807456fe"
+    },
+    {
+      "path": "allocation-frames.csv",
+      "bytes": "14686",
+      "sha256": "sha256:1771b1ba1dfc1a48cb1fe5f5da7d0ce4c1ee395ab5077be8cc236e0954662089"
+    },
+    {
+      "path": "allocation-scopes.csv",
+      "bytes": "4148",
+      "sha256": "sha256:c5a03395d84f4dc4c0a36344d1724dcd9e1efa5c022d5d9becc9a5a3d5602269"
+    },
+    {
+      "path": "checkpoint-memory.csv",
+      "bytes": "1757656",
+      "sha256": "sha256:6a4bc2e95feb9a6c8c725db9fa726e0af4155dad5865f116fb51f530cb1502c3"
+    },
+    {
+      "path": "normal-contrasts.csv",
+      "bytes": "418560",
+      "sha256": "sha256:0aae42e6f85a88002fe7f63c36690bd72aefbfd5e611193c729ffc49ec5346b4"
+    },
+    {
+      "path": "operations.csv",
+      "bytes": "75050",
+      "sha256": "sha256:2dfea553e7b139526d6e0f1dece0447d3fd524869e783a3fbb216036a5f993f2"
+    },
+    {
+      "path": "owners.csv",
+      "bytes": "230797",
+      "sha256": "sha256:a48afd6ff68ff822bab30a4e0e3bbb52141c3fa7aa75aa2eca4d34df8e95997e"
+    },
+    {
+      "path": "proofs.csv",
+      "bytes": "362649",
+      "sha256": "sha256:5d397f930b1f97e16bd084323a0611d746123c0ca463df29584900d31b4d5aca"
+    },
+    {
+      "path": "report-data.json",
+      "bytes": "13299727",
+      "sha256": "sha256:0641512f673cc0a75aa2e310b5f3d03fe734484057028d5fe6ccbea56d23bf2a"
+    },
+    {
+      "path": "samplers.csv",
+      "bytes": "6920",
+      "sha256": "sha256:67618dd788c4a15fee1dbb80c1c257bbde2ab167dea9671ab6858f2c0a918c99"
+    },
+    {
+      "path": "work-counters.csv",
+      "bytes": "431809",
+      "sha256": "sha256:615511bd3aea80f5c095f7dfdf18e8768dee9d8ceb24ab1f6dfa97feef8e1fde"
+    }
+  ],
+  "csv_null": "literal null; nested objects are compact JSON",
+  "qualifying_input": true
+}

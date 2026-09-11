@@ -396,3 +396,32 @@ Catalog alone declares a 256 MiB expanded folded-profile limit with lossless
 gzip replay. Its first release smoke retained a 171,422,982-byte folded export
 that exceeded the original 64 MiB limit. Other experiment limits and the catalog
 256 MiB file / 1 GiB evidence-root bounds remain unchanged.
+
+## Versioned catalog mutations and persistence
+
+The [retained #108 comparison](catalog-mutations/2026-09-11-container-linux-15f3fba/README.md)
+passed 32 collectors and 45,096 API operations with zero Invokes. All 24 mutation
+wall-time and CPU comparisons were lower; the 10k operations took 35.74%-59.21%
+less time. Recovery remained mixed: shared 10k reopen was 41.52% slower, while
+distinct 10k reopened idle RSS rose 18.75%. The report preserves every pair,
+full-file write costs, sampled-memory limits and separate N4 allocation evidence.
+Selected mutation allocations fell, but selected reopen attribution is unavailable
+because of a retained symbol-alias mismatch; whole-process peaks rose slightly.
+
+The `catalog-mutations` backend experiment uses fresh N100/1k/10k roots, both
+distinct/shared shapes, and one matched pair per size/shape. Each initial child
+performs unchanged apply, weight update, delete and create-only reapply with old
+and current pins; a new process reopens the same owned root. The separate N4
+profiles are not extrapolated to larger catalogs. Smoke has 16 collectors / 372
+operations; full has 32 / 45,096.
+
+| Evidence | Plan | Builds | Suite | Aggregate |
+| --- | --- | --- | --- | --- |
+| Versioned mutations, fresh reopen and allocations | [plan](catalog-mutation-plan.schema.json) | [builds](catalog-mutation-builds.schema.json) | [suite](catalog-mutation-suite.schema.json) | [aggregate](catalog-mutation-aggregate.schema.json) |
+
+The [collection method](../../docs/testing/phase-1-measurements.md#catalog-mutation-and-commit-experiments)
+separates public Result-return timing, process CPU, actual work receipts, sampled
+memory and selected async-poll/Drop origins. This experiment declares 512 MiB
+expanded folded text and one exact active-file scratch allowance: temporary
+coexistence stays within 1.5 GiB and retained evidence within 1 GiB. The archive
+and all historical experiment bounds remain unchanged.

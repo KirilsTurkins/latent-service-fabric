@@ -1,0 +1,347 @@
+﻿{
+  "root": "/workspace/project/target/optimization-catalog-mutations/smoke-neutral-01",
+  "root_bytes": 768804238,
+  "root_files": 1106,
+  "source": {
+    "binary": {
+      "bytes": "217919168",
+      "sha256": "sha256:8dd836d7742b5eb769df4567147d23e2744695407cf7a9df11cfca085705566c"
+    },
+    "build": {
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "overrides": {
+        "codegen_units": "16",
+        "collector_surface": "libtest",
+        "debug": "1",
+        "debug_assertions": "false",
+        "incremental": "false",
+        "linker_build_id": "sha1",
+        "lto": "false",
+        "opt_level": "3",
+        "overflow_checks": "false",
+        "panic": "unwind",
+        "path_remap": "source-target-cargo-home-v1",
+        "promoted_locals": "source-filename",
+        "recipe": "tools/phase0_build_environment.sh:phase0_release_cargo",
+        "recipe_sha256": "sha256:16266aee2b730aac007d2ef6b7e5a74f8ce7391c69a0ffc1849011f30884414d",
+        "strip": "none"
+      },
+      "profile": "release",
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+      "target": "x86_64-unknown-linux-gnu",
+      "wasmtime": "47.0.3"
+    },
+    "environment": {
+      "allocator": {
+        "LD_PRELOAD": "unset",
+        "MALLOC_CONF": "unset"
+      },
+      "arch": "x86_64",
+      "clock_ticks_per_second": 100,
+      "cpu_model": "11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz",
+      "cpu_policy": {},
+      "kernel": "Linux 0db06bb1a2d4 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 GNU/Linux",
+      "load_before": [
+        0.2041015625,
+        0.9423828125,
+        0.96826171875
+      ],
+      "logical_cpus": "16",
+      "memory_total_bytes": "33233743872",
+      "os": "Linux",
+      "virtualization": {
+        "container_marker": false,
+        "cpu_max": "400000 100000",
+        "cpuset_effective": "0-15",
+        "docker_marker": true,
+        "memory_max": "max",
+        "systemd_detect_virt": "unavailable",
+        "systemd_detect_virt_container": "unavailable",
+        "systemd_detect_virt_vm": "unavailable",
+        "wsl_detected": true
+      }
+    },
+    "fixtures": [
+      {
+        "bytes": "24754",
+        "name": "echo",
+        "sha256": "sha256:4dc815f10d7a2f4d7b204efa39a53ab1882bb58da8248fcd03449e87d9e9e788"
+      }
+    ],
+    "schema": "latent.phase1.measurement-identity.v1",
+    "source": {
+      "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+      "commit": "1efd906e6d970d461e339c4712426f2b024ec9d8",
+      "dirty": false,
+      "tree": "9418b4cfd753a1f4e44a58ab304b78d6ef323ba8"
+    }
+  },
+  "folded_samples": [
+    {
+      "offset": 0,
+      "read_bytes": 1048576,
+      "complete_lines": 222,
+      "line_length_min": 434,
+      "line_length_median": 3407.0,
+      "line_length_max": 12984,
+      "frames_min": 8,
+      "frames_max": 76,
+      "markers": {
+        "measured_unchanged_apply_and_drop": 0,
+        "measured_weight_apply_and_drop": 0,
+        "measured_delete_and_drop": 0,
+        "measured_reapply_and_drop": 0,
+        "publication": 0,
+        "serde_json": 52,
+        "deployments": 0,
+        "tokio": 0
+      },
+      "ends_newline": false
+    },
+    {
+      "offset": 134295552,
+      "read_bytes": 1048576,
+      "complete_lines": 97,
+      "line_length_min": 8434,
+      "line_length_median": 10463,
+      "line_length_max": 13535,
+      "frames_min": 53,
+      "frames_max": 73,
+      "markers": {
+        "measured_unchanged_apply_and_drop": 0,
+        "measured_weight_apply_and_drop": 0,
+        "measured_delete_and_drop": 0,
+        "measured_reapply_and_drop": 0,
+        "publication": 0,
+        "serde_json": 96,
+        "deployments": 0,
+        "tokio": 97
+      },
+      "ends_newline": false
+    },
+    {
+      "offset": 267542528,
+      "read_bytes": 1048576,
+      "complete_lines": 80,
+      "line_length_min": 10368,
+      "line_length_median": 12912.0,
+      "line_length_max": 14644,
+      "frames_min": 64,
+      "frames_max": 80,
+      "markers": {
+        "measured_unchanged_apply_and_drop": 0,
+        "measured_weight_apply_and_drop": 0,
+        "measured_delete_and_drop": 0,
+        "measured_reapply_and_drop": 0,
+        "publication": 0,
+        "serde_json": 80,
+        "deployments": 0,
+        "tokio": 80
+      },
+      "ends_newline": false
+    }
+  ],
+  "interpreted": {
+    "bytes": 13550578,
+    "sha256": "6ca9c3f3ca512e8b69f7e8e77eb56879c3885c0a14020a6ced44497b96e85378",
+    "record_count": 1653360,
+    "kinds": {
+      "v": 1,
+      "X": 1,
+      "I": 1,
+      "s": 5734,
+      "i": 4365,
+      "t": 86198,
+      "a": 52313,
+      "+": 752661,
+      "-": 751859,
+      "c": 112,
+      "R": 112,
+      "\n": 1,
+      "#": 2
+    }
+  },
+  "collector": {
+    "status": "passed",
+    "reason": null,
+    "population": {
+      "applies": "3",
+      "commands": "52",
+      "deletes": "1",
+      "gets": "4",
+      "invokes": "0",
+      "measured_mutations": "4",
+      "pins": "5",
+      "policies": "10",
+      "preflight_calls": "0",
+      "publications": "16",
+      "reopen_observations": "0",
+      "resolves": "12",
+      "seed_batches": "1",
+      "warmup_calls": "0"
+    },
+    "operations": {
+      "applies": {
+        "attempted": "3",
+        "returned_error": "0",
+        "returned_ok": "3"
+      },
+      "deletes": {
+        "attempted": "1",
+        "returned_error": "0",
+        "returned_ok": "1"
+      },
+      "gets": {
+        "attempted": "4",
+        "returned_error": "0",
+        "returned_ok": "4"
+      },
+      "pins": {
+        "attempted": "5",
+        "returned_error": "0",
+        "returned_ok": "5"
+      },
+      "policies": {
+        "attempted": "10",
+        "returned_error": "0",
+        "returned_ok": "10"
+      },
+      "publications": {
+        "attempted": "16",
+        "returned_error": "0",
+        "returned_ok": "16"
+      },
+      "resolves": {
+        "attempted": "12",
+        "returned_error": "2",
+        "returned_ok": "10"
+      },
+      "seed_batches": {
+        "attempted": "1",
+        "returned_error": "0",
+        "returned_ok": "1"
+      }
+    },
+    "shutdown": {
+      "activeActivations": 0,
+      "activeBackendInvocations": 0,
+      "activeConnections": 0,
+      "activeControlJobs": 0,
+      "activeLeases": 0,
+      "activeRpcs": 0,
+      "cancellationRegistrations": 0,
+      "clean": true,
+      "cleanup": {
+        "accepting": false,
+        "capacity": 5,
+        "completed": 0,
+        "driverAlive": false,
+        "driverJoined": true,
+        "failed": false,
+        "fallbacks": 0,
+        "handoffs": 0,
+        "panicked": 0,
+        "queued": 0,
+        "reserved": 0,
+        "running": 0,
+        "timedOut": 0
+      },
+      "compiler": {
+        "accepting": false,
+        "assigned_jobs": 0,
+        "cancelled_waiters": 0,
+        "coalesced_waiters": 0,
+        "discarded_results": 0,
+        "failed": false,
+        "jobs_abandoned": 0,
+        "jobs_completed": 0,
+        "jobs_failed": 0,
+        "jobs_started": 0,
+        "maximum_document_bytes": 5308416,
+        "maximum_jobs": 1,
+        "maximum_queued_jobs": 0,
+        "maximum_ready_preparations": 5,
+        "maximum_waiters": 5,
+        "maximum_waiters_per_job": 5,
+        "maximum_workers": 1,
+        "queue_rejected": 0,
+        "queued_jobs": 0,
+        "ready_compiled_image_bytes": 0,
+        "ready_metadata_bytes": 0,
+        "ready_preparations": 0,
+        "ready_rejected": 0,
+        "reserved_document_bytes": 0,
+        "running_jobs": 0,
+        "waiter_rejected": 0,
+        "waiting_callers": 0,
+        "workers_joined": 1,
+        "workers_live": 0,
+        "workers_quiescent": 1
+      },
+      "epochHelperJoined": true,
+      "instanceReservations": 0,
+      "liveCancellationProbes": 0,
+      "liveHostStates": 0,
+      "liveInstances": 0,
+      "liveStores": 0,
+      "liveTemporaryBuffers": 0,
+      "observerCorrelations": 0,
+      "preparingComponents": 0,
+      "preparingMetadataBytes": 0,
+      "preparingSourceBytes": 0,
+      "quarantinedCells": 0,
+      "queuedActivations": 0,
+      "queuedReservations": 0,
+      "quotaReservations": 0,
+      "reservedCpuFuel": 0,
+      "reservedMemoryBytes": 0,
+      "telemetryFlushed": true,
+      "telemetryRetainedEntries": 1
+    },
+    "runtime_threads_after_join": {
+      "control": 0,
+      "invocation": 0
+    },
+    "catalog_owners_released": {
+      "artifacts": true,
+      "deployments": true
+    }
+  },
+  "suite": {
+    "status": "failed",
+    "reason": "collection-failed",
+    "record_statuses": [
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+      "passed",
+      "failed"
+    ]
+  },
+  "hashes": {
+    "suite.json": {
+      "bytes": 82680,
+      "sha256": "4d28da81b5f99297b2e9bc395f858c0b56059d5b87951ecb4a80954f5b61476a"
+    },
+    "failure.json": {
+      "bytes": 61,
+      "sha256": "06252ffc925c9995ee426fadc6aa972eaa86b7f7f47a307b51d971f951ce84ba"
+    },
+    "backend-builds.json": {
+      "bytes": 243005,
+      "sha256": "777808b29d865d2a40b471ec4755ebbf6dc430444cbc50cefff3adefb8f97e9b"
+    },
+    "runs/owner-08-allocation-00016-distinct-control-r01-allocation/probe/catalog-mutations.json": {
+      "bytes": 180825,
+      "sha256": "f75b85107b90a02a24cc99265bac5fc4c43dad74bbf40f4519d952a0415f7d93"
+    },
+    "runs/owner-08-allocation-00016-distinct-control-r01-allocation/probe/allocations.log.process.json": {
+      "bytes": 229,
+      "sha256": "8f835e9f02fe54ad1c4c2fdb90fb680b3128724e53a753e1c9c08191eedcb7e8"
+    }
+  }
+}

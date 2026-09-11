@@ -36,10 +36,19 @@ class Artifacts(BaseArtifacts):
 
 
 def folded_limit(maximum_bytes):
-    """Historical default and explicitly selected ownership/codec/catalog caps."""
-    require(type(maximum_bytes) is int and maximum_bytes in (64 * 1024**2, 128 * 1024**2, 256 * 1024**2),
+    """Historical default plus explicitly selected, finite experiment caps."""
+    require(type(maximum_bytes) is int and maximum_bytes in
+            (64 * 1024**2, 128 * 1024**2, 256 * 1024**2, 512 * 1024**2),
             "unsupported-folded-byte-bound")
     return maximum_bytes
+
+
+def folded_scratch_limit(maximum_bytes, temporary_bytes):
+    """Validate scratch after the caller validates its ordinary export preset."""
+    require(type(temporary_bytes) is int and temporary_bytes in (0, 512 * 1024**2)
+            and (temporary_bytes == 0 or maximum_bytes == temporary_bytes),
+            "unsupported-folded-scratch-bound")
+    return temporary_bytes
 
 
 def folded(path, *, maximum_bytes=MAX_FOLDED_BYTES):

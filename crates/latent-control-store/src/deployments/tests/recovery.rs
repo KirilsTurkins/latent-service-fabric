@@ -251,7 +251,18 @@ fn generation_exhaustion_never_wraps_to_zero() {
         Limits::default(),
     ))
     .unwrap();
-    store.commit(RouteGeneration(0), exhausted).unwrap();
+    store
+        .commit(
+            RouteGeneration(0),
+            persistence::encode(
+                exhausted,
+                Limits::default(),
+                &mut super::super::observation::Work::default(),
+            )
+            .unwrap(),
+            &mut super::super::observation::Work::default(),
+        )
+        .unwrap();
     let current = snapshot(&store);
     assert_code(
         run(RouteCompiler::compile(&store, None)),

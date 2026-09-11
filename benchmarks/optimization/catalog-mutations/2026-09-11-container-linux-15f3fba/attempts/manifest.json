@@ -1,0 +1,605 @@
+{
+  "all_copies_byte_verified": true,
+  "all_originals_unchanged": true,
+  "attempts": [
+    {
+      "attempt": "smoke-neutral-01",
+      "collection_passed_owners": 8,
+      "last_collector": {
+        "reason": null,
+        "shutdown": {
+          "activeActivations": 0,
+          "activeBackendInvocations": 0,
+          "activeConnections": 0,
+          "activeControlJobs": 0,
+          "activeLeases": 0,
+          "activeRpcs": 0,
+          "cancellationRegistrations": 0,
+          "clean": true,
+          "cleanup": {
+            "accepting": false,
+            "capacity": 5,
+            "completed": 0,
+            "driverAlive": false,
+            "driverJoined": true,
+            "failed": false,
+            "fallbacks": 0,
+            "handoffs": 0,
+            "panicked": 0,
+            "queued": 0,
+            "reserved": 0,
+            "running": 0,
+            "timedOut": 0
+          },
+          "compiler": {
+            "accepting": false,
+            "assigned_jobs": 0,
+            "cancelled_waiters": 0,
+            "coalesced_waiters": 0,
+            "discarded_results": 0,
+            "failed": false,
+            "jobs_abandoned": 0,
+            "jobs_completed": 0,
+            "jobs_failed": 0,
+            "jobs_started": 0,
+            "maximum_document_bytes": 5308416,
+            "maximum_jobs": 1,
+            "maximum_queued_jobs": 0,
+            "maximum_ready_preparations": 5,
+            "maximum_waiters": 5,
+            "maximum_waiters_per_job": 5,
+            "maximum_workers": 1,
+            "queue_rejected": 0,
+            "queued_jobs": 0,
+            "ready_compiled_image_bytes": 0,
+            "ready_metadata_bytes": 0,
+            "ready_preparations": 0,
+            "ready_rejected": 0,
+            "reserved_document_bytes": 0,
+            "running_jobs": 0,
+            "waiter_rejected": 0,
+            "waiting_callers": 0,
+            "workers_joined": 1,
+            "workers_live": 0,
+            "workers_quiescent": 1
+          },
+          "epochHelperJoined": true,
+          "instanceReservations": 0,
+          "liveCancellationProbes": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveStores": 0,
+          "liveTemporaryBuffers": 0,
+          "observerCorrelations": 0,
+          "preparingComponents": 0,
+          "preparingMetadataBytes": 0,
+          "preparingSourceBytes": 0,
+          "quarantinedCells": 0,
+          "queuedActivations": 0,
+          "queuedReservations": 0,
+          "quotaReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "telemetryFlushed": true,
+          "telemetryRetainedEntries": 1
+        },
+        "status": "passed",
+        "work": {
+          "budget_exhausted": false,
+          "commands": "52",
+          "invoke_attempts": "0"
+        }
+      },
+      "last_data_owner_removed": true,
+      "profile": "smoke",
+      "published_subset_complete_for_replay": false,
+      "recorded_owners": 9,
+      "requested_refs": {
+        "candidate": "1efd906e6d970d461e339c4712426f2b024ec9d8",
+        "control": "1efd906e6d970d461e339c4712426f2b024ec9d8",
+        "harness": "1efd906e6d970d461e339c4712426f2b024ec9d8"
+      },
+      "runner_source": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "clean": true,
+        "commit": "1efd906e6d970d461e339c4712426f2b024ec9d8",
+        "tree": "9418b4cfd753a1f4e44a58ab304b78d6ef323ba8"
+      },
+      "runner_source_after": null,
+      "suite_reason": "collection-failed",
+      "suite_status": "failed"
+    },
+    {
+      "attempt": "smoke-paired-01",
+      "collection_passed_owners": 8,
+      "last_collector": {
+        "reason": null,
+        "shutdown": {
+          "activeActivations": 0,
+          "activeBackendInvocations": 0,
+          "activeConnections": 0,
+          "activeControlJobs": 0,
+          "activeLeases": 0,
+          "activeRpcs": 0,
+          "cancellationRegistrations": 0,
+          "clean": true,
+          "cleanup": {
+            "accepting": false,
+            "capacity": 5,
+            "completed": 0,
+            "driverAlive": false,
+            "driverJoined": true,
+            "failed": false,
+            "fallbacks": 0,
+            "handoffs": 0,
+            "panicked": 0,
+            "queued": 0,
+            "reserved": 0,
+            "running": 0,
+            "timedOut": 0
+          },
+          "compiler": {
+            "accepting": false,
+            "assigned_jobs": 0,
+            "cancelled_waiters": 0,
+            "coalesced_waiters": 0,
+            "discarded_results": 0,
+            "failed": false,
+            "jobs_abandoned": 0,
+            "jobs_completed": 0,
+            "jobs_failed": 0,
+            "jobs_started": 0,
+            "maximum_document_bytes": 5308416,
+            "maximum_jobs": 1,
+            "maximum_queued_jobs": 0,
+            "maximum_ready_preparations": 5,
+            "maximum_waiters": 5,
+            "maximum_waiters_per_job": 5,
+            "maximum_workers": 1,
+            "queue_rejected": 0,
+            "queued_jobs": 0,
+            "ready_compiled_image_bytes": 0,
+            "ready_metadata_bytes": 0,
+            "ready_preparations": 0,
+            "ready_rejected": 0,
+            "reserved_document_bytes": 0,
+            "running_jobs": 0,
+            "waiter_rejected": 0,
+            "waiting_callers": 0,
+            "workers_joined": 1,
+            "workers_live": 0,
+            "workers_quiescent": 1
+          },
+          "epochHelperJoined": true,
+          "instanceReservations": 0,
+          "liveCancellationProbes": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveStores": 0,
+          "liveTemporaryBuffers": 0,
+          "observerCorrelations": 0,
+          "preparingComponents": 0,
+          "preparingMetadataBytes": 0,
+          "preparingSourceBytes": 0,
+          "quarantinedCells": 0,
+          "queuedActivations": 0,
+          "queuedReservations": 0,
+          "quotaReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "telemetryFlushed": true,
+          "telemetryRetainedEntries": 1
+        },
+        "status": "passed",
+        "work": {
+          "budget_exhausted": false,
+          "commands": "40",
+          "invoke_attempts": "0"
+        }
+      },
+      "last_data_owner_removed": true,
+      "profile": "smoke",
+      "published_subset_complete_for_replay": false,
+      "recorded_owners": 9,
+      "requested_refs": {
+        "candidate": "f2214f2e7dba2bcf73fdcf99d93132eaf3ce4f3b",
+        "control": "5c407efd0bed1cd54bba126ca104ff044be9c592",
+        "harness": "f2214f2e7dba2bcf73fdcf99d93132eaf3ce4f3b"
+      },
+      "runner_source": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "clean": true,
+        "commit": "f2214f2e7dba2bcf73fdcf99d93132eaf3ce4f3b",
+        "tree": "243b569e8f91fc876fd9ad8e5883f176b7099137"
+      },
+      "runner_source_after": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "clean": true,
+        "commit": "f2214f2e7dba2bcf73fdcf99d93132eaf3ce4f3b",
+        "tree": "243b569e8f91fc876fd9ad8e5883f176b7099137"
+      },
+      "suite_reason": "collection-failed",
+      "suite_status": "failed"
+    },
+    {
+      "attempt": "smoke-paired-02",
+      "collection_passed_owners": 14,
+      "last_collector": {
+        "reason": null,
+        "shutdown": {
+          "activeActivations": 0,
+          "activeBackendInvocations": 0,
+          "activeConnections": 0,
+          "activeControlJobs": 0,
+          "activeLeases": 0,
+          "activeRpcs": 0,
+          "cancellationRegistrations": 0,
+          "clean": true,
+          "cleanup": {
+            "accepting": false,
+            "capacity": 5,
+            "completed": 0,
+            "driverAlive": false,
+            "driverJoined": true,
+            "failed": false,
+            "fallbacks": 0,
+            "handoffs": 0,
+            "panicked": 0,
+            "queued": 0,
+            "reserved": 0,
+            "running": 0,
+            "timedOut": 0
+          },
+          "compiler": {
+            "accepting": false,
+            "assigned_jobs": 0,
+            "cancelled_waiters": 0,
+            "coalesced_waiters": 0,
+            "discarded_results": 0,
+            "failed": false,
+            "jobs_abandoned": 0,
+            "jobs_completed": 0,
+            "jobs_failed": 0,
+            "jobs_started": 0,
+            "maximum_document_bytes": 5308416,
+            "maximum_jobs": 1,
+            "maximum_queued_jobs": 0,
+            "maximum_ready_preparations": 5,
+            "maximum_waiters": 5,
+            "maximum_waiters_per_job": 5,
+            "maximum_workers": 1,
+            "queue_rejected": 0,
+            "queued_jobs": 0,
+            "ready_compiled_image_bytes": 0,
+            "ready_metadata_bytes": 0,
+            "ready_preparations": 0,
+            "ready_rejected": 0,
+            "reserved_document_bytes": 0,
+            "running_jobs": 0,
+            "waiter_rejected": 0,
+            "waiting_callers": 0,
+            "workers_joined": 1,
+            "workers_live": 0,
+            "workers_quiescent": 1
+          },
+          "epochHelperJoined": true,
+          "instanceReservations": 0,
+          "liveCancellationProbes": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0,
+          "liveStores": 0,
+          "liveTemporaryBuffers": 0,
+          "observerCorrelations": 0,
+          "preparingComponents": 0,
+          "preparingMetadataBytes": 0,
+          "preparingSourceBytes": 0,
+          "quarantinedCells": 0,
+          "queuedActivations": 0,
+          "queuedReservations": 0,
+          "quotaReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "telemetryFlushed": true,
+          "telemetryRetainedEntries": 1
+        },
+        "status": "passed",
+        "work": {
+          "budget_exhausted": false,
+          "commands": "41",
+          "invoke_attempts": "0"
+        }
+      },
+      "last_data_owner_removed": true,
+      "profile": "smoke",
+      "published_subset_complete_for_replay": false,
+      "recorded_owners": 15,
+      "requested_refs": {
+        "candidate": "e275289dd35cb2640bb39aa545871a9491e6cfe4",
+        "control": "bfb682b6e6d02a5f7133d8108991ab129b54f030",
+        "harness": "e275289dd35cb2640bb39aa545871a9491e6cfe4"
+      },
+      "runner_source": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "clean": true,
+        "commit": "e275289dd35cb2640bb39aa545871a9491e6cfe4",
+        "tree": "540f4ead04bd7051ae02c9a71630cc9763bcd532"
+      },
+      "runner_source_after": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "clean": true,
+        "commit": "e275289dd35cb2640bb39aa545871a9491e6cfe4",
+        "tree": "540f4ead04bd7051ae02c9a71630cc9763bcd532"
+      },
+      "suite_reason": "collection-failed",
+      "suite_status": "failed"
+    },
+    {
+      "aggregate_flags": {
+        "attempt_count_complete": true,
+        "population_complete": true,
+        "qualifying_full_population": false,
+        "status": "incomplete",
+        "validated_collectors": "16",
+        "validated_commands": "372",
+        "validated_invocations": "0"
+      },
+      "attempt": "smoke-paired-03",
+      "collection_passed_owners": 16,
+      "profile": "smoke",
+      "published_subset_complete_for_replay": false,
+      "recorded_owners": 16,
+      "requested_refs": {
+        "candidate": "15f3fba3f47404240dd577d9eaaa3f60270b81d1",
+        "control": "165d1eb5084c256dab72ac10217b26af3c6e4c44",
+        "harness": "15f3fba3f47404240dd577d9eaaa3f60270b81d1"
+      },
+      "runner_source": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "clean": true,
+        "commit": "15f3fba3f47404240dd577d9eaaa3f60270b81d1",
+        "tree": "0b476179c2c3494071a2d37c0908dc2611173c8a"
+      },
+      "runner_source_after": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "clean": true,
+        "commit": "15f3fba3f47404240dd577d9eaaa3f60270b81d1",
+        "tree": "0b476179c2c3494071a2d37c0908dc2611173c8a"
+      },
+      "suite_reason": null,
+      "suite_status": "passed"
+    }
+  ],
+  "copied_utc": "2026-09-11T07:23:30.650520+00:00",
+  "excluded": [
+    "full failed and smoke raw roots",
+    "binaries and source trees",
+    "large expanded exports",
+    "raw/interpreted allocation streams and compressed profiles",
+    "generated data roots"
+  ],
+  "file_count": 29,
+  "files": [
+    {
+      "bytes": 56,
+      "copy_byte_verified": true,
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-neutral-smoke-01.log",
+      "path": "notes/issue108-neutral-smoke-01.log",
+      "sha256": "sha256:9cd88204fec81bb331c14b423345c63ce6a21f7325cd1ff1534d2072fdf10cf9"
+    },
+    {
+      "bytes": 56,
+      "copy_byte_verified": true,
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-paired-smoke-01.log",
+      "path": "notes/issue108-paired-smoke-01.log",
+      "sha256": "sha256:9cd88204fec81bb331c14b423345c63ce6a21f7325cd1ff1534d2072fdf10cf9"
+    },
+    {
+      "bytes": 56,
+      "copy_byte_verified": true,
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-paired-smoke-02.log",
+      "path": "notes/issue108-paired-smoke-02.log",
+      "sha256": "sha256:9cd88204fec81bb331c14b423345c63ce6a21f7325cd1ff1534d2072fdf10cf9"
+    },
+    {
+      "bytes": 1353,
+      "copy_byte_verified": true,
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-export-preflight-01.log",
+      "path": "notes/issue108-export-preflight-01.log",
+      "sha256": "sha256:b854b24e802be5f3d3cf3c3cb5a58d979a8a1d6a08cc864b721dee54ce6add17"
+    },
+    {
+      "bytes": 1022,
+      "copy_byte_verified": true,
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-scratch-preflight-01.log",
+      "path": "notes/issue108-scratch-preflight-01.log",
+      "sha256": "sha256:4dc21c1e6a07e7f38e91eb10af1f42d9c5c8fa738ac82cc532ffbe062aa6b9ba"
+    },
+    {
+      "bytes": 10107,
+      "copy_byte_verified": true,
+      "original_format": "UTF-8 JSON with BOM; published as .json.raw to preserve original bytes",
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-allocation-bound-inspect.json",
+      "path": "notes/issue108-allocation-bound-inspect.json.raw",
+      "sha256": "sha256:8eff39f6d0d9068323dc871faa824f7025720b3e10c27d50349a840e9dcf4150"
+    },
+    {
+      "bytes": 233509,
+      "copy_byte_verified": true,
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-coexistence-smoke02.json",
+      "path": "notes/issue108-coexistence-smoke02.json",
+      "sha256": "sha256:8b35b6c2ce8318ba4cb36609f52fb0326e3ef42071966ceb4ae988962952f5ae"
+    },
+    {
+      "bytes": 586,
+      "copy_byte_verified": true,
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-selected-preflight-failed-01.json",
+      "path": "notes/issue108-selected-preflight-failed-01.json",
+      "sha256": "sha256:f56e4bbffbe4bb713dcf0ebeb5c1254de64430dc850592b2c177fe1b14834fde"
+    },
+    {
+      "bytes": 6649,
+      "copy_byte_verified": true,
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-selected-preflight-02.json",
+      "path": "notes/issue108-selected-preflight-02.json",
+      "sha256": "sha256:c8e5a587c404f23b6d62a1047ef0e9d725a1ac2bdef2a752e554cde9b9d79647"
+    },
+    {
+      "bytes": 82680,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-neutral-01/suite.json",
+      "path": "smoke-neutral-01/suite.json",
+      "sha256": "sha256:4d28da81b5f99297b2e9bc395f858c0b56059d5b87951ecb4a80954f5b61476a"
+    },
+    {
+      "bytes": 243005,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-neutral-01/backend-builds.json",
+      "path": "smoke-neutral-01/backend-builds.json",
+      "sha256": "sha256:777808b29d865d2a40b471ec4755ebbf6dc430444cbc50cefff3adefb8f97e9b"
+    },
+    {
+      "bytes": 61,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-neutral-01/failure.json",
+      "path": "smoke-neutral-01/failure.json",
+      "sha256": "sha256:06252ffc925c9995ee426fadc6aa972eaa86b7f7f47a307b51d971f951ce84ba"
+    },
+    {
+      "bytes": 82936,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/suite.json",
+      "path": "smoke-paired-01/suite.json",
+      "sha256": "sha256:fe1f2267ef1d0c13b690fa1f2dd2b99827ee9b54e3b6ecc070ac9f38459103fd"
+    },
+    {
+      "bytes": 243005,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/backend-builds.json",
+      "path": "smoke-paired-01/backend-builds.json",
+      "sha256": "sha256:ed589a1593f8bf392ce4ad76d1ae35dbf9a70939f63556e8d754520f7058bb43"
+    },
+    {
+      "bytes": 61,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/failure.json",
+      "path": "smoke-paired-01/failure.json",
+      "sha256": "sha256:06252ffc925c9995ee426fadc6aa972eaa86b7f7f47a307b51d971f951ce84ba"
+    },
+    {
+      "bytes": 162806,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-02/suite.json",
+      "path": "smoke-paired-02/suite.json",
+      "sha256": "sha256:bff7d4a79e6a1bb648f750257942baa4c084476eb5f2e32b14d9480331f62726"
+    },
+    {
+      "bytes": 243005,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-02/backend-builds.json",
+      "path": "smoke-paired-02/backend-builds.json",
+      "sha256": "sha256:ab1f8c240359352437214380e4f616de4f48b57a7dcc1b28898c940d5c4f29cd"
+    },
+    {
+      "bytes": 65,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-02/failure.json",
+      "path": "smoke-paired-02/failure.json",
+      "sha256": "sha256:8f6dacab414c4d5a000144777c59632f18c4078319317abeb6bfcb02641f714e"
+    },
+    {
+      "bytes": 406598,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-03/suite.json",
+      "path": "smoke-paired-03/suite.json",
+      "sha256": "sha256:b92faf8f286ab65a89d8f7b83fa766c4d933caa14a2e7f77054edea824807b9d"
+    },
+    {
+      "bytes": 243011,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-03/backend-builds.json",
+      "path": "smoke-paired-03/backend-builds.json",
+      "sha256": "sha256:1ad4993674757e53437e45a017a2aa6372d8c7fc60a18e3631994f71a6141c18"
+    },
+    {
+      "bytes": 1633291,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-03/aggregate.json",
+      "path": "smoke-paired-03/aggregate.json",
+      "sha256": "sha256:9e097b4c8caa4809fd420ed248f1a39acf5fb21292c697750f2d9a751f250f1b"
+    },
+    {
+      "bytes": 1296,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/issue108-export-preflight-01/receipt.json",
+      "path": "export-preflight-01/receipt.json",
+      "sha256": "sha256:eeb3297b52c55fe8b0ec1d03ffc088b77028e400f355c7b3afe91c48a17562d1"
+    },
+    {
+      "bytes": 1074,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/issue108-scratch-preflight-01/receipt.json",
+      "path": "scratch-preflight-01/receipt.json",
+      "sha256": "sha256:d6dc130c5fb8b92ca95b63e6a6d9d5b9bab26c7ef724d0dde13f543b7991580f"
+    },
+    {
+      "bytes": 180825,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-neutral-01/runs/owner-08-allocation-00016-distinct-control-r01-allocation/probe/catalog-mutations.json",
+      "path": "smoke-neutral-01/last-collector.json",
+      "sha256": "sha256:f75b85107b90a02a24cc99265bac5fc4c43dad74bbf40f4519d952a0415f7d93"
+    },
+    {
+      "bytes": 1003,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-neutral-01/data-owners/owner-08-allocation-00016-distinct-control-r01-allocation/cleanup.json",
+      "path": "smoke-neutral-01/last-cleanup.json",
+      "sha256": "sha256:28ecc3abb37c8129799bb804ec4b82481d0f93b2cf281adb1b1630ddeaa2b8ad"
+    },
+    {
+      "bytes": 180628,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/runs/owner-08-allocation-00004-distinct-control-r01-allocation/probe/catalog-mutations.json",
+      "path": "smoke-paired-01/last-collector.json",
+      "sha256": "sha256:b0d8758bef8f61a88a3d28b51d3292d9a90291d4b455c97d4a745ee27971e383"
+    },
+    {
+      "bytes": 1002,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/data-owners/owner-08-allocation-00004-distinct-control-r01-allocation/cleanup.json",
+      "path": "smoke-paired-01/last-cleanup.json",
+      "sha256": "sha256:a178343537f795e02c1a063e6be1a7b603f53848315652af9e7ea41b2af94816"
+    },
+    {
+      "bytes": 181662,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-02/runs/owner-14-allocation-00004-shared-control-r01-allocation/probe/catalog-mutations.json",
+      "path": "smoke-paired-02/last-collector.json",
+      "sha256": "sha256:02c57cc4a35b73bc1cc5da1783ccf5222a6bc0232dc37744d2c9c566d9a6ea0d"
+    },
+    {
+      "bytes": 998,
+      "copy_byte_verified": true,
+      "original_path": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/smoke-paired-02/data-owners/owner-14-allocation-00004-shared-control-r01-allocation/cleanup.json",
+      "path": "smoke-paired-02/last-cleanup.json",
+      "sha256": "sha256:4e39a61d4898ae9eff9d04e9f4b76e22c1060eb6f80b7b85021984ca1ef0514f"
+    }
+  ],
+  "maximum_copied_total_bytes": 33554432,
+  "maximum_input_file_bytes": 33554432,
+  "not_published_empty_witnesses": [
+    {
+      "bytes": 0,
+      "kind": "not-published-empty-witness",
+      "omitted_publication_path": "notes/issue108-paired-smoke-03.log",
+      "original_byte_verified": true,
+      "original_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-paired-smoke-03.log",
+      "published": false,
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "original_retention": "Complete original evidence roots and diagnostic exports remain unchanged on the owning machine; generated data cleanup is recorded separately.",
+  "schema": "latent.diagnostic.catalog-mutation-attempt-witnesses.v1",
+  "scope": "original small diagnostic subset; not a standard replayable Phase1 archive",
+  "total_bytes": 4142406,
+  "workloads_or_replays_performed_by_copy": 0
+}

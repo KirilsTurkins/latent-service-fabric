@@ -22,6 +22,9 @@ from .recovery import model as recovery_model
 
 
 def execute(args, repo):
+    if getattr(args, "experiment", "warm") == "catalog-mutations":
+        from .catalog_mutations.collect import execute as execute_catalog_mutations
+        return execute_catalog_mutations(args, repo)
     if getattr(args, "experiment", "warm") == "catalog":
         from .catalog.collect import execute as execute_catalog
         return execute_catalog(args, repo)

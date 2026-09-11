@@ -112,11 +112,19 @@ class CatalogFoldedTests(unittest.TestCase):
                 log.write_bytes(b"mock helper output")
                 if "--print-flamegraph" in argv:
                     Path(argv[-1]).write_bytes(b"selected 1\n")
-            with patch.object(run, "command", side_effect=command), \
+            now = 1_000_000_000
+            deadline = now + 240 * 1_000_000_000
+            cutoff = now + 120 * 1_000_000_000
+            with patch.object(run.time, "monotonic_ns", return_value=now), \
+                    patch.object(run, "command", side_effect=command) as commands, \
                     patch.object(run, "compress_folded", wraps=files.compress_folded) as compress:
-                run.profile_reports(root / "heaptrack", "printer", "zstd", root, 0, 1024,
+                run.profile_reports(root / "heaptrack", "printer", "zstd", root, deadline, 1024,
                                     maximum_folded_bytes=CATALOG)
-            self.assertEqual([call.kwargs for call in compress.call_args_list], [{"maximum_bytes": CATALOG}] * 2)
+            self.assertEqual([call.args[4] for call in commands.call_args_list],
+                             [deadline, deadline, cutoff, cutoff])
+            self.assertEqual([call.kwargs["remaining"] for call in commands.call_args_list], [1024] * 4)
+            self.assertEqual([call.kwargs for call in compress.call_args_list],
+                             [{"maximum_bytes": CATALOG, "deadline": cutoff, "remaining": 1024}] * 2)
         refs = {name: {"path": name + (".folded.gz" if name in ("allocations", "peak") else "")}
                 for name in ("raw", "report", "interpreted", "allocations", "peak")}
         rows = {name: {"path": name} for name in ("report.process.json", "interpreted.process.json", "allocations.log", "peak.log",

@@ -10,6 +10,10 @@ description = "Control-plane persistence interfaces and immutable local deployme
 [lints]
 workspace = true
 
+[features]
+default = []
+catalog-observation = []
+
 [dependencies]
 latent-core = { path = "../latent-core" }
 latent-manifest = { path = "../latent-manifest" }

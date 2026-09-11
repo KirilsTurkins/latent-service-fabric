@@ -32,7 +32,8 @@ def artifact_set(root, builds, rows=None):
         from .collect import inventory
         rows = inventory(root)
     binaries = {build["executables"]["backend"]["path"] for build in builds["builds"].values()}
-    if builds["schema"] in ("latent.optimization.cache-builds.v1", "latent.optimization.catalog-builds.v1"):
+    if builds["schema"] in ("latent.optimization.cache-builds.v1", "latent.optimization.catalog-builds.v1",
+                            "latent.optimization.catalog-mutation-builds.v1"):
         from tools.optimization_cache_lookup.files import Artifacts as CacheArtifacts
         return CacheArtifacts(root, rows, binaries)
     maximum = 1024**3 if builds["schema"] in ("latent.optimization.budget-lifecycle-builds.v1", "latent.optimization.recovery-builds.v1") else 2 * 1024**3
@@ -45,6 +46,9 @@ def validate_suite(path):
     checksum = hash_file(path, DOCUMENT_BYTES)
     suite = read_json(path)
     require(hash_file(path, DOCUMENT_BYTES) == checksum, "backend-suite-changed-during-read")
+    if suite.get("schema") == "latent.optimization.catalog-mutation-suite.v1":
+        from .catalog_mutations.evidence import validate_suite as validate_catalog_mutations
+        return validate_catalog_mutations(path)
     if suite.get("schema") == "latent.optimization.catalog-suite.v1":
         from .catalog.evidence import validate_suite as validate_catalog
         return validate_catalog(path)

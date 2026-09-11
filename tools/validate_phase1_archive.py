@@ -231,7 +231,7 @@ def evidence_kind(directory):
         return 'budget'
     if aggregate.get('schema') == 'latent.optimization.budget-lifecycle-aggregate.v1':
         return 'budget-lifecycle'
-    for kind in ('transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog'):
+    for kind in ('transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog', 'catalog-mutation'):
         if aggregate.get('schema') == f'latent.optimization.{kind}-aggregate.v1':
             return kind
     if aggregate.get('schema') == 'latent.optimization.backend-revision-aggregate.v1':
@@ -293,19 +293,20 @@ def verify_artifact_identity(directory):
 
 
 def verify_revision(directory, *, backend=False, cold=False, budget=False, lifecycle=False, transport=False, recovery=False,
-                    ownership=None, codec=None, engine=None, catalog=False):
+                    ownership=None, codec=None, engine=None, catalog=False, catalog_mutation=False):
     require(ownership in (None, 'ownership-rpc', 'ownership'), 'invalid ownership archive dispatch')
     require(codec in (None, 'codec-rpc', 'codec'), 'invalid codec archive dispatch')
     require(engine in (None, 'engine-warm', 'engine'), 'invalid engine archive dispatch')
     require(type(catalog) is bool, 'invalid catalog archive dispatch')
-    require(sum(bool(value) for value in (backend, cold, budget, lifecycle, transport, recovery, ownership, codec, engine, catalog)) <= 1,
+    require(type(catalog_mutation) is bool, 'invalid catalog mutation archive dispatch')
+    require(sum(bool(value) for value in (backend, cold, budget, lifecycle, transport, recovery, ownership, codec, engine, catalog, catalog_mutation)) <= 1,
             'ambiguous revision archive dispatch')
-    kind = 'catalog' if catalog else engine or codec or ownership or ('recovery' if recovery else 'transport-warm' if transport else 'budget-lifecycle' if lifecycle else 'budget' if budget else 'cold' if cold else 'backend-revision' if backend else 'revision')
+    kind = 'catalog-mutation' if catalog_mutation else 'catalog' if catalog else engine or codec or ownership or ('recovery' if recovery else 'transport-warm' if transport else 'budget-lifecycle' if lifecycle else 'budget' if budget else 'cold' if cold else 'backend-revision' if backend else 'revision')
     retained = read_optimization_json(
         paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
         MAX_AGGREGATE_BYTES)
     suite = paths.existing_regular_file_path(directory / 'suite.json', f'{kind} suite')
-    validator = validate_backend_revision_suite if backend or cold or lifecycle or recovery or ownership == 'ownership' or codec == 'codec' or engine == 'engine' or catalog else validate_revision_suite
+    validator = validate_backend_revision_suite if backend or cold or lifecycle or recovery or ownership == 'ownership' or codec == 'codec' or engine == 'engine' or catalog or catalog_mutation else validate_revision_suite
     regenerated = validator(suite)
     require(canonical(retained) == canonical(regenerated),
             f'{kind} aggregate differs from replayed evidence')
@@ -400,7 +401,7 @@ def verify_archive(root, manifest, archive_path, *, replay):
         require(kind == outer_kind, 'outer evidence kind differs from archive')
         outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
                        if kind == 'measurement' else ('aggregate.json',))
-        if kind in ('optimization', 'artifact-identity', 'revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog',
+        if kind in ('optimization', 'artifact-identity', 'revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog', 'catalog-mutation',
                     'cache-lookup', 'cache-behavior'):
             require('suite.json' in expected, f'{kind} archive omits suite')
         for name in outer_files:
@@ -413,12 +414,13 @@ def verify_archive(root, manifest, archive_path, *, replay):
                 verify_optimization(extracted)
             elif kind == 'artifact-identity':
                 verify_artifact_identity(extracted)
-            elif kind in ('revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog'):
+            elif kind in ('revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog', 'catalog-mutation'):
                 verify_revision(extracted, backend=kind == 'backend-revision', cold=kind == 'cold', budget=kind == 'budget',
                                 lifecycle=kind == 'budget-lifecycle', transport=kind == 'transport-warm', recovery=kind == 'recovery',
                                 ownership=kind if kind in ('ownership-rpc', 'ownership') else None,
                                 codec=kind if kind in ('codec-rpc', 'codec') else None,
-                                engine=kind if kind in ('engine-warm', 'engine') else None, catalog=kind == 'catalog')
+                                engine=kind if kind in ('engine-warm', 'engine') else None, catalog=kind == 'catalog',
+                                catalog_mutation=kind == 'catalog-mutation')
             elif kind in ('cache-lookup', 'cache-behavior'):
                 verify_cache(extracted, kind)
             else:

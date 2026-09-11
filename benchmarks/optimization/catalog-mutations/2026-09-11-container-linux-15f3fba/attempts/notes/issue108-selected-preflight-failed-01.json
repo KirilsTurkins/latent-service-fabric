@@ -1,0 +1,16 @@
+{
+  "diagnostic_folded_maximum_bytes": "536870912",
+  "elapsed_nanos": "538576611",
+  "error": {
+    "message": "unbound-helper-receipt",
+    "type": "EvidenceError"
+  },
+  "harness_commit": "f2214f2e7dba2bcf73fdcf99d93132eaf3ce4f3b",
+  "note": "Original suite, raw, binary and export remain unchanged; no full-suite validation.",
+  "qualifying_full_population": false,
+  "schema": "latent.diagnostic.catalog-mutation-selected-preflight.v1",
+  "scope": "one-retained-N4-distinct-control-allocation-owner",
+  "source_suite_status": "failed",
+  "status": "failed",
+  "workloads_run": 0
+}

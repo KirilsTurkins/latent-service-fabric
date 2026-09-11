@@ -22,8 +22,8 @@ use latent_routing::{InvocationTarget, RouteSnapshot, RouteSnapshotSource};
 
 use super::super::{error, DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig};
 
-pub(super) type Store = DirectoryDeploymentRepository;
-pub(super) type Limits = DirectoryDeploymentRepositoryConfig;
+pub(in crate::deployments) type Store = DirectoryDeploymentRepository;
+pub(in crate::deployments) type Limits = DirectoryDeploymentRepositoryConfig;
 pub(super) type Code = PlatformErrorCode;
 pub(super) const CONTRACT: &str = "example:echo/api@1.0.0";
 
@@ -39,7 +39,7 @@ impl Wake for ThreadWake {
     }
 }
 
-pub(super) fn run<F: Future>(future: F) -> F::Output {
+pub(in crate::deployments) fn run<F: Future>(future: F) -> F::Output {
     let waker = Waker::from(Arc::new(ThreadWake(std::thread::current())));
     let mut context = Context::from_waker(&waker);
     let mut future = std::pin::pin!(future);
@@ -51,7 +51,7 @@ pub(super) fn run<F: Future>(future: F) -> F::Output {
     }
 }
 
-pub(super) struct TempRoot(pub PathBuf);
+pub(in crate::deployments) struct TempRoot(pub PathBuf);
 
 impl TempRoot {
     pub fn new() -> Self {
@@ -77,7 +77,7 @@ impl Drop for TempRoot {
 }
 
 #[derive(Default)]
-pub(super) struct Releases {
+pub(in crate::deployments) struct Releases {
     pub values: RwLock<BTreeMap<ReleaseDigest, CapsuleArtifact>>,
     pub fetches: AtomicUsize,
     pub fetch_gate: Mutex<Option<Arc<Barrier>>>,
@@ -250,7 +250,11 @@ pub(super) fn artifact(marker: &str) -> CapsuleArtifact {
     }
 }
 
-pub(super) fn deployment(id: &str, tenant: &str, release: &ReleaseDigest) -> DeploymentManifest {
+pub(in crate::deployments) fn deployment(
+    id: &str,
+    tenant: &str,
+    release: &ReleaseDigest,
+) -> DeploymentManifest {
     DeploymentManifest {
         api_version: MANIFEST_API_VERSION.to_owned(),
         id: latent_core::DeploymentId(id.to_owned()),

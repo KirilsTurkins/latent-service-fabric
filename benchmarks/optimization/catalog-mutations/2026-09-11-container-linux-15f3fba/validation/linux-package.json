@@ -1,0 +1,36 @@
+{
+  "schema": "latent.catalog-mutation.linux-package-validation.v1",
+  "status": "passed",
+  "exit_code": 0,
+  "exit_witness": "Coordinator awaited native wrapper session 88130 to its actual exit code 0.",
+  "source": "/workspace/project/target/optimization-catalog-mutations/full-01",
+  "output": "/workspace/project/target/optimization-catalog-mutations/publication-01",
+  "clean_harness": "/tmp/lsf-catalog-mutation-harness-04",
+  "harness_commit": "15f3fba3f47404240dd577d9eaaa3f60270b81d1",
+  "command": [
+    "python3",
+    "tools/package_phase1_evidence.py",
+    "--source",
+    "/workspace/project/target/optimization-catalog-mutations/full-01",
+    "--output",
+    "/workspace/project/target/optimization-catalog-mutations/publication-01",
+    "--compression-level",
+    "9",
+    "--split-archive"
+  ],
+  "semantic_replay": true,
+  "log": {
+    "path": "linux-package.log",
+    "bytes": "53",
+    "sha256": "sha256:1fc7f74f010093f923d2f174daf47dddc69e32cb31b135a6f6cc7b2731e679ec"
+  },
+  "archive": {
+    "bytes": "161619941",
+    "path": "raw-evidence.tar.gz",
+    "sha256": "sha256:b1b1abe26eaeca39670b09a1f6a32d41e55ed419bd83c32341985928f03dd01d"
+  },
+  "manifest_files": 1370,
+  "expanded_bytes": "619755414",
+  "wall_duration_nanos": null,
+  "duration_note": "The original command wrapper did not record its own elapsed duration."
+}

@@ -1,18 +1,22 @@
+mod encoding;
+mod hashing;
+#[cfg(test)]
+mod legacy;
+mod projection;
+
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use latent_artifacts::content_digest;
 use latent_core::{DeploymentId, PlatformError, PlatformErrorCode};
 use latent_manifest::{
     __serde::{Deserialize, Serialize},
     __serde_json as json, DeploymentManifest, JsonManifestCodec, ManifestCodec,
 };
-#[cfg(test)]
-use latent_routing::RouteSnapshot;
 
 use super::compiler::CompiledCatalog;
+use super::observation::{count, maximum, Work};
 use super::{error, DirectoryDeploymentRepositoryConfig, OwnerLock};
 
 #[cfg(test)]
@@ -180,6 +184,7 @@ fn create_durable_root(root: &Path) -> Result<PathBuf, PlatformError> {
 pub(super) fn load(
     root: &Path,
     config: DirectoryDeploymentRepositoryConfig,
+    work: &mut Work,
 ) -> Result<Option<Record>, PlatformError> {
     let file = match File::open(root.join(STATE_FILE)) {
         Ok(file) => file,
@@ -197,63 +202,83 @@ pub(super) fn load(
         return Err(byte_limit());
     }
     let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
-    let payload = bounded_json(&record.payload, config.max_state_bytes)?;
-    if !matches!(record.format_version, 1 | 2) || content_digest(&payload).0 != record.checksum {
+    let checksum = payload_checksum(&record.payload, config.max_state_bytes, work)?;
+    if !matches!(record.format_version, 1 | 2)
+        || record.checksum.as_bytes().strip_prefix(b"sha256:") != Some(checksum.as_slice())
+    {
         return Err(corrupt());
     }
     Ok(Some(record))
 }
 
-pub(super) fn encode(
-    catalog: &CompiledCatalog,
-    config: DirectoryDeploymentRepositoryConfig,
-) -> Result<Vec<u8>, PlatformError> {
-    let codec = JsonManifestCodec::default();
-    let deployments = catalog
-        .deployments
-        .values()
-        .map(|deployment| {
-            let bytes = codec
-                .encode_deployment(deployment)
-                .map_err(super::manifest_error)?;
-            json::from_slice(&bytes).map_err(|_| corrupt())
-        })
-        .collect::<Result<Vec<_>, PlatformError>>()?;
-    let payload = Payload {
-        generation: catalog.generation.0,
-        generated_at_unix_millis: catalog.generated_at_unix_millis,
-        deployments,
-        snapshot: catalog_snapshot_value(catalog),
-        object_generations: Some(
-            catalog
-                .versions
-                .iter()
-                .map(|(id, generation)| StoredObjectGeneration {
-                    id: id.0.clone(),
-                    generation: *generation,
-                })
-                .collect(),
-        ),
-    };
-    let payload_bytes = bounded_json(&payload, config.max_state_bytes)?;
-    let checksum = content_digest(&payload_bytes).0;
-    drop(payload_bytes);
-    let record = Record {
-        format_version: 2,
-        checksum,
-        payload,
-    };
-    bounded_json(&record, config.max_state_bytes)
+/// The only pairing of a fully validated catalog with its exact durable bytes.
+/// No clone, mutable catalog access, or independently supplied byte constructor exists.
+pub(super) struct EncodedCatalog {
+    catalog: CompiledCatalog,
+    bytes: Vec<u8>,
 }
 
-/// Stops serialization at the byte budget, rather than allocating an oversized transaction.
-fn bounded_json<T: Serialize>(value: &T, limit: usize) -> Result<Vec<u8>, PlatformError> {
+impl EncodedCatalog {
+    pub(super) fn catalog(&self) -> &CompiledCatalog {
+        &self.catalog
+    }
+
+    pub(super) fn into_catalog(self) -> CompiledCatalog {
+        self.catalog
+    }
+
+    pub(super) fn into_parts(self) -> (CompiledCatalog, Vec<u8>) {
+        (self.catalog, self.bytes)
+    }
+
+    #[cfg(test)]
+    pub(super) fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+pub(super) fn encode(
+    catalog: CompiledCatalog,
+    config: DirectoryDeploymentRepositoryConfig,
+    work: &mut Work,
+) -> Result<EncodedCatalog, PlatformError> {
+    count!(work, encoder_calls, 1);
+    let result = encode_bytes(&catalog, config.max_state_bytes, work);
+    if result.is_ok() {
+        count!(work, encoder_completed, 1);
+    } else {
+        count!(work, encoder_failed, 1);
+    }
+    result.map(|bytes| EncodedCatalog { catalog, bytes })
+}
+
+fn encode_bytes(
+    catalog: &CompiledCatalog,
+    limit: usize,
+    work: &mut Work,
+) -> Result<Vec<u8>, PlatformError> {
     let mut output = LimitedBytes {
         bytes: Vec::new(),
         limit,
     };
-    json::to_writer(&mut output, value).map_err(|_| byte_limit())?;
+    count!(work, envelope_serializations, 1);
+    let result = encoding::write(&mut output, catalog, work);
+    count!(work, encoded_buffer_bytes, output.bytes.len());
+    maximum!(work, encoded_capacity_max, output.bytes.capacity());
+    result.map_err(|_| byte_limit())?;
     Ok(output.bytes)
+}
+
+fn payload_checksum(
+    payload: &Payload,
+    limit: usize,
+    work: &mut Work,
+) -> Result<[u8; 64], PlatformError> {
+    // Same typed canonical traversal and byte bound, with no payload-sized buffer.
+    let mut output = hashing::Hashing::new(std::io::sink(), limit);
+    count!(work, load_payload_serializations, 1);
+    json::to_writer(&mut output, payload).map_err(|_| byte_limit())?;
+    Ok(output.finish())
 }
 
 struct LimitedBytes {
@@ -319,50 +344,37 @@ pub(super) fn catalog_snapshot_value(catalog: &CompiledCatalog) -> json::Value {
     })
 }
 
-#[cfg(test)]
-pub(super) fn snapshot_value(snapshot: &RouteSnapshot) -> json::Value {
-    let services = snapshot
-        .services
-        .iter()
-        .map(|service| {
-            let revisions = service
-                .revisions
-                .iter()
-                .map(|revision| {
-                    json::json!({
-                        "revision": revision.revision.0,
-                        "release": revision.release.0,
-                        "weight": revision.weight,
-                        "attributes": revision.attributes,
-                    })
-                })
-                .collect::<Vec<_>>();
-            json::json!({
-                "route": service.id.0,
-                "tenant": service.tenant.0,
-                "service": service.service.0,
-                "revisions": revisions,
-            })
-        })
-        .collect::<Vec<_>>();
-    json::json!({
-        "generation": snapshot.generation.0,
-        "generated_at_unix_millis": snapshot.generated_at_unix_millis,
-        "services": services,
-        "bindings": [],
-        "policy_digests": snapshot.policy_digests,
-    })
-}
-
-pub(super) fn stage(root: &Path, bytes: &[u8]) -> Result<(), PlatformError> {
+pub(super) fn stage(root: &Path, bytes: &[u8], work: &mut Work) -> Result<(), PlatformError> {
+    count!(work, stage_calls, 1);
+    count!(work, stage_requested_bytes, bytes.len());
     remove_pending(root)?;
     let mut pending = OpenOptions::new()
         .create_new(true)
         .write(true)
         .open(root.join(PENDING_FILE))
         .map_err(io_error)?;
-    pending.write_all(bytes).map_err(io_error)?;
-    pending.sync_all().map_err(io_error)
+    write_stage(&mut pending, bytes, work)?;
+    if let Err(failure) = pending.sync_all() {
+        count!(work, stage_sync_failures, 1);
+        return Err(io_error(failure));
+    }
+    count!(work, stage_completed, 1);
+    count!(work, stage_synced_bytes, bytes.len());
+    Ok(())
+}
+
+fn write_stage(
+    writer: &mut impl Write,
+    bytes: &[u8],
+    work: &mut Work,
+) -> Result<(), PlatformError> {
+    if let Err(failure) = writer.write_all(bytes) {
+        count!(work, stage_write_failures, 1);
+        work.written(None);
+        return Err(io_error(failure));
+    }
+    work.written(Some(bytes.len()));
+    Ok(())
 }
 
 pub(super) fn replace(root: &Path) -> Result<(), PlatformError> {
@@ -469,3 +481,10 @@ fn corrupt() -> PlatformError {
         "invalid-persisted-catalog",
     )
 }
+
+#[cfg(all(test, feature = "catalog-observation"))]
+#[path = "tests/observation_io.rs"]
+mod observation_tests;
+
+#[cfg(test)]
+mod tests;

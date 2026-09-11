@@ -7,6 +7,9 @@ from tools.optimization_revision_runner.build import validate_refs
 
 
 def validate_experiment(value,artifacts,profile,experiment):
+    if experiment == "catalog-mutations":
+        from .catalog_mutations.builds import validate as validate_catalog_mutations
+        return validate_catalog_mutations(value,artifacts,profile)
     if experiment == "catalog":
         from .catalog.builds import validate as validate_catalog
         return validate_catalog(value,artifacts,profile)

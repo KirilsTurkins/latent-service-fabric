@@ -10,6 +10,7 @@ use latent_manifest::{
     Phase1ManifestValidator,
 };
 
+use super::observation::{count, CatalogWorkOperation as WorkOperation, Work};
 use super::{
     compile_versioned, error, manifest_error, next_generation, now, CompiledCatalog,
     DeploymentPage, DeploymentPageRequest, DirectoryDeploymentRepository,
@@ -63,44 +64,51 @@ impl DirectoryDeploymentRepository {
         &self,
         deployments: Vec<DeploymentManifest>,
     ) -> Result<RouteGeneration, PlatformError> {
-        if deployments.is_empty() {
-            return Ok(self.read_catalog().generation);
-        }
-        if deployments.len() > self.config.max_deployments {
-            return Err(error(
-                PlatformErrorCode::ResourceExhausted,
-                "deployment-count-limit",
-            ));
-        }
-        let previous = self.read_catalog();
-        let generation = next_generation(previous.generation)?;
-        let mut next = previous.deployments.clone();
-        let mut versions = previous.versions.clone();
-        let mut seen = BTreeSet::new();
-        for deployment in deployments {
-            let deployment = normalize(deployment)?;
-            if !seen.insert(deployment.id.clone()) {
+        let mut work = self.observation.begin(WorkOperation::ApplyMany);
+        let result = async {
+            if deployments.is_empty() {
+                return Ok(self.read_catalog().generation);
+            }
+            if deployments.len() > self.config.max_deployments {
                 return Err(error(
-                    PlatformErrorCode::AlreadyExists,
-                    "duplicate-deployment-id",
+                    PlatformErrorCode::ResourceExhausted,
+                    "deployment-count-limit",
                 ));
             }
-            check_scope(next.get(&deployment.id).map(Arc::as_ref), &deployment)?;
-            versions.insert(deployment.id.clone(), generation.0);
-            next.insert(deployment.id.clone(), Arc::new(deployment));
+            let previous = self.read_catalog();
+            let generation = next_generation(previous.generation)?;
+            let mut next = previous.deployments.clone();
+            let mut versions = previous.versions.clone();
+            let mut seen = BTreeSet::new();
+            for deployment in deployments {
+                let deployment = normalize(deployment, &mut work)?;
+                if !seen.insert(deployment.id.clone()) {
+                    return Err(error(
+                        PlatformErrorCode::AlreadyExists,
+                        "duplicate-deployment-id",
+                    ));
+                }
+                check_scope(next.get(&deployment.id).map(Arc::as_ref), &deployment)?;
+                versions.insert(deployment.id.clone(), generation.0);
+                next.insert(deployment.id.clone(), Arc::new(deployment));
+            }
+            let compiled = compile_versioned(
+                next,
+                versions,
+                generation,
+                now()?,
+                self.artifacts.as_ref(),
+                self.config,
+                Some(&previous),
+                &mut work,
+            )
+            .await?;
+            self.commit(previous.generation, compiled, &mut work)?;
+            Ok(generation)
         }
-        let compiled = compile_versioned(
-            next,
-            versions,
-            generation,
-            now()?,
-            self.artifacts.as_ref(),
-            self.config,
-            Some(&previous),
-        )
-        .await?;
-        self.commit(previous.generation, compiled)?;
-        Ok(generation)
+        .await;
+        work.finish(&result);
+        result
     }
 
     async fn apply_with_generation(
@@ -109,51 +117,63 @@ impl DirectoryDeploymentRepository {
         deployment: DeploymentManifest,
         expected_generation: Option<u64>,
     ) -> Result<DeploymentApplyReceipt, PlatformError> {
-        self.validate_target(tenant, &deployment.id)?;
-        if deployment.metadata.tenant.as_ref() != Some(tenant) {
-            return Err(scope_conflict());
+        let mut work = self.observation.begin(WorkOperation::ApplyVersioned);
+        let result = async {
+            self.validate_target(tenant, &deployment.id)?;
+            if deployment.metadata.tenant.as_ref() != Some(tenant) {
+                return Err(scope_conflict());
+            }
+            let deployment = normalize(deployment, &mut work)?;
+            let previous = self.read_catalog();
+            check_scope(
+                previous.deployments.get(&deployment.id).map(Arc::as_ref),
+                &deployment,
+            )?;
+            let precondition = ObjectPrecondition {
+                tenant: tenant.clone(),
+                id: deployment.id.clone(),
+                expected: expected_generation,
+                operation: Operation::Apply,
+            };
+            precondition.check(&previous)?;
+            let generation = next_generation(previous.generation)?;
+            let receipt = DeploymentApplyReceipt {
+                deployment: VersionedDeployment {
+                    manifest: deployment.clone(),
+                    generation: generation.0,
+                },
+                catalog_generation: generation,
+            };
+            let mut next = previous.deployments.clone();
+            let mut versions = previous.versions.clone();
+            versions.insert(deployment.id.clone(), generation.0);
+            next.insert(deployment.id.clone(), Arc::new(deployment));
+            let compiled = compile_versioned(
+                next,
+                versions,
+                generation,
+                now()?,
+                self.artifacts.as_ref(),
+                self.config,
+                Some(&previous),
+                &mut work,
+            )
+            .await?;
+            let outcome = self.commit_checked(
+                previous.generation,
+                compiled,
+                Some(&precondition),
+                &mut work,
+            )?;
+            after_commit();
+            outcome.durability.map_err(|failure| {
+                committed_error(failure, &receipt.deployment, generation, "apply")
+            })?;
+            Ok(receipt)
         }
-        let deployment = normalize(deployment)?;
-        let previous = self.read_catalog();
-        check_scope(
-            previous.deployments.get(&deployment.id).map(Arc::as_ref),
-            &deployment,
-        )?;
-        let precondition = ObjectPrecondition {
-            tenant: tenant.clone(),
-            id: deployment.id.clone(),
-            expected: expected_generation,
-            operation: Operation::Apply,
-        };
-        precondition.check(&previous)?;
-        let generation = next_generation(previous.generation)?;
-        let receipt = DeploymentApplyReceipt {
-            deployment: VersionedDeployment {
-                manifest: deployment.clone(),
-                generation: generation.0,
-            },
-            catalog_generation: generation,
-        };
-        let mut next = previous.deployments.clone();
-        let mut versions = previous.versions.clone();
-        versions.insert(deployment.id.clone(), generation.0);
-        next.insert(deployment.id.clone(), Arc::new(deployment));
-        let compiled = compile_versioned(
-            next,
-            versions,
-            generation,
-            now()?,
-            self.artifacts.as_ref(),
-            self.config,
-            Some(&previous),
-        )
-        .await?;
-        let outcome = self.commit_checked(previous.generation, compiled, Some(&precondition))?;
-        after_commit();
-        outcome.durability.map_err(|failure| {
-            committed_error(failure, &receipt.deployment, generation, "apply")
-        })?;
-        Ok(receipt)
+        .await;
+        work.finish(&result);
+        result
     }
 
     async fn delete_with_generation(
@@ -162,49 +182,61 @@ impl DirectoryDeploymentRepository {
         id: &DeploymentId,
         expected_generation: Option<u64>,
     ) -> Result<DeploymentDeleteReceipt, PlatformError> {
-        self.validate_target(tenant, id)?;
-        let previous = self.read_catalog();
-        let precondition = ObjectPrecondition {
-            tenant: tenant.clone(),
-            id: id.clone(),
-            expected: expected_generation,
-            operation: Operation::Delete,
-        };
-        precondition.check(&previous)?;
-        let manifest = previous
-            .deployments
-            .get(id)
-            .ok_or_else(not_found)?
-            .as_ref()
-            .clone();
-        let generation = next_generation(previous.generation)?;
-        let receipt = DeploymentDeleteReceipt {
-            deleted: VersionedDeployment {
-                manifest,
-                generation: previous.versions[id],
-            },
-            catalog_generation: generation,
-        };
-        let mut next = previous.deployments.clone();
-        let mut versions = previous.versions.clone();
-        next.remove(id);
-        versions.remove(id);
-        let compiled = compile_versioned(
-            next,
-            versions,
-            generation,
-            now()?,
-            self.artifacts.as_ref(),
-            self.config,
-            Some(&previous),
-        )
-        .await?;
-        let outcome = self.commit_checked(previous.generation, compiled, Some(&precondition))?;
-        after_commit();
-        outcome
-            .durability
-            .map_err(|failure| committed_error(failure, &receipt.deleted, generation, "delete"))?;
-        Ok(receipt)
+        let mut work = self.observation.begin(WorkOperation::DeleteVersioned);
+        let result = async {
+            self.validate_target(tenant, id)?;
+            let previous = self.read_catalog();
+            let precondition = ObjectPrecondition {
+                tenant: tenant.clone(),
+                id: id.clone(),
+                expected: expected_generation,
+                operation: Operation::Delete,
+            };
+            precondition.check(&previous)?;
+            let manifest = previous
+                .deployments
+                .get(id)
+                .ok_or_else(not_found)?
+                .as_ref()
+                .clone();
+            let generation = next_generation(previous.generation)?;
+            let receipt = DeploymentDeleteReceipt {
+                deleted: VersionedDeployment {
+                    manifest,
+                    generation: previous.versions[id],
+                },
+                catalog_generation: generation,
+            };
+            let mut next = previous.deployments.clone();
+            let mut versions = previous.versions.clone();
+            next.remove(id);
+            versions.remove(id);
+            let compiled = compile_versioned(
+                next,
+                versions,
+                generation,
+                now()?,
+                self.artifacts.as_ref(),
+                self.config,
+                Some(&previous),
+                &mut work,
+            )
+            .await?;
+            let outcome = self.commit_checked(
+                previous.generation,
+                compiled,
+                Some(&precondition),
+                &mut work,
+            )?;
+            after_commit();
+            outcome.durability.map_err(|failure| {
+                committed_error(failure, &receipt.deleted, generation, "delete")
+            })?;
+            Ok(receipt)
+        }
+        .await;
+        work.finish(&result);
+        result
     }
 
     fn validate_target(&self, tenant: &TenantId, id: &DeploymentId) -> Result<(), PlatformError> {
@@ -320,7 +352,10 @@ impl DeploymentStore for DirectoryDeploymentRepository {
     }
 }
 
-fn normalize(mut deployment: DeploymentManifest) -> Result<DeploymentManifest, PlatformError> {
+fn normalize(
+    mut deployment: DeploymentManifest,
+    work: &mut Work,
+) -> Result<DeploymentManifest, PlatformError> {
     Phase1ManifestValidator
         .validate_deployment(&deployment)
         .map_err(manifest_error)?;
@@ -332,6 +367,7 @@ fn normalize(mut deployment: DeploymentManifest) -> Result<DeploymentManifest, P
     }
     deployment.release.0.make_ascii_lowercase();
     let codec = JsonManifestCodec::default();
+    count!(work, normalization_deployment_encodes, 1);
     let bytes = codec
         .encode_deployment(&deployment)
         .map_err(manifest_error)?;

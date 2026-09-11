@@ -92,6 +92,17 @@ class BackendValidatorCliTests(unittest.TestCase):
         self.assertEqual((code, stdout, output), (1, "", None))
         self.assertIn("unsupported-backend-aggregate-display-schema", stderr)
 
+    def test_catalog_mutation_displays_all_commands_and_requires_identical_replay(self):
+        value = {"schema": "latent.optimization.catalog-mutation-aggregate.v1", "status": "complete",
+                 "validated_commands": "45096", "population_complete": True}
+        code, stdout, stderr, output = self.invoke(value, compared=value, output=True)
+        self.assertEqual((code, stdout, stderr),
+                         (0, "complete: 45096 catalog operations; population_complete=True\n", ""))
+        self.assertEqual(output, canonical(value) + b"\n")
+        code, stdout, stderr, output = self.invoke(value, compared=dict(value, validated_commands="45095"), output=True)
+        self.assertEqual((code, stdout, output), (1, "", None))
+        self.assertIn("backend-aggregate-does-not-replay", stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

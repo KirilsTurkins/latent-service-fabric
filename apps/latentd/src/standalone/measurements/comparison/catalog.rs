@@ -1,13 +1,13 @@
 //! Bounded, zero-Invoke catalog comparison against two immutable revisions.
 mod collector;
-mod files;
-mod fixture;
+pub(super) mod files;
+pub(super) mod fixture;
 mod frames;
-mod observation;
+pub(super) mod observation;
 mod plan;
 mod proofs;
-mod resolve;
-mod sampler;
+pub(super) mod resolve;
+pub(super) mod sampler;
 mod sequence;
 
 use super::{cold::call::Clock, node::Node, writer::Writer, Result};

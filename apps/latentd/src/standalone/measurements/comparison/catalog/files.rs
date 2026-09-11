@@ -125,7 +125,11 @@ impl Inputs {
     }
 }
 
-pub(super) fn file_reference(path: &Path, name: &str, maximum: u64) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn file_reference(
+    path: &Path,
+    name: &str,
+    maximum: u64,
+) -> Result<Value> {
     if !std::fs::symlink_metadata(path)?.file_type().is_file() {
         return Err("catalog nonregular artifact".into());
     }
@@ -166,7 +170,7 @@ fn required(name: &str) -> Result<PathBuf> {
     Ok(path)
 }
 
-pub(super) fn data_identity(data: &Path) -> Result<Value> {
+pub(in crate::standalone::measurements::comparison) fn data_identity(data: &Path) -> Result<Value> {
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;

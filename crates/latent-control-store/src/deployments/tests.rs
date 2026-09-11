@@ -1,12 +1,15 @@
 mod admission;
-mod fixtures;
+pub(super) mod fixtures;
 mod golden;
 #[cfg(unix)]
 mod lock_release;
+#[cfg(feature = "catalog-observation")]
+mod observation;
 mod pagination;
 mod recovery;
 #[cfg(target_os = "linux")]
 mod resources;
+mod reuse_integrity;
 mod root_identity;
 mod scoped_routes;
 mod verified_metadata;

@@ -30,6 +30,30 @@ pub(super) struct Catalogs {
 }
 
 impl Catalogs {
+    #[cfg(test)]
+    pub(super) async fn open_observed(
+        settings: &NodeSettings,
+        observer: latent_control_store::CatalogWorkObserver,
+    ) -> Result<Self, PlatformError> {
+        let artifacts = Arc::new(DirectoryArtifactRepository::open(
+            settings.data_directory.join("releases"),
+            settings.artifacts,
+        )?);
+        let deployments = Arc::new(
+            DirectoryDeploymentRepository::open_observed(
+                settings.data_directory.join("deployments"),
+                artifacts.clone(),
+                settings.deployments,
+                observer,
+            )
+            .await?,
+        );
+        Ok(Self {
+            artifacts,
+            deployments,
+        })
+    }
+
     pub(super) async fn open(settings: &NodeSettings) -> Result<Self, PlatformError> {
         let artifacts = Arc::new(DirectoryArtifactRepository::open(
             settings.data_directory.join("releases"),

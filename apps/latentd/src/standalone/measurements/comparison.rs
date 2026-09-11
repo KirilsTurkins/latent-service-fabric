@@ -3,6 +3,7 @@ mod budget;
 mod cache;
 mod call;
 mod catalog;
+mod catalog_mutations;
 mod cold;
 mod engine;
 mod evidence;

@@ -26,17 +26,27 @@ class DirectoryLimits:
         values = (self.maximum_depth, self.maximum_files, self.maximum_entries, self.maximum_file_bytes)
         if (any(type(value) is not int for value in values) or not 0 <= self.maximum_depth <= 2
                 or not 1 <= self.maximum_files <= 64 or not self.maximum_files <= self.maximum_entries <= 80
-                or not 1 <= self.maximum_file_bytes <= MAX_FILE_BYTES):
+                or not 1 <= self.maximum_file_bytes <= 512 * 1024**2):
             raise ValueError("helper-directory-limits")
 
 
-def directory_bytes(directory: Path, limits: DirectoryLimits | None = None) -> int:
+def directory_bytes(directory: Path, limits: DirectoryLimits | None = None, *,
+                    minimum_file_sizes: dict[Path, int] | None = None,
+                    temporary_file: Path | None = None) -> int:
     limits = limits or DirectoryLimits()
+    if temporary_file is not None and (not isinstance(temporary_file, Path)
+                                      or temporary_file.parent != directory):
+        raise ValueError("helper-temporary-file-path")
+    minimum_file_sizes = minimum_file_sizes or {}
+    if (len(minimum_file_sizes) > limits.maximum_files
+            or any(not isinstance(path, Path) or type(size) is not int or size < 0
+                   for path, size in minimum_file_sizes.items())):
+        raise ValueError("helper-artifact-minimum-size")
     root = directory.lstat()
     if not stat.S_ISDIR(root.st_mode) or getattr(root, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
         raise ValueError("helper-artifact-count-or-type")
     total = 0
-    files = entries = 0
+    files = entries = matched_minimums = 0
     pending = [(directory, 0)]
     while pending:
         current, depth = pending.pop()
@@ -49,6 +59,8 @@ def directory_bytes(directory: Path, limits: DirectoryLimits | None = None) -> i
                 if stat.S_ISLNK(value.st_mode) or getattr(value, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT:
                     raise ValueError("helper-artifact-count-or-type")
                 if stat.S_ISDIR(value.st_mode):
+                    if Path(child.path) == temporary_file:
+                        raise ValueError("helper-temporary-file-type")
                     if depth >= limits.maximum_depth:
                         raise ValueError("helper-artifact-depth-bound" if limits.maximum_depth else "helper-artifact-count-or-type")
                     pending.append((Path(child.path), depth + 1))
@@ -56,18 +68,33 @@ def directory_bytes(directory: Path, limits: DirectoryLimits | None = None) -> i
                     files += 1
                     if files > limits.maximum_files:
                         raise ValueError("helper-artifact-count-or-type")
-                    if value.st_size > limits.maximum_file_bytes:
+                    path = Path(child.path)
+                    matched_minimums += path in minimum_file_sizes
+                    # Directory entries can lag an open writer, including on Windows.
+                    size = max(value.st_size, minimum_file_sizes.get(path, 0))
+                    maximum = (limits.maximum_file_bytes if temporary_file is None or path == temporary_file
+                               else min(limits.maximum_file_bytes, MAX_FILE_BYTES))
+                    if size > maximum:
                         raise ValueError("helper-artifact-byte-bound")
-                    total += value.st_size
+                    # One explicitly named expanded stream owns a separate bounded
+                    # scratch allowance. All other files, including its gzip, count.
+                    if path != temporary_file:
+                        total += size
                 else:
                     raise ValueError("helper-artifact-count-or-type")
+    if matched_minimums != len(minimum_file_sizes):
+        raise ValueError("helper-artifact-count-or-type")
     return total
 
 
 def command(argv: list[str], log: Path, timeout: int, cwd: Path, deadline: int,
             env: dict | None = None, maximum: int = 16 * 1024 * 1024,
             watched: Path | None = None, remaining: int = MAX_TOTAL_BYTES,
-            directory_limits: DirectoryLimits | None = None) -> dict:
+            directory_limits: DirectoryLimits | None = None,
+            temporary_file: Path | None = None) -> dict:
+    if temporary_file is not None and (not isinstance(temporary_file, Path) or watched is None
+                                      or temporary_file.parent != watched):
+        raise ValueError("helper-temporary-file-path")
     checksum = fingerprint(Path(argv[0]))[0]
     until = min(deadline, time.monotonic_ns() + timeout * 1_000_000_000)
     receipt = {"process_id": None, "start_time_ticks": None, "role": "artifact-identity-helper",
@@ -97,9 +124,11 @@ def command(argv: list[str], log: Path, timeout: int, cwd: Path, deadline: int,
                     if count > maximum:
                         raise ValueError("helper-output-bound")
                     destination.write(block)
-                if watched is not None and directory_bytes(watched, directory_limits) > remaining:
+                if watched is not None and directory_bytes(watched, directory_limits,
+                                                          temporary_file=temporary_file) > remaining:
                     raise ValueError("helper-total-output-bound")
-            if watched is not None and directory_bytes(watched, directory_limits) > remaining:
+            if watched is not None and directory_bytes(watched, directory_limits,
+                                                      temporary_file=temporary_file) > remaining:
                 raise ValueError("helper-total-output-bound")
     finally:
         if child is not None:
