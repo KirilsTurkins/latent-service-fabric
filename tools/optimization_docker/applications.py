@@ -36,11 +36,16 @@ class Application:
         config = configuration(campaign.images[arm]["image_id"], command, arm=arm, density=density,
                                network=campaign.fleet.network, mounts=mounts, owner=campaign.fleet.owner, role=role)
         self.container_id = campaign.fleet.create(config, role)
+        campaign.progress("app-created", {"role": role, "arm": arm, "density": density,
+                          "container_id": self.container_id, "template_copy": self.template_copy})
         self.start = campaign.fleet.start(self.container_id)
+        campaign.progress("app-started", {"container_id": self.container_id, "start": self.start})
         self.ready = self.wait_event("ready", deadline=time.monotonic_ns() + 120 * 10**9)
         self.ready_inspect = campaign.fleet.inspect(self.container_id)
         require(self.ready_inspect["State"]["Running"] and not self.ready_inspect["State"]["OOMKilled"],
                 "docker-application-not-running")
+        campaign.progress("app-ready", {"container_id": self.container_id, "ready": self.ready,
+                          "event_observations": self.seen, "ready_inspect_call": campaign.fleet.calls - 1})
         self.owner_ref = "owner-" + self.container_id
         self.endpoint = "http://" + role + ":7070"
         self.app_pid = self.ready["child_pid"]
@@ -76,11 +81,14 @@ class Application:
 
     def snapshot(self, index):
         before = stamp()
+        self.campaign.progress("app-snapshot-attempt", {"container_id": self.container_id,
+                               "index": index, "signal_before_nanos": before})
         call = self.campaign.fleet.signal(self.container_id, "SIGUSR1")
         event = self.wait_event("snapshot", deadline=time.monotonic_ns() + 10 * 10**9, snapshot=index)
         result = {"snapshot_index": index, "signal_before_nanos": before, "call": call,
                   "observed_nanos": stamp(), "event_sequence": event["sequence"]}
         self.snapshots.append(result)
+        self.campaign.progress("app-snapshot-observed", {"container_id": self.container_id, **result})
         return result
 
     def finish(self):
@@ -94,6 +102,7 @@ class Application:
                   "event_observations": self.seen, "snapshots": self.snapshots, "template_copy": self.template_copy,
                   "data_inventory": fixtures.inventory(self.data) if self.data is not None else None}
         self.campaign.fleet.remove(self.container_id)
+        self.campaign.progress("app-finished", result)
         return result
 
 

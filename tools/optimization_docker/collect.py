@@ -15,7 +15,7 @@ from tools.optimization_revision_runner.build import source
 from . import build, fixtures, model, seeds
 from .applications import Application, idle_window
 from .engine import Engine
-from .owned import Fleet, mount, stamp
+from .owned import Fleet, encoded, mount, stamp
 from .session import Session
 
 
@@ -35,6 +35,9 @@ class Campaign:
         self.images = read_json(self.build_root / "images.json")["images"]
         require(set(self.images) == {"lsf", "native", "client"}, "docker-image-set")
         self.root.mkdir(parents=True)
+        with (self.root / "progress.ndjson").open("xb"):
+            pass
+        self.progress_count = self.progress_bytes = 0
         names = build.input_names(self.repository)
         self.collector_inputs, self.collector_build_inputs = {}, {}
         for name in names:
@@ -60,9 +63,28 @@ class Campaign:
     def volume_mount(self, path, destination, readonly=False):
         return mount(self.volume, path.relative_to(Path("/bench")).as_posix(), destination, readonly)
 
+    def progress(self, kind, value):
+        data = encoded({"ordinal": self.progress_count, "observed_nanos": stamp(), "kind": kind, "value": value})
+        require(self.progress_count < 20_000 and len(data) <= 2 * 1024**2
+                and self.progress_bytes + len(data) <= 32 * 1024**2, "docker-progress-bound")
+        with (self.root / "progress.ndjson").open("ab") as stream:
+            stream.write(data)
+        self.progress_count += 1
+        self.progress_bytes += len(data)
+
     def reserve(self, additional):
         inventory = fixtures.inventory(self.root)
         require(int(inventory["bytes"]) + additional <= model.MAX_TOTAL_BYTES, "docker-evidence-total-bound")
+
+    def reserve_active(self, arm, density, *, seed=False):
+        owners = density if arm == "native" else 1
+        wrapper = owners * (10 * 512 * 1024 + 2 * 256 * 1024)
+        journals = model.MAX_FILE_BYTES - self.fleet.journal_bytes + 32 * 1024**2 - self.progress_bytes
+        client = model.MAX_CLIENT_BYTES + 2 * 1024**2
+        helpers = (2 * density + 2) * (2 * 1024**2 + 4096) if seed else 0
+        # The fixed import-free guest does not receive a filesystem capability.
+        # Include copied catalog data and parent metadata outside child streams.
+        self.reserve(wrapper + journals + client + helpers + 64 * 1024**2)
 
     def observe_environment(self, stage):
         # Controller /proc describes the shared Linux VM, never a Windows host PID.
@@ -142,6 +164,7 @@ class Campaign:
     def group(self, pair, group, client, templates):
         begin = stamp()
         arm, density, ordinal = group["arm"], group["density"], group["ordinal"]
+        self.reserve_active(arm, density)
         applications = []
         for index in range(1 if arm == "lsf" else density):
             role = f"p{pair}-g{ordinal}-{arm}-{index}"

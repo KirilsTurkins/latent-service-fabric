@@ -17,6 +17,7 @@ from .model import DENSITIES, PREFIX
 def prepare(campaign):
     result = {}
     for density in DENSITIES:
+        campaign.reserve_active("lsf", density, seed=True)
         directory = campaign.root / "seeds" / str(density)
         directory.mkdir(parents=True)
         app = Application(campaign, f"seed-d{density}", "lsf", density)
@@ -29,12 +30,14 @@ def prepare(campaign):
         def invoke(name, arguments):
             log = directory / (name + ".json.log")
             argv = [str(campaign.build_root / "binaries/latent"), "--config", str(config), "--output", "json", *arguments]
+            campaign.progress("seed-command-attempt", {"density": density, "name": name, "argv": argv})
             process = command(argv, log, 15, campaign.repository, campaign.fleet.deadline,
                               dict(os.environ), maximum=2 * 1024**2)
             value = json.loads(log.read_bytes())
             require(value.get("category") == "success", "docker-seed-management-failed")
             calls.append({"name": name, "arguments": arguments, "process": process,
                           "log": reference(log, campaign.root), "result": value})
+            campaign.progress("seed-command-completed", {"density": density, **calls[-1]})
             return value
 
         before = invoke("inventory-before", ["node", "get", "optimization-node"])["data"]["inventory"]
@@ -62,6 +65,7 @@ def prepare(campaign):
                  "before": before, "after": after, "template": receipt,
                  "template_path": app.data.relative_to(campaign.root).as_posix(), "resources": derived}
         write_json(directory / "seed.json", value)
+        campaign.setup.append(value)
         result[density] = {"path": app.data, "receipt": receipt, "record": value}
         campaign.reserve(64 * 1024**2)
     return result
