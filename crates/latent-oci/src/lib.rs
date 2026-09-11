@@ -1,13 +1,19 @@
 //! OCI distribution contracts for exact package bytes and detached evidence.
 //!
-//! These models establish byte identity and association, not registry transport,
-//! publisher trust, guest validity, or catalog admission.
+//! Includes bounded, authenticated registry transport, byte identity and detached
+//! evidence association. Publisher trust, guest validity and catalog admission
+//! are separate policy decisions.
 
 #![forbid(unsafe_code)]
 
+mod http;
 mod manifest;
 mod upload;
 
+pub use http::{
+    HttpOciRegistry, OciPulledPackage, RegistryConfig, RegistryCredentials, RegistryLimits,
+    RegistryUsage,
+};
 pub use manifest::OciManifestBytes;
 pub use upload::OciPushRequest;
 
@@ -26,6 +32,7 @@ pub struct OciReference {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OciDescriptor {
     pub media_type: String,
+    pub artifact_type: Option<String>,
     pub digest: String,
     pub size_bytes: u64,
     pub annotations: Metadata,

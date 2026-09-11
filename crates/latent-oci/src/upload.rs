@@ -7,6 +7,15 @@ use latent_artifacts::package::{
 use latent_core::{PlatformError, PlatformErrorCode};
 use std::fmt;
 
+pub(crate) struct PushParts {
+    pub(crate) reference: OciReference,
+    pub(crate) manifest: bytes::Bytes,
+    pub(crate) digest: latent_core::PackageDigest,
+    pub(crate) subject: Option<latent_core::PackageDigest>,
+    pub(crate) config: (LayerDescriptor, bytes::Bytes),
+    pub(crate) layers: Vec<(LayerDescriptor, bytes::Bytes)>,
+}
+
 /// A complete, format-checked package upload with immutable byte associations.
 ///
 /// The original manifest, its exact config bytes and every ordered layer are
@@ -180,6 +189,36 @@ impl OciPushRequest {
             UploadLayout::Referrer(manifest) => &manifest.layers,
         };
         descriptors.iter().zip(self.layers.iter().map(Box::as_ref))
+    }
+
+    // Transfer immutable buffers into reference-counted HTTP bodies without
+    // cloning potentially large payloads. Metadata is independently bounded.
+    pub(crate) fn into_parts(self) -> PushParts {
+        let (config, descriptors, subject) = match &self.layout {
+            UploadLayout::Package(layout) => (
+                layout.manifest().config.clone(),
+                layout.manifest().layers.clone(),
+                None,
+            ),
+            UploadLayout::Referrer(manifest) => (
+                manifest.config.clone(),
+                manifest.layers.clone(),
+                Some(manifest.subject.digest.clone()),
+            ),
+        };
+        let digest = self.manifest.digest().clone();
+        PushParts {
+            reference: self.reference,
+            manifest: self.manifest.into_bytes().into(),
+            digest,
+            subject,
+            config: (config, self.config_bytes.into_vec().into()),
+            layers: descriptors
+                .into_iter()
+                .zip(self.layers.into_vec())
+                .map(|(descriptor, bytes)| (descriptor, bytes.into_vec().into()))
+                .collect(),
+        }
     }
 }
 

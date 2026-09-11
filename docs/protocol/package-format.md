@@ -4,8 +4,9 @@ This is the format foundation delivered by
 [#140](https://github.com/KirilsTurkins/latent-service-fabric/issues/140). It
 defines bounded models, codecs and validation. The
 [packaging workflow](../component-development/packaging.md) adds deterministic
-build/inspection and component/WIT checks. Registry transport, cryptographic
-verification, trusted catalog admission and rollout remain subsequent tickets in the
+build/inspection and component/WIT checks. The [registry adapter](../reference/oci-registry.md)
+adds scoped authenticated transfers. Cryptographic verification, trusted catalog
+admission and rollout remain subsequent tickets in the
 [Phase 2 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/139).
 
 ## Identity and compatibility

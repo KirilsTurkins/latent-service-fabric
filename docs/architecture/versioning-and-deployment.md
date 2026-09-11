@@ -6,9 +6,15 @@ In Phase 1, `ReleaseDigest` is SHA-256 of component bytes. The local catalog's
 versioned completion record separately binds the descriptor, contracts and
 canonical capsule manifest to those bytes. Metadata cannot change under an
 existing release identity. This detects accidental storage corruption under the
-locally trusted filesystem boundary; package signatures, provenance and OCI
-distribution remain later-phase work. See the
+locally trusted filesystem boundary. See the
 [local release catalog](../development/local-release-catalog.md).
+
+Phase 2 introduces a separate `PackageDigest` over exact package-manifest bytes
+and a [bounded OCI library adapter](../reference/oci-registry.md) for immutable
+package distribution. These additions preserve the existing local release
+identity. Package signatures, provenance verification and remote-package
+catalog/management integration remain planned; an OCI transfer alone does not
+admit a release or make it routable.
 
 ## Mutable deployment
 

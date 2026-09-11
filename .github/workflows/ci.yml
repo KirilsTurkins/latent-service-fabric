@@ -70,6 +70,23 @@ jobs:
           cargo test --workspace --all-targets --all-features --locked
           cargo test -p latent-admission -p latent-scheduler --doc --locked
 
+  oci-registry:
+    name: OCI registry TLS integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - name: Fetch pinned disposable registry
+        run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - name: Check runner ownership and cleanup guards
+        run: python3 -m unittest discover -s tools/tests -p test_oci_registry_runner.py
+      - name: Validate bounded authenticated OCI distribution
+        run: python3 tools/run_oci_registry_tests.py --state-file "$RUNNER_TEMP/lsf-oci-registry.json"
+      - name: Recover only this job's disposable registry
+        if: always()
+        run: python3 tools/run_oci_registry_tests.py --cleanup-state "$RUNNER_TEMP/lsf-oci-registry.json"
+
   catalog:
     name: Durable catalog acceptance
     runs-on: ubuntu-24.04

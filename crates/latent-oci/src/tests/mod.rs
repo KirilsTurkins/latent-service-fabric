@@ -1,7 +1,7 @@
 use super::*;
 use latent_artifacts::package::{package_digest, EvidenceKind, PackageKind, PackageLimits};
 
-mod fixtures;
+pub(crate) mod fixtures;
 use fixtures::{evidence_fixture, fixture, reference};
 
 #[test]
