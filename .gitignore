@@ -19,3 +19,7 @@ artifacts/
 /sdk/java-client/build/
 /sdk/dotnet/**/bin/
 /sdk/dotnet/**/obj/
+# Keep new bulky optimization payloads outside the source checkout. Existing
+# canonical tracked packages remain tracked; summaries and checksums are kept.
+/benchmarks/optimization/**/*.tar.gz
+/benchmarks/optimization/**/*.tar.gz.part-*

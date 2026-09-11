@@ -1,5 +1,11 @@
 # Precise budgets: controlled revision comparison
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 The candidate met the 99% useful-success target at 2 ms: **2,794/2,800 offers
 (99.7857%)**, versus **2,634/2,800 (94.0714%)** for the control. All seven paired
 repetitions improved. Neither variant completed useful work at 1 ms. Successful
@@ -228,7 +234,7 @@ python tools/run_optimization_backend_revision.py --experiment budget --profile 
 
 The [external aggregate](external/aggregate.json) and
 [lifecycle aggregate](lifecycle/aggregate.json) are derived from their complete
-raw suites. Both archives retain original attempts/events, plans, component and
+raw suites. Both historical archives contain original attempts/events, plans, component and
 metadata bytes, exact binaries, common source/build inputs and resource/process
 cleanup receipts. Packaging used `--compression-level 9 --split-archive` into
 `target/optimization-budget/publication-e25b609/{external,lifecycle}`. The ordered
@@ -249,7 +255,7 @@ Windows archive replay. Recheck them without executing any retained binary:
 
 ```sh
 python tools/validate_phase1_archive.py \
-  benchmarks/optimization/precise-budgets/2026-09-09-container-linux-e25b609/external
+  "${restored_root}/benchmarks/optimization/precise-budgets/2026-09-09-container-linux-e25b609/external"
 python tools/validate_phase1_archive.py \
-  benchmarks/optimization/precise-budgets/2026-09-09-container-linux-e25b609/lifecycle
+  "${restored_root}/benchmarks/optimization/precise-budgets/2026-09-09-container-linux-e25b609/lifecycle"
 ```

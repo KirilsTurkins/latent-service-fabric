@@ -1,5 +1,11 @@
 # Typed JSON codec comparison
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 The typed decoder improves warm Echo against its matched control: paired p50
 falls by **20.002 us** (6/7 pairs), and observed warm server batch CPU falls from
 1.78 to 1.69 s. Transform improves in every pair at p50, throughput and server
@@ -305,9 +311,9 @@ root. Independent archive replay:
 
 ```sh
 python tools/validate_phase1_archive.py \
-  benchmarks/optimization/typed-codec/2026-09-09-container-linux-9a2749f/rpc
+  "${restored_root}/benchmarks/optimization/typed-codec/2026-09-09-container-linux-9a2749f/rpc"
 python tools/validate_phase1_archive.py \
-  benchmarks/optimization/typed-codec/2026-09-09-container-linux-9a2749f/codec
+  "${restored_root}/benchmarks/optimization/typed-codec/2026-09-09-container-linux-9a2749f/codec"
 ```
 
 Archive replay validates retained evidence without executing its binaries.

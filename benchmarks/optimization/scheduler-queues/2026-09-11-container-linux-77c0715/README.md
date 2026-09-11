@@ -1,5 +1,11 @@
 # Scheduler queue storage, cancellation and retirement
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 Direct queued-entry locations removed the measured cancellation scans and element shifts. Timing was mixed: the one-tenant cancellation median fell from **37.8615 to 36.6405 microseconds**, while the eight-tenant median rose from **30.0755 to 42.6785 microseconds**. Selected cancellation allocations were unchanged. The full comparison passed **14 collectors and 9,128 logical offers, with zero guest Invokes**. These results support the mechanical work reduction and ownership fix; they do not establish uniformly faster scheduling or lower memory use.
 
 The scheduler stores queue entries and tenant rotation links in bounded reusable slots, with sequence-checked queued locations and an indexed tenant lookup. It preserves the original **O(n) within-tenant priority/deadline/aging winner scan**, round-robin order and reserved logical queue depth across an open pool call. Restoring a selected entry uses its original sequence and the current tenant. Stale owners cannot remove a replacement registration.
@@ -83,7 +89,7 @@ The [member manifest](scheduler/raw-evidence.manifest.json) covers **923 files /
 Replay from the repository root:
 
 ```sh
-python tools/validate_phase1_archive.py benchmarks/optimization/scheduler-queues/2026-09-11-container-linux-77c0715/scheduler
+python tools/validate_phase1_archive.py "${restored_root}/benchmarks/optimization/scheduler-queues/2026-09-11-container-linux-77c0715/scheduler"
 ```
 
 Use a clean checkout of the exact harness above and fresh directories for collection. Build the two revisions, copy the complete hash-bound build closure including sidecars and executable modes into separate fresh smoke/full roots, and run smoke before full:

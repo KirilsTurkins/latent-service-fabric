@@ -18,6 +18,7 @@ from jsonschema.exceptions import SchemaError
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
 WARNINGS: list[str] = []
+MAX_BENCHMARK_TREE_BYTES = 600 * 1024 * 1024
 
 IGNORED_DIRECTORY_NAMES = {
     ".git",
@@ -502,6 +503,18 @@ def validate_required_docs() -> None:
             fail(f"required documentation missing: {relative}")
 
 
+def validate_benchmark_retention(root: Path = ROOT) -> None:
+    """Keep the selected reference evidence and summaries within a finite tree."""
+    total = sum(
+        (Path(directory) / name).stat().st_size
+        for directory, _, files in os.walk(root / "benchmarks", followlinks=False)
+        for name in files
+    )
+    if total > MAX_BENCHMARK_TREE_BYTES:
+        fail(f"benchmark tree exceeds the 600 MiB retention budget ({total} bytes); "
+             "keep new raw runs outside the checkout and follow docs/testing/benchmark-retention.md")
+
+
 def validate_nonempty_files(root: Path = ROOT) -> None:
     retained_empty = retained_empty_evidence(root)
     for path in iter_source_files(root):
@@ -586,6 +599,7 @@ def main() -> int:
     validate_kubernetes_schema_plans()
     validate_interface_only_policy()
     validate_required_docs()
+    validate_benchmark_retention()
     validate_nonempty_files()
 
     print(f"validated repository: {sum(1 for _ in iter_source_files())} source files")

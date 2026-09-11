@@ -1,5 +1,11 @@
 # Artifact identity optimization: measured comparison
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 Recorded 2026-09-08 for [#99](https://github.com/KirilsTurkins/latent-service-fabric/issues/99), part of the Phase 1 extension.
 
 The candidate replaces padding-copy SHA-256 with the pinned SHA-256 implementation and streams verified component bytes through 64 KiB scratch. Repository recovery and catalog compilation retain verified metadata without retaining a component buffer. COMPLETE, metadata, digest, size, requested-release and publication checks remain active.
@@ -68,8 +74,8 @@ Offline replay parses the retained interpreted Heaptrack stream and cross-checks
 
 ## Retained evidence
 
-The adjacent archive, manifest, checksum and aggregate retain the actual binaries, shared fixtures, every process receipt, raw logs and allocation profiles. Replay without executing any retained binary:
+The historical package contained the actual binaries, shared fixtures, every process receipt, raw logs and allocation profiles. Its manifest, checksum and aggregate remain in this checkout. After restoring that package, replay without executing its binaries:
 
 ```sh
-python3 tools/validate_phase1_archive.py benchmarks/optimization/artifact-identity/2026-09-08-container-linux-95a53b1
+python3 tools/validate_phase1_archive.py "${restored_root}/benchmarks/optimization/artifact-identity/2026-09-08-container-linux-95a53b1"
 ```

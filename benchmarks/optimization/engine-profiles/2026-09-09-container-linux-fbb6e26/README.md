@@ -1,5 +1,11 @@
 # Bounded Wasmtime engine profiles (#106)
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 **Keep on-demand/speed (D0) as the default.** Pooling reduced warm setup in every phase and all seven pairs, but increased fresh compilation time, retained virtual mappings, RSS, and compiled-image charges. Its much lower virtual high-water values do not make it a general low-memory setting. Speed-and-size produced no compiled-image charge reduction in these fixtures and had mixed latency results.
 
 The separate default-path external comparison had lower paired p50/p95 and batch CPU, but higher successful-response p99 and order-dependent RSS. Matrix D0's Echo p50 was higher than its matched old control. The two measurement boundaries remain separate; neither establishes a universal warm-path speedup or an SLO.
@@ -147,7 +153,7 @@ All owners shut down cleanly with zero quarantine/live native transients and joi
 
 ## Retained failures and corrections
 
-Failed attempts supply no selected full-performance result, and no corrected identity is substituted into an older attempt. The [retained diagnostic subset](retained-diagnostics/README.md) publishes original raw reports and validation receipts for four earlier release attempts, including all ten actual owners. It excludes executables, source trees and other unselected dependencies and is not a qualifying Phase1 evidence archive. The complete original attempt roots remain preserved separately.
+Failed attempts supply no selected full-performance result, and no corrected identity is substituted into an older attempt. The [retained diagnostic subset](retained-diagnostics/README.md) publishes original raw reports and validation receipts for four earlier release attempts, including all ten actual owners. It excludes executables, source trees and other unselected dependencies and is not a qualifying Phase1 evidence archive. The complete original attempt roots were retained separately at publication; this checkout does not promise continuing local retention of those roots.
 
 | Retained attempt | Actual work and outcome | Correction / qualification boundary |
 | --- | --- | --- |
@@ -176,7 +182,7 @@ Both primary full populations passed semantic replay. The immutable external04 a
 | [External04 manifest](external-rpc/raw-evidence.manifest.json) | 1,133 | 461,428,230 | 103,718,971 | `156015dacbb733f4675b4da5884afd4355c0c6422e3d9f66d1c2dfc8af97562f` |
 | [Matrix05 manifest](matrix/raw-evidence.manifest.json) | 1,750 | 567,510,275 | 109,724,887 | `459aae84e4848688402c9d5021e3336b3f934f42f35b6c560a04867452927e6a` |
 
-Both use three parts: 50,000,000 / 50,000,000 / 3,718,971 bytes externally and 50,000,000 / 50,000,000 / 9,724,887 bytes for the matrix. Each part has its own retained checksum. Existing 1 GiB expanded, 256 MiB ordinary-member and 198 MB split-compressed bounds remain unchanged. Each archive retains all original inputs, raw attempts, process/build receipts and declared artifacts for its corresponding primary full population. Older attempts are represented by the separately labelled diagnostic subset above.
+Both use three parts: 50,000,000 / 50,000,000 / 3,718,971 bytes externally and 50,000,000 / 50,000,000 / 9,724,887 bytes for the matrix. Each part has its own retained checksum. Existing 1 GiB expanded, 256 MiB ordinary-member and 198 MB split-compressed bounds remain unchanged. Each historical archive contains all original inputs, raw attempts, process/build receipts and declared artifacts for its corresponding primary full population; these payloads require restoration for replay. Older attempts are represented by the separately labelled diagnostic subset above.
 
 External aggregate SHA-256 is `b2cc3e2ac920b7a7ee52d53a81958a25d5ebcadfdebfe0b72dd696efcade2501`; matrix aggregate is `17a9006902fb424e31741179f089aa16306cba98488ae651671f5b1c952fbe15`. Their suite hashes are `92f17fe3c2afd162828b7dc75f628e7740772769743333a30bb2b6e18917cec2` and `9024d42fedeef0381375dbeebf6383f4a713bca55f548dc1c6b1cf2a2fa77e6f`. Matrix collection took 116.793424432 s; external collection took 17.651233992 s. Build and collection stages have independent limits, not a single shared campaign deadline.
 

@@ -1,5 +1,11 @@
 # Versioned catalog mutations and canonical persistence
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 All 24 measured mutation comparisons used less wall time and process CPU with the candidate. At 10,000 releases/deployments, the four public mutations took **35.74%-59.21% less time**, depending on operation and shape. Post-seed idle RSS fell **40.95%** for distinct services and **44.99%** for a shared service. Full semantic replay passed **32 collectors, 45,096 API operations, 224 resolves, 64 mutations and 16 reopen observations, with zero guest Invokes**.
 
 Recovery had mixed results. Shared 10k reopen took **11.350 s versus 8.020 s**, **41.52% longer**, with higher process CPU. Distinct 10k reopened idle RSS rose **18.75%**, even though its opening was 6.01% faster and its later RSS fell. Both 100-release reopens were slower. The result supports cheaper versioned commits in this population; it does not establish uniformly faster recovery or a general memory ceiling.
@@ -181,7 +187,7 @@ This population has one pair per size/shape and no 100k state. It supplies no co
 
 ## Retained attempts and validation
 
-Earlier failures remain separate from the qualified full root. Their actual identities and partial populations are retained; offline export/compression diagnostics did not rerun a collector or fill a missing owner. The [attempt appendix](attempts/README.md) and [hash manifest](attempts/manifest.json) retain 29 original small witness files, 4,142,406 B, and identify the original empty smoke log without publishing an empty file. This is a diagnostic subset excluding the older large binaries, source trees and expanded profiles; the original failed roots remain separate. It is not a replayable qualifying archive.
+Earlier failures remain separate from the qualified full root. Their recorded identities and partial populations are retained; offline export/compression diagnostics did not rerun a collector or fill a missing owner. The [attempt appendix](attempts/README.md) and [hash manifest](attempts/manifest.json) retain 29 original small witness files, 4,142,406 B, and identify the original empty smoke log without publishing an empty file. This is a diagnostic subset excluding the older large binaries, source trees and expanded profiles; the original failed roots were separate at publication. It is not a replayable qualifying archive.
 
 | Attempt | Retained scope | Outcome |
 | --- | --- | --- |
@@ -202,12 +208,12 @@ Native validation recorded [122 passing observation-enabled control-store checks
 
 Linux packaging completed its mandatory full semantic roundtrip replay, and independent Windows full semantic replay passed in **118.264682700 s**. The [Linux receipt](validation/linux-package.json) and [log](validation/linux-package.log), and [Windows receipt](validation/windows-replay.json) and [log](validation/windows-replay.log), retain actual exit-zero evidence and byte identities. The Windows copy remained unchanged through replay. Linux package duration was not recorded and is not estimated.
 
-The [member manifest](catalog/raw-evidence.manifest.json) covers **1,370 members / 619,755,414 expanded bytes**. Logical split gzip is **161,619,941 B**, SHA256 **`b1b1abe26eaeca39670b09a1f6a32d41e55ed419bd83c32341985928f03dd01d`**. The [part manifest](catalog/raw-evidence.parts.json) binds three 50,000,000 B parts and one 11,619,941 B part. The [original aggregate](catalog/aggregate.json), both clean binaries, retained build closure and all full-population raw evidence are in this qualifying package; failed attempts remain separate.
+The [member manifest](catalog/raw-evidence.manifest.json) covers **1,370 members / 619,755,414 expanded bytes**. Logical split gzip is **161,619,941 B**, SHA256 **`b1b1abe26eaeca39670b09a1f6a32d41e55ed419bd83c32341985928f03dd01d`**. The [part manifest](catalog/raw-evidence.parts.json) binds three 50,000,000 B parts and one 11,619,941 B part. The [original aggregate](catalog/aggregate.json), both clean binaries, retained build closure and all full-population raw evidence were included in the original qualifying package; its payloads require restoration for replay. Failed-attempt summaries remain separate.
 
 From the repository root, replay the closed package with:
 
 ```sh
-python tools/validate_phase1_archive.py benchmarks/optimization/catalog-mutations/2026-09-11-container-linux-15f3fba/catalog
+python tools/validate_phase1_archive.py "${restored_root}/benchmarks/optimization/catalog-mutations/2026-09-11-container-linux-15f3fba/catalog"
 ```
 
 To reproduce collection, use a clean checkout of the exact harness above and fresh directories. Build both source revisions with `tools/build_optimization_backend_revision.py --experiment catalog-mutations --profile full --control-ref 165d1eb5084c256dab72ac10217b26af3c6e4c44 --candidate-ref 15f3fba3f47404240dd577d9eaaa3f60270b81d1 --harness-ref 15f3fba3f47404240dd577d9eaaa3f60270b81d1 --output <fresh-build-root> --target-root <fresh-build-parent>`. Copy its complete hash-bound build closure into fresh smoke/full roots, including referenced sidecars and executable modes. Run the smoke and full profiles sequentially:

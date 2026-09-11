@@ -1,5 +1,11 @@
 # Request ownership: earlier release with an observed warm-RPC cost
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 [#104](https://github.com/KirilsTurkins/latent-service-fabric/issues/104) is accepted
 as a memory and ownership tradeoff. The candidate releases the raw input vector
 before guest dispatch and avoids copying the full invocation context. Actual
@@ -280,7 +286,7 @@ retained data and does not execute retained binaries.
 ```sh
 for package in rpc backend rpc-diagnostic; do
   python3 tools/validate_phase1_archive.py \
-    "benchmarks/optimization/request-ownership/2026-09-09-container-linux-2bd2452/$package"
+    "${restored_root}/benchmarks/optimization/request-ownership/2026-09-09-container-linux-2bd2452/$package"
 done
 # To package fresh qualified full roots, use a new publication directory:
 python3 tools/package_phase1_evidence.py --source "$OWNERSHIP_ROOT/rpc-full" \

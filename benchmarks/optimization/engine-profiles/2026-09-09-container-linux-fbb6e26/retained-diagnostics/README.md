@@ -1,6 +1,12 @@
 # Retained #106 diagnostics
 
-This archive preserves original bytes from four earlier matrix attempts for inspection. It is a **diagnostic-only subset**, not a qualifying full suite, performance comparison, or standard Phase 1 evidence archive. Referenced executables, source trees and other unselected files are deliberately absent; the complete original Docker roots remain untouched. The final qualifying matrix-full-05 and primary external-full-04 evidence are separate publications.
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
+This archive preserves original bytes from four earlier matrix attempts for inspection. It is a **diagnostic-only subset**, not a qualifying full suite, performance comparison, or standard Phase 1 evidence archive. Referenced executables, source trees and other unselected files are deliberately absent; the complete original Docker roots were separate at publication. The final qualifying matrix-full-05 and primary external-full-04 evidence are separate publications.
 
 | Attempt | Original collection suite | Actual owners | Attempted Invokes / commands | Original aggregate validated Invokes / commands / processes |
 |---|---|---:|---:|---|

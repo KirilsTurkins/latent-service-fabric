@@ -1,5 +1,11 @@
 # Catalog memory and public resolver comparison
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 At 100,000 distinct services, candidate post-publication RSS was **1,117,204,480 B**, versus **2,718,257,152 B** for control: **58.90% lower**. This met both reference-shape targets: at least 25% lower matched RSS and at most 1,750,000,000 B. The full campaign passed semantic replay with 24 collectors, 596,720 API operations, 196,396 resolves and **zero guest Invokes**.
 
 The result depends on workload shape and lifecycle. With 100,000 deployments sharing one service, RSS fell only **14.19%**, to **2,504,171,520 B**. All four shared-shape resolver p50/p99 pairs were slower at that scale, and its weight update took 24.53% longer. Reopened candidate RSS was 2.95 GB distinct and 2.78 GB shared. The reference target therefore does not establish a general memory ceiling or universal latency improvement.
@@ -162,26 +168,26 @@ The corrected common plan explicitly selects **256 MiB expanded folded text for 
 
 ## Archive and reproduction
 
-**Linux and independent Windows archive replay: PASS.** Full raw semantic replay and mandatory Linux package round-trip semantic replay passed. The [publication receipt](publication-receipt.json) records helper exit 0, unchanged source bytes, identical tar round-trip bytes and completed semantic replay. All eight package files were copied into `catalog/` with file-set, size and SHA equality; their combined size is 194,303,083 B. Independent Windows full semantic archive replay validated all 1,316 files in 322.201534700 s with exit 0; its [receipt](validation/windows-replay.json) and [log](validation/windows-replay.log) retain the exact validator and result hashes.
+**Linux and independent Windows archive replay: PASS.** Full raw semantic replay and mandatory Linux package round-trip semantic replay passed. The [publication receipt](publication-receipt.json) records helper exit 0, unchanged source bytes, identical tar round-trip bytes and completed semantic replay. At publication, all eight package files were copied into `catalog/` with file-set, size and SHA equality; their combined size is 194,303,083 B. Independent Windows full semantic archive replay validated all 1,316 files in 322.201534700 s with exit 0; its [receipt](validation/windows-replay.json) and [log](validation/windows-replay.log) retain the exact validator and result hashes.
 
 The compressed archive is **193,350,965 B**, SHA-256 `d9209cedec5f08354c8f00e7608c0bb5723dd6996c1a0ab9fec27434f4920cbf`. It contains **1,316 members / 777,448,331 B** of payload; the canonical USTAR stream is **778,475,520 B**. The four ordered parts are:
 
 | Part | Bytes | SHA-256 |
 | --- | ---: | --- |
-| [0001](catalog/raw-evidence.tar.gz.part-0001) | 50,000,000 | `19590bfce4d9f8ad23c96f098af4bb150f550ce26ee4bea95195b26746123f35` |
-| [0002](catalog/raw-evidence.tar.gz.part-0002) | 50,000,000 | `de024531a62e33d6fff182c63fa13dc732414123c1f153a89644e275bb677247` |
-| [0003](catalog/raw-evidence.tar.gz.part-0003) | 50,000,000 | `3902e7828e23c907329ea8233c79d29a2ee3236d3a8fa38690d99ceef79b23e1` |
-| [0004](catalog/raw-evidence.tar.gz.part-0004) | 43,350,965 | `bb50192667815b714808322d31d6b9944b9342a1ffebd88bd78b138f742d1d46` |
+| [0001](https://github.com/KirilsTurkins/latent-service-fabric/blob/a432c51f9ed0a4eaf55473d80122bbb8e5a419cf/benchmarks/optimization/catalog-memory/2026-09-10-container-linux-96716c8/catalog/raw-evidence.tar.gz.part-0001) | 50,000,000 | `19590bfce4d9f8ad23c96f098af4bb150f550ce26ee4bea95195b26746123f35` |
+| [0002](https://github.com/KirilsTurkins/latent-service-fabric/blob/a432c51f9ed0a4eaf55473d80122bbb8e5a419cf/benchmarks/optimization/catalog-memory/2026-09-10-container-linux-96716c8/catalog/raw-evidence.tar.gz.part-0002) | 50,000,000 | `de024531a62e33d6fff182c63fa13dc732414123c1f153a89644e275bb677247` |
+| [0003](https://github.com/KirilsTurkins/latent-service-fabric/blob/a432c51f9ed0a4eaf55473d80122bbb8e5a419cf/benchmarks/optimization/catalog-memory/2026-09-10-container-linux-96716c8/catalog/raw-evidence.tar.gz.part-0003) | 50,000,000 | `3902e7828e23c907329ea8233c79d29a2ee3236d3a8fa38690d99ceef79b23e1` |
+| [0004](https://github.com/KirilsTurkins/latent-service-fabric/blob/a432c51f9ed0a4eaf55473d80122bbb8e5a419cf/benchmarks/optimization/catalog-memory/2026-09-10-container-linux-96716c8/catalog/raw-evidence.tar.gz.part-0004) | 43,350,965 | `bb50192667815b714808322d31d6b9944b9342a1ffebd88bd78b138f742d1d46` |
 
 The [member manifest](catalog/raw-evidence.manifest.json), [ordered parts manifest](catalog/raw-evidence.parts.json), [gzip checksum](catalog/raw-evidence.tar.gz.sha256) and [outer aggregate](catalog/aggregate.json) retain the complete package bindings.
 
-From the repository root, replay the published package with:
+After restoring the historical package, run from the repository root:
 
 ```sh
-python tools/validate_phase1_archive.py benchmarks/optimization/catalog-memory/2026-09-10-container-linux-96716c8/catalog
+python tools/validate_phase1_archive.py "${restored_root}/benchmarks/optimization/catalog-memory/2026-09-10-container-linux-96716c8/catalog"
 ```
 
-The repository validator checks the captured source/build graph and replays the retained evidence; validation does not relabel it to the checkout used for replay.
+The archive validator checks the restored source/build graph and replays its raw evidence; validation does not relabel it to the checkout used for replay.
 
 The first packaging attempt used the existing gzip level9 path and produced 204,279,199 B, above the unchanged 198,000,000 B split limit. Packaging failed; its transient gzip was automatically removed by `TemporaryDirectory`. The measurement source, [failure log](attempts/issue107-package-02.log) and [attempt receipt](attempts/issue107-packaging-attempt-02.json) remain retained. The successful separate attempt above used stronger compatible gzip compression of the exact same canonical USTAR bytes, with the original archive limits and mandatory semantic verifier. No measurement was rerun or relabeled for compression. The earlier folded-export failure has its own [bounded diagnostic receipt](attempts/issue107-smoke01-allocation-bound.json).
 

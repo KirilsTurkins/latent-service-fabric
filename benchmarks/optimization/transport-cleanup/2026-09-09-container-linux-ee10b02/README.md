@@ -1,5 +1,11 @@
 # Transport interruption cleanup: release comparison
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 Both full suites completed and passed semantic replay. Their complete archives passed mandatory Linux replay and independent Windows replay.
 
 Issue [#119](https://github.com/KirilsTurkins/latent-service-fabric/issues/119) adds bounded standalone ownership after a transport deadline or disconnect. Each accepted RPC reserves a finite cleanup slot. Ordinary completion refunds it; an interrupted RPC transfers its exact activation and slot to one node-owned driver, which continues native cleanup within a fixed allowance. Cell reuse still requires the backend's affirmative reusable disposition. Refusal, timeout or panic remains conservative.
@@ -141,7 +147,7 @@ python3 tools/run_optimization_backend_revision.py --experiment recovery --profi
   --target-root /workspace/optimization-recovery-data
 ```
 
-Smoke uses the corresponding fresh smoke directories and `--profile smoke`. Replay with `validate_optimization_revision_evidence.py` for warm and `validate_optimization_backend_revision.py` for recovery, each accepting `suite.json` and an `--aggregate` output. Package each full root separately with `package_phase1_evidence.py --compression-level 9 --split-archive`; replay published directories with `validate_phase1_archive.py`, which never executes retained binaries. The complete procedure is in the [transport interruption recovery method](../../../../docs/testing/phase-1-measurements.md#transport-interruption-recovery).
+Smoke uses the corresponding fresh smoke directories and `--profile smoke`. Replay with `validate_optimization_revision_evidence.py` for warm and `validate_optimization_backend_revision.py` for recovery, each accepting `suite.json` and an `--aggregate` output. Package each full root separately with `package_phase1_evidence.py --compression-level 9 --split-archive`; replay complete new or restored historical packages with `validate_phase1_archive.py`, which never executes retained binaries. The complete procedure is in the [transport interruption recovery method](../../../../docs/testing/phase-1-measurements.md#transport-interruption-recovery).
 
 ## Validation and historical diagnostics
 
@@ -155,7 +161,7 @@ The earlier same-deadline failure documented with the [#103 comparison](../../pr
 
 ## Retained evidence and independent replay
 
-Each package retains its original suite, aggregate, binaries, source/build inputs, logs and raw observations. The archive is one logical gzip stream transported in ordered bounded parts. Its aggregate, file manifest and parts index are directly inspectable:
+Each historical package contains its original suite, aggregate, binaries, source/build inputs, logs and raw observations; its payloads require restoration for replay. The archive is one logical gzip stream transported in ordered bounded parts. Its aggregate, file manifest and parts index are directly inspectable:
 
 | Package | Retained files | Expanded bytes | Logical gzip bytes | Parts | Evidence |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -171,9 +177,9 @@ Linux packaging verified every retained file and replayed each complete suite. I
 
 ```sh
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/transport-cleanup/2026-09-09-container-linux-ee10b02/warm
+  "${restored_root}/benchmarks/optimization/transport-cleanup/2026-09-09-container-linux-ee10b02/warm"
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/transport-cleanup/2026-09-09-container-linux-ee10b02/recovery
+  "${restored_root}/benchmarks/optimization/transport-cleanup/2026-09-09-container-linux-ee10b02/recovery"
 ```
 
 Original functional and historical failures remain preserved separately. No attempt was removed from a successful suite, and retries use fresh output directories.

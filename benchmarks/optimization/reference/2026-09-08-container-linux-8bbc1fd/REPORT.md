@@ -1,5 +1,11 @@
 # Pre-optimization standalone reference
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 The full reference is complete: **88,326 attempts and 245 independently owned
 processes**, seven alternating pairs, all 16 cases per arm, and no incorrect
 workload results. The retained process receipts cover 14 measured servers,
@@ -117,7 +123,7 @@ and provisioning child was reaped with its output closed.
 
 ## Replay and retained diagnostic
 
-The archive contains 2,003 unchanged files,
+The historical archive contains 2,003 unchanged files,
 408,638,361 expanded bytes and 74,394,099 compressed bytes.
 Archive SHA-256: `654142050ecb1c11e18c6717451dc9c19f59da08b8b9ee89cbd1e266b0c06e77`.
 
@@ -125,7 +131,7 @@ From the repository root:
 
 ```sh
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/reference/2026-09-08-container-linux-8bbc1fd
+  "${restored_root}/benchmarks/optimization/reference/2026-09-08-container-linux-8bbc1fd"
 ```
 
 This independently verifies the bounded archive, all artifact hashes,

@@ -1,5 +1,11 @@
 # Rejected optimization reference attempt
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 This diagnostic archive is **not a qualified performance baseline**. All seven
 alternating pairs completed, but the recorded aggregate correctly reports
 `status: failed`. The 88,326 attempts, 245 process receipts, original output and
