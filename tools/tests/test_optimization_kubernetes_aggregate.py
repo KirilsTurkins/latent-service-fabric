@@ -5,13 +5,20 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
 
+from tools.optimization_evidence import attempts
 from tools.optimization_evidence.common import EvidenceError, canonical
 from tools.optimization_kubernetes import aggregate, model
 
 
+def population(*, start=100, elapsed=100):
+    return attempts.counts([{"scheduled_nanos": str(start), "dispatch_nanos": str(start),
+        "completed_nanos": str(start + elapsed), "rpc_received": True,
+        "outcome": "success", "semantic_match": True} for _ in range(4)])
+
+
 def rows(values, *, kind="measured"):
     return [{"pair": pair, "arm": "native", "group": pair % 2, "density": 1,
-             "phase_kind": kind, "counts": {"attempts": "4", "successful": "4"}, "metrics": {"cost": value}}
+             "phase_kind": kind, "counts": population(), "metrics": {"cost": value}}
             for pair, value in enumerate(values)]
 
 
@@ -21,6 +28,37 @@ def contrast(before, after):
 
 
 class KubernetesAggregateTests(unittest.TestCase):
+    def test_platform_population_preserves_independent_clocks_and_throughput(self):
+        before, after = rows(["40000000"]), rows(["20000000"])
+        after[0]["counts"] = population(start=500, elapsed=200)
+        for key in ("first_scheduled_nanos", "last_completed_nanos", "elapsed_nanos"):
+            self.assertNotEqual(before[0]["counts"][key], after[0]["counts"][key])
+        self.assertNotEqual(before[0]["counts"]["throughput"]["elapsed_nanos"],
+                            after[0]["counts"]["throughput"]["elapsed_nanos"])
+        for row in before + after:
+            row["metrics"] = {"successes_per_second": row["metrics"]["cost"]}
+        original = copy.deepcopy((before, after))
+        result, = aggregate.platform_comparisons(after, before, ("arm", "density", "phase_kind"),
+                                                 {"successes_per_second": "responses/s"}, family="phase")
+        self.assertEqual((before, after), original)
+        self.assertEqual(result["pairs"][0]["docker"], "40000000")
+        self.assertEqual(result["pairs"][0]["kubernetes"], "20000000")
+        self.assertEqual(result["pairs"][0]["kubernetes_minus_docker"], "-20000000")
+
+    def test_platform_population_rejects_each_changed_outcome_or_numerator(self):
+        before, after = rows(["1"]), rows(["2"])
+        paths = [(name,) for name in ("attempts", "dispatched", "undispatched", "received", "successful",
+                                      "semantic_mismatches", "outcomes")]
+        paths += [("throughput", name) for name in ("completed_attempts", "successful_responses")]
+        for path in paths:
+            changed = copy.deepcopy(after)
+            count = changed[0]["counts"]
+            for name in path[:-1]:
+                count = count[name]
+            count[path[-1]] = {"success": "3", "invalid-response": "1"} if path == ("outcomes",) else "9"
+            with self.subTest(path=path), self.assertRaisesRegex(EvidenceError, "platform-outcome-population"):
+                contrast(before, changed)
+
     def test_requested_and_effective_cpu_caps_remain_distinct(self):
         def owner(requested, effective):
             limits = {"requested_cpu": {"quota": str(requested), "period": "100000"},

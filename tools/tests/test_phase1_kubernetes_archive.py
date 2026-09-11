@@ -1,6 +1,7 @@
 """Small transport fixtures with substituted semantic replay; no benchmark claims."""
 from contextlib import ExitStack
 from copy import deepcopy
+from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -133,10 +134,27 @@ class KubernetesArchiveTests(unittest.TestCase):
         self.assertFalse(self.output.exists())
         with self.assertRaisesRegex(ValueError, "only valid for Kubernetes"):
             archive.verify_package(self.dependency, docker_package=self.dependency)
-        self.assertEqual(archive.archive_file_limit("kubernetes"), 5000)
-        self.assertEqual(archive.archive_bounds("kubernetes")[0], 1024**3)
+        self.assertEqual(archive.archive_file_limit("kubernetes"), 8000)
+        self.assertEqual(archive.archive_file_limit("docker"), 6000)
+        self.assertEqual(archive.archive_file_limit("measurement"), 5000)
+        self.assertEqual(archive.archive_file_limit("codec"), 5000)
+        self.assertEqual(archive.archive_bounds("kubernetes"), (1024**3, 256 * 1024**2))
         self.assertEqual(archive.MAX_SPLIT_COMPRESSED, 198_000_000)
         self.assertEqual(archive.MAX_PART_BYTES, 50_000_000)
+
+    def test_kubernetes_extraction_uses_its_cap_and_keeps_dependency_separate(self):
+        extract = archive.phase0_evidence.extract_tar_stream
+        with self.mocks(), patch.object(archive.phase0_evidence, "extract_tar_stream", wraps=extract) as calls:
+            package.package(self.source, self.output, self.root / "unused", split_archive=True,
+                            docker_package=self.dependency)
+        limits = [call.kwargs.get("maximum_files") for call in calls.call_args_list]
+        self.assertIn(8000, limits)
+        self.assertIn(6000, limits)
+        self.assertTrue(set(limits) <= {6000, 8000})
+        with self.assertRaisesRegex(ValueError, "invalid explicit member limit"):
+            archive.phase0_evidence.extract_tar_stream(BytesIO(), self.root / "invalid-limit", "test",
+                                                       maximum_files=8001)
+        self.assertFalse((self.root / "invalid-limit").exists())
 
     def test_original_dependency_hash_is_not_replaceable(self):
         with self.assertRaisesRegex(ValueError, "not-original-campaign"):

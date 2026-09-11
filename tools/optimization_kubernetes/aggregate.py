@@ -16,6 +16,8 @@ from . import model
 SCHEMA = model.PREFIX + "aggregate.v1"
 PHASE_DIMENSIONS = ("density", "phase_name", "phase_kind", "function", "concurrency")
 SPREAD_FIELDS = ("count", "minimum", "median", "maximum", "median_absolute_deviation")
+PHASE_POPULATION_FIELDS = ("attempts", "dispatched", "undispatched", "received", "successful",
+                           "semantic_mismatches", "outcomes")
 CROSS_PHASE = ("successful_response_latency_nanos.median", "successful_response_latency_nanos.p99",
     "all_dispatched_latency_nanos.median", "all_dispatched_latency_nanos.p99",
     "all_offered_elapsed_nanos.p99", "dispatch_lag_nanos.p99", "successful_response_fraction",
@@ -57,6 +59,15 @@ def _compact_summary_strata(strata):
     return result
 
 
+def _phase_population(counts):
+    # These campaigns have independent clocks and elapsed times. Match every
+    # outcome denominator and both throughput numerators, retaining each
+    # platform's temporal fields and resulting rates in its original phase row.
+    return {**{name: counts[name] for name in PHASE_POPULATION_FIELDS},
+            "throughput": {name: counts["throughput"][name]
+                           for name in ("completed_attempts", "successful_responses")}}
+
+
 def platform_comparisons(kubernetes, original, dimensions, units, *, family):
     """Match recorded pair indices; the platforms were separate campaigns."""
     indexed = []
@@ -75,7 +86,7 @@ def platform_comparisons(kubernetes, original, dimensions, units, *, family):
         require(type(left["group"]) is int and type(right["group"]) is int
                 and left["group"] == right["group"], "kubernetes-aggregate-platform-order")
         if family == "phase":
-            require(canonical(left["counts"]) == canonical(right["counts"]),
+            require(canonical(_phase_population(left["counts"])) == canonical(_phase_population(right["counts"])),
                     "kubernetes-aggregate-platform-outcome-population")
         grouped[key[1:]].append((key[0], left, right))
     result = []

@@ -56,6 +56,7 @@ MAX_CODEC_EXPANDED = 2 * 1024 * 1024 * 1024
 MAX_CODEC_FILE_BYTES = 256 * 1024 * 1024
 MAX_FILES = 5000
 MAX_DOCKER_FILES = 6000
+MAX_KUBERNETES_FILES = 8000
 MAX_AGGREGATE_BYTES = 8 * 1024 * 1024
 CHUNK = 64 * 1024
 
@@ -261,16 +262,17 @@ def evidence_kind(directory):
 
 def archive_bounds(kind):
     """The bounded codec discriminator is the sole 2 GiB archive policy."""
-    if kind == 'docker':
+    if kind in ('docker', 'kubernetes'):
         return MAX_EXPANDED, 256 * 1024 * 1024
     return ((MAX_CODEC_EXPANDED, MAX_CODEC_FILE_BYTES) if kind == 'codec'
             else (MAX_EXPANDED, MAX_EXPANDED))
 
 
 def archive_file_limit(kind):
-    # The actual full + smoke + two failed setup closures contain 5,015
-    # ordinary files. Preserve every original without widening byte limits.
-    return MAX_DOCKER_FILES if kind == 'docker' else MAX_FILES
+    # Docker retains 5,015 files. Kubernetes adds its current full/smoke,
+    # completed prior smoke, three failed attempts and bootstrap/cleanup.
+    # Their measured inventory exceeds 7,600 files; byte limits stay finite.
+    return {'docker': MAX_DOCKER_FILES, 'kubernetes': MAX_KUBERNETES_FILES}.get(kind, MAX_FILES)
 
 
 def verify_optimization(directory):
@@ -427,8 +429,8 @@ def verify_archive(root, manifest, archive_path, *, replay, docker_package=None)
         extracted = Path(temporary) / 'raw'
         with gzip.open(archive_path, 'rb') as stream:
             options = {'maximum_bytes': MAX_CODEC_EXPANDED} if outer_kind == 'codec' else {}
-            if outer_kind == 'docker':
-                options['maximum_files'] = MAX_DOCKER_FILES
+            if outer_kind in ('docker', 'kubernetes'):
+                options['maximum_files'] = archive_file_limit(outer_kind)
             files = phase0_evidence.extract_tar_stream(stream, extracted, 'Phase 1 evidence', **options)
         require(files == seen, 'extraction differs from verified archive')
         for name, row in expected.items():

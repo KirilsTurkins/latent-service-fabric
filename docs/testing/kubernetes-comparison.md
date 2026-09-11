@@ -350,8 +350,11 @@ check exact aggregate, CSV and manifest bytes and require final cluster cleanup
 after both campaigns. No retained source or executable is run. Repeat archive
 replay independently on Linux and Windows, preserving package hashes.
 
-The Kubernetes package retains the existing 1 GiB expanded / 5,000-file bound;
-the separately validated Docker dependency keeps its own 6,000-file bound.
+The Kubernetes package allows 8,000 files to retain the current full and smoke,
+completed prior smoke, failed attempts and bootstrap/cleanup together. Its
+expanded limit remains 1 GiB, with at most 256 MiB per file. The separately
+validated Docker dependency keeps its own 6,000-file bound; other families'
+file-count limits are unchanged.
 Split gzip remains at most 198 MB, in two to four parts of at most 50 MB. This
 does not establish that any not-yet-packaged population fits: actual compressed
 size, both semantic replay results and cleanup receipts remain required.
