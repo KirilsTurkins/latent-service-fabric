@@ -18,6 +18,10 @@ The full, paired, clean CI and separate-filesystem receipts are retained.
 The August [Phase 0 authorization](phase-0-completion.md) and its raw evidence
 retain their original scope and identity.
 
+The later [Phase 1 performance extension](phase-1-extension-completion.md)
+records separate optimization and infrastructure comparisons. It does not
+replace this September 8 functional completion decision or its evidence.
+
 ## Implemented surface and limits
 
 | Feature | Current behavior and boundary |

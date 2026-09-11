@@ -50,6 +50,13 @@ Plan capacity by:
 
 Do not plan by one heap, connection pool, or listener per service.
 
+The [measured tuning guidance](../phase-1-extension-completion.md#tuning-and-closure)
+separates active component working sets, prepared-cache capacity and
+available cells from dormant catalog size. Budget queue/admission headroom
+and cleanup separately. Infrastructure comparisons retain native resource
+partitioning, LSF pooling and observed effective CPU caps; they do not
+establish an isolated orchestration cost or a production capacity limit.
+
 ## Required dashboards
 
 - fixed runtime RSS versus activation RSS,

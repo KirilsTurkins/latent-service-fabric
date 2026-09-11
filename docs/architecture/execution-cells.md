@@ -45,3 +45,11 @@ A cell may be returned only after:
 7. backend-specific memory reset guarantees hold.
 
 Conformance tests must detect cross-activation data leakage.
+
+## Measured engine and ownership tradeoffs
+
+The [extension results](../phase-1-extension-completion.md#tuning-and-closure)
+retain the on-demand/speed default and the measured pooling tradeoffs.
+Pooling does not remove the fresh-store boundary or permit cell reuse
+before execution and cleanup have retired. Prepared-cache capacity
+describes retained code, not resident service instances or available cells.

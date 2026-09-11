@@ -141,6 +141,11 @@ or query a known activation ID while the first call is pending. After a lost
 server-assigned receipt, identity can be unavailable. Not-found status can also
 mean eviction, restart, or foreign scope; it never proves that no work ran.
 
+For the measured budget and cold-preparation limits, see the
+[extension guidance](../phase-1-extension-completion.md#tuning-and-closure).
+A successful warm-call percentile is not a cleanup deadline or a reason
+to retry an invocation whose outcome is unknown.
+
 ## Output and exits
 
 `--output json` emits one bounded JSON document and newline on stdout. Help and

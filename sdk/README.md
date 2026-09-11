@@ -40,6 +40,11 @@ server cancellation. Only an explicit cancellation response confirms its
 disposition; automatic cancellation forwarding and retry policy are outside
 these interfaces.
 
+The [extension's caller-budget guidance](../docs/phase-1-extension-completion.md#tuning-and-closure)
+distinguishes useful responses, deadline misses and eventual cleanup.
+Its benchmark client results do not add transports, automatic cancellation
+forwarding or retries to these SDK interfaces.
+
 ### C callback contract
 
 The C vtable's `cancel` takes an activation ID, reason, callback, and user data.
