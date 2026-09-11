@@ -57,6 +57,7 @@ cargo check -p latent-toolchain-smoke --example containment-capsule --target was
 cargo check -p latent-toolchain-smoke --example generic-capsule --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example capabilities-capsule --target wasm32-wasip2 --locked
 python3 tools/build_echo_capsule.py --verify-reproducible
+python3 tools/validate_package_smoke.py
 cargo build -p latent-toolchain-smoke --example oversized-log-capsule \
     --target wasm32-unknown-unknown --release --locked
 OVERSIZED_LOG_CORE="${TARGET_ROOT}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm"

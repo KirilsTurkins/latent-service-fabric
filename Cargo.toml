@@ -10,6 +10,7 @@ members = [
     "crates/latent-component-bindings",
     "crates/latent-rpc",
     "crates/latent-artifacts",
+    "crates/latent-packaging",
     "crates/latent-oci",
     "crates/latent-signing",
     "crates/latent-policy",

@@ -2,9 +2,10 @@
 
 This is the format foundation delivered by
 [#140](https://github.com/KirilsTurkins/latent-service-fabric/issues/140). It
-defines bounded models, codecs and validation. Packaging commands, registry
-transport, cryptographic verification, trusted catalog admission and rollout
-remain the subsequent tickets in the
+defines bounded models, codecs and validation. The
+[packaging workflow](../component-development/packaging.md) adds deterministic
+build/inspection and component/WIT checks. Registry transport, cryptographic
+verification, trusted catalog admission and rollout remain subsequent tickets in the
 [Phase 2 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/139).
 
 ## Identity and compatibility

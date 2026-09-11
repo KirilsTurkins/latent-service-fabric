@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "kind": "browser-assets",
+  "name": "example-browser",
+  "version": "1.0.0",
+  "entrypoint": "index.html",
+  "annotations": {},
+  "layers": [
+    {"path": "app.js", "source": "app.js", "role": "asset", "mediaType": "text/javascript"},
+    {"path": "index.html", "source": "index.html", "role": "asset", "mediaType": "text/html"}
+  ]
+}

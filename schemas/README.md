@@ -32,6 +32,8 @@ The package schemas describe a separate immutable artifact format:
 | [package-manifest.schema.json](package-manifest.schema.json) | OCI package envelope referencing exact configuration and layer bytes. |
 | [package-evidence.schema.json](package-evidence.schema.json) | Detached signature, provenance or SBOM association with an exact package subject. |
 | [package-wit-lock.schema.json](package-wit-lock.schema.json) | Pinned WIT source package identities, dependencies and content digests. |
+| [package-source.schema.json](package-source.schema.json) | Explicit bounded file-selection recipe for deterministic packaging. |
+| [package-build-inputs.schema.json](package-build-inputs.schema.json) | Packager receipt associating observed input identities with exact output layers. |
 
 These schemas close structural objects, enforce role/media-type combinations,
 and bound arrays, names and annotations. Package annotations permit at most 32
@@ -47,3 +49,7 @@ See the [package format contract](../docs/protocol/package-format.md) and its
 format validation does not establish publisher trust, payload semantic
 compatibility, registry availability or executable guest content. Evidence
 payload formats and verification belong to subsequent Phase 2 features.
+
+The [packaging workflow](../docs/component-development/packaging.md) validates
+supplied components against the pinned WIT graph and typed contracts. Recipe
+schema checks are separate from filesystem confinement and semantic validation.

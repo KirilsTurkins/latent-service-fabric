@@ -45,6 +45,7 @@ SCHEMA_EXAMPLES: dict[str, tuple[str, ...]] = {
     "package-evidence.schema.json": ("examples/package-format/evidence/*-manifest.json",),
     "package-manifest.schema.json": ("examples/package-format/*/manifest.json",),
     "package-wit-lock.schema.json": ("examples/package-format/capsule/blobs/wit-lock.json",),
+    "package-source.schema.json": ("examples/package-inputs/*/package-source.json",),
     "policy.schema.json": ("examples/policies/*.json",),
     "release-publish.schema.json": ("examples/**/publish-release.json",),
     "route-snapshot.schema.json": ("examples/route-snapshot.json",),

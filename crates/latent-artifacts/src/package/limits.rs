@@ -32,7 +32,8 @@ impl Default for PackageLimits {
 }
 
 impl PackageLimits {
-    pub(super) fn validate(self) -> Result<(), PlatformError> {
+    /// Rejects zero limits or attempts to raise the versioned profile ceilings.
+    pub fn validate(self) -> Result<(), PlatformError> {
         let maximum = Self::default();
         macro_rules! check {
             ($($field:ident),+ $(,)?) => {$ (

@@ -12,3 +12,7 @@ identify the delivered boundary without changing these decisions.
 [ADR-0019](0019-separate-package-identity-from-component-identity.md) defines the
 Phase 2 package identity and format foundation while preserving Phase 1 component
 identities. The bounded format codec does not itself establish publisher trust.
+
+[ADR-0020](0020-validate-supplied-components-without-executing-guests.md) implements
+deterministic supplied-artifact packaging and bounded structural validation
+without compiling or invoking guests.
