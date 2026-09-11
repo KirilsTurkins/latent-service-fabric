@@ -161,6 +161,33 @@ class KubernetesSetupIdentity(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "runtime-manifest-config-graph"):
                     setup._verify_runtime_images(steps, ["docker.exe", "--context", "desktop-linux"], "f" * 64, transfer)
 
+    def test_actual_native_and_client_without_cri_digests_require_containerd_manifest_target(self):
+        root = Path(__file__).parent / "fixtures/kubernetes-import-01"
+        transfer = json.loads((root / "image-transfer.json").read_bytes())
+        index = (root / "index.json").read_bytes()
+        for kind in ("native", "client"):
+            expected = copy.deepcopy(transfer["images"][kind])
+            entry = next(row for row in json.loads(index)["manifests"] if row["digest"] == expected["manifest_digest"])
+            expected.update(archive_index_digest=digest(index), archive_index_entry=entry)
+            cri = json.loads((root / ("cri-" + kind + ".json")).read_bytes())
+            self.assertEqual(cri["status"]["repoDigests"], [])
+            target = {"media_type": "application/vnd.oci.image.manifest.v1+json", "digest": expected["manifest_digest"]}
+            with self.subTest(kind=kind):
+                actual = setup._imported_image(cri, expected, live_index=index, live_target=target)
+                self.assertEqual(actual["repo_digest_scope"], "not-reported")
+                self.assertEqual(actual["repo_digests"], [])
+                for crossed in (None, {**target, "digest": digest(index)},
+                                {**target, "digest": expected["config_digest"]},
+                                {**target, "media_type": "application/vnd.oci.image.index.v1+json"}):
+                    with self.assertRaisesRegex(ValueError, "imported-tag-manifest-binding"):
+                        setup._imported_image(cri, expected, live_index=index, live_target=crossed)
+                with self.assertRaisesRegex(ValueError, "imported-index-binding"):
+                    setup._imported_image(cri, expected, live_target=target)
+                crossed = copy.deepcopy(cri)
+                crossed["status"]["repoDigests"] = ["unrelated@sha256:" + "a" * 64]
+                with self.assertRaisesRegex(ValueError, "imported-index-binding"):
+                    setup._imported_image(crossed, expected, live_index=index, live_target=target)
+
     def test_archive_rejects_corruption_crossed_index_duplicate_and_traversal(self):
         for options in ({"changed_layer": True}, {"crossed_index": True},
                         {"duplicate": True}, {"traversal": True}):

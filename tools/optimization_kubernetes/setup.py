@@ -432,17 +432,27 @@ def _archive_images(path, original):
             "index": {"sha256": index_digest, "bytes": str(len(index_bytes)), "document": index}}
 
 
-def _imported_image(value, expected, *, live_index=None):
+def _imported_image(value, expected, *, live_index=None, live_target=None):
     status, info = value.get("status", {}), value.get("info", {})
-    roots = {name.rsplit("@", 1)[-1] for name in status.get("repoDigests", [])}
+    digests = status.get("repoDigests")
+    _require(isinstance(digests, list) and len(digests) <= 32
+             and all(isinstance(name, str) and len(name) <= 1024 for name in digests), "imported-repo-digests")
+    roots = {name.rsplit("@", 1)[-1] for name in digests}
     scope = "manifest"
     if expected["manifest_digest"] not in roots:
         scope = "archive-index"
         _require(isinstance(live_index, bytes)
                  and "sha256:" + hashlib.sha256(live_index).hexdigest() == expected.get("archive_index_digest")
-                 and expected["archive_index_digest"] in roots
                  and expected.get("archive_index_entry") in json.loads(live_index).get("manifests", []),
                  "imported-index-binding")
+        if digests:
+            _require(expected["archive_index_digest"] in roots, "imported-index-binding")
+        else:
+            # CRI can omit repoDigests for an archive-loaded tagged image. The
+            # separately read containerd target must still be its exact manifest.
+            scope = "not-reported"
+            _require(live_target == {"media_type": "application/vnd.oci.image.manifest.v1+json",
+                                     "digest": expected["manifest_digest"]}, "imported-tag-manifest-binding")
     _require(status.get("id") == expected["config_digest"]
              and "docker.io/library/" + expected["tag"] in status.get("repoTags", [])
              and info.get("imageSpec") == expected["config"], "imported-image-binding")
@@ -482,7 +492,7 @@ def _verify_runtime_images(steps, docker, worker, transfer):
                  and "sha256:" + hashlib.sha256(config).hexdigest() == expected["config_digest"]
                  and json.loads(config) == expected["config"], "runtime-manifest-config-graph")
         actual = steps.run("import-" + kind, [*base, "crictl", "inspecti", expected["tag"]], parse=True)
-        result[kind] = {**_imported_image(actual, expected, live_index=index), "containerd_target": target,
+        result[kind] = {**_imported_image(actual, expected, live_index=index, live_target=target), "containerd_target": target,
                         "rootfs_diff_ids": actual["info"]["imageSpec"]["rootfs"]["diff_ids"],
                         "live_layer_bytes_rehashed": False}
     return result
