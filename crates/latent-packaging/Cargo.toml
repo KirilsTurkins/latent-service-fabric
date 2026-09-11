@@ -1,0 +1,28 @@
+[package]
+name = "latent-packaging"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Deterministic bounded packaging and inspection of supplied component and asset bytes."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-artifacts = { path = "../latent-artifacts" }
+latent-core = { path = "../latent-core" }
+latent-contracts = { path = "../latent-contracts" }
+latent-manifest = { path = "../latent-manifest" }
+cap-std = "=4.0.3"
+cap-fs-ext = "=4.0.3"
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+wasmparser.workspace = true
+wit-parser = { version = "=0.252.0", default-features = false, features = ["std", "decoding"] }
+
+[dev-dependencies]
+tempfile.workspace = true
+wasm-encoder.workspace = true

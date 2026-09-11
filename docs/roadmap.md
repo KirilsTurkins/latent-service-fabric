@@ -75,7 +75,9 @@ Implementation is tracked by [epic #139](https://github.com/KirilsTurkins/latent
 and the [Phase 2 milestone](https://github.com/KirilsTurkins/latent-service-fabric/milestone/4).
 The [package identity and artifact-format foundation](protocol/package-format.md)
 defines bounded capsule, browser-asset and SSR-package contracts. It does not
-yet implement registry transfer, cryptographic verification or trusted admission.
+itself establish publisher trust. [Deterministic packaging and inspection](component-development/packaging.md)
+now validate supplied components against pinned WIT sources and typed metadata.
+Registry transfer, cryptographic verification and trusted admission follow next.
 
 OCI push/pull, signatures, provenance, SBOM, trusted AOT cache, release rollout
 orchestration, canary, and rollback. Atomic local deployment/snapshot publication

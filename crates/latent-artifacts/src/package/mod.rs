@@ -35,6 +35,19 @@ pub const WIT_LOCK_MEDIA_TYPE: &str = "application/vnd.latent.wit-lock.v1+json";
 pub const LAYER_PATH_ANNOTATION: &str = "org.opencontainers.image.title";
 pub const LAYER_ROLE_ANNOTATION: &str = "dev.latent.layer.role";
 
+/// Validates a portable relative content path without touching the filesystem.
+pub fn validate_package_path(path: &str, limits: PackageLimits) -> Result<(), PlatformError> {
+    limits.validate()?;
+    paths::path(path, limits)
+}
+
+/// Checks the package profile's JSON resource/lexical limits, without asserting
+/// any document schema, semantic association or trust.
+pub fn validate_package_json(bytes: &[u8], limits: PackageLimits) -> Result<(), PlatformError> {
+    drop(parse::parse(bytes, limits)?);
+    Ok(())
+}
+
 /// Content identity of the exact received manifest bytes, without normalization.
 #[must_use]
 pub fn package_digest(bytes: &[u8]) -> PackageDigest {

@@ -16,11 +16,13 @@ pinned build tooling and reproducibility checks. Its generated package is
 executable on the standalone node; the checked-in `publish-release.json` is only
 a schema-shape example with placeholder digests.
 
-## Phase 2 packaging target
+## Phase 2 packaging
 
-The supply-chain package described below is the Phase 2 target. OCI distribution,
-signature verification, SBOM handling and provenance policy are not implemented
-by the Phase 1 local publication workflow.
+The [deterministic packaging workflow](packaging.md) now builds and inspects
+supplied components, capsule metadata, typed contracts and pinned WIT sources.
+The complete supply-chain package below remains the Phase 2 target. OCI
+distribution, signature verification, SBOM handling and provenance policy are
+separate from this packager and the Phase 1 local publication workflow.
 
 ```text
 component.wasm
