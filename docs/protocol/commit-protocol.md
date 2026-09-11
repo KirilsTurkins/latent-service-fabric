@@ -1,5 +1,11 @@
 # Activation commit protocol
 
+This is a later-phase contract for state and effects. The completed
+[Phase 1 stateless lifecycle](../activation-lifecycle.md) performs execution,
+cleanup and terminal publication without a durable state/effect commit
+coordinator. Its bounded status journal does not implement the recovery protocol
+below.
+
 The commit coordinator is the semantic boundary between guest completion and externally durable success.
 
 ## Inputs

@@ -1,10 +1,19 @@
 # Cluster topology
 
-## Control plane
+This is the intended clustered topology, not a delivered Phase 1 deployment
+mode. The completed [standalone Linux node](../reference/standalone-node.md) uses
+one process, local durable catalogs and a loopback RPC listener. Cluster control,
+remote invocation, workload mTLS, PostgreSQL, OCI distribution, durable state and
+workflows remain [later-phase work](../roadmap.md). The extension's
+[Docker/Kubernetes benchmarks](../phase-1-extension-completion.md#kubernetes-112)
+run that same standalone product inside containers; they do not implement this
+control plane or establish production HA.
+
+## Planned control plane
 
 Two or more `latent-control` instances may share PostgreSQL and an OCI registry. They expose management APIs and distribute route snapshots. A custom consensus system is not required for the initial architecture.
 
-## Data plane
+## Planned data plane
 
 Every `latentd` node can execute any compatible release it can retrieve, verify, prepare, and admit under its trust and placement policies.
 

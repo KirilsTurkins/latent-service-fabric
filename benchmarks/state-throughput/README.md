@@ -1,5 +1,7 @@
 # Transactional keyed-state throughput
 
+This is a Phase 4 benchmark specification. Transactional keyed state and commit coordination are not implemented by the completed stateless Phase 1 runtime.
+
 ## Required metrics
 
 - `transactions_per_second`

@@ -4,12 +4,13 @@ This checkout keeps the reports, aggregates, paired results and provenance for
 completed optimizations. Historical raw archive payloads live at the fixed Git
 revision listed in the [retention policy](../../docs/testing/benchmark-retention.md)
 and [retention ledger](retention.json). Restore only the package needed for an
-independent replay. The current Docker comparison and the Phase 0/1 reference
-evidence remain available locally. Statements about raw collection below describe
+independent replay. The Kubernetes archive and the Phase 0/1 reference evidence
+remain available locally; replay of the Kubernetes package also requires restoring
+its original Docker dependency. Statements about raw collection below describe
 the protocol and original publications, rather than new validation of this compact tree.
 
-The [Phase 1 extension](https://github.com/KirilsTurkins/latent-service-fabric/issues/97)
-uses a separate native Rust/tonic service and a standalone `latentd` process.
+The [completed Phase 1 extension](../../docs/phase-1-extension-completion.md)
+used a separate native Rust/tonic service and a standalone `latentd` process.
 Both execute the same pure Rust Echo, bounded compute and structured transform
 logic from `tools/optimization-workloads`. The maintained Wasm component wraps
 those functions; the native reference uses their JSON framing adapter. The same
@@ -111,8 +112,8 @@ so their CPU deltas are not measured-only per-call costs. Native admission uses
 four executing slots and two runtime workers; LSF also has64 queue slots and two
 control workers. These configurations describe the compared systems explicitly.
 
-This protocol supplies the baseline for optimization tickets. Real Docker and
-Kubernetes deployment comparisons are tracked separately in
+This protocol supplied the baseline for the completed optimization tickets.
+Actual Docker and Kubernetes deployment comparisons are completed in
 [#111](https://github.com/KirilsTurkins/latent-service-fabric/issues/111) and
 [#112](https://github.com/KirilsTurkins/latent-service-fabric/issues/112).
 Original Phase0 and Phase1 evidence remains immutable under `benchmarks/phase0`

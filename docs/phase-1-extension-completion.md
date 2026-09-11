@@ -1,5 +1,7 @@
 # Phase 1 extension: measured results and Phase 2 handoff
 
+**Extension status: COMPLETE — September 11, 2026.**
+
 The prioritized Phase 1 optimizations and Docker/Kubernetes comparisons are merged. This report records their measured results, remaining limits and handoff to Phase 2 packaging and supply-chain feature delivery. It supplements the original [functional Phase 1 completion](phase-1-completion.md), whose decision and receipts remain unchanged. The extension delivered useful-success, recovery, ownership and catalog improvements, with material latency and memory costs. It does not establish a universal service SLO.
 
 Every comparison uses its report's actual control/candidate source, binaries, configuration and population. The [#98 reference](../benchmarks/optimization/reference/2026-09-08-container-linux-8bbc1fd/REPORT.md) retained 88,326 offers; its separate [rejected predecessor](../benchmarks/optimization/diagnostics/2026-09-08-container-linux-7857e6c/REPORT.md) remains failed evidence. Neither merged commit identities nor later medians replace measured sources. Percentages are not additive; campaigns are not pooled into synthetic repetitions.
@@ -68,3 +70,11 @@ Use the following measured limits when choosing a configuration:
 The scheduler retains its within-tenant winner scan and bounded arena high water; catalog idle reductions do not establish an all-shape or peak memory ceiling. Keep these rules consistent in [architecture](architecture/execution-cells.md), [operations](operations/topology.md), [CLI](reference/operator-cli.md), [SDK identity/cancellation semantics](../sdk/README.md) and [client/measurement guidance](testing/phase-1-measurements.md).
 
 The linked reports retain exact denominators, working sets, fairness curves, CPU boundaries, unavailable fields, failed attempts and archive replay commands. Process medians differ from pooled samples; #107–109 single-pair cases are descriptive. Delivery and closure status are recorded in [extension gate #113](https://github.com/KirilsTurkins/latent-service-fabric/issues/113), [epic #97](https://github.com/KirilsTurkins/latent-service-fabric/issues/97) and the [Phase 1 extension milestone](https://github.com/KirilsTurkins/latent-service-fabric/milestone/5). The already-met #103/#107 targets remain scoped to their historical matched populations; no integrated post-extension 2 ms budget campaign is implied. Unmet 1 ms useful work, all-shape RSS and adverse tails remain explicit limitations under the revised gate. #110 is **closed/not planned**. The next work is Phase 2 packaging and supply-chain feature delivery, following the [ROADMAP](roadmap.md). A benchmark cluster does not implement later-phase cluster control. No further optimization cycle is required to remove every regression.
+
+The final report [PR #134](https://github.com/KirilsTurkins/latent-service-fabric/pull/134)
+merged into `development` on September 11 as
+`57742511d8db6a1a3491d3c5253140b933ae8ea6`, after all five required CI checks passed
+on reviewed head `96a5217656bdffb431caa11cb5d6514ef4a1fe5f`. Tickets #112/#113 and epic
+#97 are closed as completed; the extension milestone is closed with zero open
+issues. This delivery receipt does not change any campaign's measured source or
+performance qualification.

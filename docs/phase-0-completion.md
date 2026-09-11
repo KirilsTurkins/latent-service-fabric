@@ -1,6 +1,11 @@
 # Phase 0 completion gate
 
-**Gate status: AUTHORIZED — Phase 1 is authorized for this branch's canonical execution identity.**
+**Historical gate status: AUTHORIZED — Phase 1 was authorized for the recorded August 30 execution identity.**
+
+Phase 1 subsequently completed its [functional gate](phase-1-completion.md) and
+[optimization/comparison extension](phase-1-extension-completion.md). This report
+preserves the original Phase 0 decision, measured identity and handoff; its
+authorization does not describe the current Phase 1 runtime's execution identity.
 
 The retained August 30 [gate summary](../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
 was emitted by a separate clean native-Linux checkout at commit

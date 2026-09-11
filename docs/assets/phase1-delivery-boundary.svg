@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="phase1-delivery-title phase1-delivery-description">
+  <title id="phase1-delivery-title">Completed Phase 1 standalone delivery boundary</title>
+  <desc id="phase1-delivery-description">Phase 1 and its extension are complete. Durable local release and deployment catalogs feed authenticated loopback RPC, bounded preparation and admission, fixed cells and fresh Wasmtime activations. Context, logs, clocks, cancellation, status and cleanup are implemented. Docker and Kubernetes comparisons retain measured memory and startup benefits alongside slower warm invocation. Packaging, supply chain, distributed control and guest state remain later phases.</desc>
+  <defs>
+    <linearGradient id="phase1-delivery-background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b102d"/>
+      <stop offset="1" stop-color="#1e3a5f"/>
+    </linearGradient>
+    <marker id="phase1-delivery-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#bfdbfe"/>
+    </marker>
+    <filter id="phase1-delivery-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#09090b" flood-opacity=".38"/>
+    </filter>
+    <style>
+      .heading { font: 700 34px system-ui, sans-serif; fill: #faf5ff; }
+      .subheading { font: 400 18px system-ui, sans-serif; fill: #ddd6fe; }
+      .title { font: 700 21px system-ui, sans-serif; fill: #f8fafc; }
+      .copy { font: 400 15px system-ui, sans-serif; fill: #e0e7ff; }
+      .label { font: 600 14px system-ui, sans-serif; fill: #c4b5fd; }
+      .pass { font: 700 18px system-ui, sans-serif; fill: #d1fae5; }
+      .planned { font: 400 15px system-ui, sans-serif; fill: #cbd5e1; }
+    </style>
+  </defs>
+  <rect width="1440" height="760" rx="34" fill="url(#phase1-delivery-background)"/>
+  <text x="74" y="84" class="heading">Phase 1 complete: dormant services, bounded local execution</text>
+  <text x="74" y="120" class="subheading">One locally trusted Linux node · functional gate and prioritized extension complete · September 2026</text>
+  <g filter="url(#phase1-delivery-shadow)">
+    <rect x="74" y="176" width="390" height="266" rx="24" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <text x="108" y="220" class="label">DURABLE LOCAL CONTROL</text>
+    <text x="108" y="259" class="title">Publish and route</text>
+    <text x="108" y="299" class="copy">Verified component bytes and metadata</text>
+    <text x="108" y="327" class="copy">Release/deployment catalogs and generations</text>
+    <text x="108" y="355" class="copy">Tenant scope and immutable route snapshots</text>
+    <text x="108" y="397" class="copy">CLI + authenticated loopback management RPC</text>
+    <rect x="524" y="176" width="390" height="266" rx="24" fill="#1e40af" stroke="#93c5fd" stroke-width="2"/>
+    <text x="558" y="220" class="label">TEMPORARY ACTIVATION</text>
+    <text x="558" y="259" class="title">Admit, prepare and execute</text>
+    <text x="558" y="299" class="copy">Bounded jobs, caches, queues and fixed cells</text>
+    <text x="558" y="327" class="copy">Fresh Wasmtime store and component instance</text>
+    <text x="558" y="355" class="copy">Context, log and clock imports; finite budgets</text>
+    <text x="558" y="397" class="copy">Status, cancellation, cleanup and telemetry</text>
+    <rect x="974" y="176" width="392" height="266" rx="24" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <text x="1008" y="220" class="label">MEASURED EXTENSION</text>
+    <text x="1008" y="259" class="title">Benefits and costs retained</text>
+    <text x="1008" y="299" class="copy">Preparation, budgets, ownership and catalog work</text>
+    <text x="1008" y="327" class="copy">Actual Docker and Kubernetes comparisons</text>
+    <text x="1008" y="355" class="copy">Dense-cohort memory and startup benefits</text>
+    <text x="1008" y="397" class="copy">Native warm calls faster; no universal SLO</text>
+  </g>
+  <path d="M 466 309 H 514" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase1-delivery-arrow)"/>
+  <path d="M 916 309 H 964" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase1-delivery-arrow)"/>
+  <rect x="74" y="486" width="1292" height="72" rx="18" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+  <text x="108" y="530" class="pass">Completed scope: single-node stateless fabric. Idle services own no process, listener, guest store or worker.</text>
+  <rect x="74" y="594" width="1292" height="100" rx="24" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+  <text x="108" y="635" class="title">Next: Phase 2 packaging and supply chain</text>
+  <text x="108" y="667" class="planned">Later: HTTP/triggers and providers · guest state/effects and workflows · distributed control and remote invocation</text>
+</svg>

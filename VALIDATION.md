@@ -1,13 +1,16 @@
 # Validation baseline
 
-Updated on **2026-09-08** for the retained Phase 0 evidence, generated build
+Updated on **2026-09-11** for completed Phase 1 and its performance extension,
+the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
 generic execution, activation capabilities/lifecycle, invocation and management
 service adapters, standalone Linux node composition, operator CLI workflows, and explicit heavy
-validation gates. These commands describe validation coverage; the evidence
-from the September 7 audit is recorded separately in
-[the audit report](docs/development/feature-audit-2026-09-07.md).
+validation gates. These commands describe validation coverage; the
+[Phase 1 completion review](docs/phase-1-completion.md) and
+[extension report](docs/phase-1-extension-completion.md) record the completed
+decisions. The [September 7 audit](docs/development/feature-audit-2026-09-07.md)
+is an earlier snapshot.
 
 ## Entry point
 
@@ -379,9 +382,11 @@ Passing ordinary Phase 1 foundation checks validates the implemented manifest,
 budget/cancellation, storage, local routing, admission, scheduling, generic
 execution, activation capabilities/lifecycle, telemetry, invocation/management
 adapters, and standalone behavior covered by the selected tests. The operator
-CLI remains unimplemented. Finite startup/restart/shutdown checks do not establish
-long-running reclamation evidence, heavy dormant-service scale, or completion of
-the Phase 1 gate.
+CLI is implemented and covered by its executable integration tests. Finite
+startup/restart/shutdown checks alone do not establish long-running reclamation
+or heavy dormant-service scale. The completed Phase 1 gate combines its retained
+conformance, scale, soak, and benchmark evidence; the extension separately
+records optimization results and Docker/Kubernetes comparisons.
 
 Passing the Phase 0 executable baseline establishes source consistency, guest behavior,
 component-interface validity, fixed cell-pool accounting, real Wasmtime

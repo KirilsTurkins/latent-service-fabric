@@ -2,7 +2,14 @@
 
 ## Definition
 
-Latent Service Fabric is a component-native execution fabric in which deployed services are dormant immutable artifacts. Requests become temporary activations. Activations execute inside a fixed pool of reusable sandboxed cells and release all activation-owned resources when they finish or suspend durably.
+Latent Service Fabric is a component-native execution fabric in which deployed services are dormant immutable artifacts. Requests become temporary activations. Activations execute inside a fixed pool of reusable sandboxed cells and release activation-owned execution resources when they finish. Durable suspension remains a later-phase model.
+
+Phase 1 and its prioritized performance extension are complete. The current
+product is a locally trusted standalone Linux stateless node. Packaging and
+supply-chain features are the next Phase 2 scope; clustered control, guest state,
+workflows and general trigger/provider implementations remain later work.
+
+![Phase 1 delivery boundary: durable local catalogs and RPC feed bounded preparation, fixed cells and fresh Wasmtime activations; measured comparisons retain limits, while packaging, distributed control and state remain later phases.](../assets/phase1-delivery-boundary.svg)
 
 ## Resource invariant
 
@@ -68,13 +75,21 @@ reclamation across three mixed soaks; catalog metadata RSS grows and is reported
 separately. The [controlled comparison](../../benchmarks/phase1/paired/2026-09-08-container-linux-e7e06f7/REPORT.md)
 records actual productionization overhead and its measurement boundaries.
 
+The [completed extension](../phase-1-extension-completion.md) records warm/cold
+preparation, budget, cache, ownership, codec, catalog and scheduler changes, plus
+actual Docker and Kubernetes comparisons. Native handlers retain lower warm
+latency in those infrastructure campaigns; LSF reduces memory and startup cost
+for their dense cohorts. Results include mixed regressions and do not establish
+a universal millisecond SLO or production cluster capacity.
+
 ```text
 Service = stable logical name
 Release = immutable capsule digest
 Revision = release + deployment configuration
 Route = rule selecting a revision
 Activation = revision × function × input × identity × budget × deadline
-Result = output + state commit + effect intents + accounting
+Phase 1 result = output or typed failure + accounting
+Later transactional result = output + state commit + effect intents + accounting
 ```
 
 There is intentionally no `Service = PID + port + heap + threads` relationship.

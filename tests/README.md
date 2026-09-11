@@ -2,15 +2,23 @@
 
 This directory holds cross-phase behavioral specifications. Executable Rust
 unit and integration tests live with their owning crates and applications;
-repository/tooling regressions live in `tools/tests`. The maintained echo
-component and `latentd` Phase 0 harness provide execution/containment fixtures.
+repository/tooling regressions live in `tools/tests`. Maintained echo, generic
+and capabilities components exercise the completed Phase 1 standalone node;
+the retained `latentd` Phase 0 harness has separate containment coverage.
 
-Normal workspace tests cover the implemented manifest codec, resource budgets
-and cancellation, fixed cell pool, local release catalog, and deployment/routing
-foundations. Future-phase specifications here do not imply an implemented
-conformance suite or a completed Phase 1 node workflow.
+Normal workspace tests cover manifests, durable catalogs and routing, admission,
+fair scheduling, budgets and cancellation, generic Wasmtime execution, lifecycle
+ownership, management/invocation adapters, the CLI, telemetry and SDK contracts.
+The [bounded conformance profile](../docs/testing/phase-1-conformance.md) exercises
+the real node and CLI. The specifications in the subdirectories also describe
+later-phase state, effects, providers, compatibility and cluster requirements;
+those requirements are not all implemented by the stateless Phase 1 suite.
 
 See [VALIDATION.md](../VALIDATION.md) for focused commands and the distinction
 between ordinary regressions and explicit heavy scaling, profiling, and soak
-tests. Phase 1's integrated conformance and completion harness remains tracked
-by [#16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16).
+tests. The [functional completion report](../docs/phase-1-completion.md) records
+the completed Phase 1 gate. The
+[extension report](../docs/phase-1-extension-completion.md) consolidates subsequent
+optimizations and actual Docker/Kubernetes comparisons, including regressions
+and environment limits. Historical archive restoration follows the
+[retention policy](../docs/testing/benchmark-retention.md).

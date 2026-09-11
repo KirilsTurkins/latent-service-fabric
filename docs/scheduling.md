@@ -6,6 +6,14 @@ queued work fairly, and returns one execution-owned cell and quota reservation.
 It creates no dispatcher task, worker thread, runtime, listener, or per-service
 queue. Enqueue futures cooperatively dispatch on the caller's async runtime.
 
+Live entries use bounded reusable slots and linked tenant queues. Cancellation
+looks up the activation's live registration and unlinks its exact slot without
+scanning or shifting unrelated queue entries; sequence checks protect reused
+slots. Final cancellation owners are dropped outside the scheduler mutex.
+Selection within the chosen tenant still scans its live candidates to apply
+priority, deadline and aging rules. Slot storage retains its bounded high-water
+capacity for reuse.
+
 This Rust API is composed by the [activation lifecycle](activation-lifecycle.md)
 and [standalone node](reference/standalone-node.md) with generic Wasmtime
 dispatch. The retained Phase 0 execution path continues to provide its separate
@@ -207,9 +215,12 @@ Node adapter tests verify shared cancellation identity/reason/wakeup, terminal
 publication ordering, and isolation when an activation ID is registered again.
 Existing Phase 0 pool and activation-runner regressions remain required.
 
-These checks do not run the heavy dormant-service scaling or long resource soak
-needed for Phase 1 #16. They do not establish generic Wasmtime dispatch or a
-complete standalone release-to-invocation product flow.
+These checks are focused scheduler regressions. The completed
+[Phase 1 gate](phase-1-completion.md) combines the separate scaling/soak evidence
+and the standalone release-to-invocation flow. The
+[extension results](phase-1-extension-completion.md) retain the scheduler's mixed
+timings: eliminating cancellation scans and shifts did not produce uniformly
+faster settlement or lower selected allocations.
 
 The Rust `ActivationScheduler` seam intentionally evolves to consume an admitted
 request and return an owned assignment. Independent legacy `CellPool`

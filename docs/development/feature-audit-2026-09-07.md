@@ -1,5 +1,12 @@
 # Feature audit — September 7, 2026
 
+This is a historical audit of the source revision below, not the current feature
+inventory. Its Phase 1 follow-ups were subsequently resolved by the
+[September 8 functional completion](../phase-1-completion.md); the
+[September 11 extension report](../phase-1-extension-completion.md) records the
+later optimizations, infrastructure comparisons and Phase 2 handoff. The dated
+findings and validation results below retain their original meaning.
+
 The audit reviewed `development` at `d5a7692`, the Phase 1 milestone and every
 open issue/PR, with the closed foundation tickets used to check delivered scope.
 The repository's integration branch is `development`; there is no `dev` branch.

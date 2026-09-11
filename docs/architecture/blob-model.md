@@ -1,6 +1,12 @@
 # Blob model
 
-Large payloads should not be repeatedly serialized through the router, runtime, and component call graph. LSF represents them as immutable content-addressed blob references.
+This is the planned blob capability model. Phase 1 exposes blob contract types
+but implements no guest blob provider, leases, replication, or garbage collector.
+The standalone runtime rejects unavailable blob imports; its current invocation
+path uses bounded inline payloads. See the [capability surface](../runtime/capabilities.md)
+and [roadmap](../roadmap.md).
+
+Large payloads should not be repeatedly serialized through the router, runtime, and component call graph. The intended model represents them as immutable content-addressed blob references.
 
 ## Write lifecycle
 

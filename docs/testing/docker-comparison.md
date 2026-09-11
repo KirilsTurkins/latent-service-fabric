@@ -7,6 +7,14 @@ with `build`, `import`, `images`, `run` and `validate` subcommands. The
 [private schemas](../../tools/optimization_docker/schemas/README.md) document the
 completed evidence shapes. Semantic replay remains the authority for qualification.
 
+The [completed comparison](../../benchmarks/optimization/docker-comparison/2026-09-11-container-linux-a56a6dc/README.md)
+retains the 300-offer smoke and 9,926-offer full results, paired tables and
+limitations. Its raw archive was compacted after delivery; restore the exact
+historical package using its report or the
+[retention policy](benchmark-retention.md) before running archive replay.
+The separate [Kubernetes comparison](kubernetes-comparison.md) reuses those
+original images and requires the restored Docker package for its own replay.
+
 ## Workload and comparison boundary
 
 For each density D=1, 8 and 32, one LSF container serves D deployed services;

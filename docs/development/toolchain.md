@@ -67,7 +67,15 @@ Install the remaining contract tools at their selected versions, for example `ca
 
 ## Linux and evidence boundary
 
-Linux or WSL may run `make validate`, `make phase0-gate-smoke`, and `make phase0-gate`. Only a clean native-Linux host or VM may create replacement calibration, profiling, or resource-soak evidence; those wrappers reject WSL and containers because the measurements establish a native-host reference.
+Linux or WSL may run `make validate`, `make phase0-gate-smoke`, and `make phase0-gate`.
+Only a clean native-Linux host or VM may create replacement **Phase 0**
+calibration, profiling or resource-soak evidence; those wrappers reject WSL and
+containers because their measurements establish a native-host reference.
+The separate Phase 1 collectors record their actual supported environment.
+The completed [extension comparisons](../phase-1-extension-completion.md),
+including Docker and Kubernetes, ran on the documented Docker Desktop/WSL2
+host. They are valid for that measured environment and do not replace the
+Phase 0 native baseline or claim bare-metal/cloud capacity.
 
 Before a full authorization attempt, verify:
 

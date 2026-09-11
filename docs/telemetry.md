@@ -163,5 +163,7 @@ tools/validate_contracts.sh
 Tiny fixtures cover redaction, distinct outcomes, pinned correlation, monotonic
 timing, overlapping tokens, bounded queues/sinks, failure isolation, and inventory
 bounds. Lifecycle and real-component integrations exercise observation through
-cleanup. These checks do not establish the heavy Phase 1 scaling/reclamation
-evidence tracked by #16.
+cleanup. The separate [Phase 1 completion report](phase-1-completion.md)
+records the completed scaling/reclamation gate; the
+[extension report](phase-1-extension-completion.md) records later performance
+results and their limits.

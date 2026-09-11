@@ -3,6 +3,10 @@
 - **Status:** Accepted
 - **Date:** 2026-08-17
 
+## Implementation status at Phase 1 completion
+
+Phase 1 uses fixed logical trust-class cells inside one standalone node process. Separate execution-host processes remain a future backend option.
+
 ## Context
 
 A single process minimizes overhead but increases the blast radius of runtime or provider defects.

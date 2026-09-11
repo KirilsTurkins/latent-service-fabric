@@ -9,9 +9,9 @@ environment, network, process, or other ambient authority is installed. The
 remaining platform capability packages are contracts for later implementation.
 
 The [local activation manager](../activation-lifecycle.md) supplies these
-capabilities with the activation's shared accounting owner. These APIs do not
-provide the standalone node, public invocation service, or a capability broker
-for later-phase state, network, secrets, or child-call access.
+capabilities with the activation's shared accounting owner inside the delivered
+[standalone node](../reference/standalone-node.md). A capability broker for
+state, network, secrets, or child-call access remains later-phase work.
 
 ## Context disclosure
 

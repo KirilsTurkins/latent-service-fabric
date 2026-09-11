@@ -1,5 +1,12 @@
 # State and effect architecture
 
+Phase 1 implements only the stateless model below. Release/deployment catalog
+durability is implemented, but guest state transactions, effect outboxes, entity
+leases and durable workflows remain later-phase design contracts. The generic
+runtime rejects their unavailable imports, and ordinary stateless outcomes
+contain no committed state versions or effect IDs. See the
+[current activation lifecycle](../activation-lifecycle.md) and [roadmap](../roadmap.md).
+
 ## State models
 
 ### Stateless

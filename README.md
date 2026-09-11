@@ -7,7 +7,7 @@ sockets, threads, guest heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-> Phase 1 is delivered: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [completion review](docs/phase-1-completion.md) links clean deterministic CI, actual 100,000-registration scale, three mixed soaks, seven benchmark runs and seven controlled historical/current pairs. These are scoped engineering results, not a production SLO or a claim that productionization adds no overhead. Final repository integration and issue closure are recorded in that review.
+> Phase 1 and its performance extension are complete: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [functional completion review](docs/phase-1-completion.md) and [extension report](docs/phase-1-extension-completion.md) cover scale, soak, optimization, and actual Docker/Kubernetes comparisons. These are scoped engineering results, not production SLOs. Phase 2 packaging and supply-chain work is next.
 
 ## Core invariant
 
@@ -16,6 +16,8 @@ resident state = fixed node runtime + bounded catalog metadata + active activati
 ```
 
 The number of operating-system processes, threads, sockets, and execution cells is node-defined and must not scale with the number of deployed services.
+
+![Completed Phase 1: authenticated local clients use durable catalogs, admission and scheduling, and generic Wasmtime cells; packaging, general capabilities, state, and clustering remain later phases.](docs/assets/phase1-delivery-boundary.svg)
 
 ## Authoritative interface layers
 
@@ -82,12 +84,20 @@ configured standalone node's supported RPC surface.
 | Operator CLI | Private explicit profiles, bounded local preflight, one RPC per command, exact versions/identity, structured output and exit codes, and generated echo package inputs; [operator CLI](docs/reference/operator-cli.md) |
 | Bounded conformance | Real CLI/node scenarios, selected adapter/RPC parity, owned child resource probes and validated diagnostic reports; [selected profile](docs/testing/phase-1-conformance.md) |
 | Full measurements and comparison | Fixed-topology scale through 100,000 registrations, three mixed soaks, seven independent benchmarks and seven historical/current pairs; [full report](benchmarks/phase1/measurements/2026-09-08-container-linux-d72c99b6/REPORT.md), [controlled comparison](benchmarks/phase1/paired/2026-09-08-container-linux-e7e06f7/REPORT.md) |
+| Performance extension | Verified artifact identity, shared bounded cold preparation, prepared-cache accounting, precise deadlines, request/codec ownership, configurable engine profiles, catalog memory/persistence, and indexed queue cancellation; [results and tradeoffs](docs/phase-1-extension-completion.md) |
+| Docker and Kubernetes comparisons | Actual container and ClusterIP Service deployments, warm requests, first response, startup and memory measurements with replayable evidence; [Docker](docs/testing/docker-comparison.md), [Kubernetes](docs/testing/kubernetes-comparison.md) |
 
 The [completion review](docs/phase-1-completion.md) maps the delivered behavior to
 all Phase 1 acceptance criteria and records measurement limits. See
 [the roadmap](docs/roadmap.md) for issue links and future phase boundaries.
 
-## Phase 0 result
+The infrastructure comparisons completed 9,926 full offers per platform. Native
+services had lower warm request latency; LSF used less application memory at
+8 and 32 services. The reports retain cold-start boundaries, resource-limit
+differences, and the Docker Desktop/WSL2 environment. They do not establish
+production cluster capacity or a universal millisecond request budget.
+
+## Historical Phase 0 result
 
 The Phase 0 spike proves a deliberately narrow local feasibility slice:
 
@@ -104,11 +114,11 @@ The Phase 0 spike proves a deliberately narrow local feasibility slice:
 It does **not** prove routing, admission, deployment management, production
 trust/security, durable state/effects, remote invocation, cluster operation,
 production SLOs, arbitrary-duration leak freedom, or the 100,000 dormant-service
-invariant. The retained matched resource soak is current, single-host
+invariant. The retained matched resource soak is historical, single-host
 observational evidence and participates in the authorized full-gate receipt;
-the authorization does not extend the conclusions beyond this boundary. See
+the authorization does not extend the Phase 0 conclusions beyond this boundary. See
 [`docs/phase-0-completion.md`](docs/phase-0-completion.md) for its evidence
-ledger, current authorization status, and Phase 1 handoff.
+ledger, original authorization status, and Phase 1 handoff.
 
 See [`docs/architecture/overview.md`](docs/architecture/overview.md) and
 [`docs/testing/invariants.md`](docs/testing/invariants.md) for the proven
@@ -149,7 +159,7 @@ make phase0-gate
 It runs the complete clean-checkout validation, executable spike, and fresh
 baseline sequence, then writes a machine-readable receipt under
 `target/phase0-gate/`. The retained [August 30 receipt](benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
-records the current `pass` / `authorized` result and its checked execution
+records the original `pass` / `authorized` result and its checked execution
 identity. The [August 29 receipt](benchmarks/phase0/receipts/native-linux-2026-08-29-54d02679/gate-summary.json)
 remains immutable historical evidence.
 Use `make phase0-gate-smoke` for the deterministic CI-sized sequence; it
