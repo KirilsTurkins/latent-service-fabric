@@ -1,0 +1,61 @@
+warning: associated function `from_wire_kind` is never used
+  --> crates\latent-manifest\src\codec.rs:44:8
+   |
+37 | impl ManifestKind {
+   | ----------------- associated function in this implementation
+...
+44 |     fn from_wire_kind(kind: &str) -> Option<Self> {
+   |        ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: methods `limits`, `decode_document`, `encode_document`, and `decode_preparsed` are never used
+   --> crates\latent-manifest\src\codec.rs:123:18
+    |
+116 | impl JsonManifestCodec {
+    | ---------------------- methods in this implementation
+...
+123 |     pub const fn limits(&self) -> ManifestLimits {
+    |                  ^^^^^^
+...
+128 |     pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
+    |            ^^^^^^^^^^^^^^^
+...
+135 |     pub fn encode_document(&self, manifest: &ManifestDocument) -> ManifestResult<Vec<u8>> {
+    |            ^^^^^^^^^^^^^^^
+...
+153 |     fn decode_preparsed(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `document_kind` is never used
+   --> crates\latent-manifest\src\codec.rs:324:4
+    |
+324 | fn document_kind(value: &Value) -> ManifestResult<ManifestKind> {
+    |    ^^^^^^^^^^^^^
+
+warning: `latent-manifest` (lib) generated 3 warnings
+   Compiling latent-scheduler v0.1.0-alpha.1 (C:\Users\turkins\Desktop\latent-fabric-scheduler-queues\crates\latent-scheduler)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.20s
+     Running tests\fair_scheduler.rs (target\debug\deps\fair_scheduler-0b86027c23b93c8f.exe)
+
+running 1 test
+test concurrency::selected_cancellation_cannot_touch_same_id_replacement_before_old_pool_returns ... FAILED
+
+failures:
+
+---- concurrency::selected_cancellation_cannot_touch_same_id_replacement_before_old_pool_returns stdout ----
+
+thread 'concurrency::selected_cancellation_cannot_touch_same_id_replacement_before_old_pool_returns' (21904) panicked at crates\latent-scheduler\tests\fair_scheduler\support.rs:338:14:
+called `Result::unwrap()` on an `Err` value: PlatformError { code: AlreadyExists, message: "invocation does not satisfy local admission policy", retryable: false, details: [ErrorDetail { kind: "admission.limit", fields: {"dimension": "activation-id", "reason": "activation-id-unavailable", "scope": "request"} }] }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'tokio-rt-worker' (49512) panicked at crates\latent-scheduler\tests\fair_scheduler\concurrency.rs:48:50:
+called `Result::unwrap()` on an `Err` value: Disconnected
+
+
+failures:
+    concurrency::selected_cancellation_cannot_touch_same_id_replacement_before_old_pool_returns
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p latent-scheduler --test fair_scheduler`

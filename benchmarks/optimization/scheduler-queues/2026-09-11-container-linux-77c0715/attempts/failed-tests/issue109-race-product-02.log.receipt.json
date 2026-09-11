@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "latent-scheduler",
+    "--test",
+    "fair_scheduler",
+    "selected_cancellation_cannot_touch_same_id_replacement_before_old_pool_returns",
+    "--locked"
+  ],
+  "cwd": "C:\\Users\\turkins\\Desktop\\latent-fabric-scheduler-queues",
+  "exit_code": 101,
+  "elapsed_nanos": "10102388300",
+  "log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-race-product-02.log"
+}

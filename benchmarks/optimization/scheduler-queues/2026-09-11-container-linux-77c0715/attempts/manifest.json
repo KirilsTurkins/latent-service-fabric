@@ -1,0 +1,64 @@
+{
+  "counting_note": "Focused pass counts overlap final scheduler test coverage; failed attempts are not passing validations.",
+  "native_attempts": [
+    {
+      "exit_code": 101,
+      "interpretation": "Intentional regression demonstration: final cancellation Drop observed the scheduler state lock held.",
+      "label": "lifetime-before-01",
+      "log": "failed-tests/issue109-lifetime-before-01.log",
+      "receipt": "failed-tests/issue109-lifetime-before-01.log.receipt.json"
+    },
+    {
+      "exit_code": 0,
+      "interpretation": "Focused post-fix lifetime test; overlaps the later all-target passing population.",
+      "label": "lifetime-after-01",
+      "log": "failed-tests/issue109-lifetime-after-01.log",
+      "receipt": "failed-tests/issue109-lifetime-after-01.log.receipt.json"
+    },
+    {
+      "exit_code": 101,
+      "interpretation": "Invalid early same-ID admission assumption: the selected entry still owned its original permit. Admission correctly returned AlreadyExists; barrier teardown also reported Disconnected.",
+      "label": "race-product-02",
+      "log": "failed-tests/issue109-race-product-02.log",
+      "receipt": "failed-tests/issue109-race-product-02.log.receipt.json"
+    },
+    {
+      "exit_code": 0,
+      "interpretation": "Corrected test requires early AlreadyExists, reuses the vacant physical slot with a different ID, and admits the original ID only after stale acquisition cleanup; both pool outcomes pass.",
+      "label": "race-product-03",
+      "log": "failed-tests/issue109-race-product-03.log",
+      "receipt": "failed-tests/issue109-race-product-03.log.receipt.json"
+    }
+  ],
+  "schema": "latent.scheduler-supporting-attempts.v1",
+  "smoke_inspections": [
+    {
+      "full_population_completed": false,
+      "inspection": "attempts/neutral-smoke/inspection.json",
+      "label": "neutral-smoke",
+      "logical_offers": "1344",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-inspect-neutral-01.log",
+      "qualification_note": "Smoke is supporting inspection, not the full acceptance population.",
+      "source_revisions": {
+        "candidate": "7ddc41779cd0648a14626b1e558a7bff08ba3fe2",
+        "control": "7ddc41779cd0648a14626b1e558a7bff08ba3fe2",
+        "harness": "7ddc41779cd0648a14626b1e558a7bff08ba3fe2"
+      },
+      "validated_attempts": 14
+    },
+    {
+      "full_population_completed": false,
+      "inspection": "attempts/matched-smoke/inspection.json",
+      "label": "matched-smoke",
+      "logical_offers": "1344",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-inspect-smoke-paired-01.log",
+      "qualification_note": "Smoke is supporting inspection, not the full acceptance population.",
+      "source_revisions": {
+        "candidate": "77c071550160cb661864c828d825b3fd08cf25f0",
+        "control": "7ddc41779cd0648a14626b1e558a7bff08ba3fe2",
+        "harness": "77c071550160cb661864c828d825b3fd08cf25f0"
+      },
+      "validated_attempts": 14
+    }
+  ]
+}

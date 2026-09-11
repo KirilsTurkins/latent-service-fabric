@@ -1072,6 +1072,11 @@ after those checks complete.
 
 ## Scheduler queue experiments
 
+The [retained #109 comparison](../../benchmarks/optimization/scheduler-queues/2026-09-11-container-linux-77c0715/README.md)
+contains the qualified full population, every observed pair, and the closed
+archive replayed on Linux and Windows. Cancellation scans and shifts fell;
+selected allocations were unchanged. Timing and memory limits remain explicit.
+
 The scheduler comparison uses the real admission controller, fair scheduler and
 four fixed execution cells. Returned assignments are explicitly released after a
 requested 10 ms hold. This is a controlled scheduler service model; no guest is
@@ -1140,4 +1145,4 @@ replay additionally checks the original rows, artifacts, owners and summaries.
 Keep the first actual selected-frame profile as preflight evidence before freezing
 the common source. Preserve a failed preflight separately from the final paired
 population. The report must distinguish collection completion from acceptance
-qualification and report final CI against the exact proposed merge commit.
+qualification and report final CI against the exact PR head proposed for merging.

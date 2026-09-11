@@ -425,3 +425,20 @@ memory and selected async-poll/Drop origins. This experiment declares 512 MiB
 expanded folded text and one exact active-file scratch allowance: temporary
 coexistence stays within 1.5 GiB and retained evidence within 1 GiB. The archive
 and all historical experiment bounds remain unchanged.
+
+## Scheduler queues and cancellation
+
+The [retained #109 comparison](scheduler-queues/2026-09-11-container-linux-77c0715/README.md)
+completed 14 collectors and 9,128 logical offers with zero guest Invokes.
+Direct queued-entry locations removed the observed cancellation scans and element
+shifts; selected cancellation allocations were unchanged. The report retains all
+load, cancellation and process-resource pairs, including mixed latency results.
+The within-tenant priority/deadline/aging winner scan remains O(n), and reusable
+arenas retain bounded high-water capacity after drain.
+
+The [fixed method](../../docs/testing/phase-1-measurements.md#scheduler-queue-experiments)
+uses four real scheduler cells with a 10 ms requested assignment hold, separate
+normal and allocation runs, and explicit overload qualification. It measures
+scheduler behavior in this finite population, not guest throughput or a production
+memory ceiling. Private evidence schemas are under
+`tools/optimization_scheduler/schemas`.

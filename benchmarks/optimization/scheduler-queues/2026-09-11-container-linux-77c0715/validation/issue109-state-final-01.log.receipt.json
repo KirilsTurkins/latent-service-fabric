@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "latent-scheduler",
+    "--lib",
+    "local::state::tests",
+    "--locked"
+  ],
+  "cwd": "C:\\Users\\turkins\\Desktop\\latent-fabric-scheduler-queues",
+  "exit_code": 0,
+  "elapsed_nanos": "6154235700",
+  "log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-state-final-01.log"
+}

@@ -1,0 +1,10 @@
+# Preserve original measured, hashed and executed bytes across checkouts.
+* whitespace=blank-at-eol,space-before-tab,cr-at-eol,-blank-at-eof
+analysis/** -text
+scheduler/** -text
+attempts/** -text
+validation/** -text
+extract.py -text
+publication-receipt.json -text
+attempts/** whitespace=blank-at-eol,space-before-tab,cr-at-eol,-blank-at-eof
+validation/*.log whitespace=blank-at-eol,space-before-tab,cr-at-eol,-blank-at-eof

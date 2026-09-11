@@ -1,0 +1,23 @@
+test_empty_and_failed_population_cannot_qualify (tools.tests.test_optimization_scheduler.AllocationOrigins.test_empty_and_failed_population_cannot_qualify) ... ok
+test_single_selected_group_retains_origin_through_later_frees (tools.tests.test_optimization_scheduler.AllocationOrigins.test_single_selected_group_retains_origin_through_later_frees) ... ok
+test_verified_symbol_without_observed_origin_is_unavailable (tools.tests.test_optimization_scheduler.AllocationOrigins.test_verified_symbol_without_observed_origin_is_unavailable) ... ok
+test_both_populations_and_distinct_denominators (tools.tests.test_optimization_scheduler.FixedPopulation.test_both_populations_and_distinct_denominators) ... ok
+test_closed_plan_and_no_inherited_scratch_or_population_override (tools.tests.test_optimization_scheduler.FixedPopulation.test_closed_plan_and_no_inherited_scratch_or_population_override) ... ok
+test_tenant_local_cancel_set_does_not_become_global_ordinal_set (tools.tests.test_optimization_scheduler.FixedPopulation.test_tenant_local_cancel_set_does_not_become_global_ordinal_set) ... ok
+test_actual_boundaries_and_zero_denominator_remain_distinct (tools.tests.test_optimization_scheduler.OriginalOfferRows.test_actual_boundaries_and_zero_denominator_remain_distinct) ... ok
+test_backpressure_never_acquires_an_enqueue_denominator (tools.tests.test_optimization_scheduler.OriginalOfferRows.test_backpressure_never_acquires_an_enqueue_denominator) ... ok
+test_snapshot_numeric_booleans_and_out_of_scope_counters_rejected (tools.tests.test_optimization_scheduler.OriginalOfferRows.test_snapshot_numeric_booleans_and_out_of_scope_counters_rejected) ... ok
+test_tampered_ordinal_tenant_deadline_hold_and_cleanup_rejected (tools.tests.test_optimization_scheduler.OriginalOfferRows.test_tampered_ordinal_tenant_deadline_hold_and_cleanup_rejected) ... ok
+test_complete_replay_is_called_with_retained_suite (tools.tests.test_scheduler_archive.SchedulerArchiveTests.test_complete_replay_is_called_with_retained_suite) ... ok
+test_incomplete_or_wrong_population_cannot_publish (tools.tests.test_scheduler_archive.SchedulerArchiveTests.test_incomplete_or_wrong_population_cannot_publish) ... ok
+test_replay_change_rejects_even_a_complete_outer_aggregate (tools.tests.test_scheduler_archive.SchedulerArchiveTests.test_replay_change_rejects_even_a_complete_outer_aggregate) ... ok
+test_scheduler_uses_original_archive_limits (tools.tests.test_scheduler_archive.SchedulerArchiveTests.test_scheduler_uses_original_archive_limits) ... ok
+test_all_contracts_are_valid_and_have_distinct_identifiers (tools.tests.test_scheduler_schemas.SchedulerSchemaTests.test_all_contracts_are_valid_and_have_distinct_identifiers) ... ok
+test_every_fixed_selector_and_suite_plan_matches_its_contract (tools.tests.test_scheduler_schemas.SchedulerSchemaTests.test_every_fixed_selector_and_suite_plan_matches_its_contract) ... ok
+test_qualified_aggregate_requires_full_exact_population (tools.tests.test_scheduler_schemas.SchedulerSchemaTests.test_qualified_aggregate_requires_full_exact_population) ... ok
+test_structural_plan_rejects_crossed_allocation_case_and_extra_fields (tools.tests.test_scheduler_schemas.SchedulerSchemaTests.test_structural_plan_rejects_crossed_allocation_case_and_extra_fields) ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.254s
+
+OK
