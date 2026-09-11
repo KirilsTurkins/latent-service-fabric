@@ -1,0 +1,187 @@
+{
+  "exit_code": 0,
+  "failure": null,
+  "finished_nanos": "261137702321848",
+  "helper": {
+    "bytes": "3194",
+    "path": "/work/cleanup-validation-source10-01.py",
+    "sha256": "sha256:ed1ee894580bf0e3958e85b6f5daaf5f3e2d585f1f1a23dbfdf524b8a57154ce"
+  },
+  "inputs_after": [
+    {
+      "bytes": "8005",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/bootstrap.json",
+      "sha256": "sha256:94312e41af0907ca440a869f9ce3023facb1ba7f1778eeea0e295a43cd2c2501"
+    },
+    {
+      "bytes": "73155",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/bootstrap.ndjson",
+      "sha256": "sha256:a31d96ced713f68154ff6616b3fa4511cec080994f1842987e352487a162afe9"
+    },
+    {
+      "bytes": "35294",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/setup.json",
+      "sha256": "sha256:6824c63bcd4f4ebadc43c3ffb7ab0c0f30d4bf6b706301463d669d932d51759a"
+    },
+    {
+      "bytes": "34951",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/original-setup.json",
+      "sha256": "sha256:464365dff16f8a4c98f76145fe491b3e499736aee926244e09d04cedf9d2b59c"
+    },
+    {
+      "bytes": "2068",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/cleanup-01/cleanup.json",
+      "sha256": "sha256:8523e70f3e474babb3de465af5442844655633a617ee4e253260721f9fc253f9"
+    },
+    {
+      "bytes": "73383",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/cleanup-01/cleanup.ndjson",
+      "sha256": "sha256:1facbee3241149737b3330b4061e8e0a891dbf9ac37617e1c1bc1628ebebf3c0"
+    },
+    {
+      "bytes": "880",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/cleanup-01/windows-credential-cleanup.json",
+      "sha256": "sha256:f8e743a00471b97629338f26dc98db08ba1582fa2fefb525c2f24b2fd9489f95"
+    },
+    {
+      "bytes": "3811",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/cleanup-01/windows-credential-cleanup.py",
+      "sha256": "sha256:bdbaf5dc6501c79e7136dac7e2dd6b6e5d9685159f6da1af81cf575164435f2e"
+    }
+  ],
+  "inputs_before": [
+    {
+      "bytes": "8005",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/bootstrap.json",
+      "sha256": "sha256:94312e41af0907ca440a869f9ce3023facb1ba7f1778eeea0e295a43cd2c2501"
+    },
+    {
+      "bytes": "73155",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/bootstrap.ndjson",
+      "sha256": "sha256:a31d96ced713f68154ff6616b3fa4511cec080994f1842987e352487a162afe9"
+    },
+    {
+      "bytes": "35294",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/setup.json",
+      "sha256": "sha256:6824c63bcd4f4ebadc43c3ffb7ab0c0f30d4bf6b706301463d669d932d51759a"
+    },
+    {
+      "bytes": "34951",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/original-setup.json",
+      "sha256": "sha256:464365dff16f8a4c98f76145fe491b3e499736aee926244e09d04cedf9d2b59c"
+    },
+    {
+      "bytes": "2068",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/cleanup-01/cleanup.json",
+      "sha256": "sha256:8523e70f3e474babb3de465af5442844655633a617ee4e253260721f9fc253f9"
+    },
+    {
+      "bytes": "73383",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/cleanup-01/cleanup.ndjson",
+      "sha256": "sha256:1facbee3241149737b3330b4061e8e0a891dbf9ac37617e1c1bc1628ebebf3c0"
+    },
+    {
+      "bytes": "880",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/cleanup-01/windows-credential-cleanup.json",
+      "sha256": "sha256:f8e743a00471b97629338f26dc98db08ba1582fa2fefb525c2f24b2fd9489f95"
+    },
+    {
+      "bytes": "3811",
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/cleanup-01/windows-credential-cleanup.py",
+      "sha256": "sha256:bdbaf5dc6501c79e7136dac7e2dd6b6e5d9685159f6da1af81cf575164435f2e"
+    }
+  ],
+  "inputs_unchanged": true,
+  "ru_maxrss_kib": 33916,
+  "schema": "latent.diagnostic.kubernetes-cleanup-validation.v1",
+  "scope": "offline-public-final-cleanup-proof-no-live-api-no-workload",
+  "source_after": {
+    "clean": true,
+    "commit": "10d50e61c5632ea2361a16dffc3b4819987f4dc4",
+    "tree": "125d2b8fbe41a08f8f07bc1b7ad267f43b977773"
+  },
+  "source_before": {
+    "clean": true,
+    "commit": "10d50e61c5632ea2361a16dffc3b4819987f4dc4",
+    "tree": "125d2b8fbe41a08f8f07bc1b7ad267f43b977773"
+  },
+  "started_nanos": "261136924330886",
+  "verified_cleanup": {
+    "bootstrap": {
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/bootstrap.json",
+      "sha256": "sha256:94312e41af0907ca440a869f9ce3023facb1ba7f1778eeea0e295a43cd2c2501"
+    },
+    "controller_disconnected": true,
+    "credentials_before": [
+      {
+        "bytes": "1107",
+        "path": "private/tls/ca.pem",
+        "sha256": "sha256:1fb044632dd8b187d4c62b90da08e9856b271593d1c0ba7d9c095ef0a1dfd7c0"
+      },
+      {
+        "bytes": "1675",
+        "path": "private/tls/client.key",
+        "sha256": "sha256:bb9f5cbd9338f6f3ab22ba7b61f1baa15bca536d541ddb6f495df388e34e9203"
+      },
+      {
+        "bytes": "1155",
+        "path": "private/tls/client.pem",
+        "sha256": "sha256:e383c1e76413fefa94e0bdfbb32ce2a1106297a591ee8783639258b0df64a9ed"
+      },
+      {
+        "bytes": "5678",
+        "path": "private/kubeconfig",
+        "sha256": "sha256:9a8fb6f08a5a32638b6ac6d8b641b9326a3098a21c18fd75c37684bc4130c913"
+      }
+    ],
+    "credentials_removed": [
+      {
+        "absent": true,
+        "bytes": "1107",
+        "path": "private/tls/ca.pem",
+        "sha256": "sha256:1fb044632dd8b187d4c62b90da08e9856b271593d1c0ba7d9c095ef0a1dfd7c0"
+      },
+      {
+        "absent": true,
+        "bytes": "1675",
+        "path": "private/tls/client.key",
+        "sha256": "sha256:bb9f5cbd9338f6f3ab22ba7b61f1baa15bca536d541ddb6f495df388e34e9203"
+      },
+      {
+        "absent": true,
+        "bytes": "1155",
+        "path": "private/tls/client.pem",
+        "sha256": "sha256:e383c1e76413fefa94e0bdfbb32ce2a1106297a591ee8783639258b0df64a9ed"
+      },
+      {
+        "absent": true,
+        "bytes": "5678",
+        "path": "private/kubeconfig",
+        "sha256": "sha256:9a8fb6f08a5a32638b6ac6d8b641b9326a3098a21c18fd75c37684bc4130c913"
+      }
+    ],
+    "engine": {
+      "api_version": "1.54",
+      "server_version": "29.7.2"
+    },
+    "failure": null,
+    "finished_nanos": "260607050024294",
+    "network_removed": true,
+    "nodes_already_absent": [],
+    "nodes_removed": [
+      "9243d49a2cf84e8a6402e55d8b406d75bd0212afc88f550ea1bea262680cba83",
+      "3f4673acdd0303255b1391b65db491fa50934afd2dd32fd1444a8a7f3c857d70"
+    ],
+    "owner": "lsf-112-8c22b65b1529",
+    "public_files_images_volumes_retained": true,
+    "schema": "latent.optimization.kubernetes-cluster-cleanup.v1",
+    "source": {
+      "cargo_lock_sha256": "sha256:08974270174575379a10e4f83920755aba00a33b61d2f8e63e5b05b6ea6695d1",
+      "clean": true,
+      "commit": "8b0441fb5b052c7b103f55a4f2ab2e72b5a4add5",
+      "tree": "53763907750d7637474685c25c4d5740f5a8ba41"
+    },
+    "started_nanos": "260574515237202",
+    "status": "owned-cluster-removed"
+  }
+}

@@ -97,10 +97,13 @@ def create_archive(source, stage, policy, compression_level=6, *, split_archive=
     return manifest
 
 
-def package(source, output, policy, compression_level=6, *, split_archive=False):
+def package(source, output, policy, compression_level=6, *, split_archive=False, docker_package=None):
     compression_level = checked_compression_level(compression_level)
     require(type(split_archive) is bool, 'split archive option must be a boolean')
     source = paths.existing_directory_path(source, 'measurement source')
+    kind = evidence_kind(source)
+    require(docker_package is None or kind == 'kubernetes', '--docker-package is only valid for Kubernetes evidence')
+    require(kind != 'kubernetes' or docker_package is not None, 'Kubernetes packaging requires --docker-package')
     output = paths.absent_output_path(output)
     require(not output.is_relative_to(source) and not source.is_relative_to(output),
             'source and output must not overlap')
@@ -109,7 +112,10 @@ def package(source, output, policy, compression_level=6, *, split_archive=False)
         stage = Path(temporary) / 'package'
         stage.mkdir()
         manifest = create_archive(source, stage, policy, compression_level, split_archive=split_archive)
-        verify_package(stage)
+        if docker_package is None:
+            verify_package(stage)
+        else:
+            verify_package(stage, docker_package=docker_package)
         stage.rename(output)
     return manifest
 
@@ -123,10 +129,12 @@ def main():
                         help='gzip level 1 through 9; default 6 preserves existing archive output')
     parser.add_argument('--split-archive', action='store_true',
                         help='retain the exact gzip stream in 2–4 parts of at most 50 MB (198 MB total)')
+    parser.add_argument('--docker-package', type=Path,
+                        help='original #111 Docker package; required only for Kubernetes evidence')
     args = parser.parse_args()
     try:
         manifest = package(args.source, args.output, args.policy, args.compression_level,
-                           split_archive=args.split_archive)
+                           split_archive=args.split_archive, docker_package=args.docker_package)
     except (ValueError, OSError, tarfile.TarError, EOFError) as error:
         parser.exit(2, f'Phase 1 packaging failed: {error}\n')
     print(f"Packaged and replayed {len(manifest['files'])} unchanged evidence files.")

@@ -238,6 +238,7 @@ def extract_tar_stream(stream: BinaryIO, destination: Path, label: str, *,
     duplicate normalized paths, and escaping paths are rejected. The default
     remains 1 GiB; the Phase 1 codec dispatcher may explicitly select 2 GiB.
     The Docker dispatcher may select 6,000 files to retain failed setup sources.
+    Kubernetes may select 8,000 for current, prior and failed campaign closures.
     """
 
     if maximum_bytes is None:
@@ -248,7 +249,7 @@ def extract_tar_stream(stream: BinaryIO, destination: Path, label: str, *,
     if maximum_files is None:
         maximum_files = MAX_ARCHIVE_FILES
     else:
-        _require(type(maximum_files) is int and maximum_files in (5_000, 6_000),
+        _require(type(maximum_files) is int and maximum_files in (5_000, 6_000, 8_000),
                  f"{label} invalid explicit member limit")
     _require(not destination.exists(), f"{label} destination already exists: {destination}")
     destination.mkdir(parents=True)

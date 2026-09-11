@@ -54,6 +54,10 @@ PRIVATE_SCHEMA_FILES = {
         "aggregate.schema.json", "client-plan.schema.json",
         "client-command.schema.json", "client-summary.schema.json",
     },
+    "tools/optimization_kubernetes/schemas": {
+        "bootstrap.schema.json", "suite.schema.json", "aggregate.schema.json",
+        "cluster-cleanup.schema.json",
+    },
 }
 
 SVG_UNSAFE_ELEMENTS = frozenset({"embed", "foreignObject", "iframe", "image", "object", "script"})
@@ -452,6 +456,27 @@ def validate_docker_schema_plans() -> None:
         sys.path.pop(0)
 
 
+def validate_kubernetes_schema_plans() -> None:
+    """Check source selectors in both envelopes, without fabricating campaigns."""
+    sys.path.insert(0, str(ROOT))
+    try:
+        from tools.optimization_kubernetes import model
+
+        directory = ROOT / "tools/optimization_kubernetes/schemas"
+        for name in ("suite", "aggregate"):
+            document = json.loads((directory / f"{name}.schema.json").read_text(encoding="utf-8"))
+            selected = {"$defs": document["$defs"], **document["properties"]["plan"]}
+            validator = Draft202012Validator(selected)
+            for profile in ("smoke", "full"):
+                value = model.plan(profile, owner="lsf-112-0123456789ab")
+                for error in validator.iter_errors(value):
+                    fail(f"Kubernetes {profile} {name} schema differs from fixed source plan: {error.message}")
+    except (OSError, ValueError, KeyError, IndexError, TypeError, SchemaError) as exc:
+        fail(f"Kubernetes schema plan validation failed: {exc}")
+    finally:
+        sys.path.pop(0)
+
+
 def validate_interface_only_policy() -> None:
     forbidden = ("todo!", "unimplemented!", "panic!(\"not implemented", "TODO_IMPLEMENTATION")
     for path in files_with_suffix(".rs"):
@@ -571,6 +596,7 @@ def main() -> int:
     validate_wit()
     validate_schemas()
     validate_docker_schema_plans()
+    validate_kubernetes_schema_plans()
     validate_interface_only_policy()
     validate_required_docs()
     validate_benchmark_retention()

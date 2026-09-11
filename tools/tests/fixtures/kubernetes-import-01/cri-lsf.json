@@ -1,0 +1,72 @@
+{
+  "info": {
+    "chainID": "sha256:5da01faa700a174aa12791452d4be972465d6ba808659cfe6d00d2be89a169a9",
+    "imageSpec": {
+      "architecture": "amd64",
+      "config": {
+        "Entrypoint": [
+          "/opt/lsf/optimization-container"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ],
+        "Labels": {
+          "latent.benchmark.owner": "lsf111-images-fc45a33903fb46eea767",
+          "latent.benchmark.role": "lsf"
+        }
+      },
+      "created": "2026-09-11T10:25:33.546458926Z",
+      "history": [
+        {
+          "comment": "debuerreotype 0.17",
+          "created": "2026-07-13T00:00:00Z",
+          "created_by": "# debian.sh --arch 'amd64' out/ 'bookworm' '@1783900800'"
+        },
+        {
+          "created": "2026-09-11T10:25:21.325344523Z",
+          "created_by": "/bin/sh -c #(nop) COPY file:75321cb72b05737dd94254834929adbbdddb2f6b3014bd0d09623fbcaae10d40 in /opt/lsf/optimization-container "
+        },
+        {
+          "created": "2026-09-11T10:25:28.823090417Z",
+          "created_by": "/bin/sh -c #(nop) COPY dir:3e41064c3c661848fd2e3204b9cbdecc152d0890b634a53a83fa53928d5d4e4d in /opt/lsf/ "
+        },
+        {
+          "created": "2026-09-11T10:25:31.473346492Z",
+          "created_by": "/bin/sh -c #(nop)  ENTRYPOINT [\"/opt/lsf/optimization-container\"]",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-09-11T10:25:32.687763253Z",
+          "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.owner=lsf111-images-fc45a33903fb46eea767",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-09-11T10:25:33.546458926Z",
+          "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.role=lsf",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "diff_ids": [
+          "sha256:81f823b9617547261c907396f63f770deaa554748ff739bedfa650e3bb74595a",
+          "sha256:3a8b1ccb7dfc8d23307eeeac18cc3331053686d304e7308773b69f52cbac2f76",
+          "sha256:7c401bc2226e93cbb7cbe499f5af8db5146d497be210d820de7f145aa226c834"
+        ],
+        "type": "layers"
+      }
+    }
+  },
+  "status": {
+    "id": "sha256:002ee2895cfd81a33a3f00d18241405f42c139ca089cf6397e9a93fdbc9c50a4",
+    "pinned": false,
+    "repoDigests": [
+      "docker.io/library/import-2026-09-11@sha256:77bb5ae886bf776cccccf82443052741efb718fc84f414ddd1f3d0fe5956bc2f"
+    ],
+    "repoTags": [
+      "docker.io/library/lsf111-images-fc45a33903fb46eea767:lsf"
+    ],
+    "size": "87442648",
+    "username": ""
+  }
+}

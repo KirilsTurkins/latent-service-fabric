@@ -1,0 +1,229 @@
+{
+  "archive": {
+    "bytes": "105556480",
+    "sha256": "sha256:67ec4c98376734a9357a28989390849ac2254886ef9aae0fdd8ba95dce1105f7"
+  },
+  "images": {
+    "client": {
+      "config": {
+        "architecture": "amd64",
+        "config": {
+          "Entrypoint": [
+            "/opt/lsf/optimization-client"
+          ],
+          "Env": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          ],
+          "Labels": {
+            "latent.benchmark.owner": "lsf111-images-fc45a33903fb46eea767",
+            "latent.benchmark.role": "client"
+          }
+        },
+        "created": "2026-09-11T10:25:47.416970236Z",
+        "history": [
+          {
+            "comment": "debuerreotype 0.17",
+            "created": "2026-07-13T00:00:00Z",
+            "created_by": "# debian.sh --arch 'amd64' out/ 'bookworm' '@1783900800'"
+          },
+          {
+            "created": "2026-09-11T10:25:44.795168262Z",
+            "created_by": "/bin/sh -c #(nop) COPY file:3da4e37246eda46754f98e039a0844bf4f75dc59deb5ebf11b2e402b57c1a0e2 in /opt/lsf/optimization-client "
+          },
+          {
+            "created": "2026-09-11T10:25:45.930860024Z",
+            "created_by": "/bin/sh -c #(nop)  ENTRYPOINT [\"/opt/lsf/optimization-client\"]",
+            "empty_layer": true
+          },
+          {
+            "created": "2026-09-11T10:25:46.635272841Z",
+            "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.owner=lsf111-images-fc45a33903fb46eea767",
+            "empty_layer": true
+          },
+          {
+            "created": "2026-09-11T10:25:47.416970236Z",
+            "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.role=client",
+            "empty_layer": true
+          }
+        ],
+        "os": "linux",
+        "rootfs": {
+          "diff_ids": [
+            "sha256:81f823b9617547261c907396f63f770deaa554748ff739bedfa650e3bb74595a",
+            "sha256:3bd366f10c765211d5a8c2dc73bc3792ba19153cd5c1c0cb87d4ab4fac6609f0"
+          ],
+          "type": "layers"
+        }
+      },
+      "config_digest": "sha256:0a86a2cbcd47d4afe1a240251c6e23fceb8951083d4debf38f6283765c39bc91",
+      "layers": [
+        {
+          "digest": "sha256:597c6c618d36213af657a6a8444a5d87801f9a219682b206ad21ccb8f3e57bbd",
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "size": 28232643
+        },
+        {
+          "digest": "sha256:1b808005c3a910a568514c352aadc63da597125cb7c2b5d70301279132cec9ca",
+          "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+          "size": 10374611
+        }
+      ],
+      "manifest_digest": "sha256:a0b4d53de03366327b428e80b3e071abbe87b5519717c58839f954cb038d77d7",
+      "tag": "lsf111-images-fc45a33903fb46eea767:client"
+    },
+    "lsf": {
+      "config": {
+        "architecture": "amd64",
+        "config": {
+          "Entrypoint": [
+            "/opt/lsf/optimization-container"
+          ],
+          "Env": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          ],
+          "Labels": {
+            "latent.benchmark.owner": "lsf111-images-fc45a33903fb46eea767",
+            "latent.benchmark.role": "lsf"
+          }
+        },
+        "created": "2026-09-11T10:25:33.546458926Z",
+        "history": [
+          {
+            "comment": "debuerreotype 0.17",
+            "created": "2026-07-13T00:00:00Z",
+            "created_by": "# debian.sh --arch 'amd64' out/ 'bookworm' '@1783900800'"
+          },
+          {
+            "created": "2026-09-11T10:25:21.325344523Z",
+            "created_by": "/bin/sh -c #(nop) COPY file:75321cb72b05737dd94254834929adbbdddb2f6b3014bd0d09623fbcaae10d40 in /opt/lsf/optimization-container "
+          },
+          {
+            "created": "2026-09-11T10:25:28.823090417Z",
+            "created_by": "/bin/sh -c #(nop) COPY dir:3e41064c3c661848fd2e3204b9cbdecc152d0890b634a53a83fa53928d5d4e4d in /opt/lsf/ "
+          },
+          {
+            "created": "2026-09-11T10:25:31.473346492Z",
+            "created_by": "/bin/sh -c #(nop)  ENTRYPOINT [\"/opt/lsf/optimization-container\"]",
+            "empty_layer": true
+          },
+          {
+            "created": "2026-09-11T10:25:32.687763253Z",
+            "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.owner=lsf111-images-fc45a33903fb46eea767",
+            "empty_layer": true
+          },
+          {
+            "created": "2026-09-11T10:25:33.546458926Z",
+            "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.role=lsf",
+            "empty_layer": true
+          }
+        ],
+        "os": "linux",
+        "rootfs": {
+          "diff_ids": [
+            "sha256:81f823b9617547261c907396f63f770deaa554748ff739bedfa650e3bb74595a",
+            "sha256:3a8b1ccb7dfc8d23307eeeac18cc3331053686d304e7308773b69f52cbac2f76",
+            "sha256:7c401bc2226e93cbb7cbe499f5af8db5146d497be210d820de7f145aa226c834"
+          ],
+          "type": "layers"
+        }
+      },
+      "config_digest": "sha256:002ee2895cfd81a33a3f00d18241405f42c139ca089cf6397e9a93fdbc9c50a4",
+      "layers": [
+        {
+          "digest": "sha256:597c6c618d36213af657a6a8444a5d87801f9a219682b206ad21ccb8f3e57bbd",
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "size": 28232643
+        },
+        {
+          "digest": "sha256:e190b7057f73327a0dd15542d1e66aac9f121a634d77b7c778314733bf84c344",
+          "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+          "size": 4502544
+        },
+        {
+          "digest": "sha256:090a8f506594533fafce225bf58a3bf75d3d408a4e977b5dcbad8230830c1bd9",
+          "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+          "size": 54703965
+        }
+      ],
+      "manifest_digest": "sha256:ae339a3194de7528217ba6352d28391425d71b584d89546808de4bd40e5b5eb3",
+      "tag": "lsf111-images-fc45a33903fb46eea767:lsf"
+    },
+    "native": {
+      "config": {
+        "architecture": "amd64",
+        "config": {
+          "Entrypoint": [
+            "/opt/lsf/optimization-container"
+          ],
+          "Env": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          ],
+          "Labels": {
+            "latent.benchmark.owner": "lsf111-images-fc45a33903fb46eea767",
+            "latent.benchmark.role": "native"
+          }
+        },
+        "created": "2026-09-11T10:25:40.524549274Z",
+        "history": [
+          {
+            "comment": "debuerreotype 0.17",
+            "created": "2026-07-13T00:00:00Z",
+            "created_by": "# debian.sh --arch 'amd64' out/ 'bookworm' '@1783900800'"
+          },
+          {
+            "created": "2026-09-11T10:25:21.325344523Z",
+            "created_by": "/bin/sh -c #(nop) COPY file:75321cb72b05737dd94254834929adbbdddb2f6b3014bd0d09623fbcaae10d40 in /opt/lsf/optimization-container "
+          },
+          {
+            "created": "2026-09-11T10:25:37.919650618Z",
+            "created_by": "/bin/sh -c #(nop) COPY dir:7384c9ce6bab0871bdaa423cba5a4ece305ef8ffacce5f8ae6388bce0d8728b7 in /opt/lsf/ "
+          },
+          {
+            "created": "2026-09-11T10:25:38.940762771Z",
+            "created_by": "/bin/sh -c #(nop)  ENTRYPOINT [\"/opt/lsf/optimization-container\"]",
+            "empty_layer": true
+          },
+          {
+            "created": "2026-09-11T10:25:39.765809601Z",
+            "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.owner=lsf111-images-fc45a33903fb46eea767",
+            "empty_layer": true
+          },
+          {
+            "created": "2026-09-11T10:25:40.524549274Z",
+            "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.role=native",
+            "empty_layer": true
+          }
+        ],
+        "os": "linux",
+        "rootfs": {
+          "diff_ids": [
+            "sha256:81f823b9617547261c907396f63f770deaa554748ff739bedfa650e3bb74595a",
+            "sha256:3a8b1ccb7dfc8d23307eeeac18cc3331053686d304e7308773b69f52cbac2f76",
+            "sha256:6df6f3e92a0dacca3a22fde2eec146565b2b9aa6e2f4e92e64fb9b263b9827f4"
+          ],
+          "type": "layers"
+        }
+      },
+      "config_digest": "sha256:89fb147ed5feff1e64c1ff2f66cf52e52a25984959bc8a227fe27b7a42ced2c5",
+      "layers": [
+        {
+          "digest": "sha256:597c6c618d36213af657a6a8444a5d87801f9a219682b206ad21ccb8f3e57bbd",
+          "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+          "size": 28232643
+        },
+        {
+          "digest": "sha256:e190b7057f73327a0dd15542d1e66aac9f121a634d77b7c778314733bf84c344",
+          "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+          "size": 4502544
+        },
+        {
+          "digest": "sha256:dd109a7d3988b92f21c669ae2b50329436d912dbed9e67f1fa85d778309b181c",
+          "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+          "size": 7721879
+        }
+      ],
+      "manifest_digest": "sha256:2d42cbc8194c46ce1c9614ac3bac94dd9e8c44df77ce75db692081cd610154b4",
+      "tag": "lsf111-images-fc45a33903fb46eea767:native"
+    }
+  }
+}

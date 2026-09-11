@@ -1,0 +1,19 @@
+{
+  "schema": "latent.test.kubernetes-startup-records.v1",
+  "records": [
+    {
+      "path": "lsf.ndjson",
+      "source": "target/phase1-extension/issue112-smoke-01-recovered-outputs/3/events.ndjson",
+      "scope": "first-two-original-complete-LF-records",
+      "bytes": 882,
+      "sha256": "4f17f36054c40b5dc1a9eebe9280ccc328f7923225d4ba28640eb9ee71248428"
+    },
+    {
+      "path": "native.ndjson",
+      "source": "target/phase1-extension/issue112-smoke-02-recovered-outputs/5/events.ndjson",
+      "scope": "first-two-original-complete-LF-records",
+      "bytes": 840,
+      "sha256": "3146e774ed0eda591550b3b0e995edb540aacb6c7c64a7a787d6dfa47e82d348"
+    }
+  ]
+}

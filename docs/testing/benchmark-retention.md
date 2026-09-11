@@ -2,14 +2,17 @@
 
 The current checkout keeps optimization reports, aggregates, paired tables,
 source identities, archive manifests, checksums and recorded validation receipts.
-Historical optimization archive payloads have been removed to reduce checkout
-size. The Docker comparison package is retained separately. Phase 0 archives,
+Historical optimization archive payloads, including the original Docker comparison,
+have been removed to reduce checkout size. The Kubernetes comparison package is
+retained; replay requires restoring its exact Docker dependency. Phase 0 archives,
 Phase 1 evidence, measurement schemas and small regression fixtures are unchanged.
 
 The [retention ledger](../../benchmarks/optimization/retention.json) lists the
-23 compacted packages and diagnostic bundles, their removed payload sizes and Git
-blob identities, and their original archive manifests. In total, 56 payload files
-accounting for 2,268,388,392 bytes were removed from the current tree.
+24 compacted packages and diagnostic bundles, their removed payload sizes and Git
+blob identities, and their original archive manifests. In total, 60 payload files
+accounting for 2,438,191,603 bytes were removed from the current tree. Docker's four
+parts account for 169,803,211 bytes; its reports, tables and original manifests
+remain. The Kubernetes report includes the exact dependency restoration command.
 
 Repository validation caps `benchmarks/` at 600 MiB. New optimization gzip payloads
 and archive parts are ignored by default; keep raw runs and package staging under

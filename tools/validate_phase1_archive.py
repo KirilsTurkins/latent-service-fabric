@@ -56,6 +56,7 @@ MAX_CODEC_EXPANDED = 2 * 1024 * 1024 * 1024
 MAX_CODEC_FILE_BYTES = 256 * 1024 * 1024
 MAX_FILES = 5000
 MAX_DOCKER_FILES = 6000
+MAX_KUBERNETES_FILES = 8000
 MAX_AGGREGATE_BYTES = 8 * 1024 * 1024
 CHUNK = 64 * 1024
 
@@ -243,7 +244,7 @@ def evidence_kind(directory):
         return 'backend-revision'
     if aggregate.get('schema') == 'latent.optimization.cold-aggregate.v1':
         return 'cold'
-    for kind in ('cache-lookup', 'cache-behavior', 'scheduler', 'docker'):
+    for kind in ('cache-lookup', 'cache-behavior', 'scheduler', 'docker', 'kubernetes'):
         if aggregate.get('schema') == f'latent.optimization.{kind}-aggregate.v1':
             return kind
     del aggregate
@@ -261,16 +262,17 @@ def evidence_kind(directory):
 
 def archive_bounds(kind):
     """The bounded codec discriminator is the sole 2 GiB archive policy."""
-    if kind == 'docker':
+    if kind in ('docker', 'kubernetes'):
         return MAX_EXPANDED, 256 * 1024 * 1024
     return ((MAX_CODEC_EXPANDED, MAX_CODEC_FILE_BYTES) if kind == 'codec'
             else (MAX_EXPANDED, MAX_EXPANDED))
 
 
 def archive_file_limit(kind):
-    # The actual full + smoke + two failed setup closures contain 5,015
-    # ordinary files. Preserve every original without widening byte limits.
-    return MAX_DOCKER_FILES if kind == 'docker' else MAX_FILES
+    # Docker retains 5,015 files. Kubernetes adds its current full/smoke,
+    # completed prior smoke, three failed attempts and bootstrap/cleanup.
+    # Their measured inventory exceeds 7,600 files; byte limits stay finite.
+    return {'docker': MAX_DOCKER_FILES, 'kubernetes': MAX_KUBERNETES_FILES}.get(kind, MAX_FILES)
 
 
 def verify_optimization(directory):
@@ -366,18 +368,22 @@ def verify_scheduler(directory):
             'scheduler archive requires a qualified complete full population')
 
 
-def verify_package(directory, *, replay=True):
+def verify_package(directory, *, replay=True, docker_package=None):
     root = paths.existing_directory_path(directory, 'evidence package')
+    kind = evidence_kind(root)
+    require(docker_package is None or kind == 'kubernetes', '--docker-package is only valid for Kubernetes evidence')
+    require(not replay or kind != 'kubernetes' or docker_package is not None,
+            'Kubernetes replay requires --docker-package')
     manifest = load_manifest(root)
     checksum = paths.existing_regular_file_path(root / (ARCHIVE + '.sha256'), 'archive checksum')
     require(checksum.stat().st_size <= 256, 'oversized archive checksum')
     require(checksum.read_text() == manifest['archive']['sha256'][7:] + '  ' + ARCHIVE + '\n',
             'archive checksum sidecar mismatch')
     with archive_input(root, manifest) as archive_path:
-        return verify_archive(root, manifest, archive_path, replay=replay)
+        return verify_archive(root, manifest, archive_path, replay=replay, docker_package=docker_package)
 
 
-def verify_archive(root, manifest, archive_path, *, replay):
+def verify_archive(root, manifest, archive_path, *, replay, docker_package=None):
     outer_kind = evidence_kind(root)
     maximum, file_maximum = archive_bounds(outer_kind)
     require(size(manifest['total_bytes']) <= maximum, 'expanded byte bound')
@@ -423,8 +429,8 @@ def verify_archive(root, manifest, archive_path, *, replay):
         extracted = Path(temporary) / 'raw'
         with gzip.open(archive_path, 'rb') as stream:
             options = {'maximum_bytes': MAX_CODEC_EXPANDED} if outer_kind == 'codec' else {}
-            if outer_kind == 'docker':
-                options['maximum_files'] = MAX_DOCKER_FILES
+            if outer_kind in ('docker', 'kubernetes'):
+                options['maximum_files'] = archive_file_limit(outer_kind)
             files = phase0_evidence.extract_tar_stream(stream, extracted, 'Phase 1 evidence', **options)
         require(files == seen, 'extraction differs from verified archive')
         for name, row in expected.items():
@@ -459,6 +465,9 @@ def verify_archive(root, manifest, archive_path, *, replay):
                 verify_scheduler(extracted)
             elif kind == 'docker':
                 verify_docker(extracted)
+            elif kind == 'kubernetes':
+                from tools.phase1_kubernetes_archive import verify as verify_kubernetes
+                verify_kubernetes(extracted, docker_package=docker_package)
             else:
                 validate_aggregate(extracted / 'aggregate.json')
                 validate_comparison(extracted / 'comparison.json')
@@ -471,9 +480,11 @@ def verify_archive(root, manifest, archive_path, *, replay):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('package', type=Path)
+    parser.add_argument('--docker-package', type=Path,
+                        help='original #111 Docker package; required only for Kubernetes replay')
     args = parser.parse_args()
     try:
-        manifest = verify_package(args.package)
+        manifest = verify_package(args.package, docker_package=args.docker_package)
     except (ValueError, OSError, tarfile.TarError, EOFError) as error:
         parser.exit(2, f'Phase 1 archive rejected: {error}\n')
     print(f"Phase 1 archive and evidence replay validated ({len(manifest['files'])} files).")

@@ -274,7 +274,7 @@ def _pairs(raw):
     return result
 
 
-def _cgroup(value, controls, lower, upper, wrapper, child):
+def _cgroup(value, controls, lower, upper, wrapper, child, *, leaf_pids_max=None):
     fields(value, "started_nanos finished_nanos membership mountinfo directory mapping_unavailable_reason files")
     _window(value, lower, upper)
     membership, mountinfo = _raw(value["membership"]), _raw(value["mountinfo"])
@@ -293,11 +293,20 @@ def _cgroup(value, controls, lower, upper, wrapper, child):
             require(parsed[name] is None, "wrapper-unmapped-cgroup-file")
         unavailable[name] = raw["unavailable_reason"]
     limits = {}
-    for name, expected in (("memory.max", controls["memory"]), ("memory.swap.max", 0),
-                            ("pids.max", controls["pids_limit"])):
+    for name, expected in (("memory.max", controls["memory"]), ("memory.swap.max", 0)):
         limits[name] = _number(parsed[name])
         if limits[name] is not None:
             require(uint(limits[name]) == expected, "wrapper-effective-control")
+    if leaf_pids_max is None:
+        limits["pids.max"] = _number(parsed["pids.max"])
+        if limits["pids.max"] is not None:
+            require(uint(limits["pids.max"]) == controls["pids_limit"], "wrapper-effective-control")
+    else:
+        require(isinstance(leaf_pids_max, str) and (leaf_pids_max == "max"
+                or re.fullmatch(r"[1-9][0-9]{0,19}", leaf_pids_max)), "wrapper-provider-pids-limit")
+        limits["pids.max"] = None if parsed["pids.max"] is None else parsed["pids.max"].strip()
+        if limits["pids.max"] is not None:
+            require(limits["pids.max"] == leaf_pids_max, "wrapper-effective-control")
     limits["cpu.max"] = None
     if parsed["cpu.max"] is not None:
         tokens = parsed["cpu.max"].split()
@@ -404,6 +413,27 @@ def validate(directory: Path, *, arm: str, density: int, container_id: str,
         integer(expected_connections)
     require(directory.is_dir() and not directory.is_symlink(), "wrapper-directory")
     identity = _inspect(ready_inspect, final_inspect, container_id, controls)
+    return validate_observations(directory, arm=arm, density=density, container_id=container_id,
+                                 identity=identity, controls=controls, expected_snapshots=expected_snapshots,
+                                 expected_connections=expected_connections)
+
+
+def validate_observations(directory: Path, *, arm: str, density: int, container_id: str,
+                          identity: dict, controls: dict, expected_snapshots: int = 6,
+                          expected_connections: int | None = None, leaf_pids_max: str | None = None) -> dict:
+    """Replay common wrapper bytes after the provider has verified its own facts.
+
+    A non-default leaf PID limit is supplied only by a provider which separately
+    verifies the effective ancestor limit. It is never a replacement inspect DTO.
+    """
+    require(arm in ("lsf", "native"), "wrapper-arm")
+    model.resources(arm, density)  # Keep the shared bounded arm/density presets.
+    require(isinstance(identity, dict) and isinstance(controls, dict), "wrapper-provider-facts")
+    identity = dict(identity)
+    require(type(expected_snapshots) is int and expected_snapshots in (0, 6), "wrapper-snapshot-preset")
+    if expected_connections is not None:
+        integer(expected_connections)
+    require(directory.is_dir() and not directory.is_symlink(), "wrapper-directory")
     data = _file(directory, "events.ndjson", 10 * EVENT_BYTES)
     raw_lines = data.splitlines(keepends=True)
     require(len(raw_lines) == expected_snapshots + 3 and all(line.endswith(b"\n")
@@ -455,7 +485,8 @@ def validate(directory: Path, *, arm: str, density: int, container_id: str,
         if fixed_identity is None:
             fixed_identity = current_identity
         require(current_identity == fixed_identity, "wrapper-process-replaced")
-        cgroup = _cgroup(sample["cgroup"], controls, uint(child["finished_nanos"]), end, wrapper, child)
+        cgroup = _cgroup(sample["cgroup"], controls, uint(child["finished_nanos"]), end, wrapper, child,
+                         leaf_pids_max=leaf_pids_max)
         if previous_cgroup is not None:
             for key in ("cpu_stat", "memory_events"):
                 before, after = previous_cgroup[key], cgroup[key]

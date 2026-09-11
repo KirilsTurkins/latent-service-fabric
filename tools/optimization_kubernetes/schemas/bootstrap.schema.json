@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/kubernetes-bootstrap.v1.schema.json",
+  "title": "Kubernetes comparison bootstrap v1",
+  "$comment": "Completed public benchmark envelope only. Nested shared records and all cross-file, ownership, timing, strict type, hash, cleanup and statistical checks require offline semantic replay. No external references.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "failure",
+    "owner",
+    "source",
+    "started_nanos",
+    "finished_nanos",
+    "output",
+    "setup_file",
+    "setup_sha256",
+    "setup",
+    "original_setup",
+    "controller_id",
+    "controller_original_networks",
+    "engine",
+    "images",
+    "kubectl",
+    "network_created_by_setup",
+    "network_id",
+    "network_identity",
+    "node_api_call",
+    "nodes",
+    "worker_root",
+    "worker_root_create_call",
+    "private_credentials",
+    "private_kubeconfig"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.kubernetes-bootstrap.v1"
+    },
+    "status": {
+      "const": "connected-no-workload"
+    },
+    "failure": {
+      "const": null
+    },
+    "owner": {
+      "$ref": "#/$defs/owner"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "started_nanos": {
+      "$ref": "#/$defs/uint"
+    },
+    "finished_nanos": {
+      "$ref": "#/$defs/uint"
+    },
+    "output": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "setup_file": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "setup_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "setup": {
+      "$ref": "#/$defs/reference"
+    },
+    "original_setup": {
+      "$ref": "#/$defs/reference"
+    },
+    "controller_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "controller_original_networks": {
+      "type": "object",
+      "maxProperties": 32,
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "engine": {
+      "type": "object",
+      "maxProperties": 4096
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lsf",
+        "native",
+        "client"
+      ],
+      "properties": {
+        "lsf": {
+          "type": "object",
+          "maxProperties": 4096
+        },
+        "native": {
+          "type": "object",
+          "maxProperties": 4096
+        },
+        "client": {
+          "type": "object",
+          "maxProperties": 4096
+        }
+      }
+    },
+    "kubectl": {
+      "type": "object",
+      "maxProperties": 4096
+    },
+    "network_created_by_setup": {
+      "type": "boolean"
+    },
+    "network_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "network_identity": {
+      "type": "object",
+      "maxProperties": 4096
+    },
+    "node_api_call": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 199999
+    },
+    "nodes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "worker",
+        "control-plane"
+      ],
+      "properties": {
+        "worker": {
+          "type": "object",
+          "maxProperties": 4096
+        },
+        "control-plane": {
+          "type": "object",
+          "maxProperties": 4096
+        }
+      }
+    },
+    "worker_root": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "worker_root_create_call": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 199999
+    },
+    "private_credentials": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/reference"
+      }
+    },
+    "private_kubeconfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "publishable"
+      ],
+      "properties": {
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "publishable": {
+          "const": false
+        }
+      }
+    }
+  },
+  "$defs": {
+    "uint": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^lsf-112-[0-9a-f]{12}$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "bytes": {
+          "$ref": "#/$defs/uint"
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "tree",
+        "clean",
+        "cargo_lock_sha256"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "clean": {
+          "const": true
+        },
+        "cargo_lock_sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    }
+  }
+}
