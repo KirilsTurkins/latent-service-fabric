@@ -5,9 +5,11 @@
 Latent Service Fabric is a component-native execution fabric in which deployed services are dormant immutable artifacts. Requests become temporary activations. Activations execute inside a fixed pool of reusable sandboxed cells and release activation-owned execution resources when they finish. Durable suspension remains a later-phase model.
 
 Phase 1 and its prioritized performance extension are complete. The current
-product is a locally trusted standalone Linux stateless node. Packaging and
-supply-chain features are the next Phase 2 scope; clustered control, guest state,
-workflows and general trigger/provider implementations remain later work.
+product is a locally trusted standalone Linux stateless node. Phase 2 now also
+provides immutable package formats, a deterministic packager and a
+[bounded OCI library adapter](../reference/oci-registry.md). Publisher trust,
+remote-package catalog and management integration, clustered control, guest
+state, workflows and general trigger/provider implementations remain planned.
 
 ![Phase 1 delivery boundary: durable local catalogs and RPC feed bounded preparation, fixed cells and fresh Wasmtime activations; measured comparisons retain limits, while packaging, distributed control and state remain later phases.](../assets/phase1-delivery-boundary.svg)
 
@@ -109,10 +111,11 @@ Stores desired state, validates releases, compiles bindings and routes, evaluate
 Receives triggers and direct calls, resolves exact revisions from a local snapshot, performs admission, schedules activations, materializes code, binds capabilities, executes guest code, commits state, persists effect intents, and returns results.
 
 These plane descriptions include later-phase capabilities. Phase 1 implements
-the local stateless routing and execution path, management RPCs, and CLI. OCI
-distribution, clustered control, durable state/effects, and general trigger
-adapters remain later work. Phase 0 implements only the local component
-preparation, execution, containment, and reclamation slice.
+the local stateless routing and execution path, management RPCs, and CLI. Phase 2
+adds bounded library packaging and OCI transfers; publisher verification and
+their catalog/management integration remain planned. Clustered control, durable
+state/effects and general trigger adapters are later work. Phase 0 implements
+only the local component preparation, execution, containment and reclamation slice.
 
 ## Physical topology
 
@@ -132,8 +135,9 @@ Ingress ─────────────► latentd nodes ◄────
 The diagram shows the intended clustered topology. Current standalone mode
 embeds local desired-state catalogs and the supported management services in
 one Linux `latentd` process, using durable local storage. A separate clustered
-control plane, PostgreSQL storage, and OCI distribution remain later work.
-Neither topology was a Phase 0 product surface.
+control plane and PostgreSQL storage remain later work. The delivered OCI adapter
+is a separate library boundary; it does not yet connect remote packages to the
+node's catalog or management services. Neither topology was a Phase 0 product surface.
 
 ## Fixed process model
 

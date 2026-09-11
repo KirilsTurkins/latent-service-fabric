@@ -4,9 +4,11 @@ The control plane manages desired state and compiled metadata. It does not execu
 
 Phase 1 embeds its implemented release/deployment catalogs, route compiler and
 management services in the [standalone node](../reference/standalone-node.md).
-The separate `latent-control` application remains a scaffold. PostgreSQL, OCI,
-signature/provenance admission, binding compilation and distributed reconciliation
-are later-phase designs. The [management API reference](../reference/management-services.md)
+The separate `latent-control` application remains a scaffold. Phase 2 delivers a
+[bounded OCI library adapter](../reference/oci-registry.md); its catalog and
+management integration, signature/provenance admission, PostgreSQL, binding
+compilation and distributed reconciliation remain planned. The
+[management API reference](../reference/management-services.md)
 lists the supported RPC methods and explicit unsupported operations.
 
 ## Modules
@@ -15,8 +17,10 @@ lists the supported RPC methods and explicit unsupported operations.
 
 The delivered local catalog indexes immutable component digests, bounded
 descriptors and manifest summaries, with verified durable publication and scoped
-pagination. Publisher signatures, attestations, SBOM verification and OCI
-distribution are planned additions; see [the catalog trust boundary](../development/local-release-catalog.md#trust-boundary).
+pagination. The OCI adapter can transfer complete immutable packages, but it
+does not admit them to this catalog. Publisher signatures, attestations, SBOM
+verification and remote-package catalog admission are planned additions; see
+[the catalog trust boundary](../development/local-release-catalog.md#trust-boundary).
 
 ### Contract registry
 
