@@ -32,7 +32,8 @@ def image_archive(path, *, changed_layer=False, crossed_index=False, duplicate=F
                 "layers": [{"digest": digest(layer), "size": len(layer)}]}
     manifest_bytes = encoded(manifest)
     identifier = digest(manifest_bytes)
-    index = {"schemaVersion": 2, "manifests": [{"digest": "sha256:" + "0" * 64 if crossed_index else identifier}]}
+    index = {"schemaVersion": 2, "manifests": [{"digest": "sha256:" + "0" * 64 if crossed_index else identifier,
+              "annotations": {"io.containerd.image.name": "docker.io/library/" + setup.IMAGE_PREFIX + ":lsf"}}]}
     entries = {"oci-layout": encoded({"imageLayoutVersion": "1.0.0"}), "index.json": encoded(index),
                "blobs/sha256/" + identifier[7:]: manifest_bytes,
                "blobs/sha256/" + digest(config_bytes)[7:]: config_bytes,
@@ -79,7 +80,7 @@ class KubernetesSetupIdentity(unittest.TestCase):
             value = setup._archive_images(path, original)
             expected = value["images"]["lsf"]
             self.assertNotEqual(expected["manifest_digest"], expected["config_digest"])
-            cri = {"status": {"id": expected["config_digest"], "repoTags": ["actual:lsf"],
+            cri = {"status": {"id": expected["config_digest"], "repoTags": ["docker.io/library/" + expected["tag"]],
                               "repoDigests": ["actual@" + expected["manifest_digest"]]},
                    "info": {"imageSpec": expected["config"]}}
             self.assertEqual(setup._imported_image(cri, expected)["manifest_digest"], original["lsf"]["Id"])
@@ -92,6 +93,74 @@ class KubernetesSetupIdentity(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "imported-image-binding"):
                 setup._imported_image(wrong, expected)
 
+    def test_actual_containerd_index_alias_requires_exact_saved_root_and_config(self):
+        root = Path(__file__).parent / "fixtures/kubernetes-import-01"
+        cri_bytes = (root / "cri-lsf.json").read_bytes()
+        transfer_bytes = (root / "image-transfer.json").read_bytes()
+        index_bytes = (root / "index.json").read_bytes()
+        self.assertEqual(digest(index_bytes), "sha256:77bb5ae886bf776cccccf82443052741efb718fc84f414ddd1f3d0fe5956bc2f")
+        expected = json.loads(transfer_bytes)["images"]["lsf"]
+        expected.update(archive_index_digest=digest(index_bytes), archive_index_entry=json.loads(index_bytes)["manifests"][0])
+        cri = json.loads(cri_bytes)
+        actual = setup._imported_image(cri, expected, live_index=index_bytes)
+        self.assertEqual(actual["repo_digest_scope"], "archive-index")
+        self.assertEqual(actual["manifest_digest"], setup.IMAGE_IDS["lsf"])
+        self.assertNotEqual(actual["archive_index_digest"], actual["manifest_digest"])
+        for live in (None, index_bytes + b"\n", encoded({"schemaVersion": 2, "manifests": []})):
+            with self.subTest(live=live is None), self.assertRaisesRegex(ValueError, "imported-index-binding"):
+                setup._imported_image(cri, expected, live_index=live)
+        for change in ("id", "tag", "config", "entry"):
+            crossed, crossed_expected = copy.deepcopy(cri), copy.deepcopy(expected)
+            if change == "id":
+                crossed["status"]["id"] = expected["manifest_digest"]
+            elif change == "tag":
+                crossed["status"]["repoTags"] = ["docker.io/library/other:lsf"]
+            elif change == "config":
+                crossed["info"]["imageSpec"]["config"]["WorkingDir"] = "/crossed"
+            else:
+                crossed_expected["archive_index_entry"]["digest"] = setup.IMAGE_IDS["native"]
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                setup._imported_image(crossed, crossed_expected, live_index=index_bytes)
+
+    def test_runtime_graph_reads_original_manifest_and_config_without_reimport(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "images.tar"
+            original = image_archive(path)
+            transfer = setup._archive_images(path, original)
+            expected = transfer["images"]["lsf"]
+            with tarfile.open(path, "r:") as archive:
+                with archive.extractfile("index.json") as stream:
+                    content = {transfer["index"]["sha256"]: stream.read()}
+                for identifier in (expected["manifest_digest"], expected["config_digest"]):
+                    with archive.extractfile("blobs/sha256/" + identifier[7:]) as stream:
+                        content[identifier] = stream.read()
+            commands = []
+
+            def run(name, argv, **kwargs):
+                commands.append((name, argv, kwargs))
+                self.assertEqual(argv[:5], ["docker.exe", "--context", "desktop-linux", "exec", "f" * 64])
+                tail = argv[5:]
+                if tail == ["ctr", "--namespace", "k8s.io", "images", "list"]:
+                    return "REF TYPE DIGEST SIZE\n" + "docker.io/library/" + expected["tag"] + \
+                        " application/vnd.oci.image.index.v1+json " + transfer["index"]["sha256"] + " 1B"
+                if tail[:5] == ["ctr", "--namespace", "k8s.io", "content", "get"]:
+                    self.assertEqual(kwargs["parse"], "bytes")
+                    return content[tail[5]]
+                self.assertEqual(tail, ["crictl", "inspecti", expected["tag"]])
+                return {"status": {"id": expected["config_digest"], "repoTags": ["docker.io/library/" + expected["tag"]],
+                                   "repoDigests": ["import@" + transfer["index"]["sha256"]]},
+                        "info": {"imageSpec": expected["config"]}}
+
+            steps = setup._Steps(Path(temporary), Path(temporary))
+            with patch.object(steps, "run", side_effect=run):
+                value = setup._verify_runtime_images(steps, ["docker.exe", "--context", "desktop-linux"], "f" * 64, transfer)
+                self.assertEqual(value["lsf"]["rootfs_diff_ids"], original["lsf"]["RootFS"]["Layers"])
+                self.assertFalse(value["lsf"]["live_layer_bytes_rehashed"])
+                self.assertEqual(len(commands), 5)
+                content[expected["config_digest"]] += b" "
+                with self.assertRaisesRegex(ValueError, "runtime-manifest-config-graph"):
+                    setup._verify_runtime_images(steps, ["docker.exe", "--context", "desktop-linux"], "f" * 64, transfer)
+
     def test_archive_rejects_corruption_crossed_index_duplicate_and_traversal(self):
         for options in ({"changed_layer": True}, {"crossed_index": True},
                         {"duplicate": True}, {"traversal": True}):
@@ -100,6 +169,72 @@ class KubernetesSetupIdentity(unittest.TestCase):
                 original = image_archive(path, **options)
                 with self.assertRaises(ValueError):
                     setup._archive_images(path, original)
+
+    def test_resume_binds_failed_original_and_load_cleanup_without_rewriting(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            command = root / "commands/00-images-load"
+            command.mkdir(parents=True)
+            (root / "private").mkdir()
+            (root / "private/kubeconfig").write_bytes(b"private synthetic credential")
+            for name in ("stdout.bin", "stderr.bin"):
+                (command / name).write_bytes(b"")
+            setup._json(command / "receipt.json", {"exit_code": 0, "failure": None,
+                        "reaped": True, "output_closed": True, "job_empty": True,
+                        "stdout": setup._reference(command / "stdout.bin", root),
+                        "stderr": setup._reference(command / "stderr.bin", root)})
+            transfer = {"archive": {"bytes": "1", "sha256": digest(b"x")}, "images": {}}
+            setup._json(root / "image-transfer.json", transfer)
+            original = {"schema": setup.SCHEMA, "status": "incomplete", "root": str(root),
+                        "owner": "lsf-112-0123456789ab", "context": "kind-lsf-112-0123456789ab",
+                        "failure": {"type": "ValueError", "message": "kubernetes-setup-imported-image-binding"},
+                        "private_kubeconfig": "private/kubeconfig", "kubeconfig_publishable": False,
+                        "private_kubeconfig_identity": setup._reference(root / "private/kubeconfig", root),
+                        "image_archive": transfer, "commands": [setup._reference(command / "receipt.json", root)]}
+            setup._json(root / "setup.json", original)
+            before = (root / "setup.json").read_bytes()
+            actual, archive, refs = setup._original_attempt(root)
+            self.assertEqual(actual, original)
+            self.assertEqual(archive, transfer)
+            self.assertEqual(refs["original_setup"]["sha256"], digest(before))
+            self.assertEqual((root / "setup.json").read_bytes(), before)
+            self.assertEqual(refs["original_image_load"], original["commands"][0])
+            (command / "stdout.bin").write_bytes(b"changed after setup")
+            with self.assertRaisesRegex(ValueError, "original-reference-hash"):
+                setup._original_attempt(root)
+            with self.assertRaisesRegex(ValueError, "original-reference-path"):
+                setup._retained_reference(root, {"path": "../outside", "bytes": "0", "sha256": digest(b"")})
+
+    def test_resume_node_verification_rejects_recreated_uid_with_same_name(self):
+        owner = "lsf-112-0123456789ab"
+        original, docker_nodes, kube_nodes = {"owner": owner, "nodes": []}, [], []
+        for index, role in enumerate(("control-plane", "worker")):
+            labels = {"io.x-k8s.kind.cluster": owner, "io.x-k8s.kind.role": role}
+            row = {"role": role, "name": owner + "-" + role, "container_id": str(index) * 64,
+                   "image_id": "sha256:" + "a" * 64, "labels": labels, "uid": "original-" + role,
+                   "node_info": {"containerRuntimeVersion": "containerd://2.3.4"},
+                   "outer_limits": {"cpu_nano": (2 if index == 0 else 8) * 10**9,
+                                    "memory_bytes": (4 if index == 0 else 12) * 1024**3,
+                                    "memory_plus_swap_bytes": (4 if index == 0 else 12) * 1024**3}}
+            original["nodes"].append(row)
+            docker_nodes.append({"Id": row["container_id"], "Image": row["image_id"], "Name": "/" + row["name"],
+                                 "Config": {"Labels": labels}, "State": {"Running": True},
+                                 "HostConfig": {"NanoCpus": row["outer_limits"]["cpu_nano"],
+                                                "Memory": row["outer_limits"]["memory_bytes"],
+                                                "MemorySwap": row["outer_limits"]["memory_plus_swap_bytes"]}})
+            kube_nodes.append({"metadata": {"name": row["name"], "uid": row["uid"],
+                                            "labels": {"latent.benchmark.worker": owner}},
+                               "status": {"nodeInfo": row["node_info"],
+                                          "conditions": [{"type": "Ready", "status": "True"}]}})
+        steps = setup._Steps(Path("."), Path("."))
+        responses = [docker_nodes, "podPidsLimit: 512\n", "podPidsLimit: 512\n", {"items": kube_nodes}]
+        with patch.object(steps, "run", side_effect=responses) as run:
+            setup._resume_nodes(steps, ["docker.exe"], ["kubectl.exe"], original)
+            self.assertEqual([call.args[0] for call in run.call_args_list],
+                             ["owned-nodes", "kubelet-control-plane", "kubelet-worker", "kubernetes-nodes"])
+        kube_nodes[1]["metadata"]["uid"] = "different-uid-same-name"
+        with patch.object(steps, "run", side_effect=responses), self.assertRaisesRegex(ValueError, "resume-node-uid-ready"):
+            setup._resume_nodes(steps, ["docker.exe"], ["kubectl.exe"], original)
 
     def test_outer_ids_are_exact_frozen_images_not_arbitrary_local_tags(self):
         rows = [{"Id": identifier, "Descriptor": {"digest": identifier,

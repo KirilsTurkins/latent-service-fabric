@@ -374,7 +374,9 @@ def _archive_images(path, original):
         with archive.extractfile(members["oci-layout"]) as stream:
             _require(json.load(stream).get("imageLayoutVersion") == "1.0.0", "oci-layout-version")
         with archive.extractfile(members["index.json"]) as stream:
-            index = json.load(stream)
+            index_bytes = stream.read(MAX_OUTPUT + 1)
+            index = json.loads(index_bytes)
+        index_digest = "sha256:" + hashlib.sha256(index_bytes).hexdigest()
         _require(index.get("schemaVersion") == 2 and isinstance(index.get("manifests"), list)
                  and 1 <= len(index["manifests"]) <= 16, "oci-index")
         _require(all(any(item.get("digest") == row["Id"] for item in index["manifests"])
@@ -418,21 +420,72 @@ def _archive_images(path, original):
                         actual.update(block)
                 _require(actual.hexdigest() == digest[7:], "oci-layer-hash")
                 checked_layers.add(digest)
+            tag = IMAGE_PREFIX + ":" + kind
+            index_members = [item for item in index["manifests"] if item.get("digest") == row["Id"]
+                             and item.get("annotations", {}).get("io.containerd.image.name") ==
+                             "docker.io/library/" + tag]
+            _require(len(index_members) == 1, "oci-original-tag-membership")
             result[kind] = {"manifest_digest": row["Id"], "config_digest": config_digest,
-                            "config": config, "layers": manifest["layers"], "tag": IMAGE_PREFIX + ":" + kind}
-    return {"archive": reference, "images": result}
+                            "config": config, "layers": manifest["layers"], "tag": tag,
+                            "archive_index_digest": index_digest, "archive_index_entry": index_members[0]}
+    return {"archive": reference, "images": result,
+            "index": {"sha256": index_digest, "bytes": str(len(index_bytes)), "document": index}}
 
 
-def _imported_image(value, expected):
+def _imported_image(value, expected, *, live_index=None):
     status, info = value.get("status", {}), value.get("info", {})
+    roots = {name.rsplit("@", 1)[-1] for name in status.get("repoDigests", [])}
+    scope = "manifest"
+    if expected["manifest_digest"] not in roots:
+        scope = "archive-index"
+        _require(isinstance(live_index, bytes)
+                 and "sha256:" + hashlib.sha256(live_index).hexdigest() == expected.get("archive_index_digest")
+                 and expected["archive_index_digest"] in roots
+                 and expected.get("archive_index_entry") in json.loads(live_index).get("manifests", []),
+                 "imported-index-binding")
     _require(status.get("id") == expected["config_digest"]
-             and any(name.endswith("@" + expected["manifest_digest"]) for name in status.get("repoDigests", []))
-             and info.get("imageSpec", {}).get("rootfs") == expected["config"]["rootfs"]
-             and info.get("imageSpec", {}).get("config", {}).get("Entrypoint") ==
-             expected["config"].get("config", {}).get("Entrypoint"), "imported-image-binding")
+             and "docker.io/library/" + expected["tag"] in status.get("repoTags", [])
+             and info.get("imageSpec") == expected["config"], "imported-image-binding")
     return {"status_id": status["id"], "repo_digests": status["repoDigests"],
             "repo_tags": status.get("repoTags", []), "manifest_digest": expected["manifest_digest"],
-            "config_digest": expected["config_digest"]}
+            "config_digest": expected["config_digest"], "repo_digest_scope": scope,
+            "archive_index_digest": expected.get("archive_index_digest")}
+
+
+def _verify_runtime_images(steps, docker, worker, transfer):
+    """Only read immutable containerd content/metadata and CRI image status."""
+    base = [*docker, "exec", worker]
+    listing = steps.run("runtime-images", [*base, "ctr", "--namespace", "k8s.io", "images", "list"])
+    targets = {}
+    for line in listing.splitlines():
+        fields = line.split()
+        if fields and fields[0] in {"docker.io/library/" + row["tag"] for row in transfer["images"].values()}:
+            _require(len(fields) >= 3 and fields[0] not in targets, "runtime-image-target")
+            targets[fields[0]] = {"media_type": fields[1], "digest": fields[2]}
+    _require(len(targets) == len(transfer["images"]), "runtime-image-target-count")
+    content = [*base, "ctr", "--namespace", "k8s.io", "content", "get"]
+    index = steps.run("runtime-index", [*content, transfer["index"]["sha256"]], parse="bytes")
+    _require("sha256:" + hashlib.sha256(index).hexdigest() == transfer["index"]["sha256"]
+             and json.loads(index) == transfer["index"]["document"], "runtime-index-bytes")
+    result = {}
+    for kind, expected in transfer["images"].items():
+        target = targets["docker.io/library/" + expected["tag"]]
+        types = {expected["manifest_digest"]: "application/vnd.oci.image.manifest.v1+json",
+                 expected["archive_index_digest"]: "application/vnd.oci.image.index.v1+json"}
+        _require(target["digest"] in types and target["media_type"] == types[target["digest"]],
+                 "runtime-target-digest")
+        manifest = steps.run("runtime-manifest-" + kind, [*content, expected["manifest_digest"]], parse="bytes")
+        config = steps.run("runtime-config-" + kind, [*content, expected["config_digest"]], parse="bytes")
+        _require("sha256:" + hashlib.sha256(manifest).hexdigest() == expected["manifest_digest"]
+                 and json.loads(manifest)["config"]["digest"] == expected["config_digest"]
+                 and json.loads(manifest)["layers"] == expected["layers"]
+                 and "sha256:" + hashlib.sha256(config).hexdigest() == expected["config_digest"]
+                 and json.loads(config) == expected["config"], "runtime-manifest-config-graph")
+        actual = steps.run("import-" + kind, [*base, "crictl", "inspecti", expected["tag"]], parse=True)
+        result[kind] = {**_imported_image(actual, expected, live_index=index), "containerd_target": target,
+                        "rootfs_diff_ids": actual["info"]["imageSpec"]["rootfs"]["diff_ids"],
+                        "live_layer_bytes_rehashed": False}
+    return result
 
 
 class _Steps:
@@ -453,10 +506,13 @@ class _Steps:
                 self.rows.append(_reference(directory / "receipt.json", self.root))
                 _json(self.root / "commands" / f"completed-{len(self.rows):02d}.json", self.rows)
         data = (directory / "stdout.bin").read_bytes()
+        if parse == "bytes":
+            return data
         return json.loads(data) if parse else data.decode("utf-8", errors="strict").strip()
 
-    def source(self, git, label):
-        prefix = [git, "-C", self.repository]
+    def source(self, git, label, *, repository=None):
+        repository = repository or self.repository
+        prefix = [git, "-C", repository]
         _require(not self.run(label + "-generated-untracked", [*prefix, "ls-files", "--", EXCLUDED_GENERATED_PATH]),
                  "excluded-generated-tree-is-tracked")
         _require(not self.run(label + "-clean", [*prefix, "status", "--porcelain", "--untracked-files=all",
@@ -467,8 +523,8 @@ class _Steps:
         _require(all(re.fullmatch(r"[0-9a-f]{40}", item) for item in (commit, tree)), "source-identity")
         return {"commit": commit, "tree": tree, "clean": True,
                 "excluded_generated_path": EXCLUDED_GENERATED_PATH,
-                "cargo_lock": _hash(self.repository / "Cargo.lock"),
-                "setup_source": _hash(self.repository / "tools/optimization_kubernetes/setup.py")}
+                "cargo_lock": _hash(repository / "Cargo.lock"),
+                "setup_source": _hash(repository / "tools/optimization_kubernetes/setup.py")}
 
 
 def prepare(repository: Path, root: Path) -> dict:
@@ -587,10 +643,7 @@ def prepare(repository: Path, root: Path) -> dict:
         steps.run("images-load", [kind, "load", "image-archive", transfer, "--name", owner,
                                   "--nodes", owner + "-worker"], timeout=600)
         worker = owned_nodes[1]["container_id"]
-        receipt["imported_images"] = {}
-        for key in IMAGE_IDS:
-            actual = steps.run("import-" + key, [*docker, "exec", worker, "crictl", "inspecti", IMAGE_PREFIX + ":" + key], parse=True)
-            receipt["imported_images"][key] = _imported_image(actual, receipt["image_archive"]["images"][key])
+        receipt["imported_images"] = _verify_runtime_images(steps, docker, worker, receipt["image_archive"])
         after_images = _outer_images(steps.run("original-images-after", [*docker, "image", "inspect",
                                     *(IMAGE_PREFIX + ":" + key for key in IMAGE_IDS)], parse=True))
         _require(after_images == original, "original-images-changed")
@@ -608,13 +661,173 @@ def prepare(repository: Path, root: Path) -> dict:
     return receipt
 
 
+def _retained_reference(root, reference):
+    relative = reference.get("path", "")
+    _require(isinstance(relative, str) and re.fullmatch(
+        r"(?:commands/[0-9]{2}-[a-z0-9-]+/(?:receipt.json|stdout.bin|stderr.bin)|private/kubeconfig)", relative),
+        "original-reference-path")
+    path = root / relative
+    for parent in (path.parent, *path.parent.parents):
+        if parent == root.parent:
+            break
+        info = parent.lstat()
+        _require(stat.S_ISDIR(info.st_mode) and not getattr(info, "st_file_attributes", 0)
+                 & stat.FILE_ATTRIBUTE_REPARSE_POINT, "original-reference-parent")
+    _require(_reference(path, root) == reference, "original-reference-hash")
+    return path
+
+
+def _original_attempt(root):
+    original_path, transfer_path = root / "setup.json", root / "image-transfer.json"
+    references = {"original_setup": {"path": str(original_path), **_hash(original_path)},
+                  "original_image_transfer": {"path": str(transfer_path), **_hash(transfer_path)}}
+    original = json.loads(original_path.read_bytes())
+    transfer = json.loads(transfer_path.read_bytes())
+    _require(original.get("schema") == SCHEMA and original.get("status") == "incomplete"
+             and original.get("root") == str(root)
+             and original.get("failure", {}).get("message") == "kubernetes-setup-imported-image-binding",
+             "original-failed-import-attempt")
+    _require(re.fullmatch(r"lsf-112-[0-9a-f]{12}", original.get("owner", ""))
+             and original.get("context") == "kind-" + original["owner"]
+             and original.get("image_archive") == transfer
+             and original.get("private_kubeconfig") == "private/kubeconfig"
+             and original.get("kubeconfig_publishable") is False, "original-setup-binding")
+    _retained_reference(root, original["private_kubeconfig_identity"])
+    commands = original.get("commands", [])
+    _require(isinstance(commands, list) and 1 <= len(commands) <= 64
+             and len({row["path"] for row in commands}) == len(commands), "original-command-count")
+    loaded = []
+    for reference in commands:
+        command = json.loads(_retained_reference(root, reference).read_bytes())
+        _require(command.get("exit_code") == 0 and command.get("failure") is None
+                 and all(command.get(key) is True for key in ("reaped", "output_closed", "job_empty")),
+                 "original-command-cleanup")
+        for stream in ("stdout", "stderr"):
+            _retained_reference(root, command[stream])
+        if reference["path"].endswith("-images-load/receipt.json"):
+            loaded.append(reference)
+    _require(len(loaded) == 1, "original-image-load-receipt")
+    return original, transfer, {**references, "original_image_load": loaded[0]}
+
+
+def _resume_nodes(steps, docker, kubectl, original):
+    nodes = original.get("nodes", [])
+    _require(len(nodes) == 2 and [node.get("role") for node in nodes] == ["control-plane", "worker"]
+             and len({node.get("container_id") for node in nodes}) == 2
+             and all(re.fullmatch(r"[0-9a-f]{64}", node.get("container_id", "")) for node in nodes),
+             "resume-node-set")
+    actual = steps.run("owned-nodes", [*docker, "inspect", *(node["container_id"] for node in nodes)], parse=True)
+    _require(len(actual) == 2, "resume-node-count")
+    for expected, node in zip(nodes, actual):
+        limits = expected["outer_limits"]
+        labels = node.get("Config", {}).get("Labels", {})
+        _require(node.get("Id") == expected["container_id"] and node.get("Image") == expected["image_id"]
+                 and node.get("Name") == "/" + expected["name"]
+                 and node.get("State", {}).get("Running") is True and labels == expected["labels"]
+                 and labels.get("io.x-k8s.kind.cluster") == original["owner"]
+                 and labels.get("io.x-k8s.kind.role") == expected["role"]
+                 and node.get("HostConfig", {}).get("NanoCpus") == limits["cpu_nano"]
+                 and node["HostConfig"].get("Memory") == limits["memory_bytes"]
+                 and node["HostConfig"].get("MemorySwap") == limits["memory_plus_swap_bytes"],
+                 "resume-owned-node-changed")
+        policy = steps.run("kubelet-" + expected["role"], [*docker, "exec", expected["container_id"],
+                           "cat", "/var/lib/kubelet/config.yaml"])
+        _require(len(re.findall(r"(?m)^podPidsLimit: 512\s*$", policy)) == 1, "pod-pid-policy")
+    observed = steps.run("kubernetes-nodes", [*kubectl, "get", "nodes", "-o", "json"], parse=True)
+    _require(len(observed.get("items", [])) == 2, "kubernetes-node-count")
+    for node in nodes:
+        matches = [item for item in observed["items"] if item.get("metadata", {}).get("name") == node["name"]]
+        _require(len(matches) == 1 and matches[0]["metadata"].get("uid") == node["uid"]
+                 and matches[0].get("status", {}).get("nodeInfo") == node["node_info"]
+                 and any(item.get("type") == "Ready" and item.get("status") == "True"
+                         for item in matches[0]["status"].get("conditions", [])), "resume-node-uid-ready")
+        if node["role"] == "worker":
+            _require(matches[0]["metadata"].get("labels", {}).get("latent.benchmark.worker") == original["owner"],
+                     "worker-placement-label")
+
+
+def resume(repository: Path, original_root: Path, root: Path) -> dict:
+    """Read-only verification of the retained loaded cluster; no create/load/retry."""
+    _require(os.name == "nt", "windows-required")
+    repository, original_root, root = repository.resolve(), original_root.absolute(), root.absolute()
+    _require(root.parent == original_root and re.fullmatch(r"resume-[0-9]{2}", root.name)
+             and re.fullmatch(r"issue112-setup-[0-9]{2}", original_root.name)
+             and original_root.parent.name == "phase1-extension" and original_root.parent.parent.name == "target"
+             and not root.exists(), "fresh-resume-root")
+    for path in (original_root, *original_root.parents):
+        info = path.lstat()
+        _require(stat.S_ISDIR(info.st_mode) and not getattr(info, "st_file_attributes", 0)
+                 & stat.FILE_ATTRIBUTE_REPARSE_POINT, "resume-root-reparse")
+    original, prior_transfer, references = _original_attempt(original_root)
+    _space(original_root)
+    root.mkdir()
+    for name in ("commands", "private", "private/tmp"):
+        (root / name).mkdir()
+    receipt = {key: original[key] for key in ("owner", "nodes", "original_images", "context",
+                "private_kubeconfig", "private_kubeconfig_identity", "kubeconfig_publishable")}
+    receipt.update(schema="latent.optimization.kubernetes-setup-resume.v1", root=str(original_root),
+                   verification_root=str(root), status="incomplete", verification_kind="read-only-existing-import",
+                   historical_failure=original["failure"], failure=None, **references,
+                   started_nanos=str(time.monotonic_ns()), headroom_bytes=str(HEADROOM))
+    _json(root / "ownership.json", receipt)
+    steps = _Steps(root, repository)
+    try:
+        tools = {name: shutil.which(name) for name in ("git", "docker", "kubectl")}
+        _require(all(tools.values()), "required-local-tools")
+        tools = {name: str(Path(path).resolve()) for name, path in tools.items()}
+        _require(all(Path(path).suffix.lower() == ".exe" for path in tools.values()), "native-tool-executable")
+        receipt["source_before"] = steps.source(tools["git"], "verifier-before")
+        _require(_hash(Path(__file__)) == receipt["source_before"]["setup_source"], "executing-source-binding")
+        original_repository = original_root.parents[2]
+        receipt["original_source_before"] = steps.source(tools["git"], "original-before", repository=original_repository)
+        _require(receipt["original_source_before"] == original["source_before"], "original-source-changed")
+        docker = [tools["docker"], "--context", "desktop-linux"]
+        receipt["docker_version"] = steps.run("docker-version", [*docker, "version", "--format", "{{json .}}"], parse=True)
+        server = receipt["docker_version"].get("Server", {})
+        _require(server.get("Version") == "29.7.2" and server.get("Os") == "linux"
+                 and server.get("Arch") == "amd64", "docker-server-identity")
+        original_images = _outer_images(steps.run("original-images", [*docker, "image", "inspect",
+                                      *(IMAGE_PREFIX + ":" + key for key in IMAGE_IDS)], parse=True))
+        _require(original_images == original["original_images"], "original-images-changed")
+        transfer = _archive_images(original_root / "images.tar", original_images)
+        old_projection = {"archive": transfer["archive"], "images": {
+            kind: {key: value for key, value in image.items() if key not in ("archive_index_digest", "archive_index_entry")}
+            for kind, image in transfer["images"].items()}}
+        _require(old_projection == prior_transfer, "original-transfer-changed")
+        receipt["image_archive"] = transfer
+        kubectl = [tools["kubectl"], "--kubeconfig", original_root / "private/kubeconfig",
+                   "--context", original["context"], "--request-timeout=10s"]
+        _resume_nodes(steps, docker, kubectl, original)
+        receipt["imported_images"] = _verify_runtime_images(steps, docker, original["nodes"][1]["container_id"], transfer)
+        after_images = _outer_images(steps.run("original-images-after", [*docker, "image", "inspect",
+                                    *(IMAGE_PREFIX + ":" + key for key in IMAGE_IDS)], parse=True))
+        _require(after_images == original_images, "original-images-changed")
+        receipt["original_source_after"] = steps.source(tools["git"], "original-after", repository=original_repository)
+        receipt["source_after"] = steps.source(tools["git"], "verifier-after")
+        _require(receipt["original_source_after"] == receipt["original_source_before"]
+                 and receipt["source_after"] == receipt["source_before"], "source-changed")
+        _require(_original_attempt(original_root) == (original, prior_transfer, references)
+                 and _hash(original_root / "images.tar", MAX_TAR) == transfer["archive"], "original-attempt-changed")
+        receipt.update(status="ready-for-campaign-preflight", disk_free_after=str(_space(root)),
+                       retained_bytes=str(_usage(root)))
+    except BaseException as error:
+        receipt["failure"] = {"type": type(error).__name__, "message": str(error)[:2048]}
+        raise
+    finally:
+        receipt.update(commands=steps.rows, finished_nanos=str(time.monotonic_ns()))
+        _json(root / "setup.json", receipt)
+    return receipt
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", type=Path, required=True)
     parser.add_argument("--root", type=Path, required=True)
+    parser.add_argument("--resume-from", type=Path)
     args = parser.parse_args()
     try:
-        result = prepare(args.repository, args.root)
+        result = (resume(args.repository, args.resume_from, args.root) if args.resume_from is not None
+                  else prepare(args.repository, args.root))
     except (ValueError, OSError, RuntimeError, subprocess.SubprocessError) as error:
         parser.exit(1, f"Kubernetes setup retained an incomplete attempt: {error}\n")
     print(json.dumps({"status": result["status"], "owner": result["owner"], "root": result["root"]}))
