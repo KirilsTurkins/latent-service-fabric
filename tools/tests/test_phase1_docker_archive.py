@@ -9,6 +9,8 @@ from unittest.mock import patch
 from tools import package_phase1_evidence as package
 from tools import phase1_docker_archive as docker
 from tools import validate_phase1_archive as archive
+from tools.optimization_evidence.common import sha256
+from tools.tests.test_optimization_docker_evidence import api, mini_protocol
 
 
 class DockerArchiveTests(unittest.TestCase):
@@ -68,9 +70,11 @@ class DockerArchiveTests(unittest.TestCase):
     def publish(self, **options):
         return package.package(self.source, self.output, self.root / "unused-policy", **options)
 
-    def test_discriminator_preserves_all_existing_archive_bounds(self):
+    def test_discriminator_uses_only_the_declared_docker_archive_policy(self):
         self.assertEqual(archive.evidence_kind(self.source), "docker")
-        self.assertEqual(archive.archive_bounds("docker"), (1024**3, 1024**3))
+        self.assertEqual(archive.archive_bounds("docker"), (1024**3, 256 * 1024**2))
+        self.assertEqual(archive.archive_file_limit("docker"), 6000)
+        self.assertEqual(archive.archive_file_limit("scheduler"), 5000)
         self.assertEqual(archive.MAX_FILES, 5000)
         self.assertEqual(archive.MAX_COMPRESSED, 99_000_000)
         self.assertEqual(archive.MAX_SPLIT_COMPRESSED, 198_000_000)
@@ -192,6 +196,176 @@ class DockerArchiveTests(unittest.TestCase):
             self.publish()
         self.assertFalse(self.output.exists())
         self.assertEqual(self.bytes(self.source), before)
+
+
+class DockerFailedAppendixTests(unittest.TestCase):
+    def setUp(self):
+        temporary = TemporaryDirectory(prefix="docker-failed-appendix-test-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.attempts = self.root / "attempts"
+        self.directory = self.attempts / "smoke-01"
+        self.directory.mkdir(parents=True)
+        self.rows, self.suite, configs = mini_protocol()
+        cid, config = configs["seed-d1"]
+        self.cleanup = {"schema": "latent.optimization.docker-cleanup.v1", "containers": [
+            {"container_id": cid, "name": "/unit-seed-d1", "removed": True, "absence_call": 15,
+             "exit_code": 137, "oom_killed": False}], "network_id": self.suite["cleanup"]["network_id"],
+            "network_removed": True, "errors": [], "remaining_containers": [], "journal_closed": True,
+            "pending_names": []}
+        self.suite.update(schema="latent.optimization.docker-suite.v1", profile="smoke", clients=[], groups=[],
+                          failed_attachments=[], failure={"type": "EngineError", "reason": "engine-http-status"},
+                          started_nanos="0", finished_nanos="1000", cleanup=self.cleanup,
+                          images={"lsf": {"image_id": config["Image"]}})
+        self.rows[9] = api(9, "POST", "/containers/" + cid + "/start",
+                           {"message": "synthetic logger start failure"}, status=500)
+        self.rows[9].update(error="EngineError", response=None)
+        self.rows[9]["receipt"]["failure"] = "engine-http-status"
+        self.rows[12] = api(12, "POST", "/containers/" + cid + "/wait?condition=not-running", {"StatusCode": 137})
+        stopped = deepcopy(self.rows[13]["response"])
+        stopped["State"]["ExitCode"] = 137
+        self.rows[13] = api(13, "GET", "/containers/" + cid + "/json", stopped)
+        self.save()
+
+    def save(self):
+        # Fleet preserves request member order: the receipt hashes those exact
+        # encoded request bytes, not a later canonical sorting of their keys.
+        (self.directory / "engine.ndjson").write_bytes(b"".join(
+            json.dumps(row, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode() + b"\n"
+            for row in self.rows))
+        for name, value in (("suite", self.suite), ("cleanup", self.cleanup)):
+            (self.directory / (name + ".json")).write_bytes(archive.canonical(value) + b"\n")
+        refs = {}
+        for name in ("suite", "cleanup"):
+            data = (self.directory / (name + ".json")).read_bytes()
+            refs[name] = {"path": "smoke-01/" + name + ".json", "bytes": str(len(data)), "sha256": sha256(data)}
+        self.index = {"schema": "latent.optimization.docker-failed-attempts.v1", "attempts": [
+            {"qualified": False, "directory": "smoke-01", **refs, "failure": deepcopy(self.suite["failure"]),
+             "workload_offers": "0"}]}
+        self.save_index()
+
+    def save_index(self):
+        (self.attempts / "index.json").write_bytes(archive.canonical(self.index) + b"\n")
+
+    def test_http_start_error_and_nonzero_prestart_exit_remain_nonqualifying(self):
+        result = docker._failed_attempts(self.root)
+        self.assertEqual(result, self.index)
+        self.assertIs(result["attempts"][0]["qualified"], False)
+        self.assertEqual(result["attempts"][0]["workload_offers"], "0")
+        self.assertEqual(self.cleanup["containers"][0]["exit_code"], 137)
+
+    def test_optional_appendix_and_complete_directory_coverage(self):
+        with TemporaryDirectory() as empty:
+            self.assertIsNone(docker._failed_attempts(Path(empty)))
+        (self.attempts / "unindexed").mkdir()
+        with self.assertRaisesRegex(ValueError, "index-coverage"):
+            docker._failed_attempts(self.root)
+        (self.attempts / "unindexed").rmdir()
+        (self.attempts / "extra.json").write_bytes(b"{}")
+        with self.assertRaisesRegex(ValueError, "index-coverage"):
+            docker._failed_attempts(self.root)
+
+    def test_duplicate_qualified_path_and_nonzero_offer_entries_reject(self):
+        original = deepcopy(self.index)
+        mutations = [lambda row: row.update(qualified=True), lambda row: row.update(qualified=0),
+                     lambda row: row.update(directory="../outside"), lambda row: row.update(workload_offers="1"),
+                     lambda row: row.update(workload_offers=0)]
+        for mutate in mutations:
+            with self.subTest(mutate=mutate):
+                self.index = deepcopy(original)
+                mutate(self.index["attempts"][0])
+                self.save_index()
+                with self.assertRaises(ValueError):
+                    docker._failed_attempts(self.root)
+        self.index = deepcopy(original)
+        self.index["attempts"] *= 2
+        self.save_index()
+        with self.assertRaisesRegex(ValueError, "index-coverage"):
+            docker._failed_attempts(self.root)
+
+    def test_failure_and_file_references_bind_original_sidecars(self):
+        original = deepcopy(self.index)
+        for key, value in (("failure", {"type": "EngineError", "reason": "invented"}),
+                           ("suite", original["attempts"][0]["cleanup"])):
+            with self.subTest(key=key):
+                self.index = deepcopy(original)
+                self.index["attempts"][0][key] = value
+                self.save_index()
+                with self.assertRaises(ValueError):
+                    docker._failed_attempts(self.root)
+        self.index = original
+        self.save_index()
+        (self.directory / "suite.json").write_bytes(b"{}")
+        with self.assertRaises(ValueError):
+            docker._failed_attempts(self.root)
+
+    def test_existing_client_ledger_or_client_files_prevent_zero_offers(self):
+        self.suite["clients"] = [{}]
+        self.save()
+        with self.assertRaisesRegex(ValueError, "client-ledger"):
+            docker._failed_attempts(self.root)
+        self.suite["clients"] = []
+        self.save()
+        (self.directory / "clients").mkdir()
+        (self.directory / "clients" / "parent-commands.ndjson").write_bytes(b"{}\n")
+        with self.assertRaisesRegex(ValueError, "client-files"):
+            docker._failed_attempts(self.root)
+
+    def test_client_create_unknown_start_and_exec_api_prevent_zero_offers(self):
+        original = deepcopy(self.rows)
+        config = deepcopy(self.rows[7]["request"])
+        config["Labels"][docker.evidence.ROLE] = "client-p0"
+        changed = [api(7, "POST", "/containers/create?name=unit-client-p0", self.rows[7]["response"],
+                       request=config, status=201),
+                   api(9, "POST", "/containers/" + "f"*64 + "/start", status=204),
+                   api(9, "POST", "/containers/" + "a"*64 + "/exec", {"Id": "f"*64}, request={})]
+        for row in changed:
+            with self.subTest(path=row["path"]):
+                self.rows = deepcopy(original)
+                self.rows[row["ordinal"]] = row
+                self.save()
+                with self.assertRaises(ValueError):
+                    docker._failed_attempts(self.root)
+
+    def test_raw_http_bytes_and_failed_status_are_not_forged_as_success(self):
+        original = deepcopy(self.rows)
+        for mutate in (lambda row: row["receipt"].update(response_sha256="sha256:" + "0"*64),
+                       lambda row: row.update(error=None),
+                       lambda row: row["receipt"].update(connection_closed=False)):
+            with self.subTest(mutate=mutate):
+                self.rows = deepcopy(original)
+                mutate(self.rows[9])
+                self.save()
+                with self.assertRaises(ValueError):
+                    docker._failed_attempts(self.root)
+
+    def test_cleanup_ids_names_absence_calls_and_pending_owners_are_bound(self):
+        original = deepcopy(self.cleanup)
+        mutations = [lambda c: c["containers"][0].update(container_id="f"*64),
+                     lambda c: c["containers"][0].update(name="/foreign-seed-d1"),
+                     lambda c: c["containers"][0].update(absence_call=13),
+                     lambda c: c.update(pending_names=["pending"]),
+                     lambda c: c.update(network_id="f"*64),
+                     lambda c: c.update(network_removed=False)]
+        for mutate in mutations:
+            with self.subTest(mutate=mutate):
+                self.cleanup = deepcopy(original)
+                mutate(self.cleanup)
+                self.suite["cleanup"] = self.cleanup
+                self.save()
+                with self.assertRaises(ValueError):
+                    docker._failed_attempts(self.root)
+
+    def test_missing_container_or_network_404_cannot_claim_clean_removal(self):
+        original = deepcopy(self.rows)
+        for ordinal in (15, 19):
+            with self.subTest(ordinal=ordinal):
+                self.rows = deepcopy(original)
+                row = self.rows[ordinal]
+                self.rows[ordinal] = api(ordinal, "GET", row["path"], {"message": "still present"}, status=200)
+                self.save()
+                with self.assertRaises(ValueError):
+                    docker._failed_attempts(self.root)
 
 
 if __name__ == "__main__":

@@ -55,6 +55,7 @@ MAX_EXPANDED = 1024 * 1024 * 1024
 MAX_CODEC_EXPANDED = 2 * 1024 * 1024 * 1024
 MAX_CODEC_FILE_BYTES = 256 * 1024 * 1024
 MAX_FILES = 5000
+MAX_DOCKER_FILES = 6000
 MAX_AGGREGATE_BYTES = 8 * 1024 * 1024
 CHUNK = 64 * 1024
 
@@ -183,7 +184,7 @@ def load_manifest(root):
     value = json.loads(encoded, object_pairs_hook=pairs)
     require(set(value) == {'schema', 'archive', 'files', 'total_bytes'}
             and value['schema'] == 'latent.phase1.archive-manifest.v1', 'invalid manifest schema')
-    require(isinstance(value['files'], list) and 0 < len(value['files']) <= MAX_FILES,
+    require(isinstance(value['files'], list) and 0 < len(value['files']) <= archive_file_limit(kind),
             'invalid archive file count')
     observed = set()
     total = 0
@@ -202,7 +203,7 @@ def load_manifest(root):
     require(total == size(value['total_bytes']) and total <= maximum, 'expanded byte bound')
     # The bounded outer discriminator may grant a larger extraction allowance
     # only when its exact bytes are also a declared archive member.
-    if kind == 'codec':
+    if kind in ('codec', 'docker'):
         aggregate = next((row for row in value['files'] if row['path'] == 'aggregate.json'), None)
         require(aggregate is not None
                 and file_reference(root / 'aggregate.json', root, MAX_AGGREGATE_BYTES) == aggregate,
@@ -260,8 +261,16 @@ def evidence_kind(directory):
 
 def archive_bounds(kind):
     """The bounded codec discriminator is the sole 2 GiB archive policy."""
+    if kind == 'docker':
+        return MAX_EXPANDED, 256 * 1024 * 1024
     return ((MAX_CODEC_EXPANDED, MAX_CODEC_FILE_BYTES) if kind == 'codec'
             else (MAX_EXPANDED, MAX_EXPANDED))
+
+
+def archive_file_limit(kind):
+    # The actual full + smoke + two failed setup closures contain 5,015
+    # ordinary files. Preserve every original without widening byte limits.
+    return MAX_DOCKER_FILES if kind == 'docker' else MAX_FILES
 
 
 def verify_optimization(directory):
@@ -414,6 +423,8 @@ def verify_archive(root, manifest, archive_path, *, replay):
         extracted = Path(temporary) / 'raw'
         with gzip.open(archive_path, 'rb') as stream:
             options = {'maximum_bytes': MAX_CODEC_EXPANDED} if outer_kind == 'codec' else {}
+            if outer_kind == 'docker':
+                options['maximum_files'] = MAX_DOCKER_FILES
             files = phase0_evidence.extract_tar_stream(stream, extracted, 'Phase 1 evidence', **options)
         require(files == seen, 'extraction differs from verified archive')
         for name, row in expected.items():

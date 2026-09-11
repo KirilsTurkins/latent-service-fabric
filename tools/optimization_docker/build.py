@@ -57,7 +57,7 @@ def validate_receipt(value: dict, output: Path) -> dict:
     if (not isinstance(value, dict) or set(value) != keys or value["schema"] != SCHEMA
             or value["source"] != value["source_after"] or value["source"].get("clean") is not True
             or re.fullmatch(r"[0-9a-f]{40}", value["source"].get("commit", "")) is None
-            or value["target_path"] != str(TARGET) or value["command"] != RECIPE
+            or value["target_path"] != TARGET.as_posix() or value["command"] != RECIPE
             or set(value["executables"]) != set(images.BINARIES)
             or not 1 <= len(value["inputs"]) <= 3500):
         raise ValueError("docker-build-receipt")

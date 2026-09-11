@@ -229,13 +229,15 @@ def _tar_member_relative(member: tarfile.TarInfo, label: str) -> str | None:
 
 
 def extract_tar_stream(stream: BinaryIO, destination: Path, label: str, *,
-                       maximum_bytes: int | None = None) -> set[str]:
+                       maximum_bytes: int | None = None,
+                       maximum_files: int | None = None) -> set[str]:
     """Safely extract a tar stream and return its regular-file paths.
 
     The function deliberately does not use ``TarFile.extractall``: every
     member is checked before a destination is opened, and all links, devices,
     duplicate normalized paths, and escaping paths are rejected. The default
     remains 1 GiB; the Phase 1 codec dispatcher may explicitly select 2 GiB.
+    The Docker dispatcher may select 6,000 files to retain failed setup sources.
     """
 
     if maximum_bytes is None:
@@ -243,6 +245,11 @@ def extract_tar_stream(stream: BinaryIO, destination: Path, label: str, *,
     else:
         _require(type(maximum_bytes) is int and maximum_bytes in (1_073_741_824, 2_147_483_648),
                  f"{label} invalid explicit extraction limit")
+    if maximum_files is None:
+        maximum_files = MAX_ARCHIVE_FILES
+    else:
+        _require(type(maximum_files) is int and maximum_files in (5_000, 6_000),
+                 f"{label} invalid explicit member limit")
     _require(not destination.exists(), f"{label} destination already exists: {destination}")
     destination.mkdir(parents=True)
     root = destination.resolve()
@@ -254,7 +261,7 @@ def extract_tar_stream(stream: BinaryIO, destination: Path, label: str, *,
         with tarfile.open(fileobj=stream, mode="r|") as archive:
             for member in archive:
                 member_count += 1
-                _require(member_count <= MAX_ARCHIVE_FILES, f"{label} exceeds {MAX_ARCHIVE_FILES} members")
+                _require(member_count <= maximum_files, f"{label} exceeds {maximum_files} members")
                 _require(
                     not member.issym() and not member.islnk(),
                     f"{label} contains a prohibited link: {member.name!r}",

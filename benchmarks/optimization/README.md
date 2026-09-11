@@ -442,3 +442,19 @@ normal and allocation runs, and explicit overload qualification. It measures
 scheduler behavior in this finite population, not guest throughput or a production
 memory ceiling. Private evidence schemas are under
 `tools/optimization_scheduler/schemas`.
+
+## Docker application comparison protocol
+
+The [#111 runbook](../../docs/testing/docker-comparison.md) covers a fixed real
+Docker comparison: seven full pairs / 9,926 offers, preceded by a separate
+300-offer smoke. It compares one LSF container serving 1/8/32 services with the
+same number of native service containers under matched aggregate CPU, memory
+and PID limits. The same client validates echo and compute semantics; execution
+and isolation costs remain distinct. No measured result is asserted here.
+
+The [private schemas](../../tools/optimization_docker/schemas/README.md) describe
+the inputs and completed receipts. Semantic replay preserves every offer,
+first/warmup/measured phase, owner and resource observation. Reports must separate
+native child/wrapper sums, leaf-cgroup totals and client cost, retain lifecycle
+pauses and unavailable values, and state the Docker Desktop/WSL2 scope when used.
+The separate Kubernetes comparison remains #112.

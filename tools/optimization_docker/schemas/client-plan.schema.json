@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/docker-client-plan.v1.schema.json",
+  "title": "Docker comparison client-plan v1",
+  "$comment": "Private completed-evidence shape. Exact bytes, strict numeric types, ownership, control order, semantic responses, clocks, source bindings and aggregate equality require offline replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "run_id",
+    "profile",
+    "pair",
+    "token_file"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.infrastructure-client-plan.v1"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9-]{1,24}$"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "pair": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 6
+    },
+    "token_file": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "pair": {
+            "const": 0
+          }
+        }
+      }
+    }
+  ]
+}

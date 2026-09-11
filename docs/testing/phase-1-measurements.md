@@ -1146,3 +1146,26 @@ Keep the first actual selected-frame profile as preflight evidence before freezi
 the common source. Preserve a failed preflight separately from the final paired
 population. The report must distinguish collection completion from acceptance
 qualification and report final CI against the exact PR head proposed for merging.
+
+## Docker application comparison
+
+The [Docker runbook](docker-comparison.md) defines #111 collection, independent
+replay and publication. Full uses seven pairs / 9,926 offers; smoke uses one pair /
+300 offers. Each density compares one LSF node serving 1/8/32 services with the
+corresponding number of native service containers under matched aggregate CPU,
+memory and PID limits. First-per-service, warmup and measured echo/compute phases
+remain separate. These are protocol populations, not claimed comparison results.
+
+Retain actual container and namespace process ownership, ready/served/final
+resource windows, persistent client costs, source/build identities and cleanup.
+The seed-only CLI uses the controller's loopback network namespace; measured
+groups use the owned internal bridge. Report summed native children and wrappers
+separately, charge each leaf cgroup once, preserve unavailable metrics, and retain
+the intentional lifecycle pauses. Docker Desktop/WSL2 observations describe its
+shared Linux VM; they do not establish bare-metal or Kubernetes performance.
+
+Private [Docker evidence schemas](../../tools/optimization_docker/schemas/README.md)
+supplement semantic replay. The archive adapter requires both complete full and
+smoke populations with one shared retained build, keeping the standard 1 GiB
+expanded and 198 MB split-gzip bounds. Follow the runbook's fresh-root commands
+and retain actual validation receipts before publishing any measured claim.

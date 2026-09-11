@@ -27,7 +27,7 @@ class DockerBuildBindings(unittest.TestCase):
                      "recipe_sha256": inputs["tools/phase0_build_environment.sh"]["sha256"],
                      "optimization_recipe_sha256": inputs["tools/build_optimization_bench.sh"]["sha256"]}
         return {"schema": build.SCHEMA, "source": source, "source_after": copy.deepcopy(source),
-                "source_path": "/synthetic/source", "target_path": str(build.TARGET),
+                "source_path": "/synthetic/source", "target_path": "/workspace/project/target",
                 "build": {"profile": "release", "overrides": overrides}, "inputs": inputs,
                 "executables": binaries, "component": artifact("component.wasm", b"\0asm\x0d\0\x01\0"),
                 "fixtures": {}, "command": list(build.RECIPE), "process": owner, "log": log}
@@ -51,7 +51,9 @@ class DockerBuildBindings(unittest.TestCase):
                 row["build"]["overrides"]["lto"] = "true"
             def mutate_owner(row):
                 row["process"]["reaped"] = False
-            for mutation in (mutate_source, mutate_recipe, mutate_owner):
+            def mutate_linux_path(row):
+                row["target_path"] = "\\workspace\\project\\target"
+            for mutation in (mutate_source, mutate_recipe, mutate_owner, mutate_linux_path):
                 value = copy.deepcopy(original)
                 mutation(value)
                 with self.subTest(mutation=mutation.__name__), self.assertRaises(ValueError):
