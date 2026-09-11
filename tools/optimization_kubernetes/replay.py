@@ -56,7 +56,7 @@ def _tar(path, inventory, *, root_name=None):
     require(seen == expected.keys(), "kubernetes-replay-tar-missing")
 
 
-def _transfers(suite, root, journal, used):
+def _transfers(suite, root, journal, used, build_root, docker_root):
     for row in suite["preparations"]:
         destination = model.host_path(suite["owner"], suite["run_id"], row["relative"])
         require(row["destination"] == destination, "kubernetes-replay-upload-destination")
@@ -67,6 +67,33 @@ def _transfers(suite, root, journal, used):
             require(row["upload_call"] is None, "kubernetes-replay-unexpected-upload")
             continue
         transfer = row["transfer"]
+        if row["relative"] == "fixtures":
+            docker.inventory(build_root / "fixtures", transfer["inventory"])
+        elif row["relative"] == "tools":
+            expected_file = suite["collector_inputs"]["tools/optimization_kubernetes/observer.sh"]
+            files = [item for item in transfer["inventory"]["entries"] if item["kind"] == "file"]
+            require(len(files) == 1 and files[0]["path"] == "observer.sh"
+                    and all(files[0][key] == expected_file[key] for key in ("bytes", "sha256")),
+                    "kubernetes-replay-uploaded-observer")
+        elif row["relative"].startswith("data/"):
+            role = row["relative"].removeprefix("data/")
+            owners = [owner for group in suite["groups"] for owner in group["owners"]
+                      if owner["role"] == role and group["arm"] == "lsf"]
+            require(len(owners) == 1, "kubernetes-replay-uploaded-seed-owner")
+            seed = suite["seeds"][str(owners[0]["density"])]
+            original = read_json(verify_artifact(docker_root, seed["receipt"], 8 * 1024**2))
+            docker.equal(seed["template"], original["template"], "kubernetes-replay-original-seed")
+            docker.equal(transfer["inventory"], seed["template"]["inventory"], "kubernetes-replay-uploaded-seed")
+        elif row["relative"].startswith("clients/"):
+            pair = row["relative"].removeprefix("clients/")
+            require(pair.isdecimal() and int(pair) < len(suite["clients"]), "kubernetes-replay-client-input")
+            plan_path = root / "clients" / pair / "plan.json"
+            files = [item for item in transfer["inventory"]["entries"] if item["kind"] == "file"]
+            require(len(files) == 1 and files[0]["path"] == "plan.json"
+                    and files[0]["sha256"] == sha256(plan_path.read_bytes())
+                    and uint(files[0]["bytes"]) == plan_path.stat().st_size, "kubernetes-replay-uploaded-client-plan")
+        else:
+            raise ValueError("kubernetes-replay-unexpected-upload-input")
         path = verify_artifact(root, row["archive"], 40 * 1024**2)
         require(row["archive"]["sha256"] == transfer["archive_sha256"]
                 and row["archive"]["bytes"] == transfer["archive_bytes"], "kubernetes-replay-upload-hash")
@@ -125,6 +152,7 @@ def _cleanup(suite, root, journal, used):
     require(deleted and journal["rows"][value["namespace_calls"][-1]]["raw"]["status"] == 404,
             "kubernetes-replay-namespace-absence")
     require(len(value["cri_calls"]) == 4, "kubernetes-replay-runtime-cleanup-count")
+    removable = {}
     for index, ordinal in enumerate(value["cri_calls"]):
         command = ["crictl", "ps", "-a", "-o", "json"] if index < 2 else ["crictl", "pods", "-o", "json"]
         call = transport_evidence.get(journal, ordinal, provider="docker", operation="worker-exec", argv=command)
@@ -132,7 +160,20 @@ def _cleanup(suite, root, journal, used):
         if index % 2:
             require(not any(row.get("labels", {}).get("io.kubernetes.pod.namespace") == suite["namespace"]
                     for row in data.get("containers" if index < 2 else "items", [])), "kubernetes-replay-runtime-remains")
+        else:
+            for row in data.get("containers" if index < 2 else "items", []):
+                labels = row.get("labels", {})
+                if labels.get("io.kubernetes.pod.namespace") != suite["namespace"]:
+                    continue
+                require(labels.get("io.kubernetes.pod.uid") in expected
+                        and expected[labels["io.kubernetes.pod.uid"]] == labels.get("io.kubernetes.pod.name")
+                        and row.get("state") == ("CONTAINER_EXITED" if index < 2 else "SANDBOX_NOTREADY"),
+                        "kubernetes-replay-runtime-owner")
+                removable[row["id"]] = "rm" if index < 2 else "rmp"
         used.add(ordinal)
+    require(len(value["cri_removed"]) == len(removable)
+            and {row["id"]: row["operation"] for row in value["cri_removed"]} == removable,
+            "kubernetes-replay-runtime-remove-population")
     for row in value["cri_removed"]:
         require(row["operation"] in ("rm", "rmp"), "kubernetes-replay-runtime-remove-operation")
         transport_evidence.get(journal, row["call"], provider="docker", operation="worker-exec",
@@ -163,7 +204,9 @@ def validate(root, build_root, docker_root, bootstrap_root):
     built = build.validate_receipt(read_json(verify_artifact(build_root, suite["build_receipt"], 16 * 1024**2)), build_root)
     _source(suite, root, built)
     verify_artifact(docker_root, suite["docker_suite"], 32 * 1024**2)
-    bootstrap = read_json(verify_artifact(bootstrap_root, suite["bootstrap"], 8 * 1024**2))
+    from . import bootstrap_evidence
+    verify_artifact(bootstrap_root, suite["bootstrap"], 8 * 1024**2)
+    bootstrap = bootstrap_evidence.validate(bootstrap_root)
     require(bootstrap["schema"] == model.PREFIX + "bootstrap.v1" and bootstrap["failure"] is None
             and bootstrap["status"] == "connected-no-workload" and bootstrap["owner"] == suite["owner"],
             "kubernetes-replay-bootstrap")
@@ -176,7 +219,7 @@ def validate(root, build_root, docker_root, bootstrap_root):
     derived = evidence.validate(root, suite=suite, journal=journal, bootstrap=bootstrap,
                                 build_root=build_root, docker_root=docker_root)
     used = set(derived.pop("transport_calls_used"))
-    _transfers(suite, root, journal, used)
+    _transfers(suite, root, journal, used, build_root, docker_root)
     _cleanup(suite, root, journal, used)
     from . import closure
     closure.validate(suite, root, journal, bootstrap, used)
