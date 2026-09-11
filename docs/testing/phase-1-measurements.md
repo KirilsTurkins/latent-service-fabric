@@ -1154,7 +1154,8 @@ replay and publication. Full uses seven pairs / 9,926 offers; smoke uses one pai
 300 offers. Each density compares one LSF node serving 1/8/32 services with the
 corresponding number of native service containers under matched aggregate CPU,
 memory and PID limits. First-per-service, warmup and measured echo/compute phases
-remain separate. These are protocol populations, not claimed comparison results.
+remain separate. The [retained Docker results](../../benchmarks/optimization/docker-comparison/2026-09-11-container-linux-a56a6dc/README.md)
+report the actual completed comparison and both platform replays.
 
 Retain actual container and namespace process ownership, ready/served/final
 resource windows, persistent client costs, source/build identities and cleanup.

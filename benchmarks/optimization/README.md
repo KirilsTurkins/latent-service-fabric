@@ -443,14 +443,22 @@ scheduler behavior in this finite population, not guest throughput or a producti
 memory ceiling. Private evidence schemas are under
 `tools/optimization_scheduler/schemas`.
 
-## Docker application comparison protocol
+## Docker application comparison
 
 The [#111 runbook](../../docs/testing/docker-comparison.md) covers a fixed real
 Docker comparison: seven full pairs / 9,926 offers, preceded by a separate
 300-offer smoke. It compares one LSF container serving 1/8/32 services with the
 same number of native service containers under matched aggregate CPU, memory
 and PID limits. The same client validates echo and compute semantics; execution
-and isolation costs remain distinct. No measured result is asserted here.
+and isolation costs remain distinct.
+
+The [retained comparison](docker-comparison/2026-09-11-container-linux-a56a6dc/README.md)
+completed all 9,926 full offers and 300 smoke offers successfully. Native services
+had lower measured request latency; LSF used less memory at service densities 8
+and 32. The report preserves per-pair results, native resource partitions versus
+LSF's shared budget, lifecycle pauses and execution-feature differences. The
+complete archive, including both failed setup attempts, passed Linux and
+independent Windows replay. These are Docker Desktop/WSL2 application results.
 
 The [private schemas](../../tools/optimization_docker/schemas/README.md) describe
 the inputs and completed receipts. Semantic replay preserves every offer,

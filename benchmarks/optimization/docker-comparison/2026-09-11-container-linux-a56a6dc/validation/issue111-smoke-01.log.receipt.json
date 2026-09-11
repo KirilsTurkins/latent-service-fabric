@@ -1,0 +1,30 @@
+{
+  "command": [
+    "docker",
+    "exec",
+    "--workdir",
+    "/bench/source-01",
+    "lsf-issue111-controller-01",
+    "python3",
+    "tools/run_optimization_docker.py",
+    "run",
+    "--profile",
+    "smoke",
+    "--run-id",
+    "docker-smoke01",
+    "--source-ref",
+    "e88bc0ac78a75d051b5684a8acc977e23191ac37",
+    "--build-root",
+    "/bench/build-01",
+    "--volume",
+    "lsf-issue111-data-01",
+    "--controller-id",
+    "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+    "--output",
+    "/bench/smoke-01"
+  ],
+  "cwd": "C:\\Users\\turkins\\Desktop\\latent-fabric",
+  "exit_code": 1,
+  "elapsed_nanos": "3123083900",
+  "log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue111-smoke-01.log"
+}

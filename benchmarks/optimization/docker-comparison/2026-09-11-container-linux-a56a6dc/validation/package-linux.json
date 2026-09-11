@@ -1,0 +1,17 @@
+{
+  "archive": {
+    "bytes": "169803211",
+    "path": "raw-evidence.tar.gz",
+    "sha256": "sha256:b51441c7d23eb9569f77d00026533e9a5395c7732b1109b38cfbc3defeca43fd"
+  },
+  "complete": true,
+  "compression_level": 9,
+  "elapsed_nanos": "108208121743",
+  "expanded_bytes": "811119663",
+  "failure": null,
+  "output": "/bench/package-01",
+  "regular_files": 5015,
+  "replay_passed": true,
+  "source": "/bench/publication-stage-01",
+  "split_archive": true
+}
