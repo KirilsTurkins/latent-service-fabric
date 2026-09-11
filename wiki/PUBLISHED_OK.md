@@ -1,10 +1,7 @@
-# Last verified Wiki publication
+# LSF Wiki publication succeeded
 
-- Wiki commit: 82248d8e18db00384670cbfcd458370a80140346
-- Managed source commit: 52a4bd2b9f0f2cfd37f1b0d3e9c1ea8da4212bd8
-- Scope: previous Phase 0 refresh; 22 pages and seven SVGs
-- Inspected: September 11, 2026
-
-The Phase 1 refresh on this branch has not yet been published. The dedicated
-publication workflow replaces this receipt only after pushing and verifying
-the new live Wiki commit. Local validation alone is not publication.
+- Source commit: 27a2cbda58a0fda4a8223d58f6f1cffc02f5fd0d
+- Wiki commit: 279d8fb7288fb7ba837ceb3713ad02c7fb99b7ff
+- Workflow run: https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34646389730
+- Managed inventory: 26 pages and four assets, fully validated
+- Scope: completed Phase 1 and extension; Phase 2 remains next
