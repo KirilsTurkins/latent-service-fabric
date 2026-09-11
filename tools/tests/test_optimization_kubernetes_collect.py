@@ -24,6 +24,7 @@ class CleanupTests(unittest.TestCase):
         value.namespace_uid = "owned-namespace-uid"
         value.remote_root = model.host_path(value.owner, value.run_id)
         value.sessions, value.delete_receipts = [], []
+        value.preparations, value.transfers = [], []
         value.pending_pods, value.pods = set(), {}
         value.api, value.worker = Mock(), Mock()
         value.worker.json.side_effect = [({"containers": []}, 1), ({"containers": []}, 2),
@@ -89,6 +90,41 @@ class CleanupTests(unittest.TestCase):
             result = campaign.cleanup()
             self.assertEqual(len(result["errors"]), 1)
             campaign.worker.command.assert_not_called()
+
+    def test_failed_diagnostic_download_keeps_remote_output_for_recovery(self):
+        with tempfile.TemporaryDirectory() as root:
+            campaign = self.campaign(Path(root))
+            campaign.api.call.return_value = ({"kind": "Status", "code": 404}, 0)
+            campaign.preparations = [{"relative": "owners/app", "destination": campaign.remote_root + "/owners/app"}]
+            campaign.download_directory = Mock(side_effect=OSError("retain worker bytes"))
+            result = campaign.cleanup(failed=True)
+            self.assertFalse(result["remote_removed"])
+            self.assertEqual(len(result["errors"]), 1)
+            campaign.worker.command.assert_not_called()
+            campaign.download_directory.assert_called_once()
+
+    def test_unfinished_output_is_copied_after_quiescence_before_remote_removal(self):
+        with tempfile.TemporaryDirectory() as root:
+            campaign = self.campaign(Path(root))
+            campaign.api.call.return_value = ({"kind": "Status", "code": 404}, 0)
+            completed = campaign.remote_root + "/owners/completed"
+            pending = campaign.remote_root + "/clients/0"
+            campaign.preparations = [{"relative": "owners/completed", "destination": completed},
+                                     {"relative": "clients/0", "destination": pending}]
+            campaign.transfers = [{"remote": completed}]
+
+            def download(remote, _local):
+                self.assertEqual(campaign.worker.json.call_count, 4)
+                campaign.worker.command.assert_not_called()
+                self.assertEqual(remote, pending)
+                return {"remote": remote, "retained": True}
+
+            campaign.download_directory = Mock(side_effect=download)
+            result = campaign.cleanup(failed=True)
+            self.assertEqual(result["errors"], [])
+            self.assertTrue(result["remote_removed"])
+            self.assertEqual(result["failure_diagnostics"], [{"remote": pending, "retained": True}])
+            campaign.download_directory.assert_called_once()
 
 
 if __name__ == "__main__":

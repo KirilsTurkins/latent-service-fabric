@@ -187,6 +187,7 @@ class Replay:
         selected = bootstrap["nodes"]["worker"]
         self.worker = {key: selected[key] for key in ("name", "uid", "container_id")}
         self.used = set()
+        self.created_services = {}
         self.fixture_releases = docker_evidence.fixture_set(built, build_root)
         self.seeds = {density: read_json(docker_root / "seeds" / str(density) / "seed.json") for density in model.DENSITIES}
         self.observer = model.host_path(self.owner, self.run_id, "tools") + "/observer.sh"
@@ -361,12 +362,17 @@ class Replay:
         desired = model.services(owner=self.owner, run_id=self.run_id, pair=pair, group=ordinal, arm=arm, density=density)
         require(len(parent["services"]) == density and 1 <= len(parent["graph_attempts"]) <= 1200
                 and len(parent["owners"]) == (density if arm == "native" else 1), "kubernetes-evidence-group-population")
+        current_services = {}
         for row, manifest in zip(parent["services"], desired):
             fields(row, "manifest actual call")
             _same(row["manifest"], manifest, "kubernetes-evidence-service-manifest")
             self.api(row["call"], "POST", f"/api/v1/namespaces/{self.namespace}/services",
                      body=manifest, response=row["actual"], status=201)
             services.subset(row["actual"], manifest)
+            name, uid = row["actual"]["metadata"]["name"], text(row["actual"]["metadata"]["uid"], 253)
+            require(name not in self.created_services and uid not in self.created_services.values(),
+                    "kubernetes-evidence-service-identity-reused")
+            self.created_services[name] = current_services[name] = uid
         names = {model.application_role(pair, ordinal, arm, index) for index in range(len(parent["owners"]))}
         graph = None
         for index, attempt in enumerate(parent["graph_attempts"]):
@@ -376,9 +382,11 @@ class Replay:
             slices = self.api(attempt["slices_call"], "GET", f"/apis/discovery.k8s.io/v1/namespaces/{self.namespace}/endpointslices", status=200)
             require(uint(slices["finished_nanos"]) <= uint(attempt["observed_nanos"]) <= uint(parent["graph_ready_nanos"]),
                     "kubernetes-evidence-graph-clock")
+            selected_slices = _current_slices(slices["response_json"]["items"], current_services, self.created_services,
+                                              owner=self.owner, run_id=self.run_id)
             if index == len(parent["graph_attempts"]) - 1:
                 selected = [pod for pod in pods["response_json"]["items"] if pod["metadata"]["name"] in names]
-                graph = services.graph(service_list["response_json"]["items"], slices["response_json"]["items"], selected,
+                graph = services.graph(service_list["response_json"]["items"], selected_slices, selected,
                     owner=self.owner, run_id=self.run_id, pair=pair, group=ordinal, arm=arm, density=density,
                     worker_name=self.worker["name"])
         _same(graph, parent["graph"], "kubernetes-evidence-graph-replay")
@@ -672,6 +680,38 @@ def _client_cri_identity(value):
     status, info = value["status"], value["info"]
     return {"container_id": status["id"], "created_at": status["createdAt"], "started_at": status["startedAt"],
             "image_ref": status["imageRef"], "sandbox_id": info["sandboxID"], "runtime_spec": info["runtimeSpec"]}
+
+
+def _current_slices(rows, current, known, *, owner, run_id):
+    """Replay original list membership using previously observed Service POSTs."""
+    require(isinstance(rows, list) and len(rows) <= services.MAX_SLICES,
+            "kubernetes-evidence-slice-list-bound")
+    names, uids, selected = set(), set(), []
+    for value in rows:
+        require(isinstance(value, dict) and value.get("kind") == "EndpointSlice" and value.get("apiVersion") == "discovery.k8s.io/v1",
+                "kubernetes-evidence-slice-list-kind")
+        metadata = value["metadata"]
+        require(isinstance(metadata, dict), "kubernetes-evidence-slice-list-metadata")
+        name, uid = text(metadata["name"], 253), text(metadata["uid"], 253)
+        require(metadata["namespace"] == model.namespace_name(owner, run_id)
+                and name not in names and uid not in uids, "kubernetes-evidence-slice-list-identity")
+        names.add(name)
+        uids.add(uid)
+        refs, labels = metadata.get("ownerReferences", []), metadata.get("labels", {})
+        require(isinstance(refs, list) and len(refs) == 1 and isinstance(refs[0], dict) and isinstance(labels, dict),
+                "kubernetes-evidence-slice-owner-count")
+        service = text(labels.get("kubernetes.io/service-name"), 253)
+        require(service in known and refs[0].get("apiVersion") == "v1" and refs[0].get("kind") == "Service"
+                and refs[0].get("name") == service and refs[0].get("uid") == known[service]
+                and refs[0].get("controller") is True
+                and labels.get("endpointslice.kubernetes.io/managed-by") == "endpointslice-controller.k8s.io"
+                and all(key not in labels or labels[key] == expected for key, expected in
+                        ((model.OWNER_LABEL, owner), (model.RUN_LABEL, run_id))),
+                "kubernetes-evidence-slice-owner")
+        if service in current:
+            require(current[service] == known[service], "kubernetes-evidence-slice-current-owner")
+            selected.append(value)
+    return selected
 
 
 def validate(root: Path, *, suite: dict, journal: dict, bootstrap: dict, build_root: Path, docker_root: Path) -> dict:

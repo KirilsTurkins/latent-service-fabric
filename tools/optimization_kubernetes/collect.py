@@ -11,12 +11,45 @@ from tools.artifact_identity_runner.files import fingerprint, reference, retain,
 from tools.optimization_docker import build, fixtures
 from tools.optimization_docker.engine import Engine
 from tools.optimization_docker.owned import encoded, stamp
-from tools.optimization_evidence.common import read_json, require
+from tools.optimization_evidence.common import read_json, require, text
 from tools.optimization_revision_runner.build import source
 from . import files, model, node, services
 from .applications import Application, idle_window
 from .session import Session
 from .transport import Journal, Kubernetes, Worker, private_tls
+
+
+def _current_slices(rows, current, known, *, owner, run_id):
+    """Retain the API list; only known prior Service owners may linger in it."""
+    require(isinstance(rows, list) and len(rows) <= services.MAX_SLICES,
+            "kubernetes-endpoint-list-bound")
+    selected, names, identifiers = [], set(), set()
+    namespace = model.namespace_name(owner, run_id)
+    for row in rows:
+        require(isinstance(row, dict) and row.get("apiVersion") == "discovery.k8s.io/v1"
+                and row.get("kind") == "EndpointSlice", "kubernetes-endpoint-list-kind")
+        metadata = row["metadata"]
+        require(isinstance(metadata, dict), "kubernetes-endpoint-list-metadata")
+        name, uid = text(metadata.get("name"), 253), text(metadata.get("uid"), 253)
+        require(metadata.get("namespace") == namespace and name not in names and uid not in identifiers,
+                "kubernetes-endpoint-list-identity")
+        names.add(name)
+        identifiers.add(uid)
+        labels, refs = metadata.get("labels", {}), metadata.get("ownerReferences", [])
+        require(isinstance(labels, dict), "kubernetes-endpoint-list-labels")
+        service = text(labels.get("kubernetes.io/service-name"), 253)
+        require(isinstance(refs, list) and len(refs) == 1 and isinstance(refs[0], dict)
+                and service in known and refs[0].get("apiVersion") == "v1"
+                and refs[0].get("kind") == "Service" and refs[0].get("name") == service
+                and refs[0].get("uid") == known[service] and refs[0].get("controller") is True
+                and labels.get("endpointslice.kubernetes.io/managed-by") == "endpointslice-controller.k8s.io",
+                "kubernetes-endpoint-list-owner")
+        require(all(key not in labels or labels[key] == expected for key, expected in
+                    ((model.OWNER_LABEL, owner), (model.RUN_LABEL, run_id))), "kubernetes-endpoint-list-labels")
+        if service in current:
+            require(current[service] == known[service], "kubernetes-endpoint-current-owner")
+            selected.append(row)
+    return selected
 
 
 class Campaign:
@@ -59,6 +92,7 @@ class Campaign:
         self.pending_pods, self.pods, self.delete_receipts = set(), {}, []
         self.preparations, self.transfers, self.groups, self.clients, self.sessions = [], [], [], [], []
         self.applications = []
+        self.created_services = {}
         self.build_root, self.docker_root = args.build_root.resolve(), args.docker_run.resolve()
         self.built = build.validate_receipt(read_json(self.build_root / "docker-builds.json"), self.build_root)
         self.docker_suite = read_json(self.docker_root / "suite.json")
@@ -238,9 +272,15 @@ class Campaign:
         apps = [Application(self, pair, group, index) for index in range(density if arm == "native" else 1)]
         self.applications.extend(apps)
         service_rows = []
+        current_services = {}
         for manifest in model.services(owner=self.owner, run_id=self.run_id, pair=pair, group=ordinal,
                                        arm=arm, density=density):
             actual, call = self.api.call("POST", f"/api/v1/namespaces/{self.namespace}/services", manifest, expected=(201,))
+            services.subset(actual, manifest)
+            name, uid = actual["metadata"]["name"], text(actual["metadata"].get("uid"), 253)
+            require(name not in self.created_services and uid not in self.created_services.values(),
+                    "kubernetes-service-identity-reused")
+            self.created_services[name] = current_services[name] = uid
             service_rows.append({"manifest": manifest, "actual": actual, "call": call})
         # All owned files and Services exist before the first application Pod is submitted.
         pod_create_started = stamp()
@@ -257,9 +297,11 @@ class Campaign:
             selected = [row for row in pods["items"] if row["metadata"]["name"] in {app.role for app in apps}]
             graph_attempts.append({"pods_call": pods_call, "services_call": service_call, "slices_call": slices_call,
                                    "observed_nanos": stamp()})
-            endpoints = [entry for row in slices["items"] for entry in row.get("endpoints", [])]
+            current_slices = _current_slices(slices["items"], current_services, self.created_services,
+                                             owner=self.owner, run_id=self.run_id)
+            endpoints = [entry for row in current_slices for entry in row.get("endpoints", [])]
             if len(endpoints) == density and all(entry.get("conditions", {}).get("ready") is True for entry in endpoints):
-                graph = services.graph(service_list["items"], slices["items"], selected, owner=self.owner,
+                graph = services.graph(service_list["items"], current_slices, selected, owner=self.owner,
                     run_id=self.run_id, pair=pair, group=ordinal, arm=arm, density=density, worker_name=self.worker_name)
                 break
             time.sleep(0.1)
@@ -309,13 +351,14 @@ class Campaign:
         self.reserve()
         print(f"completed pair={pair} group={ordinal} arm={arm} density={density}", flush=True)
 
-    def cleanup(self):
+    def cleanup(self, *, failed=False):
         """Remove only this run's UID-bound namespace and stopped CRI objects."""
         result = {"schema": model.PREFIX + "cleanup.v1", "namespace": self.namespace,
             "namespace_uid": self.namespace_uid, "started_nanos": stamp(), "errors": [],
             "attachments": [], "pods": self.delete_receipts, "namespace_calls": [],
             "cri_calls": [], "cri_removed": [], "remote_removed": False,
-            "namespace_absent": not self.namespace_attempted, "private_tls_removed": False}
+            "namespace_absent": not self.namespace_attempted, "private_tls_removed": False,
+            "failure_diagnostics": []}
         for session in self.sessions:
             try:
                 result["attachments"].append(session.close(force=True))
@@ -383,6 +426,17 @@ class Campaign:
                 require(not any(row.get("labels", {}).get("io.kubernetes.pod.namespace") == self.namespace
                                 for row in after.get(key, [])), "kubernetes-cleanup-cri-remains")
             require(not self.pods and result["namespace_absent"], "kubernetes-cleanup-pods-remain")
+            if failed:
+                # Quiesce processes first, then preserve every unfinished output.
+                # If a bounded download fails, retain the worker tree for explicit recovery.
+                retained = {row["remote"] for row in self.transfers}
+                for index, row in enumerate(self.preparations):
+                    if not row["relative"].startswith(("owners/", "clients/")) or row["destination"] in retained:
+                        continue
+                    local = self.root / "failure-outputs" / str(index)
+                    local.parent.mkdir(exist_ok=True)
+                    diagnostic = self.download_directory(row["destination"], local)
+                    result["failure_diagnostics"].append(diagnostic)
             if self.remote_attempted:
                 expected = model.host_path(self.owner, self.run_id)
                 require(expected == self.remote_root, "kubernetes-cleanup-remote-owner")
@@ -444,7 +498,7 @@ class Campaign:
         except BaseException as error:
             failure = {"type": type(error).__name__, "reason": str(error)[:2048]}
         finally:
-            cleanup = self.cleanup()
+            cleanup = self.cleanup(failed=failure is not None)
             suite = {"schema": model.PREFIX + "suite.v1", "profile": self.profile,
                 "run_id": self.run_id, "owner": self.owner, "namespace": self.namespace,
                 "namespace_uid": self.namespace_uid, "plan": self.plan,

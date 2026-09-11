@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from tools.optimization_evidence.common import EvidenceError, canonical, sha256
-from tools.optimization_kubernetes import evidence, model
+from tools.optimization_kubernetes import collect, evidence, model
 
 CID = "a" * 64
 CONFIG, MANIFEST, INDEX = ("sha256:" + digit * 64 for digit in "bcd")
@@ -38,6 +38,16 @@ def client_pods():
     return manifest, ready, final
 
 
+def endpoint_slice(service, service_uid):
+    return {"apiVersion": "discovery.k8s.io/v1", "kind": "EndpointSlice", "metadata": {
+        "name": service + "-slice", "uid": service + "-slice-uid", "namespace": "unit-run",
+        "labels": {"kubernetes.io/service-name": service,
+                   "endpointslice.kubernetes.io/managed-by": "endpointslice-controller.k8s.io"},
+        "ownerReferences": [{"apiVersion": "v1", "kind": "Service", "name": service,
+                             "uid": service_uid, "controller": True}]},
+        "endpoints": [{"conditions": {"ready": True}}]}
+
+
 def attachment(root):
     directory = root / "clients/0"
     directory.mkdir(parents=True)
@@ -56,6 +66,45 @@ def attachment(root):
 
 
 class KubernetesEvidenceTests(unittest.TestCase):
+    def test_prior_ready_slice_cannot_trigger_next_same_density_group(self):
+        original = [endpoint_slice("previous", "previous-service-uid")]
+        before = deepcopy(original)
+        known = {"previous": "previous-service-uid", "current": "current-service-uid"}
+        for select in (collect._current_slices, evidence._current_slices):
+            self.assertEqual(select(original, {"current": known["current"]}, known, owner="unit", run_id="run"), [])
+        self.assertEqual(original, before)
+
+    def test_current_and_known_prior_slices_preserve_full_list_and_order(self):
+        original = [endpoint_slice("previous", "previous-service-uid"), endpoint_slice("current", "current-service-uid")]
+        before = deepcopy(original)
+        known = {"previous": "previous-service-uid", "current": "current-service-uid"}
+        for select in (collect._current_slices, evidence._current_slices):
+            selected = select(original, {"current": known["current"]}, known, owner="unit", run_id="run")
+            self.assertEqual(selected, [original[1]])
+            self.assertIs(selected[0], original[1])
+        self.assertEqual(original, before)
+
+    def test_unknown_or_replaced_prior_slice_owner_is_not_ignored(self):
+        for mutation in (lambda row: row["metadata"]["ownerReferences"][0].update(uid="foreign-service-uid"),
+                         lambda row: row["metadata"]["ownerReferences"][0].update(name="unknown"),
+                         lambda row: row["metadata"]["labels"].update({"kubernetes.io/service-name": "unknown"}),
+                         lambda row: row["metadata"]["labels"].update({model.OWNER_LABEL: "foreign"}),
+                         lambda row: row["metadata"].update(namespace="foreign"),
+                         lambda row: row["metadata"].update(ownerReferences=[])):
+            for select in (collect._current_slices, evidence._current_slices):
+                original = endpoint_slice("previous", "previous-service-uid")
+                mutation(original)
+                with self.subTest(mutation=mutation, select=select), self.assertRaises(EvidenceError):
+                    select([original], {"current": "current-service-uid"},
+                           {"current": "current-service-uid", "previous": "previous-service-uid"}, owner="unit", run_id="run")
+
+    def test_slice_duplicate_and_namespace_population_bound_reject(self):
+        original = endpoint_slice("current", "current-service-uid")
+        for rows in ([original, deepcopy(original)], [deepcopy(original) for _ in range(129)]):
+            for select in (collect._current_slices, evidence._current_slices):
+                with self.subTest(select=select), self.assertRaises(EvidenceError):
+                    select(rows, {"current": "current-service-uid"}, {"current": "current-service-uid"}, owner="unit", run_id="run")
+
     def test_selected_config_or_manifest_is_required_not_shared_index(self):
         bootstrap = images()
         pod = {"spec": {"containers": [{"image": bootstrap["images"]["client"]["tag"]}]},
