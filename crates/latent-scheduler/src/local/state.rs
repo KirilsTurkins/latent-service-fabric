@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 
@@ -8,6 +8,7 @@ use latent_core::{ActivationId, PlatformError, PlatformErrorCode, TenantId};
 use tokio::sync::oneshot;
 
 use super::assignment::{ActiveRegistration, PendingAssignment};
+use super::queue::{EntrySlot, Queue};
 use super::{
     error, micros, now, AdmittedSchedulingRequest, CellClass, CellPool, LocalSchedulerConfig,
     SchedulerSnapshot, SchedulingCancellation,
@@ -32,6 +33,7 @@ pub(super) struct Registration {
     pub sequence: u64,
     pub class: CellClass,
     pub cancellation: Arc<dyn SchedulingCancellation>,
+    pub queued_at: Option<EntrySlot>,
     pub assigned_at: Option<Instant>,
     pub cancellation_counted: bool,
     pub failure_counted: bool,
@@ -44,111 +46,109 @@ pub(super) struct Entry {
     pub sender: oneshot::Sender<Result<PendingAssignment, PlatformError>>,
 }
 
-struct TenantQueue {
-    tenant: TenantId,
-    entries: Vec<Entry>,
-}
-
-#[derive(Default)]
 pub(super) struct ClassState {
-    tenants: VecDeque<TenantQueue>,
+    queue: Queue,
+    #[cfg(test)]
+    pub work: super::work::Work,
     pub depth: u32,
     pub counters: SchedulerSnapshot,
     pub active_since: BTreeSet<(Instant, u64)>,
 }
 
 impl ClassState {
-    pub fn push(&mut self, entry: Entry) {
-        self.depth += 1;
-        let tenant = entry.request.permit.tenant();
-        if let Some(queue) = self
-            .tenants
-            .iter_mut()
-            .find(|queue| &queue.tenant == tenant)
-        {
-            queue.entries.push(entry);
-        } else {
-            self.tenants.push_back(TenantQueue {
-                tenant: tenant.clone(),
-                entries: vec![entry],
-            });
+    pub fn new(capacity: u32) -> Self {
+        Self {
+            queue: Queue::new(capacity),
+            #[cfg(test)]
+            work: super::work::Work::default(),
+            depth: 0,
+            counters: SchedulerSnapshot::default(),
+            active_since: BTreeSet::new(),
         }
     }
 
-    fn select(&mut self, now: Instant, starvation_after: std::time::Duration) -> Option<Entry> {
-        let tenant = self.tenants.front_mut()?;
-        let index = tenant
-            .entries
-            .iter()
-            .enumerate()
-            .min_by(|(_, a), (_, b)| {
-                let a_old = now.saturating_duration_since(a.enqueued_at) >= starvation_after;
-                let b_old = now.saturating_duration_since(b.enqueued_at) >= starvation_after;
-                match (a_old, b_old) {
-                    (true, true) => a.sequence.cmp(&b.sequence),
-                    (true, false) => Ordering::Less,
-                    (false, true) => Ordering::Greater,
-                    (false, false) => b
-                        .request
-                        .permit
-                        .obligations()
-                        .priority
-                        .cmp(&a.request.permit.obligations().priority)
-                        .then_with(|| deadline_order(a, b))
-                        .then_with(|| a.sequence.cmp(&b.sequence)),
-                }
-            })
-            .map(|(index, _)| index)
-            .expect("tenant queues are nonempty");
-        let entry = tenant.entries.remove(index);
-        // This slot remains reserved while the open pool seam is called. A
-        // concurrent enqueue must not consume it before a failed try restores it.
-        if tenant.entries.is_empty() {
-            self.tenants.pop_front();
-        }
-        Some(entry)
+    pub fn push(&mut self, entry: Entry) -> EntrySlot {
+        self.depth += 1;
+        self.queue.push(
+            entry,
+            #[cfg(test)]
+            &mut self.work,
+        )
+    }
+
+    fn select(
+        &mut self,
+        now: Instant,
+        starvation_after: std::time::Duration,
+    ) -> Option<(EntrySlot, Entry)> {
+        let (slot, _) = self.queue.front_entries().min_by(|(_, a), (_, b)| {
+            #[cfg(test)]
+            self.work.compare_winners();
+            let a_old = now.saturating_duration_since(a.enqueued_at) >= starvation_after;
+            let b_old = now.saturating_duration_since(b.enqueued_at) >= starvation_after;
+            match (a_old, b_old) {
+                (true, true) => a.sequence.cmp(&b.sequence),
+                (true, false) => Ordering::Less,
+                (false, true) => Ordering::Greater,
+                (false, false) => b
+                    .request
+                    .permit
+                    .obligations()
+                    .priority
+                    .cmp(&a.request.permit.obligations().priority)
+                    .then_with(|| deadline_order(a, b))
+                    .then_with(|| a.sequence.cmp(&b.sequence)),
+            }
+        })?;
+        let entry = self.queue.unlink(
+            slot,
+            #[cfg(test)]
+            &mut self.work,
+        );
+        // The physical slot is reusable; logical depth is still reserved while
+        // the pump owns this selected entry across the open pool call.
+        Some((slot, entry))
     }
 
     fn rotate_after_grant(&mut self, tenant: &TenantId) {
-        if let Some(index) = self
-            .tenants
-            .iter()
-            .position(|queue| &queue.tenant == tenant)
-        {
-            let queue = self.tenants.remove(index).expect("located tenant");
-            self.tenants.push_back(queue);
-        }
+        self.queue.rotate_after_grant(
+            tenant,
+            #[cfg(test)]
+            &mut self.work,
+        );
     }
 
-    fn restore(&mut self, entry: Entry) {
-        let tenant = entry.request.permit.tenant().clone();
-        self.depth -= 1; // restore the already-reserved slot
-        self.push(entry);
-        if let Some(index) = self.tenants.iter().position(|queue| queue.tenant == tenant) {
-            let queue = self.tenants.remove(index).expect("located tenant");
-            self.tenants.push_front(queue);
-        }
+    fn restore(&mut self, entry: Entry) -> EntrySlot {
+        // Selection retained this reservation. Restore leaves depth unchanged.
+        self.queue.restore(
+            entry,
+            #[cfg(test)]
+            &mut self.work,
+        )
     }
 
-    fn remove(&mut self, sequence: u64) -> Option<Entry> {
-        let (tenant_index, entry_index) =
-            self.tenants
-                .iter()
-                .enumerate()
-                .find_map(|(index, tenant)| {
-                    tenant
-                        .entries
-                        .iter()
-                        .position(|entry| entry.sequence == sequence)
-                        .map(|entry| (index, entry))
-                })?;
-        let tenant = &mut self.tenants[tenant_index];
-        let entry = tenant.entries.remove(entry_index);
+    fn remove(&mut self, slot: EntrySlot, sequence: u64) -> Option<Entry> {
+        let entry = self.queue.remove(
+            slot,
+            sequence,
+            #[cfg(test)]
+            &mut self.work,
+        )?;
         self.depth -= 1;
-        if tenant.entries.is_empty() {
-            self.tenants.remove(tenant_index);
-        }
         Some(entry)
+    }
+
+    fn tenant_count(&self) -> usize {
+        self.queue.tenant_count()
+    }
+
+    fn drain_into(&mut self, entries: &mut Vec<Entry>) {
+        self.queue.drain_into(
+            entries,
+            #[cfg(test)]
+            &mut self.work,
+        );
+        self.depth = 0;
     }
 
     fn count_error(&mut self, code: PlatformErrorCode, cancellation_counted: bool) {
@@ -195,7 +195,7 @@ impl Inner {
                     .get(&class)
                     .is_some_and(|capacity| *capacity > 0);
             snapshot.queue_depth = queue.depth;
-            snapshot.queued_tenants = u32::try_from(queue.tenants.len()).unwrap_or(u32::MAX);
+            snapshot.queued_tenants = u32::try_from(queue.tenant_count()).unwrap_or(u32::MAX);
             snapshot.oldest_lease_age_micros =
                 queue.active_since.first().map_or(0, |(started, _)| {
                     micros(now().saturating_duration_since(*started))
@@ -253,7 +253,7 @@ impl Inner {
 
     pub fn remove_queued(&self, id: &ActivationId, sequence: u64, code: PlatformErrorCode) {
         self.record_failure(id, sequence, code);
-        let removed = {
+        let (registration, removed) = {
             let mut state = self.lock();
             if !state
                 .live
@@ -267,34 +267,69 @@ impl Inner {
                 .classes
                 .get_mut(&registration.class)
                 .expect("registered class");
-            let removed = queue.remove(sequence);
-            if removed.is_none() {
+            let removed = if let Some(slot) = registration.queued_at {
+                Some(
+                    queue
+                        .remove(slot, sequence)
+                        .expect("matched queued location"),
+                )
+            } else {
                 queue.depth -= 1; // currently selected by the synchronous pump
-            }
-            removed
+                None
+            };
+            (registration, removed)
         };
         // Permit destruction takes the quota mutex: never do it under our state lock.
         drop(removed);
+        // The final cancellation owner may run arbitrary code in its destructor.
+        drop(registration);
     }
 
     pub fn finish_active(&self, id: &ActivationId, sequence: u64) {
+        let retired = {
+            let mut state = self.lock();
+            if state
+                .live
+                .get(id)
+                .is_none_or(|entry| entry.sequence != sequence)
+            {
+                return;
+            }
+            let entry = state.live.remove(id).expect("matched registration");
+            if let Some(started) = entry.assigned_at {
+                state
+                    .classes
+                    .get_mut(&entry.class)
+                    .expect("registered class")
+                    .active_since
+                    .remove(&(started, sequence));
+            }
+            entry
+        };
+        drop(retired);
+    }
+
+    fn select_queued(&self, class: CellClass) -> Option<Entry> {
         let mut state = self.lock();
-        if state
+        if state.shutdown {
+            return None;
+        }
+        let (slot, entry) = state
+            .classes
+            .get_mut(&class)
+            .expect("configured class")
+            .select(now(), self.config.starvation_after)?;
+        let registration = state
             .live
-            .get(id)
-            .is_none_or(|entry| entry.sequence != sequence)
-        {
-            return;
-        }
-        let entry = state.live.remove(id).expect("matched registration");
-        if let Some(started) = entry.assigned_at {
-            state
-                .classes
-                .get_mut(&entry.class)
-                .expect("registered class")
-                .active_since
-                .remove(&(started, sequence));
-        }
+            .get_mut(entry.request.permit.activation_id())
+            .expect("queued registration");
+        debug_assert_eq!(registration.sequence, entry.sequence);
+        debug_assert_eq!(registration.queued_at, Some(slot));
+        debug_assert!(registration.assigned_at.is_none());
+        // Retire the physical location before the selected owner leaves this
+        // lock; logical depth remains reserved across the open pool call.
+        registration.queued_at = None;
+        Some(entry)
     }
 
     pub fn pump(self: &Arc<Self>, class: CellClass) -> bool {
@@ -311,18 +346,7 @@ impl Inner {
             if snapshot.available == 0 && snapshot.quarantined != snapshot.capacity {
                 return true;
             }
-            let entry = {
-                let mut state = self.lock();
-                if state.shutdown {
-                    return true;
-                }
-                state
-                    .classes
-                    .get_mut(&class)
-                    .expect("configured class")
-                    .select(now(), self.config.starvation_after)
-            };
-            let Some(entry) = entry else {
+            let Some(entry) = self.select_queued(class) else {
                 return true;
             };
             if entry.sender.is_closed() || entry.request.cancellation.is_cancelled() {
@@ -352,17 +376,22 @@ impl Inner {
                 Ok(Some(lease)) => lease,
                 Ok(None) => {
                     let mut state = self.lock();
-                    let live = state
-                        .live
-                        .get(entry.request.permit.activation_id())
-                        .is_some_and(|registration| registration.sequence == entry.sequence);
-                    if live && !state.shutdown {
-                        state
-                            .classes
-                            .get_mut(&class)
-                            .expect("configured class")
-                            .restore(entry);
-                        return true;
+                    if !state.shutdown {
+                        let State { live, classes, .. } = &mut *state;
+                        if let Some(registration) = live
+                            .get_mut(entry.request.permit.activation_id())
+                            .filter(|registration| registration.sequence == entry.sequence)
+                        {
+                            debug_assert!(registration.queued_at.is_none());
+                            debug_assert!(registration.assigned_at.is_none());
+                            registration.queued_at = Some(
+                                classes
+                                    .get_mut(&class)
+                                    .expect("configured class")
+                                    .restore(entry),
+                            );
+                            return true;
+                        }
                     }
                     let shutting_down = state.shutdown;
                     drop(state);
@@ -415,11 +444,9 @@ impl Inner {
                     .get(&id)
                     .is_some_and(|registration| registration.sequence == entry.sequence);
             if live {
-                state
-                    .live
-                    .get_mut(&id)
-                    .expect("matched registration")
-                    .assigned_at = Some(assigned);
+                let registration = state.live.get_mut(&id).expect("matched registration");
+                debug_assert!(registration.queued_at.is_none());
+                registration.assigned_at = Some(assigned);
                 let queue = state.classes.get_mut(&class).expect("configured class");
                 queue.depth -= 1;
                 queue.active_since.insert((assigned, entry.sequence));
@@ -449,7 +476,7 @@ impl Inner {
     }
 
     fn finish_error(&self, entry: Entry, error: PlatformError) {
-        {
+        let retired = {
             let mut state = self.lock();
             let id = entry.request.permit.activation_id();
             if state
@@ -466,9 +493,13 @@ impl Inner {
                 if !registration.failure_counted {
                     queue.count_error(error.code, registration.cancellation_counted);
                 }
+                Some(registration)
+            } else {
+                None
             }
-        }
+        };
         drop(entry.request);
+        drop(retired);
         let _ = entry.sender.send(Err(error));
     }
 
@@ -486,15 +517,12 @@ impl Inner {
     }
 
     pub fn shutdown(&self) {
-        let entries = {
+        let (entries, retired) = {
             let mut state = self.lock();
             state.shutdown = true;
             let mut entries = Vec::new();
             for queue in state.classes.values_mut() {
-                for tenant in queue.tenants.drain(..) {
-                    entries.extend(tenant.entries);
-                }
-                queue.depth = 0;
+                queue.drain_into(&mut entries);
             }
             let queued: Vec<_> = state
                 .live
@@ -502,6 +530,7 @@ impl Inner {
                 .filter(|(_, entry)| entry.assigned_at.is_none())
                 .map(|(id, _)| id.clone())
                 .collect();
+            let mut retired = Vec::with_capacity(queued.len());
             for id in queued {
                 let entry = state.live.remove(&id).expect("collected registration");
                 if !entry.failure_counted {
@@ -511,12 +540,14 @@ impl Inner {
                         .expect("registered class")
                         .count_error(PlatformErrorCode::Unavailable, entry.cancellation_counted);
                 }
+                retired.push(entry);
             }
-            entries
+            (entries, retired)
         };
         for entry in entries {
             self.finish_error(entry, error(PlatformErrorCode::Unavailable, "shutdown"));
         }
+        drop(retired);
     }
 }
 
@@ -553,3 +584,6 @@ impl Drop for WaitRegistration {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;

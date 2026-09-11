@@ -1,0 +1,18 @@
+{
+  "command": null,
+  "elapsed_nanos": null,
+  "exit_code": 0,
+  "exit_code_basis": "Parent observed native session 37325 exit 0; this is a retrospective supporting receipt.",
+  "log": "linux-package.log",
+  "native_session_id": "37325",
+  "original_log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-package-01.log",
+  "reported_unchanged_evidence_files": "923",
+  "schema": "latent.scheduler-linux-package-support.v1",
+  "scope": "Retained package/replay completion message; no new replay was performed by this support publisher.",
+  "sha256": "sha256:9f5eba2dc6e1d3f94a00e916424fde392a15382553dadc11963444df2de80ad1",
+  "size_bytes": "52",
+  "unrecorded_fields": [
+    "elapsed_nanos",
+    "command"
+  ]
+}

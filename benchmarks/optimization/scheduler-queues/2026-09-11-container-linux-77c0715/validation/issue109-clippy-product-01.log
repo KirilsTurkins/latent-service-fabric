@@ -1,0 +1,301 @@
+    Checking tokio v1.53.1
+warning: associated function `from_wire_kind` is never used
+  --> crates\latent-manifest\src\codec.rs:44:8
+   |
+37 | impl ManifestKind {
+   | ----------------- associated function in this implementation
+...
+44 |     fn from_wire_kind(kind: &str) -> Option<Self> {
+   |        ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: methods `limits`, `decode_document`, `encode_document`, and `decode_preparsed` are never used
+   --> crates\latent-manifest\src\codec.rs:123:18
+    |
+116 | impl JsonManifestCodec {
+    | ---------------------- methods in this implementation
+...
+123 |     pub const fn limits(&self) -> ManifestLimits {
+    |                  ^^^^^^
+...
+128 |     pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
+    |            ^^^^^^^^^^^^^^^
+...
+135 |     pub fn encode_document(&self, manifest: &ManifestDocument) -> ManifestResult<Vec<u8>> {
+    |            ^^^^^^^^^^^^^^^
+...
+153 |     fn decode_preparsed(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `document_kind` is never used
+   --> crates\latent-manifest\src\codec.rs:324:4
+    |
+324 | fn document_kind(value: &Value) -> ManifestResult<ManifestKind> {
+    |    ^^^^^^^^^^^^^
+
+warning: `latent-manifest` (lib) generated 3 warnings
+    Checking latent-scheduler v0.1.0-alpha.1 (C:\Users\turkins\Desktop\latent-fabric-scheduler-queues\crates\latent-scheduler)
+warning: binding's name is too similar to existing binding
+   --> crates\latent-scheduler\src\fixed_pool\mod.rs:305:17
+    |
+305 |                 received = &mut receiver => received,
+    |                 ^^^^^^^^
+    |
+note: existing binding defined here
+   --> crates\latent-scheduler\src\fixed_pool\mod.rs:283:13
+    |
+283 |         mut receiver: oneshot::Receiver<Result<PendingGrant, PlatformError>>,
+    |             ^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#similar_names
+    = note: `-W clippy::similar-names` implied by `-W clippy::pedantic`
+    = help: to override `-W clippy::pedantic` add `#[allow(clippy::similar_names)]`
+
+warning: binding's name is too similar to existing binding
+   --> crates\latent-scheduler\src\fixed_pool\mod.rs:291:13
+    |
+291 |         let received = if let Some(deadline) = deadline {
+    |             ^^^^^^^^
+    |
+note: existing binding defined here
+   --> crates\latent-scheduler\src\fixed_pool\mod.rs:283:13
+    |
+283 |         mut receiver: oneshot::Receiver<Result<PendingGrant, PlatformError>>,
+    |             ^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#similar_names
+
+warning: this argument is passed by value, but not consumed in the function body
+   --> crates\latent-scheduler\src\fixed_pool\state.rs:233:19
+    |
+233 |         identity: LeaseIdentity,
+    |                   ^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_pass_by_value
+    = note: `-W clippy::needless-pass-by-value` implied by `-W clippy::pedantic`
+    = help: to override `-W clippy::pedantic` add `#[allow(clippy::needless_pass_by_value)]`
+help: consider taking a reference instead
+    |
+233 |         identity: &LeaseIdentity,
+    |                   +
+
+warning: large size difference between variants
+  --> crates\latent-scheduler\src\fixed_pool\types.rs:10:1
+   |
+10 | /  pub(super) enum Reservation {
+11 | |      Immediate(CellLease),
+   | |      -------------------- the largest variant contains at least 400 bytes
+12 | |/     Queued {
+13 | ||         waiter_id: u64,
+14 | ||         activation_id: ActivationId,
+15 | ||         receiver: oneshot::Receiver<Result<PendingGrant, PlatformError>>,
+16 | ||     },
+   | ||_____- the second-largest variant contains at least 40 bytes
+17 | |  }
+   | |__^ the entire enum is at least 400 bytes
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_enum_variant
+   = note: `-W clippy::large-enum-variant` implied by `-W clippy::all`
+   = help: to override `-W clippy::all` add `#[allow(clippy::large_enum_variant)]`
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+   |
+11 -     Immediate(CellLease),
+11 +     Immediate(Box<CellLease>),
+   |
+
+warning: large size difference between variants
+   --> crates\latent-scheduler\src\fixed_pool\types.rs:189:1
+    |
+189 | /   pub(super) enum Delivery {
+190 | | /     Grant {
+191 | | |         sender: oneshot::Sender<Result<PendingGrant, PlatformError>>,
+192 | | |         grant: PendingGrant,
+193 | | |     },
+    | | |_____- the largest variant contains at least 408 bytes
+194 | | /     Error {
+195 | | |         sender: oneshot::Sender<Result<PendingGrant, PlatformError>>,
+196 | | |         error: PlatformError,
+197 | | |     },
+    | | |_____- the second-largest variant contains at least 64 bytes
+198 | |   }
+    | |___^ the entire enum is at least 408 bytes
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_enum_variant
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+    |
+192 -         grant: PendingGrant,
+192 +         grant: Box<PendingGrant>,
+    |
+
+warning: this `if let` can be collapsed into the outer `if let`
+   --> crates\latent-scheduler\src\fixed_pool\types.rs:205:21
+    |
+205 | /                     if let Ok(grant) = result {
+206 | |                         drop(grant);
+207 | |                     }
+    | |_____________________^
+    |
+help: the outer pattern can be modified to include the inner pattern
+   --> crates\latent-scheduler\src\fixed_pool\types.rs:204:28
+    |
+204 |                 if let Err(result) = sender.send(Ok(grant)) {
+    |                            ^^^^^^ replace this binding
+205 |                     if let Ok(grant) = result {
+    |                            ^^^^^^^^^ with this pattern
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#collapsible_match
+    = note: `-W clippy::collapsible-match` implied by `-W clippy::all`
+    = help: to override `-W clippy::all` add `#[allow(clippy::collapsible_match)]`
+
+warning: the following explicit lifetimes could be elided: 'a
+   --> crates\latent-scheduler\src\fixed_pool\mod.rs:389:16
+    |
+389 |     fn release<'a>(&'a self, lease: CellLease) -> BoxFuture<'a, Result<(), PlatformError>> {
+    |                ^^   ^^                                      ^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#elidable_lifetime_names
+    = note: `-W clippy::elidable-lifetime-names` implied by `-W clippy::pedantic`
+    = help: to override `-W clippy::pedantic` add `#[allow(clippy::elidable_lifetime_names)]`
+help: elide the lifetimes
+    |
+389 -     fn release<'a>(&'a self, lease: CellLease) -> BoxFuture<'a, Result<(), PlatformError>> {
+389 +     fn release(&self, lease: CellLease) -> BoxFuture<'_, Result<(), PlatformError>> {
+    |
+
+warning: the following explicit lifetimes could be elided: 'a
+   --> crates\latent-scheduler\src\fixed_pool\mod.rs:408:19
+    |
+408 |     fn quarantine<'a>(
+    |                   ^^
+409 |         &'a self,
+    |          ^^
+...
+412 |     ) -> BoxFuture<'a, Result<(), PlatformError>> {
+    |                    ^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#elidable_lifetime_names
+help: elide the lifetimes
+    |
+408 ~     fn quarantine(
+409 ~         &self,
+410 |         lease: CellLease,
+411 |         reason: String,
+412 ~     ) -> BoxFuture<'_, Result<(), PlatformError>> {
+    |
+
+warning: manual `Debug` impl does not include all fields
+   --> crates\latent-scheduler\src\fixed_pool\mod.rs:515:1
+    |
+515 | / impl std::fmt::Debug for CellLease {
+516 | |     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+517 | |         formatter
+518 | |             .debug_struct("CellLease")
+...   |
+527 | | }
+    | |_^
+    |
+note: this field is unused
+   --> crates\latent-scheduler\src\lib.rs:81:5
+    |
+ 81 |     pub(crate) control: Option<CellLeaseControl>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = help: consider including all fields in this `Debug` impl
+    = help: consider calling `.finish_non_exhaustive()` if you intend to ignore fields
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#missing_fields_in_debug
+    = note: `-W clippy::missing-fields-in-debug` implied by `-W clippy::pedantic`
+    = help: to override `-W clippy::pedantic` add `#[allow(clippy::missing_fields_in_debug)]`
+
+warning: item in documentation is missing backticks
+ --> crates\latent-scheduler\src\local\queue.rs:1:66
+  |
+1 | //! Bounded intrusive tenant queues; selection policy remains in ClassState.
+  |                                                                  ^^^^^^^^^^
+  |
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#doc_markdown
+  = note: `-W clippy::doc-markdown` implied by `-W clippy::pedantic`
+  = help: to override `-W clippy::pedantic` add `#[allow(clippy::doc_markdown)]`
+help: try
+  |
+1 - //! Bounded intrusive tenant queues; selection policy remains in ClassState.
+1 + //! Bounded intrusive tenant queues; selection policy remains in `ClassState`.
+  |
+
+warning: field name starts with the struct's name
+   --> crates\latent-scheduler\src\local\queue.rs:195:5
+    |
+195 |     entries: &'a Arena<QueuedEntry>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#struct_field_names
+    = note: `-W clippy::struct-field-names` implied by `-W clippy::pedantic`
+    = help: to override `-W clippy::pedantic` add `#[allow(clippy::struct_field_names)]`
+
+warning: large size difference between variants
+  --> crates\latent-scheduler\src\lib.rs:62:1
+   |
+62 | / pub(crate) enum CellLeaseControl {
+63 | |     Fixed(fixed_pool::LeaseControl),
+   | |     ------------------------------- the largest variant contains at least 224 bytes
+64 | |     External(Arc<dyn CellLeaseLifecycle>),
+   | |     ------------------------------------- the second-largest variant contains at least 16 bytes
+65 | | }
+   | |_^ the entire enum is at least 224 bytes
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_enum_variant
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+   |
+63 -     Fixed(fixed_pool::LeaseControl),
+63 +     Fixed(Box<fixed_pool::LeaseControl>),
+   |
+
+warning: this function has a `#[must_use]` attribute with no message, but returns a type already marked as `#[must_use]`
+  --> crates\latent-scheduler\src\lib.rs:91:5
+   |
+91 | /     pub fn new(
+92 | |         id: CellId,
+93 | |         activation_id: ActivationId,
+94 | |         node: NodeId,
+...  |
+98 | |         lifecycle: Arc<dyn CellLeaseLifecycle>,
+99 | |     ) -> Self {
+   | |_____________^
+   |
+   = help: either add some descriptive message or remove the attribute
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#double_must_use
+   = note: `-W clippy::double-must-use` implied by `-W clippy::all`
+   = help: to override `-W clippy::all` add `#[allow(clippy::double_must_use)]`
+
+warning: the following explicit lifetimes could be elided: 'a
+   --> crates\latent-scheduler\src\lib.rs:226:16
+    |
+226 |     fn release<'a>(&'a self, lease: CellLease) -> BoxFuture<'a, Result<(), PlatformError>>;
+    |                ^^   ^^                                      ^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#elidable_lifetime_names
+help: elide the lifetimes
+    |
+226 -     fn release<'a>(&'a self, lease: CellLease) -> BoxFuture<'a, Result<(), PlatformError>>;
+226 +     fn release(&self, lease: CellLease) -> BoxFuture<'_, Result<(), PlatformError>>;
+    |
+
+warning: the following explicit lifetimes could be elided: 'a
+   --> crates\latent-scheduler\src\lib.rs:240:19
+    |
+240 |     fn quarantine<'a>(
+    |                   ^^
+241 |         &'a self,
+    |          ^^
+...
+244 |     ) -> BoxFuture<'a, Result<(), PlatformError>> {
+    |                    ^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#elidable_lifetime_names
+help: elide the lifetimes
+    |
+240 ~     fn quarantine(
+241 ~         &self,
+242 |         lease: CellLease,
+243 |         reason: String,
+244 ~     ) -> BoxFuture<'_, Result<(), PlatformError>> {
+    |
+
+warning: `latent-scheduler` (lib) generated 15 warnings (run `cargo clippy --fix --lib -p latent-scheduler -- --no-deps` to apply 5 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.17s

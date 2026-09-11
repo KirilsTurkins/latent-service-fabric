@@ -1,7 +1,14 @@
 //! One node's fair queue above the fixed cell-pool ownership seam.
 
 mod assignment;
+#[cfg(test)]
+mod lifetime_tests;
+#[cfg(test)]
+mod measurement;
+mod queue;
 mod state;
+#[cfg(test)]
+mod work;
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
@@ -137,9 +144,8 @@ impl LocalScheduler {
         }
         let classes = config
             .queue_capacity_per_class
-            .keys()
-            .copied()
-            .map(|class| (class, ClassState::default()))
+            .iter()
+            .map(|(class, capacity)| (*class, ClassState::new(*capacity)))
             .collect();
         Ok(Self {
             inner: Arc::new(Inner {
@@ -291,19 +297,20 @@ impl LocalScheduler {
         state.next_sequence = sequence
             .checked_add(1)
             .ok_or_else(|| error(PlatformErrorCode::Unavailable, "sequence-exhausted"))?;
-        state.live.insert(
-            id.clone(),
-            Registration {
-                sequence,
-                class,
-                cancellation: Arc::clone(&request.cancellation),
-                assigned_at: None,
-                cancellation_counted: false,
-                failure_counted: false,
-            },
-        );
-        state
-            .classes
+        let State { live, classes, .. } = &mut *state;
+        let std::collections::btree_map::Entry::Vacant(vacant) = live.entry(id.clone()) else {
+            unreachable!("checked unique activation under state lock");
+        };
+        let registration = vacant.insert(Registration {
+            sequence,
+            class,
+            cancellation: Arc::clone(&request.cancellation),
+            queued_at: None,
+            assigned_at: None,
+            cancellation_counted: false,
+            failure_counted: false,
+        });
+        let slot = classes
             .get_mut(&class)
             .expect("configured class")
             .push(Entry {
@@ -312,6 +319,7 @@ impl LocalScheduler {
                 enqueued_at: now(),
                 sender,
             });
+        registration.queued_at = Some(slot);
         Ok(sequence)
     }
 }

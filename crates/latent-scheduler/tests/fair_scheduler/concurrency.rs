@@ -13,7 +13,7 @@ use latent_scheduler::{
 };
 use tokio::sync::{oneshot, watch};
 
-use super::support::{failure, Fixture};
+use super::support::{complete, failure, register, Fixture};
 
 const BARRIER_TIMEOUT: Duration = Duration::from_secs(2);
 
@@ -108,17 +108,31 @@ fn paused_scheduler(
     fixture: &Fixture,
     deny_first: bool,
 ) -> (Arc<LocalScheduler>, oneshot::Receiver<()>, mpsc::Sender<()>) {
+    let (scheduler, _, entered, resume) = paused_scheduler_with_backing(fixture, deny_first);
+    (scheduler, entered, resume)
+}
+
+fn paused_scheduler_with_backing(
+    fixture: &Fixture,
+    deny_first: bool,
+) -> (
+    Arc<LocalScheduler>,
+    FixedCellPool,
+    oneshot::Receiver<()>,
+    mpsc::Sender<()>,
+) {
     let (entered_sender, entered) = oneshot::channel();
     let (resume, resume_receiver) = mpsc::channel();
     let node = fixture.configuration.node.clone();
+    let backing = FixedCellPool::new(FixedCellPoolConfig::new(
+        node.clone(),
+        CellClass::Tiny,
+        1,
+        0,
+    ))
+    .unwrap();
     let tiny: Arc<dyn CellPool> = Arc::new(PausedPool {
-        pool: FixedCellPool::new(FixedCellPoolConfig::new(
-            node.clone(),
-            CellClass::Tiny,
-            1,
-            0,
-        ))
-        .unwrap(),
+        pool: backing.clone(),
         entered: Mutex::new(Some(entered_sender)),
         resume: Mutex::new(Some(resume_receiver)),
         changes: watch::channel(0).0,
@@ -133,7 +147,97 @@ fn paused_scheduler(
         BTreeMap::from([(CellClass::Tiny, tiny), (CellClass::Small, small)]),
     )
     .unwrap();
-    (Arc::new(scheduler), entered, resume)
+    (Arc::new(scheduler), backing, entered, resume)
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn selected_cancellation_preserves_reused_slot_and_allows_id_reuse_after_cleanup() {
+    for deny_first in [true, false] {
+        selected_cancellation_with_slot_and_id_reuse(deny_first).await;
+    }
+}
+
+async fn selected_cancellation_with_slot_and_id_reuse(deny_first: bool) {
+    let fixture = Fixture::new(1, 2, Duration::from_secs(1));
+    let (scheduler, backing, entered, resume) = paused_scheduler_with_backing(&fixture, deny_first);
+    let id = ActivationId("selected-reused".to_owned());
+    let original_request = fixture.request(&id.0, "a");
+    // Prime the actual cell without entering the paused wrapper. The first A
+    // future registers with a noop waker while no cell is available.
+    let held = backing
+        .try_acquire_now(
+            &ActivationId("raw-held".to_owned()),
+            original_request.permit.tenant(),
+            CellClass::Tiny,
+            original_request.permit.granted_budget(),
+            None,
+        )
+        .unwrap()
+        .unwrap();
+    let mut original = scheduler.enqueue(original_request);
+    register(&mut original);
+    assert_eq!(scheduler.observations(CellClass::Tiny).queue_depth, 1);
+    backing.release(held).await.unwrap();
+
+    // B's independent poll owns the dispatch guard and selects the older A.
+    let owner = Arc::clone(&scheduler);
+    let other_request = fixture.request("other", "b");
+    let other = tokio::spawn(async move { owner.enqueue(other_request).await });
+    tokio::time::timeout(BARRIER_TIMEOUT, entered)
+        .await
+        .expect("B's pump pauses while acquiring the original A")
+        .unwrap();
+    assert_eq!(scheduler.observations(CellClass::Tiny).queue_depth, 2);
+
+    scheduler.cancel(&id).await.unwrap();
+    assert_eq!(failure(original).await, PlatformErrorCode::Cancelled);
+    assert_eq!(scheduler.observations(CellClass::Tiny).queue_depth, 1);
+    // The selected entry still owns A's permit, so admission must retain its ID
+    // until the old pool call returns. Its physical queue slot is reusable now.
+    let duplicate = fixture
+        .try_custom_request(&id.0, "a", 10, 60_000, 65_536)
+        .err()
+        .expect("selected admission ID remains owned across the pool call");
+    assert_eq!(duplicate.code, PlatformErrorCode::AlreadyExists);
+    let mut slot_reuser = scheduler.enqueue(fixture.request("slot-reuser", "c"));
+    register(&mut slot_reuser);
+    let queued = scheduler.observations(CellClass::Tiny);
+    assert_eq!(queued.queue_depth, 2);
+    assert_eq!(queued.queued_tenants, 2);
+    assert_eq!(queued.cancellations, 1);
+    assert_eq!(queued.rejected, 1);
+    resume.send(()).unwrap();
+
+    let other = tokio::time::timeout(BARRIER_TIMEOUT, other)
+        .await
+        .expect("the stale A acquisition leaves B schedulable")
+        .unwrap()
+        .unwrap();
+    assert_eq!(other.lease().activation_id.0, "other");
+    // B's completed poll also completed the stale acquisition and refunded A's
+    // original permit. Reuse of the original public ID is now legal.
+    let mut replacement = scheduler.enqueue(fixture.request(&id.0, "a"));
+    register(&mut replacement);
+    other.release().await.unwrap();
+    let slot_reuser = complete(slot_reuser).await;
+    assert_eq!(slot_reuser.lease().activation_id.0, "slot-reuser");
+    assert!(!slot_reuser.cancellation().is_cancelled());
+    slot_reuser.release().await.unwrap();
+    let replacement = complete(replacement).await;
+    assert_eq!(replacement.lease().activation_id, id);
+    assert!(!replacement.cancellation().is_cancelled());
+    replacement.release().await.unwrap();
+
+    let snapshot = scheduler.observations(CellClass::Tiny);
+    assert_eq!(snapshot.cancellations, 1);
+    assert_eq!(snapshot.rejected, 1);
+    assert_eq!(snapshot.granted, 3);
+    assert_eq!(snapshot.queue_depth, 0);
+    assert_eq!(snapshot.queued_tenants, 0);
+    assert_eq!(snapshot.active_leases, 0);
+    assert_eq!(snapshot.available, 1);
+    assert_eq!(snapshot.quarantined, 0);
+    fixture.assert_no_quota();
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]

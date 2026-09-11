@@ -1,0 +1,127 @@
+warning: associated function `from_wire_kind` is never used
+  --> crates\latent-manifest\src\codec.rs:44:8
+   |
+37 | impl ManifestKind {
+   | ----------------- associated function in this implementation
+...
+44 |     fn from_wire_kind(kind: &str) -> Option<Self> {
+   |        ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: methods `limits`, `decode_document`, `encode_document`, and `decode_preparsed` are never used
+   --> crates\latent-manifest\src\codec.rs:123:18
+    |
+116 | impl JsonManifestCodec {
+    | ---------------------- methods in this implementation
+...
+123 |     pub const fn limits(&self) -> ManifestLimits {
+    |                  ^^^^^^
+...
+128 |     pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
+    |            ^^^^^^^^^^^^^^^
+...
+135 |     pub fn encode_document(&self, manifest: &ManifestDocument) -> ManifestResult<Vec<u8>> {
+    |            ^^^^^^^^^^^^^^^
+...
+153 |     fn decode_preparsed(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `document_kind` is never used
+   --> crates\latent-manifest\src\codec.rs:324:4
+    |
+324 | fn document_kind(value: &Value) -> ManifestResult<ManifestKind> {
+    |    ^^^^^^^^^^^^^
+
+warning: `latent-manifest` (lib) generated 3 warnings
+   Compiling latent-scheduler v0.1.0-alpha.1 (C:\Users\turkins\Desktop\latent-fabric-scheduler-queues\crates\latent-scheduler)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.39s
+     Running unittests src\lib.rs (target\debug\deps\latent_scheduler-49406e406a19f459.exe)
+
+running 40 tests
+test fixed_pool::tests::behavior::explicit_quarantine_removes_unsafe_capacity ... ok
+test fixed_pool::tests::nonqueueing::cell_generation_exhaustion_publishes_the_unusable_capacity_transition ... ok
+test fixed_pool::tests::behavior::dropping_a_live_lease_quarantines_its_cell ... ok
+test fixed_pool::tests::behavior::foreign_pool_return_rejects_and_quarantines_the_original_cell ... ok
+test fixed_pool::tests::behavior::duplicate_return_cannot_inflate_available_capacity ... ok
+test fixed_pool::tests::behavior::dropping_a_ready_waiter_reclaims_an_unaccepted_grant ... ok
+test fixed_pool::tests::behavior::unsupported_classes_report_zero_observed_capacity ... ok
+test fixed_pool::tests::behavior::dropping_a_queued_acquisition_removes_it_before_any_release ... ok
+test fixed_pool::tests::nonqueueing::change_subscription_catches_release_between_failed_probe_and_wait ... ok
+test fixed_pool::tests::nonqueueing::change_notifications_coalesce_without_losing_the_latest_capacity ... ok
+test fixed_pool::tests::behavior::duplicate_activation_and_identity_mismatch_cannot_inflate_capacity ... ok
+test fixed_pool::tests::behavior::cancelled_waiter_never_receives_a_later_lease ... ok
+test fixed_pool::tests::behavior::expired_waiter_never_receives_a_later_lease ... ok
+test fixed_pool::tests::behavior::bounded_queue_rejects_excess_work_deterministically ... ok
+test fixed_pool::tests::behavior::capacity_is_fixed_and_concurrent_acquisition_is_bounded ... ok
+test fixed_pool::tests::behavior::quarantining_the_last_cell_fails_waiters_without_hanging ... ok
+test fixed_pool::tests::nonqueueing::nonqueueing_acquisition_never_registers_or_allocates_a_waiter ... ok
+test fixed_pool::tests::nonqueueing::nonqueueing_acquisition_preserves_legacy_fifo_handoff ... ok
+test fixed_pool::tests::nonqueueing::token_exhaustion_notifies_for_nonqueueing_and_legacy_acquisition ... ok
+test fixed_pool::tests::nonqueueing::nonqueueing_rejects_expired_deadlines_and_wrong_classes_with_bounded_errors ... ok
+test fixed_pool::tests::nonqueueing::unaccepted_abandoned_and_quarantined_leases_notify_production_observers ... ok
+test fixed_pool::tests::races::lease_token_exhaustion_quarantines_the_slot_and_fails_all_waiters ... ok
+test fixed_pool::tests::transitions::observer_reports_committed_active_and_queue_transitions ... ok
+test local::measurement::input::tests::allocation_is_only_the_fixed_many_tenant_storm ... ok
+test local::measurement::phase1_scheduler_collector ... ignored, explicit bounded scheduler measurement only
+test local::measurement::input::tests::fixed_full_and_smoke_populations_include_every_warmup_and_storm_offer ... ok
+test fixed_pool::tests::nonqueueing::nonqueueing_capacity_is_atomic_under_concurrent_acquisition ... ok
+test local::measurement::validation::tests::terminal_fixture_errors_cannot_qualify_as_saturation_or_clean_completion ... ok
+test local::measurement::storm::cancellation_population_covers_each_tenant_and_head_middle_tail_positions ... ok
+test local::queue::arena::tests::non_power_of_two_bound_reuses_vacant_slots_without_churn_growth ... ok
+test local::state::tests::churn::direct_head_middle_tail_removal_preserves_remaining_entry_owners ... ok
+test local::work::tests::disabled_and_reset_windows_do_not_retain_counts ... ok
+test local::state::tests::ordering::restoring_a_selected_last_entry_uses_the_recreated_current_tenant ... ok
+test local::work::tests::overflow_is_latched_and_independent_per_class ... ok
+test local::lifetime_tests::final_cancellation_owner_can_reenter_after_cell_and_quota_disposition ... ok
+test local::state::tests::boundaries::priority_deadline_sequence_and_exact_aging_boundary_have_fixed_winners ... ok
+test fixed_pool::tests::races::release_and_task_abort_race_preserves_exact_capacity_accounting ... ok
+test fixed_pool::tests::races::release_and_explicit_cancellation_race_is_linearizable ... ok
+test local::state::tests::ordering::selected_sequence_and_tenant_rotation_match_original_comparator_for_clock_histories ... ok
+test local::state::tests::churn::non_power_of_two_arenas_reuse_bounded_capacity_and_reject_old_slot_sequences ... ok
+
+test result: ok. 39 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\cell_pool_seam.rs (target\debug\deps\cell_pool_seam-f3fa5e2788a79133.exe)
+
+running 1 test
+test external_pool_can_mint_release_and_reclaim_affine_leases ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\fair_scheduler.rs (target\debug\deps\fair_scheduler-0b86027c23b93c8f.exe)
+
+running 30 tests
+test faults::startup_rejects_incompatible_configuration_and_actual_pool_counts ... ok
+test lifecycle::dropping_an_accepted_activation_quarantines_until_capacity_is_replaced ... ok
+test lifecycle::cancelled_mismatched_and_foreign_permits_fail_before_cell_assignment ... ok
+test lifecycle::explicit_quarantine_disposes_the_cell_before_returning_the_execution_quota ... ok
+test lifecycle::active_scheduler_cancellation_delegates_without_refunding_execution_early ... ok
+test faults::dropping_a_pending_disposition_keeps_quota_until_the_cell_is_abandoned ... ok
+test lifecycle::queued_cancellation_releases_quota_without_dispositioning_the_active_cell ... ok
+test lifecycle::dropping_a_waiter_reclaims_its_queue_slot_without_quarantining_a_cell ... ok
+test lifecycle::dropping_an_unaccepted_handoff_returns_a_reusable_cell ... ok
+test concurrency::shutdown_during_selected_acquisition_reclaims_the_unaccepted_cell ... ok
+test faults::disposition_errors_quarantine_the_cell_and_return_the_execution_reservation ... ok
+test concurrency::cancellation_of_a_retired_registration_cannot_mark_a_reused_activation_id ... ok
+test lifecycle::quarantining_the_last_cell_settles_waiters_and_preserves_other_classes ... ok
+test concurrency::selected_entry_reserves_its_queue_slot_until_failed_acquisition_is_restored ... ok
+test lifecycle::queued_request_expires_at_its_original_monotonic_deadline ... ok
+test faults::pool_cannot_substitute_activation_node_class_or_budget_at_handoff ... ok
+test lifecycle::shutdown_drains_waiters_and_retains_the_active_execution_reservation ... ok
+test lifecycle::cancellation_and_deadline_win_before_a_ready_handoff_is_accepted ... ok
+test lifecycle::shutdown_reclaims_a_ready_but_unaccepted_handoff_and_its_queued_follower ... ok
+test ordering::extra_large_capacity_requires_explicit_tenant_permission_before_scheduling ... ok
+test ordering::aged_request_precedes_new_high_priority_work_and_wait_metrics_use_monotonic_time ... ok
+test ordering::configured_class_capacity_and_granted_budgets_are_enforced_independently ... ok
+test ordering::zero_queue_capacity_denies_even_immediate_dispatch_without_leaking_quota ... ok
+test ordering::exact_queue_bound_rejects_without_losing_the_earlier_reservations ... ok
+test placement::placement_requires_the_configured_local_node_to_be_present ... ok
+test placement::placement_selects_only_the_configured_local_node_with_stable_evidence ... ok
+test ordering::one_tenant_uses_priority_then_deadline_then_enqueue_order ... ok
+test ordering::round_robin_tenants_prevents_a_noisy_neighbor_from_taking_every_handoff ... ok
+test ordering::all_five_classes_preserve_their_configured_counts_under_simultaneous_load ... ok
+test lifecycle::short_concurrent_churn_preserves_capacity_and_reclaims_all_tenants ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

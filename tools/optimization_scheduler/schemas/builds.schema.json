@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/scheduler-builds.v1.schema.json",
+  "title": "Scheduler benchmark builds v1",
+  "$comment": "Structural evidence contract only. Semantic replay additionally checks exact populations, source identity, original deadlines, ownership, artifact hashes and allocation coverage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "requested_refs",
+    "build",
+    "builds",
+    "harness",
+    "cleanup"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.scheduler-builds.v1"
+    },
+    "requested_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control",
+        "candidate",
+        "harness"
+      ],
+      "properties": {
+        "control": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "candidate": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "harness": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "maxProperties": 512,
+      "$comment": "Nested source/process/resource proof is checked by semantic replay."
+    },
+    "builds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control",
+        "candidate"
+      ],
+      "properties": {
+        "control": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "source_after",
+            "inputs",
+            "source_path",
+            "target_path",
+            "command",
+            "process",
+            "log",
+            "executables"
+          ],
+          "properties": {
+            "source": {
+              "type": "object",
+              "maxProperties": 512,
+              "$comment": "Nested source/process/resource proof is checked by semantic replay."
+            },
+            "source_after": {
+              "type": "object",
+              "maxProperties": 512,
+              "$comment": "Nested source/process/resource proof is checked by semantic replay."
+            },
+            "inputs": {
+              "type": "object",
+              "maxProperties": 512,
+              "$comment": "Nested source/process/resource proof is checked by semantic replay."
+            },
+            "source_path": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "target_path": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "command": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {
+                "type": "string",
+                "maxLength": 4096
+              }
+            },
+            "process": {
+              "type": "object",
+              "maxProperties": 512,
+              "$comment": "Nested source/process/resource proof is checked by semantic replay."
+            },
+            "log": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "bytes",
+                "sha256"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                },
+                "bytes": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^sha256:[a-f0-9]{64}$"
+                }
+              }
+            },
+            "executables": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "scheduler"
+              ],
+              "properties": {
+                "scheduler": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "path",
+                    "bytes",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1024
+                    },
+                    "bytes": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^sha256:[a-f0-9]{64}$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "candidate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "source_after",
+            "inputs",
+            "source_path",
+            "target_path",
+            "command",
+            "process",
+            "log",
+            "executables"
+          ],
+          "properties": {
+            "source": {
+              "type": "object",
+              "maxProperties": 512,
+              "$comment": "Nested source/process/resource proof is checked by semantic replay."
+            },
+            "source_after": {
+              "type": "object",
+              "maxProperties": 512,
+              "$comment": "Nested source/process/resource proof is checked by semantic replay."
+            },
+            "inputs": {
+              "type": "object",
+              "maxProperties": 512,
+              "$comment": "Nested source/process/resource proof is checked by semantic replay."
+            },
+            "source_path": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "target_path": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "command": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {
+                "type": "string",
+                "maxLength": 4096
+              }
+            },
+            "process": {
+              "type": "object",
+              "maxProperties": 512,
+              "$comment": "Nested source/process/resource proof is checked by semantic replay."
+            },
+            "log": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "bytes",
+                "sha256"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1024
+                },
+                "bytes": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^sha256:[a-f0-9]{64}$"
+                }
+              }
+            },
+            "executables": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "scheduler"
+              ],
+              "properties": {
+                "scheduler": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "path",
+                    "bytes",
+                    "sha256"
+                  ],
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1024
+                    },
+                    "bytes": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^sha256:[a-f0-9]{64}$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "harness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "source_after",
+        "inputs",
+        "source_path",
+        "target_path"
+      ],
+      "properties": {
+        "source": {
+          "type": "object",
+          "maxProperties": 512,
+          "$comment": "Nested source/process/resource proof is checked by semantic replay."
+        },
+        "source_after": {
+          "type": "object",
+          "maxProperties": 512,
+          "$comment": "Nested source/process/resource proof is checked by semantic replay."
+        },
+        "inputs": {
+          "type": "object",
+          "maxProperties": 512,
+          "$comment": "Nested source/process/resource proof is checked by semantic replay."
+        },
+        "source_path": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "target_path": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owned_worktree_removed"
+      ],
+      "properties": {
+        "owned_worktree_removed": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

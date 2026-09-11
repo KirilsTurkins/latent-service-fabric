@@ -37,7 +37,8 @@ def build_backend(root: Path, target: Path, label: str, output: Path, deadline: 
 
 LIBTESTS = {"backend": ("latentd", "latentd", "latentd-backend-collector"),
             "lookup": ("latent-wasmtime", "latent_wasmtime", "latent-wasmtime-cache-lookup"),
-            "codec": ("latent-wasmtime", "latent_wasmtime", "latent-wasmtime-codec")}
+            "codec": ("latent-wasmtime", "latent_wasmtime", "latent-wasmtime-codec"),
+            "scheduler": ("latent-scheduler", "latent_scheduler", "latent-scheduler-collector")}
 
 
 def libtest_recipe(kind):

@@ -1,0 +1,49 @@
+warning: associated function `from_wire_kind` is never used
+  --> crates\latent-manifest\src\codec.rs:44:8
+   |
+37 | impl ManifestKind {
+   | ----------------- associated function in this implementation
+...
+44 |     fn from_wire_kind(kind: &str) -> Option<Self> {
+   |        ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: methods `limits`, `decode_document`, `encode_document`, and `decode_preparsed` are never used
+   --> crates\latent-manifest\src\codec.rs:123:18
+    |
+116 | impl JsonManifestCodec {
+    | ---------------------- methods in this implementation
+...
+123 |     pub const fn limits(&self) -> ManifestLimits {
+    |                  ^^^^^^
+...
+128 |     pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
+    |            ^^^^^^^^^^^^^^^
+...
+135 |     pub fn encode_document(&self, manifest: &ManifestDocument) -> ManifestResult<Vec<u8>> {
+    |            ^^^^^^^^^^^^^^^
+...
+153 |     fn decode_preparsed(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `document_kind` is never used
+   --> crates\latent-manifest\src\codec.rs:324:4
+    |
+324 | fn document_kind(value: &Value) -> ManifestResult<ManifestKind> {
+    |    ^^^^^^^^^^^^^
+
+warning: `latent-manifest` (lib) generated 3 warnings
+   Compiling latent-scheduler v0.1.0-alpha.1 (C:\Users\turkins\Desktop\latent-fabric-scheduler-queues\crates\latent-scheduler)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.68s
+     Running unittests src\lib.rs (target\debug\deps\latent_scheduler-49406e406a19f459.exe)
+
+running 5 tests
+test local::measurement::phase1_scheduler_collector ... ignored, explicit bounded scheduler measurement only
+test local::measurement::input::tests::allocation_is_only_the_fixed_many_tenant_storm ... ok
+test local::measurement::input::tests::fixed_full_and_smoke_populations_include_every_warmup_and_storm_offer ... ok
+test local::measurement::validation::tests::terminal_fixture_errors_cannot_qualify_as_saturation_or_clean_completion ... ok
+test local::measurement::storm::cancellation_population_covers_each_tenant_and_head_middle_tail_positions ... ok
+
+test result: ok. 4 passed; 0 failed; 1 ignored; 0 measured; 28 filtered out; finished in 0.00s
+

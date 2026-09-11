@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/scheduler-plan.v1.schema.json",
+  "title": "Scheduler benchmark plan v1",
+  "$comment": "Structural evidence contract only. Semantic replay additionally checks exact populations, source identity, original deadlines, ownership, artifact hashes and allocation coverage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "variant",
+    "case",
+    "mode",
+    "observation_hold_millis"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.scheduler-plan.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "variant": {
+      "enum": [
+        "control",
+        "candidate"
+      ]
+    },
+    "case": {
+      "enum": [
+        "closed-one",
+        "saturated-one",
+        "saturated-many",
+        "reference-many",
+        "cancel-one",
+        "cancel-many"
+      ]
+    },
+    "mode": {
+      "enum": [
+        "normal",
+        "allocation"
+      ]
+    },
+    "observation_hold_millis": {
+      "const": 100
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "allocation"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "case": {
+            "const": "cancel-many"
+          }
+        }
+      }
+    }
+  ]
+}

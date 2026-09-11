@@ -1,0 +1,3 @@
+case,mode,variant,ordinal,status,reason,frame_poll_calls,cancel_calls,settled,named_allocation_count,unresolved_allocation_count,selected_allocated_bytes,selected_allocation_count,selected_live_bytes,selected_peak_live_bytes,selected_remaining_allocations,whole_process_allocated_bytes,whole_process_allocation_count,whole_process_peak_live_bytes,whole_process_remaining_allocations,whole_process_remaining_live_bytes
+cancel-many,allocation,control,12,available,null,1,32,32,224,0,21760,224,0,20992,0,1622973,13776,689072,3,928
+cancel-many,allocation,candidate,13,available,null,1,32,32,224,0,21760,224,0,20992,0,1643919,13758,689084,3,928
