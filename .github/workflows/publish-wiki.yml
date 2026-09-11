@@ -1,163 +1,87 @@
 name: Publish LSF Wiki
-
 on:
   push:
-    branches:
-      - docs/wiki
+    branches: [docs/wiki]
     paths:
-      - "wiki/pages/**"
-      - "wiki/visuals/**"
-      - ".github/workflows/publish-wiki.yml"
+      - 'wiki/pages/**'
+      - 'wiki/visuals/**'
+      - '.github/workflows/publish-wiki.yml'
   workflow_dispatch:
-
 permissions:
   contents: write
-
 concurrency:
   group: lsf-wiki-publish
-  cancel-in-progress: true
-
+  cancel-in-progress: false
 jobs:
   publish:
+    if: github.ref == 'refs/heads/docs/wiki'
     runs-on: ubuntu-24.04
     steps:
-      - name: Check out Wiki source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set up diagram renderer
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: '3.13'
           cache: pip
           cache-dependency-path: wiki/visuals/requirements.txt
-
-      - name: Generate animated Wiki diagrams
-        shell: bash
+      - name: Generate and validate current visuals
         run: |
-          set -euo pipefail
           python -m pip install --requirement wiki/visuals/requirements.txt
           python wiki/visuals/generate_diagrams.py
-
-      - name: Validate managed pages and visuals
+          python wiki/visuals/validate_wiki.py --authority-ref origin/development
+      - name: Record generated assets
         shell: bash
         run: |
           set -euo pipefail
-
-          test -f wiki/pages/Home.md
-          test -f wiki/pages/_Sidebar.md
-          test -f wiki/pages/_Footer.md
-          test "$(find wiki/pages -maxdepth 1 -type f -name '*.md' | wc -l)" -eq 20
-
-          for asset in \
-            wiki/pages/assets/architecture-at-a-glance.gif \
-            wiki/pages/assets/architecture-at-a-glance.svg \
-            wiki/pages/assets/system-decomposition.gif \
-            wiki/pages/assets/system-decomposition.svg
-          do
-            test -s "${asset}"
-          done
-
-          if grep -RIn --include='*.md' '```mermaid' wiki/pages; then
-            echo "Mermaid blocks are not permitted in the managed Wiki."
-            exit 1
-          fi
-
-          if grep -RInE --include='*.md' '^\|.*\[\[[^]]+\|[^]]+\]\].*\|' wiki/pages; then
-            echo "MediaWiki links containing pipes break Markdown table column parsing."
-            exit 1
-          fi
-
-          python - <<'PY'
-          from pathlib import Path
-          from PIL import Image
-
-          for path in (
-              Path("wiki/pages/assets/architecture-at-a-glance.gif"),
-              Path("wiki/pages/assets/system-decomposition.gif"),
-          ):
-              with Image.open(path) as image:
-                  if image.format != "GIF" or not getattr(image, "is_animated", False):
-                      raise SystemExit(f"{path} is not an animated GIF")
-                  if image.n_frames < 12:
-                      raise SystemExit(f"{path} has too few animation frames")
-
-          for path in (
-              Path("wiki/pages/assets/architecture-at-a-glance.svg"),
-              Path("wiki/pages/assets/system-decomposition.svg"),
-          ):
-              source = path.read_text(encoding="utf-8")
-              if "<svg" not in source or "@keyframes" not in source or "animateMotion" not in source:
-                  raise SystemExit(f"{path} is not an animated SVG source")
-          PY
-
-      - name: Record generated visual assets
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add wiki/pages/assets
-
-          if git diff --cached --quiet; then
-            echo "Generated visual assets are already current."
-          else
-            git commit -m "docs(wiki): regenerate animated visual assets"
+          if ! git diff --cached --quiet; then
+            git commit -m 'docs(wiki): record current diagram renders'
             git push origin HEAD:docs/wiki
           fi
-
-      - name: Publish pages
+      - name: Publish reviewed managed inventory
         shell: bash
         env:
           WIKI_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-
-          pages_dir="${GITHUB_WORKSPACE}/wiki/pages"
-          wiki_dir="${RUNNER_TEMP}/wiki-repository"
-          rm -rf "${wiki_dir}"
-
-          git clone \
-            "https://x-access-token:${WIKI_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" \
-            "${wiki_dir}"
-
-          # Preserve unknown pages while replacing all LSF-managed pages and assets.
-          cp -a "${pages_dir}/." "${wiki_dir}/"
-
-          cd "${wiki_dir}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add --all
-
-          if git diff --cached --quiet; then
-            echo "Wiki is already current."
-          else
-            git commit -m "docs: publish complete LSF wiki"
-            current_branch="$(git branch --show-current)"
-            git push origin "HEAD:${current_branch}"
+          wiki_dir=$(mktemp -d "${RUNNER_TEMP}/lsf-wiki.XXXXXXXX")
+          auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$WIKI_TOKEN" | base64 -w0)"
+          echo "::add-mask::${auth_header}"
+          wiki_url="https://github.com/${GITHUB_REPOSITORY}.wiki.git"
+          git -c "http.https://github.com/.extraheader=${auth_header}" clone "$wiki_url" "$wiki_dir"
+          python wiki/visuals/validate_wiki.py --authority-ref origin/development --stage "$wiki_dir"
+          source_commit=$(git rev-parse HEAD)
+          current_source=$(git ls-remote origin refs/heads/docs/wiki | cut -f1)
+          test "$current_source" = "$source_commit"
+          git -C "$wiki_dir" config user.name 'github-actions[bot]'
+          git -C "$wiki_dir" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$wiki_dir" add --all
+          if ! git -C "$wiki_dir" diff --cached --quiet; then
+            git -C "$wiki_dir" commit -m 'docs: publish completed Phase 1 Wiki'
+            python wiki/visuals/validate_wiki.py --authority-ref origin/development --verify-published "$wiki_dir"
+            wiki_branch=$(git -C "$wiki_dir" branch --show-current)
+            current_source=$(git ls-remote origin refs/heads/docs/wiki | cut -f1)
+            test "$current_source" = "$source_commit"
+            git -C "$wiki_dir" -c "http.https://github.com/.extraheader=${auth_header}" push origin "HEAD:${wiki_branch}"
           fi
-
-      - name: Record successful publication
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "${GITHUB_WORKSPACE}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
+          wiki_commit=$(git -C "$wiki_dir" rev-parse HEAD)
+          python wiki/visuals/validate_wiki.py --authority-ref origin/development --verify-published "$wiki_dir"
+          remote_commit=$(git -c "http.https://github.com/.extraheader=${auth_header}" ls-remote "$wiki_url" HEAD | cut -f1)
+          test "$remote_commit" = "$wiki_commit"
           cat > wiki/PUBLISHED_OK.md <<EOF
           # LSF Wiki publication succeeded
 
-          - Source commit: ${GITHUB_SHA}
+          - Source commit: ${source_commit}
+          - Wiki commit: ${wiki_commit}
           - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
-          - Visual pipeline: animated SVG sources and GitHub-compatible GIF renders
+          - Managed inventory: 26 pages and four assets, fully validated
+          - Scope: completed Phase 1 and extension; Phase 2 remains next
           EOF
-
           git add wiki/PUBLISHED_OK.md
-          if git diff --cached --quiet; then
-            echo "Publication marker is already current."
-          else
-            git commit -m "docs(wiki): record successful publication"
+          if ! git diff --cached --quiet; then
+            git commit -m 'docs(wiki): record Phase 1 publication receipt'
             git push origin HEAD:docs/wiki
           fi

@@ -1,37 +1,37 @@
+<!-- LSF-WIKI-MANAGED -->
+
 ### Start
 
 - [[Home]]
-- [[Getting-Started|Getting started]]
-- [[Core-Concepts|Core concepts]]
+- [[Getting-Started]]
+- [[Phase-1-Status]]
 - [[FAQ]]
 - [[Glossary]]
 
 ### Architecture
 
 - [[Architecture]]
-- [[Activation-Lifecycle|Activation lifecycle]]
-- [[Execution-Cells|Execution cells]]
-- [[Security-and-Isolation|Security and isolation]]
-- [[State-and-Effects|State and effects]]
-- [[Deployment-and-Routing|Deployment and routing]]
+- [[Core-Concepts]]
+- [[Activation-Lifecycle]]
+- [[Execution-Cells]]
+- [[Security-and-Isolation]]
+- [[Deployment-and-Routing]]
+- [[State-and-Effects]]
 
-### Build
+### Build and operate
 
-- [[Contracts-and-APIs|Contracts and APIs]]
-- [[Capsule-Development|Capsule development]]
-- [[Development-Workflow|Development workflow]]
-- [[Testing-and-Benchmarks|Testing and benchmarks]]
+- [[Operator-CLI]]
+- [[SDKs]]
+- [[Capsule-Development]]
+- [[Contracts-and-APIs]]
+- [[Development-Workflow]]
 
-### Project
+### Evidence and project
 
+- [[Performance-and-Infrastructure]]
+- [[Testing-and-Benchmarks]]
 - [[Roadmap]]
-- [[Design-Governance|Design governance]]
-- [[Repository-Map|Repository map]]
-
-### Canonical sources
-
-- [Repository](https://github.com/KirilsTurkins/latent-service-fabric)
-- [Architecture index](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/ARCHITECTURE.md)
-- [API surface](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/api-surface.md)
-- [ADRs](https://github.com/KirilsTurkins/latent-service-fabric/tree/release/adr)
-- [Issues](https://github.com/KirilsTurkins/latent-service-fabric/issues)
+- [[Design-Governance]]
+- [[Repository-Map]]
+- [[Phase-0-Status]]
+- [[Phase-0-Runbook]]

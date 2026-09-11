@@ -1,106 +1,12 @@
-# Capsule Development
+<!-- LSF-WIKI-MANAGED -->
+# Capsule development
 
-> **Document role:** Design guide for future capsule authors. The runtime and packaging flow are not yet fully implemented.
+Start with the maintained Rust echo component and WIT contract. `make echo-capsule` produces component bytes, capsule manifest, extracted typed contracts, deployment manifest and canonical input under `target/capsules/echo/`. Generated metadata names the actual digest.
 
-## Capsule shape
+Publish through the local node using the operator CLI. The server validates component identity, tenant, manifest semantics and exported types before durable publication. Apply a deployment and invoke its service/function using canonical WIT values.
 
-A capsule project:
+Phase 1 permits generic supported scalar/composite arguments and context/log/clock imports. No ambient WASI filesystem, environment, process or network authority is installed. WIT declarations for state, blobs, HTTP, secrets or child calls do not make providers available.
 
-1. defines or consumes versioned WIT packages;
-2. implements exported interfaces in a supported guest language;
-3. declares only the platform imports it requires;
-4. compiles to a WebAssembly Component Model binary;
-5. packages immutable metadata and supply-chain evidence.
+The six SDK directories are interface models, not six end-to-end guest build chains. The maintained executable guest is Rust. OCI push/pull, signing, provenance, SBOM and trusted distributable AOT are Phase 2 work. Local prepared code caching is implemented and does not imply those supply-chain features.
 
-Expected release assets include:
-
-```text
-component.wasm
-capsule manifest
-WIT package and lock graph
-SBOM
-build provenance
-signature or local trust declaration
-```
-
-## Design rules
-
-A portable capsule should:
-
-- create no background thread or listener;
-- make no assumption that process-local state survives a call;
-- avoid unrestricted filesystem, environment, socket, process, and secret access;
-- express every external dependency through an imported WIT contract;
-- use stable idempotency identities for side-effecting operations;
-- use asynchronous calls or durable workflow suspension for long waits;
-- use blob capabilities for large values;
-- declare domain errors explicitly;
-- keep platform failures separate from domain errors.
-
-## Export design
-
-Exports form the service's domain contract. Prefer:
-
-- explicit input and output records;
-- versioned package names;
-- bounded payloads or blob references;
-- domain-specific error variants;
-- clear idempotency and retry semantics;
-- operations whose deadlines and side effects can be reasoned about.
-
-Do not encode fabric infrastructure failures as arbitrary domain strings.
-
-## Import design
-
-Imports declare needed external capabilities. Importing an interface does not grant it. At activation time, the runtime intersects:
-
-```text
-requested import ∩ deployment grant ∩ principal authorization
-```
-
-An absent grant should result in an explicit platform denial, not ambient host access.
-
-## State
-
-Choose the smallest state model that fits:
-
-- stateless invocation;
-- transactional keyed state;
-- entity-key routing;
-- explicit durable workflow state machine.
-
-Do not treat guest linear memory as durable state.
-
-## Effects
-
-Represent external operations as effect intents when durability and recovery are required. Include deterministic effect identity and a stable idempotency key. Do not assume that a transport retry is safe merely because the first response was lost.
-
-## Long-running work
-
-Ordinary async waiting may retain logical activation state while releasing a compute worker. Work that must survive node or process loss should be an explicit durable workflow that can persist a continuation and release the entire cell.
-
-## Build and packaging status
-
-The current repository validates interface definitions and compile-smoke projections. It does not yet provide the final `latent` CLI packaging and deployment implementation described by the architecture.
-
-The [`examples/echo-contract`](https://github.com/KirilsTurkins/latent-service-fabric/tree/release/examples/echo-contract) directory demonstrates contract shape without implying a working production runtime.
-
-## Review checklist
-
-Before proposing a capsule-facing contract, verify:
-
-- WIT is the authoritative source;
-- contract and implementation versions are separated;
-- domain and platform errors remain distinct;
-- every import has policy and resource implications;
-- state and external-effect semantics are explicit;
-- large values avoid repeated copying;
-- child calls inherit bounded budgets;
-- compatibility tests cover the intended evolution path.
-
-## Canonical sources
-
-- [Creating a capsule](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/component-development/creating-a-capsule.md)
-- [Contracts and bindings](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/architecture/contracts-and-bindings.md)
-- [State and effects](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/architecture/state-and-effects.md)
-- [Security architecture](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/architecture/security.md)
+Authorities: [capsule guide](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/component-development/creating-a-capsule.md), [build foundation](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/build-foundation.md), [quickstart](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/standalone-quickstart.md), [echo example](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/examples/echo-contract/README.md).
