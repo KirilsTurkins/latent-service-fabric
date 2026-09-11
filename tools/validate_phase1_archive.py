@@ -29,6 +29,7 @@ try:
     from .optimization_backend_revision.evidence import validate_suite as validate_backend_revision_suite
     from .optimization_cache_lookup.evidence import validate_suite as validate_cache_lookup_suite
     from .optimization_scheduler.evidence import validate_suite as validate_scheduler_suite
+    from .phase1_docker_archive import verify as verify_docker
 except ImportError:
     import package_phase0_evidence as paths
     import phase0_evidence
@@ -42,6 +43,7 @@ except ImportError:
     from tools.optimization_backend_revision.evidence import validate_suite as validate_backend_revision_suite
     from tools.optimization_cache_lookup.evidence import validate_suite as validate_cache_lookup_suite
     from tools.optimization_scheduler.evidence import validate_suite as validate_scheduler_suite
+    from tools.phase1_docker_archive import verify as verify_docker
 
 ARCHIVE = 'raw-evidence.tar.gz'
 MANIFEST = 'raw-evidence.manifest.json'
@@ -240,7 +242,7 @@ def evidence_kind(directory):
         return 'backend-revision'
     if aggregate.get('schema') == 'latent.optimization.cold-aggregate.v1':
         return 'cold'
-    for kind in ('cache-lookup', 'cache-behavior', 'scheduler'):
+    for kind in ('cache-lookup', 'cache-behavior', 'scheduler', 'docker'):
         if aggregate.get('schema') == f'latent.optimization.{kind}-aggregate.v1':
             return kind
     del aggregate
@@ -444,6 +446,8 @@ def verify_archive(root, manifest, archive_path, *, replay):
                 verify_cache(extracted, kind)
             elif kind == 'scheduler':
                 verify_scheduler(extracted)
+            elif kind == 'docker':
+                verify_docker(extracted)
             else:
                 validate_aggregate(extracted / 'aggregate.json')
                 validate_comparison(extracted / 'comparison.json')

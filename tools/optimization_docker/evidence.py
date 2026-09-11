@@ -453,6 +453,10 @@ def api_protocol(rows, suite, configs):
             require(method == "GET" and status == 200 and not states and response["State"]["Running"] is True
                     and response["Config"]["Labels"].get(LABEL) == "issue111-controller-01", "docker-controller-identity")
             equal(response, suite["environment"]["controller"], "docker-controller-inspect-binding")
+        elif path.startswith("/volumes/"):
+            require(path == "/volumes/"+suite["volume"] and method == "GET" and status == 200
+                    and connected and not states, "docker-owned-volume-order")
+            equal(response, suite["environment"]["volume"], "docker-volume-inspect-binding")
         elif path.startswith("/containers/create?name="):
             name = path.removeprefix("/containers/create?name=")
             require(name in names and name not in created_names and method == "POST" and status == 201
@@ -621,6 +625,18 @@ def node_inventory(value, *, expected_entries, expected_grants=None):
     require(len(names) == len(set(names)), "docker-node-topology-duplicate")
 
 
+def applied_manifest(source):
+    """The manifest codec sorts architectures and omits empty optional fields."""
+    value = deepcopy(source)
+    spec = value["spec"]
+    if spec.get("grants") == []:
+        del spec["grants"]
+    if spec["resources"].get("wallTimeLimitMillis") is None:
+        spec["resources"].pop("wallTimeLimitMillis", None)
+    spec["placement"]["architectures"].sort()
+    return value
+
+
 def seeds(suite, root, built, calls, publications):
     results, helper_ids, total = {}, set(), 0
     build_path = original_root(suite["build_path"])
@@ -675,7 +691,8 @@ def seeds(suite, root, built, calls, publications):
                 deployment = result["data"]["deployment"]
                 require(uint(deployment["generation"]) == index+1 and result["data"]["warnings"] == [],
                         "docker-seed-deployment-generation")
-                equal(deployment["manifest"], publications[model.SERVICES[index]]["deployment"], "docker-seed-applied-manifest")
+                equal(deployment["manifest"], applied_manifest(publications[model.SERVICES[index]]["deployment"]),
+                      "docker-seed-applied-manifest")
             total += 1
         for observed in (value["before"], value["after"]):
             node_inventory(observed, expected_entries=0, expected_grants=0)
@@ -814,7 +831,13 @@ def negotiation(value, started, finished):
 
 
 def environment(value, calls, groups, started, finished):
-    fields(value, "engine_version engine_info engine_negotiation controller_platform observations controller")
+    fields(value, "engine_version engine_info engine_negotiation controller_platform observations controller volume")
+    volume = value["volume"]
+    require(volume["Labels"] == {LABEL: "issue111-controller-01"}
+            and any(row["Type"] == "volume" and row.get("Name") == volume["Name"]
+                    and row["Destination"] == "/bench" and row["RW"] is True
+                    for row in value["controller"]["Mounts"]), "docker-owned-data-volume")
+    equal(calls.find("GET", "/volumes/"+volume["Name"])["response"], volume, "docker-volume-binding")
     negotiation(value["engine_negotiation"], started, uint(calls.rows[0]["receipt"]["begin_nanos"]))
     equal(value["engine_negotiation"]["response"], value["engine_version"], "docker-engine-version-changed")
     equal(calls.find("GET", "/version")["response"], value["engine_version"], "docker-version-binding")

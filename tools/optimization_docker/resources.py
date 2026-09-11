@@ -251,7 +251,10 @@ def _directory(membership, mountinfo):
         if "\\" in root or mount != "/sys/fs/cgroup":
             continue
         if PurePosixPath(path).is_relative_to(PurePosixPath(root)):
-            return str(PurePosixPath(mount) / PurePosixPath(path).relative_to(root))
+            relative = PurePosixPath(path).relative_to(root)
+            # Rust PathBuf::join(empty) retains this separator. PurePosixPath
+            # normalizes it away, so reconstruct the actual observer spelling.
+            return mount + "/" if not relative.parts else str(PurePosixPath(mount) / relative)
     return None
 
 

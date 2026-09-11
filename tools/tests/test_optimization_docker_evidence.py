@@ -159,6 +159,27 @@ class DockerOuterEvidence(unittest.TestCase):
         rows, suite, configs = mini_protocol()
         self.assertEqual(evidence.api_protocol(rows, suite, configs), {CID: []})
 
+    def test_volume_probe_must_bind_the_owned_volume_before_containers(self):
+        rows, suite, configs = mini_protocol()
+        suite["volume"] = "owned-volume"
+        suite["environment"]["volume"] = {"Name": "owned-volume"}
+        probe = api(6, "GET", "/volumes/owned-volume", {"Name": "owned-volume"})
+        rows.insert(6, probe)
+        self.assertEqual(evidence.api_protocol(rows, suite, configs), {CID: []})
+        probe["response"] = {"Name": "foreign-volume"}
+        with self.assertRaisesRegex(ValueError, "volume-inspect-binding"):
+            evidence.api_protocol(rows, suite, configs)
+
+    def test_applied_manifest_normalizes_codec_defaults_without_changing_limits(self):
+        source = {"spec": {"grants": [], "resources": {"cpuFuel": 10, "wallTimeLimitMillis": None},
+                           "placement": {"architectures": ["x86_64", "aarch64"]}}}
+        expected = {"spec": {"resources": {"cpuFuel": 10},
+                             "placement": {"architectures": ["aarch64", "x86_64"]}}}
+        self.assertEqual(evidence.applied_manifest(source), expected)
+        self.assertIn("grants", source["spec"])
+        source["spec"]["resources"]["wallTimeLimitMillis"] = 1000
+        self.assertEqual(evidence.applied_manifest(source)["spec"]["resources"]["wallTimeLimitMillis"], 1000)
+
     def test_force_removal_unowned_signal_hidden_exec_and_changed_config_reject(self):
         changes = (
             lambda rows: rows[14].update(path=f"/containers/{CID}?v=false&force=true"),

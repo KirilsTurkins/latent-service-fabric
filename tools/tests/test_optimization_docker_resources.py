@@ -58,7 +58,7 @@ def cgroup(arm, density, start, index):
         files[name] = raw(value)
     return {"started_nanos": str(start), "finished_nanos": str(start+1),
             "membership": raw("0::/\n"), "mountinfo": raw("1 0 0:1 / /sys/fs/cgroup rw - cgroup2 cgroup rw\n"),
-            "directory": "/sys/fs/cgroup", "mapping_unavailable_reason": None, "files": files}
+            "directory": "/sys/fs/cgroup/", "mapping_unavailable_reason": None, "files": files}
 
 
 def inspect_pair(arm, density):
@@ -142,6 +142,23 @@ class Fixture:
 
 
 class DockerResources(unittest.TestCase):
+    def test_root_cgroup_mapping_preserves_actual_empty_join_spelling(self):
+        mounts = "1287 1286 0:23 / /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup rw\n"
+        self.assertEqual(resources._directory("0::/\n", mounts), "/sys/fs/cgroup/")
+        self.assertEqual(resources._directory("0::/owned\n", mounts), "/sys/fs/cgroup/owned")
+        subtree = mounts.replace("0:23 / ", "0:23 /owned ")
+        self.assertEqual(resources._directory("0::/owned\n", subtree), "/sys/fs/cgroup/")
+        self.assertEqual(resources._directory("0::/owned/child\n", subtree), "/sys/fs/cgroup/child")
+        self.assertIsNone(resources._directory("0::/foreign\n", subtree))
+        self.assertIsNone(resources._directory("0::/../foreign\n", mounts))
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Fixture(Path(directory))
+            self.assertEqual(fixture.validate()["snapshots"][0]["cgroup"]["directory"], "/sys/fs/cgroup/")
+            fixture.events[2]["detail"]["cgroup"]["directory"] = "/sys/fs/cgroup/foreign"
+            fixture.write()
+            with self.assertRaisesRegex(ValueError, "cgroup-mapping"):
+                fixture.validate()
+
     def test_six_snapshots_bind_identity_and_separate_process_rss_from_one_cgroup(self):
         with tempfile.TemporaryDirectory() as directory:
             fixture = Fixture(Path(directory))
