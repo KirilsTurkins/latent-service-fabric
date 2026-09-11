@@ -1,0 +1,82 @@
+{
+  "command": [
+    "C:\\Users\\turkins\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "C:\\Users\\turkins\\Desktop\\latent-fabric\\tools\\validate_phase1_archive.py",
+    "C:\\Users\\turkins\\Desktop\\latent-fabric\\benchmarks\\optimization\\kubernetes-comparison\\2026-09-11-container-linux-8b0441f",
+    "--docker-package",
+    "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue112-docker-replay-dependency-01"
+  ],
+  "docker_archive": {
+    "bytes": "169803211",
+    "path": "raw-evidence.tar.gz",
+    "sha256": "sha256:b51441c7d23eb9569f77d00026533e9a5395c7732b1109b38cfbc3defeca43fd"
+  },
+  "elapsed_nanos": "439216592800",
+  "exit_code": 0,
+  "failure": null,
+  "finished_nanos": "812630727485500",
+  "finished_utc": "2026-09-11T19:18:09.004027+00:00",
+  "linux_package_receipt": {
+    "bytes": "1403626",
+    "path": "/work/kubernetes-publication-package-01.json",
+    "sha256": "sha256:9e158b8c6df3207403ad88b3dbc06fcfbd3119b8a4591b5f2e6226a66934b906"
+  },
+  "linux_public_bytes_identical": true,
+  "log": {
+    "bytes": "61",
+    "path": "windows-replay.log",
+    "sha256": "sha256:b9a26d6296835c4ef7cdebf6da1408ac901401d9a376ac1420fc80584e5c4f13"
+  },
+  "output_closed": true,
+  "package_inventory": {
+    "aggregate.json": {
+      "bytes": "5782942",
+      "sha256": "sha256:f27538c151edb685722a645764861ab1254e68fec1f6c1f96057563cbff921d6"
+    },
+    "raw-evidence.manifest.json": {
+      "bytes": "1662776",
+      "sha256": "sha256:b926175c75d0e6bad7bb18356decd33572c8ecb833c463683fc3c8ec3bce896d"
+    },
+    "raw-evidence.parts.json": {
+      "bytes": "766",
+      "sha256": "sha256:1cc9a8a416913afeba1cd6ef30f5942e529823da0b3bf04391ecf22d5f273e9d"
+    },
+    "raw-evidence.tar.gz.part-0001": {
+      "bytes": "50000000",
+      "sha256": "sha256:a1f899975e40f255d145b72a38b59682b021e14682c5623081c79e75854f7270"
+    },
+    "raw-evidence.tar.gz.part-0002": {
+      "bytes": "50000000",
+      "sha256": "sha256:a3bc31d98b316c81c9aebc7e542752b38688712fdbe848ae2acc26998587a12e"
+    },
+    "raw-evidence.tar.gz.part-0003": {
+      "bytes": "28227164",
+      "sha256": "sha256:a37e7e8bbcadae067a096fe127bc235e6904367df0647f773e59144a3ef941c7"
+    },
+    "raw-evidence.tar.gz.sha256": {
+      "bytes": "86",
+      "sha256": "sha256:8abcff9ab491b54c27b9b0e55cda4ed273c885d979d5437f6b8dc585d7baedb5"
+    }
+  },
+  "package_unchanged": true,
+  "process_id": 3160,
+  "qualified_campaign_claim": false,
+  "reaped": true,
+  "schema": "latent.optimization.kubernetes-windows-archive-replay.v1",
+  "source": {
+    "commit": "41cb43ac3f7a938e27c6d97a869b8885f1d4760c",
+    "entrypoint": {
+      "bytes": "27448",
+      "sha256": "sha256:8d311ac164398bc4a4f86d72279c70af6f30613a7cf6095a7ea9be28e5ec050e"
+    },
+    "tool_closure_matches_reference": true,
+    "tree": "b7541a420b5a84953cec425c4ddb514428dae804",
+    "validator_reference": "10d50e61c5632ea2361a16dffc3b4819987f4dc4",
+    "validator_reference_tree": "125d2b8fbe41a08f8f07bc1b7ad267f43b977773"
+  },
+  "started_nanos": "812191510930000",
+  "started_utc": "2026-09-11T19:10:49.787446+00:00",
+  "status": "passed",
+  "suite_sha256": "sha256:c25e81cb839752d8bf42666200a6d8b2a21dcee309009104a7f60f85bf2276aa",
+  "timed_out": false
+}

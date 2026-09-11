@@ -7,6 +7,11 @@ receipts; this document asserts no Kubernetes performance result. The pure
 namespace, Pods and Services. The [Docker runbook](docker-comparison.md) defines
 the unchanged client workload and business-operation comparison.
 
+The [retained comparison](../../benchmarks/optimization/kubernetes-comparison/2026-09-11-container-linux-8b0441f/README.md)
+publishes the actual outcomes, failed attempts, resource differences and replay
+receipts. Its restoration command retrieves the exact original Docker dependency
+without restoring unrelated historical archives.
+
 ## Fixed workload and image reuse
 
 Reuse the exact three #111 application/client image tags, retained image content,

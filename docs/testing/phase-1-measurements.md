@@ -1178,3 +1178,18 @@ supplement semantic replay. The archive adapter requires both complete full and
 smoke populations with one shared retained build, keeping the standard 1 GiB
 expanded and 198 MB split-gzip bounds. Follow the runbook's fresh-root commands
 and retain actual validation receipts before publishing any measured claim.
+
+## Kubernetes Service comparison
+
+The [Kubernetes runbook](kubernetes-comparison.md) defines #112's real ClusterIP
+path, unchanged Docker images, seven full pairs / 9,926 offers and separate
+300-offer smoke. The [retained results](../../benchmarks/optimization/kubernetes-comparison/2026-09-11-container-linux-8b0441f/README.md)
+separate warm calls, first calls, image-present cohort readiness, application and
+wrapper resources, client cost and enclosing node observations. They retain the
+native D32 effective 4.16-CPU cap versus LSF's 4.0 CPUs and every earlier attempt.
+
+Replay the complete Kubernetes package with its exact restored Docker dependency;
+both platform campaigns keep their own original populations and limits. Matching
+indices across separate campaigns does not isolate orchestration overhead. The
+runbook and report include owned-cluster/credential cleanup and the compact
+checkout's restoration instructions.

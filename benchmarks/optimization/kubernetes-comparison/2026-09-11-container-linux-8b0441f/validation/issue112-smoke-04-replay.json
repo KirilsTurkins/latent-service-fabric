@@ -1,0 +1,72 @@
+{
+  "scope": "offline-original-evidence-replay-and-schemas",
+  "profile": "smoke",
+  "run_id": "smoke-04",
+  "installed_source": "/bench/kubernetes-source-08",
+  "installed_commit": "8b0441fb5b052c7b103f55a4f2ab2e72b5a4add5",
+  "command": [
+    "python",
+    "/bench/kubernetes-source-08/tools/run_optimization_kubernetes.py",
+    "validate",
+    "--root",
+    "/bench/kubernetes/lsf-112-8c22b65b1529/smoke-04",
+    "--build-root",
+    "/bench/build-01",
+    "--docker-run",
+    "/bench/full-01",
+    "--bootstrap-root",
+    "/bench/kubernetes/lsf-112-8c22b65b1529",
+    "--output",
+    "/work/smoke-validation-02/report"
+  ],
+  "exit_code": 0,
+  "failure": null,
+  "started_nanos": "258587709712317",
+  "finished_nanos": "258607320612812",
+  "child_ru_maxrss_kib": 383808,
+  "inputs_before": [
+    {
+      "path": "/bench/kubernetes-source-08/tools/run_optimization_kubernetes.py",
+      "bytes": "2730",
+      "sha256": "sha256:e77bb8696a331f4b63e0c181d9f68eb25d2970bab52390187f430c5b422d01d8"
+    },
+    {
+      "path": "/bench/kubernetes-source-08/tools/optimization_kubernetes/model.py",
+      "bytes": "16139",
+      "sha256": "sha256:568fc057ba58545fbf558dcac90462fae8fc93f37545699a1908a912728be041"
+    },
+    {
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/smoke-04/suite.json",
+      "bytes": "851250",
+      "sha256": "sha256:c3548615c618b5ea259c642f9c1e967cf7493b81fab390279a7925eeefbe0320"
+    },
+    {
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/smoke-04/api.ndjson",
+      "bytes": "36240737",
+      "sha256": "sha256:bc03d377bf8d8dc81de7240551e88e67077d84834256d51966530529ca67c1a4"
+    }
+  ],
+  "inputs_after": [
+    {
+      "path": "/bench/kubernetes-source-08/tools/run_optimization_kubernetes.py",
+      "bytes": "2730",
+      "sha256": "sha256:e77bb8696a331f4b63e0c181d9f68eb25d2970bab52390187f430c5b422d01d8"
+    },
+    {
+      "path": "/bench/kubernetes-source-08/tools/optimization_kubernetes/model.py",
+      "bytes": "16139",
+      "sha256": "sha256:568fc057ba58545fbf558dcac90462fae8fc93f37545699a1908a912728be041"
+    },
+    {
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/smoke-04/suite.json",
+      "bytes": "851250",
+      "sha256": "sha256:c3548615c618b5ea259c642f9c1e967cf7493b81fab390279a7925eeefbe0320"
+    },
+    {
+      "path": "/bench/kubernetes/lsf-112-8c22b65b1529/smoke-04/api.ndjson",
+      "bytes": "36240737",
+      "sha256": "sha256:bc03d377bf8d8dc81de7240551e88e67077d84834256d51966530529ca67c1a4"
+    }
+  ],
+  "inputs_unchanged": true
+}

@@ -475,4 +475,19 @@ the inputs and completed receipts. Semantic replay preserves every offer,
 first/warmup/measured phase, owner and resource observation. Reports must separate
 native child/wrapper sums, leaf-cgroup totals and client cost, retain lifecycle
 pauses and unavailable values, and state the Docker Desktop/WSL2 scope when used.
-The separate Kubernetes comparison remains #112.
+
+## Kubernetes Service comparison
+
+The [#112 comparison](kubernetes-comparison/2026-09-11-container-linux-8b0441f/README.md)
+completed 300 smoke and 9,926 full offers through actual ClusterIP Services with
+the unchanged Docker images. Native was faster on every headline warm comparison;
+LSF used less application memory at D8/D32. The report preserves the native D32
+effective 4.16-CPU ceiling versus LSF's 4.0 CPUs, first-call and cohort-readiness
+boundaries, node costs and the descriptive Docker/Kubernetes contrasts.
+
+The [runbook](../../docs/testing/kubernetes-comparison.md) defines the pinned
+owned cluster, bounded collection and cleanup. The retained package includes
+earlier failed attempts and the separately completed prior smoke. Replay requires
+the exact original Docker dependency restored under the
+[retention policy](../../docs/testing/benchmark-retention.md). Local
+Docker Desktop/WSL2 results do not establish production Kubernetes capacity.
