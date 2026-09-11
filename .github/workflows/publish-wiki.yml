@@ -69,7 +69,7 @@ jobs:
           fi
           wiki_commit=$(git -C "$wiki_dir" rev-parse HEAD)
           python wiki/visuals/validate_wiki.py --authority-ref origin/development --verify-published "$wiki_dir"
-          remote_commit=$(git -c "http.https://github.com/.extraheader=${auth_header}" ls-remote "$wiki_url" HEAD | cut -f1)
+          remote_commit=$(git -C "$wiki_dir" -c "http.https://github.com/.extraheader=${auth_header}" ls-remote origin HEAD | cut -f1)
           test "$remote_commit" = "$wiki_commit"
           cat > wiki/PUBLISHED_OK.md <<EOF
           # LSF Wiki publication succeeded
