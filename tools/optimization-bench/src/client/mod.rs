@@ -3,6 +3,7 @@ mod output;
 mod plan;
 mod record;
 mod runner;
+mod session;
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -11,6 +12,9 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 type Result<T> = std::result::Result<T, &'static str>;
 
 pub(super) fn run() -> Result<()> {
+    if std::env::args_os().skip(1).any(|arg| arg == "--session") {
+        return session::run();
+    }
     let started = Instant::now();
     let started_unix = unix_millis()?;
     let (plan_path, output_path) = arguments()?;
