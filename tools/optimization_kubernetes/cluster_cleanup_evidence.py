@@ -101,12 +101,28 @@ def _windows_credentials(root, bootstrap_root, value, boot):
     require(uint(sidecar["started_nanos"]) <= uint(sidecar["finished_nanos"]),
             "kubernetes-cluster-cleanup-windows-clock")
     # These are separate Windows and Linux monotonic clock domains.
+    bootstrap_evidence._artifact(bootstrap_root, boot["original_setup"], "original-setup.json", 8 * 1024**2)
     original = read_json(docker.relative(bootstrap_root, "original-setup.json"), 8 * 1024**2)
     require(sidecar["original_setup_sha256"] == boot["original_setup"]["sha256"],
             "kubernetes-cluster-cleanup-windows-original")
-    expected = original["private_kubeconfig_identity"]
+    expected = fields(original["private_kubeconfig_identity"], "path bytes sha256")
+    require(expected["path"] == original["private_kubeconfig"] == "private/kubeconfig"
+            and original["kubeconfig_publishable"] is False and 0 < uint(expected["bytes"]) <= 32 * 1024,
+            "kubernetes-cluster-cleanup-windows-credential-bound")
+    digest(expected["sha256"])
+    # The helper emits the original relative identity, anchored by the retained
+    # setup bytes. Resolve only its lexical Windows scope, never the replay host.
+    root_name = original["root"]
+    require(isinstance(root_name, str) and 0 < len(root_name) <= 32768 and "\0" not in root_name,
+            "kubernetes-cluster-cleanup-windows-root")
+    original_root = PureWindowsPath(root_name)
+    credential_path = original_root / expected["path"]
+    require(original_root.is_absolute() and re.fullmatch(r"[A-Za-z]:", original_root.drive) is not None
+            and ".." not in original_root.parts and credential_path.is_relative_to(original_root)
+            and credential_path.parent == original_root / "private",
+            "kubernetes-cluster-cleanup-windows-root")
     fields(sidecar["credential"], "path bytes sha256")
-    require(sidecar["credential"] == {**expected, "path": str(PureWindowsPath(original["root"]) / expected["path"])},
+    require(sidecar["credential"] == expected,
             "kubernetes-cluster-cleanup-windows-credential")
     bootstrap_evidence._artifact(root, sidecar["helper"], "windows-credential-cleanup.py", 64 * 1024)
     bootstrap_evidence._artifact(root, sidecar["cluster_cleanup"], "cleanup.json", 8 * 1024**2)

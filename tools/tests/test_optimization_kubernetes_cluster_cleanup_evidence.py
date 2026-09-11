@@ -3,7 +3,7 @@ import copy
 from contextlib import redirect_stdout
 import io
 import json
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 import tempfile
 import time
 import unittest
@@ -51,6 +51,7 @@ class ClusterCleanupEvidence(unittest.TestCase):
         original = json.loads((base / "original-setup.json").read_bytes())
         original["root"] = r"C:\owned\issue112-setup-01"
         original["private_kubeconfig"] = "private/kubeconfig"
+        original["kubeconfig_publishable"] = False
         original["private_kubeconfig_identity"] = copy.deepcopy(boot["private_credentials"][0])
         write_json(base / "original-setup.json", original)
         boot["original_setup"] = reference(base / "original-setup.json", base)
@@ -74,8 +75,7 @@ class ClusterCleanupEvidence(unittest.TestCase):
         helper.write_bytes(b"# Synthetic retained helper fixture. Never executed.\n")
         sidecar = {"schema": "latent.optimization.kubernetes-windows-credential-cleanup.v1", "owner": boot["owner"],
                    "original_setup_sha256": boot["original_setup"]["sha256"],
-                   "credential": {**original["private_kubeconfig_identity"],
-                       "path": str(PureWindowsPath(original["root"]) / "private/kubeconfig")},
+                   "credential": copy.deepcopy(original["private_kubeconfig_identity"]),
                    "verified_before": True, "removed": True, "absent": True,
                    "started_nanos": "1", "finished_nanos": "2", "helper": reference(helper, args.output),
                    "cluster_cleanup": reference(args.output / "cleanup.json", args.output), "failure": None}
@@ -105,6 +105,8 @@ class ClusterCleanupEvidence(unittest.TestCase):
                 self.assertEqual(len(result["nodes_removed"]), 2)
                 self.assertEqual(result["network_removed"], not preexisting)
                 self.assertEqual(result["credentials_removed"][-1]["path"], "private/kubeconfig")
+                sidecar = json.loads((root / "windows-credential-cleanup.json").read_bytes())
+                self.assertEqual(sidecar["credential"]["path"], "private/kubeconfig")
 
     def test_rehashed_foreign_network_or_crossed_node_is_rejected(self):
         for operation in ("network-before", "node-recheck-worker"):
@@ -154,7 +156,7 @@ class ClusterCleanupEvidence(unittest.TestCase):
                 self.validate(root, base, boot)
 
     def test_original_windows_credential_and_retained_helper_are_mandatory(self):
-        for change in ("absent", "path", "helper"):
+        for change in ("absent", "path", "relative-traversal", "digest", "bytes", "original", "helper"):
             with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
                 root, base, boot = self.fixture(Path(temporary))
                 path = root / "windows-credential-cleanup.json"
@@ -163,11 +165,52 @@ class ClusterCleanupEvidence(unittest.TestCase):
                     value["absent"] = False
                 elif change == "path":
                     value["credential"]["path"] = r"C:\unrelated\private\kubeconfig"
+                elif change == "relative-traversal":
+                    value["credential"]["path"] = "private/../kubeconfig"
+                elif change == "digest":
+                    value["credential"]["sha256"] = sha256(b"crossed credential")
+                elif change == "bytes":
+                    value["credential"]["bytes"] = "1"
+                elif change == "original":
+                    value["original_setup_sha256"] = sha256(b"crossed setup")
                 else:
                     value["helper"]["path"] = "../unrelated.py"
                 write_json(path, value)
                 with self.assertRaises(ValueError):
                     self.validate(root, base, boot)
+
+    def test_windows_relative_identity_still_requires_safe_bounded_original_scope(self):
+        changes = (
+            lambda original: original.update(root="relative/setup"),
+            lambda original: original.update(root=r"C:\owned\..\unrelated"),
+            lambda original: original.update(root=r"\\server\share\setup"),
+            lambda original: original.update(root="C:\\owned\\" + "x" * 32768),
+            lambda original: original.update(kubeconfig_publishable=True),
+            lambda original: original["private_kubeconfig_identity"].update(path="../kubeconfig"),
+            lambda original: original["private_kubeconfig_identity"].update(bytes="32769"),
+        )
+        for change in changes:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root, base, boot = self.fixture(Path(temporary))
+                original = json.loads((base / "original-setup.json").read_bytes())
+                change(original)
+                write_json(base / "original-setup.json", original)
+                boot["original_setup"] = reference(base / "original-setup.json", base)
+                value = json.loads((root / "windows-credential-cleanup.json").read_bytes())
+                value["original_setup_sha256"] = boot["original_setup"]["sha256"]
+                value["credential"] = copy.deepcopy(original["private_kubeconfig_identity"])
+                write_json(root / "windows-credential-cleanup.json", value)
+                with self.assertRaisesRegex(ValueError, "windows-(root|credential-bound)"):
+                    self.validate(root, base, boot)
+
+    def test_changed_original_setup_bytes_do_not_rebind_the_relative_credential(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root, base, boot = self.fixture(Path(temporary))
+            original = json.loads((base / "original-setup.json").read_bytes())
+            original["root"] = r"C:\other\setup"
+            write_json(base / "original-setup.json", original)
+            with self.assertRaises(ValueError):
+                self.validate(root, base, boot)
 
 
 if __name__ == "__main__":
