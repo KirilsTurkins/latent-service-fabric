@@ -1,8 +1,6 @@
 """Small verified worker transfers; large images keep their separate setup receipt."""
 from __future__ import annotations
 
-import io
-import os
 from pathlib import Path, PurePosixPath
 import stat
 import tarfile
@@ -90,13 +88,24 @@ def download(worker, source_path: str, destination: Path, archive_path: Path):
     require(source_path.startswith(root) and ".." not in PurePosixPath(source_path).parts,
             "kubernetes-download-owned-path")
     started = stamp()
-    receipt = worker.engine.download_archive(worker.container_id, source_path, archive_path,
-                                             timeout=60, maximum=MAX_TRANSFER)
-    inventory = extract_archive(archive_path, destination, expected_root=PurePosixPath(source_path).name)
-    return worker.journal.append({"provider": "docker", "operation": "worker-download",
-        "container_id": worker.container_id, "source_path": source_path,
-        "started_nanos": started, "finished_nanos": stamp(), "receipt": receipt,
-        "inventory": inventory, "archive_sha256": fingerprint(archive_path)[0]})["ordinal"]
+    receipt = inventory = checksum = failure = None
+    try:
+        receipt = worker.engine.download_archive(worker.container_id, source_path, archive_path,
+                                                 timeout=60, maximum=MAX_TRANSFER)
+        checksum = fingerprint(archive_path)[0]
+        inventory = extract_archive(archive_path, destination, expected_root=PurePosixPath(source_path).name)
+    except BaseException as error:
+        failure = type(error).__name__
+        receipt = getattr(error, "receipt", receipt)
+        if archive_path.is_file():
+            checksum = fingerprint(archive_path)[0]
+        raise
+    finally:
+        row = worker.journal.append({"provider": "docker", "operation": "worker-download",
+            "container_id": worker.container_id, "source_path": source_path,
+            "started_nanos": started, "finished_nanos": stamp(), "receipt": receipt,
+            "inventory": inventory, "archive_sha256": checksum, "failure": failure})
+    return row["ordinal"]
 
 
 def copy_file(source: Path, destination: Path):

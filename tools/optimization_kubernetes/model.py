@@ -22,7 +22,6 @@ OWNER_LABEL = "latent.benchmark.owner"
 RUN_LABEL = "latent.benchmark.run"
 ROLE_LABEL = "latent.benchmark.role"
 WORKER_LABEL = "latent.benchmark.worker"
-WORKER_VALUE = "issue112"
 POD_PIDS_LIMIT = 512
 TERMINATION_SECONDS = 40
 TMP_BYTES = 16 * 1024**2
@@ -96,14 +95,15 @@ def startup_probe():
             "timeoutSeconds": 1, "failureThreshold": 120, "successThreshold": 1}
 
 
-def plan(profile):
+def plan(profile, *, owner):
+    _label(owner, "kubernetes-owner", 48)
     workload = docker.plan(profile)
     return {"schema": PREFIX + "plan.v1", "profile": profile, "workload": workload,
             "seed_reuse": {"source": "docker-stopped-pristine-catalogs", "densities": list(DENSITIES),
                            "new_lsf_starts": 0, "new_management_rpcs": 0, "new_guest_invokes": 0},
             "measured_services": 82 * workload["repetitions"],
             "maximum_live_application_pods": 32, "maximum_live_client_pods": 1,
-            "node_selector": {WORKER_LABEL: WORKER_VALUE}, "runtime": "runc", "runtime_class": None,
+            "node_selector": {WORKER_LABEL: owner}, "runtime": "runc", "runtime_class": None,
             "resources": "cpu-memory-requests-equal-limits-matched-aggregate",
             "pod_pids_limit": POD_PIDS_LIMIT, "fd_limit_policy": "observe-runtime-default",
             "restart_policy": "Never", "automount_service_account_token": False,
@@ -180,7 +180,7 @@ def pod(image, command, *, arm, density, owner, run_id, role, fixtures, output, 
             "metadata": {"name": role, "namespace": namespace_name(owner, run_id),
                          "labels": labels(owner, run_id, role)},
             "spec": {"containers": [container], "volumes": volumes,
-                     "nodeSelector": {WORKER_LABEL: WORKER_VALUE}, "restartPolicy": "Never",
+                     "nodeSelector": {WORKER_LABEL: owner}, "restartPolicy": "Never",
                      "terminationGracePeriodSeconds": TERMINATION_SECONDS,
                      "automountServiceAccountToken": False, "enableServiceLinks": False,
                      "hostNetwork": False, "hostPID": False, "hostIPC": False,

@@ -51,7 +51,7 @@ case "$mode" in
         verify "$1" "$2" "$3"
         case "$4" in USR1|TERM) kill -s "$4" "$1" ;; *) exit 64 ;; esac
         ;;
-    observe)
+    observe|client)
         [ "$#" -eq 3 ] || exit 64
         verify "$1" "$2" "$3"
         wrapper=$1
@@ -59,19 +59,21 @@ case "$mode" in
         case "$leaf" in /*) ;; *) exit 66 ;; esac
         case "$leaf" in *..*) exit 66 ;; esac
         directory=/sys/fs/cgroup$leaf
-        children=$(cat "$directory/cgroup.procs")
-        child=''
-        for item in $children; do
-            if [ "$item" != "$wrapper" ]; then
-                [ -z "$child" ] || exit 66
-                child=$item
-            fi
-        done
-        number "$child"
         emit_value wrapper.pid "$wrapper"
-        emit_value child.pid "$child"
         process wrapper "$wrapper"
-        process child "$child"
+        if [ "$mode" = observe ]; then
+            children=$(cat "$directory/cgroup.procs")
+            child=''
+            for item in $children; do
+                if [ "$item" != "$wrapper" ]; then
+                    [ -z "$child" ] || exit 66
+                    child=$item
+                fi
+            done
+            number "$child"
+            emit_value child.pid "$child"
+            process child "$child"
+        fi
         index=0
         while :; do
             [ "$index" -lt 16 ] || exit 65

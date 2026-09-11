@@ -25,11 +25,11 @@ def fields(raw):
     return result
 
 
-def observation(raw, index, started, finished):
+def observation(raw, index, started, finished, *, client=False):
     selected = fields(raw)
     value = {"snapshot_index": index, "started_nanos": started, "finished_nanos": finished}
     consumed = set()
-    for role in ("wrapper", "child"):
+    for role in (("wrapper",) if client else ("wrapper", "child")):
         pid_name = role + ".pid"
         pid = selected[pid_name]["value"]
         require(isinstance(pid, str) and re.fullmatch(r"[1-9][0-9]*", pid), "kubernetes-observer-pid")

@@ -18,7 +18,7 @@ class Response:
     def getheader(self, name, default):
         return default
 
-    def read(self, length):
+    def read1(self, length):
         result, self.data = self.data[:length], self.data[length:]
         return result
 

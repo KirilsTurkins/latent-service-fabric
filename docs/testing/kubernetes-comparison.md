@@ -47,7 +47,9 @@ measured populations remain separate, without retries or replacement offers.
 
 Use a uniquely owned kind cluster with one control plane and one dedicated worker,
 an explicit private kubeconfig/context and retained tool/node-image pins. The
-worker carries `latent.benchmark.worker=issue112`. Pods select that label and use
+worker carries `latent.benchmark.worker=<owner>` with the exact unique cluster
+owner from the setup receipt. `model.plan(profile, owner=owner)` and Pods select
+that owned label and use
 the normal Kubernetes scheduler; they do not set `nodeName`. Keep the ordinary
 runc runtime. There are no experiment RuntimeClasses or altered runc base specs.
 The previously considered four-runtime configuration is outside this protocol.

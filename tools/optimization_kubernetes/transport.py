@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import base64
+from contextlib import contextmanager
 import hashlib
 import http.client
 import json
+import os
 from pathlib import Path
 import re
+import signal
 import ssl
 import time
 from urllib.parse import urlencode
@@ -16,6 +19,27 @@ from tools.optimization_docker.owned import encoded, identifier, stamp
 from tools.optimization_evidence.common import decode, require, sha256
 
 MAX_RESPONSE = 8 * 1024**2
+
+
+@contextmanager
+def hard_deadline(seconds):
+    """The Linux collector's synchronous API calls own one scoped wall alarm."""
+    if os.name != "posix":  # Pure transport fixtures also run on Windows.
+        yield
+        return
+    require(signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0), "kubernetes-existing-wall-alarm")
+    previous = signal.getsignal(signal.SIGALRM)
+
+    def expired(_signal, _frame):
+        raise TimeoutError("kubernetes-api-wall-deadline")
+
+    signal.signal(signal.SIGALRM, expired)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
 
 
 def blob(data):
@@ -82,14 +106,22 @@ class Kubernetes:
         connection = http.client.HTTPSConnection(self.host, 6443, timeout=timeout, context=self.context)
         start, received, status, failure, complete = stamp(), bytearray(), None, None, False
         try:
-            connection.request(method, path, request, {"Content-Type": "application/json", "Connection": "close"})
-            response = connection.getresponse()
-            status = response.status
-            require(response.getheader("Content-Encoding", "identity") == "identity",
-                    "kubernetes-api-content-encoding")
-            while chunk := response.read(min(65536, MAX_RESPONSE + 1 - len(received))):
-                received.extend(chunk)
-                require(len(received) <= MAX_RESPONSE, "kubernetes-api-response-bound")
+            with hard_deadline(timeout):
+                connection.request(method, path, request, {"Content-Type": "application/json", "Connection": "close"})
+                response = connection.getresponse()
+                status = response.status
+                require(response.getheader("Content-Encoding", "identity") == "identity",
+                        "kubernetes-api-content-encoding")
+                while True:
+                    remaining = timeout - (time.monotonic_ns() - int(start)) / 10**9
+                    require(remaining > 0, "kubernetes-api-deadline")
+                    if getattr(connection, "sock", None) is not None:
+                        connection.sock.settimeout(remaining)
+                    chunk = response.read1(min(65536, MAX_RESPONSE + 1 - len(received)))
+                    if not chunk:
+                        break
+                    received.extend(chunk)
+                    require(len(received) <= MAX_RESPONSE, "kubernetes-api-response-bound")
                 require(time.monotonic_ns() - int(start) <= timeout * 10**9, "kubernetes-api-deadline")
             complete = True
             require(status in expected, "kubernetes-api-status")
@@ -102,7 +134,8 @@ class Kubernetes:
             row = self.journal.append({"provider": "kubernetes", "method": method, "path": path,
                 "request": blob(request), "response": blob(bytes(received)), "status": status,
                 "started_nanos": start, "finished_nanos": stamp(), "response_complete": complete,
-                "connection_closed": True, "json_response": json_response, "failure": failure})
+                "connection_closed": True, "json_response": json_response, "failure": failure,
+                "timeout_seconds": timeout, "expected_statuses": list(expected)})
         return value, row["ordinal"]
 
 
@@ -179,16 +212,26 @@ class Worker:
         root = "/var/local/lsf112/" + self.owner
         require(destination == root or destination.startswith(root + "/"), "kubernetes-upload-owned-path")
         require(".." not in Path(destination).parts and archive.is_file() and not archive.is_symlink()
-                and 0 < archive.stat().st_size <= 32 * 1024**2, "kubernetes-upload-bound")
-        with archive.open("rb") as stream:
-            checksum = "sha256:" + hashlib.file_digest(stream, "sha256").hexdigest()
-            stream.seek(0)
-            raw, receipt = self.engine._exchange("PUT", "/v" + API_VERSION + "/containers/" + self.container_id
-                + "/archive?" + urlencode({"path": destination, "noOverwriteDirNonDir": "1"}),
-                iter(lambda: stream.read(65536), b""), archive.stat().st_size,
-                expected=(200,), timeout=60, maximum=MAX_RESPONSE, content_type="application/x-tar")
-        require(receipt["request_sha256"] == checksum, "kubernetes-upload-changed")
-        return self.journal.append({"provider": "docker", "operation": "worker-upload",
-            "container_id": self.container_id, "destination": destination,
-            "archive": {"bytes": receipt["request_bytes"], "sha256": checksum},
-            "response": blob(raw), "receipt": receipt})["ordinal"]
+                and 0 < archive.stat().st_size <= 40 * 1024**2, "kubernetes-upload-bound")
+        raw, receipt, failure, checksum = b"", None, None, None
+        size = archive.stat().st_size
+        try:
+            with archive.open("rb") as stream:
+                checksum = "sha256:" + hashlib.file_digest(stream, "sha256").hexdigest()
+                stream.seek(0)
+                raw, receipt = self.engine._exchange("PUT", "/v" + API_VERSION + "/containers/" + self.container_id
+                    + "/archive?" + urlencode({"path": destination, "noOverwriteDirNonDir": "1"}),
+                    iter(lambda: stream.read(65536), b""), size,
+                    expected=(200,), timeout=60, maximum=MAX_RESPONSE, content_type="application/x-tar")
+            require(receipt["request_sha256"] == checksum, "kubernetes-upload-changed")
+        except BaseException as error:
+            failure = type(error).__name__
+            receipt = getattr(error, "receipt", receipt)
+            raw = getattr(error, "body", raw)
+            raise
+        finally:
+            row = self.journal.append({"provider": "docker", "operation": "worker-upload",
+                "container_id": self.container_id, "destination": destination,
+                "archive": {"bytes": str(size), "sha256": checksum},
+                "response": blob(raw), "receipt": receipt, "failure": failure})
+        return row["ordinal"]

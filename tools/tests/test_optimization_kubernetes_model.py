@@ -25,7 +25,7 @@ class KubernetesModelTests(unittest.TestCase):
     def test_workload_and_order_are_exactly_the_docker_population(self):
         for profile, offers, pairs in (("smoke", "300", 1), ("full", "9926", 7)):
             with self.subTest(profile=profile):
-                plan = model.plan(profile)
+                plan = model.plan(profile, owner=OWNER)
                 self.assertEqual(plan["workload"], docker.plan(profile))
                 self.assertEqual(plan["workload"]["logical_offers"], offers)
                 self.assertEqual(plan["measured_services"], 82 * pairs)
@@ -34,12 +34,12 @@ class KubernetesModelTests(unittest.TestCase):
                     self.assertEqual(model.groups(profile, pair), docker.groups(profile, pair))
 
     def test_seed_reuse_does_not_claim_new_setup_calls(self):
-        plan = model.plan("full")
+        plan = model.plan("full", owner=OWNER)
         self.assertEqual(plan["seed_reuse"], {"source": "docker-stopped-pristine-catalogs",
             "densities": [1, 8, 32], "new_lsf_starts": 0, "new_management_rpcs": 0, "new_guest_invokes": 0})
         self.assertEqual(plan["workload"]["seed_management_rpcs"], 88)
         plan["workload"]["groups"][0][0]["phases"].clear()
-        self.assertTrue(model.plan("full")["workload"]["groups"][0][0]["phases"])
+        self.assertTrue(model.plan("full", owner=OWNER)["workload"]["groups"][0][0]["phases"])
 
     def test_native_resource_partitions_match_cohort_totals(self):
         for density in (1, 8, 32):
@@ -61,7 +61,10 @@ class KubernetesModelTests(unittest.TestCase):
                 model.resources(arm, density)
         for profile in ("large", None, True):
             with self.assertRaises(EvidenceError):
-                model.plan(profile)
+                model.plan(profile, owner=OWNER)
+        for owner in (None, True, "other_owner", "a" * 49):
+            with self.subTest(owner=owner), self.assertRaises(EvidenceError):
+                model.plan("smoke", owner=owner)
 
     def test_namespace_and_labels_bind_both_owner_and_run(self):
         value = model.namespace(OWNER, RUN)
@@ -96,7 +99,9 @@ class KubernetesModelTests(unittest.TestCase):
     def test_fixed_security_and_tmp_do_not_invent_runtime_limits(self):
         value = self.pod()
         spec, container = value["spec"], value["spec"]["containers"][0]
-        self.assertEqual(spec["nodeSelector"], {model.WORKER_LABEL: "issue112"})
+        self.assertEqual(spec["nodeSelector"], {model.WORKER_LABEL: OWNER})
+        self.assertEqual(model.plan("smoke", owner=OWNER)["node_selector"], spec["nodeSelector"])
+        self.assertNotEqual(model.plan("smoke", owner="other-owner")["node_selector"], spec["nodeSelector"])
         self.assertNotIn("nodeName", spec)
         self.assertNotIn("runtimeClassName", spec)
         self.assertEqual(spec["restartPolicy"], "Never")
@@ -110,7 +115,7 @@ class KubernetesModelTests(unittest.TestCase):
         self.assertTrue(all(row["hostPath"]["type"] == "Directory" for row in spec["volumes"][:-1]))
         self.assertIs(container["volumeMounts"][0]["readOnly"], True)
         self.assertIs(container["volumeMounts"][1]["readOnly"], False)
-        self.assertEqual(model.plan("full")["pod_pids_limit"], 512)
+        self.assertEqual(model.plan("full", owner=OWNER)["pod_pids_limit"], 512)
 
     def test_app_has_only_one_startup_probe_and_preserves_entrypoint(self):
         for arm in ("lsf", "native"):
