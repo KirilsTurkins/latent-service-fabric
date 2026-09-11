@@ -320,6 +320,7 @@ smoke/                                 complete successful smoke and its aggrega
 bootstrap/                             complete public bootstrap/provenance closure
 cluster-cleanup/                       final Linux and Windows cleanup receipts and helper
 attempts/                              optional indexed original failed attempt and recovery
+prior-smokes/                          earlier completed smokes, replayed separately
 ```
 
 Never copy `bootstrap/private/`, TLS key/certificate files or private kubeconfig
@@ -327,6 +328,15 @@ contents into the archive. Their recorded identity hashes are public evidence;
 the archive rejects a retained private subtree. Preserve each failed attempt and
 its separate recovery without rewriting the failed suite. Indexed failure
 evidence is diagnostic and contributes no offers to either qualified population.
+The recorded full-01 failure retains its five completed groups and 1,130
+successful offers, alongside the failed forward and original failed cleanup.
+Its separate recovery captures the remaining 33 output directories and proves
+owned cleanup without a new Invoke. The full failure adapter requires the exact
+original source, four original journal/suite hashes and the Docker dependency;
+it cannot qualify this prefix as a completed full campaign. A completed earlier
+smoke, including smoke-03 and its separate cleanup completion, belongs under
+`prior-smokes/` with an exact suite/aggregate index. Its offers remain separate
+from the current smoke and full populations.
 
 ```text
 python tools/package_phase1_evidence.py --source <stage> --output <fresh-package> --compression-level 9 --split-archive --docker-package <original-docker-package>

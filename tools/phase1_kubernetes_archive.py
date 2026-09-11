@@ -164,7 +164,9 @@ def _failed_attempts(directory, bootstrap, cleanup_started, *, dependency=None):
             recovered = _failure(attempt, bootstrap, build_root=dependency / "build", docker_root=dependency / "run")
             result_path = attempt / "suite.json"
         else:
-            recovered = _failure(attempt, bootstrap)
+            dependencies = ({} if dependency is None else
+                            {"build_root": dependency / "build", "docker_root": dependency / "run"})
+            recovered = _failure(attempt, bootstrap, **dependencies)
             result_path = attempt / "recovery.json"
         require(canonical(read_json(result_path, model.MAX_FILE_BYTES)) == canonical(recovered),
                 "kubernetes-failed-recovery-return-binding")

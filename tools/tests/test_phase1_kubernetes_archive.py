@@ -297,7 +297,13 @@ class KubernetesArchiveTests(unittest.TestCase):
         before = self.snapshot(attempts)
         with self.mocks(), patch.object(kubernetes, "_failure", return_value=recovered) as replayed:
             result = kubernetes.verify(self.source, docker_package=self.dependency)
-        replayed.assert_called_once_with(attempts / "smoke-01", self.source / "bootstrap")
+        replayed.assert_called_once()
+        self.assertEqual(replayed.call_args.args, (attempts / "smoke-01", self.source / "bootstrap"))
+        dependencies = replayed.call_args.kwargs
+        self.assertEqual(set(dependencies), {"build_root", "docker_root"})
+        self.assertEqual(dependencies["build_root"].name, "build")
+        self.assertEqual(dependencies["docker_root"].name, "run")
+        self.assertEqual(dependencies["build_root"].parent, dependencies["docker_root"].parent)
         self.assertEqual(result["failed_attempts"], {"index": index, "recoveries": [recovered]})
         self.assertEqual(result["full"]["logical_offers"], "9926")
         self.assertEqual(result["smoke"]["logical_offers"], "300")

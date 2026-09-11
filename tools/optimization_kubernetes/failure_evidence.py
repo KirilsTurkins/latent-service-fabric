@@ -310,6 +310,11 @@ def validate(failure_root: Path, bootstrap_root: Path, *, build_root=None, docke
     """Return the original recovery receipt; the original suite remains failed."""
     root = Path(failure_root)
     suite = read_json(docker.relative(root, "suite.json"), 8 * 1024**2)
+    if suite.get("failure") == {"reason": "kubernetes-pod-failed-or-restarted", "type": "EvidenceError"}:
+        from . import failure_full
+        failure_full.original_shape(suite)
+        require(build_root is not None and docker_root is not None, PREFIX + "full-dependency-required")
+        return failure_full.validate(root, Path(bootstrap_root), Path(build_root), Path(docker_root))
     if suite.get("failure") == {"reason": "kubernetes-client-ack-order-identity", "type": "EvidenceError"}:
         from . import failure_inline
         require(build_root is not None and docker_root is not None, PREFIX + "inline-dependency-required")
