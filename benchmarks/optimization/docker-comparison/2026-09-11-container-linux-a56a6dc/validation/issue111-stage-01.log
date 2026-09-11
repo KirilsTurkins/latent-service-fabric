@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/repo-source/target/phase1-extension/issue111-stage.py", line 44, in <module>
+    raise RuntimeError(f'stage bounds: {len(rows)} files, {total} bytes')
+RuntimeError: stage bounds: 5014 files, 811118776 bytes

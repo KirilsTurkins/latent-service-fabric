@@ -1,0 +1,45 @@
+{
+  "documents": 511,
+  "failures": [],
+  "families": {
+    "aggregate": 2,
+    "builds": 1,
+    "client-command": 488,
+    "client-plan": 8,
+    "client-summary": 8,
+    "plan": 2,
+    "suite": 2
+  },
+  "jsonschema_version": "4.26.0",
+  "schemas": {
+    "aggregate.schema.json": {
+      "bytes": "23695",
+      "sha256": "sha256:ed8f449b1d5d2bde4200160ac0f7d313ec5b274485b8c8f60bfd27ae6f2a0405"
+    },
+    "builds.schema.json": {
+      "bytes": "8230",
+      "sha256": "sha256:7949a4a5650b5d6f64fb9b62e521eec818104f6bc2b3709267a80899e153f690"
+    },
+    "client-command.schema.json": {
+      "bytes": "6357",
+      "sha256": "sha256:29f677b8795ee8b140b013d302aef059cb402ed060c0125fec1ffd1258b36d9a"
+    },
+    "client-plan.schema.json": {
+      "bytes": "1269",
+      "sha256": "sha256:b137ae2ceaf9b40a4dc075ff41b8518d7b9866839d812dcb2cd03ee733b49708"
+    },
+    "client-summary.schema.json": {
+      "bytes": "10803",
+      "sha256": "sha256:59696f425c9a2e7d12b48c06ca5433678ea45253325e4d32868750b7288c6fd8"
+    },
+    "plan.schema.json": {
+      "bytes": "8970",
+      "sha256": "sha256:dcde2cc16fa37dce2f464dc6a7819de2bdfd12826a054bff7fb9b71861a52eee"
+    },
+    "suite.schema.json": {
+      "bytes": "21060",
+      "sha256": "sha256:7bb2210e0dbfa2910e60821d9218c75ab717a242e0c9917e1543fffe4b46d755"
+    }
+  },
+  "status": "passed"
+}
