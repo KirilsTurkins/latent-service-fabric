@@ -1,0 +1,23 @@
+{
+  "schema": "latent.diagnostic.folded-scratch-preflight.v1",
+  "status": "passed",
+  "qualifying": false,
+  "workloads_run": 0,
+  "source_export": "/workspace/project/target/optimization-catalog-mutations/smoke-paired-02/runs/owner-14-allocation-00004-shared-control-r01-allocation/probe/peak.folded",
+  "original_sha256": "sha256:d446aa24904d4a8b239ca8abfb826742adc8d92b55ab31e5c0fde9a5f9590cbd",
+  "original_bytes": 473689685,
+  "scope": "one-copied-existing-export-with-16MiB-retained-budget-not-a-suite",
+  "temporary_folded_bytes": 536870912,
+  "retained_budget_bytes": 16777216,
+  "harness_base": "1efd906e6d970d461e339c4712426f2b024ec9d8",
+  "harness_dirty": true,
+  "driver_sha256": "sha256:9cee0d9c4718c23d95c8f5900c0a21e9ce1e1a22a844bef74bd1c76440a3d4db",
+  "historical_accounting_rejection": "folded-compression-total-bound",
+  "compressed": {
+    "path": "profile/peak.folded.gz",
+    "sha256": "sha256:def4dc1f196b59d9d351ac6487bf11b36b3301277e0daabce31c9ac206c0c650",
+    "bytes": "7110251"
+  },
+  "original_unchanged": true,
+  "elapsed_nanos": 5322614888
+}

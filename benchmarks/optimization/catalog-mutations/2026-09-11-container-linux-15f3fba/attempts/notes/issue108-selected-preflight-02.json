@@ -1,0 +1,163 @@
+{
+  "binary": {
+    "bytes": "217919168",
+    "path": "builds/control/latentd-backend-collector",
+    "sha256": "sha256:451c2bb07876d9cbc15a3449a0a44a12979885d1968fc95ea84212198984e1aa"
+  },
+  "diagnostic_folded_maximum_bytes": "536870912",
+  "elapsed_nanos": "8250494787",
+  "folded": {
+    "allocation_weight": "256522",
+    "bytes": "469170020",
+    "frame_weights": {
+      "delete": "18935",
+      "reapply": "27560",
+      "unchanged-apply": "27561",
+      "weight-update": "27562"
+    },
+    "maximum_frames": 150,
+    "maximum_line_bytes": 34224,
+    "rows": "36375",
+    "selected_weight": "101618"
+  },
+  "frames": {
+    "delete": {
+      "allocated_bytes": "936528",
+      "allocation_count": "18935",
+      "live_bytes": "0",
+      "peak_live_bytes": "61797",
+      "remaining_allocations": "0"
+    },
+    "reapply": {
+      "allocated_bytes": "1382145",
+      "allocation_count": "27560",
+      "live_bytes": "0",
+      "peak_live_bytes": "86043",
+      "remaining_allocations": "0"
+    },
+    "unchanged-apply": {
+      "allocated_bytes": "1381993",
+      "allocation_count": "27561",
+      "live_bytes": "0",
+      "peak_live_bytes": "82954",
+      "remaining_allocations": "0"
+    },
+    "weight-update": {
+      "allocated_bytes": "1382169",
+      "allocation_count": "27562",
+      "live_bytes": "0",
+      "peak_live_bytes": "86043",
+      "remaining_allocations": "0"
+    }
+  },
+  "harness_commit": "f2214f2e7dba2bcf73fdcf99d93132eaf3ce4f3b",
+  "inputs": [
+    {
+      "bytes": "5318",
+      "path": "/tmp/lsf-catalog-mutation-harness-02/tools/optimization_backend_revision/catalog_mutations/allocations.py",
+      "sha256": "sha256:fde69dfdc23aa890d2124defc8c41a6c2ecca3bad7b89ae0a2b2d6f0723fa065"
+    },
+    {
+      "bytes": "8639",
+      "path": "/tmp/lsf-catalog-mutation-harness-02/tools/optimization_cache_lookup/allocations.py",
+      "sha256": "sha256:7ba4f5af2a2589f949a07fe0ac9c986bcb51439ad3c6753f727246d1a892f623"
+    },
+    {
+      "bytes": "9497",
+      "path": "/tmp/lsf-catalog-mutation-harness-02/tools/artifact_identity_evidence/heaptrack.py",
+      "sha256": "sha256:8731e80de84c3f07a221dc0a9460aa27733851a9ffa94cffd670e5e87eb9b21a"
+    },
+    {
+      "bytes": "82936",
+      "path": "/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/suite.json",
+      "sha256": "sha256:fe1f2267ef1d0c13b690fa1f2dd2b99827ee9b54e3b6ecc070ac9f38459103fd"
+    },
+    {
+      "bytes": "243005",
+      "path": "/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/backend-builds.json",
+      "sha256": "sha256:ed589a1593f8bf392ce4ad76d1ae35dbf9a70939f63556e8d754520f7058bb43"
+    },
+    {
+      "bytes": "6535296",
+      "path": "/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/runs/owner-08-allocation-00004-distinct-control-r01-allocation/probe/interpreted.heaptrack",
+      "sha256": "sha256:61f7706346031e4ceb6ddf43fb416c8c7b9eb67452cf7905d003428aed5f4842"
+    },
+    {
+      "bytes": "469170020",
+      "path": "/workspace/project/target/issue108-export-preflight-01/allocations.folded",
+      "sha256": "sha256:4c5bd74803711190da4ac07cb96f61081e58a7de91f23bb479b2308ec1895b04"
+    },
+    {
+      "bytes": "1296",
+      "path": "/workspace/project/target/issue108-export-preflight-01/receipt.json",
+      "sha256": "sha256:eeb3297b52c55fe8b0ec1d03ffc088b77028e400f355c7b3afe91c48a17562d1"
+    },
+    {
+      "bytes": "180628",
+      "path": "/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/runs/owner-08-allocation-00004-distinct-control-r01-allocation/probe/catalog-mutations.json",
+      "sha256": "sha256:b0d8758bef8f61a88a3d28b51d3292d9a90291d4b455c97d4a745ee27971e383"
+    }
+  ],
+  "inputs_unchanged": true,
+  "note": "Original suite, raw, binary and export remain unchanged; no full-suite validation.",
+  "observed_named_allocation_count": "101618",
+  "qualifying_full_population": false,
+  "schema": "latent.diagnostic.catalog-mutation-selected-preflight.v1",
+  "scope": "one-retained-N4-distinct-control-allocation-owner",
+  "selected_attribution_reason": null,
+  "selected_attribution_status": "available",
+  "source": {
+    "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+    "clean": true,
+    "commit": "5c407efd0bed1cd54bba126ca104ff044be9c592",
+    "tree": "1d2b1b528e0bc8d8be0b135c7f6e49f01d811a7f"
+  },
+  "source_suite_status": "failed",
+  "status": "passed",
+  "union": {
+    "allocated_bytes": "5082835",
+    "allocation_count": "101618",
+    "live_bytes": "0",
+    "peak_live_bytes": "88587",
+    "remaining_allocations": "0"
+  },
+  "unresolved_allocation_count": "0",
+  "verified_symbols": {
+    "delete": {
+      "address": "916300",
+      "demangled": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_delete_and_drop",
+      "raw": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames24measured_delete_and_drop",
+      "type": "t"
+    },
+    "reapply": {
+      "address": "916400",
+      "demangled": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_reapply_and_drop",
+      "raw": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames25measured_reapply_and_drop",
+      "type": "t"
+    },
+    "unchanged-apply": {
+      "address": "916600",
+      "demangled": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_unchanged_apply_and_drop",
+      "raw": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames33measured_unchanged_apply_and_drop",
+      "type": "t"
+    },
+    "weight-update": {
+      "address": "916500",
+      "demangled": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_weight_apply_and_drop",
+      "raw": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames30measured_weight_apply_and_drop",
+      "type": "t"
+    }
+  },
+  "whole_process": {
+    "allocated_bytes": "17090684",
+    "allocation_count": "256522",
+    "command": "/workspace/project/target/optimization-catalog-mutations/smoke-paired-01/builds/control/latentd-backend-collector --exact standalone::measurements::comparison::catalog_mutations::phase1_catalog_mutation_collector --ignored --nocapture --test-threads=1",
+    "deallocation_count": "255720",
+    "format_version": "3",
+    "heaptrack_version": "1.4.0",
+    "peak_live_bytes": "758196",
+    "remaining_allocations": "802",
+    "remaining_live_bytes": "102916"
+  },
+  "workloads_run": 0
+}

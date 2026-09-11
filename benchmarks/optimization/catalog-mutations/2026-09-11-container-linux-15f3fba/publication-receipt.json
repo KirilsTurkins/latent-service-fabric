@@ -1,0 +1,157 @@
+{
+  "all_file_hashes_match": true,
+  "copy": {
+    "command": [
+      "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe",
+      "cp",
+      "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/publication-01",
+      "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-publication-01"
+    ],
+    "elapsed_nanos": "1633476000",
+    "exit_code": 0
+  },
+  "copy_log": {
+    "bytes": "0",
+    "path": "issue108-windows-publication-copy.log",
+    "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "elapsed_nanos": "125039317700",
+  "expected_sources": {
+    "candidate": "15f3fba3f47404240dd577d9eaaa3f60270b81d1",
+    "control": "165d1eb5084c256dab72ac10217b26af3c6e4c44",
+    "harness": "15f3fba3f47404240dd577d9eaaa3f60270b81d1"
+  },
+  "finished_utc": "2026-09-11T07:23:05.904023+00:00",
+  "local": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-publication-01",
+  "package_inventory": {
+    "archive": {
+      "bytes": "161619941",
+      "path": "raw-evidence.tar.gz",
+      "sha256": "sha256:b1b1abe26eaeca39670b09a1f6a32d41e55ed419bd83c32341985928f03dd01d"
+    },
+    "expanded_bytes": "619755414",
+    "files": {
+      "aggregate.json": {
+        "bytes": "3376985",
+        "path": "aggregate.json",
+        "sha256": "sha256:0b98604dde42a6b32d987ff28e631193b7d9c8e79a0fc0401818508ca3a60cc6"
+      },
+      "raw-evidence.manifest.json": {
+        "bytes": "299796",
+        "path": "raw-evidence.manifest.json",
+        "sha256": "sha256:b5b5e7dae382ba844edbe4c3afc37833742f28467513e43f0ede0539794ccb40"
+      },
+      "raw-evidence.parts.json": {
+        "bytes": "943",
+        "path": "raw-evidence.parts.json",
+        "sha256": "sha256:24743c4e80fcc52568b72fff426f0dc34823ab5bee7cd5308cc59f0d2616f344"
+      },
+      "raw-evidence.tar.gz.part-0001": {
+        "bytes": "50000000",
+        "path": "raw-evidence.tar.gz.part-0001",
+        "sha256": "sha256:85596dbb5cf045c72c4a2eea77d4ed42e70369b2c666c6a2201bd453e007fd47"
+      },
+      "raw-evidence.tar.gz.part-0002": {
+        "bytes": "50000000",
+        "path": "raw-evidence.tar.gz.part-0002",
+        "sha256": "sha256:b68ea399ea8f0fc96aec12390572115ef49b34c9254b3e479a35ffccd976c437"
+      },
+      "raw-evidence.tar.gz.part-0003": {
+        "bytes": "50000000",
+        "path": "raw-evidence.tar.gz.part-0003",
+        "sha256": "sha256:5300de088c124826044a697cbe5c3e6ba53afb111210ab650dcde591942e2f53"
+      },
+      "raw-evidence.tar.gz.part-0004": {
+        "bytes": "11619941",
+        "path": "raw-evidence.tar.gz.part-0004",
+        "sha256": "sha256:c434e6d025b2971203121edd24db7d80a9eaad8b82a77346888e3545b1d8ea3a"
+      },
+      "raw-evidence.tar.gz.sha256": {
+        "bytes": "86",
+        "path": "raw-evidence.tar.gz.sha256",
+        "sha256": "sha256:3703b6b74f500edda23b8e02681d4acfde11b5d2a349849bd471f671e5a0d7bb"
+      }
+    },
+    "manifest_files": 1370,
+    "package_bytes": "165297751",
+    "profile": "full",
+    "sources": {
+      "candidate": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "clean": true,
+        "commit": "15f3fba3f47404240dd577d9eaaa3f60270b81d1",
+        "tree": "0b476179c2c3494071a2d37c0908dc2611173c8a"
+      },
+      "control": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "clean": true,
+        "commit": "165d1eb5084c256dab72ac10217b26af3c6e4c44",
+        "tree": "575f07560c9ae3cfa45ff9c3fb6fdb9563ebada7"
+      }
+    }
+  },
+  "report": "C:\\Users\\turkins\\Desktop\\latent-fabric-catalog-commits\\benchmarks\\optimization\\catalog-mutations\\2026-09-11-container-linux-15f3fba\\catalog",
+  "schema": "latent.catalog-mutation.windows-publication.v1",
+  "script": {
+    "bytes": "23684",
+    "path": "issue108-windows-publication.py",
+    "sha256": "sha256:098fda571e0709755b79aacb437b6e38a4318d08619c755d2b9253b4e00dc9a3"
+  },
+  "source": "lsf-phase1-implementation:/workspace/project/target/optimization-catalog-mutations/publication-01",
+  "source_inspections": [
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe",
+        "exec",
+        "lsf-phase1-implementation",
+        "python3",
+        "-c",
+        "import hashlib, json, re, signal, stat, tarfile\nfrom pathlib import Path\nsignal.alarm(270)\nCONTROL = '165d1eb5084c256dab72ac10217b26af3c6e4c44'\nCANDIDATE = '15f3fba3f47404240dd577d9eaaa3f60270b81d1'\nHARNESS = '15f3fba3f47404240dd577d9eaaa3f60270b81d1'\nARCHIVE = 'raw-evidence.tar.gz'\nMANIFEST = 'raw-evidence.manifest.json'\nPARTS = 'raw-evidence.parts.json'\nCHUNK = 65536\nMAX_PACKAGE = 211631488\ndef require(condition, reason):\n    if not condition:\n        raise ValueError(reason)\n\n\ndef regular(path):\n    value = path.lstat()\n    require(stat.S_ISREG(value.st_mode) and not stat.S_ISLNK(value.st_mode)\n            and not getattr(value, 'st_file_attributes', 0) & 0x400, 'nonregular-file:' + str(path))\n    return value\n\n\ndef safe_directory(path):\n    require(path.is_absolute(), 'absolute-directory-required')\n    for parent in (*reversed(path.parents), path):\n        if parent.exists() or parent.is_symlink():\n            value = parent.lstat()\n            require(stat.S_ISDIR(value.st_mode) and not stat.S_ISLNK(value.st_mode)\n                    and not getattr(value, 'st_file_attributes', 0) & 0x400,\n                    'nonregular-directory:' + str(parent))\n\n\ndef pairs(rows):\n    result = {}\n    for key, value in rows:\n        require(key not in result, 'duplicate-json-key')\n        result[key] = value\n    return result\n\n\ndef bounded_json(path, maximum):\n    require(regular(path).st_size <= maximum, 'json-byte-bound')\n    with path.open('rb') as stream:\n        data = stream.read(maximum + 1)\n    require(len(data) <= maximum, 'json-byte-bound')\n    return json.loads(data, object_pairs_hook=pairs)\n\n\ndef number(value):\n    require(isinstance(value, str) and re.fullmatch(r'0|[1-9][0-9]{0,10}', value), 'invalid-size')\n    return int(value)\n\n\ndef reference(path, maximum, whole=None):\n    before = regular(path)\n    require(before.st_size <= maximum, 'file-byte-bound:' + str(path))\n    digest, total = hashlib.sha256(), 0\n    with path.open('rb') as stream:\n        while chunk := stream.read(CHUNK):\n            total += len(chunk)\n            require(total <= maximum, 'file-growth-bound:' + str(path))\n            digest.update(chunk)\n            if whole is not None:\n                whole.update(chunk)\n    after = regular(path)\n    require((before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)\n            == (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)\n            and total == after.st_size, 'file-mutated-while-reading:' + str(path))\n    return {'path': path.name, 'bytes': str(total), 'sha256': 'sha256:' + digest.hexdigest()}\n\n\ndef checked_reference(row, maximum):\n    require(isinstance(row, dict) and set(row) == {'path', 'bytes', 'sha256'}, 'invalid-reference')\n    name = row['path']\n    require(isinstance(name, str) and len(name) <= 1024\n            and re.fullmatch(r'[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*', name)\n            and all(part not in ('.', '..') for part in name.split('/')), 'invalid-reference-path')\n    require(isinstance(row['sha256'], str) and re.fullmatch(r'sha256:[0-9a-f]{64}', row['sha256']),\n            'invalid-reference-digest')\n    require(number(row['bytes']) <= maximum, 'invalid-reference-size')\n\n\ndef inspect_package(directory):\n    root = Path(directory)\n    safe_directory(root)\n    require(root.is_dir(), 'final-linux-package-not-published')\n    manifest = bounded_json(root / MANIFEST, 4 * 1024**2)\n    require(isinstance(manifest, dict) and set(manifest) == {'schema', 'archive', 'files', 'total_bytes'}\n            and manifest['schema'] == 'latent.phase1.archive-manifest.v1', 'invalid-manifest')\n    require(isinstance(manifest['files'], list) and 0 < len(manifest['files']) <= 5000, 'manifest-file-count')\n    checked_reference(manifest['archive'], 198_000_000)\n    require(manifest['archive']['path'] == ARCHIVE and number(manifest['archive']['bytes']) >= 20,\n            'logical-archive-reference')\n    seen, total, aggregate_ref = set(), 0, None\n    for row in manifest['files']:\n        checked_reference(row, 1024**3)\n        require(row['path'].casefold() not in seen, 'duplicate-manifest-path')\n        seen.add(row['path'].casefold())\n        total += number(row['bytes'])\n        if row['path'] == 'aggregate.json':\n            aggregate_ref = row\n    require(total == number(manifest['total_bytes']) <= 1024**3, 'manifest-expanded-total')\n    require(aggregate_ref is not None and 'suite.json' in seen, 'manifest-required-evidence')\n    aggregate = bounded_json(root / 'aggregate.json', 8 * 1024**2)\n    require(isinstance(aggregate, dict)\n            and aggregate.get('schema') == 'latent.optimization.catalog-mutation-aggregate.v1'\n            and aggregate.get('profile') == 'full' and aggregate.get('status') == 'complete'\n            and all(aggregate.get(key) is True for key in\n                    ('population_complete', 'attempt_count_complete', 'qualifying_full_population')),\n            'full-successful-catalog-mutation-package-required')\n    require(all(aggregate.get(key) == value for key, value in {\n        'validated_collectors': '32', 'planned_collectors': '32', 'validated_commands': '45096',\n        'validated_resolves': '224', 'validated_mutations': '64', 'validated_reopens': '16',\n        'validated_invocations': '0'}.items()), 'full-package-population')\n    for variant, commit in (('control', CONTROL), ('candidate', CANDIDATE)):\n        source = aggregate['sources'][variant]\n        require(source['commit'] == commit and source['clean'] is True, 'package-measured-source')\n    names = {MANIFEST, 'aggregate.json', ARCHIVE + '.sha256'}\n    transport = [ARCHIVE]\n    part_refs = {}\n    if (root / PARTS).exists() or (root / PARTS).is_symlink():\n        parts = bounded_json(root / PARTS, 8192)\n        require(isinstance(parts, dict) and set(parts) == {'schema', 'archive', 'parts'}\n                and parts['schema'] == 'latent.phase1.archive-parts.v1'\n                and parts['archive'] == manifest['archive'], 'invalid-parts-manifest')\n        length = number(manifest['archive']['bytes'])\n        width = min(50_000_000, (length + 1) // 2)\n        count = (length + width - 1) // width\n        require(2 <= count <= 4 and isinstance(parts['parts'], list) and len(parts['parts']) == count,\n                'split-layout-bound')\n        transport = []\n        for index, row in enumerate(parts['parts']):\n            checked_reference(row, 50_000_000)\n            name = ARCHIVE + f'.part-{index + 1:04d}'\n            require(row['path'] == name and number(row['bytes']) == min(width, length - index * width),\n                    'split-layout-changed')\n            transport.append(name)\n            part_refs[name] = row\n        names.add(PARTS)\n    else:\n        require(number(manifest['archive']['bytes']) <= 99_000_000, 'single-archive-bound')\n    names.update(transport)\n    actual_names = set()\n    for path in root.iterdir():\n        require(len(actual_names) < 8, 'closed-package-file-count')\n        regular(path)\n        actual_names.add(path.name)\n    require(actual_names == names, 'closed-package-file-set')\n    whole, refs = hashlib.sha256(), {}\n    for name in transport:\n        refs[name] = reference(root / name, 50_000_000 if part_refs else 99_000_000, whole)\n        require(not part_refs or refs[name] == part_refs[name], 'transport-part-digest')\n    require(sum(number(refs[name]['bytes']) for name in transport) == number(manifest['archive']['bytes'])\n            and 'sha256:' + whole.hexdigest() == manifest['archive']['sha256'], 'logical-archive-digest')\n    limits = {MANIFEST: 4 * 1024**2, 'aggregate.json': 8 * 1024**2,\n              ARCHIVE + '.sha256': 256, PARTS: 8192}\n    for name in sorted(names - set(transport)):\n        refs[name] = reference(root / name, limits[name])\n    require(refs['aggregate.json'] == aggregate_ref, 'outer-aggregate-not-byte-bound')\n    require((root / (ARCHIVE + '.sha256')).read_bytes()\n            == (manifest['archive']['sha256'][7:] + '  ' + ARCHIVE + '\\n').encode('ascii'),\n            'checksum-file-bytes')\n    require(sum(number(row['bytes']) for row in refs.values()) <= MAX_PACKAGE, 'package-total-bound')\n    return {'files': dict(sorted(refs.items())), 'archive': manifest['archive'],\n            'manifest_files': len(manifest['files']), 'expanded_bytes': manifest['total_bytes'],\n            'package_bytes': str(sum(number(row['bytes']) for row in refs.values())),\n            'sources': aggregate['sources'], 'profile': 'full'}\n\n\nclass PackageStream:\n    \"\"\"Read only the already-verified, ordered gzip transport parts.\"\"\"\n    def __init__(self, root, inventory):\n        names = [name for name in inventory['files'] if name.startswith(ARCHIVE + '.part-')]\n        self.paths = iter(root / name for name in (sorted(names) if names else [ARCHIVE]))\n        self.stream = None\n\n    def read(self, size):\n        require(type(size) is int and 0 <= size <= 1024**2, 'archive-read-bound')\n        chunks, remaining = [], size\n        while remaining:\n            if self.stream is None:\n                path = next(self.paths, None)\n                if path is None:\n                    break\n                self.stream = path.open('rb')\n            chunk = self.stream.read(remaining)\n            if chunk:\n                chunks.append(chunk)\n                remaining -= len(chunk)\n            else:\n                self.stream.close()\n                self.stream = None\n        return b''.join(chunks)\n\n    def close(self):\n        if self.stream is not None:\n            self.stream.close()\n            self.stream = None\n\n\ndef harness_source(directory, inventory):\n    root = Path(directory)\n    manifest = bounded_json(root / MANIFEST, 4 * 1024**2)\n    expected = {row['path']: row for row in manifest['files']}\n    stream, seen = PackageStream(root, inventory), set()\n    try:\n        with tarfile.open(fileobj=stream, mode='r|gz') as archive:\n            for member in archive:\n                require(len(seen) < 5000 and member.name not in seen and member.name in expected\n                        and member.isfile() and member.size == number(expected[member.name]['bytes']),\n                        'source-metadata-archive-member')\n                seen.add(member.name)\n                if member.name != 'suite.json':\n                    continue\n                require(member.size <= 32 * 1024**2, 'source-suite-byte-bound')\n                with archive.extractfile(member) as extracted:\n                    data = extracted.read(member.size + 1)\n                require(len(data) == member.size\n                        and 'sha256:' + hashlib.sha256(data).hexdigest() == expected['suite.json']['sha256'],\n                        'source-suite-manifest-digest')\n                suite = json.loads(data, object_pairs_hook=pairs)\n                source = suite['runner_source']\n                require(suite['schema'] == 'latent.optimization.catalog-mutation-suite.v1'\n                        and suite['profile'] == 'full' and suite['status'] == 'passed'\n                        and source == suite['runner_source_after'] and source['clean'] is True\n                        and source['commit'] == HARNESS, 'source-harness-identity')\n                return {'source': source, 'suite': expected['suite.json'],\n                        'scope': 'manifest-bound suite; build association requires independent Windows replay'}\n    finally:\n        stream.close()\n    raise ValueError('source-archive-suite-missing')\n\ninventory=inspect_package('/workspace/project/target/optimization-catalog-mutations/publication-01')\nprint(json.dumps({\"inventory\":inventory,\"harness_binding\":harness_source('/workspace/project/target/optimization-catalog-mutations/publication-01', inventory)},sort_keys=True))\n"
+      ],
+      "elapsed_nanos": "2151191400",
+      "exit_code": 0,
+      "harness_binding": {
+        "scope": "manifest-bound suite; build association requires independent Windows replay",
+        "source": {
+          "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+          "clean": true,
+          "commit": "15f3fba3f47404240dd577d9eaaa3f60270b81d1",
+          "tree": "0b476179c2c3494071a2d37c0908dc2611173c8a"
+        },
+        "suite": {
+          "bytes": "553825",
+          "path": "suite.json",
+          "sha256": "sha256:feadfca6735e3ef84f76a5ed153d9e1a1feabcd8599df2b0b56687396952b519"
+        }
+      },
+      "label": "source-before-copy"
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe",
+        "exec",
+        "lsf-phase1-implementation",
+        "python3",
+        "-c",
+        "import hashlib, json, re, signal, stat, tarfile\nfrom pathlib import Path\nsignal.alarm(270)\nCONTROL = '165d1eb5084c256dab72ac10217b26af3c6e4c44'\nCANDIDATE = '15f3fba3f47404240dd577d9eaaa3f60270b81d1'\nHARNESS = '15f3fba3f47404240dd577d9eaaa3f60270b81d1'\nARCHIVE = 'raw-evidence.tar.gz'\nMANIFEST = 'raw-evidence.manifest.json'\nPARTS = 'raw-evidence.parts.json'\nCHUNK = 65536\nMAX_PACKAGE = 211631488\ndef require(condition, reason):\n    if not condition:\n        raise ValueError(reason)\n\n\ndef regular(path):\n    value = path.lstat()\n    require(stat.S_ISREG(value.st_mode) and not stat.S_ISLNK(value.st_mode)\n            and not getattr(value, 'st_file_attributes', 0) & 0x400, 'nonregular-file:' + str(path))\n    return value\n\n\ndef safe_directory(path):\n    require(path.is_absolute(), 'absolute-directory-required')\n    for parent in (*reversed(path.parents), path):\n        if parent.exists() or parent.is_symlink():\n            value = parent.lstat()\n            require(stat.S_ISDIR(value.st_mode) and not stat.S_ISLNK(value.st_mode)\n                    and not getattr(value, 'st_file_attributes', 0) & 0x400,\n                    'nonregular-directory:' + str(parent))\n\n\ndef pairs(rows):\n    result = {}\n    for key, value in rows:\n        require(key not in result, 'duplicate-json-key')\n        result[key] = value\n    return result\n\n\ndef bounded_json(path, maximum):\n    require(regular(path).st_size <= maximum, 'json-byte-bound')\n    with path.open('rb') as stream:\n        data = stream.read(maximum + 1)\n    require(len(data) <= maximum, 'json-byte-bound')\n    return json.loads(data, object_pairs_hook=pairs)\n\n\ndef number(value):\n    require(isinstance(value, str) and re.fullmatch(r'0|[1-9][0-9]{0,10}', value), 'invalid-size')\n    return int(value)\n\n\ndef reference(path, maximum, whole=None):\n    before = regular(path)\n    require(before.st_size <= maximum, 'file-byte-bound:' + str(path))\n    digest, total = hashlib.sha256(), 0\n    with path.open('rb') as stream:\n        while chunk := stream.read(CHUNK):\n            total += len(chunk)\n            require(total <= maximum, 'file-growth-bound:' + str(path))\n            digest.update(chunk)\n            if whole is not None:\n                whole.update(chunk)\n    after = regular(path)\n    require((before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)\n            == (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)\n            and total == after.st_size, 'file-mutated-while-reading:' + str(path))\n    return {'path': path.name, 'bytes': str(total), 'sha256': 'sha256:' + digest.hexdigest()}\n\n\ndef checked_reference(row, maximum):\n    require(isinstance(row, dict) and set(row) == {'path', 'bytes', 'sha256'}, 'invalid-reference')\n    name = row['path']\n    require(isinstance(name, str) and len(name) <= 1024\n            and re.fullmatch(r'[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*', name)\n            and all(part not in ('.', '..') for part in name.split('/')), 'invalid-reference-path')\n    require(isinstance(row['sha256'], str) and re.fullmatch(r'sha256:[0-9a-f]{64}', row['sha256']),\n            'invalid-reference-digest')\n    require(number(row['bytes']) <= maximum, 'invalid-reference-size')\n\n\ndef inspect_package(directory):\n    root = Path(directory)\n    safe_directory(root)\n    require(root.is_dir(), 'final-linux-package-not-published')\n    manifest = bounded_json(root / MANIFEST, 4 * 1024**2)\n    require(isinstance(manifest, dict) and set(manifest) == {'schema', 'archive', 'files', 'total_bytes'}\n            and manifest['schema'] == 'latent.phase1.archive-manifest.v1', 'invalid-manifest')\n    require(isinstance(manifest['files'], list) and 0 < len(manifest['files']) <= 5000, 'manifest-file-count')\n    checked_reference(manifest['archive'], 198_000_000)\n    require(manifest['archive']['path'] == ARCHIVE and number(manifest['archive']['bytes']) >= 20,\n            'logical-archive-reference')\n    seen, total, aggregate_ref = set(), 0, None\n    for row in manifest['files']:\n        checked_reference(row, 1024**3)\n        require(row['path'].casefold() not in seen, 'duplicate-manifest-path')\n        seen.add(row['path'].casefold())\n        total += number(row['bytes'])\n        if row['path'] == 'aggregate.json':\n            aggregate_ref = row\n    require(total == number(manifest['total_bytes']) <= 1024**3, 'manifest-expanded-total')\n    require(aggregate_ref is not None and 'suite.json' in seen, 'manifest-required-evidence')\n    aggregate = bounded_json(root / 'aggregate.json', 8 * 1024**2)\n    require(isinstance(aggregate, dict)\n            and aggregate.get('schema') == 'latent.optimization.catalog-mutation-aggregate.v1'\n            and aggregate.get('profile') == 'full' and aggregate.get('status') == 'complete'\n            and all(aggregate.get(key) is True for key in\n                    ('population_complete', 'attempt_count_complete', 'qualifying_full_population')),\n            'full-successful-catalog-mutation-package-required')\n    require(all(aggregate.get(key) == value for key, value in {\n        'validated_collectors': '32', 'planned_collectors': '32', 'validated_commands': '45096',\n        'validated_resolves': '224', 'validated_mutations': '64', 'validated_reopens': '16',\n        'validated_invocations': '0'}.items()), 'full-package-population')\n    for variant, commit in (('control', CONTROL), ('candidate', CANDIDATE)):\n        source = aggregate['sources'][variant]\n        require(source['commit'] == commit and source['clean'] is True, 'package-measured-source')\n    names = {MANIFEST, 'aggregate.json', ARCHIVE + '.sha256'}\n    transport = [ARCHIVE]\n    part_refs = {}\n    if (root / PARTS).exists() or (root / PARTS).is_symlink():\n        parts = bounded_json(root / PARTS, 8192)\n        require(isinstance(parts, dict) and set(parts) == {'schema', 'archive', 'parts'}\n                and parts['schema'] == 'latent.phase1.archive-parts.v1'\n                and parts['archive'] == manifest['archive'], 'invalid-parts-manifest')\n        length = number(manifest['archive']['bytes'])\n        width = min(50_000_000, (length + 1) // 2)\n        count = (length + width - 1) // width\n        require(2 <= count <= 4 and isinstance(parts['parts'], list) and len(parts['parts']) == count,\n                'split-layout-bound')\n        transport = []\n        for index, row in enumerate(parts['parts']):\n            checked_reference(row, 50_000_000)\n            name = ARCHIVE + f'.part-{index + 1:04d}'\n            require(row['path'] == name and number(row['bytes']) == min(width, length - index * width),\n                    'split-layout-changed')\n            transport.append(name)\n            part_refs[name] = row\n        names.add(PARTS)\n    else:\n        require(number(manifest['archive']['bytes']) <= 99_000_000, 'single-archive-bound')\n    names.update(transport)\n    actual_names = set()\n    for path in root.iterdir():\n        require(len(actual_names) < 8, 'closed-package-file-count')\n        regular(path)\n        actual_names.add(path.name)\n    require(actual_names == names, 'closed-package-file-set')\n    whole, refs = hashlib.sha256(), {}\n    for name in transport:\n        refs[name] = reference(root / name, 50_000_000 if part_refs else 99_000_000, whole)\n        require(not part_refs or refs[name] == part_refs[name], 'transport-part-digest')\n    require(sum(number(refs[name]['bytes']) for name in transport) == number(manifest['archive']['bytes'])\n            and 'sha256:' + whole.hexdigest() == manifest['archive']['sha256'], 'logical-archive-digest')\n    limits = {MANIFEST: 4 * 1024**2, 'aggregate.json': 8 * 1024**2,\n              ARCHIVE + '.sha256': 256, PARTS: 8192}\n    for name in sorted(names - set(transport)):\n        refs[name] = reference(root / name, limits[name])\n    require(refs['aggregate.json'] == aggregate_ref, 'outer-aggregate-not-byte-bound')\n    require((root / (ARCHIVE + '.sha256')).read_bytes()\n            == (manifest['archive']['sha256'][7:] + '  ' + ARCHIVE + '\\n').encode('ascii'),\n            'checksum-file-bytes')\n    require(sum(number(row['bytes']) for row in refs.values()) <= MAX_PACKAGE, 'package-total-bound')\n    return {'files': dict(sorted(refs.items())), 'archive': manifest['archive'],\n            'manifest_files': len(manifest['files']), 'expanded_bytes': manifest['total_bytes'],\n            'package_bytes': str(sum(number(row['bytes']) for row in refs.values())),\n            'sources': aggregate['sources'], 'profile': 'full'}\n\n\nclass PackageStream:\n    \"\"\"Read only the already-verified, ordered gzip transport parts.\"\"\"\n    def __init__(self, root, inventory):\n        names = [name for name in inventory['files'] if name.startswith(ARCHIVE + '.part-')]\n        self.paths = iter(root / name for name in (sorted(names) if names else [ARCHIVE]))\n        self.stream = None\n\n    def read(self, size):\n        require(type(size) is int and 0 <= size <= 1024**2, 'archive-read-bound')\n        chunks, remaining = [], size\n        while remaining:\n            if self.stream is None:\n                path = next(self.paths, None)\n                if path is None:\n                    break\n                self.stream = path.open('rb')\n            chunk = self.stream.read(remaining)\n            if chunk:\n                chunks.append(chunk)\n                remaining -= len(chunk)\n            else:\n                self.stream.close()\n                self.stream = None\n        return b''.join(chunks)\n\n    def close(self):\n        if self.stream is not None:\n            self.stream.close()\n            self.stream = None\n\n\ndef harness_source(directory, inventory):\n    root = Path(directory)\n    manifest = bounded_json(root / MANIFEST, 4 * 1024**2)\n    expected = {row['path']: row for row in manifest['files']}\n    stream, seen = PackageStream(root, inventory), set()\n    try:\n        with tarfile.open(fileobj=stream, mode='r|gz') as archive:\n            for member in archive:\n                require(len(seen) < 5000 and member.name not in seen and member.name in expected\n                        and member.isfile() and member.size == number(expected[member.name]['bytes']),\n                        'source-metadata-archive-member')\n                seen.add(member.name)\n                if member.name != 'suite.json':\n                    continue\n                require(member.size <= 32 * 1024**2, 'source-suite-byte-bound')\n                with archive.extractfile(member) as extracted:\n                    data = extracted.read(member.size + 1)\n                require(len(data) == member.size\n                        and 'sha256:' + hashlib.sha256(data).hexdigest() == expected['suite.json']['sha256'],\n                        'source-suite-manifest-digest')\n                suite = json.loads(data, object_pairs_hook=pairs)\n                source = suite['runner_source']\n                require(suite['schema'] == 'latent.optimization.catalog-mutation-suite.v1'\n                        and suite['profile'] == 'full' and suite['status'] == 'passed'\n                        and source == suite['runner_source_after'] and source['clean'] is True\n                        and source['commit'] == HARNESS, 'source-harness-identity')\n                return {'source': source, 'suite': expected['suite.json'],\n                        'scope': 'manifest-bound suite; build association requires independent Windows replay'}\n    finally:\n        stream.close()\n    raise ValueError('source-archive-suite-missing')\n\ninventory=inspect_package('/workspace/project/target/optimization-catalog-mutations/publication-01')\nprint(json.dumps({\"inventory\":inventory,\"harness_binding\":None},sort_keys=True))\n"
+      ],
+      "elapsed_nanos": "793704200",
+      "exit_code": 0,
+      "harness_binding": null,
+      "label": "source-after-replay"
+    }
+  ],
+  "source_log": {
+    "bytes": "4829",
+    "path": "issue108-windows-publication-source.log",
+    "sha256": "sha256:38e7a0b5f6a0ba28023e223e59a11b9b220e30e0bf38a2047d382c04f43170a5"
+  },
+  "started_utc": "2026-09-11T07:21:00.864239+00:00",
+  "status": "complete",
+  "windows_replay": "passed",
+  "windows_replay_receipt": {
+    "bytes": "7645",
+    "path": "issue108-windows-replay.json",
+    "sha256": "sha256:86fd06127501aaf1516859b1e010517eba572db7a76e88d74f0d42953b5bd2a8"
+  }
+}

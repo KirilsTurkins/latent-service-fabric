@@ -1,0 +1,67 @@
+{
+  "scope": "byte-identical original validation witnesses; no tests or workloads run by this copier",
+  "not_published_empty_witnesses": [
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-full-01.log",
+      "bytes": "0",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "The completed runner produced no console output; original empty log remains local. Suite and aggregate carry the full result."
+    }
+  ],
+  "files": [
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-windows-publication.json",
+      "path": "publication-receipt.json",
+      "bytes": "29762",
+      "sha256": "sha256:16cf4e3c47ebf2ff4be3c3ca369c74dcdde4c635c2b6511872dd32f83c1605fd"
+    },
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-package-01.log",
+      "path": "validation/linux-package.log",
+      "bytes": "53",
+      "sha256": "sha256:1fc7f74f010093f923d2f174daf47dddc69e32cb31b135a6f6cc7b2731e679ec"
+    },
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-source-ci-15f3fba.json",
+      "path": "validation/source-ci.json",
+      "bytes": "2538",
+      "sha256": "sha256:e869ed68b67cc3e0bd7798b8b85d49836d6f1a60396608a92502ed4be3c713b7"
+    },
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-product-control-store-08.log",
+      "path": "validation/control-store-observed.log",
+      "bytes": "16292",
+      "sha256": "sha256:a66e6fee8ac8f4fcf68db4e3a112ecb9808a7c809ead80f3ff210ac9ae5015a9"
+    },
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-product-control-store-default-09.log",
+      "path": "validation/control-store-default.log",
+      "bytes": "14265",
+      "sha256": "sha256:a5ecb980444ec092c9dac3aabad595e834f0e4edb53ddb75d6c37222108befdb"
+    },
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-product-latentd-09.log",
+      "path": "validation/latentd-units.log",
+      "bytes": "14336",
+      "sha256": "sha256:ea4c5f01300831f93494339d1ae4033877cfe141e05bd7e1a65d59b6f7d42242"
+    },
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-scratch-python-12.log",
+      "path": "validation/scratch-python.log",
+      "bytes": "213",
+      "sha256": "sha256:932ea8712a9fe6982db19170fe31eb4a938e116d52a17286f3c644983ef23b4e"
+    },
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-reopen-coverage.json",
+      "path": "validation/reopen-allocation-coverage.json",
+      "bytes": "15149",
+      "sha256": "sha256:2ec61d03869bec8e481edbd7691a3031ddb12c605d89053636e1c88505ddeef6"
+    },
+    {
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue108-reopen-coverage.py",
+      "path": "validation/inspect-reopen-coverage.py",
+      "bytes": "4053",
+      "sha256": "sha256:8e7ba549af803934424a6331441bad6dcfe853b3d57a531561c7ac239b99faad"
+    }
+  ]
+}

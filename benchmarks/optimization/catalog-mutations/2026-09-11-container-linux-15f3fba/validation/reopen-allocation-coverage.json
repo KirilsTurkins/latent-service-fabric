@@ -1,0 +1,260 @@
+{
+  "schema": "latent.catalog-mutation.reopen-coverage-diagnostic.v1",
+  "scope": "read-only retained evidence and 32-byte symbol disassembly; no workload or semantic replay",
+  "aggregate": {
+    "path": "aggregate.json",
+    "bytes": "3376985",
+    "sha256": "sha256:0b98604dde42a6b32d987ff28e631193b7d9c8e79a0fc0401818508ca3a60cc6"
+  },
+  "rows": [
+    {
+      "sequence_ordinal": 25,
+      "variant": "control",
+      "shape": "distinct",
+      "source": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "commit": "165d1eb5084c256dab72ac10217b26af3c6e4c44",
+        "dirty": false,
+        "tree": "575f07560c9ae3cfa45ff9c3fb6fdb9563ebada7"
+      },
+      "binary": {
+        "bytes": "217911080",
+        "sha256": "sha256:ae29b2d92ed9cbf496ba723b6820b4ab547615dcbdfa72f8488c3e8ca5595d09"
+      },
+      "verified_symbol": {
+        "address": "aca960",
+        "demangled": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_catalog_reopen",
+        "raw": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen.llvm.latentd_16bd6e0d92949682_cgu_13",
+        "type": "t"
+      },
+      "interpreted": {
+        "path": "runs/owner-25-allocation-00004-distinct-control-r01-allocation-reopen/probe/interpreted.heaptrack",
+        "bytes": "3129298",
+        "sha256": "sha256:1d9f56ac97d82eddcd994b4a4f7e512cdc06a6cc2474c1c2a5e59508b7ef13bd"
+      },
+      "observed_names": [
+        {
+          "line_number": 28009,
+          "line": "s 7d _RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen",
+          "name": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen",
+          "matches_current_group": false,
+          "matches_raw_before_llvm_suffix": true
+        }
+      ],
+      "original_attribution_status": "available",
+      "original_counts": {
+        "allocated_bytes": "0",
+        "allocation_count": "0",
+        "live_bytes": "0",
+        "peak_live_bytes": "0",
+        "remaining_allocations": "0"
+      },
+      "original_frame": {
+        "case": "reopen",
+        "catalog_moved_to_node": true,
+        "drop_calls": "0",
+        "poll_calls": "1",
+        "symbol": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_catalog_reopen"
+      },
+      "disassembly": {
+        "command": [
+          "objdump",
+          "-d",
+          "--start-address=0xaca960",
+          "--stop-address=0xaca980",
+          "/workspace/project/target/optimization-catalog-mutations/full-01/builds/control/latentd-backend-collector"
+        ],
+        "exit_code": 0,
+        "stdout": "\n/workspace/project/target/optimization-catalog-mutations/full-01/builds/control/latentd-backend-collector:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000aca960 <_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen.llvm.latentd_16bd6e0d92949682_cgu_13>:\n  aca960:\t50                   \tpush   %rax\n  aca961:\t48 89 d0             \tmov    %rdx,%rax\n  aca964:\tc7 44 24 04 69 00 00 \tmovl   $0x69,0x4(%rsp)\n  aca96b:\t00 \n  aca96c:\t48 8d 54 24 04       \tlea    0x4(%rsp),%rdx\n  aca971:\t48 89 ca             \tmov    %rcx,%rdx\n  aca974:\tff 50 18             \tcall   *0x18(%rax)\n  aca977:\t58                   \tpop    %rax\n  aca978:\tc3                   \tret\n  aca979:\tcc                   \tint3\n  aca97a:\tcc                   \tint3\n  aca97b:\tcc                   \tint3\n  aca97c:\tcc                   \tint3\n  aca97d:\tcc                   \tint3\n  aca97e:\tcc                   \tint3\n  aca97f:\tcc                   \tint3\n",
+        "stderr": ""
+      }
+    },
+    {
+      "sequence_ordinal": 27,
+      "variant": "candidate",
+      "shape": "distinct",
+      "source": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "commit": "15f3fba3f47404240dd577d9eaaa3f60270b81d1",
+        "dirty": false,
+        "tree": "0b476179c2c3494071a2d37c0908dc2611173c8a"
+      },
+      "binary": {
+        "bytes": "218372600",
+        "sha256": "sha256:ae3472241f7bc6d509ae34475d39d33517ee0778d8abebf8ba2cec2142f1e3de"
+      },
+      "verified_symbol": {
+        "address": "a4a210",
+        "demangled": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_catalog_reopen",
+        "raw": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen.llvm.latentd_16bd6e0d92949682_cgu_12",
+        "type": "t"
+      },
+      "interpreted": {
+        "path": "runs/owner-27-allocation-00004-distinct-candidate-r01-allocation-reopen/probe/interpreted.heaptrack",
+        "bytes": "3060279",
+        "sha256": "sha256:ac37347b549962d656de034c67f6676df82a90cd6b81ca22a36d2210bab9832e"
+      },
+      "observed_names": [
+        {
+          "line_number": 27920,
+          "line": "s 7d _RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen",
+          "name": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen",
+          "matches_current_group": false,
+          "matches_raw_before_llvm_suffix": true
+        }
+      ],
+      "original_attribution_status": "available",
+      "original_counts": {
+        "allocated_bytes": "0",
+        "allocation_count": "0",
+        "live_bytes": "0",
+        "peak_live_bytes": "0",
+        "remaining_allocations": "0"
+      },
+      "original_frame": {
+        "case": "reopen",
+        "catalog_moved_to_node": true,
+        "drop_calls": "0",
+        "poll_calls": "1",
+        "symbol": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_catalog_reopen"
+      },
+      "disassembly": {
+        "command": [
+          "objdump",
+          "-d",
+          "--start-address=0xa4a210",
+          "--stop-address=0xa4a230",
+          "/workspace/project/target/optimization-catalog-mutations/full-01/builds/candidate/latentd-backend-collector"
+        ],
+        "exit_code": 0,
+        "stdout": "\n/workspace/project/target/optimization-catalog-mutations/full-01/builds/candidate/latentd-backend-collector:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000a4a210 <_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen.llvm.latentd_16bd6e0d92949682_cgu_12>:\n  a4a210:\t50                   \tpush   %rax\n  a4a211:\t48 89 d0             \tmov    %rdx,%rax\n  a4a214:\tc7 44 24 04 69 00 00 \tmovl   $0x69,0x4(%rsp)\n  a4a21b:\t00 \n  a4a21c:\t48 8d 54 24 04       \tlea    0x4(%rsp),%rdx\n  a4a221:\t48 89 ca             \tmov    %rcx,%rdx\n  a4a224:\tff 50 18             \tcall   *0x18(%rax)\n  a4a227:\t58                   \tpop    %rax\n  a4a228:\tc3                   \tret\n  a4a229:\tcc                   \tint3\n  a4a22a:\tcc                   \tint3\n  a4a22b:\tcc                   \tint3\n  a4a22c:\tcc                   \tint3\n  a4a22d:\tcc                   \tint3\n  a4a22e:\tcc                   \tint3\n  a4a22f:\tcc                   \tint3\n",
+        "stderr": ""
+      }
+    },
+    {
+      "sequence_ordinal": 29,
+      "variant": "candidate",
+      "shape": "shared",
+      "source": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "commit": "15f3fba3f47404240dd577d9eaaa3f60270b81d1",
+        "dirty": false,
+        "tree": "0b476179c2c3494071a2d37c0908dc2611173c8a"
+      },
+      "binary": {
+        "bytes": "218372600",
+        "sha256": "sha256:ae3472241f7bc6d509ae34475d39d33517ee0778d8abebf8ba2cec2142f1e3de"
+      },
+      "verified_symbol": {
+        "address": "a4a210",
+        "demangled": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_catalog_reopen",
+        "raw": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen.llvm.latentd_16bd6e0d92949682_cgu_12",
+        "type": "t"
+      },
+      "interpreted": {
+        "path": "runs/owner-29-allocation-00004-shared-candidate-r01-allocation-reopen/probe/interpreted.heaptrack",
+        "bytes": "3157103",
+        "sha256": "sha256:d5834dae360feec5863c498ff86a1a3ad1d599b1d5c73ffbe8431695085783b1"
+      },
+      "observed_names": [
+        {
+          "line_number": 27916,
+          "line": "s 7d _RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen",
+          "name": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen",
+          "matches_current_group": false,
+          "matches_raw_before_llvm_suffix": true
+        }
+      ],
+      "original_attribution_status": "available",
+      "original_counts": {
+        "allocated_bytes": "0",
+        "allocation_count": "0",
+        "live_bytes": "0",
+        "peak_live_bytes": "0",
+        "remaining_allocations": "0"
+      },
+      "original_frame": {
+        "case": "reopen",
+        "catalog_moved_to_node": true,
+        "drop_calls": "0",
+        "poll_calls": "1",
+        "symbol": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_catalog_reopen"
+      },
+      "disassembly": {
+        "command": [
+          "objdump",
+          "-d",
+          "--start-address=0xa4a210",
+          "--stop-address=0xa4a230",
+          "/workspace/project/target/optimization-catalog-mutations/full-01/builds/candidate/latentd-backend-collector"
+        ],
+        "exit_code": 0,
+        "stdout": "\n/workspace/project/target/optimization-catalog-mutations/full-01/builds/candidate/latentd-backend-collector:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000a4a210 <_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen.llvm.latentd_16bd6e0d92949682_cgu_12>:\n  a4a210:\t50                   \tpush   %rax\n  a4a211:\t48 89 d0             \tmov    %rdx,%rax\n  a4a214:\tc7 44 24 04 69 00 00 \tmovl   $0x69,0x4(%rsp)\n  a4a21b:\t00 \n  a4a21c:\t48 8d 54 24 04       \tlea    0x4(%rsp),%rdx\n  a4a221:\t48 89 ca             \tmov    %rcx,%rdx\n  a4a224:\tff 50 18             \tcall   *0x18(%rax)\n  a4a227:\t58                   \tpop    %rax\n  a4a228:\tc3                   \tret\n  a4a229:\tcc                   \tint3\n  a4a22a:\tcc                   \tint3\n  a4a22b:\tcc                   \tint3\n  a4a22c:\tcc                   \tint3\n  a4a22d:\tcc                   \tint3\n  a4a22e:\tcc                   \tint3\n  a4a22f:\tcc                   \tint3\n",
+        "stderr": ""
+      }
+    },
+    {
+      "sequence_ordinal": 31,
+      "variant": "control",
+      "shape": "shared",
+      "source": {
+        "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+        "commit": "165d1eb5084c256dab72ac10217b26af3c6e4c44",
+        "dirty": false,
+        "tree": "575f07560c9ae3cfa45ff9c3fb6fdb9563ebada7"
+      },
+      "binary": {
+        "bytes": "217911080",
+        "sha256": "sha256:ae29b2d92ed9cbf496ba723b6820b4ab547615dcbdfa72f8488c3e8ca5595d09"
+      },
+      "verified_symbol": {
+        "address": "aca960",
+        "demangled": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_catalog_reopen",
+        "raw": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen.llvm.latentd_16bd6e0d92949682_cgu_13",
+        "type": "t"
+      },
+      "interpreted": {
+        "path": "runs/owner-31-allocation-00004-shared-control-r01-allocation-reopen/probe/interpreted.heaptrack",
+        "bytes": "3230331",
+        "sha256": "sha256:166711cc59765015c1815b9c122055b47a0deb5879c69fd0f8a585b032462d30"
+      },
+      "observed_names": [
+        {
+          "line_number": 28007,
+          "line": "s 7d _RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen",
+          "name": "_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen",
+          "matches_current_group": false,
+          "matches_raw_before_llvm_suffix": true
+        }
+      ],
+      "original_attribution_status": "available",
+      "original_counts": {
+        "allocated_bytes": "0",
+        "allocation_count": "0",
+        "live_bytes": "0",
+        "peak_live_bytes": "0",
+        "remaining_allocations": "0"
+      },
+      "original_frame": {
+        "case": "reopen",
+        "catalog_moved_to_node": true,
+        "drop_calls": "0",
+        "poll_calls": "1",
+        "symbol": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_catalog_reopen"
+      },
+      "disassembly": {
+        "command": [
+          "objdump",
+          "-d",
+          "--start-address=0xaca960",
+          "--stop-address=0xaca980",
+          "/workspace/project/target/optimization-catalog-mutations/full-01/builds/control/latentd-backend-collector"
+        ],
+        "exit_code": 0,
+        "stdout": "\n/workspace/project/target/optimization-catalog-mutations/full-01/builds/control/latentd-backend-collector:     file format elf64-x86-64\n\n\nDisassembly of section .text:\n\n0000000000aca960 <_RNvNtNtNtNtNtCs1X2KchgKEqA_7latentd10standalone12measurements10comparison17catalog_mutations6frames23measured_catalog_reopen.llvm.latentd_16bd6e0d92949682_cgu_13>:\n  aca960:\t50                   \tpush   %rax\n  aca961:\t48 89 d0             \tmov    %rdx,%rax\n  aca964:\tc7 44 24 04 69 00 00 \tmovl   $0x69,0x4(%rsp)\n  aca96b:\t00 \n  aca96c:\t48 8d 54 24 04       \tlea    0x4(%rsp),%rdx\n  aca971:\t48 89 ca             \tmov    %rcx,%rdx\n  aca974:\tff 50 18             \tcall   *0x18(%rax)\n  aca977:\t58                   \tpop    %rax\n  aca978:\tc3                   \tret\n  aca979:\tcc                   \tint3\n  aca97a:\tcc                   \tint3\n  aca97b:\tcc                   \tint3\n  aca97c:\tcc                   \tint3\n  aca97d:\tcc                   \tint3\n  aca97e:\tcc                   \tint3\n  aca97f:\tcc                   \tint3\n",
+        "stderr": ""
+      }
+    }
+  ],
+  "conclusion": "Exact selected-name groups omit the Heaptrack raw alias without the LLVM suffix. The original available status establishes symbol proofs and zero unresolved frames, but the zero selected counts do not measure recovery allocations. Treat the selected reopen allocation comparison as unavailable; whole-process and normal timing/memory evidence retain their original scopes."
+}

@@ -1,0 +1,146 @@
+   Compiling latent-manifest v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-manifest)
+   Compiling latent-rpc v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-rpc)
+   Compiling latent-component-bindings v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-component-bindings)
+   Compiling latent-wasmtime v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-wasmtime)
+   Compiling latent-optimization-workloads v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/tools/optimization-workloads)
+warning: associated function `from_wire_kind` is never used
+  --> crates/latent-manifest/src/codec.rs:44:8
+   |
+37 | impl ManifestKind {
+   | ----------------- associated function in this implementation
+...
+44 |     fn from_wire_kind(kind: &str) -> Option<Self> {
+   |        ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: methods `limits`, `decode_document`, `encode_document`, and `decode_preparsed` are never used
+   --> crates/latent-manifest/src/codec.rs:123:18
+    |
+116 | impl JsonManifestCodec {
+    | ---------------------- methods in this implementation
+...
+123 |     pub const fn limits(&self) -> ManifestLimits {
+    |                  ^^^^^^
+...
+128 |     pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
+    |            ^^^^^^^^^^^^^^^
+...
+135 |     pub fn encode_document(&self, manifest: &ManifestDocument) -> ManifestResult<Vec<u8>> {
+    |            ^^^^^^^^^^^^^^^
+...
+153 |     fn decode_preparsed(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `document_kind` is never used
+   --> crates/latent-manifest/src/codec.rs:324:4
+    |
+324 | fn document_kind(value: &Value) -> ManifestResult<ManifestKind> {
+    |    ^^^^^^^^^^^^^
+
+   Compiling latent-routing v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-routing)
+   Compiling latent-activation v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-activation)
+   Compiling latent-artifacts v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-artifacts)
+   Compiling latent-telemetry v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-telemetry)
+warning: `latent-manifest` (lib) generated 3 warnings
+   Compiling latent-executor v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-executor)
+   Compiling latent-admission v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-admission)
+   Compiling latent-scheduler v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-scheduler)
+   Compiling latent-policy v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-policy)
+   Compiling latent-node v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-node)
+   Compiling latent-control-store v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-control-store)
+   Compiling latent-testkit v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-testkit)
+   Compiling latent-wire v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-wire)
+   Compiling latentd v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/apps/latentd)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 35.60s
+     Running unittests src/lib_root.rs (/workspace/project/target/debug/deps/latentd-96cd1645df698dcf)
+
+running 85 tests
+test command::tests::legacy_dispatch_is_limited_to_explicit_first_command ... ok
+test config::tests::compiler_jobs_are_independent_of_cells_and_control_threads_but_bounded_by_admission ... ok
+test command::tests::serve_requires_configuration_and_help_advertises_both_surfaces ... ok
+test command::tests::status_encoding_is_one_bounded_json_line ... ok
+test config::tests::document_size_and_nesting_are_bounded_before_deserialization ... ok
+test config::tests::engine::engine_json_has_closed_choices_and_preserves_omitted_defaults ... ok
+test config::tests::credentials_derive_exact_scoped_principals_and_secure_exposure ... ok
+test config::tests::malformed_json_never_echoes_secret_values ... ok
+test config::tests::invalid_capacity_and_retention_combinations_fail_before_startup ... ok
+test config::tests::nonlocal_bind_duplicate_tokens_and_unusable_manifest_tenants_are_rejected ... ok
+test config::tests::defaults_derive_compatible_node_limits_without_creating_storage ... ok
+test config::tests::zero_log_budget_preserves_exact_denial_across_rpc_and_admission ... ok
+test config::tests::relative_paths_anchor_to_configuration_parent_and_port_zero_is_valid ... ok
+test config::tests::engine::finite_engine_profiles_derive_checked_pool_capacity_without_opening_storage ... ok
+test standalone::load::tests::missing_observation_and_stop_never_become_a_fresh_accepting_zero ... ok
+test standalone::load::tests::pressure_preserves_zero_and_rejects_missing_ambiguous_or_invalid_samples ... ok
+test standalone::measurements::comparison::budget::phase1_budget_collector ... ignored, explicit paired budget runner supplies exact clean revision identities
+test standalone::measurements::comparison::cache::phase1_cache_collector ... ignored, explicit cache revision profile supplies bounded plan and exact inputs
+test standalone::measurements::comparison::catalog::phase1_catalog_collector ... ignored, explicit catalog runner supplies fixed counts, exact source identities and owned roots
+test standalone::measurements::comparison::catalog_mutations::phase1_catalog_mutation_collector ... ignored, explicit catalog mutation runner supplies exact identities and exclusively owned roots
+test standalone::measurements::comparison::budget::observation::tests::exact_and_missing_timestamps_survive_projection_and_pre_origin_fails ... ok
+test standalone::measurements::comparison::catalog::plan::tests::closed_catalog_populations_match_every_counted_api_boundary ... ok
+test standalone::measurements::comparison::catalog_mutations::plan::tests::fixed_populations_count_every_current_policy_pin_and_fresh_reopen ... ok
+test standalone::measurements::comparison::cold::phase1_cold_preparation_collector ... ignored, explicit cold revision profile supplies bounded plan and exact inputs
+test standalone::measurements::comparison::catalog_mutations::plan::tests::wrong_size_order_mode_and_historical_plan_fields_are_rejected ... ok
+test standalone::measurements::comparison::cold::plan::tests::populations_count_every_offer_and_control_without_hidden_retries ... ok
+test standalone::measurements::comparison::cold::schedule::tests::retained_success_cannot_borrow_another_identity_or_accounting ... ok
+test standalone::measurements::comparison::engine::call::tests::absolute_projection_rejects_reversed_or_overflowing_samples ... ok
+test standalone::measurements::comparison::engine::call::tests::absolute_projection_stays_within_the_maximum_at_millisecond_boundaries ... ok
+test standalone::measurements::comparison::engine::call::tests::expired_sample_keeps_its_receipt_without_adding_time ... ok
+test standalone::measurements::comparison::engine::call::tests::fresh_sample_avoids_the_stale_origin_maximum_violation ... ok
+test standalone::measurements::comparison::engine::call::tests::fresh_sample_handles_wall_moves_without_restarting_the_budget ... ok
+test standalone::measurements::comparison::engine::fixture::actual_tenant_fixtures_validate_before_node_start ... ignored, explicit engine fixture manifest; validates actual components without an Engine or Invoke
+test standalone::measurements::comparison::engine::call::tests::transport_status_retains_bounded_utf8_and_original_length ... ok
+test standalone::measurements::comparison::engine::namespace::tests::preserves_legacy_name_discriminator_and_noncanonical_index_bytes ... ok
+test standalone::measurements::comparison::engine::namespace::tests::rejects_unexpected_export_surface_and_malformed_component_framing ... ok
+test standalone::measurements::comparison::engine::namespace::tests::only_outer_names_change_with_other_sections_and_export_indices_preserved ... ok
+test standalone::measurements::comparison::engine::namespace::tests::nested_export_and_host_import_sections_are_not_rewritten ... ok
+test standalone::measurements::comparison::engine::phase1_engine_collector ... ignored, explicit exact-reference engine runner supplies five-profile plan and immutable fixtures
+test standalone::measurements::comparison::engine::namespace::tests::split_exports_keep_interleaved_instance_indices_and_global_name_bijection ... ok
+test standalone::measurements::comparison::engine::resources::tests::memory_projection_distinguishes_real_zero_missing_invalid_and_overflow ... ok
+test standalone::measurements::comparison::ownership::phase1_ownership_collector ... ignored, explicit exact-reference ownership runner supplies immutable fixtures and bounded plan
+test standalone::measurements::comparison::evidence::tests::semantic_input_is_the_exact_historical_targeted_echo_population ... ok
+test standalone::measurements::comparison::ownership_supervision::transferred_backend_input_retires_before_same_cell_reuse ... ignored, requires the maintained generic component and real loopback transport
+test standalone::measurements::comparison::phase1_comparison_collector ... ignored, explicit paired comparison runner supplies bounded plan and historical control
+test standalone::measurements::comparison::ownership::plan::tests::profile_mode_cannot_expand_or_disguise_attempt_population ... ok
+test standalone::measurements::comparison::recovery::phase1_recovery_collector ... ignored, explicit recovery runner supplies clean paired identities and bounded output
+test standalone::measurements::comparison::plan::tests::smoke_counts_and_noncanonical_bounds_cannot_claim_full_evidence ... ok
+test standalone::measurements::comparison::recovery::plan::tests::fixed_population_repeats_every_short_boundary_and_exceeds_cell_capacity ... ok
+test standalone::measurements::comparison::revision::phase1_revision_backend_collector ... ignored, explicit bounded revision runner supplies exact sources and plan
+test standalone::measurements::comparison::engine::plan::tests::fixed_populations_and_only_control_default_omit_engine ... ok
+test standalone::measurements::identity::tests::loaded_bytes_must_match_even_when_their_length_is_unchanged ... ok
+test standalone::measurements::identity::tests::required_fixture_names_and_lengths_are_exact ... ok
+test standalone::measurements::node::tests::configuration_reserves_records_for_all_running_and_queued_requests ... ok
+test standalone::measurements::phase1_measurement_collector ... ignored, explicit smoke/full measurement runner supplies bounded plan and prebuilt fixtures
+test standalone::measurements::plan::tests::full_measurements_cannot_be_replaced_with_smoke_counts ... ok
+test standalone::measurements::scale::tests::variant_identity_is_one_bounded_custom_section ... ok
+test standalone::measurements::soak::tests::bounded_retention_is_allowed_but_active_owners_or_missing_observations_fail ... ok
+test standalone::measurements::soak::tests::full_warmup_exercises_every_measured_fault_family ... ok
+test standalone::measurements::fixture_inputs::tests::metadata_artifact_references_match_retained_bytes_and_cannot_overwrite ... ok
+test standalone::observations::tests::inventory_slot_requires_installation_and_never_replaces_its_reporter ... ok
+test standalone::observations::tests::prepared_cache_mapping_preserves_every_aggregate_and_counter ... ok
+test standalone::observations::tests::real_backend_cache_source_returns_only_its_bounded_aggregate ... ok
+test standalone::observations::topology::tests::fixed_topology_distinguishes_measurements_unknowns_and_architectural_zeros ... ok
+test standalone::observations::topology::tests::retired_compiler_workers_report_observed_zero_with_configuration_retained ... ok
+test standalone::observations::topology::tests::short_topology_selection_is_bounded_and_explicitly_incomplete ... ok
+test standalone::parity::adapter_and_rpc_have_equivalent_selected_outcomes ... ignored, requires prebuilt echo/capabilities and bounded evidence runner; exactly 22 Invoke attempts
+test standalone::shutdown::tests::cleanup_requires_actual_join_and_no_retained_owner ... ok
+test standalone::shutdown::tests::forced_cleanup_gets_one_bounded_phase_after_natural_drain ... ok
+test standalone::transport::state::tests::contended_dispatch_still_checks_capacity_and_closing_after_locking ... ok
+test standalone::transport::state::tests::count_contention_does_not_reject_available_dispatch_capacity ... ok
+test standalone::measurements::comparison::writer::tests::streamed_document_retains_every_sample_and_rejects_partial_oversized_records ... ok
+test standalone::transport::tests::gates::connection_and_control_job_guards_are_independent_and_nonqueued ... ok
+test standalone::transport::tests::gates::malformed_configuration_is_rejected_before_listener_creation ... ok
+test standalone::transport::tests::gates::readiness_is_once_only_and_cancel_status_has_global_headroom ... ok
+test standalone::measurements::writer::tests::oversized_event_cannot_append_partial_json ... ok
+test standalone::transport::tests::ownership::cancelling_created_body_emits_unavailable_trailers_after_ordered_cleanup ... ok
+test standalone::transport::tests::ownership::entire_control_future_stays_owned_after_waiter_abort_during_a_poll ... ok
+test standalone::transport::tests::ownership::request_owner_drops_inner_future_before_releasing_rpc_guard ... ok
+test standalone::transport::tests::ownership::retained_output_body_holds_dispatch_capacity_until_dropped ... ok
+test standalone::transport::tests::shutdown::already_panicked_server_is_joined_without_repolling_its_handle ... ok
+test standalone::transport::tests::shutdown::timed_out_server_is_aborted_and_joined_before_returning_failure ... ok
+test standalone::transport::tests::deadline::delayed_unary_body_keeps_arrival_deadline_and_expiry_drop_cause ... ok
+test standalone::transport::tests::network::accepted_connections_are_bounded_and_incomplete_http2_is_closed_on_shutdown ... ok
+test phase0_collector::tests::test_binary_retains_its_actual_collector_identity ... ok
+
+test result: ok. 71 passed; 0 failed; 14 ignored; 0 measured; 0 filtered out; finished in 7.11s
+

@@ -947,3 +947,125 @@ contains the completed 24-collector, 596,720-operation campaign. Its distinct
 time regressed and reopened memory remained higher than primary idle memory.
 The report preserves every scale and case, the separate tiny allocation scope,
 failed attempts, exact source identities and the bounded publication recipe.
+
+## Catalog mutation and commit experiments
+
+The #108 `catalog-mutations` experiment uses exact clean control/candidate
+`latentd` libtest builds and one reproducible Echo fixture. Collector, helpers,
+operation-local work observer, configuration and release build settings are
+source-identical across arms. Actual build and run receipts must bind the exact
+clean commits containing the declared temporary-export protocol. Earlier
+receipts retain their original identities. The
+[retained 2026-09-11 comparison](../../benchmarks/optimization/catalog-mutations/2026-09-11-container-linux-15f3fba/README.md)
+completed 32 collectors / 45,096 commands. All 24 mutation wall/CPU comparisons
+were lower, while shared 10k reopen took 41.52% longer and distinct 10k reopened
+idle RSS rose 18.75%. These are one-pair observations with the limitations below.
+There are no guest Invokes, Stores or preparation
+jobs, and no hidden warmups, retries or extra uncounted public catalog reads.
+
+| Population | Smoke | Full |
+| --- | --- | --- |
+| Independently seeded normal sizes | 4 | 100, 1,000, 10,000 |
+| Normal initial/reopen collectors | 8 | 24 |
+| Normal public API operations | 186 | 44,910 |
+| Separate allocation size / collectors | 4 / 8 | 4 / 8 |
+| Allocation public API operations | 186 | 186 |
+| Total collectors / API operations | 16 / 372 | 32 / 45,096 |
+| Measured mutations / reopen observations | 32 / 8 | 64 / 16 |
+
+Each normal size has distinct-service and shared-service shapes and one matched
+control/candidate pair. Sizes ascend; shapes run distinct then shared, with
+control first when the zero-based size/shape index sum is even and candidate
+first otherwise. Each arm's initial and reopen children are adjacent. Allocation
+uses its own N4 roots and the same shape order after the normal stage; larger
+normal sizes and 100k catalogs are never allocation-profiled.
+
+An initial owner publishes N releases, seeds one `apply_many`, and retains an old
+pin at catalog generation 1. It performs unchanged versioned apply, weight 1-to-2
+update, delete, then create-only reapply with expected generation zero. Successful
+commits advance catalog generations through 2, 3, 4 and 5; unchanged apply still
+advances the object version. Counted gets and old/current pinned resolve/policy
+proofs follow every mutation, including a new current pin each time. Deleted
+get returns `Ok(None)`; expected route misses remain real API errors. Initial
+commands total N+36 for distinct and N+37 for shared. Reopen performs six calls:
+get, pin, two resolves and two policy reads, checking final original content and
+object generation 5. Pins and returned proof values are explicitly released.
+
+The parent creates each fresh root exclusively, retains its owner marker and
+device/inode identity, and hashes the persisted catalog after initial process
+exit. A new process opens that same unchanged root with the same arm executable;
+no seed-directory copying or restoration occurs. The parent verifies both
+process exits, native cleanup and runtime joins, records one bounded final tree
+walk, then removes its root. Initial and reopened memory observations remain
+separate, including overlap before old-pin Drop and observations after release.
+
+Normal mutation clocks span construction of the actual public future through
+its returned Result, before validation, projection and Result Drop. Reopen clocks
+span actual artifact/deployment repository opening before Node construction.
+Process CPU brackets retain actual sampling times and tick frequency. Common
+operation receipts retain compilation, derivation/reuse, fresh artifact
+verification, encoding and staged-write work. Payload reuse does not by itself
+prove skipped derivation. Commits still write a complete catalog representation;
+report actual encodes and requested/written/synced bytes rather than inferring
+constant write cost. Buffer lengths are summed work and capacities are individual
+buffer maxima, not simultaneous scratch peaks; file fsync bytes alone do not
+prove directory durability.
+
+Normal owners use the common source sampler at a requested 100 ms cadence;
+only read brackets wholly inside an operation contribute sampled maxima.
+Zero samples mean unavailable, and VmHWM/VmPeak remain lifetime high-water
+observations. Allocation owners disable that sampler. Their four noninlined
+mutation frames cover actual async polls and owned Result Drop, with observed
+poll/drop counts; the separately profiled reopen retains its returned catalog
+through Node shutdown. Exact binary nm proofs and Heaptrack interpreted/folded
+agreement bind matched selected origins, including later frees. The retained
+comparison's four reopen profiles missed a raw symbol alias: their original
+available/zero summaries remain byte-identical, but selected reopen attribution
+is reported unavailable. This does not affect the sixteen selected mutation
+frames or the whole-process allocation totals. Do not divide by
+poll count or N, sum frame peaks, infer zero whole-process residuals from selected
+residuals, or claim exact temporary scratch peaks. Unresolved attribution remains
+unavailable. One pair per size/shape supports descriptive differences, not
+per-mutation latency quantiles, confidence intervals or extrapolation from N4.
+
+The plan explicitly permits 512 MiB expanded folded text and declares
+`maximum_temporary_folded_bytes` as 512 MiB. Exactly one active owned expanded
+folded file is temporary scratch, exempt from retained-byte accounting while
+its partial gzip and every other file remain charged. Total coexistence is
+bounded at 1.5 GiB; retained evidence remains bounded at 1 GiB. Both streams are
+processed sequentially. The older catalog experiment stays at 256 MiB expanded
+text, without this scratch allowance; earlier defaults remain unchanged.
+Each export shares one 120 s deadline with gzip writing and roundtrip verification.
+The original is removed only after complete byte/hash verification, followed by
+the ordinary root-bound check. Failed originals and partial output remain
+diagnostic evidence, not an enlarged qualifying archive. Ordinary retained files
+remain bounded at 256 MiB, the evidence root at 1 GiB,
+and inventory at 4,096 files. Interpreted profiles retain 4 million records;
+folded streams retain 64 KiB lines, 100,000 rows and 512 frames. Raw documents,
+rows and sample records retain the 32 MiB / 256 KiB / 2,048 bounds. Full normal
+initial/reopen owners have 3,600/1,800 s limits and a 21,600 s stage; smoke normal
+owners have 90 s limits. Allocation owners have 180 s and their stage 7,200 s.
+
+Build from the exact clean harness, using full immutable commit arguments and
+fresh output/external build roots. Preserve the complete referenced build closure,
+including process sidecars and executable modes, in separate fresh smoke/full
+roots before collection. The following commands run from that harness; full
+collection requires a complete passing smoke and uses `--profile full` with its
+own copied build receipt. Never reuse a measured root.
+
+```text
+python tools/build_optimization_backend_revision.py --experiment catalog-mutations --profile full --control-ref <control-sha> --candidate-ref <candidate-sha> --harness-ref <harness-sha> --output <build-root> --target-root <external-build-parent>
+python tools/run_optimization_backend_revision.py --experiment catalog-mutations --profile smoke --builds <smoke-root>/backend-builds.json --target-root <owned-data-parent>
+python tools/run_optimization_backend_revision.py --experiment catalog-mutations --profile full --builds <full-root>/backend-builds.json --target-root <owned-data-parent>
+python tools/validate_optimization_backend_revision.py <full-root>/suite.json --aggregate <full-root>/aggregate.json
+python tools/package_phase1_evidence.py --source <full-root> --output <fresh-package> --compression-level 9 --split-archive
+python tools/validate_phase1_archive.py <fresh-package>
+```
+
+Collection and packaging perform mandatory semantic replay; canonical aggregate
+equality and the exact complete population remain required. Package kind
+`catalog-mutation` retains the standard 1 GiB expanded archive and 198 MB split
+gzip bound, with 2-4 parts of at most 50 MB. Compression fit is not assumed before
+the actual receipt. Independently copy/hash and replay the closed package, retain
+failed attempts separately, and report archive and final-head CI outcomes only
+after those checks complete.
