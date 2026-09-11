@@ -46,7 +46,8 @@ def main():
         engine = Engine()
         value = (setup.import_build(engine, args.implementation_id, args.source_path, args.output, ROOT)
                  if args.operation == "import" else setup.prepare_images(engine, args.build_root, ROOT))
-        print(json.dumps(value, separators=(",", ":")))
+        print(json.dumps({"operation": args.operation, "schema": value["schema"],
+                          "output": str(args.output if args.operation == "import" else args.build_root)}))
         return 0
     if args.operation == "run":
         from tools.optimization_docker.collect import execute
