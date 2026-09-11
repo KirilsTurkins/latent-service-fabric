@@ -124,8 +124,10 @@ class KubernetesModelTests(unittest.TestCase):
             self.assertEqual(value["args"], ["--output", "/output"])
             self.assertNotIn("command", value)
             self.assertEqual(value["imagePullPolicy"], "Never")
-            self.assertEqual(value["startupProbe"], {"tcpSocket": {"port": 7070}, "initialDelaySeconds": 0,
-                "periodSeconds": 1, "timeoutSeconds": 1, "failureThreshold": 120, "successThreshold": 1})
+            self.assertEqual(value["startupProbe"], model.startup_probe())
+            self.assertEqual(value["startupProbe"]["exec"]["command"],
+                ["/bin/sh", "-c", model.STARTUP_SCRIPT, "wrapper-startup", "/output/events.ndjson"])
+            self.assertNotIn("tcpSocket", value["startupProbe"])
             self.assertNotIn("readinessProbe", value)
             self.assertNotIn("livenessProbe", value)
             self.assertIs(value["stdin"], False)

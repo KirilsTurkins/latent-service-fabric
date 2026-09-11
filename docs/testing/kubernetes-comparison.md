@@ -176,13 +176,32 @@ group remains in the original response and is excluded from the current graph
 only when it matches that earlier owned Service creation. Unknown, foreign or
 crossed owners fail validation. No normalized replacement API record is published.
 
-Application Pods have only a TCP startup probe on 7070, with one-second period
-and timeout, failure threshold 120 and success threshold one. The wrapper binds
-that port after its child-ready event. Retain the actual wrapper-ready record,
-Pod Ready state and matching ready endpoint before connecting the client.
-There is no ongoing readiness or liveness probe during measurement, avoiding
-extra continuing connections alongside the 32-channel case. Probe quantization
-and observed failures remain visible; startup is not a hidden semantic Invoke.
+The current `latent.optimization.kubernetes-plan.v2` declares
+`startup_protocol: exec-ready-event.v1`. Its startup probe uses the unchanged
+images' `/bin/sh` and `/usr/bin/head` to read at most 65,536 bytes of the fresh
+`/output/events.ndjson`. It requires complete LF-terminated `started` sequence 0
+and `ready` sequence 1 records, the exact wrapper schema and fixed details,
+matching application/child PID, wrapper PID 1 and ordered numeric elapsed times.
+The existing wrapper flushes `ready` only after its child is ready and port 7070
+is bound. Absent, partial or mismatched records fail the probe. The check opens
+no network connection and performs no guest Invoke. Its one-second period and
+timeout, failure threshold 120 and success threshold one remain unchanged.
+There is no ongoing readiness or liveness probe. Pod Ready, Service/EndpointSlice
+and the proxy-rule gate still precede client connection through ClusterIP.
+
+Original `plan.v1` TCP-probe records remain immutable and replay only for the
+four retained owner/source/run/profile identities: smoke-01, smoke-02, smoke-03
+and full-01. Historical smoke-03 is a completed workload with its separate
+cleanup-completion proof; it is not a run of the new probe protocol. Historical
+successful owners require one residual accepted connection, consistent with the
+TCP startup probe under the owned path; no source-peer tracing was captured.
+Current owners require exactly the client channels and zero residual accepted
+connections. Every actual forwarding failure remains fatal. The full-01
+`forward-failed` record did not retain its errno, and its byte counters excluded
+failed forwards, so neither a probe root cause nor zero transferred bytes is
+claimed. The exec check removes the startup probe's TCP interaction while
+preserving exact #111 images and workload populations. New smoke evidence must
+pass before the new full campaign; no original attempt is relabelled or replaced.
 
 Client Pods are named `client-p<pair>`, have stdin open, `stdinOnce: false`, no
 TTY and no startup/readiness/liveness probe. The unchanged client emits its first

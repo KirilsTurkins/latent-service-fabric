@@ -447,11 +447,15 @@
         "workload",
         "seed_reuse",
         "measured_services",
-        "node_selector"
+        "node_selector",
+        "startup_probe"
       ],
       "properties": {
         "schema": {
-          "const": "latent.optimization.kubernetes-plan.v1"
+          "enum": [
+            "latent.optimization.kubernetes-plan.v1",
+            "latent.optimization.kubernetes-plan.v2"
+          ]
         },
         "profile": {
           "enum": [
@@ -631,7 +635,252 @@
             }
           }
         }
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "schema": {
+              "const": "latent.optimization.kubernetes-plan.v1"
+            },
+            "startup_probe": {
+              "const": {
+                "tcpSocket": {
+                  "port": 7070
+                },
+                "initialDelaySeconds": 0,
+                "periodSeconds": 1,
+                "timeoutSeconds": 1,
+                "failureThreshold": 120,
+                "successThreshold": 1
+              }
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "startup_protocol"
+                ]
+              },
+              {
+                "required": [
+                  "startup_prefix_bytes"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "required": [
+            "startup_protocol",
+            "startup_prefix_bytes"
+          ],
+          "properties": {
+            "schema": {
+              "const": "latent.optimization.kubernetes-plan.v2"
+            },
+            "startup_protocol": {
+              "const": "exec-ready-event.v1"
+            },
+            "startup_prefix_bytes": {
+              "const": 65536
+            },
+            "startup_probe": {
+              "const": {
+                "exec": {
+                  "command": [
+                    "/bin/sh",
+                    "-c",
+                    "set -eu\nexport LC_ALL=C\n[ -f \"$1\" ] && [ ! -L \"$1\" ] || exit 1\n/usr/bin/head -c 65536 -- \"$1\" | (\nIFS= read -r first || exit 1\nIFS= read -r second || exit 1\ncase \"$first\" in\n  '{\"app\":\"lsf\",\"child_pid\":'*) app=lsf ;;\n  '{\"app\":\"native\",\"child_pid\":'*) app=native ;;\n  *) exit 1 ;;\nesac\nprefix='{\"app\":\"'\"$app\"'\",\"child_pid\":'\nrest=${first#\"$prefix\"}\nchild=${rest%%,*}\ncase \"$child\" in ''|0*|*[!0-9]*) exit 1 ;; esac\n[ \"${#child}\" -le 10 ] && [ \"$child\" -le 4294967295 ] || exit 1\nrecord() {\n  prefix='{\"app\":\"'\"$app\"'\",\"child_pid\":'\"$child\"',\"detail\":'\"$4\"',\"elapsed_nanos\":\"'\n  case \"$1\" in \"$prefix\"*) ;; *) return 1 ;; esac\n  rest=${1#\"$prefix\"}\n  elapsed=${rest%%\\\"*}\n  case \"$elapsed\" in ''|*[!0-9]*) return 1 ;; 0) ;; 0*) return 1 ;; esac\n  [ \"${#elapsed}\" -le 18 ] || return 1\n  [ \"$rest\" = \"$elapsed\\\",\\\"event\\\":\\\"$2\\\",\\\"schema\\\":\\\"latent.optimization.container-event.v1\\\",\\\"sequence\\\":$3,\\\"wrapper_pid\\\":1}\" ]\n}\nrecord \"$first\" started 0 '{\"buffer_bytes_per_direction\":16384,\"child_kill_wait_millis\":5000,\"child_listen\":\"127.0.0.1:7071\",\"child_term_grace_millis\":10000,\"connect_timeout_millis\":5000,\"forward_drain_millis\":5000,\"listen\":\"0.0.0.0:7070\",\"maximum_connections\":32,\"maximum_lifetime_millis\":300000,\"maximum_snapshots\":6,\"pid1\":true,\"ready_timeout_millis\":30000,\"runtime_workers\":2}' || exit 1\nstarted_elapsed=$elapsed\ncase \"$app\" in\n  lsf) detail='{\"child_listen\":\"127.0.0.1:7071\",\"child_status\":{\"endpoint\":\"127.0.0.1:7071\",\"event\":\"ready\",\"nodeId\":\"optimization-node\",\"ready\":true,\"schemaVersion\":\"latent.standalone.status.v1\"},\"listen\":\"0.0.0.0:7070\"}' ;;\n  native) detail='{\"child_listen\":\"127.0.0.1:7071\",\"child_status\":{\"address\":\"http://127.0.0.1:7071\",\"event\":\"ready\",\"implementation\":\"native-reference\"},\"listen\":\"0.0.0.0:7070\"}' ;;\nesac\nrecord \"$second\" ready 1 \"$detail\" || exit 1\n[ \"$elapsed\" -ge \"$started_elapsed\" ]\n)",
+                    "wrapper-startup",
+                    "/output/events.ndjson"
+                  ]
+                },
+                "initialDelaySeconds": 0,
+                "periodSeconds": 1,
+                "timeoutSeconds": 1,
+                "failureThreshold": 120,
+                "successThreshold": 1
+              }
+            }
+          }
+        }
       ]
+    },
+    "startupProtocol": {
+      "if": {
+        "required": [
+          "plan"
+        ],
+        "properties": {
+          "plan": {
+            "required": [
+              "schema"
+            ],
+            "properties": {
+              "schema": {
+                "const": "latent.optimization.kubernetes-plan.v1"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "profile",
+              "source",
+              "plan"
+            ],
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              },
+              "source": {
+                "const": {
+                  "commit": "416589538baa5f74dcd3c5175fcef3d8bbb7abbe",
+                  "tree": "6e4b9963e15710204ef552dcb68773ffe36f7a38",
+                  "clean": true,
+                  "cargo_lock_sha256": "sha256:08974270174575379a10e4f83920755aba00a33b61d2f8e63e5b05b6ea6695d1"
+                }
+              },
+              "plan": {
+                "required": [
+                  "node_selector"
+                ],
+                "properties": {
+                  "node_selector": {
+                    "const": {
+                      "latent.benchmark.worker": "lsf-112-8c22b65b1529"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "required": [
+              "profile",
+              "source",
+              "plan"
+            ],
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              },
+              "source": {
+                "const": {
+                  "commit": "7a655e7967dbde1431f0ff8a5b928443a5986832",
+                  "tree": "49b47374b585e2b4a652c95216f6f65f173e18a6",
+                  "clean": true,
+                  "cargo_lock_sha256": "sha256:08974270174575379a10e4f83920755aba00a33b61d2f8e63e5b05b6ea6695d1"
+                }
+              },
+              "plan": {
+                "required": [
+                  "node_selector"
+                ],
+                "properties": {
+                  "node_selector": {
+                    "const": {
+                      "latent.benchmark.worker": "lsf-112-8c22b65b1529"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "required": [
+              "profile",
+              "source",
+              "plan"
+            ],
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              },
+              "source": {
+                "const": {
+                  "commit": "2f7e3b1616056ba11a7e97ac613cdc3f416eb8c0",
+                  "tree": "d9b5d8fa0035145ddfbc0e77ef03b101d2a486c4",
+                  "clean": true,
+                  "cargo_lock_sha256": "sha256:08974270174575379a10e4f83920755aba00a33b61d2f8e63e5b05b6ea6695d1"
+                }
+              },
+              "plan": {
+                "required": [
+                  "node_selector"
+                ],
+                "properties": {
+                  "node_selector": {
+                    "const": {
+                      "latent.benchmark.worker": "lsf-112-8c22b65b1529"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "required": [
+              "profile",
+              "source",
+              "plan"
+            ],
+            "properties": {
+              "profile": {
+                "const": "full"
+              },
+              "source": {
+                "const": {
+                  "commit": "901b25161c258704fa079113e1e73f0dfbd882eb",
+                  "tree": "cf722017e87abab9b2f66eb57879ffd499f19dcd",
+                  "clean": true,
+                  "cargo_lock_sha256": "sha256:08974270174575379a10e4f83920755aba00a33b61d2f8e63e5b05b6ea6695d1"
+                }
+              },
+              "plan": {
+                "required": [
+                  "node_selector"
+                ],
+                "properties": {
+                  "node_selector": {
+                    "const": {
+                      "latent.benchmark.worker": "lsf-112-8c22b65b1529"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "source": {
+              "required": [
+                "commit"
+              ],
+              "properties": {
+                "commit": {
+                  "enum": [
+                    "416589538baa5f74dcd3c5175fcef3d8bbb7abbe",
+                    "7a655e7967dbde1431f0ff8a5b928443a5986832",
+                    "2f7e3b1616056ba11a7e97ac613cdc3f416eb8c0",
+                    "901b25161c258704fa079113e1e73f0dfbd882eb"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "allOf": [
@@ -782,6 +1031,9 @@
           }
         }
       }
+    },
+    {
+      "$ref": "#/$defs/startupProtocol"
     }
   ]
 }

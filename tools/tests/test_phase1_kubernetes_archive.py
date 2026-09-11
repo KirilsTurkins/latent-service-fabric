@@ -49,6 +49,10 @@ class KubernetesArchiveTests(unittest.TestCase):
             suite = {"profile": profile}
             (self.source / name / "suite.json").write_bytes(canonical(suite) + b"\n")
             self.derived[profile] = {"status": "passed", "profile": profile, "owner": self.owner,
+                                    "plan": plan, "source": {"commit": "d" * 40},
+                                    "run_id": "full-02" if profile == "full" else "smoke-04",
+                                    "build_source": {"commit": "a" * 40},
+                                    "images": {"image_id": "sha256:" + "c" * 64},
                                     "bootstrap": {"identity": "same-bootstrap"}, "finished_nanos": "100"}
             self.values[profile] = {"schema": kubernetes.aggregate.SCHEMA, "status": "complete", "profile": profile,
                 "plan": plan, "completed_paired_run": True, "full_population_completed": profile == "full",
@@ -221,6 +225,72 @@ class KubernetesArchiveTests(unittest.TestCase):
         index = {"schema": kubernetes.model.PREFIX + "failed-attempts.v1", "attempts": [row]}
         (attempts / "index.json").write_bytes(canonical(index) + b"\n")
         return attempts, index, recovered
+
+    def prior_smoke_fixture(self):
+        root = self.source / "prior-smokes"
+        campaign = root / "smoke-03"
+        campaign.mkdir(parents=True)
+        (campaign / "suite.json").write_bytes(b'{"profile":"smoke"}\n')
+        (campaign / "aggregate.json").write_bytes(canonical(self.values["smoke"]) + b"\n")
+        index = {"schema": kubernetes.model.PREFIX + "prior-smokes.v1", "campaigns": [{
+            "directory": "smoke-03", **{key: archive.file_reference(campaign / (key + ".json"), root)
+                                          for key in ("suite", "aggregate")}}]}
+        (root / "index.json").write_bytes(canonical(index) + b"\n")
+        derived = {**self.derived["smoke"], "run_id": "smoke-03", "finished_nanos": "70",
+                   "cleanup_completion": {"finished_nanos": "80"}}
+        return root, index, (self.values["smoke"], derived, {"status": "passed", "original": True})
+
+    def prior_smokes(self):
+        return kubernetes._prior_smokes(self.source, self.root / "dependency-source",
+            self.source / "bootstrap", self.derived["full"], {"status": "passed", "original": True}, "101")
+
+    def test_prior_completed_smoke_replays_separately_without_changing_current_offer_counts(self):
+        root, index, prior = self.prior_smoke_fixture()
+        before = self.snapshot(root)
+        with patch.object(kubernetes, "_campaign", return_value=prior) as replayed:
+            result = self.prior_smokes()
+        replayed.assert_called_once_with(root / "smoke-03", self.root / "dependency-source",
+                                         self.source / "bootstrap", "smoke")
+        self.assertEqual(result["index"], index)
+        self.assertEqual(result["campaigns"][0]["aggregate"]["logical_offers"], "300")
+        self.assertEqual(self.values["full"]["logical_offers"], "9926")
+        self.assertEqual(self.snapshot(root), before)
+
+    def test_prior_smoke_requires_matching_bytes_dependencies_and_cleanup_order(self):
+        root, index, prior = self.prior_smoke_fixture()
+        path = root / "smoke-03/aggregate.json"
+        original_bytes = path.read_bytes()
+        path.write_bytes(b"changed")
+        with patch.object(kubernetes, "_campaign", return_value=prior) as replayed, self.assertRaises(ValueError):
+            self.prior_smokes()
+        replayed.assert_not_called()
+        path.write_bytes(original_bytes)
+        for field, value in (("images", {"wrong": "image"}), ("run_id", "smoke-02"),
+                             ("cleanup_completion", {"finished_nanos": "102"})):
+            with self.subTest(field=field):
+                changed = (prior[0], {**prior[1], field: value}, prior[2])
+                with patch.object(kubernetes, "_campaign", return_value=changed), self.assertRaises(ValueError):
+                    self.prior_smokes()
+        with patch.object(kubernetes, "_campaign", side_effect=ValueError("prior-semantic-failure")), \
+             self.assertRaisesRegex(ValueError, "prior-semantic-failure"):
+            self.prior_smokes()
+
+    def test_prior_smoke_index_rejects_duplicate_unindexed_and_wrong_path_entries(self):
+        root, original, prior = self.prior_smoke_fixture()
+        for change in ("duplicate", "path", "name", "unindexed"):
+            with self.subTest(change=change):
+                index = deepcopy(original)
+                if change == "duplicate":
+                    index["campaigns"] *= 2
+                elif change == "path":
+                    index["campaigns"][0]["suite"]["path"] = "smoke-03/aggregate.json"
+                elif change == "name":
+                    index["campaigns"][0]["directory"] = "../smoke-03"
+                else:
+                    (root / "unindexed").mkdir()
+                (root / "index.json").write_bytes(canonical(index))
+                with patch.object(kubernetes, "_campaign", return_value=prior), self.assertRaises(ValueError):
+                    self.prior_smokes()
 
     def test_indexed_failed_attempt_is_replayed_without_adding_qualified_offers(self):
         attempts, index, recovered = self.failure_fixture()

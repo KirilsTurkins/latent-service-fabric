@@ -74,7 +74,8 @@ def _dependency(directory, docker_package):
 
 def _population(result, derived, profile):
     pairs = model.repetitions(profile)
-    plan = model.plan(profile, owner=derived["owner"])
+    protocol = model.suite_startup_protocol(derived)
+    plan = model.plan(profile, owner=derived["owner"], startup_protocol=protocol)
     offers = plan["workload"]["logical_offers"]
     require(result.get("schema") == aggregate.SCHEMA and result.get("status") == "complete"
             and result.get("profile") == profile and result.get("completed_paired_run") is True
@@ -175,6 +176,43 @@ def _failed_attempts(directory, bootstrap, cleanup_started, *, dependency=None):
     return {"index": index, "recoveries": recoveries}
 
 
+def _prior_smokes(directory, dependency, bootstrap, full, original, cleanup_started):
+    """Replay earlier completed smokes separately from the current populations."""
+    root = directory / "prior-smokes"
+    if not root.exists() and not root.is_symlink():
+        return None
+    root = paths.existing_directory_path(root, "prior Kubernetes smokes")
+    index = fields(read_json(root / "index.json", model.MAX_HELPER_BYTES), "schema campaigns")
+    require(index["schema"] == model.PREFIX + "prior-smokes.v1"
+            and isinstance(index["campaigns"], list) and 1 <= len(index["campaigns"]) <= 4,
+            "kubernetes-prior-smoke-index")
+    names, results = [], []
+    for row in index["campaigns"]:
+        fields(row, "directory suite aggregate")
+        name = text(row["directory"], 64)
+        require(re.fullmatch(r"smoke-[0-9]{2}", name) is not None, "kubernetes-prior-smoke-name")
+        names.append(name)
+        campaign = paths.existing_directory_path(root / name, "prior completed Kubernetes smoke")
+        for key in ("suite", "aggregate"):
+            reference = fields(row[key], "path bytes sha256")
+            require(reference["path"] == name + "/" + key + ".json", "kubernetes-prior-smoke-path")
+            verify_artifact(root, reference, model.MAX_FILE_BYTES)
+        result, derived, prior_original = _campaign(campaign, dependency, bootstrap, "smoke")
+        require(derived["run_id"] == name and derived["owner"] == full["owner"]
+                and canonical(derived["bootstrap"]) == canonical(full["bootstrap"])
+                and canonical(derived["build_source"]) == canonical(full["build_source"])
+                and canonical(derived["images"]) == canonical(full["images"])
+                and canonical(prior_original) == canonical(original), "kubernetes-prior-smoke-crossed-dependency")
+        _exact(campaign / "aggregate.json", canonical(result) + b"\n", "kubernetes-prior-smoke-aggregate")
+        finished = derived.get("cleanup_completion", derived)["finished_nanos"]
+        require(uint(derived["finished_nanos"]) <= uint(finished) <= uint(cleanup_started),
+                "kubernetes-prior-smoke-after-cluster-cleanup")
+        results.append({"directory": name, "aggregate": result})
+    require(names == sorted(set(names)) and {entry.name for entry in root.iterdir()} == {"index.json", *names},
+            "kubernetes-prior-smoke-coverage")
+    return {"index": index, "campaigns": results}
+
+
 def verify(directory: Path, *, docker_package):
     """Validate dependency, both populations, all report bytes and final teardown."""
     directory = paths.existing_directory_path(Path(directory), "Kubernetes archive evidence")
@@ -206,12 +244,16 @@ def verify(directory: Path, *, docker_package):
                 require(uint(campaign["cleanup_completion"]["finished_nanos"]) <= uint(cleanup["started_nanos"]),
                         "kubernetes-archive-cluster-cleanup-precedes-completion")
         failed = _failed_attempts(directory, bootstrap, cleanup["started_nanos"], dependency=dependency)
+        prior_smokes = _prior_smokes(directory, dependency, bootstrap, derived, original, cleanup["started_nanos"])
         require({entry.name for entry in directory.iterdir()} == names | {
                 "docker-reference.json", "run", "smoke", "bootstrap", "cluster-cleanup"}
-                | ({"attempts"} if failed is not None else set()), "kubernetes-archive-unrecognized-root-entry")
+                | ({"attempts"} if failed is not None else set())
+                | ({"prior-smokes"} if prior_smokes is not None else set()), "kubernetes-archive-unrecognized-root-entry")
     result = {"full": full, "smoke": checked_smoke, "dependency": reference, "cluster_cleanup": cleanup}
     if failed is not None:
         result["failed_attempts"] = failed
+    if prior_smokes is not None:
+        result["prior_smokes"] = prior_smokes
     if "cleanup_completion" in smoke_derived:
         result["smoke_cleanup_completion"] = smoke_derived["cleanup_completion"]
     return result

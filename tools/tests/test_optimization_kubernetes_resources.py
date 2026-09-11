@@ -78,10 +78,11 @@ class KubernetesFixture:
                                       "finished_nanos": str(index * 1000 + 50), **node_processes, "cgroups": ancestors})
         self.fixture.write()
 
-    def validate(self):
+    def validate(self, *, expected_connections=2, startup_protocol=model.CURRENT_STARTUP_PROTOCOL):
         return resources.validate(self.fixture.directory, arm=self.fixture.arm, density=self.fixture.density,
             pod_ready=self.pod_ready, pod_final=self.pod_final, cri_ready=self.cri_ready, cri_final=self.cri_final,
-            worker=WORKER, observations=self.observations, expected_connections=2)
+            worker=WORKER, observations=self.observations, expected_connections=expected_connections,
+            startup_protocol=startup_protocol)
 
 
 def rounded_systemd_fixture(fixture):

@@ -261,7 +261,7 @@ def validate(root, build_root, docker_root, bootstrap_root):
     require(suite["schema"] == model.PREFIX + "suite.v1" and suite["failure"] is None,
             "kubernetes-replay-incomplete-suite")
     require(suite["namespace"] == model.namespace_name(suite["owner"], suite["run_id"]), "kubernetes-replay-namespace")
-    docker.equal(suite["plan"], model.plan(suite["profile"], owner=suite["owner"]), "kubernetes-replay-plan")
+    model.suite_startup_protocol(suite)
     docker.equal(read_json(root / "plan.json"), suite["plan"], "kubernetes-replay-plan-sidecar")
     before, after = uint(suite["started_nanos"]), uint(suite["finished_nanos"])
     require(before <= after <= before + 7200 * 10**9, "kubernetes-replay-campaign-bound")

@@ -271,7 +271,8 @@ def _finish(root, suite, boot, checked, complete, build_root):
             ["--app", "native", "--executable", "/opt/lsf/optimization-native", "--output", "/output",
              "--token-file", "/fixtures/token", "--service", model.SERVICES[0]])
         manifest = model.pod(boot["images"][arm]["tag"], command, arm=arm, density=1, owner=suite["owner"],
-            run_id=suite["run_id"], role=role, fixtures=remote + "/fixtures", output=output)
+            run_id=suite["run_id"], role=role, fixtures=remote + "/fixtures", output=output,
+            startup_protocol=checked.startup_protocol)
         _same(item["manifest"], manifest, "partial-pod-manifest")
         checked.created(item["create"], manifest)
         uid = item["create"]["pod"]["metadata"]["uid"]
@@ -347,7 +348,7 @@ def _finish(root, suite, boot, checked, complete, build_root):
         owner=suite["owner"], run_id=suite["run_id"], embedded_items=True)
     graph = services.graph(service_rows, slices, [row for row in pod_rows if row["metadata"]["name"] == "p0-g1-native-0"],
         owner=suite["owner"], run_id=suite["run_id"], pair=0, group=1, arm="native", density=1,
-        worker_name=boot["nodes"]["worker"]["name"], embedded_items=True)
+        worker_name=boot["nodes"]["worker"]["name"], embedded_items=True, startup_protocol=checked.startup_protocol)
     native_target = [{"service": row["service"], "endpoint": row["endpoint"], "owner_ref": native["owner_ref"],
                       "app_process_id": native["app_process_id"]} for row in graph["targets"]]
     owners = {}
@@ -392,7 +393,7 @@ def validate(root, bootstrap_root, build_root, docker_root):
     verify_artifact(docker_root, suite["docker_suite"], 32 * 1024**2)
     require(suite["build_source"] == built["source"] and suite["owner"] == boot["owner"]
             and suite["images"] == {key: row["tag"] for key, row in boot["images"].items()}
-            and suite["plan"] == model.plan("smoke", owner=boot["owner"]), REASON + "input-binding")
+            and model.suite_startup_protocol(suite) == model.HISTORICAL_STARTUP_PROTOCOL, REASON + "input-binding")
     require(suite["collection_path"] == boot["output"] + "/smoke-02"
             and suite["bootstrap_path"] == boot["output"] + "/bootstrap.json", REASON + "original-path")
     _same(read_json(root / "plan.json"), suite["plan"], "plan-sidecar")

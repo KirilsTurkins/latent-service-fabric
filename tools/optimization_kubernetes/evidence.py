@@ -196,10 +196,21 @@ def _attachment(root, parent, expected_argv, original_ack_lines):
     return value
 
 
+def connection_accounting(arm, density, startup_protocol):
+    model.resources(arm, density)
+    require(arm in ("lsf", "native"), "kubernetes-connection-arm")
+    model.startup_probe(startup_protocol=startup_protocol)
+    historical = startup_protocol == model.HISTORICAL_STARTUP_PROTOCOL
+    return {"client_channels": density if arm == "lsf" else 1, "observed_residual": 1 if historical else 0,
+            "interpretation": ("consistent-with-startupProbe-under-closed-owned-path" if historical else
+                               "all-accepted-connections-match-client-channels"), "source_peer_tracing": False}
+
+
 class Replay:
     def __init__(self, root, suite, journal, bootstrap, built, build_root, docker_root):
         self.root, self.suite, self.journal, self.bootstrap = root, suite, journal, bootstrap
         self.owner, self.run_id, self.profile = suite["owner"], suite["run_id"], suite["profile"]
+        self.startup_protocol = model.suite_startup_protocol(suite)
         self.namespace = model.namespace_name(self.owner, self.run_id)
         self.lower, self.upper = uint(suite["started_nanos"]), uint(suite["finished_nanos"])
         require(self.lower <= self.upper and suite["namespace"] == self.namespace
@@ -278,7 +289,7 @@ class Replay:
         command += ["--config", "/fixtures/node.json"] if arm == "lsf" else ["--token-file", "/fixtures/token", "--service", model.SERVICES[index]]
         manifest = model.pod(self.bootstrap["images"][arm]["tag"], command, arm=arm, density=density,
             owner=self.owner, run_id=self.run_id, role=role, fixtures=model.host_path(self.owner, self.run_id, "fixtures"),
-            output=remote, data=data)
+            output=remote, data=data, startup_protocol=self.startup_protocol)
         _same(parent["manifest"], manifest, "kubernetes-evidence-application-manifest")
         require(parent["remote_output"] == remote and parent["remote_data"] == data, "kubernetes-evidence-application-path")
         _json(self.root, parent["directory"] + "/manifest.json", manifest)
@@ -308,10 +319,12 @@ class Replay:
         stop = self.command(parent["stop_signal_call"], [*signals, "TERM"])
         require(not stop["stdout"], "kubernetes-evidence-signal-output")
         self.downloaded(parent["download"], remote, parent["raw_directory"])
+        connections = connection_accounting(arm, density, self.startup_protocol)
         validated = resources.validate(_path(self.root, parent["raw_directory"]), arm=arm, density=density,
             pod_ready=parent["pod_ready"], pod_final=parent["pod_final"], cri_ready=parent["cri_ready"],
             cri_final=parent["cri_final"], worker=self.worker, observations=parent["observations"],
-            expected_connections=(density if arm == "lsf" else 1) + 1)
+            expected_connections=connections["client_channels"] + connections["observed_residual"],
+            startup_protocol=self.startup_protocol)
         require(parent["app_process_id"] == validated["identity"]["child_pid"]
                 and parent["owner_ref"] == "owner-" + container, "kubernetes-evidence-child-owner")
         self.events(parent)
@@ -336,9 +349,7 @@ class Replay:
                 "kubernetes-evidence-stop-observation-clock")
         self.deleted(parent["delete"], parent["pod_final"])
         return {"parent": parent, "resources": validated, "lifecycle": lifecycle,
-                "connection_accounting": {"client_channels": density if arm == "lsf" else 1,
-                    "observed_residual": 1, "interpretation": "consistent-with-startupProbe-under-closed-owned-path",
-                    "source_peer_tracing": False}}
+                "connection_accounting": connections}
 
     def events(self, parent):
         original = _read(self.root, parent["raw_directory"] + "/events.ndjson", 10 * wrapper.EVENT_BYTES)
@@ -451,7 +462,7 @@ class Replay:
                 selected = [pod for pod in pod_items if pod["metadata"]["name"] in names]
                 graph = services.graph(service_items, selected_slices, selected,
                     owner=self.owner, run_id=self.run_id, pair=pair, group=ordinal, arm=arm, density=density,
-                    worker_name=self.worker["name"], embedded_items=True)
+                    worker_name=self.worker["name"], embedded_items=True, startup_protocol=self.startup_protocol)
         _same(graph, parent["graph"], "kubernetes-evidence-graph-replay")
         forwarding_ready = self.proxy_ready(parent, graph) if require_proxy else uint(parent["graph_ready_nanos"])
         owners = [self.application(value, pair, expected, index) for index, value in enumerate(parent["owners"])]
@@ -795,7 +806,7 @@ def validate(root: Path, *, suite: dict, journal: dict, bootstrap: dict, build_r
     """Replay components; the caller must additionally qualify the campaign closure."""
     root, build_root, docker_root = Path(root), Path(build_root), Path(docker_root)
     require(suite["failure"] is None, "kubernetes-evidence-failed-campaign")
-    _same(suite["plan"], model.plan(suite["profile"], owner=suite["owner"]), "kubernetes-evidence-plan")
+    model.suite_startup_protocol(suite)
     _json(root, "plan.json", suite["plan"])
     _suite_index(root, suite)
     original = _ref(docker_root, suite["docker_suite"], expected="suite.json", maximum=64 * 1024**2)

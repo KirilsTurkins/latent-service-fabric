@@ -121,7 +121,8 @@ def _condition(conditions, name):
     return _timestamp(selected[0].get("lastTransitionTime"))
 
 
-def _pod(value, *, owner, run_id, role, arm, density, worker_name, embedded=False):
+def _pod(value, *, owner, run_id, role, arm, density, worker_name, embedded=False,
+         startup_protocol=model.CURRENT_STARTUP_PROTOCOL):
     namespace = model.namespace_name(owner, run_id)
     _, identity = _metadata(value, namespace)
     spec = _object(value.get("spec"), "kubernetes-graph-pod-spec")
@@ -140,10 +141,11 @@ def _pod(value, *, owner, run_id, role, arm, density, worker_name, embedded=Fals
     # inputs. Outer replay additionally binds args/image/data to setup receipts.
     expected = model.pod(container.get("image"), container.get("args"),
         arm=arm, density=density, owner=owner, run_id=run_id, role=role,
-        fixtures=paths["fixtures"], output=paths["output"], data=paths.get("data"))
+        fixtures=paths["fixtures"], output=paths["output"], data=paths.get("data"), startup_protocol=startup_protocol)
     projected = expected["spec"]["containers"][0]
     del projected["resources"]  # Quantity normalization and effective controls have their own proof.
     _typed_subset(value, expected, embedded=embedded)
+    model.validate_startup_probe(container.get("startupProbe"), startup_protocol=startup_protocol)
     require(spec.get("nodeName") == worker_name and not spec.get("runtimeClassName")
             and not spec.get("initContainers") and not spec.get("ephemeralContainers")
             and not container.get("command") and not container.get("readinessProbe")
@@ -182,7 +184,8 @@ def _pod(value, *, owner, run_id, role, arm, density, worker_name, embedded=Fals
             "pod_sha256": sha256(canonical(value))}
 
 
-def graph(services, endpointslices, pods, *, owner, run_id, pair, group, arm, density, worker_name, embedded_items=False):
+def graph(services, endpointslices, pods, *, owner, run_id, pair, group, arm, density, worker_name, embedded_items=False,
+          startup_protocol=model.CURRENT_STARTUP_PROTOCOL):
     """Require exactly one ready endpoint for every declared Service identity."""
     desired = model.services(owner=owner, run_id=run_id, pair=pair, group=group, arm=arm, density=density)
     namespace = model.namespace_name(owner, run_id)
@@ -200,7 +203,7 @@ def graph(services, endpointslices, pods, *, owner, run_id, pair, group, arm, de
         role = _object(value.get("metadata"), "kubernetes-graph-pod-metadata").get("name")
         require(role in names and role not in pod_map, "kubernetes-graph-pod-name-set")
         identity = _pod(value, owner=owner, run_id=run_id, role=role, arm=arm, density=density,
-                        worker_name=worker_name, embedded=embedded_items)
+                        worker_name=worker_name, embedded=embedded_items, startup_protocol=startup_protocol)
         require(identity["uid"] not in seen_uids and identity["pod_ip"] not in seen_ips
                 and identity["container_id"] not in seen_containers, "kubernetes-graph-pod-identity-reused")
         pod_map[role] = identity

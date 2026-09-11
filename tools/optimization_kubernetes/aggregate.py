@@ -270,7 +270,7 @@ def cpu_limit_cohorts(groups):
 def _aggregate(derived, original):
     require(derived["status"] == "passed", "kubernetes-aggregate-unvalidated-input")
     profile = derived["profile"]
-    plan = model.plan(profile, owner=derived["owner"])
+    plan = model.plan(profile, owner=derived["owner"], startup_protocol=model.suite_startup_protocol(derived))
     require(canonical(derived["plan"]) == canonical(plan), "kubernetes-aggregate-plan")
     require(original["profile"] == "full" and original["acceptance_qualified"] is True
             and original["full_population_completed"] is True, "kubernetes-aggregate-original-full-required")

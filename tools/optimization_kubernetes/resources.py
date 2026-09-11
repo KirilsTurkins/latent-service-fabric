@@ -13,6 +13,7 @@ import re
 from tools.optimization_docker import model as docker_model
 from tools.optimization_docker import resources as wrapper
 from tools.optimization_evidence.common import canonical, fields, integer, require, sha256, text, uint
+from . import model
 
 ANCESTOR_FILES = ("cpu.max", "memory.max", "memory.swap.max", "pids.max", "pids.current")
 POD_PIDS = 512
@@ -74,7 +75,7 @@ def _quantity(value, *, cpu=False):
     return Fraction(match[1]) * factor
 
 
-def _pod(ready, final, arm, controls, worker):
+def _pod(ready, final, arm, controls, worker, *, startup_protocol=model.CURRENT_STARTUP_PROTOCOL):
     identity = None
     for value, phase in ((ready, "Running"), (final, "Succeeded")):
         _object(value, "kubernetes-pod-object")
@@ -104,11 +105,8 @@ def _pod(ready, final, arm, controls, worker):
         require(security.get("readOnlyRootFilesystem") is True and security.get("allowPrivilegeEscalation") is False
                 and not security.get("privileged", False) and security.get("capabilities") == {"drop": ["ALL"]},
                 "kubernetes-pod-security")
-        probe = _object(container.get("startupProbe"), "kubernetes-startup-probe")
-        require(probe.get("tcpSocket") == {"port": 7070} and probe.get("periodSeconds") == 1
-                and probe.get("timeoutSeconds") == 1 and probe.get("failureThreshold") == 120
-                and probe.get("successThreshold", 1) == 1 and probe.get("initialDelaySeconds", 0) == 0
-                and not container.get("readinessProbe") and not container.get("livenessProbe"),
+        model.validate_startup_probe(container.get("startupProbe"), startup_protocol=startup_protocol)
+        require(not container.get("readinessProbe") and not container.get("livenessProbe"),
                 "kubernetes-startup-probe")
         status = _object(value.get("status"), "kubernetes-pod-status")
         require(status.get("phase") == phase, "kubernetes-pod-phase")
@@ -337,7 +335,8 @@ def _oci_path(spec, leaf, identifier):
 
 def validate(directory: Path, *, arm: str, density: int, pod_ready: dict, pod_final: dict,
              cri_ready: dict, cri_final: dict, worker: dict, observations: list,
-             expected_connections: int | None, expected_snapshots: int = 6) -> dict:
+             expected_connections: int | None, expected_snapshots: int = 6,
+             startup_protocol=model.CURRENT_STARTUP_PROTOCOL) -> dict:
     """Replay a clean app Pod. Outer replay binds worker identity and signal calls.
 
     ``observations`` contains controller-bracketed worker reads, one per numbered
@@ -352,7 +351,7 @@ def validate(directory: Path, *, arm: str, density: int, pod_ready: dict, pod_fi
     _id(worker["container_id"])
     controls = {key: value for key, value in controls.items() if key not in ("nofile_soft", "nofile_hard")}
     controls["pids_limit"] = POD_PIDS
-    identity = _pod(pod_ready, pod_final, arm, controls, worker)
+    identity = _pod(pod_ready, pod_final, arm, controls, worker, startup_protocol=startup_protocol)
     runtime_spec = _cri(cri_ready, cri_final, identity, arm, controls)
     identity.update(provider="kubernetes-containerd", worker=worker)
     require(isinstance(observations, list) and len(observations) == expected_snapshots,

@@ -153,7 +153,8 @@ def _original(root, suite, boot, journal):
                    ["--app", "lsf", "--executable", "/opt/lsf/latentd", "--output", "/output", "--config", "/fixtures/node.json"])
         manifest = model.pod(boot["images"][arm]["tag"], command, arm=arm, density=1, owner=owner, run_id=run,
             role=role, fixtures=remote + "/fixtures", output=remote + ("/clients/0" if arm == "client" else "/owners/" + role),
-            data=remote + "/data/" + role if arm == "lsf" else None)
+             data=remote + "/data/" + role if arm == "lsf" else None,
+             startup_protocol=model.suite_startup_protocol(suite))
         pod = calls.api(ordinal, "POST", base + "/pods", body=manifest, status=201)
         uid = pod["metadata"]["uid"]
         _pod(pod, suite, role, uid)
@@ -329,7 +330,7 @@ def validate(failure_root: Path, bootstrap_root: Path, *, build_root=None, docke
             and suite["images"] == {arm: row["tag"] for arm, row in boot["images"].items()}
             and suite["collection_path"] == boot["output"] + "/" + suite["run_id"]
             and suite["bootstrap_path"] == boot["output"] + "/bootstrap.json", PREFIX + "original-scope")
-    require(suite["plan"] == model.plan("smoke", owner=suite["owner"]), PREFIX + "plan")
+    require(model.suite_startup_protocol(suite) == model.HISTORICAL_STARTUP_PROTOCOL, PREFIX + "plan")
     verify_artifact(bootstrap_root, suite["bootstrap"], 8 * 1024**2)
     original = value["original_suite"]
     require(original == {"path": suite["run_id"] + "/suite.json", "bytes": str((root / "suite.json").stat().st_size),
