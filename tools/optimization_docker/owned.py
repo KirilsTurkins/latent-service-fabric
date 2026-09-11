@@ -50,7 +50,8 @@ def configuration(image, command, *, arm, density, network, mounts, owner, role,
                            "SecurityOpt": ["no-new-privileges"], "Ulimits": [
                                {"Name": "nofile", "Soft": 1024, "Hard": 1024}],
                            "Tmpfs": {"/tmp": "rw,noexec,nosuid,size=16777216"},
-                           "LogConfig": {"Type": "local", "Config": {"max-size": "8m", "max-file": "1"}},
+                           "LogConfig": {"Type": "local", "Config": {
+                               "max-size": "8m", "max-file": "1", "compress": "false"}},
                            "Mounts": mounts},
             "NetworkingConfig": {"EndpointsConfig": {network: {"Aliases": [role]}}}}
 

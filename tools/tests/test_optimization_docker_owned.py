@@ -53,6 +53,9 @@ class Tests(unittest.TestCase):
         self.assertNotIn("PortBindings", config["HostConfig"])
         self.assertTrue(config["HostConfig"]["ReadonlyRootfs"])
         self.assertEqual(config["HostConfig"]["MemorySwap"], 64 * 1024**2)
+        # Docker cannot start a local logger with compression and only one file.
+        self.assertEqual(config["HostConfig"]["LogConfig"]["Config"], {
+            "max-size": "8m", "max-file": "1", "compress": "false"})
         with self.assertRaises(EvidenceError):
             owned.mount("owned", "../foreign", "/output")
 
