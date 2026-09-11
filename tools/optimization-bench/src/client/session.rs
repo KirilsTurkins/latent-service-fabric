@@ -232,8 +232,7 @@ fn execute(
             .as_object()
             .ok_or("session-command-projection")?
             .clone();
-        let event;
-        match command.operation.as_str() {
+        let event = match command.operation.as_str() {
             "begin-group" => {
                 let group = groups[command.group.ok_or("session-group")? as usize];
                 let targets = command.targets.ok_or("session-targets")?;
@@ -245,7 +244,7 @@ fn execute(
                     state.commands += 1;
                     return Err(reason);
                 }
-                event = "group-ready";
+                "group-ready"
             }
             "inventory" => {
                 let live = state.live.as_ref().ok_or("session-group-not-live")?;
@@ -300,13 +299,13 @@ fn execute(
                     "result".into(),
                     json!({"status":"passed","channels_dropped":channels,"active_tasks":0}),
                 );
-                event = "group-finished";
+                "group-finished"
             }
             "finish" => {
                 return state.finish(&input, plan, receipt);
             }
             _ => return Err("session-unknown-command"),
-        }
+        };
         output.event(event, Some(ordinal), &Value::Object(payload))?;
         state.commands += 1;
     }
