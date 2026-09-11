@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from tools.optimization_evidence.common import EvidenceError, canonical, sha256
-from tools.optimization_kubernetes import collect, evidence, model
+from tools.optimization_kubernetes import collect, evidence, model, services
 
 CID = "a" * 64
 CONFIG, MANIFEST, INDEX = ("sha256:" + digit * 64 for digit in "bcd")
@@ -19,6 +19,11 @@ def images():
     return {"images": {"client": {"tag": "lsf111-images-" + "a" * 20 + ":client",
         "original_docker_image_id": MANIFEST, "imported": {"config_digest": CONFIG,
             "manifest_digest": MANIFEST, "status_id": CONFIG, "archive_index_digest": INDEX}}}}
+
+
+def image_cri(bootstrap, reference=MANIFEST):
+    return {"status": {"imageRef": reference}, "info": {"config": {"image": {
+        "image": CONFIG, "user_specified_image": bootstrap["images"]["client"]["tag"]}}}}
 
 
 def client_pods():
@@ -66,6 +71,34 @@ def attachment(root):
 
 
 class KubernetesEvidenceTests(unittest.TestCase):
+    def test_embedded_slice_type_comes_only_from_validated_list(self):
+        row = endpoint_slice("current", "current-service-uid")
+        del row["apiVersion"]
+        del row["kind"]
+        known = {"current": "current-service-uid"}
+        envelope = {"apiVersion": "discovery.k8s.io/v1", "kind": "EndpointSliceList", "metadata": {}, "items": [row]}
+        items = services.list_items(envelope, "EndpointSlice")
+        for select in (collect._current_slices, evidence._current_slices):
+            with self.assertRaises(EvidenceError):
+                select(items, known, known, owner="unit", run_id="run")
+            self.assertEqual(select(items, known, known, owner="unit", run_id="run", embedded_items=True), [row])
+        self.assertNotIn("apiVersion", row)
+        self.assertNotIn("kind", row)
+
+    def test_cleanup_embedded_pod_keeps_namespace_and_role_owner_checks(self):
+        campaign = object.__new__(collect.Campaign)
+        campaign.owner, campaign.run_id, campaign.namespace = "unit", "run", "unit-run"
+        row = {"metadata": {"name": "client-p0", "namespace": "unit-run",
+                            "labels": model.labels("unit", "run", "client-p0")}}
+        envelope = {"apiVersion": "v1", "kind": "PodList", "metadata": {}, "items": [row]}
+        items = services.list_items(envelope, "Pod")
+        with self.assertRaises(EvidenceError):
+            campaign._namespace_pod(row)
+        campaign._namespace_pod(items[0], embedded=True)
+        row["metadata"]["namespace"] = "foreign"
+        with self.assertRaises(EvidenceError):
+            campaign._namespace_pod(items[0], embedded=True)
+
     def test_prior_ready_slice_cannot_trigger_next_same_density_group(self):
         original = [endpoint_slice("previous", "previous-service-uid")]
         before = deepcopy(original)
@@ -109,7 +142,7 @@ class KubernetesEvidenceTests(unittest.TestCase):
         bootstrap = images()
         pod = {"spec": {"containers": [{"image": bootstrap["images"]["client"]["tag"]}]},
                "status": {"containerStatuses": [{"imageID": CONFIG}]}}
-        cri = {"status": {"imageRef": MANIFEST}}
+        cri = image_cri(bootstrap)
         evidence._image(pod, cri, "client", bootstrap)
         for replacement in (INDEX, "sha256:" + "e" * 64):
             cri["status"]["imageRef"] = replacement
@@ -120,10 +153,27 @@ class KubernetesEvidenceTests(unittest.TestCase):
         bootstrap = images()
         tag = bootstrap["images"]["client"]["tag"]
         pod = {"spec": {"containers": [{"image": tag}]}, "status": {"containerStatuses": [{"imageID": CONFIG}]}}
-        cri = {"status": {"imageRef": "docker-pullable://docker.io/library/" + tag + "@" + MANIFEST}}
+        cri = image_cri(bootstrap, "docker-pullable://docker.io/library/" + tag + "@" + MANIFEST)
         evidence._image(pod, cri, "client", bootstrap)
         cri["status"]["imageRef"] = "foreign/image@" + MANIFEST
         with self.assertRaisesRegex(EvidenceError, "image-repository"):
+            evidence._image(pod, cri, "client", bootstrap)
+
+    def test_recorded_shared_index_alias_requires_actual_per_arm_config_selection(self):
+        bootstrap = images()
+        selected = bootstrap["images"]["client"]
+        alias = "docker.io/library/import-unit@" + INDEX
+        selected["imported"].update(repo_digest_scope="archive-index", repo_digests=[alias])
+        pod = {"spec": {"containers": [{"image": selected["tag"]}]},
+               "status": {"containerStatuses": [{"imageID": alias}]}}
+        cri = image_cri(bootstrap, alias)
+        evidence._image(pod, cri, "client", bootstrap)
+        cri["info"]["config"]["image"]["image"] = "sha256:" + "e" * 64
+        with self.assertRaisesRegex(EvidenceError, "cri-selected-image"):
+            evidence._image(pod, cri, "client", bootstrap)
+        cri = image_cri(bootstrap, alias)
+        selected["imported"]["repo_digests"] = ["docker.io/library/other@" + INDEX]
+        with self.assertRaises(EvidenceError):
             evidence._image(pod, cri, "client", bootstrap)
 
     def test_cri_stats_keep_two_clocks_and_explicit_missing_fields(self):

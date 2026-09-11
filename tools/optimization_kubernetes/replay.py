@@ -7,7 +7,7 @@ import tarfile
 
 from tools.optimization_docker import build, evidence as docker
 from tools.optimization_evidence.common import canonical, read_json, require, sha256, uint, verify_artifact
-from . import model, transport_evidence
+from . import model, services, transport_evidence
 
 
 def _source(suite, root, built):
@@ -148,6 +148,9 @@ def _cleanup(suite, root, journal, used):
             deleted = True
         else:
             require(raw["method"] == "GET", "kubernetes-replay-namespace-cleanup-method")
+            if raw["path"] == base + "/pods":
+                require(services.list_items(call["response_json"], "Pod") == [],
+                        "kubernetes-replay-final-namespace-pods")
         used.add(ordinal)
     require(deleted and journal["rows"][value["namespace_calls"][-1]]["raw"]["status"] == 404,
             "kubernetes-replay-namespace-absence")

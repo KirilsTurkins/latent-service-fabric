@@ -19,15 +19,14 @@ from .session import Session
 from .transport import Journal, Kubernetes, Worker, private_tls
 
 
-def _current_slices(rows, current, known, *, owner, run_id):
+def _current_slices(rows, current, known, *, owner, run_id, embedded_items=False):
     """Retain the API list; only known prior Service owners may linger in it."""
     require(isinstance(rows, list) and len(rows) <= services.MAX_SLICES,
             "kubernetes-endpoint-list-bound")
     selected, names, identifiers = [], set(), set()
     namespace = model.namespace_name(owner, run_id)
     for row in rows:
-        require(isinstance(row, dict) and row.get("apiVersion") == "discovery.k8s.io/v1"
-                and row.get("kind") == "EndpointSlice", "kubernetes-endpoint-list-kind")
+        services.item_kind(row, "EndpointSlice", embedded=embedded_items)
         metadata = row["metadata"]
         require(isinstance(metadata, dict), "kubernetes-endpoint-list-metadata")
         name, uid = text(metadata.get("name"), 253), text(metadata.get("uid"), 253)
@@ -294,15 +293,19 @@ class Campaign:
             pods, pods_call = self.api.call("GET", f"/api/v1/namespaces/{self.namespace}/pods")
             service_list, service_call = self.api.call("GET", f"/api/v1/namespaces/{self.namespace}/services")
             slices, slices_call = self.api.call("GET", f"/apis/discovery.k8s.io/v1/namespaces/{self.namespace}/endpointslices")
-            selected = [row for row in pods["items"] if row["metadata"]["name"] in {app.role for app in apps}]
+            pod_items = services.list_items(pods, "Pod")
+            service_items = services.list_items(service_list, "Service")
+            slice_items = services.list_items(slices, "EndpointSlice")
+            selected = [row for row in pod_items if row["metadata"]["name"] in {app.role for app in apps}]
             graph_attempts.append({"pods_call": pods_call, "services_call": service_call, "slices_call": slices_call,
                                    "observed_nanos": stamp()})
-            current_slices = _current_slices(slices["items"], current_services, self.created_services,
-                                             owner=self.owner, run_id=self.run_id)
+            current_slices = _current_slices(slice_items, current_services, self.created_services,
+                                             owner=self.owner, run_id=self.run_id, embedded_items=True)
             endpoints = [entry for row in current_slices for entry in row.get("endpoints", [])]
             if len(endpoints) == density and all(entry.get("conditions", {}).get("ready") is True for entry in endpoints):
-                graph = services.graph(service_list["items"], current_slices, selected, owner=self.owner,
-                    run_id=self.run_id, pair=pair, group=ordinal, arm=arm, density=density, worker_name=self.worker_name)
+                graph = services.graph(service_items, current_slices, selected, owner=self.owner,
+                    run_id=self.run_id, pair=pair, group=ordinal, arm=arm, density=density,
+                    worker_name=self.worker_name, embedded_items=True)
                 break
             time.sleep(0.1)
         else:
@@ -380,8 +383,8 @@ class Campaign:
                             "kubernetes-cleanup-namespace-replaced")
                     pods, call = self.api.call("GET", path + "/pods")
                     result["namespace_calls"].append(call)
-                    for pod in pods["items"]:
-                        self._namespace_pod(pod)
+                    for pod in services.list_items(pods, "Pod"):
+                        self._namespace_pod(pod, embedded=True)
                         name, uid = pod["metadata"]["name"], pod["metadata"]["uid"]
                         require(name in self.pending_pods and self.pods.get(name, uid) == uid,
                                 "kubernetes-cleanup-unowned-pod")
@@ -473,9 +476,10 @@ class Campaign:
                         for key, expected in model.labels(self.owner, self.run_id).items()),
                 "kubernetes-cleanup-namespace-owner")
 
-    def _namespace_pod(self, value):
+    def _namespace_pod(self, value, *, embedded=False):
+        services.item_kind(value, "Pod", embedded=embedded)
         metadata = value["metadata"]
-        require(value.get("kind") == "Pod" and metadata["namespace"] == self.namespace
+        require(metadata["namespace"] == self.namespace
                 and all(metadata.get("labels", {}).get(key) == expected
                         for key, expected in model.labels(self.owner, self.run_id, metadata["name"]).items()),
                 "kubernetes-cleanup-pod-owner")

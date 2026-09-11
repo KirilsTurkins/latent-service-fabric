@@ -14,6 +14,7 @@ from tools.optimization_evidence.common import canonical, require, sha256, text
 from . import model
 
 MAX_SLICES = 128
+ITEM_TYPES = {"Pod": "v1", "Service": "v1", "EndpointSlice": "discovery.k8s.io/v1"}
 ZERO_DEFAULTS = {
     ("spec", "publishNotReadyAddresses"), ("spec", "hostNetwork"),
     ("spec", "hostPID"), ("spec", "hostIPC"),
@@ -27,6 +28,34 @@ ZERO_DEFAULTS = {
 def _object(value, reason):
     require(isinstance(value, dict), reason)
     return value
+
+
+def item_kind(value, kind, *, embedded=False):
+    """Only a caller-validated typed List can supply an item's omitted TypeMeta."""
+    _object(value, "kubernetes-graph-item-object")
+    require(kind in ITEM_TYPES and type(embedded) is bool, "kubernetes-graph-item-type")
+    for key, expected in (("kind", kind), ("apiVersion", ITEM_TYPES[kind])):
+        require(embedded and key not in value or value.get(key) == expected,
+                "kubernetes-graph-item-kind")
+
+
+def list_items(value, kind):
+    """Validate the complete enclosing API list without modifying any raw item."""
+    _object(value, "kubernetes-graph-list-object")
+    require(kind in ITEM_TYPES and value.get("kind") == kind + "List"
+            and value.get("apiVersion") == ITEM_TYPES[kind], "kubernetes-graph-list-kind")
+    metadata = _object(value.get("metadata"), "kubernetes-graph-list-metadata")
+    require(metadata.get("continue", "") == "", "kubernetes-graph-list-incomplete")
+    rows = value.get("items")
+    require(isinstance(rows, list) and len(rows) <= 512, "kubernetes-graph-list-population")
+    for row in rows:
+        item_kind(row, kind, embedded=True)
+    return rows
+
+
+def _typed_subset(actual, expected, *, embedded):
+    item_kind(actual, expected["kind"], embedded=embedded)
+    subset(actual, {key: value for key, value in expected.items() if key not in ("kind", "apiVersion")})
 
 
 def subset(actual, expected, path=()):
@@ -92,7 +121,7 @@ def _condition(conditions, name):
     return _timestamp(selected[0].get("lastTransitionTime"))
 
 
-def _pod(value, *, owner, run_id, role, arm, density, worker_name):
+def _pod(value, *, owner, run_id, role, arm, density, worker_name, embedded=False):
     namespace = model.namespace_name(owner, run_id)
     _, identity = _metadata(value, namespace)
     spec = _object(value.get("spec"), "kubernetes-graph-pod-spec")
@@ -114,7 +143,7 @@ def _pod(value, *, owner, run_id, role, arm, density, worker_name):
         fixtures=paths["fixtures"], output=paths["output"], data=paths.get("data"))
     projected = expected["spec"]["containers"][0]
     del projected["resources"]  # Quantity normalization and effective controls have their own proof.
-    subset(value, expected)
+    _typed_subset(value, expected, embedded=embedded)
     require(spec.get("nodeName") == worker_name and not spec.get("runtimeClassName")
             and not spec.get("initContainers") and not spec.get("ephemeralContainers")
             and not container.get("command") and not container.get("readinessProbe")
@@ -153,7 +182,7 @@ def _pod(value, *, owner, run_id, role, arm, density, worker_name):
             "pod_sha256": sha256(canonical(value))}
 
 
-def graph(services, endpointslices, pods, *, owner, run_id, pair, group, arm, density, worker_name):
+def graph(services, endpointslices, pods, *, owner, run_id, pair, group, arm, density, worker_name, embedded_items=False):
     """Require exactly one ready endpoint for every declared Service identity."""
     desired = model.services(owner=owner, run_id=run_id, pair=pair, group=group, arm=arm, density=density)
     namespace = model.namespace_name(owner, run_id)
@@ -170,7 +199,8 @@ def graph(services, endpointslices, pods, *, owner, run_id, pair, group, arm, de
         _object(value, "kubernetes-graph-pod")
         role = _object(value.get("metadata"), "kubernetes-graph-pod-metadata").get("name")
         require(role in names and role not in pod_map, "kubernetes-graph-pod-name-set")
-        identity = _pod(value, owner=owner, run_id=run_id, role=role, arm=arm, density=density, worker_name=worker_name)
+        identity = _pod(value, owner=owner, run_id=run_id, role=role, arm=arm, density=density,
+                        worker_name=worker_name, embedded=embedded_items)
         require(identity["uid"] not in seen_uids and identity["pod_ip"] not in seen_ips
                 and identity["container_id"] not in seen_containers, "kubernetes-graph-pod-identity-reused")
         pod_map[role] = identity
@@ -185,7 +215,7 @@ def graph(services, endpointslices, pods, *, owner, run_id, pair, group, arm, de
         name = identity["name"]
         require(name in desired_by_name and name not in service_map and identity["uid"] not in seen_uids,
                 "kubernetes-graph-service-identity")
-        subset(value, desired_by_name[name])
+        _typed_subset(value, desired_by_name[name], embedded=embedded_items)
         require(value["spec"]["selector"] == desired_by_name[name]["spec"]["selector"],
                 "kubernetes-graph-service-selector")
         ip = _ip(value["spec"].get("clusterIP"))
@@ -199,8 +229,8 @@ def graph(services, endpointslices, pods, *, owner, run_id, pair, group, arm, de
     slice_names, slice_rows = set(), {}
     for value in endpointslices:
         _object(value, "kubernetes-graph-slice")
-        require(value.get("apiVersion") == "discovery.k8s.io/v1" and value.get("kind") == "EndpointSlice"
-                and value.get("addressType") == "IPv4", "kubernetes-graph-slice-kind")
+        item_kind(value, "EndpointSlice", embedded=embedded_items)
+        require(value.get("addressType") == "IPv4", "kubernetes-graph-slice-kind")
         metadata, identity = _metadata(value, namespace)
         require(identity["uid"] not in seen_uids and identity["name"] not in slice_names,
                 "kubernetes-graph-slice-identity")

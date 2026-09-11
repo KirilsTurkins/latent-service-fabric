@@ -59,8 +59,17 @@ def _image(pod, cri, arm, bootstrap):
     allowed = {digest(imported["config_digest"]), digest(imported["manifest_digest"])}
     require(original["original_docker_image_id"] == imported["manifest_digest"]
             and imported["status_id"] == imported["config_digest"], "kubernetes-evidence-image-graph")
+    selected = cri["info"]["config"]["image"]
+    require(selected.get("image") == imported["config_digest"]
+            and selected.get("user_specified_image") == original["tag"], "kubernetes-evidence-cri-selected-image")
     for observed in (pod["status"]["containerStatuses"][0]["imageID"], cri["status"]["imageRef"]):
         value = text(observed, 1024)
+        # CRI can report the imported archive's repository alias. The per-arm
+        # config identity above, not this shared index digest, proves selection.
+        if imported.get("repo_digest_scope") == "archive-index" and value in imported.get("repo_digests", []):
+            require("@" in value and value.rsplit("@", 1)[1] == digest(imported["archive_index_digest"]),
+                    "kubernetes-evidence-image-index-alias")
+            continue
         if value.startswith("docker-pullable://"):
             value = value[len("docker-pullable://"):]
         if "@" in value:
@@ -382,13 +391,16 @@ class Replay:
             slices = self.api(attempt["slices_call"], "GET", f"/apis/discovery.k8s.io/v1/namespaces/{self.namespace}/endpointslices", status=200)
             require(uint(slices["finished_nanos"]) <= uint(attempt["observed_nanos"]) <= uint(parent["graph_ready_nanos"]),
                     "kubernetes-evidence-graph-clock")
-            selected_slices = _current_slices(slices["response_json"]["items"], current_services, self.created_services,
-                                              owner=self.owner, run_id=self.run_id)
+            pod_items = services.list_items(pods["response_json"], "Pod")
+            service_items = services.list_items(service_list["response_json"], "Service")
+            slice_items = services.list_items(slices["response_json"], "EndpointSlice")
+            selected_slices = _current_slices(slice_items, current_services, self.created_services,
+                                              owner=self.owner, run_id=self.run_id, embedded_items=True)
             if index == len(parent["graph_attempts"]) - 1:
-                selected = [pod for pod in pods["response_json"]["items"] if pod["metadata"]["name"] in names]
-                graph = services.graph(service_list["response_json"]["items"], selected_slices, selected,
+                selected = [pod for pod in pod_items if pod["metadata"]["name"] in names]
+                graph = services.graph(service_items, selected_slices, selected,
                     owner=self.owner, run_id=self.run_id, pair=pair, group=ordinal, arm=arm, density=density,
-                    worker_name=self.worker["name"])
+                    worker_name=self.worker["name"], embedded_items=True)
         _same(graph, parent["graph"], "kubernetes-evidence-graph-replay")
         owners = [self.application(value, pair, expected, index) for index, value in enumerate(parent["owners"])]
         for owner in owners:
@@ -456,6 +468,11 @@ class Replay:
                 and type(status["metadata"]["attempt"]) is int
                 and status["state"] == ("CONTAINER_EXITED" if final else "CONTAINER_RUNNING"),
                 "kubernetes-evidence-client-cri-state")
+        require(resources.cri_timestamp(status["createdAt"]) <= resources.cri_timestamp(status["startedAt"]),
+                "kubernetes-evidence-client-cri-start")
+        if not final:
+            require(resources.cri_timestamp(status.get("finishedAt"), unreported=True) is None,
+                    "kubernetes-evidence-running-client-finished")
         _image(pod, cri, "client", self.bootstrap)
         uid = pod["metadata"]["uid"]
         require(all(status["labels"].get("io.kubernetes.pod." + key) == value for key, value in
@@ -634,7 +651,8 @@ class Replay:
         points.append(self.client_observation(final_observation, final, "final", final=True))
         _same(_client_cri_identity(final_observation["cri"]), stable, "kubernetes-evidence-client-final-replaced")
         status = final_observation["cri"]["status"]
-        require(_counter(status["createdAt"]) <= _counter(status["startedAt"]) < _counter(status["finishedAt"]),
+        require(resources.cri_timestamp(status["createdAt"]) <= resources.cri_timestamp(status["startedAt"])
+                < resources.cri_timestamp(status["finishedAt"]),
                 "kubernetes-evidence-client-cri-lifetime")
         self.client_barriers(parent, groups, derived)
         self.deleted(parent["delete"], final)
@@ -682,14 +700,13 @@ def _client_cri_identity(value):
             "image_ref": status["imageRef"], "sandbox_id": info["sandboxID"], "runtime_spec": info["runtimeSpec"]}
 
 
-def _current_slices(rows, current, known, *, owner, run_id):
+def _current_slices(rows, current, known, *, owner, run_id, embedded_items=False):
     """Replay original list membership using previously observed Service POSTs."""
     require(isinstance(rows, list) and len(rows) <= services.MAX_SLICES,
             "kubernetes-evidence-slice-list-bound")
     names, uids, selected = set(), set(), []
     for value in rows:
-        require(isinstance(value, dict) and value.get("kind") == "EndpointSlice" and value.get("apiVersion") == "discovery.k8s.io/v1",
-                "kubernetes-evidence-slice-list-kind")
+        services.item_kind(value, "EndpointSlice", embedded=embedded_items)
         metadata = value["metadata"]
         require(isinstance(metadata, dict), "kubernetes-evidence-slice-list-metadata")
         name, uid = text(metadata["name"], 253), text(metadata["uid"], 253)

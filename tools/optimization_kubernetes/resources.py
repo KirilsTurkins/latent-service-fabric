@@ -6,6 +6,7 @@ elapsed clocks remain distinct; ancestor limits are not added to leaf usage.
 from __future__ import annotations
 
 from fractions import Fraction
+from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath
 import re
 
@@ -16,6 +17,39 @@ from tools.optimization_evidence.common import canonical, fields, integer, requi
 ANCESTOR_FILES = ("cpu.max", "memory.max", "memory.swap.max", "pids.max", "pids.current")
 POD_PIDS = 512
 ROOT = PurePosixPath("/sys/fs/cgroup")
+
+
+def cri_timestamp(value, *, unreported=False):
+    """Exact CRI Unix nanoseconds; retain raw RFC3339 strings in every receipt.
+
+    crictl renders inspect timestamps as RFC3339Nano, while numeric CRI JSON
+    represents the same Unix domain. Neither is a controller monotonic clock.
+    """
+    if unreported and (value is None or type(value) is int and value == 0
+                       or isinstance(value, str) and value in ("0001-01-01T00:00:00Z", "0")):
+        return None
+    if type(value) is int:
+        return integer(value, 0, 2**64 - 1)
+    value = text(value, 64)
+    if re.fullmatch(r"[0-9]+", value):
+        return uint(value)
+    match = re.fullmatch(r"([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})"
+                         r"(?:\.([0-9]{1,9}))?(Z|[+-][0-9]{2}:[0-9]{2})", value)
+    require(match is not None, "kubernetes-cri-timestamp")
+    zone = match[8]
+    offset = 0
+    if zone != "Z":
+        hours, minutes = int(zone[1:3]), int(zone[4:6])
+        require(hours <= 23 and minutes <= 59, "kubernetes-cri-timestamp-offset")
+        offset = (hours * 60 + minutes) * (1 if zone[0] == "+" else -1)
+    try:
+        instant = datetime(*(int(match[index]) for index in range(1, 7)),
+                           tzinfo=timezone(timedelta(minutes=offset)))
+        delta = instant - datetime(1970, 1, 1, tzinfo=timezone.utc)
+    except (ValueError, OverflowError):
+        require(False, "kubernetes-cri-timestamp")
+    nanos = (delta.days * 86400 + delta.seconds) * 10**9 + int((match[7] or "").ljust(9, "0"))
+    return integer(nanos, 0, 2**64 - 1)
 
 
 def _object(value, reason):
@@ -144,8 +178,10 @@ def _cri(ready, final, identity, arm, controls):
     require(before.get("createdAt") == after.get("createdAt") and before.get("startedAt") == after.get("startedAt")
             and before.get("imageRef") == after.get("imageRef")
             and ready["info"]["sandboxID"] == final["info"]["sandboxID"], "kubernetes-cri-replaced")
-    require(uint(str(before.get("createdAt"))) <= uint(str(before.get("startedAt")))
-            < uint(str(after.get("finishedAt"))) and type(after.get("exitCode")) is int and after["exitCode"] == 0
+    require(cri_timestamp(before.get("createdAt")) <= cri_timestamp(before.get("startedAt"))
+            < cri_timestamp(after.get("finishedAt"))
+            and cri_timestamp(before.get("finishedAt"), unreported=True) is None
+            and type(after.get("exitCode")) is int and after["exitCode"] == 0
             and after.get("reason") == "Completed", "kubernetes-cri-not-clean")
     identity.update(host_wrapper_pid_at_ready=integer(ready["info"].get("pid"), 1),
                     sandbox_id=ready["info"]["sandboxID"], cri_image_ref=text(before.get("imageRef"), 512),
@@ -258,8 +294,11 @@ def _ancestry(value, leaf, identity, controls):
         uid_spellings = (identity["uid"], identity["uid"].replace("-", "_"))
         pod_names = {prefix + uid + suffix for uid in uid_spellings for prefix, suffix in
                      (("pod", ""), ("kubepods-pod", ".slice"), ("kubepods-burstable-pod", ".slice"),
-                      ("kubepods-besteffort-pod", ".slice"))}
+                      ("kubepods-besteffort-pod", ".slice"), ("kubelet-kubepods-pod", ".slice"))}
         if index > 0 and path.name in pod_names:
+            if path.name.startswith("kubelet-kubepods-pod"):
+                require(path.parent == ROOT / "kubelet.slice" / "kubelet-kubepods.slice",
+                        "kubernetes-kubelet-pod-parent")
             require(pod_index is None and limits["pids.max"] == str(POD_PIDS), "kubernetes-pod-pids-limit")
             pod_index = index
         rows.append({"path": str(path), "limits": limits, "files": files})

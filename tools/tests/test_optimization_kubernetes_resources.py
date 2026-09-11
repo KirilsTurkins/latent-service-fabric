@@ -85,6 +85,61 @@ class KubernetesFixture:
 
 
 class KubernetesResources(unittest.TestCase):
+    def test_actual_crictl_rfc3339_nanos_preserve_precision_and_offset(self):
+        actual = "2026-09-11T13:31:06.778695268Z"
+        value = resources.cri_timestamp(actual)
+        self.assertEqual(value, 1789133466778695268)
+        self.assertEqual(resources.cri_timestamp("2026-09-11T15:31:06.778695268+02:00"), value)
+        self.assertEqual(resources.cri_timestamp("2026-09-11T13:31:06.778695269Z") - value, 1)
+        self.assertEqual(resources.cri_timestamp(str(value)), value)
+
+    def test_unfinished_cri_sentinel_is_unavailable_not_a_zero_measurement(self):
+        for value in (None, "0001-01-01T00:00:00Z", "0", 0):
+            self.assertIsNone(resources.cri_timestamp(value, unreported=True))
+        for value in (True, 1.5, "2026-02-30T00:00:00Z", "2026-09-11T13:31:06.7786952681Z",
+                      "2026-09-11T13:31:06.000000000+24:00", "2026-09-11T13:31:06"):
+            with self.subTest(value=value), self.assertRaises(EvidenceError):
+                resources.cri_timestamp(value)
+
+    def test_actual_cri_lifetime_strings_remain_original_and_one_ns_reverse_rejects(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = KubernetesFixture(Path(directory))
+            for value in (fixture.cri_ready, fixture.cri_final):
+                value["status"].update(createdAt="2026-09-11T13:31:08.207792564Z",
+                                       startedAt="2026-09-11T13:31:08.327446097Z")
+            fixture.cri_ready["status"]["finishedAt"] = "0001-01-01T00:00:00Z"
+            fixture.cri_final["status"]["finishedAt"] = "2026-09-11T13:31:08.327446098Z"
+            before = deepcopy((fixture.cri_ready, fixture.cri_final))
+            fixture.validate()
+            self.assertEqual((fixture.cri_ready, fixture.cri_final), before)
+            fixture.cri_final["status"]["finishedAt"] = "2026-09-11T13:31:08.327446096Z"
+            with self.assertRaisesRegex(EvidenceError, "cri-not-clean"):
+                fixture.validate()
+
+    def test_actual_kind_kubelet_pod_path_keeps_exact_ancestry_and_effective_pid_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = KubernetesFixture(Path(directory))
+            source = fixture.observations[0]["cgroups"]
+            controls = docker_model.resources("native", 32)
+            pod_name = "kubelet-kubepods-pod" + UID.replace("-", "_") + ".slice"
+            pod = resources.ROOT / "kubelet.slice" / "kubelet-kubepods.slice" / pod_name
+            leaf = pod / ("cri-containerd-" + CONTAINER_ID + ".scope")
+            paths = [leaf, pod, pod.parent, pod.parent.parent, resources.ROOT]
+            rows = [{"path": str(path), "files": deepcopy(source[index if index < 3 else -1]["files"])}
+                    for index, path in enumerate(paths)]
+            rows[0]["files"]["pids.max"] = raw("38021\n")
+            result = resources._ancestry(rows, leaf, {"uid": UID, "container_id": CONTAINER_ID}, controls)
+            self.assertEqual(result["leaf_pids_max"], "38021")
+            self.assertEqual(result["effective_pids_max"], "512")
+            self.assertEqual(result["pod_index"], 1)
+            changed = deepcopy(rows)
+            for row in changed:
+                row["path"] = row["path"].replace("/kubelet.slice/", "/foreign.slice/")
+                if row["path"].endswith("/kubelet.slice"):
+                    row["path"] = row["path"].removesuffix("/kubelet.slice") + "/foreign.slice"
+            with self.assertRaisesRegex(EvidenceError, "kubelet-pod-parent"):
+                resources._ancestry(changed, changed[0]["path"], {"uid": UID, "container_id": CONTAINER_ID}, controls)
+
     def test_actual_provider_facts_bind_namespace_and_ancestor_limits(self):
         with tempfile.TemporaryDirectory() as directory:
             fixture = KubernetesFixture(Path(directory))

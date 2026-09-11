@@ -2,7 +2,7 @@
 import copy
 import unittest
 
-from tools.optimization_evidence.common import EvidenceError
+from tools.optimization_evidence.common import EvidenceError, canonical, sha256
 from tools.optimization_kubernetes import model, services
 
 OWNER = "lsf-112-abcdef012345"
@@ -67,6 +67,43 @@ def replay(rows, arm="lsf", density=1):
 
 
 class KubernetesServiceGraphTests(unittest.TestCase):
+    def test_typed_api_lists_allow_embedded_typemeta_omission_without_raw_normalization(self):
+        original = fixture()
+        for rows in original:
+            for row in rows:
+                del row["apiVersion"]
+                del row["kind"]
+        before = copy.deepcopy(original)
+        with self.assertRaises(EvidenceError):
+            replay(original)
+        selected = []
+        for kind, rows in zip(("Service", "EndpointSlice", "Pod"), original):
+            envelope = {"apiVersion": services.ITEM_TYPES[kind], "kind": kind + "List",
+                        "metadata": {"resourceVersion": "123"}, "items": rows}
+            selected.append(services.list_items(envelope, kind))
+            self.assertIs(selected[-1], rows)
+        result = services.graph(*selected, owner=OWNER, run_id=RUN, pair=0, group=0, arm="lsf", density=1,
+                                worker_name=WORKER, embedded_items=True)
+        self.assertEqual(original, before)
+        self.assertEqual(next(iter(result["pods"].values()))["pod_sha256"], sha256(canonical(original[2][0])))
+        self.assertEqual(result["targets"][0]["service_sha256"], sha256(canonical(original[0][0])))
+        self.assertEqual(next(iter(result["slices"].values()))["slice_sha256"], sha256(canonical(original[1][0])))
+
+    def test_wrong_list_type_pagination_and_supplied_item_type_reject(self):
+        for change in (lambda value: value.update(kind="ServiceList"),
+                       lambda value: value.update(apiVersion="v2"),
+                       lambda value: value["metadata"].update({"continue": "unread-next-page"}),
+                       lambda value: value["items"][0].update(kind="Service"),
+                       lambda value: value["items"][0].update(apiVersion="discovery.k8s.io/v1"),
+                       lambda value: value["items"][0].update(kind=None)):
+            pod = fixture()[2][0]
+            del pod["kind"]
+            del pod["apiVersion"]
+            envelope = {"apiVersion": "v1", "kind": "PodList", "metadata": {}, "items": [pod]}
+            change(envelope)
+            with self.subTest(change=change), self.assertRaises(EvidenceError):
+                services.list_items(envelope, "Pod")
+
     def test_all_densities_bind_service_addresses_to_expected_pod_owners(self):
         for density in (1, 8, 32):
             for arm in ("lsf", "native"):
