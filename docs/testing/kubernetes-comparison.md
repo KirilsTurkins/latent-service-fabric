@@ -1,6 +1,6 @@
 # Kubernetes Service comparison
 
-This is the initial #112 runbook for the fixed local Kubernetes comparison.
+This is the #112 runbook for the fixed local Kubernetes comparison.
 Cluster setup, smoke/full outcomes and measured results require their actual
 receipts; this document asserts no Kubernetes performance result. The pure
 [model](../../tools/optimization_kubernetes/model.py) builds the plan, owned
@@ -130,6 +130,36 @@ Use that actual Service destination in the original client target records.
 Direct Pod IP, port-forward, NodePort, Ingress or a Windows host listener is not
 this population. One LSF Pod behind multiple Services remains one process owner.
 
+EndpointSlice readiness and worker proxy programming are separate gates. After
+the API graph becomes ready, the parent reads the owned worker's original
+`iptables-save -t nat` and `iptables-save -t filter` output. Every current Service
+IP and port must have the expected Service-chain to endpoint-chain to Pod-IP
+forwarding path, without a matching rejecting rule, before `begin-group` opens
+the client channels. These are bounded rule-table observations, not TCP probes
+or extra Invokes. Retain every poll and its original command/output receipt, with
+at most 20 attempts and a 120-second overall readiness deadline.
+`graph_ready_nanos` continues to denote the API graph milestone;
+`proxy_ready_nanos` records the later observed forwarding-rule milestone.
+Neither is an exact timestamp of when the kernel first became reachable.
+
+This gate follows the retained smoke-02 failure: its 30 LSF offers succeeded,
+then the first new native Service connection failed despite an API-ready
+EndpointSlice. No native Invoke was made and owned cleanup completed. The failed
+attempt remains diagnostic; the new gate does not alter that original record or
+turn its partial population into a completed smoke.
+
+Replay preserves the original API response bytes. Kubernetes typed List responses
+can omit `kind` and `apiVersion` on their embedded items: the enclosing
+`PodList`, `ServiceList` or `EndpointSliceList` supplies that type only after its
+own type and complete, unpaginated population are checked. A conflicting explicit
+item type still fails. Specific omitted false/zero manifest fields use their
+declared API defaults; omission does not authorize changing other controls.
+EndpointSlice owner labels may be absent, but the exact Service name and UID in
+the controller owner reference are required. A lingering slice from an earlier
+group remains in the original response and is excluded from the current graph
+only when it matches that earlier owned Service creation. Unknown, foreign or
+crossed owners fail validation. No normalized replacement API record is published.
+
 Application Pods have only a TCP startup probe on 7070, with one-second period
 and timeout, failure threshold 120 and success threshold one. The wrapper binds
 that port after its child-ready event. Retain the actual wrapper-ready record,
@@ -149,9 +179,12 @@ attachment began later.
 Ready, served and final inventory barriers retain the same requested 250 ms
 resource windows, with all D channels held through the final window. Parent,
 wrapper and client clock origins stay separate. Report API-create, scheduling,
-container start, wrapper/Pod ready, endpoint ready and first semantic response
-as their actual observed milestones. Images are already present; sequential
-native provisioning, endpoint readiness, channel setup and deliberate barriers
+container start, wrapper/Pod ready, endpoint ready, forwarding-rule readiness and
+first semantic response
+as their actual observed milestones. Images are already present; all application
+Pods in a group are submitted before waiting for them, unlike the original
+Docker campaign's sequential provisioning. Pod creation, both readiness gates,
+channel setup and deliberate barriers
 remain in parent upper bounds. This is not idealized image-absent cold latency.
 
 ## Collection, evidence and limits
@@ -164,17 +197,43 @@ Pods and one persistent client are active; no replicas, autoscaler, sidecars or
 unplanned workload are added. Run and inspect the explicit 300-offer smoke before
 the seven-pair full campaign. An incomplete or failed attempt cannot qualify by
 dropping failed rows or shrinking density.
+Completed `suite.json` stores ordered identity/hash references to the original
+`group-P-G.json` files; replay verifies each reference before expanding its group
+in memory, keeping the existing per-document decoder limits unchanged.
 
-Use explicit private kubeconfig, context, namespace and bounded request timeout
-on every kubectl call. The following are operation templates, not a completed
-collection or a substitute for the owned driver and retained receipts:
+The Windows [setup helper](../../tools/optimization_kubernetes/setup.py) creates
+the unique owned cluster and imports the pinned original images. Its fresh root
+must be `target/phase1-extension/issue112-setup-NN` in the selected repository.
+Setup failure retains its original receipt, cluster and private credentials;
+`--resume-from` verifies a specifically retained import without repeating it.
+It is not a generic retry switch. The setup and Linux controller identities are
+source-bound to this experiment; inspect their declared pins before reproduction.
 
 ```text
-kubectl --kubeconfig <private-config> --context <owned-context> --request-timeout=10s create -f <owned-namespace.json>
-kubectl --kubeconfig <private-config> --context <owned-context> --namespace <owned-namespace> --request-timeout=10s create -f <group-manifests.json>
-kubectl --kubeconfig <private-config> --context <owned-context> --namespace <owned-namespace> --request-timeout=10s get pods,services,endpointslices -o json
-kubectl --kubeconfig <private-config> --context <owned-context> --namespace <owned-namespace> attach -i <client-pod> -c client --pod-running-timeout=120s
+python -m tools.optimization_kubernetes.setup --repository <repository> --root <repository>/target/phase1-extension/issue112-setup-NN
 ```
+
+Transfer the hash-bound public setup provenance and the private kubeconfig to the
+owned Linux controller. Keep the latter outside publication inputs. Bootstrap
+uses the original successful setup, or its separately validated resume receipt
+plus the unchanged original. The bootstrap root is exactly
+`/bench/kubernetes/<owner>`. Run from the clean collector checkout with the exact
+`--source-ref`; each output must be its fresh run-ID child. Build and Docker run
+roots are the unchanged #111 closures, not newly built substitutes.
+
+```text
+python tools/run_optimization_kubernetes.py bootstrap --setup <verified-setup.json> --original-setup <original-setup.json> --kubeconfig <private-kubeconfig> --output /bench/kubernetes/<owner>
+python tools/run_optimization_kubernetes.py run --profile smoke --source-ref <clean-collector-SHA> --run-id smoke-NN --bootstrap /bench/kubernetes/<owner>/bootstrap.json --build-root <docker-build> --docker-run <docker-full> --output /bench/kubernetes/<owner>/smoke-NN
+python tools/run_optimization_kubernetes.py validate --root <smoke-root> --build-root <docker-build> --docker-run <docker-full> --bootstrap-root <bootstrap-root> --output <fresh-smoke-analysis>
+python tools/run_optimization_kubernetes.py run --profile full --source-ref <clean-collector-SHA> --run-id full-NN --bootstrap /bench/kubernetes/<owner>/bootstrap.json --build-root <docker-build> --docker-run <docker-full> --output /bench/kubernetes/<owner>/full-NN
+python tools/run_optimization_kubernetes.py validate --root <full-root> --build-root <docker-build> --docker-run <docker-full> --bootstrap-root <bootstrap-root> --output <fresh-full-analysis>
+```
+
+The driver records HTTPS API calls with private TLS identity and bounded request
+deadlines; kubectl is used for the owned persistent client attach. Do not replace
+the driver with ad hoc Pod commands or extra probes. Inspect both smoke collection
+and offline replay before full collection. Validation reads original records,
+performs no Kubernetes operations and writes only a fresh analysis directory.
 
 Keep child and wrapper RSS/thread/FD observations separate and count every leaf
 cgroup once. Pod and kind-node totals include enclosing costs and must not be
@@ -192,6 +251,59 @@ recorded owned UIDs, verify termination and CRI disappearance, and remove only
 their verified data and namespace. Cluster teardown additionally checks the
 recorded kind node/container identities; retain pre-existing/shared networks and
 all #111 image/catalog evidence. Report any forced termination or failed cleanup.
+
+After all campaigns and any explicit failure recovery, perform final teardown
+once. The cleanup command retains the actual Linux cluster, network and copied
+credential-removal receipts. Separately remove the original Windows private
+kubeconfig with the retained ownership/hash-checking helper and retain its
+`windows-credential-cleanup.json` receipt and exact helper source.
+
+```text
+python tools/run_optimization_kubernetes.py cleanup --bootstrap /bench/kubernetes/<owner>/bootstrap.json --output /bench/kubernetes/<owner>/cleanup-NN
+```
+
+## Offline archive and original Docker dependency
+
+The Kubernetes publication depends on the immutable original #111 Docker package
+with logical gzip SHA-256
+`b51441c7d23eb9569f77d00026533e9a5395c7732b1109b38cfbc3defeca43fd`.
+It does not duplicate that package's build, images or Docker campaign. Prepare a
+fresh stage containing:
+
+```text
+aggregate.json, docker-aggregate.json   exact full-analysis JSON outputs
+*.csv, manifest.json                   all fifteen exact tables and analysis manifest
+docker-reference.json                  original Docker archive/manifest/aggregate byte hashes
+run/                                   complete full Kubernetes campaign
+smoke/                                 complete successful smoke and its aggregate.json
+bootstrap/                             complete public bootstrap/provenance closure
+cluster-cleanup/                       final Linux and Windows cleanup receipts and helper
+attempts/                              optional indexed original failed attempt and recovery
+```
+
+Never copy `bootstrap/private/`, TLS key/certificate files or private kubeconfig
+contents into the archive. Their recorded identity hashes are public evidence;
+the archive rejects a retained private subtree. Preserve each failed attempt and
+its separate recovery without rewriting the failed suite. Indexed failure
+evidence is diagnostic and contributes no offers to either qualified population.
+
+```text
+python tools/package_phase1_evidence.py --source <stage> --output <fresh-package> --compression-level 9 --split-archive --docker-package <original-docker-package>
+python tools/validate_phase1_archive.py <kubernetes-package> --docker-package <original-docker-package>
+```
+
+Packaging and replay verify the original Docker package, safely extract its
+bounded dependency into a temporary directory, rehash its members, and replay
+both Kubernetes campaigns against that same build and full Docker run. They
+check exact aggregate, CSV and manifest bytes and require final cluster cleanup
+after both campaigns. No retained source or executable is run. Repeat archive
+replay independently on Linux and Windows, preserving package hashes.
+
+The Kubernetes package retains the existing 1 GiB expanded / 5,000-file bound;
+the separately validated Docker dependency keeps its own 6,000-file bound.
+Split gzip remains at most 198 MB, in two to four parts of at most 50 MB. This
+does not establish that any not-yet-packaged population fits: actual compressed
+size, both semantic replay results and cleanup receipts remain required.
 
 When run on Docker Desktop/WSL2, the result describes a real Kubernetes Service
 path inside this host's shared Linux VM. One local worker and a separate local

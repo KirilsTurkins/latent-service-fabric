@@ -6,8 +6,47 @@ import json
 import tarfile
 
 from tools.optimization_docker import build, evidence as docker
-from tools.optimization_evidence.common import canonical, read_json, require, sha256, uint, verify_artifact
+from tools.optimization_evidence.common import canonical, fields, read_json, require, sha256, uint, verify_artifact
 from . import model, services, transport_evidence
+
+
+def load_suite(root):
+    """Resolve exact original group sidecars without one oversized JSON document."""
+    root = Path(root)
+    suite = read_json(root / "suite.json", 16 * 1024**2)
+    require(suite.get("schema") == model.PREFIX + "suite.v1" and suite.get("failure") is None,
+            "kubernetes-replay-incomplete-suite")
+    expected = [(pair, group) for pair in range(model.repetitions(suite["profile"]))
+                for group in model.groups(suite["profile"], pair)]
+    require(isinstance(suite["groups"], list) and len(suite["groups"]) == len(expected),
+            "kubernetes-replay-group-reference-population")
+    groups, total_bytes, total_nodes = [], 0, 0
+    for reference, (pair, expected_group) in zip(suite["groups"], expected):
+        fields(reference, "pair group arm density artifact")
+        identity = {"pair": pair, "group": expected_group["ordinal"],
+                    "arm": expected_group["arm"], "density": expected_group["density"]}
+        docker.equal({key: reference[key] for key in identity}, identity,
+                     "kubernetes-replay-group-reference-order")
+        artifact = fields(reference["artifact"], "path bytes sha256")
+        require(artifact["path"] == f"group-{pair}-{expected_group['ordinal']}.json",
+                "kubernetes-replay-group-reference-path")
+        total_bytes += uint(artifact["bytes"])
+        require(total_bytes <= 128 * 1024**2, "kubernetes-replay-group-total-bytes")
+        path = verify_artifact(root, artifact, 16 * 1024**2)
+        value = read_json(path, 16 * 1024**2)
+        docker.equal({key: value[key] for key in identity}, identity,
+                     "kubernetes-replay-group-sidecar-identity")
+        pending = [value]
+        while pending:
+            item = pending.pop()
+            total_nodes += 1
+            require(total_nodes <= 2_000_000, "kubernetes-replay-group-total-nodes")
+            if isinstance(item, dict):
+                pending.extend(item.values())
+            elif isinstance(item, list):
+                pending.extend(item)
+        groups.append(value)
+    return {**suite, "groups": groups}
 
 
 def _source(suite, root, built):
@@ -196,7 +235,7 @@ def validate(root, build_root, docker_root, bootstrap_root):
     """Return both independently validated platform records for aggregation."""
     from . import evidence
     root, build_root, docker_root, bootstrap_root = map(Path, (root, build_root, docker_root, bootstrap_root))
-    suite = read_json(root / "suite.json", 128 * 1024**2)
+    suite = load_suite(root)
     require(suite["schema"] == model.PREFIX + "suite.v1" and suite["failure"] is None,
             "kubernetes-replay-incomplete-suite")
     require(suite["namespace"] == model.namespace_name(suite["owner"], suite["run_id"]), "kubernetes-replay-namespace")

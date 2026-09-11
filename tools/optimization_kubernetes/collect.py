@@ -13,7 +13,7 @@ from tools.optimization_docker.engine import Engine
 from tools.optimization_docker.owned import encoded, stamp
 from tools.optimization_evidence.common import read_json, require, text
 from tools.optimization_revision_runner.build import source
-from . import files, model, node, services
+from . import files, model, node, proxy, services
 from .applications import Application, idle_window
 from .session import Session
 from .transport import Journal, Kubernetes, Worker, private_tls
@@ -311,6 +311,8 @@ class Campaign:
         else:
             raise TimeoutError("kubernetes-service-endpoint-deadline")
         graph_ready = stamp()
+        programmed = proxy.wait(self.worker, graph, deadline=self.deadline,
+            progress=lambda attempt: self.progress("proxy-attempt", {"pair": pair, "group": ordinal, **attempt}))
         by_uid = {app.uid: app for app in apps}
         targets = [{"service": item["service"], "endpoint": item["endpoint"],
                     "owner_ref": by_uid[item["pod_uid"]].owner_ref,
@@ -345,6 +347,7 @@ class Campaign:
         value = {"pair": pair, "group": ordinal, "arm": arm, "density": density,
             "started_nanos": began, "pod_create_started_nanos": pod_create_started,
             "graph_ready_nanos": graph_ready, "finished_nanos": stamp(), "graph_attempts": graph_attempts,
+            "proxy_attempts": programmed["attempts"], "proxy_ready_nanos": programmed["ready_nanos"],
             "services": service_rows, "graph": graph, "targets": targets, "owners": owners, "windows": windows,
             "cluster_before": cluster_before, "cluster_after": cluster_after, "service_deletes": service_deletes}
         require(int(value["finished_nanos"]) - int(began) <= 600 * 10**9, "kubernetes-group-deadline")
@@ -520,7 +523,10 @@ class Campaign:
                 "namespace_create_call": getattr(self, "namespace_create_call", None),
                 "namespace_absence_call": getattr(self, "namespace_absence_call", None),
                 "remote_create_call": getattr(self, "remote_create_call", None),
-                "groups": self.groups, "clients": self.clients, "preparations": self.preparations,
+                "groups": [{**{key: row[key] for key in ("pair", "group", "arm", "density")},
+                            "artifact": reference(self.root / f"group-{row['pair']}-{row['group']}.json", self.root)}
+                           for row in self.groups],
+                "clients": self.clients, "preparations": self.preparations,
                 "transfers": self.transfers, "cleanup": cleanup, "failure": failure}
             write_json(self.root / "suite.json", suite)
         print(json.dumps({"profile": self.profile, "groups": len(self.groups), "clients": len(self.clients),

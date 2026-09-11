@@ -1,0 +1,769 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/kubernetes-aggregate.v1.schema.json",
+  "title": "Kubernetes comparison aggregate v1",
+  "$comment": "Completed public benchmark envelope only. Nested shared records and all cross-file, ownership, timing, strict type, hash, cleanup and statistical checks require offline semantic replay. No external references.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "profile",
+    "plan",
+    "completed_paired_run",
+    "full_population_completed",
+    "acceptance_qualified",
+    "logical_offers",
+    "validated_pairs",
+    "source",
+    "build_source",
+    "suite_sha256",
+    "images",
+    "counts",
+    "collection_elapsed_nanos",
+    "collection_scope",
+    "original_docker",
+    "platform_comparison_status",
+    "platform_comparison_scope",
+    "phase_rows",
+    "phase_comparisons",
+    "resource_points",
+    "resource_comparisons",
+    "idle_windows",
+    "idle_window_comparisons",
+    "lifecycle_owners",
+    "lifecycle_cohorts",
+    "lifecycle_comparisons",
+    "client_resource_points",
+    "client_intervals",
+    "client_cpu_comparisons",
+    "platform_comparisons",
+    "node_resource_points",
+    "node_resource_intervals",
+    "units",
+    "limitations"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.kubernetes-aggregate.v1"
+    },
+    "status": {
+      "const": "complete"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "plan": {
+      "$ref": "#/$defs/plan"
+    },
+    "completed_paired_run": {
+      "const": true
+    },
+    "full_population_completed": {
+      "type": "boolean"
+    },
+    "acceptance_qualified": {
+      "type": "boolean"
+    },
+    "logical_offers": {
+      "enum": [
+        "300",
+        "9926"
+      ]
+    },
+    "validated_pairs": {
+      "enum": [
+        1,
+        7
+      ]
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "build_source": {
+      "$ref": "#/$defs/source"
+    },
+    "suite_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lsf",
+        "native",
+        "client"
+      ],
+      "properties": {
+        "lsf": {
+          "type": "object",
+          "maxProperties": 4096
+        },
+        "native": {
+          "type": "object",
+          "maxProperties": 4096
+        },
+        "client": {
+          "type": "object",
+          "maxProperties": 4096
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "offers",
+        "successful",
+        "seed_management_rpcs",
+        "seed_invokes",
+        "measured_application_owners",
+        "client_owners"
+      ],
+      "properties": {
+        "offers": {
+          "$ref": "#/$defs/uint"
+        },
+        "successful": {
+          "$ref": "#/$defs/uint"
+        },
+        "seed_management_rpcs": {
+          "const": "0"
+        },
+        "seed_invokes": {
+          "const": "0"
+        },
+        "measured_application_owners": {
+          "enum": [
+            44,
+            308
+          ]
+        },
+        "client_owners": {
+          "enum": [
+            1,
+            7
+          ]
+        }
+      }
+    },
+    "collection_elapsed_nanos": {
+      "$ref": "#/$defs/uint"
+    },
+    "collection_scope": {
+      "const": "owned-namespace-fixture-copy-paired-clients-parent-observation-and-cleanup"
+    },
+    "original_docker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256",
+        "suite_sha256",
+        "source",
+        "build_source",
+        "profile",
+        "logical_offers",
+        "validated_pairs"
+      ],
+      "properties": {
+        "path": {
+          "const": "docker-aggregate.json"
+        },
+        "bytes": {
+          "$ref": "#/$defs/uint"
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "suite_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "build_source": {
+          "$ref": "#/$defs/source"
+        },
+        "profile": {
+          "const": "full"
+        },
+        "logical_offers": {
+          "const": "9926"
+        },
+        "validated_pairs": {
+          "const": 7
+        }
+      }
+    },
+    "platform_comparison_status": {
+      "enum": [
+        "available",
+        "unavailable-different-workload-populations"
+      ]
+    },
+    "platform_comparison_scope": {
+      "const": "same-arm-and-pair-index-separate-campaigns-not-isolated-ClusterIP-overhead"
+    },
+    "phase_rows": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "phase_comparisons": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "resource_points": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "resource_comparisons": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "idle_windows": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "idle_window_comparisons": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "lifecycle_owners": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "lifecycle_cohorts": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "lifecycle_comparisons": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "client_resource_points": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "client_intervals": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "client_cpu_comparisons": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "platform_comparisons": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "node_resource_points": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "node_resource_intervals": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "units": {
+      "type": "object",
+      "maxProperties": 4096
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      }
+    }
+  },
+  "$defs": {
+    "uint": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^lsf-112-[0-9a-f]{12}$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "bytes": {
+          "$ref": "#/$defs/uint"
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "tree",
+        "clean",
+        "cargo_lock_sha256"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "clean": {
+          "const": true
+        },
+        "cargo_lock_sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "maxProperties": 64,
+      "required": [
+        "schema",
+        "profile",
+        "workload",
+        "seed_reuse",
+        "measured_services",
+        "node_selector"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.kubernetes-plan.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "workload": {
+          "type": "object",
+          "maxProperties": 64,
+          "required": [
+            "schema",
+            "profile",
+            "repetitions",
+            "logical_offers",
+            "groups"
+          ],
+          "properties": {
+            "schema": {
+              "const": "latent.optimization.docker-plan.v1"
+            },
+            "profile": {
+              "enum": [
+                "smoke",
+                "full"
+              ]
+            },
+            "repetitions": {
+              "enum": [
+                1,
+                7
+              ]
+            },
+            "logical_offers": {
+              "enum": [
+                "300",
+                "9926"
+              ]
+            },
+            "groups": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 7,
+              "items": {
+                "type": "array",
+                "minItems": 6,
+                "maxItems": 6,
+                "items": {
+                  "type": "object",
+                  "maxProperties": 4096
+                }
+              }
+            }
+          }
+        },
+        "seed_reuse": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "densities",
+            "new_lsf_starts",
+            "new_management_rpcs",
+            "new_guest_invokes"
+          ],
+          "properties": {
+            "source": {
+              "const": "docker-stopped-pristine-catalogs"
+            },
+            "densities": {
+              "const": [
+                1,
+                8,
+                32
+              ]
+            },
+            "new_lsf_starts": {
+              "const": 0
+            },
+            "new_management_rpcs": {
+              "const": 0
+            },
+            "new_guest_invokes": {
+              "const": 0
+            }
+          }
+        },
+        "measured_services": {
+          "enum": [
+            82,
+            574
+          ]
+        },
+        "node_selector": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "latent.benchmark.worker"
+          ],
+          "properties": {
+            "latent.benchmark.worker": {
+              "$ref": "#/$defs/owner"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              }
+            },
+            "required": [
+              "profile"
+            ]
+          },
+          "then": {
+            "properties": {
+              "measured_services": {
+                "const": 82
+              },
+              "workload": {
+                "properties": {
+                  "profile": {
+                    "const": "smoke"
+                  },
+                  "repetitions": {
+                    "const": 1
+                  },
+                  "logical_offers": {
+                    "const": "300"
+                  },
+                  "groups": {
+                    "minItems": 1,
+                    "maxItems": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "full"
+              }
+            },
+            "required": [
+              "profile"
+            ]
+          },
+          "then": {
+            "properties": {
+              "measured_services": {
+                "const": 574
+              },
+              "workload": {
+                "properties": {
+                  "profile": {
+                    "const": "full"
+                  },
+                  "repetitions": {
+                    "const": 7
+                  },
+                  "logical_offers": {
+                    "const": "9926"
+                  },
+                  "groups": {
+                    "minItems": 7,
+                    "maxItems": 7
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              }
+            }
+          },
+          "validated_pairs": {
+            "const": 1
+          },
+          "logical_offers": {
+            "const": "300"
+          },
+          "full_population_completed": {
+            "const": false
+          },
+          "acceptance_qualified": {
+            "const": false
+          },
+          "platform_comparison_status": {
+            "const": "unavailable-different-workload-populations"
+          },
+          "counts": {
+            "properties": {
+              "offers": {
+                "const": "300"
+              },
+              "successful": {
+                "const": "300"
+              },
+              "measured_application_owners": {
+                "const": 44
+              },
+              "client_owners": {
+                "const": 1
+              }
+            }
+          },
+          "phase_rows": {
+            "minItems": 30,
+            "maxItems": 30
+          },
+          "resource_points": {
+            "minItems": 36,
+            "maxItems": 36
+          },
+          "idle_windows": {
+            "minItems": 18,
+            "maxItems": 18
+          },
+          "lifecycle_owners": {
+            "minItems": 44,
+            "maxItems": 44
+          },
+          "lifecycle_cohorts": {
+            "minItems": 6,
+            "maxItems": 6
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "full"
+              }
+            }
+          },
+          "validated_pairs": {
+            "const": 7
+          },
+          "logical_offers": {
+            "const": "9926"
+          },
+          "full_population_completed": {
+            "const": true
+          },
+          "acceptance_qualified": {
+            "const": true
+          },
+          "platform_comparison_status": {
+            "const": "available"
+          },
+          "counts": {
+            "properties": {
+              "offers": {
+                "const": "9926"
+              },
+              "successful": {
+                "const": "9926"
+              },
+              "measured_application_owners": {
+                "const": 308
+              },
+              "client_owners": {
+                "const": 7
+              }
+            }
+          },
+          "phase_rows": {
+            "minItems": 210,
+            "maxItems": 210
+          },
+          "resource_points": {
+            "minItems": 252,
+            "maxItems": 252
+          },
+          "idle_windows": {
+            "minItems": 126,
+            "maxItems": 126
+          },
+          "lifecycle_owners": {
+            "minItems": 308,
+            "maxItems": 308
+          },
+          "lifecycle_cohorts": {
+            "minItems": 42,
+            "maxItems": 42
+          }
+        }
+      }
+    }
+  ]
+}

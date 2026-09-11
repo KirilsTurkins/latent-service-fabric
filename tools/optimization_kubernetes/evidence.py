@@ -14,7 +14,7 @@ from tools.optimization_docker import resources as wrapper
 from tools.optimization_evidence.common import (
     canonical, decode, digest, fields, integer, read_json, require, sha256, text, uint, verify_artifact,
 )
-from . import model, node, resources, services, transport_evidence as transport
+from . import model, node, proxy, resources, services, transport_evidence as transport
 
 
 def _same(left, right, reason):
@@ -360,8 +360,45 @@ class Replay:
         require(not pending and bytes(captured) == original and event_index == 9, "kubernetes-evidence-event-complete")
         return events
 
-    def group(self, parent, pair, expected):
+    def proxy_ready(self, parent, graph):
+        attempts = parent["proxy_attempts"]
+        require(isinstance(attempts, list) and 1 <= len(attempts) <= proxy.MAX_ATTEMPTS,
+                "kubernetes-evidence-proxy-attempt-bound")
+        begin, previous = uint(parent["graph_ready_nanos"]), uint(parent["graph_ready_nanos"])
+        ready = uint(parent["proxy_ready_nanos"])
+        require(begin <= ready <= uint(parent["finished_nanos"]) and ready - begin <= proxy.TIMEOUT_NANOS,
+                "kubernetes-evidence-proxy-clock")
+        seen = set()
+        for index, attempt in enumerate(attempts):
+            fields(attempt, "nat_call filter_call observed_nanos result")
+            require(attempt["nat_call"] != attempt["filter_call"]
+                    and not seen.intersection((attempt["nat_call"], attempt["filter_call"])),
+                    "kubernetes-evidence-proxy-call-reused")
+            seen.update((attempt["nat_call"], attempt["filter_call"]))
+            nat = self.command(attempt["nat_call"], proxy.COMMANDS["nat"])
+            filtered = self.command(attempt["filter_call"], proxy.COMMANDS["filter"])
+            observed = uint(attempt["observed_nanos"])
+            require(previous <= uint(nat["started_nanos"]) <= uint(nat["finished_nanos"])
+                    <= uint(filtered["started_nanos"]) <= uint(filtered["finished_nanos"]) <= observed <= ready,
+                    "kubernetes-evidence-proxy-attempt-clock")
+            result = proxy.validate(nat["stdout"], filtered["stdout"], graph)
+            _same(result, attempt["result"], "kubernetes-evidence-proxy-original-rules")
+            require(result["ready"] is (index == len(attempts) - 1),
+                    "kubernetes-evidence-proxy-first-ready")
+            previous = observed
+        return ready
+
+    def group(self, parent, pair, expected, *, require_proxy=True):
         ordinal, arm, density = expected["ordinal"], expected["arm"], expected["density"]
+        require(type(require_proxy) is bool, "kubernetes-evidence-proxy-policy")
+        if not require_proxy:
+            require(self.suite["profile"] == "smoke" and self.suite["source"]["commit"]
+                    == "7a655e7967dbde1431f0ff8a5b928443a5986832"
+                    and self.suite["failure"] == {"type": "EvidenceError", "reason": "kubernetes-client-ack-order-identity"}
+                    and pair == 0 and ordinal == 0 and len(self.suite["groups"]) == 1
+                    and parent == self.suite["groups"][0]
+                    and "proxy_attempts" not in parent and "proxy_ready_nanos" not in parent,
+                    "kubernetes-evidence-historical-failed-proxy-policy")
         require(parent["pair"] == pair and parent["group"] == ordinal and parent["arm"] == arm
                 and parent["density"] == density, "kubernetes-evidence-group-order")
         start, end = uint(parent["started_nanos"]), uint(parent["finished_nanos"])
@@ -402,6 +439,7 @@ class Replay:
                     owner=self.owner, run_id=self.run_id, pair=pair, group=ordinal, arm=arm, density=density,
                     worker_name=self.worker["name"], embedded_items=True)
         _same(graph, parent["graph"], "kubernetes-evidence-graph-replay")
+        forwarding_ready = self.proxy_ready(parent, graph) if require_proxy else uint(parent["graph_ready_nanos"])
         owners = [self.application(value, pair, expected, index) for index, value in enumerate(parent["owners"])]
         for owner in owners:
             absent = self.api(owner["parent"]["delete"]["absence_call"], "GET",
@@ -423,7 +461,7 @@ class Replay:
             _same(owner["service_endpoints"], {row["service"]: row["endpoint"] for row in graph["service_endpoints"][uid]},
                   "kubernetes-evidence-owner-endpoints")
         require(len(parent["windows"]) == 3, "kubernetes-evidence-window-count")
-        previous = uint(parent["graph_ready_nanos"])
+        previous = forwarding_ready
         for position, (window, stage) in enumerate(zip(parent["windows"], ("ready", "served", "final"))):
             fields(window, "stage started_nanos before sleep_begin_nanos sleep_end_nanos after finished_nanos")
             require(window["stage"] == stage and previous <= uint(window["started_nanos"])
@@ -669,7 +707,7 @@ class Replay:
             finish = next(index for index, command in enumerate(commands)
                           if command["group"] == ordinal and command["command"] == "finish-group")
             _same(commands[begin]["targets"], group["targets"], "kubernetes-evidence-client-service-targets")
-            require(uint(group["graph_ready_nanos"]) <= uint(parent["commands"][begin]["sent_nanos"])
+            require(uint(group["proxy_ready_nanos"]) <= uint(parent["commands"][begin]["sent_nanos"])
                     and uint(acks[finish]["received_nanos"]) <= uint(group["finished_nanos"]),
                     "kubernetes-evidence-client-group-clock")
             for position, window in enumerate(group["windows"]):

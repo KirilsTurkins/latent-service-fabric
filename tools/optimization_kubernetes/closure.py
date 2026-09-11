@@ -132,7 +132,7 @@ class Closure:
                 ready = stage.endswith("-ready")
                 _same(observation, group["cluster_before" if ready else "cluster_after"],
                       "kubernetes-closure-background-group")
-                lower = uint(group["graph_ready_nanos"] if ready else group["windows"][-1]["finished_nanos"])
+                lower = uint(group["proxy_ready_nanos"] if ready else group["windows"][-1]["finished_nanos"])
                 upper = self._command_time(group["pair"], group["group"], "begin-group" if ready else "finish-group")
             elif stage.startswith("idle-before-"):
                 lower = self.time(self.suite["namespace_create_call"])
@@ -242,6 +242,9 @@ class Closure:
                              "cri_ready cri_ready_call identity_call start_time_ticks app_process_id owner_ref container_id").split()
                     emit("application-ready", {key: parent[key] for key in names}, self.time(parent["identity_call"]),
                          self.time(group["graph_attempts"][0]["pods_call"], "started_nanos"))
+                for attempt in group["proxy_attempts"]:
+                    emit("proxy-attempt", {"pair": pair, "group": group["group"], **attempt},
+                         uint(attempt["observed_nanos"]), uint(group["proxy_ready_nanos"]))
                 for index in range(6):
                     for parent in group["owners"]:
                         row = parent["snapshots"][index]
