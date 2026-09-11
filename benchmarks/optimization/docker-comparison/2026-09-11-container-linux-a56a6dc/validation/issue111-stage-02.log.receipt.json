@@ -1,0 +1,13 @@
+{
+  "command": [
+    "docker",
+    "exec",
+    "lsf-issue111-controller-01",
+    "python3",
+    "/repo-source/target/phase1-extension/issue111-stage.py"
+  ],
+  "cwd": "C:\\Users\\turkins\\Desktop\\latent-fabric",
+  "exit_code": 0,
+  "elapsed_nanos": "1390172500",
+  "log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue111-stage-02.log"
+}

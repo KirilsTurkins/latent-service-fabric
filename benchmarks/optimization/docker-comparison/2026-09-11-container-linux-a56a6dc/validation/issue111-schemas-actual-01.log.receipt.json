@@ -1,0 +1,446 @@
+{
+  "command": [
+    "docker",
+    "exec",
+    "-i",
+    "-e",
+    "PYTHONDONTWRITEBYTECODE=1",
+    "0db06bb1a2d493ee88eb00dcb0fcae61693ffedd6439e48b1b84b821d1c6a555",
+    "python3",
+    "/repo-source/target/phase1-extension/issue111-schema-validate.py"
+  ],
+  "controller_id": "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+  "driver_sha256": "sha256:da15eddfea9f907d4fddc1e43669f9c10f3ebaa62c1a40da5ae845c80bbb4e46",
+  "elapsed_nanos": "16276177200",
+  "exit_code": 0,
+  "failure": null,
+  "implementation_id": "0db06bb1a2d493ee88eb00dcb0fcae61693ffedd6439e48b1b84b821d1c6a555",
+  "input_bytes": "16092071",
+  "input_sha256": "sha256:e35e3ae92a9f01d6359b8731d12ee55d1e8cb9e98447f34d7e81f0edd852f65c",
+  "log": {
+    "bytes": "1338",
+    "path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue111-schemas-actual-01.log",
+    "sha256": "sha256:12e200eae1e5b67fb8c0c3804d2742e2e25cc81dbd4e8c6037792a5f81d3c255"
+  },
+  "read_only_evidence": true,
+  "reads": [
+    {
+      "bytes": "5469",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/smoke-03/plan.json"
+      ],
+      "elapsed_nanos": "614299500",
+      "exit_code": 0,
+      "path": "/bench/smoke-03/plan.json",
+      "sha256": "sha256:d1b9f54ab4fe5887a475c8e5a44e8c3161fc3dc8f5bb7a7ccff12186c11055df",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "1454417",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/smoke-03/suite.json"
+      ],
+      "elapsed_nanos": "569966600",
+      "exit_code": 0,
+      "path": "/bench/smoke-03/suite.json",
+      "sha256": "sha256:1e7e62a038517905056e37678d31171232f20d02c31e888ec04b7f56097e41c2",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "2016330",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/analysis-smoke-03/aggregate.json"
+      ],
+      "elapsed_nanos": "547805600",
+      "exit_code": 0,
+      "path": "/bench/analysis-smoke-03/aggregate.json",
+      "sha256": "sha256:5334166f4171274cbc13530385c83643417b0c5131d5465adbc0ac94196a1dec",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "147",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/smoke-03/clients/0/plan.json"
+      ],
+      "elapsed_nanos": "593247300",
+      "exit_code": 0,
+      "path": "/bench/smoke-03/clients/0/plan.json",
+      "sha256": "sha256:b198401c12ed965d6f66322b9b500f1fe5824db5604c44a9cfda03a4b8885f13",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "954",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/smoke-03/clients/0/summary.json"
+      ],
+      "elapsed_nanos": "599677800",
+      "exit_code": 0,
+      "path": "/bench/smoke-03/clients/0/summary.json",
+      "sha256": "sha256:4bbb0bbdf78a5ebc70f9e49a6f698b72287f4426c9542646e8f4adf942dca715",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "32113",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/plan.json"
+      ],
+      "elapsed_nanos": "599180600",
+      "exit_code": 0,
+      "path": "/bench/full-01/plan.json",
+      "sha256": "sha256:e1c3d21149a0e6fdc53e76d217ab2ac99e9972a7629fed8c9d724cc5d115250b",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "6651154",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/suite.json"
+      ],
+      "elapsed_nanos": "694605300",
+      "exit_code": 0,
+      "path": "/bench/full-01/suite.json",
+      "sha256": "sha256:d70b659d93fd8956029fb91dcac4c1e0bfa542b35fe4fa938ba1a2b7e80b64dd",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "5261376",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/analysis-full-01/aggregate.json"
+      ],
+      "elapsed_nanos": "674325200",
+      "exit_code": 0,
+      "path": "/bench/analysis-full-01/aggregate.json",
+      "sha256": "sha256:ed860707571363cc5bdad7ec84f01b721a9de3d7b79a85a7707cb04fe2800617",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "145",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/0/plan.json"
+      ],
+      "elapsed_nanos": "583627600",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/0/plan.json",
+      "sha256": "sha256:aa1debe1ead60579ab60f405b00a7bb2d6bf752f7775ab7e01766323fc8e79ca",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "956",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/0/summary.json"
+      ],
+      "elapsed_nanos": "553337500",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/0/summary.json",
+      "sha256": "sha256:613ebec64eb52cef6f7bb9d9841c1aead1d4450143a4ff6fa088206619bda82e",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "145",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/1/plan.json"
+      ],
+      "elapsed_nanos": "557469500",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/1/plan.json",
+      "sha256": "sha256:48ed924d687c0a7113da44a754cf3294ca8b22a66e16a07741690cac1150380b",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "956",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/1/summary.json"
+      ],
+      "elapsed_nanos": "561787300",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/1/summary.json",
+      "sha256": "sha256:6854109eb145362a52c0a2c4fcffb65d13ead407eeb56444caadc1eebe4b9354",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "145",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/2/plan.json"
+      ],
+      "elapsed_nanos": "583456900",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/2/plan.json",
+      "sha256": "sha256:7c7ad8eb291bcde0cc4a9698ec84304327d5dbc6cb09870c5f63703be25c0f60",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "956",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/2/summary.json"
+      ],
+      "elapsed_nanos": "577518000",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/2/summary.json",
+      "sha256": "sha256:d85706154936052ccbf65da74f533333d3ebe6a8f7f0a35b6339c87cc6fda45c",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "145",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/3/plan.json"
+      ],
+      "elapsed_nanos": "589161000",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/3/plan.json",
+      "sha256": "sha256:cc2aa132e9ccbcda00764d71d1da35bd0be06da8f4705160979890e6738ad76b",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "956",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/3/summary.json"
+      ],
+      "elapsed_nanos": "579060200",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/3/summary.json",
+      "sha256": "sha256:bf60f3cc0e6c0910c71ac24206a5667d60362f38a850bd4009213957e762237a",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "145",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/4/plan.json"
+      ],
+      "elapsed_nanos": "665612100",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/4/plan.json",
+      "sha256": "sha256:3e167e8ff711fe700bf264fa5813499f4a518c25d50cdeb78f73138ed0349b63",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "956",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/4/summary.json"
+      ],
+      "elapsed_nanos": "759511000",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/4/summary.json",
+      "sha256": "sha256:0a0d67325bf83475421b3d2f2cab32edffb0c650bd026ebcaf54ed6c190bb705",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "145",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/5/plan.json"
+      ],
+      "elapsed_nanos": "623417400",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/5/plan.json",
+      "sha256": "sha256:15b4a61616ceed0f6837f7d90de546403ccad8f3850c135aa13efcbf00631483",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "956",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/5/summary.json"
+      ],
+      "elapsed_nanos": "581137200",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/5/summary.json",
+      "sha256": "sha256:43d812c10982e56826e06a80f5406749a33fe97d802cecb4bc21e6f497824e0a",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "145",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/6/plan.json"
+      ],
+      "elapsed_nanos": "571566800",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/6/plan.json",
+      "sha256": "sha256:61e11730c4bc10d92af6628cf33ce7bcd10d38cbf9691632b8420c048a7442b5",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "956",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/full-01/clients/6/summary.json"
+      ],
+      "elapsed_nanos": "553870700",
+      "exit_code": 0,
+      "path": "/bench/full-01/clients/6/summary.json",
+      "sha256": "sha256:aeae25b0357456f39f1510dd4c6db480d8900f57e05d01a85092865689389918",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": "326534",
+      "command": [
+        "docker",
+        "exec",
+        "8c6562736fe48363248c46e3bcb929c1a44c2708d27f445aa531dedf3ac84fda",
+        "python3",
+        "-c",
+        "import pathlib,sys; p=pathlib.Path(sys.argv[1]); n=32*1024**2; s=p.stat(); assert p.is_file() and not p.is_symlink() and s.st_size<=n; f=p.open(\"rb\"); b=f.read(n+1); assert len(b)==s.st_size and len(b)<=n; sys.stdout.buffer.write(b)",
+        "/bench/build-01/docker-builds.json"
+      ],
+      "elapsed_nanos": "602142900",
+      "exit_code": 0,
+      "path": "/bench/build-01/docker-builds.json",
+      "sha256": "sha256:3a2cf62ba2ee4be32480aa28a20fe13ba9ea2b02ba745a86b0d9e6e327e382a9",
+      "stderr_bytes": "0",
+      "stderr_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "schema": "latent.optimization.docker-schema-validation-diagnostic.v1",
+  "semantic_replay": false,
+  "status": "passed",
+  "validator_sha256": "sha256:6981f9763041b0d49b08f36f2a166dd9cfe6d3a3cee5040bb0a40a624ab6338d"
+}

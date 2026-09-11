@@ -15,13 +15,13 @@ try:
     from .validate_phase1_archive import (ARCHIVE, MANIFEST, MAX_COMPRESSED, MAX_EXPANDED,
                                          MAX_FILES, evidence_kind, file_reference, relative_path, require,
                                          verify_package, CHUNK, MAX_SPLIT_COMPRESSED, PARTS_MANIFEST,
-                                         split_layout, archive_bounds)
+                                         split_layout, archive_bounds, archive_file_limit)
 except ImportError:
     import package_phase0_evidence as paths
     from validate_phase1_archive import (ARCHIVE, MANIFEST, MAX_COMPRESSED, MAX_EXPANDED,
                                         MAX_FILES, evidence_kind, file_reference, relative_path, require,
                                         verify_package, CHUNK, MAX_SPLIT_COMPRESSED, PARTS_MANIFEST,
-                                        split_layout, archive_bounds)
+                                        split_layout, archive_bounds, archive_file_limit)
 
 
 def checked_compression_level(value):
@@ -62,7 +62,7 @@ def create_archive(source, stage, policy, compression_level=6, *, split_archive=
     if kind == 'measurement':
         require('measurement-policy.json' not in files, 'source already contains a policy copy')
         files['measurement-policy.json'] = paths.existing_regular_file_path(policy, 'measurement policy')
-    require(len(files) <= MAX_FILES, 'too many evidence files')
+    require(len(files) <= archive_file_limit(kind), 'too many evidence files')
     require(sum(path.stat().st_size for path in files.values()) <= maximum_expanded, 'evidence exceeds expanded bound')
     references = []
     archive_path = stage / ARCHIVE

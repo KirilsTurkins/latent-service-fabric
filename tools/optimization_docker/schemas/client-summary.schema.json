@@ -1,0 +1,390 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/docker-client-summary.v1.schema.json",
+  "title": "Docker comparison client-summary v1",
+  "$comment": "Private completed-evidence shape. Exact bytes, strict numeric types, ownership, control order, semantic responses, clocks, source bindings and aggregate equality require offline replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "reason",
+    "plan_sha256",
+    "process_id",
+    "commands_completed",
+    "groups_completed",
+    "phases_completed",
+    "offers",
+    "management_calls",
+    "active_tasks_at_completion",
+    "channels_at_completion",
+    "runtime_dropped",
+    "session_elapsed_nanos",
+    "attempts",
+    "finish_command"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.infrastructure-client-summary.v1"
+    },
+    "status": {
+      "const": "complete"
+    },
+    "reason": {
+      "const": null
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "process_id": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "commands_completed": {
+      "const": "61"
+    },
+    "groups_completed": {
+      "const": "6"
+    },
+    "phases_completed": {
+      "const": "30"
+    },
+    "offers": {
+      "enum": [
+        "300",
+        "1418"
+      ]
+    },
+    "management_calls": {
+      "const": "9"
+    },
+    "active_tasks_at_completion": {
+      "const": 0
+    },
+    "channels_at_completion": {
+      "const": 0
+    },
+    "runtime_dropped": {
+      "const": true
+    },
+    "session_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 20
+    },
+    "attempts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "finish_command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "command_bytes",
+        "command_sha256"
+      ],
+      "properties": {
+        "command": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "ordinal",
+            "plan_sha256",
+            "command",
+            "group",
+            "phase",
+            "barrier",
+            "targets"
+          ],
+          "properties": {
+            "schema": {
+              "const": "latent.optimization.infrastructure-client-command.v1"
+            },
+            "ordinal": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60
+            },
+            "plan_sha256": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "command": {
+              "const": "finish"
+            },
+            "group": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "phase": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 8
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "barrier": {
+              "enum": [
+                null,
+                "ready",
+                "served",
+                "final"
+              ]
+            },
+            "targets": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 32,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "service",
+                      "endpoint",
+                      "owner_ref",
+                      "app_process_id"
+                    ],
+                    "properties": {
+                      "service": {
+                        "enum": [
+                          "optimization/workloads",
+                          "optimization/workloads-1",
+                          "optimization/workloads-2",
+                          "optimization/workloads-3",
+                          "optimization/workloads-4",
+                          "optimization/workloads-5",
+                          "optimization/workloads-6",
+                          "optimization/workloads-7",
+                          "optimization/workloads-8",
+                          "optimization/workloads-9",
+                          "optimization/workloads-10",
+                          "optimization/workloads-11",
+                          "optimization/workloads-12",
+                          "optimization/workloads-13",
+                          "optimization/workloads-14",
+                          "optimization/workloads-15",
+                          "optimization/workloads-16",
+                          "optimization/workloads-17",
+                          "optimization/workloads-18",
+                          "optimization/workloads-19",
+                          "optimization/workloads-20",
+                          "optimization/workloads-21",
+                          "optimization/workloads-22",
+                          "optimization/workloads-23",
+                          "optimization/workloads-24",
+                          "optimization/workloads-25",
+                          "optimization/workloads-26",
+                          "optimization/workloads-27",
+                          "optimization/workloads-28",
+                          "optimization/workloads-29",
+                          "optimization/workloads-30",
+                          "optimization/workloads-31"
+                        ]
+                      },
+                      "endpoint": {
+                        "type": "string",
+                        "pattern": "^http://[^\\x00-\\x1f\\x7f]+$",
+                        "maxLength": 2048
+                      },
+                      "owner_ref": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9_-]{1,128}$"
+                      },
+                      "app_process_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 2147483647
+                      }
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "command": {
+                    "const": "begin-group"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "group": {
+                    "type": "integer"
+                  },
+                  "phase": {
+                    "const": null
+                  },
+                  "barrier": {
+                    "const": null
+                  },
+                  "targets": {
+                    "type": "array"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "command": {
+                    "const": "inventory"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "group": {
+                    "type": "integer"
+                  },
+                  "phase": {
+                    "const": null
+                  },
+                  "barrier": {
+                    "type": "string"
+                  },
+                  "targets": {
+                    "const": null
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "command": {
+                    "const": "phase"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "group": {
+                    "type": "integer"
+                  },
+                  "phase": {
+                    "type": "integer"
+                  },
+                  "barrier": {
+                    "const": null
+                  },
+                  "targets": {
+                    "const": null
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "command": {
+                    "const": "finish-group"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "group": {
+                    "type": "integer"
+                  },
+                  "phase": {
+                    "const": null
+                  },
+                  "barrier": {
+                    "const": null
+                  },
+                  "targets": {
+                    "const": null
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "command": {
+                    "const": "finish"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "group": {
+                    "const": null
+                  },
+                  "phase": {
+                    "const": null
+                  },
+                  "barrier": {
+                    "const": null
+                  },
+                  "targets": {
+                    "const": null
+                  },
+                  "ordinal": {
+                    "const": 60
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "command_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        },
+        "command_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

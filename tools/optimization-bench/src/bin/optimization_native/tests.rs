@@ -235,3 +235,30 @@ fn configuration_rejects_public_bind_bad_tokens_and_unowned_service_names() {
     config.services.push("optimization/workloads".to_owned());
     assert!(config.validate().is_err());
 }
+
+#[test]
+fn configuration_accepts_exact_32_services_without_aliases_or_extra_names() {
+    let mut config = args();
+    config.services = (0..32)
+        .map(|index| {
+            if index == 0 {
+                "optimization/workloads".to_owned()
+            } else {
+                format!("optimization/workloads-{index}")
+            }
+        })
+        .collect();
+    assert!(config.validate().is_ok());
+    for invalid in [
+        "optimization/workloads-0",
+        "optimization/workloads-01",
+        "optimization/workloads-32",
+        "optimization/workloads-+1",
+        "optimization/workloads-1 ",
+    ] {
+        config.services = vec![invalid.to_owned()];
+        assert!(config.validate().is_err(), "{invalid}");
+    }
+    config.services = vec!["optimization/workloads-31".to_owned(); 2];
+    assert!(config.validate().is_err());
+}

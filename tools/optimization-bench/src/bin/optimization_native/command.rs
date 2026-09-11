@@ -40,23 +40,28 @@ impl Args {
             || !(1..=64).contains(&self.concurrency)
             || !(1..=MAXIMUM_TIMEOUT_MILLIS).contains(&self.timeout_ms)
             || self.services.is_empty()
-            || self.services.len() > 5
+            || self.services.len() > 32
         {
             return Err(());
         }
         for (index, service) in self.services.iter().enumerate() {
-            if !matches!(
-                service.as_str(),
-                "optimization/workloads"
-                    | "optimization/workloads-1"
-                    | "optimization/workloads-2"
-                    | "optimization/workloads-3"
-                    | "optimization/workloads-4"
-            ) || self.services[..index].contains(service)
-            {
+            if !valid_service(service) || self.services[..index].contains(service) {
                 return Err(());
             }
         }
         Ok(())
     }
+}
+
+fn valid_service(service: &str) -> bool {
+    if service == "optimization/workloads" {
+        return true;
+    }
+    service
+        .strip_prefix("optimization/workloads-")
+        .is_some_and(|suffix| {
+            suffix
+                .parse::<u32>()
+                .is_ok_and(|index| (1..=31).contains(&index) && suffix == index.to_string())
+        })
 }

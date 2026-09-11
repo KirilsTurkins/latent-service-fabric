@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/docker-client-command.v1.schema.json",
+  "title": "Docker comparison client-command v1",
+  "$comment": "Private completed-evidence shape. Exact bytes, strict numeric types, ownership, control order, semantic responses, clocks, source bindings and aggregate equality require offline replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ordinal",
+    "plan_sha256",
+    "command",
+    "group",
+    "phase",
+    "barrier",
+    "targets"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.infrastructure-client-command.v1"
+    },
+    "ordinal": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 60
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "command": {
+      "enum": [
+        "begin-group",
+        "inventory",
+        "phase",
+        "finish-group",
+        "finish"
+      ]
+    },
+    "group": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "phase": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "barrier": {
+      "enum": [
+        null,
+        "ready",
+        "served",
+        "final"
+      ]
+    },
+    "targets": {
+      "anyOf": [
+        {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "service",
+              "endpoint",
+              "owner_ref",
+              "app_process_id"
+            ],
+            "properties": {
+              "service": {
+                "enum": [
+                  "optimization/workloads",
+                  "optimization/workloads-1",
+                  "optimization/workloads-2",
+                  "optimization/workloads-3",
+                  "optimization/workloads-4",
+                  "optimization/workloads-5",
+                  "optimization/workloads-6",
+                  "optimization/workloads-7",
+                  "optimization/workloads-8",
+                  "optimization/workloads-9",
+                  "optimization/workloads-10",
+                  "optimization/workloads-11",
+                  "optimization/workloads-12",
+                  "optimization/workloads-13",
+                  "optimization/workloads-14",
+                  "optimization/workloads-15",
+                  "optimization/workloads-16",
+                  "optimization/workloads-17",
+                  "optimization/workloads-18",
+                  "optimization/workloads-19",
+                  "optimization/workloads-20",
+                  "optimization/workloads-21",
+                  "optimization/workloads-22",
+                  "optimization/workloads-23",
+                  "optimization/workloads-24",
+                  "optimization/workloads-25",
+                  "optimization/workloads-26",
+                  "optimization/workloads-27",
+                  "optimization/workloads-28",
+                  "optimization/workloads-29",
+                  "optimization/workloads-30",
+                  "optimization/workloads-31"
+                ]
+              },
+              "endpoint": {
+                "type": "string",
+                "pattern": "^http://[^\\x00-\\x1f\\x7f]+$",
+                "maxLength": 2048
+              },
+              "owner_ref": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]{1,128}$"
+              },
+              "app_process_id": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2147483647
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "begin-group"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "group": {
+            "type": "integer"
+          },
+          "phase": {
+            "const": null
+          },
+          "barrier": {
+            "const": null
+          },
+          "targets": {
+            "type": "array"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "inventory"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "group": {
+            "type": "integer"
+          },
+          "phase": {
+            "const": null
+          },
+          "barrier": {
+            "type": "string"
+          },
+          "targets": {
+            "const": null
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "phase"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "group": {
+            "type": "integer"
+          },
+          "phase": {
+            "type": "integer"
+          },
+          "barrier": {
+            "const": null
+          },
+          "targets": {
+            "const": null
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "finish-group"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "group": {
+            "type": "integer"
+          },
+          "phase": {
+            "const": null
+          },
+          "barrier": {
+            "const": null
+          },
+          "targets": {
+            "const": null
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": {
+            "const": "finish"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "group": {
+            "const": null
+          },
+          "phase": {
+            "const": null
+          },
+          "barrier": {
+            "const": null
+          },
+          "targets": {
+            "const": null
+          },
+          "ordinal": {
+            "const": 60
+          }
+        }
+      }
+    }
+  ]
+}

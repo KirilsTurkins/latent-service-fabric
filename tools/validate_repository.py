@@ -46,6 +46,15 @@ SCHEMA_EXAMPLES: dict[str, tuple[str, ...]] = {
     "trigger.schema.json": ("examples/**/*trigger.json",),
 }
 
+# Private measurement evidence does not acquire application-manifest authority.
+PRIVATE_SCHEMA_FILES = {
+    "tools/optimization_docker/schemas": {
+        "plan.schema.json", "builds.schema.json", "suite.schema.json",
+        "aggregate.schema.json", "client-plan.schema.json",
+        "client-command.schema.json", "client-summary.schema.json",
+    },
+}
+
 SVG_UNSAFE_ELEMENTS = frozenset({"embed", "foreignObject", "iframe", "image", "object", "script"})
 SVG_NONLOCAL_URL = re.compile(r"url\(\s*['\"]?\s*(?!#)", re.IGNORECASE)
 SVG_CSS_IMPORT = re.compile(r"@import\b", re.IGNORECASE)
@@ -375,6 +384,12 @@ def validate_schemas() -> None:
     if missing:
         fail(f"missing required schemas: {', '.join(sorted(missing))}")
 
+    for directory, expected in PRIVATE_SCHEMA_FILES.items():
+        private_paths = sorted((ROOT / directory).glob("*.schema.json"))
+        if {path.name for path in private_paths} != expected:
+            fail(f"private schema file set differs: {directory}")
+        schema_paths.extend(private_paths)
+
     schema_ids: dict[str, Path] = {}
     for path in schema_paths:
         document = json.loads(path.read_text(encoding="utf-8"))
@@ -412,6 +427,28 @@ def validate_schemas() -> None:
                     f"schema validation failed for {example_path.relative_to(ROOT)} "
                     f"at {location}: {error.message}"
                 )
+
+
+def validate_docker_schema_plans() -> None:
+    """Check fixed source plans without invoking Docker or constructing evidence."""
+    sys.path.insert(0, str(ROOT))
+    try:
+        from tools.optimization_docker import model
+
+        directory = ROOT / "tools/optimization_docker/schemas"
+        documents = {name: json.loads((directory / f"{name}.schema.json").read_text(encoding="utf-8"))
+                     for name in ("plan", "suite", "aggregate")}
+        for profile in ("smoke", "full"):
+            value = model.plan(profile)
+            selected = [documents["plan"], *(documents[name]["properties"]["plan"]
+                                           for name in ("suite", "aggregate"))]
+            for document in selected:
+                for error in Draft202012Validator(document).iter_errors(value):
+                    fail(f"Docker {profile} schema differs from fixed source plan: {error.message}")
+    except (OSError, ValueError, KeyError, IndexError, TypeError, SchemaError) as exc:
+        fail(f"Docker schema plan validation failed: {exc}")
+    finally:
+        sys.path.pop(0)
 
 
 def validate_interface_only_policy() -> None:
@@ -520,6 +557,7 @@ def main() -> int:
     validate_proto()
     validate_wit()
     validate_schemas()
+    validate_docker_schema_plans()
     validate_interface_only_policy()
     validate_required_docs()
     validate_nonempty_files()

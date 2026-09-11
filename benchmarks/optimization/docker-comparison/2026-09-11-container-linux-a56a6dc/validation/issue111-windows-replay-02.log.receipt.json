@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python",
+    "tools/validate_phase1_archive.py",
+    "benchmarks/optimization/docker-comparison/2026-09-11-container-linux-a56a6dc"
+  ],
+  "cwd": "C:\\Users\\turkins\\Desktop\\latent-fabric",
+  "exit_code": 0,
+  "elapsed_nanos": "96947237900",
+  "log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue111-windows-replay-02.log"
+}
