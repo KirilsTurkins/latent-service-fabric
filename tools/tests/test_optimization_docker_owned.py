@@ -59,6 +59,17 @@ class Tests(unittest.TestCase):
         with self.assertRaises(EvidenceError):
             owned.mount("owned", "../foreign", "/output")
 
+    def test_only_seed_containers_can_share_controller_loopback(self):
+        arguments = dict(arm="lsf", density=8, network="b" * 64, mounts=[], owner="run",
+                         role="seed-d8", network_namespace="c" * 64)
+        config = owned.configuration("sha256:" + "a" * 64, [], **arguments)
+        self.assertEqual(config["HostConfig"]["NetworkMode"], "container:" + "c" * 64)
+        self.assertEqual(config["NetworkingConfig"], {"EndpointsConfig": {}})
+        self.assertEqual(config["Hostname"], "")
+        for role in ("p0-g0-lsf-0", "client-p0", "seed-d32"):
+            with self.assertRaises(EvidenceError):
+                owned.configuration("sha256:" + "a" * 64, [], **{**arguments, "role": role})
+
     def test_cleanup_reconciles_pending_container_after_two_lost_responses(self):
         identifier = "a" * 64
         config = {"Labels": {owned.LABEL: "run", owned.ROLE: "app"}, "Image": "sha256:" + "b" * 64}

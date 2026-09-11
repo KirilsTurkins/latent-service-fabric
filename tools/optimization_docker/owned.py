@@ -36,10 +36,11 @@ def mount(volume, subpath, destination, readonly=False):
             "VolumeOptions": {"NoCopy": True, "Subpath": subpath}}
 
 
-def configuration(image, command, *, arm, density, network, mounts, owner, role, interactive=False):
+def configuration(image, command, *, arm, density, network, mounts, owner, role, interactive=False,
+                  network_namespace=None):
     require(re.fullmatch(r"sha256:[0-9a-f]{64}", image) is not None, "docker-pinned-image")
     limits = resources(arm, density)
-    return {"Image": image, "Cmd": command, "Labels": {LABEL: owner, ROLE: role},
+    result = {"Image": image, "Cmd": command, "Labels": {LABEL: owner, ROLE: role},
             "Hostname": role, "OpenStdin": interactive, "StdinOnce": False,
             "AttachStdin": interactive, "AttachStdout": True, "AttachStderr": True, "Tty": False,
             "StopSignal": "SIGTERM", "StopTimeout": 30,
@@ -54,6 +55,15 @@ def configuration(image, command, *, arm, density, network, mounts, owner, role,
                                "max-size": "8m", "max-file": "1", "compress": "false"}},
                            "Mounts": mounts},
             "NetworkingConfig": {"EndpointsConfig": {network: {"Aliases": [role]}}}}
+    if network_namespace is not None:
+        # The real management CLI requires loopback. Only pristine seed setup
+        # shares the controller's network namespace; measured owners use the bridge.
+        require(arm == "lsf" and role == f"seed-d{density}" and not interactive,
+                "docker-seed-network-namespace-only")
+        result["HostConfig"]["NetworkMode"] = "container:" + identifier(network_namespace)
+        result["Hostname"] = ""
+        result["NetworkingConfig"] = {"EndpointsConfig": {}}
+    return result
 
 
 class Fleet:

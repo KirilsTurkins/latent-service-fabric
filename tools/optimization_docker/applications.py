@@ -34,7 +34,8 @@ class Application:
         command += ["--config", "/fixtures/node.json"] if arm == "lsf" else [
             "--token-file", "/fixtures/token", "--service", SERVICES[service_index]]
         config = configuration(campaign.images[arm]["image_id"], command, arm=arm, density=density,
-                               network=campaign.fleet.network, mounts=mounts, owner=campaign.fleet.owner, role=role)
+                               network=campaign.fleet.network, mounts=mounts, owner=campaign.fleet.owner, role=role,
+                               network_namespace=campaign.controller_id if arm == "lsf" and template is None else None)
         self.container_id = campaign.fleet.create(config, role)
         campaign.progress("app-created", {"role": role, "arm": arm, "density": density,
                           "container_id": self.container_id, "template_copy": self.template_copy})
@@ -47,7 +48,7 @@ class Application:
         campaign.progress("app-ready", {"container_id": self.container_id, "ready": self.ready,
                           "event_observations": self.seen, "ready_inspect_call": campaign.fleet.calls - 1})
         self.owner_ref = "owner-" + self.container_id
-        self.endpoint = "http://" + role + ":7070"
+        self.endpoint = "http://" + ("127.0.0.1" if arm == "lsf" and template is None else role) + ":7070"
         self.app_pid = self.ready["child_pid"]
         self.snapshots = []
 

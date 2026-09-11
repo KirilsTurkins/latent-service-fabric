@@ -363,8 +363,10 @@ def configurations(suite, owners):
     fixture_mount = mount(volume, str((build_path/"fixtures").relative_to("/bench")), "/fixtures", True)
     result = {}
     for owner, arm, density, role, position in owners:
+        seed = role == f"seed-d{density}"
         require(owner["role"] == role and owner["arm"] == arm and owner["density"] == density
-                and owner["output"] == "owners/"+role and owner["endpoint"] == "http://"+role+":7070"
+                and owner["output"] == "owners/"+role
+                and owner["endpoint"] == "http://"+("127.0.0.1" if seed else role)+":7070"
                 and owner["owner_ref"] == "owner-"+owner["container_id"], "docker-app-owner-identity")
         mounts = [fixture_mount, mount(volume, str((collection/owner["output"]).relative_to("/bench")), "/output")]
         if arm == "lsf":
@@ -374,7 +376,8 @@ def configurations(suite, owners):
         argv += ["--config", "/fixtures/node.json"] if arm == "lsf" else ["--token-file", "/fixtures/token",
                                                                                    "--service", model.SERVICES[position]]
         result[role] = (owner["container_id"], configuration(suite["images"][arm]["image_id"], argv,
-            arm=arm, density=density, network=network, mounts=mounts, owner=suite["run_id"], role=role))
+            arm=arm, density=density, network=network, mounts=mounts, owner=suite["run_id"], role=role,
+            network_namespace=suite["environment"]["controller"]["Id"] if seed else None))
     require(len(suite["clients"]) == suite["plan"]["repetitions"], "docker-client-count")
     for pair, client in enumerate(suite["clients"]):
         require(client["pair"] == pair and client["directory"] == f"clients/{pair}", "docker-client-order")
@@ -505,9 +508,13 @@ def api_protocol(rows, suite, configs):
                     require(response["State"]["OOMKilled"] is False, "docker-container-oom")
                     if "NetworkSettings" in response:
                         networks = response["NetworkSettings"]["Networks"]
-                        require(isinstance(networks, dict) and len(networks) == 1
-                                and next(iter(networks.values()))["NetworkID"] == network,
-                                "docker-container-network-isolation")
+                        if role.startswith("seed-"):
+                            require(networks == {} and response["HostConfig"]["NetworkMode"] == "container:"+controller,
+                                    "docker-seed-network-namespace")
+                        else:
+                            require(isinstance(networks, dict) and len(networks) == 1
+                                    and next(iter(networks.values()))["NetworkID"] == network,
+                                    "docker-container-network-isolation")
                         require(all(value is None for value in (response["NetworkSettings"].get("Ports") or {}).values()),
                                 "docker-container-published-port")
                     if state == "waited":

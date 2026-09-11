@@ -21,10 +21,9 @@ def prepare(campaign):
         directory = campaign.root / "seeds" / str(density)
         directory.mkdir(parents=True)
         app = Application(campaign, f"seed-d{density}", "lsf", density)
-        networks = app.ready_inspect["NetworkSettings"]["Networks"]
-        addresses = [row["IPAddress"] for row in networks.values() if row["NetworkID"] == campaign.fleet.network]
-        require(len(addresses) == 1 and addresses[0], "docker-seed-network-address")
-        config = cli_config(directory, "http://" + addresses[0] + ":7070", "cli.json")
+        require(app.ready_inspect["HostConfig"]["NetworkMode"] == "container:" + campaign.controller_id,
+                "docker-seed-network-namespace")
+        config = cli_config(directory, app.endpoint, "cli.json")
         calls = []
 
         def invoke(name, arguments):
