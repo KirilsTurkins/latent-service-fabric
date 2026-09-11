@@ -1,10 +1,12 @@
 """Finite protocol unit cases; synthetic rows are never qualified release evidence."""
+import copy
+import os
 import unittest
 from unittest.mock import patch
 
 from tools.optimization_scheduler import aggregate, allocations, model, rows
-from tools.optimization_scheduler.parse import checkpoint
-from tools.optimization_evidence.common import EvidenceError
+from tools.optimization_scheduler.parse import checkpoint, parse
+from tools.optimization_evidence.common import EvidenceError, canonical, sha256
 from tools.optimization_backend_revision.ownership.allocations import Attribution
 
 
@@ -106,6 +108,173 @@ class OriginalOfferRows(unittest.TestCase):
         item["work"]["entry_unlinks"] = "1"
         with self.assertRaises(EvidenceError):
             checkpoint(item, model.plan("smoke"), 3)
+
+
+def raw_checkpoint(label, at, *, granted=0, cancelled=0, depth=0, live=0, leases=0,
+                   tenant_count=0, enabled=False, unlinks=0, accepting=True):
+    """Small hand-authored protocol state, not a recorded scheduler observation."""
+    return {
+        "label": label, "started_nanos": str(at), "finished_nanos": str(at + 1000),
+        "scheduler": {"accepting": accepting, "capacity": "4", "available": str(4 - leases),
+                      "active_leases": str(leases), "quarantined": "0", "queue_depth": str(depth),
+                      "queued_tenants": str(tenant_count if depth else 0), "rejected": str(cancelled),
+                      "cancellations": str(cancelled), "expired": "0", "granted": str(granted),
+                      "total_wait_micros": "0", "max_wait_micros": "0", "oldest_lease_age_micros": "0"},
+        "quota": {"active_activations": str(live), "queued_activations": str(depth),
+                  "reserved_cpu_fuel": str(live * 100), "reserved_memory_bytes": str(live * 65536),
+                  "retained_tenants": str(tenant_count)},
+        "work": {"enabled": enabled, "overflowed": False, "tenant_linear_visits": "0",
+                 "winner_comparisons": "0", "cancel_entry_visits": "0", "entry_shifted_slots": "0",
+                 "tenant_shifted_slots": "0", "entry_unlinks": str(unlinks), "tenant_index_lookups": "0"},
+    }
+
+
+def raw_document(case="closed-one"):
+    """Two finite synthetic parser fixtures; neither has a build/owner/archive graph."""
+    selected = model.plan("smoke", case=case)
+    identity = {"source": {"commit": "a" * 40, "clean": False},
+                "diagnostic": "synthetic parser unit fixture; not collected evidence"}
+    process_id = os.getpid()
+    plan_hash, identity_hash = sha256(canonical(selected)), sha256(canonical(identity))
+    value = {"schema": "latent.optimization.scheduler-arm.v1", "plan": copy.deepcopy(selected),
+             "identity": copy.deepcopy(identity), "process_id": process_id, "plan_sha256": plan_hash,
+             "identity_sha256": identity_hash, "settings": model.settings(selected),
+             "outcome": "passed", "failure": None, "runtime_dropped": True, "fixture_dropped": True, "invokes": "0"}
+    if case == "closed-one":
+        value.update(rows=released_rows(), started_nanos="188000000", finished_nanos="364000000",
+                     elapsed_nanos="380000000", frame=None,
+                     counts={"offers": "24", "admission_calls": "24", "admitted": "24", "enqueue_calls": "24",
+                             "enqueue_results": "24", "cancel_calls": "0", "cancel_accepted": "0",
+                             "release_calls": "24", "released": "24", "cleanup_reclaims": "0", "shutdown_calls": "1"},
+                     checkpoints=[raw_checkpoint("ready", 0), raw_checkpoint("after-warmup", 187500000, granted=8),
+                                  raw_checkpoint("load-finished", 365000000, granted=24),
+                                  raw_checkpoint("shutdown", 370000000, granted=24, accepting=False)])
+    else:
+        if case != "cancel-many":
+            raise AssertionError("only the two declared fixture cases exist")
+        original, cancelled_index, released_index = [], 0, 0
+        for ordinal in range(68):
+            holder = ordinal < 4
+            index = ordinal if holder else ordinal - 4
+            at = (100000000 if holder else 120000000) + index * 1000
+            row = dict.fromkeys(rows.TIMES)
+            row.update(ordinal=str(ordinal), tenant=str(index % 8), activation_id=f"scheduler-{ordinal:05}",
+                       role="holder" if holder else "queued", scheduled_nanos=str(at), dispatched_nanos=str(at),
+                       admission_started_nanos=str(at + 1), admission_finished_nanos=str(at + 2), admitted_nanos=str(at + 2),
+                       deadline_nanos=str(at + 1000000001), deadline_unix_millis="10000", enqueue_called_nanos=str(at + 3),
+                       cancel_accepted=None, cancel_error=None, error=None, cleanup_reclaimed=False)
+            # Explicit tenant-local cancellation set, independent of model.cancelled.
+            if not holder and index // 8 in (0, 3, 4, 7):
+                request = 300000000 + cancelled_index * 1000
+                row.update(cancel_requested_nanos=str(request), cancel_finished_nanos=str(request + 1), cancel_accepted=True,
+                           result_nanos=str(330000000 + cancelled_index * 1000), outcome="scheduler-error",
+                           error={"code": "cancelled", "message": "local scheduling could not proceed", "retryable": False,
+                                  "details": [{"kind": "scheduler.limit", "fields": {"reason": "cancelled"}}]})
+                cancelled_index += 1
+            else:
+                returned = at + 4 if holder else 420000000 + released_index * 2000000
+                release = 400000000 + ordinal * 1000000 if holder else returned + 1000000
+                row.update(result_nanos=str(returned), release_started_nanos=str(release), released_nanos=str(release + 1), outcome="released")
+                if not holder:
+                    released_index += 1
+            original.append(row)
+        value.update(rows=original, started_nanos="100000000", finished_nanos="490000000", elapsed_nanos="520000000",
+                     counts={"offers": "68", "admission_calls": "68", "admitted": "68", "enqueue_calls": "68",
+                             "enqueue_results": "68", "cancel_calls": "32", "cancel_accepted": "32",
+                             "release_calls": "36", "released": "36", "cleanup_reclaims": "0", "shutdown_calls": "1"},
+                     frame={"symbol": model.SYMBOL, "polls": "1", "started_nanos": "300000000", "finished_nanos": "350000000",
+                            "cancel_calls": "32", "settled": "32", "scope": "cancel-and-original-enqueue-future-settlement"},
+                     checkpoints=[raw_checkpoint("ready", 0),
+                                  raw_checkpoint("four-holders", 110000000, granted=4, live=4, leases=4, tenant_count=4),
+                                  raw_checkpoint("queued", 200000000, granted=4, depth=64, live=68, leases=4, tenant_count=8),
+                                  raw_checkpoint("cancel-before", 290000000, granted=4, depth=64, live=68, leases=4, tenant_count=8, enabled=True),
+                                  raw_checkpoint("cancel-after", 360000000, granted=4, cancelled=32, depth=32, live=36, leases=4, tenant_count=8, enabled=True, unlinks=32),
+                                  raw_checkpoint("storm-drained", 500000000, granted=36, cancelled=32),
+                                  raw_checkpoint("shutdown", 510000000, granted=36, cancelled=32, accepting=False)])
+        # Grant wait counters correspond to the still-original successful queued offers.
+        waits = [(int(row["result_nanos"]) - int(row["enqueue_called_nanos"])) // 1000
+                 for row in original if row["outcome"] == "released"]
+        for item in value["checkpoints"][-2:]:
+            item["scheduler"].update(total_wait_micros=str(sum(waits)), max_wait_micros=str(max(waits)))
+    return value, (selected, identity, process_id, plan_hash, identity_hash)
+
+
+class CompleteRawDocuments(unittest.TestCase):
+    def test_complete_closed_document_replays_warmup_and_measured_populations(self):
+        value, inputs = raw_document()
+        result = parse(value, *inputs)
+        self.assertEqual(result["counts"]["offers"], "24")
+        self.assertEqual(result["warmup"]["offers"], "8")
+        self.assertEqual(result["measured"]["outcomes"]["released"], "16")
+        self.assertEqual(result["measured"]["observed_hold_nanos"]["median"], "10000000")
+        self.assertIsNone(result["frame"])
+        self.assertIsNone(result["work"])
+
+    def test_complete_storm_document_replays_original_cancellation_and_refunds(self):
+        value, inputs = raw_document("cancel-many")
+        result = parse(value, *inputs)
+        self.assertEqual(result["counts"]["enqueue_calls"], "68")
+        self.assertEqual(result["measured"]["outcomes"], {"released": "36", "admission-error": "0", "scheduler-error": "32", "backpressure": "0"})
+        self.assertEqual([row["offers"] for row in result["per_tenant"].values()], ["9"] * 4 + ["8"] * 4)
+        self.assertEqual(result["measured"]["cancel_to_original_settlement_nanos"]["count"], "32")
+        self.assertEqual(result["frame"]["settled"], "32")
+        self.assertEqual(result["work"]["entry_unlinks"], "32")
+        self.assertIsNone(result["warmup"])
+
+    def test_raw_pid_plan_and_identity_are_bound_to_independent_inputs(self):
+        original, inputs = raw_document()
+        changes = {"pid": lambda value: value.update(process_id=inputs[2] + 1),
+                   "pid-type": lambda value: value.update(process_id=str(inputs[2])),
+                   "plan-hash": lambda value: value.update(plan_sha256="sha256:" + "b" * 64),
+                   "identity-hash": lambda value: value.update(identity_sha256="sha256:" + "c" * 64),
+                   "plan": lambda value: value["plan"].update(variant="candidate"),
+                   "identity": lambda value: value["identity"]["source"].update(clean=True)}
+        for name, mutate in changes.items():
+            value = copy.deepcopy(original)
+            mutate(value)
+            with self.subTest(name=name), self.assertRaises(EvidenceError):
+                parse(value, *inputs)
+
+    def test_original_cancel_settlements_must_stay_inside_the_actual_frame(self):
+        original, inputs = raw_document("cancel-many")
+        for field, value in (("started_nanos", "300000001"), ("finished_nanos", "330000000")):
+            changed = copy.deepcopy(original)
+            changed["frame"][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(EvidenceError, "scheduler-cancel-settlement-outside-frame"):
+                parse(changed, *inputs)
+        for field, value in (("polls", "0"), ("settled", "31")):
+            changed = copy.deepcopy(original)
+            changed["frame"][field] = value
+            with self.subTest(field=field), self.assertRaisesRegex(EvidenceError, "scheduler-cancellation-frame"):
+                parse(changed, *inputs)
+
+    def test_absent_duplicated_and_replaced_checkpoints_are_rejected(self):
+        for case in ("closed-one", "cancel-many"):
+            original, inputs = raw_document(case)
+            for operation in ("absent", "duplicate", "replaced"):
+                value = copy.deepcopy(original)
+                if operation == "absent":
+                    del value["checkpoints"][1]
+                elif operation == "duplicate":
+                    value["checkpoints"].insert(1, copy.deepcopy(value["checkpoints"][1]))
+                else:
+                    value["checkpoints"][2] = copy.deepcopy(value["checkpoints"][1])
+                with self.subTest(case=case, operation=operation), self.assertRaisesRegex(EvidenceError, "scheduler-checkpoint-(population|order)"):
+                    parse(value, *inputs)
+
+    def test_consistent_nonzero_final_owners_and_undropped_runtime_are_rejected(self):
+        for case in ("closed-one", "cancel-many"):
+            original, inputs = raw_document(case)
+            value = copy.deepcopy(original)
+            final = value["checkpoints"][-1]
+            final["scheduler"].update(available="3", active_leases="1")
+            final["quota"].update(active_activations="1", reserved_cpu_fuel="100", reserved_memory_bytes="65536", retained_tenants="1")
+            with self.subTest(case=case, kind="owner"), self.assertRaisesRegex(EvidenceError, "scheduler-final-owners-not-idle"):
+                parse(value, *inputs)
+            value = copy.deepcopy(original)
+            value["runtime_dropped"] = False
+            with self.subTest(case=case, kind="runtime"), self.assertRaisesRegex(EvidenceError, "scheduler-raw-incomplete-cleanup"):
+                parse(value, *inputs)
 
 
 class AllocationOrigins(unittest.TestCase):
