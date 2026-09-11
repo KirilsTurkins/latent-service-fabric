@@ -12,9 +12,10 @@ distribution remain later-phase work. See the
 
 ## Mutable deployment
 
-A deployment points to a release and supplies capability grants, resource ceilings,
-placement, availability targets, and route weight. Three distinct identities
-describe updates:
+A deployment points to a release and supplies capability grants, resource ceilings
+and route weight. The schema also carries placement and availability declarations;
+Phase 1 validates supported local requirements but does not reconcile cached
+copies or place work across nodes. Three distinct identities describe updates:
 
 | Identity | Meaning |
 | --- | --- |
@@ -52,6 +53,14 @@ No step requires a continuously running service instance.
 
 Multiple implementation and contract versions may coexist. A provider is selected only when the consumer's contract requirement and binding policy are satisfied.
 
+Phase 1 supports coexisting local revisions and explicit contract/function
+selection. Consumer/provider binding resolution and contract migration remain
+later work; see [contracts and bindings](contracts-and-bindings.md).
+
 ## Derived artifacts
 
 AOT images, snapshots, and fused components are cache derivatives. Their keys include every input release, policy digest, runtime/compiler configuration, target, and CPU feature set. They are invalidated rather than migrated when any input changes.
+
+The implemented prepared cache holds locally compiled Wasmtime code under
+validated compatibility keys. Snapshotting, fused composition and distributed
+AOT artifact acceptance remain planned; prepared entries retain no guest store.

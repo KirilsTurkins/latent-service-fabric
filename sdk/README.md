@@ -26,9 +26,10 @@ activation never ran.
 | Parent present without root | Phase 1 rejects this incomplete lineage; adapters must not guess a root from caller metadata. |
 | Root present without parent | Preserve it for server validation; this does not authorize joining another invocation tree. |
 
-The server identity and lineage rules are integration requirements for #11 and
-#12. The SDKs currently provide interfaces and executable test doubles, not a
-server or a transport that implements these rules.
+The delivered [activation manager](../docs/activation-lifecycle.md) and
+[invocation adapter](../docs/protocol/invocation-service.md) enforce these server
+identity and lineage rules. The SDKs provide interfaces and executable test
+doubles; applications still need a transport implementation.
 
 All six client surfaces cancel and query status by known activation ID.
 Cancellation has three successful RPC dispositions: `accepted`,
@@ -86,4 +87,6 @@ response without reinvoking, absent/server-assigned identity, explicit lineage,
 and present-empty identity. Each fake deliberately holds invocation completion
 until the assertions before completion have run; no network server or long
 workload is required. These checks establish that the interface can express the
-contract. Actual wire conversion and server behavior remain #12/#16 evidence.
+contract. Actual wire conversion and server behavior are covered separately by
+the invocation adapter tests and the completed
+[Phase 1 conformance gate](../docs/phase-1-completion.md).

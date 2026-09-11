@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="phase0-gate-title phase0-gate-description">
-  <title id="phase0-gate-title">Phase 0 full gate decision flow</title>
-  <desc id="phase0-gate-description">The August 30 clean native-Linux receipt took the authorized branch for its canonical execution identity. Current execution identity, retained raw evidence, and a fresh baseline enter every full completion gate; a future execution-affecting change must revalidate before it can take the authorized branch.</desc>
+  <title id="phase0-gate-title">Historical Phase 0 full gate decision flow</title>
+  <desc id="phase0-gate-description">The August 30 clean native-Linux receipt took the authorized Phase 0 branch for its measured canonical execution identity. That gate compares execution identity, retained raw evidence and a fresh baseline. Phase 1 and its extension have their own completed gates and do not revise this historical receipt.</desc>
   <defs>
     <linearGradient id="phase0-gate-background" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#1b102d"/>
@@ -25,12 +25,12 @@
   </defs>
 
   <rect width="1440" height="760" rx="34" fill="url(#phase0-gate-background)"/>
-  <text x="74" y="88" class="heading">The completion gate decides from evidence, not issue state</text>
-  <text x="74" y="122" class="subheading">The August 30 native-Linux receipt is authorized for its canonical execution identity; execution changes must revalidate.</text>
+  <text x="74" y="88" class="heading">Historical Phase 0 gate: authorization follows measured evidence</text>
+  <text x="74" y="122" class="subheading">August 30, 2026 native-Linux receipt. Phase 1 and its extension have separate completed gates.</text>
 
   <g filter="url(#phase0-gate-shadow)">
     <rect x="74" y="184" width="310" height="132" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
-    <text x="108" y="232" class="box-title">Current execution identity</text>
+    <text x="108" y="232" class="box-title">Measured identity</text>
     <text x="108" y="260" class="box-copy">clean tree · fixture · configuration</text>
     <text x="108" y="286" class="small">documentation-only changes stay visible</text>
 
@@ -66,14 +66,14 @@
     <text x="1050" y="246" class="blocked">IF A RUN BLOCKS</text>
     <text x="1050" y="282" class="box-copy">write the receipt and inspect</text>
     <text x="1050" y="306" class="box-copy">its `blockers` array</text>
-    <text x="1050" y="338" class="small">Phase 1 handoff is not authorized.</text>
+    <text x="1050" y="338" class="small">This identity receives no authorization.</text>
 
     <rect x="1012" y="444" width="354" height="178" rx="24" fill="#065f46" stroke="#34d399" stroke-width="3"/>
     <text x="1050" y="496" class="authorized">AUTHORIZED</text>
-    <text x="1228" y="496" class="current">CURRENT RECORD</text>
+    <text x="1228" y="496" class="current">AUG 30, 2026</text>
     <text x="1050" y="532" class="box-copy">full receipt has no blockers</text>
-    <text x="1050" y="556" class="box-copy">for the current execution path</text>
-    <text x="1050" y="588" class="small">Phase 1 handoff may proceed.</text>
+    <text x="1050" y="556" class="box-copy">for its measured execution identity</text>
+    <text x="1050" y="588" class="small">Historical Phase 1 handoff authorized.</text>
   </g>
 
   <path d="M 874 348 H 938 V 282 H 1002" fill="none" stroke="#fbbf24" stroke-width="6" marker-end="url(#phase0-gate-arrow)"/>

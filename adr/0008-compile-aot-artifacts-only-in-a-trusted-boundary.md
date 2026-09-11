@@ -3,6 +3,10 @@
 - **Status:** Accepted
 - **Date:** 2026-08-17
 
+## Implementation status at Phase 1 completion
+
+Phase 1 compiles verified portable components locally and retains bounded in-memory prepared entries. A trusted distributed/persistent AOT cache remains Phase 2 work.
+
 ## Context
 
 Precompiled native code can bypass assumptions made by validation of portable component bytes.

@@ -4,4 +4,15 @@ LSF assumes capsule code, capsule inputs, remote invocation payloads, and extern
 
 Security-sensitive reports should not be opened as public issues. Until a private disclosure channel is established, document the issue locally and contact the repository maintainers through a private GitHub security advisory.
 
-The initial trusted computing base is expected to include the node runtime, execution engine, artifact verifier, capability providers, policy engine, state commit coordinator, trusted compiler boundary, and host operating system.
+The delivered Phase 1 trusted computing base includes the standalone node,
+Wasmtime and its local compiler, local artifact/catalog verification, scoped
+authentication and admission, activation capability hosts, and the host operating
+system. The listener is restricted to authenticated local loopback operation.
+Integrity verification of local artifacts does not establish publisher identity.
+
+Registry signatures/provenance, general external capability providers,
+transactional state/effects, and cluster mTLS remain later-phase work. They add
+trust boundaries when implemented. See the
+[security architecture](docs/architecture/security.md) and
+[Phase 1 completion scope](docs/phase-1-completion.md). This remains an
+experimental prerelease without a production security certification.

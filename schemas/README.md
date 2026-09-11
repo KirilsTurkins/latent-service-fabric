@@ -20,5 +20,5 @@ wire types. Arbitrary trigger-configuration numbers are retained with exact
 decimal significand and exponent precision; they are never silently rounded
 through binary floating point.
 
-See `docs/protocol/manifest-codec.md` for parser limits, normalization, semantic
+See the [manifest codec contract](../docs/protocol/manifest-codec.md) for parser limits, normalization, semantic
 Phase 1 validation, and forward-compatibility rules.

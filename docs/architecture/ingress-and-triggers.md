@@ -2,11 +2,17 @@
 
 Capsules never own listeners, queue-consumer loops, or timer threads. Shared ingress adapters and trigger sources translate external activity into activation envelopes.
 
+Phase 1 delivers direct invocation RPC on the standalone node's authenticated
+loopback listener. HTTP routing, events, queues, durable timers, blob triggers
+and internal service calls remain [later-phase work](../roadmap.md). The trigger
+lifecycle below is an architectural contract, not a current background service.
+See the [invocation service](../protocol/invocation-service.md) for available calls.
+
 ## Ingress adapters
 
 An adapter terminates one protocol, authenticates or extracts a principal, maps protocol metadata to an invocation target, applies payload limits, and converts the activation outcome back into a protocol response.
 
-Supported architectural protocol classes are HTTP, direct RPC, events, queues, timers, blobs, and internal calls. Implementations may support multiple concrete products behind one class.
+Planned protocol classes are HTTP, direct RPC, events, queues, timers, blobs, and internal calls. Future implementations may support multiple concrete products behind one class.
 
 ## Trigger lifecycle
 

@@ -1,7 +1,7 @@
 # Contributing
 
-LSF has an executable Phase 0 runtime and an expanding set of Phase 1
-implementations. Contributions should preserve the distinction between
+LSF has completed Phase 1 and its performance/infrastructure extension;
+Phase 2 packaging and supply-chain work is next. Contributions should preserve the distinction between
 architectural contracts, generated surfaces, and implemented behavior. Consult
 [the roadmap](docs/roadmap.md) for the current boundary.
 

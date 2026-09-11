@@ -1,4 +1,11 @@
-# Backend conformance suite
+# Backend conformance specification
+
+This target matrix spans multiple phases. The completed Phase 1
+[bounded conformance profile](../../docs/testing/phase-1-conformance.md) and
+[completion gate](../../docs/phase-1-completion.md) cover the supported stateless
+Wasmtime and inline-adapter/network boundaries. Futures, streams, transactional
+state, effects and descendant budget delegation below require later-phase
+implementations and their own executable coverage.
 
 Every execution backend must pass the same cases:
 

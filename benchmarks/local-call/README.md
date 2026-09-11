@@ -1,5 +1,7 @@
 # Inline versus isolated-local call chain
 
+This is a future benchmark specification for inline versus isolated-local service-to-service calls. Phase 1 delivers external invocation on a standalone node; these call-chain variants are not completed Phase 1 measurements.
+
 ## Required metrics
 
 - `calls_per_second`

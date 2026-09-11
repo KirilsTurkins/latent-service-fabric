@@ -4,7 +4,11 @@ The separate paired experiment compares the unmodified historical runtime at
 `52ac47542a05c0a1263f78a14c04a5c2e6b761f3` with the current production standalone
 node. It measures a declared set of production changes on one observed Linux
 environment. It does not replace the August 30 native calibration, rerun the
-historical full invariant proof, or by itself complete Phase 1.
+historical full invariant proof, or by itself complete Phase 1. Here, "current"
+means the candidate revision recorded by each run, not every later repository
+revision. The retained [functional completion](../phase-1-completion.md) and
+[extension results](../phase-1-extension-completion.md) keep those populations
+and measured source identities separate.
 
 Both arms use the maintained Echo guest. The bootstrap verifies that its
 `component.rs` and `logic.rs` sources are identical across the two revisions.

@@ -20,6 +20,15 @@ only source of a normative claim.
 Do not use remote images, raster screenshots, Mermaid-only diagrams, embedded
 HTML, JavaScript, event handlers, external stylesheets, or external fonts.
 
+The managed Wiki may include generated GIF previews of its canonical SVGs where
+GitHub Wiki does not render the source animation. Generate those previews with
+the Wiki branch's maintained generator and update them together with their SVG
+source. They are a rendering compatibility artifact, not an independent diagram
+or screenshot: retain accessible SVG titles/descriptions, descriptive Markdown
+alt text and authoritative nearby prose. Preview motion must follow the same
+nonessential-information rule below; the source and static reading must remain
+understandable without animation.
+
 ## Required SVG structure
 
 Every SVG must be valid XML and begin with this accessibility contract, using a
@@ -85,6 +94,10 @@ state. Likewise, a closed issue must not be drawn as an authorization signal.
   aspirational one. A diagram may show both branches of a decision when one
   branch is not currently satisfied.
 - Pair the SVG with nearby prose that states status, scope, and exceptions.
+- Mark historical gate diagrams with their phase and date. Preserve their
+  measured claims without presenting them as the current delivery boundary;
+  [the Phase 1 overview](assets/phase1-delivery-boundary.svg) shows the completed
+  standalone scope and later-phase features separately.
 - Prefer static diagrams. If motion is ever necessary, it must be decorative,
   must not carry unique information, and must respect reduced-motion users.
 - Before committing, verify XML parsing, a non-empty `title` and `desc`, the

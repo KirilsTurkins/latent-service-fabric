@@ -1,5 +1,11 @@
 # Phase 0 baseline and calibration evidence
 
+This directory preserves the historical Phase 0 campaign. References to the
+selected or current Phase 0 configuration below describe that campaign's final
+August 30 identity, not the later runtime. Phase 1 and its extension completed
+their own [functional](../../docs/phase-1-completion.md) and
+[performance](../../docs/phase-1-extension-completion.md) reviews.
+
 raw-results.json and BASELINE.md are the original full-profile observation.
 They remain useful as historical evidence, but their WSL2 environment means
 they are not the Phase 1 variance reference.

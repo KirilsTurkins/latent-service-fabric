@@ -1,5 +1,7 @@
 # Cross-node invocation
 
+This is a future cross-node benchmark specification. Phase 1 delivers authenticated loopback invocation on a standalone node; the Docker/Kubernetes comparisons do not implement LSF cluster routing.
+
 ## Required metrics
 
 - `calls_per_second`

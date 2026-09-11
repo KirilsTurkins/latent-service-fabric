@@ -8,9 +8,10 @@ worker, runtime, socket, service-specific queue, or periodic task.
 
 The embedded deployment catalog supplies immutable typed execution policy via
 `RevisionPolicySource`. The [fair scheduler](scheduling.md) consumes the permit
-and retains its reservation with the assigned cell. The generalized activation
-manager remains #11 work; these APIs do not turn the Phase 0 test executable
-into the Phase 1 invocation service.
+and retains its reservation with the assigned cell. The delivered
+[activation manager](activation-lifecycle.md) composes these owners in the
+[standalone node](reference/standalone-node.md), which serves the authenticated
+Phase 1 invocation API.
 
 ## Ownership and trust boundaries
 

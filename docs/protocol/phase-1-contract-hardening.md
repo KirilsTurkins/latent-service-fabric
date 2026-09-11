@@ -200,7 +200,7 @@ services callable.
 | `NodeService.RegisterNode` | Explicitly unimplemented. |
 | `NodeService.ReportInventory` | Explicitly unimplemented. |
 | `NodeService.Heartbeat` | Explicitly unimplemented. |
-| `ContractService`, `CapabilityService`, `AuditService`, `BindingService`, `TriggerService`, `PolicyService` | Explicitly unimplemented until their owning Phase 1/later ticket supplies an adapter. |
+| `ContractService`, `CapabilityService`, `AuditService`, `BindingService`, `TriggerService`, `PolicyService` | Explicitly unimplemented; these service adapters are outside the completed Phase 1 standalone subset. |
 
 An adapter must return its transport's standard unimplemented status for every
 listed unsupported method; it must never return an empty successful response.

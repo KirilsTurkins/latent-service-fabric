@@ -1,5 +1,7 @@
 # Derived composition performance
 
+This is a research benchmark specification. Call-graph fusion has not been promoted into the completed Phase 1 runtime.
+
 ## Required metrics
 
 - `unfused_p99_micros`

@@ -5,6 +5,11 @@ finite Phase 0 baseline into an optimization handoff without treating a local
 microbenchmark as a production SLO, cross-platform conclusion, or capacity
 promise.
 
+This is the historical Phase 0 handoff. Its Phase 1 scheduler, runtime and
+lifecycle work is delivered; see the [functional completion](phase-1-completion.md)
+and [extension results](phase-1-extension-completion.md). The profiling recipes,
+source identities and decisions below retain their original evidence scope.
+
 ## Reference method
 
 Run the profile set only from a clean worktree on a stable native-Linux host or

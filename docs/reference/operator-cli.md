@@ -209,5 +209,6 @@ Malformed/unknown contracts are protocol failures. Bare ResourceExhausted or
 OutOfRange statuses are conservatively transport failures because local message
 limits can produce them. Valid bounded structured platform details retain their
 typed classification. See [validation tiers](../../VALIDATION.md) for the bounded
-CLI/unit/real-process tests. This surface does not establish the heavy Phase 1
-completion evidence tracked by #16.
+CLI/unit/real-process tests. The separate
+[Phase 1 completion report](../phase-1-completion.md) records the completed
+scaling, reclamation and integrated conformance gate.

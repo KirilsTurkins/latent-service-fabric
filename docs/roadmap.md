@@ -60,7 +60,7 @@ no performance regression. The retained Phase 0 demonstration and historical
 native receipts keep their original scope. Clustering, general capabilities,
 state/effects and workflows remain the later phases below.
 
-The later [Phase 1 performance extension](phase-1-extension-completion.md)
+The completed [Phase 1 performance extension](phase-1-extension-completion.md)
 records the merged prioritized optimizations and Docker/Kubernetes
 comparisons, separately from the original functional completion decision.
 Resident Echo met its 2 ms useful-success target in #103; distinct 100k
@@ -78,6 +78,12 @@ and deterministic weighted selection are already Phase 1 routing foundations.
 ## Phase 3: capabilities
 
 Capability broker, policy grants, HTTP, blob, secrets, events, provider pooling, auditing, and descendant budgets.
+
+Shared application HTTP ingress and bounded hosting profiles, including
+[Angular SSR and hydration](https://github.com/KirilsTurkins/latent-service-fabric/issues/44),
+belong here. Phase 1 context, clocks, budget access, and structured logging are
+already implemented; application-owned listeners and idle execution resources
+remain outside the resource model.
 
 ## Phase 4: state and effects
 

@@ -1,5 +1,13 @@
 # Identity and capability architecture
 
+Phase 1 authenticates configured bearer credentials on the standalone node's
+loopback RPC listener and applies tenant-scoped management, invocation, status
+and cancellation authorization. Its guest imports are limited to context, log
+and monotonic/wall clocks. See the [node credential model](../reference/standalone-node.md)
+and [capability implementation](../runtime/capabilities.md). Node workload mTLS,
+delegated child calls and general external capability providers below remain
+later-phase design contracts.
+
 ## Identity layers
 
 LSF distinguishes:
@@ -11,7 +19,7 @@ LSF distinguishes:
 - delegated child-call identity,
 - administrator identity.
 
-A remote child call carries a bounded delegation rather than the caller's unrestricted original credential.
+A future remote child call must carry a bounded delegation rather than the caller's unrestricted original credential. Phase 1 root/parent IDs are correlation metadata and do not grant delegated authority.
 
 ## Authorization
 

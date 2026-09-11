@@ -1,5 +1,11 @@
 # Activation lifecycle protocol
 
+This is the cross-phase target protocol. The delivered
+[Phase 1 lifecycle](../activation-lifecycle.md) runs stateless activations through
+`Received`, `Resolved`, `Admitted`, `Queued`, `Materializing`, and `Running`, then
+publishes a separate terminal state. Suspension, durable commit, effects, and
+durable workflow continuation below remain later-phase requirements.
+
 ## State machine
 
 ```text

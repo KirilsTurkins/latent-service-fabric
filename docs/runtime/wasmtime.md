@@ -295,6 +295,9 @@ LSF_ECHO_COMPONENT=target/capsules/echo/echo-capsule.wasm \
 
 These regressions establish the behavior they exercise and live-resource
 accounting at completion. They do not replace native long-running RSS/mapping,
-helper-topology, dormant-release scaling, or the complete #16 conformance
-evidence. Heavy calibration, profiling, and soak gates remain explicitly
-requested work described in [VALIDATION](../../VALIDATION.md).
+helper-topology, or dormant-release scaling evidence. The completed
+[Phase 1 gate](../phase-1-completion.md) and
+[extension report](../phase-1-extension-completion.md) record those separate
+measurements and their source-specific limits. New heavy calibration, profiling,
+and soak runs require explicit selection as described in
+[VALIDATION](../../VALIDATION.md).

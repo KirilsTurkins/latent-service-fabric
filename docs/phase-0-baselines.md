@@ -2,6 +2,11 @@
 
 The Phase 0 baseline records reproducible observational evidence for issue #24. It is not a production benchmark, service-level objective, competitive comparison, cluster-capacity model, or Phase 1 API.
 
+The completed [Phase 1 gate](phase-1-completion.md) and
+[extension report](phase-1-extension-completion.md) contain the later stateless
+scale, reclamation and Docker/Kubernetes results. The Phase 0 references and
+commands below preserve their original scope.
+
 ## Commands
 
 Run the deterministic CI-sized profile:
@@ -270,4 +275,4 @@ Reference files must not be replaced with measurements from a materially differe
 
 ## Unsupported conclusions
 
-The baseline does not support conclusions about production SLOs, competitive performance, cluster scaling, 100,000-service density, state throughput, remote-call latency, networking, autoscaling, long-duration leaks, or call-graph fusion. Those remain later-phase work.
+The baseline does not support conclusions about production SLOs, competitive performance, cluster scaling, 100,000-service density, state throughput, remote-call latency, networking, autoscaling, long-duration leaks, or call-graph fusion. Later Phase 1 density and infrastructure comparisons have their own measured boundaries in the linked completion reports; other future-phase requirements remain outside this evidence.

@@ -3,9 +3,11 @@
 This document separates the historical Phase 0 executable invariants, delivered
 Phase 1 evidence, and target invariants that remain later-phase work. The retained
 clean-checkout [completion receipt](../../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
-authorizes Phase 1 for the current canonical execution identity. It does not
-claim production readiness or Phase 1 API compatibility. See
-[`../phase-0-completion.md`](../phase-0-completion.md).
+authorized Phase 1 for its recorded August 30 execution identity. It does not
+describe the current Phase 1 runtime or claim production readiness. See the
+[historical Phase 0 decision](../phase-0-completion.md), completed
+[Phase 1 gate](../phase-1-completion.md), and
+[extension results](../phase-1-extension-completion.md) for their separate scopes.
 
 ## Phase 0 exercised subset
 

@@ -2,9 +2,10 @@
 
 The selected deterministic profile exercises the real standalone Linux node,
 operator CLI, durable catalogs and Wasmtime guests. It produces a versioned
-report and raw diagnostics. Passing this profile does not complete
-[gate #16](https://github.com/KirilsTurkins/latent-service-fabric/issues/16)
-or the Phase 1 epic.
+report and raw diagnostics. The completed
+[Phase 1 gate](../phase-1-completion.md) combines this profile with separate
+scale, soak and comparison evidence. Passing this bounded profile alone is not
+a new completion decision.
 
 ## Run and inspect
 

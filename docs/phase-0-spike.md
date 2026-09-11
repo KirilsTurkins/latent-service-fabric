@@ -1,6 +1,6 @@
 # Phase 0 executable spike
 
-`latentd phase0-spike invoke-once` is the finite composition root for the Phase 0 vertical slice. It is a local research and CI surface. It is **not production-ready**, does not expose a daemon listener, and is **not the future Phase 1 management or public invocation API**. Phase 1 builds on the retained runtime and containment invariants rather than promising this harness as its external contract.
+`latentd phase0-spike invoke-once` is the finite composition root for the retained Phase 0 vertical slice. It is a local research and CI surface with no daemon listener. The completed Phase 1 product uses the [standalone node](reference/standalone-node.md) and [operator CLI](reference/operator-cli.md); this harness keeps its original payloads and runtime/containment regression contract.
 
 ## One-command demonstration
 

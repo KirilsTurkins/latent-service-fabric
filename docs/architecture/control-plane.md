@@ -2,41 +2,67 @@
 
 The control plane manages desired state and compiled metadata. It does not execute capsule code and is excluded from the ordinary invocation hot path.
 
+Phase 1 embeds its implemented release/deployment catalogs, route compiler and
+management services in the [standalone node](../reference/standalone-node.md).
+The separate `latent-control` application remains a scaffold. PostgreSQL, OCI,
+signature/provenance admission, binding compilation and distributed reconciliation
+are later-phase designs. The [management API reference](../reference/management-services.md)
+lists the supported RPC methods and explicit unsupported operations.
+
 ## Modules
 
 ### Release catalog
 
-Indexes immutable capsule digests, OCI references, publisher identity, signatures, attestations, SBOMs, WIT contract digests, admission status, and compatibility metadata.
+The delivered local catalog indexes immutable component digests, bounded
+descriptors and manifest summaries, with verified durable publication and scoped
+pagination. Publisher signatures, attestations, SBOM verification and OCI
+distribution are planned additions; see [the catalog trust boundary](../development/local-release-catalog.md#trust-boundary).
 
 ### Contract registry
 
-Indexes exported and imported WIT packages, interfaces, worlds, functions, type graphs, and dependency digests. It provides compatibility reports and binding plans.
+The future registry will index exported and imported WIT packages, interfaces,
+worlds, functions, type graphs and dependency digests, and produce compatibility
+reports and binding plans. Phase 1 validates supplied typed contract metadata
+and actual component signatures during preparation.
 
 ### Deployment reconciler
 
-Combines a release with mutable grants, resource ceilings, placement constraints, cache-availability targets, and route weights to produce a revision.
+Phase 1 validates local desired state and produces deterministic revisions from
+a release and execution policy, with atomic weighted route publication and
+per-object generation preconditions. A continuous distributed reconciler,
+placement and cache-availability reconciliation remain planned.
 
 ### Binding compiler
 
-Connects imported contracts to host capabilities or provider services. It records the permitted physical modes: host, inline, isolated local, remote, or automatic.
+The planned binding compiler connects imported contracts to host capabilities
+or provider services and records permitted physical modes. Phase 1 binds only
+its supported context, log and clock host imports; it has no service binding graph.
 
 ### Policy engine
 
-Evaluates publisher trust, capability grants, placement, resource ceilings, tenant quotas, network egress, state namespaces, secret access, fusion eligibility, and native fallback eligibility.
+Phase 1 enforces configured principal/tenant/trust/cell authorization, supported
+capability grants and bounded resource admission. Publisher trust, general egress,
+state/secrets providers, fusion and native fallback remain planned policy domains.
 
 ### Route compiler
 
-Builds a fully resolved immutable `RouteSnapshot` containing service routes, weighted revisions, bindings, and policy digests. Every snapshot has a monotonically increasing generation and content digest.
+Builds an immutable `RouteSnapshot` containing local service routes, weighted
+revisions and policy digests. Every snapshot has a monotonically increasing
+generation and content digest. Compiled provider bindings are later work.
 
 The standalone deployment compiler verifies every referenced release on every compilation. After fresh verification it can reuse immutable record derivations and remap unchanged packed tenant/service scopes, using an optional bounded metadata memo. It still visits the full desired state and streams a complete canonical durable record into one bounded buffer; commit consumes those exact bytes after generation checks. These choices preserve object versions, weighted routing and crash recovery. See [deployment routing and update cost](../deployment-routing.md#limits-and-update-cost).
 
 ### Node inventory
 
-Tracks node identity, architecture, CPU features, trust classes, cell capacity, queue pressure, cache locality, region/zone, state-affinity information, and route-generation lag.
+The delivered node exposes bounded local identity, health, drain state, runtime,
+cell, queue, cache and load observations. Cluster inventory, region/zone placement,
+remote route-generation lag and state affinity are later work.
 
 ### Audit subsystem
 
-Records administrative mutations, policy decisions, signature results, capability grants, route switches, secret access, and security-sensitive denials.
+Phase 1 has bounded structured node/activation telemetry and local management
+receipts. The broader durable audit subsystem for signatures, secret access and
+cluster administrative decisions remains planned.
 
 ## Consistency model
 

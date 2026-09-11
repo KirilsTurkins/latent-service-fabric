@@ -4,8 +4,17 @@
 `jsonschema` dependency. It validates JSON/TOML syntax, accessible local-only
 source-controlled SVGs, Cargo workspace membership and path dependencies,
 Protobuf imports, WIT package declarations, required schemas/docs, nonempty
-files, and the interface-only binary policy. The visual rules for those SVGs
+files, benchmark retention bounds, and forbidden Rust placeholder tokens.
+The visual rules for those SVGs
 are in [`../docs/svg-style.md`](../docs/svg-style.md).
+
+Phase 1 and its performance extension are complete. Use the
+[validation guide](../VALIDATION.md) for ordinary checks and the
+[extension report](../docs/phase-1-extension-completion.md) for retained results.
+The [Docker](../docs/testing/docker-comparison.md) and
+[Kubernetes](../docs/testing/kubernetes-comparison.md) collectors are explicit
+infrastructure experiments; their archives replay without rerunning workloads.
+Historical Phase 0 tools below retain their original native-Linux restrictions.
 
 `run_phase0_hot_path_profiles.sh` is the manual native-Linux evidence command
 for issue 40. It requires a clean source tree, a durable published branch/tag
