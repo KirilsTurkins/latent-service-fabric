@@ -6,6 +6,7 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "validate_repository.py"
 SPEC = importlib.util.spec_from_file_location("validate_repository", MODULE_PATH)
@@ -129,6 +130,25 @@ class SourceTraversalTests(unittest.TestCase):
                     for error in validator.ERRORS
                 )
             )
+
+
+class BenchmarkRetentionTests(unittest.TestCase):
+    def test_budget_counts_combined_files_including_generated_directory_names(self) -> None:
+        validator.ERRORS.clear()
+        self.addCleanup(validator.ERRORS.clear)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            evidence = root / "benchmarks/artifacts"
+            evidence.mkdir(parents=True)
+            (root / "benchmarks/report.md").write_bytes(b"report")
+            (evidence / "payload.bin").write_bytes(b"1234")
+            with patch.object(validator, "MAX_BENCHMARK_TREE_BYTES", 10):
+                validator.validate_benchmark_retention(root)
+                self.assertEqual(validator.ERRORS, [])
+                (evidence / "payload.bin").write_bytes(b"12345")
+                validator.validate_benchmark_retention(root)
+                self.assertEqual(len(validator.ERRORS), 1)
+                self.assertIn("retention budget (11 bytes)", validator.ERRORS[0])
 
 
 class RetainedEmptyEvidenceTests(unittest.TestCase):

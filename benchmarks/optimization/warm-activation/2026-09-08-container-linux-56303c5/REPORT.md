@@ -1,5 +1,11 @@
 # Verified warm activation: before/after observations
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 Recorded 2026-09-08 for [#100](https://github.com/KirilsTurkins/latent-service-fabric/issues/100),
 part of the Phase 1 performance extension.
 
@@ -280,7 +286,7 @@ The external package passed mandatory Linux replay and independent Windows
 replay of all 2,209 files (508,491,972 expanded bytes). Its exact gzip stream is
 104,832,759 bytes with SHA-256
 `d4cae0a082b983d690eb690b983b0291d7859ff7e89dd7f5b50ade2c001c434d`.
-It is stored as 50,000,000, 50,000,000 and 4,832,759-byte parts; the adjacent
+It was published as 50,000,000, 50,000,000 and 4,832,759-byte parts; the adjacent
 parts manifest binds their order, individual hashes and complete stream hash.
 
 The first gzip-level-6 packaging attempt exceeded the ordinary 99,000,000-byte
@@ -304,9 +310,9 @@ To replay a completed retained package, from the repository root:
 
 ```sh
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/warm-activation/2026-09-08-container-linux-56303c5/external
+  "${restored_root}/benchmarks/optimization/warm-activation/2026-09-08-container-linux-56303c5/external"
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/warm-activation/2026-09-08-container-linux-56303c5/backend
+  "${restored_root}/benchmarks/optimization/warm-activation/2026-09-08-container-linux-56303c5/backend"
 ```
 
 This report establishes a measured warm-path improvement with explicit cold

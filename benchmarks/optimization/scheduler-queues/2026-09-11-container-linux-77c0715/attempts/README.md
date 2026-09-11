@@ -14,5 +14,5 @@ ownership and passed both pool outcomes; no product admission bypass was added.
 The [manifest](manifest.json) describes each attempt. The
 [supporting manifest](../validation/supporting-manifest.json) records exact
 original paths, hashes and sizes, including quiet zero-byte wrapper logs that
-are inventoried but not published. Original raw smoke roots remain separate;
+are inventoried but not published. Original raw smoke roots were stored separately at publication;
 these small diagnostics are not a replayable full-population package.

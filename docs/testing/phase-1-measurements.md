@@ -5,6 +5,13 @@ These collectors exercise the actual standalone composition separately from the
 profile validates the collectors. Full evidence requires explicit `--profile full`.
 Neither a smoke report nor a passing benchmark closes the Phase 1 gate by itself.
 
+Historical optimization reports now use [compact evidence retention](benchmark-retention.md).
+Their metrics, source identities and recorded validation outcomes remain in the
+checkout; raw archive replay or extraction requires restoring the exact package
+from the documented historical commit. References below to retained raw files
+describe the original collection or restored package, not payload availability
+in the compact checkout. New collections still produce complete bounded evidence.
+
 ## Build and run
 
 Use Linux and the [pinned toolchain](../development/toolchain.md). Build the
@@ -138,7 +145,8 @@ is visible in that RPC interval, not in a fabricated backend-total interval.
 The retained [verified warm activation comparison](../../benchmarks/optimization/warm-activation/2026-09-08-container-linux-56303c5/REPORT.md)
 contains seven paired external-client runs and a separate seven-pair backend
 diagnostic. It reports warm latency gains, cache-refill regressions and the
-remaining tight-budget failures. Its two archives replay independently; these
+remaining tight-budget failures. Its two historical archives passed independent
+replay and can be restored for another check; these
 observations do not replace the original Phase 1 scale and soak evidence.
 
 `tools/package_phase1_evidence.py` retains gzip level 6 by default and accepts
@@ -395,7 +403,7 @@ python3 tools/validate_optimization_backend_revision.py \
 
 Package each full root independently with `tools/package_phase1_evidence.py`;
 `--compression-level 9 --split-archive` is available within the existing caps.
-Replay each published directory with `tools/validate_phase1_archive.py`, which
+Replay each complete new or restored historical package with `tools/validate_phase1_archive.py`, which
 extracts bounded temporary files and never executes the retained binaries.
 Failed attempts remain separate; retries require fresh build-only copies.
 
