@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Clustered control-plane entry point."
+description = "Placeholder entry point for the future clustered control plane."
 
 [lints]
 workspace = true
