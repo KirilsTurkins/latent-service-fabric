@@ -1,5 +1,11 @@
 # Bounded cold preparation: before/after observations
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 Recorded 2026-09-08 for [#101](https://github.com/KirilsTurkins/latent-service-fabric/issues/101).
 
 The candidate keeps warm calls responsive during distinct cold preparation:
@@ -289,7 +295,7 @@ compilations are not stalled to manufacture overlap.
 
 ## Archive, reproduction and earlier diagnostics
 
-The [archive](raw-evidence.tar.gz) contains 755 original files totaling
+The [historical archive](https://github.com/KirilsTurkins/latent-service-fabric/blob/a432c51f9ed0a4eaf55473d80122bbb8e5a419cf/benchmarks/optimization/cold-preparation/2026-09-08-container-linux-368d621/raw-evidence.tar.gz) contains 755 original files totaling
 442,057,781 bytes. The gzip stream is **94,759,089 bytes**, SHA-256
 `71f52da001932cd83ced66e3ead5dfa9bc5715341fb44ca6b11bd8a7d68caee8`.
 The [manifest](raw-evidence.manifest.json) binds every retained file, and the
@@ -318,7 +324,7 @@ python tools/validate_optimization_backend_revision.py \
   /workspace/project/target/optimization-backend-revisions/cold-full-02/suite.json \
   --aggregate /workspace/project/target/optimization-backend-revisions/cold-full-02/aggregate.json
 python tools/validate_phase1_archive.py \
-  benchmarks/optimization/cold-preparation/2026-09-08-container-linux-368d621
+  "${restored_root}/benchmarks/optimization/cold-preparation/2026-09-08-container-linux-368d621"
 ```
 
 Archive replay never executes retained binaries. The package remains below the
@@ -339,8 +345,8 @@ The first full dataset at `9065ab413081e97ed8304935d7c07ffd03070950` passed its
 population and cleanup checks but lacked the compiler-worker topology row. Its
 94,796,102-byte package, SHA-256
 `f0a6a91bb28654caa0e8ead8fcf79316b631b49d248c1a5e310dc83e54e52dfa`, and report
-remain preserved as local audit diagnostics under
-`target/phase1-extension/issue101-full01-package` in the original audit workspace.
+were retained at publication as local audit diagnostics under
+`target/phase1-extension/issue101-full01-package` in the original audit workspace; continued local availability is not promised.
 This published dataset reruns the
 complete population after that inventory correction. None of its metrics is
 carried forward from the first full run, and no earlier attempt is silently

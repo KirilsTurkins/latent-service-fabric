@@ -1,5 +1,13 @@
 # Phase 1 optimization measurements
 
+This checkout keeps the reports, aggregates, paired results and provenance for
+completed optimizations. Historical raw archive payloads live at the fixed Git
+revision listed in the [retention policy](../../docs/testing/benchmark-retention.md)
+and [retention ledger](retention.json). Restore only the package needed for an
+independent replay. The current Docker comparison and the Phase 0/1 reference
+evidence remain available locally. Statements about raw collection below describe
+the protocol and original publications, rather than new validation of this compact tree.
+
 The [Phase 1 extension](https://github.com/KirilsTurkins/latent-service-fabric/issues/97)
 uses a separate native Rust/tonic service and a standalone `latentd` process.
 Both execute the same pure Rust Echo, bounded compute and structured transform
@@ -9,13 +17,14 @@ external client sends the same protobuf requests over one persistent connection
 per case. Native means native code in the recorded environment, not bare metal.
 
 The [clean pre-optimization reference](reference/2026-09-08-container-linux-8bbc1fd/REPORT.md)
-retains seven alternating pairs and all 88,326 attempts. Its report includes
+records seven alternating pairs and all 88,326 attempts. Its report includes
 unmet latency/budget targets and links to the separately retained rejected
-configuration attempt. Verify the complete archive with:
+configuration attempt. After restoring its package as described in the retention
+policy, verify the complete archive with:
 
 ```sh
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/reference/2026-09-08-container-linux-8bbc1fd
+  "${restored_root}/benchmarks/optimization/reference/2026-09-08-container-linux-8bbc1fd"
 ```
 
 Run the bounded smoke profile on Linux, including a declared Linux container:
@@ -118,7 +127,7 @@ completed all 252 full measurements. With 64 MiB components, median artifact
 recovery fell from 309 ms to 53 ms and combined recovery/catalog loading from
 861 ms to 104 ms. Candidate profiled peak heap for these operations was 0.12 MiB
 and 0.20 MiB respectively. The report distinguishes normal CPU/RSS from separately
-profiled heap usage and links the complete replayable evidence.
+profiled heap usage and identifies the original replayable evidence.
 
 The [artifact identity comparison](https://github.com/KirilsTurkins/latent-service-fabric/issues/99)
 uses the identical auxiliary Rust probe on clean control and candidate commits.
@@ -180,7 +189,7 @@ worker threads and slightly higher RSS; it does not claim faster compilation.
 This separate `--experiment cold` protocol uses matched release binaries and a
 common in-process RPC client/observer. It is distinct from the standalone
 external-client baseline. The report provides exact source/build identities,
-collection and replay commands, limitations and the complete raw archive.
+collection and replay commands, limitations and the historical raw archive identity.
 
 ## Prepared cache lookup and runtime ownership
 
@@ -193,14 +202,15 @@ retirement. Warm baseline p50 changes from 0.725 ms to 0.709 ms, while churn
 latency is mixed and observed node RSS is slightly higher.
 
 The report separates lookup, complete invocation, allocator and process-resource
-boundaries. Both archives retain complete raw evidence and passed Linux and
-independent Windows replay. Replay them without executing retained binaries:
+boundaries. Both original archives included complete raw evidence and passed
+Linux and independent Windows replay. Restore the two packages before replaying
+them without executing retained binaries:
 
 ```sh
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/lookup
+  "${restored_root}/benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/lookup"
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior
+  "${restored_root}/benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior"
 ```
 
 ## Precise budget experiments

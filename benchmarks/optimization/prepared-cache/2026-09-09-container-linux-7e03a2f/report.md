@@ -1,5 +1,11 @@
 # Prepared-cache lookup and runtime ownership
 
+Historical raw archive payloads are omitted from this checkout. Results and
+original validation records remain; recorded replay passes describe publication
+checks. [Restore the exact historical package](../../../../docs/testing/benchmark-retention.md) before running raw
+replay or extraction commands below. Set `restored_root` to its fresh restore
+directory; manifests alone do not make the current directory replayable.
+
 The [#102 comparison](https://github.com/KirilsTurkins/latent-service-fabric/issues/102) completed both full populations. Candidate cache lookup used less elapsed time and actual thread CPU in **41 of 42 normal process pairs**. Separately profiled hits changed from **one allocation / 14 bytes per get to zero**, with verified attribution in every profiled process. The real-node experiment confirmed resident versus evicted-but-still-owned runtime accounting and final retirement. Its warm baseline improved slightly, while churn latency was mixed and observed node RSS increased slightly.
 
 These are two distinct experiments: [lookup results](lookup/aggregate.json) measure the actual generic cache with tagged values; [behavior results](behavior/aggregate.json) exercise compiled Echo components through a real node and RPC client. The lookup results do not establish allocation-free complete invocations, and neither experiment establishes a general RSS reduction or a production SLO.
@@ -235,11 +241,11 @@ From the repository root:
 
 ```sh
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/lookup
+  "${restored_root}/benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/lookup"
 python3 tools/validate_phase1_archive.py \
-  benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior
+  "${restored_root}/benchmarks/optimization/prepared-cache/2026-09-09-container-linux-7e03a2f/behavior"
 ```
 
-The archives retain exact executables, source/build controls, components and metadata, plans, traces, every original raw result/stage/resource record, profiler records, tool logs and ownership receipts. All failures and outliers remain in the populations. The first official smoke's allocation attribution incorrectly reported zero control allocations because it did not recognize the actual Rust v0 symbol and folded source suffix. Those original diagnostics remain unchanged and are superseded for allocation conclusions by the corrected symbol proof and this fresh full collection.
+The historical archives contain exact executables, source/build controls, components and metadata, plans, traces, every original raw result/stage/resource record, profiler records, tool logs and ownership receipts. All failures and outliers remain in the populations. The first official smoke's allocation attribution incorrectly reported zero control allocations because it did not recognize the actual Rust v0 symbol and folded source suffix. Those original diagnostics remain unchanged and are superseded for allocation conclusions by the corrected symbol proof and this fresh full collection.
 
-The original full behavior aggregate was 12,361,740 B because it duplicated raw stage and node arrays. It remains preserved in local ignored diagnostics. Publication analysis at `ed5a105` produces a 1,179,332 B aggregate with derived stage/job counts and observed resource summaries; every original raw array is still archived and strictly replayed. This is a derived-output compaction from the unchanged suite, not a workload rerun or a measurement of a later product revision. Original Phase 0, Phase 1 and earlier optimization evidence remains unchanged.
+The original full behavior aggregate was 12,361,740 B because it duplicated raw stage and node arrays. It was preserved in local ignored diagnostics at publication. Publication analysis at `ed5a105` produces a 1,179,332 B aggregate with derived stage/job counts and observed resource summaries; every original raw array is still archived and strictly replayed. This is a derived-output compaction from the unchanged suite, not a workload rerun or a measurement of a later product revision. Original measurements and recorded validation outcomes are unchanged; archive availability follows the retention notice above.

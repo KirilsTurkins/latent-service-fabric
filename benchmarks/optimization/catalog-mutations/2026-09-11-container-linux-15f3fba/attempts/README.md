@@ -2,7 +2,7 @@
 
 This is a diagnostic subset: **29 published original files, 4,142,406 bytes**, copied without changing their bytes. The [manifest](manifest.json) records each original Windows/container path, size and SHA-256, verifies the copies, and records that the originals remained unchanged. It separately records the original empty smoke03 console log as a `not-published-empty-witness`, including its zero-byte size and SHA-256. The manifest and this README are generated descriptions.
 
-These files permit inspection of the failed collection attempts, their final native collector and cleanup witnesses, the bounded export checks, and the later successful smoke. They are **not a complete replayable Phase 1 archive**. Referenced binaries, source trees, other per-owner raw files and large allocation streams/exports remain in the original local evidence roots; generated workload data was removed as recorded by its cleanup receipts. The full measured publication is separate.
+These files permit inspection of the failed collection attempts, their final native collector and cleanup witnesses, the bounded export checks, and the later successful smoke. They are **not a complete replayable Phase 1 archive**. Referenced binaries, source trees, other per-owner raw files and large allocation streams/exports were retained in separate local evidence roots at publication; continued local availability is not promised; generated workload data was removed as recorded by its cleanup receipts. The full measured publication is separate.
 
 | Original attempt | Sources: control / candidate and harness | Retained result |
 | --- | --- | --- |
