@@ -41,6 +41,48 @@ def protocol(profile="smoke", pair=0):
 
 
 class ClientEvidenceTests(unittest.TestCase):
+    def test_explicit_service_map_allows_distinct_lsf_services_on_one_process(self):
+        _, groups, _, owners, commands = protocol()
+        group = next(group for group in groups if group["arm"] == "lsf" and group["density"] == 8)
+        command = next(evidence.decode(row["line"].encode()) for row in commands
+                       if evidence.decode(row["line"].encode())["command"] == "begin-group"
+                       and evidence.decode(row["line"].encode())["group"] == group["ordinal"])
+        targets = command["targets"]
+        owner_ref = targets[0]["owner_ref"]
+        endpoints = {target["service"]: f"http://service-{index}.example:7070"
+                     for index, target in enumerate(targets)}
+        owners[owner_ref].update(endpoint=next(iter(endpoints.values())), service_endpoints=endpoints)
+        for target in targets:
+            target["endpoint"] = endpoints[target["service"]]
+        self.assertEqual(evidence._targets(targets, group, owners), {owner_ref})
+        for mutate in (lambda row: row.pop("service_endpoints"),
+                       lambda row: row["service_endpoints"].pop(model.SERVICES[1]),
+                       lambda row: row["service_endpoints"].update({model.SERVICES[1]: endpoints[model.SERVICES[0]]}),
+                       lambda row: row.update(endpoint="http://unowned.example:7070")):
+            changed = copy.deepcopy(owners)
+            mutate(changed[owner_ref])
+            with self.assertRaises(EvidenceError):
+                evidence._targets(targets, group, changed)
+        crossed = copy.deepcopy(targets)
+        crossed[1]["endpoint"] = crossed[0]["endpoint"]
+        with self.assertRaises(EvidenceError):
+            evidence._targets(crossed, group, owners)
+
+    def test_native_service_map_cannot_borrow_another_owner_service(self):
+        _, groups, _, owners, commands = protocol()
+        group = next(group for group in groups if group["arm"] == "native" and group["density"] == 8)
+        command = next(evidence.decode(row["line"].encode()) for row in commands
+                       if evidence.decode(row["line"].encode())["command"] == "begin-group"
+                       and evidence.decode(row["line"].encode())["group"] == group["ordinal"])
+        targets = command["targets"]
+        for target in targets:
+            owners[target["owner_ref"]]["service_endpoints"] = {target["service"]: target["endpoint"]}
+        self.assertEqual(len(evidence._targets(targets, group, owners)), 8)
+        owner = owners[targets[0]["owner_ref"]]
+        owner["service_endpoints"][targets[1]["service"]] = targets[1]["endpoint"]
+        with self.assertRaises(EvidenceError):
+            evidence._targets(targets, group, owners)
+
     def test_exact_control_population_requires_three_barriers_before_drop(self):
         for profile, pair in (("smoke", 0), *(('full', pair) for pair in range(7))):
             _, groups, digest, owners, commands = protocol(profile, pair)

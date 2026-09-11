@@ -142,6 +142,25 @@ class Fixture:
 
 
 class DockerResources(unittest.TestCase):
+    def test_provider_extraction_keeps_docker_projection_exact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Fixture(Path(directory))
+            expected = fixture.validate()
+            controls = model.resources(fixture.arm, fixture.density)
+            identity = resources._inspect(fixture.ready_inspect, fixture.final_inspect, CONTAINER_ID, controls)
+            actual = resources.validate_observations(fixture.directory, arm=fixture.arm, density=fixture.density,
+                container_id=CONTAINER_ID, identity=identity, controls=controls, expected_connections=2)
+            self.assertEqual(actual, expected)
+            self.assertNotIn("wrapper_pid", identity)
+
+    def test_docker_still_rejects_unbounded_leaf_pids(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Fixture(Path(directory))
+            fixture.events[2]["detail"]["cgroup"]["files"]["pids.max"] = raw("max\n")
+            fixture.write()
+            with self.assertRaises(ValueError):
+                fixture.validate()
+
     def test_root_cgroup_mapping_preserves_actual_empty_join_spelling(self):
         mounts = "1287 1286 0:23 / /sys/fs/cgroup ro,nosuid,nodev,noexec,relatime - cgroup2 cgroup rw\n"
         self.assertEqual(resources._directory("0::/\n", mounts), "/sys/fs/cgroup/")

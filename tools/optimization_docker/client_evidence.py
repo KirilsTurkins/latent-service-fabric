@@ -100,8 +100,21 @@ def _targets(value, group, owners):
                 "docker-client-target-endpoint")
         pid = integer(target["app_process_id"], 1, 2**31 - 1)
         owner = fields(owners[owner_ref], "app_process_id endpoint arm density group container_id",
-                       "release_digests" if group["arm"] == "lsf" else "")
-        _equal([owner["app_process_id"], owner["endpoint"], owner["arm"], owner["density"], owner["group"]],
+                       "service_endpoints release_digests" if group["arm"] == "lsf" else "service_endpoints")
+        owner_endpoint = owner["endpoint"]
+        if "service_endpoints" in owner:
+            service_endpoints = owner["service_endpoints"]
+            expected_services = model.SERVICES[:group["density"]] if group["arm"] == "lsf" else [target["service"]]
+            require(isinstance(service_endpoints, dict) and set(service_endpoints) == set(expected_services),
+                    "docker-client-owner-service-endpoints")
+            for service_endpoint in service_endpoints.values():
+                service_endpoint = text(service_endpoint, 2048)
+                require(service_endpoint.startswith("http://") and not any(ord(char) < 32 or ord(char) == 127
+                        for char in service_endpoint), "docker-client-owner-service-endpoint")
+            require(len(set(service_endpoints.values())) == len(service_endpoints)
+                    and owner_endpoint in service_endpoints.values(), "docker-client-owner-service-alias")
+            owner_endpoint = service_endpoints[target["service"]]
+        _equal([owner["app_process_id"], owner_endpoint, owner["arm"], owner["density"], owner["group"]],
                [pid, endpoint, group["arm"], group["density"], group["ordinal"]], "docker-client-owner-crossed")
         require(re.fullmatch(r"[0-9a-f]{64}", text(owner["container_id"], 64)), "docker-client-container-id")
         if group["arm"] == "lsf":
