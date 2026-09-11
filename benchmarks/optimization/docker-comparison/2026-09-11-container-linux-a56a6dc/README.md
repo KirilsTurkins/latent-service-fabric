@@ -80,10 +80,20 @@ The archive retains complete earlier smoke attempts and `attempts/index.json`. S
 
 [aggregate.json](aggregate.json) and all 12 CSV files are bound by [tables.manifest.json](tables.manifest.json). The [raw manifest](raw-evidence.manifest.json) lists **5,015 files / 811,119,663 expanded bytes**, including the failed attempts. The split archive represents **169,803,211 compressed bytes**, SHA-256 `b51441c7d23eb9569f77d00026533e9a5395c7732b1109b38cfbc3defeca43fd`; [parts and hashes](raw-evidence.parts.json) bind its four fragments. Packaging used an explicit Docker-only 6,000-file archive limit for this combined publication; retained byte limits remain unchanged. [Linux package verification](validation/package-linux.json) passed mandatory semantic replay in 108.208 s.
 
-From the repository root, verify the archive and replay its evidence with:
+The current checkout retains this report and its original tables, manifests and
+replay receipts. The four raw parts are retained in the fixed storage commit below
+to leave room for the Kubernetes comparison under the 600 MiB benchmark budget.
+Follow the [retention policy](../../../../docs/testing/benchmark-retention.md);
+from the repository root, restore this exact package into a fresh external
+directory before replaying it:
 
 ```sh
-python tools/validate_phase1_archive.py benchmarks/optimization/docker-comparison/2026-09-11-container-linux-a56a6dc
+storage_commit=a432c51f9ed0a4eaf55473d80122bbb8e5a419cf
+docker_package=benchmarks/optimization/docker-comparison/2026-09-11-container-linux-a56a6dc
+restored_root=../benchmark-docker-raw
+mkdir -- "$restored_root"
+git archive --format=tar "$storage_commit" "$docker_package" | tar -xf - -C "$restored_root"
+python tools/validate_phase1_archive.py "$restored_root/$docker_package"
 ```
 
 Independent [Windows archive replay](validation/issue111-windows-replay-02.log.receipt.json) also passed all 5,015 files in 96.947 s. Its [first attempt](validation/issue111-windows-replay-01.log.receipt.json) exposed a Windows path-separator issue in the validator; that source fix changed neither workload evidence nor archive bytes.

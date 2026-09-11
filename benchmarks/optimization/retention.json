@@ -3,7 +3,7 @@
   "policy": "../../docs/testing/benchmark-retention.md",
   "storage_commit": "a432c51f9ed0a4eaf55473d80122bbb8e5a419cf",
   "retention": "reports-aggregates-paired-tables-provenance",
-  "removed_payload_bytes": "2268388392",
+  "removed_payload_bytes": "2438191603",
   "packages": [
     {
       "directory": "benchmarks/optimization/artifact-identity/2026-09-08-container-linux-95a53b1",
@@ -122,6 +122,38 @@
           "path": "replay-source-7857e6c.tar.gz",
           "git_blob": "0364969530a116df93022a40712f0dc080a816ac",
           "bytes": "424523"
+        }
+      ]
+    },
+    {
+      "directory": "benchmarks/optimization/docker-comparison/2026-09-11-container-linux-a56a6dc",
+      "archive": {
+        "bytes": "169803211",
+        "path": "raw-evidence.tar.gz",
+        "sha256": "sha256:b51441c7d23eb9569f77d00026533e9a5395c7732b1109b38cfbc3defeca43fd"
+      },
+      "manifest": "raw-evidence.manifest.json",
+      "removed_payload_bytes": "169803211",
+      "payloads": [
+        {
+          "path": "raw-evidence.tar.gz.part-0001",
+          "git_blob": "9b3787a3c062a279295ec800aa06320aa125e57e",
+          "bytes": "50000000"
+        },
+        {
+          "path": "raw-evidence.tar.gz.part-0002",
+          "git_blob": "01700aff7e8312552fbadde9a50dc6ff3c32fc56",
+          "bytes": "50000000"
+        },
+        {
+          "path": "raw-evidence.tar.gz.part-0003",
+          "git_blob": "4b048c977c629d43debc30fa55ec882c75813a17",
+          "bytes": "50000000"
+        },
+        {
+          "path": "raw-evidence.tar.gz.part-0004",
+          "git_blob": "ab45fbf68e295b35d1ab9d622c6ad64215920b3a",
+          "bytes": "19803211"
         }
       ]
     },
