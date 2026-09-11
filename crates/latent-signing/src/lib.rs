@@ -2,11 +2,12 @@
 
 #![forbid(unsafe_code)]
 
-use latent_core::{BoxFuture, Metadata, PlatformError, PublisherId, ReleaseDigest};
+use latent_core::{BoxFuture, Metadata, PackageDigest, PlatformError, PublisherId};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SignatureEnvelope {
-    pub subject: ReleaseDigest,
+    /// The immutable package manifest identity, not its component-only release digest.
+    pub subject: PackageDigest,
     pub algorithm: String,
     pub signature: Vec<u8>,
     pub certificate_chain: Vec<Vec<u8>>,
@@ -16,7 +17,8 @@ pub struct SignatureEnvelope {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProvenanceStatement {
-    pub subject: ReleaseDigest,
+    /// The package whose complete content association the provenance describes.
+    pub subject: PackageDigest,
     pub builder: String,
     pub source_repository: Option<String>,
     pub source_revision: Option<String>,
@@ -27,7 +29,8 @@ pub struct ProvenanceStatement {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SbomReference {
-    pub subject: ReleaseDigest,
+    /// The package associated with this SBOM; the association alone is not trust proof.
+    pub subject: PackageDigest,
     pub media_type: String,
     pub digest: String,
 }

@@ -901,6 +901,8 @@ dependencies = [
  "latent-contracts",
  "latent-core",
  "latent-manifest",
+ "serde",
+ "serde_json",
  "sha2",
 ]
 

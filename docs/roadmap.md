@@ -71,6 +71,12 @@ under the scope below; local catalog/build foundations remain Phase 1.
 
 ## Phase 2: packaging and supply chain
 
+Implementation is tracked by [epic #139](https://github.com/KirilsTurkins/latent-service-fabric/issues/139)
+and the [Phase 2 milestone](https://github.com/KirilsTurkins/latent-service-fabric/milestone/4).
+The [package identity and artifact-format foundation](protocol/package-format.md)
+defines bounded capsule, browser-asset and SSR-package contracts. It does not
+yet implement registry transfer, cryptographic verification or trusted admission.
+
 OCI push/pull, signatures, provenance, SBOM, trusted AOT cache, release rollout
 orchestration, canary, and rollback. Atomic local deployment/snapshot publication
 and deterministic weighted selection are already Phase 1 routing foundations.
