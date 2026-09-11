@@ -294,7 +294,7 @@ fresh stage containing:
 
 ```text
 aggregate.json, docker-aggregate.json   exact full-analysis JSON outputs
-*.csv, manifest.json                   all fifteen exact tables and analysis manifest
+*.csv, manifest.json                   all sixteen exact tables and analysis manifest
 docker-reference.json                  original Docker archive/manifest/aggregate byte hashes
 run/                                   complete full Kubernetes campaign
 smoke/                                 complete successful smoke and its aggregate.json

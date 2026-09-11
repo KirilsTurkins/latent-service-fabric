@@ -270,13 +270,14 @@
           "const": "latent.optimization.kubernetes-cleanup.v1"
         },
         "errors": {
-          "const": []
+          "type": "array",
+          "maxItems": 1
         },
         "namespace_absent": {
           "const": true
         },
         "remote_removed": {
-          "const": true
+          "type": "boolean"
         },
         "private_tls_removed": {
           "const": true
@@ -288,6 +289,54 @@
     }
   },
   "$defs": {
+    "historicalSmoke03": {
+      "$comment": "Only the preserved smoke03 cleanup error. Original suite/hash and the separate seven-call cleanup completion must still pass semantic replay.",
+      "required": [
+        "profile", "run_id", "owner", "namespace", "namespace_uid", "source", "source_after"
+      ],
+      "properties": {
+        "profile": {"const": "smoke"},
+        "run_id": {"const": "smoke-03"},
+        "owner": {"const": "lsf-112-8c22b65b1529"},
+        "namespace": {"const": "lsf-112-8c22b65b1529-smoke-03"},
+        "namespace_uid": {"const": "1e40c576-a29b-45be-b497-dad8f8f826bd"},
+        "source": {"$ref": "#/$defs/historicalSmoke03Source"},
+        "source_after": {"$ref": "#/$defs/historicalSmoke03Source"}
+      }
+    },
+    "historicalSmoke03Source": {
+      "const": {
+        "commit": "2f7e3b1616056ba11a7e97ac613cdc3f416eb8c0",
+        "tree": "d9b5d8fa0035145ddfbc0e77ef03b101d2a486c4",
+        "clean": true,
+        "cargo_lock_sha256": "sha256:08974270174575379a10e4f83920755aba00a33b61d2f8e63e5b05b6ea6695d1"
+      }
+    },
+    "cleanupOutcome": {
+      "if": {"$ref": "#/$defs/historicalSmoke03"},
+      "then": {
+        "properties": {
+          "cleanup": {
+            "properties": {
+              "errors": {
+                "const": [{"reason": "kubernetes-worker-exec-stderr", "stage": "owned-resources", "type": "EvidenceError"}]
+              },
+              "remote_removed": {"const": false}
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "cleanup": {
+            "properties": {
+              "errors": {"const": []},
+              "remote_removed": {"const": true}
+            }
+          }
+        }
+      }
+    },
     "uint": {
       "type": "string",
       "pattern": "^(0|[1-9][0-9]{0,19})$"
@@ -902,6 +951,7 @@
     }
   },
   "allOf": [
+    {"$ref": "#/$defs/cleanupOutcome"},
     {
       "if": {
         "properties": {
