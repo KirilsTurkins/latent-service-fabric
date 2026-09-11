@@ -12,6 +12,10 @@ from the documented historical commit. References below to retained raw files
 describe the original collection or restored package, not payload availability
 in the compact checkout. New collections still produce complete bounded evidence.
 
+The [extension completion report](../phase-1-extension-completion.md)
+consolidates the later comparisons, target dispositions and tuning limits.
+Each original campaign retains its own source, population and replay scope.
+
 ## Build and run
 
 Use Linux and the [pinned toolchain](../development/toolchain.md). Build the

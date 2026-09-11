@@ -60,6 +60,15 @@ no performance regression. The retained Phase 0 demonstration and historical
 native receipts keep their original scope. Clustering, general capabilities,
 state/effects and workflows remain the later phases below.
 
+The later [Phase 1 performance extension](phase-1-extension-completion.md)
+records the merged prioritized optimizations and Docker/Kubernetes
+comparisons, separately from the original functional completion decision.
+Resident Echo met its 2 ms useful-success target in #103; distinct 100k
+catalog RSS fell 58.90% in #107. These results do not establish a universal
+latency SLO, all-shape memory ceiling or isolated orchestration cost.
+The handoff proceeds to Phase 2 packaging and supply-chain feature delivery
+under the scope below; local catalog/build foundations remain Phase 1.
+
 ## Phase 2: packaging and supply chain
 
 OCI push/pull, signatures, provenance, SBOM, trusted AOT cache, release rollout
