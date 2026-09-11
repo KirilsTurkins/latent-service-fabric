@@ -73,7 +73,8 @@ class KubernetesAggregateTests(unittest.TestCase):
                     "event_observations": [{"sequence": 1, "observed_nanos": str(250 + index * 2)}]},
                    "lifecycle": {"create_started_nanos": str(100 + index * 10),
                                  "create_finished_nanos": str(102 + index * 10)}} for index in range(8)]
-        group = {"pair": 0, "group": 0, "arm": "native", "density": 8, "owners": owners, "graph_ready_nanos": "300"}
+        group = {"pair": 0, "group": 0, "arm": "native", "density": 8, "owners": owners,
+                 "graph_ready_nanos": "300", "proxy_ready_nanos": "325"}
         command = {"command": "phase", "group": 0, "phase": 0}
         client = {"evidence": {"pair": 0, "first_responses": [{"group": 0, "owner_ref": "owner-0",
                     "response_session_nanos": "999999999999"}]}, "parent": {
@@ -85,6 +86,12 @@ class KubernetesAggregateTests(unittest.TestCase):
         self.assertEqual(cohorts[0]["metrics"]["first_phase_command_to_first_response_ack_nanos"], "100")
         self.assertEqual(cohorts[0]["start_boundary"], "parent-begin-Pod-create-API")
         self.assertEqual(cohorts[0]["metrics"]["cohort_first_request_to_service_graph_ready_nanos"], "200")
+        self.assertEqual(cohorts[0]["metrics"]["cohort_first_request_to_service_forwarding_ready_nanos"], "225")
+        for invalid in ("299", "401"):
+            group["proxy_ready_nanos"] = invalid
+            with self.assertRaises(EvidenceError):
+                aggregate.lifecycle_rows([group], [client])
+        group["proxy_ready_nanos"] = "325"
         owners[0]["lifecycle"]["create_finished_nanos"] = "900"
         with self.assertRaises(EvidenceError):
             aggregate.lifecycle_rows([group], [client])

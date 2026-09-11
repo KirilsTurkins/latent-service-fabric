@@ -112,6 +112,8 @@ def lifecycle_rows(groups, clients):
         ack, = [row for row in client["parent"]["acknowledgements"]
                 if row["ack"]["event"] == "first-response" and row["ack"]["command_ordinal"] == ordinal]
         observed = ack["received_nanos"]
+        require(uint(group["graph_ready_nanos"]) <= uint(group["proxy_ready_nanos"])
+                <= uint(commands[ordinal]["sent_nanos"]), "kubernetes-aggregate-proxy-readiness-order")
         starts, ready_times, first_owner = [], [], None
         for owner in group["owners"]:
             parent, life = owner["parent"], owner["lifecycle"]
@@ -140,7 +142,8 @@ def lifecycle_rows(groups, clients):
                     first_owner["lifecycle"]["create_started_nanos"], observed),
                 "last_ready_observation_to_first_response_ack_nanos": docker._span(str(max(ready_times)), observed),
                 "first_phase_command_to_first_response_ack_nanos": docker._span(commands[ordinal]["sent_nanos"], observed),
-                "cohort_first_request_to_service_graph_ready_nanos": docker._span(str(min(starts)), group["graph_ready_nanos"])}})
+                "cohort_first_request_to_service_graph_ready_nanos": docker._span(str(min(starts)), group["graph_ready_nanos"]),
+                "cohort_first_request_to_service_forwarding_ready_nanos": docker._span(str(min(starts)), group["proxy_ready_nanos"])}})
     return owners, cohorts
 
 
@@ -267,7 +270,8 @@ def _aggregate(derived, original):
             ("idle-window", windows, original["idle_windows"], ("density", "stage"),
              {key: resource_units[key] for key in CROSS_WINDOW}),
             ("lifecycle", cohorts, _docker_lifecycle(original["lifecycle_cohorts"]), ("density",),
-             {key: "ns" for key in cohorts[0]["metrics"] if key != "cohort_first_request_to_service_graph_ready_nanos"}),
+             {key: "ns" for key in cohorts[0]["metrics"] if key not in (
+                 "cohort_first_request_to_service_graph_ready_nanos", "cohort_first_request_to_service_forwarding_ready_nanos")}),
             ("client-cpu", client_intervals, original["client_intervals"], ("density", "from_stage", "to_stage"), client_units)):
             cross.extend(platform_comparisons(rows, prior, ("arm", *dimensions), units, family=family))
     original_bytes = canonical(original) + b"\n"
@@ -303,6 +307,7 @@ def _aggregate(derived, original):
             "Matched aggregate CPU/memory has partitioned native per-service quotas versus pooled LSF resources; global C4 cannot borrow idle native partitions.",
             "Pod creation and Docker container start are different parent-observed lifecycle boundaries, with images already present.",
             "Kubernetes submits the cohort before waiting for readiness; original Docker provisioning is sequential. Both include connections and intentional 250ms barriers.",
+            "Endpoint readiness and observed worker Service forwarding rules are separate boundaries. Read-only forwarding polls precede client connection and remain in cold lifecycle costs.",
             "API wall timestamps, CRI sample timestamps and client/wrapper/parent monotonic clocks are retained in their own domains; no cross-origin subtraction is used.",
             "Leaf cgroup CPU combines application and wrapper work, management and observation; no pure handler or separate child/wrapper CPU claim is made.",
             "Process RSS may double-count shared pages. Leaf usage is counted once; process, leaf, Pod ancestor and outer node memory are never added together.",
