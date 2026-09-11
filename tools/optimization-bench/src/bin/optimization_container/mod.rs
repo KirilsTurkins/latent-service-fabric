@@ -22,16 +22,13 @@ pub(super) fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    let runtime = match tokio::runtime::Builder::new_multi_thread()
+    let Ok(runtime) = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(2)
         .enable_all()
         .build()
-    {
-        Ok(runtime) => runtime,
-        Err(_) => {
-            eprintln!("container wrapper runtime failed");
-            return ExitCode::FAILURE;
-        }
+    else {
+        eprintln!("container wrapper runtime failed");
+        return ExitCode::FAILURE;
     };
     let result = runtime.block_on(supervisor::run(&args, origin));
     runtime.shutdown_timeout(std::time::Duration::from_secs(5));

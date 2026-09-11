@@ -13,7 +13,8 @@ pub struct Command {
     pub schema: String,
     pub ordinal: u32,
     pub plan_sha256: String,
-    pub command: String,
+    #[serde(rename = "command")]
+    pub operation: String,
     #[serde(deserialize_with = "nullable")]
     pub group: Option<u32>,
     #[serde(deserialize_with = "nullable")]
@@ -97,11 +98,11 @@ impl Command {
         if self.schema != format!("{PREFIX}command.v1")
             || self.ordinal != ordinal
             || self.plan_sha256 != digest
-            || self.command != expected.command
+            || self.operation != expected.command
             || self.group != expected.group
             || self.phase != expected.phase
             || self.barrier.as_deref() != expected.barrier
-            || self.targets.is_some() != (self.command == "begin-group")
+            || self.targets.is_some() != (self.operation == "begin-group")
         {
             return Err("session-command-order-or-association");
         }
@@ -148,8 +149,11 @@ impl Input {
                 .saturating_duration_since(Instant::now())
                 .min(Duration::from_millis(250));
             let timeout = Timespec {
-                tv_sec: remaining.as_secs() as _,
-                tv_nsec: remaining.subsec_nanos() as _,
+                tv_sec: remaining
+                    .as_secs()
+                    .try_into()
+                    .map_err(|_| "session-control-timeout")?,
+                tv_nsec: remaining.subsec_nanos().into(),
             };
             let mut fds = [PollFd::new(&stdin, PollFlags::IN)];
             match poll(&mut fds, Some(&timeout)) {

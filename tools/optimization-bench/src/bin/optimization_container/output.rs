@@ -3,9 +3,9 @@ use std::io::{self, Write};
 use std::path::Path;
 use std::time::Instant;
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
-use super::{command::App, Result};
+use super::{Result, command::App};
 
 pub(super) struct Events {
     file: File,
@@ -33,7 +33,7 @@ impl Events {
             sequence: 0,
         }
     }
-    pub fn emit(&mut self, event: &'static str, detail: Value) -> Result<()> {
+    pub fn emit(&mut self, event: &'static str, detail: &Value) -> Result<()> {
         if self.sequence >= 10 {
             return Err("wrapper-event-count");
         }

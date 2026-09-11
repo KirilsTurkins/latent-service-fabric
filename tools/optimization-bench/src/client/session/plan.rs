@@ -63,16 +63,16 @@ impl Plan {
     pub fn groups(&self) -> Vec<Group> {
         let densities = [1, 8, 32];
         let mut groups = Vec::with_capacity(6);
-        for position in 0..3 {
-            let index = (position + self.pair as usize) % 3;
-            let arms = if (self.pair as usize + position) % 2 == 0 {
+        for position in 0_u32..3 {
+            let index = ((position + self.pair) % 3) as usize;
+            let arms = if (self.pair + position).is_multiple_of(2) {
                 ["lsf", "native"]
             } else {
                 ["native", "lsf"]
             };
-            for arm in arms {
+            for (arm_index, arm) in (0_u32..).zip(arms) {
                 groups.push(Group {
-                    index: groups.len() as u32,
+                    index: position * 2 + arm_index,
                     arm,
                     density: densities[index],
                 });
@@ -110,7 +110,7 @@ impl Plan {
             },
         ];
         if group.density == 1 {
-            for (name, kind, function, offers, concurrency) in [
+            for (index, (name, kind, function, offers, concurrency)) in (3_u32..).zip([
                 (
                     "echo-c1-warmup",
                     "warmup",
@@ -153,9 +153,9 @@ impl Plan {
                     if full { 128 } else { 8 },
                     4,
                 ),
-            ] {
+            ]) {
                 phases.push(Phase {
-                    index: phases.len() as u32,
+                    index,
                     name,
                     kind,
                     function,
@@ -226,7 +226,8 @@ pub fn targets(group: Group, rows: &[Target]) -> Result<()> {
         return Err("session-target-count");
     }
     for (index, row) in rows.iter().enumerate() {
-        if row.service != service(index as u32)
+        let service_index = u32::try_from(index).map_err(|_| "session-target-count")?;
+        if row.service != service(service_index)
             || row.app_process_id == 0
             || row.app_process_id > i32::MAX as u32
             || !word(&row.owner_ref, 128)

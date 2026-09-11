@@ -60,7 +60,8 @@ impl Clock {
             scheduled,
             absolute_deadline: u64::try_from(absolute).map_err(|_| "deadline-overflow")?,
             deadline,
-            quantization: (absolute * 1_000_000 - exact) as u64,
+            quantization: u64::try_from(absolute * 1_000_000 - exact)
+                .map_err(|_| "deadline-overflow")?,
         })
     }
 }
@@ -152,7 +153,7 @@ pub async fn run(inputs: Inputs<'_>, output: &mut Output, state: &mut State) -> 
         match pending.join_next().await {
             Some(Ok(completed)) => {
                 counts.observe(&completed.row);
-                if let Err(reason) = accept(&inputs, &clock, completed, output, state) {
+                if let Err(reason) = accept(&inputs, &clock, &completed, output, state) {
                     error.get_or_insert(reason);
                 }
             }
@@ -170,7 +171,7 @@ pub async fn run(inputs: Inputs<'_>, output: &mut Output, state: &mut State) -> 
     let complete = error.is_none() && counts.attempts == u64::from(inputs.phase.offers);
     Ok(
         json!({"status":if complete && counts.successful == counts.attempts {"passed"} else {"failed"},
-        "reason":error.or(if counts.successful != counts.attempts {Some("session-phase-outcome")} else {None}),
+        "reason":error.or(if counts.successful == counts.attempts {None} else {Some("session-phase-outcome")}),
         "phase":{"ordinal":inputs.phase.index,"name":inputs.phase.name,"kind":inputs.phase.kind,
             "function":inputs.phase.function,"offers":inputs.phase.offers,"concurrency":inputs.phase.concurrency},
         "origin_session_nanos":nanos(clock.origin.duration_since(inputs.session_started)).to_string(),
@@ -182,7 +183,7 @@ pub async fn run(inputs: Inputs<'_>, output: &mut Output, state: &mut State) -> 
 fn accept(
     inputs: &Inputs<'_>,
     clock: &Clock,
-    completed: Completed,
+    completed: &Completed,
     output: &mut Output,
     state: &mut State,
 ) -> Result<()> {
@@ -204,7 +205,7 @@ fn accept(
                     .map_err(|_| "session-timestamp")?,
             )
             .ok_or("session-timestamp")?;
-        output.event("first-response", Some(inputs.command), json!({"group":inputs.group.index,
+        output.event("first-response", Some(inputs.command), &json!({"group":inputs.group.index,
             "phase":inputs.phase.index,"index":completed.index,"global_ordinal":completed.global,
             "target_index":completed.target,"owner_ref":target.owner_ref,"app_process_id":target.app_process_id,
             "activation_id":completed.row.activation_id,"outcome":completed.row.outcome,

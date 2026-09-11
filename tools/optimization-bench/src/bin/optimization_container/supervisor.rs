@@ -2,16 +2,16 @@ use std::fs::File;
 use std::process::ExitStatus;
 use std::time::{Duration, Instant};
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use tokio::net::TcpListener;
 use tokio::process::Child;
 use tokio::sync::mpsc;
 use tokio::task::{JoinHandle, JoinSet};
 
 use super::{
-    child,
+    Result, child,
     command::{self, Args},
-    forward, observe, output, streams, Result,
+    forward, observe, output, streams,
 };
 
 pub(super) async fn run(args: &Args, origin: Instant) -> Result<()> {
@@ -91,20 +91,20 @@ struct Owner {
 
 impl Owner {
     async fn serve(&mut self) -> Result<()> {
-        self.events.emit("started",json!({"pid1":std::process::id()==1,"listen":command::LISTEN,
+        self.events.emit("started",&json!({"pid1":std::process::id()==1,"listen":command::LISTEN,
             "child_listen":command::CHILD_LISTEN,"runtime_workers":2,"maximum_connections":forward::CAPACITY,
             "buffer_bytes_per_direction":forward::BUFFER_BYTES,"connect_timeout_millis":5000,"ready_timeout_millis":30000,
             "child_term_grace_millis":10000,"child_kill_wait_millis":5000,"forward_drain_millis":5000,
-            "maximum_lifetime_millis":300000,"maximum_snapshots":6}))?;
+            "maximum_lifetime_millis":300_000,"maximum_snapshots":6}))?;
         let ready = tokio::time::timeout(Duration::from_secs(30), self.ready())
             .await
             .map_err(|_| "child-ready-timeout")??;
         let listener = TcpListener::bind(command::LISTEN)
             .await
             .map_err(|_| "wrapper-listener-bind")?;
-        self.events.emit("ready",json!({"listen":command::LISTEN,"child_listen":command::CHILD_LISTEN,"child_status":ready}))?;
+        self.events.emit("ready",&json!({"listen":command::LISTEN,"child_listen":command::CHILD_LISTEN,"child_status":ready}))?;
         let lifetime = tokio::time::sleep_until(tokio::time::Instant::from_std(
-            self.origin + Duration::from_secs(300),
+            self.origin + Duration::from_mins(5),
         ));
         tokio::pin!(lifetime);
         loop {
@@ -124,7 +124,7 @@ impl Owner {
                     if self.snapshots>6 {return Err("wrapper-snapshot-limit");}
                     let mut sample=observe::snapshot(self.pid,self.snapshots,self.origin);
                     sample["forward"]=self.counts.value();
-                    self.events.emit("snapshot",sample)?;
+                    self.events.emit("snapshot",&sample)?;
                 }
                 accepted=listener.accept()=> {
                     let (stream,_)=accepted.map_err(|_|"wrapper-listener-accept")?;
@@ -172,7 +172,7 @@ impl Owner {
             && self.counts.failed == 0
             && self.counts.aborted == 0
             && self.counts.rejected == 0;
-        self.events.emit("stopped",json!({"clean":clean,"failure":result.err(),"stop_requested":self.stop_requested,
+        self.events.emit("stopped",&json!({"clean":clean,"failure":result.err(),"stop_requested":self.stop_requested,
             "child":exit.value(),"forward":self.counts.value(),"copy_tasks_joined":copies,"output_tasks_joined":outputs_joined,
             "stdout":stdout.as_ref().map(|r|r.value("child-stdout.bin")),"stderr":stderr.as_ref().map(|r|r.value("child-stderr.bin")),
             "snapshots":self.snapshots}))?;
@@ -238,7 +238,7 @@ impl Signals {
     fn new() -> Result<Self> {
         #[cfg(unix)]
         {
-            use tokio::signal::unix::{signal, SignalKind};
+            use tokio::signal::unix::{SignalKind, signal};
             Ok(Self {
                 stop: StopSignals {
                     terminate: signal(SignalKind::terminate())

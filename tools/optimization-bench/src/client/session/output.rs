@@ -62,7 +62,7 @@ impl Output {
         Ok(())
     }
 
-    pub fn event(&mut self, event: &str, command: Option<u32>, payload: Value) -> Result<()> {
+    pub fn event(&mut self, event: &str, command: Option<u32>, payload: &Value) -> Result<()> {
         let value = json!({"schema":format!("{PREFIX}event.v1"),"event":event,
             "event_ordinal":self.event_count,"command_ordinal":command,
             "process_id":std::process::id(),"plan_sha256":self.digest,

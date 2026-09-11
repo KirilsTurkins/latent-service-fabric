@@ -28,6 +28,32 @@ struct Live {
     deadline: Instant,
 }
 
+impl Live {
+    fn inventory(
+        &self,
+        authorization: &MetadataValue<Ascii>,
+        started: Instant,
+        runtime: &tokio::runtime::Runtime,
+        barrier: &str,
+    ) -> Result<Value> {
+        if self.group.arm == "lsf" {
+            runtime.block_on(inventory_call(
+                &self.channels[0],
+                authorization,
+                started,
+                self.deadline,
+                barrier,
+            ))
+        } else {
+            Ok(
+                json!({"status":"passed","barrier":barrier,"rpc_calls":0,"inventory":null,
+                "reason":"native-no-management-api","channel_index":null,
+                "started_nanos":nanos(started.elapsed()).to_string(),"finished_nanos":nanos(started.elapsed()).to_string()}),
+            )
+        }
+    }
+}
+
 struct Session {
     commands: u32,
     groups: u32,
@@ -36,6 +62,50 @@ struct Session {
     attempts: phase::State,
     live: Option<Live>,
     finish_command: Option<Value>,
+}
+
+impl Session {
+    fn begin_group(
+        &mut self,
+        group: Group,
+        targets: Vec<Target>,
+        started: Instant,
+        session_deadline: Instant,
+        runtime: &tokio::runtime::Runtime,
+    ) -> Result<(Value, Option<&'static str>)> {
+        plan::targets(group, &targets)?;
+        let deadline = (Instant::now() + Duration::from_mins(5)).min(session_deadline);
+        let (channels, connections, failure) =
+            runtime.block_on(connect(&targets, started, deadline));
+        let channel_count = channels.len();
+        self.live = Some(Live {
+            group,
+            targets,
+            channels,
+            deadline,
+        });
+        self.attempts.first_response = false;
+        Ok((
+            json!({"status":if failure.is_none(){"passed"}else{"failed"},
+            "reason":failure,"connections":connections,"independent_channels":channel_count}),
+            failure,
+        ))
+    }
+
+    fn finish(&mut self, input: &control::Input, plan: &Plan, receipt: Value) -> Result<()> {
+        input.finished()?;
+        if self.groups != 6
+            || self.phases != 30
+            || self.attempts.offers != u64::from(plan.offers())
+            || self.management_calls != 9
+            || self.live.is_some()
+        {
+            return Err("session-incomplete-population");
+        }
+        self.commands += 1;
+        self.finish_command = Some(receipt);
+        Ok(())
+    }
 }
 
 pub(super) fn run() -> Result<()> {
@@ -88,7 +158,7 @@ pub(super) fn run() -> Result<()> {
     drop(state.live.take());
     drop(runtime);
     if let Err(reason) = result {
-        let _ = output.event("failed", Some(state.commands), json!({"reason":reason,
+        let _ = output.event("failed", Some(state.commands), &json!({"reason":reason,
             "offers":state.attempts.offers.to_string(),"active_tasks":0,"channels":0,"runtime_dropped":true}));
     }
     let summary = json!({"schema":format!("{PREFIX}summary.v1"),"status":if result.is_ok(){"complete"}else{"failed"},
@@ -146,50 +216,32 @@ fn execute(
 ) -> Result<()> {
     let groups = plan.groups();
     let sequence = control::sequence(plan);
-    let session_deadline = started + Duration::from_secs(30 * 60);
-    output.event("ready", None, json!({"plan":{"schema":plan.schema,"run_id":plan.run_id,
-        "profile":plan.profile,"pair":plan.pair},"groups":groups.iter().map(|group| {
-            json!({"ordinal":group.index,"arm":group.arm,"density":group.density,
-                "phases":plan.phases(*group).iter().map(|phase|json!({"ordinal":phase.index,"name":phase.name,
-                    "kind":phase.kind,"function":phase.function,"offers":phase.offers,"concurrency":phase.concurrency,
-                    "payload":if phase.function=="compute"{json!([17,10000])}else{json!(["optimization-reference-v1"])}})).collect::<Vec<_>>()})
-        }).collect::<Vec<_>>(),"logical_offers":plan.offers().to_string(),"commands":61,
-        "runtime_workers":2,"maximum_channels":32,"maximum_output_bytes":plan::MAXIMUM_BYTES.to_string(),
-        "maximum_command_bytes":plan::MAXIMUM_COMMAND,"group_timeout_seconds":300,"session_timeout_seconds":1800}))?;
+    let session_deadline = started + Duration::from_mins(30);
+    output.event("ready", None, &ready(plan, &groups))?;
     let mut input = control::Input::default();
     for (ordinal, expected) in sequence.iter().enumerate() {
+        let ordinal = u32::try_from(ordinal).map_err(|_| "session-command-count")?;
         let deadline = state
             .live
             .as_ref()
             .map_or(session_deadline, |live| live.deadline.min(session_deadline));
         let (command, bytes) = input.command(deadline)?;
-        command.validate(expected, ordinal as u32, digest_value)?;
+        command.validate(expected, ordinal, digest_value)?;
         let receipt = json!({"command":command,"command_bytes":bytes.len().to_string(),"command_sha256":digest(&bytes)});
         let mut payload = receipt
             .as_object()
             .ok_or("session-command-projection")?
             .clone();
         let event;
-        match command.command.as_str() {
+        match command.operation.as_str() {
             "begin-group" => {
                 let group = groups[command.group.ok_or("session-group")? as usize];
                 let targets = command.targets.ok_or("session-targets")?;
-                plan::targets(group, &targets)?;
-                let deadline = (Instant::now() + Duration::from_secs(300)).min(session_deadline);
-                let (channels, connections, failure) =
-                    runtime.block_on(connect(&targets, started, deadline));
-                let channel_count = channels.len();
-                state.live = Some(Live {
-                    group,
-                    targets,
-                    channels,
-                    deadline,
-                });
-                state.attempts.first_response = false;
-                payload.insert("result".into(), json!({"status":if failure.is_none(){"passed"}else{"failed"},
-                    "reason":failure,"connections":connections,"independent_channels":channel_count}));
+                let (result, failure) =
+                    state.begin_group(group, targets, started, session_deadline, runtime)?;
+                payload.insert("result".into(), result);
                 if let Some(reason) = failure {
-                    output.event("group-ready", Some(ordinal as u32), Value::Object(payload))?;
+                    output.event("group-ready", Some(ordinal), &Value::Object(payload))?;
                     state.commands += 1;
                     return Err(reason);
                 }
@@ -198,25 +250,13 @@ fn execute(
             "inventory" => {
                 let live = state.live.as_ref().ok_or("session-group-not-live")?;
                 let barrier = command.barrier.as_deref().ok_or("session-barrier")?;
-                let result = if live.group.arm == "lsf" {
+                if live.group.arm == "lsf" {
                     state.management_calls += 1;
-                    runtime.block_on(inventory_call(
-                        &live.channels[0],
-                        authorization,
-                        started,
-                        live.deadline,
-                        barrier,
-                    ))
-                } else {
-                    Ok(
-                        json!({"status":"passed","barrier":barrier,"rpc_calls":0,"inventory":null,
-                        "reason":"native-no-management-api","channel_index":null,
-                        "started_nanos":nanos(started.elapsed()).to_string(),"finished_nanos":nanos(started.elapsed()).to_string()}),
-                    )
-                }?;
+                }
+                let result = live.inventory(authorization, started, runtime, barrier)?;
                 let passed = result["status"] == "passed";
                 payload.insert("result".into(), result);
-                output.event("inventory", Some(ordinal as u32), Value::Object(payload))?;
+                output.event("inventory", Some(ordinal), &Value::Object(payload))?;
                 state.commands += 1;
                 if !passed {
                     return Err("session-inventory-failed");
@@ -234,7 +274,7 @@ fn execute(
                         targets: &live.targets,
                         channels: &live.channels,
                         authorization,
-                        command: ordinal as u32,
+                        command: ordinal,
                         session_started: started,
                         deadline: live.deadline.min(session_deadline),
                     },
@@ -243,11 +283,7 @@ fn execute(
                 ))?;
                 let passed = result["status"] == "passed";
                 payload.insert("result".into(), result);
-                output.event(
-                    "phase-complete",
-                    Some(ordinal as u32),
-                    Value::Object(payload),
-                )?;
+                output.event("phase-complete", Some(ordinal), &Value::Object(payload))?;
                 state.phases += 1;
                 state.commands += 1;
                 if !passed {
@@ -267,25 +303,26 @@ fn execute(
                 event = "group-finished";
             }
             "finish" => {
-                input.finished()?;
-                if state.groups != 6
-                    || state.phases != 30
-                    || state.attempts.offers != u64::from(plan.offers())
-                    || state.management_calls != 9
-                    || state.live.is_some()
-                {
-                    return Err("session-incomplete-population");
-                }
-                state.commands += 1;
-                state.finish_command = Some(receipt);
-                return Ok(());
+                return state.finish(&input, plan, receipt);
             }
             _ => return Err("session-unknown-command"),
         }
-        output.event(event, Some(ordinal as u32), Value::Object(payload))?;
+        output.event(event, Some(ordinal), &Value::Object(payload))?;
         state.commands += 1;
     }
     Err("session-missing-finish")
+}
+
+fn ready(plan: &Plan, groups: &[Group]) -> Value {
+    json!({"plan":{"schema":plan.schema,"run_id":plan.run_id,
+        "profile":plan.profile,"pair":plan.pair},"groups":groups.iter().map(|group| {
+            json!({"ordinal":group.index,"arm":group.arm,"density":group.density,
+                "phases":plan.phases(*group).iter().map(|phase|json!({"ordinal":phase.index,"name":phase.name,
+                    "kind":phase.kind,"function":phase.function,"offers":phase.offers,"concurrency":phase.concurrency,
+                    "payload":if phase.function=="compute"{json!([17,10000])}else{json!(["optimization-reference-v1"])}})).collect::<Vec<_>>()})
+        }).collect::<Vec<_>>(),"logical_offers":plan.offers().to_string(),"commands":61,
+        "runtime_workers":2,"maximum_channels":32,"maximum_output_bytes":plan::MAXIMUM_BYTES.to_string(),
+        "maximum_command_bytes":plan::MAXIMUM_COMMAND,"group_timeout_seconds":300,"session_timeout_seconds":1800})
 }
 
 async fn connect(
