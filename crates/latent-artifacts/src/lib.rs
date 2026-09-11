@@ -4,6 +4,7 @@
 
 mod content_hash;
 mod local_repository;
+pub mod package;
 mod preparation;
 mod preparation_fingerprint;
 mod verification_statistics;

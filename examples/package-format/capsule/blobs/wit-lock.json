@@ -1,0 +1,1 @@
+{"formatVersion":1,"world":"example:fixture/fixture@1.0.0","contractsDigest":"sha256:ace63694df9286d7787bb88be343f4c580c759bba7ad71d0f8e56ac8d2573c4f","packages":[{"id":"example:fixture@1.0.0","sourcePath":"wit/example.wit","digest":"sha256:f219448dbad9232235d4d058d4e2f3937c70a9ef2ab8c3c5927a1771768466ab","dependencies":[]}]}
