@@ -1,0 +1,17 @@
+{
+  "apiVersion": "latent.dev/v1alpha1",
+  "kind": "ReleasePublish",
+  "release": {
+    "digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "service": "examples/echo",
+    "semanticVersion": "0.1.0",
+    "world": "examples:echo/service@0.1.0"
+  },
+  "artifact": {
+    "capsuleManifestJson": "{\"apiVersion\":\"latent.dev/v1alpha1\",\"kind\":\"Capsule\"}",
+    "componentBase64": "AGFzbQ==",
+    "componentDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "componentMediaType": "application/vnd.wasm.component.v1+wasm",
+    "contractMetadataJson": "{\"format_version\":1,\"contracts\":[{\"id\":\"examples:echo/api@0.1.0\",\"package_name\":\"examples:echo\",\"semantic_version\":\"0.1.0\",\"interfaces\":[{\"id\":\"examples:echo/api@0.1.0\",\"functions\":[{\"id\":\"echo\",\"name\":\"echo\",\"asynchronous\":false,\"parameters\":[{\"name\":\"message\",\"value_type\":\"String\",\"documentation\":null}],\"results\":[{\"name\":\"result\",\"value_type\":{\"Result\":{\"ok\":\"String\",\"error\":{\"Variant\":\"echo-error\"}}},\"documentation\":null}],\"documentation\":null,\"attributes\":{}}],\"documentation\":null,\"digest\":\"sha256:2222222222222222222222222222222222222222222222222222222222222222\"}],\"dependencies\":[],\"digest\":\"sha256:3333333333333333333333333333333333333333333333333333333333333333\"}]}"
+  }
+}

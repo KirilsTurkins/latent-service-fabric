@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/ownership-rpc-aggregate.schema.json",
+  "$comment": "Bounded structural envelope. Mandatory exact source/build, fixture, ownership, clock, allocation and offered-population replay uses tools.optimization_revision_evidence.validate_suite for ownership-rpc or tools.optimization_backend_revision.evidence.validate_suite for ownership. Smoke never qualifies as full evidence.",
+  "$defs": {
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "$ref": "#/$defs/json"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/json"
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "status",
+    "scope",
+    "suite_sha256",
+    "plan_sha256",
+    "population_complete",
+    "attempt_count_complete",
+    "validated_attempts",
+    "validated_processes",
+    "identity",
+    "runs",
+    "comparisons",
+    "limitations",
+    "clock_ticks_per_second"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.ownership-rpc-aggregate.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "failed"
+      ]
+    },
+    "scope": {
+      "const": "lsf-revisions-shared-external-client-request-payload-ownership"
+    },
+    "suite_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "population_complete": {
+      "type": "boolean"
+    },
+    "attempt_count_complete": {
+      "type": "boolean"
+    },
+    "validated_attempts": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "validated_processes": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "identity": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 14,
+      "items": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "comparisons": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "clock_ticks_per_second": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000000
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "complete"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          },
+          "population_complete": {
+            "const": true
+          },
+          "attempt_count_complete": {
+            "const": true
+          },
+          "validated_attempts": {
+            "const": "12936"
+          },
+          "validated_processes": {
+            "const": "70"
+          }
+        }
+      }
+    }
+  ]
+}

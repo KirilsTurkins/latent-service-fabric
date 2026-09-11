@@ -1,0 +1,603 @@
+{
+  "candidate": "77c071550160cb661864c828d825b3fd08cf25f0",
+  "command_receipts": [
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-scheduler",
+        "--lib",
+        "--locked",
+        "local::measurement"
+      ],
+      "elapsed_nanos": "6952699400",
+      "exit_code": 0,
+      "label": "rust-common-02",
+      "log": "validation/issue109-rust-common-02.log",
+      "receipt": "validation/issue109-rust-common-02.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-scheduler",
+        "--all-targets",
+        "--locked"
+      ],
+      "elapsed_nanos": "27524886400",
+      "exit_code": 0,
+      "label": "rust-product-01",
+      "log": "validation/issue109-rust-product-01.log",
+      "receipt": "validation/issue109-rust-product-01.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-scheduler",
+        "--lib",
+        "local::state::tests",
+        "--locked"
+      ],
+      "elapsed_nanos": "6154235700",
+      "exit_code": 0,
+      "label": "state-final-01",
+      "log": "validation/issue109-state-final-01.log",
+      "receipt": "validation/issue109-state-final-01.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-scheduler",
+        "--test",
+        "fair_scheduler",
+        "concurrency::",
+        "--locked"
+      ],
+      "elapsed_nanos": "4088004600",
+      "exit_code": 0,
+      "label": "concurrency-final-01",
+      "log": "validation/issue109-concurrency-final-01.log",
+      "receipt": "validation/issue109-concurrency-final-01.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "latent-scheduler",
+        "--all-targets",
+        "--locked",
+        "--no-deps"
+      ],
+      "elapsed_nanos": "4326463800",
+      "exit_code": 0,
+      "label": "clippy-common-02",
+      "log": "validation/issue109-clippy-common-02.log",
+      "receipt": "validation/issue109-clippy-common-02.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "latent-scheduler",
+        "--lib",
+        "--locked",
+        "--no-deps"
+      ],
+      "elapsed_nanos": "10865146300",
+      "exit_code": 0,
+      "label": "clippy-product-01",
+      "log": "validation/issue109-clippy-product-01.log",
+      "receipt": "validation/issue109-clippy-product-01.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "latent-scheduler",
+        "--all-targets",
+        "--locked",
+        "--no-deps"
+      ],
+      "elapsed_nanos": "3669212000",
+      "exit_code": 0,
+      "label": "final-local-checks-01",
+      "log": "validation/issue109-final-local-checks-01.log",
+      "receipt": "validation/issue109-final-local-checks-01.log.receipt.json"
+    },
+    {
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "tools.tests.test_optimization_scheduler",
+        "tools.tests.test_scheduler_archive",
+        "tools.tests.test_scheduler_schemas",
+        "-v"
+      ],
+      "elapsed_nanos": "1639974400",
+      "exit_code": 0,
+      "label": "python-common-01",
+      "log": "validation/issue109-python-common-01.log",
+      "receipt": "validation/issue109-python-common-01.log.receipt.json"
+    },
+    {
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "tools.tests.test_optimization_scheduler.CompleteRawDocuments",
+        "-v"
+      ],
+      "elapsed_nanos": "441423800",
+      "exit_code": 0,
+      "label": "python-raw-02",
+      "log": "validation/issue109-python-raw-02.log",
+      "receipt": "validation/issue109-python-raw-02.log.receipt.json"
+    },
+    {
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "tools.tests.test_phase1_archive"
+      ],
+      "elapsed_nanos": "21600107900",
+      "exit_code": 0,
+      "label": "archive-common-01",
+      "log": "validation/issue109-archive-common-01.log",
+      "receipt": "validation/issue109-archive-common-01.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-scheduler",
+        "--lib",
+        "--locked",
+        "local::lifetime_tests"
+      ],
+      "elapsed_nanos": "5925829000",
+      "exit_code": 101,
+      "label": "lifetime-before-01",
+      "log": "attempts/failed-tests/issue109-lifetime-before-01.log",
+      "receipt": "attempts/failed-tests/issue109-lifetime-before-01.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-scheduler",
+        "--lib",
+        "--locked",
+        "local::lifetime_tests"
+      ],
+      "elapsed_nanos": "5713217000",
+      "exit_code": 0,
+      "label": "lifetime-after-01",
+      "log": "attempts/failed-tests/issue109-lifetime-after-01.log",
+      "receipt": "attempts/failed-tests/issue109-lifetime-after-01.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-scheduler",
+        "--test",
+        "fair_scheduler",
+        "selected_cancellation_cannot_touch_same_id_replacement_before_old_pool_returns",
+        "--locked"
+      ],
+      "elapsed_nanos": "10102388300",
+      "exit_code": 101,
+      "label": "race-product-02",
+      "log": "attempts/failed-tests/issue109-race-product-02.log",
+      "receipt": "attempts/failed-tests/issue109-race-product-02.log.receipt.json"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "latent-scheduler",
+        "--test",
+        "fair_scheduler",
+        "selected_cancellation_preserves_reused_slot_and_allows_id_reuse_after_cleanup",
+        "--locked"
+      ],
+      "elapsed_nanos": "5900695900",
+      "exit_code": 0,
+      "label": "race-product-03",
+      "log": "attempts/failed-tests/issue109-race-product-03.log",
+      "receipt": "attempts/failed-tests/issue109-race-product-03.log.receipt.json"
+    }
+  ],
+  "control": "7ddc41779cd0648a14626b1e558a7bff08ba3fe2",
+  "copies": [
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-rust-common-02.log",
+      "path": "validation/issue109-rust-common-02.log",
+      "sha256": "sha256:114d0996235b396b9eba2842cf8c84e75197745f3fa1349398e88b30e0207204",
+      "size_bytes": "2256"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-rust-common-02.log.receipt.json",
+      "path": "validation/issue109-rust-common-02.log.receipt.json",
+      "sha256": "sha256:5523ab2183defb18aca16711776ab79e89c5ef3f97197f67e6c8ca3ec6a06f69",
+      "size_bytes": "384"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-rust-product-01.log",
+      "path": "validation/issue109-rust-product-01.log",
+      "sha256": "sha256:712401496c636a36d6d18ba00efd030d5a6457ec5bde39b9ac1ed5417c8a66c2",
+      "size_bytes": "9047"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-rust-product-01.log.receipt.json",
+      "path": "validation/issue109-rust-product-01.log.receipt.json",
+      "sha256": "sha256:10ad42ac1c0c3da22e901207e20709288b13214cc186dda5b73197adfe865f93",
+      "size_bytes": "367"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-state-final-01.log",
+      "path": "validation/issue109-state-final-01.log",
+      "sha256": "sha256:13a0fce11874a4f611e9255dd55cd93a8221fee7be592c478bb26060de9d2c28",
+      "size_bytes": "2275"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-state-final-01.log.receipt.json",
+      "path": "validation/issue109-state-final-01.log.receipt.json",
+      "sha256": "sha256:a5bf4d7f0855561853c126fca37ec14fb1c54437e1d7623853f07669a2db6886",
+      "size_bytes": "385"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-concurrency-final-01.log",
+      "path": "validation/issue109-concurrency-final-01.log",
+      "sha256": "sha256:14ef8bd8e385b23867f55d93a42c3679b3c1a9b0d6188e1230407d556125f56e",
+      "size_bytes": "2096"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-concurrency-final-01.log.receipt.json",
+      "path": "validation/issue109-concurrency-final-01.log.receipt.json",
+      "sha256": "sha256:eb03006ae09243058eef71b8f6c6807171a5a144235ffa02efe7213be442999b",
+      "size_bytes": "409"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-clippy-common-02.log",
+      "path": "validation/issue109-clippy-common-02.log",
+      "sha256": "sha256:65089946cd9a90b63a0c0fd95578b9add0c760453d8082e8a626e47a473233d5",
+      "size_bytes": "16101"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-clippy-common-02.log.receipt.json",
+      "path": "validation/issue109-clippy-common-02.log.receipt.json",
+      "sha256": "sha256:2cc2325d6923cc9638c968dee28526eed33bb4e79ffcc681cac3059374461c4e",
+      "size_bytes": "387"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-clippy-product-01.log",
+      "path": "validation/issue109-clippy-product-01.log",
+      "sha256": "sha256:892d7ea01160c63e65f0aaa3d8f37ca7508dd9f3c190d009ac637658abd2fef4",
+      "size_bytes": "13203"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-clippy-product-01.log.receipt.json",
+      "path": "validation/issue109-clippy-product-01.log.receipt.json",
+      "sha256": "sha256:3ab4ac4627eee79a0b1b178450b556ecbffc8a47a4240e3f27403d95eebe14d6",
+      "size_bytes": "381"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-final-local-checks-01.log",
+      "path": "validation/issue109-final-local-checks-01.log",
+      "sha256": "sha256:8f7a50f06bfa67ea8aeb51388dfb6173f83d420a3409f07d63fe61070aac9ac6",
+      "size_bytes": "16965"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-final-local-checks-01.log.receipt.json",
+      "path": "validation/issue109-final-local-checks-01.log.receipt.json",
+      "sha256": "sha256:e728032fefee7ba1a5cbead4e1d2dd65225973fe44a92f904f1416bb77909603",
+      "size_bytes": "392"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-python-common-01.log",
+      "path": "validation/issue109-python-common-01.log",
+      "sha256": "sha256:2ae6bac1c8b0b8f9837f3b10b136b601d933a1e6b6ee92c8bb43a3a3189aec4d",
+      "size_bytes": "3400"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-python-common-01.log.receipt.json",
+      "path": "validation/issue109-python-common-01.log.receipt.json",
+      "sha256": "sha256:0a6530e9681ce7f8c0900a0849fe429a456f697e595acaca0f0a17353b5b670d",
+      "size_bytes": "453"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-python-raw-02.log",
+      "path": "validation/issue109-python-raw-02.log",
+      "sha256": "sha256:c19fce694f68b515ad6334f7772b51631696ded70f4f7b71c1965d60ceaf11e4",
+      "size_bytes": "1337"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-python-raw-02.log.receipt.json",
+      "path": "validation/issue109-python-raw-02.log.receipt.json",
+      "sha256": "sha256:f14d8e6fecaa00ddbfcf83dbbdc299a28a503c47cad5bcdc38122b756c7ad2d0",
+      "size_bytes": "384"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-archive-common-01.log",
+      "path": "validation/issue109-archive-common-01.log",
+      "sha256": "sha256:f9f384c1963483cfdc3f96c02468ff6d9bcffef58e800c47d15c236f45ba03d0",
+      "size_bytes": "144"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-archive-common-01.log.receipt.json",
+      "path": "validation/issue109-archive-common-01.log.receipt.json",
+      "sha256": "sha256:83b829f9eaaee4ed0d16b3b711ef118861475da8b579d8c55bae2dead956e0df",
+      "size_bytes": "350"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-lifetime-before-01.log",
+      "path": "attempts/failed-tests/issue109-lifetime-before-01.log",
+      "sha256": "sha256:bf55a2449c3d65ae158093db00a70297b05ce3014c7bad8d2db07286e1fce187",
+      "size_bytes": "2423"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-lifetime-before-01.log.receipt.json",
+      "path": "attempts/failed-tests/issue109-lifetime-before-01.log.receipt.json",
+      "sha256": "sha256:4f0965ecd750a15999bd8b6910abe2ad37c8be4e30f9e5fb9fccfa02fab5252e",
+      "size_bytes": "393"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-lifetime-after-01.log",
+      "path": "attempts/failed-tests/issue109-lifetime-after-01.log",
+      "sha256": "sha256:4308044de9bf9a1857d0624452b56475013d172b88291f33d2e049540461bf4d",
+      "size_bytes": "1805"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-lifetime-after-01.log.receipt.json",
+      "path": "attempts/failed-tests/issue109-lifetime-after-01.log.receipt.json",
+      "sha256": "sha256:477d80ac6c3b0a5aef8bca37800eaa300fabc4df96eb6b19663de71bbe7cd34e",
+      "size_bytes": "390"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-race-product-02.log",
+      "path": "attempts/failed-tests/issue109-race-product-02.log",
+      "sha256": "sha256:4c2ae0c0fc728ba103ad54b956360cae3dc578ff72f28d02f48e1ec736e67f8c",
+      "size_bytes": "2870"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-race-product-02.log.receipt.json",
+      "path": "attempts/failed-tests/issue109-race-product-02.log.receipt.json",
+      "sha256": "sha256:3c0a4cb0a0948595019a0befb1ca6ecd271a1f8969c32e53114ec3aa9adb2da6",
+      "size_bytes": "472"
+    },
+    {
+      "kind": "original-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-race-product-03.log",
+      "path": "attempts/failed-tests/issue109-race-product-03.log",
+      "sha256": "sha256:89e0ab071a4ffb1f389e814075d942d787e83a552a7fa4be802270029997ef48",
+      "size_bytes": "1804"
+    },
+    {
+      "kind": "original-command-receipt",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-race-product-03.log.receipt.json",
+      "path": "attempts/failed-tests/issue109-race-product-03.log.receipt.json",
+      "sha256": "sha256:ee3d3e9d02eb67779ebf7655e6f86e2da48546e374d9cf6980c3cc2e6bae6479",
+      "size_bytes": "468"
+    },
+    {
+      "kind": "original-inspection-json-bytes",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-inspect-neutral-01.log",
+      "path": "attempts/neutral-smoke/inspection.json",
+      "sha256": "sha256:c9d7a82f7ffd8b909b1b7992f472809ebd3599c371fbafdf4ebae20e633eaa86",
+      "size_bytes": "3669"
+    },
+    {
+      "kind": "original-inspection-json-bytes",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-inspect-neutral-01.log",
+      "path": "attempts/neutral-smoke/inspection.log",
+      "sha256": "sha256:c9d7a82f7ffd8b909b1b7992f472809ebd3599c371fbafdf4ebae20e633eaa86",
+      "size_bytes": "3669"
+    },
+    {
+      "kind": "original-inspection-json-bytes",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-inspect-smoke-paired-01.log",
+      "path": "attempts/matched-smoke/inspection.json",
+      "sha256": "sha256:7f324d638e92890b44639e5010629a08e2c0a0d2d55488d484ffee080946b5a4",
+      "size_bytes": "5227"
+    },
+    {
+      "kind": "original-inspection-json-bytes",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-inspect-smoke-paired-01.log",
+      "path": "attempts/matched-smoke/inspection.log",
+      "sha256": "sha256:7f324d638e92890b44639e5010629a08e2c0a0d2d55488d484ffee080946b5a4",
+      "size_bytes": "5227"
+    },
+    {
+      "kind": "original-linux-package-log",
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-package-01.log",
+      "path": "validation/linux-package.log",
+      "sha256": "sha256:9f5eba2dc6e1d3f94a00e916424fde392a15382553dadc11963444df2de80ad1",
+      "size_bytes": "52"
+    }
+  ],
+  "generated_receipts": [
+    {
+      "path": "validation/linux-package.json",
+      "sha256": "sha256:6b17f18df00cc90bb358c19ea45ded42d67fed4f5a3bfccc49e3b400846fe32c",
+      "size_bytes": "745"
+    },
+    {
+      "path": "attempts/manifest.json",
+      "sha256": "sha256:8e3d20ee00841c1c3998fa21d25cc28892d23fd9b1f334d29ffe8bbacd743165",
+      "size_bytes": "3055"
+    }
+  ],
+  "no_new_validation_executed": true,
+  "provenance_note": "Original command receipts contain commands, cwd, exit, duration and log path; they do not independently bind a source commit. Source binding for measured release evidence is in the separate scheduler package.",
+  "publisher": {
+    "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-publish-support.py",
+    "sha256": "sha256:9d5e19565649e5db16ca48a3bd1ce56339257c985974c98c107ce2f9661c8a7d",
+    "size_bytes": "11078"
+  },
+  "quiet_wrapper_logs_not_published": [
+    {
+      "copied": false,
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-build-neutral-01.log",
+      "reason": "Zero-byte wrapper output is inventoried only; actual collection evidence is retained separately.",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": "0",
+      "status_inferred_from_log": false
+    },
+    {
+      "copied": false,
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-build-paired-01.log",
+      "reason": "Zero-byte wrapper output is inventoried only; actual collection evidence is retained separately.",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": "0",
+      "status_inferred_from_log": false
+    },
+    {
+      "copied": false,
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-smoke-neutral-01.log",
+      "reason": "Zero-byte wrapper output is inventoried only; actual collection evidence is retained separately.",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": "0",
+      "status_inferred_from_log": false
+    },
+    {
+      "copied": false,
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-smoke-paired-01.log",
+      "reason": "Zero-byte wrapper output is inventoried only; actual collection evidence is retained separately.",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": "0",
+      "status_inferred_from_log": false
+    },
+    {
+      "copied": false,
+      "original": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-full-01.log",
+      "reason": "Zero-byte wrapper output is inventoried only; actual collection evidence is retained separately.",
+      "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": "0",
+      "status_inferred_from_log": false
+    }
+  ],
+  "scheduler_validation": {
+    "counting": "Union of successful original Rust test-name rows; scoped repetitions are not added.",
+    "ignored_test_names": [
+      "local::measurement::phase1_scheduler_collector"
+    ],
+    "passed_test_names": [
+      "concurrency::cancellation_of_a_retired_registration_cannot_mark_a_reused_activation_id",
+      "concurrency::selected_cancellation_preserves_reused_slot_and_allows_id_reuse_after_cleanup",
+      "concurrency::selected_entry_reserves_its_queue_slot_until_failed_acquisition_is_restored",
+      "concurrency::shutdown_during_selected_acquisition_reclaims_the_unaccepted_cell",
+      "external_pool_can_mint_release_and_reclaim_affine_leases",
+      "faults::disposition_errors_quarantine_the_cell_and_return_the_execution_reservation",
+      "faults::dropping_a_pending_disposition_keeps_quota_until_the_cell_is_abandoned",
+      "faults::pool_cannot_substitute_activation_node_class_or_budget_at_handoff",
+      "faults::startup_rejects_incompatible_configuration_and_actual_pool_counts",
+      "fixed_pool::tests::behavior::bounded_queue_rejects_excess_work_deterministically",
+      "fixed_pool::tests::behavior::cancelled_waiter_never_receives_a_later_lease",
+      "fixed_pool::tests::behavior::capacity_is_fixed_and_concurrent_acquisition_is_bounded",
+      "fixed_pool::tests::behavior::dropping_a_live_lease_quarantines_its_cell",
+      "fixed_pool::tests::behavior::dropping_a_queued_acquisition_removes_it_before_any_release",
+      "fixed_pool::tests::behavior::dropping_a_ready_waiter_reclaims_an_unaccepted_grant",
+      "fixed_pool::tests::behavior::duplicate_activation_and_identity_mismatch_cannot_inflate_capacity",
+      "fixed_pool::tests::behavior::duplicate_return_cannot_inflate_available_capacity",
+      "fixed_pool::tests::behavior::expired_waiter_never_receives_a_later_lease",
+      "fixed_pool::tests::behavior::explicit_quarantine_removes_unsafe_capacity",
+      "fixed_pool::tests::behavior::foreign_pool_return_rejects_and_quarantines_the_original_cell",
+      "fixed_pool::tests::behavior::quarantining_the_last_cell_fails_waiters_without_hanging",
+      "fixed_pool::tests::behavior::unsupported_classes_report_zero_observed_capacity",
+      "fixed_pool::tests::nonqueueing::cell_generation_exhaustion_publishes_the_unusable_capacity_transition",
+      "fixed_pool::tests::nonqueueing::change_notifications_coalesce_without_losing_the_latest_capacity",
+      "fixed_pool::tests::nonqueueing::change_subscription_catches_release_between_failed_probe_and_wait",
+      "fixed_pool::tests::nonqueueing::nonqueueing_acquisition_never_registers_or_allocates_a_waiter",
+      "fixed_pool::tests::nonqueueing::nonqueueing_acquisition_preserves_legacy_fifo_handoff",
+      "fixed_pool::tests::nonqueueing::nonqueueing_capacity_is_atomic_under_concurrent_acquisition",
+      "fixed_pool::tests::nonqueueing::nonqueueing_rejects_expired_deadlines_and_wrong_classes_with_bounded_errors",
+      "fixed_pool::tests::nonqueueing::token_exhaustion_notifies_for_nonqueueing_and_legacy_acquisition",
+      "fixed_pool::tests::nonqueueing::unaccepted_abandoned_and_quarantined_leases_notify_production_observers",
+      "fixed_pool::tests::races::lease_token_exhaustion_quarantines_the_slot_and_fails_all_waiters",
+      "fixed_pool::tests::races::release_and_explicit_cancellation_race_is_linearizable",
+      "fixed_pool::tests::races::release_and_task_abort_race_preserves_exact_capacity_accounting",
+      "fixed_pool::tests::transitions::observer_reports_committed_active_and_queue_transitions",
+      "lifecycle::active_scheduler_cancellation_delegates_without_refunding_execution_early",
+      "lifecycle::cancellation_and_deadline_win_before_a_ready_handoff_is_accepted",
+      "lifecycle::cancelled_mismatched_and_foreign_permits_fail_before_cell_assignment",
+      "lifecycle::dropping_a_waiter_reclaims_its_queue_slot_without_quarantining_a_cell",
+      "lifecycle::dropping_an_accepted_activation_quarantines_until_capacity_is_replaced",
+      "lifecycle::dropping_an_unaccepted_handoff_returns_a_reusable_cell",
+      "lifecycle::explicit_quarantine_disposes_the_cell_before_returning_the_execution_quota",
+      "lifecycle::quarantining_the_last_cell_settles_waiters_and_preserves_other_classes",
+      "lifecycle::queued_cancellation_releases_quota_without_dispositioning_the_active_cell",
+      "lifecycle::queued_request_expires_at_its_original_monotonic_deadline",
+      "lifecycle::short_concurrent_churn_preserves_capacity_and_reclaims_all_tenants",
+      "lifecycle::shutdown_drains_waiters_and_retains_the_active_execution_reservation",
+      "lifecycle::shutdown_reclaims_a_ready_but_unaccepted_handoff_and_its_queued_follower",
+      "local::lifetime_tests::final_cancellation_owner_can_reenter_after_cell_and_quota_disposition",
+      "local::measurement::input::tests::allocation_is_only_the_fixed_many_tenant_storm",
+      "local::measurement::input::tests::fixed_full_and_smoke_populations_include_every_warmup_and_storm_offer",
+      "local::measurement::storm::cancellation_population_covers_each_tenant_and_head_middle_tail_positions",
+      "local::measurement::validation::tests::terminal_fixture_errors_cannot_qualify_as_saturation_or_clean_completion",
+      "local::queue::arena::tests::non_power_of_two_bound_reuses_vacant_slots_without_churn_growth",
+      "local::state::tests::boundaries::priority_deadline_sequence_and_exact_aging_boundary_have_fixed_winners",
+      "local::state::tests::churn::direct_head_middle_tail_removal_preserves_remaining_entry_owners",
+      "local::state::tests::churn::non_power_of_two_arenas_reuse_bounded_capacity_and_reject_old_slot_sequences",
+      "local::state::tests::ordering::restoring_a_selected_last_entry_uses_the_recreated_current_tenant",
+      "local::state::tests::ordering::selected_sequence_and_tenant_rotation_match_original_comparator_for_clock_histories",
+      "local::work::tests::disabled_and_reset_windows_do_not_retain_counts",
+      "local::work::tests::overflow_is_latched_and_independent_per_class",
+      "ordering::aged_request_precedes_new_high_priority_work_and_wait_metrics_use_monotonic_time",
+      "ordering::all_five_classes_preserve_their_configured_counts_under_simultaneous_load",
+      "ordering::configured_class_capacity_and_granted_budgets_are_enforced_independently",
+      "ordering::exact_queue_bound_rejects_without_losing_the_earlier_reservations",
+      "ordering::extra_large_capacity_requires_explicit_tenant_permission_before_scheduling",
+      "ordering::one_tenant_uses_priority_then_deadline_then_enqueue_order",
+      "ordering::round_robin_tenants_prevents_a_noisy_neighbor_from_taking_every_handoff",
+      "ordering::zero_queue_capacity_denies_even_immediate_dispatch_without_leaking_quota",
+      "placement::placement_requires_the_configured_local_node_to_be_present",
+      "placement::placement_selects_only_the_configured_local_node_with_stable_evidence"
+    ],
+    "unique_ignored": "1",
+    "unique_passed": "71"
+  },
+  "schema": "latent.scheduler-supporting-publication.v1"
+}

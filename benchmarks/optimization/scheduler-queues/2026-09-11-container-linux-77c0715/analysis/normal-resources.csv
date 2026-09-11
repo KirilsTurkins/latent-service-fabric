@@ -1,0 +1,13 @@
+case,mode,variant,ordinal,normal_completion_rss_bytes,normal_kernel_high_water_rss_bytes,normal_maximum_observed_rss_bytes,whole_process_cpu_micros
+closed-one,normal,control,0,4718592,4718592,4718592,27182
+closed-one,normal,candidate,1,5111808,5111808,5111808,23746
+saturated-one,normal,candidate,2,25821184,25821184,25821184,174432
+saturated-one,normal,control,3,25952256,25952256,25952256,185080
+saturated-many,normal,control,4,26214400,26214400,26214400,173869
+saturated-many,normal,candidate,5,26214400,26214400,26214400,188462
+reference-many,normal,candidate,6,5242880,5242880,5242880,39052
+reference-many,normal,control,7,5373952,5373952,5373952,33919
+cancel-one,normal,control,8,4587520,4587520,4587520,4809
+cancel-one,normal,candidate,9,4587520,4587520,4587520,5093
+cancel-many,normal,candidate,10,4980736,4980736,4980736,6168
+cancel-many,normal,control,11,4718592,4718592,4718592,4765

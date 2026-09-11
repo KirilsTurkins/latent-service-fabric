@@ -1,6 +1,6 @@
 # Phase 0 activation containment
 
-This document defines the failure, cancellation, deadline, completion, and cleanup contract implemented by the Phase 0 activation runner and the Wasmtime Component Model backend.
+This document describes the retained Phase 0 runner and its current shared Wasmtime containment path. The Phase 1 product lifecycle is documented separately in [activation-lifecycle.md](../activation-lifecycle.md), and current host capabilities in [runtime/capabilities.md](../runtime/capabilities.md). Archived Phase 0 receipts, timing thresholds, and authorization remain unchanged.
 
 ## Ownership boundary
 
@@ -11,7 +11,7 @@ This document defines the failure, cancellation, deadline, completion, and clean
 3. one contained backend invocation; and
 4. exactly one attempted terminal cell disposition: release or quarantine.
 
-The Wasmtime backend owns all invocation-local runtime state: the component instance, store, host state, temporary input buffer, live cancellation probe, limiter state, and invocation log buffer. Prepared component state remains in the bounded node-owned cache and is not activation-local.
+The Wasmtime backend owns invocation-local runtime state: the component instance, store, host state, decoded values, live cancellation probe, limiter state, and log counters with budget accounting. Accepted logs live in the bounded node sink. Prepared component state remains node-owned and is retained by the bounded resident cache, the single shared uncached-preparation slot used by the cache-disabled Phase 0 path, or active invocation/prepared-use pins.
 
 ## Cleanup ordering
 
@@ -22,16 +22,13 @@ The normal ordering is:
 3. Acquire a cell while observing cancellation and the deadline.
 4. Recheck cancellation and expiry after accepting the affine lease.
 5. Build the execution request from the granted lease.
-6. Invoke the backend through `invoke_contained`.
-7. Drop the guest instance and its live-instance guard.
-8. Drop the Wasmtime store and store guard.
-9. Drop host state and its guard.
-10. Drop temporary input buffers.
-11. Drop the live cancellation probe.
-12. Publish bounded logs.
-13. Return the backend outcome together with an explicit cleanup proof.
-14. Release the lease only for `ExecutionCleanup::Reusable`; otherwise quarantine it.
-15. Remove the cancellation registration.
+6. Invoke the backend through `invoke_contained`; valid log writes are offered to the bounded sink during execution.
+7. Complete the dynamic Component Model call and post-return, then capture consumption and encode its bounded result.
+8. Drop the store and guest runtime state, decoded values, prepared runtime pin, and active-instance permit.
+9. Classify the outcome, then drop the live cancellation probe and remaining activation guards.
+10. Return the backend outcome together with an explicit cleanup proof.
+11. Release the lease only for `ExecutionCleanup::Reusable`; otherwise quarantine it.
+12. Remove the cancellation registration.
 
 A backend that implements only the legacy `invoke` method receives the conservative default cleanup result and its lease is quarantined. Safe reuse must be proved explicitly.
 
@@ -89,11 +86,11 @@ Dropping a still-live affine lease remains conservative: the pool quarantines it
 
 ## Stable activation mapping
 
-Cancellation and deadline errors use shared constructors at every execution stage: before acquisition, while queued, immediately after grant, during guest execution, and at guest-result handoff. Their terminal state, code, detail kind, retryability, and bounded message shape do not depend on the stage that observed them.
+Cancellation and deadline errors use shared constructors at every execution stage: before acquisition, while queued, immediately after grant, during guest execution, and at guest-result handoff. Their terminal state, code, detail kind, retryability, and bounded message shape do not depend on the stage that observed them. A successful `ActivationOutcome::Succeeded` maps to the shared terminal state `Completed`; archived receipts retain their original outcome labels.
 
 | Execution result | Activation terminal state | Error code/detail |
 | --- | --- | --- |
-| Guest return | `Succeeded` | output and consumption preserved |
+| Guest return | `Completed` | output and consumption preserved |
 | Guest trap | `GuestTrap` | `GuestTrap` / `activation.guest-trap` |
 | Cancellation | `Cancelled` | `Cancelled` / `activation.cancelled` |
 | Deadline | `DeadlineExceeded` | `DeadlineExceeded` / `activation.deadline-exceeded` |
@@ -107,7 +104,7 @@ Diagnostics are bounded before crossing the activation boundary: messages are li
 
 ## Runtime interruption and deadline tolerance
 
-The backend enables Wasmtime fuel consumption and epoch interruption. A weak-engine ticker advances the epoch without keeping the engine alive. Each fresh store receives an epoch callback that checks the live cancellation probe and a monotonic deadline derived once from the Unix deadline.
+The backend enables Wasmtime fuel consumption and epoch interruption. One weak-engine ticker belongs to the shared runtime for each factory; the final runtime owner wakes and joins it. Each fresh store receives a callback that checks the live cancellation probe and effective monotonic deadline. When an admission deadline is supplied, the backend preserves its original clock sample and may tighten it using the execution request. Legacy direct calls derive their deadline from one clock sample when backend accounting begins.
 
 The real infinite-loop acceptance test measures monotonic elapsed time around the invocation. Its upper bound is:
 
@@ -119,7 +116,7 @@ requested deadline duration
 
 The separate five-second timeout is only a deadlock watchdog and is not the acceptance tolerance.
 
-Fuel, peak aggregate linear memory, wall time, and published log bytes are reported through `BudgetConsumption`. The memory fixture asserts that `peak_memory_bytes` never exceeds the granted memory budget. Every invocation receives a fresh store and host state, so failed activations cannot retain guest memory or host capability state for the next activation.
+Fuel, peak aggregate linear memory, wall time, and accepted log bytes are reported through `BudgetConsumption`. Log bytes charge the complete canonical encoded record, including escaping and trusted correlation fields, when the sink accepts it; later capture eviction does not refund consumption. The memory fixture asserts that `peak_memory_bytes` never exceeds the granted memory budget. Every invocation receives a fresh store and host state, so failed activations cannot retain guest memory or host capability state for the next activation.
 
 ## Test fixtures and observations
 

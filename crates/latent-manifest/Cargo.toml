@@ -5,10 +5,12 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-manifest."
+description = "Schema-backed declarative manifest codecs and Phase 1 validation."
 
 [lints]
 workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+serde.workspace = true
+serde_json = { workspace = true, features = ["arbitrary_precision"] }

@@ -18,6 +18,7 @@ from jsonschema.exceptions import SchemaError
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
 WARNINGS: list[str] = []
+MAX_BENCHMARK_TREE_BYTES = 600 * 1024 * 1024
 
 IGNORED_DIRECTORY_NAMES = {
     ".git",
@@ -28,6 +29,7 @@ IGNORED_DIRECTORY_NAMES = {
     ".pytest_cache",
     ".venv",
     ".vscode",
+    ".zig-cache",
     "__pycache__",
     "artifacts",
     "coverage",
@@ -40,8 +42,22 @@ SCHEMA_EXAMPLES: dict[str, tuple[str, ...]] = {
     "capsule-manifest.schema.json": ("examples/**/capsule.json",),
     "deployment.schema.json": ("examples/**/deployment.json",),
     "policy.schema.json": ("examples/policies/*.json",),
-    "route-snapshot.schema.json": (),
+    "release-publish.schema.json": ("examples/**/publish-release.json",),
+    "route-snapshot.schema.json": ("examples/route-snapshot.json",),
     "trigger.schema.json": ("examples/**/*trigger.json",),
+}
+
+# Private measurement evidence does not acquire application-manifest authority.
+PRIVATE_SCHEMA_FILES = {
+    "tools/optimization_docker/schemas": {
+        "plan.schema.json", "builds.schema.json", "suite.schema.json",
+        "aggregate.schema.json", "client-plan.schema.json",
+        "client-command.schema.json", "client-summary.schema.json",
+    },
+    "tools/optimization_kubernetes/schemas": {
+        "bootstrap.schema.json", "suite.schema.json", "aggregate.schema.json",
+        "cluster-cleanup.schema.json",
+    },
 }
 
 SVG_UNSAFE_ELEMENTS = frozenset({"embed", "foreignObject", "iframe", "image", "object", "script"})
@@ -373,6 +389,12 @@ def validate_schemas() -> None:
     if missing:
         fail(f"missing required schemas: {', '.join(sorted(missing))}")
 
+    for directory, expected in PRIVATE_SCHEMA_FILES.items():
+        private_paths = sorted((ROOT / directory).glob("*.schema.json"))
+        if {path.name for path in private_paths} != expected:
+            fail(f"private schema file set differs: {directory}")
+        schema_paths.extend(private_paths)
+
     schema_ids: dict[str, Path] = {}
     for path in schema_paths:
         document = json.loads(path.read_text(encoding="utf-8"))
@@ -412,6 +434,49 @@ def validate_schemas() -> None:
                 )
 
 
+def validate_docker_schema_plans() -> None:
+    """Check fixed source plans without invoking Docker or constructing evidence."""
+    sys.path.insert(0, str(ROOT))
+    try:
+        from tools.optimization_docker import model
+
+        directory = ROOT / "tools/optimization_docker/schemas"
+        documents = {name: json.loads((directory / f"{name}.schema.json").read_text(encoding="utf-8"))
+                     for name in ("plan", "suite", "aggregate")}
+        for profile in ("smoke", "full"):
+            value = model.plan(profile)
+            selected = [documents["plan"], *(documents[name]["properties"]["plan"]
+                                           for name in ("suite", "aggregate"))]
+            for document in selected:
+                for error in Draft202012Validator(document).iter_errors(value):
+                    fail(f"Docker {profile} schema differs from fixed source plan: {error.message}")
+    except (OSError, ValueError, KeyError, IndexError, TypeError, SchemaError) as exc:
+        fail(f"Docker schema plan validation failed: {exc}")
+    finally:
+        sys.path.pop(0)
+
+
+def validate_kubernetes_schema_plans() -> None:
+    """Check source selectors in both envelopes, without fabricating campaigns."""
+    sys.path.insert(0, str(ROOT))
+    try:
+        from tools.optimization_kubernetes import model
+
+        directory = ROOT / "tools/optimization_kubernetes/schemas"
+        for name in ("suite", "aggregate"):
+            document = json.loads((directory / f"{name}.schema.json").read_text(encoding="utf-8"))
+            selected = {"$defs": document["$defs"], **document["properties"]["plan"]}
+            validator = Draft202012Validator(selected)
+            for profile in ("smoke", "full"):
+                value = model.plan(profile, owner="lsf-112-0123456789ab")
+                for error in validator.iter_errors(value):
+                    fail(f"Kubernetes {profile} {name} schema differs from fixed source plan: {error.message}")
+    except (OSError, ValueError, KeyError, IndexError, TypeError, SchemaError) as exc:
+        fail(f"Kubernetes schema plan validation failed: {exc}")
+    finally:
+        sys.path.pop(0)
+
+
 def validate_interface_only_policy() -> None:
     forbidden = ("todo!", "unimplemented!", "panic!(\"not implemented", "TODO_IMPLEMENTATION")
     for path in files_with_suffix(".rs"):
@@ -419,11 +484,6 @@ def validate_interface_only_policy() -> None:
         for token in forbidden:
             if token in text:
                 fail(f"implementation placeholder token {token!r} found in {path.relative_to(ROOT)}")
-
-    for app_main in (ROOT / "apps").glob("*/src/main.rs"):
-        text = app_main.read_text(encoding="utf-8")
-        if not re.search(r"fn\s+main\s*\(\s*\)\s*\{\s*\}", text, re.DOTALL):
-            warn(f"binary placeholder has behavior: {app_main.relative_to(ROOT)}")
 
 
 def validate_required_docs() -> None:
@@ -443,10 +503,87 @@ def validate_required_docs() -> None:
             fail(f"required documentation missing: {relative}")
 
 
-def validate_nonempty_files() -> None:
-    for path in iter_source_files():
-        if path.stat().st_size == 0:
-            fail(f"empty file: {path.relative_to(ROOT)}")
+def validate_benchmark_retention(root: Path = ROOT) -> None:
+    """Keep the selected reference evidence and summaries within a finite tree."""
+    total = sum(
+        (Path(directory) / name).stat().st_size
+        for directory, _, files in os.walk(root / "benchmarks", followlinks=False)
+        for name in files
+    )
+    if total > MAX_BENCHMARK_TREE_BYTES:
+        fail(f"benchmark tree exceeds the 600 MiB retention budget ({total} bytes); "
+             "keep new raw runs outside the checkout and follow docs/testing/benchmark-retention.md")
+
+
+def validate_nonempty_files(root: Path = ROOT) -> None:
+    retained_empty = retained_empty_evidence(root)
+    for path in iter_source_files(root):
+        if path.stat().st_size == 0 and path not in retained_empty:
+            fail(f"empty file: {path.relative_to(root)}")
+
+
+def retained_empty_evidence(root: Path) -> set[Path]:
+    """Admit only explicitly hashed empty receipts in local conformance packages."""
+    empty_digest = "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    permitted: set[Path] = set()
+
+    def unique_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate field")
+            result[key] = value
+        return result
+
+    for manifest in sorted((root / "benchmarks/phase1/conformance").glob("*/files.manifest.json")):
+        try:
+            if manifest.is_symlink() or manifest.parent.is_symlink() or not manifest.is_file():
+                raise ValueError("linked manifest")
+            with manifest.open("rb") as stream:
+                encoded = stream.read(4 * 1024 * 1024 + 1)
+            if len(encoded) > 4 * 1024 * 1024:
+                raise ValueError("manifest exceeds bound")
+            document = json.loads(encoded, object_pairs_hook=unique_fields)
+            if (not isinstance(document, dict)
+                    or set(document) != {"schema", "files", "total_bytes"}
+                    or document["schema"] != "latent.phase1.retained-files.v1"
+                    or not isinstance(document["files"], list)
+                    or not 0 < len(document["files"]) <= 5000):
+                raise ValueError("invalid manifest")
+            selected: set[Path] = set()
+            names: set[str] = set()
+            total = 0
+            for row in document["files"]:
+                if not isinstance(row, dict) or set(row) != {"path", "bytes", "sha256"}:
+                    raise ValueError("invalid reference")
+                name = row["path"]
+                if (not isinstance(name, str) or len(name) > 1024
+                        or re.fullmatch(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*", name) is None
+                        or any(part in (".", "..") for part in name.split("/"))
+                        or name.casefold() in names
+                        or not isinstance(row["bytes"], str)
+                        or re.fullmatch(r"0|[1-9][0-9]{0,19}", row["bytes"]) is None
+                        or not isinstance(row["sha256"], str)
+                        or re.fullmatch(r"sha256:[0-9a-f]{64}", row["sha256"]) is None):
+                    raise ValueError("invalid reference")
+                names.add(name.casefold())
+                total += int(row["bytes"])
+                if row["bytes"] != "0":
+                    continue
+                path = manifest.parent
+                for part in name.split("/"):
+                    path /= part
+                    if path.is_symlink():
+                        raise ValueError("linked empty receipt")
+                if row["sha256"] != empty_digest or not path.is_file() or path.stat().st_size != 0:
+                    raise ValueError("changed empty receipt")
+                selected.add(path)
+            if document["total_bytes"] != str(total):
+                raise ValueError("manifest total mismatch")
+            permitted.update(selected)
+        except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+            fail(f"invalid retained evidence manifest {manifest.relative_to(root)}: {exc}")
+    return permitted
 
 
 def main() -> int:
@@ -458,8 +595,11 @@ def main() -> int:
     validate_proto()
     validate_wit()
     validate_schemas()
+    validate_docker_schema_plans()
+    validate_kubernetes_schema_plans()
     validate_interface_only_policy()
     validate_required_docs()
+    validate_benchmark_retention()
     validate_nonempty_files()
 
     print(f"validated repository: {sum(1 for _ in iter_source_files())} source files")

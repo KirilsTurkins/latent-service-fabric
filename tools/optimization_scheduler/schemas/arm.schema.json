@@ -1,0 +1,810 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/scheduler-arm.v1.schema.json",
+  "title": "Scheduler benchmark arm v1",
+  "$comment": "Structural evidence contract only. Semantic replay additionally checks exact populations, source identity, original deadlines, ownership, artifact hashes and allocation coverage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "plan",
+    "identity",
+    "process_id",
+    "plan_sha256",
+    "identity_sha256",
+    "settings",
+    "started_nanos",
+    "finished_nanos",
+    "elapsed_nanos",
+    "outcome",
+    "failure",
+    "counts",
+    "rows",
+    "checkpoints",
+    "frame",
+    "runtime_dropped",
+    "fixture_dropped",
+    "invokes"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.scheduler-arm.v1"
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "profile",
+        "variant",
+        "case",
+        "mode",
+        "observation_hold_millis"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.scheduler-plan.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "variant": {
+          "enum": [
+            "control",
+            "candidate"
+          ]
+        },
+        "case": {
+          "enum": [
+            "closed-one",
+            "saturated-one",
+            "saturated-many",
+            "reference-many",
+            "cancel-one",
+            "cancel-many"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "normal",
+            "allocation"
+          ]
+        },
+        "observation_hold_millis": {
+          "const": 100
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "allocation"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "case": {
+                "const": "cancel-many"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "identity": {
+      "type": "object",
+      "maxProperties": 512,
+      "$comment": "Nested source/process/resource proof is checked by semantic replay."
+    },
+    "process_id": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 2147483647
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "identity_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tenants",
+        "measured_offers",
+        "warmup_offers",
+        "rate_per_second",
+        "pending_capacity",
+        "queue_capacity",
+        "cells",
+        "hold_millis",
+        "original_budget_millis",
+        "counters_enabled"
+      ],
+      "properties": {
+        "tenants": {
+          "enum": [
+            1,
+            8,
+            32
+          ]
+        },
+        "measured_offers": {
+          "type": "integer",
+          "minimum": 16,
+          "maximum": 2000
+        },
+        "warmup_offers": {
+          "enum": [
+            0,
+            8
+          ]
+        },
+        "rate_per_second": {
+          "enum": [
+            0,
+            100,
+            1000
+          ]
+        },
+        "pending_capacity": {
+          "enum": [
+            1,
+            64
+          ]
+        },
+        "queue_capacity": {
+          "enum": [
+            32,
+            64
+          ]
+        },
+        "cells": {
+          "const": 4
+        },
+        "hold_millis": {
+          "const": 10
+        },
+        "original_budget_millis": {
+          "const": 1000
+        },
+        "counters_enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "started_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "finished_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "outcome": {
+      "enum": [
+        "passed",
+        "failed"
+      ]
+    },
+    "failure": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 4096
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "offers",
+        "admission_calls",
+        "admitted",
+        "enqueue_calls",
+        "enqueue_results",
+        "cancel_calls",
+        "cancel_accepted",
+        "release_calls",
+        "released",
+        "cleanup_reclaims",
+        "shutdown_calls"
+      ],
+      "properties": {
+        "offers": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "admission_calls": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "admitted": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "enqueue_calls": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "enqueue_results": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "cancel_calls": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "cancel_accepted": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "release_calls": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "released": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "cleanup_reclaims": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "shutdown_calls": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "rows": {
+      "type": "array",
+      "maxItems": 2008,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ordinal",
+          "tenant",
+          "activation_id",
+          "role",
+          "scheduled_nanos",
+          "dispatched_nanos",
+          "admission_started_nanos",
+          "admission_finished_nanos",
+          "admitted_nanos",
+          "deadline_nanos",
+          "deadline_unix_millis",
+          "enqueue_called_nanos",
+          "result_nanos",
+          "release_started_nanos",
+          "released_nanos",
+          "cancel_requested_nanos",
+          "cancel_finished_nanos",
+          "cancel_accepted",
+          "cancel_error",
+          "outcome",
+          "error",
+          "cleanup_reclaimed"
+        ],
+        "properties": {
+          "ordinal": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "tenant": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "activation_id": {
+            "type": "string",
+            "pattern": "^scheduler-[0-9]{5}$"
+          },
+          "role": {
+            "enum": [
+              "holder",
+              "queued",
+              "warmup",
+              "measured"
+            ]
+          },
+          "scheduled_nanos": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "dispatched_nanos": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "admission_started_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "admission_finished_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "admitted_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deadline_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deadline_unix_millis": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enqueue_called_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "release_started_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "released_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cancel_requested_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cancel_finished_nanos": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cancel_accepted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cancel_error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "array",
+                    "maxItems": 16,
+                    "items": {
+                      "type": "object",
+                      "maxProperties": 512,
+                      "$comment": "Nested source/process/resource proof is checked by semantic replay."
+                    }
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "outcome": {
+            "enum": [
+              "released",
+              "admission-error",
+              "scheduler-error",
+              "backpressure",
+              "pending",
+              "assigned",
+              "release-error"
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "code",
+                  "message",
+                  "retryable",
+                  "details"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  },
+                  "details": {
+                    "type": "array",
+                    "maxItems": 16,
+                    "items": {
+                      "type": "object",
+                      "maxProperties": 512,
+                      "$comment": "Nested source/process/resource proof is checked by semantic replay."
+                    }
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cleanup_reclaimed": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "checkpoints": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "label",
+          "started_nanos",
+          "finished_nanos",
+          "scheduler",
+          "quota",
+          "work"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "started_nanos": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "finished_nanos": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "scheduler": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "accepting",
+              "capacity",
+              "available",
+              "active_leases",
+              "quarantined",
+              "queue_depth",
+              "queued_tenants",
+              "rejected",
+              "cancellations",
+              "expired",
+              "granted",
+              "total_wait_micros",
+              "max_wait_micros",
+              "oldest_lease_age_micros"
+            ],
+            "properties": {
+              "accepting": {
+                "type": "boolean"
+              },
+              "capacity": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "available": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "active_leases": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "quarantined": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "queue_depth": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "queued_tenants": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "rejected": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "cancellations": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "expired": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "granted": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "total_wait_micros": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "max_wait_micros": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "oldest_lease_age_micros": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              }
+            }
+          },
+          "quota": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "active_activations",
+              "queued_activations",
+              "reserved_cpu_fuel",
+              "reserved_memory_bytes",
+              "retained_tenants"
+            ],
+            "properties": {
+              "active_activations": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "queued_activations": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "reserved_cpu_fuel": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "reserved_memory_bytes": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "retained_tenants": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              }
+            }
+          },
+          "work": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "enabled",
+              "overflowed",
+              "tenant_linear_visits",
+              "winner_comparisons",
+              "cancel_entry_visits",
+              "entry_shifted_slots",
+              "tenant_shifted_slots",
+              "entry_unlinks",
+              "tenant_index_lookups"
+            ],
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "overflowed": {
+                "type": "boolean"
+              },
+              "tenant_linear_visits": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "winner_comparisons": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "cancel_entry_visits": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "entry_shifted_slots": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "tenant_shifted_slots": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "entry_unlinks": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "tenant_index_lookups": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "frame": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "symbol",
+            "polls",
+            "started_nanos",
+            "finished_nanos",
+            "cancel_calls",
+            "settled",
+            "scope"
+          ],
+          "properties": {
+            "symbol": {
+              "const": "latent_scheduler::local::measurement::measured_cancel_and_settle"
+            },
+            "polls": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "started_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "finished_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "cancel_calls": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "settled": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "scope": {
+              "const": "cancel-and-original-enqueue-future-settlement"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "runtime_dropped": {
+      "type": "boolean"
+    },
+    "fixture_dropped": {
+      "type": "boolean"
+    },
+    "invokes": {
+      "const": "0"
+    }
+  }
+}

@@ -1,0 +1,153 @@
+warning: associated function `from_wire_kind` is never used
+  --> crates/latent-manifest/src/codec.rs:44:8
+   |
+37 | impl ManifestKind {
+   | ----------------- associated function in this implementation
+...
+44 |     fn from_wire_kind(kind: &str) -> Option<Self> {
+   |        ^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: methods `limits`, `decode_document`, `encode_document`, and `decode_preparsed` are never used
+   --> crates/latent-manifest/src/codec.rs:123:18
+    |
+116 | impl JsonManifestCodec {
+    | ---------------------- methods in this implementation
+...
+123 |     pub const fn limits(&self) -> ManifestLimits {
+    |                  ^^^^^^
+...
+128 |     pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
+    |            ^^^^^^^^^^^^^^^
+...
+135 |     pub fn encode_document(&self, manifest: &ManifestDocument) -> ManifestResult<Vec<u8>> {
+    |            ^^^^^^^^^^^^^^^
+...
+153 |     fn decode_preparsed(
+    |        ^^^^^^^^^^^^^^^^
+
+warning: function `document_kind` is never used
+   --> crates/latent-manifest/src/codec.rs:324:4
+    |
+324 | fn document_kind(value: &Value) -> ManifestResult<ManifestKind> {
+    |    ^^^^^^^^^^^^^
+
+warning: `latent-manifest` (lib) generated 3 warnings
+   Compiling latent-control-store v0.1.0-alpha.1 (/tmp/lsf-catalog-mutation-product-check-01/crates/latent-control-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.73s
+     Running unittests src/lib.rs (/workspace/project/target/debug/deps/latent_control_store-f5e7c826c39a4613)
+
+running 109 tests
+test deployments::compiler::tests::differential::index_charge_preserves_default_then_named_byte_and_entry_error_precedence ... ok
+test deployments::compiler::tests::differential::irrelevant_verified_metadata_refreshes_generation_stamp_without_owning_it_in_record ... ok
+test deployments::compiler::tests::differential::optional_stamp_retention_cannot_exhaust_the_acceptance_budget ... ok
+test deployments::compiler::tests::differential::absent_memo_and_changed_limits_preserve_the_full_reference_contract ... ok
+test deployments::compiler::tests::differential::missing_clean_mapping_rebuilds_before_appending_any_partial_scope ... ok
+test deployments::compiler::tests::ownership::canonical_records_share_routes_and_equal_reapply_without_sharing_object_versions ... ok
+test deployments::compiler::tests::ownership::changed_corrupt_bytes_fail_before_any_prior_record_is_reused_or_mutated ... ok
+test deployments::compiler::tests::ownership::freshly_changed_execution_or_export_metadata_prevents_reuse ... ok
+test deployments::compiler::tests::differential::reused_default_scope_keeps_endpoint_subsets_separate_from_all_route_members ... ok
+test deployments::compiler::tests::ownership::changed_weight_and_inserted_position_preserve_old_pin_and_retire_only_old_payload ... ok
+test deployments::compiler::tests::search::route_members_are_independent_of_endpoint_members_and_errors_keep_their_order ... ok
+test deployments::observation::disabled_feature_has_no_retained_observation_state ... ok
+test deployments::compiler::tests::search::streamed_selection_preserves_original_framing_unicode_and_empty_keys ... ok
+test deployments::compiler::tests::differential::earlier_id_insert_delete_weight_and_recreate_match_fresh_bytes_and_route_positions ... ok
+test deployments::compiler::tests::search::packed_weighted_routes_match_reference_and_cover_each_bucket_boundary ... ok
+test deployments::persistence::faults::initialization_orders_state_marker_file_rename_and_directory_sync ... ok
+test deployments::persistence::hashing::tests::short_writes_hash_exactly_once_and_over_limit_input_never_reaches_destination ... ok
+test deployments::persistence::hashing::tests::zero_limit_and_checked_count_overflow_reject_without_updating_hash ... ok
+test deployments::persistence::tests::exact_final_document_limit_and_structural_boundaries_never_publish_partial_bytes ... ok
+test deployments::persistence::tests::failed_sealing_releases_the_only_catalog_record_owner ... ok
+test deployments::persistence::tests::nine_to_ten_uses_current_generation_fields_without_rewriting_canonical_deployments ... ok
+test deployments::persistence::tests::recovery::load_preserves_exact_file_bound_and_rejects_modified_typed_payload ... ok
+test deployments::persistence::tests::recovery::loaded_v1_is_still_recompiled_against_the_final_v2_size_limit ... ok
+test deployments::persistence::faults::staging_marker_cleanup_never_repairs_corrupt_completed_state ... ok
+test deployments::persistence::tests::recovery::reopened_v1_and_v2_keep_original_noncanonical_file_bytes ... ok
+test deployments::persistence::tests::typed_checksum_sink_preserves_v1_omission_and_exact_payload_byte_bound ... ok
+test deployments::persistence::tests::streamed_encoding_matches_original_for_empty_escaped_and_large_number_states ... ok
+test deployments::tests::admission::execution::admission_rejection_never_calls_the_real_runner_or_cell_pool ... ok
+test deployments::tests::admission::catalog_replacement_and_restart_keep_policy_pins_and_do_not_reset_shared_quotas ... ok
+test deployments::tests::admission::execution::downstream_queue_failure_returns_the_admission_reservation ... ok
+test deployments::tests::admission::execution::cancellation_in_the_real_runner_releases_queued_and_running_quota ... ok
+test deployments::persistence::faults::marker_creation_and_partial_writes_are_recoverable_at_every_boundary ... ok
+test deployments::tests::admission::generated_revision_identities_do_not_consume_the_route_identifier_budget ... ok
+test deployments::tests::admission::execution::dropping_real_runner_futures_reclaims_quota_and_cancellation_without_reusing_uncertain_cells ... ok
+test deployments::tests::admission::real_catalog_cancellation_enqueue_failure_expiry_and_future_drop_reclaim_all_guards ... ok
+test deployments::tests::admission::real_catalog_rejections_create_no_cancellation_state_or_execution_work ... ok
+test deployments::tests::admission::real_catalog_verifies_the_entire_pinned_identity_and_ignores_forged_attributes ... ok
+test deployments::tests::admission::weighted_selection_preserves_each_exact_revisions_own_policy ... ok
+test deployments::persistence::faults::nested_path_sync_failures_propagate_and_existing_path_retries_resync_all_links ... ok
+test deployments::tests::apply_read_list_delete_and_pinned_revision ... ok
+test deployments::tests::compiler_publisher_and_coalescing_source_enforce_complete_generations ... ok
+test deployments::tests::concurrent_writers_cannot_overwrite_a_newer_generation ... ok
+test deployments::tests::admission::execution::runner_terminal_matrix_disposes_cells_before_quota_returns_to_baseline ... ok
+test deployments::tests::duplicate_contract_and_function_ids_are_rejected ... ok
+test deployments::tests::golden::catalog_preserves_original_bytes_and_weighted_assignments ... ok
+test deployments::tests::configured_bounds_reject_mutations_before_persistence ... ok
+test deployments::tests::lock_release::initialization_error_releases_lock_before_repository_construction ... ok
+test deployments::tests::invalid_batches_leave_generation_and_state_unchanged ... ok
+test deployments::tests::lock_release::dropping_owner_releases_lock_while_duplicate_descriptor_remains_open ... ok
+test deployments::tests::pagination::an_oversized_first_record_fails_before_cloning_instead_of_repeating_an_empty_page ... ok
+test deployments::tests::pagination::damaged_oversized_and_cross_scope_tokens_fail_before_selection ... ok
+test deployments::tests::pagination::any_publication_expires_pages_without_changing_unrelated_object_versions ... ok
+test deployments::tests::pagination::invalid_sizes_and_scope_fail_before_selection_or_artifact_access ... ok
+test deployments::tests::concurrent_snapshot_replacement_never_exposes_half_a_batch ... ok
+test deployments::tests::pagination::maximum_length_tenant_service_and_ids_produce_usable_bounded_tokens ... ok
+test deployments::tests::pagination::exact_record_byte_budget_returns_a_cursor_before_the_uncloned_next_record ... ok
+test deployments::tests::pagination::missing_tenant_or_service_selects_and_clones_no_other_records ... ok
+test deployments::tests::pagination::service_pages_seek_the_scope_and_allow_a_different_continuation_size ... ok
+test deployments::tests::pagination::tenant_pages_follow_id_order_with_one_lookahead_and_only_selected_clones ... ok
+test deployments::tests::recovery::generation_exhaustion_never_wraps_to_zero ... ok
+test deployments::tests::recovery::crash_boundaries_keep_disk_and_memory_on_complete_snapshots ... ok
+test deployments::tests::recovery::interrupted_initialization_restores_the_missing_marker ... ok
+test deployments::tests::pagination::tokens_do_not_transfer_to_another_catalog_or_survive_reopen ... ok
+test deployments::tests::pagination::reused_manifest_crossing_nine_to_ten_recomputes_exact_page_row_cost ... ok
+test deployments::tests::recovery::recovery_never_silently_drops_a_missing_release_or_changed_contract ... ok
+test deployments::tests::recovery::staging_io_failure_does_not_publish_any_desired_state ... ok
+test deployments::tests::recovery::restart_ignores_pending_but_rejects_corrupt_or_missing_complete_state ... ok
+test deployments::tests::recovery::real_release_and_deployment_catalogs_restore_exact_routes_and_deletions ... ok
+test deployments::tests::recovery::valid_checksum_does_not_hide_a_mismatched_compiled_snapshot ... ok
+test deployments::tests::rejects_unsupported_releases_and_contract_conflicts ... ok
+test deployments::tests::resources::compilation_memory::release_grouping_fetches_each_digest_once_even_with_interleaved_ids ... ok
+test deployments::tests::reuse_integrity::complete_contract_content_invalidates_reuse_even_with_unchanged_declared_digests ... ok
+test deployments::tests::reuse_integrity::unchanged_component_bytes_do_not_cache_changed_execution_policy ... ok
+test deployments::tests::reuse_integrity::updating_one_release_still_rejects_corruption_in_an_unchanged_release ... ok
+test deployments::tests::root_identity::during_open::relative_root_stays_owned_while_open_is_suspended_at_release_fetch ... ok
+test deployments::tests::reuse_integrity::metadata_above_the_optional_stamp_limit_remains_valid_through_update_and_reopen ... ok
+test deployments::tests::root_ownership_limits_and_hot_path_are_explicit ... ok
+test deployments::tests::scoped_routes::empty_tenant_projections_have_distinct_scoped_digests ... ok
+test deployments::tests::scoped_routes::projection::borrowed_snapshot_equality_checks_every_public_dimension_without_projection ... ok
+test deployments::tests::root_identity::mutations_stay_in_the_owned_root_after_working_directory_changes ... ok
+test deployments::tests::scoped_routes::projection::copied_metadata_discards_source_slack_but_injected_output_slack_is_rejected ... ok
+test deployments::tests::scoped_routes::projection::moved_request_tenant_capacity_is_included_in_returned_cost ... ok
+test deployments::tests::scoped_routes::projection_bounds_and_digest_cover_returned_values ... ok
+test deployments::tests::scoped_routes::projection_reads_only_selected_tenant_and_preserves_restart_identity ... ok
+test deployments::tests::scoped_routes::revision_count_and_attribute_count_are_checked_before_projection ... ok
+test deployments::tests::scoped_routes::selected_capacity_limits_do_not_visit_unrelated_revision_metadata ... ok
+test deployments::tests::tenants_and_named_routes_never_cross_boundaries ... ok
+test deployments::tests::verified_metadata::checked_metadata_still_requires_deployment_compatibility_validation ... ok
+test deployments::tests::verified_metadata::compilation_uses_verified_metadata_once_per_release_and_preserves_routes ... ok
+test deployments::tests::verified_metadata::valid_verified_metadata_for_another_release_is_not_adopted ... ok
+test deployments::tests::verified_metadata::default_metadata_fetch_verifies_fresh_bytes_length_and_requested_identity ... ok
+test deployments::tests::versioned::delete_receipts_preserve_removed_versions_and_recreation_never_reuses_a_stamp ... ok
+test deployments::tests::versioned::persistence::exhausted_generation_cannot_wrap_object_versions_or_commit_a_mutation ... ok
+test deployments::tests::versioned::legacy_batch_and_snapshot_writers_preserve_consistent_object_stamps ... ok
+test deployments::tests::versioned::persistence::legacy_state_opens_without_rewrite_then_next_mutation_persists_explicit_object_versions ... ok
+test deployments::tests::versioned::persistence::persisted_object_versions_require_an_exact_valid_map_even_with_a_valid_checksum ... ok
+test deployments::tests::versioned::persistence::precommit_failures_preserve_versions_and_uncertain_commits_report_exact_stamps ... ok
+test deployments::tests::versioned::races::apply_receipt_retains_its_own_committed_state_when_another_writer_finishes_first ... ok
+test deployments::tests::versioned::races::create_only_precondition_is_rechecked_after_a_concurrent_creation ... ok
+test deployments::tests::versioned::races::delete_receipt_identifies_removed_state_even_when_recreation_precedes_its_response ... ok
+test deployments::tests::versioned::races::caller_precondition_is_rechecked_after_same_object_update_or_delete_recreate ... ok
+test deployments::tests::versioned::races::uncertain_durability_details_identify_the_commit_before_a_later_writers_response ... ok
+test deployments::tests::versioned::races::paused_delete_cannot_remove_a_concurrently_updated_object ... ok
+test deployments::tests::versioned::tenant_scope_is_checked_independently_of_object_identity_and_generation ... ok
+test deployments::tests::versioned::races::unrelated_compile_conflict_preserves_the_callers_object_stamp_for_retry ... ok
+test deployments::tests::versioned::versioned_apply_compares_caller_preconditions_and_returns_normalized_committed_state ... ok
+test deployments::tests::weighting_is_deterministic_order_independent_and_restart_stable ... ok
+test deployments::tests::resources::dormant_deployments_allocate_no_runtime_resources ... ok
+test deployments::tests::resources::compilation_memory::large_release_metadata_has_a_bounded_compilation_working_set ... ok
+
+test result: ok. 109 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 33.41s
+

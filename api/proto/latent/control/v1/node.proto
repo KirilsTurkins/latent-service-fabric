@@ -8,6 +8,20 @@ message CellCapacity {
   string class = 1;
   uint32 total = 2;
   uint32 available = 3;
+  bool observation_available = 4;
+  bool accepting = 5;
+  uint32 active = 6;
+  uint32 quarantined = 7;
+  uint32 queue_depth = 8;
+  uint32 queue_capacity = 9;
+  uint32 queued_tenants = 10;
+  uint64 rejected = 11;
+  uint64 cancellations = 12;
+  uint64 expired = 13;
+  uint64 granted = 14;
+  uint64 total_wait_micros = 15;
+  uint64 max_wait_micros = 16;
+  uint64 oldest_lease_age_micros = 17;
 }
 
 message CacheEntry {
@@ -39,6 +53,101 @@ message NodeInventory {
   uint64 route_generation = 5;
   repeated CacheEntry cache_entries = 6;
   uint64 observed_at_unix_millis = 7;
+  NodeCacheSummary cache_summary = 8;
+  NodePressureObservation pressure = 9;
+  NodeHealthObservation health = 10;
+  NodeResourceTopology topology = 11;
+  optional NodeQuotaSummary quotas = 12;
+  // Conservative returned domain snapshot cost, not process RSS.
+  uint64 retained_bytes = 13;
+}
+
+enum NodeHealthStatus {
+  NODE_HEALTH_STATUS_UNSPECIFIED = 0;
+  NODE_HEALTH_STATUS_HEALTHY = 1;
+  NODE_HEALTH_STATUS_DEGRADED = 2;
+  NODE_HEALTH_STATUS_UNHEALTHY = 3;
+}
+
+message NodeHealthObservation {
+  NodeHealthStatus status = 1;
+  bool ready = 2;
+  bool healthy = 3;
+  repeated string reasons = 4;
+  uint64 observed_at_unix_millis = 5;
+}
+
+message NodePressureObservation {
+  // False distinguishes unavailable pressure from a measured zero.
+  bool load_available = 1;
+  optional uint64 load_sample_age_millis = 2;
+  uint32 cpu_pressure_milli = 3;
+  uint32 memory_pressure_milli = 4;
+  uint32 queue_pressure_milli = 5;
+  uint32 cache_pressure_milli = 6;
+}
+
+message NodeCacheSummary {
+  bool available = 1;
+  uint64 entries = 2;
+  uint64 maximum_entries = 3;
+  uint64 source_bytes = 4;
+  uint64 maximum_source_bytes = 5;
+  uint64 metadata_bytes = 6;
+  uint64 maximum_metadata_bytes = 7;
+  uint64 compiled_image_bytes = 8;
+  uint64 maximum_compiled_image_bytes = 9;
+  uint64 preparing = 10;
+  uint64 maximum_concurrent_preparations = 11;
+  uint64 preparing_source_bytes = 12;
+  uint64 preparing_metadata_bytes = 13;
+  uint64 hits = 14;
+  uint64 misses = 15;
+  uint64 evictions = 16;
+  uint64 invalidations = 17;
+}
+
+enum ResourceOwnership {
+  RESOURCE_OWNERSHIP_UNSPECIFIED = 0;
+  RESOURCE_OWNERSHIP_NODE_FIXED = 1;
+  RESOURCE_OWNERSHIP_ACTIVATION_SCOPED = 2;
+  RESOURCE_OWNERSHIP_SERVICE_RESIDENT = 3;
+}
+
+message NodeTopologyEntry {
+  string name = 1;
+  string kind = 2;
+  ResourceOwnership ownership = 3;
+  uint64 configured_count = 4;
+  // Missing means unmeasured; zero is an actual observation.
+  optional uint64 active_count = 5;
+  map<string, string> attributes = 6;
+}
+
+message NodeResourceTopology {
+  repeated NodeTopologyEntry entries = 1;
+  bool available = 2;
+  bool complete = 3;
+}
+
+message NodeQuotaUsage {
+  uint32 active_activations = 1;
+  uint32 queued_activations = 2;
+  uint64 reserved_cpu_fuel = 3;
+  uint64 reserved_memory_bytes = 4;
+}
+
+message NodeQuotaLimits {
+  uint32 maximum_concurrent_activations = 1;
+  uint32 maximum_queued_activations = 2;
+  uint64 maximum_reserved_cpu_fuel = 3;
+  uint64 maximum_reserved_memory_bytes = 4;
+}
+
+message NodeQuotaSummary {
+  NodeQuotaUsage usage = 1;
+  NodeQuotaLimits limits = 2;
+  uint64 retained_tenants = 3;
 }
 
 message RegisterNodeRequest {
@@ -83,9 +192,14 @@ message ListNodesResponse {
 }
 
 service NodeService {
+  // Phase 2+ cluster registration. Explicitly unimplemented in Phase 1.
   rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+  // Phase 2+ cluster reporting. Explicitly unimplemented in Phase 1.
   rpc ReportInventory(ReportInventoryRequest) returns (Empty);
+  // Phase 2+ cluster heartbeats. Explicitly unimplemented in Phase 1.
   rpc Heartbeat(HeartbeatRequest) returns (Empty);
+  // Phase 1 standalone: returns the local node inventory only.
   rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
+  // Phase 1 standalone: returns the bounded local node list only.
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
 }

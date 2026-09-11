@@ -2,9 +2,21 @@
 
 #![forbid(unsafe_code)]
 
+pub mod async_runtime;
+pub mod conformance;
 pub mod deterministic;
+pub mod harness;
+pub mod process;
+pub mod resources;
 
+pub use async_runtime::AsyncTestRuntime;
 pub use deterministic::{block_on, DeterministicIds, ManualClock, TempWorkspace};
+pub use harness::{
+    BorrowedBackendHarness, ExpectedOutcome, IdleScalingMeasurement, InvocationCase,
+    InvocationConformanceSuite, NodeHarness, ObservedInvariantProbe, ScopedNodeHarness,
+};
+pub use process::{CapturedProcess, ProcessHarness};
+pub use resources::{CurrentProcessProbe, ProcessResources, ResourceProbe};
 
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{BoxFuture, Metadata, PlatformError};
@@ -41,7 +53,7 @@ pub struct IdleScalingObservation {
 pub trait BackendHarness: Send + Sync {
     fn backend(&self) -> &dyn ExecutionBackend;
 
-    fn invoke<'a>(&'a self, envelope: ActivationEnvelope) -> BoxFuture<'a, ActivationOutcome>;
+    fn invoke(&self, envelope: ActivationEnvelope) -> BoxFuture<'_, ActivationOutcome>;
 }
 
 pub trait ConformanceSuite: Send + Sync {
@@ -55,12 +67,12 @@ pub trait ConformanceSuite: Send + Sync {
 }
 
 pub trait InvariantProbe: Send + Sync {
-    fn node_inventory<'a>(&'a self) -> BoxFuture<'a, Result<NodeInventory, PlatformError>>;
+    fn node_inventory(&self) -> BoxFuture<'_, Result<NodeInventory, PlatformError>>;
 
-    fn idle_scaling<'a>(
-        &'a self,
+    fn idle_scaling(
+        &self,
         registered_releases: u64,
-    ) -> BoxFuture<'a, Result<IdleScalingObservation, PlatformError>>;
+    ) -> BoxFuture<'_, Result<IdleScalingObservation, PlatformError>>;
 
-    fn telemetry<'a>(&'a self) -> BoxFuture<'a, Result<Vec<MetricPoint>, PlatformError>>;
+    fn telemetry(&self) -> BoxFuture<'_, Result<Vec<MetricPoint>, PlatformError>>;
 }

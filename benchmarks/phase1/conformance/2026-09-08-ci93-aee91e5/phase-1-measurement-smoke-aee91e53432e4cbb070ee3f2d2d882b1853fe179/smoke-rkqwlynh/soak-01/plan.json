@@ -1,0 +1,18 @@
+{
+  "schema": "latent.phase1.measurement-plan.v1",
+  "profile": "smoke",
+  "kind": "soak",
+  "repetition": 1,
+  "scale_counts": [
+    2,
+    4
+  ],
+  "route_samples": 16,
+  "warmup_invocations": 4,
+  "measured_invocations": 20,
+  "batch_size": 20,
+  "concurrency": 2,
+  "benchmark_samples": 4,
+  "maximum_run_seconds": "90",
+  "maximum_output_bytes": "8388608"
+}

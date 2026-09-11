@@ -422,7 +422,8 @@ fn request(
     message: &str,
     budget: ResourceBudget,
 ) -> ExecutionRequest {
-    let deadline = budget.wall_deadline_unix_millis;
+    let deadline =
+        ResourceBudget::effective_deadline_unix_millis(now_unix_millis(), None, [&budget]);
     ExecutionRequest {
         activation: ActivationEnvelope {
             activation_id: activation_id.clone(),
@@ -485,7 +486,7 @@ fn budget(cpu_fuel: u64, memory_bytes: u64, deadline: Option<u64>) -> ResourceBu
     ResourceBudget {
         cpu_fuel,
         memory_bytes,
-        wall_deadline_unix_millis: deadline,
+        wall_time_limit_millis: deadline.map(|value| value.saturating_sub(now_unix_millis())),
         child_calls: 0,
         outbound_requests: 0,
         state_read_bytes: 0,
@@ -741,6 +742,9 @@ async fn assert_mixed_healthy(
                 assert_eq!(success.output, expected.as_bytes());
                 assert_eq!(success.output_media_type, ECHO_SUCCESS_MEDIA_TYPE);
             }
+            ActivationOutcome::DeclaredError { error, .. } => {
+                panic!("{suite} healthy activation returned a declared error: {error:?}");
+            }
             ActivationOutcome::Failed { error, .. } => {
                 panic!("{suite} healthy activation failed: {error:?}");
             }
@@ -760,7 +764,8 @@ fn activation_envelope(
     message: &str,
     budget: ResourceBudget,
 ) -> ActivationEnvelope {
-    let deadline = budget.wall_deadline_unix_millis;
+    let deadline =
+        ResourceBudget::effective_deadline_unix_millis(now_unix_millis(), None, [&budget]);
     ActivationEnvelope {
         activation_id: activation_id.clone(),
         parent_activation_id: None,
@@ -838,6 +843,9 @@ fn assert_activation_failure(
         }
         ActivationOutcome::Succeeded(success) => {
             panic!("expected failure, got output {:?}", success.output);
+        }
+        ActivationOutcome::DeclaredError { error, .. } => {
+            panic!("expected platform failure, got declared error: {error:?}");
         }
     }
 }

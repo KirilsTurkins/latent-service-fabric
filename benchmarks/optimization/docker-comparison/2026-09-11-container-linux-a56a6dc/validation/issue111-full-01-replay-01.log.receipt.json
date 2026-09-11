@@ -1,0 +1,22 @@
+{
+  "command": [
+    "docker",
+    "exec",
+    "--workdir",
+    "/bench/source-01",
+    "lsf-issue111-controller-01",
+    "python3",
+    "tools/run_optimization_docker.py",
+    "validate",
+    "--root",
+    "/bench/full-01",
+    "--build-root",
+    "/bench/build-01",
+    "--output",
+    "/bench/analysis-full-01"
+  ],
+  "cwd": "C:\\Users\\turkins\\Desktop\\latent-fabric",
+  "exit_code": 0,
+  "elapsed_nanos": "15894091500",
+  "log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue111-full-01-replay-01.log"
+}

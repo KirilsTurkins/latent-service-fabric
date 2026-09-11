@@ -1,5 +1,3 @@
-//! Developer and operator CLI entry point.
-//!
-//! This binary intentionally has no runtime behavior in the interface scaffold.
-
-fn main() {}
+fn main() -> std::process::ExitCode {
+    latent::main_entry()
+}

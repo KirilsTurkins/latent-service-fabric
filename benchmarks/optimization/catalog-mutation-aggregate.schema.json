@@ -1,0 +1,793 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Closed bounded envelope; exact source, process, fixture, operation and observer associations require mandatory semantic replay.",
+  "title": "Catalog mutation aggregate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "status",
+    "population_complete",
+    "attempt_count_complete",
+    "qualifying_full_population",
+    "scope",
+    "suite",
+    "builds",
+    "plan",
+    "sources",
+    "validated_commands",
+    "validated_resolves",
+    "validated_invocations",
+    "validated_mutations",
+    "validated_reopens",
+    "validated_collectors",
+    "planned_collectors",
+    "elapsed_nanos",
+    "normal_elapsed_nanos",
+    "allocation_elapsed_nanos",
+    "runs",
+    "normal_pairs",
+    "allocation_pairs",
+    "comparison_scope"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.catalog-mutation-aggregate.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "failed"
+      ]
+    },
+    "population_complete": {
+      "type": "boolean"
+    },
+    "attempt_count_complete": {
+      "type": "boolean"
+    },
+    "qualifying_full_population": {
+      "type": "boolean"
+    },
+    "scope": {
+      "const": "zero-invoke-public-versioned-mutations-adjacent-reopen-and-separate-allocation"
+    },
+    "suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "const": "suite.json"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "builds": {
+      "$ref": "#/$defs/artifact"
+    },
+    "plan": {
+      "$ref": "#/$defs/plan"
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control",
+        "candidate"
+      ],
+      "properties": {
+        "control": {
+          "type": "object",
+          "maxProperties": 4096
+        },
+        "candidate": {
+          "type": "object",
+          "maxProperties": 4096
+        }
+      }
+    },
+    "validated_commands": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "validated_resolves": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "validated_invocations": {
+      "const": "0"
+    },
+    "validated_mutations": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "validated_reopens": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "validated_collectors": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "planned_collectors": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "normal_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "allocation_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "maxProperties": 96
+      }
+    },
+    "normal_pairs": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "allocation_pairs": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "maxProperties": 4096
+      }
+    },
+    "comparison_scope": {
+      "const": "one-paired-observation-per-size-shape-operation-no-process-quantiles"
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repetition",
+        "variant",
+        "shape",
+        "populated_size",
+        "mode",
+        "sequence_ordinal"
+      ],
+      "properties": {
+        "repetition": {
+          "type": "integer",
+          "const": 1
+        },
+        "variant": {
+          "enum": [
+            "control",
+            "candidate"
+          ]
+        },
+        "shape": {
+          "enum": [
+            "distinct",
+            "shared"
+          ]
+        },
+        "populated_size": {
+          "type": "integer",
+          "enum": [
+            4,
+            100,
+            1000,
+            10000
+          ]
+        },
+        "mode": {
+          "enum": [
+            "initial",
+            "reopen",
+            "allocation",
+            "allocation-reopen"
+          ]
+        },
+        "sequence_ordinal": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 31
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "profile",
+        "normal_sizes",
+        "allocation_size",
+        "pairs_per_size_shape",
+        "rows",
+        "mutations",
+        "normal_totals",
+        "allocation_totals",
+        "totals",
+        "order",
+        "maximum_normal_seconds",
+        "maximum_allocation_seconds",
+        "maximum_artifact_bytes",
+        "maximum_artifact_files",
+        "maximum_folded_expanded_bytes",
+        "maximum_temporary_folded_bytes",
+        "maximum_profile_records",
+        "maximum_document_bytes",
+        "maximum_row_bytes",
+        "maximum_samples",
+        "sampler_interval_millis",
+        "measured_symbols",
+        "normal_boundary",
+        "reopen_boundary",
+        "allocation_boundary",
+        "allocation_reopen_boundary"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.catalog-mutation-suite-plan.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "normal_sizes": {},
+        "allocation_size": {},
+        "pairs_per_size_shape": {
+          "const": 1
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/selection"
+          }
+        },
+        "mutations": {
+          "const": [
+            "unchanged-apply",
+            "weight-update",
+            "delete",
+            "reapply"
+          ]
+        },
+        "normal_totals": {},
+        "allocation_totals": {},
+        "totals": {},
+        "order": {
+          "const": "sizes-ascending-shapes-distinct-shared-parity-first-arm-adjacent-reopen"
+        },
+        "maximum_normal_seconds": {},
+        "maximum_allocation_seconds": {
+          "const": "7200"
+        },
+        "maximum_artifact_bytes": {
+          "const": "1073741824"
+        },
+        "maximum_artifact_files": {
+          "const": 4096
+        },
+        "maximum_folded_expanded_bytes": {
+          "const": "536870912"
+        },
+        "maximum_temporary_folded_bytes": {
+          "const": "536870912"
+        },
+        "maximum_profile_records": {
+          "const": 4000000
+        },
+        "maximum_document_bytes": {
+          "const": "33554432"
+        },
+        "maximum_row_bytes": {
+          "const": "262144"
+        },
+        "maximum_samples": {
+          "const": 2048
+        },
+        "sampler_interval_millis": {
+          "const": 100
+        },
+        "measured_symbols": {
+          "const": {
+            "unchanged-apply": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_unchanged_apply_and_drop",
+            "weight-update": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_weight_apply_and_drop",
+            "delete": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_delete_and_drop",
+            "reapply": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_reapply_and_drop",
+            "reopen": "latentd::standalone::measurements::comparison::catalog_mutations::frames::measured_catalog_reopen"
+          }
+        },
+        "normal_boundary": {
+          "const": "public-versioned-mutation-future-to-return-before-result-validation-and-drop"
+        },
+        "reopen_boundary": {
+          "const": "actual-artifact-and-deployment-repository-open"
+        },
+        "allocation_boundary": {
+          "const": "actual-async-mutation-poll-and-owned-result-drop"
+        },
+        "allocation_reopen_boundary": {
+          "const": "actual-repository-open-with-catalog-retained-through-node-shutdown"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "normal_sizes": {
+                "const": [
+                  4
+                ]
+              },
+              "allocation_size": {
+                "const": 4
+              },
+              "normal_totals": {
+                "const": {
+                  "publications": 16,
+                  "seed_batches": 4,
+                  "applies": 12,
+                  "deletes": 4,
+                  "gets": 20,
+                  "resolves": 56,
+                  "policies": 50,
+                  "pins": 24,
+                  "commands": 186,
+                  "invokes": 0,
+                  "measured_mutations": 16,
+                  "reopen_observations": 4,
+                  "warmup_calls": 0,
+                  "preflight_calls": 0,
+                  "collector_processes": 8
+                }
+              },
+              "allocation_totals": {
+                "const": {
+                  "publications": 16,
+                  "seed_batches": 4,
+                  "applies": 12,
+                  "deletes": 4,
+                  "gets": 20,
+                  "resolves": 56,
+                  "policies": 50,
+                  "pins": 24,
+                  "commands": 186,
+                  "invokes": 0,
+                  "measured_mutations": 16,
+                  "reopen_observations": 4,
+                  "warmup_calls": 0,
+                  "preflight_calls": 0,
+                  "collector_processes": 8
+                }
+              },
+              "totals": {
+                "const": {
+                  "publications": 32,
+                  "seed_batches": 8,
+                  "applies": 24,
+                  "deletes": 8,
+                  "gets": 40,
+                  "resolves": 112,
+                  "policies": 100,
+                  "pins": 48,
+                  "commands": 372,
+                  "invokes": 0,
+                  "measured_mutations": 32,
+                  "reopen_observations": 8,
+                  "warmup_calls": 0,
+                  "preflight_calls": 0,
+                  "collector_processes": 16
+                }
+              },
+              "maximum_normal_seconds": {
+                "const": "3600"
+              },
+              "rows": {
+                "minItems": 16,
+                "maxItems": 16
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "full"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "normal_sizes": {
+                "const": [
+                  100,
+                  1000,
+                  10000
+                ]
+              },
+              "allocation_size": {
+                "const": 4
+              },
+              "normal_totals": {
+                "const": {
+                  "publications": 44400,
+                  "seed_batches": 12,
+                  "applies": 36,
+                  "deletes": 12,
+                  "gets": 60,
+                  "resolves": 168,
+                  "policies": 150,
+                  "pins": 72,
+                  "commands": 44910,
+                  "invokes": 0,
+                  "measured_mutations": 48,
+                  "reopen_observations": 12,
+                  "warmup_calls": 0,
+                  "preflight_calls": 0,
+                  "collector_processes": 24
+                }
+              },
+              "allocation_totals": {
+                "const": {
+                  "publications": 16,
+                  "seed_batches": 4,
+                  "applies": 12,
+                  "deletes": 4,
+                  "gets": 20,
+                  "resolves": 56,
+                  "policies": 50,
+                  "pins": 24,
+                  "commands": 186,
+                  "invokes": 0,
+                  "measured_mutations": 16,
+                  "reopen_observations": 4,
+                  "warmup_calls": 0,
+                  "preflight_calls": 0,
+                  "collector_processes": 8
+                }
+              },
+              "totals": {
+                "const": {
+                  "publications": 44416,
+                  "seed_batches": 16,
+                  "applies": 48,
+                  "deletes": 16,
+                  "gets": 80,
+                  "resolves": 224,
+                  "policies": 200,
+                  "pins": 96,
+                  "commands": 45096,
+                  "invokes": 0,
+                  "measured_mutations": 64,
+                  "reopen_observations": 16,
+                  "warmup_calls": 0,
+                  "preflight_calls": 0,
+                  "collector_processes": 32
+                }
+              },
+              "maximum_normal_seconds": {
+                "const": "21600"
+              },
+              "rows": {
+                "minItems": 32,
+                "maxItems": 32
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              }
+            }
+          },
+          "planned_collectors": {
+            "const": "16"
+          },
+          "runs": {
+            "maxItems": 16
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "population_complete": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "validated_commands": {
+                  "const": "372"
+                },
+                "validated_resolves": {
+                  "const": "112"
+                },
+                "validated_mutations": {
+                  "const": "32"
+                },
+                "validated_reopens": {
+                  "const": "8"
+                },
+                "validated_collectors": {
+                  "const": "16"
+                },
+                "attempt_count_complete": {
+                  "const": true
+                },
+                "qualifying_full_population": {
+                  "const": false
+                },
+                "status": {
+                  "const": "incomplete"
+                },
+                "runs": {
+                  "minItems": 16,
+                  "maxItems": 16
+                },
+                "normal_pairs": {
+                  "minItems": 2,
+                  "maxItems": 2
+                },
+                "allocation_pairs": {
+                  "minItems": 4,
+                  "maxItems": 4
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "full"
+              }
+            }
+          },
+          "planned_collectors": {
+            "const": "32"
+          },
+          "runs": {
+            "maxItems": 32
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "population_complete": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "validated_commands": {
+                  "const": "45096"
+                },
+                "validated_resolves": {
+                  "const": "224"
+                },
+                "validated_mutations": {
+                  "const": "64"
+                },
+                "validated_reopens": {
+                  "const": "16"
+                },
+                "validated_collectors": {
+                  "const": "32"
+                },
+                "attempt_count_complete": {
+                  "const": true
+                },
+                "qualifying_full_population": {
+                  "const": true
+                },
+                "status": {
+                  "const": "complete"
+                },
+                "runs": {
+                  "minItems": 32,
+                  "maxItems": 32
+                },
+                "normal_pairs": {
+                  "minItems": 6,
+                  "maxItems": 6
+                },
+                "allocation_pairs": {
+                  "minItems": 4,
+                  "maxItems": 4
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "failed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "population_complete": {
+            "const": false
+          },
+          "attempt_count_complete": {
+            "const": false
+          },
+          "qualifying_full_population": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "complete"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          },
+          "population_complete": {
+            "const": true
+          },
+          "attempt_count_complete": {
+            "const": true
+          },
+          "qualifying_full_population": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "qualifying_full_population": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          },
+          "status": {
+            "const": "complete"
+          },
+          "population_complete": {
+            "const": true
+          },
+          "attempt_count_complete": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "population_complete": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attempt_count_complete": {
+            "const": false
+          },
+          "qualifying_full_population": {
+            "const": false
+          }
+        }
+      }
+    }
+  ]
+}

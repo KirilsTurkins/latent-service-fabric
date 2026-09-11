@@ -1,0 +1,1 @@
+{"path": "/bench/publication-stage-01", "method": "replace-stage-hardlinks-with-verified-independent-copies", "copied_files": 5014, "copied_bytes": "811118776", "original_bytes_unchanged": true, "elapsed_nanos": "3871308587"}

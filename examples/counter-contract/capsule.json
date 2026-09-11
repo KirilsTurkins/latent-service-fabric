@@ -34,7 +34,7 @@
     "limits": {
       "cpuFuel": 2000000,
       "memoryBytes": 16777216,
-      "wallDeadlineUnixMillis": null,
+      "wallTimeLimitMillis": null,
       "childCalls": 0,
       "outboundRequests": 0,
       "stateReadBytes": 65536,

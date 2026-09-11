@@ -1,0 +1,11 @@
+test_absent_duplicated_and_replaced_checkpoints_are_rejected (tools.tests.test_optimization_scheduler.CompleteRawDocuments.test_absent_duplicated_and_replaced_checkpoints_are_rejected) ... ok
+test_complete_closed_document_replays_warmup_and_measured_populations (tools.tests.test_optimization_scheduler.CompleteRawDocuments.test_complete_closed_document_replays_warmup_and_measured_populations) ... ok
+test_complete_storm_document_replays_original_cancellation_and_refunds (tools.tests.test_optimization_scheduler.CompleteRawDocuments.test_complete_storm_document_replays_original_cancellation_and_refunds) ... ok
+test_consistent_nonzero_final_owners_and_undropped_runtime_are_rejected (tools.tests.test_optimization_scheduler.CompleteRawDocuments.test_consistent_nonzero_final_owners_and_undropped_runtime_are_rejected) ... ok
+test_original_cancel_settlements_must_stay_inside_the_actual_frame (tools.tests.test_optimization_scheduler.CompleteRawDocuments.test_original_cancel_settlements_must_stay_inside_the_actual_frame) ... ok
+test_raw_pid_plan_and_identity_are_bound_to_independent_inputs (tools.tests.test_optimization_scheduler.CompleteRawDocuments.test_raw_pid_plan_and_identity_are_bound_to_independent_inputs) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.048s
+
+OK

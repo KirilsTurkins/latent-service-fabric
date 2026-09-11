@@ -1,0 +1,930 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/docker-aggregate.v1.schema.json",
+  "title": "Docker comparison aggregate v1",
+  "$comment": "Private completed-evidence shape. Exact bytes, strict numeric types, ownership, control order, semantic responses, clocks, source bindings and aggregate equality require offline replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "profile",
+    "plan",
+    "completed_paired_run",
+    "full_population_completed",
+    "acceptance_qualified",
+    "logical_offers",
+    "validated_pairs",
+    "source",
+    "build_source",
+    "suite_sha256",
+    "images",
+    "counts",
+    "collection_elapsed_nanos",
+    "collection_scope",
+    "phase_rows",
+    "phase_comparisons",
+    "resource_points",
+    "resource_comparisons",
+    "idle_windows",
+    "idle_window_comparisons",
+    "lifecycle_owners",
+    "lifecycle_cohorts",
+    "lifecycle_comparisons",
+    "client_resource_points",
+    "client_intervals",
+    "client_cpu_comparisons",
+    "background",
+    "units",
+    "limitations"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.docker-aggregate.v1"
+    },
+    "status": {
+      "const": "complete"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "seed_templates",
+        "seed_lsf_starts",
+        "seed_management_rpcs",
+        "seed_guest_invokes",
+        "idle_window_millis",
+        "snapshots_per_application",
+        "ready_timeout_seconds",
+        "group_timeout_seconds",
+        "collection_timeout_seconds",
+        "maximum_artifact_bytes",
+        "maximum_files",
+        "maximum_file_bytes",
+        "maximum_client_bytes",
+        "tenant",
+        "contract",
+        "node_id",
+        "request_budget_millis",
+        "cpu_fuel",
+        "memory_bytes",
+        "log_bytes",
+        "connect_timeout_millis",
+        "response_timeout_millis",
+        "client_workers",
+        "wrapper_workers",
+        "wrapper_live_connections",
+        "wrapper_direction_buffer_bytes",
+        "order",
+        "profile",
+        "repetitions",
+        "logical_offers",
+        "client_owners",
+        "measured_lsf_starts",
+        "measured_native_starts",
+        "measured_lsf_inventory_rpcs",
+        "client_commands",
+        "groups"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.docker-plan.v1"
+        },
+        "seed_templates": {
+          "const": 3
+        },
+        "seed_lsf_starts": {
+          "const": 3
+        },
+        "seed_management_rpcs": {
+          "const": 88
+        },
+        "seed_guest_invokes": {
+          "const": 0
+        },
+        "idle_window_millis": {
+          "const": 250
+        },
+        "snapshots_per_application": {
+          "const": 6
+        },
+        "ready_timeout_seconds": {
+          "const": 120
+        },
+        "group_timeout_seconds": {
+          "const": 600
+        },
+        "collection_timeout_seconds": {
+          "const": 7200
+        },
+        "maximum_artifact_bytes": {
+          "const": "1073741824"
+        },
+        "maximum_files": {
+          "const": 4096
+        },
+        "maximum_file_bytes": {
+          "const": "268435456"
+        },
+        "maximum_client_bytes": {
+          "const": "33554432"
+        },
+        "tenant": {
+          "const": "optimization"
+        },
+        "contract": {
+          "const": "optimization:benchmark/workloads@0.1.0"
+        },
+        "node_id": {
+          "const": "optimization-node"
+        },
+        "request_budget_millis": {
+          "const": 1000
+        },
+        "cpu_fuel": {
+          "const": 10000000000
+        },
+        "memory_bytes": {
+          "const": 67108864
+        },
+        "log_bytes": {
+          "const": 16384
+        },
+        "connect_timeout_millis": {
+          "const": 5000
+        },
+        "response_timeout_millis": {
+          "const": 5000
+        },
+        "client_workers": {
+          "const": 2
+        },
+        "wrapper_workers": {
+          "const": 2
+        },
+        "wrapper_live_connections": {
+          "const": 32
+        },
+        "wrapper_direction_buffer_bytes": {
+          "const": 16384
+        },
+        "order": {
+          "const": "rotate-density-by-pair-lsf-first-when-pair-plus-rotated-position-is-even"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "repetitions": {
+          "enum": [
+            1,
+            7
+          ]
+        },
+        "logical_offers": {
+          "enum": [
+            "300",
+            "9926"
+          ]
+        },
+        "client_owners": {
+          "enum": [
+            1,
+            7
+          ]
+        },
+        "measured_lsf_starts": {
+          "enum": [
+            3,
+            21
+          ]
+        },
+        "measured_native_starts": {
+          "enum": [
+            41,
+            287
+          ]
+        },
+        "measured_lsf_inventory_rpcs": {
+          "enum": [
+            9,
+            63
+          ]
+        },
+        "client_commands": {
+          "enum": [
+            61,
+            427
+          ]
+        },
+        "groups": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 7,
+          "items": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "ordinal",
+                "arm",
+                "density",
+                "phases"
+              ],
+              "properties": {
+                "ordinal": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "arm": {
+                  "enum": [
+                    "lsf",
+                    "native"
+                  ]
+                },
+                "density": {
+                  "enum": [
+                    1,
+                    8,
+                    32
+                  ]
+                },
+                "phases": {
+                  "type": "array",
+                  "minItems": 3,
+                  "maxItems": 9,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "ordinal",
+                      "name",
+                      "kind",
+                      "offers",
+                      "concurrency",
+                      "function",
+                      "payload"
+                    ],
+                    "properties": {
+                      "ordinal": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 8
+                      },
+                      "name": {
+                        "enum": [
+                          "first",
+                          "density-warmup",
+                          "density-measured",
+                          "echo-c1-warmup",
+                          "echo-c1-measured",
+                          "compute-c1-warmup",
+                          "compute-c1-measured",
+                          "echo-c4-warmup",
+                          "echo-c4-measured"
+                        ]
+                      },
+                      "kind": {
+                        "enum": [
+                          "first",
+                          "warmup",
+                          "measured"
+                        ]
+                      },
+                      "offers": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 128
+                      },
+                      "concurrency": {
+                        "enum": [
+                          1,
+                          4
+                        ]
+                      },
+                      "function": {
+                        "enum": [
+                          "echo",
+                          "compute"
+                        ]
+                      },
+                      "payload": {
+                        "enum": [
+                          [
+                            "optimization-reference-v1"
+                          ],
+                          [
+                            17,
+                            10000
+                          ]
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "density": {
+                        "const": 1
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "phases": {
+                        "minItems": 9,
+                        "maxItems": 9
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "phases": {
+                        "minItems": 3,
+                        "maxItems": 3
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              },
+              "repetitions": {
+                "const": 1
+              },
+              "logical_offers": {
+                "const": "300"
+              },
+              "client_owners": {
+                "const": 1
+              },
+              "measured_lsf_starts": {
+                "const": 3
+              },
+              "measured_native_starts": {
+                "const": 41
+              },
+              "measured_lsf_inventory_rpcs": {
+                "const": 9
+              },
+              "client_commands": {
+                "const": 61
+              },
+              "groups": {
+                "minItems": 1,
+                "maxItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "profile": {
+                "const": "full"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "profile": {
+                "const": "full"
+              },
+              "repetitions": {
+                "const": 7
+              },
+              "logical_offers": {
+                "const": "9926"
+              },
+              "client_owners": {
+                "const": 7
+              },
+              "measured_lsf_starts": {
+                "const": 21
+              },
+              "measured_native_starts": {
+                "const": 287
+              },
+              "measured_lsf_inventory_rpcs": {
+                "const": 63
+              },
+              "client_commands": {
+                "const": 427
+              },
+              "groups": {
+                "minItems": 7,
+                "maxItems": 7
+              }
+            }
+          }
+        }
+      ],
+      "$comment": "Closed structural plan and exact profile totals; semantic replay enforces the complete derived group order and every phase value."
+    },
+    "completed_paired_run": {
+      "const": true
+    },
+    "full_population_completed": {
+      "type": "boolean"
+    },
+    "acceptance_qualified": {
+      "type": "boolean"
+    },
+    "logical_offers": {
+      "enum": [
+        "300",
+        "9926"
+      ]
+    },
+    "validated_pairs": {
+      "enum": [
+        1,
+        7
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "tree",
+        "clean",
+        "cargo_lock_sha256"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "clean": {
+          "const": true
+        },
+        "cargo_lock_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "build_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "tree",
+        "clean",
+        "cargo_lock_sha256"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "clean": {
+          "const": true
+        },
+        "cargo_lock_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "suite_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lsf",
+        "native",
+        "client"
+      ],
+      "properties": {
+        "lsf": {
+          "type": "object",
+          "maxProperties": 512,
+          "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+        },
+        "native": {
+          "type": "object",
+          "maxProperties": 512,
+          "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+        },
+        "client": {
+          "type": "object",
+          "maxProperties": 512,
+          "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "offers",
+        "successful",
+        "seed_management_rpcs",
+        "seed_invokes",
+        "measured_application_owners",
+        "client_owners",
+        "all_containers_removed",
+        "api_calls"
+      ],
+      "properties": {
+        "offers": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        },
+        "successful": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        },
+        "seed_management_rpcs": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        },
+        "seed_invokes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        },
+        "measured_application_owners": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        },
+        "client_owners": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        },
+        "all_containers_removed": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        },
+        "api_calls": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "maxLength": 20
+        }
+      }
+    },
+    "collection_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "maxLength": 20
+    },
+    "collection_scope": {
+      "const": "seed-setup-paired-clients-parent-observation-and-cleanup"
+    },
+    "phase_rows": {
+      "type": "array",
+      "minItems": 30,
+      "maxItems": 210,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "phase_comparisons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "resource_points": {
+      "type": "array",
+      "minItems": 36,
+      "maxItems": 252,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "resource_comparisons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "idle_windows": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 126,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "idle_window_comparisons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "lifecycle_owners": {
+      "type": "array",
+      "minItems": 44,
+      "maxItems": 308,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "lifecycle_cohorts": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 42,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "lifecycle_comparisons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "client_resource_points": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 133,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "client_intervals": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 126,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "client_cpu_comparisons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+      }
+    },
+    "background": {
+      "type": "object",
+      "maxProperties": 512,
+      "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+    },
+    "units": {
+      "type": "object",
+      "maxProperties": 512,
+      "$comment": "The existing semantic replay validates this nested receipt and its referenced bytes."
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              }
+            }
+          },
+          "validated_pairs": {
+            "const": 1
+          },
+          "logical_offers": {
+            "const": "300"
+          },
+          "full_population_completed": {
+            "const": false
+          },
+          "acceptance_qualified": {
+            "const": false
+          },
+          "counts": {
+            "properties": {
+              "offers": {
+                "const": "300"
+              },
+              "successful": {
+                "const": "300"
+              },
+              "seed_management_rpcs": {
+                "const": "88"
+              },
+              "seed_invokes": {
+                "const": "0"
+              },
+              "measured_application_owners": {
+                "const": "44"
+              },
+              "client_owners": {
+                "const": "1"
+              },
+              "all_containers_removed": {
+                "const": "48"
+              }
+            }
+          },
+          "phase_rows": {
+            "minItems": 30,
+            "maxItems": 30
+          },
+          "resource_points": {
+            "minItems": 36,
+            "maxItems": 36
+          },
+          "idle_windows": {
+            "minItems": 18,
+            "maxItems": 18
+          },
+          "lifecycle_owners": {
+            "minItems": 44,
+            "maxItems": 44
+          },
+          "lifecycle_cohorts": {
+            "minItems": 6,
+            "maxItems": 6
+          },
+          "client_intervals": {
+            "minItems": 18,
+            "maxItems": 18
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "full"
+              }
+            }
+          },
+          "validated_pairs": {
+            "const": 7
+          },
+          "logical_offers": {
+            "const": "9926"
+          },
+          "full_population_completed": {
+            "const": true
+          },
+          "acceptance_qualified": {
+            "const": true
+          },
+          "counts": {
+            "properties": {
+              "offers": {
+                "const": "9926"
+              },
+              "successful": {
+                "const": "9926"
+              },
+              "seed_management_rpcs": {
+                "const": "88"
+              },
+              "seed_invokes": {
+                "const": "0"
+              },
+              "measured_application_owners": {
+                "const": "308"
+              },
+              "client_owners": {
+                "const": "7"
+              },
+              "all_containers_removed": {
+                "const": "318"
+              }
+            }
+          },
+          "phase_rows": {
+            "minItems": 210,
+            "maxItems": 210
+          },
+          "resource_points": {
+            "minItems": 252,
+            "maxItems": 252
+          },
+          "idle_windows": {
+            "minItems": 126,
+            "maxItems": 126
+          },
+          "lifecycle_owners": {
+            "minItems": 308,
+            "maxItems": 308
+          },
+          "lifecycle_cohorts": {
+            "minItems": 42,
+            "maxItems": 42
+          },
+          "client_intervals": {
+            "minItems": 126,
+            "maxItems": 126
+          }
+        }
+      }
+    }
+  ]
+}

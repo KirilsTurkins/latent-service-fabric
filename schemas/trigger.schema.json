@@ -3,6 +3,7 @@
   "$id": "https://latent.dev/schemas/v1alpha1/trigger.schema.json",
   "title": "LSF Trigger",
   "type": "object",
+  "maxProperties": 4,
   "additionalProperties": false,
   "required": [
     "apiVersion",
@@ -10,6 +11,26 @@
     "metadata",
     "spec"
   ],
+  "$defs": {
+    "configurationValue": {
+      "type": [
+        "object",
+        "array",
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ],
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/configurationValue"
+      },
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/configurationValue"
+      }
+    }
+  },
   "properties": {
     "apiVersion": {
       "const": "latent.dev/v1alpha1"
@@ -26,6 +47,7 @@
     },
     "metadata": {
       "type": "object",
+      "maxProperties": 5,
       "required": [
         "name"
       ],
@@ -45,12 +67,14 @@
         },
         "labels": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
         },
         "annotations": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
@@ -59,6 +83,7 @@
     },
     "spec": {
       "type": "object",
+      "maxProperties": 2,
       "additionalProperties": false,
       "required": [
         "target",
@@ -67,6 +92,7 @@
       "properties": {
         "target": {
           "type": "object",
+          "maxProperties": 4,
           "additionalProperties": false,
           "required": [
             "service",
@@ -94,7 +120,10 @@
         },
         "configuration": {
           "type": "object",
-          "additionalProperties": true
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/configurationValue"
+          }
         }
       }
     }

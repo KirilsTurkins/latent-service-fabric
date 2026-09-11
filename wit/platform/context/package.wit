@@ -19,7 +19,9 @@ interface context {
     record resource-budget {
         cpu-fuel: u64,
         memory-bytes: u64,
-        wall-deadline-unix-millis: option<u64>,
+        // A relative ceiling measured from admission. `none` adds no ceiling;
+        // `some(0)` grants no wall time.
+        wall-time-limit-millis: option<u64>,
         child-calls: u32,
         outbound-requests: u32,
         state-read-bytes: u64,
@@ -36,6 +38,8 @@ interface context {
     principal: func() -> invocation-principal;
     trace: func() -> trace-context;
     deadline-unix-millis: func() -> option<u64>;
+    // Live unspent capacity. Here wall-time-limit-millis is time remaining
+    // until the effective monotonic deadline, including time spent queued.
     remaining-budget: func() -> resource-budget;
     metadata: func() -> list<tuple<string, string>>;
 }

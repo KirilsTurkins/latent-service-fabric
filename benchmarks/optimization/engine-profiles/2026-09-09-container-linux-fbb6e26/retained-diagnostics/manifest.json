@@ -1,0 +1,1217 @@
+{
+  "archive": {
+    "bytes": 1414473,
+    "compression": "gzip level9, mtime0, empty filename",
+    "expanded_file_bytes": 16663853,
+    "files": 105,
+    "path": "attempts.tar.gz",
+    "sha256": "sha256:7fe288047eb4cc885ddde1af98e1347149bdb8d6cb4eb5f996df1fc4006e05e6",
+    "tar": "USTAR sorted names, mtime0, uid/gid0, mode0644",
+    "uncompressed_tar_bytes": 16752640
+  },
+  "attempts": [
+    {
+      "absent_original_files": [],
+      "actual_commands": 1,
+      "actual_invokes": 0,
+      "actual_owners": 1,
+      "name": "matrix-smoke-01",
+      "original_aggregate": {
+        "attempt_count_complete": false,
+        "population_complete": false,
+        "status": "failed",
+        "validated_attempts": "0",
+        "validated_commands": "0",
+        "validated_processes": "0"
+      },
+      "outcomes": {},
+      "owners": [
+        {
+          "actual_commands": 1,
+          "actual_invokes": 0,
+          "engine_profile_id": "D0",
+          "outcomes": {},
+          "process": {
+            "executable_sha256": "sha256:6eac9b128b0595f88c27e7f825601f6a0e4daf9d40184b145f3d666d2afd3e05",
+            "exit_code": 101,
+            "output_closed": true,
+            "process_id": 45433,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16370062"
+          },
+          "raw_reason": "engine-comparison-failed",
+          "raw_status": "failed",
+          "retained_invoke_rows": 0,
+          "semantic_invalid": 0,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:d9f905a16ed613df8f63b885041274ca205ffda43ad4ddf53563187412bb2ff8",
+            "commit": "a92c4c7b9a0b0c13e390ab42c074076fde9d1a8f",
+            "dirty": false,
+            "tree": "77a693d8615c7c01cc197dd026f179f298500762"
+          },
+          "suite_status": "failed",
+          "variant": "control"
+        }
+      ],
+      "profile": "smoke",
+      "qualification_exclusion_reason": "Failed capsule publication before any Invoke; smoke profile, zero qualified owners.",
+      "requested_refs": {
+        "candidate": "31452236a29622184b9efe69daf4bda140bc0ed8",
+        "control": "a92c4c7b9a0b0c13e390ab42c074076fde9d1a8f",
+        "harness": "31452236a29622184b9efe69daf4bda140bc0ed8"
+      },
+      "suite_reason": "collection-failed",
+      "suite_status": "failed"
+    },
+    {
+      "absent_original_files": [],
+      "actual_commands": 125,
+      "actual_invokes": 52,
+      "actual_owners": 1,
+      "name": "matrix-smoke-02",
+      "original_aggregate": {
+        "attempt_count_complete": false,
+        "population_complete": false,
+        "status": "failed",
+        "validated_attempts": "0",
+        "validated_commands": "0",
+        "validated_processes": "0"
+      },
+      "outcomes": {
+        "platform-failure": 1,
+        "success": 17,
+        "transport-failure": 34
+      },
+      "owners": [
+        {
+          "actual_commands": 125,
+          "actual_invokes": 52,
+          "engine_profile_id": "D0",
+          "outcomes": {
+            "platform-failure": 1,
+            "success": 17,
+            "transport-failure": 34
+          },
+          "process": {
+            "executable_sha256": "sha256:6755b026602f8acd7008e339e0aa7761ae79809879c3e8a73cce021fa7cf7138",
+            "exit_code": 101,
+            "output_closed": true,
+            "process_id": 58939,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16531230"
+          },
+          "raw_reason": "engine-comparison-failed",
+          "raw_status": "failed",
+          "retained_invoke_rows": 52,
+          "semantic_invalid": 35,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+            "commit": "2b97d9581b38131b4666cbbe6a9f43479e8a44ea",
+            "dirty": false,
+            "tree": "169e7c3e18bb29b11816e8f290c1c1f884a17ebc"
+          },
+          "suite_status": "failed",
+          "variant": "control"
+        }
+      ],
+      "profile": "smoke",
+      "qualification_exclusion_reason": "Failed smoke collector retained transport/oracle failures; zero qualified owners.",
+      "requested_refs": {
+        "candidate": "3ff6d019960ddc8698020f17a88d240762c44c3e",
+        "control": "2b97d9581b38131b4666cbbe6a9f43479e8a44ea",
+        "harness": "3ff6d019960ddc8698020f17a88d240762c44c3e"
+      },
+      "suite_reason": "collection-failed",
+      "suite_status": "failed"
+    },
+    {
+      "absent_original_files": [
+        "aggregate.json",
+        "failure.json"
+      ],
+      "actual_commands": 625,
+      "actual_invokes": 260,
+      "actual_owners": 5,
+      "name": "matrix-smoke-03",
+      "original_aggregate": null,
+      "outcomes": {
+        "platform-failure": 45,
+        "success": 215
+      },
+      "owners": [
+        {
+          "actual_commands": 125,
+          "actual_invokes": 52,
+          "engine_profile_id": "D0",
+          "outcomes": {
+            "platform-failure": 9,
+            "success": 43
+          },
+          "process": {
+            "executable_sha256": "sha256:3436e1a875692c5b7f5487224ce812bc6c8df9bb2ea83a2113df9892a79a017b",
+            "exit_code": 0,
+            "output_closed": true,
+            "process_id": 73463,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16731408"
+          },
+          "raw_reason": null,
+          "raw_status": "passed",
+          "retained_invoke_rows": 52,
+          "semantic_invalid": 0,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+            "commit": "0fb2366714df7ee7e2845474818e0cb986b8df7d",
+            "dirty": false,
+            "tree": "cdd267685ea5d02b95ba8fa100a2c17235b2304c"
+          },
+          "suite_status": "passed",
+          "variant": "control"
+        },
+        {
+          "actual_commands": 125,
+          "actual_invokes": 52,
+          "engine_profile_id": "D0",
+          "outcomes": {
+            "platform-failure": 9,
+            "success": 43
+          },
+          "process": {
+            "executable_sha256": "sha256:a4b4c7c60908f1086cdfe634d963509560b71b2b255158d74e3661ec5e64f8cc",
+            "exit_code": 0,
+            "output_closed": true,
+            "process_id": 73484,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16731555"
+          },
+          "raw_reason": null,
+          "raw_status": "passed",
+          "retained_invoke_rows": 52,
+          "semantic_invalid": 0,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+            "commit": "807a1a85482ab0794fcd31b2739f1d774d9dd1d5",
+            "dirty": false,
+            "tree": "e1d8175750caffdbf6de6eb8c1133078267caa37"
+          },
+          "suite_status": "passed",
+          "variant": "candidate"
+        },
+        {
+          "actual_commands": 125,
+          "actual_invokes": 52,
+          "engine_profile_id": "P0",
+          "outcomes": {
+            "platform-failure": 9,
+            "success": 43
+          },
+          "process": {
+            "executable_sha256": "sha256:a4b4c7c60908f1086cdfe634d963509560b71b2b255158d74e3661ec5e64f8cc",
+            "exit_code": 0,
+            "output_closed": true,
+            "process_id": 73505,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16731697"
+          },
+          "raw_reason": null,
+          "raw_status": "passed",
+          "retained_invoke_rows": 52,
+          "semantic_invalid": 0,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+            "commit": "807a1a85482ab0794fcd31b2739f1d774d9dd1d5",
+            "dirty": false,
+            "tree": "e1d8175750caffdbf6de6eb8c1133078267caa37"
+          },
+          "suite_status": "passed",
+          "variant": "candidate"
+        },
+        {
+          "actual_commands": 125,
+          "actual_invokes": 52,
+          "engine_profile_id": "D1",
+          "outcomes": {
+            "platform-failure": 9,
+            "success": 43
+          },
+          "process": {
+            "executable_sha256": "sha256:a4b4c7c60908f1086cdfe634d963509560b71b2b255158d74e3661ec5e64f8cc",
+            "exit_code": 0,
+            "output_closed": true,
+            "process_id": 73526,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16731837"
+          },
+          "raw_reason": null,
+          "raw_status": "passed",
+          "retained_invoke_rows": 52,
+          "semantic_invalid": 0,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+            "commit": "807a1a85482ab0794fcd31b2739f1d774d9dd1d5",
+            "dirty": false,
+            "tree": "e1d8175750caffdbf6de6eb8c1133078267caa37"
+          },
+          "suite_status": "passed",
+          "variant": "candidate"
+        },
+        {
+          "actual_commands": 125,
+          "actual_invokes": 52,
+          "engine_profile_id": "P1",
+          "outcomes": {
+            "platform-failure": 9,
+            "success": 43
+          },
+          "process": {
+            "executable_sha256": "sha256:a4b4c7c60908f1086cdfe634d963509560b71b2b255158d74e3661ec5e64f8cc",
+            "exit_code": 0,
+            "output_closed": true,
+            "process_id": 73547,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16732015"
+          },
+          "raw_reason": null,
+          "raw_status": "passed",
+          "retained_invoke_rows": 52,
+          "semantic_invalid": 0,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+            "commit": "807a1a85482ab0794fcd31b2739f1d774d9dd1d5",
+            "dirty": false,
+            "tree": "e1d8175750caffdbf6de6eb8c1133078267caa37"
+          },
+          "suite_status": "passed",
+          "variant": "candidate"
+        }
+      ],
+      "profile": "smoke",
+      "qualification_exclusion_reason": "Smoke population only; original runtime collectors passed but original Python replay failed and produced no aggregate. Separate corrected-verifier receipt remains diagnostic and explicitly denies full qualification.",
+      "requested_refs": {
+        "candidate": "807a1a85482ab0794fcd31b2739f1d774d9dd1d5",
+        "control": "0fb2366714df7ee7e2845474818e0cb986b8df7d",
+        "harness": "807a1a85482ab0794fcd31b2739f1d774d9dd1d5"
+      },
+      "suite_reason": null,
+      "suite_status": "passed"
+    },
+    {
+      "absent_original_files": [],
+      "actual_commands": 4827,
+      "actual_invokes": 2382,
+      "actual_owners": 3,
+      "name": "matrix-full-04",
+      "original_aggregate": {
+        "attempt_count_complete": false,
+        "population_complete": false,
+        "status": "failed",
+        "validated_attempts": "1588",
+        "validated_commands": "3218",
+        "validated_processes": "2"
+      },
+      "outcomes": {
+        "platform-failure": 18,
+        "success": 2018,
+        "transport-failure": 346
+      },
+      "owners": [
+        {
+          "actual_commands": 1609,
+          "actual_invokes": 794,
+          "engine_profile_id": "D0",
+          "outcomes": {
+            "platform-failure": 9,
+            "success": 785
+          },
+          "process": {
+            "executable_sha256": "sha256:3436e1a875692c5b7f5487224ce812bc6c8df9bb2ea83a2113df9892a79a017b",
+            "exit_code": 0,
+            "output_closed": true,
+            "process_id": 86580,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16845668"
+          },
+          "raw_reason": null,
+          "raw_status": "passed",
+          "retained_invoke_rows": 794,
+          "semantic_invalid": 0,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+            "commit": "172c5a3f2ea9c8b233a780bafdcb4c2d453f939b",
+            "dirty": false,
+            "tree": "35fc2f6369a0dd2328eb2f894921b9be2ccc267d"
+          },
+          "suite_status": "passed",
+          "variant": "control"
+        },
+        {
+          "actual_commands": 1609,
+          "actual_invokes": 794,
+          "engine_profile_id": "D0",
+          "outcomes": {
+            "platform-failure": 9,
+            "success": 785
+          },
+          "process": {
+            "executable_sha256": "sha256:a4b4c7c60908f1086cdfe634d963509560b71b2b255158d74e3661ec5e64f8cc",
+            "exit_code": 0,
+            "output_closed": true,
+            "process_id": 86601,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16846031"
+          },
+          "raw_reason": null,
+          "raw_status": "passed",
+          "retained_invoke_rows": 794,
+          "semantic_invalid": 0,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+            "commit": "9e50564cb2fbe78e1c136e634fcca6747c6779f8",
+            "dirty": false,
+            "tree": "4880f7515b0b5fdbf6a78722dfe4707bb560d0d7"
+          },
+          "suite_status": "passed",
+          "variant": "candidate"
+        },
+        {
+          "actual_commands": 1609,
+          "actual_invokes": 794,
+          "engine_profile_id": "P0",
+          "outcomes": {
+            "success": 448,
+            "transport-failure": 346
+          },
+          "process": {
+            "executable_sha256": "sha256:a4b4c7c60908f1086cdfe634d963509560b71b2b255158d74e3661ec5e64f8cc",
+            "exit_code": 101,
+            "output_closed": true,
+            "process_id": 86622,
+            "reaped": true,
+            "role": "artifact-identity-helper",
+            "start_time_ticks": "16846387"
+          },
+          "raw_reason": "engine-comparison-failed",
+          "raw_status": "failed",
+          "retained_invoke_rows": 794,
+          "semantic_invalid": 346,
+          "shutdown_clean": true,
+          "source": {
+            "cargo_lock_sha256": "sha256:ad0cdff10a0c980cd93441afcdf0501a4d1910074b0756940751701989c6c976",
+            "commit": "9e50564cb2fbe78e1c136e634fcca6747c6779f8",
+            "dirty": false,
+            "tree": "4880f7515b0b5fdbf6a78722dfe4707bb560d0d7"
+          },
+          "suite_status": "failed",
+          "variant": "candidate"
+        }
+      ],
+      "profile": "full",
+      "qualification_exclusion_reason": "Failed partial full population: three of35 planned owners attempted, only two qualified; all failure receipts retained. Not complete full evidence.",
+      "requested_refs": {
+        "candidate": "9e50564cb2fbe78e1c136e634fcca6747c6779f8",
+        "control": "172c5a3f2ea9c8b233a780bafdcb4c2d453f939b",
+        "harness": "9e50564cb2fbe78e1c136e634fcca6747c6779f8"
+      },
+      "suite_reason": "collection-failed",
+      "suite_status": "failed"
+    }
+  ],
+  "excluded": [
+    {
+      "reason": "compact diagnostic inspection subset; these can exceed the explicit64MiB bound and remain in original roots",
+      "scope": "executables, build/source trees, compiler caches, profile data and unrelated artifacts"
+    },
+    {
+      "reason": "retained suite/build receipts may reference excluded files; this subset is intentionally not self-contained semantic replay evidence",
+      "scope": "host/cgroup snapshots and other references outside the closed selected member list"
+    },
+    {
+      "reason": "outside the explicitly authorized four-attempt diagnostic scope",
+      "scope": "other attempts, SDK targets, user data and running process state"
+    }
+  ],
+  "files": [
+    {
+      "archive_path": "matrix-full-04/aggregate.json",
+      "bytes": 333111,
+      "sha256": "sha256:d826d54e14fb98f1ad19c282823c90201c4ed54811a1bcd2a997ad5f92a80883",
+      "source_path": "matrix-full-04/aggregate.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/backend-builds.json",
+      "bytes": 103134,
+      "sha256": "sha256:a85cb7739316cdd8ad12d41d8fd0fdd43874999a3dabff0709109188b03c28c1",
+      "source_path": "matrix-full-04/backend-builds.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/components/capabilities.wasm",
+      "bytes": 40670,
+      "sha256": "sha256:18df08785ca66e9a9d8d4328ddfc152b1dd5b00702a95db408c0d869164f0db3",
+      "source_path": "matrix-full-04/components/capabilities.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/components/echo.wasm",
+      "bytes": 24754,
+      "sha256": "sha256:4dc815f10d7a2f4d7b204efa39a53ab1882bb58da8248fcd03449e87d9e9e788",
+      "source_path": "matrix-full-04/components/echo.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/components/engine-memory.wasm",
+      "bytes": 1119,
+      "sha256": "sha256:5aa895441000880bdc9ef5c8050ff5b5fa5c1bfd52c9daccbf76541520883fce",
+      "source_path": "matrix-full-04/components/engine-memory.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/components/generic.wasm",
+      "bytes": 28056,
+      "sha256": "sha256:88b5e7e28997f503c617cb0fea7c6b51f413fc02b1c84eba482db01b84500beb",
+      "source_path": "matrix-full-04/components/generic.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/components/optimization-contracts.json",
+      "bytes": 1243,
+      "sha256": "sha256:08aec318aeec3f65dc412531f7058771fd85b5403a11e152d9fd6e30171d74cf",
+      "source_path": "matrix-full-04/components/optimization-contracts.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/components/optimization.wasm",
+      "bytes": 24641,
+      "sha256": "sha256:cd0f08b79b549c5be86ae3b88622cd5b8aa42ce7a4acaa3b6692e3562fe8dd66",
+      "source_path": "matrix-full-04/components/optimization.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/engine-fixtures.json",
+      "bytes": 1135,
+      "sha256": "sha256:9c6b056c31bd0d5704ca88d4d9e7eb4168c368e43bafd5b034e3e594d17b435d",
+      "source_path": "matrix-full-04/engine-fixtures.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/failure.json",
+      "bytes": 55,
+      "sha256": "sha256:1079b7b90516063c5db52f85d09d778d0ecbe39bbfea9bc34cee7d7d1e94334d",
+      "source_path": "matrix-full-04/failure.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-00-control-D0/collector.log",
+      "bytes": 658,
+      "sha256": "sha256:ae0215df64dbbacd046b970bfd6372d4b13e6e88e65345bcd00c039b31dd5dcd",
+      "source_path": "matrix-full-04/runs/block-01-row-00-control-D0/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-00-control-D0/collector.log.process.json",
+      "bytes": 228,
+      "sha256": "sha256:c6695dec332345d2ba8efdb7b3335f6a4d3e8849363f8666671560490279734e",
+      "source_path": "matrix-full-04/runs/block-01-row-00-control-D0/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-00-control-D0/engine.json",
+      "bytes": 3477762,
+      "sha256": "sha256:b8b8cd345dae9b396525611234017c223a693f7f4f12ae42fd073436be09e193",
+      "source_path": "matrix-full-04/runs/block-01-row-00-control-D0/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-00-control-D0/identity.json",
+      "bytes": 2548,
+      "sha256": "sha256:168a85304a03952a45751720cc5e92a52459adcce16ee15df82b70069b462174",
+      "source_path": "matrix-full-04/runs/block-01-row-00-control-D0/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-00-control-D0/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-full-04/runs/block-01-row-00-control-D0/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-00-control-D0/plan.json",
+      "bytes": 170,
+      "sha256": "sha256:4e798a24721f900db98b26d090d68ad78168e782c5f12dbb95f331bfcd74b72d",
+      "source_path": "matrix-full-04/runs/block-01-row-00-control-D0/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/collector.log",
+      "bytes": 660,
+      "sha256": "sha256:46e5daaa4f471df862c79d0e538b78ebf1c2f29c9dd9f30b82cf2eda1a562963",
+      "source_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/collector.log.process.json",
+      "bytes": 228,
+      "sha256": "sha256:4598a42451e28688fccf016eaffa8509ee452b149b91399d7175bd5550d339d9",
+      "source_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/engine.json",
+      "bytes": 3478028,
+      "sha256": "sha256:4f9a5755d4cb9b183a0c45af6fd8d1a26ba669124c732e6de903fc11bd25d3dc",
+      "source_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/identity.json",
+      "bytes": 2546,
+      "sha256": "sha256:5137f0c5e86f5980ec93c2ad31fe55b60fb51e62dd7a01b22a7addbac2cf8bdc",
+      "source_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/plan.json",
+      "bytes": 216,
+      "sha256": "sha256:2765feffe30db5418347c2f5a21e77711fad58afae21cc9b8d91bf813ad7dddd",
+      "source_path": "matrix-full-04/runs/block-01-row-01-candidate-D0/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/collector.log",
+      "bytes": 1091,
+      "sha256": "sha256:096a28bb577953ddf8c59d4084e08eca6d0a906ae8e85678d37d91408dff45f3",
+      "source_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/collector.log.process.json",
+      "bytes": 230,
+      "sha256": "sha256:1cc79279574465fe5feea33f8c148f3615bfd9a96527c41c72fdeeeb823f2e8a",
+      "source_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/engine.json",
+      "bytes": 2709605,
+      "sha256": "sha256:249742ffd64c45e03cf077112e4670bb585640e734b196b387e2ea1f4a3a39f4",
+      "source_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/identity.json",
+      "bytes": 2546,
+      "sha256": "sha256:5137f0c5e86f5980ec93c2ad31fe55b60fb51e62dd7a01b22a7addbac2cf8bdc",
+      "source_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/plan.json",
+      "bytes": 214,
+      "sha256": "sha256:54cd9b156639aad9a1802327661f046b3a8683912d761ec323b83b5aac5f10bc",
+      "source_path": "matrix-full-04/runs/block-01-row-02-candidate-P0/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-full-04/suite.json",
+      "bytes": 121966,
+      "sha256": "sha256:b1f70f485c8a8155b7e9ab8b01339f49c3604a345dba26bdc2258bc50e2b5ad1",
+      "source_path": "matrix-full-04/suite.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/aggregate.json",
+      "bytes": 105088,
+      "sha256": "sha256:5b79db4233fa24155b740719aae48f2635fa6ee34ba3fec5a4eee7258ebb43c8",
+      "source_path": "matrix-smoke-01/aggregate.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/backend-builds.json",
+      "bytes": 102274,
+      "sha256": "sha256:b50b687c93d43b8b4aabd43e66b3de7d3c0966b218989732d6e578fa52af35f4",
+      "source_path": "matrix-smoke-01/backend-builds.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/components/capabilities.wasm",
+      "bytes": 40670,
+      "sha256": "sha256:18df08785ca66e9a9d8d4328ddfc152b1dd5b00702a95db408c0d869164f0db3",
+      "source_path": "matrix-smoke-01/components/capabilities.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/components/echo.wasm",
+      "bytes": 24754,
+      "sha256": "sha256:4dc815f10d7a2f4d7b204efa39a53ab1882bb58da8248fcd03449e87d9e9e788",
+      "source_path": "matrix-smoke-01/components/echo.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/components/engine-memory.wasm",
+      "bytes": 1119,
+      "sha256": "sha256:5aa895441000880bdc9ef5c8050ff5b5fa5c1bfd52c9daccbf76541520883fce",
+      "source_path": "matrix-smoke-01/components/engine-memory.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/components/generic.wasm",
+      "bytes": 28056,
+      "sha256": "sha256:88b5e7e28997f503c617cb0fea7c6b51f413fc02b1c84eba482db01b84500beb",
+      "source_path": "matrix-smoke-01/components/generic.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/components/optimization-contracts.json",
+      "bytes": 1243,
+      "sha256": "sha256:08aec318aeec3f65dc412531f7058771fd85b5403a11e152d9fd6e30171d74cf",
+      "source_path": "matrix-smoke-01/components/optimization-contracts.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/components/optimization.wasm",
+      "bytes": 24641,
+      "sha256": "sha256:cd0f08b79b549c5be86ae3b88622cd5b8aa42ce7a4acaa3b6692e3562fe8dd66",
+      "source_path": "matrix-smoke-01/components/optimization.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/engine-fixtures.json",
+      "bytes": 1135,
+      "sha256": "sha256:9c6b056c31bd0d5704ca88d4d9e7eb4168c368e43bafd5b034e3e594d17b435d",
+      "source_path": "matrix-smoke-01/engine-fixtures.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/failure.json",
+      "bytes": 55,
+      "sha256": "sha256:1079b7b90516063c5db52f85d09d778d0ecbe39bbfea9bc34cee7d7d1e94334d",
+      "source_path": "matrix-smoke-01/failure.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/collector.log",
+      "bytes": 1249,
+      "sha256": "sha256:61dd400f39d18728d04e9c4fb7a781f8978c79e59283377f8c3fa74616516829",
+      "source_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/collector.log.process.json",
+      "bytes": 230,
+      "sha256": "sha256:a6925587381f0501bfe6d84e3110d45f707edb27c27b2cde082e80975293250d",
+      "source_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/engine.json",
+      "bytes": 26955,
+      "sha256": "sha256:57240b29c443b69ae3ed765196f9a5eb54e57f3bb81d12fac8dfaf405e9067ce",
+      "source_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/identity.json",
+      "bytes": 2542,
+      "sha256": "sha256:89ef4005619d2b271f9ab3b74039a420ba6254af47e94bbdec9849d32d17e041",
+      "source_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/plan.json",
+      "bytes": 171,
+      "sha256": "sha256:6199da416dcb73f4eecda5dc96b6a7190e73cfa460c115e0f834075ab1639386",
+      "source_path": "matrix-smoke-01/runs/block-01-row-00-control-D0/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-01/suite.json",
+      "bytes": 86021,
+      "sha256": "sha256:39b4a460c4230b1f10b16f4db6a573899cdad6bce588dba56a069d6e0637fcd3",
+      "source_path": "matrix-smoke-01/suite.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/aggregate.json",
+      "bytes": 105945,
+      "sha256": "sha256:5e8daabecfaf2aabb82310dc9340e37b0b25bbce9d5e798986482c8f911190f1",
+      "source_path": "matrix-smoke-02/aggregate.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/backend-builds.json",
+      "bytes": 103131,
+      "sha256": "sha256:3c68f27dffdd35e2341776544bd6d786d84cc91683f1ebb49be62aef90d62661",
+      "source_path": "matrix-smoke-02/backend-builds.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/components/capabilities.wasm",
+      "bytes": 40670,
+      "sha256": "sha256:18df08785ca66e9a9d8d4328ddfc152b1dd5b00702a95db408c0d869164f0db3",
+      "source_path": "matrix-smoke-02/components/capabilities.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/components/echo.wasm",
+      "bytes": 24754,
+      "sha256": "sha256:4dc815f10d7a2f4d7b204efa39a53ab1882bb58da8248fcd03449e87d9e9e788",
+      "source_path": "matrix-smoke-02/components/echo.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/components/engine-memory.wasm",
+      "bytes": 1119,
+      "sha256": "sha256:5aa895441000880bdc9ef5c8050ff5b5fa5c1bfd52c9daccbf76541520883fce",
+      "source_path": "matrix-smoke-02/components/engine-memory.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/components/generic.wasm",
+      "bytes": 28056,
+      "sha256": "sha256:88b5e7e28997f503c617cb0fea7c6b51f413fc02b1c84eba482db01b84500beb",
+      "source_path": "matrix-smoke-02/components/generic.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/components/optimization-contracts.json",
+      "bytes": 1243,
+      "sha256": "sha256:08aec318aeec3f65dc412531f7058771fd85b5403a11e152d9fd6e30171d74cf",
+      "source_path": "matrix-smoke-02/components/optimization-contracts.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/components/optimization.wasm",
+      "bytes": 24641,
+      "sha256": "sha256:cd0f08b79b549c5be86ae3b88622cd5b8aa42ce7a4acaa3b6692e3562fe8dd66",
+      "source_path": "matrix-smoke-02/components/optimization.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/engine-fixtures.json",
+      "bytes": 1135,
+      "sha256": "sha256:9c6b056c31bd0d5704ca88d4d9e7eb4168c368e43bafd5b034e3e594d17b435d",
+      "source_path": "matrix-smoke-02/engine-fixtures.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/failure.json",
+      "bytes": 55,
+      "sha256": "sha256:1079b7b90516063c5db52f85d09d778d0ecbe39bbfea9bc34cee7d7d1e94334d",
+      "source_path": "matrix-smoke-02/failure.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/collector.log",
+      "bytes": 1088,
+      "sha256": "sha256:488e62cdf376f6952a4d10831854257c40cc09c5303ffa61eff6a0f6dde7e717",
+      "source_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/collector.log.process.json",
+      "bytes": 230,
+      "sha256": "sha256:1c8a61d352fa07f43cfb80b7efdae9b90773992ee226e468a981b5656613fcc6",
+      "source_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/engine.json",
+      "bytes": 582470,
+      "sha256": "sha256:f02088348773dde6a5d2f221ab9a80dc2a73c45a32f4492d1eea622085a5b6d3",
+      "source_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/identity.json",
+      "bytes": 2543,
+      "sha256": "sha256:ef7fcaebf4e23b4d957e46bb4ad79621050d8b64d642e5d1f6ad76bc2f2feada",
+      "source_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/plan.json",
+      "bytes": 171,
+      "sha256": "sha256:6199da416dcb73f4eecda5dc96b6a7190e73cfa460c115e0f834075ab1639386",
+      "source_path": "matrix-smoke-02/runs/block-01-row-00-control-D0/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-02/suite.json",
+      "bytes": 92325,
+      "sha256": "sha256:a0ba4263a566eafe104107eeeea038fdfa3b4ef05848753eae5e2e1b6627209d",
+      "source_path": "matrix-smoke-02/suite.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/backend-builds.json",
+      "bytes": 103134,
+      "sha256": "sha256:64dee91697032158ab253300029c30a49df1281be44a8996f71abea2bdd8b4ca",
+      "source_path": "matrix-smoke-03/backend-builds.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/components/capabilities.wasm",
+      "bytes": 40670,
+      "sha256": "sha256:18df08785ca66e9a9d8d4328ddfc152b1dd5b00702a95db408c0d869164f0db3",
+      "source_path": "matrix-smoke-03/components/capabilities.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/components/echo.wasm",
+      "bytes": 24754,
+      "sha256": "sha256:4dc815f10d7a2f4d7b204efa39a53ab1882bb58da8248fcd03449e87d9e9e788",
+      "source_path": "matrix-smoke-03/components/echo.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/components/engine-memory.wasm",
+      "bytes": 1119,
+      "sha256": "sha256:5aa895441000880bdc9ef5c8050ff5b5fa5c1bfd52c9daccbf76541520883fce",
+      "source_path": "matrix-smoke-03/components/engine-memory.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/components/generic.wasm",
+      "bytes": 28056,
+      "sha256": "sha256:88b5e7e28997f503c617cb0fea7c6b51f413fc02b1c84eba482db01b84500beb",
+      "source_path": "matrix-smoke-03/components/generic.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/components/optimization-contracts.json",
+      "bytes": 1243,
+      "sha256": "sha256:08aec318aeec3f65dc412531f7058771fd85b5403a11e152d9fd6e30171d74cf",
+      "source_path": "matrix-smoke-03/components/optimization-contracts.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/components/optimization.wasm",
+      "bytes": 24641,
+      "sha256": "sha256:cd0f08b79b549c5be86ae3b88622cd5b8aa42ce7a4acaa3b6692e3562fe8dd66",
+      "source_path": "matrix-smoke-03/components/optimization.wasm",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/engine-fixtures.json",
+      "bytes": 1135,
+      "sha256": "sha256:9c6b056c31bd0d5704ca88d4d9e7eb4168c368e43bafd5b034e3e594d17b435d",
+      "source_path": "matrix-smoke-03/engine-fixtures.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/collector.log",
+      "bytes": 657,
+      "sha256": "sha256:0b2ad3bfb5f1e9a9c3fd7752320aa78234cdbc609aa299e32ddd303206323a2f",
+      "source_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/collector.log.process.json",
+      "bytes": 228,
+      "sha256": "sha256:8fdcef4000e144bfc4cd63cc8ad815d359ddfb60d952b6bbdb6948cd547c8cca",
+      "source_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/engine.json",
+      "bytes": 714944,
+      "sha256": "sha256:1a3f650997eff1d5845ce3158f5f69a1225c34187336b6c552439c482339f047",
+      "source_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/identity.json",
+      "bytes": 2545,
+      "sha256": "sha256:25cf9d64c4a18975d9255a5677bbcc7611ece1beb21413ff765910bdd5ec3679",
+      "source_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/plan.json",
+      "bytes": 171,
+      "sha256": "sha256:6199da416dcb73f4eecda5dc96b6a7190e73cfa460c115e0f834075ab1639386",
+      "source_path": "matrix-smoke-03/runs/block-01-row-00-control-D0/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/collector.log",
+      "bytes": 659,
+      "sha256": "sha256:5b353ee3f496b01bffbd4b4f68c0bfd06dc53b0b204d658b358d237371420ef9",
+      "source_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/collector.log.process.json",
+      "bytes": 228,
+      "sha256": "sha256:2edbc74d736b8603f361c94ebd6d8ff6177bb35696db413a5df0674a44d8e711",
+      "source_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/engine.json",
+      "bytes": 715562,
+      "sha256": "sha256:29433323726dd101ce7822d3dd59e94f94c5755fbaa500508ea7fa6db3e40f03",
+      "source_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/identity.json",
+      "bytes": 2545,
+      "sha256": "sha256:ad9ba4e53ef641448dfeb96e2bbc57649565414c4253c68725ffdae2f0dca59c",
+      "source_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/plan.json",
+      "bytes": 217,
+      "sha256": "sha256:7babea1777456c43f672b7627482ec89cf8b9c81cdbe229b94281299034094d4",
+      "source_path": "matrix-smoke-03/runs/block-01-row-01-candidate-D0/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/collector.log",
+      "bytes": 659,
+      "sha256": "sha256:5221b284565b5cdcd4033632f6c4d915a57617be8c563f974a3f6510004b1b10",
+      "source_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/collector.log.process.json",
+      "bytes": 228,
+      "sha256": "sha256:0cc65741c71a0e8e98733edc1f5aec9ba1d72b81a503ef745ca4e017b78fd220",
+      "source_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/engine.json",
+      "bytes": 715421,
+      "sha256": "sha256:0128884b878e25d555c91594bace92c804a1574ce188ed77ca690342f4f71b4f",
+      "source_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/identity.json",
+      "bytes": 2545,
+      "sha256": "sha256:ad9ba4e53ef641448dfeb96e2bbc57649565414c4253c68725ffdae2f0dca59c",
+      "source_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/plan.json",
+      "bytes": 215,
+      "sha256": "sha256:816fed28d96df4ceffdaeddc22f4212ff5447e3c4ede260e24db2c0228332ef3",
+      "source_path": "matrix-smoke-03/runs/block-01-row-02-candidate-P0/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/collector.log",
+      "bytes": 659,
+      "sha256": "sha256:b1adbef11e06e418d5630d4aa59369a27a25ec56111c7dad2bcb8c4080dfc80a",
+      "source_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/collector.log.process.json",
+      "bytes": 228,
+      "sha256": "sha256:7c5dd3c1ef88d711da1b9b4d378516319eec5d58201d88d8e7daff7081980b45",
+      "source_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/engine.json",
+      "bytes": 715870,
+      "sha256": "sha256:d6da60c114e2136deaa999940c59cbf22088788fc410166778b85d9db2636f30",
+      "source_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/identity.json",
+      "bytes": 2545,
+      "sha256": "sha256:ad9ba4e53ef641448dfeb96e2bbc57649565414c4253c68725ffdae2f0dca59c",
+      "source_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/plan.json",
+      "bytes": 226,
+      "sha256": "sha256:4234bbfb1afc68059cfbe71384c2658effbb46416e67b628fe483b343bed30f6",
+      "source_path": "matrix-smoke-03/runs/block-01-row-03-candidate-D1/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/collector.log",
+      "bytes": 659,
+      "sha256": "sha256:073f60dfe2c11c76c4ab8cc4666bfe03b3511bae9f58ecb98ed09ac508dfb267",
+      "source_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/collector.log",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/collector.log.process.json",
+      "bytes": 228,
+      "sha256": "sha256:7e6656dd3892b150cb70a84409bc2a2e3a2b40c971f777f5b689e2d215e10cf1",
+      "source_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/collector.log.process.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/engine.json",
+      "bytes": 715464,
+      "sha256": "sha256:fd514a1ea776adc378ddcf3feb33e41538d6f7fcfdc3823225e1aaa9d9536916",
+      "source_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/engine.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/identity.json",
+      "bytes": 2545,
+      "sha256": "sha256:24d48602a884ae07a041922209c219dd17ce6a0753ba7e64b5a86a9f0e4abd68",
+      "source_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/identity.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/parent-cleanup.json",
+      "bytes": 17,
+      "sha256": "sha256:ddb619d84def1b591d4d3ccefe17b4a21927fdb8bacfd27a50ae84b33d849598",
+      "source_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/parent-cleanup.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/plan.json",
+      "bytes": 224,
+      "sha256": "sha256:aa5cf338005adc5c9811329d6f1a7dc85990bbb627449817bbcc32632e5392f4",
+      "source_path": "matrix-smoke-03/runs/block-01-row-04-candidate-P1/plan.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "matrix-smoke-03/suite.json",
+      "bytes": 146383,
+      "sha256": "sha256:bd958ef09bd53b295e6e7a317352104fe6501c9e1247ad6c0002ae74d925e960",
+      "source_path": "matrix-smoke-03/suite.json",
+      "source_root": "docker_engine_root"
+    },
+    {
+      "archive_path": "supplemental/issue106-matrix-smoke-03.log",
+      "bytes": 64,
+      "sha256": "sha256:f7a86e78035f7de8daf0291996a1e2016dbd27960b95e327a627252782a6156b",
+      "source_path": "target/phase1-extension/issue106-matrix-smoke-03.log",
+      "source_root": "main_workspace"
+    },
+    {
+      "archive_path": "supplemental/issue106-smoke03-workingtree-replay-01/aggregate.json",
+      "bytes": 863468,
+      "sha256": "sha256:e859c497ac5484a4678082521e270b662dded0d889c16d763a47888660cfdad4",
+      "source_path": "target/phase1-extension/issue106-smoke03-workingtree-replay-01/aggregate.json",
+      "source_root": "main_workspace"
+    },
+    {
+      "archive_path": "supplemental/issue106-smoke03-workingtree-replay-01/receipt.json",
+      "bytes": 21151,
+      "sha256": "sha256:bdf36e183cc13f21343381d5c37993a5cab0a9093d2d281169e8b75e03ff28a5",
+      "source_path": "target/phase1-extension/issue106-smoke03-workingtree-replay-01/receipt.json",
+      "source_root": "main_workspace"
+    }
+  ],
+  "full_benchmark_qualification": false,
+  "limits": {
+    "maximum_expanded_bytes": 67108864,
+    "maximum_files": 256,
+    "regular_files_only": true
+  },
+  "schema": "latent.optimization.engine-diagnostic-subset.v1",
+  "scope": "original diagnostic receipts only; not a qualifying suite or standard Phase1 archive",
+  "source_roots": {
+    "docker_engine_root": "/workspace/project/target/optimization-engine",
+    "main_workspace": "C:/Users/turkins/Desktop/latent-fabric"
+  },
+  "supplemental_smoke03_replay": {
+    "aggregate_status": "incomplete",
+    "collector_source_identity_relabelled": false,
+    "full_benchmark_qualification": false,
+    "scope": "existing separately recorded corrected-verifier result; no replay executed while packaging",
+    "status": "passed",
+    "validated_attempts": "260",
+    "validated_commands": "625",
+    "validated_processes": "5"
+  },
+  "verification": {
+    "every_extracted_member_matches_original_source_hash": true,
+    "extraction": "bounded memory-only regular-file extraction",
+    "semantic_replay_performed": false,
+    "source_content_modified": false,
+    "source_hashes_rechecked_before_packing": true
+  }
+}

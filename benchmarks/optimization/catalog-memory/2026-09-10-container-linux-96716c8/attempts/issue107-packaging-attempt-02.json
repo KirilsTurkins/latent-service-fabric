@@ -1,0 +1,12 @@
+{
+  "status": "failed",
+  "source": "unchanged full-02",
+  "gzip_level": 9,
+  "compressed_bytes": 204279199,
+  "maximum_compressed_bytes": 198000000,
+  "returncode": 2,
+  "log": "issue107-package-02.log",
+  "temporary_archive": "automatically removed by existing TemporaryDirectory cleanup",
+  "measurement_source": "retained unchanged",
+  "next": "stronger compatible gzip in separate publication-compression-03 work; original bounds unchanged"
+}

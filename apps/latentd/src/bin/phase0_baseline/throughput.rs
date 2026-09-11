@@ -193,37 +193,125 @@ async fn wait_for_queue_depth(
 
 async fn wait_for_activation_saturation(
     pool: &FixedCellPool,
+    transitions: &mut tokio::sync::mpsc::UnboundedReceiver<
+        latent_scheduler::FixedCellPoolTestTransition,
+    >,
+    expected_activation_ids: &std::collections::HashSet<String>,
     mode: ThroughputMode,
     expected_active: u32,
     expected_queue: u32,
     timeout_ms: u64,
-    poll_interval_ms: u64,
-) -> Result<(), BenchError> {
-    let deadline = tokio::time::Instant::now() + Duration::from_millis(timeout_ms);
-    loop {
-        let snapshot = pool.observations();
-        if snapshot.active_leases == expected_active && snapshot.queue_depth == expected_queue {
-            return Ok(());
+) -> Result<CellPoolSnapshot, BenchError> {
+    let expected_active_count = usize::try_from(expected_active)
+        .map_err(|_| BenchError::new("expected active count does not fit usize"))?;
+    let expected_queue_count = usize::try_from(expected_queue)
+        .map_err(|_| BenchError::new("expected queue count does not fit usize"))?;
+    let expected_total = expected_active_count
+        .checked_add(expected_queue_count)
+        .ok_or_else(|| BenchError::new("expected saturation participant count overflow"))?;
+    if expected_activation_ids.len() != expected_total {
+        return Err(BenchError::new(format!(
+            "real {} activation batch registered {} transition participants; expected {}",
+            mode.name(),
+            expected_activation_ids.len(),
+            expected_total
+        )));
+    }
+
+    let mut activated = std::collections::HashSet::with_capacity(expected_active_count);
+    let mut queued = std::collections::HashSet::with_capacity(expected_queue_count);
+    let coordination = async {
+        loop {
+            let transition = transitions.recv().await.ok_or_else(|| {
+                BenchError::new(format!(
+                    "real {} activation transition observer closed before saturation",
+                    mode.name()
+                ))
+            })?;
+            let activation_id = transition.activation_id.0;
+            if !expected_activation_ids.contains(&activation_id) {
+                continue;
+            }
+            if activated.contains(&activation_id) || queued.contains(&activation_id) {
+                return Err(BenchError::new(format!(
+                    "real {} activation {activation_id} produced duplicate pre-gate transitions",
+                    mode.name()
+                )));
+            }
+
+            match transition.kind {
+                latent_scheduler::FixedCellPoolTestTransitionKind::LeaseActivated => {
+                    activated.insert(activation_id);
+                }
+                latent_scheduler::FixedCellPoolTestTransitionKind::RequestQueued => {
+                    queued.insert(activation_id);
+                }
+            }
+
+            if activated.len() > expected_active_count || queued.len() > expected_queue_count {
+                return Err(BenchError::new(format!(
+                    "real {} activation transitions exceeded the expected state: active events={} expected={}, queue events={} expected={}",
+                    mode.name(),
+                    activated.len(),
+                    expected_active_count,
+                    queued.len(),
+                    expected_queue_count
+                )));
+            }
+            if activated.len() == expected_active_count && queued.len() == expected_queue_count {
+                return Ok(transition.observations);
+            }
         }
-        if tokio::time::Instant::now() >= deadline {
+    };
+
+    let transition_snapshot = match tokio::time::timeout(
+        Duration::from_millis(timeout_ms),
+        coordination,
+    )
+    .await
+    {
+        Ok(result) => result?,
+        Err(_) => {
+            let snapshot = pool.observations();
             return Err(BenchError::new(format!(
-                "real {} activation workload did not reach its coordinated pool state: active={} expected={}, queue={} expected={}",
+                "real {} activation transitions did not reach the coordinated pool state: active events={} expected={}, queue events={} expected={}, raw active={} expected={}, raw queue={} expected={}",
                 mode.name(),
+                activated.len(),
+                expected_active_count,
+                queued.len(),
+                expected_queue_count,
                 snapshot.active_leases,
                 expected_active,
                 snapshot.queue_depth,
                 expected_queue
             )));
         }
-        await_coordination_poll(poll_interval_ms).await;
+    };
+
+    let snapshot = pool.observations();
+    if transition_snapshot.active_leases != expected_active
+        || transition_snapshot.queue_depth != expected_queue
+        || snapshot.active_leases != expected_active
+        || snapshot.queue_depth != expected_queue
+    {
+        return Err(BenchError::new(format!(
+            "real {} activation transitions reached inconsistent pool state: event active={} expected={}, event queue={} expected={}, raw active={} expected={}, raw queue={} expected={}",
+            mode.name(),
+            transition_snapshot.active_leases,
+            expected_active,
+            transition_snapshot.queue_depth,
+            expected_queue,
+            snapshot.active_leases,
+            expected_active,
+            snapshot.queue_depth,
+            expected_queue
+        )));
     }
+    Ok(snapshot)
 }
 
-/// The calibrated unprofiled path deliberately keeps the original cooperative
-/// polling behavior.  A profiler-only command may opt into a small sleep to
-/// prevent instrumentation from starving the tasks whose real saturation
-/// state is being observed; that different method is recorded in raw config
-/// and never compared to the #38 throughput band.
+/// The standalone pool probe retains cooperative polling for its legacy queue-depth sample.
+/// Activation saturation uses committed fixed-pool transition notifications instead.
 async fn await_coordination_poll(poll_interval_ms: u64) {
     if poll_interval_ms == 0 {
         tokio::task::yield_now().await;
@@ -345,6 +433,9 @@ async fn run_throughput_mode(
         saturation_gate.close();
         let participant_count = usize::try_from(activations_per_batch)
             .map_err(|_| BenchError::new("activation batch size does not fit usize"))?;
+        let mut transitions = pool.subscribe_test_transitions();
+        let mut expected_activation_ids =
+            std::collections::HashSet::with_capacity(participant_count);
         let barrier = Arc::new(Barrier::new(participant_count.saturating_add(1)));
         let done = Arc::new(AtomicBool::new(false));
         let monitor_pool = Arc::clone(pool);
@@ -372,6 +463,11 @@ async fn run_throughput_mode(
             let activation_id = ActivationId(format!(
                 "baseline-throughput-{mode_name}-{batch:08}-{slot:04}"
             ));
+            if !expected_activation_ids.insert(activation_id.0.clone()) {
+                return Err(BenchError::new(format!(
+                    "duplicate activation id generated for {mode_name} batch {batch}"
+                )));
+            }
             let expected_output = format!("throughput-{mode_name}-{batch}-{slot}");
             let input = format!("{FIXTURE_DELAYED_ECHO_PREFIX}{expected_output}");
             let input_bytes = u64::try_from(input.len()).unwrap_or(u64::MAX);
@@ -416,13 +512,15 @@ async fn run_throughput_mode(
         barrier.wait().await;
         let saturation_result = wait_for_activation_saturation(
             pool,
+            &mut transitions,
+            &expected_activation_ids,
             mode,
             config.pool_capacity,
             expected_queue_depth,
             config.coordination_timeout_ms,
-            config.coordination_poll_interval_ms,
         )
         .await;
+        drop(transitions);
         // Always release real leases, including when the proof fails, before
         // joining the participants so a failed assertion cannot deadlock the
         // benchmark process.
@@ -437,10 +535,13 @@ async fn run_throughput_mode(
         let (batch_maximum_active, batch_maximum_queue) = monitor.await.map_err(|error| {
             BenchError::new(format!("activation throughput monitor failed: {error}"))
         })?;
-        saturation_result?;
-        maximum_observed_active_leases =
-            maximum_observed_active_leases.max(batch_maximum_active);
-        maximum_observed_queue_depth = maximum_observed_queue_depth.max(batch_maximum_queue);
+        let saturation_snapshot = saturation_result?;
+        maximum_observed_active_leases = maximum_observed_active_leases.max(
+            batch_maximum_active.max(saturation_snapshot.active_leases),
+        );
+        maximum_observed_queue_depth = maximum_observed_queue_depth.max(
+            batch_maximum_queue.max(saturation_snapshot.queue_depth),
+        );
 
         let elapsed = duration_micros(batch_started.elapsed());
         batch_micros.push(elapsed);
@@ -529,7 +630,7 @@ fn pool_budget(timeout_ms: u64) -> ResourceBudget {
     ResourceBudget {
         cpu_fuel: 1,
         memory_bytes: 1,
-        wall_deadline_unix_millis: Some(now_unix_millis().saturating_add(timeout_ms)),
+        wall_time_limit_millis: Some(timeout_ms),
         child_calls: 0,
         outbound_requests: 0,
         state_read_bytes: 0,

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "-p",
+    "latent-scheduler",
+    "--lib",
+    "--locked",
+    "--no-deps"
+  ],
+  "cwd": "C:\\Users\\turkins\\Desktop\\latent-fabric-scheduler-queues",
+  "exit_code": 0,
+  "elapsed_nanos": "10865146300",
+  "log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-clippy-product-01.log"
+}

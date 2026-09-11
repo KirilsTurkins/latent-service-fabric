@@ -1,0 +1,1 @@
+{"apiVersion":"latent.dev/v1alpha1","kind":"Binding","metadata":{"name":"gateway-to-echo","tenant":"examples"},"spec":{"consumer":{"contract":"examples:echo/api@0.1.0","service":"examples/gateway"},"mode":"auto","provider":{"contract":"examples:echo/api@0.1.0","route":"production","service":"examples/echo"}}}

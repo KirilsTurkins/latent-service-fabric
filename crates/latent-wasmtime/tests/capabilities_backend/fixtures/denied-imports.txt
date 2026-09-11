@@ -1,0 +1,9 @@
+filesystem wasi:filesystem/types@0.2.0
+network wasi:sockets/tcp@0.2.0
+environment wasi:cli/environment@0.2.0
+random latent:random/random@0.1.0
+state latent:state/key-value@0.1.0
+blob latent:blob/blob@0.1.0
+secrets latent:secrets/reader@0.1.0
+events latent:events/publisher@0.1.0
+timer latent:timer/scheduler@0.1.0

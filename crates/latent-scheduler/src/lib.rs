@@ -3,8 +3,17 @@
 #![forbid(unsafe_code)]
 
 mod fixed_pool;
+mod local;
 
-pub use fixed_pool::{FixedCellPool, FixedCellPoolConfig};
+pub use local::{
+    AdmittedSchedulingRequest, LocalNodePlacement, LocalScheduler, LocalSchedulerConfig,
+    ScheduledActivation, SchedulerSnapshot, SchedulingCancellation,
+};
+
+pub use fixed_pool::{
+    FixedCellPool, FixedCellPoolConfig, FixedCellPoolTestTransition,
+    FixedCellPoolTestTransitionKind,
+};
 
 use latent_activation::ActivationEnvelope;
 use latent_core::{
@@ -145,10 +154,10 @@ pub struct PlacementDecision {
 }
 
 pub trait ActivationScheduler: Send + Sync {
-    fn enqueue<'a>(
-        &'a self,
-        request: SchedulingRequest,
-    ) -> BoxFuture<'a, Result<CellLease, PlatformError>>;
+    fn enqueue(
+        &self,
+        request: AdmittedSchedulingRequest,
+    ) -> BoxFuture<'_, Result<ScheduledActivation, PlatformError>>;
 
     fn cancel<'a>(
         &'a self,
@@ -163,6 +172,31 @@ pub trait ActivationScheduler: Send + Sync {
 /// observations have conservative defaults so independent implementations remain
 /// source-compatible at the trait boundary.
 pub trait CellPool: Send + Sync {
+    /// Atomically reserves an available cell without creating a pool waiter.
+    /// Fair schedulers keep their ordering queue above this operation. `None`
+    /// means temporarily busy; permanently unusable capacity returns an error.
+    fn try_acquire_now(
+        &self,
+        activation_id: &ActivationId,
+        _tenant: &TenantId,
+        _class: CellClass,
+        _budget: &ResourceBudget,
+        _deadline_unix_millis: Option<u64>,
+    ) -> Result<Option<CellLease>, PlatformError> {
+        Err(unsupported_pool_operation(
+            "try-acquire",
+            Some(activation_id),
+            None,
+        ))
+    }
+
+    /// Bounded, coalescing change notifications. Subscribe before inspecting
+    /// capacity to avoid losing a concurrent release. Tokens are hints, not
+    /// capacity accounting. Legacy pools may omit this scheduler extension.
+    fn subscribe_changes(&self) -> Option<tokio::sync::watch::Receiver<u64>> {
+        None
+    }
+
     fn acquire<'a>(
         &'a self,
         activation_id: &'a ActivationId,
@@ -170,6 +204,24 @@ pub trait CellPool: Send + Sync {
         class: CellClass,
         budget: &'a ResourceBudget,
     ) -> BoxFuture<'a, Result<CellLease, PlatformError>>;
+
+    /// Acquires a cell using the already-resolved invocation deadline.
+    ///
+    /// New implementations that queue work must override this method so a
+    /// caller's absolute deadline is observed while waiting.  The default
+    /// preserves the original seam for independent Phase 0 implementations;
+    /// the activation runner still checks the deadline before and after that
+    /// call, but such an implementation cannot provide precise queued expiry.
+    fn acquire_with_deadline<'a>(
+        &'a self,
+        activation_id: &'a ActivationId,
+        tenant: &'a TenantId,
+        class: CellClass,
+        budget: &'a ResourceBudget,
+        _deadline_unix_millis: Option<u64>,
+    ) -> BoxFuture<'a, Result<CellLease, PlatformError>> {
+        self.acquire(activation_id, tenant, class, budget)
+    }
 
     fn release<'a>(&'a self, lease: CellLease) -> BoxFuture<'a, Result<(), PlatformError>>;
 

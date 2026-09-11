@@ -47,9 +47,12 @@ fi
 cd "${ROOT}"
 export GITHUB_SHA="$(git rev-parse HEAD)"
 
-echo "==> Phase 0 gate: repository contracts, builds, and tests"
-make validate
-make repository-tests
+# The spike and baseline runners each retain an independent contract/fixture
+# boundary. Run the remaining repository validation once here instead of
+# invoking `make validate` and then repeating its contract and repository-test
+# work inside both Phase 0 runners.
+echo "==> Phase 0 gate: repository builds, tests, and SDK surfaces"
+make fmt-check check clippy test sdks
 
 echo "==> Phase 0 gate: real executable spike and containment"
 tools/run_phase0_spike.sh

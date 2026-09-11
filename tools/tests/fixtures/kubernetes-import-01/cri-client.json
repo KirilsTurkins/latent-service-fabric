@@ -1,0 +1,65 @@
+{
+  "info": {
+    "chainID": "sha256:17fca3aa5a6d280d277e40fe3dd621be0b0ea4c57c89a89ac49760d87d3feff1",
+    "imageSpec": {
+      "architecture": "amd64",
+      "config": {
+        "Entrypoint": [
+          "/opt/lsf/optimization-client"
+        ],
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ],
+        "Labels": {
+          "latent.benchmark.owner": "lsf111-images-fc45a33903fb46eea767",
+          "latent.benchmark.role": "client"
+        }
+      },
+      "created": "2026-09-11T10:25:47.416970236Z",
+      "history": [
+        {
+          "comment": "debuerreotype 0.17",
+          "created": "2026-07-13T00:00:00Z",
+          "created_by": "# debian.sh --arch 'amd64' out/ 'bookworm' '@1783900800'"
+        },
+        {
+          "created": "2026-09-11T10:25:44.795168262Z",
+          "created_by": "/bin/sh -c #(nop) COPY file:3da4e37246eda46754f98e039a0844bf4f75dc59deb5ebf11b2e402b57c1a0e2 in /opt/lsf/optimization-client "
+        },
+        {
+          "created": "2026-09-11T10:25:45.930860024Z",
+          "created_by": "/bin/sh -c #(nop)  ENTRYPOINT [\"/opt/lsf/optimization-client\"]",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-09-11T10:25:46.635272841Z",
+          "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.owner=lsf111-images-fc45a33903fb46eea767",
+          "empty_layer": true
+        },
+        {
+          "created": "2026-09-11T10:25:47.416970236Z",
+          "created_by": "/bin/sh -c #(nop)  LABEL latent.benchmark.role=client",
+          "empty_layer": true
+        }
+      ],
+      "os": "linux",
+      "rootfs": {
+        "diff_ids": [
+          "sha256:81f823b9617547261c907396f63f770deaa554748ff739bedfa650e3bb74595a",
+          "sha256:3bd366f10c765211d5a8c2dc73bc3792ba19153cd5c1c0cb87d4ab4fac6609f0"
+        ],
+        "type": "layers"
+      }
+    }
+  },
+  "status": {
+    "id": "sha256:0a86a2cbcd47d4afe1a240251c6e23fceb8951083d4debf38f6283765c39bc91",
+    "pinned": false,
+    "repoDigests": [],
+    "repoTags": [
+      "docker.io/library/lsf111-images-fc45a33903fb46eea767:client"
+    ],
+    "size": "38609293",
+    "username": ""
+  }
+}

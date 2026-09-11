@@ -1,0 +1,494 @@
+#!/usr/bin/env python3
+"""Verify a bounded Phase 1 archive, safely extract it temporarily, and replay its evidence."""
+from __future__ import annotations
+
+import argparse
+from contextlib import contextmanager
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import sys
+import tarfile
+import tempfile
+
+if __package__ in (None, ''):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+try:
+    from . import package_phase0_evidence as paths
+    from . import phase0_evidence
+    from .phase1_evidence.replay import validate_aggregate, validate_comparison
+    from .phase1_evidence.common import canonical, read_json
+    from .validate_phase1_paired import replay as validate_paired
+    from .optimization_evidence.common import read_json as read_optimization_json
+    from .optimization_evidence.suite import validate_suite as validate_optimization_suite
+    from .artifact_identity_evidence import validate_suite as validate_artifact_identity_suite
+    from .optimization_revision_evidence.suite import validate_suite as validate_revision_suite
+    from .optimization_backend_revision.evidence import validate_suite as validate_backend_revision_suite
+    from .optimization_cache_lookup.evidence import validate_suite as validate_cache_lookup_suite
+    from .optimization_scheduler.evidence import validate_suite as validate_scheduler_suite
+    from .phase1_docker_archive import verify as verify_docker
+except ImportError:
+    import package_phase0_evidence as paths
+    import phase0_evidence
+    from phase1_evidence.replay import validate_aggregate, validate_comparison
+    from phase1_evidence.common import canonical, read_json
+    from validate_phase1_paired import replay as validate_paired
+    from tools.optimization_evidence.common import read_json as read_optimization_json
+    from tools.optimization_evidence.suite import validate_suite as validate_optimization_suite
+    from tools.artifact_identity_evidence import validate_suite as validate_artifact_identity_suite
+    from tools.optimization_revision_evidence.suite import validate_suite as validate_revision_suite
+    from tools.optimization_backend_revision.evidence import validate_suite as validate_backend_revision_suite
+    from tools.optimization_cache_lookup.evidence import validate_suite as validate_cache_lookup_suite
+    from tools.optimization_scheduler.evidence import validate_suite as validate_scheduler_suite
+    from tools.phase1_docker_archive import verify as verify_docker
+
+ARCHIVE = 'raw-evidence.tar.gz'
+MANIFEST = 'raw-evidence.manifest.json'
+PARTS_MANIFEST = 'raw-evidence.parts.json'
+MAX_COMPRESSED = 99_000_000
+MAX_SPLIT_COMPRESSED = 198_000_000
+MAX_PART_BYTES = 50_000_000
+MAX_EXPANDED = 1024 * 1024 * 1024
+MAX_CODEC_EXPANDED = 2 * 1024 * 1024 * 1024
+MAX_CODEC_FILE_BYTES = 256 * 1024 * 1024
+MAX_FILES = 5000
+MAX_DOCKER_FILES = 6000
+MAX_KUBERNETES_FILES = 8000
+MAX_AGGREGATE_BYTES = 8 * 1024 * 1024
+CHUNK = 64 * 1024
+
+
+def require(condition, reason):
+    if not condition:
+        raise ValueError(reason)
+
+
+def relative_path(value):
+    require(isinstance(value, str) and len(value) <= 1024
+            and re.fullmatch(r'[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*', value)
+            and all(part not in ('.', '..') for part in value.split('/')), 'invalid archive path')
+    return value
+
+
+def pairs(rows):
+    value = {}
+    for key, item in rows:
+        require(key not in value, 'duplicate manifest field')
+        value[key] = item
+    return value
+
+
+def size(value):
+    require(isinstance(value, str) and re.fullmatch(r'0|[1-9][0-9]{0,10}', value), 'invalid size')
+    return int(value)
+
+
+def file_reference(path, root, maximum=MAX_EXPANDED):
+    paths.require_regular_file(path, 'evidence file')
+    total = 0
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(CHUNK), b''):
+            total += len(chunk)
+            require(total <= maximum, 'evidence file exceeds bound')
+            digest.update(chunk)
+    return {'path': relative_path(path.relative_to(root).as_posix()),
+            'bytes': str(total), 'sha256': 'sha256:' + digest.hexdigest()}
+
+
+def split_layout(total):
+    require(20 <= total <= MAX_SPLIT_COMPRESSED, 'split archive compressed byte bound')
+    chunk_bytes = min(MAX_PART_BYTES, (total + 1) // 2)
+    count = (total + chunk_bytes - 1) // chunk_bytes
+    require(2 <= count <= 4, 'split archive part count bound')
+    return [(f'{ARCHIVE}.part-{index + 1:04d}', min(chunk_bytes, total - index * chunk_bytes))
+            for index in range(count)]
+
+
+def transport_names(root, expected):
+    # Reserve the complete transport namespace, including case aliases. Other
+    # published files (for example REPORT.md) remain compatible with old packages.
+    for path in root.iterdir():
+        folded = path.name.casefold()
+        if (folded.startswith(ARCHIVE.casefold()) or folded.startswith(PARTS_MANIFEST.casefold())
+                or folded == MANIFEST.casefold()):
+            require(path.name in expected, 'unexpected or ambiguous archive transport file')
+            paths.require_regular_file(path, 'archive transport file')
+
+
+@contextmanager
+def archive_input(root, manifest):
+    split_path = root / PARTS_MANIFEST
+    if not split_path.exists() and not split_path.is_symlink():
+        transport_names(root, {ARCHIVE, ARCHIVE + '.sha256', MANIFEST})
+        archive_path = paths.existing_regular_file_path(root / ARCHIVE, 'evidence archive')
+        require(file_reference(archive_path, root, MAX_COMPRESSED) == manifest['archive'],
+                'archive checksum mismatch')
+        yield archive_path
+        return
+    paths.require_regular_file(split_path, 'split archive manifest')
+    with split_path.open('rb') as stream:
+        encoded = stream.read(8193)
+    require(len(encoded) <= 8192, 'split manifest exceeds bound')
+    value = json.loads(encoded, object_pairs_hook=pairs)
+    require(isinstance(value, dict) and set(value) == {'schema', 'archive', 'parts'}
+            and value['schema'] == 'latent.phase1.archive-parts.v1', 'invalid split manifest schema')
+    require(value['archive'] == manifest['archive'], 'split logical archive mismatch')
+    layout = split_layout(size(manifest['archive']['bytes']))
+    require(isinstance(value['parts'], list) and len(value['parts']) == len(layout),
+            'split archive part count mismatch')
+    expected_names = {MANIFEST, PARTS_MANIFEST, ARCHIVE + '.sha256'}
+    expected_names.update(name for name, _ in layout)
+    transport_names(root, expected_names)
+    for row, (name, expected_bytes) in zip(value['parts'], layout):
+        require(isinstance(row, dict) and set(row) == {'path', 'bytes', 'sha256'}
+                and row['path'] == name and row['bytes'] == str(expected_bytes)
+                and isinstance(row['sha256'], str) and re.fullmatch(r'sha256:[0-9a-f]{64}', row['sha256']),
+                'invalid split part identity or order')
+    with tempfile.TemporaryDirectory(prefix='latent-phase1-parts-') as temporary:
+        archive_path = Path(temporary) / ARCHIVE
+        whole_digest = hashlib.sha256()
+        total = 0
+        with archive_path.open('xb') as output:
+            for row in value['parts']:
+                path = paths.existing_regular_file_path(root / row['path'], 'archive part')
+                require(path.stat().st_size == size(row['bytes']), 'split part size mismatch')
+                digest = hashlib.sha256()
+                observed = 0
+                with path.open('rb') as stream:
+                    for chunk in iter(lambda: stream.read(CHUNK), b''):
+                        observed += len(chunk)
+                        total += len(chunk)
+                        require(observed <= size(row['bytes']) and total <= MAX_SPLIT_COMPRESSED,
+                                'split archive read exceeds bound')
+                        digest.update(chunk)
+                        whole_digest.update(chunk)
+                        output.write(chunk)
+                require(observed == size(row['bytes']) and 'sha256:' + digest.hexdigest() == row['sha256'],
+                        'split part checksum mismatch')
+        require(total == size(manifest['archive']['bytes'])
+                and 'sha256:' + whole_digest.hexdigest() == manifest['archive']['sha256'],
+                'split whole archive checksum mismatch')
+        yield archive_path
+
+
+def load_manifest(root):
+    kind = evidence_kind(root)
+    maximum, file_maximum = archive_bounds(kind)
+    path = paths.existing_regular_file_path(root / MANIFEST, 'archive manifest')
+    with path.open('rb') as stream:
+        encoded = stream.read(4 * 1024 * 1024 + 1)
+    require(len(encoded) <= 4 * 1024 * 1024, 'manifest exceeds bound')
+    value = json.loads(encoded, object_pairs_hook=pairs)
+    require(set(value) == {'schema', 'archive', 'files', 'total_bytes'}
+            and value['schema'] == 'latent.phase1.archive-manifest.v1', 'invalid manifest schema')
+    require(isinstance(value['files'], list) and 0 < len(value['files']) <= archive_file_limit(kind),
+            'invalid archive file count')
+    observed = set()
+    total = 0
+    for row in [value['archive'], *value['files']]:
+        require(isinstance(row, dict) and set(row) == {'path', 'bytes', 'sha256'}, 'invalid file reference')
+        relative_path(row['path'])
+        require(re.fullmatch(r'sha256:[0-9a-f]{64}', row['sha256']), 'invalid file digest')
+        bound = MAX_EXPANDED if row is value['archive'] else file_maximum
+        require(size(row['bytes']) <= bound, 'file exceeds expanded bound')
+    require(value['archive']['path'] == ARCHIVE, 'unexpected archive name')
+    for row in value['files']:
+        folded = row['path'].casefold()
+        require(folded not in observed, 'duplicate archive path')
+        observed.add(folded)
+        total += size(row['bytes'])
+    require(total == size(value['total_bytes']) and total <= maximum, 'expanded byte bound')
+    # The bounded outer discriminator may grant a larger extraction allowance
+    # only when its exact bytes are also a declared archive member.
+    if kind in ('codec', 'docker'):
+        aggregate = next((row for row in value['files'] if row['path'] == 'aggregate.json'), None)
+        require(aggregate is not None
+                and file_reference(root / 'aggregate.json', root, MAX_AGGREGATE_BYTES) == aggregate,
+                'outer aggregate is not bound to archive manifest')
+    return value
+
+
+def verify_policy(policy, aggregate):
+    recorded = aggregate['policy']
+    encoded = json.dumps(policy, sort_keys=True, separators=(',', ':'),
+                         ensure_ascii=False, allow_nan=False).encode('utf-8')
+    require(policy == recorded['document'], 'archived policy differs from aggregate policy')
+    require('sha256:' + hashlib.sha256(encoded).hexdigest() == recorded['sha256'],
+            'archived policy digest differs from aggregate policy')
+
+
+def evidence_kind(directory):
+    path = paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate')
+    # Full optimization aggregates exceed the legacy 200,000-node ceiling.
+    # Inspect with that format's bounded parser, retaining the archive byte cap.
+    aggregate = read_optimization_json(path, MAX_AGGREGATE_BYTES)
+    require(isinstance(aggregate, dict), 'invalid aggregate object')
+    if aggregate.get('schema') == 'latent.optimization.aggregate.v1':
+        return 'optimization'
+    if aggregate.get('schema') == 'latent.artifact-identity.aggregate.v1':
+        return 'artifact-identity'
+    if aggregate.get('schema') == 'latent.optimization.revision-aggregate.v1':
+        return 'revision'
+    if aggregate.get('schema') == 'latent.optimization.budget-aggregate.v1':
+        return 'budget'
+    if aggregate.get('schema') == 'latent.optimization.budget-lifecycle-aggregate.v1':
+        return 'budget-lifecycle'
+    for kind in ('transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog', 'catalog-mutation'):
+        if aggregate.get('schema') == f'latent.optimization.{kind}-aggregate.v1':
+            return kind
+    if aggregate.get('schema') == 'latent.optimization.backend-revision-aggregate.v1':
+        return 'backend-revision'
+    if aggregate.get('schema') == 'latent.optimization.cold-aggregate.v1':
+        return 'cold'
+    for kind in ('cache-lookup', 'cache-behavior', 'scheduler', 'docker', 'kubernetes'):
+        if aggregate.get('schema') == f'latent.optimization.{kind}-aggregate.v1':
+            return kind
+    del aggregate
+    # Other formats still satisfy every original structural/string limit.
+    aggregate = read_json(path, MAX_AGGREGATE_BYTES)
+    require(isinstance(aggregate, dict), 'invalid aggregate object')
+    schema = aggregate.get('schema')
+    if schema == 'latent.phase1.paired-aggregate.v1':
+        return 'paired'
+    # Shape-only archive verification remains available for legacy callers.
+    # A missing schema never passes the mandatory semantic publication replay.
+    require(schema in (None, 'latent.phase1.measurement-aggregate.v1'), 'unsupported evidence schema')
+    return 'measurement'
+
+
+def archive_bounds(kind):
+    """The bounded codec discriminator is the sole 2 GiB archive policy."""
+    if kind in ('docker', 'kubernetes'):
+        return MAX_EXPANDED, 256 * 1024 * 1024
+    return ((MAX_CODEC_EXPANDED, MAX_CODEC_FILE_BYTES) if kind == 'codec'
+            else (MAX_EXPANDED, MAX_EXPANDED))
+
+
+def archive_file_limit(kind):
+    # Docker retains 5,015 files. Kubernetes adds its current full/smoke,
+    # completed prior smoke, three failed attempts and bootstrap/cleanup.
+    # Their measured inventory exceeds 7,600 files; byte limits stay finite.
+    return {'docker': MAX_DOCKER_FILES, 'kubernetes': MAX_KUBERNETES_FILES}.get(kind, MAX_FILES)
+
+
+def verify_optimization(directory):
+    retained = read_optimization_json(
+        paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
+        MAX_AGGREGATE_BYTES)
+    suite = paths.existing_regular_file_path(directory / 'suite.json', 'optimization suite')
+    regenerated = validate_optimization_suite(suite)
+    require(canonical(retained) == canonical(regenerated),
+            'optimization aggregate differs from replayed evidence')
+    require(regenerated.get('schema') == 'latent.optimization.aggregate.v1'
+            and regenerated.get('profile') == 'full'
+            and regenerated.get('status') == 'complete'
+            and regenerated.get('population_complete') is True
+            and regenerated.get('attempt_count_complete') is True,
+            'optimization archive requires complete full-population evidence')
+
+
+def verify_artifact_identity(directory):
+    retained = read_optimization_json(
+        paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
+        MAX_AGGREGATE_BYTES)
+    suite = paths.existing_regular_file_path(directory / 'suite.json', 'artifact identity suite')
+    regenerated = validate_artifact_identity_suite(suite)
+    require(canonical(retained) == canonical(regenerated),
+            'artifact identity aggregate differs from replayed evidence')
+    require(regenerated.get('schema') == 'latent.artifact-identity.aggregate.v1'
+            and regenerated.get('profile') == 'full'
+            and regenerated.get('status') == 'passed'
+            and regenerated.get('population_complete') is True
+            and regenerated.get('full_comparison_qualified') is True,
+            'artifact identity archive requires a qualified full comparison')
+
+
+def verify_revision(directory, *, backend=False, cold=False, budget=False, lifecycle=False, transport=False, recovery=False,
+                    ownership=None, codec=None, engine=None, catalog=False, catalog_mutation=False):
+    require(ownership in (None, 'ownership-rpc', 'ownership'), 'invalid ownership archive dispatch')
+    require(codec in (None, 'codec-rpc', 'codec'), 'invalid codec archive dispatch')
+    require(engine in (None, 'engine-warm', 'engine'), 'invalid engine archive dispatch')
+    require(type(catalog) is bool, 'invalid catalog archive dispatch')
+    require(type(catalog_mutation) is bool, 'invalid catalog mutation archive dispatch')
+    require(sum(bool(value) for value in (backend, cold, budget, lifecycle, transport, recovery, ownership, codec, engine, catalog, catalog_mutation)) <= 1,
+            'ambiguous revision archive dispatch')
+    kind = 'catalog-mutation' if catalog_mutation else 'catalog' if catalog else engine or codec or ownership or ('recovery' if recovery else 'transport-warm' if transport else 'budget-lifecycle' if lifecycle else 'budget' if budget else 'cold' if cold else 'backend-revision' if backend else 'revision')
+    retained = read_optimization_json(
+        paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
+        MAX_AGGREGATE_BYTES)
+    suite = paths.existing_regular_file_path(directory / 'suite.json', f'{kind} suite')
+    validator = validate_backend_revision_suite if backend or cold or lifecycle or recovery or ownership == 'ownership' or codec == 'codec' or engine == 'engine' or catalog or catalog_mutation else validate_revision_suite
+    regenerated = validator(suite)
+    require(canonical(retained) == canonical(regenerated),
+            f'{kind} aggregate differs from replayed evidence')
+    require(regenerated.get('schema') == f'latent.optimization.{kind}-aggregate.v1'
+            and regenerated.get('profile') == 'full'
+            and regenerated.get('status') == 'complete'
+            and regenerated.get('population_complete') is True
+            and regenerated.get('attempt_count_complete') is True,
+            f'{kind} archive requires complete full-population evidence')
+
+
+def verify_cache(directory, kind):
+    require(kind in ('cache-lookup', 'cache-behavior'), 'unsupported cache evidence kind')
+    retained = read_optimization_json(
+        paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
+        MAX_AGGREGATE_BYTES)
+    suite = paths.existing_regular_file_path(directory / 'suite.json', f'{kind} suite')
+    validator = validate_cache_lookup_suite if kind == 'cache-lookup' else validate_backend_revision_suite
+    regenerated = validator(suite)
+    require(canonical(retained) == canonical(regenerated),
+            f'{kind} aggregate differs from replayed evidence')
+    require(regenerated.get('schema') == f'latent.optimization.{kind}-aggregate.v1'
+            and regenerated.get('profile') == 'full'
+            and regenerated.get('status') == 'complete'
+            and regenerated.get('population_complete') is True
+            and regenerated.get('attempt_count_complete') is True,
+            f'{kind} archive requires complete full-population evidence')
+
+
+def verify_scheduler(directory):
+    retained = read_optimization_json(
+        paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
+        MAX_AGGREGATE_BYTES)
+    suite = paths.existing_regular_file_path(directory / 'suite.json', 'scheduler suite')
+    regenerated = validate_scheduler_suite(suite)
+    require(canonical(retained) == canonical(regenerated),
+            'scheduler aggregate differs from replayed evidence')
+    require(regenerated.get('schema') == 'latent.optimization.scheduler-aggregate.v1'
+            and regenerated.get('profile') == 'full'
+            and regenerated.get('status') == 'complete'
+            and regenerated.get('completed_paired_run') is True
+            and regenerated.get('acceptance_qualified') is True
+            and regenerated.get('full_population_completed') is True,
+            'scheduler archive requires a qualified complete full population')
+
+
+def verify_package(directory, *, replay=True, docker_package=None):
+    root = paths.existing_directory_path(directory, 'evidence package')
+    kind = evidence_kind(root)
+    require(docker_package is None or kind == 'kubernetes', '--docker-package is only valid for Kubernetes evidence')
+    require(not replay or kind != 'kubernetes' or docker_package is not None,
+            'Kubernetes replay requires --docker-package')
+    manifest = load_manifest(root)
+    checksum = paths.existing_regular_file_path(root / (ARCHIVE + '.sha256'), 'archive checksum')
+    require(checksum.stat().st_size <= 256, 'oversized archive checksum')
+    require(checksum.read_text() == manifest['archive']['sha256'][7:] + '  ' + ARCHIVE + '\n',
+            'archive checksum sidecar mismatch')
+    with archive_input(root, manifest) as archive_path:
+        return verify_archive(root, manifest, archive_path, replay=replay, docker_package=docker_package)
+
+
+def verify_archive(root, manifest, archive_path, *, replay, docker_package=None):
+    outer_kind = evidence_kind(root)
+    maximum, file_maximum = archive_bounds(outer_kind)
+    require(size(manifest['total_bytes']) <= maximum, 'expanded byte bound')
+    expected = {row['path']: row for row in manifest['files']}
+    # Inspect fixed-size headers before a general tar parser can allocate a PAX
+    # body. Packages use plain USTAR only. All expansion, padding and trailing
+    # data are bounded and checked before the shared extractor is called.
+    seen = set()
+    zero_blocks = 0
+    expanded = 0
+    expansion_bound = size(manifest['total_bytes']) + len(expected) * 1024 + 10240
+    with gzip.open(archive_path, 'rb') as archive:
+        while header := archive.read(512):
+            expanded += len(header)
+            require(expanded <= expansion_bound and len(header) == 512, 'invalid tar expansion')
+            if not any(header):
+                zero_blocks += 1
+                continue
+            require(zero_blocks == 0, 'data follows tar end marker')
+            member = tarfile.TarInfo.frombuf(header, encoding='utf-8', errors='strict')
+            name = relative_path(member.name)
+            require(member.type in (tarfile.REGTYPE, tarfile.AREGTYPE),
+                    'archive member must be a plain regular file')
+            require(name not in seen and name in expected, 'unexpected or duplicate archive member')
+            require(member.size == size(expected[name]['bytes']), 'archive member size mismatch')
+            seen.add(name)
+            digest = hashlib.sha256()
+            total = 0
+            while total < member.size:
+                chunk = archive.read(min(CHUNK, member.size - total))
+                require(chunk, 'truncated tar member')
+                digest.update(chunk)
+                total += len(chunk)
+            padding = (-member.size) % 512
+            padding_bytes = archive.read(padding)
+            require(len(padding_bytes) == padding and not any(padding_bytes), 'invalid tar padding')
+            expanded += total + padding
+            require(expanded <= expansion_bound, 'tar expansion exceeds bound')
+            require(total == member.size and 'sha256:' + digest.hexdigest() == expected[name]['sha256'],
+                    'archive member checksum mismatch')
+    require(zero_blocks >= 2 and seen == set(expected), 'archive omits files or end markers')
+    with tempfile.TemporaryDirectory(prefix='latent-phase1-archive-') as temporary:
+        extracted = Path(temporary) / 'raw'
+        with gzip.open(archive_path, 'rb') as stream:
+            options = {'maximum_bytes': MAX_CODEC_EXPANDED} if outer_kind == 'codec' else {}
+            if outer_kind in ('docker', 'kubernetes'):
+                options['maximum_files'] = archive_file_limit(outer_kind)
+            files = phase0_evidence.extract_tar_stream(stream, extracted, 'Phase 1 evidence', **options)
+        require(files == seen, 'extraction differs from verified archive')
+        for name, row in expected.items():
+            require(file_reference(extracted / name, extracted, file_maximum) == row, 'round-trip checksum mismatch')
+        kind = evidence_kind(extracted)
+        require(kind == outer_kind, 'outer evidence kind differs from archive')
+        outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
+                       if kind == 'measurement' else ('aggregate.json',))
+        if kind in ('optimization', 'artifact-identity', 'revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog', 'catalog-mutation',
+                    'cache-lookup', 'cache-behavior', 'scheduler'):
+            require('suite.json' in expected, f'{kind} archive omits suite')
+        for name in outer_files:
+            require(name in expected and file_reference(root / name, root) == expected[name],
+                    'outer evidence differs from archived evidence')
+        if replay:
+            if kind == 'paired':
+                validate_paired(extracted / 'aggregate.json')
+            elif kind == 'optimization':
+                verify_optimization(extracted)
+            elif kind == 'artifact-identity':
+                verify_artifact_identity(extracted)
+            elif kind in ('revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog', 'catalog-mutation'):
+                verify_revision(extracted, backend=kind == 'backend-revision', cold=kind == 'cold', budget=kind == 'budget',
+                                lifecycle=kind == 'budget-lifecycle', transport=kind == 'transport-warm', recovery=kind == 'recovery',
+                                ownership=kind if kind in ('ownership-rpc', 'ownership') else None,
+                                codec=kind if kind in ('codec-rpc', 'codec') else None,
+                                engine=kind if kind in ('engine-warm', 'engine') else None, catalog=kind == 'catalog',
+                                catalog_mutation=kind == 'catalog-mutation')
+            elif kind in ('cache-lookup', 'cache-behavior'):
+                verify_cache(extracted, kind)
+            elif kind == 'scheduler':
+                verify_scheduler(extracted)
+            elif kind == 'docker':
+                verify_docker(extracted)
+            elif kind == 'kubernetes':
+                from tools.phase1_kubernetes_archive import verify as verify_kubernetes
+                verify_kubernetes(extracted, docker_package=docker_package)
+            else:
+                validate_aggregate(extracted / 'aggregate.json')
+                validate_comparison(extracted / 'comparison.json')
+                policy = json.loads((extracted / 'measurement-policy.json').read_text())
+                aggregate = json.loads((extracted / 'aggregate.json').read_text())
+                verify_policy(policy, aggregate)
+    return manifest
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('package', type=Path)
+    parser.add_argument('--docker-package', type=Path,
+                        help='original #111 Docker package; required only for Kubernetes replay')
+    args = parser.parse_args()
+    try:
+        manifest = verify_package(args.package, docker_package=args.docker_package)
+    except (ValueError, OSError, tarfile.TarError, EOFError) as error:
+        parser.exit(2, f'Phase 1 archive rejected: {error}\n')
+    print(f"Phase 1 archive and evidence replay validated ({len(manifest['files'])} files).")
+
+
+if __name__ == '__main__':
+    main()

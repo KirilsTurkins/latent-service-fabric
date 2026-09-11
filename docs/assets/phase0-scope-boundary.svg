@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="phase0-scope-title phase0-scope-description">
-  <title id="phase0-scope-title">Phase 0 measured scope and excluded capabilities</title>
+  <title id="phase0-scope-title">Historical Phase 0 measured scope and excluded capabilities</title>
   <desc id="phase0-scope-description">A bounded Phase 0 execution slice moves one echo component through preparation, a fixed cell pool, and fresh activation state. The August 30 full-gate receipt authorizes Phase 1 only for this canonical execution identity; routing, public APIs, durable state, multi-service operation, and cluster behavior remain outside the measured scope.</desc>
   <defs>
     <linearGradient id="phase0-scope-background" x1="0" y1="0" x2="1" y2="1">
@@ -30,7 +30,7 @@
 
   <rect width="1440" height="760" rx="34" fill="url(#phase0-scope-background)"/>
   <text x="74" y="88" class="heading">Phase 0 proves a bounded local execution slice</text>
-  <text x="74" y="122" class="subheading">The measured lifecycle is real; the excluded capabilities are not implied by it.</text>
+  <text x="74" y="122" class="subheading">Historical August 2026 evidence. Later Phase 1 delivery has a separate completion report.</text>
 
   <g filter="url(#phase0-scope-shadow)">
     <rect x="74" y="178" width="790" height="420" rx="28" fill="#1e40af" stroke="#93c5fd" stroke-width="3"/>
@@ -48,7 +48,7 @@
     <text x="400" y="386" class="box-copy">lease one fixed cell</text>
     <text x="400" y="410" class="box-copy">invoke through</text>
     <text x="400" y="434" class="box-copy">Wasmtime</text>
-    <text x="400" y="458" class="box-copy">bounded queue + budgets</text>
+    <text x="400" y="458" class="box-copy">queue + budget limits</text>
 
     <rect x="628" y="304" width="198" height="190" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
     <text x="658" y="352" class="box-title">Reclaim</text>
@@ -74,5 +74,5 @@
   </g>
 
   <rect x="74" y="650" width="1292" height="56" rx="16" fill="#065f46" stroke="#34d399" stroke-width="2"/>
-  <text x="104" y="685" class="status">Authorized: the August 30 full receipt permits Phase 1 for this canonical execution identity; execution-affecting changes require revalidation.</text>
+  <text x="104" y="685" class="status">August 30 receipt: Phase 1 handoff authorized for this measured identity. Current Phase 1 features are documented separately.</text>
 </svg>

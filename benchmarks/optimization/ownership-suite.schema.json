@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/ownership-suite.schema.json",
+  "$comment": "Bounded structural envelope. Mandatory exact source/build, fixture, ownership, clock, allocation and offered-population replay uses tools.optimization_revision_evidence.validate_suite for ownership-rpc or tools.optimization_backend_revision.evidence.validate_suite for ownership. Smoke never qualifies as full evidence.",
+  "$defs": {
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "$ref": "#/$defs/json"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/json"
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "required": [
+    "schema",
+    "profile",
+    "plan",
+    "builds",
+    "runner_source",
+    "runner_source_after",
+    "status",
+    "reason",
+    "elapsed_nanos",
+    "runs",
+    "artifacts",
+    "tools",
+    "symbols"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.ownership-suite.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "plan": {
+      "oneOf": [
+        {
+          "const": {
+            "schema": "latent.optimization.ownership-population.v1",
+            "profile": "smoke",
+            "normal_pairs": 1,
+            "allocation_pairs_per_shape": 1,
+            "shapes": [
+              "warm-echo",
+              "payload-64k",
+              "payload-near-limit",
+              "context-small",
+              "context-64k",
+              "context-near-limit"
+            ],
+            "normal": {
+              "schema": "latent.optimization.ownership-plan.v1",
+              "profile": "smoke",
+              "mode": "normal",
+              "repetition": 1,
+              "shapes": [
+                "warm-echo",
+                "payload-64k",
+                "payload-near-limit",
+                "context-small",
+                "context-64k",
+                "context-near-limit"
+              ],
+              "warmup_per_shape": 1,
+              "measured_per_shape": 3,
+              "proofs": [
+                "cancel-pending",
+                "drop-pending"
+              ],
+              "maximum_run_seconds": "90",
+              "maximum_output_bytes": "8388608"
+            },
+            "allocation": [
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "smoke",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "warm-echo"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 2,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "smoke",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "payload-64k"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 2,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "smoke",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "payload-near-limit"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 2,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "smoke",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "context-small"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 2,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "smoke",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "context-64k"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 2,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "smoke",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "context-near-limit"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 2,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              }
+            ],
+            "maximum_run_seconds": "7200",
+            "maximum_artifact_bytes": "1073741824",
+            "maximum_artifact_files": 4096,
+            "maximum_folded_expanded_bytes": "134217728"
+          }
+        },
+        {
+          "const": {
+            "schema": "latent.optimization.ownership-population.v1",
+            "profile": "full",
+            "normal_pairs": 7,
+            "allocation_pairs_per_shape": 1,
+            "shapes": [
+              "warm-echo",
+              "payload-64k",
+              "payload-near-limit",
+              "context-small",
+              "context-64k",
+              "context-near-limit"
+            ],
+            "normal": {
+              "schema": "latent.optimization.ownership-plan.v1",
+              "profile": "full",
+              "mode": "normal",
+              "repetition": 1,
+              "shapes": [
+                "warm-echo",
+                "payload-64k",
+                "payload-near-limit",
+                "context-small",
+                "context-64k",
+                "context-near-limit"
+              ],
+              "warmup_per_shape": 4,
+              "measured_per_shape": 32,
+              "proofs": [
+                "cancel-pending",
+                "drop-pending"
+              ],
+              "maximum_run_seconds": "90",
+              "maximum_output_bytes": "8388608"
+            },
+            "allocation": [
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "full",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "warm-echo"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 8,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "full",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "payload-64k"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 8,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "full",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "payload-near-limit"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 8,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "full",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "context-small"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 8,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "full",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "context-64k"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 8,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              },
+              {
+                "schema": "latent.optimization.ownership-plan.v1",
+                "profile": "full",
+                "mode": "allocation",
+                "repetition": 1,
+                "shapes": [
+                  "context-near-limit"
+                ],
+                "warmup_per_shape": 1,
+                "measured_per_shape": 8,
+                "proofs": [],
+                "maximum_run_seconds": "180",
+                "maximum_output_bytes": "8388608"
+              }
+            ],
+            "maximum_run_seconds": "7200",
+            "maximum_artifact_bytes": "1073741824",
+            "maximum_artifact_files": 4096,
+            "maximum_folded_expanded_bytes": "134217728"
+          }
+        }
+      ]
+    },
+    "builds": {
+      "$ref": "#/$defs/artifact"
+    },
+    "runner_source": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "runner_source_after": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed"
+      ]
+    },
+    "reason": {
+      "enum": [
+        null,
+        "collection-failed"
+      ]
+    },
+    "elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 26,
+      "items": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "tools": {
+      "$ref": "#/$defs/json"
+    },
+    "symbols": {
+      "$ref": "#/$defs/json"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "passed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "const": null
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "reason": {
+            "const": "collection-failed"
+          }
+        }
+      }
+    }
+  ]
+}

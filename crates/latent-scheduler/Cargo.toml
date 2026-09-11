@@ -13,7 +13,12 @@ workspace = true
 [dependencies]
 latent-core = { path = "../latent-core" }
 latent-activation = { path = "../latent-activation" }
+latent-admission = { path = "../latent-admission" }
 tokio.workspace = true
 
 [dev-dependencies]
+latent-routing = { path = "../latent-routing" }
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }

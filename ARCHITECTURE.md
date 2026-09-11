@@ -2,6 +2,13 @@
 
 The authoritative architecture is divided by concern so that runtime implementation can evolve without erasing the foundational invariants.
 
+Phase 1 and its prioritized performance extension are complete. The delivered
+product is the [standalone Linux stateless node](docs/reference/standalone-node.md),
+with the scope and evidence recorded in the [functional completion](docs/phase-1-completion.md)
+and [extension report](docs/phase-1-extension-completion.md). The pages below also
+define later-phase design contracts; their implementation boundaries distinguish
+those plans from available features. Phase 2 begins with packaging and supply chain.
+
 - [Overview](docs/architecture/overview.md)
 - [Control plane](docs/architecture/control-plane.md)
 - [Data plane](docs/architecture/data-plane.md)

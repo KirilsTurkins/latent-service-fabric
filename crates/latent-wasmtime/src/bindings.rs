@@ -1,30 +1,21 @@
-//! Generated host bindings for the Phase 0 echo world.
+//! Shared generated host bindings and the legacy signature validator.
 
-mod generated {
-    include!(concat!(env!("OUT_DIR"), "/echo_bindings.rs"));
-}
+pub use latent_component_bindings::host::echo::ServicePre;
+pub use latent_component_bindings::host::runtime::latent;
 
-pub use generated::{exports, latent, Service};
+use wasmtime::component::{HasSelf, Linker};
 
 use crate::host::HostState;
 
-pub struct ServicePre<T: 'static> {
-    inner: generated::ServicePre<T>,
-}
-
-impl<T: 'static> ServicePre<T> {
-    pub fn new(instance_pre: wasmtime::component::InstancePre<T>) -> wasmtime::Result<Self> {
-        Ok(Self {
-            inner: generated::ServicePre::new(instance_pre)?,
-        })
-    }
-}
-
-impl ServicePre<HostState> {
-    pub async fn instantiate_async(
-        &self,
-        store: &mut wasmtime::Store<HostState>,
-    ) -> wasmtime::Result<Service> {
-        self.inner.instantiate_async(store).await
-    }
+/// Install only Phase 1 authority, even though the generated runtime world also
+/// describes interfaces reserved for later phases.
+pub(crate) fn install_context_log_clock(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
+    latent::context::context::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| {
+        state
+    })?;
+    latent::log::log::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| state)?;
+    latent::clock::monotonic::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| {
+        state
+    })?;
+    latent::clock::wall::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| state)
 }

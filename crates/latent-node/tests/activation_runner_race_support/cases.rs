@@ -13,6 +13,7 @@ async fn queue_race_prefers_cancellation_then_deadline_over_cell_grant() {
     runner
         .cancel(&id, "three-way race cancellation")
         .await
+        .map(|disposition| assert_eq!(disposition, latent_core::CancelDisposition::Accepted))
         .expect("cancellation remains registered");
 
     assert_failure(
@@ -64,6 +65,7 @@ async fn cancellation_and_deadline_override_guest_completion_at_handoff() {
     runner
         .cancel(&id, "visible at handoff")
         .await
+        .map(|disposition| assert_eq!(disposition, latent_core::CancelDisposition::Accepted))
         .expect("cancellation is accepted before handoff release");
     gate.proceed("backend result released").await;
     assert_failure(
@@ -110,15 +112,16 @@ async fn cancellation_is_linearizable_against_registration_removal() {
     runner
         .cancel(&id, "accepted after handoff")
         .await
+        .map(|disposition| assert_eq!(disposition, latent_core::CancelDisposition::Accepted))
         .expect("registration remains live until disposition completes");
     release.proceed("release completes").await;
 
     assert_success(join(task, "registration removal").await, &used);
-    let error = runner
+    let disposition = runner
         .cancel(&id, "after removal")
         .await
-        .expect_err("registration is removed after completion");
-    assert_eq!(error.code, PlatformErrorCode::NotFound);
+        .expect("missing Phase 0 registration is a normal disposition");
+    assert_eq!(disposition, latent_core::CancelDisposition::NotFound);
     assert_eq!(runner.snapshot().active_cancellation_registrations, 0);
 }
 

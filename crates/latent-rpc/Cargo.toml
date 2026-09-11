@@ -1,0 +1,22 @@
+[package]
+name = "latent-rpc"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Generated Protobuf messages and Tonic client/server surfaces for Latent Service Fabric."
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+prost.workspace = true
+tonic.workspace = true
+tonic-prost.workspace = true
+
+[build-dependencies]
+protoc-bin-vendored.workspace = true
+tonic-prost-build.workspace = true

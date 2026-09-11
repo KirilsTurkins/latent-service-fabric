@@ -1,0 +1,1 @@
+{"apiVersion":"latent.dev/v1alpha1","kind":"Policy","metadata":{"name":"default-log","tenant":"examples"},"spec":{"document":"allow when capability == 'latent:log/log@0.1.0' and budget.logBytes <= 65536","language":"latent-policy/v1"}}

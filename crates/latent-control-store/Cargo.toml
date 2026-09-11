@@ -5,10 +5,14 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-control-store."
+description = "Control-plane persistence interfaces and immutable local deployment routing."
 
 [lints]
 workspace = true
+
+[features]
+default = []
+catalog-observation = []
 
 [dependencies]
 latent-core = { path = "../latent-core" }
@@ -18,3 +22,11 @@ latent-node = { path = "../latent-node" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-policy = { path = "../latent-policy" }
 latent-audit = { path = "../latent-audit" }
+sha2.workspace = true
+
+[dev-dependencies]
+latent-admission = { path = "../latent-admission" }
+latent-activation = { path = "../latent-activation" }
+latent-executor = { path = "../latent-executor" }
+latent-scheduler = { path = "../latent-scheduler" }
+tokio.workspace = true

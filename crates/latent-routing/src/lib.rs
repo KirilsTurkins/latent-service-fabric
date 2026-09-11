@@ -2,6 +2,10 @@
 
 #![forbid(unsafe_code)]
 
+pub mod revision_policy;
+
+pub use revision_policy::{RevisionAdmissionPolicy, RevisionPolicySource};
+
 use latent_core::{
     BindingId, BoxFuture, ContractId, FunctionId, Metadata, PlatformError, ReleaseDigest,
     RevisionId, RouteGeneration, RouteId, ServiceId, TenantId,
@@ -28,6 +32,8 @@ pub struct RevisionRoute {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServiceRoute {
     pub id: RouteId,
+    /// A service identifier is only unique inside this tenant scope.
+    pub tenant: TenantId,
     pub service: ServiceId,
     pub revisions: Vec<RevisionRoute>,
 }
@@ -35,8 +41,10 @@ pub struct ServiceRoute {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BindingRoute {
     pub id: BindingId,
+    pub consumer_tenant: TenantId,
     pub consumer_service: ServiceId,
     pub imported_contract: ContractId,
+    pub provider_tenant: TenantId,
     pub provider_service: ServiceId,
     pub provider_contract: ContractId,
     pub mode: BindingMode,
@@ -82,6 +90,18 @@ pub trait RouteResolver: Send + Sync {
     ) -> Result<ResolvedBinding, PlatformError>;
 
     fn generation(&self) -> RouteGeneration;
+}
+
+/// One immutable view used for both resolution and admission policy lookup.
+pub trait ActivationCatalog: RouteResolver + RevisionPolicySource {}
+
+impl<T: RouteResolver + RevisionPolicySource> ActivationCatalog for T {}
+
+/// Capture one catalog generation before resolving an activation. Keeping this
+/// view through admission prevents a concurrent deployment change from mixing
+/// routing and execution policy from different generations.
+pub trait ActivationCatalogSource: Send + Sync {
+    fn pin(&self) -> Result<std::sync::Arc<dyn ActivationCatalog>, PlatformError>;
 }
 
 pub trait RouteCompiler: Send + Sync {

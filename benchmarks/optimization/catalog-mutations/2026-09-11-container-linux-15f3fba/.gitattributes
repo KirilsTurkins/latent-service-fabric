@@ -1,0 +1,11 @@
+# Preserve original measured, hashed and executed bytes across checkouts.
+analysis/** -text
+catalog/** -text
+attempts/** -text
+validation/** -text
+extract.py -text
+publication-receipt.json -text
+# Windows command captures retain their original CRLF bytes.
+attempts/*.log whitespace=trailing-space,space-before-tab,cr-at-eol
+validation/*.log whitespace=blank-at-eol,space-before-tab,cr-at-eol,-blank-at-eof
+attempts/notes/issue108-allocation-bound-inspect.json.raw whitespace=trailing-space,space-before-tab,cr-at-eol

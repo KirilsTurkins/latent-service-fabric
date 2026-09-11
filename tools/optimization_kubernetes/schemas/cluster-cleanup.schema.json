@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/kubernetes-cluster-cleanup.v1.schema.json",
+  "title": "Kubernetes comparison cluster-cleanup v1",
+  "$comment": "Completed public benchmark envelope only. Nested shared records and all cross-file, ownership, timing, strict type, hash, cleanup and statistical checks require offline semantic replay. No external references.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "owner",
+    "bootstrap",
+    "status",
+    "failure",
+    "nodes_removed",
+    "nodes_already_absent",
+    "controller_disconnected",
+    "network_removed",
+    "public_files_images_volumes_retained",
+    "credentials_removed",
+    "started_nanos",
+    "source",
+    "credentials_before",
+    "engine",
+    "finished_nanos"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.kubernetes-cluster-cleanup.v1"
+    },
+    "owner": {
+      "$ref": "#/$defs/owner"
+    },
+    "bootstrap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "status": {
+      "const": "owned-cluster-removed"
+    },
+    "failure": {
+      "const": null
+    },
+    "nodes_removed": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 2,
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "nodes_already_absent": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 2,
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "controller_disconnected": {
+      "type": "boolean"
+    },
+    "network_removed": {
+      "type": "boolean"
+    },
+    "public_files_images_volumes_retained": {
+      "const": true
+    },
+    "credentials_removed": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 49,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "bytes",
+          "sha256",
+          "absent"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "bytes": {
+            "$ref": "#/$defs/uint"
+          },
+          "sha256": {
+            "$ref": "#/$defs/digest"
+          },
+          "absent": {
+            "const": true
+          }
+        }
+      }
+    },
+    "started_nanos": {
+      "$ref": "#/$defs/uint"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "credentials_before": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 49,
+      "items": {
+        "$ref": "#/$defs/reference"
+      }
+    },
+    "engine": {
+      "type": "object",
+      "maxProperties": 4096
+    },
+    "finished_nanos": {
+      "$ref": "#/$defs/uint"
+    }
+  },
+  "$defs": {
+    "uint": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^lsf-112-[0-9a-f]{12}$"
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "bytes": {
+          "$ref": "#/$defs/uint"
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "tree",
+        "clean",
+        "cargo_lock_sha256"
+      ],
+      "properties": {
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "tree": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "clean": {
+          "const": true
+        },
+        "cargo_lock_sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    }
+  }
+}

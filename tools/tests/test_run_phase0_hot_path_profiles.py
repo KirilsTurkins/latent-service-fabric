@@ -9,6 +9,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from tools.tests.phase0_test_environment import (
+    sanitized_phase0_environment,
+    write_native_linux_runner_stubs,
+)
+
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "tools" / "run_phase0_hot_path_profiles.sh"
@@ -40,6 +45,8 @@ class HotPathProfileRunnerTests(unittest.TestCase):
         *,
         environment: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
+        if environment is None:
+            environment = sanitized_phase0_environment()
         return subprocess.run(
             self.command(calibration, output),
             check=False,
@@ -86,7 +93,7 @@ class HotPathProfileRunnerTests(unittest.TestCase):
             calibration = root / "calibration.json"
             calibration.write_text("{}\n", encoding="utf-8")
             output = root / "evidence"
-            base_environment = dict(os.environ)
+            base_environment = sanitized_phase0_environment()
 
             relative_environment = dict(base_environment)
             relative_environment["LSF_HOT_PATH_TARGET_DIR"] = "profile-build"
@@ -164,15 +171,9 @@ class HotPathProfileRunnerTests(unittest.TestCase):
             "esac\n",
         )
         for command in ("cargo", "perf", "heaptrack", "heaptrack_print"):
-            self.write_executable(bin_directory / command, "#!/usr/bin/env bash\nexit 0\n")
-        self.write_executable(
-            bin_directory / "uname", "#!/usr/bin/env bash\nprintf '%s\\n' Linux\n"
-        )
-        self.write_executable(
-            bin_directory / "systemd-detect-virt",
-            "#!/usr/bin/env bash\nprintf '%s\\n' none\n",
-        )
-        environment = dict(os.environ)
+            self.write_executable(bin_directory / command, "#!/usr/bin/env bash\nexit 99\n")
+        write_native_linux_runner_stubs(bin_directory)
+        environment = sanitized_phase0_environment()
         # The production profiler runs repository validation after creating
         # its external target.  Fake-runner provenance tests must derive their
         # own fresh target instead of inheriting that outer path.
@@ -180,6 +181,45 @@ class HotPathProfileRunnerTests(unittest.TestCase):
         environment["PATH"] = f"{bin_directory}:{environment['PATH']}"
         environment["PYTHON"] = sys.executable
         return source, environment
+
+    def test_fake_host_inputs_preserve_wsl_and_container_rejection(self) -> None:
+        for host_kind in ("wsl", "container"):
+            with self.subTest(host_kind=host_kind), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                source, environment = self.fake_runner_environment(
+                    root,
+                    execution_commit=SOURCE_COMMIT,
+                    execution_tree=SOURCE_TREE,
+                )
+                bin_directory = root / "bin"
+                if host_kind == "wsl":
+                    (bin_directory / "native-kernel.txt").write_text(
+                        "Linux version 6.6.0-microsoft-standard-WSL2\n", encoding="utf-8"
+                    )
+                    expected_error = "WSL is historical-only"
+                else:
+                    self.write_executable(
+                        bin_directory / "systemd-detect-virt",
+                        "#!/usr/bin/env bash\nprintf '%s\\n' docker\n",
+                    )
+                    expected_error = "require systemd-detect-virt --container to report none"
+                calibration = root / "calibration.json"
+                calibration.write_text("{}\n", encoding="utf-8")
+                output = root / "evidence"
+                command = self.command(calibration, output)
+                command[0] = str(source / "tools" / RUNNER.name)
+                result = subprocess.run(
+                    command,
+                    check=False,
+                    text=True,
+                    capture_output=True,
+                    env=environment,
+                    cwd=source,
+                )
+                self.assertEqual(result.returncode, 2)
+                self.assertIn(expected_error, result.stderr)
+                self.assertFalse(output.exists())
+                self.assertFalse(Path(f"{output}.build").exists())
 
     def test_rejects_a_same_tree_but_different_execution_head_before_collection(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

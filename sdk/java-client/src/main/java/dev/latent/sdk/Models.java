@@ -12,7 +12,7 @@ public final class Models {
     public record ResourceBudget(
             long cpuFuel,
             long memoryBytes,
-            Optional<Long> wallDeadlineUnixMillis,
+            Optional<Long> wallTimeLimitMillis,
             int childCalls,
             int outboundRequests,
             long stateReadBytes,
@@ -53,11 +53,25 @@ public final class Models {
             Map<String, String> metadata) {
     }
 
+    /**
+     * Caller identity and lineage remain optional claims, never SDK-generated authority.
+     * The server assigns an absent activation ID and, when root and parent are absent,
+     * uses the effective ID as root. It rejects a parent without an explicit root.
+     * Present empty values remain present for server validation.
+     */
     public record InvokeRequest(
             InvocationTarget target,
             ByteBuffer payload,
             String mediaType,
-            InvokeOptions options) {
+            InvokeOptions options,
+            Optional<String> activationId,
+            Optional<String> rootActivationId,
+            Optional<String> parentActivationId) {
+        public InvokeRequest(
+                InvocationTarget target, ByteBuffer payload, String mediaType, InvokeOptions options) {
+            this(target, payload, mediaType, options,
+                    Optional.empty(), Optional.empty(), Optional.empty());
+        }
     }
 
     public record InvokeResponse(
@@ -77,6 +91,82 @@ public final class Models {
             String code,
             String message,
             boolean retryable,
-            Map<String, String> details) {
+            List<ErrorDetail> details) {
+    }
+
+    public record ErrorDetail(
+            String kind,
+            Map<String, String> fields) {
+    }
+
+    public record DeclaredError(
+            String code,
+            String message,
+            ByteBuffer payload,
+            String mediaType,
+            Map<String, String> metadata) {
+    }
+
+    public record InvocationReceipt(
+            String activationId,
+            String revisionId,
+            String releaseDigest,
+            long routeGeneration,
+            BudgetConsumption consumption) {
+    }
+
+    public sealed interface InvocationOutcome permits InvocationSuccess,
+            DeclaredInvocationError, PlatformInvocationFailure {
+    }
+
+    public record InvocationSuccess(InvokeResponse response) implements InvocationOutcome {
+    }
+
+    public record DeclaredInvocationError(
+            InvocationReceipt receipt,
+            DeclaredError error) implements InvocationOutcome {
+    }
+
+    public record PlatformInvocationFailure(
+            InvocationReceipt receipt,
+            PlatformFailure error) implements InvocationOutcome {
+    }
+
+    public enum CancelDisposition {
+        ACCEPTED,
+        ALREADY_TERMINAL,
+        NOT_FOUND
+    }
+
+    public record CancelResponse(
+            CancelDisposition disposition,
+            Optional<String> terminalState) {
+    }
+
+    public sealed interface RetainedInvocationOutcome permits ActivationSuccessSummary,
+            RetainedDeclaredError, RetainedPlatformFailure {
+    }
+
+    public record ActivationSuccessSummary(
+            Optional<String> committedStateVersion,
+            List<String> effectIds,
+            Map<String, String> metadata) implements RetainedInvocationOutcome {
+    }
+
+    public record RetainedDeclaredError(DeclaredError error) implements RetainedInvocationOutcome {
+    }
+
+    public record RetainedPlatformFailure(PlatformFailure error) implements RetainedInvocationOutcome {
+    }
+
+    public record ActivationStatus(
+            String activationId,
+            String phase,
+            Optional<String> terminalState,
+            Optional<RetainedInvocationOutcome> terminalOutcome,
+            Optional<BudgetConsumption> finalConsumption,
+            long lastUpdatedUnixMillis,
+            Optional<Long> terminalAtUnixMillis,
+            Map<String, String> metadata) {
     }
 }

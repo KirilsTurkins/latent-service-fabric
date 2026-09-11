@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="phase0-lifecycle-title phase0-lifecycle-description">
-  <title id="phase0-lifecycle-title">Phase 0 activation resource lifecycle</title>
+  <title id="phase0-lifecycle-title">Retained Phase 0 activation resource lifecycle</title>
   <desc id="phase0-lifecycle-description">A prepared component is held in a bounded node-owned cache. An invocation leases a cell, creates fresh activation-owned execution state, and then releases or quarantines the cell after cleanup. No idle service owns a process, listener, socket, heap, or thread.</desc>
   <defs>
     <linearGradient id="phase0-lifecycle-background" x1="0" y1="0" x2="1" y2="1">
@@ -30,7 +30,7 @@
 
   <rect width="1440" height="760" rx="34" fill="url(#phase0-lifecycle-background)"/>
   <text x="74" y="88" class="heading">Activation state is temporary; node resources stay bounded</text>
-  <text x="74" y="122" class="subheading">The Phase 0 lifecycle separates reusable node-owned resources from fresh activation-owned state.</text>
+  <text x="74" y="122" class="subheading">Retained Phase 0 composition. The completed Phase 1 node preserves this ownership boundary.</text>
 
   <text x="74" y="190" class="small">NODE-OWNED, BOUNDED</text>
   <text x="692" y="190" class="small">ACTIVATION-OWNED, FRESH EACH INVOCATION</text>
@@ -49,7 +49,7 @@
     <text x="458" y="314" class="box-copy">fixed pool capacity</text>
     <text x="458" y="338" class="box-copy">bounded queue</text>
     <line x1="458" y1="370" x2="602" y2="370" stroke="#a5b4fc" stroke-width="1"/>
-    <text x="458" y="408" class="small">one activation at a time</text>
+    <text x="458" y="408" class="small">one active owner</text>
     <text x="458" y="432" class="small">per leased cell</text>
 
     <rect x="710" y="226" width="326" height="292" rx="24" fill="#1e40af" stroke="#93c5fd" stroke-width="3"/>

@@ -1,0 +1,98 @@
+{
+  "scope": "read-only diagnosis of retained smoke-01; no collector/profiler rerun, no source/raw mutation; compression and coalescing figures are diagnostic estimates, not emitted artifacts",
+  "original_root": "/workspace/project/target/optimization-catalog/smoke-01",
+  "sources": {
+    "control": "8fb79ff92884190da62ddb965e4dbe09f8627a5e",
+    "candidate": "b592c0c69812629d926c924514891ac9dbff45a3",
+    "harness": "b592c0c69812629d926c924514891ac9dbff45a3"
+  },
+  "original_status": {
+    "suite": "failed",
+    "reason": "collection-failed",
+    "attempted_children": 25,
+    "normal_initial_passed": 12,
+    "normal_reopen_passed": 12,
+    "normal_commands": 7332,
+    "profile_export_failed": 1,
+    "profile_raw_status": "passed",
+    "profile_raw_commands": 98,
+    "profile_raw_publications": 16,
+    "profile_raw_applies": 1,
+    "profile_raw_resolves": 81,
+    "profile_raw_invokes": 0,
+    "full_suite_qualified": false
+  },
+  "references": {
+    "suite_sha256": "sha256:d55a55130dfbf3495f0da780ecd58d5bb1e531db107b3a62c8698628f62898b2",
+    "builds": {
+      "path": "backend-builds.json",
+      "bytes": 217727,
+      "sha256": "sha256:718965f62bbd4e0a3e38f485992ad76bc976d9441ec4be46bb79987ac176436c"
+    },
+    "profile_raw": {
+      "path": "runs/owner-24-pair-01-distinct-control-allocation-default-success/probe/catalog.json",
+      "bytes": 75549,
+      "sha256": "sha256:9730f48fcc9daa6c098ff92e93ac8bac54beab78c46f0920bb686063f8dfa5bf"
+    },
+    "folded_sha256": "sha256:81fc89552a77890b9f2cadffabbd8b6dd06699f61858ceba2a85effe40d172f5"
+  },
+  "retained_root": {
+    "logical_bytes": 663968411,
+    "regular_files": 1142,
+    "group_bytes": {
+      "backend-builds.json": 217727,
+      "suite.json": 409291,
+      "failure.json": 54,
+      "aggregate.json": 916684,
+      "echo": 29498,
+      "tools": 1287,
+      "builds": 477120772,
+      "data-owners": 27846,
+      "runs": 185245252
+    },
+    "control_executable_bytes": 216184304,
+    "candidate_executable_bytes": 215970656
+  },
+  "actual_folded": {
+    "bytes": 171422982,
+    "rows": 16460,
+    "total_weight": 308465,
+    "maximum_line_bytes": 33618,
+    "lines_over_64KiB": 0,
+    "maximum_semicolon_frames": 140,
+    "line_p50_bytes": 9700,
+    "line_p99_bytes": 22428,
+    "distinct_stack_sha256_count": 7304
+  },
+  "diagnostic_estimates": {
+    "gzip_level9_stream_bytes": 2637087,
+    "exact_stack_weight_coalesced_bytes": 81152363,
+    "root_bytes_after_replacing_only_this_folded_with_estimated_gzip": 495182516
+  },
+  "current_limits": {
+    "folded_expanded_bytes": 67108864,
+    "line_bytes": 65536,
+    "rows": 100000,
+    "stack_frames": 512,
+    "regular_file_bytes": 268435456,
+    "root_bytes": 1073741824,
+    "profile_reservation_bytes": 268435456
+  },
+  "recommendation": {
+    "folded_expanded_bytes": 268435456,
+    "scope": "catalog-only explicit kwargs; historical defaults unchanged",
+    "other_limits": "unchanged",
+    "proof_limit": "proves this observed allocations.folded fits, not unobserved peak/other-case/full profiles",
+    "raw_heaptrack_bytes": 592703,
+    "interpreted_heaptrack_bytes": 6387260
+  },
+  "required_forwarding": [
+    "tools/artifact_identity_evidence/common.py folded_limit: closed 256 MiB option only; default stays64 MiB",
+    "catalog/model.py suite plan: declare maximum expanded folded bytes",
+    "catalog/collect.py collect_probe: maximum_folded_bytes=...",
+    "catalog/evidence.py whole allocation replay: maximum_folded_bytes=...",
+    "catalog/allocations.py selected folded_attribution: maximum_bytes=...",
+    "catalog suite/aggregate schema embedded plan bindings and focused defaults/forwarding tests"
+  ],
+  "preservation": "Keep failed smoke-01 and original full-01/builds-01 untouched; new measured roots/clean refs carry the revised explicit bound."
+}

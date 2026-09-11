@@ -1,13 +1,16 @@
 # Contributing
 
-LSF is currently interface-first. Contributions should preserve the distinction between architectural contracts and implementations.
+LSF has completed Phase 1 and its performance/infrastructure extension;
+Phase 2 packaging and supply-chain work is next. Contributions should preserve the distinction between
+architectural contracts, generated surfaces, and implemented behavior. Consult
+[the roadmap](docs/roadmap.md) for the current boundary.
 
 ## Change categories
 
 - **ADR:** a decision that changes a core invariant, dependency direction, execution model, or compatibility promise.
 - **RFC:** a proposal requiring review before contracts are changed.
 - **Interface change:** a compatible or incompatible update to WIT, Protobuf, JSON Schema, Rust traits, or an SDK surface.
-- **Implementation change:** future code behind an accepted interface.
+- **Implementation change:** code behind an accepted interface.
 
 ## Interface rules
 
@@ -31,3 +34,8 @@ A pull request should include:
 - relevant ADR or RFC,
 - conformance tests or a test specification,
 - generated artifacts only when generation is reproducible.
+
+Run checks appropriate to the change using [VALIDATION.md](VALIDATION.md).
+Normal validation excludes expensive ignored acceptance tests; request
+100,000-release catalog scaling, native profiling, and long resource soaks only
+through their documented explicit commands or manual workflow inputs.

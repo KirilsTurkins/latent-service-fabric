@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Fixed catalog collector selection",
+  "description": "Closed selectors; the matching semantic model enforces exact owner order, counts and stage bounds.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "profile", "repetition", "variant", "shape", "mode", "sequence_ordinal", "case"],
+  "properties": {
+    "schema": {"const": "latent.optimization.catalog-plan.v1"},
+    "profile": {"enum": ["smoke", "full"]},
+    "repetition": {"type": "integer", "minimum": 1, "maximum": 3},
+    "variant": {"enum": ["control", "candidate"]},
+    "shape": {"enum": ["distinct", "shared"]},
+    "mode": {"enum": ["initial", "reopen", "allocation"]},
+    "sequence_ordinal": {"type": "integer", "minimum": 0, "maximum": 39},
+    "case": {"enum": [null, "default-success", "named-success", "route-miss", "export-miss"]}
+  },
+  "allOf": [
+    {"if": {"properties": {"profile": {"const": "full"}}},
+     "then": {"properties": {"repetition": {"const": 1}, "sequence_ordinal": {"maximum": 23}}}},
+    {"if": {"properties": {"mode": {"const": "allocation"}}},
+     "then": {"properties": {"repetition": {"const": 1}, "case": {"type": "string"}}},
+     "else": {"properties": {"case": {"type": "null"}}}}
+  ]
+}

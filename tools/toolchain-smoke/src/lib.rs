@@ -1,4 +1,4 @@
-//! Compile-only probes for the dependencies selected by the Phase 0 baseline.
+//! Compile-only probes for the dependencies selected by the build foundation.
 //!
 //! This crate deliberately does not construct an engine, store, executor, listener,
 //! thread, process, or service-owned runtime resource.
@@ -8,12 +8,12 @@ pub mod host {
     #[derive(Debug, Clone, PartialEq, Eq, clap::Parser, serde::Serialize, serde::Deserialize)]
     #[command(name = "latent-toolchain-smoke")]
     pub struct ProbeConfiguration {
-        #[arg(long, default_value = "phase-0")]
+        #[arg(long, default_value = "phase-1-foundation")]
         pub profile: String,
     }
 
     pub mod bindings {
-        include!(concat!(env!("OUT_DIR"), "/host_bindings.rs"));
+        pub use latent_component_bindings::host::runtime::*;
     }
 
     pub fn digest(bytes: &[u8]) -> [u8; 32] {
@@ -40,9 +40,13 @@ pub mod host {
         config.wasm_component_model(true);
         config.wasm_component_model_async(true);
     }
+
+    pub fn tracing_dispatch() -> tracing::Dispatch {
+        tracing::Dispatch::new(tracing_subscriber::registry())
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
 pub mod guest_bindings {
-    include!(concat!(env!("OUT_DIR"), "/guest_bindings.rs"));
+    pub use latent_component_bindings::guest::runtime::*;
 }

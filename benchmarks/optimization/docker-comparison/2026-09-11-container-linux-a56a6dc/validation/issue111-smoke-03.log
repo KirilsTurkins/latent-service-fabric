@@ -1,0 +1,6 @@
+completed pair=0 group=0 arm=lsf density=1
+completed pair=0 group=1 arm=native density=1
+completed pair=0 group=2 arm=native density=8
+completed pair=0 group=3 arm=lsf density=8
+completed pair=0 group=4 arm=lsf density=32
+completed pair=0 group=5 arm=native density=32

@@ -69,7 +69,7 @@ fn envelope(id: ActivationId, deadline: Option<u64>) -> ActivationEnvelope {
         budget: ResourceBudget {
             cpu_fuel: 1_000_000,
             memory_bytes: 16 * 1024 * 1024,
-            wall_deadline_unix_millis: deadline,
+            wall_time_limit_millis: None,
             child_calls: 0,
             outbound_requests: 0,
             state_read_bytes: 0,
@@ -172,6 +172,9 @@ fn assert_success(outcome: ActivationOutcome, expected: &BudgetConsumption) {
             assert_eq!(success.output, b"completed");
             assert_eq!(&success.consumption, expected);
         }
+        ActivationOutcome::DeclaredError { error, .. } => {
+            panic!("unexpected declared error: {error:?}");
+        }
         ActivationOutcome::Failed { error, .. } => panic!("unexpected failure: {error:?}"),
     }
 }
@@ -199,6 +202,9 @@ fn assert_failure(
         }
         ActivationOutcome::Succeeded(success) => {
             panic!("expected failure, got {:?}", success.output);
+        }
+        ActivationOutcome::DeclaredError { error, .. } => {
+            panic!("expected platform failure, got declared error: {error:?}");
         }
     }
 }

@@ -1,0 +1,149 @@
+{
+  "command": [
+    "C:\\Users\\turkins\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "C:\\Users\\turkins\\Desktop\\latent-fabric-scheduler-queues\\tools\\validate_phase1_archive.py",
+    "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-publication-01"
+  ],
+  "elapsed_nanos": "16538549100",
+  "exit_code": 0,
+  "expected_sources": {
+    "candidate": "77c071550160cb661864c828d825b3fd08cf25f0",
+    "control": "7ddc41779cd0648a14626b1e558a7bff08ba3fe2",
+    "harness": "77c071550160cb661864c828d825b3fd08cf25f0"
+  },
+  "finished_utc": "2026-09-11T08:51:16.870067+00:00",
+  "harness_binding": {
+    "scope": "manifest-bound suite; build association requires independent Windows replay",
+    "source": {
+      "cargo_lock_sha256": "sha256:c4c3f9ae98df2cd772e24bf0ddc1f3a1b8f418765e01d94a3e35da2d7a617f22",
+      "clean": true,
+      "commit": "77c071550160cb661864c828d825b3fd08cf25f0",
+      "tree": "f40f3aee2cc3a8430e4d2dc6b1af4fd79d4ff08c"
+    },
+    "suite": {
+      "bytes": "329619",
+      "path": "suite.json",
+      "sha256": "sha256:e16c13396cbebee3a1a8582801cd0321f841bfb150fcb854d61a25a5ee7bc17b"
+    }
+  },
+  "inventory_before_replay": {
+    "archive": {
+      "bytes": "13138362",
+      "path": "raw-evidence.tar.gz",
+      "sha256": "sha256:6eee8ae0759449fe8261ddb89f148bd3182d04a01a19a3a47b9cdfe998d4a3b1"
+    },
+    "expanded_bytes": "60893654",
+    "files": {
+      "aggregate.json": {
+        "bytes": "1144490",
+        "path": "aggregate.json",
+        "sha256": "sha256:ee29326fc2059ef6bdc2bffe0af1a90a2b88d1c9e91edbeb6ffee123efc3d751"
+      },
+      "raw-evidence.manifest.json": {
+        "bytes": "196358",
+        "path": "raw-evidence.manifest.json",
+        "sha256": "sha256:3a82cd2e1441b4d8e50ce8424e5b164db4cb0b7d467e31babe2a345cbabc7700"
+      },
+      "raw-evidence.parts.json": {
+        "bytes": "586",
+        "path": "raw-evidence.parts.json",
+        "sha256": "sha256:104e8307bf55053a971caf4a3137e2f136780b1402dc8997b00840e18e9bc879"
+      },
+      "raw-evidence.tar.gz.part-0001": {
+        "bytes": "6569181",
+        "path": "raw-evidence.tar.gz.part-0001",
+        "sha256": "sha256:85d928ad604a2ac7073c7afc2f3cb7dbb9ec61da6667591ea9dd01833b6370f0"
+      },
+      "raw-evidence.tar.gz.part-0002": {
+        "bytes": "6569181",
+        "path": "raw-evidence.tar.gz.part-0002",
+        "sha256": "sha256:22758fa240c2746a0dc6e968d7ab35b12da3ace4b839dcb4f7c3164a14168a1d"
+      },
+      "raw-evidence.tar.gz.sha256": {
+        "bytes": "86",
+        "path": "raw-evidence.tar.gz.sha256",
+        "sha256": "sha256:e091ee5bcfebb29d6ebd90555182127ec72356eddc1c4f0f00247806b9fa7e69"
+      }
+    },
+    "manifest_files": 923,
+    "package_bytes": "14479882",
+    "profile": "full",
+    "sources": {
+      "candidate": "77c071550160cb661864c828d825b3fd08cf25f0",
+      "control": "7ddc41779cd0648a14626b1e558a7bff08ba3fe2",
+      "harness": "77c071550160cb661864c828d825b3fd08cf25f0"
+    }
+  },
+  "log": {
+    "bytes": "60",
+    "path": "windows-replay.log",
+    "sha256": "sha256:91c457ebdfa98e246018d73752ccfecdf4b4d4c872869d007ee556968b53e0eb"
+  },
+  "original_log_path": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-windows-replay.log",
+  "package": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-publication-01",
+  "package_inventory": {
+    "archive": {
+      "bytes": "13138362",
+      "path": "raw-evidence.tar.gz",
+      "sha256": "sha256:6eee8ae0759449fe8261ddb89f148bd3182d04a01a19a3a47b9cdfe998d4a3b1"
+    },
+    "expanded_bytes": "60893654",
+    "files": {
+      "aggregate.json": {
+        "bytes": "1144490",
+        "path": "aggregate.json",
+        "sha256": "sha256:ee29326fc2059ef6bdc2bffe0af1a90a2b88d1c9e91edbeb6ffee123efc3d751"
+      },
+      "raw-evidence.manifest.json": {
+        "bytes": "196358",
+        "path": "raw-evidence.manifest.json",
+        "sha256": "sha256:3a82cd2e1441b4d8e50ce8424e5b164db4cb0b7d467e31babe2a345cbabc7700"
+      },
+      "raw-evidence.parts.json": {
+        "bytes": "586",
+        "path": "raw-evidence.parts.json",
+        "sha256": "sha256:104e8307bf55053a971caf4a3137e2f136780b1402dc8997b00840e18e9bc879"
+      },
+      "raw-evidence.tar.gz.part-0001": {
+        "bytes": "6569181",
+        "path": "raw-evidence.tar.gz.part-0001",
+        "sha256": "sha256:85d928ad604a2ac7073c7afc2f3cb7dbb9ec61da6667591ea9dd01833b6370f0"
+      },
+      "raw-evidence.tar.gz.part-0002": {
+        "bytes": "6569181",
+        "path": "raw-evidence.tar.gz.part-0002",
+        "sha256": "sha256:22758fa240c2746a0dc6e968d7ab35b12da3ace4b839dcb4f7c3164a14168a1d"
+      },
+      "raw-evidence.tar.gz.sha256": {
+        "bytes": "86",
+        "path": "raw-evidence.tar.gz.sha256",
+        "sha256": "sha256:e091ee5bcfebb29d6ebd90555182127ec72356eddc1c4f0f00247806b9fa7e69"
+      }
+    },
+    "manifest_files": 923,
+    "package_bytes": "14479882",
+    "profile": "full",
+    "sources": {
+      "candidate": "77c071550160cb661864c828d825b3fd08cf25f0",
+      "control": "7ddc41779cd0648a14626b1e558a7bff08ba3fe2",
+      "harness": "77c071550160cb661864c828d825b3fd08cf25f0"
+    }
+  },
+  "package_unchanged": true,
+  "platform": "win32",
+  "process_id": 50240,
+  "python": "3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]",
+  "pythonpath": "C:\\Users\\turkins\\Desktop\\latent-fabric-phase1\\target\\phase1\\measurement-python-deps",
+  "reaped": true,
+  "repository": "C:\\Users\\turkins\\Desktop\\latent-fabric-scheduler-queues",
+  "schema": "latent.scheduler.windows-archive-replay.v1",
+  "source": "lsf-phase1-implementation:/workspace/project/target/optimization-scheduler/publication-01",
+  "source_copy_report_identical": true,
+  "started_utc": "2026-09-11T08:51:00.319474+00:00",
+  "status": "passed",
+  "validator": {
+    "bytes": "25816",
+    "path": "validate_phase1_archive.py",
+    "sha256": "sha256:eee10c75c62117aa2951dc40eaacff42349d1189e533bd02e544a14770f2b956"
+  }
+}

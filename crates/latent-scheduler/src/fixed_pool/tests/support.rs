@@ -63,11 +63,13 @@ pub(super) fn pool_with_clock(
     (pool, clock)
 }
 
-pub(super) fn budget(deadline: Option<u64>) -> ResourceBudget {
+pub(super) fn budget(_deadline: Option<u64>) -> ResourceBudget {
     ResourceBudget {
         cpu_fuel: 10_000,
         memory_bytes: 1_048_576,
-        wall_deadline_unix_millis: deadline,
+        // The test helper's `deadline` is an absolute scheduler deadline;
+        // it is passed separately below rather than encoded in a ceiling.
+        wall_time_limit_millis: None,
         child_calls: 0,
         outbound_requests: 0,
         state_read_bytes: 0,
@@ -87,8 +89,14 @@ pub(super) async fn acquire(
     let activation_id = ActivationId(activation.to_owned());
     let tenant = TenantId("tenant-test".to_owned());
     let budget = budget(deadline);
-    pool.acquire(&activation_id, &tenant, CellClass::Standard, &budget)
-        .await
+    pool.acquire_with_deadline(
+        &activation_id,
+        &tenant,
+        CellClass::Standard,
+        &budget,
+        deadline,
+    )
+    .await
 }
 
 pub(super) async fn wait_for_queue_depth(pool: &FixedCellPool, expected: u32) {

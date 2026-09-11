@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "latent.phase1.conformance.v1",
+  "title": "Bounded Phase 1 deterministic evidence, never a calibrated baseline",
+  "description": "Structural schema. tools/validate_phase1_conformance.py additionally enforces fixed case membership, counters, process identity, cleanup, artifact containment and digests. No measured baseline is included in this directory.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "profile", "case_manifest_sha256", "identity", "environment", "public_config", "work", "drivers", "cases", "samples", "shutdowns", "artifacts", "deferred_evidence", "deterministic_status", "phase1_completion"],
+  "properties": {
+    "schema": {"const": "latent.phase1.conformance.v1"},
+    "profile": {"const": "bounded-deterministic"},
+    "case_manifest_sha256": {"$ref": "#/$defs/digest"},
+    "identity": {"$ref": "#/$defs/identity"},
+    "environment": {"type": "object", "required": ["os", "kernel", "architecture", "rust_version", "wasmtime_version"]},
+    "public_config": {"type": "object", "minProperties": 1},
+    "work": {"$ref": "#/$defs/work"},
+    "drivers": {"type": "array", "maxItems": 2, "items": {"type": "object", "additionalProperties": false, "required": ["driver", "work"], "properties": {"driver": {"enum": ["process", "adapter"]}, "work": {"$ref": "#/$defs/work"}}}},
+    "cases": {"type": "array", "maxItems": 19, "items": {"$ref": "#/$defs/case"}},
+    "samples": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/sample"}},
+    "shutdowns": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/shutdown"}},
+    "artifacts": {"type": "array", "maxItems": 512, "items": {"$ref": "#/$defs/artifact"}},
+    "deferred_evidence": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"type": "object", "additionalProperties": false, "required": ["id", "status", "reason"], "properties": {"id": {"type": "string"}, "status": {"const": "not_run"}, "reason": {"enum": ["outside-bounded-profile", "not-authorized-heavy-work"]}}}},
+    "deterministic_status": {"enum": ["passed", "failed"]},
+    "phase1_completion": {"const": "incomplete"}
+  },
+  "$defs": {
+    "u64": {"type": "string", "pattern": "^(0|[1-9][0-9]{0,19})$", "description": "Canonical decimal, additionally checked <=18446744073709551615 by the verifier."},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "status": {"enum": ["passed", "failed", "not_run", "not_applicable"]},
+    "file": {"type": "object", "additionalProperties": false, "required": ["name", "sha256", "bytes"], "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 128}, "sha256": {"$ref": "#/$defs/digest"}, "bytes": {"$ref": "#/$defs/u64"}}},
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_commit", "source_tree", "source_dirty", "cargo_lock_sha256", "config_sha256", "binaries", "fixtures"],
+      "properties": {
+        "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "source_tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "source_dirty": {"type": "boolean"},
+        "cargo_lock_sha256": {"$ref": "#/$defs/digest"},
+        "config_sha256": {"$ref": "#/$defs/digest", "description": "SHA-256 of sanitized public_config: UTF-8 JSON, lexically sorted keys, no whitespace, integral numbers only. Credentials and any private config hash are excluded."},
+        "binaries": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/file"}},
+        "fixtures": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/file"}}
+      }
+    },
+    "work": {"type": "object", "additionalProperties": false, "required": ["commands", "invoke_attempts", "budget_exhausted"], "properties": {"commands": {"$ref": "#/$defs/u64"}, "invoke_attempts": {"$ref": "#/$defs/u64"}, "budget_exhausted": {"type": "boolean"}}},
+    "case": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "status", "reason", "work", "observations", "diagnostics"],
+      "properties": {
+        "id": {"type": "string", "maxLength": 128}, "status": {"$ref": "#/$defs/status"},
+        "reason": {"type": ["null", "string"], "maxLength": 4096},
+        "work": {"$ref": "#/$defs/work"}, "observations": {},
+        "diagnostics": {"type": "array", "maxItems": 32, "items": {"type": "string", "maxLength": 512}}
+      }
+    },
+    "artifact": {"type": "object", "additionalProperties": false, "required": ["path", "sha256", "bytes"], "properties": {"path": {"type": "string", "minLength": 1, "maxLength": 512}, "sha256": {"$ref": "#/$defs/digest"}, "bytes": {"$ref": "#/$defs/u64"}}},
+    "process_identity": {"type": "object", "additionalProperties": false, "required": ["processId", "startTimeTicks"], "properties": {"processId": {"type": "integer", "minimum": 1, "maximum": 4294967295}, "startTimeTicks": {"$ref": "#/$defs/u64"}}},
+    "process": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identity", "process", "taskCount", "uniqueSocketCount", "listeningTcpSocketCount", "descendants", "sampleAttempts"],
+      "properties": {
+        "identity": {"$ref": "#/$defs/process_identity"},
+        "process": {"type": "object", "additionalProperties": false, "required": ["processId", "residentMemoryBytes", "threadCount", "openFileDescriptors", "socketCount"], "properties": {
+          "processId": {"type": "integer", "minimum": 1},
+          "residentMemoryBytes": {"anyOf": [{"$ref": "#/$defs/u64"}, {"type": "null"}]},
+          "threadCount": {"anyOf": [{"$ref": "#/$defs/u64"}, {"type": "null"}]},
+          "openFileDescriptors": {"anyOf": [{"$ref": "#/$defs/u64"}, {"type": "null"}]},
+          "socketCount": {"anyOf": [{"$ref": "#/$defs/u64"}, {"type": "null"}]}
+        }},
+        "taskCount": {"$ref": "#/$defs/u64"}, "uniqueSocketCount": {"$ref": "#/$defs/u64"},
+        "listeningTcpSocketCount": {"$ref": "#/$defs/u64"},
+        "descendants": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/process_identity"}},
+        "sampleAttempts": {"type": "integer", "minimum": 1, "maximum": 3}
+      }
+    },
+    "sample": {"type": "object", "additionalProperties": false, "required": ["sequence", "sample_started_micros", "sample_finished_micros", "node_instance", "phase", "process", "inventory"], "properties": {"sequence": {"$ref": "#/$defs/u64"}, "sample_started_micros": {"$ref": "#/$defs/u64", "description": "Monotonic elapsed microseconds from the driver's single origin before inventory/proc sampling."}, "sample_finished_micros": {"$ref": "#/$defs/u64"}, "node_instance": {"type": "integer", "minimum": 1, "maximum": 3}, "phase": {"enum": ["empty", "dormant", "warm", "post-mixed", "pre-shutdown"]}, "process": {"$ref": "#/$defs/process"}, "inventory": {"type": "object"}}},
+    "shutdown": {"type": "object", "additionalProperties": false, "required": ["node_instance", "process_id", "start_time_ticks", "exit_success", "reaped", "readers_joined", "report"], "properties": {"node_instance": {"type": "integer", "minimum": 1, "maximum": 3}, "process_id": {"type": "integer", "minimum": 1}, "start_time_ticks": {"$ref": "#/$defs/u64"}, "exit_success": {"type": "boolean"}, "reaped": {"type": "boolean"}, "readers_joined": {"type": "boolean"}, "report": {"type": "object", "description": "Exact product ShutdownReport. The semantic verifier requires every transient counter and cleanup flag; its existing numeric fields are intentionally retained."}}}
+  }
+}

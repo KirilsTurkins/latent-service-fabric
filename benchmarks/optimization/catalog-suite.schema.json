@@ -1,0 +1,986 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Catalog suite evidence envelope",
+  "description": "Closed bounded envelope. Exact source, owner order, every operation, same-root reopen, resource ownership and allocation attribution require the matching semantic replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "plan",
+    "builds",
+    "runner_source",
+    "runner_source_after",
+    "status",
+    "reason",
+    "elapsed_nanos",
+    "normal_elapsed_nanos",
+    "allocation_elapsed_nanos",
+    "tools",
+    "symbols",
+    "runs",
+    "artifacts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.catalog-suite.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "plan": {
+      "$ref": "#/$defs/plan"
+    },
+    "builds": {
+      "$ref": "#/$defs/artifact"
+    },
+    "runner_source": {
+      "type": "object"
+    },
+    "runner_source_after": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object"
+        }
+      ]
+    },
+    "status": {
+      "enum": [
+        "passed",
+        "failed"
+      ]
+    },
+    "reason": {
+      "enum": [
+        null,
+        "collection-failed"
+      ]
+    },
+    "elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "normal_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "allocation_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "heaptrack": {
+          "type": "object"
+        },
+        "heaptrack_print": {
+          "type": "object"
+        },
+        "zstd": {
+          "type": "object"
+        },
+        "nm": {
+          "type": "object"
+        }
+      }
+    },
+    "symbols": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "control": {
+          "type": "object"
+        },
+        "candidate": {
+          "type": "object"
+        }
+      }
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "repetition",
+          "variant",
+          "shape",
+          "mode",
+          "sequence_ordinal",
+          "case",
+          "status",
+          "reason",
+          "command",
+          "started_micros",
+          "finished_micros",
+          "plan",
+          "identity",
+          "data_owner",
+          "reopen_input",
+          "post_exit",
+          "cleanup",
+          "raw",
+          "log",
+          "ready",
+          "result",
+          "process",
+          "probe_process",
+          "resources",
+          "cpu",
+          "profile_refs",
+          "host_after",
+          "cgroup_after",
+          "host_before",
+          "cgroup_before"
+        ],
+        "properties": {
+          "repetition": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "variant": {
+            "enum": [
+              "control",
+              "candidate"
+            ]
+          },
+          "shape": {
+            "enum": [
+              "distinct",
+              "shared"
+            ]
+          },
+          "mode": {
+            "enum": [
+              "initial",
+              "reopen",
+              "allocation"
+            ]
+          },
+          "sequence_ordinal": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 39
+          },
+          "case": {
+            "enum": [
+              null,
+              "default-success",
+              "named-success",
+              "route-miss",
+              "export-miss"
+            ]
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed"
+            ]
+          },
+          "reason": {
+            "enum": [
+              null,
+              "collector-failed"
+            ]
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "minItems": 6,
+            "maxItems": 9
+          },
+          "started_micros": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$",
+            "maxLength": 20
+          },
+          "finished_micros": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$",
+                "maxLength": 20
+              }
+            ]
+          },
+          "plan": {
+            "$ref": "#/$defs/artifact"
+          },
+          "identity": {
+            "$ref": "#/$defs/artifact"
+          },
+          "data_owner": {
+            "$ref": "#/$defs/artifact"
+          },
+          "reopen_input": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/artifact"
+              }
+            ]
+          },
+          "post_exit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/artifact"
+              }
+            ]
+          },
+          "cleanup": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/artifact"
+              }
+            ]
+          },
+          "raw": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/artifact"
+              }
+            ]
+          },
+          "log": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/artifact"
+              }
+            ]
+          },
+          "ready": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/artifact"
+              }
+            ]
+          },
+          "result": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/$defs/artifact"
+              }
+            ]
+          },
+          "process": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          },
+          "probe_process": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          },
+          "resources": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          },
+          "cpu": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          },
+          "profile_refs": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          },
+          "host_after": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          },
+          "cgroup_after": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          },
+          "host_before": {
+            "type": "object"
+          },
+          "cgroup_before": {
+            "type": "object"
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 40
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact"
+      },
+      "minItems": 1,
+      "maxItems": 4096
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "smoke"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "smoke"
+              },
+              "rows": {
+                "minItems": 40,
+                "maxItems": 40
+              },
+              "normal_pairs_per_shape": {
+                "const": 3
+              }
+            }
+          },
+          "runs": {
+            "maxItems": 40
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "plan": {
+            "properties": {
+              "profile": {
+                "const": "full"
+              },
+              "rows": {
+                "minItems": 24,
+                "maxItems": 24
+              },
+              "normal_pairs_per_shape": {
+                "const": 1
+              }
+            }
+          },
+          "runs": {
+            "maxItems": 24
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$",
+          "maxLength": 20
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repetition",
+        "variant",
+        "shape",
+        "mode",
+        "sequence_ordinal",
+        "case"
+      ],
+      "properties": {
+        "repetition": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "variant": {
+          "enum": [
+            "control",
+            "candidate"
+          ]
+        },
+        "shape": {
+          "enum": [
+            "distinct",
+            "shared"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "initial",
+            "reopen",
+            "allocation"
+          ]
+        },
+        "sequence_ordinal": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 39
+        },
+        "case": {
+          "enum": [
+            null,
+            "default-success",
+            "named-success",
+            "route-miss",
+            "export-miss"
+          ]
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "profile",
+        "normal_pairs_per_shape",
+        "rows",
+        "scales",
+        "cases_per_checkpoint",
+        "per_owner",
+        "totals",
+        "order",
+        "maximum_normal_seconds",
+        "maximum_allocation_seconds",
+        "maximum_artifact_bytes",
+        "maximum_folded_expanded_bytes",
+        "maximum_artifact_files",
+        "maximum_document_bytes",
+        "maximum_row_bytes",
+        "maximum_samples",
+        "sampler_interval_millis",
+        "measured_symbols",
+        "allocation_frame_invocations",
+        "normal_boundary",
+        "allocation_boundary"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.catalog-suite-plan.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "normal_pairs_per_shape": {
+          "enum": [
+            1,
+            3
+          ]
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/selection"
+          },
+          "minItems": 24,
+          "maxItems": 40
+        },
+        "scales": {
+          "enum": [
+            [
+              2,
+              4,
+              16
+            ],
+            [
+              100,
+              1000,
+              10000,
+              100000
+            ]
+          ]
+        },
+        "cases_per_checkpoint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "default-success",
+            "named-success",
+            "route-miss",
+            "export-miss"
+          ],
+          "properties": {
+            "default-success": {
+              "enum": [
+                32,
+                5000
+              ]
+            },
+            "named-success": {
+              "enum": [
+                32,
+                5000
+              ]
+            },
+            "route-miss": {
+              "enum": [
+                64,
+                1000
+              ]
+            },
+            "export-miss": {
+              "enum": [
+                64,
+                1000
+              ]
+            }
+          }
+        },
+        "per_owner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "initial",
+            "reopen",
+            "allocation"
+          ],
+          "properties": {
+            "initial": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "invokes",
+                "commands",
+                "publications",
+                "applies",
+                "resolves",
+                "policies",
+                "pins",
+                "measured_resolves",
+                "warmup_resolves",
+                "preflight_resolves"
+              ],
+              "properties": {
+                "invokes": {
+                  "const": 0
+                },
+                "commands": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "publications": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "applies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "policies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "pins": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "measured_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "warmup_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "preflight_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                }
+              }
+            },
+            "reopen": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "invokes",
+                "commands",
+                "publications",
+                "applies",
+                "resolves",
+                "policies",
+                "pins",
+                "measured_resolves",
+                "warmup_resolves",
+                "preflight_resolves"
+              ],
+              "properties": {
+                "invokes": {
+                  "const": 0
+                },
+                "commands": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "publications": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "applies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "policies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "pins": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "measured_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "warmup_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "preflight_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                }
+              }
+            },
+            "allocation": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "invokes",
+                "commands",
+                "publications",
+                "applies",
+                "resolves",
+                "policies",
+                "pins",
+                "measured_resolves",
+                "warmup_resolves",
+                "preflight_resolves"
+              ],
+              "properties": {
+                "invokes": {
+                  "const": 0
+                },
+                "commands": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "publications": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "applies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "policies": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "pins": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "measured_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "warmup_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                },
+                "preflight_resolves": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 148013
+                }
+              }
+            }
+          }
+        },
+        "totals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "invokes",
+            "commands",
+            "publications",
+            "applies",
+            "resolves",
+            "policies",
+            "pins",
+            "measured_resolves",
+            "warmup_resolves",
+            "preflight_resolves",
+            "collector_processes"
+          ],
+          "properties": {
+            "invokes": {
+              "const": 0
+            },
+            "commands": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "publications": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "applies": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "resolves": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "policies": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "pins": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "measured_resolves": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "warmup_resolves": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "preflight_resolves": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            },
+            "collector_processes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 596720
+            }
+          }
+        },
+        "order": {
+          "const": "distinct-control-first-shared-candidate-first-initial-reopen-adjacent"
+        },
+        "maximum_normal_seconds": {
+          "enum": [
+            "3600",
+            "21600"
+          ]
+        },
+        "maximum_allocation_seconds": {
+          "const": "7200"
+        },
+        "maximum_artifact_bytes": {
+          "const": "1073741824"
+        },
+        "maximum_artifact_files": {
+          "const": 4096
+        },
+        "maximum_document_bytes": {
+          "const": "33554432"
+        },
+        "maximum_row_bytes": {
+          "const": "262144"
+        },
+        "maximum_samples": {
+          "const": 2048
+        },
+        "sampler_interval_millis": {
+          "const": 100
+        },
+        "measured_symbols": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "default-success",
+            "named-success",
+            "route-miss",
+            "export-miss"
+          ],
+          "properties": {
+            "default-success": {
+              "const": "latentd::standalone::measurements::comparison::catalog::frames::measured_default_success_and_drop"
+            },
+            "named-success": {
+              "const": "latentd::standalone::measurements::comparison::catalog::frames::measured_named_success_and_drop"
+            },
+            "route-miss": {
+              "const": "latentd::standalone::measurements::comparison::catalog::frames::measured_route_miss_and_drop"
+            },
+            "export-miss": {
+              "const": "latentd::standalone::measurements::comparison::catalog::frames::measured_export_miss_and_drop"
+            }
+          }
+        },
+        "allocation_frame_invocations": {
+          "const": 1
+        },
+        "normal_boundary": {
+          "const": "directory-deployment-resolver.resolve-to-return-before-validation-and-drop"
+        },
+        "allocation_boundary": {
+          "const": "public-resolve-and-result-drop-batch"
+        },
+        "maximum_folded_expanded_bytes": {
+          "const": "268435456"
+        }
+      }
+    }
+  }
+}

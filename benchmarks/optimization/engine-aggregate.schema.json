@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "engine-aggregate evidence envelope",
+  "description": "Closed bounded envelope. Complete source, ordering, configuration, outcome and ownership qualification requires the matching semantic replay.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "status",
+    "population_complete",
+    "attempt_count_complete",
+    "validated_attempts",
+    "validated_commands",
+    "validated_processes",
+    "suite_sha256",
+    "plan_sha256",
+    "scope",
+    "builds",
+    "runs",
+    "comparisons",
+    "limitations"
+  ],
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "complete"}}, "required": ["status"]},
+      "then": {"properties": {"profile": {"const": "full"}, "population_complete": {"const": true},
+        "attempt_count_complete": {"const": true}, "validated_attempts": {"const": "27790"},
+        "validated_commands": {"const": "56315"}, "validated_processes": {"const": "35"},
+        "runs": {"minItems": 35, "maxItems": 35}}}
+    }
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.engine-aggregate.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "failed"
+      ]
+    },
+    "population_complete": {
+      "type": "boolean"
+    },
+    "attempt_count_complete": {
+      "type": "boolean"
+    },
+    "validated_attempts": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "validated_commands": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "validated_processes": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$",
+      "maxLength": 20
+    },
+    "suite_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "scope": {
+      "const": "five-owned-node-engine-profiles-with-shared-within-block-D0-baselines"
+    },
+    "builds": {
+      "type": "object"
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 0,
+      "maxItems": 35
+    },
+    "comparisons": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "maxItems": 32
+    }
+  }
+}

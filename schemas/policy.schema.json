@@ -3,6 +3,7 @@
   "$id": "https://latent.dev/schemas/v1alpha1/policy.schema.json",
   "title": "LSF Policy",
   "type": "object",
+  "maxProperties": 4,
   "additionalProperties": false,
   "required": [
     "apiVersion",
@@ -19,6 +20,7 @@
     },
     "metadata": {
       "type": "object",
+      "maxProperties": 5,
       "required": [
         "name"
       ],
@@ -38,12 +40,14 @@
         },
         "labels": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
         },
         "annotations": {
           "type": "object",
+          "maxProperties": 4096,
           "additionalProperties": {
             "type": "string"
           }
@@ -52,6 +56,7 @@
     },
     "spec": {
       "type": "object",
+      "maxProperties": 2,
       "additionalProperties": false,
       "required": [
         "language",

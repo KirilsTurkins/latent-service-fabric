@@ -1,0 +1,617 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.invalid/phase1/suite.schema.json",
+  "title": "Phase 1 suite evidence",
+  "description": "Structural schema. Python validation additionally verifies bounded files, hashes, profile presets, conservation, process ownership, scope and compatible measurement populations.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "identity",
+    "plans",
+    "runs",
+    "artifacts"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.phase1.measurement-suite.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "source",
+        "build",
+        "environment",
+        "binary",
+        "fixtures"
+      ],
+      "properties": {
+        "schema": {
+          "const": "latent.phase1.measurement-identity.v1"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "commit",
+            "tree",
+            "dirty",
+            "cargo_lock_sha256"
+          ],
+          "properties": {
+            "commit": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "tree": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "dirty": {
+              "type": "boolean"
+            },
+            "cargo_lock_sha256": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          }
+        },
+        "build": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "profile",
+            "rustc",
+            "cargo",
+            "wasmtime",
+            "target",
+            "overrides"
+          ],
+          "properties": {
+            "profile": {
+              "enum": [
+                "debug",
+                "release"
+              ]
+            },
+            "rustc": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "cargo": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "wasmtime": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "target": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "overrides": {
+              "type": "object",
+              "maxProperties": 64
+            }
+          }
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "os",
+            "arch",
+            "kernel",
+            "cpu_model",
+            "logical_cpus",
+            "memory_total_bytes",
+            "virtualization",
+            "allocator",
+            "cpu_policy",
+            "load_before"
+          ],
+          "properties": {
+            "os": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "arch": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "kernel": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "cpu_model": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "logical_cpus": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "memory_total_bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "virtualization": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "allocator": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "cpu_policy": {
+              "type": "object",
+              "maxProperties": 4096
+            },
+            "load_before": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "binary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sha256",
+            "bytes"
+          ],
+          "properties": {
+            "sha256": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          }
+        },
+        "fixtures": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "sha256",
+              "bytes"
+            ],
+            "properties": {
+              "name": {
+                "enum": [
+                  "echo",
+                  "generic",
+                  "capabilities"
+                ]
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "bytes": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "plans": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "profile",
+            "kind",
+            "repetition",
+            "scale_counts",
+            "route_samples",
+            "warmup_invocations",
+            "measured_invocations",
+            "batch_size",
+            "concurrency",
+            "benchmark_samples",
+            "maximum_run_seconds",
+            "maximum_output_bytes"
+          ],
+          "properties": {
+            "schema": {
+              "const": "latent.phase1.measurement-plan.v1"
+            },
+            "profile": {
+              "enum": [
+                "smoke",
+                "full"
+              ]
+            },
+            "kind": {
+              "enum": [
+                "scale",
+                "soak",
+                "benchmark"
+              ]
+            },
+            "repetition": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 21
+            },
+            "scale_counts": {
+              "oneOf": [
+                {
+                  "const": [
+                    2,
+                    4
+                  ]
+                },
+                {
+                  "const": [
+                    100,
+                    1000,
+                    10000,
+                    100000
+                  ]
+                }
+              ]
+            },
+            "route_samples": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "warmup_invocations": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "measured_invocations": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "batch_size": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "concurrency": {
+              "const": 2
+            },
+            "benchmark_samples": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maximum_run_seconds": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "maximum_output_bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          }
+        },
+        "soak": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "profile",
+            "kind",
+            "repetition",
+            "scale_counts",
+            "route_samples",
+            "warmup_invocations",
+            "measured_invocations",
+            "batch_size",
+            "concurrency",
+            "benchmark_samples",
+            "maximum_run_seconds",
+            "maximum_output_bytes"
+          ],
+          "properties": {
+            "schema": {
+              "const": "latent.phase1.measurement-plan.v1"
+            },
+            "profile": {
+              "enum": [
+                "smoke",
+                "full"
+              ]
+            },
+            "kind": {
+              "enum": [
+                "scale",
+                "soak",
+                "benchmark"
+              ]
+            },
+            "repetition": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 21
+            },
+            "scale_counts": {
+              "oneOf": [
+                {
+                  "const": [
+                    2,
+                    4
+                  ]
+                },
+                {
+                  "const": [
+                    100,
+                    1000,
+                    10000,
+                    100000
+                  ]
+                }
+              ]
+            },
+            "route_samples": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "warmup_invocations": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "measured_invocations": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "batch_size": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "concurrency": {
+              "const": 2
+            },
+            "benchmark_samples": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maximum_run_seconds": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "maximum_output_bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          }
+        },
+        "benchmark": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "profile",
+            "kind",
+            "repetition",
+            "scale_counts",
+            "route_samples",
+            "warmup_invocations",
+            "measured_invocations",
+            "batch_size",
+            "concurrency",
+            "benchmark_samples",
+            "maximum_run_seconds",
+            "maximum_output_bytes"
+          ],
+          "properties": {
+            "schema": {
+              "const": "latent.phase1.measurement-plan.v1"
+            },
+            "profile": {
+              "enum": [
+                "smoke",
+                "full"
+              ]
+            },
+            "kind": {
+              "enum": [
+                "scale",
+                "soak",
+                "benchmark"
+              ]
+            },
+            "repetition": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 21
+            },
+            "scale_counts": {
+              "oneOf": [
+                {
+                  "const": [
+                    2,
+                    4
+                  ]
+                },
+                {
+                  "const": [
+                    100,
+                    1000,
+                    10000,
+                    100000
+                  ]
+                }
+              ]
+            },
+            "route_samples": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "warmup_invocations": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "measured_invocations": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "batch_size": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "concurrency": {
+              "const": 2
+            },
+            "benchmark_samples": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maximum_run_seconds": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "maximum_output_bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          }
+        }
+      }
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 63,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "repetition",
+          "status",
+          "reason",
+          "report"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "scale",
+              "soak",
+              "benchmark"
+            ]
+          },
+          "repetition": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 21
+          },
+          "status": {
+            "enum": [
+              "passed",
+              "failed"
+            ]
+          },
+          "reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              }
+            ]
+          },
+          "report": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "path",
+                  "sha256",
+                  "bytes"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1024
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  "bytes": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9][0-9]{0,19})$"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 2048,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256",
+          "bytes"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          }
+        }
+      }
+    }
+  }
+}

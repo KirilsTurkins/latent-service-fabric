@@ -24,6 +24,9 @@ TOOLCHAIN = ROOT / "tools" / "toolchain.toml"
 CONTRACT = ROOT / "examples" / "echo-contract" / "wit" / "echo.wit"
 CAPSULE_TEMPLATE = ROOT / "examples" / "echo-contract" / "capsule.json"
 CAPSULE_SCHEMA = ROOT / "schemas" / "capsule-manifest.schema.json"
+CONTRACT_METADATA = ROOT / "examples" / "echo-contract" / "contracts.json"
+DEPLOYMENT_TEMPLATE = ROOT / "examples" / "echo-contract" / "deployment.json"
+DEPLOYMENT_SCHEMA = ROOT / "schemas" / "deployment.schema.json"
 
 PACKAGE = "latent-toolchain-smoke"
 EXAMPLE = "echo-capsule"
@@ -361,6 +364,87 @@ def write_json(path: Path, value: Any) -> None:
     )
 
 
+def metadata_digest(value: dict[str, Any]) -> str:
+    unsigned = {key: item for key, item in value.items() if key != "digest"}
+    encoded = json.dumps(
+        unsigned, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
+
+
+def validate_cli_contract_metadata(
+    metadata: dict[str, Any], parsed_interface: dict[str, Any]
+) -> None:
+    """Check this maintained one-function fixture against wasm-tools' parsed WIT.
+
+    This is not a general WIT-to-descriptor generator. The public Rust metadata
+    codec validates the resulting document in CLI unit tests and publication.
+    """
+    try:
+        contracts = metadata["contracts"]
+        if metadata["format_version"] != 1 or len(contracts) != 1:
+            raise ValueError("unexpected contract envelope")
+        contract = contracts[0]
+        if (contract["id"] != "examples:echo/api@0.1.0"
+                or contract["package_name"] != "examples:echo"
+                or contract["semantic_version"] != "0.1.0"
+                or contract["dependencies"] != []
+                or len(contract["interfaces"]) != 1):
+            raise ValueError("unexpected contract identity")
+        interface = contract["interfaces"][0]
+        if interface["id"] != contract["id"] or len(interface["functions"]) != 1:
+            raise ValueError("unexpected interface surface")
+        function = interface["functions"][0]
+        expected = {
+            "id": "echo", "name": "echo", "asynchronous": False,
+            "parameters": [{"name": "message", "value_type": "String", "documentation": None}],
+            "results": [{"name": "result", "value_type": {
+                "Result": {"ok": "String", "error": {"Variant": "echo-error"}}
+            }, "documentation": None}],
+            "documentation": None, "attributes": {},
+        }
+        if function != expected:
+            raise ValueError("unexpected typed function")
+        if (interface["digest"] != metadata_digest(interface)
+                or contract["digest"] != metadata_digest(contract)):
+            raise ValueError("stale descriptor digest")
+
+        interfaces = [value for value in parsed_interface["interfaces"] if value["name"] == "api"]
+        if len(interfaces) != 1 or set(interfaces[0]["functions"]) != {"echo"}:
+            raise ValueError("unexpected parsed export functions")
+        parsed = interfaces[0]["functions"]["echo"]
+        if (parsed["name"] != "echo" or parsed["kind"] != "freestanding"
+                or parsed["params"] != [{"name": "message", "type": "string"}]):
+            raise ValueError("unexpected parsed parameter type")
+        types = parsed_interface["types"]
+        result = types[parsed["result"]]["kind"]["result"]
+        error = types[result["err"]]
+        if (result["ok"] != "string" or error["name"] != "echo-error"
+                or error["kind"]["variant"]["cases"] != [
+                    {"name": "empty-message", "type": None},
+                    {"name": "message-too-large", "type": None},
+                ]):
+            raise ValueError("unexpected parsed result type")
+    except (KeyError, IndexError, TypeError, ValueError) as error:
+        raise BuildError("typed CLI metadata does not match the generated echo interface") from error
+
+
+def write_cli_inputs(
+    directory: Path, digest: str, parsed_interface: dict[str, Any]
+) -> None:
+    metadata = json.loads(CONTRACT_METADATA.read_text(encoding="utf-8"))
+    validate_cli_contract_metadata(metadata, parsed_interface)
+    deployment = json.loads(DEPLOYMENT_TEMPLATE.read_text(encoding="utf-8"))
+    deployment["spec"]["release"] = f"sha256:{digest}"
+    schema = json.loads(DEPLOYMENT_SCHEMA.read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    if list(validator.iter_errors(deployment)):
+        raise BuildError("generated CLI deployment is invalid")
+    write_json(directory / "contracts.json", metadata)
+    write_json(directory / "deployment.json", deployment)
+    write_json(directory / "input.json", ["hello"])
+
+
 def validate_and_stage_output(
     component: bytes,
     *,
@@ -404,6 +488,7 @@ def validate_and_stage_output(
 
         manifest = build_capsule_manifest(digest)
         write_json(staging / "capsule.json", manifest)
+        write_cli_inputs(staging, digest, parsed_interface)
         (staging / "sha256.txt").write_text(
             f"{digest}  {ARTIFACT_NAME}\n", encoding="utf-8"
         )

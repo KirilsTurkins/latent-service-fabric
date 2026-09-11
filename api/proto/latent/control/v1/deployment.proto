@@ -34,11 +34,16 @@ message Deployment {
   ResourceBudget resources = 7;
   AvailabilityPolicy availability = 8;
   PlacementPolicy placement = 9;
+  // Output-only last-mutation version of this deployment, not the current route
+  // generation. Unrelated writes leave it unchanged; delete/recreate never
+  // reuses an old version. Adapters ignore this field on apply input.
   uint64 generation = 10;
 }
 
 message ApplyDeploymentRequest {
   Deployment deployment = 1;
+  // Absent: unconditional upsert. Zero: require absence (create only).
+  // Positive: require that exact existing deployment version at atomic commit.
   optional uint64 expected_generation = 2;
 }
 
@@ -48,6 +53,7 @@ message ApplyDeploymentResponse {
 }
 
 message GetDeploymentRequest {
+  // Resolved within the authenticated principal's tenant by the adapter.
   string id = 1;
 }
 
@@ -56,7 +62,12 @@ message GetDeploymentResponse {
 }
 
 message ListDeploymentsRequest {
+  // Optional filter within the authenticated principal's tenant. Empty is invalid.
   optional string service = 1;
+  // Tokens are opaque, tenant/filter-bound and expire after catalog publication
+  // or repository reopen. A missing page or zero page_size selects the adapter's
+  // configured positive default; omitted and explicit zero are indistinguishable.
+  // The adapter enforces repository and whole-response byte limits.
   PageRequest page = 2;
 }
 
@@ -66,7 +77,11 @@ message ListDeploymentsResponse {
 }
 
 message DeleteDeploymentRequest {
+  // Resolved within the authenticated principal's tenant by the adapter.
   string id = 1;
+  // Absent: delete the existing object. Positive: require its exact version.
+  // Zero requires absence, so an existing object conflicts and an absent object
+  // returns not-found. This is checked atomically, never by adapter read/check.
   optional uint64 expected_generation = 2;
 }
 
@@ -82,9 +97,15 @@ message DeploymentEvent {
 }
 
 service DeploymentService {
+  // Phase 1 standalone: supported.
   rpc ApplyDeployment(ApplyDeploymentRequest) returns (ApplyDeploymentResponse);
+  // Phase 1 standalone: supported.
   rpc GetDeployment(GetDeploymentRequest) returns (GetDeploymentResponse);
+  // Phase 1 standalone: supported.
   rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+  // Phase 1 standalone: supported.
   rpc DeleteDeployment(DeleteDeploymentRequest) returns (Empty);
+  // Phase 2+ control-plane watch. A Phase 1 standalone adapter must return an
+  // explicit unimplemented response.
   rpc WatchDeployment(WatchDeploymentRequest) returns (stream DeploymentEvent);
 }

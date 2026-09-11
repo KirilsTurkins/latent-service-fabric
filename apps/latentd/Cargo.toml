@@ -17,22 +17,51 @@ workspace = true
 [dependencies]
 clap.workspace = true
 latent-activation = { path = "../../crates/latent-activation" }
+latent-admission = { path = "../../crates/latent-admission" }
 latent-artifacts = { path = "../../crates/latent-artifacts" }
+latent-control-store = { path = "../../crates/latent-control-store" }
 latent-core = { path = "../../crates/latent-core" }
 latent-executor = { path = "../../crates/latent-executor" }
 latent-manifest = { path = "../../crates/latent-manifest" }
 latent-node = { path = "../../crates/latent-node" }
 latent-routing = { path = "../../crates/latent-routing" }
 latent-scheduler = { path = "../../crates/latent-scheduler" }
+latent-telemetry = { path = "../../crates/latent-telemetry" }
 latent-wasmtime = { path = "../../crates/latent-wasmtime" }
+latent-wire = { path = "../../crates/latent-wire" }
+http-body.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "net", "signal", "io-util"] }
+tonic.workspace = true
+tower.workspace = true
 
 [dev-dependencies]
+latent-control-store = { path = "../../crates/latent-control-store", features = ["catalog-observation"] }
+latent-optimization-workloads = { path = "../../tools/optimization-workloads" }
+latent-testkit = { path = "../../crates/latent-testkit" }
 tempfile.workspace = true
+tokio = { workspace = true, features = ["test-util"] }
+wasm-encoder.workspace = true
+wasmparser.workspace = true
 
 [[test]]
 name = "phase0_spike_e2e"
 path = "tests/phase0_spike_e2e_root.rs"
+
+[[test]]
+name = "catalog_scale"
+path = "tests/catalog_scale.rs"
+
+[[test]]
+name = "standalone_node"
+path = "tests/standalone_node.rs"
+
+[[test]]
+name = "standalone_command"
+path = "tests/standalone_command.rs"
+
+[[test]]
+name = "standalone_shutdown"
+path = "tests/standalone_shutdown.rs"

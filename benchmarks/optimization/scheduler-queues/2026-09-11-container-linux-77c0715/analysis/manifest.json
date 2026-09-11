@@ -1,0 +1,40 @@
+{
+  "scope": "descriptive extraction of the qualified full aggregate; no collectors run",
+  "files": [
+    {
+      "path": "allocation.csv",
+      "bytes": "643",
+      "sha256": "sha256:0acbe653c64388d720b014b2014e41a1bc3d248405fa3657d5f4efdd6bc156b8"
+    },
+    {
+      "path": "analysis.json",
+      "bytes": "3495010",
+      "sha256": "sha256:56f4ed3c933f637c16f163903579bf81367970021f8d9331603afab35bcfc794"
+    },
+    {
+      "path": "cancellation.csv",
+      "bytes": "2707",
+      "sha256": "sha256:8b28965013a63c86e1f852dfb17fdd313c91990da098e7dd14f2135b04df7a97"
+    },
+    {
+      "path": "load.csv",
+      "bytes": "3951",
+      "sha256": "sha256:4d83a2797b81fd31fbe8af3890ceb8afc82f005ff98f819bdae463fc86a0f170"
+    },
+    {
+      "path": "normal-resources.csv",
+      "bytes": "907",
+      "sha256": "sha256:dc80bb2f52ee1f9941b786e30278bfebc600faf57337830f0453c370f0c9fdf3"
+    },
+    {
+      "path": "paired-differences.csv",
+      "bytes": "618400",
+      "sha256": "sha256:5304a66070bd299cb4fd0bd40e98f9168a09b95ba2df575cbc17973f735ef13d"
+    },
+    {
+      "path": "per-tenant.csv",
+      "bytes": "35697",
+      "sha256": "sha256:8196f6ea54ec3bb8c15e640493548f7c9901c8531dcc14e10beaf67ca7b47bd8"
+    }
+  ]
+}

@@ -6,10 +6,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use latent_activation::{ActivationEnvelope, ActivationManager, ActivationOutcome, TraceContext};
 use latent_artifacts::CapsuleArtifact;
 use latent_core::{
-    ActivationId, ActivationTerminalState, BoxFuture, BudgetConsumption, CapabilityId, ContractId,
-    ErrorDetail, FunctionId, InvocationPrincipal, Metadata, NodeId, PlatformError,
-    PlatformErrorCode, PrincipalKind, ReleaseDigest, ResourceBudget, ServiceId, SpanId, TenantId,
-    TraceId,
+    ActivationId, ActivationTerminalState, BoxFuture, BudgetConsumption, CancelDisposition,
+    CapabilityId, ContractId, ErrorDetail, FunctionId, InvocationPrincipal, Metadata, NodeId,
+    PlatformError, PlatformErrorCode, PrincipalKind, ReleaseDigest, ResourceBudget, ServiceId,
+    SpanId, TenantId, TraceId,
 };
 use latent_executor::{
     BoundImport, ExecutionBackend, ExecutionCancellation, ExecutionReport, ExecutionRequest,
@@ -307,6 +307,7 @@ async fn cancellation_interrupts_queued_and_running_activations() {
     runner
         .cancel(&queued_id, &"queue-cancel-reason".repeat(64))
         .await
+        .map(|disposition| assert_eq!(disposition, CancelDisposition::Accepted))
         .expect("queued cancellation is accepted");
     let queued_outcome = tokio::time::timeout(Duration::from_secs(2), queued)
         .await
@@ -339,6 +340,7 @@ async fn cancellation_interrupts_queued_and_running_activations() {
     runner
         .cancel(&running_id, "running-cancel")
         .await
+        .map(|disposition| assert_eq!(disposition, CancelDisposition::Accepted))
         .expect("running cancellation is accepted");
     let running_outcome = tokio::time::timeout(Duration::from_secs(2), running)
         .await
@@ -534,7 +536,7 @@ fn envelope_with_id(activation_id: ActivationId, input: &str) -> ActivationEnvel
         budget: ResourceBudget {
             cpu_fuel: 1_000_000,
             memory_bytes: 16 * 1024 * 1024,
-            wall_deadline_unix_millis: Some(deadline),
+            wall_time_limit_millis: None,
             child_calls: 0,
             outbound_requests: 0,
             state_read_bytes: 0,
@@ -572,6 +574,9 @@ fn assert_success(outcome: ActivationOutcome, expected_output: &[u8]) {
         ActivationOutcome::Succeeded(success) => {
             assert_eq!(success.output, expected_output);
         }
+        ActivationOutcome::DeclaredError { error, .. } => {
+            panic!("expected success, got declared error: {error:?}");
+        }
         ActivationOutcome::Failed { error, .. } => {
             panic!("expected success, got {:?}: {}", error.code, error.message);
         }
@@ -595,6 +600,9 @@ fn assert_failure(
         }
         ActivationOutcome::Succeeded(success) => {
             panic!("expected failure, got output {:?}", success.output);
+        }
+        ActivationOutcome::DeclaredError { error, .. } => {
+            panic!("expected platform failure, got declared error: {error:?}");
         }
     }
 }

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "docker",
+    "exec",
+    "--workdir",
+    "/repo-source",
+    "lsf-phase1-implementation",
+    "python3",
+    "tools/validate_repository.py"
+  ],
+  "cwd": "C:\\Users\\turkins\\Desktop\\latent-fabric",
+  "exit_code": 0,
+  "elapsed_nanos": "90114119300",
+  "log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue111-repository-03.log"
+}

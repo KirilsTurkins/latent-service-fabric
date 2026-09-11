@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Phase 0 Wasmtime Component Model execution backend for Latent Service Fabric."
+description = "Bounded Wasmtime Component Model runtime with a retained Phase 0 compatibility facade."
 
 [lints]
 workspace = true
@@ -13,16 +13,22 @@ workspace = true
 [dependencies]
 blake3.workspace = true
 latent-artifacts = { path = "../latent-artifacts" }
+latent-component-bindings = { path = "../latent-component-bindings" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
 latent-manifest = { path = "../latent-manifest" }
+latent-telemetry = { path = "../latent-telemetry" }
+serde.workspace = true
+serde_json.workspace = true
 sha2.workspace = true
 wasmtime.workspace = true
 
 [dev-dependencies]
-serde_json.workspace = true
 latent-activation = { path = "../latent-activation" }
 latent-node = { path = "../latent-node" }
 latent-routing = { path = "../latent-routing" }
 latent-scheduler = { path = "../latent-scheduler" }
 tokio = { workspace = true, features = ["rt-multi-thread"] }
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+rustix = { version = "=1.1.4", features = ["time"] }

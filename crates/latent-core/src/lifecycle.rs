@@ -28,3 +28,15 @@ pub enum ActivationTerminalState {
     DependencyFailed,
     PlatformFailed,
 }
+
+/// Stable result of a cancellation request.
+///
+/// Platform transport and validation failures remain `PlatformError`s.  These
+/// values are normal, deterministic outcomes that clients need to distinguish
+/// without interpreting a generic boolean or an error string.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CancelDisposition {
+    Accepted,
+    AlreadyTerminal(ActivationTerminalState),
+    NotFound,
+}

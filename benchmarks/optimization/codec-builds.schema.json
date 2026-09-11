@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/codec-builds.schema.json",
+  "$comment": "Structural bounds only; tools.optimization_codec.evidence.validate_suite performs required exact-source, semantic, ownership and allocation replay.",
+  "$defs": {
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "$ref": "#/$defs/json"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/json"
+          }
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object",
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "requested_refs",
+    "build",
+    "builds",
+    "harness",
+    "cleanup"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.codec-builds.v1"
+    },
+    "requested_refs": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "build": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "builds": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "harness": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "maxProperties": 4096,
+      "additionalProperties": {
+        "$ref": "#/$defs/json"
+      }
+    }
+  }
+}

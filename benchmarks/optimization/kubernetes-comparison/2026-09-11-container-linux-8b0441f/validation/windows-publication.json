@@ -1,0 +1,896 @@
+{
+  "benchmarks_bytes_after": "483590784",
+  "benchmarks_bytes_before": "335804420",
+  "benchmarks_limit_bytes": "629145600",
+  "commands": [
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "inspect",
+        "/work/kubernetes-publication-package-01.json",
+        "10d50e61c5632ea2361a16dffc3b4819987f4dc4",
+        "8b0441fb5b052c7b103f55a4f2ab2e72b5a4add5",
+        "[\"phase_rows\", \"phase_comparisons\", \"resource_points\", \"resource_comparisons\", \"idle_windows\", \"idle_window_comparisons\", \"lifecycle_owners\", \"lifecycle_cohorts\", \"lifecycle_comparisons\", \"client_resource_points\", \"client_intervals\", \"client_cpu_comparisons\", \"platform_comparisons\", \"node_resource_points\", \"node_resource_intervals\", \"cpu_limit_cohorts\"]"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812175472999400",
+      "finished_utc": "2026-09-11T19:10:33.749535+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812174506400700",
+      "started_utc": "2026-09-11T19:10:32.782913+00:00",
+      "stderr": "",
+      "stdout": "{\"archive\": {\"bytes\": \"128227164\", \"path\": \"raw-evidence.tar.gz\", \"sha256\": \"sha256:30b81cef5129286510e8994b5bcb3c6ec8236c50b1eebb0686ffc25afb9dfc1e\"}, \"expanded_bytes\": \"848006375\", \"linux_receipt\": {\"bytes\": \"1403626\", \"path\": \"/work/kubernetes-publication-package-01.json\", \"sha256\": \"sha256:9e158b8c6df3207403ad88b3dbc06fcfbd3119b8a4591b5f2e6226a66934b906\"}, \"linux_validator_source\": {\"cargo_lock\": {\"bytes\": \"63422\", \"sha256\": \"sha256:08974270174575379a10e4f83920755aba00a33b61d2f8e63e5b05b6ea6695d1\"}, \"clean\": true, \"commit\": \"10d50e61c5632ea2361a16dffc3b4819987f4dc4\", \"repository\": \"/bench/kubernetes-source-10\", \"tree\": \"125d2b8fbe41a08f8f07bc1b7ad267f43b977773\"}, \"member_count\": 7652, \"package\": {\"aggregate.json\": {\"bytes\": \"5782942\", \"sha256\": \"sha256:f27538c151edb685722a645764861ab1254e68fec1f6c1f96057563cbff921d6\"}, \"raw-evidence.manifest.json\": {\"bytes\": \"1662776\", \"sha256\": \"sha256:b926175c75d0e6bad7bb18356decd33572c8ecb833c463683fc3c8ec3bce896d\"}, \"raw-evidence.parts.json\": {\"bytes\": \"766\", \"sha256\": \"sha256:1cc9a8a416913afeba1cd6ef30f5942e529823da0b3bf04391ecf22d5f273e9d\"}, \"raw-evidence.tar.gz.part-0001\": {\"bytes\": \"50000000\", \"sha256\": \"sha256:a1f899975e40f255d145b72a38b59682b021e14682c5623081c79e75854f7270\"}, \"raw-evidence.tar.gz.part-0002\": {\"bytes\": \"50000000\", \"sha256\": \"sha256:a3bc31d98b316c81c9aebc7e542752b38688712fdbe848ae2acc26998587a12e\"}, \"raw-evidence.tar.gz.part-0003\": {\"bytes\": \"28227164\", \"sha256\": \"sha256:a37e7e8bbcadae067a096fe127bc235e6904367df0647f773e59144a3ef941c7\"}, \"raw-evidence.tar.gz.sha256\": {\"bytes\": \"86\", \"sha256\": \"sha256:8abcff9ab491b54c27b9b0e55cda4ed273c885d979d5437f6b8dc585d7baedb5\"}}, \"reports\": {\"aggregate.json\": {\"bytes\": \"5782942\", \"sha256\": \"sha256:f27538c151edb685722a645764861ab1254e68fec1f6c1f96057563cbff921d6\"}, \"client-cpu-comparisons.csv\": {\"bytes\": \"25923\", \"sha256\": \"sha256:e1d0914897e9aa3f8c51a32b76ba4facecf52fdf294e06939500bd3770ece664\"}, \"client-intervals.csv\": {\"bytes\": \"7800\", \"sha256\": \"sha256:89921c60ba29bec4473834bfb1db654b1862b67b8edec9668bb4b01222d213bb\"}, \"client-resource-points.csv\": {\"bytes\": \"22437\", \"sha256\": \"sha256:5b93c2c6da070723bc0909f2a14e15a1e27dad2f77e42ef4f758eda369b9e207\"}, \"cpu-limit-cohorts.csv\": {\"bytes\": \"3455\", \"sha256\": \"sha256:f1654dfab7eebce3b19f89c9bb1f06433559b12bcd83c5b1ad3bf686d81a6387\"}, \"docker-aggregate.json\": {\"bytes\": \"5261376\", \"sha256\": \"sha256:ed860707571363cc5bdad7ec84f01b721a9de3d7b79a85a7707cb04fe2800617\"}, \"idle-window-comparisons.csv\": {\"bytes\": \"405086\", \"sha256\": \"sha256:6d7856c167b798a97ceaf816ac33a9ee7b14edfda047b901f073186a47517ce8\"}, \"idle-windows.csv\": {\"bytes\": \"418428\", \"sha256\": \"sha256:08c2ead68c211466b0917d6cc65d08f50269bbfd2525f174ec22d898bc89b387\"}, \"lifecycle-cohorts.csv\": {\"bytes\": \"21801\", \"sha256\": \"sha256:bd7b19582ca69a27515ede6612f283961993d4bee20757f3f13f730d99ea8a8f\"}, \"lifecycle-comparisons.csv\": {\"bytes\": \"63438\", \"sha256\": \"sha256:851d4c76e5cd3b204b6aaf443015cf0be04affd0136cc7d785becc819ae9bf06\"}, \"lifecycle-owners.csv\": {\"bytes\": \"79521\", \"sha256\": \"sha256:245eca1a97a7959c8dbe6e35db548f148590287c63914ddd46d9892dab2ea472\"}, \"manifest.json\": {\"bytes\": \"2700\", \"sha256\": \"sha256:da35bff884a2fe76bdeb84c9527265ca6d6a44a0968288131ccffd6a09c3ad0f\"}, \"node-resource-intervals.csv\": {\"bytes\": \"24379\", \"sha256\": \"sha256:288477a241f91b4d454ad9e78676571792081dc9efab7ac97b4bb265ffdd3de4\"}, \"node-resource-points.csv\": {\"bytes\": \"36840\", \"sha256\": \"sha256:084437a24f13b16fa1ea9c39ddcf719578a9d85230b1517aeda227e936480a96\"}, \"phase-comparisons.csv\": {\"bytes\": \"1327859\", \"sha256\": \"sha256:f5a5f1e43b5321a37c5ab7c7e7a9a5886b038f8a529c7d3e9028d415f7b48914\"}, \"phase-rows.csv\": {\"bytes\": \"683621\", \"sha256\": \"sha256:ea21a418397f9c77ae62f22ff1ff17e892295cea5505422e37e2645a9fd462e8\"}, \"platform-comparisons.csv\": {\"bytes\": \"1143183\", \"sha256\": \"sha256:976bbd16baa53bffb97dcfbf1b73ce4dbd41c70b852a8a250570cb76e9b36081\"}, \"resource-comparisons.csv\": {\"bytes\": \"853985\", \"sha256\": \"sha256:9b11b32e79a8272a3b09d8c5415c753386ddb10ccf423b99d8b4bcb50e1491ae\"}, \"resource-points.csv\": {\"bytes\": \"291118\", \"sha256\": \"sha256:bf5c71ce83d6b90447d9a9387c187e710295dd79f49aaa3f0d576051a24cde19\"}}, \"suite_sha256\": \"sha256:c25e81cb839752d8bf42666200a6d8b2a21dcee309009104a7f60f85bf2276aa\"}\n"
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/kubernetes-package-01/aggregate.json",
+        "5782942",
+        "sha256:f27538c151edb685722a645764861ab1254e68fec1f6c1f96057563cbff921d6"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812176074111100",
+      "finished_utc": "2026-09-11T19:10:34.350651+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812175508787300",
+      "started_utc": "2026-09-11T19:10:33.785304+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/kubernetes-package-01/raw-evidence.manifest.json",
+        "1662776",
+        "sha256:b926175c75d0e6bad7bb18356decd33572c8ecb833c463683fc3c8ec3bce896d"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812176690672800",
+      "finished_utc": "2026-09-11T19:10:34.967209+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812176091485400",
+      "started_utc": "2026-09-11T19:10:34.367998+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/kubernetes-package-01/raw-evidence.parts.json",
+        "766",
+        "sha256:1cc9a8a416913afeba1cd6ef30f5942e529823da0b3bf04391ecf22d5f273e9d"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812177270721600",
+      "finished_utc": "2026-09-11T19:10:35.547257+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812176704560400",
+      "started_utc": "2026-09-11T19:10:34.981074+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/kubernetes-package-01/raw-evidence.tar.gz.part-0001",
+        "50000000",
+        "sha256:a1f899975e40f255d145b72a38b59682b021e14682c5623081c79e75854f7270"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812178240012900",
+      "finished_utc": "2026-09-11T19:10:36.516553+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812177282396000",
+      "started_utc": "2026-09-11T19:10:35.558911+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/kubernetes-package-01/raw-evidence.tar.gz.part-0002",
+        "50000000",
+        "sha256:a3bc31d98b316c81c9aebc7e542752b38688712fdbe848ae2acc26998587a12e"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812179302864100",
+      "finished_utc": "2026-09-11T19:10:37.579404+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812178309918800",
+      "started_utc": "2026-09-11T19:10:36.586432+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/kubernetes-package-01/raw-evidence.tar.gz.part-0003",
+        "28227164",
+        "sha256:a37e7e8bbcadae067a096fe127bc235e6904367df0647f773e59144a3ef941c7"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812180321629000",
+      "finished_utc": "2026-09-11T19:10:38.598168+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812179386665300",
+      "started_utc": "2026-09-11T19:10:37.663172+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/kubernetes-package-01/raw-evidence.tar.gz.sha256",
+        "86",
+        "sha256:8abcff9ab491b54c27b9b0e55cda4ed273c885d979d5437f6b8dc585d7baedb5"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812180987237700",
+      "finished_utc": "2026-09-11T19:10:39.263775+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812180361593400",
+      "started_utc": "2026-09-11T19:10:38.638108+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/client-cpu-comparisons.csv",
+        "25923",
+        "sha256:e1d0914897e9aa3f8c51a32b76ba4facecf52fdf294e06939500bd3770ece664"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812181589973100",
+      "finished_utc": "2026-09-11T19:10:39.866515+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812180995549400",
+      "started_utc": "2026-09-11T19:10:39.272064+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/client-intervals.csv",
+        "7800",
+        "sha256:89921c60ba29bec4473834bfb1db654b1862b67b8edec9668bb4b01222d213bb"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812182192143100",
+      "finished_utc": "2026-09-11T19:10:40.468681+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812181600343500",
+      "started_utc": "2026-09-11T19:10:39.876851+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/client-resource-points.csv",
+        "22437",
+        "sha256:5b93c2c6da070723bc0909f2a14e15a1e27dad2f77e42ef4f758eda369b9e207"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812182789827200",
+      "finished_utc": "2026-09-11T19:10:41.066365+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812182205154100",
+      "started_utc": "2026-09-11T19:10:40.481646+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/cpu-limit-cohorts.csv",
+        "3455",
+        "sha256:f1654dfab7eebce3b19f89c9bb1f06433559b12bcd83c5b1ad3bf686d81a6387"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812183382483300",
+      "finished_utc": "2026-09-11T19:10:41.659021+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812182799964300",
+      "started_utc": "2026-09-11T19:10:41.076473+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/docker-aggregate.json",
+        "5261376",
+        "sha256:ed860707571363cc5bdad7ec84f01b721a9de3d7b79a85a7707cb04fe2800617"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812184015520100",
+      "finished_utc": "2026-09-11T19:10:42.292061+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812183391732300",
+      "started_utc": "2026-09-11T19:10:41.668237+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/idle-window-comparisons.csv",
+        "405086",
+        "sha256:6d7856c167b798a97ceaf816ac33a9ee7b14edfda047b901f073186a47517ce8"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812184586410200",
+      "finished_utc": "2026-09-11T19:10:42.862950+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812184035171000",
+      "started_utc": "2026-09-11T19:10:42.311678+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/idle-windows.csv",
+        "418428",
+        "sha256:08c2ead68c211466b0917d6cc65d08f50269bbfd2525f174ec22d898bc89b387"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812185165347400",
+      "finished_utc": "2026-09-11T19:10:43.441885+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812184595770900",
+      "started_utc": "2026-09-11T19:10:42.872283+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/lifecycle-cohorts.csv",
+        "21801",
+        "sha256:bd7b19582ca69a27515ede6612f283961993d4bee20757f3f13f730d99ea8a8f"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812185719821200",
+      "finished_utc": "2026-09-11T19:10:43.996359+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812185177611400",
+      "started_utc": "2026-09-11T19:10:43.454123+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/lifecycle-comparisons.csv",
+        "63438",
+        "sha256:851d4c76e5cd3b204b6aaf443015cf0be04affd0136cc7d785becc819ae9bf06"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812186327812900",
+      "finished_utc": "2026-09-11T19:10:44.604351+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812185730772400",
+      "started_utc": "2026-09-11T19:10:44.007284+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/lifecycle-owners.csv",
+        "79521",
+        "sha256:245eca1a97a7959c8dbe6e35db548f148590287c63914ddd46d9892dab2ea472"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812186885402200",
+      "finished_utc": "2026-09-11T19:10:45.161940+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812186337850900",
+      "started_utc": "2026-09-11T19:10:44.614360+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/manifest.json",
+        "2700",
+        "sha256:da35bff884a2fe76bdeb84c9527265ca6d6a44a0968288131ccffd6a09c3ad0f"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812187452425500",
+      "finished_utc": "2026-09-11T19:10:45.728962+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812186894375600",
+      "started_utc": "2026-09-11T19:10:45.170893+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/node-resource-intervals.csv",
+        "24379",
+        "sha256:288477a241f91b4d454ad9e78676571792081dc9efab7ac97b4bb265ffdd3de4"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812188024661200",
+      "finished_utc": "2026-09-11T19:10:46.301199+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812187463451200",
+      "started_utc": "2026-09-11T19:10:45.739965+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/node-resource-points.csv",
+        "36840",
+        "sha256:084437a24f13b16fa1ea9c39ddcf719578a9d85230b1517aeda227e936480a96"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812188590600400",
+      "finished_utc": "2026-09-11T19:10:46.867139+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812188034803000",
+      "started_utc": "2026-09-11T19:10:46.311318+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/phase-comparisons.csv",
+        "1327859",
+        "sha256:f5a5f1e43b5321a37c5ab7c7e7a9a5886b038f8a529c7d3e9028d415f7b48914"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812189163218000",
+      "finished_utc": "2026-09-11T19:10:47.439756+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812188599671000",
+      "started_utc": "2026-09-11T19:10:46.876187+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/phase-rows.csv",
+        "683621",
+        "sha256:ea21a418397f9c77ae62f22ff1ff17e892295cea5505422e37e2645a9fd462e8"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812189747214800",
+      "finished_utc": "2026-09-11T19:10:48.023752+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812189176264700",
+      "started_utc": "2026-09-11T19:10:47.452778+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/platform-comparisons.csv",
+        "1143183",
+        "sha256:976bbd16baa53bffb97dcfbf1b73ce4dbd41c70b852a8a250570cb76e9b36081"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812190315051800",
+      "finished_utc": "2026-09-11T19:10:48.591588+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812189758204100",
+      "started_utc": "2026-09-11T19:10:48.034721+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/resource-comparisons.csv",
+        "853985",
+        "sha256:9b11b32e79a8272a3b09d8c5415c753386ddb10ccf423b99d8b4bcb50e1491ae"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812190909808000",
+      "finished_utc": "2026-09-11T19:10:49.186345+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812190325453500",
+      "started_utc": "2026-09-11T19:10:48.601973+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "copy",
+        "/work/full-validation-02/report/resource-points.csv",
+        "291118",
+        "sha256:bf5c71ce83d6b90447d9a9387c187e710295dd79f49aaa3f0d576051a24cde19"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812191487265800",
+      "finished_utc": "2026-09-11T19:10:49.763803+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812190919773400",
+      "started_utc": "2026-09-11T19:10:49.196292+00:00",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.EXE",
+        "exec",
+        "-i",
+        "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+        "python3",
+        "-",
+        "inspect",
+        "/work/kubernetes-publication-package-01.json",
+        "10d50e61c5632ea2361a16dffc3b4819987f4dc4",
+        "8b0441fb5b052c7b103f55a4f2ab2e72b5a4add5",
+        "[\"phase_rows\", \"phase_comparisons\", \"resource_points\", \"resource_comparisons\", \"idle_windows\", \"idle_window_comparisons\", \"lifecycle_owners\", \"lifecycle_cohorts\", \"lifecycle_comparisons\", \"client_resource_points\", \"client_intervals\", \"client_cpu_comparisons\", \"platform_comparisons\", \"node_resource_points\", \"node_resource_intervals\", \"cpu_limit_cohorts\"]"
+      ],
+      "exit_code": 0,
+      "finished_nanos": "812631920186400",
+      "finished_utc": "2026-09-11T19:18:10.196726+00:00",
+      "remote_program_sha256": "sha256:62f18ab09c5255e49ddba3e771d8aebb1e6408c61636714e83d28a71fdab2d67",
+      "started_nanos": "812630918611100",
+      "started_utc": "2026-09-11T19:18:09.195130+00:00",
+      "stderr": "",
+      "stdout": "{\"archive\": {\"bytes\": \"128227164\", \"path\": \"raw-evidence.tar.gz\", \"sha256\": \"sha256:30b81cef5129286510e8994b5bcb3c6ec8236c50b1eebb0686ffc25afb9dfc1e\"}, \"expanded_bytes\": \"848006375\", \"linux_receipt\": {\"bytes\": \"1403626\", \"path\": \"/work/kubernetes-publication-package-01.json\", \"sha256\": \"sha256:9e158b8c6df3207403ad88b3dbc06fcfbd3119b8a4591b5f2e6226a66934b906\"}, \"linux_validator_source\": {\"cargo_lock\": {\"bytes\": \"63422\", \"sha256\": \"sha256:08974270174575379a10e4f83920755aba00a33b61d2f8e63e5b05b6ea6695d1\"}, \"clean\": true, \"commit\": \"10d50e61c5632ea2361a16dffc3b4819987f4dc4\", \"repository\": \"/bench/kubernetes-source-10\", \"tree\": \"125d2b8fbe41a08f8f07bc1b7ad267f43b977773\"}, \"member_count\": 7652, \"package\": {\"aggregate.json\": {\"bytes\": \"5782942\", \"sha256\": \"sha256:f27538c151edb685722a645764861ab1254e68fec1f6c1f96057563cbff921d6\"}, \"raw-evidence.manifest.json\": {\"bytes\": \"1662776\", \"sha256\": \"sha256:b926175c75d0e6bad7bb18356decd33572c8ecb833c463683fc3c8ec3bce896d\"}, \"raw-evidence.parts.json\": {\"bytes\": \"766\", \"sha256\": \"sha256:1cc9a8a416913afeba1cd6ef30f5942e529823da0b3bf04391ecf22d5f273e9d\"}, \"raw-evidence.tar.gz.part-0001\": {\"bytes\": \"50000000\", \"sha256\": \"sha256:a1f899975e40f255d145b72a38b59682b021e14682c5623081c79e75854f7270\"}, \"raw-evidence.tar.gz.part-0002\": {\"bytes\": \"50000000\", \"sha256\": \"sha256:a3bc31d98b316c81c9aebc7e542752b38688712fdbe848ae2acc26998587a12e\"}, \"raw-evidence.tar.gz.part-0003\": {\"bytes\": \"28227164\", \"sha256\": \"sha256:a37e7e8bbcadae067a096fe127bc235e6904367df0647f773e59144a3ef941c7\"}, \"raw-evidence.tar.gz.sha256\": {\"bytes\": \"86\", \"sha256\": \"sha256:8abcff9ab491b54c27b9b0e55cda4ed273c885d979d5437f6b8dc585d7baedb5\"}}, \"reports\": {\"aggregate.json\": {\"bytes\": \"5782942\", \"sha256\": \"sha256:f27538c151edb685722a645764861ab1254e68fec1f6c1f96057563cbff921d6\"}, \"client-cpu-comparisons.csv\": {\"bytes\": \"25923\", \"sha256\": \"sha256:e1d0914897e9aa3f8c51a32b76ba4facecf52fdf294e06939500bd3770ece664\"}, \"client-intervals.csv\": {\"bytes\": \"7800\", \"sha256\": \"sha256:89921c60ba29bec4473834bfb1db654b1862b67b8edec9668bb4b01222d213bb\"}, \"client-resource-points.csv\": {\"bytes\": \"22437\", \"sha256\": \"sha256:5b93c2c6da070723bc0909f2a14e15a1e27dad2f77e42ef4f758eda369b9e207\"}, \"cpu-limit-cohorts.csv\": {\"bytes\": \"3455\", \"sha256\": \"sha256:f1654dfab7eebce3b19f89c9bb1f06433559b12bcd83c5b1ad3bf686d81a6387\"}, \"docker-aggregate.json\": {\"bytes\": \"5261376\", \"sha256\": \"sha256:ed860707571363cc5bdad7ec84f01b721a9de3d7b79a85a7707cb04fe2800617\"}, \"idle-window-comparisons.csv\": {\"bytes\": \"405086\", \"sha256\": \"sha256:6d7856c167b798a97ceaf816ac33a9ee7b14edfda047b901f073186a47517ce8\"}, \"idle-windows.csv\": {\"bytes\": \"418428\", \"sha256\": \"sha256:08c2ead68c211466b0917d6cc65d08f50269bbfd2525f174ec22d898bc89b387\"}, \"lifecycle-cohorts.csv\": {\"bytes\": \"21801\", \"sha256\": \"sha256:bd7b19582ca69a27515ede6612f283961993d4bee20757f3f13f730d99ea8a8f\"}, \"lifecycle-comparisons.csv\": {\"bytes\": \"63438\", \"sha256\": \"sha256:851d4c76e5cd3b204b6aaf443015cf0be04affd0136cc7d785becc819ae9bf06\"}, \"lifecycle-owners.csv\": {\"bytes\": \"79521\", \"sha256\": \"sha256:245eca1a97a7959c8dbe6e35db548f148590287c63914ddd46d9892dab2ea472\"}, \"manifest.json\": {\"bytes\": \"2700\", \"sha256\": \"sha256:da35bff884a2fe76bdeb84c9527265ca6d6a44a0968288131ccffd6a09c3ad0f\"}, \"node-resource-intervals.csv\": {\"bytes\": \"24379\", \"sha256\": \"sha256:288477a241f91b4d454ad9e78676571792081dc9efab7ac97b4bb265ffdd3de4\"}, \"node-resource-points.csv\": {\"bytes\": \"36840\", \"sha256\": \"sha256:084437a24f13b16fa1ea9c39ddcf719578a9d85230b1517aeda227e936480a96\"}, \"phase-comparisons.csv\": {\"bytes\": \"1327859\", \"sha256\": \"sha256:f5a5f1e43b5321a37c5ab7c7e7a9a5886b038f8a529c7d3e9028d415f7b48914\"}, \"phase-rows.csv\": {\"bytes\": \"683621\", \"sha256\": \"sha256:ea21a418397f9c77ae62f22ff1ff17e892295cea5505422e37e2645a9fd462e8\"}, \"platform-comparisons.csv\": {\"bytes\": \"1143183\", \"sha256\": \"sha256:976bbd16baa53bffb97dcfbf1b73ce4dbd41c70b852a8a250570cb76e9b36081\"}, \"resource-comparisons.csv\": {\"bytes\": \"853985\", \"sha256\": \"sha256:9b11b32e79a8272a3b09d8c5415c753386ddb10ccf423b99d8b4bcb50e1491ae\"}, \"resource-points.csv\": {\"bytes\": \"291118\", \"sha256\": \"sha256:bf5c71ce83d6b90447d9a9387c187e710295dd79f49aaa3f0d576051a24cde19\"}}, \"suite_sha256\": \"sha256:c25e81cb839752d8bf42666200a6d8b2a21dcee309009104a7f60f85bf2276aa\"}\n"
+    }
+  ],
+  "copies": [
+    {
+      "bytes": "5782942",
+      "path": "aggregate.json",
+      "sha256": "sha256:f27538c151edb685722a645764861ab1254e68fec1f6c1f96057563cbff921d6",
+      "source": "/work/kubernetes-package-01/aggregate.json"
+    },
+    {
+      "bytes": "1662776",
+      "path": "raw-evidence.manifest.json",
+      "sha256": "sha256:b926175c75d0e6bad7bb18356decd33572c8ecb833c463683fc3c8ec3bce896d",
+      "source": "/work/kubernetes-package-01/raw-evidence.manifest.json"
+    },
+    {
+      "bytes": "766",
+      "path": "raw-evidence.parts.json",
+      "sha256": "sha256:1cc9a8a416913afeba1cd6ef30f5942e529823da0b3bf04391ecf22d5f273e9d",
+      "source": "/work/kubernetes-package-01/raw-evidence.parts.json"
+    },
+    {
+      "bytes": "50000000",
+      "path": "raw-evidence.tar.gz.part-0001",
+      "sha256": "sha256:a1f899975e40f255d145b72a38b59682b021e14682c5623081c79e75854f7270",
+      "source": "/work/kubernetes-package-01/raw-evidence.tar.gz.part-0001"
+    },
+    {
+      "bytes": "50000000",
+      "path": "raw-evidence.tar.gz.part-0002",
+      "sha256": "sha256:a3bc31d98b316c81c9aebc7e542752b38688712fdbe848ae2acc26998587a12e",
+      "source": "/work/kubernetes-package-01/raw-evidence.tar.gz.part-0002"
+    },
+    {
+      "bytes": "28227164",
+      "path": "raw-evidence.tar.gz.part-0003",
+      "sha256": "sha256:a37e7e8bbcadae067a096fe127bc235e6904367df0647f773e59144a3ef941c7",
+      "source": "/work/kubernetes-package-01/raw-evidence.tar.gz.part-0003"
+    },
+    {
+      "bytes": "86",
+      "path": "raw-evidence.tar.gz.sha256",
+      "sha256": "sha256:8abcff9ab491b54c27b9b0e55cda4ed273c885d979d5437f6b8dc585d7baedb5",
+      "source": "/work/kubernetes-package-01/raw-evidence.tar.gz.sha256"
+    },
+    {
+      "bytes": "25923",
+      "path": "client-cpu-comparisons.csv",
+      "sha256": "sha256:e1d0914897e9aa3f8c51a32b76ba4facecf52fdf294e06939500bd3770ece664",
+      "source": "/work/full-validation-02/report/client-cpu-comparisons.csv"
+    },
+    {
+      "bytes": "7800",
+      "path": "client-intervals.csv",
+      "sha256": "sha256:89921c60ba29bec4473834bfb1db654b1862b67b8edec9668bb4b01222d213bb",
+      "source": "/work/full-validation-02/report/client-intervals.csv"
+    },
+    {
+      "bytes": "22437",
+      "path": "client-resource-points.csv",
+      "sha256": "sha256:5b93c2c6da070723bc0909f2a14e15a1e27dad2f77e42ef4f758eda369b9e207",
+      "source": "/work/full-validation-02/report/client-resource-points.csv"
+    },
+    {
+      "bytes": "3455",
+      "path": "cpu-limit-cohorts.csv",
+      "sha256": "sha256:f1654dfab7eebce3b19f89c9bb1f06433559b12bcd83c5b1ad3bf686d81a6387",
+      "source": "/work/full-validation-02/report/cpu-limit-cohorts.csv"
+    },
+    {
+      "bytes": "5261376",
+      "path": "docker-aggregate.json",
+      "sha256": "sha256:ed860707571363cc5bdad7ec84f01b721a9de3d7b79a85a7707cb04fe2800617",
+      "source": "/work/full-validation-02/report/docker-aggregate.json"
+    },
+    {
+      "bytes": "405086",
+      "path": "idle-window-comparisons.csv",
+      "sha256": "sha256:6d7856c167b798a97ceaf816ac33a9ee7b14edfda047b901f073186a47517ce8",
+      "source": "/work/full-validation-02/report/idle-window-comparisons.csv"
+    },
+    {
+      "bytes": "418428",
+      "path": "idle-windows.csv",
+      "sha256": "sha256:08c2ead68c211466b0917d6cc65d08f50269bbfd2525f174ec22d898bc89b387",
+      "source": "/work/full-validation-02/report/idle-windows.csv"
+    },
+    {
+      "bytes": "21801",
+      "path": "lifecycle-cohorts.csv",
+      "sha256": "sha256:bd7b19582ca69a27515ede6612f283961993d4bee20757f3f13f730d99ea8a8f",
+      "source": "/work/full-validation-02/report/lifecycle-cohorts.csv"
+    },
+    {
+      "bytes": "63438",
+      "path": "lifecycle-comparisons.csv",
+      "sha256": "sha256:851d4c76e5cd3b204b6aaf443015cf0be04affd0136cc7d785becc819ae9bf06",
+      "source": "/work/full-validation-02/report/lifecycle-comparisons.csv"
+    },
+    {
+      "bytes": "79521",
+      "path": "lifecycle-owners.csv",
+      "sha256": "sha256:245eca1a97a7959c8dbe6e35db548f148590287c63914ddd46d9892dab2ea472",
+      "source": "/work/full-validation-02/report/lifecycle-owners.csv"
+    },
+    {
+      "bytes": "2700",
+      "path": "tables.manifest.json",
+      "sha256": "sha256:da35bff884a2fe76bdeb84c9527265ca6d6a44a0968288131ccffd6a09c3ad0f",
+      "source": "/work/full-validation-02/report/manifest.json"
+    },
+    {
+      "bytes": "24379",
+      "path": "node-resource-intervals.csv",
+      "sha256": "sha256:288477a241f91b4d454ad9e78676571792081dc9efab7ac97b4bb265ffdd3de4",
+      "source": "/work/full-validation-02/report/node-resource-intervals.csv"
+    },
+    {
+      "bytes": "36840",
+      "path": "node-resource-points.csv",
+      "sha256": "sha256:084437a24f13b16fa1ea9c39ddcf719578a9d85230b1517aeda227e936480a96",
+      "source": "/work/full-validation-02/report/node-resource-points.csv"
+    },
+    {
+      "bytes": "1327859",
+      "path": "phase-comparisons.csv",
+      "sha256": "sha256:f5a5f1e43b5321a37c5ab7c7e7a9a5886b038f8a529c7d3e9028d415f7b48914",
+      "source": "/work/full-validation-02/report/phase-comparisons.csv"
+    },
+    {
+      "bytes": "683621",
+      "path": "phase-rows.csv",
+      "sha256": "sha256:ea21a418397f9c77ae62f22ff1ff17e892295cea5505422e37e2645a9fd462e8",
+      "source": "/work/full-validation-02/report/phase-rows.csv"
+    },
+    {
+      "bytes": "1143183",
+      "path": "platform-comparisons.csv",
+      "sha256": "sha256:976bbd16baa53bffb97dcfbf1b73ce4dbd41c70b852a8a250570cb76e9b36081",
+      "source": "/work/full-validation-02/report/platform-comparisons.csv"
+    },
+    {
+      "bytes": "853985",
+      "path": "resource-comparisons.csv",
+      "sha256": "sha256:9b11b32e79a8272a3b09d8c5415c753386ddb10ccf423b99d8b4bcb50e1491ae",
+      "source": "/work/full-validation-02/report/resource-comparisons.csv"
+    },
+    {
+      "bytes": "291118",
+      "path": "resource-points.csv",
+      "sha256": "sha256:bf5c71ce83d6b90447d9a9387c187e710295dd79f49aaa3f0d576051a24cde19",
+      "source": "/work/full-validation-02/report/resource-points.csv"
+    }
+  ],
+  "docker_dependency": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue112-docker-replay-dependency-01",
+  "failure": null,
+  "finished_nanos": "812632560282200",
+  "finished_utc": "2026-09-11T19:18:10.836788+00:00",
+  "helper": {
+    "bytes": "20693",
+    "sha256": "sha256:c1165e4818655e8f40a2b07d37fcf08f45c78dad66e19c10895dc6a4231229eb"
+  },
+  "linux_container_id": "64536d1cd190483798c77dbd6a164ffc03195335ab9bbe50583517603614f961",
+  "linux_inventory": {
+    "archive": {
+      "bytes": "128227164",
+      "path": "raw-evidence.tar.gz",
+      "sha256": "sha256:30b81cef5129286510e8994b5bcb3c6ec8236c50b1eebb0686ffc25afb9dfc1e"
+    },
+    "expanded_bytes": "848006375",
+    "linux_receipt": {
+      "bytes": "1403626",
+      "path": "/work/kubernetes-publication-package-01.json",
+      "sha256": "sha256:9e158b8c6df3207403ad88b3dbc06fcfbd3119b8a4591b5f2e6226a66934b906"
+    },
+    "linux_validator_source": {
+      "cargo_lock": {
+        "bytes": "63422",
+        "sha256": "sha256:08974270174575379a10e4f83920755aba00a33b61d2f8e63e5b05b6ea6695d1"
+      },
+      "clean": true,
+      "commit": "10d50e61c5632ea2361a16dffc3b4819987f4dc4",
+      "repository": "/bench/kubernetes-source-10",
+      "tree": "125d2b8fbe41a08f8f07bc1b7ad267f43b977773"
+    },
+    "member_count": 7652,
+    "package": {
+      "aggregate.json": {
+        "bytes": "5782942",
+        "sha256": "sha256:f27538c151edb685722a645764861ab1254e68fec1f6c1f96057563cbff921d6"
+      },
+      "raw-evidence.manifest.json": {
+        "bytes": "1662776",
+        "sha256": "sha256:b926175c75d0e6bad7bb18356decd33572c8ecb833c463683fc3c8ec3bce896d"
+      },
+      "raw-evidence.parts.json": {
+        "bytes": "766",
+        "sha256": "sha256:1cc9a8a416913afeba1cd6ef30f5942e529823da0b3bf04391ecf22d5f273e9d"
+      },
+      "raw-evidence.tar.gz.part-0001": {
+        "bytes": "50000000",
+        "sha256": "sha256:a1f899975e40f255d145b72a38b59682b021e14682c5623081c79e75854f7270"
+      },
+      "raw-evidence.tar.gz.part-0002": {
+        "bytes": "50000000",
+        "sha256": "sha256:a3bc31d98b316c81c9aebc7e542752b38688712fdbe848ae2acc26998587a12e"
+      },
+      "raw-evidence.tar.gz.part-0003": {
+        "bytes": "28227164",
+        "sha256": "sha256:a37e7e8bbcadae067a096fe127bc235e6904367df0647f773e59144a3ef941c7"
+      },
+      "raw-evidence.tar.gz.sha256": {
+        "bytes": "86",
+        "sha256": "sha256:8abcff9ab491b54c27b9b0e55cda4ed273c885d979d5437f6b8dc585d7baedb5"
+      }
+    },
+    "reports": {
+      "aggregate.json": {
+        "bytes": "5782942",
+        "sha256": "sha256:f27538c151edb685722a645764861ab1254e68fec1f6c1f96057563cbff921d6"
+      },
+      "client-cpu-comparisons.csv": {
+        "bytes": "25923",
+        "sha256": "sha256:e1d0914897e9aa3f8c51a32b76ba4facecf52fdf294e06939500bd3770ece664"
+      },
+      "client-intervals.csv": {
+        "bytes": "7800",
+        "sha256": "sha256:89921c60ba29bec4473834bfb1db654b1862b67b8edec9668bb4b01222d213bb"
+      },
+      "client-resource-points.csv": {
+        "bytes": "22437",
+        "sha256": "sha256:5b93c2c6da070723bc0909f2a14e15a1e27dad2f77e42ef4f758eda369b9e207"
+      },
+      "cpu-limit-cohorts.csv": {
+        "bytes": "3455",
+        "sha256": "sha256:f1654dfab7eebce3b19f89c9bb1f06433559b12bcd83c5b1ad3bf686d81a6387"
+      },
+      "docker-aggregate.json": {
+        "bytes": "5261376",
+        "sha256": "sha256:ed860707571363cc5bdad7ec84f01b721a9de3d7b79a85a7707cb04fe2800617"
+      },
+      "idle-window-comparisons.csv": {
+        "bytes": "405086",
+        "sha256": "sha256:6d7856c167b798a97ceaf816ac33a9ee7b14edfda047b901f073186a47517ce8"
+      },
+      "idle-windows.csv": {
+        "bytes": "418428",
+        "sha256": "sha256:08c2ead68c211466b0917d6cc65d08f50269bbfd2525f174ec22d898bc89b387"
+      },
+      "lifecycle-cohorts.csv": {
+        "bytes": "21801",
+        "sha256": "sha256:bd7b19582ca69a27515ede6612f283961993d4bee20757f3f13f730d99ea8a8f"
+      },
+      "lifecycle-comparisons.csv": {
+        "bytes": "63438",
+        "sha256": "sha256:851d4c76e5cd3b204b6aaf443015cf0be04affd0136cc7d785becc819ae9bf06"
+      },
+      "lifecycle-owners.csv": {
+        "bytes": "79521",
+        "sha256": "sha256:245eca1a97a7959c8dbe6e35db548f148590287c63914ddd46d9892dab2ea472"
+      },
+      "manifest.json": {
+        "bytes": "2700",
+        "sha256": "sha256:da35bff884a2fe76bdeb84c9527265ca6d6a44a0968288131ccffd6a09c3ad0f"
+      },
+      "node-resource-intervals.csv": {
+        "bytes": "24379",
+        "sha256": "sha256:288477a241f91b4d454ad9e78676571792081dc9efab7ac97b4bb265ffdd3de4"
+      },
+      "node-resource-points.csv": {
+        "bytes": "36840",
+        "sha256": "sha256:084437a24f13b16fa1ea9c39ddcf719578a9d85230b1517aeda227e936480a96"
+      },
+      "phase-comparisons.csv": {
+        "bytes": "1327859",
+        "sha256": "sha256:f5a5f1e43b5321a37c5ab7c7e7a9a5886b038f8a529c7d3e9028d415f7b48914"
+      },
+      "phase-rows.csv": {
+        "bytes": "683621",
+        "sha256": "sha256:ea21a418397f9c77ae62f22ff1ff17e892295cea5505422e37e2645a9fd462e8"
+      },
+      "platform-comparisons.csv": {
+        "bytes": "1143183",
+        "sha256": "sha256:976bbd16baa53bffb97dcfbf1b73ce4dbd41c70b852a8a250570cb76e9b36081"
+      },
+      "resource-comparisons.csv": {
+        "bytes": "853985",
+        "sha256": "sha256:9b11b32e79a8272a3b09d8c5415c753386ddb10ccf423b99d8b4bcb50e1491ae"
+      },
+      "resource-points.csv": {
+        "bytes": "291118",
+        "sha256": "sha256:bf5c71ce83d6b90447d9a9387c187e710295dd79f49aaa3f0d576051a24cde19"
+      }
+    },
+    "suite_sha256": "sha256:c25e81cb839752d8bf42666200a6d8b2a21dcee309009104a7f60f85bf2276aa"
+  },
+  "linux_package": "/work/kubernetes-package-01",
+  "linux_report": "/work/full-validation-02/report",
+  "public_report": "C:\\Users\\turkins\\Desktop\\latent-fabric\\benchmarks\\optimization\\kubernetes-comparison\\2026-09-11-container-linux-8b0441f",
+  "reserve_bytes": "8388608",
+  "schema": "latent.optimization.kubernetes-windows-publication.v1",
+  "selected_bytes": "146346684",
+  "source": {
+    "commit": "41cb43ac3f7a938e27c6d97a869b8885f1d4760c",
+    "entrypoint": {
+      "bytes": "27448",
+      "sha256": "sha256:8d311ac164398bc4a4f86d72279c70af6f30613a7cf6095a7ea9be28e5ec050e"
+    },
+    "tool_closure_matches_reference": true,
+    "tree": "b7541a420b5a84953cec425c4ddb514428dae804",
+    "validator_reference": "10d50e61c5632ea2361a16dffc3b4819987f4dc4",
+    "validator_reference_tree": "125d2b8fbe41a08f8f07bc1b7ad267f43b977773"
+  },
+  "started_nanos": "812173069574600",
+  "started_utc": "2026-09-11T19:10:31.346089+00:00",
+  "status": "copied-and-Windows-replayed",
+  "windows_receipt": {
+    "bytes": "3232",
+    "sha256": "sha256:12689f9652d71dc18e01d1e7b825484405ccc0f4ce3594a975218caa48549132"
+  }
+}

@@ -2,6 +2,9 @@
 
 #![forbid(unsafe_code)]
 
+pub mod invocation;
+pub mod management;
+
 use latent_activation::{ActivationEnvelope, ActivationOutcome};
 use latent_core::{ActivationId, BoxFuture, Metadata, NodeId, PlatformError, RouteGeneration};
 

@@ -1,0 +1,70 @@
+{
+  "files": [
+    {
+      "gzip": true,
+      "original_bytes": "327648",
+      "original_path": "initial/catalog.json",
+      "original_sha256": "sha256:a8510dc12908c330bb23ac7414dd3cea2a46fb5c3976437d38a866a57271eda6",
+      "path": "initial-catalog.json.gz"
+    },
+    {
+      "gzip": true,
+      "original_bytes": "54153",
+      "original_path": "reopen/catalog.json",
+      "original_sha256": "sha256:349602772e71ce50913a3ee522f6890619285a581d4f59b551485a0c558663a4",
+      "path": "reopen-catalog.json.gz"
+    },
+    {
+      "gzip": true,
+      "original_bytes": "73630",
+      "original_path": "allocation/catalog.json",
+      "original_sha256": "sha256:a36dc2c33a55d84d55e78b605abcbe3383b00043cfa6734a2aae71b705a2f647",
+      "path": "allocation-catalog.json.gz"
+    },
+    {
+      "gzip": false,
+      "original_bytes": "523",
+      "original_path": "initial/sampler.jsonl",
+      "original_sha256": "sha256:26caf690ecd177ebde1926d6e70c94707d870bed3a2ac32094c71fff43008e75",
+      "path": "initial-sampler.jsonl"
+    },
+    {
+      "gzip": false,
+      "original_bytes": "148",
+      "original_path": "reopen/sampler.jsonl",
+      "original_sha256": "sha256:cf62caa6cc6186919d174a0e63b7068945738f0079e03ea29b750e161ae4e4ef",
+      "path": "reopen-sampler.jsonl"
+    },
+    {
+      "gzip": false,
+      "original_bytes": "24754",
+      "original_path": "echo/echo-capsule.wasm",
+      "original_sha256": "sha256:4dc815f10d7a2f4d7b204efa39a53ab1882bb58da8248fcd03449e87d9e9e788",
+      "path": "echo-echo-capsule.wasm"
+    },
+    {
+      "gzip": false,
+      "original_bytes": "1392",
+      "original_path": "echo/capsule.json",
+      "original_sha256": "sha256:e68d2667e0ade831009bb132375c7474b1bfdd22ce7bd8c16acc0b956e78b938",
+      "path": "echo-capsule.json"
+    },
+    {
+      "gzip": false,
+      "original_bytes": "1349",
+      "original_path": "echo/contracts.json",
+      "original_sha256": "sha256:8e2d862da2819d6a5a43266af2c8e79eb8f98e16f4492ae325f2a995081b003e",
+      "path": "echo-contracts.json"
+    },
+    {
+      "gzip": false,
+      "original_bytes": "1104",
+      "original_path": "echo/deployment.json",
+      "original_sha256": "sha256:33b597cfa85edf8bfe75dc17d23cd7291e4423115baf0ba04e578f79cd746f84",
+      "path": "echo-deployment.json"
+    }
+  ],
+  "qualifying": false,
+  "schema": "latent.optimization.catalog-diagnostic-fixture.v1",
+  "snapshot_sha256": "2abef5f89c22a86a292eadad4ef8f01231a5f4cffc8dbc3ad254d5dd322d5381"
+}

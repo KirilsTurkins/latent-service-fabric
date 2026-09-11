@@ -2,6 +2,9 @@ package latent:service@0.1.0;
 
 interface invoke {
     record target {
+        // `none` resolves in the caller's tenant. Cross-tenant resolution
+        // requires an explicit granted tenant and is not provided by Phase 1.
+        tenant: option<string>,
         service: string,
         contract: string,
         function: string,
@@ -21,17 +24,50 @@ interface invoke {
         metadata: list<tuple<string, string>>,
     }
 
-    variant platform-error {
+    record error-detail {
+        kind: string,
+        fields: list<tuple<string, string>>,
+    }
+
+    enum platform-error-code {
         unavailable,
         deadline-exceeded,
         cancelled,
         resource-exhausted,
         permission-denied,
+        unauthenticated,
+        invalid-argument,
+        not-found,
+        already-exists,
         incompatible-contract,
         state-conflict,
         dependency-failed,
-        guest-trap(string),
-        internal(string),
+        guest-trap,
+        corrupt-artifact,
+        route-unavailable,
+        admission-rejected,
+        internal,
+    }
+
+    record platform-error {
+        code: platform-error-code,
+        message: string,
+        retryable: bool,
+        details: list<error-detail>,
+    }
+
+    record declared-error {
+        code: string,
+        message: string,
+        payload: list<u8>,
+        media-type: string,
+        metadata: list<tuple<string, string>>,
+    }
+
+    variant invocation-outcome {
+        success(invocation-result),
+        declared-error(declared-error),
+        platform-failure(platform-error),
     }
 
     call: async func(
@@ -39,5 +75,5 @@ interface invoke {
         payload: list<u8>,
         media-type: string,
         options: call-options,
-    ) -> result<invocation-result, platform-error>;
+    ) -> invocation-outcome;
 }

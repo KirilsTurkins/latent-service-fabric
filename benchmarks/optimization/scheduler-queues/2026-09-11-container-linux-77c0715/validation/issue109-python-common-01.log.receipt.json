@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "unittest",
+    "tools.tests.test_optimization_scheduler",
+    "tools.tests.test_scheduler_archive",
+    "tools.tests.test_scheduler_schemas",
+    "-v"
+  ],
+  "cwd": "C:\\Users\\turkins\\Desktop\\latent-fabric-scheduler-queues",
+  "exit_code": 0,
+  "elapsed_nanos": "1639974400",
+  "log": "C:\\Users\\turkins\\Desktop\\latent-fabric\\target\\phase1-extension\\issue109-python-common-01.log"
+}

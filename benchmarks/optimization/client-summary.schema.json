@@ -1,0 +1,2941 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.fabric/schemas/optimization/client-summary.schema.json",
+  "$comment": "Structural validation is necessary; tools/validate_optimization_evidence.py performs mandatory semantic and integrity replay.",
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "bytes"
+      ],
+      "additionalProperties": false
+    },
+    "json": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 1048576
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/json"
+          },
+          "maxItems": 100000,
+          "minItems": 0
+        },
+        {
+          "type": "object",
+          "maxProperties": 4096,
+          "additionalProperties": {
+            "$ref": "#/$defs/json"
+          }
+        }
+      ]
+    },
+    "client_plan": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.client-plan.v1"
+        },
+        "tenant": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "maxItems": 64,
+          "minItems": 1
+        },
+        "contract": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "route": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 4096
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "function": {
+          "enum": [
+            "echo",
+            "compute",
+            "transform"
+          ]
+        },
+        "payload": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/json"
+          },
+          "maxItems": 4096,
+          "minItems": 0
+        },
+        "warmup_attempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "measured_attempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "batch_size": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "concurrency": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "runtime_workers": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "schedule": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "const": "closed-loop"
+                }
+              },
+              "required": [
+                "mode"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "mode": {
+                  "const": "scheduled"
+                },
+                "interval_nanos": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": [
+                "mode",
+                "interval_nanos"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "budget_millis": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5000
+        },
+        "cpu_fuel": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "memory_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "log_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "connect_timeout_millis": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "response_timeout_millis": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "maximum_output_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "run_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-]{1,48}$"
+        },
+        "arm": {
+          "enum": [
+            "native",
+            "lsf"
+          ]
+        },
+        "server_process_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "endpoint": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "token_file": {
+          "type": "string",
+          "maxLength": 4096
+        }
+      },
+      "required": [
+        "schema",
+        "tenant",
+        "services",
+        "contract",
+        "route",
+        "function",
+        "payload",
+        "warmup_attempts",
+        "measured_attempts",
+        "batch_size",
+        "concurrency",
+        "runtime_workers",
+        "schedule",
+        "budget_millis",
+        "cpu_fuel",
+        "memory_bytes",
+        "log_bytes",
+        "connect_timeout_millis",
+        "response_timeout_millis",
+        "maximum_output_bytes",
+        "run_id",
+        "arm",
+        "server_process_id",
+        "endpoint",
+        "token_file"
+      ],
+      "additionalProperties": false
+    },
+    "plan": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.plan.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "repetitions": {
+          "enum": [
+            1,
+            7
+          ]
+        },
+        "scenarios": {
+          "const": [
+            "cold-restart"
+          ]
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "client_plan": {
+                "type": "object",
+                "properties": {
+                  "schema": {
+                    "const": "latent.optimization.client-plan.v1"
+                  },
+                  "tenant": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "services": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 4096
+                    },
+                    "maxItems": 64,
+                    "minItems": 1
+                  },
+                  "contract": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "route": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4096
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "function": {
+                    "enum": [
+                      "echo",
+                      "compute",
+                      "transform"
+                    ]
+                  },
+                  "payload": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/json"
+                    },
+                    "maxItems": 4096,
+                    "minItems": 0
+                  },
+                  "warmup_attempts": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4294967295
+                  },
+                  "measured_attempts": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4294967295
+                  },
+                  "batch_size": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4294967295
+                  },
+                  "concurrency": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 64
+                  },
+                  "runtime_workers": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 16
+                  },
+                  "schedule": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "mode": {
+                            "const": "closed-loop"
+                          }
+                        },
+                        "required": [
+                          "mode"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "mode": {
+                            "const": "scheduled"
+                          },
+                          "interval_nanos": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
+                        },
+                        "required": [
+                          "mode",
+                          "interval_nanos"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "budget_millis": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5000
+                  },
+                  "cpu_fuel": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 18446744073709551615
+                  },
+                  "memory_bytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 18446744073709551615
+                  },
+                  "log_bytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 18446744073709551615
+                  },
+                  "connect_timeout_millis": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 18446744073709551615
+                  },
+                  "response_timeout_millis": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 18446744073709551615
+                  },
+                  "maximum_output_bytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 18446744073709551615
+                  }
+                },
+                "required": [
+                  "schema",
+                  "tenant",
+                  "services",
+                  "contract",
+                  "route",
+                  "function",
+                  "payload",
+                  "warmup_attempts",
+                  "measured_attempts",
+                  "batch_size",
+                  "concurrency",
+                  "runtime_workers",
+                  "schedule",
+                  "budget_millis",
+                  "cpu_fuel",
+                  "memory_bytes",
+                  "log_bytes",
+                  "connect_timeout_millis",
+                  "response_timeout_millis",
+                  "maximum_output_bytes"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "client_plan"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 16,
+          "minItems": 16
+        },
+        "maximum_run_seconds": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "maximum_artifact_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        }
+      },
+      "required": [
+        "schema",
+        "profile",
+        "repetitions",
+        "scenarios",
+        "cases",
+        "maximum_run_seconds",
+        "maximum_artifact_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "readiness": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.client-readiness.v1"
+        },
+        "run_id": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "arm": {
+          "enum": [
+            "native",
+            "lsf"
+          ]
+        },
+        "client_process_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "server_process_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "runtime_workers": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "maximum_in_flight": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "started_unix_millis": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "connected_unix_millis": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "connect_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "startup_to_ready_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "request_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "expected_output_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "plan_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "request_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "expected_output_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "public_plan": {
+          "type": "object",
+          "properties": {
+            "schema": {
+              "const": "latent.optimization.client-plan.v1"
+            },
+            "tenant": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "services": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 4096
+              },
+              "maxItems": 64,
+              "minItems": 1
+            },
+            "contract": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "route": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "function": {
+              "enum": [
+                "echo",
+                "compute",
+                "transform"
+              ]
+            },
+            "warmup_attempts": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "measured_attempts": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "batch_size": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "concurrency": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 64
+            },
+            "runtime_workers": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16
+            },
+            "schedule": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "closed-loop"
+                    }
+                  },
+                  "required": [
+                    "mode"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "const": "scheduled"
+                    },
+                    "interval_nanos": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "interval_nanos"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "budget_millis": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5000
+            },
+            "cpu_fuel": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            "memory_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            "log_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            "connect_timeout_millis": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            "response_timeout_millis": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            "maximum_output_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 18446744073709551615
+            },
+            "run_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9-]{1,48}$"
+            },
+            "arm": {
+              "enum": [
+                "native",
+                "lsf"
+              ]
+            },
+            "server_process_id": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4294967295
+            },
+            "payload_sha256": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "payload_bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          },
+          "required": [
+            "schema",
+            "tenant",
+            "services",
+            "contract",
+            "route",
+            "function",
+            "warmup_attempts",
+            "measured_attempts",
+            "batch_size",
+            "concurrency",
+            "runtime_workers",
+            "schedule",
+            "budget_millis",
+            "cpu_fuel",
+            "memory_bytes",
+            "log_bytes",
+            "connect_timeout_millis",
+            "response_timeout_millis",
+            "maximum_output_bytes",
+            "run_id",
+            "arm",
+            "server_process_id",
+            "payload_sha256",
+            "payload_bytes"
+          ],
+          "additionalProperties": false
+        },
+        "observation_hold_millis": {
+          "const": 100
+        }
+      },
+      "required": [
+        "schema",
+        "run_id",
+        "arm",
+        "client_process_id",
+        "server_process_id",
+        "runtime_workers",
+        "maximum_in_flight",
+        "started_unix_millis",
+        "connected_unix_millis",
+        "connect_nanos",
+        "startup_to_ready_nanos",
+        "request_bytes",
+        "expected_output_bytes",
+        "plan_sha256",
+        "request_sha256",
+        "expected_output_sha256",
+        "public_plan",
+        "observation_hold_millis"
+      ],
+      "additionalProperties": false
+    },
+    "attempt": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.attempt.v1"
+        },
+        "phase": {
+          "enum": [
+            "warmup",
+            "measured"
+          ]
+        },
+        "index": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "batch": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "scheduled_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "completed_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "request_deadline_unix_millis": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "deadline_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "overshoot_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "absolute_deadline_quantization_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "activation_id": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "service": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "dispatch_nanos": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dispatch_lag_nanos": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "latency_nanos": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "grpc_timeout_nanos": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "grpc_timeout_header": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{1,8}[HMSmun]$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "success",
+            "declared-error",
+            "platform-failure",
+            "transport-failure",
+            "client-timeout",
+            "client-overload",
+            "client-deadline-before-dispatch",
+            "invalid-response"
+          ]
+        },
+        "code": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 4096
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "semantic_match": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rpc_received": {
+          "type": "boolean"
+        },
+        "response": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "activation_id": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "revision_id": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "release_digest": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "route_generation": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]{0,19})$"
+                },
+                "consumption": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "cpu_fuel": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "peak_memory_bytes": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "wall_time_micros": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "child_calls": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "outbound_requests": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "state_read_bytes": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "state_write_bytes": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "blob_read_bytes": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "blob_write_bytes": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "log_bytes": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        },
+                        "effect_count": {
+                          "type": "string",
+                          "pattern": "^(0|[1-9][0-9]{0,19})$"
+                        }
+                      },
+                      "required": [
+                        "cpu_fuel",
+                        "peak_memory_bytes",
+                        "wall_time_micros",
+                        "child_calls",
+                        "outbound_requests",
+                        "state_read_bytes",
+                        "state_write_bytes",
+                        "blob_read_bytes",
+                        "blob_write_bytes",
+                        "log_bytes",
+                        "effect_count"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "media_type": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 4096
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "payload_sha256": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "payload_bytes": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]{0,19})$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "activation_id",
+                "revision_id",
+                "release_digest",
+                "route_generation",
+                "consumption",
+                "media_type",
+                "payload_sha256",
+                "payload_bytes"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema",
+        "phase",
+        "index",
+        "batch",
+        "scheduled_nanos",
+        "completed_nanos",
+        "request_deadline_unix_millis",
+        "deadline_nanos",
+        "overshoot_nanos",
+        "absolute_deadline_quantization_nanos",
+        "activation_id",
+        "service",
+        "dispatch_nanos",
+        "dispatch_lag_nanos",
+        "latency_nanos",
+        "grpc_timeout_nanos",
+        "grpc_timeout_header",
+        "outcome",
+        "code",
+        "semantic_match",
+        "rpc_received",
+        "response"
+      ],
+      "additionalProperties": false
+    },
+    "counts": {
+      "type": "object",
+      "properties": {
+        "attempts": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "dispatched": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "undispatched": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "received": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "successful": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "semantic_mismatches": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "last_completed_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "elapsed_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "first_scheduled_nanos": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcomes": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "declared-error": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "platform-failure": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "transport-failure": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "client-timeout": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "client-overload": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "client-deadline-before-dispatch": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "invalid-response": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "throughput": {
+          "type": "object",
+          "properties": {
+            "completed_attempts": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "successful_responses": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "elapsed_nanos": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            }
+          },
+          "required": [
+            "completed_attempts",
+            "successful_responses",
+            "elapsed_nanos"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "attempts",
+        "dispatched",
+        "undispatched",
+        "received",
+        "successful",
+        "semantic_mismatches",
+        "last_completed_nanos",
+        "elapsed_nanos",
+        "first_scheduled_nanos",
+        "outcomes",
+        "throughput"
+      ],
+      "additionalProperties": false
+    },
+    "phase": {
+      "type": "object",
+      "properties": {
+        "origin_unix_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "clock_anchor_uncertainty_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "phase_elapsed_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "counts": {
+          "$ref": "#/$defs/counts"
+        },
+        "batches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "counts": {
+                "$ref": "#/$defs/counts"
+              }
+            },
+            "required": [
+              "index",
+              "counts"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 10000,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "origin_unix_nanos",
+        "clock_anchor_uncertainty_nanos",
+        "phase_elapsed_nanos",
+        "counts",
+        "batches"
+      ],
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.client-summary.v1"
+        },
+        "status": {
+          "const": "complete"
+        },
+        "readiness": {
+          "$ref": "#/$defs/readiness"
+        },
+        "warmup": {
+          "$ref": "#/$defs/phase"
+        },
+        "measured": {
+          "$ref": "#/$defs/phase"
+        },
+        "client_elapsed_nanos": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "active_tasks_at_completion": {
+          "const": 0
+        },
+        "observation_hold_millis": {
+          "const": 100
+        }
+      },
+      "required": [
+        "schema",
+        "status",
+        "readiness",
+        "warmup",
+        "measured",
+        "client_elapsed_nanos",
+        "active_tasks_at_completion",
+        "observation_hold_millis"
+      ],
+      "additionalProperties": false
+    },
+    "process": {
+      "type": "object",
+      "properties": {
+        "process_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "start_time_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "role": {
+          "enum": [
+            "native-server",
+            "lsf-server",
+            "lsf-seed",
+            "load-client"
+          ]
+        },
+        "executable_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "reaped": {
+          "type": "boolean"
+        },
+        "output_closed": {
+          "type": "boolean"
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -255,
+              "maximum": 255
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "process_id",
+        "start_time_ticks",
+        "role",
+        "executable_sha256",
+        "reaped",
+        "output_closed",
+        "exit_code"
+      ],
+      "additionalProperties": false
+    },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "object",
+          "properties": {
+            "commit": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "tree": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            "dirty": {
+              "type": "boolean"
+            },
+            "cargo_lock_sha256": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "commit",
+            "tree",
+            "dirty",
+            "cargo_lock_sha256"
+          ],
+          "additionalProperties": false
+        },
+        "build": {
+          "type": "object",
+          "properties": {
+            "profile": {
+              "enum": [
+                "release",
+                "debug"
+              ]
+            },
+            "rustc": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "cargo": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "wasmtime": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "target": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "overrides": {
+              "type": "object",
+              "maxProperties": 64
+            }
+          },
+          "required": [
+            "profile",
+            "rustc",
+            "cargo",
+            "wasmtime",
+            "target",
+            "overrides"
+          ],
+          "additionalProperties": false
+        },
+        "environment": {
+          "type": "object",
+          "properties": {
+            "os": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "arch": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "kernel": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "cpu_model": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "logical_cpus": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "memory_total_bytes": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,19})$"
+            },
+            "virtualization": {
+              "type": "object",
+              "maxProperties": 64
+            },
+            "allocator": {
+              "type": "object",
+              "maxProperties": 64
+            },
+            "cpu_policy": {
+              "type": "object",
+              "maxProperties": 64
+            },
+            "load_before": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0
+              },
+              "maxItems": 3,
+              "minItems": 3
+            }
+          },
+          "required": [
+            "os",
+            "arch",
+            "kernel",
+            "cpu_model",
+            "logical_cpus",
+            "memory_total_bytes",
+            "virtualization",
+            "allocator",
+            "cpu_policy",
+            "load_before"
+          ],
+          "additionalProperties": false
+        },
+        "executables": {
+          "type": "object",
+          "properties": {
+            "native": {
+              "$ref": "#/$defs/artifact"
+            },
+            "lsf": {
+              "$ref": "#/$defs/artifact"
+            },
+            "client": {
+              "$ref": "#/$defs/artifact"
+            },
+            "control": {
+              "$ref": "#/$defs/artifact"
+            },
+            "cli": {
+              "$ref": "#/$defs/artifact"
+            }
+          },
+          "required": [
+            "native",
+            "lsf",
+            "client"
+          ],
+          "additionalProperties": false
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          },
+          "maxItems": 5,
+          "minItems": 5
+        },
+        "workload_sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          },
+          "maxItems": 32,
+          "minItems": 1
+        },
+        "build_inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          },
+          "maxItems": 8,
+          "minItems": 8
+        },
+        "source_checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          },
+          "maxItems": 2,
+          "minItems": 2
+        }
+      },
+      "required": [
+        "source",
+        "build",
+        "environment",
+        "executables",
+        "components",
+        "workload_sources",
+        "build_inputs",
+        "source_checks"
+      ],
+      "additionalProperties": false
+    },
+    "snapshot": {
+      "type": "object",
+      "properties": {
+        "process_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "start_time_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "rss_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "cpu_user_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "cpu_system_ticks": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "read_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "write_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "threads": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "fd_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      },
+      "required": [
+        "process_id",
+        "start_time_ticks",
+        "rss_bytes",
+        "cpu_user_ticks",
+        "cpu_system_ticks",
+        "read_bytes",
+        "write_bytes",
+        "threads",
+        "fd_count"
+      ],
+      "additionalProperties": false
+    },
+    "samples": {
+      "type": "object",
+      "properties": {
+        "before": {
+          "$ref": "#/$defs/snapshot"
+        },
+        "after": {
+          "$ref": "#/$defs/snapshot"
+        },
+        "last_live": {
+          "$ref": "#/$defs/snapshot"
+        },
+        "peak_rss_bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "sample_interval_millis": {
+          "const": 100
+        },
+        "peak_semantics": {
+          "const": "maximum-observed-rss-not-instantaneous-peak"
+        }
+      },
+      "required": [
+        "before",
+        "after",
+        "last_live",
+        "peak_rss_bytes",
+        "sample_interval_millis",
+        "peak_semantics"
+      ],
+      "additionalProperties": false
+    },
+    "cgroup": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "const": "runner-cgroup-shared"
+        },
+        "process_membership": {
+          "type": "string",
+          "maxLength": 16384
+        },
+        "cpu.max": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cpu.stat": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.max": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.current": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.stat": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.events": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cpu.pressure": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "memory.pressure": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "io.pressure": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolution": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "resolved",
+                "unsupported"
+              ]
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mount_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mount_root": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "mount_point": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "device": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "inode": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "path",
+            "mount_id",
+            "mount_root",
+            "mount_point",
+            "device",
+            "inode"
+          ],
+          "additionalProperties": false
+        },
+        "errors": {
+          "type": "object",
+          "properties": {
+            "cpu.max": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "cpu.stat": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.max": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.current": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.stat": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.events": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "cpu.pressure": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "memory.pressure": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "io.pressure": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "process_membership": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "mountinfo": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            },
+            "resolution": {
+              "enum": [
+                "missing",
+                "permission-denied",
+                "oversized",
+                "invalid",
+                "unavailable",
+                "ambiguous",
+                "membership-changed"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "scope",
+        "process_membership",
+        "cpu.max",
+        "cpu.stat",
+        "memory.max",
+        "memory.current",
+        "memory.stat",
+        "memory.events",
+        "cpu.pressure",
+        "memory.pressure",
+        "io.pressure",
+        "resolution",
+        "errors"
+      ],
+      "additionalProperties": false
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "server": {
+          "$ref": "#/$defs/samples"
+        },
+        "client": {
+          "$ref": "#/$defs/samples"
+        },
+        "cgroup": {
+          "type": "object",
+          "properties": {
+            "before": {
+              "$ref": "#/$defs/cgroup"
+            },
+            "after": {
+              "$ref": "#/$defs/cgroup"
+            }
+          },
+          "required": [
+            "before",
+            "after"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "server",
+        "client",
+        "cgroup"
+      ],
+      "additionalProperties": false
+    },
+    "lifecycle": {
+      "type": "object",
+      "properties": {
+        "process_start_to_ready_micros": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "process_start_to_first_response_observed_micros": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "ready_to_first_response_observed_micros": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "first_response_observation": {
+          "const": "parent-received-client-event-upper-bound-includes-client-startup-and-connect"
+        },
+        "initial_preparation": {
+          "enum": [
+            "included-in-first-call",
+            "not-applicable"
+          ]
+        }
+      },
+      "required": [
+        "process_start_to_ready_micros",
+        "process_start_to_first_response_observed_micros",
+        "ready_to_first_response_observed_micros",
+        "first_response_observation",
+        "initial_preparation"
+      ],
+      "additionalProperties": false
+    },
+    "batch": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "plan": {
+          "$ref": "#/$defs/artifact"
+        },
+        "readiness": {
+          "$ref": "#/$defs/artifact"
+        },
+        "attempts": {
+          "$ref": "#/$defs/artifact"
+        },
+        "summary": {
+          "$ref": "#/$defs/artifact"
+        },
+        "client_process": {
+          "$ref": "#/$defs/artifact"
+        },
+        "resources": {
+          "$ref": "#/$defs/artifact"
+        }
+      },
+      "required": [
+        "id",
+        "plan",
+        "readiness",
+        "attempts",
+        "summary",
+        "client_process",
+        "resources"
+      ],
+      "additionalProperties": false
+    },
+    "run": {
+      "type": "object",
+      "properties": {
+        "repetition": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 7
+        },
+        "arm": {
+          "enum": [
+            "native",
+            "lsf"
+          ]
+        },
+        "scenario": {
+          "const": "cold-restart"
+        },
+        "status": {
+          "enum": [
+            "passed",
+            "failed"
+          ]
+        },
+        "reason": {
+          "enum": [
+            null,
+            "collector-failed"
+          ]
+        },
+        "started_micros": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "finished_micros": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "batches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/batch"
+          },
+          "maxItems": 16,
+          "minItems": 0
+        },
+        "server_process": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "configuration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cleanup": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/artifact"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lifecycle": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/lifecycle"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "repetition",
+        "arm",
+        "scenario",
+        "status",
+        "reason",
+        "started_micros",
+        "finished_micros",
+        "batches",
+        "server_process",
+        "configuration",
+        "cleanup",
+        "lifecycle"
+      ],
+      "additionalProperties": false
+    },
+    "suite": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.suite.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "plan": {
+          "$ref": "#/$defs/plan"
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/run"
+          },
+          "maxItems": 14,
+          "minItems": 0
+        },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artifact"
+          },
+          "maxItems": 4096,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "schema",
+        "profile",
+        "plan",
+        "identity",
+        "runs",
+        "artifacts"
+      ],
+      "additionalProperties": false
+    },
+    "distribution": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "minimum": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "median": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "maximum": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "p95": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "p99": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "mean": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "median_absolute_deviation": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        },
+        "standard_deviation": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "count",
+        "minimum",
+        "median",
+        "maximum",
+        "p95",
+        "p99",
+        "mean",
+        "median_absolute_deviation",
+        "standard_deviation"
+      ],
+      "additionalProperties": false
+    },
+    "phase_metrics": {
+      "type": "object",
+      "properties": {
+        "counts": {
+          "$ref": "#/$defs/counts"
+        },
+        "latency_population": {
+          "const": "all-dispatched-including-failures"
+        },
+        "latency_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "all_dispatched_latency_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "successful_response_latency_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "all_offered_elapsed_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dispatch_lag_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "overshoot_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outcome_latency_nanos": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "declared-error": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "platform-failure": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "transport-failure": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "client-timeout": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "client-overload": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "client-deadline-before-dispatch": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "invalid-response": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/distribution"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "success",
+            "declared-error",
+            "platform-failure",
+            "transport-failure",
+            "client-timeout",
+            "client-overload",
+            "client-deadline-before-dispatch",
+            "invalid-response"
+          ],
+          "additionalProperties": false
+        },
+        "successful_response_fraction": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "successes_per_second": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "attempts_per_second": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "budget_successes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "budget_misses": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "batches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "counts": {
+                "$ref": "#/$defs/counts"
+              },
+              "latency_population": {
+                "const": "all-dispatched-including-failures"
+              },
+              "latency_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "all_dispatched_latency_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "successful_response_latency_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "all_offered_elapsed_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "dispatch_lag_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "overshoot_nanos": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/distribution"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "outcome_latency_nanos": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "declared-error": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "platform-failure": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "transport-failure": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "client-timeout": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "client-overload": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "client-deadline-before-dispatch": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "invalid-response": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/$defs/distribution"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "success",
+                  "declared-error",
+                  "platform-failure",
+                  "transport-failure",
+                  "client-timeout",
+                  "client-overload",
+                  "client-deadline-before-dispatch",
+                  "invalid-response"
+                ],
+                "additionalProperties": false
+              },
+              "successful_response_fraction": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "successes_per_second": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "attempts_per_second": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "budget_successes": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              },
+              "budget_misses": {
+                "type": "string",
+                "pattern": "^(0|[1-9][0-9]{0,19})$"
+              }
+            },
+            "required": [
+              "index",
+              "counts",
+              "latency_population",
+              "latency_nanos",
+              "all_dispatched_latency_nanos",
+              "successful_response_latency_nanos",
+              "all_offered_elapsed_nanos",
+              "dispatch_lag_nanos",
+              "overshoot_nanos",
+              "outcome_latency_nanos",
+              "successful_response_fraction",
+              "successes_per_second",
+              "attempts_per_second",
+              "budget_successes",
+              "budget_misses"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 10000,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "counts",
+        "latency_population",
+        "latency_nanos",
+        "all_dispatched_latency_nanos",
+        "successful_response_latency_nanos",
+        "all_offered_elapsed_nanos",
+        "dispatch_lag_nanos",
+        "overshoot_nanos",
+        "outcome_latency_nanos",
+        "successful_response_fraction",
+        "successes_per_second",
+        "attempts_per_second",
+        "budget_successes",
+        "budget_misses",
+        "batches"
+      ],
+      "additionalProperties": false
+    },
+    "comparison": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "successful_response_pairs": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "paired_successful_response_median_latency_differences_nanos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pairs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "repetition": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 7
+              },
+              "native": {
+                "$ref": "#/$defs/phase_metrics"
+              },
+              "lsf": {
+                "$ref": "#/$defs/phase_metrics"
+              },
+              "comparison_population": {
+                "const": "successful-responses-only-conditional-on-success"
+              },
+              "lsf_minus_native_successful_response_median_latency_nanos": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^-?(0|[1-9][0-9]*)([.][0-9]+)?$",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "repetition",
+              "native",
+              "lsf",
+              "comparison_population",
+              "lsf_minus_native_successful_response_median_latency_nanos"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 7,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "id",
+        "successful_response_pairs",
+        "paired_successful_response_median_latency_differences_nanos",
+        "pairs"
+      ],
+      "additionalProperties": false
+    },
+    "aggregate": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "latent.optimization.aggregate.v1"
+        },
+        "profile": {
+          "enum": [
+            "smoke",
+            "full"
+          ]
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "incomplete",
+            "failed"
+          ]
+        },
+        "scope": {
+          "const": "standalone-native-code-versus-lsf-productionization-bundle"
+        },
+        "suite_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "plan_sha256": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "identity": {
+          "$ref": "#/$defs/identity"
+        },
+        "population_complete": {
+          "type": "boolean"
+        },
+        "validated_attempts": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "validated_processes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "attempt_count_complete": {
+          "type": "boolean"
+        },
+        "runs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/json"
+          },
+          "maxItems": 14,
+          "minItems": 0
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/comparison"
+          },
+          "maxItems": 16,
+          "minItems": 16
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "maxItems": 32,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "schema",
+        "profile",
+        "status",
+        "scope",
+        "suite_sha256",
+        "plan_sha256",
+        "identity",
+        "population_complete",
+        "validated_attempts",
+        "validated_processes",
+        "attempt_count_complete",
+        "runs",
+        "comparisons",
+        "limitations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$ref": "#/$defs/summary"
+}

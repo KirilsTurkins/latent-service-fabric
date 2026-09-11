@@ -19,6 +19,9 @@ pub struct NativeCollectorIdentity {
     pub build_configuration: NativeCollectorBuildConfiguration,
 }
 
+// These independent booleans intentionally mirror Cargo's serialized release
+// profile contract; collapsing them would make the retained evidence ambiguous.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct NativeCollectorBuildConfiguration {
     pub schema_version: &'static str,
@@ -63,7 +66,7 @@ pub fn native_collector_identity(
         return Err("native collector executable is empty".to_owned());
     }
     let mut digest = Sha256::new();
-    let mut buffer = [0_u8; 64 * 1024];
+    let mut buffer = vec![0_u8; 64 * 1024];
     loop {
         let read = file.read(&mut buffer).map_err(|error| {
             format!(

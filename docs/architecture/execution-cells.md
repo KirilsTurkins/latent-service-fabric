@@ -2,6 +2,12 @@
 
 An execution cell is a reusable sandbox allocation slot. It is not associated with a service identity while idle.
 
+Phase 1 implements fixed in-process cell pools, fresh Wasmtime stores and
+affirmative reuse/quarantine through the [local scheduler](../scheduling.md)
+and [activation lifecycle](../activation-lifecycle.md). Trust-sharded processes,
+state transactions and external asynchronous capability providers described as
+extensions below remain later work.
+
 ## Cell contents during an activation
 
 - cell identifier and allocation class,
@@ -22,7 +28,13 @@ Fixed classes improve predictable capacity and reduce allocator fragmentation. T
 
 ## Thread model
 
-The node owns fixed compute and I/O worker pools. Invocations are asynchronous tasks, not operating-system threads. Guest execution consumes a compute worker only while running. Async capability operations yield execution and return the worker to the pool.
+The standalone node owns a configured shared async runtime and fixed compiler
+workers. Invocations are futures polled on that runtime, not dedicated
+operating-system threads. Directory reads and native compilation use bounded
+compiler jobs; no worker count grows with registered services. Wasmtime async
+calls can yield, but an epoch tick alone is not a general scheduler fairness or
+millisecond response guarantee. The optional fuel-yield policy and interruption
+limits are documented in [the runtime reference](../runtime/wasmtime.md).
 
 ## Isolation model
 
@@ -45,3 +57,11 @@ A cell may be returned only after:
 7. backend-specific memory reset guarantees hold.
 
 Conformance tests must detect cross-activation data leakage.
+
+## Measured engine and ownership tradeoffs
+
+The [extension results](../phase-1-extension-completion.md#tuning-and-closure)
+retain the on-demand/speed default and the measured pooling tradeoffs.
+Pooling does not remove the fresh-store boundary or permit cell reuse
+before execution and cleanup have retired. Prepared-cache capacity
+describes retained code, not resident service instances or available cells.

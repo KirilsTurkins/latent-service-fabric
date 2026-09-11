@@ -1,0 +1,63 @@
+{
+  "schema": "latent.phase1.case-manifest.v1",
+  "profile": "bounded-deterministic",
+  "maximum_invoke_attempts": "64",
+  "maximum_commands": "256",
+  "driver_limits": {
+    "process": {"maximum_invoke_attempts": "36", "maximum_commands": "192"},
+    "adapter": {"maximum_invoke_attempts": "28", "maximum_commands": "64", "required_invoke_attempts": "22"}
+  },
+  "required_cases": [
+    "empty-readiness",
+    "dormant-catalog",
+    "fresh-store",
+    "mixed-outcomes",
+    "deadline",
+    "cancellation",
+    "malformed-input",
+    "memory-budget",
+    "fuel-budget",
+    "persistent-wall-ceiling",
+    "log-budget",
+    "capability-context",
+    "tenant-isolation",
+    "route-update",
+    "queue-admission",
+    "healthy-recovery",
+    "child-resources",
+    "clean-shutdown",
+    "adapter-rpc-parity"
+  ],
+  "case_descriptions": {
+    "empty-readiness": "Actual bound standalone child becomes ready with empty catalogs.",
+    "dormant-catalog": "Small dormant catalog uses no guest preparation before invocation; this is not a scale result.",
+    "fresh-store": "Repeated small guest execution receives fresh store state, including a repeated bump on the same scheduled cell after its earlier bump mutation.",
+    "mixed-outcomes": "Success, declared guest error and trap preserve distinct terminal outcomes.",
+    "deadline": "A bounded expired or running deadline terminates through the supported invocation path.",
+    "cancellation": "Explicit cancellation and scoped status settle a known activation without reinvocation.",
+    "malformed-input": "Malformed typed input is rejected without successful guest execution.",
+    "memory-budget": "A small configured memory boundary is enforced.",
+    "fuel-budget": "A finite positive fuel grant is exhausted by a small noncooperative guest; its retained resource-limit outcome and final accounting match the response.",
+    "persistent-wall-ceiling": "Node and deployment relative wall-time ceilings remain valid after wall-clock passage beyond their configured durations, preserve stored policy, and combine with an earlier caller absolute deadline.",
+    "log-budget": "The supplied activation log budget governs emitted guest logs.",
+    "capability-context": "Context, remaining-budget and clock/log fixture observations use the current activation.",
+    "tenant-isolation": "Two explicit tenants retain scoped releases and activation observations.",
+    "route-update": "A running activation retains its old revision while a same-release policy update creates a new revision observed by a later activation; the old owner is then cancelled and policy restored.",
+    "queue-admission": "Two running cells plus three queued owners remain bounded; overflow is rejected. After the first same-tenant waiter runs, the other tenant completes while the second holder and second same-tenant spin are still running, before either is cancelled or terminates. Accepted cancellation and retained accounting settle all owners; this is a bounded fairness witness, not a calibrated fairness result.",
+    "healthy-recovery": "A healthy activation succeeds after the selected failures.",
+    "child-resources": "Bounded samples of the retained child PID corroborate tiny topology and resource ownership; RSS is only an observation.",
+    "clean-shutdown": "The real child reports zero transient owners, flushes telemetry, joins its helper and is reaped.",
+    "adapter-rpc-parity": "Eight outcome pairs plus capabilities snapshot, live-budget/log and clock pairs compare direct adapter and real RPC. A single reused cell, same-service releases under two tenants, and actual correlated logs/spans verify context, trace, accounting and tenant association without equating distinct identities or clock values."
+  },
+  "deferred_evidence": [
+    "dormant-scale-100",
+    "dormant-scale-1000",
+    "dormant-scale-10000",
+    "dormant-scale-100000",
+    "mixed-workload-soak",
+    "rss-reclamation-baseline",
+    "calibrated-phase1-baseline",
+    "phase0-comparable-deltas"
+  ],
+  "deferred_reason": "outside-bounded-profile"
+}

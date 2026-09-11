@@ -1,0 +1,134 @@
+[
+  {
+    "name": "plain integer",
+    "target": "deployment-weight",
+    "lexeme": "1",
+    "valid": true
+  },
+  {
+    "name": "fractional lexical form with integral value",
+    "target": "deployment-weight",
+    "lexeme": "1.0",
+    "valid": true
+  },
+  {
+    "name": "exponent lexical form with integral value",
+    "target": "deployment-weight",
+    "lexeme": "1e0",
+    "valid": true
+  },
+  {
+    "name": "negative zero is an integer",
+    "target": "deployment-weight",
+    "lexeme": "-0.0",
+    "valid": true
+  },
+  {
+    "name": "route maximum in fractional lexical form",
+    "target": "deployment-weight",
+    "lexeme": "10000.0",
+    "valid": true
+  },
+  {
+    "name": "non-integral route value",
+    "target": "deployment-weight",
+    "lexeme": "10000.5",
+    "valid": false
+  },
+  {
+    "name": "near-integral route value remains non-integral",
+    "target": "deployment-weight",
+    "lexeme": "1.0000000000000000000000000000000001",
+    "valid": false
+  },
+  {
+    "name": "route value above schema maximum",
+    "target": "deployment-weight",
+    "lexeme": "10001",
+    "valid": false
+  },
+  {
+    "name": "u32 maximum minus one",
+    "target": "capsule-host-call-depth",
+    "lexeme": "4294967294",
+    "valid": true
+  },
+  {
+    "name": "u32 maximum",
+    "target": "capsule-host-call-depth",
+    "lexeme": "4294967295",
+    "valid": true
+  },
+  {
+    "name": "u32 maximum in fractional lexical form",
+    "target": "capsule-host-call-depth",
+    "lexeme": "4294967295.0",
+    "valid": true
+  },
+  {
+    "name": "near-integral u32 value remains non-integral",
+    "target": "capsule-host-call-depth",
+    "lexeme": "1.0000000000000000000000000000000001",
+    "valid": false
+  },
+  {
+    "name": "u32 maximum plus one",
+    "target": "capsule-host-call-depth",
+    "lexeme": "4294967296",
+    "valid": false
+  },
+  {
+    "name": "u32 maximum plus one in fractional lexical form",
+    "target": "capsule-host-call-depth",
+    "lexeme": "4294967296.0",
+    "valid": false
+  },
+  {
+    "name": "i64 maximum",
+    "target": "capsule-memory-bytes",
+    "lexeme": "9223372036854775807",
+    "valid": true
+  },
+  {
+    "name": "i64 maximum plus one",
+    "target": "capsule-memory-bytes",
+    "lexeme": "9223372036854775808",
+    "valid": true
+  },
+  {
+    "name": "i64 maximum plus two",
+    "target": "capsule-memory-bytes",
+    "lexeme": "9223372036854775809",
+    "valid": true
+  },
+  {
+    "name": "u64 maximum minus one",
+    "target": "capsule-memory-bytes",
+    "lexeme": "18446744073709551614",
+    "valid": true
+  },
+  {
+    "name": "u64 maximum",
+    "target": "capsule-memory-bytes",
+    "lexeme": "18446744073709551615",
+    "valid": true
+  },
+  {
+    "name": "near-integral u64 value remains non-integral",
+    "target": "capsule-memory-bytes",
+    "lexeme": "1.0000000000000000000000000000000001",
+    "valid": false
+  },
+  {
+    "name": "u64 maximum plus one",
+    "target": "capsule-memory-bytes",
+    "lexeme": "18446744073709551616",
+    "valid": false
+  },
+  {
+    "name": "negative unsigned value",
+    "target": "capsule-memory-bytes",
+    "lexeme": "-1",
+    "valid": false
+  }
+]
