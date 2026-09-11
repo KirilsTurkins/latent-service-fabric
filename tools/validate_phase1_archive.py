@@ -28,6 +28,7 @@ try:
     from .optimization_revision_evidence.suite import validate_suite as validate_revision_suite
     from .optimization_backend_revision.evidence import validate_suite as validate_backend_revision_suite
     from .optimization_cache_lookup.evidence import validate_suite as validate_cache_lookup_suite
+    from .optimization_scheduler.evidence import validate_suite as validate_scheduler_suite
 except ImportError:
     import package_phase0_evidence as paths
     import phase0_evidence
@@ -40,6 +41,7 @@ except ImportError:
     from tools.optimization_revision_evidence.suite import validate_suite as validate_revision_suite
     from tools.optimization_backend_revision.evidence import validate_suite as validate_backend_revision_suite
     from tools.optimization_cache_lookup.evidence import validate_suite as validate_cache_lookup_suite
+    from tools.optimization_scheduler.evidence import validate_suite as validate_scheduler_suite
 
 ARCHIVE = 'raw-evidence.tar.gz'
 MANIFEST = 'raw-evidence.manifest.json'
@@ -238,7 +240,7 @@ def evidence_kind(directory):
         return 'backend-revision'
     if aggregate.get('schema') == 'latent.optimization.cold-aggregate.v1':
         return 'cold'
-    for kind in ('cache-lookup', 'cache-behavior'):
+    for kind in ('cache-lookup', 'cache-behavior', 'scheduler'):
         if aggregate.get('schema') == f'latent.optimization.{kind}-aggregate.v1':
             return kind
     del aggregate
@@ -336,6 +338,23 @@ def verify_cache(directory, kind):
             f'{kind} archive requires complete full-population evidence')
 
 
+def verify_scheduler(directory):
+    retained = read_optimization_json(
+        paths.existing_regular_file_path(directory / 'aggregate.json', 'aggregate'),
+        MAX_AGGREGATE_BYTES)
+    suite = paths.existing_regular_file_path(directory / 'suite.json', 'scheduler suite')
+    regenerated = validate_scheduler_suite(suite)
+    require(canonical(retained) == canonical(regenerated),
+            'scheduler aggregate differs from replayed evidence')
+    require(regenerated.get('schema') == 'latent.optimization.scheduler-aggregate.v1'
+            and regenerated.get('profile') == 'full'
+            and regenerated.get('status') == 'complete'
+            and regenerated.get('completed_paired_run') is True
+            and regenerated.get('acceptance_qualified') is True
+            and regenerated.get('full_population_completed') is True,
+            'scheduler archive requires a qualified complete full population')
+
+
 def verify_package(directory, *, replay=True):
     root = paths.existing_directory_path(directory, 'evidence package')
     manifest = load_manifest(root)
@@ -402,7 +421,7 @@ def verify_archive(root, manifest, archive_path, *, replay):
         outer_files = (('aggregate.json', 'comparison.json', 'measurement-policy.json')
                        if kind == 'measurement' else ('aggregate.json',))
         if kind in ('optimization', 'artifact-identity', 'revision', 'budget', 'budget-lifecycle', 'backend-revision', 'cold', 'transport-warm', 'recovery', 'ownership-rpc', 'ownership', 'codec-rpc', 'codec', 'engine-warm', 'engine', 'catalog', 'catalog-mutation',
-                    'cache-lookup', 'cache-behavior'):
+                    'cache-lookup', 'cache-behavior', 'scheduler'):
             require('suite.json' in expected, f'{kind} archive omits suite')
         for name in outer_files:
             require(name in expected and file_reference(root / name, root) == expected[name],
@@ -423,6 +442,8 @@ def verify_archive(root, manifest, archive_path, *, replay):
                                 catalog_mutation=kind == 'catalog-mutation')
             elif kind in ('cache-lookup', 'cache-behavior'):
                 verify_cache(extracted, kind)
+            elif kind == 'scheduler':
+                verify_scheduler(extracted)
             else:
                 validate_aggregate(extracted / 'aggregate.json')
                 validate_comparison(extracted / 'comparison.json')

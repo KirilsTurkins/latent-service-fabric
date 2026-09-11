@@ -52,6 +52,8 @@ struct TenantQueue {
 #[derive(Default)]
 pub(super) struct ClassState {
     tenants: VecDeque<TenantQueue>,
+    #[cfg(test)]
+    pub work: super::work::Work,
     pub depth: u32,
     pub counters: SchedulerSnapshot,
     pub active_since: BTreeSet<(Instant, u64)>,
@@ -61,11 +63,11 @@ impl ClassState {
     pub fn push(&mut self, entry: Entry) {
         self.depth += 1;
         let tenant = entry.request.permit.tenant();
-        if let Some(queue) = self
-            .tenants
-            .iter_mut()
-            .find(|queue| &queue.tenant == tenant)
-        {
+        if let Some(queue) = self.tenants.iter_mut().find(|queue| {
+            #[cfg(test)]
+            self.work.visit_tenant();
+            &queue.tenant == tenant
+        }) {
             queue.entries.push(entry);
         } else {
             self.tenants.push_back(TenantQueue {
@@ -82,6 +84,8 @@ impl ClassState {
             .iter()
             .enumerate()
             .min_by(|(_, a), (_, b)| {
+                #[cfg(test)]
+                self.work.compare_winners();
                 let a_old = now.saturating_duration_since(a.enqueued_at) >= starvation_after;
                 let b_old = now.saturating_duration_since(b.enqueued_at) >= starvation_after;
                 match (a_old, b_old) {
@@ -100,6 +104,9 @@ impl ClassState {
             })
             .map(|(index, _)| index)
             .expect("tenant queues are nonempty");
+        #[cfg(test)]
+        self.work
+            .unlink_entries(1, tenant.entries.len() - index - 1);
         let entry = tenant.entries.remove(index);
         // This slot remains reserved while the open pool seam is called. A
         // concurrent enqueue must not consume it before a failed try restores it.
@@ -110,11 +117,14 @@ impl ClassState {
     }
 
     fn rotate_after_grant(&mut self, tenant: &TenantId) {
-        if let Some(index) = self
-            .tenants
-            .iter()
-            .position(|queue| &queue.tenant == tenant)
-        {
+        if let Some(index) = self.tenants.iter().position(|queue| {
+            #[cfg(test)]
+            self.work.visit_tenant();
+            &queue.tenant == tenant
+        }) {
+            #[cfg(test)]
+            self.work
+                .shift_tenants(index.min(self.tenants.len() - index - 1));
             let queue = self.tenants.remove(index).expect("located tenant");
             self.tenants.push_back(queue);
         }
@@ -124,7 +134,14 @@ impl ClassState {
         let tenant = entry.request.permit.tenant().clone();
         self.depth -= 1; // restore the already-reserved slot
         self.push(entry);
-        if let Some(index) = self.tenants.iter().position(|queue| queue.tenant == tenant) {
+        if let Some(index) = self.tenants.iter().position(|queue| {
+            #[cfg(test)]
+            self.work.visit_tenant();
+            queue.tenant == tenant
+        }) {
+            #[cfg(test)]
+            self.work
+                .shift_tenants(index.min(self.tenants.len() - index - 1));
             let queue = self.tenants.remove(index).expect("located tenant");
             self.tenants.push_front(queue);
         }
@@ -136,16 +153,28 @@ impl ClassState {
                 .iter()
                 .enumerate()
                 .find_map(|(index, tenant)| {
+                    #[cfg(test)]
+                    self.work.visit_tenant();
                     tenant
                         .entries
                         .iter()
-                        .position(|entry| entry.sequence == sequence)
+                        .position(|entry| {
+                            #[cfg(test)]
+                            self.work.visit_cancel_entry();
+                            entry.sequence == sequence
+                        })
                         .map(|entry| (index, entry))
                 })?;
         let tenant = &mut self.tenants[tenant_index];
+        #[cfg(test)]
+        self.work
+            .unlink_entries(1, tenant.entries.len() - entry_index - 1);
         let entry = tenant.entries.remove(entry_index);
         self.depth -= 1;
         if tenant.entries.is_empty() {
+            #[cfg(test)]
+            self.work
+                .shift_tenants(tenant_index.min(self.tenants.len() - tenant_index - 1));
             self.tenants.remove(tenant_index);
         }
         Some(entry)
@@ -492,6 +521,8 @@ impl Inner {
             let mut entries = Vec::new();
             for queue in state.classes.values_mut() {
                 for tenant in queue.tenants.drain(..) {
+                    #[cfg(test)]
+                    queue.work.unlink_entries(tenant.entries.len(), 0);
                     entries.extend(tenant.entries);
                 }
                 queue.depth = 0;

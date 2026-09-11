@@ -1069,3 +1069,75 @@ gzip bound, with 2-4 parts of at most 50 MB. Compression fit is not assumed befo
 the actual receipt. Independently copy/hash and replay the closed package, retain
 failed attempts separately, and report archive and final-head CI outcomes only
 after those checks complete.
+
+## Scheduler queue experiments
+
+The scheduler comparison uses the real admission controller, fair scheduler and
+four fixed execution cells. Returned assignments are explicitly released after a
+requested 10 ms hold. This is a controlled scheduler service model; no guest is
+invoked and its throughput is not application execution capacity. Record actual
+hold durations, original one-second admission deadlines, caller scheduling lag,
+enqueue-to-return latency, every offered outcome, and final pool/quota ownership.
+The selected tenant's priority/deadline/aging comparator remains a linear scan.
+
+Each arm runs four load cases: one-tenant closed loop, one-tenant and 32-tenant
+saturation at 1,000 offers/second, and a 32-tenant reference at 100 offers/second.
+Each load child has eight warmups. Full uses 128 closed-loop offers and two-second
+open-loop schedules; smoke uses 16 closed-loop offers and 200 ms schedules.
+One closed-loop request or at most 64 open-loop requests may remain pending.
+The scheduler queue is bounded at 32. Client backpressure, admission rejection,
+scheduler rejection and completed assignments are separate populations.
+
+Cancellation storms first hold four cells and register 64 original queued
+futures. With one or eight tenants, cancel tenant-local ordinals whose remainder
+modulo eight is 0, 3, 4 or 7. All 32 original canceled futures must settle before
+the four holders and 32 survivors are released. Test-only queue-work counters
+cover that cancellation-and-settlement window in normal storms; they are disabled
+for load and allocation owners. Counts describe actual comparisons, lookups,
+unlinks and logical slots shifted, not CPU instructions or mutex wait time.
+
+Both presets have 14 children: eight load, four normal storm and two allocation
+storm owners. Full contains 9,128 logical offers (8,720 load, 272 normal storm,
+136 allocation); smoke contains 1,344 (936, 272, 136 respectively). These are
+scheduler offers, not Invoke RPCs. Each case has one matched pair, so results are
+descriptive observations without independent replication or production SLO claims.
+
+The allocation frame polls the actual cancellation-and-settlement future,
+including the original queued futures. Fixture construction, JSON projection and
+validation stay outside it. Prove the selected frame in the actual interpreted
+trace as well as the exact binary's symbol table; an absent match is unavailable
+attribution, never evidence of zero allocation. Preserve whole-process totals and
+selected-origin frees separately. Raw children are bounded at 32 MiB, aggregate
+JSON at 8 MiB, expanded folded profiles at 64 MiB and retained evidence at 1 GiB.
+There is no temporary folded-file allowance. The suite has a 30-minute deadline;
+normal/allocation children have 60/180-second limits and profile reports 120 seconds.
+
+The scheduler build, run and validation entrypoints use separate versioned
+`scheduler-builds`, `scheduler-suite` and `scheduler-aggregate` documents. A
+published full result requires replayed complete paired population, actual
+scheduler overload in both saturated cases and arms, a successful low-rate
+reference, and supported selected allocation coverage. Archive replay preserves
+the standard 1 GiB expansion and 5,000-member bounds. Retain failures and unmet
+targets as limitations rather than adjusting an arm's workload after collection.
+
+Run the following from the clean measured harness. Full commit arguments bind
+the two versions and the common collector; the full versions must differ.
+Preserve the complete referenced build closure, including process sidecars and
+executable modes, in fresh smoke/full roots before collecting. Run and inspect
+smoke before full. Neither runner retries failed owners or supplies missing offers.
+
+```text
+python tools/build_optimization_scheduler.py --profile full --control-ref <control-sha> --candidate-ref <candidate-sha> --harness-ref <harness-sha> --output <build-root> --target-root <external-build-parent>
+python tools/run_optimization_scheduler.py --profile smoke --builds <smoke-root>/scheduler-builds.json
+python tools/run_optimization_scheduler.py --profile full --builds <full-root>/scheduler-builds.json
+python tools/validate_optimization_scheduler.py <full-root>/suite.json --aggregate <full-root>/aggregate.json
+python tools/package_phase1_evidence.py --source <full-root> --output <fresh-package> --compression-level 9 --split-archive
+python tools/validate_phase1_archive.py <fresh-package>
+```
+
+Structural schemas live under `tools/optimization_scheduler/schemas`; semantic
+replay additionally checks the original rows, artifacts, owners and summaries.
+Keep the first actual selected-frame profile as preflight evidence before freezing
+the common source. Preserve a failed preflight separately from the final paired
+population. The report must distinguish collection completion from acceptance
+qualification and report final CI against the exact proposed merge commit.

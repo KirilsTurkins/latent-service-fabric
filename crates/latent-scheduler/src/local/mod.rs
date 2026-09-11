@@ -1,7 +1,11 @@
 //! One node's fair queue above the fixed cell-pool ownership seam.
 
 mod assignment;
+#[cfg(test)]
+mod measurement;
 mod state;
+#[cfg(test)]
+mod work;
 
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};

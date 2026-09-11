@@ -1,0 +1,283 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/benchmarks/scheduler-aggregate.v1.schema.json",
+  "title": "Scheduler benchmark aggregate v1",
+  "$comment": "Structural evidence contract only. Semantic replay additionally checks exact populations, source identity, original deadlines, ownership, artifact hashes and allocation coverage.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile",
+    "status",
+    "plan",
+    "completed_paired_run",
+    "full_population_completed",
+    "acceptance_qualified",
+    "acceptance_evidence",
+    "validated_attempts",
+    "logical_offers",
+    "load_offers",
+    "storm_offers",
+    "profile_offers",
+    "collection_elapsed_nanos",
+    "source_revisions",
+    "suite_sha256",
+    "artifacts",
+    "builds",
+    "runs",
+    "comparisons",
+    "scope",
+    "limitations"
+  ],
+  "properties": {
+    "schema": {
+      "const": "latent.optimization.scheduler-aggregate.v1"
+    },
+    "profile": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "status": {
+      "enum": [
+        "complete",
+        "failed"
+      ]
+    },
+    "plan": {
+      "enum": [
+        {
+          "schema": "latent.optimization.scheduler-suite-plan.v1",
+          "profile": "smoke",
+          "children": 14,
+          "logical_offers": "1344",
+          "load_offers": "936",
+          "storm_offers": "272",
+          "profile_offers": "136",
+          "normal_children": 12,
+          "allocation_children": 2,
+          "order": "case-order-alternating-first-arm-then-control-candidate-profile",
+          "normal_timeout_seconds": 60,
+          "allocation_timeout_seconds": 180,
+          "profile_report_timeout_seconds": 120,
+          "suite_timeout_seconds": 1800,
+          "maximum_raw_bytes": "33554432",
+          "maximum_aggregate_bytes": "8388608",
+          "maximum_total_bytes": "1073741824",
+          "maximum_folded_bytes": "67108864",
+          "maximum_files": 4096,
+          "maximum_profile_records": 4000000,
+          "measured_symbol": "latent_scheduler::local::measurement::measured_cancel_and_settle",
+          "counter_scope": "normal-storm-32-cancellations-and-original-settlements-only",
+          "allocation_boundary": "32-cancel-and-32-original-queued-future-settlements-poll-frame"
+        },
+        {
+          "schema": "latent.optimization.scheduler-suite-plan.v1",
+          "profile": "full",
+          "children": 14,
+          "logical_offers": "9128",
+          "load_offers": "8720",
+          "storm_offers": "272",
+          "profile_offers": "136",
+          "normal_children": 12,
+          "allocation_children": 2,
+          "order": "case-order-alternating-first-arm-then-control-candidate-profile",
+          "normal_timeout_seconds": 60,
+          "allocation_timeout_seconds": 180,
+          "profile_report_timeout_seconds": 120,
+          "suite_timeout_seconds": 1800,
+          "maximum_raw_bytes": "33554432",
+          "maximum_aggregate_bytes": "8388608",
+          "maximum_total_bytes": "1073741824",
+          "maximum_folded_bytes": "67108864",
+          "maximum_files": 4096,
+          "maximum_profile_records": 4000000,
+          "measured_symbol": "latent_scheduler::local::measurement::measured_cancel_and_settle",
+          "counter_scope": "normal-storm-32-cancellations-and-original-settlements-only",
+          "allocation_boundary": "32-cancel-and-32-original-queued-future-settlements-poll-frame"
+        }
+      ]
+    },
+    "completed_paired_run": {
+      "type": "boolean"
+    },
+    "full_population_completed": {
+      "type": "boolean"
+    },
+    "acceptance_qualified": {
+      "type": "boolean"
+    },
+    "acceptance_evidence": {
+      "type": "object",
+      "maxProperties": 512,
+      "$comment": "Nested source/process/resource proof is checked by semantic replay."
+    },
+    "validated_attempts": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 14
+    },
+    "logical_offers": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "load_offers": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "storm_offers": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "profile_offers": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "collection_elapsed_nanos": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,19})$"
+    },
+    "source_revisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "control",
+        "candidate",
+        "harness"
+      ],
+      "properties": {
+        "control": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "candidate": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "harness": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        }
+      }
+    },
+    "suite_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "bytes",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "bytes": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,19})$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "builds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
+      }
+    },
+    "runs": {
+      "type": "array",
+      "maxItems": 14,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "Nested source/process/resource proof is checked by semantic replay."
+      }
+    },
+    "comparisons": {
+      "type": "array",
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "maxProperties": 512,
+        "$comment": "Nested source/process/resource proof is checked by semantic replay."
+      }
+    },
+    "scope": {
+      "const": "one-pair-per-case-real-scheduler-four-cell-10ms-service-model-no-guest-invokes"
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "string",
+        "maxLength": 4096
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "acceptance_qualified": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "profile": {
+            "const": "full"
+          },
+          "status": {
+            "const": "complete"
+          },
+          "completed_paired_run": {
+            "const": true
+          },
+          "full_population_completed": {
+            "const": true
+          },
+          "validated_attempts": {
+            "const": 14
+          },
+          "logical_offers": {
+            "const": "9128"
+          }
+        }
+      }
+    }
+  ]
+}
