@@ -1,5 +1,5 @@
 #[path = "../../../tests/admission/support.rs"]
-mod authority;
+pub(super) mod authority;
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;

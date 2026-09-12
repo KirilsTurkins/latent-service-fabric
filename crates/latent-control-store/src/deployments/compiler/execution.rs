@@ -96,7 +96,7 @@ pub(super) async fn load(
             return Err(error(
                 PlatformErrorCode::PermissionDenied,
                 "route-lifecycle-required",
-            ))
+            ));
         }
         HistoricalExecutionState::Eligible(token) => {
             if token.release() != release {

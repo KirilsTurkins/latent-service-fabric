@@ -327,7 +327,11 @@ fn marker_pid(path: &Path) -> Option<u32> {
 }
 
 fn wait_for_marker(path: &Path, running: &Running) -> u32 {
-    let deadline = Instant::now() + Duration::from_secs(10);
+    // Authentication hashes the actual debug executable before sending input.
+    // Give that rendezvous the fixture's existing job budget; the old 10-second
+    // observer cutoff could cancel a valid job on a busy runner. The compiler's
+    // own deadline (including the shorter deadline scenario) remains authoritative.
+    let deadline = Instant::now() + support::limits().job_timeout;
     loop {
         if let Some(pid) = marker_pid(path) {
             return pid;

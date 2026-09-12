@@ -153,11 +153,18 @@ def validate_svg(root: Path = ROOT) -> None:
             fail(f"SVG role must be img: {relative}")
 
         elements = list(svg.iter())
-        identifiers = {
-            element.get("id")
-            for element in elements
-            if isinstance(element.tag, str) and element.get("id")
-        }
+        identifier_counts: dict[str, int] = {}
+        for element in elements:
+            if not isinstance(element.tag, str):
+                continue
+            identifier = element.get("id")
+            if identifier:
+                identifier_counts[identifier] = identifier_counts.get(identifier, 0) + 1
+        for identifier in sorted(
+            identifier for identifier, count in identifier_counts.items() if count > 1
+        ):
+            fail(f"SVG contains duplicate ID {identifier}: {relative}")
+        identifiers = set(identifier_counts)
         required_labels = set(svg.get("aria-labelledby", "").split())
         if not required_labels <= identifiers:
             missing = ", ".join(sorted(required_labels - identifiers))

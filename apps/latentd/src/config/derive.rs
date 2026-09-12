@@ -52,6 +52,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         supply_chain: super::supply_chain::derive(&config.supply_chain)?,
         isolated_aot,
         audit: super::audit::derive(config.audit.as_ref())?,
+        rollouts: super::rollouts::derive(config.rollouts.as_ref(), config.audit.is_some())?,
         node,
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,

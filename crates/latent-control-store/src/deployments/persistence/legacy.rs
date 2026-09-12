@@ -38,6 +38,7 @@ pub(super) fn encode(
                 })
                 .collect(),
         ),
+        control: None,
     };
     let payload_bytes = bounded_json(&payload, config.max_state_bytes)?;
     let checksum = content_digest(&payload_bytes).0;

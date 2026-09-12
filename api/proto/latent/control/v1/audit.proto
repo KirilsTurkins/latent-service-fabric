@@ -116,6 +116,9 @@ message AuditIdentities {
   optional string evidence_revision_digest = 9;
   optional string deployment = 10;
   optional uint64 deployment_generation = 11;
+  optional uint64 rollout_revision = 12;
+  optional uint32 rollout_step = 13;
+  optional uint64 state_version = 14;
 }
 
 enum AuditControlAction {
@@ -173,6 +176,7 @@ message Phase2AuditAttempt {
   bool replay = 7;
   optional uint64 expected_deployment_generation = 8;
   optional string preview_receipt_digest = 9;
+  optional uint64 expected_rollout_revision = 10;
 }
 
 message Phase2AuditOutcome {
