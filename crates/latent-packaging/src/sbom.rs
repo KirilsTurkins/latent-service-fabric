@@ -27,7 +27,10 @@ impl Default for SbomLimits {
 
 impl SbomLimits {
     fn validate(self) -> Result<(), PlatformError> {
-        if self.max_document_bytes == 0 || self.max_entries == 0 || self.max_string_bytes == 0 {
+        if self.max_document_bytes == 0
+            || self.max_entries == 0
+            || self.max_string_bytes == 0
+        {
             return Err(crate::invalid("invalid-sbom-limits"));
         }
         Ok(())
@@ -219,7 +222,10 @@ pub fn inspect_cyclonedx_sbom(
     })
 }
 
-fn validate_entries(entries: &[SbomInventoryEntry], limits: SbomLimits) -> Result<(), PlatformError> {
+fn validate_entries(
+    entries: &[SbomInventoryEntry],
+    limits: SbomLimits,
+) -> Result<(), PlatformError> {
     let mut previous_identity: Option<(SbomEntryKind, &str, Option<&str>)> = None;
     for entry in entries {
         validate_string(&entry.name, limits, "invalid-sbom-entry-name")?;
@@ -228,7 +234,11 @@ fn validate_entries(entries: &[SbomInventoryEntry], limits: SbomLimits) -> Resul
             limits,
             "invalid-sbom-entry-version",
         )?;
-        validate_optional_string(entry.source.as_deref(), limits, "invalid-sbom-entry-source")?;
+        validate_optional_string(
+            entry.source.as_deref(),
+            limits,
+            "invalid-sbom-entry-source",
+        )?;
         validate_optional_string(
             entry.license_expression.as_deref(),
             limits,
@@ -271,7 +281,11 @@ fn validate_components(
         if !matches!(license_status, "declared" | "unavailable") {
             return Err(crate::invalid("invalid-sbom-license-status"));
         }
-        identities.push((role.to_owned(), component.name.clone(), component.version.clone()));
+        identities.push((
+            role.to_owned(),
+            component.name.clone(),
+            component.version.clone(),
+        ));
     }
     identities.sort();
     if identities.windows(2).any(|pair| pair[0] == pair[1]) {
@@ -311,9 +325,11 @@ fn component_from_entry(entry: SbomInventoryEntry) -> CycloneDxComponent {
                 .to_owned(),
         }]
     });
-    let licenses = entry.license_expression.map_or_else(Vec::new, |expression| {
-        vec![CycloneDxLicenseChoice { expression }]
-    });
+    let licenses = entry
+        .license_expression
+        .map_or_else(Vec::new, |expression| {
+            vec![CycloneDxLicenseChoice { expression }]
+        });
 
     CycloneDxComponent {
         component_type: entry.kind.component_type().to_owned(),
@@ -391,7 +407,8 @@ fn encode_bounded_json<T: Serialize>(
         bytes: Vec::new(),
         maximum,
     };
-    serde_json::to_writer(&mut writer, value).map_err(|_| crate::exceeded("sbom-document-limit"))?;
+    serde_json::to_writer(&mut writer, value)
+        .map_err(|_| crate::exceeded("sbom-document-limit"))?;
     Ok(writer.bytes)
 }
 
@@ -528,7 +545,8 @@ mod tests {
         let mut second = first.clone();
         second.entries.reverse();
 
-        let first = generate_cyclonedx_sbom(subject.clone(), first, SbomLimits::default()).unwrap();
+        let first =
+            generate_cyclonedx_sbom(subject.clone(), first, SbomLimits::default()).unwrap();
         let second = generate_cyclonedx_sbom(subject, second, SbomLimits::default()).unwrap();
 
         assert_eq!(first.bytes, second.bytes);
@@ -554,8 +572,12 @@ mod tests {
             generate_cyclonedx_sbom(subject.clone(), inventory, SbomLimits::default()).unwrap();
         let text = std::str::from_utf8(&document.bytes).unwrap();
 
-        assert!(text.contains("\"org.lsf.source.status\",\"value\":\"unavailable\""));
-        assert!(text.contains("\"org.lsf.license.status\",\"value\":\"unavailable\""));
+        assert!(text.contains(
+            "\"org.lsf.source.status\",\"value\":\"unavailable\""
+        ));
+        assert!(text.contains(
+            "\"org.lsf.license.status\",\"value\":\"unavailable\""
+        ));
 
         let inspected = inspect_cyclonedx_sbom(
             CYCLONEDX_JSON_MEDIA_TYPE,
