@@ -40,22 +40,6 @@ impl ManifestKind {
     pub fn schema(self) -> &'static str {
         schema_text(self)
     }
-
-    fn from_wire_kind(kind: &str) -> Option<Self> {
-        match kind {
-            "Capsule" => Some(Self::Capsule),
-            "Deployment" => Some(Self::Deployment),
-            "Binding" => Some(Self::Binding),
-            "Policy" => Some(Self::Policy),
-            "HttpTrigger"
-            | "EventTrigger"
-            | "TimerTrigger"
-            | "QueueTrigger"
-            | "BlobTrigger"
-            | "DirectInvocationTrigger" => Some(Self::Trigger),
-            _ => None,
-        }
-    }
 }
 
 /// Type-erased decoded manifest used by generic admission and tooling paths.
@@ -119,59 +103,12 @@ impl JsonManifestCodec {
         Self { limits }
     }
 
-    #[must_use]
-    pub const fn limits(&self) -> ManifestLimits {
-        self.limits
-    }
-
-    /// Decodes any manifest kind identified by its top-level `kind` field.
-    pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
-        let value = self.parse_limited(bytes)?;
-        let kind = document_kind(&value)?;
-        self.decode_preparsed(kind, value)
-    }
-
-    /// Canonically encodes a type-erased manifest.
-    pub fn encode_document(&self, manifest: &ManifestDocument) -> ManifestResult<Vec<u8>> {
-        match manifest {
-            ManifestDocument::Capsule(value) => self.encode_capsule(value),
-            ManifestDocument::Deployment(value) => self.encode_deployment(value),
-            ManifestDocument::Binding(value) => self.encode_binding(value),
-            ManifestDocument::Trigger(value) => self.encode_trigger(value),
-            ManifestDocument::Policy(value) => self.encode_policy(value),
-        }
-    }
-
     fn decode_kind<T>(&self, bytes: &[u8], kind: ManifestKind) -> ManifestResult<T>
     where
         T: DeserializeOwned + Normalize,
     {
         let value = self.parse_limited(bytes)?;
         self.validate_and_decode(value, kind)
-    }
-
-    fn decode_preparsed(
-        &self,
-        kind: ManifestKind,
-        value: Value,
-    ) -> ManifestResult<ManifestDocument> {
-        match kind {
-            ManifestKind::Capsule => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Capsule),
-            ManifestKind::Deployment => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Deployment),
-            ManifestKind::Binding => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Binding),
-            ManifestKind::Trigger => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Trigger),
-            ManifestKind::Policy => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Policy),
-        }
     }
 
     fn validate_and_decode<T>(&self, value: Value, kind: ManifestKind) -> ManifestResult<T>
@@ -326,37 +263,6 @@ fn ensure_wire_identity(id: &str, metadata_name: &str) -> ManifestResult<()> {
             "the domain ID must equal metadata.name because the JSON resource has one identity field",
         )])
     }
-}
-
-fn document_kind(value: &Value) -> ManifestResult<ManifestKind> {
-    let object = value.as_object().ok_or_else(|| {
-        vec![ManifestViolation::new(
-            "$",
-            "invalid-type",
-            "a manifest document must be a JSON object",
-        )]
-    })?;
-    let kind = object.get("kind").ok_or_else(|| {
-        vec![ManifestViolation::new(
-            "$.kind",
-            "missing-field",
-            "required field `kind` is missing",
-        )]
-    })?;
-    let kind = kind.as_str().ok_or_else(|| {
-        vec![ManifestViolation::new(
-            "$.kind",
-            "invalid-type",
-            "field `kind` must be a string",
-        )]
-    })?;
-    ManifestKind::from_wire_kind(kind).ok_or_else(|| {
-        vec![ManifestViolation::new(
-            "$.kind",
-            "unexpected-kind",
-            format!("unsupported manifest kind `{kind}`"),
-        )]
-    })
 }
 
 fn validate_model_integer_ranges(
