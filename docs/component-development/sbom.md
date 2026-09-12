@@ -143,9 +143,9 @@ binds every choice. Supplied malformed, duplicated, conflicting or mismatched
 evidence fails even when its presence is optional. Policy evaluation does not
 grant publisher, builder, tenant or execution authority.
 
-The future admission owner must combine these results with current package
-publisher proofs, required builder provenance and its own current policy
-generation at final publication. SBOM policy has no independent trust store,
+The [admission owner](../reference/package-admission.md) combines these results
+with current package publisher proofs, required builder provenance and its own
+current policy generation at final publication. SBOM policy has no independent trust store,
 clock owner, hidden network discovery or authority-refresh mechanism.
 
 `SbomPolicy::new` and `from_json` validate the explicit

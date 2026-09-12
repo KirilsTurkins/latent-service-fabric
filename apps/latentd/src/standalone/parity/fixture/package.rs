@@ -124,6 +124,7 @@ fn create(
         "manifest":manifest_artifact,"contracts":contracts_artifact,"deployment":deployment_artifact});
     Package {
         upload: proto::PublishReleaseRequest {
+            package: None,
             release: None,
             artifact: Some(proto::CapsuleArtifactUpload {
                 capsule_manifest_json: manifest,

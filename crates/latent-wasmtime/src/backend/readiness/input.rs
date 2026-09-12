@@ -1,12 +1,11 @@
 use latent_artifacts::{
-    ArtifactPreparationIdentity, ArtifactPreparationReadLimits, CapsuleArtifact,
-    OwnedArtifactPreparationSource,
+    ArtifactPreparationReadLimits, CapsuleArtifact, OwnedArtifactPreparationSource,
 };
 use latent_core::PlatformError;
 use latent_executor::PreparationKey;
 
 use crate::backend::preparation::{
-    counters, retained_metadata_bytes, Compilation, ComponentIntegrity,
+    counters, retained_metadata_bytes, Compilation, ComponentIntegrity, SourceAuthority,
 };
 use crate::backend::{prepared_handle, PreparationContext, PreparedRuntime};
 use crate::cache::{PrepareAccess, PrepareReservation};
@@ -31,10 +30,15 @@ impl PreparationContext {
         input: ArtifactInput,
         key: PreparationKey,
         mut handle: String,
-        authentication: Option<ArtifactPreparationIdentity>,
+        authority: SourceAuthority,
         mut reservation: PrepareReservation<PreparedRuntime>,
         queue: QueueWindow,
     ) -> Result<CompilationResult<PreparedRuntime>, PlatformError> {
+        let SourceAuthority {
+            authentication,
+            eligibility,
+        } = authority;
+        self.check_eligibility(eligibility.as_ref(), &key.release)?;
         let job = self.observer.begin(&key.release);
         job.record_queue_wait(queue.started_nanos, queue.finished_nanos);
         // This input owner (including its source/root lock) remains in this
@@ -68,7 +72,11 @@ impl PreparationContext {
                 self.config.maximum_artifact_metadata_bytes,
                 self.config.value_codec_limits.max_depth,
             )?;
-            retained_metadata_bytes(identity.metadata().charged_bytes(), Some(identity))?
+            retained_metadata_bytes(
+                identity.metadata().charged_bytes(),
+                Some(identity),
+                eligibility.as_ref(),
+            )?
         } else {
             let discovered;
             let metadata = if let Some(metadata) = prevalidated {
@@ -77,18 +85,25 @@ impl PreparationContext {
                 discovered = self.metadata_identity(&artifact)?;
                 &discovered
             };
-            handle = prepared_handle(&key, &component_digest, &metadata.digest);
-            retained_metadata_bytes(metadata.bytes, None)?
+            handle = crate::backend::admission::scoped_handle(
+                prepared_handle(&key, &component_digest, &metadata.digest),
+                eligibility.as_ref(),
+            );
+            retained_metadata_bytes(metadata.bytes, None, eligibility.as_ref())?
         };
         validation.complete();
         if authentication.is_none() {
             match reservation.rekey(handle.clone())? {
                 PrepareAccess::Hit(runtime) => {
+                    if runtime.eligibility != eligibility {
+                        return Err(crate::backend::admission_association_error());
+                    }
+                    self.check_runtime(&runtime)?;
                     return Ok(CompilationResult {
                         runtime,
                         reservation: None,
                         observation: job,
-                    })
+                    });
                 }
                 PrepareAccess::Compile(owned) => reservation = owned,
             }
@@ -101,6 +116,7 @@ impl PreparationContext {
                 component_digest,
                 metadata_bytes,
                 authentication,
+                eligibility,
             },
             &job,
         )?;

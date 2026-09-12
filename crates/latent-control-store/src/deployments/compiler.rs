@@ -12,7 +12,7 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-use latent_artifacts::{ArtifactRepository, VerifiedArtifactMetadata};
+use latent_artifacts::{ArtifactRepository, ReleaseEligibility, VerifiedArtifactMetadata};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration};
 use latent_manifest::{
     __serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidator,
@@ -36,6 +36,8 @@ pub(super) struct CompiledCatalog {
     pub generated_at_unix_millis: u64,
     pub records: Box<[Arc<RevisionRecord>]>,
     pub paging_index: DeploymentIndex,
+    pub eligibility: Box<[ReleaseEligibility]>,
+    pub local_releases: usize,
     routes: Box<[RouteRow]>,
     route_revisions: Box<[RecordIndex]>,
     endpoints: Box<[EndpointRow]>,
@@ -77,6 +79,34 @@ pub(super) async fn compile(
     reason = "the local observer adds no policy or compilation input"
 )]
 pub(super) async fn compile_versioned(
+    deployments: DesiredDeployments,
+    versions: ObjectVersions,
+    generation: RouteGeneration,
+    generated_at_unix_millis: u64,
+    artifacts: &dyn ArtifactRepository,
+    config: DirectoryDeploymentRepositoryConfig,
+    previous: Option<&CompiledCatalog>,
+    work: &mut Work,
+) -> Result<super::persistence::EncodedCatalog, PlatformError> {
+    compile_versioned_inner(
+        deployments,
+        versions,
+        generation,
+        generated_at_unix_millis,
+        artifacts,
+        config,
+        previous,
+        work,
+        false,
+    )
+    .await
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "startup adds bounded per-read retries without restarting compilation"
+)]
+pub(super) async fn compile_versioned_inner(
     mut deployments: DesiredDeployments,
     versions: ObjectVersions,
     generation: RouteGeneration,
@@ -85,6 +115,7 @@ pub(super) async fn compile_versioned(
     config: DirectoryDeploymentRepositoryConfig,
     previous: Option<&CompiledCatalog>,
     work: &mut Work,
+    recovery: bool,
 ) -> Result<super::persistence::EncodedCatalog, PlatformError> {
     count!(work, compiler_calls, 1);
     work.generation(generation.0);
@@ -128,6 +159,8 @@ pub(super) async fn compile_versioned(
         let mut indexes = index::IndexBudget::default();
         let mut revision_ids = BTreeSet::new();
         let mut metadata_budget = config.max_state_bytes;
+        let mut eligibility = Vec::new();
+        let mut local_releases = 0;
         for id in versions.keys() {
             charge(&mut metadata_budget, 128)?;
             charge(&mut metadata_budget, id.0.len())?;
@@ -197,9 +230,30 @@ pub(super) async fn compile_versioned(
                 drop(release.take());
                 drop(release_surface.take());
                 fingerprints.clear();
-                let artifact = artifacts
-                    .fetch_verified_metadata(&deployment.release)
-                    .await?;
+                let artifact =
+                    super::recovery_admission::metadata(artifacts, &deployment.release, recovery)
+                        .await?;
+                if let Some(grant) =
+                    super::recovery_admission::eligibility(artifacts, &deployment.release, recovery)
+                        .await?
+                {
+                    if grant.release() != &deployment.release {
+                        return Err(error(
+                            PlatformErrorCode::PermissionDenied,
+                            "route-admission-release-mismatch",
+                        ));
+                    }
+                    charge(&mut metadata_budget, grant.retained_bytes())?;
+                    eligibility.try_reserve_exact(1).map_err(|_| {
+                        error(
+                            PlatformErrorCode::ResourceExhausted,
+                            "route-admission-allocation",
+                        )
+                    })?;
+                    eligibility.push(grant);
+                } else {
+                    local_releases += 1;
+                }
                 let digest_matches = artifact.verified_digest() == &deployment.release
                     && artifact
                         .descriptor()
@@ -225,6 +279,17 @@ pub(super) async fn compile_versioned(
                 release = Some((deployment.release.clone(), artifact));
             }
             let artifact = &release.as_ref().expect("current release was fetched").1;
+            if let Some(grant) = eligibility
+                .last()
+                .filter(|grant| grant.release() == &deployment.release)
+            {
+                if grant.tenant() != tenant {
+                    return Err(error(
+                        PlatformErrorCode::PermissionDenied,
+                        "route-admission-tenant-mismatch",
+                    ));
+                }
+            }
             Phase1ManifestValidator
                 .validate_deployment_against_capsule(deployment, artifact.manifest())
                 .map_err(manifest_error)?;
@@ -423,6 +488,8 @@ pub(super) async fn compile_versioned(
             generated_at_unix_millis,
             records,
             paging_index,
+            eligibility: eligibility.into_boxed_slice(),
+            local_releases,
             routes: packed.routes,
             route_revisions: packed.route_revisions,
             endpoints: packed.endpoints,

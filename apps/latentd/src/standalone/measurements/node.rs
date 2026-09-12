@@ -231,6 +231,7 @@ impl MeasurementNode {
             .publish_release(authenticated(
                 &fixture.target.tenant,
                 management::PublishReleaseRequest {
+                    package: None,
                     release: None,
                     artifact: Some(upload),
                 },

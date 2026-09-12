@@ -12,6 +12,7 @@ mod resources;
 mod reuse_integrity;
 mod root_identity;
 mod scoped_routes;
+mod supply_chain;
 mod verified_metadata;
 mod versioned;
 

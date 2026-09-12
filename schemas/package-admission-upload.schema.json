@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/package-admission-upload.schema.json",
+  "title": "LSF authenticated executable package publication input",
+  "$comment": "Explicit JSON projection of PublishReleaseRequest.package; not a new latent CLI command. Binary fields are standard padded base64. This closed profile omits every legacy descriptor/artifact field. Protobuf may omit empty repeated fields, represented here explicitly as empty arrays. The adapter additionally checks decoded capacities, existing aggregate 20 MiB default request budget, lower configured limits and nonempty document bytes. The authority validates portable paths, exact associations, semantics and trust; schema success grants no authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "package"
+  ],
+  "properties": {
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest",
+        "configuration",
+        "layers",
+        "signatures",
+        "provenance",
+        "sboms"
+      ],
+      "properties": {
+        "manifest": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 349528,
+          "contentEncoding": "base64",
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?(?![\\s\\S])"
+        },
+        "configuration": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 349528,
+          "contentEncoding": "base64",
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?(?![\\s\\S])"
+        },
+        "layers": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "data"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240,
+                "pattern": "^[A-Za-z0-9._/-]+(?![\\s\\S])"
+              },
+              "data": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 22369624,
+                "contentEncoding": "base64",
+                "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?(?![\\s\\S])"
+              }
+            }
+          }
+        },
+        "signatures": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "manifest",
+              "configuration",
+              "payload"
+            ],
+            "properties": {
+              "manifest": {
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 349528,
+                "contentEncoding": "base64",
+                "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?(?![\\s\\S])"
+              },
+              "configuration": {
+                "const": "e30="
+              },
+              "payload": {
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 5464,
+                "contentEncoding": "base64",
+                "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?(?![\\s\\S])"
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "provenance": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "manifest",
+              "configuration",
+              "payload"
+            ],
+            "properties": {
+              "manifest": {
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 349528,
+                "contentEncoding": "base64",
+                "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?(?![\\s\\S])"
+              },
+              "configuration": {
+                "const": "e30="
+              },
+              "payload": {
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 65536,
+                "contentEncoding": "base64",
+                "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?(?![\\s\\S])"
+              }
+            }
+          },
+          "minItems": 1
+        },
+        "sboms": {
+          "type": "array",
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "manifest",
+              "configuration",
+              "payload"
+            ],
+            "properties": {
+              "manifest": {
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 349528,
+                "contentEncoding": "base64",
+                "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?(?![\\s\\S])"
+              },
+              "configuration": {
+                "const": "e30="
+              },
+              "payload": {
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 1398104,
+                "contentEncoding": "base64",
+                "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?(?![\\s\\S])"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

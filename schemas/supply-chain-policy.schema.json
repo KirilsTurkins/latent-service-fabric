@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/supply-chain-policy.schema.json",
+  "title": "LSF complete operator-approved admission policy snapshot",
+  "$comment": "Shape validation does not approve host configuration. Rust enforces 256 KiB input, parser/work bounds, positive generation, ordered validity intervals, distinct tenant names/publishers, matching scope and exact policy/revocation identities, key validation, configured lower child-profile limits, currentness and durable generation floors. All nested policies/revocation snapshots are required, including explicit empty deny sets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "generation",
+    "scope",
+    "validFrom",
+    "validUntil",
+    "tenants",
+    "publisher",
+    "publisherRevocations",
+    "builder",
+    "builderRevocations",
+    "sbom"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551615
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:/@-]+(?![\\s\\S])"
+    },
+    "validFrom": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "validUntil": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "tenants": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tenant",
+          "publishers"
+        ],
+        "properties": {
+          "tenant": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9._:/@-]+(?![\\s\\S])"
+          },
+          "publishers": {
+            "type": "array",
+            "maxItems": 64,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[A-Za-z0-9._:/@-]+(?![\\s\\S])"
+            }
+          }
+        }
+      }
+    },
+    "publisher": {
+      "$ref": "https://latent.dev/schemas/v1/publisher-policy.schema.json",
+      "properties": {
+        "keys": {
+          "maxItems": 64
+        }
+      }
+    },
+    "publisherRevocations": {
+      "$ref": "https://latent.dev/schemas/v1/publisher-revocations.schema.json",
+      "properties": {
+        "revokedPublishers": {
+          "maxItems": 64
+        }
+      }
+    },
+    "builder": {
+      "$ref": "https://latent.dev/schemas/v1/builder-policy.schema.json",
+      "properties": {
+        "keys": {
+          "maxItems": 64
+        },
+        "requirements": {
+          "maxItems": 64
+        }
+      }
+    },
+    "builderRevocations": {
+      "$ref": "https://latent.dev/schemas/v1/builder-revocations.schema.json",
+      "properties": {
+        "revokedBuilders": {
+          "maxItems": 64
+        }
+      }
+    },
+    "sbom": {
+      "$ref": "https://latent.dev/schemas/package-sbom-policy.schema.json"
+    }
+  }
+}

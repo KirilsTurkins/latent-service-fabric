@@ -10,7 +10,7 @@ use crate::containment::platform_error;
 use crate::host::HostState;
 use crate::preparation_observer::PreparationObserver;
 use crate::{preparation_metadata, WasmtimeEngineProfile};
-use latent_artifacts::{ArtifactPreparationIdentity, CapsuleArtifact};
+use latent_artifacts::{AdmissionAuthority, ArtifactPreparationIdentity, CapsuleArtifact};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedComponent};
 use latent_manifest::{ExecutionBackendKind, StateModel, ThreadingModel};
@@ -19,6 +19,7 @@ use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
 pub(super) struct PreparationContext {
+    pub(super) admission: Option<Arc<dyn AdmissionAuthority>>,
     pub(super) runtime_ledger: crate::cache::PreparedRuntimeLedger,
     pub(super) next_untrusted: std::sync::atomic::AtomicU64,
     pub(super) engine: Engine,

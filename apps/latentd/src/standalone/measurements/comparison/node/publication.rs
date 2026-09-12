@@ -31,6 +31,7 @@ impl Node {
         let published =
             proto::release_service_client::ReleaseServiceClient::new(self.channel.clone())
                 .publish_release(authenticated(proto::PublishReleaseRequest {
+                    package: None,
                     release: None,
                     artifact: Some(upload),
                 })?)

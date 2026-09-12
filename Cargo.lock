@@ -1560,8 +1560,16 @@ dependencies = [
 name = "latent-policy"
 version = "0.1.0-alpha.2"
 dependencies = [
+ "base64 0.22.1",
+ "latent-artifacts",
  "latent-core",
  "latent-manifest",
+ "latent-packaging",
+ "latent-signing",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "wasm-encoder 0.252.0",
 ]
 
 [[package]]
@@ -1702,6 +1710,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "tokio",
+ "wasm-encoder 0.252.0",
  "wasmtime",
 ]
 
@@ -1762,6 +1771,7 @@ dependencies = [
  "latent-manifest",
  "latent-node",
  "latent-optimization-workloads",
+ "latent-policy",
  "latent-routing",
  "latent-scheduler",
  "latent-telemetry",

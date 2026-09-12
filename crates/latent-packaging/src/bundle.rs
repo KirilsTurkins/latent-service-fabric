@@ -44,6 +44,21 @@ pub struct PackageBundle {
 }
 
 impl PackageBundle {
+    /// Returns the exact inspected input without cloning its potentially large
+    /// blobs. The returned public data carries no verification authority.
+    #[must_use]
+    pub fn into_input(self) -> BundleInput {
+        BundleInput {
+            manifest: self.manifest.into_vec(),
+            configuration: self.configuration.into_vec(),
+            layers: self
+                .layers
+                .into_vec()
+                .into_iter()
+                .map(|blob| (blob.path.into_string(), blob.bytes.into_vec()))
+                .collect(),
+        }
+    }
     #[must_use]
     pub fn layout(&self) -> &PackageLayout {
         &self.layout

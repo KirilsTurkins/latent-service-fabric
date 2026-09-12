@@ -16,6 +16,8 @@ message ReleaseDescriptor {
   string media_type = 7;
   uint64 size_bytes = 8;
   uint64 created_at_unix_millis = 9;
+  // Historical catalog admission, never a transferable authorization grant or
+  // a promise of current eligibility after trust/clock changes.
   bool admitted = 10;
   map<string, string> annotations = 11;
   // Explicit scope of a catalog descriptor. Phase 1 RPC publication requires it
@@ -35,9 +37,41 @@ message CapsuleArtifactUpload {
   bytes contract_metadata_json = 5;
 }
 
+// Exact received package bytes. Paths associate layers with the verified package
+// configuration; they are never interpreted as client-selected filesystem paths.
+message PackageAdmissionLayer {
+  string path = 1;
+  bytes data = 2;
+}
+
+// One exact detached OCI evidence envelope, empty config, and payload. Association
+// alone confers no authority; the configured node authority verifies every item.
+message PackageAdmissionEvidence {
+  bytes manifest = 1;
+  bytes configuration = 2;
+  bytes payload = 3;
+}
+
+// Bounded executable capsule admission. Publisher and tenant authority cannot be
+// supplied as request flags: the node authenticates the tenant separately and
+// verifies package semantics, publisher, builder, evidence, and configured policy.
+message PackageAdmissionUpload {
+  bytes manifest = 1;
+  bytes configuration = 2;
+  repeated PackageAdmissionLayer layers = 3;
+  repeated PackageAdmissionEvidence signatures = 4;
+  repeated PackageAdmissionEvidence provenance = 5;
+  repeated PackageAdmissionEvidence sboms = 6;
+}
+
 message PublishReleaseRequest {
+  // Optional legacy claims; forbidden with package admission.
   ReleaseDescriptor release = 1;
+  // Explicitly trusted-local compatibility only; enforced catalogs reject it.
   CapsuleArtifactUpload artifact = 2;
+  // Exactly one of artifact and package must be present. This additive field
+  // preserves existing wire numbers without silently discarding either input.
+  PackageAdmissionUpload package = 3;
 }
 
 message PublishReleaseResponse {

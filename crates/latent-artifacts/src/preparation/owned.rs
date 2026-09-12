@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use latent_core::{PlatformError, ReleaseDigest};
 
+use crate::ArtifactRepository;
 use crate::{ArtifactPreparationIdentity, CapsuleArtifact, DirectoryArtifactRepository};
 
 /// Fixed-size read admission facts from an immutable, admitted catalog entry.
@@ -36,6 +37,13 @@ pub struct OwnedArtifactPreparationSource {
 impl OwnedArtifactPreparationSource {
     pub(crate) fn new(repository: Arc<DirectoryArtifactRepository>) -> Self {
         Self { repository }
+    }
+
+    pub fn eligibility(
+        &self,
+        release: &ReleaseDigest,
+    ) -> Result<Option<crate::ReleaseEligibility>, PlatformError> {
+        self.repository.release_eligibility(release)
     }
 
     /// Returns an admitted immutable identity without disk I/O or metadata

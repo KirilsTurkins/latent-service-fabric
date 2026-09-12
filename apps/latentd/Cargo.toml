@@ -24,6 +24,7 @@ latent-core = { path = "../../crates/latent-core" }
 latent-executor = { path = "../../crates/latent-executor" }
 latent-manifest = { path = "../../crates/latent-manifest" }
 latent-node = { path = "../../crates/latent-node" }
+latent-policy = { path = "../../crates/latent-policy" }
 latent-routing = { path = "../../crates/latent-routing" }
 latent-scheduler = { path = "../../crates/latent-scheduler" }
 latent-telemetry = { path = "../../crates/latent-telemetry" }

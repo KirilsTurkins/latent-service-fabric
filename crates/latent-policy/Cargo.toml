@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-policy."
+description = "Bounded supply-chain admission policy and runtime authorization contracts."
 
 [lints]
 workspace = true
@@ -13,3 +13,13 @@ workspace = true
 [dependencies]
 latent-core = { path = "../latent-core" }
 latent-manifest = { path = "../latent-manifest" }
+latent-artifacts = { path = "../latent-artifacts" }
+latent-packaging = { path = "../latent-packaging" }
+latent-signing = { path = "../latent-signing" }
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+base64.workspace = true
+wasm-encoder.workspace = true

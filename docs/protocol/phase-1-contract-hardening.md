@@ -105,6 +105,14 @@ ActivationSuccessSummary, and every SDK retain the same three fields.
 
 ## Local release publication
 
+Phase 2 adds `PublishReleaseRequest.package` at field 3 and the bounded package
+layer/evidence messages without changing existing field numbers or service
+signatures. Exactly one of `artifact` and `package` is required; package input
+forbids the optional legacy `release` descriptor. The checked descriptor golden
+includes this deliberate additive change. Existing Phase 1 clients keep the
+local upload representation below; enforced nodes reject it and require the
+[authenticated package path](../reference/package-admission.md).
+
 Phase 1 `PublishRelease` uses the bounded unary `CapsuleArtifactUpload`:
 
 - `capsule_manifest_json`;

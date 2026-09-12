@@ -79,6 +79,7 @@ impl StandaloneNode {
         reason = "one ordered teardown keeps forced cleanup, resource observations and native joins together"
     )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
+        self.supply_chain.retire();
         self.load.stop_accepting();
         let handle = self
             .transport

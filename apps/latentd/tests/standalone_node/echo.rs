@@ -185,6 +185,7 @@ fn upload() -> proto::PublishReleaseRequest {
     )
     .expect("semantically valid typed descriptors");
     proto::PublishReleaseRequest {
+        package: None,
         release: None,
         artifact: Some(proto::CapsuleArtifactUpload {
             capsule_manifest_json: codec.encode_capsule(&manifest).unwrap(),

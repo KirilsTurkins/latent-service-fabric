@@ -70,6 +70,7 @@ impl super::super::PreparationContext {
         input: Compilation,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
+        self.check_eligibility(input.eligibility.as_ref(), &key.release)?;
         let compilation = job.stage(PreparationStage::ComponentNew);
         let component = Component::new(&self.engine, &artifact.component_bytes);
         if component.is_ok() {
@@ -84,6 +85,7 @@ impl super::super::PreparationContext {
                 false,
             )
         })?;
+        self.check_eligibility(input.eligibility.as_ref(), &key.release)?;
         let linking = job.stage(PreparationStage::SurfaceLink);
         let surface = surface::validate(&component, &self.engine, artifact, &self.config)?;
         let metadata_bytes = input
@@ -111,6 +113,7 @@ impl super::super::PreparationContext {
             surface,
             descriptor,
             authentication: input.authentication,
+            eligibility: input.eligibility,
             metadata_bytes,
             image_bytes,
             // The existing full metadata charge includes these manifest fields.
@@ -129,6 +132,7 @@ impl super::super::PreparationContext {
                 })?,
         });
         linking.complete();
+        self.check_runtime(&runtime)?;
         Ok(runtime)
     }
 }

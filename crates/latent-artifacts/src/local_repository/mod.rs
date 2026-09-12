@@ -1,3 +1,5 @@
+mod admission;
+mod admission_storage;
 mod component_reader;
 pub(crate) mod contract_metadata;
 mod document_reader;
@@ -114,6 +116,7 @@ struct VerifiedEntry {
     metadata: VerifiedArtifactMetadata,
     component_bytes: Vec<u8>,
     completion: CompletionRecord,
+    admission: Option<admission_storage::StoredAdmission>,
 }
 
 struct PublicationAdoption {
@@ -147,11 +150,15 @@ impl Drop for OwnerLock {
     }
 }
 
-/// Crash-safe local trusted release catalog for standalone `latentd`.
+/// Crash-safe standalone release catalog with an explicit trust mode.
 ///
 /// A repository owns its root exclusively for its lifetime using an OS file
 /// lock acquired before temporary cleanup or index rebuild. The lock is
 /// released automatically on normal drop and process exit/crash.
+/// `open` retains the Phase 1 trusted-local contract; `open_enforced` requires a
+/// configured admission authority and refuses raw publication. Catalog pages
+/// retain bounded historical summaries, while resolution and preparation require
+/// current eligibility. Enforced roots cannot reopen in trusted-local mode.
 pub struct DirectoryArtifactRepository {
     root: PathBuf,
     config: DirectoryArtifactRepositoryConfig,
@@ -164,6 +171,8 @@ pub struct DirectoryArtifactRepository {
     /// Serializes writers, reserves directory capacity and gates mutations after
     /// indeterminate durability. Only a retry of the pending digest may proceed.
     publish_lock: Mutex<PublicationState>,
+    admission_work: Mutex<()>,
+    admission: Option<admission::RepositoryAdmission>,
     _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
@@ -186,8 +195,29 @@ impl DirectoryArtifactRepository {
         root: impl Into<PathBuf>,
         config: DirectoryArtifactRepositoryConfig,
     ) -> Result<Self, PlatformError> {
+        Self::open_configured(root.into(), config, None)
+    }
+
+    pub fn open_enforced(
+        root: impl Into<PathBuf>,
+        config: DirectoryArtifactRepositoryConfig,
+        limits: crate::AdmissionStorageLimits,
+        authority: Arc<dyn crate::AdmissionAuthority>,
+    ) -> Result<Self, PlatformError> {
+        limits.validate()?;
+        Self::open_configured(
+            root.into(),
+            config,
+            Some(admission::RepositoryAdmission::new(authority, limits)),
+        )
+    }
+
+    fn open_configured(
+        root: PathBuf,
+        config: DirectoryArtifactRepositoryConfig,
+        admission: Option<admission::RepositoryAdmission>,
+    ) -> Result<Self, PlatformError> {
         validate_config(config)?;
-        let root = root.into();
         let root = root_durability::create_durable_root(&root)?;
 
         let owner_lock = OpenOptions::new()
@@ -203,6 +233,7 @@ impl DirectoryArtifactRepository {
             )
         })?;
         let owner_lock = OwnerLock(owner_lock);
+        admission::check_mode(&root, admission.is_some())?;
 
         fs::create_dir_all(root.join(RELEASES_DIR)).map_err(io_error)?;
         fs::create_dir_all(root.join(TEMP_DIR)).map_err(io_error)?;
@@ -219,6 +250,8 @@ impl DirectoryArtifactRepository {
             preparation_epoch: Arc::new(RepositoryEpoch),
             verification_statistics: VerificationStatistics::default(),
             publish_lock: Mutex::new(PublicationState::default()),
+            admission_work: Mutex::new(()),
+            admission,
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),
@@ -226,6 +259,9 @@ impl DirectoryArtifactRepository {
             stamp_byte_limit: crate::preparation::MAXIMUM_STAMP_BYTES,
         };
         repository.rebuild_index()?;
+        if repository.admission.is_some() {
+            admission::persist_mode(&repository.root)?;
+        }
         Ok(repository)
     }
 
@@ -247,6 +283,7 @@ impl DirectoryArtifactRepository {
         &self,
         release: &ReleaseDigest,
     ) -> Result<Option<ArtifactPreparationIdentity>, PlatformError> {
+        self.current_eligibility(release)?;
         let index = self.index.read().map_err(lock_error)?;
         let entry = index
             .by_digest
@@ -281,7 +318,6 @@ impl DirectoryArtifactRepository {
     }
 
     fn rebuild_index(&self) -> Result<(), PlatformError> {
-        let mut publication = self.publish_lock.lock().map_err(lock_error)?;
         let releases = self.root.join(RELEASES_DIR);
         let mut complete_entries = Vec::new();
         let mut scanned = 0_usize;
@@ -311,15 +347,28 @@ impl DirectoryArtifactRepository {
 
         let mut next = CatalogIndex::default();
         for path in complete_entries {
-            let metadata = self
-                .load_complete_entry(&path, Retention::Metadata)?
-                .metadata;
+            let verified = self.load_complete_entry(&path, Retention::Metadata)?;
+            let eligibility = self.recover_eligibility(&path, &verified)?;
+            let completion = verified.completion.identity()?;
+            let metadata = verified.metadata;
             let stamp = self.preparation_stamp(&metadata);
-            next.insert_verified(metadata, stamp, self.config)?;
+            if let Some(recovered) = eligibility {
+                next.insert_admitted(
+                    metadata,
+                    stamp,
+                    recovered.binding,
+                    recovered.eligibility,
+                    completion,
+                    self.config,
+                )?;
+            } else {
+                next.insert_verified(metadata, stamp, self.config)?;
+            }
         }
         // Reconcile completed entries from an interrupted publication before
         // exposing the rebuilt index or allowing further mutations.
         sync_dir(&releases)?;
+        let mut publication = self.publish_lock.lock().map_err(lock_error)?;
         *self.index.write().map_err(lock_error)? = next;
         publication.release_directories = scanned;
         publication.pending = None;
@@ -341,6 +390,16 @@ impl DirectoryArtifactRepository {
         limits: ArtifactPreparationReadLimits,
     ) -> Result<VerifiedEntry, PlatformError> {
         let completion = CompletionRecord::read(path)?;
+        let admission = match (self.admission.as_ref(), completion.admission_digest()) {
+            (Some(config), Some(digest)) => Some(admission_storage::StoredAdmission::read(
+                path,
+                digest,
+                config.limits,
+                self.config.max_component_bytes,
+            )?),
+            (None, None) => None,
+            _ => return Err(corrupt("catalog-admission-mode-mismatch")),
+        };
         let metadata_bytes = read_bounded_file(
             &path.join(METADATA_FILE),
             limits.maximum_metadata_document_bytes,
@@ -404,6 +463,7 @@ impl DirectoryArtifactRepository {
             ),
             component_bytes: component.bytes,
             completion,
+            admission,
         })
     }
 
@@ -502,6 +562,14 @@ impl DirectoryArtifactRepository {
     }
 
     fn stage_publication(&self, prepared: &PreparedPublication) -> Result<PathBuf, PlatformError> {
+        self.stage_publication_with_admission(prepared, None)
+    }
+
+    fn stage_publication_with_admission(
+        &self,
+        prepared: &PreparedPublication,
+        admission: Option<&admission_storage::PreparedAdmissionFiles>,
+    ) -> Result<PathBuf, PlatformError> {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|_| {
@@ -525,6 +593,9 @@ impl DirectoryArtifactRepository {
                 &tmp_path.join(COMPONENT_FILE),
                 &prepared.artifact.component_bytes,
             )?;
+            if let Some(admission) = admission {
+                admission.write(&tmp_path)?;
+            }
             write_synced(
                 &tmp_path.join(COMPLETE_FILE),
                 &prepared.completion.encode()?,
@@ -566,6 +637,12 @@ impl DirectoryArtifactRepository {
     }
 
     fn publish_sync(&self, artifact: CapsuleArtifact) -> Result<ArtifactDescriptor, PlatformError> {
+        if self.admission.is_some() {
+            return Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "raw-publication-disabled-in-enforced-mode",
+            ));
+        }
         let mut publication = self.publish_lock.lock().map_err(lock_error)?;
         let digest = artifact.descriptor.release_digest.clone();
         if publication
@@ -640,6 +717,22 @@ impl DirectoryArtifactRepository {
 }
 
 impl ArtifactRepository for DirectoryArtifactRepository {
+    fn release_eligibility(
+        &self,
+        release: &ReleaseDigest,
+    ) -> Result<Option<crate::ReleaseEligibility>, PlatformError> {
+        self.current_eligibility(release)
+    }
+
+    fn admit_package<'a>(
+        &'a self,
+        tenant: &'a latent_core::TenantId,
+        upload: crate::PackageAdmissionUpload,
+        preflight: &'a mut (dyn FnMut(&crate::ArtifactCatalogEntry) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<crate::ArtifactCatalogEntry, PlatformError>> {
+        Box::pin(async move { self.admit_sync(tenant, upload, preflight) })
+    }
     fn owned_preparation_source(self: Arc<Self>) -> Option<OwnedArtifactPreparationSource> {
         Some(OwnedArtifactPreparationSource::new(self))
     }
@@ -678,7 +771,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
             } else {
                 None
             };
-            Ok(descriptor
+            let value = descriptor
                 .map(|entry| &entry.value.descriptor)
                 .filter(|value| {
                     query
@@ -690,7 +783,12 @@ impl ArtifactRepository for DirectoryArtifactRepository {
                             .as_ref()
                             .is_none_or(|media_type| &value.media_type == media_type)
                 })
-                .cloned())
+                .cloned();
+            drop(index);
+            if let Some(descriptor) = &value {
+                self.current_eligibility(&descriptor.release_digest)?;
+            }
+            Ok(value)
         })
     }
 
@@ -706,6 +804,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<VerifiedArtifactMetadata, PlatformError>> {
         Box::pin(async move {
+            self.current_eligibility(digest)?;
             add(&self.verification_statistics.metadata_fetch_attempts, 1);
             if !self
                 .index
@@ -721,7 +820,9 @@ impl ArtifactRepository for DirectoryArtifactRepository {
             }
             let verified =
                 self.load_complete_entry(&self.entry_path(digest)?, Retention::Metadata)?;
+            self.verify_admission_index(digest, &verified)?;
             verified.metadata.verify_requested(digest)?;
+            self.current_eligibility(digest)?;
             Ok(verified.metadata)
         })
     }

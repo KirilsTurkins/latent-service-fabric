@@ -201,6 +201,7 @@ fn publish(args: &PublishArgs, config: &ResolvedConfig) -> Result<Operation, Fai
         ));
     }
     Ok(Operation::PublishRelease(proto::PublishReleaseRequest {
+        package: None,
         release: None,
         artifact: Some(proto::CapsuleArtifactUpload {
             capsule_manifest_json,

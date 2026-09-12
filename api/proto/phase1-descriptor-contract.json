@@ -3644,6 +3644,102 @@
         {
           "field": [
             {
+              "jsonName": "path",
+              "label": "LABEL_OPTIONAL",
+              "name": "path",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "data",
+              "label": "LABEL_OPTIONAL",
+              "name": "data",
+              "number": 2,
+              "type": "TYPE_BYTES"
+            }
+          ],
+          "name": "PackageAdmissionLayer"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "manifest",
+              "label": "LABEL_OPTIONAL",
+              "name": "manifest",
+              "number": 1,
+              "type": "TYPE_BYTES"
+            },
+            {
+              "jsonName": "configuration",
+              "label": "LABEL_OPTIONAL",
+              "name": "configuration",
+              "number": 2,
+              "type": "TYPE_BYTES"
+            },
+            {
+              "jsonName": "payload",
+              "label": "LABEL_OPTIONAL",
+              "name": "payload",
+              "number": 3,
+              "type": "TYPE_BYTES"
+            }
+          ],
+          "name": "PackageAdmissionEvidence"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "manifest",
+              "label": "LABEL_OPTIONAL",
+              "name": "manifest",
+              "number": 1,
+              "type": "TYPE_BYTES"
+            },
+            {
+              "jsonName": "configuration",
+              "label": "LABEL_OPTIONAL",
+              "name": "configuration",
+              "number": 2,
+              "type": "TYPE_BYTES"
+            },
+            {
+              "jsonName": "layers",
+              "label": "LABEL_REPEATED",
+              "name": "layers",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PackageAdmissionLayer"
+            },
+            {
+              "jsonName": "signatures",
+              "label": "LABEL_REPEATED",
+              "name": "signatures",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PackageAdmissionEvidence"
+            },
+            {
+              "jsonName": "provenance",
+              "label": "LABEL_REPEATED",
+              "name": "provenance",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PackageAdmissionEvidence"
+            },
+            {
+              "jsonName": "sboms",
+              "label": "LABEL_REPEATED",
+              "name": "sboms",
+              "number": 6,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PackageAdmissionEvidence"
+            }
+          ],
+          "name": "PackageAdmissionUpload"
+        },
+        {
+          "field": [
+            {
               "jsonName": "release",
               "label": "LABEL_OPTIONAL",
               "name": "release",
@@ -3658,6 +3754,14 @@
               "number": 2,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.CapsuleArtifactUpload"
+            },
+            {
+              "jsonName": "package",
+              "label": "LABEL_OPTIONAL",
+              "name": "package",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PackageAdmissionUpload"
             }
           ],
           "name": "PublishReleaseRequest"

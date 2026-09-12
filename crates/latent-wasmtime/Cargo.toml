@@ -24,6 +24,7 @@ sha2.workspace = true
 wasmtime.workspace = true
 
 [dev-dependencies]
+wasm-encoder.workspace = true
 latent-activation = { path = "../latent-activation" }
 latent-node = { path = "../latent-node" }
 latent-routing = { path = "../latent-routing" }

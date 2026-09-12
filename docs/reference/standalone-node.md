@@ -35,6 +35,7 @@ produces a token accepted by this configuration format.
   "dataDirectory": "data",
   "bind": "127.0.0.1:50051",
   "nodeId": "local-node",
+  "supplyChain": {"mode": "trusted-local"},
   "credentials": [
     {
       "token": "REPLACE_WITH_A_GENERATED_BASE64URL_TOKEN",
@@ -83,6 +84,16 @@ existing canonical parent. The data directory is created during startup, with
 separate `releases/` and `deployments/` roots. Paths and credentials are omitted
 from startup failure diagnostics.
 
+The [authenticated package admission](package-admission.md) mode is selected
+with `"supplyChain":{"mode":"enforced","policyFile":"admission-policy.json",
+"clockLeaseSeconds":5}`. The policy path is also anchored to the configuration
+directory. It requires a complete bounded publisher/builder/revocation/SBOM and
+tenant-authorization policy. An omitted member or explicit `trusted-local` keeps
+Phase 1 compatibility only for local catalogs; an existing enforced root refuses
+that downgrade. The [member schema](../../schemas/node-supply-chain.schema.json)
+describes both closed forms. Changing the policy file does not automatically
+reload live trust; the host replacement API owns that transaction.
+
 | Field | Default | Meaning and supported bounds |
 | --- | --- | --- |
 | `bind` | `127.0.0.1:50051` | Loopback IP literal; port zero selects an ephemeral port. |
@@ -107,6 +118,8 @@ from startup failure diagnostics.
 | `catalogs.releaseIndexBytes` | `67108864` | Release index allocation ceiling, 1 MiB–1 GiB. |
 | `catalogs.deployments` | `4096` | Deployment count, at most 100000. |
 | `catalogs.deploymentStateBytes` | `67108864` | Deployment/compiler state ceiling, 1 MiB–1 GiB. |
+| `supplyChain` | `{"mode":"trusted-local"}` | Explicit local compatibility or `enforced` with a required policy file. |
+| `supplyChain.clockLeaseSeconds` | `5` in enforced mode | Durable future clock lease, integer 1–5 seconds; restart before its persisted floor fails closed. |
 | `retention.terminalEntries` | `1024` | Retained terminal activation count, at most 100000. |
 | `retention.terminalTtlMillis` | `300000` | Monotonic terminal retention, 1–86400000 ms. |
 | `retention.bytes` | `268435456` | Journal allocation ceiling, at most 1 GiB; all active reservations must fit. |
@@ -211,9 +224,10 @@ runtime release after factory destruction. See the
 [runtime accounting contract](../runtime/wasmtime.md#node-policy-and-shared-preparation)
 for the API and unavailable-value semantics.
 
-Publication validates durable artifacts; it does not
-promise that every published component's imports, types, metadata or declared
-resources fit this particular runtime.
+Trusted-local publication validates durable artifacts without authenticating
+their publisher or builder. Enforced publication additionally checks complete
+package semantics and current supply-chain policy. Both still require runtime
+resource, capability and deployment checks before execution.
 
 The listener serves Invoke/Cancel/GetActivation and the supported release,
 deployment, route and node RPCs. Documented future methods return `Unimplemented`.

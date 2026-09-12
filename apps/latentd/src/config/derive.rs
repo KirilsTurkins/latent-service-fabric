@@ -35,6 +35,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     telemetry.validate().map_err(|_| invalid("telemetry"))?;
     Ok(NodeSettings {
         data_directory: config.data_directory.as_path().to_path_buf(),
+        supply_chain: super::supply_chain::derive(&config.supply_chain)?,
         node: descriptor(config),
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,
