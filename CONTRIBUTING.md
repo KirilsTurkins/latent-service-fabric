@@ -1,12 +1,11 @@
 # Contributing
 
 LSF has completed Phase 1 and its performance/infrastructure extension. Phase 2
-packaging and supply-chain work is underway; immutable package formats,
-deterministic packaging, and bounded authenticated OCI distribution are already
-implemented on `development`, while publisher trust and later Phase 2 integration
-remain in progress or planned. Contributions should preserve the distinction
-between architectural contracts, generated surfaces, and implemented behavior.
-Consult [the roadmap](docs/roadmap.md) for the current boundary.
+packaging and supply-chain work is underway, with focused capabilities landing
+independently on `development`. Contributions should preserve the distinction
+between architectural contracts, generated surfaces, implemented behavior, and
+planned phase scope. Consult [the roadmap](docs/roadmap.md) together with the
+current `development` documentation for the exact delivered boundary.
 
 ## Change categories
 
