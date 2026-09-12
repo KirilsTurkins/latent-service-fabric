@@ -42,6 +42,23 @@ impl PackageSigningSubject {
         })
     }
 
+    #[cfg(test)]
+    pub(crate) fn test(
+        subject: PackageSubject,
+        component_digest: Option<ArtifactBlobDigest>,
+    ) -> Self {
+        Self {
+            kind: if component_digest.is_some() {
+                PackageKind::Capsule
+            } else {
+                PackageKind::BrowserAssets
+            },
+            component_digest,
+            component_size: None,
+            subject,
+        }
+    }
+
     #[must_use]
     pub fn subject(&self) -> &PackageSubject {
         &self.subject
