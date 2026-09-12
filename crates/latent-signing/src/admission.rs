@@ -151,10 +151,7 @@ pub fn verify_current_supply_chain_evidence(
     builder_verifier
         .check_current(provenance, now)
         .map_err(PlatformError::from)?;
-    if publisher_verifier
-        .state_id()
-        .map_err(PlatformError::from)?
-        != publisher_state
+    if publisher_verifier.state_id().map_err(PlatformError::from)? != publisher_state
         || builder_verifier.state_id().map_err(PlatformError::from)? != builder_state
     {
         return Err(failure(
@@ -430,7 +427,7 @@ mod tests {
         .unwrap_err();
         assert_eq!(error.message, "supply-chain-component-subject-mismatch");
 
-        let other_publisher_state = publisher_state('7');
+        let other_publisher_state = self::publisher_state('7');
         let error = bind_current_evidence(
             &expected,
             PublisherEvidenceView {
