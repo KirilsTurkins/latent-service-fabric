@@ -3,6 +3,7 @@
 
 #![forbid(unsafe_code)]
 
+mod aot;
 mod backend;
 mod bindings;
 mod cache;
@@ -25,6 +26,9 @@ use latent_artifacts::CapsuleArtifact;
 use latent_core::{BoxFuture, Metadata, PlatformError, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 
+pub use aot::{
+    AotCompatibilityKey, AotCompilerLimits, TrustedAotCompilerAuthority, TrustedAotOutput,
+};
 pub use backend::{PreparationActivitySnapshot, WasmtimeBackend};
 pub use cache::{
     PreparedCacheAccountingSnapshot, PreparedCacheSnapshot, PreparedRuntimeObserver,
