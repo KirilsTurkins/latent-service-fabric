@@ -251,6 +251,7 @@ fn concurrent_publishers_cannot_overcommit_the_last_recovery_directory() {
         }));
     }
     let mut accepted = Vec::new();
+    let mut busy = Vec::new();
     for writer in writers {
         let (value, result) = writer.join().expect("writer must finish");
         match result {
@@ -260,10 +261,21 @@ fn concurrent_publishers_cannot_overcommit_the_last_recovery_directory() {
             }
             Err(failure) => {
                 assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
-                assert!(failure.message.contains("recovery directory"));
+                if failure.message == "admission-work-busy" {
+                    busy.push(value.clone());
+                } else {
+                    assert!(failure.message.contains("recovery directory"));
+                }
                 assert!(!release_dir(temp.path(), &value.descriptor.release_digest).exists());
             }
         }
+    }
+    for value in busy {
+        let failure = block_on(repo.publish(value.clone()))
+            .expect_err("the one durable winner consumes the last directory");
+        assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+        assert!(failure.message.contains("recovery directory"));
+        assert!(!release_dir(temp.path(), &value.descriptor.release_digest).exists());
     }
     assert_eq!(accepted.len(), 1);
     assert_catalog(&repo, &accepted);

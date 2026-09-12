@@ -42,8 +42,7 @@ struct Inner {
 }
 struct State {
     policy: SupplyChainPolicy,
-    publisher: PublisherVerifier,
-    builder: BuilderVerifier,
+    verifiers: Option<(PublisherVerifier, BuilderVerifier)>,
     ledger: Ledger,
     floor: DurableFloor,
     observed_at: u64,
@@ -98,7 +97,13 @@ impl SupplyChainAuthority {
             .as_ref()
             .map_or(Some(1), |floor| floor.epoch.checked_add(1))
             .ok_or_else(|| unavailable("admission-epoch-exhausted"))?;
-        let (publisher, builder) = policy.verifiers(now)?;
+        // Structurally valid but currently expired/offline policy may restore
+        // negative catalog history and management. It creates no verifier/grant.
+        let verifiers = match policy.verifiers(now) {
+            Ok(verifiers) => Some(verifiers),
+            Err(failure) if failure.code == PlatformErrorCode::PermissionDenied => None,
+            Err(failure) => return Err(failure),
+        };
         let ceiling = now
             .checked_add(lease_seconds)
             .ok_or_else(|| invalid("admission-clock-overflow"))?;
@@ -115,8 +120,7 @@ impl SupplyChainAuthority {
                 retired: AtomicBool::new(false),
                 state: Mutex::new(State {
                     policy,
-                    publisher,
-                    builder,
+                    verifiers,
                     ledger,
                     floor,
                     observed_at: after,
@@ -195,7 +199,7 @@ impl SupplyChainAuthority {
         let now = self.inner.sample_clock(&mut state)?;
         state.floor.check_policy(&next.identity)?;
         next.verifiers(now)?;
-        if state.policy.identity == next.identity {
+        if state.policy.identity == next.identity && state.verifiers.is_some() {
             return Ok(());
         }
         let epoch = state
@@ -212,10 +216,9 @@ impl SupplyChainAuthority {
         if after < now || after >= state.floor.restart_not_before {
             return Err(unavailable("admission-clock-lease-uncovered"));
         }
-        let (publisher, builder) = next.verifiers(after)?;
+        let verifiers = next.verifiers(after)?;
         state.policy = next;
-        state.publisher = publisher;
-        state.builder = builder;
+        state.verifiers = Some(verifiers);
         state.observed_at = after;
         state.halted = false;
         Ok(())
@@ -295,6 +298,11 @@ impl Inner {
     }
 }
 impl State {
+    fn verifiers(&self) -> Result<&(PublisherVerifier, BuilderVerifier), PlatformError> {
+        self.verifiers
+            .as_ref()
+            .ok_or_else(|| denied("admission-trust-unavailable"))
+    }
     fn persist(&mut self, next: DurableFloor) -> Result<(), PlatformError> {
         if let Err(error) = self.ledger.persist(&next) {
             self.halted = true;

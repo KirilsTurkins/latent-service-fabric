@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use latent_artifacts::{
     AdmissionAuthority, ArtifactPreparationIdentity, ArtifactRepository, CapsuleArtifact,
-    ReleaseEligibility,
+    ReleaseUseEligibility,
 };
 use latent_core::{
     ActivationClock, ActivationId, BoxFuture, BudgetConsumption, ContractId, Metadata,
@@ -70,7 +70,7 @@ pub(crate) struct PreparedRuntime {
     descriptor: PreparedComponent,
     imports: Vec<ContractId>,
     authentication: Option<ArtifactPreparationIdentity>,
-    eligibility: Option<ReleaseEligibility>,
+    eligibility: Option<ReleaseUseEligibility>,
     metadata_bytes: usize,
     image_bytes: usize,
     // Runtime-owned costs retire only after all native and metadata fields.
@@ -118,6 +118,10 @@ impl SharedRuntime {
         self.cache.prepared_runtime_observer()
     }
 
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "factory transfers the fixed engine, worker, and independent policy owners once"
+    )]
     pub(crate) fn new(
         config: &WasmtimeConfig,
         services: WasmtimeHostServices,
@@ -125,6 +129,7 @@ impl SharedRuntime {
         engine: Engine,
         profile: WasmtimeEngineProfile,
         admission: Option<Arc<dyn AdmissionAuthority>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
         runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     ) -> Result<Self, PlatformError> {
         let cache = Arc::new(PreparedCache::new_tracked(config.cache_limits())?);
@@ -133,6 +138,7 @@ impl SharedRuntime {
         let uncached_prepared = Arc::new(Mutex::new(None));
         let preparation_context = Arc::new(PreparationContext {
             admission,
+            lifecycle,
             runtime_profile,
             engine,
             profile: profile.clone(),
@@ -308,7 +314,7 @@ impl WasmtimeBackend {
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
         integrity: ComponentIntegrity,
-        eligibility: Option<ReleaseEligibility>,
+        eligibility: Option<ReleaseUseEligibility>,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         self.shared

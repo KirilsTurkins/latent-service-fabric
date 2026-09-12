@@ -1,4 +1,5 @@
 //! Fixed-schema response traversal before conversion or JSON allocation.
+mod release_operation;
 
 use std::collections::HashMap;
 
@@ -125,7 +126,18 @@ impl Check for proto::PublishReleaseResponse {
             .as_ref()
             .ok_or_else(invalid_response)?
             .check(b)?;
-        b.texts(&self.admission_warnings)
+        b.texts(&self.admission_warnings)?;
+        if let Some(operation) = &self.operation {
+            operation.check(b)?;
+            if Some(operation.tenant.as_str())
+                != self.release.as_ref().and_then(|v| v.tenant.as_deref())
+                || operation.component_digest.as_deref()
+                    != self.release.as_ref().map(|v| v.digest.as_str())
+            {
+                return Err(invalid_response());
+            }
+        }
+        Ok(())
     }
 }
 impl Check for proto::GetReleaseResponse {

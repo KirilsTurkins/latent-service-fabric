@@ -33,9 +33,9 @@ impl WasmtimeBackend {
         context.validate_engine_key(&key)?;
         let source = Arc::clone(&repository).owned_preparation_source();
         let eligibility = if let Some(source) = &source {
-            source.eligibility(&key.release)?
+            source.execution_eligibility(&key.release)?
         } else {
-            if repository.release_eligibility(&key.release)?.is_some() {
+            if repository.execution_eligibility(&key.release)?.is_some() {
                 return Err(super::admission_association_error());
             }
             None

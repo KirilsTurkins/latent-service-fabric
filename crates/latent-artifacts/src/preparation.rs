@@ -46,6 +46,13 @@ impl<'repo> ArtifactPreparationSource<'repo> {
         self.repository.release_eligibility(release)
     }
 
+    pub fn execution_eligibility(
+        &self,
+        release: &ReleaseDigest,
+    ) -> Result<Option<crate::ReleaseUseEligibility>, PlatformError> {
+        self.repository.execution_eligibility(release)
+    }
+
     /// Looks up an immutable admitted snapshot without file I/O or metadata
     /// traversal. Missing entries are `NotFound`; `None` means use this source's
     /// fully checked fetch because its metadata is not eligible for a stamp.

@@ -27,6 +27,7 @@ pub(super) fn publish(
     limits: &ManagementLimits,
 ) -> Result<(), Status> {
     let mut budget = RequestBudget::new::<proto::PublishReleaseRequest>(limits)?;
+    super::lifecycle::operation(value.operation.as_ref(), &mut budget, limits, true)?;
     match (&value.artifact, &value.package) {
         (None, Some(package)) => {
             if value.release.is_some() {

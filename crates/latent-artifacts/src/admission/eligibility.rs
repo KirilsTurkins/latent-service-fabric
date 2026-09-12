@@ -127,6 +127,12 @@ impl ReleaseEligibility {
         self.check_current()
     }
 
+    /// Exact configured owner identity, without acquiring or renewing trust.
+    #[must_use]
+    pub fn belongs_to_authority(&self, authority: &Arc<dyn AdmissionAuthority>) -> bool {
+        Arc::ptr_eq(&self.owner.authority, authority)
+    }
+
     /// Checks this private grant using an already-held common authority fence.
     pub fn check_with(&self, checker: &dyn AdmissionRecheck) -> Result<(), PlatformError> {
         self.owner.check()?;

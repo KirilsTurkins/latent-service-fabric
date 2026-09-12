@@ -1,5 +1,7 @@
 mod detail;
 #[cfg(test)]
+mod release_tests;
+#[cfg(test)]
 mod tests;
 
 use latent_core::{ErrorDetail, PlatformError, PlatformErrorCode};

@@ -125,12 +125,19 @@ fn pending_sync_failure_preserves_entry_and_byte_capacity_across_reopen() {
                 .count(),
             1
         );
-        // Recover without an identical retry, using only durable storage.
+        // COMPLETE alone is pending content, not a committed lifecycle member.
         drop(repo);
         let reopened =
             DirectoryArtifactRepository::open(temp.path(), config).expect("reopen at limit");
         assert_eq!(
-            block_on(reopened.fetch(&first.descriptor.release_digest)).expect("recovered"),
+            block_on(reopened.fetch(&first.descriptor.release_digest))
+                .expect_err("orphan stays hidden")
+                .code,
+            PlatformErrorCode::NotFound
+        );
+        block_on(reopened.publish(first.clone())).expect("explicit retry commits membership");
+        assert_eq!(
+            block_on(reopened.fetch(&first.descriptor.release_digest)).expect("admitted retry"),
             first
         );
         assert_eq!(
@@ -161,13 +168,17 @@ fn recovery_gate_preserves_reads_of_prior_complete_state() {
         vec![prior.descriptor]
     );
     drop(repo);
+    let reopened = repository(temp.path());
     assert_eq!(
-        block_on(repository(temp.path()).list(None, 10))
+        block_on(reopened.list(None, 10))
             .expect("recovered list")
             .entries
             .len(),
-        2
+        1
     );
+    block_on(reopened.publish(artifact("pending", b"pending")))
+        .expect("explicit retry commits pending content");
+    assert_eq!(block_on(reopened.list(None, 10)).unwrap().entries.len(), 2);
 }
 
 fn nested_type(kind: &str, wrappers: usize) -> ValueType {

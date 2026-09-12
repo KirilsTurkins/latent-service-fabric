@@ -1,4 +1,5 @@
 mod admission;
+pub(super) mod execution;
 mod fingerprint;
 mod index;
 mod packing;
@@ -12,7 +13,7 @@ use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-use latent_artifacts::{ArtifactRepository, ReleaseEligibility, VerifiedArtifactMetadata};
+use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility, VerifiedArtifactMetadata};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode, ReleaseDigest, RouteGeneration};
 use latent_manifest::{
     __serde_json as json, JsonManifestCodec, ManifestCodec, ManifestValidator,
@@ -36,8 +37,9 @@ pub(super) struct CompiledCatalog {
     pub generated_at_unix_millis: u64,
     pub records: Box<[Arc<RevisionRecord>]>,
     pub paging_index: DeploymentIndex,
-    pub eligibility: Box<[ReleaseEligibility]>,
+    pub eligibility: Box<[ReleaseUseEligibility]>,
     pub local_releases: usize,
+    pub inactive: Box<[execution::InactiveRelease]>,
     routes: Box<[RouteRow]>,
     route_revisions: Box<[RecordIndex]>,
     endpoints: Box<[EndpointRow]>,
@@ -100,6 +102,7 @@ pub(super) async fn compile_versioned(
         work,
         false,
         None,
+        None,
     )
     .await
 }
@@ -118,6 +121,7 @@ pub(super) async fn compile_versioned_with_runtime(
     previous: Option<&CompiledCatalog>,
     work: &mut Work,
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+    lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
 ) -> Result<super::persistence::EncodedCatalog, PlatformError> {
     compile_versioned_inner(
         deployments,
@@ -130,6 +134,7 @@ pub(super) async fn compile_versioned_with_runtime(
         work,
         false,
         runtime_profile,
+        lifecycle,
     )
     .await
 }
@@ -149,6 +154,7 @@ pub(super) async fn compile_versioned_inner(
     work: &mut Work,
     recovery: bool,
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+    lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
 ) -> Result<super::persistence::EncodedCatalog, PlatformError> {
     count!(work, compiler_calls, 1);
     work.generation(generation.0);
@@ -193,6 +199,7 @@ pub(super) async fn compile_versioned_inner(
         let mut revision_ids = BTreeSet::new();
         let mut metadata_budget = config.max_state_bytes;
         let mut eligibility = Vec::new();
+        let mut inactive = Vec::new();
         let mut local_releases = 0;
         for id in versions.keys() {
             charge(&mut metadata_budget, 128)?;
@@ -263,29 +270,36 @@ pub(super) async fn compile_versioned_inner(
                 drop(release.take());
                 drop(release_surface.take());
                 fingerprints.clear();
-                let artifact =
-                    super::recovery_admission::metadata(artifacts, &deployment.release, recovery)
-                        .await?;
-                if let Some(grant) =
-                    super::recovery_admission::eligibility(artifacts, &deployment.release, recovery)
-                        .await?
-                {
-                    if grant.release() != &deployment.release {
-                        return Err(error(
-                            PlatformErrorCode::PermissionDenied,
-                            "route-admission-release-mismatch",
-                        ));
+                let (artifact, execution) = execution::load(
+                    artifacts,
+                    &deployment.release,
+                    recovery,
+                    runtime_profile,
+                    lifecycle,
+                )
+                .await?;
+                match execution {
+                    execution::Execution::Eligible(grant) => {
+                        charge(&mut metadata_budget, grant.retained_bytes())?;
+                        eligibility.try_reserve_exact(1).map_err(|_| {
+                            error(
+                                PlatformErrorCode::ResourceExhausted,
+                                "route-admission-allocation",
+                            )
+                        })?;
+                        eligibility.push(grant);
                     }
-                    charge(&mut metadata_budget, grant.retained_bytes())?;
-                    eligibility.try_reserve_exact(1).map_err(|_| {
-                        error(
-                            PlatformErrorCode::ResourceExhausted,
-                            "route-admission-allocation",
-                        )
-                    })?;
-                    eligibility.push(grant);
-                } else {
-                    local_releases += 1;
+                    execution::Execution::Inactive(denied) => {
+                        charge(&mut metadata_budget, denied.retained_bytes())?;
+                        inactive.try_reserve_exact(1).map_err(|_| {
+                            error(
+                                PlatformErrorCode::ResourceExhausted,
+                                "route-inactive-allocation",
+                            )
+                        })?;
+                        inactive.push(denied);
+                    }
+                    execution::Execution::Unmanaged => local_releases += 1,
                 }
                 let digest_matches = artifact.verified_digest() == &deployment.release
                     && artifact
@@ -304,7 +318,6 @@ pub(super) async fn compile_versioned_inner(
                         "release-digest-mismatch",
                     ));
                 }
-                latent_manifest::check_runtime_compatibility(artifact.manifest(), runtime_profile)?;
                 let stamp = reuse::metadata_stamp(&artifact);
                 memo.push(position, stamp);
                 release_surface = reuse::prior_release(compatible, &deployment.release, stamp)
@@ -317,11 +330,22 @@ pub(super) async fn compile_versioned_inner(
                 .last()
                 .filter(|grant| grant.release() == &deployment.release)
             {
-                if grant.tenant() != tenant {
-                    return Err(error(
-                        PlatformErrorCode::PermissionDenied,
-                        "route-admission-tenant-mismatch",
-                    ));
+                grant.authorize_tenant(tenant)?;
+            }
+            if let Some(denied) = inactive
+                .last()
+                .filter(|entry| entry.release() == &deployment.release)
+            {
+                denied.authorize_tenant(tenant)?;
+                let unchanged = previous.is_some_and(|old| {
+                    old.versions.get(&deployment.id) == versions.get(&deployment.id)
+                        && old
+                            .deployments
+                            .get(&deployment.id)
+                            .is_some_and(|value| value.as_ref() == deployment.as_ref())
+                });
+                if !recovery && !unchanged {
+                    return Err(denied.error());
                 }
             }
             Phase1ManifestValidator
@@ -524,6 +548,7 @@ pub(super) async fn compile_versioned_inner(
             paging_index,
             eligibility: eligibility.into_boxed_slice(),
             local_releases,
+            inactive: inactive.into_boxed_slice(),
             routes: packed.routes,
             route_revisions: packed.route_revisions,
             endpoints: packed.endpoints,

@@ -7,7 +7,7 @@ pub(super) use counters::PreparationCounters;
 
 use std::mem::size_of;
 
-use latent_artifacts::{ArtifactPreparationIdentity, ArtifactRepository, ReleaseEligibility};
+use latent_artifacts::{ArtifactPreparationIdentity, ArtifactRepository, ReleaseUseEligibility};
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedActivation};
 
@@ -21,13 +21,13 @@ pub(super) struct Compilation {
     pub(super) component_digest: String,
     pub(super) metadata_bytes: usize,
     pub(super) authentication: Option<ArtifactPreparationIdentity>,
-    pub(super) eligibility: Option<ReleaseEligibility>,
+    pub(super) eligibility: Option<ReleaseUseEligibility>,
 }
 
 /// The optimization identity and live admission capability have separate roles.
 pub(super) struct SourceAuthority {
     pub(super) authentication: Option<ArtifactPreparationIdentity>,
-    pub(super) eligibility: Option<ReleaseEligibility>,
+    pub(super) eligibility: Option<ReleaseUseEligibility>,
 }
 
 #[derive(Clone, Copy)]
@@ -52,9 +52,9 @@ impl WasmtimeBackend {
         self.shared.preparation_context.validate_engine_key(key)?;
         let source = repository.preparation_source();
         let eligibility = if let Some(source) = &source {
-            source.eligibility(&key.release)?
+            source.execution_eligibility(&key.release)?
         } else {
-            if repository.release_eligibility(&key.release)?.is_some() {
+            if repository.execution_eligibility(&key.release)?.is_some() {
                 return Err(super::admission_association_error());
             }
             None
@@ -186,7 +186,7 @@ impl WasmtimeBackend {
 pub(super) fn retained_metadata_bytes(
     bytes: usize,
     identity: Option<&ArtifactPreparationIdentity>,
-    eligibility: Option<&ReleaseEligibility>,
+    eligibility: Option<&ReleaseUseEligibility>,
 ) -> Result<usize, PlatformError> {
     bytes
         .checked_add(identity.map_or(
@@ -199,11 +199,11 @@ pub(super) fn retained_metadata_bytes(
         ))
         .and_then(|bytes| {
             bytes.checked_add(eligibility.map_or(
-                size_of::<Option<ReleaseEligibility>>(),
+                size_of::<Option<ReleaseUseEligibility>>(),
                 |value| {
                     value
                         .retained_bytes()
-                        .max(size_of::<Option<ReleaseEligibility>>())
+                        .max(size_of::<Option<ReleaseUseEligibility>>())
                 },
             ))
         })
@@ -229,7 +229,7 @@ pub(super) fn empty_component() -> PlatformError {
 pub(super) fn authenticated_handle(
     key: &PreparationKey,
     identity: &ArtifactPreparationIdentity,
-    eligibility: Option<&ReleaseEligibility>,
+    eligibility: Option<&ReleaseUseEligibility>,
 ) -> String {
     let mut digest = blake3::Hasher::new();
     digest.update(b"lsf-wasmtime-authenticated-preparation-v1\0");

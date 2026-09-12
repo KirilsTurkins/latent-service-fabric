@@ -13,7 +13,7 @@ use crate::{
     PackageAdmissionUpload, VerifiedArtifactMetadata,
 };
 
-pub(super) fn verify(
+pub(in crate::local_repository) fn verify(
     binding: &AdmissionBinding,
     upload: &PackageAdmissionUpload,
     metadata: &VerifiedArtifactMetadata,

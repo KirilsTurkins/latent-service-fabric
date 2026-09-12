@@ -1,5 +1,5 @@
 //! One configured authority gates every concrete repository reuse path.
-mod association;
+pub(super) mod association;
 
 use std::fs;
 use std::path::Path;
@@ -8,13 +8,13 @@ use std::sync::Arc;
 use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest, TenantId};
 
 use super::{
-    admission_storage::PreparedAdmissionFiles, corrupt, error, lock_error, resource_exhausted,
-    sync_dir, write_synced, DirectoryArtifactRepository, Retention, VerifiedEntry,
+    corrupt, error, lock_error, resource_exhausted, sync_dir, write_synced,
+    DirectoryArtifactRepository, Retention, VerifiedEntry,
 };
 use crate::admission::EligibilityOwner;
 use crate::{
     AdmissionAuthority, AdmissionBinding, AdmissionStorageLimits, ArtifactCatalogEntry,
-    PackageAdmissionUpload, ReleaseEligibility, VerifiedAdmission,
+    ReleaseEligibility, VerifiedAdmission,
 };
 
 const MODE_FILE: &str = "ADMISSION_MODE";
@@ -81,6 +81,9 @@ pub(super) fn persist_mode(root: &Path) -> Result<(), PlatformError> {
 
 impl Drop for DirectoryArtifactRepository {
     fn drop(&mut self) {
+        if let Some(lifecycle) = self.lifecycle.get() {
+            lifecycle.retire();
+        }
         if let Some(admission) = &self.admission {
             admission.owner.retire();
         }
@@ -92,6 +95,11 @@ impl DirectoryArtifactRepository {
         &self,
         release: &ReleaseDigest,
     ) -> Result<Option<ReleaseEligibility>, PlatformError> {
+        if self.lifecycle.get().is_some() {
+            return self
+                .current_execution_eligibility(release)
+                .map(|token| token.admission().cloned());
+        }
         if self.admission.is_none() {
             return Ok(None);
         }
@@ -117,6 +125,14 @@ impl DirectoryArtifactRepository {
         release: &ReleaseDigest,
         verified: &VerifiedEntry,
     ) -> Result<(), PlatformError> {
+        if let Some(lifecycle) = self.lifecycle.get() {
+            let expected = lifecycle
+                .identity(release)?
+                .ok_or_else(|| corrupt("lifecycle-membership-missing"))?;
+            if expected.completion != verified.completion.identity()? {
+                return Err(corrupt("stored-content-changed-after-lifecycle-adoption"));
+            }
+        }
         if self.admission.is_none() {
             return Ok(());
         }
@@ -184,7 +200,7 @@ impl DirectoryArtifactRepository {
         }))
     }
 
-    fn validate_verified(
+    pub(super) fn validate_verified(
         &self,
         tenant: &TenantId,
         value: &VerifiedAdmission,
@@ -210,194 +226,8 @@ impl DirectoryArtifactRepository {
         Ok(())
     }
 
-    pub(super) fn admit_sync(
-        &self,
-        tenant: &TenantId,
-        upload: PackageAdmissionUpload,
-        preflight: &mut (dyn FnMut(&ArtifactCatalogEntry) -> Result<(), PlatformError> + Send),
-    ) -> Result<ArtifactCatalogEntry, PlatformError> {
-        let _work = self
-            .admission_work
-            .try_lock()
-            .map_err(|_| resource_exhausted("admission-work-busy"))?;
-        let config = self.admission.as_ref().ok_or_else(|| {
-            error(
-                PlatformErrorCode::PermissionDenied,
-                "package-admission-requires-enforced-mode",
-            )
-        })?;
-        config
-            .limits
-            .check_upload(&upload, self.config.max_component_bytes)?;
-        let verified = config.authority.verify(tenant, upload)?;
-        self.validate_verified(tenant, &verified)?;
-        let VerifiedAdmission {
-            artifact,
-            upload,
-            grant,
-        } = verified;
-        let files = PreparedAdmissionFiles::prepare(
-            grant.binding(),
-            upload,
-            &artifact,
-            config.limits,
-            self.config.max_component_bytes,
-        )?;
-        let mut prepared = self.prepare_publication(artifact)?;
-        let summary = summary(&prepared.artifact);
-        // Rejection-only user callback: no authority, publication or index lock.
-        preflight(&summary)?;
-        let release = prepared.artifact.descriptor.release_digest.clone();
-        let destination = self.entry_path(&release)?;
-        let mut staging = None;
-        let (eligibility, completion) = if destination.exists() {
-            let existing = self.load_complete_entry(&destination, Retention::Metadata)?;
-            if !prepared.completion.same_artifact(&existing.completion)
-                || !files.same_upload(
-                    existing
-                        .admission
-                        .as_ref()
-                        .ok_or_else(|| corrupt("admission-record-missing"))?,
-                )
-            {
-                return Err(error(
-                    PlatformErrorCode::AlreadyExists,
-                    "release contains different package or evidence",
-                ));
-            }
-            let recovered = self
-                .recover_eligibility(&destination, &existing)?
-                .ok_or_else(|| corrupt("admission-recovery-missing"))?;
-            let token = recovered.eligibility.ok_or_else(|| {
-                error(
-                    PlatformErrorCode::PermissionDenied,
-                    "retained-admission-is-not-current",
-                )
-            })?;
-            (token, existing.completion)
-        } else {
-            prepared.completion.bind_admission(&files.record_bytes);
-            self.index.read().map_err(lock_error)?.preflight_admission(
-                &prepared.artifact.descriptor,
-                &prepared.artifact.manifest,
-                grant.binding(),
-                prepared.completion.identity()?,
-                grant.retained_bytes().saturating_add(256),
-                self.config,
-            )?;
-            staging = Some(Staged(
-                self.stage_publication_with_admission(&prepared, Some(&files))?,
-            ));
-            (
-                ReleaseEligibility::new(grant, Arc::clone(&config.owner)),
-                prepared.completion.clone(),
-            )
-        };
-        let super::PreparedPublication { artifact, .. } = prepared;
-        let crate::CapsuleArtifact {
-            descriptor,
-            manifest,
-            ..
-        } = artifact;
-        drop(files);
-        self.commit_admission(
-            &destination,
-            staging.as_ref().map(|value| value.0.as_path()),
-            &completion,
-            &eligibility,
-            &descriptor,
-            &manifest,
-        )?;
-        Ok(summary)
-    }
-
-    fn commit_admission(
-        &self,
-        destination: &Path,
-        staged: Option<&Path>,
-        expected: &super::CompletionRecord,
-        eligibility: &ReleaseEligibility,
-        descriptor: &crate::ArtifactDescriptor,
-        manifest: &latent_manifest::CapsuleManifest,
-    ) -> Result<(), PlatformError> {
-        let release = eligibility.release();
-        eligibility.with_current(&mut |check| {
-            let mut publication = self.publish_lock.lock().map_err(lock_error)?;
-            if publication
-                .pending
-                .as_ref()
-                .is_some_and(|pending| pending != release)
-            {
-                return Err(error(
-                    PlatformErrorCode::Unavailable,
-                    "catalog-needs-pending-admission-recovery",
-                ));
-            }
-            self.index.read().map_err(lock_error)?.preflight_admission(
-                descriptor,
-                manifest,
-                eligibility.binding(),
-                expected.identity()?,
-                eligibility.retained_bytes(),
-                self.config,
-            )?;
-            check.check()?;
-            if let Some(staged) = staged {
-                if destination.exists() {
-                    return Err(error(
-                        PlatformErrorCode::StateConflict,
-                        "concurrent-admission-retry-required",
-                    ));
-                }
-                if publication.release_directories >= self.config.max_recovery_directories {
-                    return Err(resource_exhausted(
-                        "catalog recovery directory capacity reached",
-                    ));
-                }
-                check.check()?;
-                fs::rename(staged, destination).map_err(super::io_error)?;
-                publication.release_directories += 1;
-                publication.pending = Some(release.clone());
-                #[cfg(test)]
-                super::integrity::faults::after_rename(destination);
-            }
-            publication.pending = Some(release.clone());
-            let verified = self.load_complete_entry(destination, Retention::Metadata)?;
-            if &verified.completion != expected {
-                return Err(corrupt("admission-completion-changed"));
-            }
-            #[cfg(test)]
-            if self
-                .fail_parent_sync_once
-                .swap(false, std::sync::atomic::Ordering::SeqCst)
-            {
-                return Err(error(
-                    PlatformErrorCode::Internal,
-                    "injected parent-directory sync failure after rename",
-                ));
-            }
-            sync_dir(&self.root.join(super::RELEASES_DIR))?;
-            let stamp = self.preparation_stamp(&verified.metadata);
-            let mut index = self.index.write().map_err(lock_error)?;
-            // Reuse the already-held fence; do not acquire authority while the
-            // index is held. Waiting for existing catalog readers must not leave
-            // the post-sync currentness sample stale before adoption.
-            check.check()?;
-            index.insert_admitted(
-                verified.metadata,
-                stamp,
-                eligibility.binding().clone(),
-                Some(eligibility.clone()),
-                expected.identity()?,
-                self.config,
-            )?;
-            publication.pending = None;
-            Ok(())
-        })
-    }
-
-    /// Explicit control-plane revalidation using original retained evidence.
-    /// It refreshes only bounded process-local proof ownership, not stored bytes.
+    /// Explicit bounded control-plane proof refresh. The persisted lifecycle
+    /// state and selected raw evidence remain unchanged; terminal rows deny it.
     pub fn reverify_retained(
         &self,
         tenant: &TenantId,
@@ -407,72 +237,68 @@ impl DirectoryArtifactRepository {
             .admission_work
             .try_lock()
             .map_err(|_| resource_exhausted("admission-work-busy"))?;
-        let config = self.admission.as_ref().ok_or_else(|| {
+        self.admission.as_ref().ok_or_else(|| {
             error(
                 PlatformErrorCode::PermissionDenied,
                 "reverification-requires-enforced-mode",
             )
         })?;
-        {
-            let index = self.index.read().map_err(lock_error)?;
-            if index
-                .by_digest
-                .get(release)
-                .and_then(|entry| entry.value.tenant.as_ref())
-                != Some(tenant)
-            {
-                return Err(error(
-                    PlatformErrorCode::NotFound,
-                    "release digest not found",
-                ));
-            }
+        let row = self
+            .life_store()
+            .record(release)?
+            .filter(|row| row.scope.tenant() == Some(tenant))
+            .ok_or_else(|| error(PlatformErrorCode::NotFound, "release digest not found"))?;
+        if row.state != crate::ReleaseLifecycleState::Admitted {
+            return Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "release-lifecycle-ineligible",
+            ));
         }
         let destination = self.entry_path(release)?;
-        let existing = self.load_complete_entry(&destination, Retention::Metadata)?;
-        self.verify_admission_index(release, &existing)?;
-        let recovered = self
-            .recover_eligibility(&destination, &existing)?
-            .ok_or_else(|| corrupt("admission-record-missing"))?;
-        let token = recovered.eligibility.ok_or_else(|| {
+        let verified = self.load_complete_entry(&destination, Retention::Metadata)?;
+        self.verify_admission_index(release, &verified)?;
+        let token = if row.evidence_revision_digest.is_some() {
+            self.recover_selected_evidence(&destination, &verified)?
+        } else {
+            self.recover_eligibility(&destination, &verified)?
+                .and_then(|value| value.eligibility)
+        }
+        .ok_or_else(|| {
             error(
                 PlatformErrorCode::PermissionDenied,
                 "retained-admission-is-not-current",
             )
         })?;
-        if token.grant.retained_bytes() > config.limits.max_grant_bytes {
-            return Err(resource_exhausted("admission-grant-retention-limit"));
-        }
         let summary = ArtifactCatalogEntry {
-            descriptor: existing.metadata.descriptor().clone(),
-            tenant: existing.metadata.manifest().metadata.tenant.clone(),
-            service: latent_core::ServiceId(existing.metadata.manifest().metadata.name.clone()),
-            semantic_version: existing.metadata.manifest().semantic_version.clone(),
-            world: existing.metadata.manifest().world.clone(),
+            descriptor: verified.metadata.descriptor().clone(),
+            tenant: verified.metadata.manifest().metadata.tenant.clone(),
+            service: latent_core::ServiceId(verified.metadata.manifest().metadata.name.clone()),
+            semantic_version: verified.metadata.manifest().semantic_version.clone(),
+            world: verified.metadata.manifest().world.clone(),
         };
-        self.commit_admission(
-            &destination,
-            None,
-            &existing.completion,
-            &token,
-            existing.metadata.descriptor(),
-            existing.metadata.manifest(),
-        )?;
+        self.life_store().with_exclusive(&mut |_fence| {
+            let current = self
+                .life_store()
+                .record(release)?
+                .ok_or_else(|| corrupt("lifecycle-record-missing"))?;
+            if current != row {
+                return Err(error(
+                    PlatformErrorCode::StateConflict,
+                    "release-generation-conflict",
+                ));
+            }
+            token.with_current(&mut |check| {
+                let _publication = self.publish_lock.lock().map_err(lock_error)?;
+                let mut index = self.index.write().map_err(lock_error)?;
+                check.check()?;
+                index.install_selected_eligibility(
+                    release,
+                    Some(token.clone()),
+                    verified.completion.identity()?,
+                    self.config,
+                )
+            })
+        })?;
         Ok(summary)
-    }
-}
-
-struct Staged(std::path::PathBuf);
-impl Drop for Staged {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(&self.0);
-    }
-}
-fn summary(artifact: &crate::CapsuleArtifact) -> ArtifactCatalogEntry {
-    ArtifactCatalogEntry {
-        descriptor: artifact.descriptor.clone(),
-        tenant: artifact.manifest.metadata.tenant.clone(),
-        service: latent_core::ServiceId(artifact.manifest.metadata.name.clone()),
-        semantic_version: artifact.manifest.semantic_version.clone(),
-        world: artifact.manifest.world.clone(),
     }
 }

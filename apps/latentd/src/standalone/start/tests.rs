@@ -66,3 +66,23 @@ async fn compose_rejects_local_catalogs_under_enforced_settings() {
         PlatformErrorCode::PermissionDenied
     );
 }
+
+#[tokio::test]
+async fn compose_rejects_mixed_local_catalog_owners_before_starting_services() {
+    let directories = [TempDir::new().unwrap(), TempDir::new().unwrap()];
+    let settings = settings(&directories[0]);
+    let mut catalogs = Catalogs::open(&settings).await.unwrap();
+    assert!(catalogs
+        .deployments
+        .is_bound_to_catalog(&catalogs.artifacts.lifecycle_authority()));
+    let other_settings = super::tests::settings(&directories[1]);
+    let other = Catalogs::open(&other_settings).await.unwrap();
+    catalogs.deployments = other.deployments;
+    assert_eq!(
+        super::StandaloneNode::compose(&settings, &catalogs, Arc::new(SystemActivationClock))
+            .err()
+            .unwrap()
+            .code,
+        PlatformErrorCode::PermissionDenied
+    );
+}

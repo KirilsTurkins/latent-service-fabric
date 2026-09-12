@@ -232,6 +232,7 @@ impl MeasurementNode {
                 &fixture.target.tenant,
                 management::PublishReleaseRequest {
                     package: None,
+                    operation: None,
                     release: None,
                     artifact: Some(upload),
                 },

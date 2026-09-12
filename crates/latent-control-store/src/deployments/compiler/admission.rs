@@ -83,7 +83,9 @@ impl RevisionPolicySource for PinnedRouteResolver {
             return Err(missing_policy());
         }
         crate::deployments::admission_fence::check_selected(
-            self.catalog.eligibility_for(&revision.release),
+            self.catalog
+                .selected_eligibility(&revision.release)
+                .as_ref(),
             &target.tenant,
         )?;
         Ok(RevisionAdmissionPolicy {

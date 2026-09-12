@@ -4,6 +4,8 @@
 
 mod admission;
 mod content_hash;
+mod historical_execution;
+mod lifecycle;
 mod local_repository;
 pub mod package;
 mod preparation;
@@ -11,6 +13,18 @@ mod preparation_fingerprint;
 mod verification_statistics;
 mod verified_metadata;
 
+pub use historical_execution::{
+    HistoricalExecutionSnapshot, HistoricalExecutionState, HistoricalReleaseDenial,
+};
+pub use lifecycle::{
+    LifecycleAuthorityHandle, LifecycleEligibility, LifecycleLimits, LifecycleScope,
+    ManagedPublicationReceipt, ManagedPublicationUpload, ReleaseActor, ReleaseActorKind,
+    ReleaseEligibilityReason, ReleaseEvidenceUpload, ReleaseLifecycleAction,
+    ReleaseLifecycleReason, ReleaseLifecycleRecord, ReleaseLifecycleState, ReleaseLifecycleStatus,
+    ReleaseLiveEligibility, ReleaseMutationContext, ReleaseOperationDisposition,
+    ReleaseOperationLookup, ReleaseOperationPrecondition, ReleaseOperationPreview,
+    ReleaseOperationReceipt, ReleasePolicyIdentity, ReleaseUseEligibility, ReleaseUseRecheck,
+};
 pub use preparation::{
     ArtifactPreparationIdentity, ArtifactPreparationReadBounds, ArtifactPreparationReadLimits,
     ArtifactPreparationSource, OwnedArtifactPreparationSource,
@@ -146,6 +160,58 @@ pub struct DerivedArtifactDescriptor {
 }
 
 pub trait ArtifactRepository: Send + Sync {
+    /// Authenticated publication with a bounded durable retry receipt. The host
+    /// callback must accept the exact response before any filesystem mutation.
+    fn publish_managed<'a>(
+        &'a self,
+        _context: ReleaseMutationContext,
+        _upload: ManagedPublicationUpload,
+        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<ManagedPublicationReceipt, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    fn get_release_lifecycle<'a>(
+        &'a self,
+        _scope: &'a LifecycleScope,
+        _release: &'a ReleaseDigest,
+    ) -> BoxFuture<'a, Result<Option<ReleaseLifecycleStatus>, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    fn get_release_operation<'a>(
+        &'a self,
+        _scope: &'a LifecycleScope,
+        _operation_id: &'a str,
+    ) -> BoxFuture<'a, Result<ReleaseOperationLookup, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    fn change_release_lifecycle<'a>(
+        &'a self,
+        _context: ReleaseMutationContext,
+        _release: &'a ReleaseDigest,
+        _action: ReleaseLifecycleAction,
+        _reason: ReleaseLifecycleReason,
+        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<ReleaseOperationReceipt, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    fn renew_release_evidence<'a>(
+        &'a self,
+        _context: ReleaseMutationContext,
+        _release: &'a ReleaseDigest,
+        _package: &'a latent_core::PackageDigest,
+        _evidence: ReleaseEvidenceUpload,
+        _preflight: &'a mut (dyn for<'p> FnMut(ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<ReleaseOperationReceipt, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
     /// Authenticated package publication. The rejection-only callback validates
     /// the exact prospective response before staging or mutation, without locks.
     fn admit_package<'a>(
@@ -164,6 +230,27 @@ pub trait ArtifactRepository: Send + Sync {
         _release: &ReleaseDigest,
     ) -> Result<Option<ReleaseEligibility>, PlatformError> {
         Ok(None)
+    }
+
+    /// Sealed lifecycle and optional signing authority, independent of cache stamps.
+    /// Missing capability is only an unmanaged embedding, never a catalog grant.
+    fn execution_eligibility(
+        &self,
+        _release: &ReleaseDigest,
+    ) -> Result<Option<ReleaseUseEligibility>, PlatformError> {
+        Ok(None)
+    }
+
+    /// Historical metadata for control recovery, with an explicit permission state.
+    /// The generic adapter never combines caller metadata with a delegated token.
+    fn historical_execution_snapshot<'a>(
+        &'a self,
+        release: &'a ReleaseDigest,
+    ) -> BoxFuture<'a, Result<HistoricalExecutionSnapshot, PlatformError>> {
+        Box::pin(async move {
+            let metadata = self.fetch_verified_metadata(release).await?;
+            Ok(HistoricalExecutionSnapshot::unmanaged(metadata))
+        })
     }
 
     /// Transfers preparation reads and identity lookup to one sealed, owned

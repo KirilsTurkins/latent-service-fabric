@@ -15,7 +15,17 @@ pub(super) fn response(
     if !matches!(case, Case::Cancel | Case::Deadline | Case::Malformed)
         && (consumed.cpu_fuel == 0 || consumed.peak_memory_bytes == 0)
     {
-        return Err("guest never executed".into());
+        let outcome = match response.result.as_ref() {
+            Some(Outcome::PlatformFailure(error)) => error.code.chars().take(64).collect(),
+            Some(Outcome::DeclaredError(_)) => "declared-error".to_owned(),
+            Some(Outcome::Success(_)) => "success".to_owned(),
+            None => "missing-outcome".to_owned(),
+        };
+        return Err(format!(
+            "guest never executed: case={} outcome={outcome}",
+            case.name()
+        )
+        .into());
     }
     match (case, response.result.as_ref()) {
         (Case::Domain, Some(Outcome::DeclaredError(error))) => {

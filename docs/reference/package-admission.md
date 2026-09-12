@@ -146,7 +146,9 @@ publisher and builder trust states, proof age, validity intervals and clock leas
 There is no separate positive-verification cache or waiting verification queue.
 
 Sealed process-local eligibility remains separate from preparation optimization
-stamps. The repository, deployment commit, prepared-cache reuse, compiler work,
+stamps. A catalog-owned [lifecycle capability](release-lifecycle.md) composes
+with the current signed grant; local catalogs have lifecycle without a fabricated
+signature or package identity. The repository, deployment commit, prepared-cache reuse, compiler work,
 readiness and actual activation start all enforce current authority. Cached
 code and an old route or ready object cannot authorize a new activation after
 expiry or revocation. Final guarded start produces one affine execution grant;
@@ -174,13 +176,23 @@ may therefore be unavailable for up to the configured lease duration.
 Missing floor data in an initialized authority is corruption, not permission to
 reset the policy generation or clock history.
 
+A valid policy outside its current validity interval may open with no positive
+verification grants, allowing historical lifecycle status and management of
+retained releases. It cannot admit or execute them until current checks pass.
+Malformed policy configuration, invalid persisted floors and unusable clock
+state still abort opening; expired validity does not enable local-mode fallback.
+
 Exact retries use the original package/artifact/evidence bytes and current
 trust. The original historical receipt and verification time are retained.
 There is one immutable package association per component release digest;
-different package, tenant, metadata or evidence for the same component conflicts.
-Retained original evidence can be explicitly reverified to refresh current
-eligibility while it remains valid. Reissued signature/provenance envelopes and
-atomic evidence renewal belong to [release lifecycle #148](https://github.com/KirilsTurkins/latent-service-fabric/issues/148).
+different package, tenant, metadata or evidence submitted through ordinary
+publication for the same component conflicts. Retained selected evidence can be
+explicitly reverified while it remains valid. Reissued envelopes use the separate
+[lifecycle evidence-renewal operation](release-lifecycle.md#evidence-renewal-and-route-refresh),
+with an exact generation precondition and immutable evidence revision. Original
+completion records remain unchanged. Old routes retain their old grants; fresh
+bounded control compilation, including startup deployment recovery, can obtain
+current capabilities for an admitted release that still passes all checks.
 Do not overwrite evidence or invent a different component identity to bypass
 expiry. A lost or post-rename failed response can leave a pending durable
 candidate; reconcile with the repository's recovery/retry procedure.

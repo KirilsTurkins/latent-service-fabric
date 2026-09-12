@@ -62,6 +62,12 @@ pub trait AdmissionGrant: Send + Sync {
     fn as_any(&self) -> &dyn std::any::Any;
     fn binding(&self) -> &AdmissionBinding;
 
+    /// Bounded diagnostic identity captured by this verified proof. It is never
+    /// used as authority and does not refresh the proof or trusted clock.
+    fn policy_identity(&self) -> Option<crate::ReleasePolicyIdentity> {
+        None
+    }
+
     /// Conservative retained bytes including this grant's owned/shared proof data.
     fn retained_bytes(&self) -> usize;
 

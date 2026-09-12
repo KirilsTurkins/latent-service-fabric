@@ -46,6 +46,13 @@ impl OwnedArtifactPreparationSource {
         self.repository.release_eligibility(release)
     }
 
+    pub fn execution_eligibility(
+        &self,
+        release: &ReleaseDigest,
+    ) -> Result<Option<crate::ReleaseUseEligibility>, PlatformError> {
+        self.repository.execution_eligibility(release)
+    }
+
     /// Returns an admitted immutable identity without disk I/O or metadata
     /// traversal. `None` requires this same source's fully checked fetch.
     pub fn identity(

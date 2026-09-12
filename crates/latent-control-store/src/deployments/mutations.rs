@@ -102,6 +102,7 @@ impl DirectoryDeploymentRepository {
                 Some(&previous),
                 &mut work,
                 self.runtime_profile.as_deref(),
+                self.lifecycle.as_ref(),
             )
             .await?;
             self.commit(previous.generation, compiled, &mut work)?;
@@ -159,6 +160,7 @@ impl DirectoryDeploymentRepository {
                 Some(&previous),
                 &mut work,
                 self.runtime_profile.as_deref(),
+                self.lifecycle.as_ref(),
             )
             .await?;
             let outcome = self.commit_checked(
@@ -223,6 +225,7 @@ impl DirectoryDeploymentRepository {
                 Some(&previous),
                 &mut work,
                 self.runtime_profile.as_deref(),
+                self.lifecycle.as_ref(),
             )
             .await?;
             let outcome = self.commit_checked(

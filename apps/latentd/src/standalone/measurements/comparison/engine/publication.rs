@@ -94,6 +94,7 @@ async fn one(node: &mut Node, clock: Clock) -> Result<(Value, [Value; 2])> {
         .publish_release(auth(
             proto::PublishReleaseRequest {
                 package: None,
+                operation: None,
                 release: None,
                 artifact: Some(upload),
             },

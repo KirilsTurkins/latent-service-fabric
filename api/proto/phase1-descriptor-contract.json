@@ -3479,6 +3479,276 @@
       "dependency": [
         "latent/control/v1/common.proto"
       ],
+      "enumType": [
+        {
+          "name": "ReleaseActorKind",
+          "value": [
+            {
+              "name": "RELEASE_ACTOR_KIND_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "RELEASE_ACTOR_KIND_USER",
+              "number": 1
+            },
+            {
+              "name": "RELEASE_ACTOR_KIND_SERVICE",
+              "number": 2
+            },
+            {
+              "name": "RELEASE_ACTOR_KIND_NODE",
+              "number": 3
+            },
+            {
+              "name": "RELEASE_ACTOR_KIND_TRIGGER",
+              "number": 4
+            },
+            {
+              "name": "RELEASE_ACTOR_KIND_ADMINISTRATOR",
+              "number": 5
+            },
+            {
+              "name": "RELEASE_ACTOR_KIND_ANONYMOUS",
+              "number": 6
+            },
+            {
+              "name": "RELEASE_ACTOR_KIND_HOST",
+              "number": 7
+            }
+          ]
+        },
+        {
+          "name": "ReleaseLifecycleState",
+          "value": [
+            {
+              "name": "RELEASE_LIFECYCLE_STATE_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_STATE_ADMITTED",
+              "number": 1
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_STATE_REVOKED",
+              "number": 2
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_STATE_RETIRED",
+              "number": 3
+            }
+          ]
+        },
+        {
+          "name": "ReleaseLifecycleAction",
+          "value": [
+            {
+              "name": "RELEASE_LIFECYCLE_ACTION_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_ACTION_PUBLISH",
+              "number": 1
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_ACTION_REVOKE",
+              "number": 2
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_ACTION_RETIRE",
+              "number": 3
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_ACTION_RENEW_EVIDENCE",
+              "number": 4
+            }
+          ]
+        },
+        {
+          "name": "ReleaseOperationDisposition",
+          "value": [
+            {
+              "name": "RELEASE_OPERATION_DISPOSITION_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "RELEASE_OPERATION_DISPOSITION_COMMITTED",
+              "number": 1
+            },
+            {
+              "name": "RELEASE_OPERATION_DISPOSITION_REJECTED",
+              "number": 2
+            }
+          ]
+        },
+        {
+          "name": "ReleaseLifecycleReason",
+          "value": [
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_ADMITTED",
+              "number": 1
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_EVIDENCE_RENEWED",
+              "number": 2
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_OPERATOR_REVOCATION",
+              "number": 3
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_SECURITY_INCIDENT",
+              "number": 4
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_CORRUPT_CONTENT",
+              "number": 5
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_SUPERSEDED",
+              "number": 6
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_END_OF_SUPPORT",
+              "number": 7
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_OPERATOR_RETIREMENT",
+              "number": 8
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_INVALID_PACKAGE",
+              "number": 9
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_INTEGRITY_MISMATCH",
+              "number": 10
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_INCOMPATIBLE_CONTRACT",
+              "number": 11
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_EVIDENCE_REJECTED",
+              "number": 12
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_POLICY_DENIED",
+              "number": 13
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_RELEASE_REVOKED",
+              "number": 14
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_RELEASE_RETIRED",
+              "number": 15
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_GENERATION_CONFLICT",
+              "number": 16
+            },
+            {
+              "name": "RELEASE_LIFECYCLE_REASON_CONTENT_CONFLICT",
+              "number": 17
+            }
+          ]
+        },
+        {
+          "name": "ReleaseLiveEligibility",
+          "value": [
+            {
+              "name": "RELEASE_LIVE_ELIGIBILITY_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "RELEASE_LIVE_ELIGIBILITY_ELIGIBLE",
+              "number": 1
+            },
+            {
+              "name": "RELEASE_LIVE_ELIGIBILITY_DENIED",
+              "number": 2
+            },
+            {
+              "name": "RELEASE_LIVE_ELIGIBILITY_UNKNOWN",
+              "number": 3
+            }
+          ]
+        },
+        {
+          "name": "ReleaseEligibilityReason",
+          "value": [
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_LOCAL_ELIGIBLE",
+              "number": 1
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_VERIFIED",
+              "number": 2
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_REVOKED",
+              "number": 3
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_RETIRED",
+              "number": 4
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_POLICY_DENIED",
+              "number": 5
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_PROOF_EXPIRED",
+              "number": 6
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_RUNTIME_INCOMPATIBLE",
+              "number": 7
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_CORRUPT_CONTENT",
+              "number": 8
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_AUTHORITY_UNAVAILABLE",
+              "number": 9
+            },
+            {
+              "name": "RELEASE_ELIGIBILITY_REASON_MUTATION_UNCERTAIN",
+              "number": 10
+            }
+          ]
+        },
+        {
+          "name": "ReleaseOperationLookupDisposition",
+          "value": [
+            {
+              "name": "RELEASE_OPERATION_LOOKUP_DISPOSITION_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "RELEASE_OPERATION_LOOKUP_DISPOSITION_FOUND",
+              "number": 1
+            },
+            {
+              "name": "RELEASE_OPERATION_LOOKUP_DISPOSITION_UNKNOWN",
+              "number": 2
+            },
+            {
+              "name": "RELEASE_OPERATION_LOOKUP_DISPOSITION_UNCERTAIN",
+              "number": 3
+            }
+          ]
+        }
+      ],
       "messageType": [
         {
           "field": [
@@ -3740,6 +4010,525 @@
         {
           "field": [
             {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ReleaseOperationPrecondition",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "subject",
+              "label": "LABEL_OPTIONAL",
+              "name": "subject",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 2,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseActorKind"
+            }
+          ],
+          "name": "ReleaseActor"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "scope",
+              "label": "LABEL_OPTIONAL",
+              "name": "scope",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "digest",
+              "label": "LABEL_OPTIONAL",
+              "name": "digest",
+              "number": 3,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "ReleasePolicyIdentity"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "componentDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "component_digest",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "packageDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "package_digest",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "state",
+              "label": "LABEL_OPTIONAL",
+              "name": "state",
+              "number": 4,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseLifecycleState"
+            },
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "actor",
+              "label": "LABEL_OPTIONAL",
+              "name": "actor",
+              "number": 6,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseActor"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 7,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseLifecycleReason"
+            },
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 8,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "policy",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy",
+              "number": 9,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleasePolicyIdentity"
+            },
+            {
+              "jsonName": "observedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "observed_at_unix_millis",
+              "number": 10,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "evidenceRevisionDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "evidence_revision_digest",
+              "number": 11,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "ReleaseLifecycleRecord",
+          "oneofDecl": [
+            {
+              "name": "_package_digest"
+            },
+            {
+              "name": "_observed_at_unix_millis"
+            },
+            {
+              "name": "_evidence_revision_digest"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "record",
+              "label": "LABEL_OPTIONAL",
+              "name": "record",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseLifecycleRecord"
+            },
+            {
+              "jsonName": "eligibility",
+              "label": "LABEL_OPTIONAL",
+              "name": "eligibility",
+              "number": 2,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseLiveEligibility"
+            },
+            {
+              "jsonName": "eligibilityReason",
+              "label": "LABEL_OPTIONAL",
+              "name": "eligibility_reason",
+              "number": 3,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseEligibilityReason"
+            }
+          ],
+          "name": "ReleaseLifecycleStatus"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "requestDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "request_digest",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "actor",
+              "label": "LABEL_OPTIONAL",
+              "name": "actor",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseActor"
+            },
+            {
+              "jsonName": "action",
+              "label": "LABEL_OPTIONAL",
+              "name": "action",
+              "number": 5,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseLifecycleAction"
+            },
+            {
+              "jsonName": "disposition",
+              "label": "LABEL_OPTIONAL",
+              "name": "disposition",
+              "number": 6,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseOperationDisposition"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 7,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseLifecycleReason"
+            },
+            {
+              "jsonName": "componentDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "component_digest",
+              "number": 8,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "packageManifestDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "package_manifest_digest",
+              "number": 9,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 10,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "record",
+              "label": "LABEL_OPTIONAL",
+              "name": "record",
+              "number": 11,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseLifecycleRecord"
+            },
+            {
+              "jsonName": "policy",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy",
+              "number": 12,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleasePolicyIdentity"
+            },
+            {
+              "jsonName": "observedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "observed_at_unix_millis",
+              "number": 13,
+              "oneofIndex": 3,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ReleaseOperationReceipt",
+          "oneofDecl": [
+            {
+              "name": "_component_digest"
+            },
+            {
+              "name": "_package_manifest_digest"
+            },
+            {
+              "name": "_expected_generation"
+            },
+            {
+              "name": "_observed_at_unix_millis"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "digest",
+              "label": "LABEL_OPTIONAL",
+              "name": "digest",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetReleaseLifecycleRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "status",
+              "label": "LABEL_OPTIONAL",
+              "name": "status",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseLifecycleStatus"
+            }
+          ],
+          "name": "GetReleaseLifecycleResponse",
+          "oneofDecl": [
+            {
+              "name": "_status"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetReleaseOperationRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "lookup",
+              "label": "LABEL_OPTIONAL",
+              "name": "lookup",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseOperationLookupDisposition"
+            },
+            {
+              "jsonName": "receipt",
+              "label": "LABEL_OPTIONAL",
+              "name": "receipt",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseOperationReceipt"
+            }
+          ],
+          "name": "GetReleaseOperationResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "digest",
+              "label": "LABEL_OPTIONAL",
+              "name": "digest",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "action",
+              "label": "LABEL_OPTIONAL",
+              "name": "action",
+              "number": 2,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseLifecycleAction"
+            },
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseOperationPrecondition"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 4,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.ReleaseLifecycleReason"
+            }
+          ],
+          "name": "ChangeReleaseLifecycleRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseOperationReceipt"
+            }
+          ],
+          "name": "ChangeReleaseLifecycleResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "signatures",
+              "label": "LABEL_REPEATED",
+              "name": "signatures",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PackageAdmissionEvidence"
+            },
+            {
+              "jsonName": "provenance",
+              "label": "LABEL_REPEATED",
+              "name": "provenance",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PackageAdmissionEvidence"
+            },
+            {
+              "jsonName": "sboms",
+              "label": "LABEL_REPEATED",
+              "name": "sboms",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PackageAdmissionEvidence"
+            }
+          ],
+          "name": "ReleaseEvidenceUpload"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "digest",
+              "label": "LABEL_OPTIONAL",
+              "name": "digest",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "packageDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "package_digest",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseOperationPrecondition"
+            },
+            {
+              "jsonName": "evidence",
+              "label": "LABEL_OPTIONAL",
+              "name": "evidence",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseEvidenceUpload"
+            }
+          ],
+          "name": "RenewReleaseEvidenceRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseOperationReceipt"
+            }
+          ],
+          "name": "RenewReleaseEvidenceResponse"
+        },
+        {
+          "field": [
+            {
               "jsonName": "release",
               "label": "LABEL_OPTIONAL",
               "name": "release",
@@ -3762,6 +4551,14 @@
               "number": 3,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.PackageAdmissionUpload"
+            },
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseOperationPrecondition"
             }
           ],
           "name": "PublishReleaseRequest"
@@ -3782,6 +4579,14 @@
               "name": "admission_warnings",
               "number": 2,
               "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseOperationReceipt"
             }
           ],
           "name": "PublishReleaseResponse"
@@ -3886,6 +4691,26 @@
               "inputType": ".latent.control.v1.ListReleasesRequest",
               "name": "ListReleases",
               "outputType": ".latent.control.v1.ListReleasesResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.GetReleaseLifecycleRequest",
+              "name": "GetReleaseLifecycle",
+              "outputType": ".latent.control.v1.GetReleaseLifecycleResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.GetReleaseOperationRequest",
+              "name": "GetReleaseOperation",
+              "outputType": ".latent.control.v1.GetReleaseOperationResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ChangeReleaseLifecycleRequest",
+              "name": "ChangeReleaseLifecycle",
+              "outputType": ".latent.control.v1.ChangeReleaseLifecycleResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.RenewReleaseEvidenceRequest",
+              "name": "RenewReleaseEvidence",
+              "outputType": ".latent.control.v1.RenewReleaseEvidenceResponse"
             }
           ],
           "name": "ReleaseService"

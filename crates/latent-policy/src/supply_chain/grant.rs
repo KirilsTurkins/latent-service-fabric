@@ -19,8 +19,8 @@ impl Grant {
             return Err(denied("admission-grant-stale"));
         }
         let now = owner.sample(state)?;
-        state.publisher.check_current(&self.publisher, now)?;
-        state.builder.check_current(&self.builder, now)?;
+        state.verifiers()?.0.check_current(&self.publisher, now)?;
+        state.verifiers()?.1.check_current(&self.builder, now)?;
         if !state
             .policy
             .tenants
@@ -38,6 +38,14 @@ impl AdmissionGrant for Grant {
     }
     fn binding(&self) -> &AdmissionBinding {
         &self.binding
+    }
+    fn policy_identity(&self) -> Option<latent_artifacts::ReleasePolicyIdentity> {
+        let receipt = super::receipt::Receipt::validate_history(&self.binding).ok()?;
+        Some(latent_artifacts::ReleasePolicyIdentity {
+            scope: receipt.policy.scope,
+            generation: receipt.policy.generation,
+            digest: receipt.policy_digest.parse().ok()?,
+        })
     }
     fn retained_bytes(&self) -> usize {
         // Fixed conservative charge covers bounded proof identities/source

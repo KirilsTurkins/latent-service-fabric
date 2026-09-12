@@ -133,10 +133,17 @@ fn assert_initial_adoption_rejects(damage: Damage) {
     let reopened =
         DirectoryArtifactRepository::open(temp.path(), config).expect("verified recovery");
     assert_eq!(
-        block_on(reopened.fetch(&candidate.descriptor.release_digest)).expect("recovered artifact"),
+        block_on(reopened.fetch(&candidate.descriptor.release_digest))
+            .expect_err("repaired orphan still lacks a committed lifecycle row")
+            .code,
+        PlatformErrorCode::NotFound
+    );
+    block_on(reopened.publish(candidate.clone())).expect("identical retry at directory capacity");
+    assert_eq!(
+        block_on(reopened.fetch(&candidate.descriptor.release_digest))
+            .expect("explicit retry commits repaired content"),
         candidate
     );
-    block_on(reopened.publish(candidate)).expect("identical retry at directory capacity");
     assert_eq!(
         block_on(reopened.publish(unrelated))
             .expect_err("recovered final directory retains its capacity charge")
