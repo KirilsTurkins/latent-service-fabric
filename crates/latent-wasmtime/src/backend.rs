@@ -75,6 +75,8 @@ pub(crate) struct PreparedRuntime {
     image_bytes: usize,
     // Runtime-owned costs retire only after all native and metadata fields.
     lifetime_charge: crate::cache::PreparedRuntimeCharge,
+    // All native owners above must retire before live-image quota is refunded.
+    _native_image: Option<crate::aot::image_budget::NativeImagePermit>,
 }
 
 impl PreparedRuntime {
@@ -110,6 +112,15 @@ pub(crate) struct SharedRuntime {
     preparation_context: Arc<PreparationContext>,
 }
 impl SharedRuntime {
+    pub(crate) fn native_aot_snapshot(
+        &self,
+    ) -> Result<Option<crate::NativeAotSnapshot>, PlatformError> {
+        self.preparation_context
+            .native_aot
+            .as_ref()
+            .map(|service| service.snapshot())
+            .transpose()
+    }
     pub(crate) fn cache_accounting_snapshot(&self) -> crate::PreparedCacheAccountingSnapshot {
         self.cache.accounting_snapshot()
     }
@@ -131,12 +142,14 @@ impl SharedRuntime {
         admission: Option<Arc<dyn AdmissionAuthority>>,
         lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
         runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+        native_aot: Option<Arc<crate::aot::cache::NativeAotService>>,
     ) -> Result<Self, PlatformError> {
         let cache = Arc::new(PreparedCache::new_tracked(config.cache_limits())?);
         let preparation = Arc::new(PreparationCounters::default());
         let preparation_observer = PreparationObserver::new(config.maximum_concurrent_preparations);
         let uncached_prepared = Arc::new(Mutex::new(None));
         let preparation_context = Arc::new(PreparationContext {
+            native_aot,
             admission,
             lifecycle,
             runtime_profile,
@@ -209,6 +222,9 @@ pub struct WasmtimeBackend {
     shared: Arc<SharedRuntime>,
 }
 impl WasmtimeBackend {
+    pub fn native_aot_snapshot(&self) -> Result<Option<crate::NativeAotSnapshot>, PlatformError> {
+        self.shared.native_aot_snapshot()
+    }
     #[must_use]
     pub fn compiler_snapshot(&self) -> crate::PreparationCompilerSnapshot {
         self.shared

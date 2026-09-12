@@ -53,7 +53,8 @@ pub(crate) struct QueueWindow {
     pub(crate) finished_nanos: u64,
 }
 
-type Task<T> = Box<dyn FnOnce(QueueWindow) -> Result<CompilationResult<T>, PlatformError> + Send>;
+pub(crate) type Task<T> =
+    Box<dyn FnOnce(QueueWindow) -> Result<CompilationResult<T>, PlatformError> + Send>;
 
 pub(crate) enum Acquisition<T: Send + Sync + 'static> {
     Ready(ReadyPin<T>),

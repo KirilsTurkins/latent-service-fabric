@@ -21,6 +21,30 @@ pub struct WasmtimeComponentEngineFactory {
 }
 
 impl WasmtimeComponentEngineFactory {
+    /// Fixed native-cache and image ownership; absent in local compilation mode.
+    pub fn native_aot_snapshot(&self) -> Result<Option<crate::NativeAotSnapshot>, PlatformError> {
+        self.shared.native_aot_snapshot()
+    }
+
+    /// Use one approved isolated compiler and authenticated persistent cache.
+    /// Both repository preparation APIs are bound to this exact catalog owner.
+    pub fn with_catalog_and_aot(
+        config: WasmtimeConfig,
+        services: WasmtimeHostServices,
+        catalog: Arc<latent_artifacts::DirectoryArtifactRepository>,
+        settings: crate::NativeAotSettings,
+    ) -> Result<Self, PlatformError> {
+        let lifecycle = catalog.lifecycle_authority();
+        let admission = lifecycle.required_authority().cloned();
+        Self::with_admission_and_aot(
+            config,
+            DispatchMode::Generic,
+            services,
+            admission,
+            Some(lifecycle),
+            Some((catalog, settings)),
+        )
+    }
     /// Independent opt-in input observations, available after factory shutdown.
     #[must_use]
     pub fn invocation_input_observer(&self) -> crate::InvocationInputObserver {
@@ -123,11 +147,25 @@ impl WasmtimeComponentEngineFactory {
     }
 
     fn with_admission(
+        config: WasmtimeConfig,
+        mode: DispatchMode,
+        services: WasmtimeHostServices,
+        admission: Option<Arc<dyn latent_artifacts::AdmissionAuthority>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+    ) -> Result<Self, PlatformError> {
+        Self::with_admission_and_aot(config, mode, services, admission, lifecycle, None)
+    }
+
+    fn with_admission_and_aot(
         mut config: WasmtimeConfig,
         mode: DispatchMode,
         services: WasmtimeHostServices,
         admission: Option<Arc<dyn latent_artifacts::AdmissionAuthority>>,
         lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+        native: Option<(
+            Arc<latent_artifacts::DirectoryArtifactRepository>,
+            crate::NativeAotSettings,
+        )>,
     ) -> Result<Self, PlatformError> {
         if mode == DispatchMode::Phase0 {
             // Preserve the Phase 0 64 KiB payload plus 16 KiB canonical ABI
@@ -155,6 +193,11 @@ impl WasmtimeComponentEngineFactory {
                 false,
             )
         })?;
+        let native = native
+            .map(|(catalog, settings)| {
+                crate::aot::cache::NativeAotService::new(&config, &engine, catalog, settings)
+            })
+            .transpose()?;
         let epoch_ticker = EpochTicker::start(
             &engine,
             Duration::from_millis(config.epoch_tick_interval_millis),
@@ -169,6 +212,7 @@ impl WasmtimeComponentEngineFactory {
             admission,
             lifecycle,
             Arc::clone(&runtime_profile),
+            native,
         )?);
         Ok(Self {
             engine,

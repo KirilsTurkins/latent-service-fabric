@@ -7,6 +7,9 @@ use sha2::{Digest, Sha256};
 use std::fmt;
 use zeroize::Zeroizing;
 
+mod restore;
+pub(crate) use restore::{AuthenticatedAotReceipt, AuthenticatedNative};
+
 const MAX_COMPILER_ID_BYTES: usize = 1024;
 const MAX_RECEIPT_BYTES: usize = 8192;
 

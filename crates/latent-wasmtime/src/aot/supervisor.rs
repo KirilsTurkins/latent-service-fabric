@@ -1,6 +1,11 @@
 //! One bounded blocking job, suitable for the existing fixed compiler workers.
 
+mod input;
 mod process;
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(crate) use input::tests::Fixture as InputFixture;
+pub(crate) use input::AotPreparedInput;
 
 use super::ownership::{AotResourceLimits, AotResourceSnapshot, Budget, OutputPermit, WorkPermit};
 use super::sandbox::SandboxLimits;
@@ -9,8 +14,8 @@ use super::{
     TrustedAotCompilerAuthority, TrustedAotOutput, ValidatedAotProfile,
 };
 use latent_artifacts::{
-    preparation_metadata_fingerprint, ArtifactPreparationReadLimits, CapsuleArtifact,
-    LifecycleScope, OwnedArtifactPreparationSource, ReleaseUseEligibility,
+    preparation_metadata_fingerprint, ArtifactPreparationIdentity, ArtifactPreparationReadLimits,
+    CapsuleArtifact, LifecycleScope, OwnedArtifactPreparationSource, ReleaseUseEligibility,
 };
 use latent_core::{PackageDigest, PlatformError, PlatformErrorCode, ReleaseDigest};
 use sha2::{Digest, Sha256};
@@ -263,29 +268,23 @@ impl AotCompilationJob {
     pub fn control(&self) -> AotJobControl {
         self.control.clone()
     }
-    pub fn run(mut self) -> Result<TrustedAotOutput, PlatformError> {
+    pub fn run(self) -> Result<TrustedAotOutput, PlatformError> {
+        self.read()?.compile()
+    }
+    pub(crate) fn read(self) -> Result<AotPreparedInput, PlatformError> {
         self.check()?;
+        let authentication = self.source.identity(&self.release)?;
         let artifact = self.source.fetch_blocking(&self.release, self.limits)?;
         self.check()?;
-        let source = self.checked_source(&artifact)?;
+        let source = self.checked_source(&artifact, authentication.as_ref())?;
         let key = AotCompatibilityKey::from_source(
             &source,
             &self.state.profile,
             self.state.compiler_digest,
             self.state.sandbox_digest,
         )?;
-        let output = process::compile(&self, &artifact.component_bytes)?;
-        // Recheck the exact retained capability; re-verification into a new
-        // generation cannot silently upgrade a job queued under an older proof.
         self.check()?;
-        let completed = CompletedAotJob {
-            key,
-            output,
-            permit: self.output.take().ok_or_else(invalid)?,
-        };
-        let output = self.state.authority.seal_completed(completed)?;
-        self.check()?;
-        Ok(output)
+        Ok(AotPreparedInput::new(artifact, key, authentication, self))
     }
     fn check(&self) -> Result<(), PlatformError> {
         self.check_control()?;
@@ -305,6 +304,7 @@ impl AotCompilationJob {
     fn checked_source(
         &self,
         artifact: &CapsuleArtifact,
+        authentication: Option<&ArtifactPreparationIdentity>,
     ) -> Result<CheckedAotSource, PlatformError> {
         let component_digest: [u8; 32] = Sha256::digest(&artifact.component_bytes).into();
         if super::blob(component_digest).as_str() != self.release.0
@@ -325,7 +325,7 @@ impl AotCompilationJob {
             self.state.limits.maximum_metadata_bytes,
             32,
         )?;
-        if let Some(identity) = self.source.identity(&self.release)? {
+        if let Some(identity) = authentication {
             identity.verify_metadata(artifact, self.state.limits.maximum_metadata_bytes, 32)?;
         }
         Ok(CheckedAotSource {

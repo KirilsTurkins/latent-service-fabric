@@ -116,7 +116,16 @@ impl WasmtimeBackend {
                         u64::from(identity.is_some()),
                     );
                     counters::add(&context.preparation.repository_fetches, 1);
-                    let input = if let Some(source) = source {
+                    let input = if let Some(native) = &context.native_aot {
+                        let bounds = source
+                            .as_ref()
+                            .ok_or_else(super::admission_association_error)?
+                            .read_bounds(&key.release)?;
+                        future.reserve_documents(document_bytes(bounds)?)?;
+                        let job = native.reserve(&key.release)?;
+                        drop(source);
+                        input::ArtifactInput::Native(Some(job))
+                    } else if let Some(source) = source {
                         let bounds = bounds.map_or_else(|| source.read_bounds(&key.release), Ok)?;
                         if bounds.component_bytes != source_bytes as u64 {
                             return Err(invalid("preparation-read-size-changed"));
@@ -143,11 +152,28 @@ impl WasmtimeBackend {
                         authentication: identity.clone(),
                         eligibility: eligibility.clone(),
                     };
-                    future.start(move |reservation| {
-                        Box::new(move |queue| {
-                            context.compile_input(input, key, handle, authority, reservation, queue)
-                        })
-                    })?;
+                    let native_control = match &input {
+                        input::ArtifactInput::Native(Some(job)) => Some(job.control()),
+                        _ => None,
+                    };
+                    let build =
+                        move |reservation| -> crate::compiler::Task<super::PreparedRuntime> {
+                            Box::new(move |queue| {
+                                context.compile_input(
+                                    input,
+                                    key,
+                                    handle,
+                                    authority,
+                                    reservation,
+                                    queue,
+                                )
+                            })
+                        };
+                    if let Some(control) = native_control {
+                        future.start_with_control(Some(control), build)?;
+                    } else {
+                        future.start(build)?;
+                    }
                 } else {
                     // Only the distinct job owns the directory/root lock.
                     drop(source);

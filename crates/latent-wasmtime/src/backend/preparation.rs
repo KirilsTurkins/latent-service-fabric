@@ -62,6 +62,18 @@ impl WasmtimeBackend {
         self.shared
             .preparation_context
             .check_eligibility(eligibility.as_ref(), &key.release)?;
+        if let Some(native) = &self.shared.preparation_context.native_aot {
+            // Validate the borrowed caller's sealed source first, then use the
+            // same owned readiness queue. Recheck the ORIGINAL capability after
+            // the await so renewal cannot silently upgrade this request.
+            let ready = self
+                .prepare_ready_repository(native.catalog(), key.clone())
+                .await?;
+            self.shared
+                .preparation_context
+                .check_eligibility(eligibility.as_ref(), &key.release)?;
+            return self.materialize_readiness(ready);
+        }
         let identity = source
             .as_ref()
             .map(|source| source.identity(&key.release))

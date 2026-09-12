@@ -1,4 +1,4 @@
-# Isolated trusted-local AOT compilation
+# Isolated trusted-local AOT compilation and native cache
 
 Phase 2 issue #150 adds a bounded compiler producer to `latent-wasmtime`.
 `IsolatedAotCompiler` launches an approved one-job executable, verifies its input
@@ -6,10 +6,11 @@ and output, and returns locally authenticated native bytes with an owned memory
 allowance. The child uses Wasmtime 47.0.3's safe `Engine::precompile_component`;
 it never instantiates a guest or loads native output.
 
-Persistent AOT storage and native loading belong to #151. Current runtime
-preparation continues to compile portable components through the existing
-Wasmtime path. This producer is a host API; it does not yet replace that path or
-add an automatic node/CLI AOT cache.
+Issue #151 adds opt-in persistent native reuse and authenticated loading. A
+configured factory uses its exact directory catalog, approved isolated compiler,
+protected host key, bounded raw-blob cache and bounded receipt cache. The normal
+configuration continues to compile portable components locally. There is no
+automatic CLI cache or distributed native-artifact trust protocol.
 
 ## Host API and input authority
 
@@ -38,8 +39,25 @@ let receipt = output.receipt();
 
 `AotJobControl::cancel` signals the owner. Dropping an unstarted job starts no
 process. The producer has no internal queue, compiler thread pool or dormant
-service process. Its blocking operation can be owned by the existing fixed
-compiler workers when #151 integrates native reuse.
+service process. In the integrated mode its blocking operation runs on the
+existing fixed compiler workers, or on the existing synchronous control path.
+
+To enable that mode, construct `NativeAotSettings` with the approved executable,
+one moved `TrustedAotCompilerAuthority`, `AotProcessLimits`, `NativeAotCacheConfig`
+and `NativeImageLimits`, then call:
+
+```rust,ignore
+let factory = WasmtimeComponentEngineFactory::with_catalog_and_aot(
+    config, services, catalog, settings,
+)?;
+```
+
+Both preparation APIs are bound to that exact catalog owner. A caller cannot
+substitute a different repository or use a raw-artifact preparation method to
+bypass configured isolated compilation. The standalone node's optional
+[`isolatedAot` settings](../reference/standalone-node.md#optional-isolated-aot-compilation)
+and [configuration schema](../../schemas/node-isolated-aot.schema.json) describe
+executable approval, private key-file checks and separate cache roots.
 
 ## Exact compatibility and provenance
 
@@ -180,7 +198,7 @@ neither cloneable nor publicly constructible/deserializable. Its native allowanc
 remains charged until the actual output owner is dropped, even after compilation
 and shutdown finish. Borrowing bytes does not release that ownership.
 
-## Local authentication and #151
+## Local authentication and persistent reuse
 
 `TrustedAotCompilerAuthority` holds a nonzero 256-bit key in zeroizing storage.
 Provision it outside the child and any replaceable cache. The producer does not
@@ -190,19 +208,90 @@ Only the private completed-job path can seal native bytes. Its domain-separated
 keyed-BLAKE3 authenticator binds the compatibility-key digest, exact native
 SHA-256, size and configured compiler identity. Verification uses constant-time
 MAC equality. Replacing native bytes and recomputing caller-controlled digests
-does not establish authentic output. The bounded receipt is future storage
-metadata, not a public constructor for `TrustedAotOutput`.
+does not establish authentic output. The bounded receipt remains untrusted
+storage metadata until the configured authority authenticates it; it is not a
+public constructor for `TrustedAotOutput`.
 
 This authority is local to the configured host/key. It implies no publisher-key
 reuse, distributed native attestation protocol or keyless trust. Authentication
-also does not grant current release eligibility. #151 must check the current
-catalog/trust/profile at the native-loader boundary, authenticate persisted
-bytes before any unsafe loader call, and preserve runtime/active-use ownership
-across eviction. Recovery, incompatibility and portable fallback behavior belong
-to that integration. #150 introduces no native deserialization or unsafe-code
-exception.
+also does not grant current release eligibility. Changing the host key makes old
+receipts unusable. Catalog membership, lifecycle generation, signing currentness
+and runtime compatibility are checked independently of cache contents.
+
+A persistent hit starts with one fresh bounded fetch from the sealed catalog
+source. The checked input derives the exact compatibility key; its receipt must
+match every key field and authenticate its claimed native digest and size before
+the raw blob is pinned or read. A bounded raw-byte owner is then independently
+checked against those claims. The private native proof borrows that exact
+immutable owner and the same checked input. Receipt read memory can be released
+before the larger blob read. There is no public `load(bytes)` or restored-output
+constructor.
+
+The sole audited unsafe operation is `Component::deserialize` over this immutable
+authenticated slice. Wasmtime 47.0.3 copies the bytes into its own mapping; the
+loader never deserializes a replaceable file or trusts a filename. It checks the
+actual engine fingerprint, current input capability and job control before entry,
+then checks currentness again after the synchronous loader returns. Wasmtime
+provides no cancellation hook inside that call. Surface validation, linking and
+runtime adoption retain the native owner and its allowance through all errors.
+
+Missing cache entries and rejected cached content permit at most one isolated
+compilation after independent input and engine checks. There is no in-process
+`Component::new` fallback in configured isolated mode. Lifecycle, policy,
+cancellation, deadline and resource-limit errors remain failures. Blob bytes are
+persisted before their compatibility receipt. If persistence of freshly produced
+output fails, that owned authenticated output can still prepare the runtime;
+the failure is counted, and later preparations check storage afresh. Failed
+cleanup retains its storage charge. Unknown files and links are not silently
+adopted as cache entries.
+
+Resident prepared-runtime hits retain the existing compact catalog checks and
+avoid this fresh fetch; persistent native hits after a prepared miss or restart
+still perform it. Neither cache upgrades old in-process lifecycle capabilities.
+Prepared/queued pins are not accepted invocation starts. Final guarded start
+checks remain in force, while starts already accepted by the authority may finish.
+
+## Native image and cache accounting
+
+Before native loading, `NativeImageLimits` reserves one image and the complete
+ELF length rounded up to the actual host page size, using checked arithmetic.
+The per-image limit applies to that rounded length, and total bytes must be at
+least the per-image limit.
+
+| Image resource | Default | Hard ceiling |
+| --- | ---: | ---: |
+| Live or loading images | 64 | 4,096 |
+| One rounded mapping | 128 MiB | 256 MiB |
+| All rounded mappings | 256 MiB | 1 GiB |
+
+Integrated output settings are also capped at 256 MiB and must fit the raw-cache
+object/read/staging limits and the rounded image limit. The receipt cache defaults
+to 1,024 entries, 16 MiB of disk, 2 MiB of metadata, 8 KiB per receipt, and eight
+read owners sharing 64 KiB. Raw blobs use the independently bounded
+[raw artifact cache](../reference/raw-artifact-cache.md). These domains can
+exhaust independently; an entry-count ceiling is not a guaranteed capacity.
+
+`native_aot_snapshot()` on the factory and backend returns `None` when this mode
+is absent. When configured it reports producer, raw-storage, receipt and image
+usage plus cache hits/misses/rejections, isolated compilation attempts and
+persistence failures. `images.loader_attempts` increments immediately before the
+actual native load; failed preconditions and reservations do not increment it.
+Loading counts/bytes are subsets of live image counts/bytes and must not be added
+again. The existing prepared-runtime ledger reports logical image spans, while
+this separate image budget also charges final page padding.
+
+The image permit remains with the runtime through resident, ready and active
+pins. Cache eviction or cancellation does not refund an image while such an
+owner survives; native handles are destroyed before its final refund. The input
+byte lease overlaps the new mapping during copying. These counters exclude
+decoder/type/unwind heap, allocator arena retention, lazy COW memfd data and file
+descriptors, guest/pooling mappings and RSS. Focused correctness tests do not
+establish a new throughput target, long-running memory bound or 100,000-release
+performance result.
 
 Source: [producer and process ownership](../../crates/latent-wasmtime/src/aot/supervisor.rs),
 [worker protocol](../../crates/latent-wasmtime/src/aot/protocol.rs),
 [sandbox](../../crates/latent-wasmtime/src/aot/sandbox.rs), and
-[local output seal](../../crates/latent-wasmtime/src/aot/seal.rs).
+[local output seal](../../crates/latent-wasmtime/src/aot/seal.rs),
+[authenticated copying loader](../../crates/latent-wasmtime/src/aot/loader.rs), and
+[image ownership](../../crates/latent-wasmtime/src/aot/image_budget.rs).

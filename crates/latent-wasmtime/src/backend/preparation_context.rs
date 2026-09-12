@@ -19,6 +19,7 @@ use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
 pub(super) struct PreparationContext {
+    pub(super) native_aot: Option<Arc<crate::aot::cache::NativeAotService>>,
     pub(super) runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     pub(super) admission: Option<Arc<dyn AdmissionAuthority>>,
     pub(super) lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,

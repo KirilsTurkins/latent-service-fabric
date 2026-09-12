@@ -6,6 +6,8 @@ use tempfile::TempDir;
 use super::Catalogs;
 use crate::config::{NodeConfig, NodeSettings, SupplyChainSettings};
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod aot;
 #[cfg(target_os = "linux")]
 mod control;
 
@@ -59,7 +61,7 @@ async fn compose_rejects_local_catalogs_under_enforced_settings() {
     let catalogs = Catalogs::open(&settings).await.unwrap();
     enforce(&mut settings);
     assert_eq!(
-        super::StandaloneNode::compose(&settings, &catalogs, Arc::new(SystemActivationClock))
+        super::StandaloneNode::compose(&mut settings, &catalogs, Arc::new(SystemActivationClock))
             .err()
             .unwrap()
             .code,
@@ -70,7 +72,7 @@ async fn compose_rejects_local_catalogs_under_enforced_settings() {
 #[tokio::test]
 async fn compose_rejects_mixed_local_catalog_owners_before_starting_services() {
     let directories = [TempDir::new().unwrap(), TempDir::new().unwrap()];
-    let settings = settings(&directories[0]);
+    let mut settings = settings(&directories[0]);
     let mut catalogs = Catalogs::open(&settings).await.unwrap();
     assert!(catalogs
         .deployments
@@ -79,7 +81,7 @@ async fn compose_rejects_mixed_local_catalog_owners_before_starting_services() {
     let other = Catalogs::open(&other_settings).await.unwrap();
     catalogs.deployments = other.deployments;
     assert_eq!(
-        super::StandaloneNode::compose(&settings, &catalogs, Arc::new(SystemActivationClock))
+        super::StandaloneNode::compose(&mut settings, &catalogs, Arc::new(SystemActivationClock))
             .err()
             .unwrap()
             .code,

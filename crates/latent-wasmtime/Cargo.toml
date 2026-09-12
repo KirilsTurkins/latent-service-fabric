@@ -7,8 +7,16 @@ license.workspace = true
 authors.workspace = true
 description = "Bounded Wasmtime Component Model runtime with a retained Phase 0 compatibility facade."
 
-[lints]
-workspace = true
+[lints.rust]
+# Only the private authenticated copying loader may locally allow unsafe.
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
 
 [[test]]
 name = "aot_supervisor"

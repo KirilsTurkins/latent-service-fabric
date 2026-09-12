@@ -45,6 +45,9 @@ impl<T> Core<T> {
         while index < state.jobs.len() {
             let job = &mut state.jobs[index];
             job.abandoned = true;
+            if let Some(control) = &job.native_control {
+                control.cancel();
+            }
             let pending = std::mem::take(&mut job.waiters);
             state.waiters -= pending.len();
             waiters.extend(pending);

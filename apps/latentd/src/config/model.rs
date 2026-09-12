@@ -31,6 +31,8 @@ pub struct NodeConfig {
     pub catalogs: CatalogConfig,
     #[serde(default)]
     pub supply_chain: SupplyChainConfig,
+    #[serde(default, deserialize_with = "super::aot::present")]
+    pub isolated_aot: Option<super::IsolatedAotConfig>,
     #[serde(default)]
     pub retention: RetentionConfig,
     #[serde(default)]
