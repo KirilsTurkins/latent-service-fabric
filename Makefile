@@ -1,10 +1,43 @@
 CARGO ?= cargo
 PYTHON ?= python3
 
-.PHONY: check rpc-bindings component-bindings guest-bindings echo-capsule echo-capsule-reproducibility phase0-spike-demo phase0-calibration phase0-gate phase0-gate-smoke phase1-foundation fmt fmt-check clippy test schemas repository-tests contracts sdks validate tree
+.PHONY: check help rpc-bindings component-bindings guest-bindings echo-capsule echo-capsule-reproducibility phase0-spike-demo phase0-calibration phase0-gate phase0-gate-smoke phase1-foundation fmt fmt-check clippy test schemas repository-tests contracts sdks validate tree
 
 check:
 	$(CARGO) check --workspace --all-targets --all-features --locked
+
+help:
+	@printf '%s\n' \
+		'LSF contributor commands' \
+		'' \
+		'Validation and formatting:' \
+		'  check                         Compile the Rust workspace and all targets.' \
+		'  fmt                           Format all Rust workspace sources.' \
+		'  fmt-check                     Check Rust formatting without modifying sources.' \
+		'  clippy                        Run Clippy across the Rust workspace.' \
+		'  test                          Run Rust workspace tests.' \
+		'  schemas                       Validate repository and foundation schemas/contracts.' \
+		'  repository-tests              Run repository-local Python unit tests.' \
+		'  contracts                     Validate contracts and bounded integration fixtures.' \
+		'  sdks                          Validate all maintained SDK contract surfaces.' \
+		'  phase1-foundation             Run the retained Phase 1 Rust/contracts validation aggregate.' \
+		'  validate                      Run the normal clean-checkout validation entry point.' \
+		'' \
+		'Bindings and generated fixtures:' \
+		'  rpc-bindings                  Check generated RPC bindings.' \
+		'  component-bindings            Check host and wasm32-wasip2 component bindings.' \
+		'  guest-bindings                Check guest bindings and the echo guest example.' \
+		'  echo-capsule                  Build the maintained echo capsule fixture (manual generated build).' \
+		'  echo-capsule-reproducibility  Verify two clean echo builds are byte-identical (manual fixture check).' \
+		'' \
+		'Retained Phase 0 evidence commands (historical/manual):' \
+		'  phase0-spike-demo             Run the retained Phase 0 executable spike demo.' \
+		'  phase0-calibration            Run retained native Phase 0 calibration.' \
+		'  phase0-gate                   Run the retained full Phase 0 authorization gate.' \
+		'  phase0-gate-smoke             Run the deterministic retained Phase 0 smoke gate.' \
+		'' \
+		'Utility:' \
+		'  tree                          List repository files while excluding common generated trees.'
 
 rpc-bindings:
 	$(CARGO) check -p latent-rpc --all-targets --all-features --locked
