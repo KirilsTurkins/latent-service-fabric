@@ -1,10 +1,16 @@
 """Offline profile/receipt/ownership checks; no node, compiler or network."""
 import copy
+from contextlib import redirect_stdout
+import io
+import json
 from pathlib import Path
+import signal
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+from tools import phase2_gate_resource as workflow
 from tools.phase2_gate_resource import SOURCE_FILES
 from tools.phase2_gate_resource_os import fixture_inventory
 from tools.phase2_gate_resource_profile import (
@@ -273,3 +279,100 @@ class Phase2ResourceTests(unittest.TestCase):
         value["shutdown"]["compiler"]["jobs_started"] = 3
         with self.assertRaisesRegex(WorkflowError, "receipt-compiler-work"):
             validate_receipt(value)
+
+
+class ResourceReceiptPublicationTests(unittest.TestCase):
+    """Exercise real final validation, signal ownership and new-file publication."""
+
+    def setUp(self):
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        fixture = self.root / "fixture"
+        fixture.mkdir()
+        self.args = SimpleNamespace(cli=self.root / "latent", node=self.root / "latentd",
+                                    fixture_root=fixture, build_identity=self.root / "build.json",
+                                    output=self.root / "receipt.json")
+        numbers = [signal.SIGINT, signal.SIGTERM]
+        if hasattr(signal, "SIGBREAK"):
+            numbers.append(signal.SIGBREAK)
+        self.original_handlers = dict.fromkeys(numbers, signal.SIG_DFL)
+        self.handlers = dict(self.original_handlers)
+
+        def install(number, handler):
+            previous = self.handlers[number]
+            self.handlers[number] = handler
+            return previous
+
+        self.enterContext(patch.object(signal, "getsignal", side_effect=self.handlers.__getitem__))
+        self.enterContext(patch.object(signal, "signal", side_effect=install))
+        self.enterContext(patch.object(workflow.sys, "platform", "linux"))
+        self.enterContext(patch.object(workflow.sys, "version_info", (3, 13)))
+        self.enterContext(patch.object(workflow.os, "sysconf", return_value=4096, create=True))
+        self.now = 1000.0
+        self.enterContext(patch.object(workflow.time, "monotonic", side_effect=lambda: self.now))
+        expected = complete_receipt()
+        self.enterContext(patch.object(workflow, "build_identity", return_value=expected["build"]))
+        self.enterContext(patch.object(workflow, "hash_file", return_value="sha256:" + "1" * 64))
+        self.enterContext(patch.object(workflow, "fixture_inventory", return_value=[]))
+        self.enterContext(patch.object(workflow, "metadata", return_value={
+            "packages": expected["packages"], "verifiedAtUnixSeconds": "1",
+            "proofAgeExpiresAtUnixSeconds": "601",
+        }))
+        self.work_directories = []
+
+        def completed_work(client, _binary, _directory, _fixture, _metadata, result):
+            self.work_directories.append(client.directory.parent)
+            result.update(copy.deepcopy(expected))
+            client.controls = expected["controls"]
+            client.invocations = expected["invokeAttempts"]
+            self.now += 1
+
+        self.run = self.enterContext(patch.object(workflow, "run", side_effect=completed_work))
+        self.stdout = self.enterContext(redirect_stdout(io.StringIO()))
+
+    def check_published(self, passed):
+        self.run.assert_called_once()
+        self.assertEqual(len(self.work_directories), 1)
+        self.assertFalse(self.work_directories[0].exists())
+        self.assertEqual(self.handlers, self.original_handlers)
+        result = json.loads(self.args.output.read_text())
+        self.assertIs(result["passed"], passed)
+        self.assertIs(json.loads(self.stdout.getvalue())["passed"], passed)
+        self.assertEqual(len(result["samples"]), 12, "completed evidence was discarded")
+        self.assertTrue(result["temporaryOutputsRemoved"])
+        if not passed:
+            with self.assertRaisesRegex(WorkflowError, "receipt-not-passing"):
+                validate_receipt(result)
+        return result
+
+    def test_cancellation_during_final_validation_retains_only_failed_receipt(self):
+        def validate_then_cancel(value):
+            validate_receipt(value)
+            handler = self.handlers[signal.SIGTERM]
+            self.assertTrue(callable(handler))
+            handler(signal.SIGTERM, None)
+
+        with patch.object(workflow, "validate_receipt", side_effect=validate_then_cancel):
+            with self.assertRaisesRegex(WorkflowError, "receipt-validation:resource-unavailable"):
+                workflow.execute(self.args)
+        self.check_published(False)
+
+    def test_validation_overrun_uses_existing_final_deadline_and_retains_failure(self):
+        def validate_then_expire(value):
+            validate_receipt(value)
+            self.now = 1000 + PROFILE["deadlineSeconds"] + PROFILE["shutdownSeconds"] + 1
+
+        with patch.object(workflow, "validate_receipt", side_effect=validate_then_expire):
+            with self.assertRaisesRegex(WorkflowError, "receipt-validation:resource-deadline"):
+                workflow.execute(self.args)
+        self.assertEqual(self.check_published(False)["elapsedMillis"], "311000")
+
+    def test_successful_publication_includes_final_validation_elapsed_time(self):
+        def validate_then_finish(value):
+            validate_receipt(value)
+            self.now += 2
+
+        with patch.object(workflow, "validate_receipt", side_effect=validate_then_finish):
+            workflow.execute(self.args)
+        result = self.check_published(True)
+        self.assertEqual(result["elapsedMillis"], "3000")
+        validate_receipt(result)

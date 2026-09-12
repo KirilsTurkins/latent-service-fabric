@@ -27,7 +27,7 @@ no retry of a failed Invoke or adjustment to the canary denominator or threshold
 
 The local host was Linux x86_64 on WSL2 kernel
 `6.6.87.2-microsoft-standard-WSL2`, with Python 3.13.5 and Rust 1.97.1 debug builds.
-This is not a bare-metal result. The predefined profile took 8.682 seconds,
+This is not a bare-metal result. The predefined profile took 8.739 seconds,
 including identity processing, work and shutdown; that duration is not a latency
 benchmark. Every phase retained seven threads/tasks, 18 descriptors, three
 sockets, one TCP listener and zero descendants. Only two of the 32 releases were
@@ -35,12 +35,12 @@ prepared; the other 30 had no execution resources.
 
 | Phase (three samples each) | Median RSS bytes | Median RSS MiB |
 | --- | ---: | ---: |
-| Warm baseline | 63,569,920 | 60.625 |
-| Dormant cohort | 64,356,352 | 61.375 |
-| Execution reclaimed | 65,667,072 | 62.625 |
-| Deployments removed | 65,667,072 | 62.625 |
+| Warm baseline | 63,832,064 | 60.875 |
+| Dormant cohort | 64,618,496 | 61.625 |
+| Execution reclaimed | 66,060,288 | 63.000 |
+| Deployments removed | 66,060,288 | 63.000 |
 
-RSS grew by 0.75 MiB with the dormant cohort and by 2 MiB by final route removal.
+RSS grew by 0.750 MiB with the dormant cohort and by 2.125 MiB by final route removal.
 Authoritative release metadata, audit history and two prepared images remain
 intentionally retained. The receipt proves the declared transient counters reach
 zero and owners join/reap; it does not claim that RSS returns to baseline, that

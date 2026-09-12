@@ -144,6 +144,11 @@ def execute_owned(args, cancellation):
         result["elapsedMillis"] = str(int((time.monotonic() - started) * 1000))
         result["passed"] = True
         validate_receipt(result)
+        # Validation is still owned work. Observe cancellation and the existing
+        # final deadline before publishing a passing receipt; file publication
+        # itself is not atomic with host signal delivery.
+        result["elapsedMillis"] = str(int((time.monotonic() - started) * 1000))
+        checkpoint(deadline + PROFILE["shutdownSeconds"], cancellation)
     except BaseException as error:
         result["passed"] = False
         # Only fixed stage tokens from our own harness are retained. Never

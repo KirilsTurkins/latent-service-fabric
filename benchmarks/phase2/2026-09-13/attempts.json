@@ -49,6 +49,22 @@
       "disposition": "Superseded after formatting and offline-validator coverage improvements. Fixed PROFILE and workload were unchanged. Full initial receipt compacted; final receipt below is a separate fresh observation."
     },
     {
+      "id": "resource-after-validator-tightening",
+      "outcome": "passed-before-final-publication-check",
+      "receiptFileSha256": "1eb868b86754dea7ddcec1f038b3d59c17ebfdc8134a0acd7a09a26842fb47fb",
+      "controls": 133,
+      "invocations": 32,
+      "samples": 12,
+      "elapsedMillis": 8682,
+      "rssMediansBytes": [
+        63569920,
+        64356352,
+        65667072,
+        65667072
+      ],
+      "disposition": "Superseded after review added cancellation/deadline checking after final receipt validation. Runtime workload and PROFILE limits unchanged. The replacement receipt is a separate fresh run; this earlier full receipt is compacted."
+    },
+    {
       "id": "resource-final",
       "outcome": "passed",
       "receipt": "resource-receipt.json"
@@ -86,6 +102,16 @@
       "outcome": "unavailable",
       "reason": "Host Windows/WSL bash RPC handle failure prevented Linux shell-guard cases from executing",
       "disposition": "Not a test pass. Reran intended Linux tests inside the owned container: seven shell-guard tests passed."
+    },
+    {
+      "id": "gate-pr-before-publication-check",
+      "outcome": "superseded",
+      "reviewedHead": "df83fd31d23058bca9965b852ecdb41569dbdf85",
+      "workflowRuns": [
+        34725514194,
+        34725514222
+      ],
+      "disposition": "Pending CI deliberately cancelled after independent review found the collector could publish passed=true when cancelled during validation. Added a final checkpoint and three focused cancellation/deadline/elapsed regressions. All38 collector tests and a fresh unchanged resource profile passed; new-head CI is required before merge."
     }
   ]
 }

@@ -170,7 +170,7 @@ The fixed [resource profile](docs/testing/phase-2-resource-profile.md) retains
 32 signed releases, 16 deployments, two warmed portable images, 32 successful
 Invokes and 12 OS samples, with transient ownership returning to zero and actual
 worker joins/process reap. Its final collector and validator checks passed
-35/35. The [compact evidence set](benchmarks/phase2/2026-09-13/README.md) preserves
+38/38. The [compact evidence set](benchmarks/phase2/2026-09-13/README.md) preserves
 source and binary identities, finite limits, failed/superseded attempts and the
 WSL2 host boundary. This is no new 100k-scale or production SLO claim; historical
 Phase 1 scale/soak reports retain their original measurement scope.
