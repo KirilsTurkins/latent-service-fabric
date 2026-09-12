@@ -544,7 +544,6 @@ fn now_unix_millis() -> u64 {
     u64::try_from(millis).unwrap_or(u64::MAX)
 }
 
-const DELAYED_TRAP_MODE: &str = "__latent_test_delayed_trap";
 const DELAYED_MEMORY_MODE: &str = "__latent_test_delayed_memory";
 const MIXED_DELAYED_ECHO_PREFIX: &str = "__latent_test_mixed_delayed_echo:";
 const MIXED_MEMORY_ECHO_PREFIX: &str = "__latent_test_mixed_memory_echo:";
@@ -600,23 +599,29 @@ async fn healthy_activations_remain_correct_while_an_infinite_activation_times_o
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 #[ignore = "requires the containment component built by tools/validate_contracts.sh"]
 async fn healthy_activations_remain_correct_while_another_activation_traps() {
-    let (runner, pool, backend, _) = runner_fixture(5).await;
     let failure_id = ActivationId("mixed-trap-failure".to_owned());
+    let mut expected = BTreeSet::from([failure_id.0.clone()]);
+    expected.extend((0..4).map(|index| format!("mixed-trap-healthy-{index}")));
+    let rendezvous = Arc::new(MixedMemoryRendezvous::new(expected, Duration::from_secs(2)));
+    let sink: Arc<dyn StructuredLogSink> = rendezvous.clone();
+    let (runner, pool, backend, _) = runner_fixture_with_log_sink(5, sink).await;
     let failure = {
         let runner = Arc::clone(&runner);
         tokio::spawn(async move {
             runner
                 .invoke(activation_envelope(
                     failure_id,
-                    DELAYED_TRAP_MODE,
+                    "__latent_test_mixed_trap",
                     budget(MAXIMUM_FUEL, 16 * 1024 * 1024, None),
                 ))
                 .await
         })
     };
-    wait_for_runtime_active(&backend, 1).await;
-    let healthy = spawn_mixed_healthy(&runner, "trap", 4);
-    wait_for_runtime_active(&backend, 2).await;
+    let healthy = spawn_mixed_healthy_with_prefix(&runner, "trap", 4, MIXED_MEMORY_ECHO_PREFIX);
+    let witness = wait_for_mixed_memory_rendezvous(&rendezvous, || {
+        !failure.is_finished() && healthy.iter().all(|(_, _, task)| !task.is_finished())
+    })
+    .await;
 
     let outcome = tokio::time::timeout(Duration::from_secs(5), failure)
         .await
@@ -630,6 +635,11 @@ async fn healthy_activations_remain_correct_while_another_activation_traps() {
     );
     assert_mixed_healthy(healthy, &backend, "trap").await;
     assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
+    assert!(witness.opened, "mixed trap rendezvous failed: {witness:?}");
+    assert_eq!(witness.arrived, witness.expected);
+    assert!(witness.unexpected.is_empty());
+    assert!(!witness.timed_out);
+    assert!(!witness.departed_before_release);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 6)]
@@ -858,11 +868,11 @@ async fn assert_mixed_healthy(
             }
         }
         let logs = backend.log_sink().snapshot_for(&activation_id);
-        if suite == "memory" {
+        if suite == "memory" || suite == "trap" {
             assert_eq!(
                 logs.len(),
                 2,
-                "memory healthy activation has rendezvous and invocation logs"
+                "gated healthy activation has rendezvous and invocation logs"
             );
             assert_eq!(logs[0].message, MIXED_MEMORY_READY_LOG_MESSAGE);
         } else {

@@ -20,6 +20,7 @@ use logic::{MessageRejection, MAX_LOG_ACTIVATION_ID_BYTES};
 
 const TRAP_MODE: &str = "__latent_test_trap";
 const DELAYED_TRAP_MODE: &str = "__latent_test_delayed_trap";
+const MIXED_TRAP_MODE: &str = "__latent_test_mixed_trap";
 const INFINITE_MODE: &str = "__latent_test_infinite";
 const MEMORY_MODE: &str = "__latent_test_memory";
 const DELAYED_MEMORY_MODE: &str = "__latent_test_delayed_memory";
@@ -31,8 +32,8 @@ const MIXED_MEMORY_READY_LOG_MESSAGE: &str = "containment mixed memory rendezvou
 const MIXED_MEMORY_PRESSURE_LOG_MESSAGE: &str = "containment mixed memory pressure started";
 const MEMORY_CHUNK_BYTES: usize = 64 * 1024;
 const CONTROLLED_DELAY_ITERATIONS: u64 = 2_000_000;
-// Mixed trap/deadline tests retain their historical bounded delay. The mixed
-// memory test now synchronizes through the host log sink before this delay.
+// The deadline fixture retains its bounded delay. Mixed trap/memory fixtures
+// synchronize through the host log sink before completing their guest work.
 const CONTROLLED_MIXED_DELAY_ITERATIONS: u64 = 50_000_000;
 
 struct ContainmentCapsule;
@@ -55,6 +56,10 @@ impl Guest for ContainmentCapsule {
 
         match message.as_str() {
             TRAP_MODE => panic!("controlled containment fixture trap"),
+            MIXED_TRAP_MODE => {
+                wait_for_mixed_memory_rendezvous();
+                panic!("controlled rendezvous containment fixture trap");
+            }
             DELAYED_TRAP_MODE => {
                 controlled_delay(CONTROLLED_MIXED_DELAY_ITERATIONS);
                 panic!("controlled delayed containment fixture trap");

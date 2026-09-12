@@ -27,9 +27,9 @@ impl Journal {
         }
     }
     fn rows(&self) -> Vec<AuditStoredRecord> {
-        let page = self
-            .handle
-            .query(
+        let expires = Instant::now() + Duration::from_secs(5);
+        let ticket = loop {
+            match self.handle.query(
                 AuditQueryRequest {
                     scope: AuditScope::Tenant(TenantId("examples".to_owned())),
                     filter: AuditFilter::default(),
@@ -37,11 +37,18 @@ impl Journal {
                     limit: 32,
                     maximum_bytes: 64 * 1024,
                 },
-                Instant::now() + Duration::from_secs(5),
-            )
-            .unwrap()
-            .blocking_wait()
-            .unwrap();
+                expires,
+            ) {
+                Ok(ticket) => break ticket,
+                Err(error) if error.message == "audit-busy" && Instant::now() < expires => {
+                    // The durable acknowledgement can race the worker's brief
+                    // bookkeeping lock. Retry this read within one fixed deadline.
+                    std::thread::yield_now();
+                }
+                Err(error) => panic!("audit query failed: {error:?}"),
+            }
+        };
+        let page = ticket.blocking_wait().unwrap();
         // Test-only bounded copy; production response paths transfer the lease.
         page.records().to_vec()
     }
