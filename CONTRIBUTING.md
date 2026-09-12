@@ -7,6 +7,14 @@ between architectural contracts, generated surfaces, implemented behavior, and
 planned phase scope. Consult [the roadmap](docs/roadmap.md) together with the
 current `development` documentation for the exact delivered boundary.
 
+## First contribution
+
+Start with the live [open `good first issue` queue](https://github.com/KirilsTurkins/latent-service-fabric/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22). Read the selected issue completely, check its assignee and linked or existing pull requests, and coordinate on the issue before starting work that could overlap another contribution.
+
+Create your branch from the current `development` branch and target `development` in the pull request, even though the repository's GitHub default branch is `release`. Follow the existing branch conventions for the kind of change, for example `chore/<short-description>` for documentation or maintenance and `feat/<short-description>` for feature work.
+
+Install the pinned prerequisites from the [development toolchain guide](docs/development/toolchain.md), then select checks appropriate to the change using [VALIDATION.md](VALIDATION.md). Keep expensive scale probes, profiling, calibration, and resource soaks opt-in unless the issue or acceptance criteria explicitly require them.
+
 ## Change categories
 
 - **ADR:** a decision that changes a core invariant, dependency direction, execution model, or compatibility promise.
