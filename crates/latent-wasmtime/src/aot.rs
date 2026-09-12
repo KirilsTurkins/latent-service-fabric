@@ -140,7 +140,8 @@ impl AotCompatibilityKey {
         ] {
             frame_sha256(&mut digest, value.as_bytes());
         }
-        artifact_digest(digest.finalize().as_slice())
+        let bytes = digest.finalize();
+        artifact_digest(bytes.as_ref())
     }
 }
 
@@ -308,9 +309,12 @@ fn profile_digest(
         profile.cpu_feature_set.as_str(),
     ] {
         validate_identity(value, limits)?;
-        retained = retained
-            .checked_add(value.len())
-            .ok_or_else(|| error(PlatformErrorCode::ResourceExhausted, "aot-profile-byte-limit"))?;
+        retained = retained.checked_add(value.len()).ok_or_else(|| {
+            error(
+                PlatformErrorCode::ResourceExhausted,
+                "aot-profile-byte-limit",
+            )
+        })?;
         frame_sha256(&mut digest, value.as_bytes());
     }
     digest.update([
@@ -326,7 +330,12 @@ fn profile_digest(
         retained = retained
             .checked_add(name.len())
             .and_then(|total| total.checked_add(value.len()))
-            .ok_or_else(|| error(PlatformErrorCode::ResourceExhausted, "aot-profile-byte-limit"))?;
+            .ok_or_else(|| {
+                error(
+                    PlatformErrorCode::ResourceExhausted,
+                    "aot-profile-byte-limit",
+                )
+            })?;
         if retained > limits.maximum_profile_bytes {
             return Err(error(
                 PlatformErrorCode::ResourceExhausted,
@@ -342,7 +351,8 @@ fn profile_digest(
             "aot-profile-byte-limit",
         ));
     }
-    Ok(artifact_digest(digest.finalize().as_slice()))
+    let bytes = digest.finalize();
+    Ok(artifact_digest(bytes.as_ref()))
 }
 
 fn validate_identity(value: &str, limits: AotCompilerLimits) -> Result<(), PlatformError> {
@@ -356,7 +366,8 @@ fn validate_identity(value: &str, limits: AotCompilerLimits) -> Result<(), Platf
 }
 
 fn sha256_digest(bytes: &[u8]) -> ArtifactBlobDigest {
-    artifact_digest(Sha256::digest(bytes).as_slice())
+    let digest = Sha256::digest(bytes);
+    artifact_digest(digest.as_ref())
 }
 
 fn artifact_digest(bytes: &[u8]) -> ArtifactBlobDigest {
@@ -440,16 +451,30 @@ mod tests {
         changed.cpu_feature_set = "host-avx2".to_owned();
         assert_ne!(key(&changed).digest(), baseline);
         changed = original.clone();
-        changed.configuration.insert("fuel".to_owned(), "other".to_owned());
+        changed
+            .configuration
+            .insert("fuel".to_owned(), "other".to_owned());
         assert_ne!(key(&changed).digest(), baseline);
 
         let contract_changed = AotCompatibilityKey::from_profile(
-            package('1'), digest('2'), &original, digest('5'), digest('4'), AotCompilerLimits::default(),
-        ).unwrap();
+            package('1'),
+            digest('2'),
+            &original,
+            digest('5'),
+            digest('4'),
+            AotCompilerLimits::default(),
+        )
+        .unwrap();
         assert_ne!(contract_changed.digest(), baseline);
         let policy_changed = AotCompatibilityKey::from_profile(
-            package('1'), digest('2'), &original, digest('3'), digest('5'), AotCompilerLimits::default(),
-        ).unwrap();
+            package('1'),
+            digest('2'),
+            &original,
+            digest('3'),
+            digest('5'),
+            AotCompilerLimits::default(),
+        )
+        .unwrap();
         assert_ne!(policy_changed.digest(), baseline);
     }
 
@@ -459,39 +484,70 @@ mod tests {
             "trusted-local-wasmtime-aot-v1",
             [7; 32],
             AotCompilerLimits::default(),
-        ).unwrap();
+        )
+        .unwrap();
         let expected = key(&profile());
-        let output = authority.seal(expected.clone(), b"native-image".to_vec()).unwrap();
+        let output = authority
+            .seal(expected.clone(), b"native-image".to_vec())
+            .unwrap();
         authority.verify(&output, &expected).unwrap();
 
         let other = TrustedAotCompilerAuthority::new(
             "trusted-local-wasmtime-aot-v1",
             [8; 32],
             AotCompilerLimits::default(),
-        ).unwrap();
-        assert_eq!(other.verify(&output, &expected).unwrap_err().code, PlatformErrorCode::PermissionDenied);
+        )
+        .unwrap();
+        assert_eq!(
+            other.verify(&output, &expected).unwrap_err().code,
+            PlatformErrorCode::PermissionDenied
+        );
 
         let mut changed_profile = profile();
         changed_profile.target_triple = "aarch64-unknown-linux-gnu".to_owned();
         let wrong_key = key(&changed_profile);
-        assert_eq!(authority.verify(&output, &wrong_key).unwrap_err().code, PlatformErrorCode::PermissionDenied);
+        assert_eq!(
+            authority.verify(&output, &wrong_key).unwrap_err().code,
+            PlatformErrorCode::PermissionDenied
+        );
     }
 
     #[test]
     fn excessive_output_and_profile_are_rejected_before_retention() {
-        let limits = AotCompilerLimits { maximum_output_bytes: 4, ..AotCompilerLimits::default() };
+        let limits = AotCompilerLimits {
+            maximum_output_bytes: 4,
+            ..AotCompilerLimits::default()
+        };
         let expected = AotCompatibilityKey::from_profile(
-            package('1'), digest('2'), &profile(), digest('3'), digest('4'), limits,
-        ).unwrap();
+            package('1'),
+            digest('2'),
+            &profile(),
+            digest('3'),
+            digest('4'),
+            limits,
+        )
+        .unwrap();
         let authority = TrustedAotCompilerAuthority::new("compiler", [9; 32], limits).unwrap();
-        assert_eq!(authority.seal(expected, vec![0; 5]).unwrap_err().code, PlatformErrorCode::ResourceExhausted);
+        assert_eq!(
+            authority.seal(expected, vec![0; 5]).unwrap_err().code,
+            PlatformErrorCode::ResourceExhausted
+        );
 
         let mut too_large = profile();
-        too_large.configuration.insert("x".repeat(1025), "y".to_owned());
+        too_large
+            .configuration
+            .insert("x".repeat(1025), "y".to_owned());
         assert_eq!(
             AotCompatibilityKey::from_profile(
-                package('1'), digest('2'), &too_large, digest('3'), digest('4'), AotCompilerLimits::default(),
-            ).unwrap_err().code,
+                package('1'),
+                digest('2'),
+                &too_large,
+                digest('3'),
+                digest('4'),
+                AotCompilerLimits::default(),
+            )
+            .unwrap_err()
+            .code,
             PlatformErrorCode::InvalidArgument
         );
     }
