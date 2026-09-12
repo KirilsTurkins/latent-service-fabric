@@ -1,4 +1,7 @@
 //! Exact byte distribution and independently approved publisher evidence; no guest execution.
+#[cfg(unix)]
+#[path = "registry/cache.rs"]
+mod cache;
 #[path = "registry/fixtures.rs"]
 mod fixtures;
 #[path = "registry/provenance.rs"]
@@ -224,6 +227,8 @@ async fn real_tls_registry_roundtrips_tag_race_auth_and_referrers() {
     referrers(&client, &origin, &subject, &evidence).await;
     signatures::roundtrip(&client, &origin, capsule).await;
     authentication(&origin, &subject).await;
+    #[cfg(unix)]
+    cache::roundtrip(&origin, &packages).await;
     shutdown(&client).await;
 }
 

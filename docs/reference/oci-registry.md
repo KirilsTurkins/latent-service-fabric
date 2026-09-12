@@ -77,6 +77,28 @@ session, and registry-side expiry must reclaim it. Shutdown closes admission and
 waits for owned work until the supplied deadline; a deadline error does not
 claim that remote cleanup completed.
 
+## Optional raw download cache
+
+`HttpOciRegistry::new_with_cache` accepts a shared
+[`RawArtifactCache`](raw-artifact-cache.md). Complete package pulls can reuse
+verified blob payloads while retaining their ordinary manifest, descriptor and
+output-budget checks. The manifest is still fetched remotely on every pull, and
+each cached blob requires an authorized `HEAD` with the exact advertised length
+and a matching digest header when present. `405`/`501` fall back to ordinary
+authenticated `GET`; an authorization failure remains an error. Low-level reads
+and referrer discovery keep their existing behavior.
+
+Reclaimable entry/disk/metadata pressure receives one reclamation pass of at most
+16 examined entries and one reservation retry, then remains an explicit error.
+Non-reclaimable limits or contention do not evict data. Cache reservations and split OCI buffer permits
+move into blocking file work together, so caller cancellation cannot refund
+capacity before that work ends. `cache_usage()` reports the configured cache's
+aggregate storage and ownership counters. Catalog admission and execution
+eligibility remain separate from download caching.
+Disk results received after the absolute operation deadline are rejected even
+when the job has already completed. A timeout does not forcibly stop kernel I/O
+or refund its still-owned reservations.
+
 ## Supported discovery profile
 
 Referrer listing is bounded and filtered locally by `artifactType`, even when a
@@ -155,5 +177,14 @@ verifies it against an independently supplied publisher policy. No private key
 is retained. The original tiny format corpus makes no runnable-guest or
 trusted-evidence claim. Scripted HTTP unit tests cover hostile
 responses and cancellation separately. No benchmark, 100k workload or successful
-run report is generated, and these checks do not require native Linux outside
-the Docker engine.
+run report is generated. The distribution checks can run with a Windows Rust
+test binary and Linux Docker engine. The additional cold/warm/reopened raw-cache
+roundtrip runs only in a Unix Rust test process because it exercises directory
+durability. It is part of the same primary integration test and uses the tiny
+browser package; it builds or invokes no guest.
+
+Pass `--test-binary /absolute/path/to/the/registry-test-binary` to the runner to
+reuse an existing build. Without `--provenance-input`, the separate observed-build
+provenance test is skipped. The Python fixture runner and test process must share
+access to the fixture's loopback endpoint and CA file; a Linux test binary in a
+separate container does not share the Windows host's loopback automatically.

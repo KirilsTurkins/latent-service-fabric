@@ -45,15 +45,24 @@ impl Reply {
 pub struct Server {
     address: SocketAddr,
     requests: Arc<Mutex<Vec<String>>>,
+    methods: Arc<Mutex<Vec<(String, String)>>>,
     task: JoinHandle<()>,
 }
 
 impl Server {
     pub async fn start(mut route: impl FnMut(&str) -> Reply + Send + 'static) -> Self {
+        Self::start_methods(move |_, path| route(path)).await
+    }
+
+    pub async fn start_methods(
+        mut route: impl FnMut(&str, &str) -> Reply + Send + 'static,
+    ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let address = listener.local_addr().unwrap();
         let requests = Arc::new(Mutex::new(Vec::new()));
         let log = requests.clone();
+        let methods = Arc::new(Mutex::new(Vec::new()));
+        let method_log = methods.clone();
         let task = tokio::spawn(async move {
             for _ in 0..64 {
                 let (mut socket, _) = listener.accept().await.unwrap();
@@ -64,6 +73,7 @@ impl Server {
                     assert!(request.len() <= 8192, "bounded test request");
                 }
                 let request = std::str::from_utf8(&request).unwrap();
+                let method = request.split_whitespace().next().unwrap();
                 let path = request
                     .lines()
                     .next()
@@ -72,14 +82,18 @@ impl Server {
                     .nth(1)
                     .unwrap();
                 log.lock().unwrap().push(path.to_owned());
-                let reply = route(path);
+                method_log
+                    .lock()
+                    .unwrap()
+                    .push((method.to_owned(), path.to_owned()));
+                let reply = route(method, path);
                 tokio::time::sleep(reply.delay).await;
                 let mut headers = format!("HTTP/1.1 {} Response\r\nConnection: close\r\nContent-Length: {}\r\nContent-Type: {}\r\n", reply.status, reply.body.len(), reply.content_type);
                 for (name, value) in reply.headers {
                     write!(headers, "{name}: {value}\r\n").unwrap();
                 }
                 headers.push_str("\r\n");
-                if socket.write_all(headers.as_bytes()).await.is_ok() {
+                if socket.write_all(headers.as_bytes()).await.is_ok() && method != "HEAD" {
                     let _ = socket.write_all(&reply.body).await;
                 }
             }
@@ -87,12 +101,17 @@ impl Server {
         Self {
             address,
             requests,
+            methods,
             task,
         }
     }
 
     pub fn registry(&self, limits: RegistryLimits) -> HttpOciRegistry {
-        HttpOciRegistry::new(RegistryConfig {
+        HttpOciRegistry::new(self.config(limits)).unwrap()
+    }
+
+    pub fn config(&self, limits: RegistryLimits) -> RegistryConfig {
+        RegistryConfig {
             origin: format!("http://{}", self.address),
             repository: "tenant/site".into(),
             credentials: RegistryCredentials::Anonymous,
@@ -100,8 +119,7 @@ impl Server {
             additional_root_certificates: Vec::new(),
             allow_insecure_loopback: true,
             limits,
-        })
-        .unwrap()
+        }
     }
 
     pub fn reference(&self, reference: &str) -> OciReference {
@@ -114,6 +132,10 @@ impl Server {
 
     pub fn requests(&self) -> Vec<String> {
         self.requests.lock().unwrap().clone()
+    }
+
+    pub fn methods(&self) -> Vec<(String, String)> {
+        self.methods.lock().unwrap().clone()
     }
 
     pub async fn wait_requests(&self, count: usize) {
