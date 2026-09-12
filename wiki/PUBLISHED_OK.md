@@ -1,7 +1,7 @@
 # LSF Wiki publication succeeded
 
-- Source commit: 27a2cbda58a0fda4a8223d58f6f1cffc02f5fd0d
-- Wiki commit: 279d8fb7288fb7ba837ceb3713ad02c7fb99b7ff
-- Workflow run: https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34646389730
+- Source commit: d9778eae9d83d5738e3f70b6ba15080a24c0d63a
+- Wiki commit: 7cd26bb98c751df82b530d635f978f9934131414
+- Workflow run: https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34724297039
 - Managed inventory: 26 pages and four assets, fully validated
-- Scope: completed Phase 1 and extension; Phase 2 remains next
+- Scope: Phase 2 feature delivery; completion tracked by gate #158; Phase 3 planned
