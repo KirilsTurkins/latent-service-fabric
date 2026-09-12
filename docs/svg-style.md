@@ -44,9 +44,12 @@ file-specific ID prefix:
 ```
 
 Use a `viewBox`, not fixed `width` or `height`, so Markdown renderers can scale
-the image. Prefix every internal ID (`example-arrow`, `example-shadow`) with
-the filename concept to avoid collisions if a renderer inlines SVG content.
-Keep text as real SVG `<text>` elements rather than flattening it into paths.
+the image. Every nonempty ID must be unique within its SVG document; duplicate
+IDs make local references ambiguous. The validator scopes this uniqueness check
+to one file at a time. Prefix every internal ID (`example-arrow`,
+`example-shadow`) with the filename concept to avoid collisions if a renderer
+inlines SVG content. Keep text as real SVG `<text>` elements rather than
+flattening it into paths.
 
 ## Layout and typography
 
