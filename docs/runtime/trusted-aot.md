@@ -85,6 +85,16 @@ sets a parent-death signal with a parent-identity race check, disables core dump
 sets hard resource limits and enables no-new-privileges. These prerequisites are
 checked again after trusted engine initialization.
 
+Final entry completes its `/proc/self` inventory and personality checks before
+setting and verifying non-dumpable state through `prctl`. Linux [changes proc
+file ownership](https://man7.org/linux/man-pages/man5/proc_pid.5.html) when
+dumpability is disabled, so doing this earlier prevents an
+unprivileged child from reading its own personality. This order also preserves
+the parent's earlier executable authentication. No untrusted component bytes
+are read until dump protection, Landlock and seccomp all succeed; the final
+filter forbids changing dumpability. The acceptance harness runs every child
+probe without root credentials, including when its launcher runs as root.
+
 Before receiving the component, the child installs a Landlock filesystem policy
 with no allowed paths and a fixed default-deny seccomp policy. File opens,
 networking, process/thread creation, further executable launches, privilege
@@ -112,8 +122,8 @@ sandbox enforcement.
 1. Parent authenticates the running executable, then writes a four-byte
    little-endian bootstrap length and at most 4,096 trusted bootstrap bytes.
    Child has already applied launch limits and checked clean descriptors before
-   reading the fixed prefix. Dump protection is deferred until after that
-   prefix, so it cannot interfere with the parent's executable authentication.
+   reading the fixed prefix. Dump protection is deferred until final entry,
+   after the parent's executable authentication and the child's final proc reads.
    Direct descriptor I/O prevents read-ahead into later frames.
 2. Child initializes the trusted engine and enters the full sandbox. Its
    readiness frame contains `LSFAOTR1`, the 32-byte engine fingerprint, a

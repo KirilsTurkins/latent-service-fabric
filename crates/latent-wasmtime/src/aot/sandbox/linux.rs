@@ -15,10 +15,6 @@ use super::{failure, policy, SandboxLimits};
 
 pub(super) fn bootstrap(limits: SandboxLimits, parent_pid: u32) -> Result<(), PlatformError> {
     launch_limits(limits, parent_pid)?;
-    // The parent's executable authentication handshake has completed before
-    // bootstrap. Earlier dump protection could block its /proc/pid/exe read.
-    process::set_dumpable_behavior(process::DumpableBehavior::NotDumpable)
-        .map_err(|_| denied("aot-dump-protection-unavailable"))?;
     inventory(limits.maximum_fds)?;
     personality()?;
     Ok(())
@@ -93,6 +89,18 @@ pub(super) fn enter(limits: SandboxLimits, parent_pid: u32) -> Result<(), Platfo
         return Err(denied("aot-bootstrap-state-changed"));
     }
     let filter = policy::build()?;
+    // NotDumpable changes /proc/self file ownership to root, so an unprivileged
+    // process must finish its final inventory/personality reads first. The
+    // parent's executable authentication and trusted engine setup are also
+    // complete. No untrusted Wasm has been read, and none can be read until all
+    // enforcement succeeds. Verify through prctl, without reopening /proc.
+    process::set_dumpable_behavior(process::DumpableBehavior::NotDumpable)
+        .map_err(|_| denied("aot-dump-protection-unavailable"))?;
+    if process::dumpable_behavior().map_err(|_| denied("aot-dump-protection-unavailable"))?
+        != process::DumpableBehavior::NotDumpable
+    {
+        return Err(denied("aot-dump-protection-unavailable"));
+    }
     let status = Ruleset::default()
         .set_compatibility(CompatLevel::HardRequirement)
         .handle_access(AccessFs::from_all(ABI::V3))

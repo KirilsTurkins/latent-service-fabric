@@ -45,8 +45,8 @@ fn run(options: WorkerOptions, clean: bool) -> Result<(), &'static str> {
     let mut input = Input(std::io::stdin());
     let mut output = Output(std::io::stdout());
     // Only this fixed four-byte header is read before bootstrap. The parent
-    // authenticates /proc/pid/exe before sending it; setting dumpable=false in
-    // bootstrap earlier could prevent that parent inspection. There is no
+    // authenticates /proc/pid/exe before sending it. Dump protection is applied
+    // at final entry after the child's own last /proc inventory too. There is no
     // buffering/read-ahead and no Wasm or variable-length allocation here.
     let bootstrap_length =
         protocol::bootstrap_length(&mut input).map_err(|_| "invalid bootstrap length")?;

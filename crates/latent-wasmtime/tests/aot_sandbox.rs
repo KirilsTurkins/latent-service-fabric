@@ -28,6 +28,7 @@ mod linux {
         fs::{File, OpenOptions},
         io::{Read, Write},
         os::fd::AsFd,
+        os::unix::process::CommandExt as _,
         process::{Child, Command, ExitStatus, Stdio},
         time::{Duration, Instant},
     };
@@ -49,6 +50,7 @@ mod linux {
         let executable = std::env::current_exe().unwrap();
         let cases = [
             "entry",
+            "dump-protection",
             "inherited-fd",
             "clean-marker-with-fd",
             "filesystem",
@@ -69,6 +71,7 @@ mod linux {
                 None
             };
             let mut command = Command::new(&executable);
+            unprivileged(&mut command);
             command
                 .env_clear()
                 .arg(if case == "clean-marker-with-fd" {
@@ -99,6 +102,7 @@ mod linux {
         let mut payload = u32::try_from(policy.len()).unwrap().to_le_bytes().to_vec();
         payload.extend_from_slice(&policy);
         let mut command = Command::new("python3");
+        unprivileged(&mut command);
         command
             .env_clear()
             .env("PATH", "/usr/local/bin:/usr/bin:/bin")
@@ -114,10 +118,22 @@ mod linux {
             String::from_utf8_lossy(&result.diagnostics)
         );
         assert_eq!(result.output, b"kernel syscall denial passed\n");
-        println!("AOT sandbox: 11 real-entry probes and exact-policy syscall probe passed");
+        println!(
+            "AOT sandbox: 12 unprivileged real-entry probes and exact-policy syscall probe passed"
+        );
+    }
+
+    fn unprivileged(command: &mut Command) {
+        if rustix::process::geteuid().is_root() {
+            // Root-run builders must exercise the same /proc access rules as
+            // ordinary CI users. Only each disposable child drops credentials;
+            // its PID and the parent's identity used by launch checks persist.
+            command.gid(65534).uid(65534);
+        }
     }
 
     fn probe(case: &str, parent_pid: u32, clean: bool) {
+        assert!(!rustix::process::geteuid().is_root());
         let limits = sandbox::SandboxLimits::default();
         let arguments = [
             "--probe-clean".into(),
@@ -165,6 +181,17 @@ mod linux {
         assert_eq!(enforced.profile_id(), sandbox::PROFILE_ID);
         match case {
             "entry" | "inherited-fd" => {}
+            "dump-protection" => {
+                // Entry already verified PR_GET_DUMPABLE before installing the
+                // final filter. The filter must forbid undoing that state; no
+                // post-filter /proc read or PR_GET permission is needed.
+                assert_eq!(
+                    rustix::process::set_dumpable_behavior(
+                        rustix::process::DumpableBehavior::Dumpable
+                    ),
+                    Err(rustix::io::Errno::PERM)
+                );
+            }
             "filesystem" => {
                 assert_denied(File::open("/proc/self/status"));
                 assert_denied(OpenOptions::new().write(true).open("/dev/null"));
