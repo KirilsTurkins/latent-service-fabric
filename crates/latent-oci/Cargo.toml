@@ -24,4 +24,5 @@ tokio = { workspace = true, features = ["net", "io-util"] }
 
 [dev-dependencies]
 latent-packaging = { path = "../latent-packaging" }
+latent-signing = { path = "../latent-signing" }
 tempfile.workspace = true

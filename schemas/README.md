@@ -34,6 +34,10 @@ The package schemas describe a separate immutable artifact format:
 | [package-wit-lock.schema.json](package-wit-lock.schema.json) | Pinned WIT source package identities, dependencies and content digests. |
 | [package-source.schema.json](package-source.schema.json) | Explicit bounded file-selection recipe for deterministic packaging. |
 | [package-build-inputs.schema.json](package-build-inputs.schema.json) | Packager receipt associating observed input identities with exact output layers. |
+| [package-signature.schema.json](package-signature.schema.json) | Closed single-signature LSF envelope using DSSE PAE. |
+| [package-signature-claims.schema.json](package-signature-claims.schema.json) | Exact signed package subject, publisher claim and validity interval. |
+| [publisher-policy.schema.json](publisher-policy.schema.json) | Explicit bounded publisher-key approval policy. |
+| [publisher-revocations.schema.json](publisher-revocations.schema.json) | Explicit expiring revocations bound to one exact canonical policy. |
 
 These schemas close structural objects, enforce role/media-type combinations,
 and bound arrays, names and annotations. Package annotations permit at most 32
@@ -47,8 +51,11 @@ from `1.0` or `1e0`; the package wire parser rejects the latter spellings.
 See the [package format contract](../docs/protocol/package-format.md) and its
 [small exact-byte fixtures](../examples/package-format/README.md). Successful
 format validation does not establish publisher trust, payload semantic
-compatibility, registry availability or executable guest content. Evidence
-payload formats and verification belong to subsequent Phase 2 features.
+compatibility, registry availability or executable guest content. The signature
+schemas describe the implemented [publisher trust profile](../docs/reference/publisher-trust.md).
+Its Rust verifier additionally checks cryptography, exact subject association,
+canonical policy identity, freshness, revocation and owner limits. Provenance and
+SBOM payload authentication remain subsequent Phase 2 features.
 
 The [packaging workflow](../docs/component-development/packaging.md) validates
 supplied components against the pinned WIT graph and typed contracts. Recipe

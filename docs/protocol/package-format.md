@@ -5,8 +5,9 @@ This is the format foundation delivered by
 defines bounded models, codecs and validation. The
 [packaging workflow](../component-development/packaging.md) adds deterministic
 build/inspection and component/WIT checks. The [registry adapter](../reference/oci-registry.md)
-adds scoped authenticated transfers. Cryptographic verification, trusted catalog
-admission and rollout remain subsequent tickets in the
+adds scoped authenticated transfers. [Publisher signature verification](../reference/publisher-trust.md)
+binds exact packages to approved keys and current trust state. Provenance/SBOM
+verification, trusted catalog admission and rollout remain subsequent tickets in the
 [Phase 2 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/139).
 
 ## Identity and compatibility
@@ -124,9 +125,11 @@ size `2`. Exactly one evidence layer has title and role annotations; its role is
 | Provenance | `application/vnd.latent.provenance.v1` | `application/vnd.latent.provenance.payload.v1+json` |
 | SBOM | `application/vnd.latent.sbom.v1` | `application/vnd.latent.sbom.payload.v1+json` |
 
-These envelope types reserve subject associations, not cryptographic payload
-formats. The signature/provenance/SBOM tickets define their actual payloads and
-verification policy. A referrer with a matching subject is not authenticated.
+These envelope types define subject associations. The
+[publisher signature profile](../reference/publisher-trust.md) defines the
+implemented signature payload and verification policy. Provenance and SBOM
+payload verification remain subsequent tickets. A referrer with a matching
+subject alone is not authenticated.
 Required evidence must pass independent subject, integrity and trust checks
 before admission. Evidence cannot be made part of the same manifest it signs;
 that would create a digest cycle.

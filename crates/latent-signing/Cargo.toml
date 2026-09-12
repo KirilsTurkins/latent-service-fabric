@@ -5,10 +5,19 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-signing."
+description = "Bounded package signatures and current publisher trust verification."
 
 [lints]
 workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-artifacts = { path = "../latent-artifacts" }
+base64.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+ed25519-dalek = { version = "=3.0.0", default-features = false, features = ["alloc", "pkcs8", "zeroize", "fast"] }
+ed25519 = { version = "=3.0.0", default-features = false, features = ["alloc", "pkcs8", "zeroize"] }
+curve25519-dalek = { version = "=5.0.0", default-features = false }
+getrandom = { version = "=0.4.3", default-features = false }
+zeroize = { version = "=1.9.0", default-features = false, features = ["alloc"] }

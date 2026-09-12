@@ -78,8 +78,9 @@ defines bounded capsule, browser-asset and SSR-package contracts. It does not
 itself establish publisher trust. [Deterministic packaging and inspection](component-development/packaging.md)
 now validate supplied components against pinned WIT sources and typed metadata.
 The [registry adapter](reference/oci-registry.md) provides scoped authenticated
-transfers and bounded referrer discovery. Cryptographic verification and trusted
-admission follow next.
+transfers and bounded referrer discovery. [Publisher signing and verification](reference/publisher-trust.md)
+bind exact packages to approved keys, current trust policy and revocation state.
+Provenance, SBOM and trusted catalog admission follow next.
 
 OCI push/pull, signatures, provenance, SBOM, trusted AOT cache, release rollout
 orchestration, canary, and rollback. Atomic local deployment/snapshot publication

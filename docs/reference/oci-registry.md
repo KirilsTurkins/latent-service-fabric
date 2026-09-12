@@ -13,6 +13,10 @@ implemented [packager](../component-development/packaging.md) checks
 supplied component semantics before distribution; the registry itself cannot
 make that assertion trustworthy.
 
+The separate [publisher verifier](publisher-trust.md) can authenticate pulled
+signature evidence against explicit current policy/revocation snapshots. That
+library result does not by itself admit a release to the catalog.
+
 ## Configure the endpoint
 
 Construct the client inside a Tokio runtime with `RegistryConfig`. `origin` is
@@ -144,8 +148,11 @@ an unavailable Docker daemon is reported as a cleanup failure.
 The ignored Rust integration target exercises all three package kinds, exact
 manifest/config/layer round trips, repeated push, movement of a tag after digest
 resolution, native detached-evidence discovery/filtering, missing/wrong
-credentials and rejection of an untrusted TLS root. The tiny format corpus makes
-no runnable-guest or trusted-evidence claim. Scripted HTTP unit tests cover hostile
+credentials and rejection of an untrusted TLS root. It also generates an ephemeral
+signing key, signs a package, attaches/discovers/pulls the exact evidence and
+verifies it against an independently supplied publisher policy. No private key
+is retained. The original tiny format corpus makes no runnable-guest or
+trusted-evidence claim. Scripted HTTP unit tests cover hostile
 responses and cancellation separately. No benchmark, 100k workload or successful
 run report is generated, and these checks do not require native Linux outside
 the Docker engine.
