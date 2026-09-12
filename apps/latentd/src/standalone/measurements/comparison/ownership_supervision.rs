@@ -62,7 +62,11 @@ async fn run(control: tokio::runtime::Handle, threads: crate::standalone::Runtim
     ))
     .await
     .unwrap();
-    node.publish().await.unwrap();
+    // Publication is setup for this ownership regression, not a measured offer.
+    // Match the existing server/channel cap while keeping invocation deadlines.
+    node.publish_with_timeout(Duration::from_secs(5))
+        .await
+        .unwrap();
     node.published().await.unwrap();
     let observer = node.owner.backend.invocation_input_observer();
     observer
