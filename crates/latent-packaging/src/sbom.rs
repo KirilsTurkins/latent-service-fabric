@@ -27,10 +27,7 @@ impl Default for SbomLimits {
 
 impl SbomLimits {
     fn validate(self) -> Result<(), PlatformError> {
-        if self.max_document_bytes == 0
-            || self.max_entries == 0
-            || self.max_string_bytes == 0
-        {
+        if self.max_document_bytes == 0 || self.max_entries == 0 || self.max_string_bytes == 0 {
             return Err(crate::invalid("invalid-sbom-limits"));
         }
         Ok(())
@@ -191,11 +188,7 @@ pub fn inspect_cyclonedx_sbom(
         .version
         .as_deref()
         .ok_or_else(|| crate::invalid("missing-sbom-package-version"))?;
-    validate_string(
-        package_version,
-        limits,
-        "invalid-sbom-package-version",
-    )?;
+    validate_string(package_version, limits, "invalid-sbom-package-version")?;
 
     let expected_ref = format!("urn:lsf:package:{}", expected_subject.as_str());
     if document.metadata.component.bom_ref.as_deref() != Some(expected_ref.as_str())
@@ -234,11 +227,7 @@ fn validate_entries(
             limits,
             "invalid-sbom-entry-version",
         )?;
-        validate_optional_string(
-            entry.source.as_deref(),
-            limits,
-            "invalid-sbom-entry-source",
-        )?;
+        validate_optional_string(entry.source.as_deref(), limits, "invalid-sbom-entry-source")?;
         validate_optional_string(
             entry.license_expression.as_deref(),
             limits,
@@ -399,10 +388,7 @@ fn artifact_digest(bytes: &[u8]) -> ArtifactBlobDigest {
         .expect("locally formatted SHA-256 digest is canonical")
 }
 
-fn encode_bounded_json<T: Serialize>(
-    value: &T,
-    maximum: usize,
-) -> Result<Vec<u8>, PlatformError> {
+fn encode_bounded_json<T: Serialize>(value: &T, maximum: usize) -> Result<Vec<u8>, PlatformError> {
     let mut writer = LimitedWriter {
         bytes: Vec::new(),
         maximum,
@@ -545,8 +531,7 @@ mod tests {
         let mut second = first.clone();
         second.entries.reverse();
 
-        let first =
-            generate_cyclonedx_sbom(subject.clone(), first, SbomLimits::default()).unwrap();
+        let first = generate_cyclonedx_sbom(subject.clone(), first, SbomLimits::default()).unwrap();
         let second = generate_cyclonedx_sbom(subject, second, SbomLimits::default()).unwrap();
 
         assert_eq!(first.bytes, second.bytes);
@@ -572,12 +557,8 @@ mod tests {
             generate_cyclonedx_sbom(subject.clone(), inventory, SbomLimits::default()).unwrap();
         let text = std::str::from_utf8(&document.bytes).unwrap();
 
-        assert!(text.contains(
-            "\"org.lsf.source.status\",\"value\":\"unavailable\""
-        ));
-        assert!(text.contains(
-            "\"org.lsf.license.status\",\"value\":\"unavailable\""
-        ));
+        assert!(text.contains("\"org.lsf.source.status\",\"value\":\"unavailable\""));
+        assert!(text.contains("\"org.lsf.license.status\",\"value\":\"unavailable\""));
 
         let inspected = inspect_cyclonedx_sbom(
             CYCLONEDX_JSON_MEDIA_TYPE,
@@ -601,12 +582,9 @@ mod tests {
             package_version: "1".to_owned(),
             entries: vec![entry(SbomEntryKind::GuestDependency, "dep")],
         };
-        let document = generate_cyclonedx_sbom(
-            subject.clone(),
-            inventory.clone(),
-            SbomLimits::default(),
-        )
-        .unwrap();
+        let document =
+            generate_cyclonedx_sbom(subject.clone(), inventory.clone(), SbomLimits::default())
+                .unwrap();
 
         let wrong = inspect_cyclonedx_sbom(
             CYCLONEDX_JSON_MEDIA_TYPE,
