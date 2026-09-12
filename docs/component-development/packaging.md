@@ -91,9 +91,11 @@ and remain digest-bound. WIT supplies the full named type definitions missing
 from those legacy descriptors.
 
 This validates structural association and the supported packaging profile. It
-does not prove guest behavior, publisher trust, current node target suitability
-or safe release-to-release promotion. Those later checks must use the retained
-exact package/WIT bytes and current operator policy.
+does not prove guest behavior or publisher trust. The separate
+[compatibility checks](../reference/release-compatibility.md) evaluate node
+requirements and compare old/candidate packages using these retained exact
+package/WIT bytes. A report remains separate from the current operator policy
+and authorization required for deployment or promotion.
 
 ## Determinism and observed input identities
 

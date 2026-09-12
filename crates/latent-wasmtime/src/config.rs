@@ -5,6 +5,7 @@ mod engine;
 mod layout;
 mod pooling;
 mod profile;
+mod runtime_compatibility;
 #[cfg(test)]
 mod tests;
 

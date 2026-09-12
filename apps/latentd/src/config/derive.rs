@@ -33,10 +33,18 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         ..TelemetryPipelineConfig::default()
     };
     telemetry.validate().map_err(|_| invalid("telemetry"))?;
+    let wasmtime = runtime::wasmtime(config, &capacity)?;
+    let runtime_profile = std::sync::Arc::new(wasmtime.detected_runtime_profile()?);
+    let mut node = descriptor(config);
+    node.cpu_features = runtime_profile
+        .cpu_features()
+        .iter()
+        .map(ToString::to_string)
+        .collect();
     Ok(NodeSettings {
         data_directory: config.data_directory.as_path().to_path_buf(),
         supply_chain: super::supply_chain::derive(&config.supply_chain)?,
-        node: descriptor(config),
+        node,
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,
         artifacts: DirectoryArtifactRepositoryConfig {
@@ -62,7 +70,8 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             queue_capacity_per_class: classes.clone(),
             starvation_after: Duration::from_millis(100),
         },
-        wasmtime: runtime::wasmtime(config, &capacity)?,
+        wasmtime,
+        runtime_profile,
         manager: runtime::manager(config, &capacity),
         invocation,
         management,

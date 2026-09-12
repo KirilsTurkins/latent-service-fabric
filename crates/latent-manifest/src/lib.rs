@@ -9,12 +9,17 @@
 
 mod bounded_codec;
 mod json_number;
+mod runtime_compatibility;
 mod schema;
 mod validation;
 #[path = "codec.rs"]
 mod wire_codec;
 
 pub use bounded_codec::{JsonManifestCodec, ManifestLimits};
+pub use runtime_compatibility::{
+    check_runtime_compatibility, RuntimeCompatibilityProfile, RuntimeRequirement,
+    RuntimeRequirements, CPU_FEATURES,
+};
 pub use validation::{Phase1ManifestValidator, MANIFEST_API_VERSION, PHASE1_FABRIC_VERSION};
 pub use wire_codec::{ManifestDocument, ManifestKind};
 
@@ -120,6 +125,7 @@ pub struct CapsuleManifest {
     pub imports: Vec<ContractImport>,
     pub execution: ExecutionRequirements,
     pub minimum_fabric_version: String,
+    pub runtime_requirements: RuntimeRequirements,
 }
 
 /// Deployment availability requirements.

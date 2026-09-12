@@ -74,6 +74,7 @@ pub(super) async fn compile(
     .map(super::persistence::EncodedCatalog::into_catalog)
 }
 
+#[cfg(test)]
 #[expect(
     clippy::too_many_arguments,
     reason = "the local observer adds no policy or compilation input"
@@ -98,6 +99,37 @@ pub(super) async fn compile_versioned(
         previous,
         work,
         false,
+        None,
+    )
+    .await
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the local observer adds no policy or compilation input"
+)]
+pub(super) async fn compile_versioned_with_runtime(
+    deployments: DesiredDeployments,
+    versions: ObjectVersions,
+    generation: RouteGeneration,
+    generated_at_unix_millis: u64,
+    artifacts: &dyn ArtifactRepository,
+    config: DirectoryDeploymentRepositoryConfig,
+    previous: Option<&CompiledCatalog>,
+    work: &mut Work,
+    runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+) -> Result<super::persistence::EncodedCatalog, PlatformError> {
+    compile_versioned_inner(
+        deployments,
+        versions,
+        generation,
+        generated_at_unix_millis,
+        artifacts,
+        config,
+        previous,
+        work,
+        false,
+        runtime_profile,
     )
     .await
 }
@@ -116,6 +148,7 @@ pub(super) async fn compile_versioned_inner(
     previous: Option<&CompiledCatalog>,
     work: &mut Work,
     recovery: bool,
+    runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
 ) -> Result<super::persistence::EncodedCatalog, PlatformError> {
     count!(work, compiler_calls, 1);
     work.generation(generation.0);
@@ -271,6 +304,7 @@ pub(super) async fn compile_versioned_inner(
                         "release-digest-mismatch",
                     ));
                 }
+                latent_manifest::check_runtime_compatibility(artifact.manifest(), runtime_profile)?;
                 let stamp = reuse::metadata_stamp(&artifact);
                 memo.push(position, stamp);
                 release_surface = reuse::prior_release(compatible, &deployment.release, stamp)

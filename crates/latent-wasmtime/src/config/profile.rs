@@ -9,8 +9,25 @@ impl WasmtimeConfig {
         digest(&self.compatibility_fields(mode))
     }
 
+    #[cfg(test)]
     pub(crate) fn profile(&self, mode: DispatchMode) -> WasmtimeEngineProfile {
+        self.profile_with_runtime(mode, None)
+    }
+
+    pub(crate) fn profile_with_runtime(
+        &self,
+        mode: DispatchMode,
+        runtime: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> WasmtimeEngineProfile {
         let mut configuration = self.compatibility_fields(mode);
+        if let Some(runtime) = runtime {
+            let fingerprint = runtime
+                .digest()
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>();
+            configuration.insert("runtime-compatibility-digest".into(), fingerprint);
+        }
         configuration.insert("configuration-digest".to_owned(), digest(&configuration));
         WasmtimeEngineProfile {
             id: mode.backend_id().to_owned(),

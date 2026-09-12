@@ -53,6 +53,7 @@ pub(in super::super) fn artifact(tenant: &str, service: &str, marker: &str) -> C
                 fusion_eligible: false,
             },
             minimum_fabric_version: "0.1.0".to_owned(),
+            runtime_requirements: latent_manifest::RuntimeRequirements::default(),
         },
         contracts: vec![ContractDescriptor {
             id: ContractId(contract.clone()),

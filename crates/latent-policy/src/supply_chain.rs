@@ -36,6 +36,7 @@ pub struct SupplyChainAuthority {
 
 struct Inner {
     clock: Arc<dyn SupplyChainClock>,
+    runtime: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     state: Mutex<State>,
     retired: AtomicBool,
 }
@@ -58,6 +59,28 @@ impl SupplyChainAuthority {
         policy: SupplyChainPolicy,
         clock: Arc<dyn SupplyChainClock>,
         lease_seconds: u64,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(root, policy, clock, lease_seconds, None)
+    }
+
+    /// Opens with the same immutable, detected host profile used for deployment
+    /// and preparation. A receipt never substitutes for current host suitability.
+    pub fn open_with_runtime(
+        root: &Path,
+        policy: SupplyChainPolicy,
+        clock: Arc<dyn SupplyChainClock>,
+        lease_seconds: u64,
+        runtime: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(root, policy, clock, lease_seconds, Some(runtime))
+    }
+
+    fn open_inner(
+        root: &Path,
+        policy: SupplyChainPolicy,
+        clock: Arc<dyn SupplyChainClock>,
+        lease_seconds: u64,
+        runtime: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     ) -> Result<Self, PlatformError> {
         if !(1..=5).contains(&lease_seconds) {
             return Err(invalid("admission-clock-lease-limit"));
@@ -88,6 +111,7 @@ impl SupplyChainAuthority {
         Ok(Self {
             inner: Arc::new(Inner {
                 clock,
+                runtime,
                 retired: AtomicBool::new(false),
                 state: Mutex::new(State {
                     policy,

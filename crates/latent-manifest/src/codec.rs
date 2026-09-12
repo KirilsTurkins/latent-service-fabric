@@ -259,6 +259,13 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn encode_capsule(&self, manifest: &CapsuleManifest) -> ManifestResult<Vec<u8>> {
+        manifest.runtime_requirements.validate().map_err(|_| {
+            vec![ManifestViolation::new(
+                "$.compatibility",
+                "invalid-runtime-requirements",
+                "runtime requirements exceed their closed profile or bounds",
+            )]
+        })?;
         let mut normalized = manifest.clone();
         normalized.normalize();
         self.encode_normalized(&normalized, ManifestKind::Capsule)
@@ -609,6 +616,8 @@ trait Normalize {
 
 impl Normalize for CapsuleManifest {
     fn normalize(&mut self) {
+        self.runtime_requirements.target_triples.sort();
+        self.runtime_requirements.cpu_features.sort();
         self.component_digest.0.make_ascii_lowercase();
         self.exports
             .sort_by(|left, right| left.contract.cmp(&right.contract));
@@ -813,6 +822,22 @@ const fn default_call_depth() -> u32 {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct CapsuleCompatibilityWire {
     minimum_fabric_version: String,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "runtime_requirement"
+    )]
+    runtime: Option<crate::RuntimeRequirement>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    target_triples: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    cpu_features: Vec<String>,
+}
+
+fn runtime_requirement<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<crate::RuntimeRequirement>, D::Error> {
+    crate::RuntimeRequirement::deserialize(deserializer).map(Some)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -833,6 +858,9 @@ impl Serialize for CapsuleManifest {
     where
         S: Serializer,
     {
+        self.runtime_requirements
+            .validate()
+            .map_err(|error| serde::ser::Error::custom(error.message))?;
         CapsuleDocumentWire::from(self).serialize(serializer)
     }
 }
@@ -846,7 +874,12 @@ impl<'de> Deserialize<'de> for CapsuleManifest {
         if document.kind != FixedKind::Capsule {
             return Err(de::Error::custom("manifest kind must be Capsule"));
         }
-        Ok(document.into())
+        let manifest: Self = document.into();
+        manifest
+            .runtime_requirements
+            .validate()
+            .map_err(|error| de::Error::custom(error.message))?;
+        Ok(manifest)
     }
 }
 
@@ -886,6 +919,9 @@ impl From<&CapsuleManifest> for CapsuleDocumentWire {
             },
             compatibility: CapsuleCompatibilityWire {
                 minimum_fabric_version: value.minimum_fabric_version.clone(),
+                runtime: value.runtime_requirements.runtime.clone(),
+                target_triples: value.runtime_requirements.target_triples.clone(),
+                cpu_features: value.runtime_requirements.cpu_features.clone(),
             },
         }
     }
@@ -925,6 +961,11 @@ impl From<CapsuleDocumentWire> for CapsuleManifest {
                 fusion_eligible: value.execution.fusion_eligible,
             },
             minimum_fabric_version: value.compatibility.minimum_fabric_version,
+            runtime_requirements: crate::RuntimeRequirements {
+                runtime: value.compatibility.runtime,
+                target_triples: value.compatibility.target_triples,
+                cpu_features: value.compatibility.cpu_features,
+            },
         }
     }
 }

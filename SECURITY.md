@@ -14,6 +14,10 @@ Phase 2 adds bounded OCI transport, package publisher signatures, independently
 authorized builder provenance, SBOM policy, and enforced catalog admission.
 Enforced mode checks complete package semantics and current tenant/trust policy,
 with durable generation/clock floors and execution-time eligibility checks.
+Declared runtime/target/CPU requirements must match the actual node profile.
+Bounded [release comparison](docs/reference/release-compatibility.md) keeps
+unsupported or unknown analysis from authorizing promotion; its reports remain
+separate from live supply-chain authority.
 Historical receipts and locally admitted flags do not grant current authority.
 See [authenticated package admission](docs/reference/package-admission.md).
 

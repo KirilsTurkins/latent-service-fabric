@@ -34,7 +34,7 @@ use latent_routing::{
 };
 
 use crate::CompiledRouteStore;
-use compiler::{compile_versioned, CompiledCatalog};
+use compiler::{compile_versioned_with_runtime, CompiledCatalog};
 use mutations::{CommitOutcome, ObjectPrecondition};
 use observation::{count, CatalogWorkOperation as WorkOperation, Source, Work};
 #[cfg(feature = "catalog-observation")]
@@ -102,6 +102,7 @@ pub struct DirectoryDeploymentRepository {
     config: DirectoryDeploymentRepositoryConfig,
     artifacts: Arc<dyn ArtifactRepository>,
     admission: Option<Arc<dyn AdmissionAuthority>>,
+    runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     current: RwLock<Arc<CompiledCatalog>>,
     generation: AtomicU64,
     writer: Mutex<()>,
@@ -133,7 +134,7 @@ impl DirectoryDeploymentRepository {
         artifacts: Arc<dyn ArtifactRepository>,
         config: DirectoryDeploymentRepositoryConfig,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, artifacts, config, Source::default(), None).await
+        Self::open_inner(root, artifacts, config, Source::default(), None, None).await
     }
 
     /// Opens a catalog whose releases must belong to this exact live authority.
@@ -143,7 +144,15 @@ impl DirectoryDeploymentRepository {
         config: DirectoryDeploymentRepositoryConfig,
         authority: Arc<dyn AdmissionAuthority>,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, artifacts, config, Source::default(), Some(authority)).await
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::default(),
+            Some(authority),
+            None,
+        )
+        .await
     }
 
     /// Opens with optional bounded work receipts, including recovery and failed initialization.
@@ -155,7 +164,71 @@ impl DirectoryDeploymentRepository {
         config: DirectoryDeploymentRepositoryConfig,
         observer: CatalogWorkObserver,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, artifacts, config, Source::observed(observer), None).await
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::observed(observer),
+            None,
+            None,
+        )
+        .await
+    }
+
+    /// Restores a trusted-local catalog against one immutable host profile.
+    pub async fn open_with_runtime(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::default(),
+            None,
+            Some(profile),
+        )
+        .await
+    }
+
+    /// Enforces both current release authority and declared host requirements.
+    pub async fn open_enforced_with_runtime(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        authority: Arc<dyn AdmissionAuthority>,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::default(),
+            Some(authority),
+            Some(profile),
+        )
+        .await
+    }
+
+    #[cfg(feature = "catalog-observation")]
+    pub async fn open_observed_with_runtime(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        observer: CatalogWorkObserver,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::observed(observer),
+            None,
+            Some(profile),
+        )
+        .await
     }
 
     async fn open_inner(
@@ -164,6 +237,7 @@ impl DirectoryDeploymentRepository {
         config: DirectoryDeploymentRepositoryConfig,
         observation: Source,
         admission: Option<Arc<dyn AdmissionAuthority>>,
+        runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     ) -> Result<Self, PlatformError> {
         let mut work = observation.begin(WorkOperation::Open);
         let result = async {
@@ -210,6 +284,7 @@ impl DirectoryDeploymentRepository {
                 None,
                 &mut work,
                 true,
+                runtime_profile.as_deref(),
             )
             .await?;
             if let Some(record) = restored {
@@ -229,6 +304,7 @@ impl DirectoryDeploymentRepository {
                 config,
                 artifacts,
                 admission,
+                runtime_profile,
                 generation: AtomicU64::new(generation.0),
                 current: RwLock::new(Arc::new(catalog)),
                 writer: Mutex::new(()),
@@ -439,7 +515,7 @@ impl RouteCompiler for DirectoryDeploymentRepository {
                         "stale-route-generation",
                     ));
                 }
-                let next = compile_versioned(
+                let next = compile_versioned_with_runtime(
                     current.deployments.clone(),
                     current.versions.clone(),
                     next_generation(current.generation)?,
@@ -448,6 +524,7 @@ impl RouteCompiler for DirectoryDeploymentRepository {
                     self.config,
                     Some(&current),
                     &mut work,
+                    self.runtime_profile.as_deref(),
                 )
                 .await?;
                 Ok(next.into_catalog().snapshot())
@@ -473,7 +550,7 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
                             "stale-route-generation",
                         ));
                     }
-                    let compiled = compile_versioned(
+                    let compiled = compile_versioned_with_runtime(
                         current.deployments.clone(),
                         current.versions.clone(),
                         snapshot.generation,
@@ -482,6 +559,7 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
                         self.config,
                         Some(&current),
                         work,
+                        self.runtime_profile.as_deref(),
                     )
                     .await?;
                     if !compiled.catalog().matches_snapshot(&snapshot) {

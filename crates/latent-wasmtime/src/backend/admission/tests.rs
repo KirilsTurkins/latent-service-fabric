@@ -217,3 +217,65 @@ async fn queued_source_is_rechecked_before_compilation_and_all_waiters_release()
     assert_eq!(backend.compiler_snapshot().ready_preparations, 0);
     assert_eq!(backend.cache_snapshot().preparing, 0);
 }
+
+#[test]
+fn explicit_host_requirements_reject_before_component_compilation() {
+    let factory = WasmtimeComponentEngineFactory::new(WasmtimeConfig::default()).unwrap();
+    let backend = factory.create_backend_instance();
+    backend.preparation_observer().enable();
+    let mut value = artifact();
+    value.manifest.runtime_requirements.target_triples = vec!["unknown-vendor-none".into()];
+    let key = factory.preparation_key(value.descriptor.release_digest.clone());
+    let job = backend.shared.preparation_observer.begin(&key.release);
+    let failure = backend
+        .prepare_runtime_with_integrity(&value, &key, ComponentIntegrity::Verify, None, &job)
+        .err()
+        .unwrap();
+    assert_eq!(
+        failure.code,
+        latent_core::PlatformErrorCode::IncompatibleContract
+    );
+    assert_eq!(failure.message, "runtime-target-incompatible");
+    assert_eq!(backend.resource_snapshot().stores_created, 0);
+    assert!(!backend
+        .preparation_observer()
+        .snapshot()
+        .recent_stages
+        .iter()
+        .any(|entry| entry.stage == crate::PreparationStage::ComponentNew));
+}
+
+#[test]
+fn declared_host_requirements_change_metadata_identity_without_changing_component() {
+    let factory = WasmtimeComponentEngineFactory::new(WasmtimeConfig::default()).unwrap();
+    let backend = factory.create_backend_instance();
+    let mut value = artifact();
+    let original = backend
+        .shared
+        .preparation_context
+        .metadata_identity(&value)
+        .unwrap()
+        .digest;
+    value.manifest.runtime_requirements.runtime = Some(latent_manifest::RuntimeRequirement {
+        engine: "wasmtime".into(),
+        minimum_version: "47.0.3".into(),
+    });
+    backend
+        .shared
+        .preparation_context
+        .validate_manifest(&value)
+        .unwrap();
+    assert_ne!(
+        original,
+        backend
+            .shared
+            .preparation_context
+            .metadata_identity(&value)
+            .unwrap()
+            .digest
+    );
+    assert!(factory
+        .profile()
+        .configuration
+        .contains_key("runtime-compatibility-digest"));
+}

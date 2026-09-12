@@ -48,7 +48,23 @@ impl Fixture {
         Self::with_inventory("builder-a", false)
     }
     fn with_inventory(builder_id: &str, with_inventory: bool) -> Self {
-        let input = packaging::capsule(packaging::component::Options::default());
+        Self::configured(builder_id, with_inventory, None)
+    }
+    pub fn with_runtime_requirements(requirements: Value) -> Self {
+        Self::configured("builder-a", true, Some(requirements))
+    }
+    fn configured(builder_id: &str, with_inventory: bool, requirements: Option<Value>) -> Self {
+        let mut input = packaging::capsule(packaging::component::Options::default());
+        if let Some(requirements) = requirements {
+            packaging::mutate_json(&mut input, "capsule.json", |manifest| {
+                for (key, value) in requirements.as_object().unwrap() {
+                    manifest["compatibility"]
+                        .as_object_mut()
+                        .unwrap()
+                        .insert(key.clone(), value.clone());
+                }
+            });
+        }
         let inventory = sbom::inventory(&input);
         let bundle = if with_inventory {
             build_package_with_sbom(input, inventory, PackagingLimits::default()).unwrap()

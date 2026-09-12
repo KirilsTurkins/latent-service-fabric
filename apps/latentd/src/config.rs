@@ -38,6 +38,7 @@ pub struct NodeSettings {
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) scheduler: latent_scheduler::LocalSchedulerConfig,
     pub(crate) wasmtime: latent_wasmtime::WasmtimeConfig,
+    pub(crate) runtime_profile: std::sync::Arc<latent_manifest::RuntimeCompatibilityProfile>,
     pub(crate) manager: latent_node::LocalActivationManagerConfig,
     pub(crate) invocation: latent_wire::invocation::InvocationLimits,
     pub(crate) management: latent_wire::management::ManagementLimits,

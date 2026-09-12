@@ -33,6 +33,7 @@ impl PreparationMetadataFingerprint {
 /// The identity is internal to this engine version, never a release digest or
 /// persisted format. Derived `Debug` on these owned domain records has fixed field
 /// order; metadata maps are ordered. Streaming avoids another metadata buffer.
+/// The v2 domain includes the Phase 2 runtime requirements and their owned cost.
 pub fn preparation_metadata_fingerprint(
     descriptor: &ArtifactDescriptor,
     manifest: &CapsuleManifest,
@@ -55,7 +56,7 @@ pub fn preparation_metadata_fingerprint(
     };
     writer
         .hasher
-        .update(b"lsf-wasmtime-preparation-metadata-v1\0");
+        .update(b"lsf-wasmtime-preparation-metadata-v2\0");
     write!(
         &mut writer,
         "{:?}\n{:?}\n{:?}",
@@ -112,6 +113,8 @@ impl Bounds {
         self.string(&manifest.component_digest.0)?;
         self.string(&manifest.world.0)?;
         self.string(&manifest.minimum_fabric_version)?;
+        manifest.runtime_requirements.validate()?;
+        self.charge(manifest.runtime_requirements.retained_bytes())?;
         for export in &manifest.exports {
             self.charge(64)?;
             self.string(&export.contract.0)?;

@@ -403,18 +403,17 @@ fn validate_string(
     }
 
     if let Some(pattern) = schema.get("pattern").and_then(Value::as_str) {
-        let matches = match pattern {
-            "^sha256:[a-fA-F0-9]{64}$" => is_sha256_digest(value),
+        let (matches, code, message) = match pattern {
+            "^sha256:[a-fA-F0-9]{64}$" => (is_sha256_digest(value), "invalid-digest", "value must be a sha256: digest followed by exactly 64 hexadecimal characters"),
+            r"^[A-Za-z0-9_.]+(?:-[A-Za-z0-9_.]+){2,}(?![\s\S])" => (
+                crate::runtime_compatibility::model::target(value),
+                "invalid-target-triple",
+                "target must contain at least three nonempty ASCII alphanumeric, underscore or dot segments separated by hyphens",
+            ),
             _ => panic!("embedded schema uses unsupported pattern `{pattern}`"),
         };
         if !matches {
-            push_violation(
-                violations,
-                max_violations,
-                path,
-                "invalid-digest",
-                "value must be a sha256: digest followed by exactly 64 hexadecimal characters",
-            );
+            push_violation(violations, max_violations, path, code, message);
         }
     }
 }

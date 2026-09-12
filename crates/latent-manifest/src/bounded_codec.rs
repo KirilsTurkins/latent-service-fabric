@@ -640,6 +640,8 @@ trait Normalize {
 
 impl Normalize for CapsuleManifest {
     fn normalize(&mut self) {
+        self.runtime_requirements.target_triples.sort();
+        self.runtime_requirements.cpu_features.sort();
         self.component_digest.0.make_ascii_lowercase();
         self.exports
             .sort_by(|left, right| left.contract.cmp(&right.contract));

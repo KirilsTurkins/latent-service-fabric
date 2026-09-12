@@ -18,7 +18,7 @@ struct Noop;
 impl Wake for Noop {
     fn wake(self: Arc<Self>) {}
 }
-fn ready<T>(mut future: Pin<Box<dyn Future<Output = T> + Send + '_>>) -> T {
+pub(super) fn ready<T>(mut future: Pin<Box<dyn Future<Output = T> + Send + '_>>) -> T {
     let waker = Waker::from(Arc::new(Noop));
     match future.as_mut().poll(&mut Context::from_waker(&waker)) {
         Poll::Ready(value) => value,

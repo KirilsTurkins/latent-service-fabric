@@ -27,7 +27,11 @@ pub use sbom::{
     SbomPolicyEvaluation, SbomPresence, SbomRoleCounts, CYCLONEDX_JSON_MEDIA_TYPE,
     CYCLONEDX_SPEC_VERSION, SBOM_PATH,
 };
-pub use semantics::{validate_capsule, CheckedSurface, SemanticLimits, SurfaceCounts};
+pub use semantics::{
+    compare_packages, validate_capsule, BreakingChangeAllowance, CheckedSurface,
+    ComparedPackageIdentity, PackageComparisonLimits, PackageCompatibilityReport, SemanticLimits,
+    SurfaceCounts,
+};
 
 use latent_core::{PlatformError, PlatformErrorCode};
 

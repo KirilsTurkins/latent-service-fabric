@@ -16,6 +16,7 @@ pub struct WasmtimeComponentEngineFactory {
     engine: Engine,
     config: WasmtimeConfig,
     profile: WasmtimeEngineProfile,
+    runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     shared: Arc<SharedRuntime>,
 }
 
@@ -110,6 +111,7 @@ impl WasmtimeComponentEngineFactory {
             config.hostcall_fuel = config.hostcall_fuel.min(80 * 1024);
         }
         config.validate()?;
+        let runtime_profile = Arc::new(config.detected_runtime_profile()?);
         if mode == DispatchMode::Generic && !config.prepared_cache_enabled {
             return Err(platform_error(
                 PlatformErrorCode::InvalidArgument,
@@ -133,7 +135,7 @@ impl WasmtimeComponentEngineFactory {
             &engine,
             Duration::from_millis(config.epoch_tick_interval_millis),
         )?;
-        let profile = config.profile(mode);
+        let profile = config.profile_with_runtime(mode, Some(&runtime_profile));
         let shared = Arc::new(SharedRuntime::new(
             &config,
             services,
@@ -141,11 +143,13 @@ impl WasmtimeComponentEngineFactory {
             engine.clone(),
             profile.clone(),
             admission,
+            Arc::clone(&runtime_profile),
         )?);
         Ok(Self {
             engine,
             config,
             profile,
+            runtime_profile,
             shared,
         })
     }
@@ -153,6 +157,12 @@ impl WasmtimeComponentEngineFactory {
     #[must_use]
     pub fn profile(&self) -> &WasmtimeEngineProfile {
         &self.profile
+    }
+
+    /// Immutable detected host facts also bound into preparation identity.
+    #[must_use]
+    pub fn runtime_profile(&self) -> &latent_manifest::RuntimeCompatibilityProfile {
+        &self.runtime_profile
     }
 
     #[must_use]
