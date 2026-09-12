@@ -38,67 +38,54 @@ impl VerifiedSupplyChainEvidence {
     pub fn subject(&self) -> &PackageSubject {
         &self.subject
     }
-
     #[must_use]
     pub fn component_digest(&self) -> &ArtifactBlobDigest {
         &self.component_digest
     }
-
     #[must_use]
     pub fn publisher(&self) -> &PublisherId {
         &self.publisher
     }
-
     #[must_use]
     pub fn publisher_key_fingerprint(&self) -> &ArtifactBlobDigest {
         &self.publisher_key_fingerprint
     }
-
     #[must_use]
     pub fn builder_id(&self) -> &str {
         &self.builder_id
     }
-
     #[must_use]
     pub fn builder_key_fingerprint(&self) -> &ArtifactBlobDigest {
         &self.builder_key_fingerprint
     }
-
     #[must_use]
     pub fn signature_evidence_digest(&self) -> &PackageDigest {
         &self.signature_evidence_digest
     }
-
     #[must_use]
     pub fn signature_payload_digest(&self) -> &ArtifactBlobDigest {
         &self.signature_payload_digest
     }
-
     #[must_use]
     pub fn provenance_evidence_digest(&self) -> &PackageDigest {
         &self.provenance_evidence_digest
     }
-
     #[must_use]
     pub fn provenance_payload_digest(&self) -> &ArtifactBlobDigest {
         &self.provenance_payload_digest
     }
-
     #[must_use]
     pub fn publisher_trust_state(&self) -> &TrustStateId {
         &self.publisher_trust_state
     }
-
     #[must_use]
     pub fn builder_trust_state(&self) -> &BuilderTrustStateId {
         &self.builder_trust_state
     }
-
     #[must_use]
     pub const fn verified_at(&self) -> u64 {
         self.verified_at
     }
-
     #[must_use]
     pub const fn valid_until(&self) -> u64 {
         self.valid_until
@@ -130,7 +117,6 @@ pub fn verify_current_supply_chain_evidence(
 
     let publisher_state = publisher_verifier.state_id().map_err(PlatformError::from)?;
     let builder_state = builder_verifier.state_id().map_err(PlatformError::from)?;
-
     let evidence = bind_current_evidence(
         expected,
         PublisherEvidenceView {
@@ -159,8 +145,6 @@ pub fn verify_current_supply_chain_evidence(
         now,
     )?;
 
-    // A replacement between the first currentness check and completed binding is
-    // not allowed to leak a stale positive result from this helper.
     publisher_verifier
         .check_current(signature, now)
         .map_err(PlatformError::from)?;
@@ -178,7 +162,6 @@ pub fn verify_current_supply_chain_evidence(
             "supply-chain-trust-changed-during-admission",
         ));
     }
-
     Ok(evidence)
 }
 
@@ -288,30 +271,24 @@ mod tests {
 
     use crate::{BuilderTrustStateId, PackageSigningSubject, TrustStateId};
 
-    use super::{
-        bind_current_evidence, BuilderEvidenceView, PublisherEvidenceView,
-    };
+    use super::{bind_current_evidence, BuilderEvidenceView, PublisherEvidenceView};
 
     fn blob(byte: char) -> ArtifactBlobDigest {
         format!("sha256:{}", byte.to_string().repeat(64))
             .parse()
             .unwrap()
     }
-
     fn package(byte: char) -> PackageDigest {
         format!("sha256:{}", byte.to_string().repeat(64))
             .parse()
             .unwrap()
     }
-
     fn publisher_state(byte: char) -> TrustStateId {
-        crate::policy::state::test_state_id(blob(byte), blob('f'), 7, 11)
+        TrustStateId::test(blob(byte), blob('f'), 7, 11)
     }
-
     fn builder_state(byte: char) -> BuilderTrustStateId {
-        crate::builder_policy::state::test_state_id(blob(byte), blob('e'), 5, 9)
+        BuilderTrustStateId::test(blob(byte), blob('e'), 5, 9)
     }
-
     fn subject() -> PackageSubject {
         PackageSubject {
             media_type: OCI_MANIFEST_MEDIA_TYPE.to_owned(),
@@ -319,36 +296,42 @@ mod tests {
             size: 123,
         }
     }
-
     fn expected() -> PackageSigningSubject {
-        crate::subject::test_subject(subject(), Some(blob('b')))
+        PackageSigningSubject::test(subject(), Some(blob('b')))
     }
 
     #[test]
     fn exact_current_publisher_and_builder_evidence_is_bound() {
         let subject = subject();
+        let component = blob('b');
         let publisher_state = publisher_state('c');
         let builder_state = builder_state('d');
         let publisher = PublisherId("publisher:test".to_owned());
+        let publisher_key = blob('1');
+        let signature_evidence = package('2');
+        let signature_payload = blob('3');
+        let builder_key = blob('4');
+        let provenance_evidence = package('5');
+        let provenance_payload = blob('6');
         let evidence = bind_current_evidence(
             &expected(),
             PublisherEvidenceView {
                 subject: &subject,
                 publisher: &publisher,
-                key_fingerprint: &blob('1'),
-                evidence_digest: &package('2'),
-                payload_digest: &blob('3'),
+                key_fingerprint: &publisher_key,
+                evidence_digest: &signature_evidence,
+                payload_digest: &signature_payload,
                 state: &publisher_state,
                 verified_at: 90,
                 valid_until: 200,
             },
             BuilderEvidenceView {
                 subject: &subject,
-                component_digest: &blob('b'),
+                component_digest: &component,
                 builder_id: "builder:test",
-                key_fingerprint: &blob('4'),
-                evidence_digest: &package('5'),
-                payload_digest: &blob('6'),
+                key_fingerprint: &builder_key,
+                evidence_digest: &provenance_evidence,
+                payload_digest: &provenance_payload,
                 state: &builder_state,
                 verified_at: 100,
                 valid_until: 180,
@@ -360,7 +343,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(evidence.subject(), &subject);
-        assert_eq!(evidence.component_digest(), &blob('b'));
+        assert_eq!(evidence.component_digest(), &component);
         assert_eq!(evidence.publisher().0, "publisher:test");
         assert_eq!(evidence.builder_id(), "builder:test");
         assert_eq!(evidence.verified_at(), 100);
@@ -374,6 +357,13 @@ mod tests {
         let publisher_state = publisher_state('c');
         let builder_state = builder_state('d');
         let publisher = PublisherId("publisher:test".to_owned());
+        let publisher_key = blob('1');
+        let signature_evidence = package('2');
+        let signature_payload = blob('3');
+        let builder_key = blob('4');
+        let provenance_evidence = package('5');
+        let provenance_payload = blob('6');
+        let component = blob('b');
 
         let wrong_subject = PackageSubject {
             digest: package('9'),
@@ -384,20 +374,20 @@ mod tests {
             PublisherEvidenceView {
                 subject: &wrong_subject,
                 publisher: &publisher,
-                key_fingerprint: &blob('1'),
-                evidence_digest: &package('2'),
-                payload_digest: &blob('3'),
+                key_fingerprint: &publisher_key,
+                evidence_digest: &signature_evidence,
+                payload_digest: &signature_payload,
                 state: &publisher_state,
                 verified_at: 90,
                 valid_until: 200,
             },
             BuilderEvidenceView {
                 subject: &subject,
-                component_digest: &blob('b'),
+                component_digest: &component,
                 builder_id: "builder:test",
-                key_fingerprint: &blob('4'),
-                evidence_digest: &package('5'),
-                payload_digest: &blob('6'),
+                key_fingerprint: &builder_key,
+                evidence_digest: &provenance_evidence,
+                payload_digest: &provenance_payload,
                 state: &builder_state,
                 verified_at: 100,
                 valid_until: 180,
@@ -409,25 +399,26 @@ mod tests {
         .unwrap_err();
         assert_eq!(error.message, "supply-chain-package-subject-mismatch");
 
+        let wrong_component = blob('8');
         let error = bind_current_evidence(
             &expected,
             PublisherEvidenceView {
                 subject: &subject,
                 publisher: &publisher,
-                key_fingerprint: &blob('1'),
-                evidence_digest: &package('2'),
-                payload_digest: &blob('3'),
+                key_fingerprint: &publisher_key,
+                evidence_digest: &signature_evidence,
+                payload_digest: &signature_payload,
                 state: &publisher_state,
                 verified_at: 90,
                 valid_until: 200,
             },
             BuilderEvidenceView {
                 subject: &subject,
-                component_digest: &blob('8'),
+                component_digest: &wrong_component,
                 builder_id: "builder:test",
-                key_fingerprint: &blob('4'),
-                evidence_digest: &package('5'),
-                payload_digest: &blob('6'),
+                key_fingerprint: &builder_key,
+                evidence_digest: &provenance_evidence,
+                payload_digest: &provenance_payload,
                 state: &builder_state,
                 verified_at: 100,
                 valid_until: 180,
@@ -445,20 +436,20 @@ mod tests {
             PublisherEvidenceView {
                 subject: &subject,
                 publisher: &publisher,
-                key_fingerprint: &blob('1'),
-                evidence_digest: &package('2'),
-                payload_digest: &blob('3'),
+                key_fingerprint: &publisher_key,
+                evidence_digest: &signature_evidence,
+                payload_digest: &signature_payload,
                 state: &publisher_state,
                 verified_at: 90,
                 valid_until: 200,
             },
             BuilderEvidenceView {
                 subject: &subject,
-                component_digest: &blob('b'),
+                component_digest: &component,
                 builder_id: "builder:test",
-                key_fingerprint: &blob('4'),
-                evidence_digest: &package('5'),
-                payload_digest: &blob('6'),
+                key_fingerprint: &builder_key,
+                evidence_digest: &provenance_evidence,
+                payload_digest: &provenance_payload,
                 state: &builder_state,
                 verified_at: 100,
                 valid_until: 180,
@@ -475,28 +466,36 @@ mod tests {
     #[test]
     fn combined_validity_window_is_fail_closed() {
         let subject = subject();
+        let component = blob('b');
         let publisher_state = publisher_state('c');
         let builder_state = builder_state('d');
         let publisher = PublisherId("publisher:test".to_owned());
+        let publisher_key = blob('1');
+        let signature_evidence = package('2');
+        let signature_payload = blob('3');
+        let builder_key = blob('4');
+        let provenance_evidence = package('5');
+        let provenance_payload = blob('6');
+
         let error = bind_current_evidence(
             &expected(),
             PublisherEvidenceView {
                 subject: &subject,
                 publisher: &publisher,
-                key_fingerprint: &blob('1'),
-                evidence_digest: &package('2'),
-                payload_digest: &blob('3'),
+                key_fingerprint: &publisher_key,
+                evidence_digest: &signature_evidence,
+                payload_digest: &signature_payload,
                 state: &publisher_state,
                 verified_at: 100,
                 valid_until: 130,
             },
             BuilderEvidenceView {
                 subject: &subject,
-                component_digest: &blob('b'),
+                component_digest: &component,
                 builder_id: "builder:test",
-                key_fingerprint: &blob('4'),
-                evidence_digest: &package('5'),
-                payload_digest: &blob('6'),
+                key_fingerprint: &builder_key,
+                evidence_digest: &provenance_evidence,
+                payload_digest: &provenance_payload,
                 state: &builder_state,
                 verified_at: 110,
                 valid_until: 125,
