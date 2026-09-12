@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/package-sbom-policy.schema.json",
+  "title": "LSF SBOM content policy",
+  "description": "Bounded content requirements. Successful shape validation grants no publisher, builder or admission authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "embedded", "detached", "requireSource", "requireLicense"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "embedded": {"enum": ["optional", "required"]},
+    "detached": {"enum": ["optional", "required"]},
+    "requireSource": {"$ref": "#/$defs/roles"},
+    "requireLicense": {"$ref": "#/$defs/roles"}
+  },
+  "$defs": {
+    "roles": {
+      "type": "array",
+      "maxItems": 9,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["guest-dependency", "build-dependency", "proc-macro", "build-script", "wit-package", "build-tool", "asset", "component", "renderer"]
+      }
+    }
+  }
+}

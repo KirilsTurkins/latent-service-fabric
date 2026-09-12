@@ -20,6 +20,7 @@ cap-fs-ext = "=4.0.3"
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
+spdx = { version = "=0.13.5", default-features = false }
 wasmparser.workspace = true
 wit-parser = { version = "=0.252.0", default-features = false, features = ["std", "decoding"] }
 

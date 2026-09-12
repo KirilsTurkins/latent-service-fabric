@@ -4,7 +4,7 @@ use latent_artifacts::package::{LayerRole, PackageKind, PackageLimits};
 use latent_core::PlatformError;
 use serde::{Deserialize, Serialize};
 
-use crate::SemanticLimits;
+use crate::{SbomLimits, SemanticLimits};
 
 /// Supplied raw bytes. Archives and compression are never expanded implicitly.
 #[derive(Debug, Clone)]
@@ -79,12 +79,14 @@ pub(crate) fn check_header(
 pub struct PackagingLimits {
     pub package: PackageLimits,
     pub semantics: SemanticLimits,
+    pub sbom: SbomLimits,
 }
 
 impl PackagingLimits {
     pub(crate) fn validate(self) -> Result<(), PlatformError> {
         self.package.validate()?;
-        self.semantics.validate()
+        self.semantics.validate()?;
+        self.sbom.validate()
     }
 
     pub(crate) fn document_limit(self, role: LayerRole) -> u64 {
@@ -93,6 +95,15 @@ impl PackagingLimits {
                 (self.package.max_document_bytes as u64).min(self.package.max_layer_bytes)
             }
             _ => self.package.max_layer_bytes,
+        }
+    }
+
+    pub(crate) fn layer_limit(self, role: LayerRole, path: &str) -> u64 {
+        let maximum = self.document_limit(role);
+        match path {
+            crate::BUILD_INPUTS_PATH => maximum.min(self.package.max_document_bytes as u64),
+            crate::sbom::SBOM_PATH => maximum.min(self.sbom.max_document_bytes as u64),
+            _ => maximum,
         }
     }
 }

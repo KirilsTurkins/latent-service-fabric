@@ -82,7 +82,10 @@ transfers and bounded referrer discovery. [Publisher signing and verification](r
 bind exact packages to approved keys, current trust policy and revocation state.
 [Build provenance](reference/build-provenance.md) now records captured source and
 actual build inputs, signs exact package/component associations, and verifies
-separate builder/source policy. SBOM and trusted catalog admission follow next.
+separate builder/source policy. [Package SBOMs](component-development/sbom.md)
+bind observed dependency, tool, WIT and output inventories through embedded content
+and exact detached associations, with explicit incomplete attribution and bounded
+content policy. Trusted catalog admission follows next.
 
 OCI push/pull, signatures, provenance, SBOM, trusted AOT cache, release rollout
 orchestration, canary, and rollback. Atomic local deployment/snapshot publication

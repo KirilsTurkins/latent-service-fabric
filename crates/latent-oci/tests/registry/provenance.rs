@@ -1,10 +1,19 @@
 //! One actual observed component -> package -> signed builder evidence -> OCI
 //! round trip. No compiler, invocation or persistent private key in this process.
+#[path = "provenance/sbom.rs"]
+mod sbom;
+
 use super::reference;
 use base64::{engine::general_purpose::STANDARD, Engine};
-use latent_artifacts::package::{decode_manifest, decode_referrer, EvidenceKind, PackageLimits};
+use latent_artifacts::package::{
+    artifact_blob_digest, decode_manifest, decode_referrer, EvidenceKind, PackageLimits,
+    LAYER_PATH_ANNOTATION,
+};
 use latent_oci::{HttpOciRegistry, OciManifestBytes, OciPushRequest, OciRegistry};
-use latent_packaging::{build_package, decode_package_source, read_package_input, PackagingLimits};
+use latent_packaging::{
+    build_package_with_sbom, decode_package_source, decode_sbom_inventory, inspect_bundle,
+    read_package_input, BundleInput, PackageBundle, PackagingLimits, SbomDependencyCompleteness,
+};
 use latent_signing::{
     decode_build_observation, generate_signing_key, BuildObservation, BuilderPolicy,
     BuilderRevocationSnapshot, BuilderTrust, BuilderVerifier, LocalBuilderSigner,
@@ -28,10 +37,7 @@ fn read(path: &Path, maximum: usize) -> Vec<u8> {
     assert!(bytes.len() <= maximum);
     bytes
 }
-async fn publish_package(
-    client: &HttpOciRegistry,
-    origin: &str,
-) -> (PackageSigningSubject, BuildObservation) {
+fn load_package() -> (PackageBundle, BuildObservation) {
     let root = std::env::var("LSF_OCI_PROVENANCE_INPUT")
         .expect("pass --provenance-input to owned registry runner");
     let root = Path::new(&root);
@@ -50,11 +56,45 @@ async fn publish_package(
         package_limits,
     )
     .unwrap();
-    let package = build_package(
+    let inventory_bytes = read(
+        &root.join("sbom-inputs.json"),
+        package_limits.sbom.max_document_bytes,
+    );
+    let inventory = decode_sbom_inventory(&inventory_bytes, package_limits.sbom).unwrap();
+    assert_eq!(
+        inventory.dependency_completeness,
+        SbomDependencyCompleteness::ObservedUnitsIncomplete
+    );
+    assert_eq!(
+        inventory.source_snapshot_digest.as_ref().unwrap().as_str(),
+        observation.source.snapshot_digest
+    );
+    let material = observation
+        .materials
+        .iter()
+        .find(|material| material.name == "dependency-inventory")
+        .expect("observed normalized inventory is a provenance material");
+    assert_eq!(
+        material.digest,
+        artifact_blob_digest(&inventory_bytes).as_str()
+    );
+    assert_eq!(material.size, inventory_bytes.len() as u64);
+    let package = build_package_with_sbom(
         read_package_input(root, &source, package_limits).unwrap(),
+        inventory,
         package_limits,
     )
     .unwrap();
+    assert!(package.sbom().is_some());
+    (package, observation)
+}
+
+async fn publish_package(
+    client: &HttpOciRegistry,
+    origin: &str,
+) -> (PackageBundle, PackageSigningSubject, BuildObservation) {
+    let (package, observation) = load_package();
+    let package_limits = PackagingLimits::default();
     let subject = PackageSigningSubject::from_package(
         package.manifest_bytes(),
         package.config_bytes(),
@@ -92,6 +132,7 @@ async fn publish_package(
         client.push(request).await.unwrap(),
         subject.subject().digest
     );
+    drop(package);
     let pulled_package = client
         .pull_package(&reference(origin, subject.subject().digest.as_str()))
         .await
@@ -103,12 +144,31 @@ async fn publish_package(
     )
     .unwrap();
     assert_eq!(received_subject, subject);
+    let package = inspect_bundle(
+        BundleInput {
+            manifest: pulled_package.request().manifest().as_bytes().to_vec(),
+            configuration: pulled_package.request().config_bytes().to_vec(),
+            layers: pulled_package
+                .request()
+                .layers()
+                .map(|(descriptor, bytes)| {
+                    (
+                        descriptor.annotations.as_ref().unwrap()[LAYER_PATH_ANNOTATION].clone(),
+                        bytes.to_vec(),
+                    )
+                })
+                .collect(),
+        },
+        package_limits,
+    )
+    .unwrap();
     drop(pulled_package);
-    (received_subject, observation)
+    (package, received_subject, observation)
 }
 
 pub async fn roundtrip(client: &HttpOciRegistry, origin: &str) {
-    let (subject, observation) = publish_package(client, origin).await;
+    let (package, subject, observation) = publish_package(client, origin).await;
+    sbom::roundtrip(client, origin, &package).await;
     let limits = ProvenanceLimits::default();
 
     // Provisioned only after the build process has exited. This explicit test

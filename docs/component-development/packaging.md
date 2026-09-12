@@ -10,6 +10,11 @@ exact package identities. The [build observer and builder verifier](../reference
 authenticate maintained echo compilation claims through separate builder policy.
 Catalog admission remains a subsequent Phase 2 ticket.
 
+The [SBOM workflow](sbom.md) adds a bounded CycloneDX inventory before package
+assembly and checks exact embedded/detached associations plus content policy.
+Use the example's `build-with-sbom` command with a separately supplied normalized
+inventory; normal `build` continues to package the explicitly selected inputs.
+
 ## Build a small package
 
 From a checkout with the pinned Rust toolchain:

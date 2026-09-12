@@ -23,6 +23,7 @@ LEGACY_REQUIRED = frozenset({"build.json", "capsule.json", "echo-capsule.wasm", 
 LEGACY_OPTIONAL = frozenset({"contracts.json", "deployment.json", "input.json"})
 PACKAGE_REQUIRED = frozenset({"observation.json", "package-source.json", "echo-capsule.wasm",
     "capsule.json", "contracts.json", "wit-lock.json", "wit/context.wit", "wit/echo.wit", "wit/log.wit"})
+PACKAGE_OPTIONAL = frozenset({"sbom-inputs.json"})
 
 
 def _inventory(directory: Path, required: frozenset[str], optional: frozenset[str],
@@ -79,7 +80,7 @@ def _metadata(directory: Path, name: str) -> dict:
 
 def _recognized(directory: Path, package: bool) -> None:
     if package:
-        _inventory(directory, PACKAGE_REQUIRED, frozenset(), {"wit"})
+        _inventory(directory, PACKAGE_REQUIRED, PACKAGE_OPTIONAL, {"wit"})
         marker = _metadata(directory, "observation.json")
         recipe = _metadata(directory, "package-source.json")
         if (type(marker.get("formatVersion")) is not int or marker["formatVersion"] != 1
@@ -89,6 +90,17 @@ def _recognized(directory: Path, package: bool) -> None:
                 or recipe.get("entrypoint") != "echo-capsule.wasm"):
             raise SnapshotError("validator fixture is not the maintained observed echo profile")
         expected_digest, expected_size = marker.get("componentDigest"), marker.get("componentSize")
+        if (directory / "sbom-inputs.json").exists():
+            inventory = _metadata(directory, "sbom-inputs.json")
+            identity = file_identity(directory / "sbom-inputs.json", "dependency-inventory", 256 * 1024)
+            if (type(inventory.get("formatVersion")) is not int or inventory["formatVersion"] != 1
+                    or inventory.get("packageKind") != recipe["kind"]
+                    or inventory.get("packageName") != recipe["name"]
+                    or inventory.get("packageVersion") != recipe.get("version")
+                    or not isinstance(marker.get("materials"), list)
+                    or [row for row in marker["materials"] if isinstance(row, dict)
+                        and row.get("name") == "dependency-inventory"] != [identity]):
+                raise SnapshotError("validator fixture dependency inventory association has changed")
     else:
         _inventory(directory, LEGACY_REQUIRED, LEGACY_OPTIONAL, {"interface", "interface/deps"})
         marker = _metadata(directory, "build.json")

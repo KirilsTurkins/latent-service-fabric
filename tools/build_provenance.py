@@ -20,6 +20,7 @@ from tools.build_observation import (build_environment, file_identity, finish_ob
                                      public_repository, recipe_identity, resolve_tools)
 from tools.build_process import BuildProcessError, run_bounded
 from tools.build_process_signals import owned_cancellation
+from tools.build_sbom_inputs import InventoryCollector, cargo_home
 from tools.build_snapshot import (SnapshotError, canonical, capture_source, digest,
                                   git_environment, is_reparse, owned_child, portable_path,
                                   remove_owned_directory)
@@ -192,7 +193,9 @@ def _observed_build(*, repository: Path, revision: str, repository_label: str,
             )
             echo.verify_tool_versions(toolchain)
             echo.validate_source_contract()
-            component, reproducible = echo.build_component(build_root, verify_reproducible)
+            inventory = InventoryCollector(snapshot.root, snapshot.inventory, cargo_home(environment))
+            component, reproducible = echo.build_component(build_root, verify_reproducible,
+                                                           artifact_observer=inventory.observe)
             cancellation.check()
             built = build_root / "echo-output"
             echo.validate_and_stage_output(component, output_directory=built,
@@ -204,15 +207,6 @@ def _observed_build(*, repository: Path, revision: str, repository_label: str,
             for record in tool_materials:
                 if file_identity(tools[record["name"]], record["name"]) != record:
                     raise SnapshotError("build tool changed during observation")
-            materials = [recipe_before, *tool_materials,
-                file_identity(snapshot.root / "Cargo.lock", "dependency-lock", 4 * 1024 * 1024),
-                file_identity(snapshot.root / "tools/toolchain.toml", "toolchain-config", 256 * 1024)]
-            observation = finish_observation(
-                repository=repository_label, revision=snapshot.revision,
-                inventory=snapshot.inventory, component=component, materials=materials,
-                started=started, finished=int(time.time()), elapsed=time.monotonic() - monotonic_start,
-                reproducible=reproducible,
-            )
             output.parent.mkdir(parents=True, exist_ok=True)
             owned_child(output, target_root)
             with cancellation.defer():
@@ -221,6 +215,18 @@ def _observed_build(*, repository: Path, revision: str, repository_label: str,
             owned_child(staged, target_root)
             package_ready_inputs(snapshot.root, built, staged, component)
             cancellation.check()
+            sbom_inputs = inventory.finish(staged, toolchain, tool_materials, reproducible=reproducible)
+            materials = [recipe_before, *tool_materials,
+                file_identity(snapshot.root / "Cargo.lock", "dependency-lock", 4 * 1024 * 1024),
+                file_identity(snapshot.root / "tools/toolchain.toml", "toolchain-config", 256 * 1024),
+                {"name": "dependency-inventory", "digest": digest(sbom_inputs), "size": len(sbom_inputs)}]
+            observation = finish_observation(
+                repository=repository_label, revision=snapshot.revision,
+                inventory=snapshot.inventory, component=component, materials=materials,
+                started=started, finished=int(time.time()), elapsed=time.monotonic() - monotonic_start,
+                reproducible=reproducible,
+            )
+            (staged / "sbom-inputs.json").write_bytes(sbom_inputs)
             (staged / "observation.json").write_bytes(canonical(observation))
             if legacy_output is not None:
                 legacy_output.parent.mkdir(parents=True, exist_ok=True)
@@ -298,7 +304,8 @@ def main() -> int:
     print(json.dumps({"componentDigest": observation["componentDigest"],
                       "sourceSnapshotDigest": observation["source"]["snapshotDigest"],
                       "revision": observation["source"]["revision"],
-                      "observation": "observation.json", "packageSource": "package-source.json"},
+                      "observation": "observation.json", "packageSource": "package-source.json",
+                      "sbomInputs": "sbom-inputs.json"},
                      sort_keys=True))
     return 0
 

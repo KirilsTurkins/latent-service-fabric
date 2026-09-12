@@ -3,7 +3,7 @@ use latent_artifacts::package::{
 };
 use latent_core::PlatformError;
 
-use crate::{BuildReceipt, CheckedSurface, PackagingLimits};
+use crate::{sbom::CheckedPackageSbom, BuildReceipt, CheckedSurface, PackagingLimits};
 
 /// Exact received envelope/configuration and logical-path-addressed raw blobs.
 #[derive(Debug)]
@@ -40,6 +40,7 @@ pub struct PackageBundle {
     layers: Box<[PackageBlob]>,
     surface: Option<CheckedSurface>,
     receipt: Option<BuildReceipt>,
+    sbom: Option<CheckedPackageSbom>,
 }
 
 impl PackageBundle {
@@ -66,6 +67,12 @@ impl PackageBundle {
     #[must_use]
     pub fn build_receipt(&self) -> Option<&BuildReceipt> {
         self.receipt.as_ref()
+    }
+    /// Checked inventory association and attribution counts. Package publisher
+    /// authority and admission still require independent verification.
+    #[must_use]
+    pub fn sbom(&self) -> Option<&CheckedPackageSbom> {
+        self.sbom.as_ref()
     }
     #[must_use]
     pub fn blob(&self, path: &str) -> Option<&[u8]> {
@@ -101,13 +108,7 @@ pub fn inspect_bundle(
         if path != &layer.path {
             return Err(crate::invalid("package-blob-set-mismatch"));
         }
-        let maximum = if path == crate::BUILD_INPUTS_PATH {
-            limits
-                .document_limit(layer.role)
-                .min(limits.package.max_document_bytes as u64)
-        } else {
-            limits.document_limit(layer.role)
-        };
+        let maximum = limits.layer_limit(layer.role, path);
         if bytes.len() as u64 > maximum {
             return Err(crate::exceeded("package-content-byte-limit"));
         }
@@ -142,6 +143,7 @@ pub fn inspect_bundle(
     } else {
         None
     };
+    let sbom = crate::sbom::embedded::inspect(&layout, &input.layers, limits)?;
     Ok(PackageBundle {
         layout,
         manifest: input.manifest.into_boxed_slice(),
@@ -157,5 +159,6 @@ pub fn inspect_bundle(
             .into_boxed_slice(),
         surface,
         receipt,
+        sbom,
     })
 }

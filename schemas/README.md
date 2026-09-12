@@ -43,6 +43,9 @@ The package schemas describe a separate immutable artifact format:
 | [package-provenance.schema.json](package-provenance.schema.json) | Closed single-signature DSSE provenance envelope. |
 | [builder-policy.schema.json](builder-policy.schema.json) | Explicit builder anchors and source requirements, separate from publisher policy. |
 | [builder-revocations.schema.json](builder-revocations.schema.json) | Expiring builder revocations bound to one canonical builder policy. |
+| [package-sbom-inputs.schema.json](package-sbom-inputs.schema.json) | Normalized declared/observed package inputs for deterministic SBOM generation. |
+| [package-sbom.schema.json](package-sbom.schema.json) | Closed CycloneDX 1.6 profile embedded before package identity is computed. |
+| [package-sbom-policy.schema.json](package-sbom-policy.schema.json) | Explicit embedded/detached presence and per-role attribution requirements. |
 
 These schemas close structural objects, enforce role/media-type combinations,
 and bound arrays, names and annotations. Package annotations permit at most 32
@@ -64,7 +67,16 @@ canonical policy identity, freshness, revocation and owner limits. The
 authenticates builder assertions and exact source/component/package associations.
 Its byte bounds, timestamp ordering, duplicate material names, cross-field digest
 equality and current authority also require the Rust API. Synthetic schema
-fixtures confer no trust. SBOM authentication remains a subsequent Phase 2 feature.
+fixtures confer no trust. Final catalog admission remains separate from these
+format and evidence checks.
+
+The [SBOM profile](../docs/component-development/sbom.md) binds exact inventory
+bytes through a reserved package layer and checks identical detached associations.
+The pinned [offline upstream schemas](../tools/data/cyclonedx-1.6/README.md)
+provide an additional interoperability check. Source/path rules, unique property
+names and identities, SPDX parsing, cross-field digest associations and content
+policy also require the Rust APIs. Authenticating the exact package binds its
+embedded inventory; standalone referrer presence confers no publisher authority.
 
 The [packaging workflow](../docs/component-development/packaging.md) validates
 supplied components against the pinned WIT graph and typed contracts. Recipe

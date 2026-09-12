@@ -27,3 +27,7 @@ revocation snapshots, separate from tenant/catalog admission.
 [ADR-0023](0023-bind-build-attestations-to-observed-inputs-and-builder-trust.md)
 defines observed committed-source builds and separately approved builder proofs,
 with exact package/component/source associations and bounded current trust.
+
+[ADR-0024](0024-bind-sbom-inventory-through-package-content.md) defines bounded
+declared-input SBOMs embedded before package assembly, exact detached associations
+and content policy separate from publisher authentication and admission currentness.

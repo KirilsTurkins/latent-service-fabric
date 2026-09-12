@@ -5,7 +5,7 @@ import os
 import tempfile
 import unittest
 
-from tools.build_snapshot import SnapshotError, digest
+from tools.build_snapshot import SnapshotError, canonical, digest
 from tools.reset_validation_echo import reset_validation_echo
 
 
@@ -39,6 +39,28 @@ def fixture(root: Path, *, package: bool) -> Path:
 
 
 class ResetValidationEchoTests(unittest.TestCase):
+    def test_new_dependency_inventory_requires_exact_observation_association(self):
+        for tamper in (False, True):
+            with self.subTest(tamper=tamper), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                package = fixture(root, package=True)
+                recipe = json.loads((package / "package-source.json").read_bytes())
+                recipe["version"] = "1.0.0"
+                (package / "package-source.json").write_bytes(canonical(recipe))
+                inventory = canonical({"formatVersion": 1, "packageKind": "capsule",
+                    "packageName": "echo-provenance", "packageVersion": "1.0.0", "entries": []})
+                (package / "sbom-inputs.json").write_bytes(inventory)
+                marker = json.loads((package / "observation.json").read_bytes())
+                marker["materials"] = [{"name": "dependency-inventory", "digest": digest(inventory), "size": len(inventory)}]
+                (package / "observation.json").write_bytes(canonical(marker))
+                if tamper:
+                    (package / "sbom-inputs.json").write_bytes(inventory + b" ")
+                    with self.assertRaises(SnapshotError):
+                        reset_validation_echo(root)
+                    self.assertTrue(package.exists())
+                else:
+                    self.assertEqual(reset_validation_echo(root), 1)
+
     def test_absent_output_is_a_noop_and_other_capsules_are_preserved(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -16,6 +16,8 @@ RECIPE_FILES = (
     "build_provenance.py", "build_observation.py", "build_snapshot.py",
     "build_echo_capsule.py", "build_process.py", "build_process_windows.py", "build_process_linux.py",
     "build_process_signals.py",
+    "build_inventory_units.py", "build_inventory_manifests.py", "build_inventory_licenses.py",
+    "build_sbom_inputs.py", "data/cyclonedx-1.6/spdx-license-ids.json",
 )
 MAX_MATERIAL_BYTES = 256 * 1024 * 1024
 

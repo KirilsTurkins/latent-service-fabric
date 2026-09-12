@@ -102,7 +102,10 @@ pub fn build_package(
     )
 }
 
-fn validate_inputs(input: &PackageInput, limits: PackagingLimits) -> Result<(), PlatformError> {
+pub(crate) fn validate_inputs(
+    input: &PackageInput,
+    limits: PackagingLimits,
+) -> Result<(), PlatformError> {
     crate::input::check_header(
         &input.name,
         &input.version,
@@ -121,7 +124,7 @@ fn validate_inputs(input: &PackageInput, limits: PackagingLimits) -> Result<(), 
             return Err(crate::invalid("reserved-build-inputs-path"));
         }
         let size = layer.bytes.len() as u64;
-        if size > limits.document_limit(layer.role) {
+        if size > limits.layer_limit(layer.role, &layer.path) {
             return Err(crate::exceeded("package-input-byte-limit"));
         }
         total = total
