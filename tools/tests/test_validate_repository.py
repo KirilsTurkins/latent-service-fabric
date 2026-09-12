@@ -378,7 +378,7 @@ class GeneratedBoundaryTests(unittest.TestCase):
             self._write_foundation(root)
             build_script = root / foundation.WASMTIME_TARGET_BUILD_SCRIPT
             build_script.write_text(
-                'fn main() { let _ = std::env::var("TARGET"); '
+                'fn main() { let _ = std::env::var("OUT_DIR"); '
                 'wasmtime::component::bindgen!(); }',
                 encoding="utf-8",
             )
