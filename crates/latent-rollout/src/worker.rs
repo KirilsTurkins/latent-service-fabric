@@ -1,4 +1,5 @@
 pub(crate) mod mutation;
+pub(crate) mod rejection;
 pub(crate) mod size;
 
 use crate::{
@@ -39,6 +40,7 @@ pub(crate) struct Job<I, O> {
 pub(crate) enum Command {
     Mutation(Box<Job<MutationInput, MutationResult>>),
     Promote(Box<Job<crate::canary::PromotionInput, MutationResult>>),
+    Rollback(Box<Job<crate::rollback::RollbackInput, MutationResult>>),
     Evaluate(Job<crate::CanaryEvaluationRequest, crate::CanaryEvaluationReport>),
     Get(Job<(TenantId, RolloutId), Option<RolloutStatus>>),
     List(Job<RolloutPageRequest, RolloutPage>),
@@ -101,6 +103,9 @@ pub(crate) async fn run(
             }
             Command::Evaluate(job) => {
                 crate::canary::evaluate(&repository, &shared, &mut windows, job);
+            }
+            Command::Rollback(job) => {
+                crate::rollback::run(&repository, &audit, &shared, &mut windows, *job).await;
             }
             Command::Get(mut job) => {
                 job.charge.activate();

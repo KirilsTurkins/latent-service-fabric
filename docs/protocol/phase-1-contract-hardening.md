@@ -308,6 +308,21 @@ identities. Absent additions preserve legacy canonical records. Reports and
 protobuf messages cannot construct the private observation input accepted by
 catalog promotion. See [canary promotion](../phase-2-canary-promotion.md).
 
+### Atomic eligible-release rollback (#155)
+
+Change adds rollback at oneof tag 15 with a positive target-generation comparison.
+New target messages preserve the historical generation and retained manifest
+digest separately from the resulting route generation. Status field 20 exposes
+the plan-bound target for new plans; receipt field 19 records it only for a
+committed rollback. RolledBack state, Rollback action and RollbackApplied reason
+are additive enum values. Older plans without a captured target remain readable
+but cannot authorize a fresh rollback.
+
+Audit identity field 17 records the validated rollback target generation; attempt
+field 11 records the caller's expected target independently. Optional absent
+fields preserve legacy canonical bytes. Existing RPC signatures and field tags
+are unchanged. See [rollback semantics](../phase-2-rollback.md).
+
 Phase 0 gate #25 and the executable build foundation in #2 are complete. This
 work is reconciled with the finalized Phase 0 retained/replaced classification
 and with `development`'s generated Rust, Component Model, and RPC ownership.

@@ -64,6 +64,9 @@ impl RolloutHandle {
         if crate::canary::is_promotion(&request) {
             return Err(invalid("rollout-dedicated-promotion-required"));
         }
+        if crate::rollback::is_rollback(&request) {
+            return Err(invalid("rollout-dedicated-rollback-required"));
+        }
         let bytes = request
             .retained_bytes()
             .checked_add(size_of::<F>())
@@ -105,6 +108,37 @@ impl RolloutHandle {
             self.limits().maximum_page_bytes,
             expires,
             |job| Command::Promote(Box::new(job)),
+        )
+    }
+
+    /// Restore the recorded target through the same owned control worker. The
+    /// callback must preflight both a possible receipt and a known rejection.
+    pub fn rollback<F>(
+        &self,
+        request: RolloutRequest,
+        expires: Instant,
+        preflight: F,
+    ) -> Result<RolloutTicket<MutationResult>>
+    where
+        F: for<'a> FnOnce(crate::RollbackPreview<'a>) -> Result<()> + Send + 'static,
+    {
+        request.validate(self.rollout_limits())?;
+        if !crate::rollback::is_rollback(&request) {
+            return Err(invalid("rollout-rollback-command-required"));
+        }
+        let bytes = request
+            .retained_bytes()
+            .checked_add(size_of::<F>())
+            .ok_or_else(|| capacity("rollout-request-size"))?;
+        self.enqueue(
+            crate::rollback::RollbackInput {
+                request,
+                preflight: Box::new(preflight),
+            },
+            bytes,
+            self.limits().maximum_page_bytes,
+            expires,
+            |job| Command::Rollback(Box::new(job)),
         )
     }
 

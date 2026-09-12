@@ -2,12 +2,14 @@
 mod canary;
 pub(crate) mod codec;
 mod model;
+mod rollback;
 pub(crate) mod validation;
 pub use crate::deployments::rollouts::canary::RolloutCanaryCohort;
 pub use crate::deployments::rollouts::PreparedRolloutMutation;
 pub use canary::{RolloutCanaryCounters, RolloutCanaryDecision, RolloutCanaryPolicy};
 use latent_core::{PlatformError, PlatformErrorCode};
 pub use model::*;
+pub use rollback::RolloutRollbackTarget;
 pub(crate) type Result<T> = std::result::Result<T, PlatformError>;
 pub const MAX_REQUEST_BYTES: usize = 64 * 1024;
 pub const MAX_ROW_BYTES: usize = 128 * 1024;

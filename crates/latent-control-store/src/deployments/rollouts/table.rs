@@ -271,6 +271,9 @@ pub(in crate::deployments) fn plan_hash(row: &StoredRollout) -> Result<ArtifactB
     if let Some(policy) = s.canary_policy {
         value["canaryPolicy"] = json::to_value(policy).map_err(|_| corrupt())?;
     }
+    if let Some(target) = &s.rollback_target {
+        value["rollbackTarget"] = json::to_value(target).map_err(|_| corrupt())?;
+    }
     Ok(codec::hash(&codec::encode(&value, MAX_ROW_BYTES)?))
 }
 #[expect(
@@ -321,10 +324,11 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         }
         previous_row = Some((&s.tenant, &s.id));
         let at_end = s.candidate_weights[s.current_step as usize] == 10000;
-        if (s.state == RolloutState::Completed) != at_end
+        if (s.state != RolloutState::RolledBack && (s.state == RolloutState::Completed) != at_end)
             || !match s.state {
                 RolloutState::Running => s.reason == RolloutReason::StageApplied,
                 RolloutState::Completed => s.reason == RolloutReason::Completed,
+                RolloutState::RolledBack => s.reason == RolloutReason::RollbackApplied,
                 RolloutState::Paused | RolloutState::Aborted => {
                     s.reason == RolloutReason::OperatorRequested
                 }
@@ -332,6 +336,27 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
             }
         {
             return Err(corrupt());
+        }
+        if let Some(target) = &s.rollback_target {
+            target.validate().map_err(|_| corrupt())?;
+            if target.historical_route_generation >= s.route_generation
+                || target.manifest_digest != codec::hash(row.base_manifest.as_bytes())
+            {
+                return Err(corrupt());
+            }
+        }
+        if s.state == RolloutState::RolledBack {
+            let target = s.rollback_target.as_ref().ok_or_else(corrupt)?;
+            if row.cohort.len() != 1
+                || row.cohort[0].id != s.base.deployment_id.0
+                || row.cohort[0].manifest_digest != target.manifest_digest.as_str()
+                || row.cohort[0].generation != s.route_generation.0
+                || s.objects.len() != 1
+                || s.objects[0].deployment_id != s.base.deployment_id
+                || s.objects[0].generation != s.route_generation.0
+            {
+                return Err(corrupt());
+            }
         }
         let mut last = None;
         for member in &row.cohort {
@@ -441,6 +466,14 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
                     r.expected_revision > 0 && r.state == RolloutState::Running
                 }
                 RolloutAction::Abort => r.expected_revision > 0 && r.state == RolloutState::Aborted,
+                RolloutAction::Rollback => {
+                    r.expected_revision > 0
+                        && r.state == RolloutState::RolledBack
+                        && r.reason == RolloutReason::RollbackApplied
+                        && row.status.state == RolloutState::RolledBack
+                        && r.revision == row.status.revision
+                        && r.step == row.status.current_step
+                }
             }
         {
             return Err(corrupt());
@@ -456,6 +489,21 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
             }
             (_, _, Some(_)) => return Err(corrupt()),
             (_, _, None) => {}
+        }
+        match (
+            r.action,
+            r.rollback_target.as_ref(),
+            row.status.rollback_target.as_ref(),
+        ) {
+            (RolloutAction::Rollback, Some(actual), Some(expected)) if actual == expected => {}
+            (RolloutAction::Rollback, _, _) | (_, Some(_), _) => return Err(corrupt()),
+            (RolloutAction::Start, None, Some(target)) => {
+                if target.historical_route_generation.0.checked_add(1) != Some(r.route_generation.0)
+                {
+                    return Err(corrupt());
+                }
+            }
+            (_, None, _) => {}
         }
         r.actor.validate()?;
         crate::rollouts::validation::token(&r.operation_id, 128)?;

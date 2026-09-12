@@ -129,7 +129,9 @@ impl HistoricalReleaseDenial {
         Ok(())
     }
 
-    /// Checks scope for diagnostics. The caller must still return this denial.
+    /// Checks scope for historical inspection. This does not authorize execution:
+    /// execution callers must still return the denial. A compatibility comparison
+    /// may inspect the denied source while independently authorizing its replacement.
     pub fn authorize_tenant(&self, tenant: &TenantId) -> Result<(), PlatformError> {
         match &self.scope {
             LifecycleScope::Tenant(expected) if expected == tenant => Ok(()),

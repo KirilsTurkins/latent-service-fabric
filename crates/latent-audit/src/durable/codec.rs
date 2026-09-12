@@ -150,7 +150,9 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
     if let Some(r) = &v.rollout {
         token(r, 256)?;
     }
-    if v.canary_window_epoch == Some(0)
+    if v.rollback_target_generation == Some(RouteGeneration(0))
+        || (v.rollback_target_generation.is_some() && v.rollout.is_none())
+        || v.canary_window_epoch == Some(0)
         || (v.rollout.is_none()
             && (v.canary_window_epoch.is_some() || v.canary_evidence_digest.is_some()))
         || (v.canary_evidence_digest.is_some() && v.canary_window_epoch.is_none())
@@ -183,8 +185,17 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     if v.expected_rollout_revision.is_some()
         && (!matches!(
             v.action,
-            AuditControlAction::Rollout | AuditControlAction::Promotion
+            AuditControlAction::Rollout
+                | AuditControlAction::Promotion
+                | AuditControlAction::Rollback
         ) || v.identities.rollout.is_none())
+    {
+        return Err(invalid());
+    }
+    if v.expected_rollback_target_generation.is_some()
+        && (v.expected_rollback_target_generation == Some(RouteGeneration(0))
+            || v.action != AuditControlAction::Rollback
+            || v.identities.rollout.is_none())
     {
         return Err(invalid());
     }

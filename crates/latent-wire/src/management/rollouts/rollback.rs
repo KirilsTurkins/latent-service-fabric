@@ -1,14 +1,16 @@
-use super::super::{mutation, proto, response, validation};
+use super::{mutation, proto, response, validation};
 use crate::management::{
     control_audit, errors::platform_status, ManagementLimits, ManagementServiceAdapter,
 };
 use latent_control_store::rollouts::{RolloutCommand, RolloutId, RolloutRequest};
-use latent_core::{InvocationPrincipal, PlatformError, PlatformErrorCode, TenantId};
-use latent_rollout::{MutationPreview, PromotionPreview};
+use latent_core::{
+    InvocationPrincipal, PlatformError, PlatformErrorCode, RouteGeneration, TenantId,
+};
+use latent_rollout::{MutationPreview, RollbackPreview};
 use std::time::Instant;
 use tonic::{Response, Status};
 
-pub(in crate::management::rollouts) async fn promote(
+pub(super) async fn change(
     adapter: &ManagementServiceAdapter,
     value: proto::ChangeRolloutRequest,
     principal: InvocationPrincipal,
@@ -16,14 +18,14 @@ pub(in crate::management::rollouts) async fn promote(
     limits: ManagementLimits,
     deadline: Instant,
 ) -> Result<Response<proto::ChangeRolloutResponse>, Status> {
-    let Some(proto::change_rollout_request::Command::Promote(command)) = value.command else {
-        return Err(Status::invalid_argument("promotion command required"));
+    let Some(proto::change_rollout_request::Command::Rollback(command)) = value.command else {
+        return Err(Status::invalid_argument("rollback command required"));
     };
     let request = RolloutRequest::Change {
         context: validation::context(principal, value.operation.expect("validated operation"))?,
         id: RolloutId(value.id),
-        command: RolloutCommand::Promote {
-            next_step: command.next_step,
+        command: RolloutCommand::Rollback {
+            target_generation: RouteGeneration(command.target_generation),
         },
     };
     let mut tenant_bytes = [0_u8; 256];
@@ -32,7 +34,7 @@ pub(in crate::management::rollouts) async fn promote(
     let preview_limits = limits.clone();
     let result = adapter
         .rollout_handle()?
-        .promote(request, deadline, move |preview| {
+        .rollback(request, deadline, move |preview| {
             preflight(
                 &preview,
                 std::str::from_utf8(&tenant_bytes[..tenant_length]).expect("validated UTF-8"),
@@ -44,7 +46,7 @@ pub(in crate::management::rollouts) async fn promote(
                 } else {
                     PlatformErrorCode::Internal
                 },
-                message: "promotion-response-preflight".into(),
+                message: "rollback-response-preflight".into(),
                 retryable: false,
                 details: Vec::new(),
             })
@@ -75,7 +77,7 @@ pub(in crate::management::rollouts) async fn promote(
 }
 
 fn preflight(
-    preview: &PromotionPreview<'_>,
+    preview: &RollbackPreview<'_>,
     tenant: &str,
     limits: &ManagementLimits,
 ) -> Result<(), Status> {
@@ -91,6 +93,6 @@ fn preflight(
             limits,
         ),
         (None, Some(failure)) => response::rejection(failure, limits),
-        _ => Err(Status::internal("invalid promotion preview")),
+        _ => Err(Status::internal("invalid rollback preview")),
     }
 }

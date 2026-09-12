@@ -153,6 +153,7 @@ impl DeploymentAudit {
             expected_generation: None,
             expected_deployment_generation: expected,
             expected_rollout_revision: None,
+            expected_rollback_target_generation: None,
             replay: false,
             occurred_at_unix_millis: now(),
             preview_receipt_digest: None,

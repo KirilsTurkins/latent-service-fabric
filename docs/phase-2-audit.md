@@ -206,7 +206,11 @@ receipts for progression and startup reconciliation. [Canary promotion](phase-2-
 records its declared thresholds, selected/admitted-terminal and success/failure/slow
 counts, fixed verdict and reason. Its typed identities retain the policy digest,
 window epoch and evidence digest where available. Healthy evaluation alone never
-emits a committed promotion result. Rollback integration remains ticket #155.
+emits a committed promotion result. [Rollback](phase-2-rollback.md) records the
+caller's expected target generation on the attempt and the validated historical
+target separately from the new route generation on committed conclusions. Exact
+receipt reconciliation also covers rollback; known rejected preparation creates
+no committed catalog receipt.
 
 Focused tests exercise transaction cutpoints, missing acknowledged history,
 private paths, full-record capacity, exact replay, post-commit sink failure,

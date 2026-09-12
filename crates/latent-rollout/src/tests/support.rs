@@ -19,10 +19,16 @@ use latent_manifest::{
     ExecutionRequirements, ObjectMetadata, PlacementPolicy, StateModel, ThreadingModel,
     MANIFEST_API_VERSION,
 };
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    sync::{
+        atomic::{AtomicU8, Ordering},
+        Arc,
+    },
+};
 
 const CONTRACT: &str = "alice:echo/api@1.0.0";
-pub struct Releases(BTreeMap<ReleaseDigest, CapsuleArtifact>);
+pub struct Releases(BTreeMap<ReleaseDigest, CapsuleArtifact>, Arc<AtomicU8>);
 impl ArtifactRepository for Releases {
     fn resolve<'a>(
         &'a self,
@@ -40,7 +46,25 @@ impl ArtifactRepository for Releases {
         &'a self,
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>> {
-        Box::pin(async move { self.0.get(digest).cloned().ok_or_else(crate::closed) })
+        Box::pin(async move {
+            if *digest == content_digest(b"base") {
+                let failure = match self.1.load(Ordering::Acquire) {
+                    1 => Some((
+                        latent_core::PlatformErrorCode::NotFound,
+                        "fixture-source-unavailable",
+                    )),
+                    2 => Some((
+                        latent_core::PlatformErrorCode::PermissionDenied,
+                        "fixture-target-denied",
+                    )),
+                    _ => None,
+                };
+                if let Some((code, reason)) = failure {
+                    return Err(crate::error(code, reason));
+                }
+            }
+            self.0.get(digest).cloned().ok_or_else(crate::closed)
+        })
     }
     fn publish(
         &self,
@@ -181,11 +205,18 @@ pub fn context(operation: &str, revision: u64) -> RolloutContext {
     }
 }
 pub async fn repository(path: &std::path::Path) -> Arc<DirectoryDeploymentRepository> {
+    repository_with_gate(path, Arc::new(AtomicU8::new(0))).await
+}
+pub async fn repository_with_gate(
+    path: &std::path::Path,
+    gate: Arc<AtomicU8>,
+) -> Arc<DirectoryDeploymentRepository> {
     let releases = Arc::new(Releases(
         [artifact(b"base"), artifact(b"candidate")]
             .into_iter()
             .map(|a| (a.descriptor.release_digest.clone(), a))
             .collect(),
+        gate,
     ));
     let repository = DirectoryDeploymentRepository::open(
         path.to_path_buf(),

@@ -18,6 +18,7 @@ pub(super) fn attempt(
 ) -> Result<AuditOperationAttempt, PlatformError> {
     let preview_receipt_digest = Some(receipt_digest(value)?);
     Ok(AuditOperationAttempt {
+        expected_rollback_target_generation: None,
         scope: scope(&value.scope),
         actor: AuditActorIdentity {
             kind: actor(value.actor.kind),

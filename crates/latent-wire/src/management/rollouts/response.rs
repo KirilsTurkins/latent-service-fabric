@@ -1,7 +1,7 @@
-use super::super::{bounds, control_audit, RequestBudget};
+use super::super::{bounds, control_audit, errors::platform_status, RequestBudget};
 use super::{conversion, proto, validation, ManagementLimits};
 use latent_control_store::rollouts::RolloutOperationReceipt;
-use latent_core::TenantId;
+use latent_core::{PlatformError, TenantId};
 use latent_rollout::{MutationPreview, ResponseLease};
 use prost::Message;
 use std::time::Instant;
@@ -38,6 +38,10 @@ pub(super) fn preflight(
     if preview.receipt.canary_decision.is_some() {
         super::canary::charge_decision(&mut budget)?;
     }
+    if preview.receipt.rollback_target.is_some() {
+        budget.allocation::<proto::RolloutRollbackTarget>(1)?;
+        budget.allocation::<u8>(71)?;
+    }
     if preview.observation.is_some() {
         budget.allocation::<proto::RolloutObservation>(1)?;
     }
@@ -50,6 +54,25 @@ pub(super) fn preflight(
         observation: preview.observation.map(super::canary::observation),
     };
     if output.encoded_len() > limits.max_response_bytes {
+        return Err(bounds::exhausted());
+    }
+    Ok(())
+}
+
+pub(super) fn rejection(failure: &PlatformError, limits: &ManagementLimits) -> Result<(), Status> {
+    // Match the public fixed error envelope and prepaid audit metadata. Private
+    // source errors and diagnostic reports are never copied into this response.
+    let mut budget = RequestBudget::for_response::<proto::PlatformError>(limits)?;
+    control_audit::charge(&mut budget)?;
+    budget.allocation::<u8>(256)?;
+    let error = PlatformError {
+        code: failure.code,
+        message: String::new(),
+        retryable: failure.retryable,
+        details: Vec::new(),
+    };
+    let status = platform_status(error, limits);
+    if status.message().len() + status.details().len() + 128 > limits.max_response_bytes {
         return Err(bounds::exhausted());
     }
     Ok(())

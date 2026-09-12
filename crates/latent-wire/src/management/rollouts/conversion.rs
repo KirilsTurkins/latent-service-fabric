@@ -28,6 +28,7 @@ pub(super) fn receipt(value: domain::RolloutOperationReceipt) -> proto::RolloutO
         completed_at_unix_millis: value.completed_at_unix_millis,
         receipt_digest: value.receipt_digest.into_string(),
         canary_decision: value.canary_decision.map(super::canary::decision),
+        rollback_target: value.rollback_target.map(rollback_target),
     }
 }
 
@@ -59,6 +60,7 @@ pub(super) fn status(value: domain::RolloutStatus) -> proto::RolloutStatus {
         updated_at_unix_millis: value.updated_at_unix_millis,
         retained_operation_floor: value.retained_operation_floor,
         canary_policy: value.canary_policy.map(super::canary::policy::wire),
+        rollback_target: value.rollback_target.map(rollback_target),
     }
 }
 fn release(value: domain::RolloutRelease) -> proto::RolloutRelease {
@@ -66,5 +68,13 @@ fn release(value: domain::RolloutRelease) -> proto::RolloutRelease {
         deployment_id: value.deployment_id.0,
         component_digest: value.component.0,
         package_digest: value.package.map(latent_core::PackageDigest::into_string),
+    }
+}
+
+fn rollback_target(value: domain::RolloutRollbackTarget) -> proto::RolloutRollbackTarget {
+    proto::RolloutRollbackTarget {
+        format_version: value.format_version,
+        historical_route_generation: value.historical_route_generation.0,
+        manifest_digest: value.manifest_digest.into_string(),
     }
 }

@@ -11,6 +11,7 @@ use crate::{rollouts::*, DeploymentStore};
 mod canary;
 mod compatibility;
 mod recovery;
+mod rollback;
 
 fn alice() -> TenantId {
     TenantId("alice".into())

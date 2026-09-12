@@ -121,6 +121,7 @@ impl RolloutRequest {
             Self::Change { command, .. } => match command {
                 RolloutCommand::Advance { .. } => RolloutAction::Advance,
                 RolloutCommand::Promote { .. } => RolloutAction::Promote,
+                RolloutCommand::Rollback { .. } => RolloutAction::Rollback,
                 RolloutCommand::Pause => RolloutAction::Pause,
                 RolloutCommand::Resume => RolloutAction::Resume,
                 RolloutCommand::Abort => RolloutAction::Abort,
@@ -183,8 +184,12 @@ impl RolloutRequest {
                     .validate_deployment(&spec.candidate)
                     .map_err(|_| invalid())?;
             }
-            Self::Change { .. } => {
+            Self::Change { command, .. } => {
                 if c.operation.expected_revision == 0 {
+                    return Err(invalid());
+                }
+                if matches!(command, RolloutCommand::Rollback { target_generation } if target_generation.0 == 0)
+                {
                     return Err(invalid());
                 }
             }

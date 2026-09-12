@@ -60,6 +60,7 @@ message ChangeRolloutRequest {
     Empty resume = 12;
     Empty abort = 13;
     PromoteRollout promote = 14;
+    RollbackRollout rollback = 15;
   }
 }
 
@@ -72,6 +73,19 @@ message PromoteRollout {
   // Exactly the next stage; authority comes from the coordinator's own sealed
   // observation, never a submitted healthy flag, counter, report or window ID.
   uint32 next_step = 1;
+}
+
+message RollbackRollout {
+  // Positive comparison against this plan's unique retained target. This does
+  // not select arbitrary historical routes or submit an authorization proof.
+  uint64 target_generation = 1;
+}
+
+message RolloutRollbackTarget {
+  uint32 format_version = 1;
+  // Restoration origin, distinct from the new rollback publication generation.
+  uint64 historical_route_generation = 2;
+  string manifest_digest = 3;
 }
 
 enum RolloutDurability {
@@ -263,6 +277,7 @@ enum RolloutState {
   ROLLOUT_STATE_COMPLETED = 3;
   ROLLOUT_STATE_ABORTED = 4;
   ROLLOUT_STATE_CONFLICTED = 5;
+  ROLLOUT_STATE_ROLLED_BACK = 6;
 }
 
 enum RolloutAction {
@@ -273,6 +288,7 @@ enum RolloutAction {
   ROLLOUT_ACTION_RESUME = 4;
   ROLLOUT_ACTION_ABORT = 5;
   ROLLOUT_ACTION_PROMOTE = 6;
+  ROLLOUT_ACTION_ROLLBACK = 7;
 }
 
 enum RolloutReason {
@@ -287,6 +303,7 @@ enum RolloutReason {
   ROLLOUT_REASON_RESOURCE_LIMIT = 8;
   ROLLOUT_REASON_RECOVERY_REQUIRED = 9;
   ROLLOUT_REASON_OUTCOME_UNCERTAIN = 10;
+  ROLLOUT_REASON_ROLLBACK_APPLIED = 11;
 }
 
 enum RolloutOperationOutcome {
@@ -327,6 +344,8 @@ message RolloutStatus {
   uint64 updated_at_unix_millis = 17;
   uint64 retained_operation_floor = 18;
   RolloutCanaryPolicy canary_policy = 19;
+  // Server-derived for new plans; absent on legacy plans with no captured target.
+  RolloutRollbackTarget rollback_target = 20;
 }
 
 // Only committed operations have durable receipts. Replay returns these exact
@@ -350,4 +369,6 @@ message RolloutOperationReceipt {
   uint64 completed_at_unix_millis = 16;
   string receipt_digest = 17;
   RolloutCanaryDecision canary_decision = 18;
+  // Present only for rollback; route_generation above is its NEW publication.
+  RolloutRollbackTarget rollback_target = 19;
 }

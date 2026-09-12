@@ -1,3 +1,4 @@
+mod rollback;
 use crate::rollouts::{corrupt, error, Result};
 use latent_artifacts::{ArtifactRepository, RetainedPackageSource};
 use latent_contracts::{compare_descriptors, ComparisonLimits, StructuralCompatibility};
@@ -6,6 +7,7 @@ use latent_packaging::{
     compare_packages, inspect_bundle, BundleInput, PackageBundle, PackageComparisonLimits,
     PackagingLimits,
 };
+pub(super) use rollback::compare as rollback;
 const MAX_PACKAGE: usize = 32 * 1024 * 1024;
 fn incompatible() -> latent_core::PlatformError {
     error(
@@ -92,33 +94,42 @@ pub(super) async fn compare(
         (None, None) if old_proof.is_none() && new_proof.is_none() => {
             let previous = repository.fetch_verified_metadata(old).await?;
             let next = repository.fetch_verified_metadata(candidate).await?;
-            if previous.verified_digest() != old
-                || next.verified_digest() != candidate
-                || previous.manifest().world != next.manifest().world
-                || previous.manifest().imports != next.manifest().imports
-                || previous.contracts().is_empty()
-            {
-                return Err(incompatible());
-            }
-            for prior in previous.contracts() {
-                let mut candidates = next.contracts().iter().filter(|c| c.id == prior.id);
-                let matched = candidates.next().ok_or_else(incompatible)?;
-                if candidates.next().is_some() {
-                    return Err(incompatible());
-                }
-                let report = compare_descriptors(prior, matched, ComparisonLimits::default())?;
-                if !report.analysis_complete
-                    || !matches!(
-                        report.level,
-                        StructuralCompatibility::Identical
-                            | StructuralCompatibility::BackwardCompatible
-                    )
-                {
-                    return Err(incompatible());
-                }
-            }
+            descriptors(&previous, &next, old, candidate)?;
             Ok((None, None))
         }
         _ => Err(incompatible()),
     }
+}
+
+fn descriptors(
+    previous: &latent_artifacts::VerifiedArtifactMetadata,
+    next: &latent_artifacts::VerifiedArtifactMetadata,
+    old: &ReleaseDigest,
+    candidate: &ReleaseDigest,
+) -> Result<()> {
+    if previous.verified_digest() != old
+        || next.verified_digest() != candidate
+        || previous.manifest().world != next.manifest().world
+        || previous.manifest().imports != next.manifest().imports
+        || previous.contracts().is_empty()
+    {
+        return Err(incompatible());
+    }
+    for prior in previous.contracts() {
+        let mut candidates = next.contracts().iter().filter(|c| c.id == prior.id);
+        let matched = candidates.next().ok_or_else(incompatible)?;
+        if candidates.next().is_some() {
+            return Err(incompatible());
+        }
+        let report = compare_descriptors(prior, matched, ComparisonLimits::default())?;
+        if !report.analysis_complete
+            || !matches!(
+                report.level,
+                StructuralCompatibility::Identical | StructuralCompatibility::BackwardCompatible
+            )
+        {
+            return Err(incompatible());
+        }
+    }
+    Ok(())
 }

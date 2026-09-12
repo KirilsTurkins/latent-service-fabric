@@ -10,12 +10,12 @@ use std::{
     time::Instant,
 };
 
-struct Clock {
+pub(super) struct Clock {
     base: Instant,
     elapsed: AtomicU64,
 }
 impl Clock {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self {
             base: Instant::now(),
             elapsed: AtomicU64::new(0),
@@ -34,7 +34,7 @@ impl ActivationClock for Clock {
     }
 }
 
-fn request<T>(value: T) -> tonic::Request<T> {
+pub(super) fn request<T>(value: T) -> tonic::Request<T> {
     let mut request = tonic::Request::new(value);
     request.metadata_mut().insert(
         "authorization",
@@ -53,7 +53,7 @@ fn invoke_request(value: invocation::InvokeRequest) -> tonic::Request<invocation
     value
 }
 
-fn configured(directory: &TempDir) -> NodeSettings {
+pub(super) fn configured(directory: &TempDir) -> NodeSettings {
     let mut value = settings(directory);
     value.audit = Some(AuditLimits::default());
     value.rollouts = Some(crate::config::RolloutSettings {
@@ -65,7 +65,7 @@ fn configured(directory: &TempDir) -> NodeSettings {
     value
 }
 
-async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::StartRolloutRequest {
+pub(super) async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::StartRolloutRequest {
     let base = catalogs
         .artifacts
         .publish(component::artifact(1))
@@ -179,34 +179,7 @@ async fn actual_candidate_invocation_drives_only_the_matching_canary_promotion()
         .map(|index| format!("canary-call-{index}"))
         .find(|key| deployments.resolve(&target, Some(key)).unwrap().release.0 == candidate)
         .unwrap();
-    let mut invocation =
-        invocation::invocation_service_client::InvocationServiceClient::connect(endpoint)
-            .await
-            .unwrap();
-    let called = invocation
-        .invoke(invoke_request(invocation::InvokeRequest {
-            activation_id: Some(activation),
-            target: Some(invocation::InvocationTarget {
-                tenant: "tests".into(),
-                service: "echo".into(),
-                contract: "tests:echo/api@1.0.0".into(),
-                function: "echo".into(),
-                route: None,
-            }),
-            payload: b"[]".to_vec(),
-            media_type: latent_wasmtime::WIT_VALUES_MEDIA_TYPE.into(),
-            budget: Some(invocation::ResourceBudget {
-                cpu_fuel: 1000,
-                memory_bytes: 65_536,
-                wall_time_limit_millis: Some(1000),
-                log_bytes: 128,
-                ..Default::default()
-            }),
-            ..Default::default()
-        }))
-        .await
-        .unwrap()
-        .into_inner();
+    let called = invoke(&endpoint, activation).await;
     assert_eq!(called.release_digest, candidate);
     assert!(
         matches!(
@@ -255,10 +228,41 @@ async fn actual_candidate_invocation_drives_only_the_matching_canary_promotion()
         promoted.canary_decision.unwrap().candidate.unwrap().success,
         1
     );
-    drop(invocation);
     drop(client);
     drop(deployments);
     assert!(node.shutdown().await.unwrap().clean);
+}
+
+pub(super) async fn invoke(endpoint: &str, activation: String) -> invocation::InvokeResponse {
+    let mut client = invocation::invocation_service_client::InvocationServiceClient::connect(
+        endpoint.to_owned(),
+    )
+    .await
+    .unwrap();
+    client
+        .invoke(invoke_request(invocation::InvokeRequest {
+            activation_id: Some(activation),
+            target: Some(invocation::InvocationTarget {
+                tenant: "tests".into(),
+                service: "echo".into(),
+                contract: "tests:echo/api@1.0.0".into(),
+                function: "echo".into(),
+                route: None,
+            }),
+            payload: b"[]".to_vec(),
+            media_type: latent_wasmtime::WIT_VALUES_MEDIA_TYPE.into(),
+            budget: Some(invocation::ResourceBudget {
+                cpu_fuel: 1000,
+                memory_bytes: 65_536,
+                wall_time_limit_millis: Some(1000),
+                log_bytes: 128,
+                ..Default::default()
+            }),
+            ..Default::default()
+        }))
+        .await
+        .unwrap()
+        .into_inner()
 }
 
 #[tokio::test]

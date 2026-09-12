@@ -11,6 +11,7 @@ mod coordinator;
 mod lease;
 mod limits;
 mod model;
+mod rollback;
 #[cfg(all(test, unix))]
 mod tests;
 mod ticket;
@@ -25,6 +26,7 @@ pub use coordinator::{RolloutCoordinator, RolloutHandle, RolloutWorker};
 pub use lease::{OwnedResponse, ResponseLease};
 pub use limits::CoordinatorLimits;
 pub use model::{CoordinatorSnapshot, MutationPreview, MutationResult, RolloutFailure};
+pub use rollback::RollbackPreview;
 pub use ticket::{RolloutControl, RolloutTicket};
 
 use latent_core::{PlatformError, PlatformErrorCode};
@@ -70,6 +72,7 @@ fn bounded(failure: PlatformError) -> PlatformError {
         "rollout-canary-incomplete" => Some("rollout-canary-incomplete"),
         "rollout-canary-failed" => Some("rollout-canary-failed"),
         "rollout-canary-unavailable" => Some("rollout-canary-unavailable"),
+        "rollout-rollback-target-unavailable" => Some("rollout-rollback-target-unavailable"),
         _ => None,
     };
     if let Some(message) = canary {

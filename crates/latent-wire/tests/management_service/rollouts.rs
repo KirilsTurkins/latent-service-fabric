@@ -10,6 +10,8 @@ use tonic::Code;
 
 #[path = "rollouts/canary.rs"]
 mod canary;
+#[path = "rollouts/rollback.rs"]
+mod rollback;
 
 async fn start_input(harness: &Harness) -> proto::StartRolloutRequest {
     let base = harness
