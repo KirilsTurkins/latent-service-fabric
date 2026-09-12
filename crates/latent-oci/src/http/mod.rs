@@ -1,5 +1,6 @@
 //! One explicitly scoped OCI endpoint with bounded transfer and retention owners.
 mod body;
+mod cache;
 mod config;
 mod pull;
 mod push;
@@ -34,19 +35,49 @@ pub(crate) fn corrupt(reason: &'static str) -> PlatformError {
 pub struct HttpOciRegistry {
     pub(crate) transport: Arc<Transport>,
     pub(crate) uploads: upload_worker::UploadWorker,
+    cache: Option<Arc<latent_artifacts::RawArtifactCache>>,
 }
 
 impl HttpOciRegistry {
     pub fn new(config: RegistryConfig) -> Result<Self> {
+        Self::configured(config, None)
+    }
+
+    /// Adds replaceable raw blob storage. Every package pull still authorizes
+    /// its manifest and each cached blob against the configured registry.
+    pub fn new_with_cache(
+        config: RegistryConfig,
+        cache: Arc<latent_artifacts::RawArtifactCache>,
+    ) -> Result<Self> {
+        Self::configured(config, Some(cache))
+    }
+
+    fn configured(
+        config: RegistryConfig,
+        cache: Option<Arc<latent_artifacts::RawArtifactCache>>,
+    ) -> Result<Self> {
         let handle = tokio::runtime::Handle::try_current()
             .map_err(|_| invalid("oci-tokio-runtime-required"))?;
         let transport = Arc::new(Transport::new(config)?);
         let uploads = upload_worker::UploadWorker::new(transport.clone(), &handle);
-        Ok(Self { transport, uploads })
+        Ok(Self {
+            transport,
+            uploads,
+            cache,
+        })
     }
     #[must_use]
     pub fn usage(&self) -> RegistryUsage {
         self.transport.usage()
+    }
+
+    /// Aggregate storage/read ownership across every client sharing this cache.
+    /// This is independent of this client's transfer and returned-package leases.
+    pub fn cache_usage(&self) -> Result<Option<latent_artifacts::RawArtifactCacheSnapshot>> {
+        self.cache
+            .as_ref()
+            .map(|cache| cache.snapshot())
+            .transpose()
     }
 
     /// Stops new operations, waits for owned transfers/cleanup and closes the worker.

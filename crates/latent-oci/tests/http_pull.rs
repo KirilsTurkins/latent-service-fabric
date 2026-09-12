@@ -1,6 +1,10 @@
 #[path = "http_pull/referrers.rs"]
 mod referrers;
 #[path = "http_pull/support.rs"]
+#[allow(
+    dead_code,
+    reason = "Shared fixture APIs differ between pull and cache integration targets."
+)]
 mod support;
 
 use latent_artifacts::package::{decode_manifest, encode_manifest, package_digest, PackageLimits};

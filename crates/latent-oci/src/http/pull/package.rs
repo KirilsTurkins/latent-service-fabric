@@ -5,7 +5,7 @@ use super::{
 use crate::{OciPushRequest, OciReference};
 use latent_artifacts::package::inspect_package;
 use latent_core::PlatformErrorCode;
-use std::fmt;
+use std::{fmt, sync::Arc};
 use tokio::sync::OwnedSemaphorePermit;
 
 /// A complete format/integrity-checked package or detached evidence envelope.
@@ -39,7 +39,7 @@ impl HttpOciRegistry {
     /// Returned ownership remains charged to the adapter until Drop.
     pub async fn pull_package(&self, reference: &OciReference) -> Result<OciPulledPackage> {
         self.transport.endpoint.check_reference(reference)?;
-        let operation = self.transport.begin(0)?;
+        let operation = Arc::new(self.transport.begin(0)?);
         let slot = self.transport.lease_package()?;
         let limits = self.transport.limits.package;
         let mut manifest_lease = self.transport.lease_bytes(limits.max_document_bytes)?;
@@ -57,11 +57,12 @@ impl HttpOciRegistry {
         }
         // Reserve the complete retained graph before fetching any blob. Admission
         // is nonblocking, so partial packages cannot deadlock waiting for quota.
-        let blob_lease = self.transport.lease_bytes(fetched.envelope.blob_bytes()?)?;
+        let mut blob_lease = self.transport.lease_bytes(fetched.envelope.blob_bytes()?)?;
         let config = self
-            .fetch_blob(
+            .fetch_package_blob(
                 &blob_descriptor(fetched.envelope.config()),
-                operation.deadline,
+                operation.clone(),
+                &mut blob_lease,
             )
             .await?;
         match &fetched.envelope {
@@ -76,7 +77,11 @@ impl HttpOciRegistry {
         let mut layers = Vec::with_capacity(fetched.envelope.layers().len());
         for descriptor in fetched.envelope.layers() {
             let bytes = self
-                .fetch_blob(&blob_descriptor(descriptor), operation.deadline)
+                .fetch_package_blob(
+                    &blob_descriptor(descriptor),
+                    operation.clone(),
+                    &mut blob_lease,
+                )
                 .await?;
             layers.push((descriptor.clone(), bytes));
         }

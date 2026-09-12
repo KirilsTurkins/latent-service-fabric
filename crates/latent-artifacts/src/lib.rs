@@ -10,6 +10,7 @@ mod local_repository;
 pub mod package;
 mod preparation;
 mod preparation_fingerprint;
+mod raw_cache;
 mod verification_statistics;
 mod verified_metadata;
 
@@ -31,6 +32,11 @@ pub use preparation::{
 };
 pub use preparation_fingerprint::{
     preparation_metadata_fingerprint, PreparationMetadataFingerprint,
+};
+pub use raw_cache::{
+    RawArtifactBytes, RawArtifactCache, RawArtifactCacheLimits, RawArtifactCacheSnapshot,
+    RawArtifactEviction, RawArtifactKey, RawArtifactPin, RawArtifactRead, RawArtifactReclaim,
+    RawArtifactReclamation, RawArtifactWrite,
 };
 pub use verification_statistics::ArtifactVerificationSnapshot;
 pub use verified_metadata::VerifiedArtifactMetadata;

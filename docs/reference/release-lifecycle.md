@@ -140,9 +140,12 @@ Invocation does not renew proofs or compile a replacement route implicitly.
 Explicit deployment changes use the same control compilation boundary.
 
 Lifecycle and evidence generations also define the eligibility boundary for
-future caches. Persistent native artifacts belong to the later native-cache
-ticket; the current lifecycle feature does not claim that such a cache already
-exists.
+derived caches. The [raw download cache](raw-artifact-cache.md) retains no
+execution authority and never evicts authoritative catalog content. Retiring a
+release therefore cannot break retained deployment or rollback dependencies by
+deleting their original bytes. Persistent native artifacts belong to the later
+native-cache ticket; the current lifecycle feature does not claim that such a
+cache already exists.
 
 ## Bounds and serialization
 
