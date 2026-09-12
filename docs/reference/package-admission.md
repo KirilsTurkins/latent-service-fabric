@@ -73,9 +73,11 @@ does not use them as caller-selected filesystem destinations. Detached evidence
 uses the exact empty configuration `{}`. Registry discovery and evidence
 association alone confer no authority. The [closed JSON projection](../../schemas/package-admission-upload.schema.json)
 represents binary fields as padded base64; it is not a new `latent` CLI input
-format. Generated RPC clients and the Rust repository API expose admission;
-the complete package/sign/push/admit CLI workflow is tracked in
-[#156](https://github.com/KirilsTurkins/latent-service-fabric/issues/156).
+format. Generated RPC clients and the Rust repository API expose admission.
+The [operator CLI](../phase-2-operator-workflows.md) publishes selected local
+package and evidence bytes with `release publish-package`; the node repeats its
+current admission checks. Signature production remains the explicit host
+signing API, independent of package build and diagnostic verification.
 
 The adapter authenticates and authorizes the administrator before inspecting the
 upload. It bounds retained input capacities and encoded size before conversion.

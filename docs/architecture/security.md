@@ -1,78 +1,135 @@
 # Security architecture
 
-Phase 1 provides the locally trusted standalone boundary: verified local
-artifact bytes/metadata, explicit tenant credentials, stateless Wasmtime
-containment and declared context/log/clock imports. Phase 2 additionally provides
-the [publisher signature library](../reference/publisher-trust.md), using exact
-package subjects and explicit current policy/revocation snapshots, plus separate
-[builder provenance](../reference/build-provenance.md) for the maintained echo
-recipe. [Authenticated catalog admission](../reference/package-admission.md)
-combines these proofs with current SBOM and tenant policy. Workload mTLS,
-secret providers, trust-sharded processes and native fallback remain future
-security work. See [standalone authentication](../reference/standalone-node.md),
-[catalog trust](../development/local-release-catalog.md#trust-boundary) and
-[the Phase 1 completion scope](../phase-1-completion.md#implemented-surface-and-limits).
+The current standalone boundary combines authenticated tenant management,
+stateless Wasmtime containment and exact directory-catalog ownership. Phase 2
+delivers enforced package admission, durable lifecycle, authenticated local
+native reuse and control audit. Its [completion gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)
+remains pending; these features do not establish production readiness or a
+multi-node security boundary.
 
-## Threat model
+## Untrusted inputs and authority
 
-Untrusted by default:
+Capsule code, invocation payloads, tenant metadata, registry responses, detached
+evidence, replaceable cache files and native output are untrusted inputs.
+Validation, authentication and permission are separate checks. A content digest,
+successful OCI transfer, public admitted flag, compatibility report or historical
+receipt cannot grant execution authority.
 
-- capsule code and inputs,
-- publishers without an admitted trust policy,
-- remote invocation payloads,
-- tenant-supplied metadata,
-- external provider responses,
-- precompiled artifacts not produced by a trusted compiler boundary.
+The [management listener](../reference/standalone-node.md) authenticates explicit
+credentials and derives the principal's tenant and actor. A request body cannot
+choose another actor or tenant. Administrative release, deployment, rollout and
+audit operations remain tenant scoped; node audit additionally requires the
+trusted node-operator claim. That claim does not authorize arbitrary tenant
+queries. The delivered listener is bounded loopback RPC; workload mTLS and
+cross-node delegation belong to later work.
 
-## Capability model
+## Supply-chain admission
 
-A capability is usable only when:
+The [publisher verifier](../reference/publisher-trust.md) checks bounded Ed25519
+signatures against approved raw keys, validity intervals and explicit revocations.
+[Builder provenance](../reference/build-provenance.md) requires independently
+approved builder keys and source policy. Publisher-only keys or a matching
+referrer do not establish builder authority. The maintained build is nonhermetic;
+its repository label remains an operator assertion. Certificates and keyless
+signing are unsupported.
 
-```text
-capsule import request
-AND deployment grant
-AND invocation-principal authorization
-```
+[Catalog admission](../reference/package-admission.md) combines those proofs with
+exact package/component/tenant associations, supported WIT and manifest semantics,
+SBOM content policy and the actual runtime requirements. Its deterministic
+profile requires one publisher signature, one provenance envelope and zero or
+one associated SBOM as policy permits. Durable policy-generation and clock floors
+prevent rollback within the trusted storage boundary. Current authority is
+rechecked at publication and final execution, independently of cache residency.
 
-Handles are opaque, activation-scoped, operation-scoped, quota-bound, expiring, and auditable.
+Explicit trusted-local mode remains available. It verifies immutable content
+and lifecycle without fabricating package identity or signing proof. Enforced
+configuration cannot downgrade to local permission because evidence expires or
+is unavailable. A structurally valid expired policy can retain denied history
+for management; invalid configuration, corrupt floors and tampered associations
+remain fatal. An administrator replacing the entire node or approved trust
+configuration is outside this local protection boundary.
 
-## Default-deny guest environment
+## Lifecycle and execution cutover
 
-The default capsule world exposes no unrestricted operating-system filesystem, socket, process, environment, thread, or secret access. All external access uses WIT capabilities.
+[Lifecycle capabilities](../reference/release-lifecycle.md) bind the exact catalog
+owner, scope, release and captured generation. In enforced mode they compose with
+current admission proof. Raw preparation cannot bypass a configured owner.
+Revocation and retirement preserve content but deny later use, including held
+route, readiness and cache tokens. Only a call accepted at the shared final
+start fence may finish after the cutover.
 
-## Supply-chain boundaries
+Renewed evidence applies to the same retained package and component. It commits
+a new selected evidence revision and lifecycle generation without rewriting the
+original completion record. Old in-process tokens do not upgrade. A fresh
+control compilation, including startup recovery, may issue current capabilities
+only for still-admitted content satisfying current policy and host requirements.
+Rollback validates its target separately; it cannot restore revoked permission.
 
-The bounded publisher verifier checks Ed25519 package signatures against raw
-approved public keys, validity and explicit revocations. Its private proof binds
-exact package/evidence bytes and both current trust snapshots. Certificate and
-keyless workflows are unsupported. A signature never establishes tenant
-ownership, semantic validity, routability or trusted native output.
+## Native compilation and loading
 
-Builder provenance uses separately approved keys and explicit source requirements.
-It binds an observed component to the exact package and current builder trust.
-Unsigned observations, matching referrers and publisher-only keys do not create
-builder authority. The maintained build is nonhermetic and its repository label
-remains an operator assertion.
+The default runtime compiles verified portable components locally. The opt-in
+[isolated AOT path](../runtime/trusted-aot.md) supports Linux x86_64 with full
+Landlock ABI 3 and seccomp enforcement. Before reading untrusted Wasm, the
+approved one-job child has one thread, three directional pipes, finite hard
+resource limits, parent-death protection and a default-deny syscall/filesystem
+policy. It cannot create descendants, access the network or filesystem, or
+create new executable mappings. Unsupported or partial enforcement fails closed.
 
-Durable Phase 2 admission combines these proofs with provenance/SBOM and tenant
-policy, complete package semantics and content checks. It retains durable
-clock/generation floors and rechecks shared trust at publication and actual
-activation start, independently of prepared-cache residency. Historical receipts
-and public admitted flags do not authorize execution. Phase 1 local publication
-remains explicitly locally trusted; signed admission does not protect against
-an administrator replacing the whole node or its approved trust configuration.
+The parent verifies the actual running executable, readiness profile, engine
+fingerprint, exact bounded output framing, successful exit and fresh original
+input eligibility. Reservations remain owned through cancellation, kill and
+actual reap. There is no distributed compiler trust protocol or arbitrary native
+fallback.
 
-## AOT boundary
+A protected host-local key authenticates receipts binding exact native bytes,
+source metadata, compiler, engine, host and security configuration. Persistent
+reuse authenticates the receipt before reading its claimed blob, then checks the
+immutable byte lease before one private copying `Component::deserialize` call.
+Replaceable files are never mapped through an unauthenticated file loader. Image
+permits precede loading and outlive the associated compiled runtime. This local
+MAC is not publisher provenance and does not replace current catalog authority.
 
-Untrusted precompiled native artifacts are forbidden. Nodes compile verified component bytes locally or accept AOT output only from an isolated trusted compiler whose engine version, configuration, target, and CPU features are included in the cache key.
+## Guest capabilities
 
-## Isolation levels
+The current host exposes filtered context, structured logging and monotonic/wall
+clocks. There is no unrestricted guest filesystem, socket, environment, process,
+thread or secret access. General capability WIT declarations remain unavailable
+until a concrete provider and its policy are implemented.
 
-- Wasm store boundary for ordinary capsule isolation.
-- Fixed trust-class execution-host processes for stronger blast-radius separation.
-- Ephemeral process/container/microVM fallback for arbitrary native code.
-- Separate hosts or machines for workloads with strict side-channel requirements.
+Phase 3's [broker and grant work](../roadmap.md#phase-3-capabilities-and-application-hosting)
+will compose exact import requests, durable deployment/policy grants,
+invocation-principal authorization and provider configuration epochs. Opaque
+handles must be activation scoped, operation scoped, quota bound and revocable
+without reviving stale handles. Descendant calls must conserve budgets and
+cancellation ownership. Secret values must remain outside logs, audit fields,
+cache keys, snapshots and derived artifacts. Shared pools and streaming I/O need
+their own finite owners through cancellation and shutdown.
 
-## Planned secrets
+## Audit, recovery and storage trust
 
-Secrets are returned through short-lived handles or values, never inherited environment variables. Providers must prevent secret values from entering logs, crash reports, snapshots, telemetry attributes, or derived artifacts.
+[Durable audit](../phase-2-audit.md) records closed typed observations, attempts
+and conclusions without guest payloads, raw evidence, credentials, keys or private
+paths. Its hash chain detects inconsistency within private current-UID storage;
+it is not a MAC, external witness or protection against the owner rewriting the
+whole journal. Diagnostic loss and prior-session uncertainty remain explicit.
+
+Mutation response capacity is checked before critical audit acceptance and
+catalog persistence. Exact committed receipts establish known outcomes; a
+prospective receipt does not. A postcommit audit failure remains `OutcomeUnknown`,
+not rollback. Revoke alone may proceed when audit capacity or availability fails,
+while preserving authentication and the ordinary durable lifecycle transaction.
+
+Catalog and cache recovery recognize bounded owned layouts, validate exact
+associations and reject unsafe links or ambiguous history. An orphan complete
+upload is not automatically admitted after lifecycle initialization. Caches may
+reclaim only their replaceable unpinned bytes, never authoritative release data.
+Lowered limits cannot silently discard security history to make room.
+
+## Isolation scope
+
+The delivered guest boundary is a fresh Wasmtime store in fixed in-process
+cells. The compiler child is a separate bounded compilation boundary, not a
+per-service execution host. Trust-sharded guest processes, native compatibility
+hosts, containers/microVM fallback and separate-machine side-channel isolation
+remain architectural options, not current execution modes. Phase 3 adds provider
+and browser isolation tests; Phase 5 adds node identity and transport security.

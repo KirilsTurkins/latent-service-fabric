@@ -10,8 +10,9 @@ authentication boundary. The [standalone Linux node](standalone-node.md)
 supplies this composition and a configured loopback listener. The
 [`latent` operator CLI](operator-cli.md) exposes release, deployment, route and
 node calls with bounded local input validation, exact object versions, private
-profiles, and one request per command. Audit RPCs currently require a generated
-client; there is no audit CLI command. The [echo quickstart](../development/standalone-quickstart.md) uses its
+profiles, explicit operation reconciliation, rollout/canary/rollback control and
+typed audit queries. Commands perform one bounded request without automatic
+mutation retry. The [echo quickstart](../development/standalone-quickstart.md) uses its
 generated package inputs through this RPC boundary.
 
 ## Supported calls
@@ -19,7 +20,7 @@ generated package inputs through this RPC boundary.
 | Service | Supported calls | Standalone behavior |
 | --- | --- | --- |
 | Release | `PublishRelease`, `GetRelease`, `ListReleases`, `GetReleaseLifecycle`, `GetReleaseOperation`, `ChangeReleaseLifecycle`, `RenewReleaseEvidence` | Immutable publication, tenant-scoped metadata, durable lifecycle and bounded evidence renewal. |
-| Deployment | `ApplyDeployment`, `GetDeployment`, `ListDeployments`, `DeleteDeployment` | Atomic tenant-scoped object versions and bounded pages. |
+| Deployment | `ApplyDeployment`, `GetDeployment`, `ListDeployments`, `DeleteDeployment`, `GetDeploymentOperation` | Atomic tenant-scoped versions, optional managed operation receipts and coherent state snapshots, and bounded pages. |
 | Route | `GetRouteSnapshot` | Complete projection of the current catalog generation for one tenant. |
 | Node | `GetNode`, `ListNodes` | The one configured node's bounded inventory snapshot. |
 | Audit | `QueryAudit`, `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
@@ -126,7 +127,9 @@ body ownership and retained byte frames. An absolute deadline covers queueing,
 work and final conversion. Cancellation does not release accepted worker
 ownership early. Audited errors reuse the bounded `latent-audit-status` and
 `latent-audit-attempt` metadata described below. Current rollout calls require
-a generated client; there is no rollout CLI command yet. See the node's
+a generated client or the `latent rollout` command family. The CLI preserves the
+candidate manifest and rejects a route weight unequal to the first stage before
+dispatch. See the node's
 [manual rollout settings](standalone-node.md#optional-manual-rollouts).
 
 ### Restoring a retained rollout base
@@ -335,7 +338,8 @@ present zero; semantic validation then decides whether a request is admissible.
 
 `Deployment.generation` is an output-only object version. Apply ignores any input
 value in that field. The separate optional `expected_generation` is passed to
-the repository's atomic mutation operation unchanged:
+the repository's atomic mutation operation unchanged. When `operation` is absent,
+the existing behavior remains:
 
 | Precondition | Apply | Delete |
 | --- | --- | --- |
@@ -357,6 +361,58 @@ durability-uncertain failure can follow a committed mutation; reconcile current
 state before retrying. Bounded public error details retain supported catalog
 reasons and commit evidence such as operation, object/catalog generation, and
 `committed=true`, while excluding arbitrary repository diagnostics and paths.
+
+### Managed deployment operations
+
+Apply and Delete opt in by supplying `operation.operation_id`, a present
+`operation.expected_state_version`, and a present `expected_generation`. Apply
+accepts zero object generation for creation; managed Delete requires a positive
+object generation. The operation ID is retained by the caller. Actor and tenant
+come from the authenticated principal, and managed mutations require the node's
+enabled durable audit owner. Unsupported stores return an explicit failure;
+the adapter never falls back to an unaudited legacy mutation.
+
+Set `GetDeploymentRequest.include_operation_snapshot=true` to obtain the object,
+global `state_version`, `route_generation` and durability from one catalog
+publication. These version fields remain available when the object is absent.
+The default false preserves the original Get path and response shape. An adapter
+without coherent snapshot support rejects an explicit request rather than
+fabricating versions. The CLI exposes this choice as
+`latent deployment get ID --operation-snapshot`.
+
+The normalized manifest, action, actor, tenant, operation ID and both
+preconditions bind the request. Commit replaces desired deployments, routes and
+the compact receipt atomically. An exact retained replay returns its original
+receipt before current generation or eligibility checks, with no publication.
+Changing any bound field conflicts. Unlike the legacy object-only precondition,
+the explicit state version detects unrelated catalog changes as well. It also
+prevents an evicted create operation from running again after delete/recreate.
+
+Apply returns its normalized deployment, `receipt`, `replayed`, `durability`
+and `audit_ack`. Delete keeps `Empty` and reports bounded response metadata:
+`latent-deployment-operation-bin` carries the UTF-8 operation ID, and
+`latent-deployment-request`, `latent-deployment-receipt`,
+`latent-deployment-replayed` and `latent-deployment-durability` carry fixed
+digest, Boolean and durability values. The full receipt is read separately with
+`GetDeploymentOperation`, exposed as `latent deployment operation OPERATION_ID`.
+
+Lookup distinguishes Found, Unknown and Uncertain. Unknown includes missing,
+foreign-scope and evicted operations, with a retained floor and high watermark;
+it does not establish that a mutation never ran. Uncertain reports a selected
+catalog without durable synchronization confirmation. Keep that fact separate
+from the selected receipt and the audit acknowledgement. A timeout is not rollback.
+Retain the original operation ID and preconditions and inspect them before
+deciding on another action; the CLI does not generate replacements or retry.
+
+Managed inputs are bounded to 64 KiB and receipts to 4 KiB. The default operation
+ring retains 256 receipts, with a hard ceiling of 1024 and an 8 MiB shared
+metadata/read allowance. Request digest construction, preparation scratch and
+returned data each retain their charged owners. Response leases span conversion,
+encoding and retained HTTP frames. Full response and audit preflight precede
+durable audit acceptance; the mutation-start marker and synchronous commit have
+no intervening await. No deployment worker is added. Startup reconciles exact
+deployment receipts before the generic audit fallback, including with rollout
+RPCs disabled. See [operator workflows](../phase-2-operator-workflows.md).
 
 ## Audit acknowledgements and queries
 
@@ -462,10 +518,11 @@ repository's separate record byte budget and the adapter's complete response
 limit. Ordinary release/apply receipts are checked before mutation.
 
 Use `release_server()`, `deployment_server()`, `route_server()`, `node_server()`,
-and `audit_server()` when constructing Tonic servers so decoding and encoding
-ceilings match the adapter. The audit wrapper also retains the page allowance
-through HTTP body and frame ownership. `ManagementServices.audit` receives the
-same concrete `AuditHandle` for queries and control operations. The listener remains responsible for
+`audit_server()` and `rollout_server()` when constructing Tonic servers so decoding
+and encoding ceilings match the adapter. Deployment, audit and rollout wrappers
+retain their response allowances through HTTP body and frame ownership.
+`ManagementServices.audit` receives the same concrete `AuditHandle` for queries
+and control operations. The listener remains responsible for
 authentication, transport security, and worker/shutdown composition. Durable
 catalog mutation performs synchronous filesystem work and belongs on bounded
 control-plane workers, separate from invocation workers. These adapters do not

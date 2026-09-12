@@ -1,14 +1,18 @@
 # Standalone node
 
-`latentd serve` runs the Phase 1 stateless node on Linux. One process composes
+`latentd serve` runs the standalone stateless node on Linux. One process composes
 durable release and deployment catalogs, immutable routing, admission and quotas,
 fixed execution cells, generic Wasmtime execution, activation capabilities,
 bounded lifecycle/status retention, telemetry, and the invocation and management
 RPC adapters. Worker and listener counts come from node configuration and do not
-grow with deployed services.
+grow with deployed services. Phase 2 adds authenticated package admission,
+release lifecycle, optional authenticated native caching, durable audit and
+manual/canary/rollback control. The Phase 2 completion gate (#158) is pending;
+Phase 3 capability providers remain forthcoming.
 
 The [`latent` operator CLI](operator-cli.md) uses the generated clients to publish,
-deploy, invoke, cancel, and inspect; the
+deploy, invoke, cancel, reconcile operation receipts, control rollouts and query
+audit history; the
 [scriptable echo quickstart](../development/standalone-quickstart.md) starts a node
 with an ephemeral endpoint and private credentials. Generated Tonic clients can
 also use the [management](management-services.md) and
@@ -56,7 +60,10 @@ Keep its credentials private. Send exactly one HTTP/2 metadata header
 `authorization: Bearer <token>` on each RPC. Missing, repeated, or unknown
 credentials fail authentication. The listener uses plaintext gRPC on a literal
 loopback IP address; non-loopback binds are rejected. Port `0` is supported and
-the startup record reports the actual bound endpoint.
+the startup record reports the actual bound endpoint. The CLI's Invoke
+`--rpc-timeout-ms` must not exceed `execution.maximumWallTimeMillis`, independently
+of `--wall-time-ms`: a shorter execution budget does not legalize a larger
+transport timeout.
 
 `serve` rejects non-Linux hosts before opening configuration or storage. Linux
 must provide usable local filesystem locking and directory synchronization for
@@ -283,8 +290,8 @@ with internal `-`, `_` or `.` permitted.
 | Role | Trusted principal and access |
 | --- | --- |
 | `invoke` | User principal for invocation, cancellation and retained status in its configured tenant. |
-| `admin` | Administrator principal for that tenant's invocation and supported release/deployment/route operations. |
-| `operator` | Administrator with the fixed `latent.node.operator=true` claim, additionally permitting node inventory. |
+| `admin` | Administrator principal for that tenant's invocation, release/deployment/route/rollout operations and audit queries. |
+| `operator` | Administrator with the fixed `latent.node.operator=true` claim, additionally permitting node inventory and node-scope audit queries. |
 
 Every role remains exactly tenant scoped. An administrator cannot submit a
 foreign tenant or use caller metadata to acquire another identity. Root/parent
@@ -341,7 +348,7 @@ package semantics and current supply-chain policy. Both still require runtime
 resource, capability and deployment checks before execution.
 
 The listener serves Invoke/Cancel/GetActivation and the supported release,
-deployment, route, node and audit RPCs. Audit queries require the optional durable
+deployment, route, node, audit and rollout RPCs. Audit queries require the optional durable
 audit configuration below; when it is absent, authenticated queries return
 `Unimplemented`. Documented future methods return `Unimplemented`.
 There is no cluster controller, remote identity handshake, TLS configuration,
@@ -375,7 +382,8 @@ pruning. Unknown members, duplicate members and explicit `null` are rejected by
 the node decoder; the schema describes member shapes and numeric bounds.
 
 The journal lives at `dataDirectory/audit`. Startup opens its one storage worker
-before catalog recovery and reconciles durable pending release attempts before
+before catalog recovery and reconciles pending rollout, managed deployment and
+release attempts against their exact retained receipts before
 accepting RPCs. The audit directory and files are private to the node owner.
 Omission selects unaudited operation only when this reserved path is absent;
 an existing directory, partial initialization or symlink prevents silent
@@ -469,12 +477,23 @@ a timed-out coordinator is an unclean shutdown and keeps its actual work owned.
 
 Manual Start installs the first declared stage. Advance applies exactly the
 next stage for a plan without a canary policy. Pause and Abort freeze routes without refreshing execution grants;
-Abort is terminal and does not restore a previous release. Resume recompiles
+Abort ends forward progress and does not itself restore a previous release. Resume recompiles
 the same weights with current release eligibility into a new route generation.
 Restart never automatically advances a stage. See the
 [rollout RPC contract](management-services.md#manual-rollout-control) for exact
-tenant scope, revision checks, receipts and uncertain outcomes. Automatic
-promotion and rollback remain separate features.
+tenant scope, revision checks, receipts and uncertain outcomes. Promote is an
+explicit operator command using sealed canary evidence; it is not a timer-driven
+action. Rollback is also explicit and restores only the immutable target captured
+by a new Start, subject to current eligibility and exact cohort/version checks.
+It publishes a new route generation and RolledBack state together. Older plans
+without a stored target cannot acquire one from an arbitrary route snapshot.
+
+Managed deployment Apply/Delete uses the same enabled audit handle without
+requiring rollout RPCs or adding a worker. Request an operation snapshot to obtain
+the coherent catalog state version, then supply it with the object generation
+and caller-retained operation ID. The finite receipt ring survives restart and
+legacy/rollout writes; the catalog selects format 4 after its first managed
+deployment operation. See [managed deployment operations](management-services.md#managed-deployment-operations).
 
 ### Optional canary observations
 
@@ -563,8 +582,13 @@ Startup owns and verifies the release root, then opens the deployment root and
 rebuilds the compiled catalog before enabling RPC acceptance. Corrupt committed
 metadata, incompatible catalog formats, ownership conflicts and recovery errors
 fail startup. Restart with the same data directory preserves release/deployment
-identities and route generation. Activation history, telemetry capture and
-prepared code are bounded in-memory state and are rebuilt or empty after restart.
+identities, route generation and retained lifecycle/rollout/deployment receipts.
+Verified revoked, retired or policy-ineligible desired releases recover as
+nonauthorizing routes so management remains available; corrupt authoritative
+content still aborts startup. Activation history, live canary windows, telemetry
+capture and resident prepared code are rebuilt or empty after restart. Optional
+native cache files survive, but reuse requires current source eligibility,
+exact compatibility and authenticated bytes again.
 Follow the catalog-specific [recovery guidance](../development/local-release-catalog.md);
 do not repair integrity failures by replacing completion records or deleting
 committed state blindly.
@@ -614,6 +638,10 @@ cleanup for that run; it does not establish long-running reclamation, dormant
 100000-service scale. The retained [Phase 1 measurements](../testing/phase-1-measurements.md)
 provide that separate evidence for their recorded source revisions.
 
-See [validation commands](../../VALIDATION.md) for the focused configuration,
+The [separate Phase 2 workflow](../development/standalone-quickstart.md#bounded-phase-2-operator-workflow)
+uses current binaries, freshly signed test packages and a disposable TLS registry
+to exercise these boundaries through actual CLI and node processes. Its
+synthetic signing fixture is not production build provenance or completion-gate
+authorization. See [validation commands](../../VALIDATION.md) for the focused configuration,
 transport, catalog and execution tests. No heavy scale or soak run is required
 to exercise these startup and shutdown checks.

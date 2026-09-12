@@ -1,5 +1,9 @@
 # Standalone echo quickstart
 
+The first sequence retains the Phase 1 trusted-local compatibility workflow.
+For authenticated packages, managed receipts, canary promotion and rollback,
+use the [bounded Phase 2 workflow](#bounded-phase-2-operator-workflow) below.
+
 This Linux Bash sequence builds the maintained echo component, starts one local
 node, and uses separate `latent` processes for publication, deployment, invocation,
 status, and inventory. It performs one guest activation. Install the
@@ -220,6 +224,72 @@ to inspect current state before deciding on another operation.
 To restart, reuse the same private node configuration. Port zero can select a
 different endpoint, so refresh the client profile from the new startup record.
 The published release remains durable; this script deliberately deletes its
-deployment. Activation history and prepared caches do not persist across restart.
+deployment. Activation history and the resident prepared cache do not persist
+across restart. Optional authenticated native caching is a separate node setting.
 The finite run demonstrates this workflow and its reported cleanup; it is not
 the scale, soak, or completion evidence required by Phase 1 issue #16.
+
+## Bounded Phase 2 operator workflow
+
+Run this Linux Bash sequence from the repository root with Python 3.13, the
+pinned toolchain, Docker and OpenSSL available. It builds the current CLI and
+node before exporting fresh test evidence. The runner does not build binaries
+or pull an image implicitly. Use the pinned registry image selected by the
+maintained fixture runner, then let that runner own the disposable authenticated
+TLS registry and its cleanup:
+
+```bash
+set -euo pipefail
+umask 077
+export CARGO_TARGET_DIR="$PWD/target"
+cargo build -p latent -p latentd --all-features --locked
+REGISTRY_IMAGE=$(python3 -c 'from tools.run_oci_registry_tests import IMAGE; print(IMAGE)')
+docker pull "$REGISTRY_IMAGE"
+
+# The exporter requires a new child directory; it never overwrites old evidence.
+FIXTURE_PARENT=$(mktemp -d "${TMPDIR:-/tmp}/latent-operator-fixture.XXXXXXXX")
+LSF_OPERATOR_FIXTURE_ROOT="$FIXTURE_PARENT/inputs" \
+  cargo test -p latent-policy --lib --all-features --locked \
+  export_operator_workflow_fixture -- --ignored --test-threads=1
+python3 -m unittest tools.tests.test_phase2_operator_workflow \
+  tools.tests.test_phase2_operator_canary
+python3 tools/run_phase2_operator_workflow.py \
+  --cli "$CARGO_TARGET_DIR/debug/latent" \
+  --node "$CARGO_TARGET_DIR/debug/latentd" \
+  --fixture-root "$FIXTURE_PARENT/inputs"
+```
+
+Run the workflow immediately after exporting. The exporter generates publisher
+and independent builder keys in memory, emits public policy and short-lived
+signed test evidence, and exports no private signing key. An expired fixture is
+rejected; create a fresh directory and export again instead of changing its
+timestamps. The original fixture remains available in `FIXTURE_PARENT` for
+inspection; the runner removes its own separate client, node and registry output.
+
+The runner checks exact deterministic package rebuilds, inspect results, TLS
+push/pull and detached evidence, explicit local policy verification and denied
+credentials. Actual CLI processes then publish both packages to an enforced node,
+apply a deployment, reconcile exact replay, invoke the component, change manual
+stages, reject a no-data canary promotion, observe attributed successful calls,
+promote healthy traffic and restore the retained rollback target. It also checks
+audit pagination, explicit operation lookup after a short mutation deadline,
+restart and clean shutdown. It does not retry a mutation or add invocations until
+a canary happens to pass. Candidate manifests are explicit copies with the
+first-stage route weight, and invocation transport timeouts fit the node ceiling.
+
+The command has a finite workflow deadline and fixed fixture populations;
+retained child ownership and separate cleanup deadlines cover interruption.
+Its result uses `latent.operator.workflow-test.v1`. Successful execution establishes
+this bounded integration schedule only. The signed build observation is synthetic
+test data, not evidence of a real production build; actual observed-build tests,
+the historical Phase 1 measurements, and the pending Phase 2 completion gate
+(#158) have separate purposes. Phase 3 providers are forthcoming.
+
+For an already owned matching loopback TLS fixture, supply both
+`--registry-origin https://127.0.0.1:PORT` and `--registry-ca /absolute/ca.der`.
+It must use the maintained fixture's credentials and OCI behavior; the runner
+does not acquire or clean up an externally supplied registry. See
+[operator workflows](../phase-2-operator-workflows.md),
+[management services](../reference/management-services.md) and
+[validation](../../VALIDATION.md#phase-2-focused-validation) for the underlying
+contracts and focused tests.

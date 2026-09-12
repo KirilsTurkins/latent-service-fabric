@@ -1,16 +1,21 @@
 # Validation baseline
 
-Updated on **2026-09-11** for completed Phase 1 and its performance extension,
+Updated on **2026-09-13** for completed Phase 1 and its performance extension,
 the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
 generic execution, activation capabilities/lifecycle, invocation and management
-service adapters, standalone Linux node composition, operator CLI workflows, and explicit heavy
+service adapters, standalone Linux node composition, Phase 2 package/OCI policy,
+authenticated native caching, audit, staged rollout/canary/rollback and operator
+workflows, and explicit heavy
 validation gates. These commands describe validation coverage; the
 [Phase 1 completion review](docs/phase-1-completion.md) and
 [extension report](docs/phase-1-extension-completion.md) record the completed
 decisions. The [September 7 audit](docs/development/feature-audit-2026-09-07.md)
-is an earlier snapshot.
+is an earlier snapshot. Phase 2 feature validation is distinct from completion
+authorization: the Phase 2 gate (#158) is pending, and Phase 3 providers are
+forthcoming. Historical Phase 0/1 receipts below retain their recorded source
+identities and do not validate newly added Phase 2 paths.
 
 ## Entry point
 
@@ -107,6 +112,56 @@ Run it from an isolated clone or worktree when local build output is present.
   [docs/svg-style.md](docs/svg-style.md).
 - Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
 - The Phase 0 gate receipt rejects omitted, duplicate, unexpected, or failed baseline checks; missing required terminal scenarios; a dirty executable shutdown/topology result; malformed, unsafe, incomplete, or altered raw archives; unverified calibration/profile measurements; weakened optimization guardrails; free-form optimization decisions; stale execution evidence; and incomplete resource evidence represented as an authorization.
+
+## Phase 2 focused validation
+
+Use the pinned prerequisites and committed lockfile. These focused commands
+exercise implemented package, policy, storage, native-image, audit, delivery and
+operator boundaries without selecting catalog scale or performance campaigns:
+
+```bash
+cargo test -p latent-packaging -p latent-signing -p latent-policy --lib --all-features --locked
+cargo test -p latent-artifacts -p latent-control-store -p latent-audit -p latent-rollout --lib --all-features --locked
+cargo test -p latent-telemetry -p latent-wire -p latentd --lib --all-features --locked
+cargo test -p latent --all-targets --all-features --locked
+cargo test -p latent-wire --test management_service --all-features --locked
+cargo test -p latent-wasmtime --test native_aot_cache --all-features --locked
+```
+
+Native AOT integration requires the documented Linux x86_64 sandbox and compiler
+prerequisites in [trusted AOT](docs/runtime/trusted-aot.md); unsupported hosts do
+not establish successful isolation or native loading.
+
+The tests cover exact package/evidence association, publisher/builder policy and
+runtime compatibility, lifecycle cutover and denied recovery, authority-free raw
+cache pressure, authenticated native receipt/image ownership, durable audit
+query/control leases, exact rollout and managed deployment transactions, canary
+loss and attribution, rollback target validation, and CLI response association.
+Ordinary Rust/SDK/schema checks remain required; no single listed target replaces
+the workspace or contract checks.
+
+For the actual separate-process CLI, registry and node schedule, follow the
+[bounded operator workflow](docs/development/standalone-quickstart.md#bounded-phase-2-operator-workflow).
+It explicitly builds current binaries, fetches the pinned TLS registry image,
+and selects only the ignored `export_operator_workflow_fixture` test into a new
+directory. Run the workflow immediately with that fresh signed fixture. The
+runner itself builds nothing, never mounts node catalogs into the CLI and owns
+its disposable process/registry resources. It rejects stale fixtures and missing
+prerequisites.
+
+That schedule checks two compatible packages, exact OCI/evidence transfer,
+independent node admission, deployment receipt replay/lookup, actual attributed
+invocation, manual and canary stages, explicit rollback, audit pagination,
+interrupted-result inspection and restart. Its bounded
+`latent.operator.workflow-test.v1` result is integration evidence, not a benchmark
+or a completion receipt. Its fresh publisher and builder signatures bind
+synthetic test observations; they do not establish an actual production build.
+Observed-build provenance has its separate maintained integration.
+
+The Phase 2 completion gate (#158) must evaluate its own declared evidence before
+authorization. A passing workflow, CI job, feature ticket or documentation change
+does not independently authorize Phase 3. Do not rerun or reinterpret historical
+Phase 1 scale/soak reports as measurements of the new delivery pipeline.
 
 ## Echo fixture commands
 

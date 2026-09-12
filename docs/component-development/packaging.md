@@ -29,8 +29,9 @@ Use a new output directory on every export. The writer refuses to overwrite an
 existing directory. The SSR fixture uses the same commands with
 `examples/package-inputs/ssr` and `target/package-ssr`. Neither command starts a
 browser, renderer, server or service instance. This small example drives the
-public Rust API; the integrated operator CLI is tracked by
-[#156](https://github.com/KirilsTurkins/latent-service-fabric/issues/156).
+public Rust API. The [operator CLI](../phase-2-operator-workflows.md) exposes the
+same build/inspection boundary through `latent package build` and
+`latent package inspect`, plus explicit verification and OCI transfer.
 
 The [source recipe schema](../../schemas/package-source.schema.json) requires
 `formatVersion: 1`, `kind`, `name`, `version`, `entrypoint`, `annotations` and
