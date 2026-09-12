@@ -28,6 +28,7 @@ const MIXED_DELAYED_ECHO_PREFIX: &str = "__latent_test_mixed_delayed_echo:";
 const MIXED_MEMORY_ECHO_PREFIX: &str = "__latent_test_mixed_memory_echo:";
 const LOG_MESSAGE: &str = "containment fixture invocation";
 const MIXED_MEMORY_READY_LOG_MESSAGE: &str = "containment mixed memory rendezvous";
+const MIXED_MEMORY_PRESSURE_LOG_MESSAGE: &str = "containment mixed memory pressure started";
 const MEMORY_CHUNK_BYTES: usize = 64 * 1024;
 const CONTROLLED_DELAY_ITERATIONS: u64 = 2_000_000;
 // Mixed trap/deadline tests retain their historical bounded delay. The mixed
@@ -66,6 +67,7 @@ impl Guest for ContainmentCapsule {
             DELAYED_MEMORY_MODE => {
                 wait_for_mixed_memory_rendezvous();
                 controlled_delay(CONTROLLED_MIXED_DELAY_ITERATIONS);
+                let _ = log::write(Level::Info, MIXED_MEMORY_PRESSURE_LOG_MESSAGE, &[]);
                 exhaust_guest_memory();
             }
             _ => normal_echo(message),

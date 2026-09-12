@@ -29,6 +29,11 @@ use latent_wasmtime::{
 };
 use sha2::{Digest, Sha256};
 
+#[path = "containment_backend/rendezvous.rs"]
+mod rendezvous;
+
+use rendezvous::{MixedMemoryRendezvous, MixedMemoryRendezvousSnapshot};
+
 const TRAP_MODE: &str = "__latent_test_trap";
 const INFINITE_MODE: &str = "__latent_test_infinite";
 const MEMORY_MODE: &str = "__latent_test_memory";
@@ -36,94 +41,16 @@ const MEMORY_MODE: &str = "__latent_test_memory";
 const MAXIMUM_FUEL: u64 = 1_000_000_000_000;
 const MAXIMUM_MEMORY_BYTES: u64 = 32 * 1024 * 1024;
 
-#[derive(Debug, Clone)]
-struct MixedMemoryRendezvousSnapshot {
-    expected: BTreeSet<String>,
-    arrived: BTreeSet<String>,
-    unexpected: BTreeSet<String>,
-    opened: bool,
-    timed_out: bool,
-}
-
-#[derive(Debug, Default)]
-struct MixedMemoryRendezvousState {
-    first_arrival: Option<Instant>,
-    arrived: BTreeSet<String>,
-    unexpected: BTreeSet<String>,
-    opened: bool,
-    timed_out: bool,
-}
-
-#[derive(Debug)]
-struct MixedMemoryRendezvous {
-    expected: BTreeSet<String>,
-    timeout: Duration,
-    state: Mutex<MixedMemoryRendezvousState>,
-}
-
-impl MixedMemoryRendezvous {
-    fn new(expected: BTreeSet<String>, timeout: Duration) -> Self {
-        Self {
-            expected,
-            timeout,
-            state: Mutex::new(MixedMemoryRendezvousState::default()),
-        }
-    }
-
-    fn snapshot(&self) -> MixedMemoryRendezvousSnapshot {
-        let state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        MixedMemoryRendezvousSnapshot {
-            expected: self.expected.clone(),
-            arrived: state.arrived.clone(),
-            unexpected: state.unexpected.clone(),
-            opened: state.opened,
-            timed_out: state.timed_out,
-        }
-    }
-
-    fn timeout_now(&self) {
-        self.state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .timed_out = true;
-    }
-}
-
 impl StructuredLogSink for MixedMemoryRendezvous {
     fn try_emit(&self, entry: &CapturedLog, _encoded: &[u8]) -> Result<(), LogSinkError> {
         if entry.message != MIXED_MEMORY_READY_LOG_MESSAGE {
             return Ok(());
         }
-
-        let now = Instant::now();
-        let mut state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if state.opened || state.timed_out {
-            return Ok(());
-        }
-
-        let first_arrival = *state.first_arrival.get_or_insert(now);
-        if self.expected.contains(&entry.activation_id.0) {
-            state.arrived.insert(entry.activation_id.0.clone());
+        if self.arrive(&entry.activation_id.0) {
+            Ok(())
         } else {
-            state.unexpected.insert(entry.activation_id.0.clone());
+            Err(LogSinkError::Unavailable)
         }
-
-        if state.arrived == self.expected {
-            state.opened = true;
-            return Ok(());
-        }
-        if now.duration_since(first_arrival) >= self.timeout {
-            state.timed_out = true;
-            return Ok(());
-        }
-
-        Err(LogSinkError::Unavailable)
     }
 }
 
@@ -621,6 +548,7 @@ const DELAYED_MEMORY_MODE: &str = "__latent_test_delayed_memory";
 const MIXED_DELAYED_ECHO_PREFIX: &str = "__latent_test_mixed_delayed_echo:";
 const MIXED_MEMORY_ECHO_PREFIX: &str = "__latent_test_mixed_memory_echo:";
 const MIXED_MEMORY_READY_LOG_MESSAGE: &str = "containment mixed memory rendezvous";
+const MIXED_MEMORY_PRESSURE_LOG_MESSAGE: &str = "containment mixed memory pressure started";
 const MIXED_MEMORY_HEALTHY_COUNT: u64 = 4;
 const DEADLINE_CI_SCHEDULING_ALLOWANCE_MILLIS: u64 = 500;
 
@@ -736,7 +664,10 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
         MIXED_MEMORY_ECHO_PREFIX,
     );
 
-    let witness = wait_for_mixed_memory_rendezvous(&rendezvous).await;
+    let witness = wait_for_mixed_memory_rendezvous(&rendezvous, || {
+        !failure.is_finished() && healthy.iter().all(|(_, _, task)| !task.is_finished())
+    })
+    .await;
     if !witness.opened {
         let failure_finished = failure.is_finished();
         let healthy_finished = healthy
@@ -759,6 +690,7 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
     assert_eq!(witness.arrived, witness.expected);
     assert!(witness.unexpected.is_empty());
     assert!(!witness.timed_out);
+    assert!(!witness.departed_before_release);
 
     let outcome = tokio::time::timeout(Duration::from_secs(5), failure)
         .await
@@ -775,6 +707,10 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
         "reported peak {} exceeded grant {granted_memory}",
         consumption.peak_memory_bytes
     );
+    let pressure_logs = backend.log_sink().snapshot_for(&failure_id);
+    assert_eq!(pressure_logs.len(), 2, "pressure starts after the gate");
+    assert_eq!(pressure_logs[0].message, MIXED_MEMORY_READY_LOG_MESSAGE);
+    assert_eq!(pressure_logs[1].message, MIXED_MEMORY_PRESSURE_LOG_MESSAGE);
     assert_mixed_healthy(healthy, &backend, "memory").await;
     assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
 }
@@ -944,9 +880,11 @@ async fn assert_mixed_healthy(
 
 async fn wait_for_mixed_memory_rendezvous(
     rendezvous: &MixedMemoryRendezvous,
+    all_unfinished: impl Fn() -> bool,
 ) -> MixedMemoryRendezvousSnapshot {
     let observed = tokio::time::timeout(Duration::from_secs(3), async {
         loop {
+            rendezvous.release_if_ready(&all_unfinished);
             let snapshot = rendezvous.snapshot();
             if snapshot.opened || snapshot.timed_out {
                 return snapshot;
@@ -967,7 +905,10 @@ async fn describe_activation_task(mut task: tokio::task::JoinHandle<ActivationOu
         Ok(Err(error)) => format!("join-error:{error:?}"),
         Err(_) => {
             task.abort();
-            format!("timed-out; abort={:?}", task.await)
+            match tokio::time::timeout(Duration::from_secs(1), task).await {
+                Ok(result) => format!("timed-out; abort={result:?}"),
+                Err(_) => "timed-out; abort=incomplete-join-after-1s".to_owned(),
+            }
         }
     }
 }
