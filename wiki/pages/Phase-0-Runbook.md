@@ -15,4 +15,6 @@ New calibration/profiling/soak reference evidence requires clean native Linux ho
 
 Optimization raw packages were compacted after Phase 1; the native Phase 0 raw archives remain retained. Read exact restoration instructions before replay; do not restore every archive by default.
 
-Authorities: [completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-0-completion.md), [validation](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/VALIDATION.md), [retention](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/testing/benchmark-retention.md).
+Authorities: [completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-0-completion.md), [validation](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/VALIDATION.md), [retention](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/testing/benchmark-retention.md).
+
+For current Phase 2 package, trust and operator checks, use [Testing and benchmarks](Testing-and-Benchmarks). The pending delivery gate does not reinterpret this historical authorization procedure.

@@ -1,25 +1,24 @@
 <!-- LSF-WIKI-MANAGED -->
 # Latent Service Fabric
 
-**Phase 1 and its performance extension are complete.** LSF provides a configured single-node stateless fabric: durable release/deployment catalogs, immutable routing, bounded admission and tenant-fair scheduling, generic Wasmtime execution, invocation/status/cancellation RPCs, telemetry and a working operator CLI. The delivery line is **0.1.0-alpha.2**, a prerelease with explicitly bounded support.
+LSF runs stateless WebAssembly components on a bounded, shared execution topology. Dormant services retain metadata and artifacts; they do not own a guest heap, process or listener.
 
-A dormant service owns metadata and artifacts, but no dedicated process, thread, listener, guest heap, cell or connection pool. Metadata memory grows with catalog size; fixed execution topology does not mean constant total RSS.
+**Phase 2 implementation is delivered; delivery gate [#158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158) is pending.** Packaging, signed admission, lifecycle controls, protected native reuse, durable audit, rollouts, canary promotion, rollback and operator workflows extend the completed Phase 1 baseline. Phase 3 has **41 planned tickets** under [epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201); those capabilities are not current runtime promises.
 
-![Completed Phase 1 local invocation flow with later features separated](assets/architecture-at-a-glance.gif)
+![Phase 2 package, control and invocation path](assets/architecture-at-a-glance.gif)
 
-[Accessible SVG source](assets/architecture-at-a-glance.svg). Every fact is present in the static drawing and surrounding prose.
-
-| Reader | Guide |
+| Start here | What it explains |
 | --- | --- |
-| Run the system | [Getting started](Getting-Started), [Operator CLI](Operator-CLI) |
-| Check delivered features | [Phase 1 status](Phase-1-Status), [Architecture](Architecture) |
-| Evaluate performance | [Performance and infrastructure](Performance-and-Infrastructure), [Testing](Testing-and-Benchmarks) |
-| Integrate a capsule/client | [Capsule development](Capsule-Development), [Contracts](Contracts-and-APIs), [SDKs](SDKs) |
-| Follow upcoming work | [Roadmap](Roadmap), [State and effects](State-and-Effects) |
-| Read historical authorization | [Phase 0 status](Phase-0-Status) |
+| [Getting started](Getting-Started) | The Linux node, explicit local configuration and current source branch. |
+| [Operator CLI](Operator-CLI) | Package/OCI workflows and authenticated release, deployment, rollout and audit operations. |
+| [Security and isolation](Security-and-Isolation) | Publisher and builder authority, current eligibility, compiler isolation and cache trust. |
+| [Deployment and routing](Deployment-and-Routing) | Atomic publication, operation receipts, canary policy, rollback and recovery. |
+| [Architecture](Architecture) | Shared owners, fixed execution resources and separately bounded storage. |
+| [Phase 1 status](Phase-1-Status) | The historical baseline and its original evidence. |
+| [Roadmap](Roadmap) | The Phase 2 gate and planned Phase 3 capabilities. |
 
-The [September 8 functional completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-completion.md) and [September 11 extension report](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-extension-completion.md) preserve their own sources and measurements. The [extension milestone is closed](https://github.com/KirilsTurkins/latent-service-fabric/milestone/5). Phase 2 packaging and supply-chain work is next.
+Phase 1 functional completion on September 8 and the September 11 performance extension remain separate historical evidence populations. Their reports do not become Phase 2 measurements. A successful local test or Wiki refresh does not close the delivery gate or establish a published release.
 
-Completion does not establish production security, HA, cloud capacity, universal millisecond deadlines or stable SDK transports. Actual Docker/Kubernetes benchmarks do not implement clustered LSF control.
+Current canonical links use [development](https://github.com/KirilsTurkins/latent-service-fabric/tree/development) until the release is published. The repository owns requirements and implementation; the Wiki explains them. Start with the [operator workflow guide](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-operator-workflows.md) and [architecture](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/ARCHITECTURE.md).
 
-Reviewed September 11, 2026. This Wiki is explanatory; the [release repository](https://github.com/KirilsTurkins/latent-service-fabric/tree/release) is authoritative. The isolated Wiki source branch is not a runnable release reference.
+Reviewed September 13, 2026. Live Wiki publication is recorded separately from source validation.

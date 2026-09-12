@@ -27,6 +27,7 @@ def validate(authority_ref):
     assert actual==expected, f'Unexpected/missing managed files: {actual^expected}'
     authorities=set(git('ls-tree','-r','--name-only',authority_ref).splitlines())
     assert 'docs/phase-1-extension-completion.md' in authorities,'Authority lacks completed Phase 1'
+    assert 'docs/phase-2-operator-workflows.md' in authorities,'Authority lacks Phase 2 operator workflows'
     links=0
     for rel in sorted(expected):
         file=SOURCE/rel
@@ -42,9 +43,16 @@ def validate(authority_ref):
             label,target=match.groups()
             links+=1
             assert label.strip(),f'Empty link label: {rel}'
-            if target.startswith(BASE+'blob/release/'):
-                target_path=target.removeprefix(BASE+'blob/release/').split('#')[0]
+            if target.startswith(BASE+'blob/'):
+                branch, separator, target_path=target.removeprefix(BASE+'blob/').partition('/')
+                assert separator and branch in {'development','release'},f'Unexpected authority branch: {target}'
+                target_path=target_path.split('#')[0]
                 assert target_path in authorities,f'Missing/case-wrong authority {target_path}'
+            elif target.startswith(BASE+'tree/'):
+                branch, _, target_path=target.removeprefix(BASE+'tree/').partition('/')
+                assert branch in {'development','release'},f'Unexpected authority branch: {target}'
+                target_path=target_path.split('#')[0].rstrip('/')
+                assert not target_path or any(path.startswith(target_path+'/') for path in authorities),f'Missing/case-wrong authority directory {target_path}'
             elif target.startswith(('https://','http://','#')): continue
             else:
                 target=target.split('#')[0]

@@ -1,18 +1,27 @@
 <!-- LSF-WIKI-MANAGED -->
-# Roadmap
+# Roadmap and delivery boundaries
 
-| Phase | Status and scope |
+Implementation, retained evidence, gate completion and release publication are distinct. The current feature map is:
+
+| Phase | Status and boundary |
 | --- | --- |
-| 0: feasibility | Complete; August 30 native-Linux receipt authorized its original Phase 1 handoff. |
-| 1: single-node stateless | Complete September 8: catalogs/routing, budgets/admission/scheduling, Wasmtime, scoped capabilities/lifecycle/RPC, telemetry, Linux node and CLI. |
-| 1 extension | Complete September 11: prioritized optimizations and actual Docker/Kubernetes comparisons; #110 closed as not planned. |
-| 2: packaging/supply chain | Next: OCI push/pull, signatures, provenance, SBOM, trusted AOT cache, rollout orchestration, canary and rollback. |
-| 3: capabilities | General brokers/grants/providers, HTTP/blob/secrets/events, shared application HTTP ingress with bounded Angular SSR/hydration, pooling/auditing and descendant budgets. |
-| 4: state/effects | Transactions, optimistic concurrency, durable outbox, dispatch, idempotency and entity-key routing. |
-| 5: cluster | Separate control plane, watches, direct node calls, mTLS identity, prefetch, state affinity and multi-zone placement. |
-| 6: durable workflows | Explicit state machines, timers, continuations, awaited effects, replay and compensation. |
-| 7: research | Optional paging, continuation eviction, fusion, shared blobs, native SFI and hardware capabilities; promotion requires accepted evidence/design. |
+| Phase 0 | Historical feasibility handoff completed August 30, 2026, for its exact recorded execution identity. |
+| Phase 1 | Single-node stateless runtime functionally complete September 8; performance extension complete September 11. |
+| Phase 2 | Packaging, verified admission, lifecycle, isolated AOT/native reuse, audit, rollouts, canary promotion, rollback and operator workflows implemented. Delivery gate #158 is pending. |
+| Phase 3 | 41 planned tickets covering capability brokers/providers, HTTP/web hosting, SDK delivery and operator/security/resource gates. |
+| Phase 4 | Transactional guest state and explicit effect handling. |
+| Phase 5 | Cluster control, placement, node identity and distributed operation. |
+| Phase 6 | Durable workflows and resumable orchestration. |
+| Phase 7 | Subsequent optimization and expansion against delivered evidence. |
 
-Local release/build foundations, atomic deployment/snapshot publication and deterministic weighted routing are already Phase 1. Local prepared-component caching is not yet trusted distributed AOT supply-chain support. A Kubernetes benchmark does not implement clustered LSF control.
+Phase 2 keeps portable package identity separate from local native-code trust. OCI distribution and signatures do not establish a distributed native attestation protocol. Its rollout commands are operator-triggered; canary policy gates explicit promotion, and rollback restores only an eligible recorded target through a new route generation.
 
-The closed [extension milestone](https://github.com/KirilsTurkins/latent-service-fabric/milestone/5) ends this optimization cycle. Next feature delivery follows the [canonical roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/roadmap.md) and [Phase 2 milestone](https://github.com/KirilsTurkins/latent-service-fabric/milestone/4). Alpha packaging does not make later-phase declarations available runtime features.
+The Phase 3 [capability epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201) includes versioned host ABI/policy, bounded async I/O and pools, local child calls with descendant budgets, outbound HTTP, blobs, secrets, events, randomness and metrics. Concrete SDK transports and parity fixtures have their own delivery tickets.
+
+[Web hosting parent #44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44) retains its Angular/browser/SSR acceptance and is decomposed into concrete children. HTTP contracts and ingress, immutable asset delivery, renderer isolation, browser security and hydration are planned integrations. Existing browser/SSR package profiles do not mean a hosting runtime already exists.
+
+The plan includes operator tooling, security tests, resource accounting and documentation gates. A future capability must have an owner, finite capacity, cancellation and recovery rules before it becomes an executable contract.
+
+Historical extension [epic #97](https://github.com/KirilsTurkins/latent-service-fabric/issues/97) and [gate #113](https://github.com/KirilsTurkins/latent-service-fabric/issues/113) remain closed; #110 was closed as not planned. Their measurements are retained unchanged. Follow [Phase 1 status](Phase-1-Status) and [performance evidence](Performance-and-Infrastructure) for those claims.
+
+Authorities: [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/roadmap.md), [Phase 2 gate](https://github.com/KirilsTurkins/latent-service-fabric/issues/158), [Phase 3 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).

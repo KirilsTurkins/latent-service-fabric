@@ -1,6 +1,6 @@
 <!-- LSF-WIKI-MANAGED -->
 
-### Start
+### Start and current delivery
 
 - [[Home]]
 - [[Getting-Started]]
@@ -8,7 +8,7 @@
 - [[FAQ]]
 - [[Glossary]]
 
-### Architecture
+### Runtime, trust and control
 
 - [[Architecture]]
 - [[Core-Concepts]]
@@ -18,7 +18,7 @@
 - [[Deployment-and-Routing]]
 - [[State-and-Effects]]
 
-### Build and operate
+### Build, verify and operate
 
 - [[Operator-CLI]]
 - [[SDKs]]
@@ -26,7 +26,7 @@
 - [[Contracts-and-APIs]]
 - [[Development-Workflow]]
 
-### Evidence and project
+### Historical evidence and planned phases
 
 - [[Performance-and-Infrastructure]]
 - [[Testing-and-Benchmarks]]
@@ -35,3 +35,5 @@
 - [[Repository-Map]]
 - [[Phase-0-Status]]
 - [[Phase-0-Runbook]]
+
+Phase 2 delivery gate #158 is pending. Phase 3 has 41 planned tickets.

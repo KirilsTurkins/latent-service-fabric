@@ -5,19 +5,26 @@ Refresh work uses a dedicated `chore/wiki-*` branch, reviewed and fast-forwarded
 only into `docs/wiki`. Never merge this Wiki branch into development or release:
 its non-Wiki code is an older snapshot, not a runnable product reference.
 
-All 26 pages describe the completed Phase 1 and performance extension as of
-September 11, 2026, targeting the 0.1.0-alpha.2 delivery. Canonical links point to
-release; the validator checks exact target casing against `origin/development`
-during promotion, or `origin/release` after the product promotion is complete.
-No unique security requirement or compatibility guarantee belongs only here.
+All 26 pages describe the implemented Phase 2 surface as of September 13, 2026.
+Delivery gate #158 is pending; Phase 3 has 41 planned tickets under epic #201,
+including the retained web-hosting parent #44. Planning is not implementation,
+and a Wiki refresh is not a gate completion or a product release receipt.
+
+Current canonical links point to development until the release is published.
+The validator checks exact repository target casing against the supplied
+authority ref, normally `origin/development`; after an actual product promotion,
+a later refresh can deliberately move current links to release. No unique
+security requirement or compatibility guarantee belongs only here. Historical
+Phase 0/1 evidence keeps its original dates, populations and execution identities.
 
 ## Visuals and validation
 
 The generator creates two accessible 1440 x 760 static SVGs and matching GIF
 previews. Static SVGs follow the repository SVG convention. GIFs preserve visible
 rendering in the GitHub Wiki, with no motion or unique information in an image.
-The former animated future-architecture drawings are replaced by the delivered
-local execution path and an explicit later-phase boundary.
+The diagrams show the delivered package/control/invocation path, distinct owners
+and the planned Phase 3 boundary. Images repeat page text; they do not supply
+unique authority or measurement claims.
 
 ```bash
 python -m pip install --requirement wiki/visuals/requirements.txt
@@ -38,9 +45,11 @@ using a credential-free URL and a masked authorization header, stages the exact
 managed inventory, commits/pushes it, then records publication provenance.
 The redundant bootstrap publisher is retired.
 
-The live Wiki inspected at `82248d8e18db00384670cbfcd458370a80140346` had 22
-managed pages and seven Phase0 SVGs. This refresh updates every page, adds four
-Phase1 guides and explicitly retires those seven obsolete asset paths. The
+Before the previous Phase 1 refresh, the live Wiki inspected at
+`82248d8e18db00384670cbfcd458370a80140346` had 22 managed pages and seven Phase0
+SVGs. That refresh established the current 26-page/four-asset inventory and
+retired those seven obsolete asset paths. The Phase 2 refresh keeps this exact
+inventory and updates every page plus both diagram generators' labels. The
 stager preserves unknown files; it never recursively deletes the Wiki. It also
 updates the `.latent-service-fabric-wiki.json` manifest with exact source identity.
 Every staged file is SHA256-checked against the source, unknown files are
@@ -53,9 +62,14 @@ To inspect the exact local stage in a clean separate Wiki clone, without push:
 
 ```bash
 python wiki/visuals/validate_wiki.py --stage ../latent-fabric-wiki-live-review
-git -C ../latent-fabric-wiki-live-review diff --stat
+git -c gc.auto=0 -C ../latent-fabric-wiki-live-review diff --stat
 ```
 
 A successful validation is not a publication receipt. `wiki/PUBLISHED_OK.md`
 records the latest actual successful publication; its source and Wiki commit
 must match before claiming the live Wiki is current.
+
+Do not edit that receipt in anticipation of this refresh. Until the publication
+workflow verifies the remote commit, it truthfully describes the prior Wiki
+publication. The Phase 2 delivery gate and the product release have their own
+independent receipts.

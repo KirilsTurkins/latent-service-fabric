@@ -7,4 +7,6 @@ The spike exercises one real Rust echo component, generated WIT bindings, fixed 
 
 That receipt never claimed production readiness, stable Phase 1 APIs, 100k catalogs, generic dispatch, remote services, cluster operation or state/effects. Later Phase 1 implements and measures its own single-node surface without relabeling the Phase 0 source or receipt.
 
-Sources: [Phase 0 completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-0-completion.md), [original receipt](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json). [Historical runbook](Phase-0-Runbook) distinguishes reproduction from ordinary development.
+Sources: [Phase 0 completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-0-completion.md), [original receipt](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json). [Historical runbook](Phase-0-Runbook) distinguishes reproduction from ordinary development.
+
+Current Phase 2 implementation and its pending delivery gate are described on [Home](Home). Nothing in this navigation update changes the August 30 evidence identity or authorization.

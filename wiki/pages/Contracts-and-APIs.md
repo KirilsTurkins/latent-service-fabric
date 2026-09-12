@@ -1,18 +1,24 @@
 <!-- LSF-WIKI-MANAGED -->
 # Contracts and APIs
 
-| Authority | Delivered Phase 1 interpretation |
+Typed contracts keep byte validation, structural compatibility, runtime support and execution authority separate.
+
+| Surface | Delivered role |
 | --- | --- |
-| WIT | Component guest contracts; host capabilities are context, logs and clocks. Other packages describe later design. |
-| Protobuf | Invoke/Cancel/Status and release/deployment/route/node adapters. Other declarations do not imply live endpoints. |
-| JSON Schema | Declarative shapes; runtime codecs enforce supported semantics and bounded inputs. |
-| Rust traits | Internal seams, including subsystems awaiting implementations. |
-| SDKs | Convenience interfaces preserving semantics; no shipped SDK transport. |
+| WIT | Component imports/exports and bounded scalar/composite values with named definitions. |
+| Protobuf | Invocation, activation status/cancel, release/deployment/route/node management, rollout and audit RPCs. |
+| JSON schemas | Closed manifest, package, policy, evidence and operator configuration profiles. |
+| Rust host APIs | Package verification/comparison, signing, catalog authority, caches and bounded control ownership. |
+| Six SDK language surfaces | Interface models and executable contract fixtures; no bundled network transports or retry engines. |
 
-Generic Wasmtime dispatch uses canonical scalar/composite WIT values with lossless integer/float framing. Unsupported resources, futures, streams and async shapes fail explicitly. A declared WIT package is not an installed host implementation.
+Structural package comparison uses real bounded package/WIT input. Reports distinguish Identical, BackwardCompatible, Breaking, Unsupported and Unknown. Public declaration identity, records, variants, enums and dependency versions are compared. Documentation or formatting-only source changes can be Identical despite different package digests.
 
-Domain errors preserve typed guest results. Platform errors retain infrastructure failure and accounting separately. Timeouts or malformed replies do not prove nonexecution or authorize automatic retries. Caller lineage is opaque correlation, not authority.
+A breaking allowance is explicit and bound to the exact old/candidate package and component pair. It cannot approve incomplete, unknown or unsupported analysis. Structural permission alone grants neither trust nor current runtime eligibility. The older ID-only CompareContracts RPC remains a placeholder; it is not the package comparison authority.
 
-Implementation versions, content digests, contract versions and minimum fabric requirements are distinct. Publishing 0.1.0-alpha.2 does not renumber WIT or Protobuf contracts.
+Runtime requirements can declare the engine/minimum version, target triples and architecture-qualified CPU features. The node captures its actual immutable runtime profile. Explicit requirements without a supported profile fail closed; caller labels do not replace detected capabilities.
 
-Authorities: [API map](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/api-surface.md), [WIT codec](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/protocol/wit-values.md), [invocation service](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/protocol/invocation-service.md), [management services](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/management-services.md).
+The current generic value boundary supports bounded validated scalar/composite values. Do not assume future WIT resources, arbitrary async providers or ambient WASI behavior. Phase 3 will version its host ABI and capability profiles with their own SDK parity tests.
+
+Management returns distinct object, route, state and rollout versions. Typed operation receipts and audit acknowledgements retain their own identities. The operator derives actor/tenant from authenticated context; a caller cannot choose an authoritative actor field.
+
+Authorities: [WIT values](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/protocol/wit-values.md), [release compatibility](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/reference/release-compatibility.md), [management services](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/reference/management-services.md), [SDK guide](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/sdk/README.md).

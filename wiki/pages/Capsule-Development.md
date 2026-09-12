@@ -1,12 +1,30 @@
 <!-- LSF-WIKI-MANAGED -->
-# Capsule development
+# Capsule and package development
 
-Start with the maintained Rust echo component and WIT contract. `make echo-capsule` produces component bytes, capsule manifest, extracted typed contracts, deployment manifest and canonical input under `target/capsules/echo/`. Generated metadata names the actual digest.
+The maintained Rust echo component demonstrates the current WIT contract, generated bindings, guest imports and portable package path. Use the pinned toolchain and `make echo-capsule`; keep component bytes, manifest and WIT definitions in agreement.
 
-Publish through the local node using the operator CLI. The server validates component identity, tenant, manifest semantics and exported types before durable publication. Apply a deployment and invoke its service/function using canonical WIT values.
+| Stage | Current behavior |
+| --- | --- |
+| Component validation | Bounded typed WIT/manifest checks and exact imports/exports. |
+| Package construction | Deterministic portable capsule or asset-bundle profiles with exact layer digests. |
+| Observed build | Bounded selected Git archive, recorded current recipe material and actual maintained build execution. |
+| Inventory | Normalized dependency inputs and a restricted CycloneDX 1.6 SBOM. |
+| Signing | Separate authorized publisher and builder host APIs over exact encoded claims. |
+| Distribution | OCI package and detached evidence; no private keys in build children. |
+| Admission | Configured trust, provenance, SBOM and runtime-compatibility checks before publication. |
 
-Phase 1 permits generic supported scalar/composite arguments and context/log/clock imports. No ambient WASI filesystem, environment, process or network authority is installed. WIT declarations for state, blobs, HTTP, secrets or child calls do not make providers available.
+Observed provenance separates supplied/asserted identity from execution observations. The repository name is operator-asserted. Captured source, recipe files, tool identities and output hashes have explicit scope. The build is lockfile-only and nonhermetic, and the restricted in-toto statement makes no SLSA conformance claim. The generator's unsigned handoff is not admission authority.
 
-The six SDK directories are interface models, not six end-to-end guest build chains. The maintained executable guest is Rust. OCI push/pull, signing, provenance, SBOM and trusted distributable AOT are Phase 2 work. Local prepared code caching is implemented and does not imply those supply-chain features.
+The maintained build supervisor bounds combined output and deadlines without per-pipe reader threads or retained logs. Windows uses a hidden owned Job; Linux owns an unreaped process group. This trusted-recipe containment covers ordinary children, not deliberate session escape or cleanup after an uncatchable host termination. It is distinct from the strict isolated native compiler sandbox.
 
-Authorities: [capsule guide](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/component-development/creating-a-capsule.md), [build foundation](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/build-foundation.md), [quickstart](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/development/standalone-quickstart.md), [echo example](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/examples/echo-contract/README.md).
+The SBOM records the roles actually observed or declared: guest/build dependencies, proc macros, build scripts, WIT, tools, assets, components and renderers. Source and license availability remain explicit. The dependency inventory is incomplete; no invented graph or license attribution fills gaps. SPDX expressions are checked against the pinned parser/profile.
+
+An embedded SBOM avoids a final package-digest cycle. A detached referrer can associate those exact same bytes with the completed package. The normalized `sbom-inputs.json` is a producer input, not itself an extra package layer.
+
+The maintained observer can export a compatibility fixture with `--legacy-output-dir` from the same build. It uses a distinct fresh output directory and preserves the exact built bytes. This does not turn the unsigned fixture into a trusted package.
+
+Browser assets and renderer/SSR package profiles describe content and associations. General HTTP serving, browser hydration and renderer host integration remain planned under [#44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44). Package support alone is not a hosting runtime.
+
+For evolution, compare real packages through the bounded host API. Named WIT definitions, field/case order and dependencies matter; formatting can be identical structurally while bytes differ. Explicit unknown/unsupported analysis denies replacement. See [Contracts and APIs](Contracts-and-APIs).
+
+Authorities: [creating a capsule](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/component-development/creating-a-capsule.md), [packaging](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/component-development/packaging.md), [SBOM](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/component-development/sbom.md), [build provenance](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/reference/build-provenance.md).

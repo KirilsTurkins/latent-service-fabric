@@ -1,34 +1,28 @@
 <!-- LSF-WIKI-MANAGED -->
 # Frequently asked questions
 
-## Is LSF still a scaffold?
+**What is delivered now?** Phase 1 and its performance extension are complete. Phase 2 implements packages, signed admission/lifecycle, isolated AOT/native reuse, audit, rollouts, canary promotion, rollback and operator workflows. Delivery gate [#158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158) is pending; a Wiki refresh is not a release receipt.
 
-The single-node runtime, catalogs, CLI and supported RPCs are implemented; Phase 1 is complete. Later-phase subsystems retain interfaces/designs. The alpha release does not claim production readiness.
+**Does every dormant service have a process or heap?** No. Dormant services retain bounded metadata and artifacts. Execution cells, workers and pools are shared. Catalog RSS and storage can still grow with the number of releases.
 
-## Is each service a process or container?
+**Does a valid signature mean a release is always callable?** No. Historical signature/admission results are separate from current policy, runtime compatibility, lifecycle generation and final-start eligibility.
 
-Dormant services are metadata and artifacts. Invocations lease generic capacity and own temporary guest state. Fixed execution topology does not imply constant catalog RSS.
+**Can a cache authorize native execution?** No. Raw cache entries are storage only. Native reuse requires exact authenticated local compiler output and current source/authority checks; a filename or recomputed digest grants nothing.
 
-## Is it faster than Docker or Kubernetes?
+**Can rollback restore a revoked release?** No. It uses an explicit recorded target, checks that target's current eligibility and publishes a new route generation. Historical compatibility input is not a grant.
 
-Native handlers were faster in every headline warm pair. LSF reduced dense-cohort leaf memory and startup costs; single-service memory favored native. See [performance and infrastructure](Performance-and-Infrastructure).
+**Does a healthy Evaluate response authorize promotion?** No. Promote requires the configured owner's sealed complete window and exact rollout/cohort/policy bindings. Zero data, loss and in-flight work cannot count as successful evidence.
 
-## Can I rely on a 1 or 2 ms deadline?
+**What should an operator do after a mutation timeout?** Look up the original operation with its original identity. Unknown and Uncertain are explicit limits; neither permits an automatic fresh retry. A committed catalog receipt and an Unknown audit outcome can coexist after caller loss.
 
-There is no universal guarantee. Historical resident Echo achieved 99.7857% useful success at 2 ms and zero at 1 ms. Later one-second-budget infrastructure percentiles do not retest that deadline target. Cold preparation, queues, transport and cleanup require headroom.
+**Are guest state and effects durable?** No. Phase 2 durable control records do not create transactional guest state, an outbox or exactly-once invocation effects.
 
-## Does accepted cancel mean cleanup is finished?
+**Are the SDKs full clients?** The six language surfaces have models and fixtures. The operator CLI has a concrete generated Rust transport; general SDK transports and provider helpers remain planned.
 
-No. Accepted cancellation, terminal status, disconnect and native reclamation differ. Keep a known activation ID and inspect explicit status/cancel responses; do not automatically retry unknown outcomes.
+**Do the Docker/Kubernetes comparisons prove clustered LSF?** No. They compare actual local campaigns. Native was faster on warm headline calls; LSF used less dense-cohort leaf memory. Read the original limits in [Performance and infrastructure](Performance-and-Infrastructure).
 
-## Are SDKs ready-made network clients?
+**Is sub-2 ms latency a universal guarantee?** No. Historical percentiles, actual-deadline completion and different workloads establish different claims. No historical report is silently promoted to a current Phase 2 SLO.
 
-They are interface models with executable fixtures, without transports/serializers/retries. The current CLI has an actual generated gRPC implementation.
+**Does cancellation mean cleanup is complete?** No. Owners remain charged through actual retirement, child reaping and retained pins. Status acknowledgement is separate.
 
-## Does the Kubernetes benchmark deliver LSF clustering?
-
-No. It deploys standalone LSF and native comparators on actual local Kubernetes. Clustered control, HA and multi-zone placement remain later work.
-
-## What comes next?
-
-Phase 2 packaging/supply chain: OCI, signatures/provenance/SBOM, trusted AOT distribution and rollout orchestration. See [Roadmap](Roadmap).
+**What comes next?** Phase 3 has [41 planned tickets](https://github.com/KirilsTurkins/latent-service-fabric/issues/201) for host capabilities, concrete providers, web hosting, SDKs and gates. Those tickets do not imply the functionality already exists.

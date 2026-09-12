@@ -1,14 +1,21 @@
 <!-- LSF-WIKI-MANAGED -->
-# Language SDKs
+# SDKs and generated clients
 
-Rust, Go, TypeScript, Java, .NET and C provide **interface-only** client and guest models. They ship no network transports, serializers, retries or automatic cancellation forwarding. Executable fake-client fixtures establish interface expressiveness; actual server/wire evidence is separate.
+The repository maintains Rust, Go, TypeScript, Java, .NET and C interface surfaces with executable fixtures. They describe bounded requests/results, identity, cancellation and value behavior. They do not yet bundle production network transports, complete serializers or retry engines.
 
-Requests preserve optional activation/root/parent IDs. Absence requests server assignment; present-empty identity is invalid. Lineage is correlation, not authority. Parent without root is rejected by Phase 1.
+The operator CLI has a real generated Rust gRPC transport for the delivered node API, including Phase 2 management. That implementation does not imply equivalent generated management transports in all six SDKs.
 
-All six clients express status/cancel by known activation ID. Cancel preserves `accepted`, `already-terminal` and `not-found` separately from transport errors. Dropping a local task/context/signal/wait is not acknowledged server cancellation. After a lost response, retain identity and inspect status without automatically reinvoking; status can be evicted or lost at restart.
+| Boundary | Meaning |
+| --- | --- |
+| Invocation identity | Caller/server activation IDs are correlation and status identities, not general side-effect transaction keys. |
+| Cancellation | A cancellation request and completed resource cleanup are separate events. |
+| Values | Current typed scalar/composite WIT boundaries must validate before execution. |
+| C ownership | Borrow scopes and release obligations remain explicit across the ABI. |
+| Management versions | Object, route, state, lifecycle and rollout versions are not interchangeable. |
+| Retry behavior | Applications inspect exact operation outcomes; no automatic mutation retry is promised. |
 
-C borrows inputs and callback response values for documented lifetimes. Async implementations copy retained inputs and complete operations exactly once. The opaque local invocation handle is not an activation ID. Current identity/cancel changes affect C ABI and some language construction shapes; rebuild consumers. No stable alpha ABI is promised.
+Phase 3 plans guest bindings/helpers, six-language parity, a concrete Rust client transport and TypeScript Node transport/browser-safe application integration. See [SDK parity #227](https://github.com/KirilsTurkins/latent-service-fabric/issues/227), [Rust transport #228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228) and [TypeScript transport #230](https://github.com/KirilsTurkins/latent-service-fabric/issues/230). Browser examples must not expose privileged management credentials.
 
-`tools/validate_sdks.sh` runs Go, TypeScript, Java, .NET and C fixtures; Rust uses `cargo test -p latent-sdk`. Use pinned prerequisites and validation tiers.
+Use [Operator CLI](Operator-CLI) for current executable operator workflows. Keep future provider interfaces aligned with the versioned Phase 3 host ABI rather than assuming ambient network, secrets or filesystem imports.
 
-Authority: [SDK contracts and compatibility](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/sdk/README.md). See [Contracts and APIs](Contracts-and-APIs) for declaration versus runtime support.
+Authorities: [SDK guide](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/sdk/README.md), [WIT values](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/protocol/wit-values.md), [operator workflows](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-operator-workflows.md).

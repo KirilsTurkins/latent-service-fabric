@@ -1,14 +1,27 @@
 <!-- LSF-WIKI-MANAGED -->
-# Execution cells and ownership
+# Execution cells and code ownership
 
-Phase 1 uses one process with fixed configured in-process class pools. A generic cell supplies admission/scheduling capacity; a fresh Wasmtime Store and host state belong to each activation. Pools do not grow once per deployment.
+Execution cells are configured shared resources. A dormant service owns no cell, guest heap, dedicated thread or listener. Each admitted call receives a fresh Store and activation host state; reuse preserves runtime infrastructure, not the previous guest's mutable memory.
 
-Prepared components live in bounded node caches. Eviction drops cache ownership, but in-flight owners can retain entries. Old route/catalog generation pins also extend lifetime. A cache slot is not a cell lease, and active working set differs from dormant catalog count.
+Preparation finishes before the cell lease. The configured compiler workers, admission queues and class pools are bounded. Broken or unsafe-to-reuse state is quarantined rather than silently returned to service.
 
-Proven cleanup releases capacity; uncertain cleanup quarantines it. The fixed disconnect supervisor retains the same admitted owner and original deadline without per-disconnect tasks.
+| Resource | Ownership and limit |
+| --- | --- |
+| Prepared runtime | Bounded resident cache plus ready/active pins; eviction does not invalidate a live owner. |
+| Raw package blob | Storage-only cache pin/read/write allowances; catalog and evidence ownership remain separate. |
+| Isolated compilation | Reserved job, input/document/output allowances and an owned child until kill/reap completes. |
+| Native receipt | Small bounded locator record; untrusted until authenticated by the protected host authority. |
+| Native image | Independent image/mapping allowance held through runtime and active pins. |
+| Guest execution | Fresh Store, cell lease and admitted ledger until reclamation. |
 
-Keep the on-demand/speed default unless a measured workload justifies pooling's cold compilation, RSS and image-charge costs. Cold admission protects warm execution but can reject more work; fewer completions do not prove faster matched compilation. Queues remain finite and tenant scheduling retains its documented winner scan.
+Optional trusted AOT launches one approved compiler job in a Linux sandbox. It compiles portable input without instantiating a guest. Native loading requires the exact authenticated output, configuration and source binding plus current eligibility. This compiler child is not a general isolated guest execution host.
 
-Future trust-class process isolation can use a configured fixed process set. Current in-process class pools do not supply that stronger boundary. Durable workflow suspension and general asynchronous capability providers are later work.
+The producer defaults to two reserved/running jobs and a 30-second whole-job deadline. One component is capped at 64 MiB; native output defaults to 128 MiB. Integrated cache/image limits can be tighter, and aggregate byte allowances can exhaust before job or entry counts. These are reservation domains, not measured RSS ceilings.
 
-Authorities: [execution cells](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/architecture/execution-cells.md), [scheduling](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/scheduling.md), [Wasmtime](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/wasmtime.md), [measured tuning](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-extension-completion.md).
+Native cache hits still check their source and receipt; resident prepared hits retain compact current-catalog checks. Neither path upgrades an old lifecycle capability. Missing or rejected cache content permits at most one isolated refill; trust, source, cancellation, deadline and resource failures remain failures.
+
+Shutdown and cancellation signal work and retain ownership until actual completion. A timed-out join does not refund a running job. Input bytes can overlap a native mapping during copying; snapshots distinguish loading subsets from totals to avoid double-counting.
+
+Historical engine-profile and memory comparisons retain their original configurations in [Performance and infrastructure](Performance-and-Infrastructure). They do not establish current Phase 2 throughput or universal latency targets.
+
+Authorities: [Wasmtime runtime](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/runtime/wasmtime.md), [isolated AOT and native cache](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/runtime/trusted-aot.md), [raw cache](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/reference/raw-artifact-cache.md).

@@ -60,7 +60,7 @@ jobs:
           git -C "$wiki_dir" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git -C "$wiki_dir" add --all
           if ! git -C "$wiki_dir" diff --cached --quiet; then
-            git -C "$wiki_dir" commit -m 'docs: publish completed Phase 1 Wiki'
+            git -C "$wiki_dir" commit -m 'docs: publish current LSF Wiki'
             python wiki/visuals/validate_wiki.py --authority-ref origin/development --verify-published "$wiki_dir"
             wiki_branch=$(git -C "$wiki_dir" branch --show-current)
             current_source=$(git ls-remote origin refs/heads/docs/wiki | cut -f1)
@@ -78,10 +78,10 @@ jobs:
           - Wiki commit: ${wiki_commit}
           - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
           - Managed inventory: 26 pages and four assets, fully validated
-          - Scope: completed Phase 1 and extension; Phase 2 remains next
+          - Scope: Phase 2 feature delivery; completion tracked by gate #158; Phase 3 planned
           EOF
           git add wiki/PUBLISHED_OK.md
           if ! git diff --cached --quiet; then
-            git commit -m 'docs(wiki): record Phase 1 publication receipt'
+            git commit -m 'docs(wiki): record current publication receipt'
             git push origin HEAD:docs/wiki
           fi

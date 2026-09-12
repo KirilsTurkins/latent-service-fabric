@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render current Phase 1 SVG diagrams and static GitHub-compatible GIF previews."""
+"""Render Phase 2 delivery SVG diagrams and static GitHub-compatible GIF previews."""
 from __future__ import annotations
 import io
 from pathlib import Path
@@ -34,31 +34,31 @@ def shell(prefix,title,description,body):
 
 def home_svg():
     prefix='architecture-at-a-glance'
-    body=card(72,155,392,130,'Publish and deploy',['Validated local release bytes','Durable catalogs and object versions'])
+    body=card(72,155,392,130,'Package and verify',['Exact content and signed evidence','Current trust + lifecycle authority'])
     body+=card(524,155,392,130,'Immutable route snapshot',['Tenant-scoped deterministic selection','Generation pinned by each activation'])
     body+=card(976,155,392,130,'Fixed node resources',['Configured workers and class pools','Bounded metadata and prepared caches'])
     body+=arrow(prefix,468,516,220)+arrow(prefix,920,968,220)
-    labels=[('Loopback RPC',['Explicit credentials','Invoke / status / cancel']),('Resolve / admit',['Pin revision + budget','Finite running / queue']),('Prepare / queue',['Prepare before cell lease','Fair bounded queues']),('Fresh Store',['Generic WIT values','Context / logs / clocks']),('Account / reclaim',['Owned deadline cleanup','Reuse or quarantine'])]
+    labels=[('Loopback RPC',['Explicit credentials','Invoke / status / cancel']),('Resolve / admit',['Pin revision + budget','Finite running / queue']),('Prepare / queue',['Checked code reuse','Current start eligibility']),('Fresh Store',['Generic WIT values','Context / logs / clocks']),('Account / reclaim',['Owned terminal sample','Reuse or quarantine'])]
     for i,(title,lines) in enumerate(labels):
         x=72+i*264
         body+=card(x,335,240,145,title,lines)
         if i<4: body+=arrow(prefix,x+242,x+258,410)
     body+=text(72,518,'Dormant services own metadata and artifacts; no dedicated guest heap, process or listener.',18)
-    body+=card(72,552,1296,135,'Later phases remain separate',['Phase 2: OCI, signatures, provenance, SBOM and trusted AOT distribution','Phase 3+: general capabilities/HTTP ingress, state/effects, cluster control and durable workflows'],True)
-    body+=text(72,722,'Phase 1 + extension complete. Fixed execution topology does not mean constant catalog RSS.',16,'#d1fae5',600)
-    return shell(prefix,'Phase 1: the delivered local invocation path','One Linux node; stateless execution; explicit admission, ownership and cleanup.',body)
+    body+=card(72,552,1296,135,'Delivery boundary',['Phase 2 implemented: packages, trust, local AOT reuse, audit, rollouts, canaries and rollback. Gate #158 pending.','Phase 3: 41 planned tickets for capability providers, HTTP/web hosting, SDK delivery and gates.'],True)
+    body+=text(72,722,'Current authority: development until release publication. Fixed topology does not mean constant catalog RSS.',16,'#d1fae5',600)
+    return shell(prefix,'Phase 2: package, control and invocation','One Linux node; current eligibility and explicit ownership from publication through cleanup.',body)
 
 def architecture_svg():
     prefix='system-decomposition'
-    groups=[('Management and client',['latent: generated gRPC client','Durable release/deployment catalogs','Scoped management + inventory','No automatic retries or pagination']),('Bounded execution',['Pinned local route snapshots','Budget ledger + tenant scheduling','Bounded preparation and code cache','Fresh activation Store and host state']),('Lifecycle and telemetry',['Caller/server activation identity','Bounded status and explicit cancel','Fixed disconnect cleanup supervisor','Redacted logs and final accounting'])]
+    groups=[('Packages and trust',['Portable packages + OCI evidence','Publisher and builder authorization','Current policy + lifecycle capabilities','Raw cache is storage, not authority']),('Bounded execution',['Pinned revision + fresh Store','Budget ledger + tenant scheduling','Isolated approved compiler jobs','Authenticated local native reuse']),('Durable operator control',['Atomic deployment operation receipts','Explicit rollout and canary promotion','Eligible-target rollback + new routes','Bounded audit and exact recovery'])]
     body=''
     for i,(title,lines) in enumerate(groups): body+=card(72+i*440,166,416,212,title,lines)
     body+=text(72,420,'Six SDK language interfaces have fixtures; they do not yet ship transports, serializers or retries.',18)
-    future=[('Phase 2: next',['OCI + signed supply chain','Trusted AOT + rollout orchestration']),('Phase 3 / 4',['General capabilities + HTTP ingress','Transactional state + effect outbox']),('Phase 5 / 6',['Cluster control + mTLS + placement','Durable workflow state machines'])]
+    future=[('Phase 3: 41 planned tickets',['Capability providers + HTTP/web','SDKs + operator/security gates']),('Phase 4',['Transactional guest state','Explicit effect handling / outbox']),('Phase 5 / 6',['Cluster control + mTLS + placement','Durable workflow state machines'])]
     for i,(title,lines) in enumerate(future): body+=card(72+i*440,462,416,155,title,lines,True)
-    body+=text(72,664,'Actual Docker/Kubernetes comparisons are evidence, not clustered LSF feature delivery.',18)
-    body+=text(72,702,'Native warm calls were faster; LSF reduced dense-cohort leaf memory and startup costs.',18)
-    return shell(prefix,'Delivered features and the Phase 2 handoff','The Phase 1 completion and extension retain their original evidence and measured limits.',body)
+    body+=text(72,664,'Phase 2 gate #158 pending. Historical Phase 1 measurements keep their original source and scope.',18)
+    body+=text(72,702,'Control durability does not create guest transactions, general provider access or a clustered runtime.',18)
+    return shell(prefix,'Phase 2 owners and planned capabilities','Shared bounded owners; explicit operator actions; no worker or heap per dormant service.',body)
 
 def main():
     OUT.mkdir(parents=True,exist_ok=True)

@@ -1,12 +1,16 @@
 <!-- LSF-WIKI-MANAGED -->
-# State and effects: later-phase design
+# State and effects
 
-**Phase 1 is stateless.** Durable keyed state, effect outbox, entity ownership lanes, state transactions and durable workflow suspension are not exposed. Corresponding contracts/traits are design surfaces, not provider guarantees. Nonzero state/blob/effect/child-call budgets are rejected by Phase 1.
+Guest execution remains stateless in Phase 2. Each activation receives fresh mutable guest and host state. Prepared-code reuse, native caching and dormant release metadata do not preserve a service heap between calls.
 
-Phase 4 plans namespace-scoped transactions, optimistic concurrency, atomic state/effect-intent commit where supported, durable outbox dispatch, idempotency and entity-key routing. Phase 6 plans explicit workflow state machines, timers, awaited effects, replay and compensation.
+Durable release/deployment catalogs, lifecycle history, audit records and rollout plans are control state. Their atomic publication and operation receipts do not provide transactional guest storage or an effect outbox.
 
-The design does not promise universal exactly-once external effects. A provider can apply an operation and lose the response; recovery requires stable identity, status inspection, idempotency or compensation. Timeout never establishes nonexecution. This also informs current stateless outcome handling.
+Context, accepted logs and clocks are the delivered host capabilities. Unsupported nonzero child-call, outbound, blob, state or effect dimensions remain denied according to the current runtime profile. A manifest declaration cannot activate an unimplemented provider.
 
-Future durable suspension persists explicit continuation state and releases the cell. Arbitrary native-stack checkpointing is outside the current model. Paging/fusion/continuation experiments remain optional and unpromoted.
+Phase 3 plans explicit capability brokers and bounded provider families, including local child calls with descendant budgets. Each operation must define authorization, quota, cancellation and cleanup. External event delivery will have its own consumer/trigger semantics.
 
-Authorities: [state/effects architecture](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/architecture/state-and-effects.md), [commit protocol](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/protocol/commit-protocol.md), [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/roadmap.md).
+Transactional guest state and effects remain Phase 4. Cluster coordination belongs to Phase 5; durable workflow state machines and resumable orchestration belong to Phase 6. These are separate from the current operator rollout state machine.
+
+An activation ID does not make effects exactly once. A timeout or Unknown result does not prove an external action did not occur. Future integrations must state their idempotency and recovery contracts rather than inferring them from transport cancellation.
+
+Authorities: [capabilities](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/runtime/capabilities.md), [resource budgets](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/runtime/resource-budgets.md), [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/roadmap.md).

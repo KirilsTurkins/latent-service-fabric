@@ -1,16 +1,38 @@
 <!-- LSF-WIKI-MANAGED -->
-# Current architecture
+# Architecture
 
-The supported deployment is one Linux `latentd` process with embedded local catalogs, configured in-process cell pools and loopback gRPC services. The `latent` CLI is a separate generated RPC client. A separate control plane, PostgreSQL deployment, node federation and general ingress adapters remain later work.
+The delivered runtime is one Linux node with local durable catalogs, immutable route snapshots and configured execution pools. The separate operator CLI uses authenticated loopback RPC. Package registries distribute bytes; they do not become runtime admission authorities.
 
-![Implemented Phase 1 subsystems and later-phase boundaries](assets/system-decomposition.gif)
+![Phase 2 owners and later phase boundaries](assets/system-decomposition.gif)
 
-[Accessible SVG source](assets/system-decomposition.svg).
+| Owner | Delivered responsibility |
+| --- | --- |
+| Package and registry libraries | Deterministic portable packages, bounded OCI transfer and optional raw blob reuse. |
+| Catalog and supply-chain authority | Verified publication, exact package/component associations, current policy and lifecycle capabilities. |
+| Deployment store | Atomic desired state, route generations and bounded operation/rollout history. |
+| Rollout coordinator | One bounded control queue for explicit operator commands; no automatic health-driven controller. |
+| Audit owner | Bounded durable attempts/outcomes, recovery and leased query pages. |
+| Execution backend | Fixed cells, bounded preparation, fresh activation state and final eligibility checks. |
+| Optional isolated compiler/native cache | Approved child compilation and authenticated local native reuse with separate resource owners. |
 
-Management validates and durably publishes release/deployment metadata and immutable route snapshots. An invocation pins a local snapshot, reserves capacity, prepares immutable component readiness, schedules tenant work and executes in a fresh Store. Final accounting and cleanup belong to its activation owner. Bounded node caches and pools are not allocated once per dormant service.
+An activation selects and pins one revision and route generation. Admission reserves its execution budget; preparation completes before the cell lease. A fresh Wasmtime Store supplies supported host imports. Deadline, cancellation and completion keep their owners until cleanup actually retires work. Revocation cannot be bypassed by a prepared cache hit or an old queued token.
 
-One fixed async cleanup supervisor continues the same activation owner after a transport disconnect, under its original deadline and admitted capacity. It creates no per-disconnect task. Uncertain cleanup quarantines a cell instead of asserting reuse is safe.
+Control-plane I/O stays outside Invoke. Canary capture uses bounded in-memory accounting and an affine terminal owner; it never writes audit files or changes an activation's execution budget. Critical control audit and complete response preflight precede mutation. A lost caller may leave a committed operation whose terminal audit outcome is Unknown; exact durable lookup resolves what is retained.
 
-Phase 2 adds OCI distribution, signatures, provenance, SBOM and trusted AOT supply-chain workflows. General capabilities, transactional state/effects, cluster control and durable workflows follow their roadmap phases.
+Resources have distinct limits: catalog metadata, queue slots, request/response bytes, audit retention, raw cache storage, compiler jobs and native images. Fixed workers do not imply constant catalog RSS. Cancellation does not refund bytes or job slots while another owner still holds them.
 
-Authorities: [overview](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/architecture/overview.md), [standalone node](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/standalone-node.md), [data plane](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/architecture/data-plane.md).
+| Selected bound | Profile and scope |
+| --- | --- |
+| Admission policy | 256 KiB maximum encoded policy; nested role limits also apply. |
+| Signature / provenance envelope | 4 KiB / 48 KiB hard ceilings, with separately bounded decoded claims. |
+| Audit | 16 KiB per encoded record; default retained records use a 64 MiB byte ceiling. |
+| Rollout | 64 KiB per command and per response page; each page reserves four times its requested bytes for overlapping representations. |
+| Raw cache | Default 256 MiB resident/reserved disk and 64 MiB per object; staging, reads and metadata have separate allowances. |
+
+Configured lower limits and remaining capacity can reject work before a listed count or byte ceiling is reached. These counters describe ownership domains, not total process RSS.
+
+The default trusted-local mode remains explicit compatibility behavior. Enforced catalogs bind one configured authority, and persisted mode markers reject a downgrade. Optional rollout, audit and AOT owners have real startup/shutdown lifetimes; no dormant service receives its own worker.
+
+General HTTP ingress, provider capabilities, cross-node control, transactional guest state and durable workflows belong to later phases. Phase 3's [41-ticket plan](https://github.com/KirilsTurkins/latent-service-fabric/issues/201) is planned work.
+
+Authorities: [architecture](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/ARCHITECTURE.md), [standalone node](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/reference/standalone-node.md), [audit](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-audit.md), [trusted AOT](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/runtime/trusted-aot.md).
