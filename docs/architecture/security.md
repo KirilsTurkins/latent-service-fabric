@@ -2,10 +2,12 @@
 
 Phase 1 provides the locally trusted standalone boundary: verified local
 artifact bytes/metadata, explicit tenant credentials, stateless Wasmtime
-containment and declared context/log/clock imports. It does not yet provide
-publisher signature/provenance verification, workload mTLS, secret providers,
-trust-sharded processes or native fallback. Those sections below define later
-security requirements. See [standalone authentication](../reference/standalone-node.md),
+containment and declared context/log/clock imports. Phase 2 additionally provides
+the [publisher signature library](../reference/publisher-trust.md), using exact
+package subjects and explicit current policy/revocation snapshots. Durable
+publisher-aware catalog admission, provenance verification, workload mTLS,
+secret providers, trust-sharded processes and native fallback remain future
+security work. See [standalone authentication](../reference/standalone-node.md),
 [catalog trust](../development/local-release-catalog.md#trust-boundary) and
 [the Phase 1 completion scope](../phase-1-completion.md#implemented-surface-and-limits).
 
@@ -36,12 +38,19 @@ Handles are opaque, activation-scoped, operation-scoped, quota-bound, expiring, 
 
 The default capsule world exposes no unrestricted operating-system filesystem, socket, process, environment, thread, or secret access. All external access uses WIT capabilities.
 
-## Planned supply chain
+## Supply-chain boundaries
 
-Phase 2 admission is intended to add publisher signatures, certificate/key
-policy, provenance and SBOM verification to the existing content digest,
-manifest, import and resource checks. Phase 1 completion does not authenticate
-publishers or make locally supplied artifacts safe under an untrusted filesystem.
+The bounded publisher verifier checks Ed25519 package signatures against raw
+approved public keys, validity and explicit revocations. Its private proof binds
+exact package/evidence bytes and both current trust snapshots. Certificate and
+keyless workflows are unsupported. A signature never establishes tenant
+ownership, semantic validity, routability or trusted native output.
+
+Durable Phase 2 admission will combine these proofs with provenance/SBOM policy
+and existing content digest, manifest, import and resource checks. It must retain
+clock/generation floors and compare trust state at final publication. Phase 1
+local publication remains locally trusted and is not made safe under an
+untrusted filesystem by the signing library.
 
 ## AOT boundary
 

@@ -1,6 +1,8 @@
-//! Exact byte distribution fixtures; no guest execution or evidence trust claim.
+//! Exact byte distribution and independently approved publisher evidence; no guest execution.
 #[path = "registry/fixtures.rs"]
 mod fixtures;
+#[path = "registry/signatures.rs"]
+mod signatures;
 
 use std::time::Duration;
 
@@ -218,6 +220,7 @@ async fn real_tls_registry_roundtrips_tag_race_auth_and_referrers() {
     roundtrips(&client, &origin, &packages).await;
     tag_move(&client, &origin, &packages).await;
     referrers(&client, &origin, &subject, &evidence).await;
+    signatures::roundtrip(&client, &origin, capsule).await;
     authentication(&origin, &subject).await;
     shutdown(&client).await;
 }

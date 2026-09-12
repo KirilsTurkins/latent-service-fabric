@@ -69,6 +69,7 @@ jobs:
         run: |
           cargo test --workspace --all-targets --all-features --locked
           cargo test -p latent-admission -p latent-scheduler --doc --locked
+          cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests
 
   oci-registry:
     name: OCI registry TLS integration

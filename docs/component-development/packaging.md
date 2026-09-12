@@ -4,8 +4,9 @@
 [#141](https://github.com/KirilsTurkins/latent-service-fabric/issues/141), using
 the [Phase 2 artifact format](../protocol/package-format.md). It packages supplied
 bytes without compiling a component or invoking a guest. The separate
-[registry adapter](../reference/oci-registry.md) transfers its bytes. Publisher
-verification and catalog admission remain subsequent Phase 2 tickets.
+[registry adapter](../reference/oci-registry.md) transfers its bytes, and the
+[publisher signing library](../reference/publisher-trust.md) signs and verifies
+exact package identities. Catalog admission remains a subsequent Phase 2 ticket.
 
 ## Build a small package
 

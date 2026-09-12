@@ -3,7 +3,7 @@
 ADRs record decisions that constrain implementations and compatibility. Accepted ADRs may be superseded only by another ADR.
 
 Acceptance records architectural direction, not feature availability. Phase 1
-and its performance extension are complete; publisher trust and catalog admission,
+and its performance extension are complete; durable catalog admission,
 general capabilities, state/effects, clustered control, and fixed external
 execution hosts remain future implementation work. The
 [roadmap](../docs/roadmap.md) and [completion report](../docs/phase-1-extension-completion.md)
@@ -19,3 +19,7 @@ without compiling or invoking guests.
 
 [ADR-0021](0021-bound-registry-authority-and-transfer-ownership.md) defines scoped
 authenticated OCI transfers, retained download budgets and owned upload cleanup.
+
+[ADR-0022](0022-bind-publisher-proofs-to-current-explicit-trust.md) defines bounded
+package signatures and publisher proofs bound to explicit current policy and
+revocation snapshots, separate from tenant/catalog admission.
