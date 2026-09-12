@@ -35,6 +35,8 @@ pub struct NodeConfig {
     pub isolated_aot: Option<super::IsolatedAotConfig>,
     #[serde(default, deserialize_with = "super::audit::present")]
     pub audit: Option<super::AuditConfig>,
+    #[serde(default, deserialize_with = "super::rollouts::present")]
+    pub rollouts: Option<super::RolloutConfig>,
     #[serde(default)]
     pub retention: RetentionConfig,
     #[serde(default)]

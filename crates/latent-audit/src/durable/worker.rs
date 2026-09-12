@@ -278,6 +278,11 @@ impl Shared {
     }
 }
 impl AuditHandle {
+    /// Checks composition identity without performing I/O or acquiring a grant.
+    #[must_use]
+    pub fn same_owner(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.shared, &other.shared)
+    }
     #[must_use]
     pub fn limits(&self) -> AuditLimits {
         self.shared.limits

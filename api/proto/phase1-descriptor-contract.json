@@ -631,6 +631,33 @@
               "oneofIndex": 9,
               "proto3Optional": true,
               "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "rolloutRevision",
+              "label": "LABEL_OPTIONAL",
+              "name": "rollout_revision",
+              "number": 12,
+              "oneofIndex": 10,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "rolloutStep",
+              "label": "LABEL_OPTIONAL",
+              "name": "rollout_step",
+              "number": 13,
+              "oneofIndex": 11,
+              "proto3Optional": true,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "stateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_version",
+              "number": 14,
+              "oneofIndex": 12,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
             }
           ],
           "name": "AuditIdentities",
@@ -664,6 +691,15 @@
             },
             {
               "name": "_deployment_generation"
+            },
+            {
+              "name": "_rollout_revision"
+            },
+            {
+              "name": "_rollout_step"
+            },
+            {
+              "name": "_state_version"
             }
           ]
         },
@@ -797,6 +833,15 @@
               "oneofIndex": 2,
               "proto3Optional": true,
               "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedRolloutRevision",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_rollout_revision",
+              "number": 10,
+              "oneofIndex": 3,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
             }
           ],
           "name": "Phase2AuditAttempt",
@@ -809,6 +854,9 @@
             },
             {
               "name": "_preview_receipt_digest"
+            },
+            {
+              "name": "_expected_rollout_revision"
             }
           ]
         },
@@ -5820,6 +5868,901 @@
             }
           ],
           "name": "ReleaseService"
+        }
+      ],
+      "syntax": "proto3"
+    },
+    {
+      "dependency": [
+        "latent/control/v1/common.proto",
+        "latent/control/v1/deployment.proto",
+        "latent/control/v1/release.proto"
+      ],
+      "enumType": [
+        {
+          "name": "RolloutDurability",
+          "value": [
+            {
+              "name": "ROLLOUT_DURABILITY_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "ROLLOUT_DURABILITY_CONFIRMED",
+              "number": 1
+            },
+            {
+              "name": "ROLLOUT_DURABILITY_UNCERTAIN",
+              "number": 2
+            }
+          ]
+        },
+        {
+          "name": "RolloutOperationLookupDisposition",
+          "value": [
+            {
+              "name": "ROLLOUT_OPERATION_LOOKUP_DISPOSITION_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "ROLLOUT_OPERATION_LOOKUP_DISPOSITION_FOUND",
+              "number": 1
+            },
+            {
+              "name": "ROLLOUT_OPERATION_LOOKUP_DISPOSITION_UNKNOWN",
+              "number": 2
+            },
+            {
+              "name": "ROLLOUT_OPERATION_LOOKUP_DISPOSITION_UNCERTAIN",
+              "number": 3
+            }
+          ]
+        },
+        {
+          "name": "RolloutState",
+          "value": [
+            {
+              "name": "ROLLOUT_STATE_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "ROLLOUT_STATE_RUNNING",
+              "number": 1
+            },
+            {
+              "name": "ROLLOUT_STATE_PAUSED",
+              "number": 2
+            },
+            {
+              "name": "ROLLOUT_STATE_COMPLETED",
+              "number": 3
+            },
+            {
+              "name": "ROLLOUT_STATE_ABORTED",
+              "number": 4
+            },
+            {
+              "name": "ROLLOUT_STATE_CONFLICTED",
+              "number": 5
+            }
+          ]
+        },
+        {
+          "name": "RolloutAction",
+          "value": [
+            {
+              "name": "ROLLOUT_ACTION_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "ROLLOUT_ACTION_START",
+              "number": 1
+            },
+            {
+              "name": "ROLLOUT_ACTION_ADVANCE",
+              "number": 2
+            },
+            {
+              "name": "ROLLOUT_ACTION_PAUSE",
+              "number": 3
+            },
+            {
+              "name": "ROLLOUT_ACTION_RESUME",
+              "number": 4
+            },
+            {
+              "name": "ROLLOUT_ACTION_ABORT",
+              "number": 5
+            }
+          ]
+        },
+        {
+          "name": "RolloutReason",
+          "value": [
+            {
+              "name": "ROLLOUT_REASON_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "ROLLOUT_REASON_OPERATOR_REQUESTED",
+              "number": 1
+            },
+            {
+              "name": "ROLLOUT_REASON_STAGE_APPLIED",
+              "number": 2
+            },
+            {
+              "name": "ROLLOUT_REASON_COMPLETED",
+              "number": 3
+            },
+            {
+              "name": "ROLLOUT_REASON_GENERATION_CONFLICT",
+              "number": 4
+            },
+            {
+              "name": "ROLLOUT_REASON_COHORT_CHANGED",
+              "number": 5
+            },
+            {
+              "name": "ROLLOUT_REASON_RELEASE_INELIGIBLE",
+              "number": 6
+            },
+            {
+              "name": "ROLLOUT_REASON_INCOMPATIBLE_RELEASE",
+              "number": 7
+            },
+            {
+              "name": "ROLLOUT_REASON_RESOURCE_LIMIT",
+              "number": 8
+            },
+            {
+              "name": "ROLLOUT_REASON_RECOVERY_REQUIRED",
+              "number": 9
+            },
+            {
+              "name": "ROLLOUT_REASON_OUTCOME_UNCERTAIN",
+              "number": 10
+            }
+          ]
+        },
+        {
+          "name": "RolloutOperationOutcome",
+          "value": [
+            {
+              "name": "ROLLOUT_OPERATION_OUTCOME_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "ROLLOUT_OPERATION_OUTCOME_COMMITTED",
+              "number": 1
+            }
+          ]
+        }
+      ],
+      "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedRevision",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_revision",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "RolloutOperationPrecondition",
+          "oneofDecl": [
+            {
+              "name": "_expected_revision"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "baseDeploymentId",
+              "label": "LABEL_OPTIONAL",
+              "name": "base_deployment_id",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedBaseGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_base_generation",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "candidate",
+              "label": "LABEL_OPTIONAL",
+              "name": "candidate",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Deployment"
+            },
+            {
+              "jsonName": "candidateWeights",
+              "label": "LABEL_REPEATED",
+              "name": "candidate_weights",
+              "number": 5,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 6,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutOperationPrecondition"
+            }
+          ],
+          "name": "StartRolloutRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_base_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutOperationPrecondition"
+            },
+            {
+              "jsonName": "advance",
+              "label": "LABEL_OPTIONAL",
+              "name": "advance",
+              "number": 10,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AdvanceRollout"
+            },
+            {
+              "jsonName": "pause",
+              "label": "LABEL_OPTIONAL",
+              "name": "pause",
+              "number": 11,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Empty"
+            },
+            {
+              "jsonName": "resume",
+              "label": "LABEL_OPTIONAL",
+              "name": "resume",
+              "number": 12,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Empty"
+            },
+            {
+              "jsonName": "abort",
+              "label": "LABEL_OPTIONAL",
+              "name": "abort",
+              "number": 13,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Empty"
+            }
+          ],
+          "name": "ChangeRolloutRequest",
+          "oneofDecl": [
+            {
+              "name": "command"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "nextStep",
+              "label": "LABEL_OPTIONAL",
+              "name": "next_step",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            }
+          ],
+          "name": "AdvanceRollout"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "receipt",
+              "label": "LABEL_OPTIONAL",
+              "name": "receipt",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutOperationReceipt"
+            },
+            {
+              "jsonName": "auditAck",
+              "label": "LABEL_OPTIONAL",
+              "name": "audit_ack",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditAck"
+            },
+            {
+              "jsonName": "replayed",
+              "label": "LABEL_OPTIONAL",
+              "name": "replayed",
+              "number": 3,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "durability",
+              "label": "LABEL_OPTIONAL",
+              "name": "durability",
+              "number": 4,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutDurability"
+            }
+          ],
+          "name": "StartRolloutResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "receipt",
+              "label": "LABEL_OPTIONAL",
+              "name": "receipt",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutOperationReceipt"
+            },
+            {
+              "jsonName": "auditAck",
+              "label": "LABEL_OPTIONAL",
+              "name": "audit_ack",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditAck"
+            },
+            {
+              "jsonName": "replayed",
+              "label": "LABEL_OPTIONAL",
+              "name": "replayed",
+              "number": 3,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "durability",
+              "label": "LABEL_OPTIONAL",
+              "name": "durability",
+              "number": 4,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutDurability"
+            }
+          ],
+          "name": "ChangeRolloutResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetRolloutRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "status",
+              "label": "LABEL_OPTIONAL",
+              "name": "status",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutStatus"
+            }
+          ],
+          "name": "GetRolloutResponse",
+          "oneofDecl": [
+            {
+              "name": "_status"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "state",
+              "label": "LABEL_OPTIONAL",
+              "name": "state",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutState"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "ListRolloutsRequest",
+          "oneofDecl": [
+            {
+              "name": "_service"
+            },
+            {
+              "name": "_state"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "rollouts",
+              "label": "LABEL_REPEATED",
+              "name": "rollouts",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutStatus"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            },
+            {
+              "jsonName": "stateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_version",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "ListRolloutsResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 2,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetRolloutOperationRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "disposition",
+              "label": "LABEL_OPTIONAL",
+              "name": "disposition",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutOperationLookupDisposition"
+            },
+            {
+              "jsonName": "receipt",
+              "label": "LABEL_OPTIONAL",
+              "name": "receipt",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutOperationReceipt"
+            }
+          ],
+          "name": "GetRolloutOperationResponse",
+          "oneofDecl": [
+            {
+              "name": "_receipt"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "deploymentId",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "componentDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "component_digest",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "packageDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "package_digest",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "RolloutRelease",
+          "oneofDecl": [
+            {
+              "name": "_package_digest"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "deploymentId",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "RolloutObjectVersion"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "service",
+              "label": "LABEL_OPTIONAL",
+              "name": "service",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "revision",
+              "label": "LABEL_OPTIONAL",
+              "name": "revision",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "state",
+              "label": "LABEL_OPTIONAL",
+              "name": "state",
+              "number": 5,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutState"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 6,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutReason"
+            },
+            {
+              "jsonName": "currentStep",
+              "label": "LABEL_OPTIONAL",
+              "name": "current_step",
+              "number": 7,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "candidateWeights",
+              "label": "LABEL_REPEATED",
+              "name": "candidate_weights",
+              "number": 8,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "base",
+              "label": "LABEL_OPTIONAL",
+              "name": "base",
+              "number": 9,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutRelease"
+            },
+            {
+              "jsonName": "candidate",
+              "label": "LABEL_OPTIONAL",
+              "name": "candidate",
+              "number": 10,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutRelease"
+            },
+            {
+              "jsonName": "objects",
+              "label": "LABEL_REPEATED",
+              "name": "objects",
+              "number": 11,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutObjectVersion"
+            },
+            {
+              "jsonName": "routeGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_generation",
+              "number": 12,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "stateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_version",
+              "number": 13,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "planDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "plan_digest",
+              "number": 14,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "previousRouteGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "previous_route_generation",
+              "number": 15,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "createdAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "created_at_unix_millis",
+              "number": 16,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "updatedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "updated_at_unix_millis",
+              "number": 17,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "retainedOperationFloor",
+              "label": "LABEL_OPTIONAL",
+              "name": "retained_operation_floor",
+              "number": 18,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "RolloutStatus"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "rolloutId",
+              "label": "LABEL_OPTIONAL",
+              "name": "rollout_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "requestDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "request_digest",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "actor",
+              "label": "LABEL_OPTIONAL",
+              "name": "actor",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseActor"
+            },
+            {
+              "jsonName": "action",
+              "label": "LABEL_OPTIONAL",
+              "name": "action",
+              "number": 6,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutAction"
+            },
+            {
+              "jsonName": "expectedRevision",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_revision",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "revision",
+              "label": "LABEL_OPTIONAL",
+              "name": "revision",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "outcome",
+              "label": "LABEL_OPTIONAL",
+              "name": "outcome",
+              "number": 9,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutOperationOutcome"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 10,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutReason"
+            },
+            {
+              "jsonName": "stateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_version",
+              "number": 11,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "routeGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_generation",
+              "number": 12,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "state",
+              "label": "LABEL_OPTIONAL",
+              "name": "state",
+              "number": 13,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutState"
+            },
+            {
+              "jsonName": "step",
+              "label": "LABEL_OPTIONAL",
+              "name": "step",
+              "number": 14,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "planDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "plan_digest",
+              "number": 15,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "completedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "completed_at_unix_millis",
+              "number": 16,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "receiptDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "receipt_digest",
+              "number": 17,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "RolloutOperationReceipt"
+        }
+      ],
+      "name": "latent/control/v1/rollout.proto",
+      "package": "latent.control.v1",
+      "service": [
+        {
+          "method": [
+            {
+              "inputType": ".latent.control.v1.StartRolloutRequest",
+              "name": "StartRollout",
+              "outputType": ".latent.control.v1.StartRolloutResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ChangeRolloutRequest",
+              "name": "ChangeRollout",
+              "outputType": ".latent.control.v1.ChangeRolloutResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.GetRolloutRequest",
+              "name": "GetRollout",
+              "outputType": ".latent.control.v1.GetRolloutResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.ListRolloutsRequest",
+              "name": "ListRollouts",
+              "outputType": ".latent.control.v1.ListRolloutsResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.GetRolloutOperationRequest",
+              "name": "GetRolloutOperation",
+              "outputType": ".latent.control.v1.GetRolloutOperationResponse"
+            }
+          ],
+          "name": "RolloutService"
         }
       ],
       "syntax": "proto3"

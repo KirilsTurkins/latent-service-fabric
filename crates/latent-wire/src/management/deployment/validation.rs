@@ -5,7 +5,7 @@ use tonic::Status;
 
 use super::super::{identifier, proto, ManagementLimits, RequestBudget};
 
-pub(super) fn wire(
+pub(in crate::management) fn wire(
     deployment: &proto::Deployment,
     budget: &mut RequestBudget,
     limits: &ManagementLimits,

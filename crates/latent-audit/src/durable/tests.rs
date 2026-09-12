@@ -87,6 +87,7 @@ fn attempt() -> AuditOperationAttempt {
         replay: false,
         expected_generation: Some(0),
         expected_deployment_generation: None,
+        expected_rollout_revision: None,
         occurred_at_unix_millis: 1,
     }
 }
@@ -99,6 +100,24 @@ fn conclusion() -> AuditOperationConclusion {
         replay: false,
         occurred_at_unix_millis: 2,
     }
+}
+
+#[test]
+fn expected_rollout_revision_is_distinct_from_other_generations() {
+    let mut value = attempt();
+    value.expected_rollout_revision = Some(0);
+    assert!(codec::attempt(&value).is_err());
+    value.action = AuditControlAction::Rollout;
+    assert!(codec::attempt(&value).is_err());
+    value.identities.rollout = Some("rollout".into());
+    value.expected_generation = None;
+    codec::attempt(&value).unwrap();
+    let bytes = codec::encode(&value, 4096).unwrap();
+    let decoded: AuditOperationAttempt = codec::decode(&bytes, 4096).unwrap();
+    assert_eq!(decoded, value);
+    let mut json = serde_json::to_value(value).unwrap();
+    json["expectedRolloutRevision"] = serde_json::Value::Null;
+    assert!(serde_json::from_value::<AuditOperationAttempt>(json).is_err());
 }
 fn query(scope: AuditScope) -> AuditQueryRequest {
     AuditQueryRequest {

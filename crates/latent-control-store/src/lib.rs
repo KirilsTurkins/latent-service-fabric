@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod deployments;
+pub mod rollouts;
 mod scoped_routes;
 
 pub use scoped_routes::{RouteReadLimits, ScopedRouteRequest, ScopedRouteSnapshot};

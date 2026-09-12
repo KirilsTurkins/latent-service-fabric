@@ -7,6 +7,7 @@ mod engine;
 mod input;
 mod model;
 mod policy;
+mod rollouts;
 mod runtime;
 mod supply_chain;
 #[cfg(test)]
@@ -25,6 +26,8 @@ pub use model::{
     EngineConfig, EngineOptimization, ExecutionConfig, LimitConfig, NodeConfig, RetentionConfig,
     SupplyChainConfig, TelemetryConfig, WorkerConfig,
 };
+pub use rollouts::RolloutConfig;
+pub(crate) use rollouts::RolloutSettings;
 pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
@@ -41,6 +44,7 @@ pub struct NodeSettings {
     pub(crate) supply_chain: SupplyChainSettings,
     pub(crate) isolated_aot: Option<latent_wasmtime::NativeAotSettings>,
     pub(crate) audit: Option<latent_audit::AuditLimits>,
+    pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) scheduler: latent_scheduler::LocalSchedulerConfig,
     pub(crate) wasmtime: latent_wasmtime::WasmtimeConfig,

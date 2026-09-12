@@ -10,6 +10,7 @@ mod metadata;
 mod metadata_codec;
 mod paging;
 mod preparation_read;
+mod retained_package;
 mod root_durability;
 mod sha256;
 
@@ -631,6 +632,14 @@ impl DirectoryArtifactRepository {
 }
 
 impl ArtifactRepository for DirectoryArtifactRepository {
+    fn retained_package_source<'a>(
+        &'a self,
+        tenant: &'a latent_core::TenantId,
+        release: &'a ReleaseDigest,
+        maximum_bytes: usize,
+    ) -> BoxFuture<'a, Result<Option<crate::RetainedPackageSource>, PlatformError>> {
+        Box::pin(async move { self.retained_package(tenant, release, maximum_bytes) })
+    }
     fn execution_eligibility(
         &self,
         release: &ReleaseDigest,

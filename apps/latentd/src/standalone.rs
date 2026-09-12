@@ -7,6 +7,7 @@ mod measurements;
 mod observations;
 #[cfg(all(test, target_os = "linux"))]
 mod parity;
+mod rollouts;
 mod shutdown;
 mod start;
 pub mod transport;
@@ -28,6 +29,7 @@ use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory};
 use latent_wire::invocation::{ActivationCleanupOwner, ActivationCleanupSnapshot};
 
 pub use audit::AuditShutdownReport;
+pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.
@@ -42,6 +44,7 @@ pub struct StandaloneNode {
     supply_chain: SupplyChainLifetime,
     transport: Option<transport::Transport>,
     audit: Option<audit::AuditRuntime>,
+    rollouts: Option<rollouts::RolloutRuntime>,
     cleanup: Option<ActivationCleanupOwner>,
     sampler: Option<load::LoadSampler>,
     telemetry_runtime: Option<TelemetryRuntime>,

@@ -33,6 +33,7 @@ members = [
     "crates/latent-wrpc",
     "crates/latent-node",
     "crates/latent-control-store",
+    "crates/latent-rollout",
     "crates/latent-telemetry",
     "crates/latent-audit",
     "crates/latent-testkit",
