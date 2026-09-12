@@ -1,3 +1,4 @@
+mod audit;
 mod budget;
 mod conversion;
 mod response;
@@ -12,7 +13,7 @@ use latent_manifest::{ManifestValidator, Phase1ManifestValidator};
 use tonic::{Request, Response, Status};
 
 use super::errors::platform_status;
-use super::{proto, ManagementOperation, ManagementServiceAdapter, RequestBudget};
+use super::{control_audit, proto, ManagementOperation, ManagementServiceAdapter, RequestBudget};
 
 pub use budget::{control_budget_from_proto, control_budget_to_proto};
 pub use conversion::{deployment_from_proto, deployment_manifest_from_proto, deployment_to_proto};
@@ -23,10 +24,8 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
         &self,
         mut request: Request<proto::ApplyDeploymentRequest>,
     ) -> Result<Response<proto::ApplyDeploymentResponse>, Status> {
-        let tenant = self
-            .authenticate(&mut request, ManagementOperation::Tenant)?
-            .tenant
-            .expect("authenticated tenant");
+        let principal = self.authenticate(&mut request, ManagementOperation::Tenant)?;
+        let tenant = principal.tenant.clone().expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::ApplyDeploymentRequest>(&self.limits)?;
         let deployment = request
             .get_ref()
@@ -46,27 +45,78 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
             ));
         }
         let request = request.into_inner();
-        let manifest =
+        let mut manifest =
             deployment_manifest_from_proto(request.deployment.expect("validated deployment"))
                 .map_err(|_| Status::invalid_argument("invalid deployment representation"))?;
         Phase1ManifestValidator
             .validate_deployment(&manifest)
             .map_err(|_| Status::invalid_argument("invalid Phase 1 deployment"))?;
+        // Use the catalog codec's exact normalization before binding an audit
+        // attempt. This preserves accepted uppercase digests and unordered sets.
+        manifest.normalize_storage_fields();
         // Reject an unreturnable ordinary receipt before a durable mutation. The
         // catalog normalizes existing fields and assigns at most a u64 stamp.
         let desired = VersionedDeployment {
             manifest,
             generation: u64::MAX,
         };
-        let preflight = response::apply(&desired, &tenant, &self.limits)?;
+        let preflight = audit::response(
+            &desired,
+            &tenant,
+            &self.limits,
+            self.services.audit.is_some(),
+        )?;
         self.response(preflight)?;
-        let receipt = self
+        let audit = audit::DeploymentAudit::apply(
+            self.services.audit.as_ref(),
+            &principal,
+            &desired.manifest,
+            request.expected_generation,
+            &self.limits,
+        )
+        .await?;
+        let result = self
             .services
             .deployments
             .apply_versioned(&tenant, desired.manifest, request.expected_generation)
-            .await
-            .map_err(|error| platform_status(error, &self.limits))?;
-        self.response(response::apply(&receipt.deployment, &tenant, &self.limits)?)
+            .await;
+        let output = result
+            .as_ref()
+            .ok()
+            .map(|receipt| {
+                let response = audit::response(
+                    &receipt.deployment,
+                    &tenant,
+                    &self.limits,
+                    self.services.audit.is_some(),
+                )?;
+                if !audit.matches(&receipt.deployment, receipt.catalog_generation) {
+                    return Err(Status::internal(
+                        "deployment receipt changed the audited request",
+                    ));
+                }
+                Ok(response)
+            })
+            .transpose();
+        let ack = audit
+            .finish(
+                result
+                    .as_ref()
+                    .ok()
+                    .filter(|_| output.is_ok())
+                    .map(|receipt| (&receipt.deployment, receipt.catalog_generation)),
+            )
+            .await;
+        result.map_err(|error| control_audit::status(platform_status(error, &self.limits), ack))?;
+        let mut output = output
+            .map_err(|error| control_audit::status(error, ack))?
+            .expect("successful deployment response");
+        output.audit_ack = self
+            .services
+            .audit
+            .as_ref()
+            .map(|_| control_audit::wire(ack));
+        self.response(output)
     }
 
     async fn get_deployment(
@@ -123,24 +173,60 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
         &self,
         mut request: Request<proto::DeleteDeploymentRequest>,
     ) -> Result<Response<proto::Empty>, Status> {
-        let tenant = self
-            .authenticate(&mut request, ManagementOperation::Tenant)?
-            .tenant
-            .expect("authenticated tenant");
+        let principal = self.authenticate(&mut request, ManagementOperation::Tenant)?;
+        let tenant = principal.tenant.clone().expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::DeleteDeploymentRequest>(&self.limits)?;
         validation::id(&request.get_ref().id, &mut budget, self.limits.max_id_bytes)?;
         self.check_encoded(request.get_ref())?;
         let request = request.into_inner();
-        self.services
+        let id = DeploymentId(request.id);
+        let mut response_budget = RequestBudget::for_response::<proto::Empty>(&self.limits)?;
+        if self.services.audit.is_some() {
+            control_audit::charge(&mut response_budget)?;
+        }
+        self.response(proto::Empty {})?;
+        let audit = audit::DeploymentAudit::delete(
+            self.services.audit.as_ref(),
+            &principal,
+            &id,
+            request.expected_generation,
+            &self.limits,
+        )
+        .await?;
+        let result = self
+            .services
             .deployments
-            .delete_versioned(
-                &tenant,
-                &DeploymentId(request.id),
-                request.expected_generation,
+            .delete_versioned(&tenant, &id, request.expected_generation)
+            .await;
+        let valid = result
+            .as_ref()
+            .ok()
+            .map(|receipt| {
+                let mut budget = RequestBudget::for_response::<proto::Empty>(&self.limits)?;
+                validation::domain(&receipt.deleted, &tenant, &mut budget, &self.limits)?;
+                if !audit.matches(&receipt.deleted, receipt.catalog_generation) {
+                    return Err(Status::internal(
+                        "deployment deletion receipt changed the audited request",
+                    ));
+                }
+                Ok(())
+            })
+            .transpose();
+        let ack = audit
+            .finish(
+                result
+                    .as_ref()
+                    .ok()
+                    .filter(|_| valid.is_ok())
+                    .map(|receipt| (&receipt.deleted, receipt.catalog_generation)),
             )
-            .await
-            .map_err(|error| platform_status(error, &self.limits))?;
-        self.response(proto::Empty {})
+            .await;
+        result.map_err(|error| control_audit::status(platform_status(error, &self.limits), ack))?;
+        valid.map_err(|error| control_audit::status(error, ack))?;
+        Ok(control_audit::response(
+            self.response(proto::Empty {})?,
+            ack,
+        ))
     }
 
     type WatchDeploymentStream = tonic::codegen::BoxStream<proto::DeploymentEvent>;

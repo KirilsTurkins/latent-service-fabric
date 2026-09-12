@@ -17,15 +17,19 @@ latent-node = { path = "../latent-node" }
 latent-routing = { path = "../latent-routing" }
 latent-rpc = { path = "../latent-rpc" }
 latent-artifacts = { path = "../latent-artifacts" }
+latent-audit = { path = "../latent-audit" }
 latent-control-store = { path = "../latent-control-store" }
 latent-manifest = { path = "../latent-manifest" }
 latent-admission = { path = "../latent-admission" }
+http-body.workspace = true
 prost.workspace = true
 serde.workspace = true
+sha2.workspace = true
 tokio.workspace = true
 tonic.workspace = true
 
 [dev-dependencies]
+tempfile.workspace = true
 latent-executor = { path = "../latent-executor" }
 latent-scheduler = { path = "../latent-scheduler" }
 latent-telemetry = { path = "../latent-telemetry" }

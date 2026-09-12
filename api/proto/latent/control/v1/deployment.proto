@@ -50,6 +50,7 @@ message ApplyDeploymentRequest {
 message ApplyDeploymentResponse {
   Deployment deployment = 1;
   repeated string warnings = 2;
+  optional AuditAck audit_ack = 3;
 }
 
 message GetDeploymentRequest {

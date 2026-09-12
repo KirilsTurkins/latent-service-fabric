@@ -1,6 +1,7 @@
 //! Versioned standalone configuration, validated before opening node resources.
 
 mod aot;
+mod audit;
 mod derive;
 mod engine;
 mod input;
@@ -18,6 +19,7 @@ use std::time::Duration;
 use latent_core::{PlatformError, PlatformErrorCode};
 
 pub use aot::{AotCacheConfig, AotImageConfig, AotProcessConfig, IsolatedAotConfig};
+pub use audit::AuditConfig;
 pub use model::{
     CacheConfig, CatalogConfig, CellConfig, CredentialConfig, CredentialRole, EngineAllocator,
     EngineConfig, EngineOptimization, ExecutionConfig, LimitConfig, NodeConfig, RetentionConfig,
@@ -38,6 +40,7 @@ pub struct NodeSettings {
     pub(crate) deployments: latent_control_store::DirectoryDeploymentRepositoryConfig,
     pub(crate) supply_chain: SupplyChainSettings,
     pub(crate) isolated_aot: Option<latent_wasmtime::NativeAotSettings>,
+    pub(crate) audit: Option<latent_audit::AuditLimits>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) scheduler: latent_scheduler::LocalSchedulerConfig,
     pub(crate) wasmtime: latent_wasmtime::WasmtimeConfig,

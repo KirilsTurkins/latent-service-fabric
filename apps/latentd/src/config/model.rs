@@ -33,6 +33,8 @@ pub struct NodeConfig {
     pub supply_chain: SupplyChainConfig,
     #[serde(default, deserialize_with = "super::aot::present")]
     pub isolated_aot: Option<super::IsolatedAotConfig>,
+    #[serde(default, deserialize_with = "super::audit::present")]
+    pub audit: Option<super::AuditConfig>,
     #[serde(default)]
     pub retention: RetentionConfig,
     #[serde(default)]

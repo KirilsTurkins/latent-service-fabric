@@ -42,6 +42,14 @@ impl Harness {
         limits: ManagementLimits,
         source: Option<Arc<dyn ArtifactRepository>>,
     ) -> Self {
+        Self::with_audit(limits, source, None).await
+    }
+
+    pub async fn with_audit(
+        limits: ManagementLimits,
+        source: Option<Arc<dyn ArtifactRepository>>,
+        audit: Option<latent_audit::AuditHandle>,
+    ) -> Self {
         let root = TempRoot::new();
         let artifacts = Arc::new(
             DirectoryArtifactRepository::open(
@@ -61,6 +69,7 @@ impl Harness {
         );
         let inventory = Arc::new(Inventory::new());
         let services = ManagementServices {
+            audit,
             artifacts: source.unwrap_or_else(|| artifacts.clone()),
             deployments: deployments.clone(),
             routes: deployments.clone(),

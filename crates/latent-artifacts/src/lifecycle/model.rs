@@ -275,6 +275,9 @@ pub struct ManagedPublicationReceipt {
 /// Rejection-only callback input; no field grants admission or mutation authority.
 #[derive(Debug, Clone, Copy)]
 pub struct ReleaseOperationPreview<'a> {
+    /// This receipt already exists durably; accepting the callback does not
+    /// perform a second lifecycle mutation.
+    pub replay: bool,
     pub receipt: &'a ReleaseOperationReceipt,
     pub release: Option<&'a ArtifactCatalogEntry>,
     pub failure: Option<&'a PlatformError>,

@@ -51,3 +51,17 @@ message PageResponse {
 }
 
 message Empty {}
+
+// Local audit persistence is distinct from the authoritative mutation outcome.
+enum AuditAckStatus {
+  AUDIT_ACK_STATUS_UNSPECIFIED = 0;
+  AUDIT_ACK_STATUS_DURABLE = 1;
+  AUDIT_ACK_STATUS_OUTCOME_UNKNOWN = 2;
+  AUDIT_ACK_STATUS_AUDIT_UNAVAILABLE = 3;
+  AUDIT_ACK_STATUS_DISABLED = 4;
+}
+
+message AuditAck {
+  AuditAckStatus status = 1;
+  optional uint64 attempt_sequence = 2;
+}

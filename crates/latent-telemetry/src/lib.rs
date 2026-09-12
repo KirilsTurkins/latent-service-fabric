@@ -16,9 +16,11 @@ pub use observation::{
 };
 pub use observer::{ObserverSnapshot, SharedActivationObserver, SharedActivationObserverConfig};
 pub use phase2_canary::{
-    BoundedPhase2CanaryOutcomeWindow, Phase2CanaryCoverage, Phase2CanaryOutcomeClass,
-    Phase2CanaryOutcomeCounters, Phase2CanaryOutcomeIdentity, Phase2CanaryOutcomeObservation,
-    Phase2CanaryOutcomeSnapshot, Phase2CanaryOutcomeWindowConfig, Phase2CanaryWindowSnapshot,
+    BoundedPhase2CanaryOutcomeWindow, CanaryCapture, CanaryCaptureAttempt, CanaryCoverage,
+    CanaryRevisionBinding, CanaryRevisionSnapshot, CanarySample, CanaryWindow,
+    CanaryWindowIdentity, CanaryWindowSnapshot, CanaryWindowSpec, Phase2CanaryOutcomeClass,
+    Phase2CanaryOutcomeCounters, Phase2CanaryOutcomeWindowConfig, Phase2CanaryWindowSnapshot,
+    SelectedOutcomeRevision, CANARY_LATENCY_UPPER_MICROS,
 };
 pub use pipeline::{
     TelemetryDropReason, TelemetryHandle, TelemetryPipelineConfig, TelemetryPipelineSnapshot,

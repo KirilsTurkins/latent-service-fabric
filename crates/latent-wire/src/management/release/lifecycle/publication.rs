@@ -1,8 +1,10 @@
-use latent_artifacts::{ManagedPublicationUpload, ReleaseLifecycleAction, ReleaseOperationPreview};
+use latent_artifacts::{
+    ManagedPublicationUpload, ReleaseAuditGuard, ReleaseLifecycleAction, ReleaseOperationPreview,
+};
 use latent_core::{InvocationPrincipal, TenantId};
 use tonic::{Response, Status};
 
-use super::super::super::{errors::platform_status, RequestBudget};
+use super::super::super::{control_audit, errors::platform_status, RequestBudget};
 use super::super::{package, publication, release_descriptor_to_proto, validation};
 use super::{
     preflight_rejection, proto, publication_context, response, ManagementServiceAdapter, Preflight,
@@ -43,17 +45,23 @@ impl ManagementServiceAdapter {
             expected_release.as_ref(),
             ReleaseLifecycleAction::Publish,
         );
+        preflight.audit_enabled = self.services.audit.is_some();
+        let mut audit = ReleaseAuditGuard::new(
+            self.services.audit.as_ref(),
+            ReleaseLifecycleAction::Publish,
+        );
         let mut prepared = None;
         let result = {
             let mut callback = |preview: ReleaseOperationPreview<'_>| {
                 (|| {
                     preflight.preview(ReleaseOperationPreview {
+                        replay: preview.replay,
                         receipt: preview.receipt,
                         release: preview.release,
                         failure: preview.failure,
                     })?;
                     if preview.failure.is_some() {
-                        return Ok(());
+                        return audit.preview(preview);
                     }
                     let output = (|| {
                         if preview
@@ -76,7 +84,7 @@ impl ManagementServiceAdapter {
                     match output {
                         Ok(value) => {
                             prepared = Some(value);
-                            Ok(())
+                            audit.preview(preview)
                         }
                         Err(status) => {
                             preflight.rejected = Some(status);
@@ -90,12 +98,21 @@ impl ManagementServiceAdapter {
                 .publish_managed(context, upload, &mut callback)
                 .await
         };
+        let ack = audit
+            .finish(
+                self.services.artifacts.as_ref(),
+                result.as_ref().ok().map(|value| &value.operation),
+            )
+            .await;
         if let Some(status) = preflight.rejected.take() {
-            return Err(status);
+            return Err(control_audit::status(status, ack));
         }
-        let actual = result.map_err(|error| platform_status(error, &self.limits))?;
-        preflight.finish(Ok(actual.operation))?;
-        let expected =
+        let actual = result
+            .map_err(|error| control_audit::status(platform_status(error, &self.limits), ack))?;
+        preflight
+            .finish(Ok(actual.operation))
+            .map_err(|error| control_audit::status(error, ack))?;
+        let mut expected =
             prepared.ok_or_else(|| Status::internal("publication omitted release preflight"))?;
         let mut budget =
             RequestBudget::for_response::<proto::PublishReleaseResponse>(&self.limits)?;
@@ -107,6 +124,11 @@ impl ManagementServiceAdapter {
                 "publication release changed after preflight",
             ));
         }
+        expected.get_mut().audit_ack = self
+            .services
+            .audit
+            .as_ref()
+            .map(|_| control_audit::wire(ack));
         Ok(expected)
     }
 
@@ -132,6 +154,9 @@ impl ManagementServiceAdapter {
         }
         let mut budget =
             RequestBudget::for_response::<proto::PublishReleaseResponse>(&self.limits)?;
+        if self.services.audit.is_some() {
+            control_audit::charge(&mut budget)?;
+        }
         validation::entry(release, tenant, &mut budget, &self.limits)?;
         validation::entry(release, tenant, &mut budget, &self.limits)?;
         response::charge_operation(preview.receipt, tenant, &mut budget, &self.limits)?;
@@ -147,6 +172,11 @@ impl ManagementServiceAdapter {
             ),
             admission_warnings: Vec::new(),
             operation: Some(operation.clone()),
+            audit_ack: self
+                .services
+                .audit
+                .as_ref()
+                .map(|_| control_audit::maximum()),
         })
     }
 }

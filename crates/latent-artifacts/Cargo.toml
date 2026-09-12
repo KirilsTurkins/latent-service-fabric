@@ -12,6 +12,7 @@ workspace = true
 
 [dependencies]
 latent-core = { path = "../latent-core" }
+latent-audit = { path = "../latent-audit" }
 latent-contracts = { path = "../latent-contracts" }
 latent-manifest = { path = "../latent-manifest" }
 sha2.workspace = true

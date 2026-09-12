@@ -17,7 +17,8 @@ const MAX_PHASE2_AUDIT_PAGE_STRING_BYTES: usize = 64 * 1024 * 1024;
 const PHASE2_AUDIT_FIXED_STRING_FIELDS: usize = 12;
 const PHASE2_AUDIT_METADATA_STRINGS_PER_ATTRIBUTE: usize = 4;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Phase2AuditEventKind {
     VerificationAccepted,
     VerificationRejected,
@@ -195,6 +196,10 @@ impl BoundedPhase2AuditJournal {
         })
     }
 
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "Preserve the existing consuming memory-journal API while making bounded retained copies"
+    )]
     pub fn append(&self, event: Phase2AuditEvent) -> Result<Phase2AuditCursor, PlatformError> {
         validate_event(&event, self.limits)?;
         let event = bounded_event(&event);
@@ -315,6 +320,17 @@ fn validate_event(
         limits,
         "invalid-phase2-audit-component",
     )?;
+    if event
+        .identity
+        .component
+        .as_ref()
+        .is_some_and(|v| v.0.parse::<latent_core::ArtifactBlobDigest>().is_err())
+    {
+        return Err(error(
+            PlatformErrorCode::InvalidArgument,
+            "invalid-phase2-audit-component",
+        ));
+    }
     validate_optional_string(
         event.identity.policy.as_ref().map(|value| value.0.as_str()),
         limits,
@@ -519,7 +535,7 @@ mod tests {
                 tenant,
                 operation_id: format!("op-{id}"),
                 package: Some(package_digest('a')),
-                component: Some(ReleaseDigest("sha256:component".to_owned())),
+                component: Some(ReleaseDigest(format!("sha256:{}", "a".repeat(64)))),
                 policy: Some(PolicyId("policy-1".to_owned())),
                 rollout_id: Some("rollout-1".to_owned()),
                 revision: Some(RevisionId("revision-1".to_owned())),
@@ -648,7 +664,8 @@ mod tests {
         source.actor.attributes = BTreeMap::from([(oversized_actor_key, oversized_actor_value)]);
 
         let mut oversized_component = String::with_capacity(4096);
-        oversized_component.push_str("sha256:component");
+        oversized_component.push_str("sha256:");
+        oversized_component.extend(std::iter::repeat_n('a', 64));
         source.identity.component = Some(ReleaseDigest(oversized_component));
 
         let mut oversized_metadata_key = String::with_capacity(4096);

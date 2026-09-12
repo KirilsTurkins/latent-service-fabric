@@ -10,7 +10,8 @@ use latent_routing::ResolvedRevision;
 use latent_telemetry::{
     ActivationCleanupDisposition, ActivationObservation, ActivationObservationContext,
     ActivationObservationKind, ActivationObservationToken, ActivationObserver,
-    ActivationOutcomeClass, ActivationTerminalObservation,
+    ActivationOutcomeClass, ActivationTerminalObservation, CanaryCapture, CanarySample,
+    SelectedOutcomeRevision,
 };
 
 use crate::activation_runner::outcome_consumption;
@@ -40,7 +41,8 @@ impl Counters {
 
 #[derive(Clone)]
 pub(super) struct ObservationServices {
-    pub observer: Arc<dyn ActivationObserver>,
+    pub observer: Option<Arc<dyn ActivationObserver>>,
+    pub canary: Option<CanaryCapture>,
     pub counters: Arc<Counters>,
     pub clock: Arc<dyn ActivationClock>,
     pub owner: u64,
@@ -48,7 +50,8 @@ pub(super) struct ObservationServices {
 
 pub(super) struct Observation {
     services: ObservationServices,
-    context: ActivationObservationContext,
+    context: Option<ActivationObservationContext>,
+    canary: Option<CanarySample>,
     started: Instant,
     last_phase: ActivationPhase,
     sequence: u64,
@@ -63,29 +66,39 @@ impl Observation {
         envelope: &ActivationEnvelope,
         stamp: JournalStamp,
     ) -> Self {
-        let context = ActivationObservationContext {
-            token: ActivationObservationToken {
-                manager: services.owner,
-                sequence: serial,
-            },
-            activation_id: envelope.activation_id.clone(),
-            root_activation_id: envelope.root_activation_id.clone(),
-            parent_activation_id: envelope.parent_activation_id.clone(),
-            tenant: envelope.target.tenant.clone(),
-            service: envelope.target.service.clone(),
-            contract: envelope.target.contract.clone(),
-            function: envelope.target.function.clone(),
-            trace_id: envelope.trace.trace_id.clone(),
-            span_id: envelope.trace.span_id.clone(),
-            trace_flags: envelope.trace.trace_flags,
-            release: None,
-            revision: None,
-            route_generation: None,
+        let token = ActivationObservationToken {
+            manager: services.owner,
+            sequence: serial,
         };
+        let canary = services.canary.as_ref().and_then(|capture| {
+            capture
+                .try_begin(token, &envelope.target.tenant, &envelope.target.service)
+                .into_sample()
+        });
+        let context = services
+            .observer
+            .as_ref()
+            .map(|_| ActivationObservationContext {
+                token,
+                activation_id: envelope.activation_id.clone(),
+                root_activation_id: envelope.root_activation_id.clone(),
+                parent_activation_id: envelope.parent_activation_id.clone(),
+                tenant: envelope.target.tenant.clone(),
+                service: envelope.target.service.clone(),
+                contract: envelope.target.contract.clone(),
+                function: envelope.target.function.clone(),
+                trace_id: envelope.trace.trace_id.clone(),
+                span_id: envelope.trace.span_id.clone(),
+                trace_flags: envelope.trace.trace_flags,
+                release: None,
+                revision: None,
+                route_generation: None,
+            });
         let started = services.clock.monotonic_now();
         let observation = Self {
             services,
             context,
+            canary,
             started,
             last_phase: stamp.phase,
             sequence: stamp.sequence,
@@ -114,6 +127,9 @@ impl Observation {
         );
         if stamp.phase == ActivationPhase::Admitted {
             if let Some(grant) = grant {
+                if let Some(sample) = &mut self.canary {
+                    sample.admitted();
+                }
                 self.emit(
                     ActivationObservationKind::AdmittedGrant(grant.clone()),
                     stamp.unix_millis,
@@ -162,28 +178,52 @@ impl Observation {
                 (ActivationOutcomeClass::PlatformFailure, Some(error.code))
             }
         };
+        let terminal = ActivationTerminalObservation {
+            class,
+            terminal_state: outcome_terminal_state(outcome),
+            platform_code,
+            consumption: outcome_consumption(outcome),
+            last_phase: self.last_phase,
+            sequence: self.sequence,
+        };
+        if let Some(sample) = self.canary.take() {
+            sample.finish(
+                &terminal,
+                self.services
+                    .clock
+                    .monotonic_now()
+                    .saturating_duration_since(self.started),
+            );
+        }
         self.emit(
-            ActivationObservationKind::Terminal(ActivationTerminalObservation {
-                class,
-                terminal_state: outcome_terminal_state(outcome),
-                platform_code,
-                consumption: outcome_consumption(outcome),
-                last_phase: self.last_phase,
-                sequence: self.sequence,
-            }),
+            ActivationObservationKind::Terminal(terminal),
             stamp.unix_millis,
         );
     }
 
     fn refresh(&mut self, resolved: Option<&ResolvedRevision>) {
         if let Some(resolved) = resolved {
-            self.context.release = Some(resolved.release.clone());
-            self.context.revision = Some(resolved.revision.clone());
-            self.context.route_generation = Some(resolved.route_generation);
+            if let Some(sample) = &mut self.canary {
+                sample.bind_selected(SelectedOutcomeRevision {
+                    tenant: &resolved.target.tenant,
+                    service: &resolved.target.service,
+                    revision: &resolved.revision,
+                    component: &resolved.release,
+                    generation: resolved.route_generation,
+                });
+            }
+            if let Some(context) = &mut self.context {
+                context.release = Some(resolved.release.clone());
+                context.revision = Some(resolved.revision.clone());
+                context.route_generation = Some(resolved.route_generation);
+            }
         }
     }
 
     fn emit(&self, kind: ActivationObservationKind, unix_millis: u64) {
+        let (Some(observer), Some(context)) = (&self.services.observer, &self.context) else {
+            return;
+        };
         increment(&self.services.counters.attempted);
         let event = ActivationObservation {
             occurred_at_unix_millis: unix_millis,
@@ -195,7 +235,7 @@ impl Observation {
             kind,
         };
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            self.services.observer.on_observation(&self.context, &event);
+            observer.on_observation(context, &event);
         }));
         if result.is_err() {
             increment(&self.services.counters.panics);
