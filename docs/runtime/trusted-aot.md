@@ -79,8 +79,14 @@ code-generation settings without allocating runtime pooling resources. The
 pinned Wasmtime feature configuration excludes parallel compilation; unexpected
 thread creation is also denied by the sandbox.
 
-The parent checks the configured executable and hashes the actual running
-`/proc/<pid>/exe` before sending bootstrap data. It checks the child's actual
+The parent checks the configured executable and waits for a fixed eight-byte
+launch message from the child after its clean re-exec. Linux can release a
+`vfork` parent before the new process memory is installed, so a returned PID
+alone is insufficient for inspecting its executable. The launch message grants
+no authority: the parent still hashes the actual running `/proc/<pid>/exe`
+before sending any bootstrap data. A malformed, partial or stalled launch
+remains subject to the same deadline, cancellation and kill/reap ownership.
+It checks the child's actual
 engine fingerprint and exact enforced-sandbox profile before sending untrusted
 Wasm. Successful output requires exact framing, EOF, successful child exit and a
 fresh check of the original release capability. A lifecycle or policy change

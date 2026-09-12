@@ -39,6 +39,18 @@ fn work() -> io::Result<i32> {
     }
     let mut input = io::stdin().lock();
     let mut output = io::stdout().lock();
+    let mut launched = *b"LSFAOTL1";
+    if maximum_output == 21 {
+        launched[0] ^= 1;
+    }
+    if maximum_output == 23 {
+        output.write_all(&launched[..4])?;
+        output.flush()?;
+        loop {
+            std::thread::sleep(Duration::from_secs(1));
+        }
+    }
+    write_readiness(&mut output, &launched, maximum_output)?;
     let mut prefix = [0; 4];
     input.read_exact(&mut prefix)?;
     let bootstrap = body(&mut input, u32::from_le_bytes(prefix) as usize, 4096)?;
