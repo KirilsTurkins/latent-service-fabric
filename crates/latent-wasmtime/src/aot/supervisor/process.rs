@@ -214,6 +214,15 @@ mod linux {
         nonblocking(pipes.input.as_ref().ok_or_else(failed)?)?;
         nonblocking(&pipes.output)?;
         nonblocking(&pipes.diagnostics)?;
+        // Linux may release a vfork/posix_spawn parent before the child's new
+        // mm is installed. Wait for code in the clean image to run before
+        // reading /proc/pid/exe. This fixed message is not authentication:
+        // the actual executable hash remains mandatory before any input.
+        let mut launched = [0; protocol::LAUNCH_MAGIC.len()];
+        pipes.read(&mut launched, job)?;
+        if &launched != protocol::LAUNCH_MAGIC {
+            return Err(rejected("aot-worker-launch-mismatch"));
+        }
         // The controlled child blocks before sandbox bootstrap until this header
         // arrives. /proc identifies the actual unreaped process's executable,
         // closing a path replacement between configuration hashing and spawn.

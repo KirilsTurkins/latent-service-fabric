@@ -8,7 +8,8 @@ pub use capability::{
 };
 pub use model::*;
 pub(crate) use store::{
-    LifecycleEvidence, LifecycleFence, LifecycleIdentity, LifecyclePrepared, LifecycleStore,
+    validate_audit_receipt, LifecycleEvidence, LifecycleFence, LifecycleIdentity,
+    LifecyclePrepared, LifecycleStore,
 };
 
 use latent_core::{PlatformError, PlatformErrorCode};

@@ -1,4 +1,7 @@
 //! Small real directory transactions; no guest execution or load campaign.
+#[cfg(unix)]
+#[path = "lifecycle_tests/audit.rs"]
+mod audit;
 use super::*;
 use crate::{
     LifecycleScope, ManagedPublicationUpload, ReleaseActor, ReleaseActorKind,

@@ -234,6 +234,7 @@ message ChangeReleaseLifecycleRequest {
 
 message ChangeReleaseLifecycleResponse {
   ReleaseOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
 }
 
 message ReleaseEvidenceUpload {
@@ -252,6 +253,7 @@ message RenewReleaseEvidenceRequest {
 
 message RenewReleaseEvidenceResponse {
   ReleaseOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
 }
 
 message PublishReleaseRequest {
@@ -271,6 +273,7 @@ message PublishReleaseResponse {
   ReleaseDescriptor release = 1;
   repeated string admission_warnings = 2;
   ReleaseOperationReceipt operation = 3;
+  optional AuditAck audit_ack = 4;
 }
 
 message GetReleaseRequest {

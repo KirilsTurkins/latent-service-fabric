@@ -19,6 +19,7 @@ clap.workspace = true
 latent-activation = { path = "../../crates/latent-activation" }
 latent-admission = { path = "../../crates/latent-admission" }
 latent-artifacts = { path = "../../crates/latent-artifacts" }
+latent-audit = { path = "../../crates/latent-audit" }
 latent-control-store = { path = "../../crates/latent-control-store" }
 latent-core = { path = "../../crates/latent-core" }
 latent-executor = { path = "../../crates/latent-executor" }

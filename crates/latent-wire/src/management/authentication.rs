@@ -4,6 +4,8 @@ use latent_core::{InvocationPrincipal, PlatformError, PlatformErrorCode, Princip
 pub enum ManagementOperation {
     Tenant,
     NodeInventory,
+    AuditTenant,
+    AuditNode,
 }
 
 /// Authorization uses the same trusted identity extension as invocation.
@@ -27,12 +29,14 @@ impl ManagementPolicy for LocalManagementPolicy {
         operation: ManagementOperation,
     ) -> Result<(), PlatformError> {
         if principal.kind != PrincipalKind::Administrator
-            || (operation == ManagementOperation::NodeInventory
-                && principal
-                    .claims
-                    .get("latent.node.operator")
-                    .map(String::as_str)
-                    != Some("true"))
+            || (matches!(
+                operation,
+                ManagementOperation::NodeInventory | ManagementOperation::AuditNode
+            ) && principal
+                .claims
+                .get("latent.node.operator")
+                .map(String::as_str)
+                != Some("true"))
         {
             return Err(PlatformError {
                 code: PlatformErrorCode::PermissionDenied,

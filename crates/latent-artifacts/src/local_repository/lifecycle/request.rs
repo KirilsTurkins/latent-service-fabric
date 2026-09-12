@@ -219,6 +219,7 @@ impl DirectoryArtifactRepository {
                 let failure = (receipt.disposition == ReleaseOperationDisposition::Rejected)
                     .then(|| rejected_error(&receipt));
                 preflight(ReleaseOperationPreview {
+                    replay: true,
                     receipt: &receipt,
                     release: summary.as_ref(),
                     failure: failure.as_ref(),
@@ -283,6 +284,7 @@ impl DirectoryArtifactRepository {
         let prepared = self.life_store().prepare(receipt, None)?;
         let failure = rejected_error(prepared.receipt());
         preflight(ReleaseOperationPreview {
+            replay: false,
             receipt: prepared.receipt(),
             release: None,
             failure: Some(&failure),

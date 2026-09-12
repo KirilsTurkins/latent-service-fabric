@@ -112,6 +112,7 @@ impl ArtifactRepository for PublicationOwner {
                 }],
             };
             preflight(ReleaseOperationPreview {
+                replay: false,
                 receipt: &receipt,
                 release: (!self.reject).then_some(&self.summary),
                 failure: self.reject.then_some(&failure),

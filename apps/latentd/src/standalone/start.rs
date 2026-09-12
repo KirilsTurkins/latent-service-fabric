@@ -33,6 +33,7 @@ pub(super) struct Catalogs {
     pub(super) deployments: Arc<DirectoryDeploymentRepository>,
     pub(super) supply_chain: Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>,
     control: Option<control::StartupControl>,
+    audit: Option<super::audit::AuditRuntime>,
 }
 
 impl Catalogs {
@@ -41,9 +42,15 @@ impl Catalogs {
         settings: &NodeSettings,
         observer: latent_control_store::CatalogWorkObserver,
     ) -> Result<Self, PlatformError> {
-        if settings.supply_chain.is_enforced() {
+        if settings.supply_chain.is_enforced() || settings.audit.is_some() {
             return Err(mode_error());
         }
+        let audit = super::audit::AuditRuntime::open(
+            settings.data_directory.join("audit"),
+            None,
+            tokio::runtime::Handle::current(),
+        )
+        .await?;
         let artifacts = Arc::new(DirectoryArtifactRepository::open(
             settings.data_directory.join("releases"),
             settings.artifacts,
@@ -64,12 +71,13 @@ impl Catalogs {
             deployments,
             supply_chain: None,
             control: None,
+            audit,
         })
     }
 
     #[cfg(test)]
     pub(super) async fn open(settings: &NodeSettings) -> Result<Self, PlatformError> {
-        if settings.supply_chain.is_enforced() {
+        if settings.supply_chain.is_enforced() || settings.audit.is_some() {
             return Err(mode_error());
         }
         Self::open_inner(settings, None).await
@@ -86,10 +94,26 @@ impl Catalogs {
         settings: &NodeSettings,
         runtime: Option<&tokio::runtime::Handle>,
     ) -> Result<Self, PlatformError> {
-        let supply_chain = settings.supply_chain.open(
+        let audit = super::audit::AuditRuntime::open(
+            settings.data_directory.join("audit"),
+            settings.audit,
+            runtime
+                .cloned()
+                .unwrap_or_else(tokio::runtime::Handle::current),
+        )
+        .await?;
+        let supply_chain = match settings.supply_chain.open(
             &settings.data_directory,
             Arc::clone(&settings.runtime_profile),
-        )?;
+        ) {
+            Ok(authority) => authority,
+            Err(failure) => {
+                if let Some(audit) = &audit {
+                    let _ = audit.shutdown(settings.shutdown_grace).await;
+                }
+                return Err(failure);
+            }
+        };
         let mut control = supply_chain.as_ref().map(|authority| {
             control::StartupControl::start(
                 Arc::clone(authority),
@@ -99,11 +123,20 @@ impl Catalogs {
         });
         let opened = async {
             let artifacts = Arc::new(if let Some(authority) = &supply_chain {
+                let authority: Arc<dyn latent_artifacts::AdmissionAuthority> =
+                    if let Some(audit) = &audit {
+                        Arc::new(latent_artifacts::AuditedAdmissionAuthority::new(
+                            authority.clone(),
+                            audit.handle(),
+                        ))
+                    } else {
+                        authority.clone()
+                    };
                 DirectoryArtifactRepository::open_enforced(
                     settings.data_directory.join("releases"),
                     settings.artifacts,
                     latent_artifacts::AdmissionStorageLimits::default(),
-                    authority.clone(),
+                    authority,
                 )?
             } else {
                 DirectoryArtifactRepository::open(
@@ -121,6 +154,10 @@ impl Catalogs {
                 )
                 .await?,
             );
+            if let Some(audit) = &audit {
+                latent_artifacts::reconcile_release_audit(&audit.handle(), artifacts.as_ref())
+                    .await?;
+            }
             Ok::<_, PlatformError>((artifacts, deployments))
         }
         .await;
@@ -130,6 +167,9 @@ impl Catalogs {
                 if let Some(control) = control.take() {
                     let _ = control.shutdown(settings.shutdown_grace).await;
                 }
+                if let Some(audit) = &audit {
+                    let _ = audit.shutdown(settings.shutdown_grace).await;
+                }
                 return Err(failure);
             }
         };
@@ -138,6 +178,7 @@ impl Catalogs {
             deployments,
             supply_chain,
             control,
+            audit,
         })
     }
 }
@@ -195,12 +236,16 @@ impl StandaloneNode {
                 if let Some(control) = catalogs.control.take() {
                     let _ = control.shutdown(settings.shutdown_grace).await;
                 }
+                if let Some(audit) = &catalogs.audit {
+                    let _ = audit.shutdown(settings.shutdown_grace).await;
+                }
                 return Err(failure);
             }
         };
         if let Some(control) = catalogs.control.take() {
             node.sampler = Some(control.transfer());
         }
+        node.audit = catalogs.audit.take();
         if let Err(failure) =
             Box::pin(node.start_services(&settings, catalogs, control_runtime, threads)).await
         {
@@ -236,6 +281,7 @@ impl StandaloneNode {
         )?;
         let management = ManagementServiceAdapter::new(
             ManagementServices {
+                audit: self.audit.as_ref().map(super::audit::AuditRuntime::handle),
                 artifacts: catalogs.artifacts,
                 deployments: catalogs.deployments.clone(),
                 routes: catalogs.deployments.clone(),
@@ -302,6 +348,7 @@ impl StandaloneNode {
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
         if settings.supply_chain.is_enforced() != catalogs.supply_chain.is_some()
+            || settings.audit.is_some() != catalogs.audit.is_some()
             || (catalogs.supply_chain.is_some() && catalogs.control.is_none())
             || !catalogs
                 .deployments
@@ -358,6 +405,7 @@ impl StandaloneNode {
                 backend: backend.clone(),
             },
             LocalActivationServices {
+                canary: None,
                 clock: Arc::clone(&clock),
                 observer: Some(observer.clone()),
                 ..LocalActivationServices::default()
@@ -365,6 +413,7 @@ impl StandaloneNode {
         )?;
         Ok(Self {
             transport: None,
+            audit: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),
             cleanup: Some(ActivationCleanupOwner::start_with_observer(
                 settings.manager.journal.maximum_active,
@@ -400,12 +449,18 @@ fn factory(
     // Consume the secret-bearing settings once. Configured isolation never
     // falls back to the ordinary compiler when cache or sandbox setup fails.
     match settings.isolated_aot.take() {
-        Some(aot) => WasmtimeComponentEngineFactory::with_catalog_and_aot(
-            settings.wasmtime.clone(),
-            services,
-            Arc::clone(&catalogs.artifacts),
-            aot,
-        ),
+        Some(mut aot) => {
+            aot.audit = catalogs
+                .audit
+                .as_ref()
+                .map(super::audit::AuditRuntime::handle);
+            WasmtimeComponentEngineFactory::with_catalog_and_aot(
+                settings.wasmtime.clone(),
+                services,
+                Arc::clone(&catalogs.artifacts),
+                aot,
+            )
+        }
         None => WasmtimeComponentEngineFactory::with_catalog(
             settings.wasmtime.clone(),
             services,

@@ -341,9 +341,79 @@ package semantics and current supply-chain policy. Both still require runtime
 resource, capability and deployment checks before execution.
 
 The listener serves Invoke/Cancel/GetActivation and the supported release,
-deployment, route and node RPCs. Documented future methods return `Unimplemented`.
+deployment, route, node and audit RPCs. Audit queries require the optional durable
+audit configuration below; when it is absent, authenticated queries return
+`Unimplemented`. Documented future methods return `Unimplemented`.
 There is no cluster controller, remote identity handshake, TLS configuration,
 service-specific listener, or persistent guest instance in this composition.
+
+## Optional durable audit
+
+Linux nodes can retain bounded administrative history by adding this member to
+the node configuration. Its closed shape is described by
+[node-audit.schema.json](../../schemas/node-audit.schema.json).
+
+```json
+{
+  "audit": {
+    "mode": "durable",
+    "records": 4096,
+    "diskBytes": 67108864,
+    "queuedOperations": 64,
+    "queryOwners": 4
+  }
+}
+```
+
+These are the defaults. The respective hard ceilings are 16384 records, 256 MiB
+of journal storage, 256 queued operations and 16 retained query owners. The
+record ceiling is at least two, storage at least 32 KiB, and the other counts at
+least one. The node derives finite metadata, queue-byte and response-byte
+allowances from these counts. Records and storage are independent limits; a
+small storage allowance can fill before the record limit. There is no automatic
+pruning. Unknown members, duplicate members and explicit `null` are rejected by
+the node decoder; the schema describes member shapes and numeric bounds.
+
+The journal lives at `dataDirectory/audit`. Startup opens its one storage worker
+before catalog recovery and reconciles durable pending release attempts before
+accepting RPCs. The audit directory and files are private to the node owner.
+Omission selects unaudited operation only when this reserved path is absent;
+an existing directory, partial initialization or symlink prevents silent
+downgrade. Audit configuration is unsupported on other node platforms.
+
+`QueryPhase2Audit` returns typed observations, mutation attempts and outcomes.
+Tenant queries require an administrator and exactly that principal's tenant.
+Node queries additionally require the trusted `latent.node.operator` claim;
+that claim does not grant access to another tenant's history. Cursors are opaque
+and bound to their scope and filters. `QueryAudit` supplies a limited tenant
+projection; unsupported resource-prefix filters are rejected. Page records,
+scan work and encoded responses are bounded. The response retains its page
+allowance through body consumption or cancellation, including bytes still owned
+by the transport.
+
+Coverage reports the scanned range, stopping reason, dropped observations and
+durable unknown outcomes. After reopening, `previousSessionLossUnknown` remains
+true because prior volatile diagnostic loss counters cannot prove completeness.
+A complete scan does not erase those limitations. Mutation responses separately
+report durable, unknown, unavailable or disabled audit acknowledgement; consult
+the mutation result to determine whether the operation committed. Direct host
+embeddings must explicitly use the audit control adapters to obtain these
+acknowledgements.
+
+When `isolatedAot` is also configured, its blocking preparation worker submits
+native-cache hit, miss and corruption observations to this same journal after
+the independent source eligibility checks. Identities come from the sealed
+catalog input: tenant and exact component, plus package only when present.
+Tenant-neutral trusted-local sources use node scope. These observations describe
+persistent native lookups; resident prepared hits and the raw/prepared caches
+keep their existing aggregate counters. Capture is lossy, never changes
+preparation success, and does not run at final invocation start.
+
+Shutdown closes audit admission after control producers quiesce, then waits for
+the same worker within the shutdown allowance. Its report includes queued work,
+response owners, pending attempts and recovery state. Timeout or retained work
+prevents a clean shutdown report; dropping a network waiter does not release a
+worker's storage lock or accepted work.
 
 ## Transport, readiness and pressure
 
