@@ -6,7 +6,8 @@ containment and declared context/log/clock imports. Phase 2 additionally provide
 the [publisher signature library](../reference/publisher-trust.md), using exact
 package subjects and explicit current policy/revocation snapshots, plus separate
 [builder provenance](../reference/build-provenance.md) for the maintained echo
-recipe. Durable publisher-aware catalog admission, workload mTLS,
+recipe. [Authenticated catalog admission](../reference/package-admission.md)
+combines these proofs with current SBOM and tenant policy. Workload mTLS,
 secret providers, trust-sharded processes and native fallback remain future
 security work. See [standalone authentication](../reference/standalone-node.md),
 [catalog trust](../development/local-release-catalog.md#trust-boundary) and
@@ -53,11 +54,13 @@ Unsigned observations, matching referrers and publisher-only keys do not create
 builder authority. The maintained build is nonhermetic and its repository label
 remains an operator assertion.
 
-Durable Phase 2 admission will combine these proofs with provenance/SBOM policy
-and existing content digest, manifest, import and resource checks. It must retain
-clock/generation floors and compare trust state at final publication. Phase 1
-local publication remains locally trusted and is not made safe under an
-untrusted filesystem by the signing library.
+Durable Phase 2 admission combines these proofs with provenance/SBOM and tenant
+policy, complete package semantics and content checks. It retains durable
+clock/generation floors and rechecks shared trust at publication and actual
+activation start, independently of prepared-cache residency. Historical receipts
+and public admitted flags do not authorize execution. Phase 1 local publication
+remains explicitly locally trusted; signed admission does not protect against
+an administrator replacing the whole node or its approved trust configuration.
 
 ## AOT boundary
 

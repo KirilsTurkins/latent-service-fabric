@@ -154,8 +154,9 @@ captured state after cryptography and advances its clock high-water mark even on
 rejected operations. Contention fails through the bounded API, without a queue,
 network discovery or positive verification cache.
 
-Future durable admission must persist clock/generation floors and atomically
-compare proof state at final publication. Serialized fields, referrer presence
+The [durable admission owner](package-admission.md) persists clock/generation
+floors and atomically compares proof state at final publication and activation
+start. Serialized fields, referrer presence
 and matching subjects cannot recreate authority. [SBOM content policy](../component-development/sbom.md)
 checks presence and selected attribution requirements; it grants no builder or
 publisher authority. Trusted native compiler evidence remains separate Phase 2 work.

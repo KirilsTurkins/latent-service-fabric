@@ -23,10 +23,10 @@ latent-artifacts = { path = "../latent-artifacts" }
 latent-policy = { path = "../latent-policy" }
 latent-audit = { path = "../latent-audit" }
 sha2.workspace = true
+tokio.workspace = true
 
 [dev-dependencies]
 latent-admission = { path = "../latent-admission" }
 latent-activation = { path = "../latent-activation" }
 latent-executor = { path = "../latent-executor" }
 latent-scheduler = { path = "../latent-scheduler" }
-tokio.workspace = true

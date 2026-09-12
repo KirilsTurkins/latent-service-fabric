@@ -2,6 +2,8 @@
 
 #![forbid(unsafe_code)]
 
+pub mod supply_chain;
+
 use latent_core::{BoxFuture, InvocationPrincipal, Metadata, PlatformError, PolicyId};
 use latent_manifest::{CapsuleManifest, DeploymentManifest, PolicyManifest};
 

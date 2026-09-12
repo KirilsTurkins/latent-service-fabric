@@ -1,4 +1,8 @@
 mod conversion;
+mod package;
+mod package_publication;
+#[cfg(test)]
+mod package_tests;
 mod publication;
 #[cfg(test)]
 mod tests;
@@ -26,8 +30,11 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
             .expect("authenticated tenant");
         validation::publish(request.get_ref(), &self.limits)?;
         self.check_encoded(request.get_ref())?;
-        let (artifact, summary) =
-            publication::prepare(request.into_inner(), &tenant, &self.limits)?;
+        let mut request = request.into_inner();
+        if let Some(upload) = request.package.take() {
+            return self.publish_package(&tenant, upload).await;
+        }
+        let (artifact, summary) = publication::prepare(request, &tenant, &self.limits)?;
         // Validate the exact prospective response before durable publication.
         let mut budget =
             RequestBudget::for_response::<proto::PublishReleaseResponse>(&self.limits)?;

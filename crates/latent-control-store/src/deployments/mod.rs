@@ -1,10 +1,12 @@
 //! Embedded, tenant-safe deployment catalog and immutable route publication.
 
+mod admission_fence;
 mod compiler;
 mod mutations;
 mod observation;
 mod pagination;
 mod persistence;
+mod recovery_admission;
 mod scoped_routes;
 #[cfg(test)]
 mod tests;
@@ -17,7 +19,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, TryLockError};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use latent_artifacts::ArtifactRepository;
+use latent_artifacts::{AdmissionAuthority, AdmissionRecheck, ArtifactRepository};
 use latent_core::{
     BoxFuture, ContractId, ErrorDetail, Metadata, PlatformError, PlatformErrorCode, RevisionId,
     RouteGeneration,
@@ -99,6 +101,7 @@ pub struct DirectoryDeploymentRepository {
     root: PathBuf,
     config: DirectoryDeploymentRepositoryConfig,
     artifacts: Arc<dyn ArtifactRepository>,
+    admission: Option<Arc<dyn AdmissionAuthority>>,
     current: RwLock<Arc<CompiledCatalog>>,
     generation: AtomicU64,
     writer: Mutex<()>,
@@ -109,6 +112,8 @@ pub struct DirectoryDeploymentRepository {
     fail_before_rename: std::sync::atomic::AtomicBool,
     #[cfg(test)]
     fail_parent_sync: std::sync::atomic::AtomicBool,
+    #[cfg(test)]
+    after_parent_sync: Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 
 /// An owned read view that stays on its original generation after replacement or deletion.
@@ -128,7 +133,17 @@ impl DirectoryDeploymentRepository {
         artifacts: Arc<dyn ArtifactRepository>,
         config: DirectoryDeploymentRepositoryConfig,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, artifacts, config, Source::default()).await
+        Self::open_inner(root, artifacts, config, Source::default(), None).await
+    }
+
+    /// Opens a catalog whose releases must belong to this exact live authority.
+    pub async fn open_enforced(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        authority: Arc<dyn AdmissionAuthority>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(root, artifacts, config, Source::default(), Some(authority)).await
     }
 
     /// Opens with optional bounded work receipts, including recovery and failed initialization.
@@ -140,7 +155,7 @@ impl DirectoryDeploymentRepository {
         config: DirectoryDeploymentRepositoryConfig,
         observer: CatalogWorkObserver,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, artifacts, config, Source::observed(observer)).await
+        Self::open_inner(root, artifacts, config, Source::observed(observer), None).await
     }
 
     async fn open_inner(
@@ -148,6 +163,7 @@ impl DirectoryDeploymentRepository {
         artifacts: Arc<dyn ArtifactRepository>,
         config: DirectoryDeploymentRepositoryConfig,
         observation: Source,
+        admission: Option<Arc<dyn AdmissionAuthority>>,
     ) -> Result<Self, PlatformError> {
         let mut work = observation.begin(WorkOperation::Open);
         let result = async {
@@ -184,7 +200,7 @@ impl DirectoryDeploymentRepository {
                 }
                 None => (BTreeMap::new(), BTreeMap::new(), RouteGeneration(0), 0),
             };
-            let catalog = compile_versioned(
+            let catalog = compiler::compile_versioned_inner(
                 deployments,
                 versions,
                 generation,
@@ -193,6 +209,7 @@ impl DirectoryDeploymentRepository {
                 config,
                 None,
                 &mut work,
+                true,
             )
             .await?;
             if let Some(record) = restored {
@@ -205,10 +222,13 @@ impl DirectoryDeploymentRepository {
                 }
             }
             let (catalog, bytes) = catalog.into_parts();
+            recovery_admission::check(true, || catalog.check_admission_mode(admission.as_ref()))
+                .await?;
             let repository = Self {
                 root,
                 config,
                 artifacts,
+                admission,
                 generation: AtomicU64::new(generation.0),
                 current: RwLock::new(Arc::new(catalog)),
                 writer: Mutex::new(()),
@@ -219,15 +239,38 @@ impl DirectoryDeploymentRepository {
                 fail_before_rename: std::sync::atomic::AtomicBool::new(false),
                 #[cfg(test)]
                 fail_parent_sync: std::sync::atomic::AtomicBool::new(false),
+                #[cfg(test)]
+                after_parent_sync: Mutex::new(None),
             };
             // A durable empty catalog makes subsequent loss distinguishable from first startup.
-            if needs_initial_state {
-                persistence::stage(&repository.root, &bytes, &mut work)?;
-                persistence::replace(&repository.root)?;
+            let catalog = Arc::clone(&repository.read_catalog());
+            let retry = recovery_admission::Retry::new(true);
+            loop {
+                let mut started = false;
+                let result = catalog.with_current_admission(&mut |checker| {
+                    started = true;
+                    if needs_initial_state {
+                        persistence::stage(&repository.root, &bytes, &mut work)?;
+                        if let Some(checker) = checker {
+                            checker.check()?;
+                        }
+                        persistence::replace(&repository.root)?;
+                    }
+                    persistence::sync_root(&repository.root)?;
+                    if let Some(checker) = checker {
+                        checker.check()?;
+                    }
+                    Ok(())
+                });
+                match result {
+                    Err(failure) if !started && retry.pause(&failure).await => {}
+                    result => {
+                        result?;
+                        break;
+                    }
+                }
             }
             drop(bytes);
-            // Also completes initialization interrupted after the first state rename.
-            persistence::sync_root(&repository.root)?;
             Ok(repository)
         }
         .await;
@@ -282,6 +325,38 @@ impl DirectoryDeploymentRepository {
         precondition: Option<&ObjectPrecondition>,
         work: &mut Work,
     ) -> Result<CommitOutcome, PlatformError> {
+        let (next, bytes) = next.into_parts();
+        next.check_admission_mode(self.admission.as_ref())?;
+        let next = Arc::new(next);
+        let mut outcome = None;
+        next.with_current_admission(&mut |checker| {
+            outcome = Some(self.commit_admitted(
+                expected,
+                Arc::clone(&next),
+                &bytes,
+                precondition,
+                work,
+                checker,
+            )?);
+            Ok(())
+        })?;
+        outcome.ok_or_else(|| {
+            error(
+                PlatformErrorCode::Internal,
+                "route-admission-commit-missing",
+            )
+        })
+    }
+
+    fn commit_admitted(
+        &self,
+        expected: RouteGeneration,
+        next: Arc<CompiledCatalog>,
+        bytes: &[u8],
+        precondition: Option<&ObjectPrecondition>,
+        work: &mut Work,
+        checker: Option<&dyn AdmissionRecheck>,
+    ) -> Result<CommitOutcome, PlatformError> {
         // No await, compilation, or artifact access occurs with this writer guard held.
         let _writer = self
             .writer
@@ -297,9 +372,7 @@ impl DirectoryDeploymentRepository {
                 "stale-route-generation",
             ));
         }
-        let (next, bytes) = next.into_parts();
-        let next = Arc::new(next);
-        persistence::stage(&self.root, &bytes, work)?;
+        persistence::stage(&self.root, bytes, work)?;
         #[cfg(test)]
         if self.fail_before_rename.swap(false, Ordering::SeqCst) {
             return Err(error(
@@ -307,10 +380,14 @@ impl DirectoryDeploymentRepository {
                 "injected-before-rename",
             ));
         }
+        if let Some(checker) = checker {
+            checker.check()?;
+        }
         persistence::replace(&self.root)?;
         // Rename is the visibility commit point. Even an uncertain directory fsync must
         // install the same complete state in memory, rather than continuing on the old state.
         let durable = self.sync_parent();
+        let currentness = checker.map_or(Ok(()), AdmissionRecheck::check);
         let generation = next.generation.0;
         let old = {
             let mut current = self
@@ -323,7 +400,7 @@ impl DirectoryDeploymentRepository {
         };
         drop(old); // Potentially large destruction is deliberately outside the reader lock.
         Ok(CommitOutcome {
-            durability: durable,
+            durability: durable.and(currentness),
         })
     }
 
@@ -335,7 +412,12 @@ impl DirectoryDeploymentRepository {
                 "commit-durability-uncertain",
             ));
         }
-        persistence::sync_root(&self.root)
+        let result = persistence::sync_root(&self.root);
+        #[cfg(test)]
+        if let Some(after) = self.after_parent_sync.lock().unwrap().take() {
+            after();
+        }
+        result
     }
 }
 
@@ -479,8 +561,14 @@ impl RouteResolver for DirectoryDeploymentRepository {
     ) -> Result<ResolvedRevision, PlatformError> {
         // Borrow instead of pinning: a normal lookup never becomes the last owner that
         // has to destroy an entire retired catalog on the invocation worker.
-        self.invocation_catalog()?
-            .resolve(target, routing_key, self.config)
+        let (resolved, eligibility) = {
+            let catalog = self.invocation_catalog()?;
+            let resolved = catalog.resolve(target, routing_key, self.config)?;
+            let eligibility = catalog.eligibility_for(&resolved.release).cloned();
+            (resolved, eligibility)
+        };
+        admission_fence::check_selected(eligibility.as_ref(), &target.tenant)?;
+        Ok(resolved)
     }
 
     fn resolve_binding(
@@ -506,7 +594,12 @@ impl RouteResolver for PinnedRouteResolver {
         target: &InvocationTarget,
         routing_key: Option<&str>,
     ) -> Result<ResolvedRevision, PlatformError> {
-        self.catalog.resolve(target, routing_key, self.config)
+        let resolved = self.catalog.resolve(target, routing_key, self.config)?;
+        admission_fence::check_selected(
+            self.catalog.eligibility_for(&resolved.release),
+            &target.tenant,
+        )?;
+        Ok(resolved)
     }
 
     fn resolve_binding(

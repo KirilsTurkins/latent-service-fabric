@@ -147,8 +147,9 @@ returns a bounded resource error rather than adding an internal wait queue.
 The verifier rechecks captured trust and clock state after cryptographic work.
 A consumer must still match the proof to its exact package/evidence and compare
 the trust state atomically at its final admission or publication commit. Durable
-generation and clock floors across restarts belong to the forthcoming admission
-owner. Persisting proof fields does not turn them back into authoritative values.
+generation and clock floors across restarts belong to the implemented
+[admission owner](package-admission.md). Persisting proof fields does not turn
+them back into authoritative values.
 
 Errors expose fixed reasons without key material, claims or remote responses.
 An unknown anchor is `UnapprovedKey`; a signed publisher inconsistent with the
@@ -185,8 +186,9 @@ The existing [disposable Zot test](oci-registry.md#run-the-real-registry-check)
 adds sign/attach/discover/pull/verify in its single bounded container.
 
 [Builder provenance](build-provenance.md) now provides a distinct signed payload
-and explicit builder keys for the maintained echo recipe. SBOM authentication,
-admission and trusted AOT output remain separate Phase 2 work; compiler proofs
+and explicit builder keys for the maintained echo recipe. Authenticated package
+admission combines these proofs with embedded SBOM and current content policy.
+Trusted AOT output remains separate Phase 2 work; compiler proofs
 will require their own key roles. A package-publisher signature does not
 authenticate later detached provenance/SBOM merely because their subjects match,
 and it never authorizes native compiler output.

@@ -59,15 +59,28 @@ impl WasmtimeComponentEngineFactory {
             crate::compiler::CompilerPool::quiesce,
         )
     }
+    /// Constructs an explicitly trusted-local embedding. Enforced nodes use
+    /// `with_enforced_admission` and never select this mode from missing policy.
     pub fn new(config: WasmtimeConfig) -> Result<Self, PlatformError> {
         Self::with_mode(config, DispatchMode::Generic)
     }
 
+    /// Trusted-local embedding with host services; no supply-chain authority.
     pub fn with_host_services(
         config: WasmtimeConfig,
         services: WasmtimeHostServices,
     ) -> Result<Self, PlatformError> {
         Self::with_mode_and_services(config, DispatchMode::Generic, services)
+    }
+
+    /// Enforces one configured admission authority independently of cache stamps.
+    /// Raw artifact preparation is rejected; directory-issued eligibility is required.
+    pub fn with_enforced_admission(
+        config: WasmtimeConfig,
+        services: WasmtimeHostServices,
+        authority: Arc<dyn latent_artifacts::AdmissionAuthority>,
+    ) -> Result<Self, PlatformError> {
+        Self::with_admission(config, DispatchMode::Generic, services, Some(authority))
     }
 
     pub(crate) fn with_mode(
@@ -78,9 +91,18 @@ impl WasmtimeComponentEngineFactory {
     }
 
     pub(crate) fn with_mode_and_services(
+        config: WasmtimeConfig,
+        mode: DispatchMode,
+        services: WasmtimeHostServices,
+    ) -> Result<Self, PlatformError> {
+        Self::with_admission(config, mode, services, None)
+    }
+
+    fn with_admission(
         mut config: WasmtimeConfig,
         mode: DispatchMode,
         services: WasmtimeHostServices,
+        admission: Option<Arc<dyn latent_artifacts::AdmissionAuthority>>,
     ) -> Result<Self, PlatformError> {
         if mode == DispatchMode::Phase0 {
             // Preserve the Phase 0 64 KiB payload plus 16 KiB canonical ABI
@@ -118,6 +140,7 @@ impl WasmtimeComponentEngineFactory {
             epoch_ticker,
             engine.clone(),
             profile.clone(),
+            admission,
         )?);
         Ok(Self {
             engine,

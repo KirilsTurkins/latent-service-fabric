@@ -10,9 +10,16 @@ authentication and admission, activation capability hosts, and the host operatin
 system. The listener is restricted to authenticated local loopback operation.
 Integrity verification of local artifacts does not establish publisher identity.
 
-Registry signatures/provenance, general external capability providers,
-transactional state/effects, and cluster mTLS remain later-phase work. They add
-trust boundaries when implemented. See the
+Phase 2 adds bounded OCI transport, package publisher signatures, independently
+authorized builder provenance, SBOM policy, and enforced catalog admission.
+Enforced mode checks complete package semantics and current tenant/trust policy,
+with durable generation/clock floors and execution-time eligibility checks.
+Historical receipts and locally admitted flags do not grant current authority.
+See [authenticated package admission](docs/reference/package-admission.md).
+
+Trusted external AOT loading remains planned Phase 2 work. General external
+capability providers, transactional state/effects, and cluster mTLS remain later
+phases. They add trust boundaries when implemented. See the
 [security architecture](docs/architecture/security.md) and
 [Phase 1 completion scope](docs/phase-1-completion.md). This remains an
 experimental prerelease without a production security certification.

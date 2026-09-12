@@ -24,9 +24,15 @@ use super::{
 };
 use crate::config::NodeSettings;
 
+mod control;
+#[cfg(test)]
+mod tests;
+
 pub(super) struct Catalogs {
     pub(super) artifacts: Arc<DirectoryArtifactRepository>,
     pub(super) deployments: Arc<DirectoryDeploymentRepository>,
+    pub(super) supply_chain: Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>,
+    control: Option<control::StartupControl>,
 }
 
 impl Catalogs {
@@ -35,6 +41,9 @@ impl Catalogs {
         settings: &NodeSettings,
         observer: latent_control_store::CatalogWorkObserver,
     ) -> Result<Self, PlatformError> {
+        if settings.supply_chain.is_enforced() {
+            return Err(mode_error());
+        }
         let artifacts = Arc::new(DirectoryArtifactRepository::open(
             settings.data_directory.join("releases"),
             settings.artifacts,
@@ -51,25 +60,85 @@ impl Catalogs {
         Ok(Self {
             artifacts,
             deployments,
+            supply_chain: None,
+            control: None,
         })
     }
 
+    #[cfg(test)]
     pub(super) async fn open(settings: &NodeSettings) -> Result<Self, PlatformError> {
-        let artifacts = Arc::new(DirectoryArtifactRepository::open(
-            settings.data_directory.join("releases"),
-            settings.artifacts,
-        )?);
-        let deployments = Arc::new(
-            DirectoryDeploymentRepository::open(
-                settings.data_directory.join("deployments"),
-                artifacts.clone(),
-                settings.deployments,
+        if settings.supply_chain.is_enforced() {
+            return Err(mode_error());
+        }
+        Self::open_inner(settings, None).await
+    }
+
+    pub(super) async fn open_with_control(
+        settings: &NodeSettings,
+        runtime: &tokio::runtime::Handle,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(settings, Some(runtime)).await
+    }
+
+    async fn open_inner(
+        settings: &NodeSettings,
+        runtime: Option<&tokio::runtime::Handle>,
+    ) -> Result<Self, PlatformError> {
+        let supply_chain = settings.supply_chain.open(&settings.data_directory)?;
+        let mut control = supply_chain.as_ref().map(|authority| {
+            control::StartupControl::start(
+                Arc::clone(authority),
+                settings.load_sample_interval,
+                runtime.expect("enforced startup requires its supplied control runtime"),
             )
-            .await?,
-        );
+        });
+        let opened = async {
+            let artifacts = Arc::new(if let Some(authority) = &supply_chain {
+                DirectoryArtifactRepository::open_enforced(
+                    settings.data_directory.join("releases"),
+                    settings.artifacts,
+                    latent_artifacts::AdmissionStorageLimits::default(),
+                    authority.clone(),
+                )?
+            } else {
+                DirectoryArtifactRepository::open(
+                    settings.data_directory.join("releases"),
+                    settings.artifacts,
+                )?
+            });
+            let deployments = Arc::new(if let Some(authority) = &supply_chain {
+                DirectoryDeploymentRepository::open_enforced(
+                    settings.data_directory.join("deployments"),
+                    artifacts.clone(),
+                    settings.deployments,
+                    authority.clone(),
+                )
+                .await?
+            } else {
+                DirectoryDeploymentRepository::open(
+                    settings.data_directory.join("deployments"),
+                    artifacts.clone(),
+                    settings.deployments,
+                )
+                .await?
+            });
+            Ok::<_, PlatformError>((artifacts, deployments))
+        }
+        .await;
+        let (artifacts, deployments) = match opened {
+            Ok(catalogs) => catalogs,
+            Err(failure) => {
+                if let Some(control) = control.take() {
+                    let _ = control.shutdown(settings.shutdown_grace).await;
+                }
+                return Err(failure);
+            }
+        };
         Ok(Self {
             artifacts,
             deployments,
+            supply_chain,
+            control,
         })
     }
 }
@@ -86,7 +155,7 @@ impl StandaloneNode {
                 "standalone durable node requires Linux",
             ));
         }
-        let catalogs = Catalogs::open(&settings).await?;
+        let catalogs = Catalogs::open_with_control(&settings, &control_runtime).await?;
         Box::pin(Self::start_with_catalogs(
             settings,
             catalogs,
@@ -116,12 +185,23 @@ impl StandaloneNode {
 
     pub(super) async fn start_with_catalogs_and_clock(
         settings: NodeSettings,
-        catalogs: Catalogs,
+        mut catalogs: Catalogs,
         control_runtime: tokio::runtime::Handle,
         threads: RuntimeThreads,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
-        let mut node = Self::compose(&settings, &catalogs, clock)?;
+        let mut node = match Self::compose(&settings, &catalogs, clock) {
+            Ok(node) => node,
+            Err(failure) => {
+                if let Some(control) = catalogs.control.take() {
+                    let _ = control.shutdown(settings.shutdown_grace).await;
+                }
+                return Err(failure);
+            }
+        };
+        if let Some(control) = catalogs.control.take() {
+            node.sampler = Some(control.transfer());
+        }
         if let Err(failure) =
             Box::pin(node.start_services(&settings, catalogs, control_runtime, threads)).await
         {
@@ -167,11 +247,14 @@ impl StandaloneNode {
             },
             settings.management.clone(),
         )?;
-        self.sampler = Some(load::LoadSampler::start(
-            Arc::clone(&self.load),
-            settings.load_sample_interval,
-            &control_runtime,
-        ));
+        if self.sampler.is_none() {
+            self.sampler = Some(load::LoadSampler::start(
+                Arc::clone(&self.load),
+                settings.load_sample_interval,
+                &control_runtime,
+                catalogs.supply_chain,
+            ));
+        }
         let transport = transport::Transport::start(
             settings.transport.clone(),
             invocation,
@@ -219,6 +302,11 @@ impl StandaloneNode {
         catalogs: &Catalogs,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
+        if settings.supply_chain.is_enforced() != catalogs.supply_chain.is_some()
+            || (catalogs.supply_chain.is_some() && catalogs.control.is_none())
+        {
+            return Err(mode_error());
+        }
         let sink = Arc::new(StructuredLocalSink::new(settings.local_sink)?);
         let (telemetry, telemetry_runtime) =
             TelemetryRuntime::spawn(settings.telemetry, sink.clone())?;
@@ -226,23 +314,35 @@ impl StandaloneNode {
             telemetry.clone(),
             settings.observer.clone(),
         )?);
-        let factory = WasmtimeComponentEngineFactory::with_host_services(
-            settings.wasmtime.clone(),
-            WasmtimeHostServices {
-                clock: Arc::clone(&clock),
-                log_sink: Some(Arc::new(TelemetryLogSink::new(
-                    observer.clone(),
-                    Arc::clone(&clock),
-                ))),
-            },
-        )?;
+        let host_services = WasmtimeHostServices {
+            clock: Arc::clone(&clock),
+            log_sink: Some(Arc::new(TelemetryLogSink::new(
+                observer.clone(),
+                Arc::clone(&clock),
+            ))),
+        };
+        let factory = if let Some(authority) = &catalogs.supply_chain {
+            WasmtimeComponentEngineFactory::with_enforced_admission(
+                settings.wasmtime.clone(),
+                host_services,
+                authority.clone(),
+            )?
+        } else {
+            WasmtimeComponentEngineFactory::with_host_services(
+                settings.wasmtime.clone(),
+                host_services,
+            )?
+        };
         let backend = Arc::new(factory.create_backend_instance());
         let quotas = LocalQuotaProvider::new(settings.admission.clone())?;
         let scheduler = Arc::new(LocalScheduler::new(
             settings.scheduler.clone(),
             quotas.clone(),
         )?);
-        let load = Arc::new(load::HostLoad::default());
+        let load = catalogs.control.as_ref().map_or_else(
+            || Arc::new(load::HostLoad::default()),
+            control::StartupControl::load,
+        );
         let admission =
             LocalAdmissionController::new(Arc::new(UnpinnedPolicy), quotas.clone(), load.clone());
         let manager = LocalActivationManager::with_services(
@@ -262,6 +362,7 @@ impl StandaloneNode {
         )?;
         Ok(Self {
             transport: None,
+            supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),
             cleanup: Some(ActivationCleanupOwner::start_with_observer(
                 settings.manager.journal.maximum_active,
                 settings.manager.cleanup_grace,
@@ -286,6 +387,13 @@ impl StandaloneNode {
             cleanup_grace: settings.manager.cleanup_grace,
         })
     }
+}
+
+fn mode_error() -> PlatformError {
+    error(
+        PlatformErrorCode::PermissionDenied,
+        "enforced startup requires matching catalogs and control owner",
+    )
 }
 
 // The activation manager supplies the same pinned view used to resolve each

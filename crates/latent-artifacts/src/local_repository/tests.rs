@@ -1,3 +1,5 @@
+#[path = "admission_tests.rs"]
+mod admission;
 #[path = "catalog_query_tests.rs"]
 mod catalog_queries;
 #[path = "integrity_tests.rs"]

@@ -46,6 +46,10 @@ The package schemas describe a separate immutable artifact format:
 | [package-sbom-inputs.schema.json](package-sbom-inputs.schema.json) | Normalized declared/observed package inputs for deterministic SBOM generation. |
 | [package-sbom.schema.json](package-sbom.schema.json) | Closed CycloneDX 1.6 profile embedded before package identity is computed. |
 | [package-sbom-policy.schema.json](package-sbom-policy.schema.json) | Explicit embedded/detached presence and per-role attribution requirements. |
+| [package-admission-upload.schema.json](package-admission-upload.schema.json) | Closed JSON projection of authenticated package publication and exact evidence bytes. |
+| [package-admission-receipt.schema.json](package-admission-receipt.schema.json) | Bounded historical admission identities and policy generations; never an executable grant. |
+| [supply-chain-policy.schema.json](supply-chain-policy.schema.json) | Complete approved publisher/builder/revocation/SBOM snapshots and tenant authorization. |
+| [node-supply-chain.schema.json](node-supply-chain.schema.json) | Standalone `supplyChain` member selecting local compatibility or enforced admission. |
 
 These schemas close structural objects, enforce role/media-type combinations,
 and bound arrays, names and annotations. Package annotations permit at most 32
@@ -67,8 +71,9 @@ canonical policy identity, freshness, revocation and owner limits. The
 authenticates builder assertions and exact source/component/package associations.
 Its byte bounds, timestamp ordering, duplicate material names, cross-field digest
 equality and current authority also require the Rust API. Synthetic schema
-fixtures confer no trust. Final catalog admission remains separate from these
-format and evidence checks.
+fixtures confer no trust. [Final catalog admission](../docs/reference/package-admission.md)
+composes these format/evidence checks under current node-owned authority,
+durable clock/generation floors and guarded publication/execution boundaries.
 
 The [SBOM profile](../docs/component-development/sbom.md) binds exact inventory
 bytes through a reserved package layer and checks identical detached associations.

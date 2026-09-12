@@ -52,7 +52,14 @@ reads never become a tenant-filtered approximation of global resource usage.
 
 ## Publishing a release
 
-`PublishReleaseRequest.artifact` carries all publication inputs:
+`PublishReleaseRequest` requires exactly one upload. The additive `package`
+field performs [authenticated package admission](package-admission.md) in an
+enforced catalog; it forbids the caller `release` descriptor entirely. The
+repository derives publisher and metadata, and the adapter preflights its exact
+response before any durable staging. An enforced repository rejects the legacy
+`artifact` path.
+
+In trusted-local mode, `PublishReleaseRequest.artifact` carries these inputs:
 
 - `capsule_manifest_json`: the validated Phase 1 capsule manifest.
 - `component_bytes`: the component bytes, subject to the configured upload cap.
@@ -75,8 +82,10 @@ are output fields: input reference/publisher must be empty, timestamp zero, and
 `admitted` false. The server assigns an opaque locator, derives service/version/
 world from the manifest, and measures the uploaded size. Clients must never
 interpret the locator as a filesystem path. No persisted creation timestamp is
-available, so the response uses zero. `admitted=true` means catalog publication
-validation succeeded; invocation still performs routing, admission, preparation,
+available, so the response uses zero. `admitted=true` means historical catalog
+publication validation succeeded. It does not distinguish local compatibility
+from authenticated package admission or promise current eligibility after a
+trust change. Invocation still performs routing, current admission, preparation,
 and runtime contract validation.
 
 An identical publication is retryable through the repository's immutable

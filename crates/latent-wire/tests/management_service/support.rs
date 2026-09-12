@@ -9,7 +9,9 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
-use latent_artifacts::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
+use latent_artifacts::{
+    ArtifactRepository, DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig,
+};
 use latent_control_store::{DirectoryDeploymentRepository, DirectoryDeploymentRepositoryConfig};
 use latent_core::SystemActivationClock;
 use latent_wire::invocation::LocalPrincipalPolicy;
@@ -33,6 +35,13 @@ pub(super) struct Harness {
 
 impl Harness {
     pub async fn new(limits: ManagementLimits) -> Self {
+        Self::with_artifacts(limits, None).await
+    }
+
+    pub async fn with_artifacts(
+        limits: ManagementLimits,
+        source: Option<Arc<dyn ArtifactRepository>>,
+    ) -> Self {
         let root = TempRoot::new();
         let artifacts = Arc::new(
             DirectoryArtifactRepository::open(
@@ -52,7 +61,7 @@ impl Harness {
         );
         let inventory = Arc::new(Inventory::new());
         let services = ManagementServices {
-            artifacts: artifacts.clone(),
+            artifacts: source.unwrap_or_else(|| artifacts.clone()),
             deployments: deployments.clone(),
             routes: deployments.clone(),
             inventory: inventory.clone(),

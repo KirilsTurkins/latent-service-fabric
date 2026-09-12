@@ -226,7 +226,15 @@ pub(super) fn source() -> (Directory, Arc<DirectoryArtifactRepository>, Coalesci
         target_triple: "test".to_owned(),
         cpu_feature_set: "test".to_owned(),
     };
-    (directory, repository, CoalescingKey { key, source })
+    (
+        directory,
+        repository,
+        CoalescingKey {
+            key,
+            source,
+            eligibility: None,
+        },
+    )
 }
 
 #[cfg(unix)]

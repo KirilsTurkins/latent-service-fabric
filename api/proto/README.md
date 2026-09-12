@@ -10,6 +10,9 @@ WIT remains authoritative for typed component-to-component calls. The generic in
 adapters. See the [management service reference](../../docs/reference/management-services.md)
 for typed release uploads, tenant authorization, atomic deployment generations,
 pagination, node-operator inventory access, and explicit unsupported methods.
+The additive Phase 2 `PublishReleaseRequest.package` alternative performs
+[authenticated package admission](../../docs/reference/package-admission.md);
+enforced nodes reject the retained trusted-local `artifact` alternative.
 The [standalone Linux node](../../docs/reference/standalone-node.md) serves this
 subset through a bounded loopback listener with configured credentials.
 

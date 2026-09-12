@@ -74,6 +74,7 @@ impl LoadSampler {
         load: Arc<HostLoad>,
         interval: Duration,
         runtime: &tokio::runtime::Handle,
+        supply_chain: Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>,
     ) -> Self {
         load.refresh();
         let (stop, mut stopped) = oneshot::channel();
@@ -84,7 +85,15 @@ impl LoadSampler {
                 tokio::select! {
                     biased;
                     _ = &mut stopped => break,
-                    _ = timer.tick() => load.refresh(),
+                    _ = timer.tick() => {
+                        // The one existing control owner renews a single durable
+                        // lease. Invocations only try the in-memory fence and
+                        // fail closed while busy/uncovered; they never fsync.
+                        if let Some(authority) = &supply_chain {
+                            let _ = authority.renew_clock_lease();
+                        }
+                        load.refresh();
+                    },
                 }
             }
         });

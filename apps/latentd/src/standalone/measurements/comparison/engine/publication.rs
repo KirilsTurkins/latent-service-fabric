@@ -93,6 +93,7 @@ async fn one(node: &mut Node, clock: Clock) -> Result<(Value, [Value; 2])> {
     let published = proto::release_service_client::ReleaseServiceClient::new(node.channel())
         .publish_release(auth(
             proto::PublishReleaseRequest {
+                package: None,
                 release: None,
                 artifact: Some(upload),
             },

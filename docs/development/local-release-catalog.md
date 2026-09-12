@@ -158,7 +158,21 @@ not total decoder or compiler heap usage.
 
 ## Trust boundary
 
-Phase 1 is locally trusted. The catalog validates and canonicalizes capsule manifests and verifies SHA-256 agreement between transferred component bytes, the manifest component digest, and the immutable release digest. It does not claim signature, provenance, SBOM, registry-authentication, OCI, or trusted-AOT verification; those remain later-phase work. Registration validates catalog data without preparing or instantiating the component.
+The Phase 1 compatibility mode is locally trusted. It validates and canonicalizes
+capsule manifests and verifies SHA-256 agreement between component bytes,
+manifest and immutable release identity. It does not authenticate publishers or
+builders. Registration validates catalog data without preparing or instantiating
+the component.
+
+Phase 2 [authenticated package admission](../reference/package-admission.md)
+adds an explicit enforced repository mode, shared live authority, versioned
+completion records binding exact retained package/evidence bytes and a bounded
+historical receipt. Enforced roots reject raw publication and local reopening;
+legacy version-1 records are not automatically upgraded. Fresh full verification
+on recovery and sealed eligibility checks on deployment/preparation/activation
+keep historical publication separate from current execution authority. The
+linked migration procedure preserves local history in its original catalog.
+Trusted AOT and untrusted-filesystem protection are separate boundaries.
 
 ## Execution-resource invariant and acceptance evidence
 

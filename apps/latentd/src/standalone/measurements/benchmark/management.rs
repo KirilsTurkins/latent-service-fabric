@@ -43,6 +43,7 @@ pub(super) async fn sample(
     let request = authenticated(
         &fixture.tenant,
         proto::PublishReleaseRequest {
+            package: None,
             release: None,
             artifact: Some(upload),
         },

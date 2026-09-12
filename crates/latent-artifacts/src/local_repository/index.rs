@@ -28,6 +28,9 @@ pub(super) struct IndexedEntry {
     pub(super) descriptor_bytes: usize,
     pub(super) page_bytes: usize,
     pub(super) preparation_stamp: Option<PreparationMetadataFingerprint>,
+    pub(super) eligibility: Option<crate::ReleaseEligibility>,
+    pub(super) admission_completion: Option<[u8; 32]>,
+    pub(super) admission_binding: Option<std::sync::Arc<crate::AdmissionBinding>>,
 }
 
 #[derive(Debug)]
@@ -54,6 +57,178 @@ impl Default for CatalogIndex {
 }
 
 impl CatalogIndex {
+    pub(super) fn preflight_admission(
+        &self,
+        descriptor: &ArtifactDescriptor,
+        manifest: &CapsuleManifest,
+        binding: &crate::AdmissionBinding,
+        completion: [u8; 32],
+        eligibility_bytes: usize,
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<(), PlatformError> {
+        self.preflight(descriptor, manifest, config)?;
+        let old = self.by_digest.get(&descriptor.release_digest);
+        if old.is_some_and(|entry| {
+            entry
+                .admission_binding
+                .as_ref()
+                .is_some_and(|value| value.as_ref() != binding)
+                || entry
+                    .admission_completion
+                    .is_some_and(|value| value != completion)
+        }) {
+            return Err(corrupt("admission-history-changed"));
+        }
+        let base = if old.is_none() {
+            sizing::measure(descriptor, manifest, config)?.retained
+        } else {
+            0
+        };
+        let history = if old.is_none_or(|entry| entry.admission_binding.is_none()) {
+            history_bytes(binding)
+        } else {
+            0
+        };
+        let previous = old
+            .and_then(|entry| entry.eligibility.as_ref())
+            .map_or(0, crate::ReleaseEligibility::retained_bytes);
+        if self
+            .accounted_bytes
+            .checked_sub(previous)
+            .and_then(|used| used.checked_add(base))
+            .and_then(|used| used.checked_add(history))
+            .and_then(|used| used.checked_add(eligibility_bytes))
+            .is_none_or(|used| used > config.max_index_bytes)
+        {
+            return Err(resource_exhausted("admission-index-byte-limit"));
+        }
+        Ok(())
+    }
+
+    pub(super) fn insert_admitted(
+        &mut self,
+        metadata: VerifiedArtifactMetadata,
+        stamp: Option<PreparationMetadataFingerprint>,
+        binding: crate::AdmissionBinding,
+        eligibility: Option<crate::ReleaseEligibility>,
+        completion: [u8; 32],
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<(), PlatformError> {
+        self.preflight_admission(
+            metadata.descriptor(),
+            metadata.manifest(),
+            &binding,
+            completion,
+            eligibility
+                .as_ref()
+                .map_or(0, crate::ReleaseEligibility::retained_bytes),
+            config,
+        )?;
+        let release = metadata.verified_digest().clone();
+        self.insert_verified(metadata, stamp, config)?;
+        self.install_history(&release, binding, completion, config)?;
+        if let Some(eligibility) = eligibility {
+            self.install_eligibility(&release, eligibility, completion, config)?;
+        }
+        Ok(())
+    }
+
+    pub(super) fn install_history(
+        &mut self,
+        release: &ReleaseDigest,
+        binding: crate::AdmissionBinding,
+        completion: [u8; 32],
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<(), PlatformError> {
+        let entry = self
+            .by_digest
+            .get(release)
+            .ok_or_else(|| corrupt("admission-index-entry-missing"))?;
+        if entry
+            .admission_completion
+            .is_some_and(|old| old != completion)
+        {
+            return Err(corrupt("admission-history-changed"));
+        }
+        let old = entry.admission_binding.as_ref();
+        if old.is_some_and(|old| old.as_ref() != &binding) {
+            return Err(corrupt("admission-history-changed"));
+        }
+        if old.is_some() {
+            return Ok(());
+        }
+        if old.is_none() {
+            let charge = history_bytes(&binding);
+            if self
+                .accounted_bytes
+                .checked_add(charge)
+                .is_none_or(|used| used > config.max_index_bytes)
+            {
+                return Err(resource_exhausted("admission-history-byte-limit"));
+            }
+            self.accounted_bytes += charge;
+        }
+        let entry = self
+            .by_digest
+            .get_mut(release)
+            .ok_or_else(|| corrupt("admission-index-entry-missing"))?;
+        entry.admission_binding = Some(std::sync::Arc::new(binding));
+        entry.admission_completion = Some(completion);
+        Ok(())
+    }
+    pub(super) fn eligibility_capacity(
+        &self,
+        release: &ReleaseDigest,
+        bytes: usize,
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<(), PlatformError> {
+        let old = self
+            .by_digest
+            .get(release)
+            .and_then(|entry| entry.eligibility.as_ref())
+            .map_or(0, crate::ReleaseEligibility::retained_bytes);
+        if self
+            .accounted_bytes
+            .checked_sub(old)
+            .and_then(|used| used.checked_add(bytes))
+            .is_none_or(|used| used > config.max_index_bytes)
+        {
+            return Err(resource_exhausted("admission-index-byte-limit"));
+        }
+        Ok(())
+    }
+
+    pub(super) fn install_eligibility(
+        &mut self,
+        release: &ReleaseDigest,
+        eligibility: crate::ReleaseEligibility,
+        completion: [u8; 32],
+        config: DirectoryArtifactRepositoryConfig,
+    ) -> Result<(), PlatformError> {
+        self.eligibility_capacity(release, eligibility.retained_bytes(), config)?;
+        let entry = self
+            .by_digest
+            .get_mut(release)
+            .ok_or_else(|| corrupt("admission-index-entry-missing"))?;
+        if entry
+            .admission_completion
+            .is_some_and(|old| old != completion)
+            || entry
+                .admission_binding
+                .as_ref()
+                .is_some_and(|old| old.as_ref() != eligibility.binding())
+        {
+            return Err(corrupt("admission-index-association-changed"));
+        }
+        let old = entry
+            .eligibility
+            .as_ref()
+            .map_or(0, crate::ReleaseEligibility::retained_bytes);
+        self.accounted_bytes = self.accounted_bytes - old + eligibility.retained_bytes();
+        entry.eligibility = Some(eligibility);
+        entry.admission_completion = Some(completion);
+        Ok(())
+    }
     pub(super) fn rows(&self, tenant: &TenantId, service: Option<&ServiceId>) -> Option<&Rows> {
         match service {
             Some(service) => self.by_service.get(tenant)?.get(service),
@@ -210,11 +385,23 @@ impl CatalogIndex {
                 descriptor_bytes: cost.descriptor,
                 page_bytes: cost.page,
                 preparation_stamp: stamp,
+                eligibility: None,
+                admission_completion: None,
+                admission_binding: None,
             }),
         );
         self.accounted_bytes += cost.retained;
         self.generation += 1;
     }
+}
+
+pub(super) fn history_bytes(binding: &crate::AdmissionBinding) -> usize {
+    std::mem::size_of::<crate::AdmissionBinding>()
+        .saturating_add(64)
+        .saturating_add(binding.tenant.0.capacity())
+        .saturating_add(binding.package.as_str().len())
+        .saturating_add(binding.release.0.capacity())
+        .saturating_add(binding.receipt.capacity())
 }
 
 // Box round-trips give exact observable capacity, including caller spare capacity.

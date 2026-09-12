@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 
+mod admission;
 mod content_hash;
 mod local_repository;
 pub mod package;
@@ -20,6 +21,10 @@ pub use preparation_fingerprint::{
 pub use verification_statistics::ArtifactVerificationSnapshot;
 pub use verified_metadata::VerifiedArtifactMetadata;
 
+pub use admission::{
+    AdmissionAuthority, AdmissionBinding, AdmissionEvidence, AdmissionGrant, AdmissionRecheck,
+    AdmissionStorageLimits, PackageAdmissionUpload, ReleaseEligibility, VerifiedAdmission,
+};
 pub use local_repository::contract_metadata::{
     decode_contract_metadata, encode_contract_metadata, ContractMetadataLimits,
 };
@@ -141,6 +146,26 @@ pub struct DerivedArtifactDescriptor {
 }
 
 pub trait ArtifactRepository: Send + Sync {
+    /// Authenticated package publication. The rejection-only callback validates
+    /// the exact prospective response before staging or mutation, without locks.
+    fn admit_package<'a>(
+        &'a self,
+        _tenant: &'a TenantId,
+        _upload: PackageAdmissionUpload,
+        _preflight: &'a mut (dyn FnMut(&ArtifactCatalogEntry) -> Result<(), PlatformError> + Send),
+    ) -> BoxFuture<'a, Result<ArtifactCatalogEntry, PlatformError>> {
+        Box::pin(async { Err(unsupported_catalog_query()) })
+    }
+
+    /// Live admission currentness, independent of optional integrity stamps.
+    /// None denotes an explicitly local/generic source, never signed authority.
+    fn release_eligibility(
+        &self,
+        _release: &ReleaseDigest,
+    ) -> Result<Option<ReleaseEligibility>, PlatformError> {
+        Ok(None)
+    }
+
     /// Transfers preparation reads and identity lookup to one sealed, owned
     /// source. Workers may retain it after the requesting future is dropped.
     /// Selecting this source also selects its fetch for stamp-ineligible paths;

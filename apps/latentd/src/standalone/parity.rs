@@ -30,7 +30,7 @@ fn adapter_and_rpc_have_equivalent_selected_outcomes() {
     let evidence = invocation.block_on(async {
         tokio::time::timeout(
             Duration::from_secs(45),
-            run(
+            Box::pin(run(
                 &config,
                 public_config,
                 control.handle().clone(),
@@ -38,7 +38,7 @@ fn adapter_and_rpc_have_equivalent_selected_outcomes() {
                     invocation: observed.invocation.clone(),
                     control: observed.control.clone(),
                 },
-            ),
+            )),
         )
         .await
         .expect("45-second adapter parity deadline")

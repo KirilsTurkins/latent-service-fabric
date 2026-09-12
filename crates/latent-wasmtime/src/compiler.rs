@@ -31,6 +31,7 @@ pub(crate) use wait::PreparationWait;
 pub(crate) struct CoalescingKey {
     pub(crate) key: PreparationKey,
     pub(crate) source: ArtifactPreparationIdentity,
+    pub(crate) eligibility: Option<latent_artifacts::ReleaseEligibility>,
 }
 
 pub(crate) struct Admission {

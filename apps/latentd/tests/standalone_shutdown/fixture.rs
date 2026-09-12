@@ -40,6 +40,7 @@ pub fn upload() -> proto::PublishReleaseRequest {
         .decode_capsule(&manifest)
         .unwrap();
     proto::PublishReleaseRequest {
+        package: None,
         release: None,
         artifact: Some(proto::CapsuleArtifactUpload {
             capsule_manifest_json: manifest,

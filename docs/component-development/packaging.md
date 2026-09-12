@@ -8,7 +8,8 @@ bytes without compiling a component or invoking a guest. The separate
 [publisher signing library](../reference/publisher-trust.md) signs and verifies
 exact package identities. The [build observer and builder verifier](../reference/build-provenance.md)
 authenticate maintained echo compilation claims through separate builder policy.
-Catalog admission remains a subsequent Phase 2 ticket.
+[Authenticated catalog admission](../reference/package-admission.md) composes
+these independent checks with SBOM and tenant policy under one live node authority.
 
 The [SBOM workflow](sbom.md) adds a bounded CycloneDX inventory before package
 assembly and checks exact embedded/detached associations plus content policy.

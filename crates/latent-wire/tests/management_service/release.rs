@@ -1,5 +1,7 @@
 #[path = "release/authorization.rs"]
 mod authorization;
+#[path = "release/package.rs"]
+mod package;
 #[path = "release/pagination.rs"]
 mod pagination;
 
@@ -12,6 +14,7 @@ use super::support::{artifact, deployment, request, Harness};
 
 fn upload(artifact: &CapsuleArtifact) -> proto::PublishReleaseRequest {
     proto::PublishReleaseRequest {
+        package: None,
         release: None,
         artifact: Some(proto::CapsuleArtifactUpload {
             capsule_manifest_json: JsonManifestCodec::default()

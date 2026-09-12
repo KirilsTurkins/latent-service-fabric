@@ -6,6 +6,7 @@ mod input;
 mod model;
 mod policy;
 mod runtime;
+mod supply_chain;
 #[cfg(test)]
 mod tests;
 mod validation;
@@ -18,8 +19,9 @@ use latent_core::{PlatformError, PlatformErrorCode};
 pub use model::{
     CacheConfig, CatalogConfig, CellConfig, CredentialConfig, CredentialRole, EngineAllocator,
     EngineConfig, EngineOptimization, ExecutionConfig, LimitConfig, NodeConfig, RetentionConfig,
-    TelemetryConfig, WorkerConfig,
+    SupplyChainConfig, TelemetryConfig, WorkerConfig,
 };
+pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
 /// Configure the input before derivation; callers cannot alter the validated
@@ -32,6 +34,7 @@ pub struct NodeSettings {
     pub(crate) control_workers: usize,
     pub(crate) artifacts: latent_artifacts::DirectoryArtifactRepositoryConfig,
     pub(crate) deployments: latent_control_store::DirectoryDeploymentRepositoryConfig,
+    pub(crate) supply_chain: SupplyChainSettings,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) scheduler: latent_scheduler::LocalSchedulerConfig,
     pub(crate) wasmtime: latent_wasmtime::WasmtimeConfig,
