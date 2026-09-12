@@ -67,7 +67,11 @@ fn work() -> io::Result<i32> {
     if maximum_output == 17 {
         readiness[0] ^= 1;
     }
-    output.write_all(&readiness)?;
+    if maximum_output == 19 {
+        fragmented(&mut output, &readiness)?;
+    } else {
+        output.write_all(&readiness)?;
+    }
     output.flush()?;
     let mut length = [0; 8];
     input.read_exact(&mut length)?;
@@ -85,6 +89,10 @@ fn work() -> io::Result<i32> {
         return Err(invalid());
     }
     match command.mode.as_str() {
+        "fragmented-success" => {
+            fragmented(&mut output, &17_u64.to_le_bytes())?;
+            fragmented(&mut output, b"fragmented-native")?;
+        }
         "oversized" => output.write_all(&u64::MAX.to_le_bytes())?,
         "zero" => output.write_all(&0_u64.to_le_bytes())?,
         "truncated-header" => output.write_all(&[1, 0, 0])?,
@@ -150,4 +158,16 @@ fn mark(path: &Path) -> io::Result<()> {
 
 fn invalid() -> io::Error {
     io::Error::other("invalid supervisor fixture protocol")
+}
+
+fn fragmented(output: &mut impl Write, bytes: &[u8]) -> io::Result<()> {
+    if bytes.len() > 128 {
+        return Err(invalid());
+    }
+    for byte in bytes {
+        output.write_all(std::slice::from_ref(byte))?;
+        output.flush()?;
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    Ok(())
 }

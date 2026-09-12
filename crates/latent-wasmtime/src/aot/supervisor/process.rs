@@ -1,6 +1,6 @@
 //! Fixed-pipe protocol; no per-pipe helper threads or unbounded diagnostics.
 
-use super::super::{error, exhausted, mismatch};
+use super::super::{error, exhausted};
 use super::AotCompilationJob;
 use latent_core::{PlatformError, PlatformErrorCode};
 use sha2::{Digest, Sha256};
@@ -45,9 +45,15 @@ pub(super) fn hash_executable(
         digest.update(&bytes[..read]);
     }
     if total != metadata.len() {
-        return Err(mismatch());
+        return Err(rejected("aot-executable-length-changed"));
     }
     Ok(digest.finalize().into())
+}
+
+// Fixed stage names distinguish independent trust checks without exposing paths,
+// source bytes, digests, child diagnostics, or authentication material.
+fn rejected(reason: &'static str) -> PlatformError {
+    error(PlatformErrorCode::PermissionDenied, reason)
 }
 
 pub(super) fn compile(job: &AotCompilationJob, input: &[u8]) -> Result<Vec<u8>, PlatformError> {
@@ -66,7 +72,7 @@ pub(super) fn compile(job: &AotCompilationJob, input: &[u8]) -> Result<Vec<u8>, 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod linux {
     use super::{
-        exhausted, failed, hash_executable, mismatch, AotCompilationJob, PlatformError, Read,
+        exhausted, failed, hash_executable, rejected, AotCompilationJob, PlatformError, Read,
     };
     use crate::aot::protocol;
     use rustix::fs::{fcntl_getfl, fcntl_setfl, OFlags};
@@ -213,7 +219,7 @@ mod linux {
         // closing a path replacement between configuration hashing and spawn.
         let running = std::path::PathBuf::from(format!("/proc/{}/exe", owner.child.id()));
         if hash_executable(&running, || job.check_control())? != state.compiler_digest {
-            return Err(mismatch());
+            return Err(rejected("aot-running-executable-mismatch"));
         }
         let bootstrap_length = u32::try_from(state.bootstrap.len()).map_err(|_| exhausted())?;
         pipes.write(&bootstrap_length.to_le_bytes(), job)?;
@@ -221,7 +227,7 @@ mod linux {
         let mut ready = [0; protocol::READY_BYTES];
         pipes.read(&mut ready, job)?;
         if ready != protocol::readiness(state.profile.engine_compatibility()) {
-            return Err(mismatch());
+            return Err(rejected("aot-worker-readiness-mismatch"));
         }
         // Only the approved fully isolated child now receives untrusted Wasm.
         pipes.write(&(input.len() as u64).to_le_bytes(), job)?;
@@ -249,7 +255,7 @@ mod linux {
             let mut extra = [0; 1];
             match pipes.output.read(&mut extra) {
                 Ok(0) => eof = true,
-                Ok(_) => return Err(mismatch()),
+                Ok(_) => return Err(rejected("aot-worker-trailing-output")),
                 Err(error)
                     if matches!(
                         error.kind(),

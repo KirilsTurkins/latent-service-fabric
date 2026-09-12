@@ -313,7 +313,10 @@ impl AotCompilationJob {
             || artifact.descriptor.size_bytes != artifact.component_bytes.len() as u64
             || artifact.component_bytes.len() != self.limits.maximum_component_bytes
         {
-            return Err(mismatch());
+            return Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "aot-source-binding-mismatch",
+            ));
         }
         let metadata = preparation_metadata_fingerprint(
             &artifact.descriptor,

@@ -20,11 +20,44 @@ pub fn run() {
     cancel_running_prefix(&compiler);
     compiler.shutdown(Duration::from_secs(1)).unwrap();
     malformed_readiness();
+    fragmented_success();
     running_deadline();
     last_owner_drop();
     active_shutdown();
     super::inherited::run();
-    eprintln!("isolated AOT supervisor: 13 bounded protocol/ownership scenarios passed");
+    eprintln!("isolated AOT supervisor: 14 bounded protocol/ownership scenarios passed");
+}
+
+fn fragmented_success() {
+    let mut limits = support::limits();
+    limits.compiler.maximum_output_bytes = 19;
+    let compiler = compiler(limits);
+    let directory = Directory::new();
+    let marker = directory.path().join("worker.pid");
+    let fixture = fixture("fragmented-success", &marker);
+    let output = compiler
+        .reserve(fixture.source(), fixture.release())
+        .unwrap()
+        .run()
+        .unwrap();
+    assert_eq!(output.output(), b"fragmented-native");
+    assert_eq!(
+        output.compatibility().component().as_str(),
+        fixture.release().0
+    );
+    support::authority(limits)
+        .verify(&output, output.compatibility())
+        .unwrap();
+    assert_reaped(marker_pid(&marker).expect("successful worker wrote its completion marker"));
+    let retained = compiler.snapshot();
+    assert_eq!(retained.jobs, 0);
+    assert_eq!(retained.input_bytes, 0);
+    assert_eq!(retained.document_bytes, 0);
+    assert_eq!(retained.native_bytes, 19);
+    assert_eq!(retained.output_owners, 1);
+    assert!(retained.output_metadata_bytes > 0);
+    drop(output);
+    assert_eq!(compiler.snapshot(), AotResourceSnapshot::default());
 }
 
 fn protocol_failures(compiler: &IsolatedAotCompiler) {
@@ -46,6 +79,9 @@ fn protocol_failures(compiler: &IsolatedAotCompiler) {
             .run()
             .unwrap_err();
         assert_eq!(failure.code, code, "{mode}");
+        if mode == "trailing" {
+            assert_eq!(failure.message, "aot-worker-trailing-output");
+        }
         assert_eq!(
             compiler.snapshot(),
             AotResourceSnapshot::default(),
@@ -89,15 +125,13 @@ fn malformed_readiness() {
     let directory = Directory::new();
     let marker = directory.path().join("worker.pid");
     let fixture = fixture("hang", &marker);
-    assert_eq!(
-        compiler
-            .reserve(fixture.source(), fixture.release())
-            .unwrap()
-            .run()
-            .unwrap_err()
-            .code,
-        PlatformErrorCode::PermissionDenied
-    );
+    let failure = compiler
+        .reserve(fixture.source(), fixture.release())
+        .unwrap()
+        .run()
+        .unwrap_err();
+    assert_eq!(failure.code, PlatformErrorCode::PermissionDenied);
+    assert_eq!(failure.message, "aot-worker-readiness-mismatch");
     assert!(
         !marker.exists(),
         "malformed readiness must not receive component input"
