@@ -37,6 +37,8 @@ A pull request should include:
 - conformance tests or a test specification,
 - generated artifacts only when generation is reproducible.
 
+Run `make help` for a concise list of root contributor commands before selecting validation work.
+
 Run checks appropriate to the change using [VALIDATION.md](VALIDATION.md).
 Normal validation excludes expensive ignored acceptance tests; request
 100,000-release catalog scaling, native profiling, and long resource soaks only
