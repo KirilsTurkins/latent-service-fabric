@@ -5,6 +5,7 @@
 
 #![forbid(unsafe_code)]
 
+mod admission;
 mod builder_policy;
 mod builder_verify;
 mod crypto;
@@ -20,6 +21,7 @@ mod signer;
 mod subject;
 mod verify;
 
+pub use admission::{verify_current_supply_chain_evidence, VerifiedSupplyChainEvidence};
 pub use builder_policy::{
     BuilderKeyConfig, BuilderPolicy, BuilderPolicyConfig, BuilderRequirement,
     BuilderRevocationSnapshot, BuilderRevocationSnapshotConfig, BuilderTrust, BuilderTrustStateId,
