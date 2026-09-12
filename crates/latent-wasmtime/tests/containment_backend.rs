@@ -712,10 +712,7 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
     expected.extend(
         (0..MIXED_MEMORY_HEALTHY_COUNT).map(|index| format!("mixed-memory-healthy-{index}")),
     );
-    let rendezvous = Arc::new(MixedMemoryRendezvous::new(
-        expected,
-        Duration::from_secs(2),
-    ));
+    let rendezvous = Arc::new(MixedMemoryRendezvous::new(expected, Duration::from_secs(2)));
     let sink: Arc<dyn StructuredLogSink> = rendezvous.clone();
     let (runner, pool, backend, _) = runner_fixture_with_log_sink(5, sink).await;
 
@@ -925,12 +922,18 @@ async fn assert_mixed_healthy(
         }
         let logs = backend.log_sink().snapshot_for(&activation_id);
         if suite == "memory" {
-            assert_eq!(logs.len(), 2, "memory healthy activation has rendezvous and invocation logs");
+            assert_eq!(
+                logs.len(),
+                2,
+                "memory healthy activation has rendezvous and invocation logs"
+            );
             assert_eq!(logs[0].message, MIXED_MEMORY_READY_LOG_MESSAGE);
         } else {
             assert_eq!(logs.len(), 1, "healthy activation has one isolated log");
         }
-        let invocation_log = logs.last().expect("healthy activation retains invocation log");
+        let invocation_log = logs
+            .last()
+            .expect("healthy activation retains invocation log");
         assert_eq!(
             invocation_log.fields.get("activation_id"),
             Some(&activation_id.0),
@@ -958,9 +961,7 @@ async fn wait_for_mixed_memory_rendezvous(
     })
 }
 
-async fn describe_activation_task(
-    mut task: tokio::task::JoinHandle<ActivationOutcome>,
-) -> String {
+async fn describe_activation_task(mut task: tokio::task::JoinHandle<ActivationOutcome>) -> String {
     match tokio::time::timeout(Duration::from_secs(5), &mut task).await {
         Ok(Ok(outcome)) => format!("{outcome:?}"),
         Ok(Err(error)) => format!("join-error:{error:?}"),
