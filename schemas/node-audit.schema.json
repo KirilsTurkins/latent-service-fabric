@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/node-audit.schema.json",
+  "title": "Standalone durable audit settings",
+  "description": "Optional node audit member. Omission is unaudited; an existing audit root prevents silent downgrade. Supported by the Linux durable node.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode"],
+  "properties": {
+    "mode": { "const": "durable" },
+    "records": { "type": "integer", "minimum": 2, "maximum": 16384, "default": 4096 },
+    "diskBytes": { "type": "integer", "minimum": 32768, "maximum": 268435456, "default": 67108864 },
+    "queuedOperations": { "type": "integer", "minimum": 1, "maximum": 256, "default": 64 },
+    "queryOwners": { "type": "integer", "minimum": 1, "maximum": 16, "default": 4 }
+  }
+}

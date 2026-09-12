@@ -12,6 +12,7 @@ pub(crate) const CLEAN_WORKER_ARGUMENT: &str = "--worker-clean-v1";
 pub(crate) const MAX_BOOTSTRAP_BYTES: usize = profile::MAX_BOOTSTRAP_BYTES;
 pub(crate) const MAX_INPUT_BYTES: usize = 64 * 1024 * 1024;
 pub(crate) const MAX_OUTPUT_BYTES: usize = 512 * 1024 * 1024;
+pub(crate) const LAUNCH_MAGIC: &[u8; 8] = b"LSFAOTL1";
 pub(crate) const READY_BYTES: usize = 8 + 32 + 2 + sandbox::PROFILE_ID.len();
 const READY_MAGIC: &[u8; 8] = b"LSFAOTR1";
 

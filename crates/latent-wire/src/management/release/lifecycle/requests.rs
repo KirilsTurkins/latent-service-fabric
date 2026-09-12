@@ -1,11 +1,11 @@
 use super::super::super::{
-    errors::platform_status, identifier, ManagementOperation, RequestBudget,
+    control_audit, errors::platform_status, identifier, ManagementOperation, RequestBudget,
 };
 use super::super::{package, validation};
 use super::{conversion, proto, response, ManagementLimits, ManagementServiceAdapter, Preflight};
 use latent_artifacts::{
-    LifecycleScope, ReleaseActor, ReleaseActorKind, ReleaseLifecycleAction, ReleaseMutationContext,
-    ReleaseOperationLookup, ReleaseOperationPrecondition,
+    LifecycleScope, ReleaseActor, ReleaseActorKind, ReleaseAuditGuard, ReleaseLifecycleAction,
+    ReleaseMutationContext, ReleaseOperationLookup, ReleaseOperationPrecondition,
 };
 use latent_core::{InvocationPrincipal, PackageDigest, ReleaseDigest, TenantId};
 use tonic::{Request, Response, Status};
@@ -161,17 +161,33 @@ impl ManagementServiceAdapter {
             .clone();
         let release = ReleaseDigest(request.digest);
         let mut preflight = Preflight::new(&tenant, &self.limits, &context, Some(&release), action);
+        preflight.audit_enabled = self.services.audit.is_some();
+        let mut audit = ReleaseAuditGuard::new(self.services.audit.as_ref(), action);
         preflight.reason = Some(reason);
         let result = {
-            let mut callback =
-                |preview: latent_artifacts::ReleaseOperationPreview<'_>| preflight.preview(preview);
+            let mut callback = |preview: latent_artifacts::ReleaseOperationPreview<'_>| {
+                preflight.preview(preview)?;
+                audit.preview(preview)
+            };
             self.services
                 .artifacts
                 .change_release_lifecycle(context, &release, action, reason, &mut callback)
                 .await
         };
+        let ack = audit
+            .finish(self.services.artifacts.as_ref(), result.as_ref().ok())
+            .await;
         self.response(proto::ChangeReleaseLifecycleResponse {
-            operation: Some(preflight.finish(result)?),
+            operation: Some(
+                preflight
+                    .finish(result)
+                    .map_err(|error| control_audit::status(error, ack))?,
+            ),
+            audit_ack: self
+                .services
+                .audit
+                .as_ref()
+                .map(|_| control_audit::wire(ack)),
         })
     }
 
@@ -225,16 +241,35 @@ impl ManagementServiceAdapter {
             ReleaseLifecycleAction::RenewEvidence,
         );
         preflight.package = Some(package.clone());
+        preflight.audit_enabled = self.services.audit.is_some();
+        let mut audit = ReleaseAuditGuard::new(
+            self.services.audit.as_ref(),
+            ReleaseLifecycleAction::RenewEvidence,
+        );
         let result = {
-            let mut callback =
-                |preview: latent_artifacts::ReleaseOperationPreview<'_>| preflight.preview(preview);
+            let mut callback = |preview: latent_artifacts::ReleaseOperationPreview<'_>| {
+                preflight.preview(preview)?;
+                audit.preview(preview)
+            };
             self.services
                 .artifacts
                 .renew_release_evidence(context, &release, &package, evidence, &mut callback)
                 .await
         };
+        let ack = audit
+            .finish(self.services.artifacts.as_ref(), result.as_ref().ok())
+            .await;
         self.response(proto::RenewReleaseEvidenceResponse {
-            operation: Some(preflight.finish(result)?),
+            operation: Some(
+                preflight
+                    .finish(result)
+                    .map_err(|error| control_audit::status(error, ack))?,
+            ),
+            audit_ack: self
+                .services
+                .audit
+                .as_ref()
+                .map(|_| control_audit::wire(ack)),
         })
     }
 }

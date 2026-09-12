@@ -34,3 +34,6 @@ mod transport_cleanup;
 mod transport_cleanup_failures;
 #[path = "activation_lifecycle/transport_cleanup_pool.rs"]
 mod transport_cleanup_pool;
+
+#[path = "activation_lifecycle/canary.rs"]
+mod canary;

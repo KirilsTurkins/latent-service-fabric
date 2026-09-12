@@ -138,6 +138,7 @@ fn rejected_operation_preflight_binds_actor_and_checks_error_budget() {
         error: &'a latent_core::PlatformError,
     ) -> latent_artifacts::ReleaseOperationPreview<'a> {
         latent_artifacts::ReleaseOperationPreview {
+            replay: false,
             receipt: value,
             release: None,
             failure: Some(error),

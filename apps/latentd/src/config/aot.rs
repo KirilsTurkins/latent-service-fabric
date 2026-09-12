@@ -51,6 +51,7 @@ pub(super) fn derive(
     let authority =
         TrustedAotCompilerAuthority::new("lsf-isolated-aot-v1", secret, process.compiler)?;
     Ok(NativeAotSettings {
+        audit: None,
         executable: config.compiler_executable.as_path().to_path_buf(),
         approved_digest: digest,
         authority,
