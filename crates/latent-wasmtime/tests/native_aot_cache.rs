@@ -10,6 +10,8 @@ mod component;
 #[allow(dead_code)]
 mod runtime;
 
+#[path = "native_aot_cache/audit.rs"]
+mod audit;
 #[path = "native_aot_cache/ownership.rs"]
 mod ownership;
 #[path = "native_aot_cache/reopen.rs"]

@@ -7,7 +7,7 @@ sockets, threads, guest heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-> Phase 1 and its performance extension are complete: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [functional completion review](docs/phase-1-completion.md) and [extension report](docs/phase-1-extension-completion.md) cover scale, soak, optimization, and actual Docker/Kubernetes comparisons. These are scoped engineering results, not production SLOs. Phase 2 delivery is underway: [deterministic packaging](docs/component-development/packaging.md), [OCI distribution](docs/reference/oci-registry.md), [publisher trust](docs/reference/publisher-trust.md), [build provenance](docs/reference/build-provenance.md), and [package SBOMs](docs/component-development/sbom.md) have reusable implementations; trusted catalog admission and rollout integration remain in progress.
+> Phase 1 and its performance extension are complete: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [functional completion review](docs/phase-1-completion.md) and [extension report](docs/phase-1-extension-completion.md) cover scale, soak, optimization, and actual Docker/Kubernetes comparisons. These are scoped engineering results, not production SLOs. Phase 2 delivery now includes deterministic packaging, OCI distribution, publisher/provenance/SBOM verification, trusted admission and release lifecycle management, isolated AOT compilation, a protected native cache, durable audit, and bounded canary observations. Rollout coordination and promotion/rollback integration remain in progress.
 
 ## Core invariant
 
@@ -96,6 +96,21 @@ services had lower warm request latency; LSF used less application memory at
 8 and 32 services. The reports retain cold-start boundaries, resource-limit
 differences, and the Docker Desktop/WSL2 environment. They do not establish
 production cluster capacity or a universal millisecond request budget.
+
+## Phase 2 features delivered so far
+
+| Feature | Implemented surface and documentation |
+| --- | --- |
+| Package and distribution | Deterministic content identities and bounded authenticated registry transfer; [packaging](docs/component-development/packaging.md), [OCI distribution](docs/reference/oci-registry.md) |
+| Supply-chain verification | Publisher trust, build provenance, and package SBOM verification; [publisher trust](docs/reference/publisher-trust.md), [provenance](docs/reference/build-provenance.md), [SBOMs](docs/component-development/sbom.md) |
+| Trusted admission and lifecycle | Verified catalog admission, current eligibility, durable idempotent publication/revocation/retirement/evidence renewal; [admission](docs/reference/package-admission.md), [release lifecycle](docs/reference/release-lifecycle.md) |
+| Isolated compilation and native cache | Bounded compiler children and authenticated persistent native images with private keys and explicit cache ownership; [standalone configuration](docs/reference/standalone-node.md) |
+| Durable administrative audit | Bounded private journal, explicit mutation acknowledgements, tenant/operator query authorization, restart coverage and retained response ownership; [audit](docs/phase-2-audit.md) |
+| Canary observations | Attributable bounded outcome windows with explicit missing samples and incomplete coverage, integrated into the existing activation owner; [canary observations](docs/phase-2-canary-observation.md) |
+
+Canary observations are inputs for the upcoming rollout coordinator; they do not
+independently authorize promotion. The [roadmap](docs/roadmap.md) tracks the
+remaining Phase 2 delivery and completion gate.
 
 ## Historical Phase 0 result
 

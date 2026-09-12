@@ -29,7 +29,7 @@ use latent_core::{
 use latent_executor::ExecutionBackend;
 use latent_routing::{ActivationCatalogSource, ResolvedRevision};
 use latent_scheduler::ActivationScheduler;
-use latent_telemetry::ActivationObserver;
+use latent_telemetry::{ActivationObserver, CanaryCapture};
 
 use crate::activation_runner::failure_for_platform_error;
 use crate::{
@@ -79,6 +79,8 @@ pub struct LocalActivationServices {
     pub clock: Arc<dyn ActivationClock>,
     pub ids: Arc<dyn ActivationIdSource>,
     pub observer: Option<Arc<dyn ActivationObserver>>,
+    /// Optional bounded canary capture; independent of structured telemetry export.
+    pub canary: Option<CanaryCapture>,
 }
 
 impl Default for LocalActivationServices {
@@ -87,6 +89,7 @@ impl Default for LocalActivationServices {
             clock: Arc::new(SystemActivationClock),
             ids: Arc::new(SystemActivationIdSource::default()),
             observer: None,
+            canary: None,
         }
     }
 }
@@ -185,7 +188,7 @@ impl LocalActivationManager {
         let cancellations =
             ActivationCancellationRegistry::new(config.maximum_cancellation_reason_bytes)?;
         let observation_counters = Arc::new(Counters::default());
-        let observations = if let Some(observer) = services.observer {
+        let observations = if services.observer.is_some() || services.canary.is_some() {
             let owner = NEXT_OBSERVATION_OWNER
                 .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
                     value.checked_add(1)
@@ -197,7 +200,8 @@ impl LocalActivationManager {
                     )
                 })?;
             Some(ObservationServices {
-                observer,
+                observer: services.observer,
+                canary: services.canary,
                 counters: Arc::clone(&observation_counters),
                 clock: Arc::clone(&services.clock),
                 owner,

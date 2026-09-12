@@ -61,6 +61,7 @@ impl DirectoryArtifactRepository {
         };
         // The exact success DTO must fit before staging, receipts or payload I/O.
         preflight(ReleaseOperationPreview {
+            replay: false,
             receipt: candidate.lifecycle.receipt(),
             release: Some(&candidate.summary),
             failure: None,

@@ -260,6 +260,25 @@ for publication versus required positive generations for later mutations.
 outcomes and renewal semantics. Generated Rust struct literals require the
 additive fields; no generated source or new management-language SDK is checked in.
 
+Phase 2 audit #152 adds `AuditService.QueryPhase2Audit` with explicit query scope,
+typed records, bounded pagination and coverage. The existing `QueryAudit` RPC
+keeps its original request/response fields and service signature; its optional
+standalone implementation is a bounded tenant-scoped projection. Node-wide typed
+queries require the existing trusted operator claim. These services extend the
+Phase 1 subset described above; omission of audit configuration preserves the
+unaudited embedding surface.
+
+Optional `audit_ack` fields are additive: `PublishReleaseResponse` field 4,
+`ChangeReleaseLifecycleResponse` and `RenewReleaseEvidenceResponse` field 2,
+and `ApplyDeploymentResponse` field 3. `AuditAck` separates persistence status
+from the authoritative mutation result and preserves presence of its attempt
+sequence. Delete keeps its existing `Empty` response; bounded error/Delete
+acknowledgements use `latent-audit-status` and optional `latent-audit-attempt`
+metadata. Existing field numbers and enum values remain unchanged. The normalized
+descriptor golden includes these additions; old generated clients may ignore
+them, while new Rust response literals must initialize their optional fields.
+See [audit semantics](../phase-2-audit.md) for loss, recovery and response ownership.
+
 Phase 0 gate #25 and the executable build foundation in #2 are complete. This
 work is reconciled with the finalized Phase 0 retained/replaced classification
 and with `development`'s generated Rust, Component Model, and RPC ownership.
