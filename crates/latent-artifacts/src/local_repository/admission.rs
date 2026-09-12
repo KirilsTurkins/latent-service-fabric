@@ -169,6 +169,7 @@ impl DirectoryArtifactRepository {
                 if matches!(
                     failure.code,
                     PlatformErrorCode::PermissionDenied
+                        | PlatformErrorCode::IncompatibleContract
                         | PlatformErrorCode::StateConflict
                         | PlatformErrorCode::Unavailable
                 ) =>

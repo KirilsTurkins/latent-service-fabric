@@ -16,6 +16,12 @@ pub(super) fn manifest(
         return Err(exhausted("manifest-interface-limit"));
     }
     let mut bytes = 1024;
+    value.runtime_requirements.validate()?;
+    add(
+        &mut bytes,
+        value.runtime_requirements.retained_bytes(),
+        limits.max_summary_bytes,
+    )?;
     for text in [
         &value.api_version,
         &value.metadata.name,

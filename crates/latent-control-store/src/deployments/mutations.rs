@@ -12,7 +12,7 @@ use latent_manifest::{
 
 use super::observation::{count, CatalogWorkOperation as WorkOperation, Work};
 use super::{
-    compile_versioned, error, manifest_error, next_generation, now, CompiledCatalog,
+    compile_versioned_with_runtime, error, manifest_error, next_generation, now, CompiledCatalog,
     DeploymentPage, DeploymentPageRequest, DirectoryDeploymentRepository,
 };
 use crate::{
@@ -92,7 +92,7 @@ impl DirectoryDeploymentRepository {
                 versions.insert(deployment.id.clone(), generation.0);
                 next.insert(deployment.id.clone(), Arc::new(deployment));
             }
-            let compiled = compile_versioned(
+            let compiled = compile_versioned_with_runtime(
                 next,
                 versions,
                 generation,
@@ -101,6 +101,7 @@ impl DirectoryDeploymentRepository {
                 self.config,
                 Some(&previous),
                 &mut work,
+                self.runtime_profile.as_deref(),
             )
             .await?;
             self.commit(previous.generation, compiled, &mut work)?;
@@ -148,7 +149,7 @@ impl DirectoryDeploymentRepository {
             let mut versions = previous.versions.clone();
             versions.insert(deployment.id.clone(), generation.0);
             next.insert(deployment.id.clone(), Arc::new(deployment));
-            let compiled = compile_versioned(
+            let compiled = compile_versioned_with_runtime(
                 next,
                 versions,
                 generation,
@@ -157,6 +158,7 @@ impl DirectoryDeploymentRepository {
                 self.config,
                 Some(&previous),
                 &mut work,
+                self.runtime_profile.as_deref(),
             )
             .await?;
             let outcome = self.commit_checked(
@@ -211,7 +213,7 @@ impl DirectoryDeploymentRepository {
             let mut versions = previous.versions.clone();
             next.remove(id);
             versions.remove(id);
-            let compiled = compile_versioned(
+            let compiled = compile_versioned_with_runtime(
                 next,
                 versions,
                 generation,
@@ -220,6 +222,7 @@ impl DirectoryDeploymentRepository {
                 self.config,
                 Some(&previous),
                 &mut work,
+                self.runtime_profile.as_deref(),
             )
             .await?;
             let outcome = self.commit_checked(

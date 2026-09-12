@@ -8,6 +8,8 @@ mod catalog;
 mod clock;
 #[cfg(target_os = "linux")]
 mod history;
+#[cfg(target_os = "linux")]
+mod runtime;
 mod support;
 
 use super::*;

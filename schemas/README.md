@@ -10,6 +10,11 @@ JSON value can enter a typed manifest model. Any model/schema divergence must
 be resolved in favor of the schema or recorded as an API-versioned schema
 change.
 
+The capsule's closed optional runtime/target/CPU requirements are described in
+[release compatibility](../docs/reference/release-compatibility.md). Schema
+success checks their shape; actual host support and structural old/candidate
+comparison require the corresponding Rust checks.
+
 Unknown structural fields are intentionally rejected. For Phase 1 manifests,
 open-ended data is
 limited to the objects explicitly marked by a schema: metadata maps,

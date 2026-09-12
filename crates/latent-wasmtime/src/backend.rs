@@ -125,6 +125,7 @@ impl SharedRuntime {
         engine: Engine,
         profile: WasmtimeEngineProfile,
         admission: Option<Arc<dyn AdmissionAuthority>>,
+        runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     ) -> Result<Self, PlatformError> {
         let cache = Arc::new(PreparedCache::new_tracked(config.cache_limits())?);
         let preparation = Arc::new(PreparationCounters::default());
@@ -132,6 +133,7 @@ impl SharedRuntime {
         let uncached_prepared = Arc::new(Mutex::new(None));
         let preparation_context = Arc::new(PreparationContext {
             admission,
+            runtime_profile,
             engine,
             profile: profile.clone(),
             config: config.clone(),

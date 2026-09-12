@@ -165,6 +165,7 @@ pub fn artifact() -> CapsuleArtifact {
                 fusion_eligible: false,
             },
             minimum_fabric_version: "0.1.0-alpha.0".to_owned(),
+            runtime_requirements: Default::default(),
         },
         contracts: Vec::new(),
         component_bytes: bytes,

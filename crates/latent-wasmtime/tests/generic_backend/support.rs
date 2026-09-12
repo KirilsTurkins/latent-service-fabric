@@ -158,6 +158,7 @@ pub fn artifact_bytes(component_bytes: Vec<u8>, exports: &[&str]) -> CapsuleArti
             fusion_eligible: false,
         },
         minimum_fabric_version: "0.1.0-alpha.0".to_owned(),
+        runtime_requirements: Default::default(),
     };
     CapsuleArtifact {
         descriptor: ArtifactDescriptor {

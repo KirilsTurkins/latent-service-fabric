@@ -14,9 +14,15 @@ and a [bounded OCI library adapter](../reference/oci-registry.md) for immutable
 package distribution. These additions preserve the existing local release
 identity. Separate [publisher](../reference/publisher-trust.md) and
 [builder-provenance](../reference/build-provenance.md) verifiers authenticate
-exact package evidence against explicit current trust policies. Remote-package
-catalog/management admission remains planned; an OCI transfer or a standalone
+exact package evidence against explicit current trust policies.
+[Authenticated package admission](../reference/package-admission.md) combines
+those proofs with semantic, SBOM and tenant checks. An OCI transfer or standalone
 verification proof does not admit a release or make it routable.
+
+[Release compatibility](../reference/release-compatibility.md) checks actual-node
+requirements and compares exact old/candidate package contracts. Its report is
+an input to controlled rollout; it never grants execution authority or changes
+the immutable versioned contract identifiers selected by callers.
 
 ## Mutable deployment
 

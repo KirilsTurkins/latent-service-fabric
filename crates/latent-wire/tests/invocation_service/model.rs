@@ -205,6 +205,7 @@ pub fn artifact(generation: u8, bucket: u8) -> CapsuleArtifact {
                 .collect(),
             execution: policy().execution,
             minimum_fabric_version: "0.1.0-alpha.0".to_owned(),
+            runtime_requirements: latent_manifest::RuntimeRequirements::default(),
         },
         contracts: Vec::new(),
         component_bytes: bytes,

@@ -1,6 +1,7 @@
 //! Bounded semantic checks for supplied artifacts; no compilation, execution or trust.
 mod arena;
 mod compare;
+mod compatibility;
 mod host;
 mod lexical;
 mod limits;
@@ -12,6 +13,10 @@ mod sources;
 mod tests;
 mod wasm;
 
+pub use compatibility::{
+    compare_packages, BreakingChangeAllowance, ComparedPackageIdentity, PackageComparisonLimits,
+    PackageCompatibilityReport,
+};
 use latent_artifacts::package::{artifact_blob_digest, WitLock};
 use latent_contracts::ContractDescriptor;
 use latent_core::{ArtifactBlobDigest, PlatformError, PlatformErrorCode};

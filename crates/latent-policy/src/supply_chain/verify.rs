@@ -130,6 +130,7 @@ pub(super) fn with_state(
         return Err(denied("admission-build-sbom-source-mismatch"));
     }
     let artifact = artifact(&bundle, tenant, publisher.publisher().clone())?;
+    latent_manifest::check_runtime_compatibility(&artifact.manifest, owner.runtime.as_deref())?;
     let receipt = Receipt {
         format_version: 1,
         disposition: "admitted".to_owned(),

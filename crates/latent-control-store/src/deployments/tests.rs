@@ -11,6 +11,7 @@ mod recovery;
 mod resources;
 mod reuse_integrity;
 mod root_identity;
+mod runtime_compatibility;
 mod scoped_routes;
 mod supply_chain;
 mod verified_metadata;

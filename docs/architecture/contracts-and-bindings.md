@@ -56,5 +56,9 @@ Compatibility checks consider removed functions, changed parameter/result types,
 
 Current preparation checks agreement between the supplied manifest/contract
 metadata and actual component imports, exports and supported value signatures.
-It does not supply a general WIT-version compatibility analyzer. WIT package
+Phase 2 adds [bounded release comparison](../reference/release-compatibility.md)
+using the exact pinned WIT definitions of checked packages, plus actual-node
+runtime requirements. Descriptor-only analysis cannot establish named record or
+variant structure. Unsupported and unknown results deny automatic promotion;
+general WIT migration and binding-graph compilation remain future work. WIT
 versions remain distinct from workspace and SDK package release versions.

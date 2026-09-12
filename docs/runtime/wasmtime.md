@@ -102,6 +102,12 @@ its effective allowance is also included in preparation compatibility.
 version, engine configuration, host target, and CPU compatibility identity;
 incompatible keys cannot reuse preparation state.
 
+The factory also derives a bounded immutable
+[runtime compatibility profile](../reference/release-compatibility.md) from
+the actual engine, target and detected CPU features. Capsule requirements are
+checked before preparation, and the profile participates in preparation identity.
+The configurable CPU cache label cannot grant support for a hardware feature.
+
 Prepared entries retain compiled components and pre-instantiation/export
 metadata, never running stores or component instances. The internal preparation
 identity also binds a deterministic, engine-version-scoped fingerprint of

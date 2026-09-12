@@ -118,6 +118,13 @@ impl ManifestValidator for Phase1ManifestValidator {
             &mut violations,
         );
         validate_minimum_fabric_version(&manifest.minimum_fabric_version, &mut violations);
+        if manifest.runtime_requirements.validate().is_err() {
+            violations.push(ManifestViolation::new(
+                "$.compatibility",
+                "invalid-runtime-requirements",
+                "runtime requirements exceed their closed profile or bounds",
+            ));
+        }
         validate_capsule_scope(manifest, &mut violations);
 
         finish_violations(violations)
@@ -873,7 +880,7 @@ fn json_string(value: &str) -> String {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct SemanticVersion {
+pub(crate) struct SemanticVersion {
     major: u64,
     minor: u64,
     patch: u64,
@@ -881,7 +888,7 @@ struct SemanticVersion {
 }
 
 impl SemanticVersion {
-    fn parse(value: &str) -> Option<Self> {
+    pub(crate) fn parse(value: &str) -> Option<Self> {
         if value.is_empty() || value.trim() != value || !value.is_ascii() {
             return None;
         }

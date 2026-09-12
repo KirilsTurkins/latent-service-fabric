@@ -245,7 +245,7 @@
     },
     "compatibility": {
       "type": "object",
-      "maxProperties": 1,
+      "maxProperties": 4,
       "additionalProperties": false,
       "required": [
         "minimumFabricVersion"
@@ -253,7 +253,70 @@
       "properties": {
         "minimumFabricVersion": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "runtime": {
+          "type": "object",
+          "maxProperties": 2,
+          "additionalProperties": false,
+          "required": [
+            "engine",
+            "minimumVersion"
+          ],
+          "properties": {
+            "engine": {
+              "const": "wasmtime"
+            },
+            "minimumVersion": {
+              "type": "string",
+              "minLength": 5,
+              "maxLength": 128
+            }
+          }
+        },
+        "targetTriples": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_.]+(?:-[A-Za-z0-9_.]+){2,}(?![\\s\\S])"
+          }
+        },
+        "cpuFeatures": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "x86_64.sse2",
+              "x86_64.cmpxchg16b",
+              "x86_64.sse3",
+              "x86_64.ssse3",
+              "x86_64.sse4.1",
+              "x86_64.sse4.2",
+              "x86_64.popcnt",
+              "x86_64.avx",
+              "x86_64.avx2",
+              "x86_64.fma",
+              "x86_64.bmi1",
+              "x86_64.bmi2",
+              "x86_64.avx512bitalg",
+              "x86_64.avx512dq",
+              "x86_64.avx512f",
+              "x86_64.avx512vl",
+              "x86_64.avx512vbmi",
+              "x86_64.lzcnt",
+              "aarch64.lse",
+              "aarch64.paca",
+              "aarch64.fp16",
+              "aarch64.dotprod"
+            ]
+          }
         }
       }
     }

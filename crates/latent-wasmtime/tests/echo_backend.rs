@@ -546,6 +546,7 @@ fn parse_capsule_manifest(document: &Value) -> CapsuleManifest {
             fusion_eligible: required_bool(document, "/execution/fusionEligible"),
         },
         minimum_fabric_version: required_string(document, "/compatibility/minimumFabricVersion"),
+        runtime_requirements: Default::default(),
     }
 }
 

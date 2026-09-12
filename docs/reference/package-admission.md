@@ -96,6 +96,12 @@ detached SBOMs must agree with their package association and content policy.
 When provenance and SBOM both declare a source snapshot, those digests must
 agree. Missing attribution is never invented.
 
+[Runtime compatibility](release-compatibility.md) also checks the capsule's
+declared engine, target and CPU requirements against the actual node profile
+before creating current eligibility. Signed requirements cannot substitute for
+host support. Recovery preserves exact historical data when the present host is
+incompatible, without granting eligibility or making that release routable.
+
 The repository derives publisher and catalog metadata from the verified result.
 Its reject-only preflight callback runs before staging, outside the authority
 and index locks. The wire adapter constructs and bounds the exact prospective

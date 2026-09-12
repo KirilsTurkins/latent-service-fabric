@@ -49,11 +49,12 @@ impl Catalogs {
             settings.artifacts,
         )?);
         let deployments = Arc::new(
-            DirectoryDeploymentRepository::open_observed(
+            DirectoryDeploymentRepository::open_observed_with_runtime(
                 settings.data_directory.join("deployments"),
                 artifacts.clone(),
                 settings.deployments,
                 observer,
+                Arc::clone(&settings.runtime_profile),
             )
             .await?,
         );
@@ -84,7 +85,10 @@ impl Catalogs {
         settings: &NodeSettings,
         runtime: Option<&tokio::runtime::Handle>,
     ) -> Result<Self, PlatformError> {
-        let supply_chain = settings.supply_chain.open(&settings.data_directory)?;
+        let supply_chain = settings.supply_chain.open(
+            &settings.data_directory,
+            Arc::clone(&settings.runtime_profile),
+        )?;
         let mut control = supply_chain.as_ref().map(|authority| {
             control::StartupControl::start(
                 Arc::clone(authority),
@@ -107,18 +111,20 @@ impl Catalogs {
                 )?
             });
             let deployments = Arc::new(if let Some(authority) = &supply_chain {
-                DirectoryDeploymentRepository::open_enforced(
+                DirectoryDeploymentRepository::open_enforced_with_runtime(
                     settings.data_directory.join("deployments"),
                     artifacts.clone(),
                     settings.deployments,
                     authority.clone(),
+                    Arc::clone(&settings.runtime_profile),
                 )
                 .await?
             } else {
-                DirectoryDeploymentRepository::open(
+                DirectoryDeploymentRepository::open_with_runtime(
                     settings.data_directory.join("deployments"),
                     artifacts.clone(),
                     settings.deployments,
+                    Arc::clone(&settings.runtime_profile),
                 )
                 .await?
             });
@@ -333,6 +339,12 @@ impl StandaloneNode {
                 host_services,
             )?
         };
+        if factory.runtime_profile().digest() != settings.runtime_profile.digest() {
+            return Err(error(
+                PlatformErrorCode::IncompatibleContract,
+                "node-runtime-profile-changed",
+            ));
+        }
         let backend = Arc::new(factory.create_backend_instance());
         let quotas = LocalQuotaProvider::new(settings.admission.clone())?;
         let scheduler = Arc::new(LocalScheduler::new(

@@ -19,6 +19,7 @@ use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
 pub(super) struct PreparationContext {
+    pub(super) runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     pub(super) admission: Option<Arc<dyn AdmissionAuthority>>,
     pub(super) runtime_ledger: crate::cache::PreparedRuntimeLedger,
     pub(super) next_untrusted: std::sync::atomic::AtomicU64,
@@ -175,7 +176,7 @@ impl PreparationContext {
                 false,
             ));
         }
-        Ok(())
+        self.runtime_profile.check_capsule(manifest)
     }
 
     pub(super) fn prepared_descriptor(
