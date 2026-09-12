@@ -6,7 +6,7 @@ import "latent/control/v1/common.proto";
 import "latent/control/v1/deployment.proto";
 import "latent/control/v1/release.proto";
 
-// Manual single-node stages. Every method requires an administrator and uses
+// Operator-controlled single-node stages. Every method requires an administrator and uses
 // only the authenticated tenant. Omitted node enablement returns unimplemented.
 service RolloutService {
   rpc StartRollout(StartRolloutRequest) returns (StartRolloutResponse);
@@ -14,6 +14,7 @@ service RolloutService {
   rpc GetRollout(GetRolloutRequest) returns (GetRolloutResponse);
   rpc ListRollouts(ListRolloutsRequest) returns (ListRolloutsResponse);
   rpc GetRolloutOperation(GetRolloutOperationRequest) returns (GetRolloutOperationResponse);
+  rpc EvaluateRollout(EvaluateRolloutRequest) returns (EvaluateRolloutResponse);
 }
 
 message RolloutOperationPrecondition {
@@ -33,6 +34,21 @@ message StartRolloutRequest {
   // is installed by Start. The supported cohort is exactly base + candidate.
   repeated uint32 candidate_weights = 5;
   RolloutOperationPrecondition operation = 6;
+  // Absent preserves the manual profile. Present policies are immutable and
+  // require at least two stages plus configured observation capacity.
+  RolloutCanaryPolicy canary_policy = 7;
+}
+
+// Explicit thresholds, never a universal SLO or an observation proof.
+message RolloutCanaryPolicy {
+  uint32 format_version = 1;
+  uint64 observation_millis = 2;
+  uint64 minimum_candidate_samples = 3;
+  // Presence is required; zero is a meaningful declared threshold.
+  optional uint32 maximum_failure_basis_points = 4;
+  // One of the eight fixed inclusive histogram upper bounds in microseconds.
+  uint64 latency_threshold_micros = 5;
+  optional uint32 maximum_slow_basis_points = 6;
 }
 
 message ChangeRolloutRequest {
@@ -43,11 +59,18 @@ message ChangeRolloutRequest {
     Empty pause = 11;
     Empty resume = 12;
     Empty abort = 13;
+    PromoteRollout promote = 14;
   }
 }
 
 message AdvanceRollout {
   // Must be exactly the next stage. No health-based promotion is implied.
+  uint32 next_step = 1;
+}
+
+message PromoteRollout {
+  // Exactly the next stage; authority comes from the coordinator's own sealed
+  // observation, never a submitted healthy flag, counter, report or window ID.
   uint32 next_step = 1;
 }
 
@@ -64,6 +87,7 @@ message StartRolloutResponse {
   AuditAck audit_ack = 2;
   bool replayed = 3;
   RolloutDurability durability = 4;
+  RolloutObservation observation = 5;
 }
 
 message ChangeRolloutResponse {
@@ -71,6 +95,125 @@ message ChangeRolloutResponse {
   AuditAck audit_ack = 2;
   bool replayed = 3;
   RolloutDurability durability = 4;
+  RolloutObservation observation = 5;
+}
+
+enum RolloutObservationState {
+  ROLLOUT_OBSERVATION_STATE_UNSPECIFIED = 0;
+  ROLLOUT_OBSERVATION_STATE_COLLECTING = 1;
+  ROLLOUT_OBSERVATION_STATE_AWAITING_EVALUATION = 2;
+  ROLLOUT_OBSERVATION_STATE_UNAVAILABLE = 3;
+  ROLLOUT_OBSERVATION_STATE_RETIRED = 4;
+}
+
+// Transient observation availability, independent of committed receipt success.
+message RolloutObservation {
+  RolloutObservationState state = 1;
+  optional uint64 window_epoch = 2;
+}
+
+message EvaluateRolloutRequest {
+  string id = 1;
+  // Required positive current rollout revision. Evaluation may register a
+  // missing fresh interval, but it never changes weights or returns authority.
+  optional uint64 expected_revision = 2;
+}
+
+message EvaluateRolloutResponse {
+  CanaryEvaluationReport report = 1;
+}
+
+enum CanaryVerdict {
+  CANARY_VERDICT_UNSPECIFIED = 0;
+  CANARY_VERDICT_COLLECTING = 1;
+  CANARY_VERDICT_DRAINING = 2;
+  CANARY_VERDICT_NO_DATA = 3;
+  CANARY_VERDICT_INSUFFICIENT = 4;
+  CANARY_VERDICT_INCOMPLETE = 5;
+  CANARY_VERDICT_FAILED = 6;
+  CANARY_VERDICT_HEALTHY = 7;
+}
+
+enum CanaryDecisionReason {
+  CANARY_DECISION_REASON_UNSPECIFIED = 0;
+  CANARY_DECISION_REASON_WINDOW_OPEN = 1;
+  CANARY_DECISION_REASON_WINDOW_DRAINING = 2;
+  CANARY_DECISION_REASON_NO_CANDIDATE_SAMPLES = 3;
+  CANARY_DECISION_REASON_MINIMUM_CANDIDATE_SAMPLES = 4;
+  CANARY_DECISION_REASON_CAPTURE_INCOMPLETE = 5;
+  CANARY_DECISION_REASON_WINDOW_CLOSED_EARLY = 6;
+  CANARY_DECISION_REASON_NO_ADMITTED_CANDIDATE = 7;
+  CANARY_DECISION_REASON_NO_SUCCESSFUL_CANDIDATE = 8;
+  CANARY_DECISION_REASON_FAILURE_RATE_EXCEEDED = 9;
+  CANARY_DECISION_REASON_SLOW_RATE_EXCEEDED = 10;
+  CANARY_DECISION_REASON_MISSING_CANDIDATE = 11;
+  CANARY_DECISION_REASON_HEALTHY = 12;
+}
+
+// Diagnostic arithmetic only; Healthy is never a submitted promotion grant.
+message CanaryAssessment {
+  CanaryVerdict verdict = 1;
+  CanaryDecisionReason reason = 2;
+  uint64 selected = 3;
+  uint64 admitted_terminal = 4;
+  uint64 successes = 5;
+  uint64 failures = 6;
+  uint64 slow = 7;
+}
+
+message RolloutCanaryCounters {
+  uint64 selected = 1;
+  uint64 admitted = 2;
+  uint64 admitted_terminal = 3;
+  uint64 success = 4;
+  uint64 domain_error = 5;
+  uint64 platform_error = 6;
+  uint64 deadline_exceeded = 7;
+  uint64 cancelled = 8;
+  // Exactly nine buckets: <=100,1000,5000,10000,50000,100000,1000000,
+  // 10000000 microseconds, then overflow. No percentile interpolation.
+  repeated uint64 latency_buckets = 9;
+}
+
+message CanaryRevisionReport {
+  string revision = 1;
+  string component_digest = 2;
+  optional string package_digest = 3;
+  RolloutCanaryCounters counters = 4;
+}
+
+message CanaryEvaluationReport {
+  string rollout_id = 1;
+  uint64 revision = 2;
+  uint32 step = 3;
+  uint64 route_generation = 4;
+  string policy_digest = 5;
+  optional uint64 window_epoch = 6;
+  string candidate_revision = 7;
+  // Declared observation duration, not request latency or recovered elapsed time.
+  uint64 duration_millis = 8;
+  RolloutObservation observation = 9;
+  CanaryAssessment assessment = 10;
+  uint64 starts = 11;
+  uint64 selected = 12;
+  uint64 admitted = 13;
+  uint64 terminal = 14;
+  uint64 live = 15;
+  // The exact registered base/candidate pair, never an unbounded metric series.
+  repeated CanaryRevisionReport revisions = 16;
+  uint64 unattributed = 17;
+  uint64 abandoned = 18;
+}
+
+message RolloutCanaryDecision {
+  uint32 format_version = 1;
+  string policy_digest = 2;
+  string control_digest = 3;
+  string evidence_digest = 4;
+  uint64 window_epoch = 5;
+  uint64 observed_millis = 6;
+  RolloutCanaryCounters candidate = 7;
+  RolloutCanaryCounters baseline = 8;
 }
 
 message GetRolloutRequest {
@@ -129,6 +272,7 @@ enum RolloutAction {
   ROLLOUT_ACTION_PAUSE = 3;
   ROLLOUT_ACTION_RESUME = 4;
   ROLLOUT_ACTION_ABORT = 5;
+  ROLLOUT_ACTION_PROMOTE = 6;
 }
 
 enum RolloutReason {
@@ -182,6 +326,7 @@ message RolloutStatus {
   uint64 created_at_unix_millis = 16;
   uint64 updated_at_unix_millis = 17;
   uint64 retained_operation_floor = 18;
+  RolloutCanaryPolicy canary_policy = 19;
 }
 
 // Only committed operations have durable receipts. Replay returns these exact
@@ -204,4 +349,5 @@ message RolloutOperationReceipt {
   string plan_digest = 15;
   uint64 completed_at_unix_millis = 16;
   string receipt_digest = 17;
+  RolloutCanaryDecision canary_decision = 18;
 }

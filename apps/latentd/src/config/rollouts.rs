@@ -4,6 +4,9 @@ use latent_core::PlatformError;
 use latent_rollout::CoordinatorLimits;
 use serde::{Deserialize, Deserializer};
 
+mod canary;
+use canary::CanaryConfig;
+
 #[derive(Clone, Deserialize)]
 #[serde(tag = "mode", rename_all = "kebab-case", deny_unknown_fields)]
 pub enum RolloutConfig {
@@ -24,6 +27,8 @@ pub enum RolloutConfig {
         queued_bytes: usize,
         #[serde(rename = "queryOwners", default = "query_owners")]
         query_owners: usize,
+        #[serde(default, deserialize_with = "canary::present")]
+        canary: Option<CanaryConfig>,
     },
 }
 
@@ -31,6 +36,7 @@ pub enum RolloutConfig {
 pub(crate) struct RolloutSettings {
     pub store: RolloutLimits,
     pub coordinator: CoordinatorLimits,
+    pub canary: Option<latent_telemetry::Phase2CanaryOutcomeWindowConfig>,
 }
 
 const fn active() -> usize {
@@ -77,6 +83,7 @@ pub(super) fn derive(
         queued_operations,
         queued_bytes,
         query_owners,
+        canary,
     }) = config
     else {
         return Ok(None);
@@ -104,7 +111,11 @@ pub(super) fn derive(
     }
     .validate()
     .map_err(|_| super::invalid("rollouts"))?;
-    Ok(Some(RolloutSettings { store, coordinator }))
+    Ok(Some(RolloutSettings {
+        store,
+        coordinator,
+        canary: canary.as_ref().map(CanaryConfig::derive).transpose()?,
+    }))
 }
 
 #[cfg(test)]

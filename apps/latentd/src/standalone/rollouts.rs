@@ -26,6 +26,26 @@ pub struct RolloutShutdownReport {
     pub response_owners: usize,
     pub response_bytes: usize,
     pub failed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub canary: Option<CanaryShutdownReport>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CanaryShutdownReport {
+    pub retained_windows: usize,
+    pub retained_samples: usize,
+    pub live_samples: usize,
+    pub snapshot_owners: usize,
+}
+
+impl CanaryShutdownReport {
+    fn clean(self) -> bool {
+        self.retained_windows == 0
+            && self.retained_samples == 0
+            && self.live_samples == 0
+            && self.snapshot_owners == 0
+    }
 }
 impl RolloutShutdownReport {
     pub(super) fn clean(self) -> bool {
@@ -37,6 +57,7 @@ impl RolloutShutdownReport {
             && self.retained_request_bytes == 0
             && self.response_owners == 0
             && self.response_bytes == 0
+            && self.canary.is_none_or(CanaryShutdownReport::clean)
     }
 }
 
@@ -105,6 +126,15 @@ impl RolloutRuntime {
             response_owners: observed.response_owners,
             response_bytes: observed.response_bytes,
             failed: observed.failed,
+            canary: self
+                .handle
+                .canary_snapshot()?
+                .map(|snapshot| CanaryShutdownReport {
+                    retained_windows: snapshot.tracked_series,
+                    retained_samples: snapshot.total_samples,
+                    live_samples: snapshot.live_samples,
+                    snapshot_owners: snapshot.snapshot_owners,
+                }),
         })
     }
 }

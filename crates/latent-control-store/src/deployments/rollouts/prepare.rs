@@ -11,7 +11,7 @@ use crate::rollouts::{
     capacity, codec, conflict, error, invalid, Result, RolloutAction, RolloutCommand,
     RolloutContext, RolloutLimits, RolloutObjectVersion, RolloutOperationOutcome,
     RolloutOperationReceipt, RolloutReason, RolloutRelease, RolloutRequest, RolloutState,
-    RolloutStatus, MAX_REQUEST_BYTES, MAX_ROW_BYTES,
+    RolloutStatus, MAX_REQUEST_BYTES,
 };
 use latent_core::{ArtifactBlobDigest, DeploymentId, PlatformErrorCode, ServiceId, TenantId};
 use latent_manifest::{__serde_json as json, JsonManifestCodec, ManifestCodec};
@@ -22,13 +22,31 @@ impl DirectoryDeploymentRepository {
     pub fn rollout_limits(&self) -> RolloutLimits {
         self.rollout_limits
     }
+    pub async fn prepare_rollout(
+        &self,
+        request: RolloutRequest,
+    ) -> Result<PreparedRolloutMutation> {
+        self.prepare_rollout_inner(request, None, false).await
+    }
+    pub async fn prepare_canary_promotion(
+        &self,
+        request: RolloutRequest,
+        proof: Option<latent_telemetry::phase2_canary::SealedCanaryWindow>,
+    ) -> Result<PreparedRolloutMutation> {
+        if !matches!(request.action(), RolloutAction::Promote) {
+            return Err(invalid());
+        }
+        self.prepare_rollout_inner(request, proof, true).await
+    }
     #[expect(
         clippy::too_many_lines,
         reason = "one bounded semantic preparation validates the full old/new pair before returning its affine commit owner"
     )]
-    pub async fn prepare_rollout(
+    async fn prepare_rollout_inner(
         &self,
         request: RolloutRequest,
+        proof: Option<latent_telemetry::phase2_canary::SealedCanaryWindow>,
+        promotion: bool,
     ) -> Result<PreparedRolloutMutation> {
         request.validate(self.rollout_limits)?;
         let work_owner = WorkReservation::acquire(&self.rollout_work)?;
@@ -63,9 +81,14 @@ impl DirectoryDeploymentRepository {
                 request_digest: digest,
                 replayed: true,
                 state_only: true,
+                canary_proof: None,
                 _work: work_owner,
             });
         }
+        if request.action() == RolloutAction::Promote && !promotion {
+            return Err(invalid());
+        }
+        let mut canary_decision = None;
         let transaction = previous.transaction.checked_add(1).ok_or_else(capacity)?;
         let revision = context
             .operation
@@ -76,6 +99,18 @@ impl DirectoryDeploymentRepository {
         let reservation = previous.rollouts.reserve_next(&self.rollout_budget)?;
         let mut row = match &request {
             RolloutRequest::Start { context, spec } => {
+                if let Some(policy) = spec.canary_policy {
+                    let hub = self.canary.as_ref().ok_or_else(|| {
+                        error(PlatformErrorCode::Unavailable, "rollout-canary-unavailable")
+                    })?;
+                    if policy.minimum_candidate_samples
+                        > hub.config().maximum_samples_per_series as u64
+                        || policy.minimum_candidate_samples
+                            > hub.config().maximum_total_samples as u64
+                    {
+                        return Err(capacity());
+                    }
+                }
                 if previous.rollouts.row(&context.tenant, &spec.id).is_some() {
                     return Err(conflict());
                 }
@@ -127,10 +162,7 @@ impl DirectoryDeploymentRepository {
                 .await?;
                 let base_manifest = table::manifest(base)?;
                 let candidate_manifest = table::manifest(&spec.candidate)?;
-                let plan_digest = codec::hash(&codec::encode(
-                    &json::json!({"version":1,"tenant":context.tenant.0,"rollout":spec.id.0,"base":base_manifest,"candidate":candidate_manifest,"weights":spec.candidate_weights,"basePackage":old_package.as_ref().map(latent_core::PackageDigest::as_str),"candidatePackage":new_package.as_ref().map(latent_core::PackageDigest::as_str)}),
-                    MAX_ROW_BYTES,
-                )?);
+                let plan_digest = codec::hash(b"");
                 StoredRollout {
                     status: RolloutStatus {
                         id: spec.id.clone(),
@@ -159,6 +191,7 @@ impl DirectoryDeploymentRepository {
                         created_at_unix_millis: timestamp,
                         updated_at_unix_millis: timestamp,
                         retained_operation_floor: previous.rollouts.floor(),
+                        canary_policy: spec.canary_policy,
                     },
                     base_manifest,
                     candidate_manifest,
@@ -179,7 +212,22 @@ impl DirectoryDeploymentRepository {
                 }
                 let mut row = prior.clone();
                 match command {
-                    RolloutCommand::Advance { next_step } => {
+                    RolloutCommand::Advance { next_step }
+                    | RolloutCommand::Promote { next_step } => {
+                        if matches!(command, RolloutCommand::Advance { .. })
+                            && row.status.canary_policy.is_some()
+                        {
+                            return Err(invalid());
+                        }
+                        if matches!(command, RolloutCommand::Promote { .. }) {
+                            let proof = proof.as_ref().ok_or_else(|| {
+                                error(
+                                    PlatformErrorCode::Unavailable,
+                                    "rollout-canary-evidence-required",
+                                )
+                            })?;
+                            canary_decision = Some(self.canary_decision(&previous, prior, proof)?);
+                        }
                         if row.status.state != RolloutState::Running
                             || *next_step
                                 != row
@@ -218,6 +266,9 @@ impl DirectoryDeploymentRepository {
                 row
             }
         };
+        if matches!(request, RolloutRequest::Start { .. }) {
+            row.status.plan_digest = table::plan_hash(&row)?;
+        }
         let state_only = matches!(
             request.action(),
             RolloutAction::Pause | RolloutAction::Abort
@@ -311,6 +362,7 @@ impl DirectoryDeploymentRepository {
             plan_digest: row.status.plan_digest.clone(),
             completed_at_unix_millis: timestamp,
             receipt_digest: codec::hash(b""),
+            canary_decision,
         };
         receipt.receipt_digest = table::receipt_hash(&receipt)?;
         receipt.canonical_bytes()?;
@@ -355,6 +407,7 @@ impl DirectoryDeploymentRepository {
             request_digest: digest,
             replayed: false,
             state_only,
+            canary_proof: proof,
             _work: work_owner,
         })
     }
@@ -388,6 +441,13 @@ fn normalize(mut request: RolloutRequest) -> Result<RolloutRequest> {
     }
     Ok(request)
 }
+impl RolloutRequest {
+    /// Canonical bounded client command identity, independent of server evidence.
+    pub fn request_digest(&self, limits: RolloutLimits) -> Result<ArtifactBlobDigest> {
+        self.validate(limits)?;
+        request_digest(&normalize(self.clone())?)
+    }
+}
 fn normalize_context(context: &mut RolloutContext) {
     context.tenant.0 = context.tenant.0.as_str().into();
     context.actor.subject = context.actor.subject.as_str().into();
@@ -397,10 +457,14 @@ fn request_digest(request: &RolloutRequest) -> Result<ArtifactBlobDigest> {
     let context = request.context();
     let command = match request {
         RolloutRequest::Start { spec, .. } => {
-            json::json!({"base":spec.base.id.0,"baseGeneration":spec.base.generation,"candidate":table::manifest(&spec.candidate)?,"weights":spec.candidate_weights})
+            let mut value = json::json!({"base":spec.base.id.0,"baseGeneration":spec.base.generation,"candidate":table::manifest(&spec.candidate)?,"weights":spec.candidate_weights});
+            if let Some(policy) = spec.canary_policy {
+                value["canaryPolicy"] = json::to_value(policy).map_err(|_| invalid())?;
+            }
+            value
         }
         RolloutRequest::Change { command, .. } => {
-            json::json!({"nextStep":match command{RolloutCommand::Advance{next_step}=>Some(*next_step),_=>None}})
+            json::json!({"nextStep":match command{RolloutCommand::Advance{next_step}|RolloutCommand::Promote{next_step}=>Some(*next_step),_=>None}})
         }
     };
     Ok(codec::hash(&codec::encode(

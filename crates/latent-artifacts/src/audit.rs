@@ -193,6 +193,7 @@ async fn lookup(
 
 fn unknown() -> AuditOperationConclusion {
     AuditOperationConclusion {
+        canary_decision: None,
         result: AuditOperationResult::Unknown,
         reason: AuditReason::ReceiptUnavailable,
         receipt_digest: None,

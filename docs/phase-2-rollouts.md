@@ -22,14 +22,16 @@ weight changes.
 | Operation | Required state | Effect |
 | --- | --- | --- |
 | Start | New rollout ID, expected rollout revision 0 | Installs stage 0; becomes Running, or Completed if this is the final stage. |
-| Advance | Running, exact revision and next stage | Installs the next weights; the last stage becomes Completed. |
+| Advance | Manual plan, Running, exact revision and next stage | Installs the next weights; the last stage becomes Completed. |
+| Promote | Canary plan, Running, exact revision and next stage | Requires complete exact-cohort evidence, then atomically installs the next weights. |
 | Pause | Running, exact revision | Becomes Paused; retains the existing executable route snapshot. |
 | Resume | Paused, exact revision | Rechecks and republishes the current stage with current release grants; becomes Running. |
 | Abort | Active rollout, exact revision | Becomes Aborted; preserves the currently installed routes. |
 
 Abort does not restore the original deployment. Completed and aborted plans do
-not continue advancing. Canary policy evaluation/promotion and explicit rollback
-are implemented by their separate Phase 2 tickets, #154 and #155.
+not continue advancing. [Canary evaluation and promotion](phase-2-canary-promotion.md)
+add explicit declared acceptance criteria. Explicit rollback is the separate
+Phase 2 ticket #155.
 
 Before any route-changing operation, the coordinator checks current tenant-scoped
 release eligibility and conservative old-to-candidate compatibility. Signed

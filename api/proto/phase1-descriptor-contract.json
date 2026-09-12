@@ -301,6 +301,100 @@
               "number": 3
             }
           ]
+        },
+        {
+          "name": "AuditCanaryVerdict",
+          "value": [
+            {
+              "name": "AUDIT_CANARY_VERDICT_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_CANARY_VERDICT_COLLECTING",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_CANARY_VERDICT_DRAINING",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_CANARY_VERDICT_NO_DATA",
+              "number": 3
+            },
+            {
+              "name": "AUDIT_CANARY_VERDICT_INSUFFICIENT",
+              "number": 4
+            },
+            {
+              "name": "AUDIT_CANARY_VERDICT_INCOMPLETE",
+              "number": 5
+            },
+            {
+              "name": "AUDIT_CANARY_VERDICT_FAILED",
+              "number": 6
+            },
+            {
+              "name": "AUDIT_CANARY_VERDICT_HEALTHY",
+              "number": 7
+            }
+          ]
+        },
+        {
+          "name": "AuditCanaryReason",
+          "value": [
+            {
+              "name": "AUDIT_CANARY_REASON_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_WINDOW_OPEN",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_WINDOW_DRAINING",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_NO_CANDIDATE_SAMPLES",
+              "number": 3
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_MINIMUM_CANDIDATE_SAMPLES",
+              "number": 4
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_CAPTURE_INCOMPLETE",
+              "number": 5
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_WINDOW_CLOSED_EARLY",
+              "number": 6
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_NO_ADMITTED_CANDIDATE",
+              "number": 7
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_NO_SUCCESSFUL_CANDIDATE",
+              "number": 8
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_FAILURE_RATE_EXCEEDED",
+              "number": 9
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_SLOW_RATE_EXCEEDED",
+              "number": 10
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_MISSING_CANDIDATE",
+              "number": 11
+            },
+            {
+              "name": "AUDIT_CANARY_REASON_HEALTHY",
+              "number": 12
+            }
+          ]
         }
       ],
       "messageType": [
@@ -658,6 +752,24 @@
               "oneofIndex": 12,
               "proto3Optional": true,
               "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "canaryWindowEpoch",
+              "label": "LABEL_OPTIONAL",
+              "name": "canary_window_epoch",
+              "number": 15,
+              "oneofIndex": 13,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "canaryEvidenceDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "canary_evidence_digest",
+              "number": 16,
+              "oneofIndex": 14,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
             }
           ],
           "name": "AuditIdentities",
@@ -700,6 +812,12 @@
             },
             {
               "name": "_state_version"
+            },
+            {
+              "name": "_canary_window_epoch"
+            },
+            {
+              "name": "_canary_evidence_digest"
             }
           ]
         },
@@ -914,6 +1032,14 @@
               "name": "occurred_at_unix_millis",
               "number": 7,
               "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "canaryDecision",
+              "label": "LABEL_OPTIONAL",
+              "name": "canary_decision",
+              "number": 8,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditCanaryDecision"
             }
           ],
           "name": "Phase2AuditOutcome",
@@ -922,6 +1048,97 @@
               "name": "_receipt_digest"
             }
           ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "verdict",
+              "label": "LABEL_OPTIONAL",
+              "name": "verdict",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditCanaryVerdict"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 2,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditCanaryReason"
+            },
+            {
+              "jsonName": "observationMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "observation_millis",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "minimumCandidateSamples",
+              "label": "LABEL_OPTIONAL",
+              "name": "minimum_candidate_samples",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumFailureBasisPoints",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_failure_basis_points",
+              "number": 5,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "latencyThresholdMicros",
+              "label": "LABEL_OPTIONAL",
+              "name": "latency_threshold_micros",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumSlowBasisPoints",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_slow_basis_points",
+              "number": 7,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "selected",
+              "label": "LABEL_OPTIONAL",
+              "name": "selected",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "admittedTerminal",
+              "label": "LABEL_OPTIONAL",
+              "name": "admitted_terminal",
+              "number": 9,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "successes",
+              "label": "LABEL_OPTIONAL",
+              "name": "successes",
+              "number": 10,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "failures",
+              "label": "LABEL_OPTIONAL",
+              "name": "failures",
+              "number": 11,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "slow",
+              "label": "LABEL_OPTIONAL",
+              "name": "slow",
+              "number": 12,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "AuditCanaryDecision"
         },
         {
           "field": [
@@ -5897,6 +6114,125 @@
           ]
         },
         {
+          "name": "RolloutObservationState",
+          "value": [
+            {
+              "name": "ROLLOUT_OBSERVATION_STATE_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "ROLLOUT_OBSERVATION_STATE_COLLECTING",
+              "number": 1
+            },
+            {
+              "name": "ROLLOUT_OBSERVATION_STATE_AWAITING_EVALUATION",
+              "number": 2
+            },
+            {
+              "name": "ROLLOUT_OBSERVATION_STATE_UNAVAILABLE",
+              "number": 3
+            },
+            {
+              "name": "ROLLOUT_OBSERVATION_STATE_RETIRED",
+              "number": 4
+            }
+          ]
+        },
+        {
+          "name": "CanaryVerdict",
+          "value": [
+            {
+              "name": "CANARY_VERDICT_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "CANARY_VERDICT_COLLECTING",
+              "number": 1
+            },
+            {
+              "name": "CANARY_VERDICT_DRAINING",
+              "number": 2
+            },
+            {
+              "name": "CANARY_VERDICT_NO_DATA",
+              "number": 3
+            },
+            {
+              "name": "CANARY_VERDICT_INSUFFICIENT",
+              "number": 4
+            },
+            {
+              "name": "CANARY_VERDICT_INCOMPLETE",
+              "number": 5
+            },
+            {
+              "name": "CANARY_VERDICT_FAILED",
+              "number": 6
+            },
+            {
+              "name": "CANARY_VERDICT_HEALTHY",
+              "number": 7
+            }
+          ]
+        },
+        {
+          "name": "CanaryDecisionReason",
+          "value": [
+            {
+              "name": "CANARY_DECISION_REASON_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "CANARY_DECISION_REASON_WINDOW_OPEN",
+              "number": 1
+            },
+            {
+              "name": "CANARY_DECISION_REASON_WINDOW_DRAINING",
+              "number": 2
+            },
+            {
+              "name": "CANARY_DECISION_REASON_NO_CANDIDATE_SAMPLES",
+              "number": 3
+            },
+            {
+              "name": "CANARY_DECISION_REASON_MINIMUM_CANDIDATE_SAMPLES",
+              "number": 4
+            },
+            {
+              "name": "CANARY_DECISION_REASON_CAPTURE_INCOMPLETE",
+              "number": 5
+            },
+            {
+              "name": "CANARY_DECISION_REASON_WINDOW_CLOSED_EARLY",
+              "number": 6
+            },
+            {
+              "name": "CANARY_DECISION_REASON_NO_ADMITTED_CANDIDATE",
+              "number": 7
+            },
+            {
+              "name": "CANARY_DECISION_REASON_NO_SUCCESSFUL_CANDIDATE",
+              "number": 8
+            },
+            {
+              "name": "CANARY_DECISION_REASON_FAILURE_RATE_EXCEEDED",
+              "number": 9
+            },
+            {
+              "name": "CANARY_DECISION_REASON_SLOW_RATE_EXCEEDED",
+              "number": 10
+            },
+            {
+              "name": "CANARY_DECISION_REASON_MISSING_CANDIDATE",
+              "number": 11
+            },
+            {
+              "name": "CANARY_DECISION_REASON_HEALTHY",
+              "number": 12
+            }
+          ]
+        },
+        {
           "name": "RolloutOperationLookupDisposition",
           "value": [
             {
@@ -5972,6 +6308,10 @@
             {
               "name": "ROLLOUT_ACTION_ABORT",
               "number": 5
+            },
+            {
+              "name": "ROLLOUT_ACTION_PROMOTE",
+              "number": 6
             }
           ]
         },
@@ -6112,12 +6452,79 @@
               "number": 6,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.RolloutOperationPrecondition"
+            },
+            {
+              "jsonName": "canaryPolicy",
+              "label": "LABEL_OPTIONAL",
+              "name": "canary_policy",
+              "number": 7,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutCanaryPolicy"
             }
           ],
           "name": "StartRolloutRequest",
           "oneofDecl": [
             {
               "name": "_expected_base_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "formatVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "format_version",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "observationMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "observation_millis",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "minimumCandidateSamples",
+              "label": "LABEL_OPTIONAL",
+              "name": "minimum_candidate_samples",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumFailureBasisPoints",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_failure_basis_points",
+              "number": 4,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "latencyThresholdMicros",
+              "label": "LABEL_OPTIONAL",
+              "name": "latency_threshold_micros",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "maximumSlowBasisPoints",
+              "label": "LABEL_OPTIONAL",
+              "name": "maximum_slow_basis_points",
+              "number": 6,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_UINT32"
+            }
+          ],
+          "name": "RolloutCanaryPolicy",
+          "oneofDecl": [
+            {
+              "name": "_maximum_failure_basis_points"
+            },
+            {
+              "name": "_maximum_slow_basis_points"
             }
           ]
         },
@@ -6173,6 +6580,15 @@
               "oneofIndex": 0,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.Empty"
+            },
+            {
+              "jsonName": "promote",
+              "label": "LABEL_OPTIONAL",
+              "name": "promote",
+              "number": 14,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PromoteRollout"
             }
           ],
           "name": "ChangeRolloutRequest",
@@ -6193,6 +6609,18 @@
             }
           ],
           "name": "AdvanceRollout"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "nextStep",
+              "label": "LABEL_OPTIONAL",
+              "name": "next_step",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            }
+          ],
+          "name": "PromoteRollout"
         },
         {
           "field": [
@@ -6226,6 +6654,14 @@
               "number": 4,
               "type": "TYPE_ENUM",
               "typeName": ".latent.control.v1.RolloutDurability"
+            },
+            {
+              "jsonName": "observation",
+              "label": "LABEL_OPTIONAL",
+              "name": "observation",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutObservation"
             }
           ],
           "name": "StartRolloutResponse"
@@ -6262,9 +6698,452 @@
               "number": 4,
               "type": "TYPE_ENUM",
               "typeName": ".latent.control.v1.RolloutDurability"
+            },
+            {
+              "jsonName": "observation",
+              "label": "LABEL_OPTIONAL",
+              "name": "observation",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutObservation"
             }
           ],
           "name": "ChangeRolloutResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "state",
+              "label": "LABEL_OPTIONAL",
+              "name": "state",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.RolloutObservationState"
+            },
+            {
+              "jsonName": "windowEpoch",
+              "label": "LABEL_OPTIONAL",
+              "name": "window_epoch",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "RolloutObservation",
+          "oneofDecl": [
+            {
+              "name": "_window_epoch"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "id",
+              "label": "LABEL_OPTIONAL",
+              "name": "id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedRevision",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_revision",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "EvaluateRolloutRequest",
+          "oneofDecl": [
+            {
+              "name": "_expected_revision"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "report",
+              "label": "LABEL_OPTIONAL",
+              "name": "report",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CanaryEvaluationReport"
+            }
+          ],
+          "name": "EvaluateRolloutResponse"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "verdict",
+              "label": "LABEL_OPTIONAL",
+              "name": "verdict",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.CanaryVerdict"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 2,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.CanaryDecisionReason"
+            },
+            {
+              "jsonName": "selected",
+              "label": "LABEL_OPTIONAL",
+              "name": "selected",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "admittedTerminal",
+              "label": "LABEL_OPTIONAL",
+              "name": "admitted_terminal",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "successes",
+              "label": "LABEL_OPTIONAL",
+              "name": "successes",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "failures",
+              "label": "LABEL_OPTIONAL",
+              "name": "failures",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "slow",
+              "label": "LABEL_OPTIONAL",
+              "name": "slow",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "CanaryAssessment"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "selected",
+              "label": "LABEL_OPTIONAL",
+              "name": "selected",
+              "number": 1,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "admitted",
+              "label": "LABEL_OPTIONAL",
+              "name": "admitted",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "admittedTerminal",
+              "label": "LABEL_OPTIONAL",
+              "name": "admitted_terminal",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "success",
+              "label": "LABEL_OPTIONAL",
+              "name": "success",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "domainError",
+              "label": "LABEL_OPTIONAL",
+              "name": "domain_error",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "platformError",
+              "label": "LABEL_OPTIONAL",
+              "name": "platform_error",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "deadlineExceeded",
+              "label": "LABEL_OPTIONAL",
+              "name": "deadline_exceeded",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "cancelled",
+              "label": "LABEL_OPTIONAL",
+              "name": "cancelled",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "latencyBuckets",
+              "label": "LABEL_REPEATED",
+              "name": "latency_buckets",
+              "number": 9,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "RolloutCanaryCounters"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "revision",
+              "label": "LABEL_OPTIONAL",
+              "name": "revision",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "componentDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "component_digest",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "packageDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "package_digest",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "counters",
+              "label": "LABEL_OPTIONAL",
+              "name": "counters",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutCanaryCounters"
+            }
+          ],
+          "name": "CanaryRevisionReport",
+          "oneofDecl": [
+            {
+              "name": "_package_digest"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "rolloutId",
+              "label": "LABEL_OPTIONAL",
+              "name": "rollout_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "revision",
+              "label": "LABEL_OPTIONAL",
+              "name": "revision",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "step",
+              "label": "LABEL_OPTIONAL",
+              "name": "step",
+              "number": 3,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "routeGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_generation",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "policyDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy_digest",
+              "number": 5,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "windowEpoch",
+              "label": "LABEL_OPTIONAL",
+              "name": "window_epoch",
+              "number": 6,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "candidateRevision",
+              "label": "LABEL_OPTIONAL",
+              "name": "candidate_revision",
+              "number": 7,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "durationMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "duration_millis",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "observation",
+              "label": "LABEL_OPTIONAL",
+              "name": "observation",
+              "number": 9,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutObservation"
+            },
+            {
+              "jsonName": "assessment",
+              "label": "LABEL_OPTIONAL",
+              "name": "assessment",
+              "number": 10,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CanaryAssessment"
+            },
+            {
+              "jsonName": "starts",
+              "label": "LABEL_OPTIONAL",
+              "name": "starts",
+              "number": 11,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "selected",
+              "label": "LABEL_OPTIONAL",
+              "name": "selected",
+              "number": 12,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "admitted",
+              "label": "LABEL_OPTIONAL",
+              "name": "admitted",
+              "number": 13,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "terminal",
+              "label": "LABEL_OPTIONAL",
+              "name": "terminal",
+              "number": 14,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "live",
+              "label": "LABEL_OPTIONAL",
+              "name": "live",
+              "number": 15,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "revisions",
+              "label": "LABEL_REPEATED",
+              "name": "revisions",
+              "number": 16,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.CanaryRevisionReport"
+            },
+            {
+              "jsonName": "unattributed",
+              "label": "LABEL_OPTIONAL",
+              "name": "unattributed",
+              "number": 17,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "abandoned",
+              "label": "LABEL_OPTIONAL",
+              "name": "abandoned",
+              "number": 18,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "CanaryEvaluationReport",
+          "oneofDecl": [
+            {
+              "name": "_window_epoch"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "formatVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "format_version",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "policyDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "policy_digest",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "controlDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "control_digest",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "evidenceDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "evidence_digest",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "windowEpoch",
+              "label": "LABEL_OPTIONAL",
+              "name": "window_epoch",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "observedMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "observed_millis",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "candidate",
+              "label": "LABEL_OPTIONAL",
+              "name": "candidate",
+              "number": 7,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutCanaryCounters"
+            },
+            {
+              "jsonName": "baseline",
+              "label": "LABEL_OPTIONAL",
+              "name": "baseline",
+              "number": 8,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutCanaryCounters"
+            }
+          ],
+          "name": "RolloutCanaryDecision"
         },
         {
           "field": [
@@ -6597,6 +7476,14 @@
               "name": "retained_operation_floor",
               "number": 18,
               "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "canaryPolicy",
+              "label": "LABEL_OPTIONAL",
+              "name": "canary_policy",
+              "number": 19,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutCanaryPolicy"
             }
           ],
           "name": "RolloutStatus"
@@ -6726,6 +7613,14 @@
               "name": "receipt_digest",
               "number": 17,
               "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "canaryDecision",
+              "label": "LABEL_OPTIONAL",
+              "name": "canary_decision",
+              "number": 18,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutCanaryDecision"
             }
           ],
           "name": "RolloutOperationReceipt"
@@ -6760,6 +7655,11 @@
               "inputType": ".latent.control.v1.GetRolloutOperationRequest",
               "name": "GetRolloutOperation",
               "outputType": ".latent.control.v1.GetRolloutOperationResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.EvaluateRolloutRequest",
+              "name": "EvaluateRollout",
+              "outputType": ".latent.control.v1.EvaluateRolloutResponse"
             }
           ],
           "name": "RolloutService"

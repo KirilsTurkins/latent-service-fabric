@@ -53,6 +53,69 @@ fn authority(root: &TempDir) -> (Arc<SupplyChainAuthority>, Arc<Clock>) {
     (authority, clock)
 }
 
+#[tokio::test]
+async fn enforced_control_reuse_rejects_a_different_activation_clock_without_canary() {
+    let authority_root = TempDir::new().unwrap();
+    let directory = TempDir::new().unwrap();
+    let (authority, _) = authority(&authority_root);
+    let mut settings = super::settings(&directory);
+    super::enforce(&mut settings);
+    let clock: Arc<dyn latent_core::ActivationClock> = Arc::new(latent_core::SystemActivationClock);
+    let artifacts = Arc::new(
+        latent_artifacts::DirectoryArtifactRepository::open_enforced(
+            directory.path().join("releases"),
+            settings.artifacts,
+            latent_artifacts::AdmissionStorageLimits::default(),
+            authority.clone(),
+        )
+        .unwrap(),
+    );
+    let deployments = Arc::new(
+        latent_control_store::DirectoryDeploymentRepository::open_with_catalog(
+            directory.path().join("deployments"),
+            artifacts.clone(),
+            settings.deployments,
+            artifacts.lifecycle_authority(),
+            Arc::clone(&settings.runtime_profile),
+        )
+        .await
+        .unwrap(),
+    );
+    let mut catalogs = super::Catalogs {
+        artifacts,
+        deployments,
+        supply_chain: Some(authority.clone()),
+        control: Some(StartupControl::start(
+            authority,
+            settings.load_sample_interval,
+            &tokio::runtime::Handle::current(),
+            Arc::clone(&clock),
+        )),
+        audit: None,
+        rollouts: None,
+        clock,
+    };
+    assert!(catalogs.deployments.canary_hub().is_none());
+    assert_eq!(
+        super::super::StandaloneNode::compose(
+            &mut settings,
+            &catalogs,
+            Arc::new(latent_core::SystemActivationClock),
+        )
+        .err()
+        .unwrap()
+        .code,
+        latent_core::PlatformErrorCode::PermissionDenied,
+    );
+    catalogs
+        .control
+        .take()
+        .unwrap()
+        .shutdown(Duration::from_secs(1))
+        .await
+        .unwrap();
+}
+
 #[tokio::test(start_paused = true)]
 async fn early_owner_renews_past_initial_lease_and_transfers_without_retiring() {
     let root = TempDir::new().unwrap();
@@ -61,6 +124,7 @@ async fn early_owner_renews_past_initial_lease_and_transfers_without_retiring() 
         authority.clone(),
         Duration::from_millis(250),
         &tokio::runtime::Handle::current(),
+        Arc::new(latent_core::SystemActivationClock),
     );
     let load = owner.load();
     // A startup that lasts longer than the initial lease has the same existing
@@ -92,6 +156,7 @@ async fn failed_startup_shutdown_joins_and_cancellation_retires_the_owner() {
             authority.clone(),
             Duration::from_millis(250),
             &tokio::runtime::Handle::current(),
+            Arc::new(latent_core::SystemActivationClock),
         );
         if joined {
             owner.shutdown(Duration::from_secs(1)).await.unwrap();

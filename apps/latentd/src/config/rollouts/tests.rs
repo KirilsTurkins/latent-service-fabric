@@ -15,6 +15,43 @@ fn optional_manual_configuration_requires_audit_and_has_finite_defaults() {
     assert_eq!(settings.store.maximum_rows, 256);
     assert_eq!(settings.coordinator.maximum_queued_commands, 8);
     assert_eq!(settings.coordinator.maximum_total_page_bytes, 1024 * 1024);
+    assert!(settings.canary.is_none());
+}
+
+#[test]
+fn canary_resources_are_explicit_closed_and_bounded() {
+    let config = parsed(json!({"mode":"manual","canary":{}}));
+    let settings = derive(Some(&config), true).unwrap().unwrap();
+    let canary = settings.canary.unwrap();
+    assert_eq!(canary.maximum_series, 16);
+    assert_eq!(canary.maximum_identity_bytes, 256);
+    assert_eq!(canary.maximum_samples_per_series, 10_000);
+    for value in [
+        json!({"mode":"manual","canary":null}),
+        json!({"mode":"manual","canary":{"minimumCandidateSamples":1}}),
+    ] {
+        assert!(serde_json::from_value::<RolloutConfig>(value).is_err());
+    }
+    for (name, maximum) in [
+        ("windows", 64),
+        ("samplesPerWindow", 1_000_000),
+        ("totalSamples", 16_000_000),
+        ("liveSamples", 65_536),
+        ("snapshotOwners", 16),
+    ] {
+        for invalid in [0, maximum + 1] {
+            let mut value = json!({"mode":"manual","canary":{}});
+            value["canary"][name] = json!(invalid);
+            assert!(derive(Some(&parsed(value)), true).is_err(), "{name}");
+        }
+    }
+    assert!(derive(
+        Some(&parsed(json!({"mode":"manual","canary":{
+            "samplesPerWindow":2,"totalSamples":1
+        }}))),
+        true
+    )
+    .is_err());
 }
 
 #[test]

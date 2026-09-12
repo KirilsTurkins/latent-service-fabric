@@ -72,8 +72,11 @@ One fixed worker and bounded shared storage serve all rollouts. Restart restores
 committed progress without automatically advancing it. Active invocations keep
 their route pins; newly selected work uses the current routes and still checks
 release authority at the execution fence. No stage creates a continuously running
-service instance. Canary-driven promotion and rollback are separate Phase 2
-integration tickets.
+service instance. [Canary promotion](../phase-2-canary-promotion.md) requires an
+explicit policy and a full, drained observation window bound to the exact catalog
+owner, rollout revision and compiled cohort. The catalog rechecks the evidence
+and current release eligibility before publishing the next stage. Explicit
+rollback is the remaining separate Phase 2 integration ticket.
 
 ## Coexistence
 

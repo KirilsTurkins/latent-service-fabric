@@ -65,6 +65,10 @@ struct Finish {
     conclusion: AuditOperationConclusion,
     reply: Reply<DurableAuditAck>,
 }
+#[expect(
+    clippy::large_enum_variant,
+    reason = "Each bounded queue entry is prepaid by its fixed 4096/16384-byte command charge, including this inline payload"
+)]
 enum Command {
     Observe(AuditObservation),
     Begin(Arc<Pending>, Reply<AuditAttempt>),

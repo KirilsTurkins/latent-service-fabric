@@ -2,6 +2,8 @@ use super::{enums, proto};
 use latent_audit as domain;
 use tonic::Status;
 
+mod canary;
+
 pub(super) fn scope(
     records: &[domain::AuditStoredRecord],
     expected: &domain::AuditScope,
@@ -53,6 +55,10 @@ pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentiti
         rollout_revision: value.rollout_revision,
         rollout_step: value.rollout_step,
         state_version: value.state_version,
+        canary_window_epoch: value.canary_window_epoch,
+        canary_evidence_digest: value
+            .canary_evidence_digest
+            .map(latent_core::ArtifactBlobDigest::into_string),
     }
 }
 pub(super) fn record(value: domain::AuditStoredRecord) -> Result<proto::Phase2AuditRecord, Status> {
@@ -103,6 +109,7 @@ pub(super) fn record(value: domain::AuditStoredRecord) -> Result<proto::Phase2Au
             identities: Some(identities(conclusion.identities)),
             replay: conclusion.replay,
             occurred_at_unix_millis: conclusion.occurred_at_unix_millis,
+            canary_decision: conclusion.canary_decision.map(canary::decision),
         }),
     };
     Ok(proto::Phase2AuditRecord {

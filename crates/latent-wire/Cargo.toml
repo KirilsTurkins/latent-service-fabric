@@ -19,6 +19,7 @@ latent-rollout = { path = "../latent-rollout" }
 latent-rpc = { path = "../latent-rpc" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-audit = { path = "../latent-audit" }
+latent-telemetry = { path = "../latent-telemetry" }
 latent-control-store = { path = "../latent-control-store" }
 latent-manifest = { path = "../latent-manifest" }
 latent-admission = { path = "../latent-admission" }
@@ -33,7 +34,6 @@ tonic.workspace = true
 tempfile.workspace = true
 latent-executor = { path = "../latent-executor" }
 latent-scheduler = { path = "../latent-scheduler" }
-latent-telemetry = { path = "../latent-telemetry" }
 tokio = { workspace = true, features = ["test-util", "rt-multi-thread"] }
 hyper-util.workspace = true
 tower.workspace = true

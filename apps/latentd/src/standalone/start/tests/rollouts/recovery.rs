@@ -51,6 +51,7 @@ async fn disabled_rollouts_reconcile_existing_history_without_exposing_the_servi
             ..RolloutLimits::default()
         },
         coordinator: CoordinatorLimits::default(),
+        canary: None,
     });
     settings.shutdown_grace = Duration::from_secs(5);
     let catalogs = Catalogs::open_with_control(&settings, &tokio::runtime::Handle::current())
@@ -102,6 +103,7 @@ async fn disabled_rollouts_reconcile_existing_history_without_exposing_the_servi
                     generation: base.deployment.generation,
                 },
                 candidate: deployment_manifest_from_proto(candidate).unwrap(),
+                canary_policy: None,
                 candidate_weights: (10..=25).map(|step| step * 100).chain([10_000]).collect(),
             },
         })

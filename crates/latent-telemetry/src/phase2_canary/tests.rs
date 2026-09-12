@@ -11,6 +11,7 @@ use super::*;
 use crate::{ActivationObservationToken, ActivationOutcomeClass, ActivationTerminalObservation};
 
 mod boundaries;
+mod promotion;
 
 struct Clock {
     base: Instant,
@@ -35,6 +36,7 @@ impl ActivationClock for Clock {
 
 fn spec() -> CanaryWindowSpec {
     CanaryWindowSpec {
+        control_digest: None,
         identity: CanaryWindowIdentity {
             tenant: TenantId("tenant-a".into()),
             service: ServiceId("echo".into()),

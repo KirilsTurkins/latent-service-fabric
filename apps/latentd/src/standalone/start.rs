@@ -35,9 +35,15 @@ pub(super) struct Catalogs {
     control: Option<control::StartupControl>,
     audit: Option<super::audit::AuditRuntime>,
     rollouts: Option<super::rollouts::RolloutRuntime>,
+    clock: Arc<dyn ActivationClock>,
 }
 
 impl Catalogs {
+    fn accepts_activation_clock(&self, clock: &Arc<dyn ActivationClock>) -> bool {
+        (self.control.is_none() && self.deployments.canary_hub().is_none())
+            || Arc::ptr_eq(clock, &self.clock)
+    }
+
     #[cfg(test)]
     pub(super) async fn open_observed(
         settings: &NodeSettings,
@@ -77,6 +83,7 @@ impl Catalogs {
             control: None,
             audit,
             rollouts: None,
+            clock: Arc::new(SystemActivationClock),
         })
     }
 
@@ -88,14 +95,22 @@ impl Catalogs {
         {
             return Err(mode_error());
         }
-        Self::open_inner(settings, None).await
+        Self::open_inner(settings, None, Arc::new(SystemActivationClock)).await
     }
 
     pub(super) async fn open_with_control(
         settings: &NodeSettings,
         runtime: &tokio::runtime::Handle,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(settings, Some(runtime)).await
+        Self::open_with_control_and_clock(settings, runtime, Arc::new(SystemActivationClock)).await
+    }
+
+    pub(super) async fn open_with_control_and_clock(
+        settings: &NodeSettings,
+        runtime: &tokio::runtime::Handle,
+        clock: Arc<dyn ActivationClock>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(settings, Some(runtime), clock).await
     }
 
     #[allow(
@@ -105,6 +120,7 @@ impl Catalogs {
     async fn open_inner(
         settings: &NodeSettings,
         runtime: Option<&tokio::runtime::Handle>,
+        clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
         let audit = super::audit::AuditRuntime::open(
             settings.data_directory.join("audit"),
@@ -131,6 +147,7 @@ impl Catalogs {
                 Arc::clone(authority),
                 settings.load_sample_interval,
                 runtime.expect("enforced startup requires its supplied control runtime"),
+                Arc::clone(&clock),
             )
         });
         let mut rollouts = None;
@@ -157,20 +174,30 @@ impl Catalogs {
                     settings.artifacts,
                 )?
             });
-            let deployments = Arc::new(
-                DirectoryDeploymentRepository::open_with_catalog_and_rollout_limits(
-                    settings.data_directory.join("deployments"),
-                    artifacts.clone(),
-                    settings.deployments,
-                    artifacts.lifecycle_authority(),
-                    Arc::clone(&settings.runtime_profile),
-                    settings.rollouts.map_or_else(
-                        latent_control_store::rollouts::RolloutLimits::recovery_maximum,
-                        |value| value.store,
-                    ),
-                )
-                .await?,
-            );
+            let deployments = DirectoryDeploymentRepository::open_with_catalog_and_rollout_limits(
+                settings.data_directory.join("deployments"),
+                artifacts.clone(),
+                settings.deployments,
+                artifacts.lifecycle_authority(),
+                Arc::clone(&settings.runtime_profile),
+                settings.rollouts.map_or_else(
+                    latent_control_store::rollouts::RolloutLimits::recovery_maximum,
+                    |value| value.store,
+                ),
+            )
+            .await?;
+            let deployments = if let Some(config) = settings.rollouts.and_then(|value| value.canary)
+            {
+                deployments.with_canary(
+                    latent_telemetry::BoundedPhase2CanaryOutcomeWindow::with_clock(
+                        config,
+                        Arc::clone(&clock),
+                    )?,
+                )?
+            } else {
+                deployments
+            };
+            let deployments = Arc::new(deployments);
             if let Some(settings) = settings.rollouts {
                 rollouts = Some(super::rollouts::RolloutRuntime::start(
                     deployments.clone(),
@@ -225,6 +252,7 @@ impl Catalogs {
             control,
             audit,
             rollouts,
+            clock,
         })
     }
 }
@@ -259,14 +287,9 @@ impl StandaloneNode {
         control_runtime: tokio::runtime::Handle,
         threads: RuntimeThreads,
     ) -> Result<Self, PlatformError> {
-        Self::start_with_catalogs_and_clock(
-            settings,
-            catalogs,
-            control_runtime,
-            threads,
-            Arc::new(SystemActivationClock),
-        )
-        .await
+        let clock = Arc::clone(&catalogs.clock);
+        Self::start_with_catalogs_and_clock(settings, catalogs, control_runtime, threads, clock)
+            .await
     }
 
     pub(super) async fn start_with_catalogs_and_clock(
@@ -356,6 +379,7 @@ impl StandaloneNode {
                 settings.load_sample_interval,
                 &control_runtime,
                 catalogs.supply_chain,
+                Arc::clone(&self.clock),
             ));
         }
         let transport = transport::Transport::start(
@@ -415,6 +439,9 @@ impl StandaloneNode {
         if settings.supply_chain.is_enforced() != catalogs.supply_chain.is_some()
             || settings.audit.is_some() != catalogs.audit.is_some()
             || settings.rollouts.is_some() != catalogs.rollouts.is_some()
+            || settings.rollouts.and_then(|value| value.canary).is_some()
+                != catalogs.deployments.canary_hub().is_some()
+            || !catalogs.accepts_activation_clock(&clock)
             || (catalogs.supply_chain.is_some() && catalogs.control.is_none())
             || !catalogs
                 .deployments
@@ -471,7 +498,10 @@ impl StandaloneNode {
                 backend: backend.clone(),
             },
             LocalActivationServices {
-                canary: None,
+                canary: catalogs
+                    .rollouts
+                    .as_ref()
+                    .and_then(|owner| owner.handle().canary_capture()),
                 clock: Arc::clone(&clock),
                 observer: Some(observer.clone()),
                 ..LocalActivationServices::default()

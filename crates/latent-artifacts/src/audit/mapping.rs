@@ -42,6 +42,7 @@ pub(super) fn conclusion(
 ) -> Result<AuditOperationConclusion, PlatformError> {
     let digest = receipt_digest(value)?;
     Ok(AuditOperationConclusion {
+        canary_decision: None,
         result: match value.disposition {
             ReleaseOperationDisposition::Committed => AuditOperationResult::Committed,
             ReleaseOperationDisposition::Rejected => AuditOperationResult::Rejected,

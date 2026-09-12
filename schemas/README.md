@@ -35,7 +35,8 @@ Optional standalone node members have their own closed schemas:
 | --- | --- |
 | [node-isolated-aot.schema.json](node-isolated-aot.schema.json) | `isolatedAot`: bounded native compiler/cache configuration and protected host-key path. |
 | [node-audit.schema.json](node-audit.schema.json) | `audit`: optional durable audit resource limits. |
-| [node-rollouts.schema.json](node-rollouts.schema.json) | `rollouts`: manual shared coordinator limits, requiring the same enabled audit owner. |
+| [node-rollouts.schema.json](node-rollouts.schema.json) | `rollouts`: shared coordinator and optional canary observation limits, requiring the same enabled audit owner. |
+| [rollout-canary-policy.schema.json](rollout-canary-policy.schema.json) | Explicit immutable observation duration, candidate sample minimum and outcome/latency thresholds; never evidence of health. |
 
 The node decoder additionally rejects duplicate members and explicit null
 enablement. Runtime derivation checks cross-field resource relationships and

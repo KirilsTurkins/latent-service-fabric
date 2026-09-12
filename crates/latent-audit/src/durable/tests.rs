@@ -93,6 +93,7 @@ fn attempt() -> AuditOperationAttempt {
 }
 fn conclusion() -> AuditOperationConclusion {
     AuditOperationConclusion {
+        canary_decision: None,
         result: AuditOperationResult::Committed,
         reason: AuditReason::Committed,
         receipt_digest: Some(digest()),

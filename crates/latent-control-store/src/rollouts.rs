@@ -1,8 +1,11 @@
 //! Bounded manual rollout commands and immutable historical results.
+mod canary;
 pub(crate) mod codec;
 mod model;
 pub(crate) mod validation;
+pub use crate::deployments::rollouts::canary::RolloutCanaryCohort;
 pub use crate::deployments::rollouts::PreparedRolloutMutation;
+pub use canary::{RolloutCanaryCounters, RolloutCanaryDecision, RolloutCanaryPolicy};
 use latent_core::{PlatformError, PlatformErrorCode};
 pub use model::*;
 pub(crate) type Result<T> = std::result::Result<T, PlatformError>;

@@ -23,7 +23,7 @@ generated package inputs through this RPC boundary.
 | Route | `GetRouteSnapshot` | Complete projection of the current catalog generation for one tenant. |
 | Node | `GetNode`, `ListNodes` | The one configured node's bounded inventory snapshot. |
 | Audit | `QueryAudit`, `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
-| Rollout | `StartRollout`, `ChangeRollout`, `GetRollout`, `ListRollouts`, `GetRolloutOperation` | Optional audited manual stages over one tenant/service cohort. |
+| Rollout | `StartRollout`, `ChangeRollout`, `EvaluateRollout`, `GetRollout`, `ListRollouts`, `GetRolloutOperation` | Optional audited stages and declared canary promotion over one tenant/service cohort. |
 
 `WatchDeployment`, `WatchRouteSnapshots`, `RegisterNode`, `ReportInventory`, and
 `Heartbeat` return explicit gRPC `Unimplemented`. They do not open an idle stream
@@ -94,8 +94,7 @@ route generation and grants even after trust or cohort drift. Abort is terminal
 and does not roll back. Resume recompiles the same weights with current grants
 and publishes a new route generation before returning to Running. A final
 10000-basis-point stage atomically removes the base deployment and completes
-the rollout. This manual profile does not accept health thresholds or perform
-automatic promotion.
+the rollout. Plans without a canary policy retain these manual semantics.
 
 Start and Change return the exact committed receipt, a separate durability
 value, audit acknowledgement and replay flag. A matching retained operation ID,
@@ -129,6 +128,62 @@ ownership early. Audited errors reuse the bounded `latent-audit-status` and
 `latent-audit-attempt` metadata described below. Current rollout calls require
 a generated client; there is no rollout CLI command yet. See the node's
 [manual rollout settings](standalone-node.md#optional-manual-rollouts).
+
+### Declared canary evaluation and promotion
+
+Start may include an immutable `canary_policy`; omission keeps the existing manual
+plan. A canary plan has at least two stages and requires the node's optional
+observation hub. Its explicit format is described by
+[rollout-canary-policy.schema.json](../../schemas/rollout-canary-policy.schema.json):
+
+```json
+{
+  "formatVersion": 1,
+  "observationMillis": 30000,
+  "minimumCandidateSamples": 100,
+  "maximumFailureBasisPoints": 100,
+  "latencyThresholdMicros": 100000,
+  "maximumSlowBasisPoints": 100
+}
+```
+
+These are declared thresholds, not a measured universal SLO. Both zero-valid
+basis-point thresholds require protobuf presence. Latency thresholds must be
+one of the eight fixed inclusive histogram boundaries. Candidate minima use the
+candidate's own selected terminal outcomes, including failed admission, domain
+and platform errors, deadlines and cancellation. At least one admitted terminal
+and one successful candidate call are required. Missing, incomplete, open,
+draining or insufficient observations cannot establish health.
+
+`EvaluateRollout` requires an exact positive expected revision and returns a
+bounded report for the registered base/candidate revisions. It may start a missing
+fresh interval and return Collecting; it never changes weights. Reports show
+explicit selected/admitted/terminal counts, all outcome classes and nine latency
+buckets. Timing starts at successful window registration and measures host
+activation duration, not network request latency. Get/List do not register windows.
+
+For a canary plan, `ChangeRollout.promote` names exactly the next step and uses
+the normal operation ID and expected revision. The ordinary Advance command is
+rejected for that plan. Promotion uses only the coordinator's exact-owner sealed
+window, then rechecks cohort, generation and release eligibility at atomic commit.
+No submitted report, healthy flag, window ID or copied counter grants permission.
+Already-started calls keep their original revision and budget.
+
+Successful promotion receipts include a bounded decision summary binding policy,
+control state, evidence and candidate/base counters. Exact committed replay works
+after restart without collecting replacement evidence. Rejected promotion receives
+a fixed error with audit acknowledgement; it creates no committed rollout receipt.
+Evaluate returns the full diagnostic report. Typed audit outcomes retain bounded
+decision identities, verdict, reason, declared thresholds and assessed counters,
+including rejected promotion decisions, so those facts remain inspectable after
+restart. The audit summary is historical evidence and cannot authorize promotion.
+
+Start, Resume and Promote may return an optional observation status separately
+from the receipt and durability result. Registration pressure after commit cannot
+undo that commit. Pause/Abort retire observations; Resume refreshes the same
+weights and requires a fresh interval before later promotion. Without the optional
+hub, Resume can still refresh weights and reports observation unavailable.
+Restart preserves policy and stage, but no prior elapsed interval or healthy proof.
 
 ## Publishing a release
 

@@ -1,3 +1,4 @@
+mod canary;
 mod ownership;
 mod reconciliation;
 mod support;

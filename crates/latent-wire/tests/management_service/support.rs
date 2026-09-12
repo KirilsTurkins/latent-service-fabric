@@ -51,11 +51,19 @@ impl Harness {
         source: Option<Arc<dyn ArtifactRepository>>,
         audit: Option<latent_audit::AuditHandle>,
     ) -> Self {
-        Self::open(limits, source, audit, false).await
+        Self::open(limits, source, audit, false, None).await
     }
 
     pub async fn with_rollouts(limits: ManagementLimits, audit: latent_audit::AuditHandle) -> Self {
-        Self::open(limits, None, Some(audit), true).await
+        Self::open(limits, None, Some(audit), true, None).await
+    }
+
+    pub async fn with_canary(
+        limits: ManagementLimits,
+        audit: latent_audit::AuditHandle,
+        hub: latent_telemetry::BoundedPhase2CanaryOutcomeWindow,
+    ) -> Self {
+        Self::open(limits, None, Some(audit), true, Some(hub)).await
     }
 
     async fn open(
@@ -63,6 +71,7 @@ impl Harness {
         source: Option<Arc<dyn ArtifactRepository>>,
         audit: Option<latent_audit::AuditHandle>,
         enabled: bool,
+        canary: Option<latent_telemetry::BoundedPhase2CanaryOutcomeWindow>,
     ) -> Self {
         let root = TempRoot::new();
         let artifacts = Arc::new(
@@ -72,15 +81,17 @@ impl Harness {
             )
             .unwrap(),
         );
-        let deployments = Arc::new(
-            DirectoryDeploymentRepository::open(
-                root.0.join("deployments"),
-                artifacts.clone(),
-                DirectoryDeploymentRepositoryConfig::default(),
-            )
-            .await
-            .unwrap(),
-        );
+        let deployments = DirectoryDeploymentRepository::open(
+            root.0.join("deployments"),
+            artifacts.clone(),
+            DirectoryDeploymentRepositoryConfig::default(),
+        )
+        .await
+        .unwrap();
+        let deployments = Arc::new(match canary {
+            Some(hub) => deployments.with_canary(hub).unwrap(),
+            None => deployments,
+        });
         let (rollouts, rollout_worker) = if enabled {
             let (handle, mut worker) = latent_rollout::RolloutCoordinator::start(
                 deployments.clone(),

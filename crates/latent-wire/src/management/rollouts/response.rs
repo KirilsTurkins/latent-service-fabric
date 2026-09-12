@@ -35,12 +35,19 @@ pub(super) fn preflight(
     }
     budget.allocation::<u8>(3 * 71)?;
     control_audit::charge(&mut budget)?;
+    if preview.receipt.canary_decision.is_some() {
+        super::canary::charge_decision(&mut budget)?;
+    }
+    if preview.observation.is_some() {
+        budget.allocation::<proto::RolloutObservation>(1)?;
+    }
     let output = proto::StartRolloutResponse {
         receipt: Some(conversion::receipt(preview.receipt.clone())),
         audit_ack: Some(control_audit::wire(preview.audit_ack)),
         // Reserve the encoded true flag even for a fresh operation.
         replayed: true,
         durability: proto::RolloutDurability::Uncertain as i32,
+        observation: preview.observation.map(super::canary::observation),
     };
     if output.encoded_len() > limits.max_response_bytes {
         return Err(bounds::exhausted());

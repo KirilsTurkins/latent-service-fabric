@@ -119,6 +119,8 @@ message AuditIdentities {
   optional uint64 rollout_revision = 12;
   optional uint32 rollout_step = 13;
   optional uint64 state_version = 14;
+  optional uint64 canary_window_epoch = 15;
+  optional string canary_evidence_digest = 16;
 }
 
 enum AuditControlAction {
@@ -187,6 +189,50 @@ message Phase2AuditOutcome {
   AuditIdentities identities = 5;
   bool replay = 6;
   uint64 occurred_at_unix_millis = 7;
+  // Bounded historical decision arithmetic, not a live promotion capability.
+  AuditCanaryDecision canary_decision = 8;
+}
+
+enum AuditCanaryVerdict {
+  AUDIT_CANARY_VERDICT_UNSPECIFIED = 0;
+  AUDIT_CANARY_VERDICT_COLLECTING = 1;
+  AUDIT_CANARY_VERDICT_DRAINING = 2;
+  AUDIT_CANARY_VERDICT_NO_DATA = 3;
+  AUDIT_CANARY_VERDICT_INSUFFICIENT = 4;
+  AUDIT_CANARY_VERDICT_INCOMPLETE = 5;
+  AUDIT_CANARY_VERDICT_FAILED = 6;
+  AUDIT_CANARY_VERDICT_HEALTHY = 7;
+}
+
+enum AuditCanaryReason {
+  AUDIT_CANARY_REASON_UNSPECIFIED = 0;
+  AUDIT_CANARY_REASON_WINDOW_OPEN = 1;
+  AUDIT_CANARY_REASON_WINDOW_DRAINING = 2;
+  AUDIT_CANARY_REASON_NO_CANDIDATE_SAMPLES = 3;
+  AUDIT_CANARY_REASON_MINIMUM_CANDIDATE_SAMPLES = 4;
+  AUDIT_CANARY_REASON_CAPTURE_INCOMPLETE = 5;
+  AUDIT_CANARY_REASON_WINDOW_CLOSED_EARLY = 6;
+  AUDIT_CANARY_REASON_NO_ADMITTED_CANDIDATE = 7;
+  AUDIT_CANARY_REASON_NO_SUCCESSFUL_CANDIDATE = 8;
+  AUDIT_CANARY_REASON_FAILURE_RATE_EXCEEDED = 9;
+  AUDIT_CANARY_REASON_SLOW_RATE_EXCEEDED = 10;
+  AUDIT_CANARY_REASON_MISSING_CANDIDATE = 11;
+  AUDIT_CANARY_REASON_HEALTHY = 12;
+}
+
+message AuditCanaryDecision {
+  AuditCanaryVerdict verdict = 1;
+  AuditCanaryReason reason = 2;
+  uint64 observation_millis = 3;
+  uint64 minimum_candidate_samples = 4;
+  uint32 maximum_failure_basis_points = 5;
+  uint64 latency_threshold_micros = 6;
+  uint32 maximum_slow_basis_points = 7;
+  uint64 selected = 8;
+  uint64 admitted_terminal = 9;
+  uint64 successes = 10;
+  uint64 failures = 11;
+  uint64 slow = 12;
 }
 
 message Phase2AuditRecord {

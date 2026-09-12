@@ -11,6 +11,26 @@ pub struct AuditAttempt {
     pending: Option<Arc<Pending>>,
 }
 impl AuditHandle {
+    /// Reject-only shape and complete-envelope size validation. Does not reserve
+    /// journal capacity or authorize a control mutation.
+    pub fn preflight_conclusion(
+        &self,
+        attempt: &AuditOperationAttempt,
+        conclusion: &AuditOperationConclusion,
+    ) -> Result<()> {
+        codec::attempt(attempt)?;
+        codec::conclusion(conclusion)?;
+        let conclusion = codec::normalize(conclusion, self.shared.limits.maximum_record_bytes)?;
+        codec::envelope(
+            &attempt.scope,
+            &attempt.actor,
+            AuditRecordData::Outcome {
+                attempt_sequence: u64::MAX,
+                conclusion,
+            },
+            self.shared.limits.maximum_record_bytes,
+        )
+    }
     pub fn try_reserve_critical(
         &self,
         attempt: &AuditOperationAttempt,
@@ -198,6 +218,7 @@ fn finish(p: Arc<Pending>, conclusion: AuditOperationConclusion) -> AuditAppendT
 pub(super) fn abandoned(p: &Pending) -> AuditOperationConclusion {
     let started = p.started.load(Ordering::Acquire);
     AuditOperationConclusion {
+        canary_decision: None,
         result: if started {
             AuditOperationResult::Unknown
         } else {

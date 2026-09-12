@@ -7,6 +7,7 @@ pub struct MutationPreview<'a> {
     pub receipt: &'a RolloutOperationReceipt,
     pub replayed: bool,
     pub audit_ack: ReleaseAuditAck,
+    pub observation: Option<crate::RolloutObservation>,
 }
 
 /// A rename-committed receipt remains a committed result even when sync or audit
@@ -16,6 +17,7 @@ pub struct MutationResult {
     pub replayed: bool,
     pub durability: Result<(), PlatformError>,
     pub audit_ack: ReleaseAuditAck,
+    pub observation: Option<crate::RolloutObservation>,
 }
 
 #[derive(Debug)]
@@ -65,4 +67,6 @@ pub struct CoordinatorSnapshot {
     pub worker_completed: bool,
     pub closed: bool,
     pub failed: bool,
+    pub canary_windows: usize,
+    pub canary_metadata_bytes: usize,
 }

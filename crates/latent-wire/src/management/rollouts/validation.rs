@@ -140,6 +140,15 @@ pub(super) fn start(
     {
         return Err(Status::invalid_argument("invalid rollout stages"));
     }
+    if let Some(policy) = &value.canary_policy {
+        budget.allocation::<proto::RolloutCanaryPolicy>(1)?;
+        super::canary::policy::decode(policy)?;
+        if value.candidate_weights.len() < 2 {
+            return Err(Status::invalid_argument(
+                "canary rollout requires at least two stages",
+            ));
+        }
+    }
     let candidate = value
         .candidate
         .as_ref()

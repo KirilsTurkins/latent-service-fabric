@@ -1,11 +1,12 @@
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::time::Duration;
 
-use latent_core::{PlatformError, PlatformErrorCode};
+use latent_core::{ArtifactBlobDigest, PlatformError, PlatformErrorCode, RevisionId};
 
 use super::model::{CanaryCoverage, CanaryRevisionBinding, CanaryWindowIdentity};
 use super::window::{busy, capacity, Hub, Stats, Window};
-use super::{error, Phase2CanaryOutcomeCounters};
+use super::{error, policy, CanaryAssessment, CanaryThresholds, Phase2CanaryOutcomeCounters};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct CanaryRevisionSnapshot {
@@ -26,10 +27,11 @@ pub struct CanaryWindowSnapshot {
     live: usize,
     closed: bool,
     required: usize,
+    elapsed: Duration,
     _allowance: SnapshotAllowance,
 }
 
-struct SnapshotAllowance(Arc<Hub>);
+pub(super) struct SnapshotAllowance(pub(super) Arc<Hub>);
 
 impl CanaryWindowSnapshot {
     pub(super) fn capture(window: &Arc<Window>, required: usize) -> Result<Self, PlatformError> {
@@ -45,8 +47,8 @@ impl CanaryWindowSnapshot {
         {
             return Err(capacity());
         }
-        let closed = window.closed.load(Ordering::Acquire)
-            || window.hub.clock.monotonic_now() >= window.deadline;
+        let now = window.hub.clock.monotonic_now();
+        let closed = window.closed.load(Ordering::Acquire) || now >= window.deadline;
         window.hub.snapshots.fetch_add(1, Ordering::AcqRel);
         Ok(Self {
             window: Arc::clone(window),
@@ -55,6 +57,9 @@ impl CanaryWindowSnapshot {
             live: window.live.load(Ordering::Acquire),
             closed,
             required,
+            elapsed: now
+                .saturating_duration_since(window.started)
+                .min(window.spec.duration),
             _allowance: SnapshotAllowance(Arc::clone(&window.hub)),
         })
     }
@@ -74,6 +79,41 @@ impl CanaryWindowSnapshot {
     #[must_use]
     pub fn epoch(&self) -> u64 {
         self.window.epoch
+    }
+
+    #[must_use]
+    pub fn control_digest(&self) -> Option<&ArtifactBlobDigest> {
+        self.window.spec.control_digest.as_ref()
+    }
+    #[must_use]
+    pub fn duration(&self) -> Duration {
+        self.window.spec.duration
+    }
+    #[must_use]
+    pub fn elapsed(&self) -> Duration {
+        self.elapsed
+    }
+
+    /// A copied positive assessment remains diagnostic. Only `try_seal` checks
+    /// the capture frontier and supplies the private, exact-owner commit input.
+    pub fn assess_candidate(
+        &self,
+        candidate: &RevisionId,
+        thresholds: CanaryThresholds,
+    ) -> Result<CanaryAssessment, PlatformError> {
+        let coverage = if self.elapsed < self.window.spec.duration {
+            CanaryCoverage::Open
+        } else {
+            self.coverage()
+        };
+        policy::assess(
+            self.revisions(),
+            self.revision_outcomes(),
+            candidate,
+            thresholds,
+            coverage,
+            self.window.early_closed.load(Ordering::Acquire),
+        )
     }
     #[must_use]
     pub fn starts(&self) -> usize {

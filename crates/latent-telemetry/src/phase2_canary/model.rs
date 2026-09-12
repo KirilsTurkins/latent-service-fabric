@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use latent_core::{
-    PackageDigest, PlatformError, PlatformErrorCode, ReleaseDigest, RevisionId, RouteGeneration,
-    ServiceId, TenantId,
+    ArtifactBlobDigest, PackageDigest, PlatformError, PlatformErrorCode, ReleaseDigest, RevisionId,
+    RouteGeneration, ServiceId, TenantId,
 };
 
 use super::error;
@@ -34,6 +34,9 @@ pub struct CanaryRevisionBinding {
 #[derive(Debug, Clone)]
 pub struct CanaryWindowSpec {
     pub identity: CanaryWindowIdentity,
+    /// Opaque exact catalog/rollout/policy binding supplied by the trusted owner.
+    /// Absent for diagnostic windows that cannot authorize a catalog promotion.
+    pub control_digest: Option<ArtifactBlobDigest>,
     pub revisions: Vec<CanaryRevisionBinding>,
     /// Membership starts when registration succeeds and lasts at most one hour.
     pub duration: Duration,
@@ -158,6 +161,7 @@ pub(super) fn bounded_spec(
         }
     }
     Ok(CanaryWindowSpec {
+        control_digest: spec.control_digest.clone(),
         identity: CanaryWindowIdentity {
             tenant: TenantId(fresh(&id.tenant.0)),
             service: ServiceId(fresh(&id.service.0)),
