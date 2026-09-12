@@ -215,7 +215,10 @@ impl BoundedPhase2CanaryOutcomeWindow {
         })
     }
 
-    pub fn record(&self, observation: &Phase2CanaryOutcomeObservation) -> Result<(), PlatformError> {
+    pub fn record(
+        &self,
+        observation: &Phase2CanaryOutcomeObservation,
+    ) -> Result<(), PlatformError> {
         let key = bounded_key(&observation.identity, self.config.maximum_identity_bytes)?;
         let mut state = self.lock_state()?;
         if state.total_samples >= self.config.maximum_total_samples {
@@ -649,10 +652,7 @@ mod tests {
             Phase2CanaryOutcomeClass::PlatformError.metric_label(),
             "platform_error"
         );
-        assert_eq!(
-            Phase2CanaryCoverage::NoSamples.metric_label(),
-            "no_samples"
-        );
+        assert_eq!(Phase2CanaryCoverage::NoSamples.metric_label(), "no_samples");
         assert_eq!(
             Phase2CanaryCoverage::Ready {
                 observed: 1,
