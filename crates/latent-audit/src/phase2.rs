@@ -8,6 +8,15 @@ use latent_core::{
 
 use crate::{AuditActor, AuditOutcome};
 
+const MAX_PHASE2_AUDIT_EVENTS: usize = 16_384;
+const MAX_PHASE2_AUDIT_QUERY_EVENTS: usize = 1_024;
+const MAX_PHASE2_AUDIT_ATTRIBUTES: usize = 64;
+const MAX_PHASE2_AUDIT_STRING_BYTES: usize = 2_048;
+const MAX_PHASE2_AUDIT_RETAINED_STRING_BYTES: usize = 512 * 1024 * 1024;
+const MAX_PHASE2_AUDIT_PAGE_STRING_BYTES: usize = 64 * 1024 * 1024;
+const PHASE2_AUDIT_FIXED_STRING_FIELDS: usize = 12;
+const PHASE2_AUDIT_METADATA_STRINGS_PER_ATTRIBUTE: usize = 4;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Phase2AuditEventKind {
     VerificationAccepted,
@@ -98,9 +107,34 @@ impl Default for Phase2AuditLimits {
 impl Phase2AuditLimits {
     fn validate(self) -> Result<(), PlatformError> {
         if self.max_events == 0
+            || self.max_events > MAX_PHASE2_AUDIT_EVENTS
             || self.max_query_events == 0
+            || self.max_query_events > MAX_PHASE2_AUDIT_QUERY_EVENTS
             || self.max_attributes == 0
+            || self.max_attributes > MAX_PHASE2_AUDIT_ATTRIBUTES
             || self.max_string_bytes == 0
+            || self.max_string_bytes > MAX_PHASE2_AUDIT_STRING_BYTES
+        {
+            return Err(error(
+                PlatformErrorCode::InvalidArgument,
+                "invalid-phase2-audit-limits",
+            ));
+        }
+
+        let retained_budget = aggregate_string_budget(self.max_events, self).ok_or_else(|| {
+            error(
+                PlatformErrorCode::InvalidArgument,
+                "invalid-phase2-audit-limits",
+            )
+        })?;
+        let page_budget = aggregate_string_budget(self.max_query_events, self).ok_or_else(|| {
+            error(
+                PlatformErrorCode::InvalidArgument,
+                "invalid-phase2-audit-limits",
+            )
+        })?;
+        if retained_budget > MAX_PHASE2_AUDIT_RETAINED_STRING_BYTES
+            || page_budget > MAX_PHASE2_AUDIT_PAGE_STRING_BYTES
         {
             return Err(error(
                 PlatformErrorCode::InvalidArgument,
@@ -162,6 +196,7 @@ impl BoundedPhase2AuditJournal {
 
     pub fn append(&self, event: Phase2AuditEvent) -> Result<Phase2AuditCursor, PlatformError> {
         validate_event(&event, self.limits)?;
+        let event = bounded_event(&event);
         let mut state = self.lock_state()?;
         if state.entries.len() >= self.limits.max_events {
             state.rejected_overflow_events = state.rejected_overflow_events.saturating_add(1);
@@ -202,7 +237,13 @@ impl BoundedPhase2AuditJournal {
             .entries
             .iter()
             .filter(|stored| stored.sequence > after && &stored.event.identity.tenant == tenant);
-        let mut selected = Vec::with_capacity(limit);
+        let mut selected = Vec::new();
+        selected.try_reserve_exact(limit).map_err(|_| {
+            error(
+                PlatformErrorCode::ResourceExhausted,
+                "phase2-audit-query-allocation-failed",
+            )
+        })?;
         let mut last_sequence = None;
         for stored in matching.by_ref().take(limit) {
             selected.push(stored.event.clone());
@@ -236,6 +277,16 @@ impl BoundedPhase2AuditJournal {
     }
 }
 
+fn aggregate_string_budget(event_count: usize, limits: Phase2AuditLimits) -> Option<usize> {
+    let metadata_strings = limits
+        .max_attributes
+        .checked_mul(PHASE2_AUDIT_METADATA_STRINGS_PER_ATTRIBUTE)?;
+    let strings_per_event = PHASE2_AUDIT_FIXED_STRING_FIELDS.checked_add(metadata_strings)?;
+    strings_per_event
+        .checked_mul(limits.max_string_bytes)?
+        .checked_mul(event_count)
+}
+
 fn validate_event(
     event: &Phase2AuditEvent,
     limits: Phase2AuditLimits,
@@ -251,10 +302,28 @@ fn validate_event(
         limits,
         "invalid-phase2-audit-operation-id",
     )?;
+    if let Some(package) = &event.identity.package {
+        validate_string(package.as_str(), limits, "invalid-phase2-audit-package")?;
+    }
+    validate_optional_string(
+        event.identity.component.as_ref().map(|value| value.0.as_str()),
+        limits,
+        "invalid-phase2-audit-component",
+    )?;
+    validate_optional_string(
+        event.identity.policy.as_ref().map(|value| value.0.as_str()),
+        limits,
+        "invalid-phase2-audit-policy",
+    )?;
     validate_optional_string(
         event.identity.rollout_id.as_deref(),
         limits,
         "invalid-phase2-audit-rollout-id",
+    )?;
+    validate_optional_string(
+        event.identity.revision.as_ref().map(|value| value.0.as_str()),
+        limits,
+        "invalid-phase2-audit-revision",
     )?;
     validate_optional_string(
         event.reason_code.as_deref(),
@@ -267,20 +336,81 @@ fn validate_event(
         limits,
         "invalid-phase2-audit-actor-type",
     )?;
-    if event
-        .actor
-        .tenant
-        .as_ref()
-        .is_some_and(|tenant| tenant != &event.identity.tenant)
-    {
-        return Err(error(
-            PlatformErrorCode::PermissionDenied,
-            "phase2-audit-actor-tenant-mismatch",
-        ));
+    if let Some(actor_tenant) = &event.actor.tenant {
+        validate_string(
+            &actor_tenant.0,
+            limits,
+            "invalid-phase2-audit-actor-tenant",
+        )?;
+        if actor_tenant != &event.identity.tenant {
+            return Err(error(
+                PlatformErrorCode::PermissionDenied,
+                "phase2-audit-actor-tenant-mismatch",
+            ));
+        }
     }
     validate_metadata(&event.actor.attributes, limits)?;
     validate_metadata(&event.attributes, limits)?;
     Ok(())
+}
+
+fn bounded_event(event: &Phase2AuditEvent) -> Phase2AuditEvent {
+    Phase2AuditEvent {
+        id: AuditEventId(bounded_string(&event.id.0)),
+        actor: AuditActor {
+            subject: bounded_string(&event.actor.subject),
+            actor_type: bounded_string(&event.actor.actor_type),
+            tenant: event
+                .actor
+                .tenant
+                .as_ref()
+                .map(|tenant| TenantId(bounded_string(&tenant.0))),
+            attributes: bounded_metadata(&event.actor.attributes),
+        },
+        kind: event.kind,
+        identity: Phase2AuditIdentity {
+            tenant: TenantId(bounded_string(&event.identity.tenant.0)),
+            operation_id: bounded_string(&event.identity.operation_id),
+            package: event.identity.package.as_ref().map(|package| {
+                package
+                    .as_str()
+                    .parse()
+                    .expect("stored package digest was previously validated")
+            }),
+            component: event
+                .identity
+                .component
+                .as_ref()
+                .map(|value| ReleaseDigest(bounded_string(&value.0))),
+            policy: event
+                .identity
+                .policy
+                .as_ref()
+                .map(|value| PolicyId(bounded_string(&value.0))),
+            rollout_id: event.identity.rollout_id.as_deref().map(bounded_string),
+            revision: event
+                .identity
+                .revision
+                .as_ref()
+                .map(|value| RevisionId(bounded_string(&value.0))),
+            generation: event.identity.generation,
+        },
+        outcome: event.outcome,
+        occurred_at_unix_millis: event.occurred_at_unix_millis,
+        reason_code: event.reason_code.as_deref().map(bounded_string),
+        attributes: bounded_metadata(&event.attributes),
+    }
+}
+
+fn bounded_metadata(metadata: &BTreeMap<String, String>) -> BTreeMap<String, String> {
+    metadata
+        .iter()
+        .map(|(key, value)| (bounded_string(key), bounded_string(value)))
+        .collect()
+}
+
+fn bounded_string(value: &str) -> String {
+    Box::<str>::from(value).into_string()
 }
 
 fn validate_metadata(
@@ -365,7 +495,8 @@ mod tests {
 
     use super::{
         BoundedPhase2AuditJournal, Phase2AuditEvent, Phase2AuditEventKind, Phase2AuditIdentity,
-        Phase2AuditLimits,
+        Phase2AuditLimits, MAX_PHASE2_AUDIT_ATTRIBUTES, MAX_PHASE2_AUDIT_EVENTS,
+        MAX_PHASE2_AUDIT_QUERY_EVENTS, MAX_PHASE2_AUDIT_STRING_BYTES,
     };
 
     fn event(id: &str, tenant: &str) -> Phase2AuditEvent {
@@ -466,6 +597,114 @@ mod tests {
         let error = journal.append(mismatched).unwrap_err();
         assert_eq!(error.code, PlatformErrorCode::PermissionDenied);
         assert_eq!(error.message, "phase2-audit-actor-tenant-mismatch");
+    }
+
+    #[test]
+    fn omitted_identity_strings_are_bounded() {
+        let journal = BoundedPhase2AuditJournal::new(Phase2AuditLimits {
+            max_string_bytes: 80,
+            ..Phase2AuditLimits::default()
+        })
+        .unwrap();
+
+        let mut component = event("component", "a");
+        component.identity.component = Some(ReleaseDigest("c".repeat(81)));
+        let error = journal.append(component).unwrap_err();
+        assert_eq!(error.message, "invalid-phase2-audit-component");
+
+        let mut policy = event("policy", "a");
+        policy.identity.policy = Some(PolicyId("p".repeat(81)));
+        let error = journal.append(policy).unwrap_err();
+        assert_eq!(error.message, "invalid-phase2-audit-policy");
+
+        let mut revision = event("revision", "a");
+        revision.identity.revision = Some(RevisionId("r".repeat(81)));
+        let error = journal.append(revision).unwrap_err();
+        assert_eq!(error.message, "invalid-phase2-audit-revision");
+    }
+
+    #[test]
+    fn retained_events_do_not_keep_caller_spare_capacity() {
+        let journal = BoundedPhase2AuditJournal::new(Phase2AuditLimits::default()).unwrap();
+        let mut source = event("1", "a");
+
+        let mut oversized_operation = String::with_capacity(4096);
+        oversized_operation.push_str("op-short");
+        source.identity.operation_id = oversized_operation;
+
+        let mut oversized_subject = String::with_capacity(4096);
+        oversized_subject.push_str("operator:test");
+        source.actor.subject = oversized_subject;
+
+        let mut oversized_actor_key = String::with_capacity(4096);
+        oversized_actor_key.push_str("role");
+        let mut oversized_actor_value = String::with_capacity(4096);
+        oversized_actor_value.push_str("operator");
+        source.actor.attributes =
+            BTreeMap::from([(oversized_actor_key, oversized_actor_value)]);
+
+        let mut oversized_component = String::with_capacity(4096);
+        oversized_component.push_str("sha256:component");
+        source.identity.component = Some(ReleaseDigest(oversized_component));
+
+        let mut oversized_metadata_key = String::with_capacity(4096);
+        oversized_metadata_key.push_str("cache-disposition");
+        let mut oversized_metadata_value = String::with_capacity(4096);
+        oversized_metadata_value.push_str("miss");
+        source.attributes = BTreeMap::from([(oversized_metadata_key, oversized_metadata_value)]);
+
+        journal.append(source).unwrap();
+        let state = journal.state.lock().unwrap();
+        let stored = &state.entries.front().unwrap().event;
+        assert!(stored.identity.operation_id.capacity() < 4096);
+        assert!(stored.actor.subject.capacity() < 4096);
+        assert!(stored.identity.component.as_ref().unwrap().0.capacity() < 4096);
+        let (actor_key, actor_value) = stored.actor.attributes.first_key_value().unwrap();
+        assert!(actor_key.capacity() < 4096);
+        assert!(actor_value.capacity() < 4096);
+        let (key, value) = stored.attributes.first_key_value().unwrap();
+        assert!(key.capacity() < 4096);
+        assert!(value.capacity() < 4096);
+    }
+
+    #[test]
+    fn excessive_and_aggregate_limits_are_rejected_before_allocation() {
+        for limits in [
+            Phase2AuditLimits {
+                max_events: MAX_PHASE2_AUDIT_EVENTS + 1,
+                ..Phase2AuditLimits::default()
+            },
+            Phase2AuditLimits {
+                max_query_events: MAX_PHASE2_AUDIT_QUERY_EVENTS + 1,
+                ..Phase2AuditLimits::default()
+            },
+            Phase2AuditLimits {
+                max_attributes: MAX_PHASE2_AUDIT_ATTRIBUTES + 1,
+                ..Phase2AuditLimits::default()
+            },
+            Phase2AuditLimits {
+                max_string_bytes: MAX_PHASE2_AUDIT_STRING_BYTES + 1,
+                ..Phase2AuditLimits::default()
+            },
+            Phase2AuditLimits {
+                max_events: MAX_PHASE2_AUDIT_EVENTS,
+                max_query_events: MAX_PHASE2_AUDIT_QUERY_EVENTS,
+                max_attributes: MAX_PHASE2_AUDIT_ATTRIBUTES,
+                max_string_bytes: MAX_PHASE2_AUDIT_STRING_BYTES,
+            },
+        ] {
+            let error = BoundedPhase2AuditJournal::new(limits).unwrap_err();
+            assert_eq!(error.code, PlatformErrorCode::InvalidArgument);
+            assert_eq!(error.message, "invalid-phase2-audit-limits");
+        }
+
+        let error = BoundedPhase2AuditJournal::new(Phase2AuditLimits {
+            max_query_events: usize::MAX,
+            ..Phase2AuditLimits::default()
+        })
+        .unwrap_err();
+        assert_eq!(error.code, PlatformErrorCode::InvalidArgument);
+        assert_eq!(error.message, "invalid-phase2-audit-limits");
     }
 
     #[test]
