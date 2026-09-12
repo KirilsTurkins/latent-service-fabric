@@ -44,7 +44,7 @@ pub fn read_package_input(
         let bytes = super::io::read(
             &root,
             &file.source,
-            limits.document_limit(file.role).min(remaining),
+            limits.layer_limit(file.role, &file.path).min(remaining),
             limits.package,
         )?;
         remaining -= bytes.len() as u64;
@@ -153,10 +153,7 @@ pub fn read_package_directory(
     let layer_root = root.open_dir_nofollow("layers").map_err(super::io_error)?;
     let mut layers = Vec::with_capacity(layout.config().layers.len());
     for layer in &layout.config().layers {
-        let mut maximum = layer.size.min(limits.document_limit(layer.role));
-        if layer.path == BUILD_INPUTS_PATH {
-            maximum = maximum.min(limits.package.max_document_bytes as u64);
-        }
+        let maximum = layer.size.min(limits.layer_limit(layer.role, &layer.path));
         let bytes = super::io::read(&layer_root, &layer.path, maximum, limits.package)?;
         layers.push((layer.path.clone(), bytes));
     }

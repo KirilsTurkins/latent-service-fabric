@@ -13,7 +13,7 @@ From the configured Python 3.13 environment and pinned toolchain:
 
 ```sh
 python tools/build_provenance.py --repository https://github.com/KirilsTurkins/latent-service-fabric --output-dir target/capsules/echo-provenance
-cargo run -p latent-packaging --example package --locked -- build target/capsules/echo-provenance/package-source.json target/capsules/echo-provenance target/package-echo-provenance
+cargo run -p latent-packaging --example package --locked -- build-with-sbom target/capsules/echo-provenance/package-source.json target/capsules/echo-provenance/sbom-inputs.json target/capsules/echo-provenance target/package-echo-provenance
 cargo run -p latent-packaging --example package --locked -- inspect target/package-echo-provenance
 ```
 
@@ -27,7 +27,8 @@ This builds a small component and does not run a load campaign.
 `--legacy-output-dir` optionally exports the complete unsigned echo fixture from
 the same build for existing containment/conformance tools. It must name a distinct
 fresh child of the target root. The default export retains only the observation
-and exact package-ready inputs. Neither export authenticates legacy `build.json`.
+and exact package-ready inputs, including normalized `sbom-inputs.json`. Neither
+export authenticates legacy `build.json`.
 
 `tools/validate_contracts.sh` regenerates its two fixed echo output directories.
 Its reset helper checks the expected file inventory, fixture markers and component
@@ -49,6 +50,15 @@ material identifies the current driver/helper sources that actually performed
 the observation, rather than pretending they came from an older selected commit.
 Tool materials hash selected executable bytes. Names are bounded logical labels,
 never private filesystem paths.
+
+The maintained observer also records `dependency-inventory`: the exact hash and
+size of `sbom-inputs.json`. It reuses Cargo's actual compiler-artifact records,
+captured lock/source manifests and bounded observed cache manifests. Guest,
+build dependency, procedural macro, build script, WIT, output and tool roles
+stay separate. The [SBOM profile](../component-development/sbom.md) documents
+available attribution and the conservative producer license vocabulary. The
+packager encodes and embeds the inventory before computing the package digest;
+the same BOM bytes can subsequently be attached as detached evidence.
 
 The repository URL is explicitly `operator-asserted`; local commits and inventory
 do not authenticate remote repository ownership. This profile always reports
@@ -146,8 +156,9 @@ network discovery or positive verification cache.
 
 Future durable admission must persist clock/generation floors and atomically
 compare proof state at final publication. Serialized fields, referrer presence
-and matching subjects cannot recreate authority. SBOM policy and trusted native
-compiler evidence remain separate Phase 2 work.
+and matching subjects cannot recreate authority. [SBOM content policy](../component-development/sbom.md)
+checks presence and selected attribution requirements; it grants no builder or
+publisher authority. Trusted native compiler evidence remains separate Phase 2 work.
 
 ## Bounds and validation
 

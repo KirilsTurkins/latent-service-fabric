@@ -17,6 +17,7 @@ from tools import build_provenance as build
 from tools.build_observation import build_environment, file_identity, finish_observation, public_repository, resolve_tools
 from tools.build_snapshot import SnapshotError, canonical, digest
 from tools.tests.test_build_snapshot import git, repository
+from tools.tests.test_build_inventory import artifact, messages
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -115,7 +116,10 @@ class BuildProvenanceTests(unittest.TestCase):
             destination = repo / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes((ROOT / relative).read_bytes())
-        (repo / "Cargo.lock").write_bytes(b"version = 4\n")
+        (repo / "tools/toolchain-smoke").mkdir(exist_ok=True)
+        (repo / "tools/toolchain-smoke/Cargo.toml").write_bytes(
+            b'[package]\nname="latent-toolchain-smoke"\nversion="1.0.0"\n')
+        (repo / "Cargo.lock").write_bytes(b'version=4\n[[package]]\nname="latent-toolchain-smoke"\nversion="1.0.0"\n')
         git(repo, "add", ".")
         git(repo, "commit", "--quiet", "-m", "build inputs")
         revision = git(repo, "rev-parse", "HEAD")
@@ -123,6 +127,8 @@ class BuildProvenanceTests(unittest.TestCase):
         (repo / "wit/platform/context/package.wit").write_bytes(b"dirty WIT replacement")
         target = parent / "target"
         target.mkdir()
+        cache = parent / "cargo-cache"
+        cache.mkdir()
         output = target / "echo-observed"
         legacy_output = target / "echo-legacy" if legacy else None
         tool_paths = {name: parent / (name + ".exe") for name in ("cargo", "rustc", "wasm-tools")}
@@ -132,7 +138,7 @@ class BuildProvenanceTests(unittest.TestCase):
         original_root = echo.ROOT
         component = b"synthetic component for observer orchestration only"
         observed_root = []
-        def compile_once(_target, reproducible):
+        def compile_once(_target, reproducible, *, artifact_observer):
             observed_root.append(echo.ROOT)
             self.assertEqual(echo.command_from_environment("RUSTC", "unused"), [str(tool_paths["rustc"])])
             self.assertEqual(echo.canonical_build_environment()["RUSTC"], str(tool_paths["rustc"]))
@@ -147,6 +153,11 @@ class BuildProvenanceTests(unittest.TestCase):
                 handler = signal.getsignal(signal.SIGTERM)
                 self.assertTrue(callable(handler))
                 handler(signal.SIGTERM, None)
+            artifact_observer(messages([artifact(_target,
+                echo.ROOT / "tools/toolchain-smoke/Cargo.toml", "echo-capsule", "example")]), _target)
+            if reproducible:
+                artifact_observer(messages([artifact(_target,
+                    echo.ROOT / "tools/toolchain-smoke/Cargo.toml", "echo-capsule", "example")]), _target)
             return component, reproducible
         def stage(component_bytes, *, output_directory, **_kwargs):
             output_directory.mkdir()
@@ -161,6 +172,7 @@ class BuildProvenanceTests(unittest.TestCase):
             interface.mkdir()
             (interface / "component.wit").write_bytes(b"maintained interface output")
         with ExitStack() as mocks:
+            mocks.enter_context(mock.patch.dict(os.environ, {"CARGO_HOME": str(cache)}))
             mocks.enter_context(mock.patch.object(build, "resolve_tools", return_value=(tool_paths, materials)))
             mocks.enter_context(mock.patch.object(echo, "verify_tool_versions"))
             mocks.enter_context(mock.patch.object(echo, "build_component", side_effect=compile_once))
@@ -201,6 +213,14 @@ class BuildProvenanceTests(unittest.TestCase):
             recipe = json.loads((output / "package-source.json").read_bytes())
             self.assertEqual(len(recipe["layers"]), 7)
             self.assertEqual(observation["componentDigest"], digest((output / "echo-capsule.wasm").read_bytes()))
+            inventory_bytes = (output / "sbom-inputs.json").read_bytes()
+            inventory = json.loads(inventory_bytes)
+            self.assertEqual(inventory["dependencyCompleteness"], "observed-units-incomplete")
+            self.assertEqual(len(inventory["entries"]), 7)
+            self.assertEqual([row for row in observation["materials"] if row["name"] == "dependency-inventory"],
+                [{"name": "dependency-inventory", "digest": digest(inventory_bytes), "size": len(inventory_bytes)}])
+            self.assertNotIn(str(parent), inventory_bytes.decode())
+            self.assertNotIn("sbom-inputs.json", {row["path"] for row in recipe["layers"]})
             for row in observation["materials"]:
                 self.assertNotIn(str(parent), json.dumps(row))
             self.assertEqual({path.name for path in output.parent.iterdir()}, {output.name})

@@ -237,7 +237,7 @@ def extract_cargo_artifact(cargo_output: str) -> Path:
     return artifact
 
 
-def build_once(build_directory: Path) -> bytes:
+def build_once(build_directory: Path, *, artifact_observer=None) -> bytes:
     build_directory = build_directory.absolute()
     build_parent = build_directory.parent
     build_parent.mkdir(parents=True, exist_ok=True)
@@ -267,6 +267,8 @@ def build_once(build_directory: Path) -> bytes:
     )
     core_artifact = extract_cargo_artifact(completed.stdout)
     owned_child(core_artifact, build_directory)
+    if artifact_observer is not None:
+        artifact_observer(completed.stdout, build_directory)
     component_artifact = build_directory / "componentized" / ARTIFACT_NAME
     component_artifact.parent.mkdir(parents=True, exist_ok=True)
     wasm_tools = command_from_environment("WASM_TOOLS", "wasm-tools")
@@ -288,7 +290,7 @@ def build_once(build_directory: Path) -> bytes:
     return component
 
 
-def build_component(target_root: Path, verify_reproducible: bool) -> tuple[bytes, bool]:
+def build_component(target_root: Path, verify_reproducible: bool, *, artifact_observer=None) -> tuple[bytes, bool]:
     target_root = target_root.resolve()
     target_root.mkdir(parents=True, exist_ok=True)
     build_parent = target_root / "capsule-build"
@@ -298,8 +300,8 @@ def build_component(target_root: Path, verify_reproducible: bool) -> tuple[bytes
         first_directory = build_parent / "echo-a"
         second_directory = build_parent / "echo-b"
         try:
-            first = build_once(first_directory)
-            second = build_once(second_directory)
+            first = build_once(first_directory, artifact_observer=artifact_observer)
+            second = build_once(second_directory, artifact_observer=artifact_observer)
         finally:
             remove_owned_directory(first_directory, build_parent)
             remove_owned_directory(second_directory, build_parent)
@@ -314,7 +316,7 @@ def build_component(target_root: Path, verify_reproducible: bool) -> tuple[bytes
 
     build_directory = build_parent / "echo"
     try:
-        return build_once(build_directory), False
+        return build_once(build_directory, artifact_observer=artifact_observer), False
     finally:
         remove_owned_directory(build_directory, build_parent)
 

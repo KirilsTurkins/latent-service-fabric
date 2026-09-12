@@ -6,8 +6,9 @@ defines bounded models, codecs and validation. The
 [packaging workflow](../component-development/packaging.md) adds deterministic
 build/inspection and component/WIT checks. The [registry adapter](../reference/oci-registry.md)
 adds scoped authenticated transfers. [Publisher signature verification](../reference/publisher-trust.md)
-binds exact packages to approved keys and current trust state. Provenance/SBOM
-verification, trusted catalog admission and rollout remain subsequent tickets in the
+binds exact packages to approved keys and current trust state. [Build provenance](../reference/build-provenance.md)
+adds independent builder policy; [SBOM inspection](../component-development/sbom.md)
+binds inventories to package content. Trusted catalog admission and rollout remain subsequent tickets in the
 [Phase 2 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/139).
 
 ## Identity and compatibility
@@ -129,8 +130,12 @@ These envelope types define subject associations. The
 [publisher signature profile](../reference/publisher-trust.md) defines the
 implemented signature payload and verification policy. The
 [build provenance profile](../reference/build-provenance.md) separately defines
-authenticated builder assertions and exact source constraints. SBOM payload
-verification remains a subsequent ticket. A referrer with a matching
+authenticated builder assertions and exact source constraints. The
+[SBOM profile](../component-development/sbom.md) defines CycloneDX 1.6 content
+at the reserved `package/sbom.cdx.json` asset and requires detached SBOM payloads
+to equal those embedded bytes exactly. The inventory omits the final package
+digest to avoid a self-reference cycle; the detached subject supplies it after
+assembly. A referrer with a matching
 subject alone is not authenticated.
 Required evidence must pass independent subject, integrity and trust checks
 before admission. Evidence cannot be made part of the same manifest it signs;
