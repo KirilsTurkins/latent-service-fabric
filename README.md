@@ -1,13 +1,26 @@
 # Latent Service Fabric
 
 Latent Service Fabric (LSF) is a component-native execution-fabric engineering
-project. Its delivered Phase 1 runs independently deployable stateless service
+project. Its standalone runtime runs independently deployable stateless service
 capsules on a standalone Linux node without assigning persistent processes,
 sockets, threads, guest heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-> Phase 1 and its performance extension are complete: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [functional completion review](docs/phase-1-completion.md) and [extension report](docs/phase-1-extension-completion.md) cover scale, soak, optimization, and actual Docker/Kubernetes comparisons. These are scoped engineering results, not production SLOs. Phase 2 delivery now includes deterministic packaging, OCI distribution, publisher/provenance/SBOM verification, trusted admission and release lifecycle management, isolated AOT compilation, a protected native cache, durable audit, durable rollout coordination, controlled canary promotion and atomic eligible-release rollback. The CLI also exposes local package/OCI workflows and authenticated release, managed deployment, rollout and audit commands. Phase 2 validation and its completion gate remain in progress.
+Phase 1, its performance extension, and Phase 2 are complete in development.
+The [Phase 2 completion review](docs/phase-2-completion.md) covers deterministic
+packaging, authenticated OCI transfer, publisher/provenance/SBOM verification,
+current admission and lifecycle, isolated compilation and native reuse, durable
+audit, managed deployment receipts, canary promotion, rollback and operator
+workflows. Its compact evidence includes real registry/node execution, offline
+trust checks, native currentness and a predefined 32-release resource profile.
+
+The [Phase 1 review](docs/phase-1-completion.md) and
+[extension report](docs/phase-1-extension-completion.md) preserve the earlier
+scale, soak, optimization and Docker/Kubernetes comparisons. These are scoped
+engineering results, not production SLOs. Phase 3 has
+[41 planned tickets](docs/roadmap.md#phase-3-capabilities-and-application-hosting)
+for capability providers, application/web hosting, SDK delivery and validation.
 
 ## Core invariant
 
@@ -17,9 +30,10 @@ resident state = fixed node runtime + bounded catalog metadata + active activati
 
 The number of operating-system processes, threads, sockets, and execution cells is node-defined and must not scale with the number of deployed services.
 
-![Historical Phase 1 boundary: authenticated local clients use durable catalogs, admission and scheduling, and generic Wasmtime cells.](docs/assets/phase1-delivery-boundary.svg)
+![Phase 2 delivery: bounded package transfer, current node admission and explicit rollout control.](docs/assets/phase2-delivery-boundary.svg)
 
-This diagram records the completed Phase 1 scope. The Phase 2 additions are listed below.
+The [historical Phase 1 boundary](docs/assets/phase1-delivery-boundary.svg) retains
+its original scope. Phase 2 features are listed below.
 
 ## Authoritative interface layers
 
@@ -44,7 +58,7 @@ rfcs/                  Future design proposals
 research/              Experimental tracks kept outside the production core
 docs/                  Architecture, protocol, operations, and security documentation
 tests/                 Cross-phase test specifications; executable tests also live with crates/apps/tools
-benchmarks/            Benchmark definitions and retained Phase 0 / Phase 1 evidence
+benchmarks/            Benchmark definitions, historical measurements and compact Phase 2 gate evidence
 tools/                 Pinned validation, generation, spike, benchmark, and gate tooling
 ```
 
@@ -102,7 +116,7 @@ services had lower warm request latency; LSF used less application memory at
 differences, and the Docker Desktop/WSL2 environment. They do not establish
 production cluster capacity or a universal millisecond request budget.
 
-## Phase 2 features delivered so far
+## Delivered Phase 2 features
 
 | Feature | Implemented surface and documentation |
 | --- | --- |
@@ -120,8 +134,9 @@ production cluster capacity or a universal millisecond request budget.
 Local verification and copied canary observations do not authorize execution or
 promotion. Managed deployments bind a caller-retained operation ID, exact object
 generation and global catalog state version; receipt lookup is finite and Unknown
-does not prove a mutation never ran. The [roadmap](docs/roadmap.md) tracks remaining
-Phase 2 validation and the completion gate.
+does not prove a mutation never ran. The [completion report](docs/phase-2-completion.md)
+maps all eighteen delivery tickets and records validation, failed attempts and
+the finite scope of the gate decision.
 
 General capability providers, HTTP/web hosting and expanded SDK transports are
 Phase 3 work. Durable service state, transactional effects and clustering remain

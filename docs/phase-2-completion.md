@@ -1,15 +1,17 @@
 # Phase 2 completion review
 
-**Gate decision: PENDING — evidence review dated September 13, 2026.**
+**Gate decision: accept Phase 2 on the reviewed, CI-passing merge of this report.**
 
 This report maps [gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)
-to implemented delivery boundaries and their evidence. It does not yet authorize
-closure of [epic #139](https://github.com/KirilsTurkins/latent-service-fabric/issues/139)
-or the [Phase 2 milestone](https://github.com/KirilsTurkins/latent-service-fabric/milestone/4).
-The finite evidence runs and Wiki verification below are complete. Final
-required CI and merge review for [documentation PR #243](https://github.com/KirilsTurkins/latent-service-fabric/pull/243)
-and gate #158 remain pending. The gate owner will update this decision after
-those results and the final dependency ledger are reviewed.
+to implemented delivery boundaries and their evidence, reviewed September 13,
+2026. All eighteen implementation/documentation children are merged and closed;
+their exact revisions and successful checks are in the dependency ledger.
+The finite evidence runs and separate Wiki publication below are verified.
+The gate PR must pass all seven applicable CI checks before its reviewed merge
+authorizes closure of [epic #139](https://github.com/KirilsTurkins/latent-service-fabric/issues/139)
+and the [Phase 2 milestone](https://github.com/KirilsTurkins/latent-service-fabric/milestone/4).
+Gate #158 records that final PR, checked head and merge decision. A proposed
+branch copy of this report does not itself establish that the merge occurred.
 
 The [Phase 1 completion](phase-1-completion.md) and
 [performance extension](phase-1-extension-completion.md) retain their original
@@ -55,10 +57,11 @@ child cleanup have their own focused tests. See the fixed
 
 The [dependency ledger](../benchmarks/phase2/2026-09-13/dependencies.json)
 records the eighteen child issues, reviewed heads, merge revisions and required
-checks. Features #140–156 are delivered; #156 merged through
+checks. All #140–157 children are delivered; #156 merged through
 [PR #242](https://github.com/KirilsTurkins/latent-service-fabric/pull/242) at
-`bda3017345b0bf7d656d151cec10a5b3fd8cb165`. Documentation #157 is represented by
-PR #243 in the decision review above. The map below connects each dependency
+`bda3017345b0bf7d656d151cec10a5b3fd8cb165`. Documentation #157 merged through
+[PR #243](https://github.com/KirilsTurkins/latent-service-fabric/pull/243) at
+`939cdc836bf2a512b6001dd1031c4ae636847ca3`. The map below connects each dependency
 to its implementation and verification surface; source coverage alone is not
 a passing execution result.
 

@@ -69,16 +69,15 @@ latency SLO, all-shape memory ceiling or isolated orchestration cost.
 Phase 2 builds on that completed handoff under the scope below; local
 catalog/build foundations remain Phase 1.
 
-## Phase 2: packaging and supply chain — features delivered, gate pending
+## Phase 2: packaging and supply chain — complete
 
 [Epic #139](https://github.com/KirilsTurkins/latent-service-fabric/issues/139)
 and the [Phase 2 milestone](https://github.com/KirilsTurkins/latent-service-fabric/milestone/4)
-track the package-to-execution and operator workflow. The following feature
-surfaces are implemented. This documentation refresh is
-[#157](https://github.com/KirilsTurkins/latent-service-fabric/issues/157);
-[completion gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)
-remains pending. Feature delivery and individual test results do not substitute
-for that collective acceptance review.
+track the completed package-to-execution and operator workflow. The
+[completion review](phase-2-completion.md) records the collective acceptance
+decision for [gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158),
+including all eighteen delivery dependencies (#140–157), currentness and offline
+checks, the fixed dormant-resource profile and retained limitations.
 
 The [Phase 2 delivery notes](phase-2-delivery.md) summarize current features,
 migration and recovery boundaries. They remain unreleased development notes.
@@ -109,15 +108,17 @@ evicted operation or restores a revoked release. Catalog durability, audit
 acknowledgement and client outcome certainty remain distinct.
 
 The retained Phase 0/1 measurements keep their original execution identities and
-limitations. Phase 2 delivery makes no new 100k-scale, RSS, latency or production
-SLO claim. Its gate must assess current evidence and documentation together.
+limitations. Phase 2 adds a bounded 32-release resource observation on its
+recorded WSL2 host; it makes no new 100k-scale, latency or production SLO claim.
+Its [evidence set](../benchmarks/phase2/2026-09-13/README.md) preserves exact
+identities, actual outcomes and failed or superseded attempts.
 
 ## Phase 3: capabilities and application hosting
 
 [Epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
 defines the next capability-rich implementation phase. Issues #202–240
 and the retained [Angular umbrella #44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44)
-are a concrete backlog, not claims of working providers. The context, logging and
+form a concrete 41-ticket planned backlog. The context, logging and
 clock surface already delivered in #10 remains the baseline.
 
 The sequence starts with exact versioned contracts, durable grants and a sealed

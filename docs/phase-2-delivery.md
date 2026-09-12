@@ -2,9 +2,10 @@
 
 These are unreleased development notes. The current tagged release remains
 `0.1.0-alpha.2`, which records Phase 1 and its prioritized performance extension.
-Phase 2 feature delivery is present; its completion decision belongs to
-[gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158).
-Closed implementation tickets alone do not establish that decision.
+Phase 2 is complete under the collective
+[gate #158 review](phase-2-completion.md), which records the implementation,
+validation evidence and limitations. Completion does not change the tagged
+release or turn these observations into production SLOs.
 
 ## Features
 
@@ -72,6 +73,9 @@ policy. It exercises exact transfer, deployment, actual invocations, canary
 promotion, rollback, audit, restart and revocation. Its signed test observation
 is synthetic; the separately maintained observed-build integration supplies
 the actual build-capture evidence. [Validation](../VALIDATION.md) identifies both.
+The [completion review](phase-2-completion.md) additionally covers registry
+outage, real native trust invalidation and the fixed 32-release resource profile,
+with compact receipts and explicit failed or superseded attempts.
 
 This remains a standalone Linux stateless node. Package contracts for browser
 assets and SSR do not provide application ingress, browser hosting or rendering.

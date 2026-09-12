@@ -8,8 +8,8 @@ The [standalone Linux node](../reference/standalone-node.md) embeds the delivere
 Phase 1 and Phase 2 control services. Phase 2 feature delivery includes package
 admission, lifecycle, compatibility, audit, staged rollout, canary promotion,
 rollback and [operator workflows](../phase-2-operator-workflows.md).
-[Gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)
-remains pending. The separate `latent-control` application is a scaffold;
+The [Phase 2 completion review](../phase-2-completion.md) records the accepted
+scope and evidence. The separate `latent-control` application is a scaffold;
 PostgreSQL, remote route watches and distributed reconciliation belong to Phase 5.
 
 ## Release catalog and admission

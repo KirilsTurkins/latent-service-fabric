@@ -4,13 +4,12 @@
 
 Latent Service Fabric is a component-native execution fabric in which deployed services are dormant immutable artifacts. Requests become temporary activations. Activations execute inside a fixed pool of reusable sandboxed cells and release activation-owned execution resources when they finish. Durable suspension remains a later-phase model.
 
-Phase 1 and its prioritized performance extension are complete. Phase 2 feature
-delivery adds packaging and authenticated OCI transfer, enforced catalog
-admission, release lifecycle, compatibility, raw/native caches, durable audit and
+Phase 1 and its prioritized performance extension are complete. The completed
+[Phase 2](../phase-2-completion.md) adds packaging and authenticated OCI transfer,
+enforced catalog admission, release lifecycle, compatibility, raw/native caches, durable audit and
 atomic rollout, promotion and rollback. The current product remains a standalone
 Linux stateless node, with explicit trusted-local or enforced release policy.
-[Phase 2 gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)
-is pending. [Phase 3](../roadmap.md#phase-3-capabilities-and-application-hosting)
+[Phase 3](../roadmap.md#phase-3-capabilities-and-application-hosting)
 has a concrete capability/provider and web-hosting backlog; those providers and
 application ingress are not implemented by their WIT or package declarations.
 

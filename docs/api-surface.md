@@ -1,9 +1,9 @@
 # API surface map
 
 This map distinguishes implemented APIs from declared architectural contracts.
-Phase 1 and its performance extension are complete. Phase 2 feature delivery is
-present; [gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)
-remains pending. Generated bindings and schemas do not themselves implement a
+Phase 1 and its performance extension are complete. The
+[Phase 2 completion review](phase-2-completion.md) records its accepted delivery
+scope and evidence. Generated bindings and schemas do not themselves implement a
 service. [The roadmap](roadmap.md) maps Phase 3's concrete capability, provider,
 web and SDK work without claiming it has shipped.
 
