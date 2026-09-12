@@ -27,7 +27,9 @@ use latent_core::{BoxFuture, Metadata, PlatformError, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 
 pub use aot::{
-    AotCompatibilityKey, AotCompilerLimits, TrustedAotCompilerAuthority, TrustedAotOutput,
+    run_aot_compiler_worker, AotCompatibilityKey, AotCompilationJob, AotCompilerLimits,
+    AotJobControl, AotProcessLimits, AotResourceLimits, AotResourceSnapshot, AotSandboxLimits,
+    IsolatedAotCompiler, TrustedAotCompilerAuthority, TrustedAotOutput, ValidatedAotProfile,
 };
 pub use backend::{PreparationActivitySnapshot, WasmtimeBackend};
 pub use cache::{

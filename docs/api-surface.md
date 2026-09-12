@@ -74,7 +74,7 @@ through one bounded, authenticated loopback listener on Linux.
 | `latent-scheduler` | open `CellPool` with nonqueueing acquisition/change notifications, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `LocalScheduler`, `AdmittedSchedulingRequest`, `ScheduledActivation`, `SchedulerSnapshot`, `SchedulingCancellation`, `LocalNodePlacement` |
 | `latent-activation` | `ActivationRequest`, bounded `ActivationRequestBuilder`, `ActivationIdSource`, `ActivationManager`, `ActivationJournal` |
 | `latent-executor` | `ExecutionBackend::prepare_ready_from_repository`/`materialize_ready`, compatible `prepare_from_repository`, `PreparedActivation`, `PreparedReadiness`, affine `PreparedUse`, backend registry and cancellation |
-| `latent-wasmtime` | `WasmtimeComponentEngineFactory`, generic `WasmtimeBackend`, bounded preparation/value policy, `WasmtimeHostServices`, `ContextExposurePolicy`, `StructuredLogSink`, dynamic exports and cleanup proof; retained Phase 0 facade and future AOT interfaces |
+| `latent-wasmtime` | `WasmtimeComponentEngineFactory`, generic `WasmtimeBackend`, bounded preparation/value policy, `WasmtimeHostServices`, `ContextExposurePolicy`, `StructuredLogSink`, dynamic exports and cleanup proof; `IsolatedAotCompiler`, `ValidatedAotProfile` and affine `TrustedAotOutput`; retained Phase 0 facade |
 | `latent-capabilities` | provider, broker, registry, handle model |
 | `latent-blobs` | large-value storage, leases, and transfer |
 | `latent-identity` | authentication, authorization, delegation, node identity |

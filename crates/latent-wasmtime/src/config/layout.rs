@@ -10,6 +10,8 @@ pub(super) const POOL_UNUSED_WARM_SLOTS: u32 = 0;
 pub(super) const POOL_DECOMMIT_BATCH_SIZE: usize = 1;
 pub(super) const POOL_KEEP_RESIDENT_BYTES: usize = 0;
 
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct MemoryLayout {
     reservation: u64,
     growth_reservation: u64,
@@ -17,6 +19,11 @@ pub(super) struct MemoryLayout {
 }
 
 impl MemoryLayout {
+    pub(super) fn compiler_bounded(&self) -> bool {
+        self.reservation <= 64 * 1024 * 1024 * 1024
+            && self.growth_reservation <= 64 * 1024 * 1024 * 1024
+            && self.guard <= 1024 * 1024 * 1024
+    }
     pub(super) fn apply(&self, config: &mut Config) {
         config.memory_reservation(self.reservation);
         config.memory_reservation_for_growth(self.growth_reservation);

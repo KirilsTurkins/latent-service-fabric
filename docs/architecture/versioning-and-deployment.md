@@ -86,3 +86,8 @@ AOT images, snapshots, and fused components are cache derivatives. Their keys in
 The implemented prepared cache holds locally compiled Wasmtime code under
 validated compatibility keys. Snapshotting, fused composition and distributed
 AOT artifact acceptance remain planned; prepared entries retain no guest store.
+
+Phase 2 also provides an [isolated trusted-local compiler producer](../runtime/trusted-aot.md)
+with authenticated, bounded native-output ownership. Persistent storage and
+runtime loading of that output remain issue #151; the current prepared cache
+continues using its existing local compilation path.

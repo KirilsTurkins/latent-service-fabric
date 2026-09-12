@@ -711,6 +711,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "enumflags2"
+version = "0.7.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1027f7680c853e056ebcec683615fb6fbbc07dbaa13b4d5d9442b146ded4ecef"
+dependencies = [
+ "enumflags2_derive",
+]
+
+[[package]]
+name = "enumflags2_derive"
+version = "0.7.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67c78a4d8fdf9953a5c9d458f9efe940fd97a0cab0941c075a813ac594733827"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1306,6 +1326,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "landlock"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "635839550ae8b90d9fd2571460a6645dc0aec070225956ca7a2831ed31d2795d"
+dependencies = [
+ "enumflags2",
+ "libc",
+ "thiserror",
+]
+
+[[package]]
 name = "latent"
 version = "0.1.0-alpha.2"
 dependencies = [
@@ -1696,6 +1727,7 @@ name = "latent-wasmtime"
 version = "0.1.0-alpha.2"
 dependencies = [
  "blake3",
+ "landlock",
  "latent-activation",
  "latent-artifacts",
  "latent-component-bindings",
@@ -1706,13 +1738,17 @@ dependencies = [
  "latent-routing",
  "latent-scheduler",
  "latent-telemetry",
+ "libc",
+ "memmap2",
  "rustix",
+ "seccompiler",
  "serde",
  "serde_json",
  "sha2 0.10.9",
  "tokio",
  "wasm-encoder 0.252.0",
  "wasmtime",
+ "zeroize",
 ]
 
 [[package]]
@@ -1874,6 +1910,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ad38eb12aea514a0466ea40a80fd8cc83637065948eb4a426e4aa46261175227"
 dependencies = [
  "rustix",
+]
+
+[[package]]
+name = "memmap2"
+version = "0.9.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1219ed1b7f229ee7104d281dd01d6802fe28bb6e95d292942c4daacdeb798c0"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -2437,6 +2482,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91c1b7e4904c873ef0710c1f407dde2e6287de2bebc1bbbf7d430bb7cbffd939"
 dependencies = [
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "seccompiler"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4ae55de56877481d112a559bbc12667635fdaf5e005712fd4e2b2fa50ffc884"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
