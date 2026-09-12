@@ -49,11 +49,12 @@ impl Catalogs {
             settings.artifacts,
         )?);
         let deployments = Arc::new(
-            DirectoryDeploymentRepository::open_observed_with_runtime(
+            DirectoryDeploymentRepository::open_observed_with_catalog(
                 settings.data_directory.join("deployments"),
                 artifacts.clone(),
                 settings.deployments,
                 observer,
+                artifacts.lifecycle_authority(),
                 Arc::clone(&settings.runtime_profile),
             )
             .await?,
@@ -110,24 +111,16 @@ impl Catalogs {
                     settings.artifacts,
                 )?
             });
-            let deployments = Arc::new(if let Some(authority) = &supply_chain {
-                DirectoryDeploymentRepository::open_enforced_with_runtime(
+            let deployments = Arc::new(
+                DirectoryDeploymentRepository::open_with_catalog(
                     settings.data_directory.join("deployments"),
                     artifacts.clone(),
                     settings.deployments,
-                    authority.clone(),
+                    artifacts.lifecycle_authority(),
                     Arc::clone(&settings.runtime_profile),
                 )
-                .await?
-            } else {
-                DirectoryDeploymentRepository::open_with_runtime(
-                    settings.data_directory.join("deployments"),
-                    artifacts.clone(),
-                    settings.deployments,
-                    Arc::clone(&settings.runtime_profile),
-                )
-                .await?
-            });
+                .await?,
+            );
             Ok::<_, PlatformError>((artifacts, deployments))
         }
         .await;
@@ -310,6 +303,15 @@ impl StandaloneNode {
     ) -> Result<Self, PlatformError> {
         if settings.supply_chain.is_enforced() != catalogs.supply_chain.is_some()
             || (catalogs.supply_chain.is_some() && catalogs.control.is_none())
+            || !catalogs
+                .deployments
+                .is_bound_to_catalog(&catalogs.artifacts.lifecycle_authority())
+            || settings.supply_chain.is_enforced()
+                != catalogs
+                    .artifacts
+                    .lifecycle_authority()
+                    .required_authority()
+                    .is_some()
         {
             return Err(mode_error());
         }
@@ -327,18 +329,11 @@ impl StandaloneNode {
                 Arc::clone(&clock),
             ))),
         };
-        let factory = if let Some(authority) = &catalogs.supply_chain {
-            WasmtimeComponentEngineFactory::with_enforced_admission(
-                settings.wasmtime.clone(),
-                host_services,
-                authority.clone(),
-            )?
-        } else {
-            WasmtimeComponentEngineFactory::with_host_services(
-                settings.wasmtime.clone(),
-                host_services,
-            )?
-        };
+        let factory = WasmtimeComponentEngineFactory::with_catalog(
+            settings.wasmtime.clone(),
+            host_services,
+            catalogs.artifacts.lifecycle_authority(),
+        )?;
         if factory.runtime_profile().digest() != settings.runtime_profile.digest() {
             return Err(error(
                 PlatformErrorCode::IncompatibleContract,

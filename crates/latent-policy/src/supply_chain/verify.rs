@@ -74,7 +74,7 @@ pub(super) fn with_state(
         limits.package,
     )?;
     let signature = &signatures[0];
-    let publisher = state.publisher.verify_package(
+    let publisher = state.verifiers()?.0.verify_package(
         &subject,
         SignatureEvidenceRef {
             manifest: &signature.manifest,
@@ -92,7 +92,7 @@ pub(super) fn with_state(
         return Err(denied("admission-tenant-publisher-denied"));
     }
     let provenance_entry = &provenance[0];
-    let builder = state.builder.verify_package(
+    let builder = state.verifiers()?.1.verify_package(
         &subject,
         ProvenanceEvidenceRef {
             manifest: &provenance_entry.manifest,

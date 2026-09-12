@@ -16,7 +16,7 @@ generated package inputs through this RPC boundary.
 
 | Service | Supported calls | Standalone behavior |
 | --- | --- | --- |
-| Release | `PublishRelease`, `GetRelease`, `ListReleases` | Immutable local publication and tenant-scoped metadata queries. |
+| Release | `PublishRelease`, `GetRelease`, `ListReleases`, `GetReleaseLifecycle`, `GetReleaseOperation`, `ChangeReleaseLifecycle`, `RenewReleaseEvidence` | Immutable publication, tenant-scoped metadata, durable lifecycle and bounded evidence renewal. |
 | Deployment | `ApplyDeployment`, `GetDeployment`, `ListDeployments`, `DeleteDeployment` | Atomic tenant-scoped object versions and bounded pages. |
 | Route | `GetRouteSnapshot` | Complete projection of the current catalog generation for one tenant. |
 | Node | `GetNode`, `ListNodes` | The one configured node's bounded inventory snapshot. |
@@ -49,6 +49,10 @@ Node inventory can include information about the whole node. Its default policy
 therefore additionally requires the trusted claim `latent.node.operator=true`.
 Adding that text to payload metadata does not grant operator access. Inventory
 reads never become a tenant-filtered approximation of global resource usage.
+
+See [release lifecycle](release-lifecycle.md) for authenticated actors, atomic
+mutation preconditions, evidence renewal, operation retention and uncertain
+outcomes. Historical descriptors and live eligibility are separate.
 
 ## Publishing a release
 
@@ -91,7 +95,9 @@ and runtime contract validation.
 An identical publication is retryable through the repository's immutable
 identity rules. A digest does not permit replacing its descriptor, contract
 metadata, manifest, or tenant association. A lost response should be reconciled
-with `GetRelease` before deciding whether to repeat publication.
+with `GetRelease` before deciding whether to repeat publication. The optional
+`operation` input retains a caller ID for exact operation reconciliation through
+`GetReleaseOperation`; zero generation then requires durable lifecycle absence.
 
 ### Typed contract metadata
 

@@ -247,6 +247,19 @@ the validator's drift detection and the cross-SDK surface requirements.
 
 ## Integration boundary
 
+Phase 2 lifecycle #148 adds `PublishReleaseRequest.operation` field 4 and
+`PublishReleaseResponse.operation` field 3 without reusing or changing existing
+field numbers. Omission preserves existing publication callers. New unary
+`GetReleaseLifecycle`, `GetReleaseOperation`, `ChangeReleaseLifecycle` and
+`RenewReleaseEvidence` methods expose bounded lifecycle state and operation
+receipts; actor/tenant authority comes from trusted authentication. Explicit
+operation preconditions preserve generation presence, including present zero
+for publication versus required positive generations for later mutations.
+`ReleaseDescriptor.admitted` remains historical. See
+[release lifecycle](../reference/release-lifecycle.md) for retention, uncertain
+outcomes and renewal semantics. Generated Rust struct literals require the
+additive fields; no generated source or new management-language SDK is checked in.
+
 Phase 0 gate #25 and the executable build foundation in #2 are complete. This
 work is reconciled with the finalized Phase 0 retained/replaced classification
 and with `development`'s generated Rust, Component Model, and RPC ownership.

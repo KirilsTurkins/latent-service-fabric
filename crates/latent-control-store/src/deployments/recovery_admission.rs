@@ -5,7 +5,7 @@
 
 use std::time::Duration;
 
-use latent_artifacts::{ArtifactRepository, ReleaseEligibility, VerifiedArtifactMetadata};
+use latent_artifacts::{ArtifactRepository, ReleaseUseEligibility, VerifiedArtifactMetadata};
 use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest};
 use tokio::time::Instant;
 
@@ -66,9 +66,9 @@ pub(super) async fn eligibility(
     artifacts: &dyn ArtifactRepository,
     release: &ReleaseDigest,
     recovery: bool,
-) -> Result<Option<ReleaseEligibility>, PlatformError> {
+) -> Result<Option<ReleaseUseEligibility>, PlatformError> {
     check(recovery, || {
-        let eligibility = artifacts.release_eligibility(release)?;
+        let eligibility = artifacts.execution_eligibility(release)?;
         if let Some(grant) = &eligibility {
             grant.check_current()?;
         }

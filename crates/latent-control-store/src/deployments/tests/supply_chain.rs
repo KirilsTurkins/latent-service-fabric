@@ -221,3 +221,51 @@ fn revoked_unchanged_metadata_cannot_be_reapplied_or_reopened_as_current() {
     ))
     .is_err());
 }
+
+#[test]
+fn catalog_bound_recovery_keeps_trust_denials_visible_until_fresh_control_refresh() {
+    let Fixture {
+        store,
+        releases,
+        authority,
+        first,
+        _roots: roots,
+        ..
+    } = Fixture::new();
+    let desired = deployment("blue", "example", &first);
+    run(store.apply(desired.clone())).unwrap();
+    authority.state.active.store(false, Ordering::SeqCst);
+    drop(store);
+    let store = run(Store::open_with_catalog(
+        &roots[1].0,
+        releases.clone(),
+        Limits::default(),
+        releases.lifecycle_authority(),
+        super::lifecycle::profile("47.0.3"),
+    ))
+    .unwrap();
+    let denied = store.pin().unwrap();
+    assert_code(
+        denied.resolve(&target("example", None), None),
+        Code::PermissionDenied,
+    );
+    assert_eq!(run(store.list()).unwrap(), vec![desired.clone()]);
+    authority.state.active.store(true, Ordering::SeqCst);
+    assert_code(
+        denied.resolve(&target("example", None), None),
+        Code::PermissionDenied,
+    );
+    // A new bounded control compilation may obtain fresh proof; an old pin cannot.
+    run(store.apply(desired)).unwrap();
+    assert_eq!(
+        store
+            .resolve(&target("example", None), None)
+            .unwrap()
+            .release,
+        first
+    );
+    assert_code(
+        denied.resolve(&target("example", None), None),
+        Code::PermissionDenied,
+    );
+}

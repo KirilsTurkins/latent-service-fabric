@@ -63,7 +63,7 @@ async fn run(
 ) -> DriverEvidence {
     let config_sha256 =
         latent_artifacts::content_digest(&serde_json::to_vec(&public_config).unwrap()).0;
-    let mut session = Session::start(config, control, threads).await;
+    let mut session = Box::pin(Session::start(config, control, threads)).await;
     let (pairs, echo_telemetry) = outcomes::run(&mut session).await;
     let (capability_pairs, capability_telemetry) = capabilities::run(&mut session).await;
     assert_eq!(echo_telemetry["service"], capability_telemetry["service"]);

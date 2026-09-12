@@ -63,36 +63,57 @@ async fn setup() -> (
     Arc<DirectoryArtifactRepository>,
     WasmtimeComponentEngineFactory,
 ) {
+    setup_mode(true).await
+}
+
+async fn setup_mode(
+    enforced: bool,
+) -> (
+    authority::Directory,
+    Arc<authority::Authority>,
+    Arc<DirectoryArtifactRepository>,
+    WasmtimeComponentEngineFactory,
+) {
     let artifact = artifact();
     let authority = authority::Authority::new(artifact.clone());
     let trusted: Arc<dyn AdmissionAuthority> = authority.clone();
     let directory = authority::Directory::new();
-    let repository = Arc::new(
+    let repository = Arc::new(if enforced {
         DirectoryArtifactRepository::open_enforced(
             &directory.0,
             DirectoryArtifactRepositoryConfig::default(),
             AdmissionStorageLimits::default(),
             trusted.clone(),
         )
-        .unwrap(),
-    );
-    repository
-        .admit_package(
-            &TenantId("tests".to_owned()),
-            authority::upload(&artifact),
-            &mut |_| Ok(()),
+        .unwrap()
+    } else {
+        DirectoryArtifactRepository::open(
+            &directory.0,
+            DirectoryArtifactRepositoryConfig::default(),
         )
-        .await
-        .unwrap();
+        .unwrap()
+    });
+    if enforced {
+        repository
+            .admit_package(
+                &TenantId("tests".to_owned()),
+                authority::upload(&artifact),
+                &mut |_| Ok(()),
+            )
+            .await
+            .unwrap();
+    } else {
+        repository.publish(artifact).await.unwrap();
+    }
     let config = WasmtimeConfig {
         compiler_workers: Some(1),
         maximum_concurrent_preparations: 3,
         ..WasmtimeConfig::default()
     };
-    let factory = WasmtimeComponentEngineFactory::with_enforced_admission(
+    let factory = WasmtimeComponentEngineFactory::with_catalog(
         config,
         WasmtimeHostServices::default(),
-        trusted,
+        repository.lifecycle_authority(),
     )
     .unwrap();
     (directory, authority, repository, factory)
@@ -106,7 +127,7 @@ async fn checked_fallback_without_optimization_stamp_retains_eligibility_on_reus
     let artifact = artifact();
     let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
     let eligibility = repository
-        .release_eligibility(&key.release)
+        .execution_eligibility(&key.release)
         .unwrap()
         .unwrap();
     let job = backend.shared.preparation_observer.begin(&key.release);
@@ -151,7 +172,18 @@ async fn checked_fallback_without_optimization_stamp_retains_eligibility_on_reus
 
 #[tokio::test(flavor = "current_thread")]
 async fn queued_source_is_rechecked_before_compilation_and_all_waiters_release() {
-    let (_directory, authority, repository, factory) = setup().await;
+    queued_source_case(true, false).await;
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn lifecycle_revocation_rechecks_queued_work_for_local_and_enforced_catalogs() {
+    for enforced in [false, true] {
+        queued_source_case(enforced, true).await;
+    }
+}
+
+async fn queued_source_case(enforced: bool, lifecycle: bool) {
+    let (_directory, authority, repository, factory) = setup_mode(enforced).await;
     let backend = factory.create_backend_instance();
     backend.preparation_observer().enable();
     let pool = backend.shared.compiler.as_ref().unwrap();
@@ -185,7 +217,7 @@ async fn queued_source_is_rechecked_before_compilation_and_all_waiters_release()
     started.recv_timeout(Duration::from_secs(5)).unwrap();
     let key = factory.preparation_key(artifact().descriptor.release_digest);
     let mut first = backend.prepare_ready_from_repository(repository.clone(), key.clone());
-    let mut second = backend.prepare_ready_from_repository(repository, key);
+    let mut second = backend.prepare_ready_from_repository(repository.clone(), key.clone());
     assert!(first
         .as_mut()
         .poll(&mut Context::from_waker(Waker::noop()))
@@ -194,7 +226,12 @@ async fn queued_source_is_rechecked_before_compilation_and_all_waiters_release()
         .as_mut()
         .poll(&mut Context::from_waker(Waker::noop()))
         .is_pending());
-    authority.state.active.store(false, Ordering::SeqCst);
+    if lifecycle {
+        revoke_lifecycle(&repository, &key.release).await;
+    } else {
+        authority.state.active.store(false, Ordering::SeqCst);
+    }
+
     release.send(()).unwrap();
     assert!(tokio::time::timeout(Duration::from_secs(5), first)
         .await
@@ -216,6 +253,32 @@ async fn queued_source_is_rechecked_before_compilation_and_all_waiters_release()
     assert_eq!(backend.compiler_snapshot().reserved_document_bytes, 0);
     assert_eq!(backend.compiler_snapshot().ready_preparations, 0);
     assert_eq!(backend.cache_snapshot().preparing, 0);
+}
+
+async fn revoke_lifecycle(
+    repository: &DirectoryArtifactRepository,
+    release: &latent_core::ReleaseDigest,
+) {
+    repository
+        .change_release_lifecycle(
+            latent_artifacts::ReleaseMutationContext {
+                scope: latent_artifacts::LifecycleScope::Tenant(TenantId("tests".into())),
+                actor: latent_artifacts::ReleaseActor {
+                    subject: "queue-test".into(),
+                    kind: latent_artifacts::ReleaseActorKind::Host,
+                },
+                operation: Some(latent_artifacts::ReleaseOperationPrecondition {
+                    operation_id: "queue-revoke".into(),
+                    expected_generation: 1,
+                }),
+            },
+            release,
+            latent_artifacts::ReleaseLifecycleAction::Revoke,
+            latent_artifacts::ReleaseLifecycleReason::OperatorRevocation,
+            &mut |_| Ok(()),
+        )
+        .await
+        .unwrap();
 }
 
 #[test]

@@ -19,7 +19,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, TryLockError};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use latent_artifacts::{AdmissionAuthority, AdmissionRecheck, ArtifactRepository};
+use latent_artifacts::{AdmissionAuthority, ArtifactRepository, ReleaseUseRecheck};
 use latent_core::{
     BoxFuture, ContractId, ErrorDetail, Metadata, PlatformError, PlatformErrorCode, RevisionId,
     RouteGeneration,
@@ -103,6 +103,7 @@ pub struct DirectoryDeploymentRepository {
     artifacts: Arc<dyn ArtifactRepository>,
     admission: Option<Arc<dyn AdmissionAuthority>>,
     runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+    lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
     current: RwLock<Arc<CompiledCatalog>>,
     generation: AtomicU64,
     writer: Mutex<()>,
@@ -126,6 +127,14 @@ pub struct PinnedRouteResolver {
 }
 
 impl DirectoryDeploymentRepository {
+    /// Reports exact catalog-owner identity without checking any release grant.
+    #[must_use]
+    pub fn is_bound_to_catalog(&self, owner: &latent_artifacts::LifecycleAuthorityHandle) -> bool {
+        self.lifecycle
+            .as_ref()
+            .is_some_and(|configured| configured.same_owner(owner))
+    }
+
     /// Restores and verifies the latest complete state; never silently resets a corrupt catalog.
     /// Relative paths are anchored on first poll, before suspension. The retained
     /// canonical absolute root keeps later operations bound to the owned directory.
@@ -134,7 +143,7 @@ impl DirectoryDeploymentRepository {
         artifacts: Arc<dyn ArtifactRepository>,
         config: DirectoryDeploymentRepositoryConfig,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, artifacts, config, Source::default(), None, None).await
+        Self::open_inner(root, artifacts, config, Source::default(), None, None, None).await
     }
 
     /// Opens a catalog whose releases must belong to this exact live authority.
@@ -150,6 +159,7 @@ impl DirectoryDeploymentRepository {
             config,
             Source::default(),
             Some(authority),
+            None,
             None,
         )
         .await
@@ -171,6 +181,7 @@ impl DirectoryDeploymentRepository {
             Source::observed(observer),
             None,
             None,
+            None,
         )
         .await
     }
@@ -189,6 +200,7 @@ impl DirectoryDeploymentRepository {
             Source::default(),
             None,
             Some(profile),
+            None,
         )
         .await
     }
@@ -208,6 +220,7 @@ impl DirectoryDeploymentRepository {
             Source::default(),
             Some(authority),
             Some(profile),
+            None,
         )
         .await
     }
@@ -227,6 +240,50 @@ impl DirectoryDeploymentRepository {
             Source::observed(observer),
             None,
             Some(profile),
+            None,
+        )
+        .await
+    }
+
+    /// Binds historical recovery and active routes to this exact catalog owner.
+    pub async fn open_with_catalog(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        lifecycle: latent_artifacts::LifecycleAuthorityHandle,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        let admission = lifecycle.required_authority().cloned();
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::default(),
+            admission,
+            Some(profile),
+            Some(lifecycle),
+        )
+        .await
+    }
+
+    #[cfg(feature = "catalog-observation")]
+    pub async fn open_observed_with_catalog(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        observer: CatalogWorkObserver,
+        lifecycle: latent_artifacts::LifecycleAuthorityHandle,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        let admission = lifecycle.required_authority().cloned();
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::observed(observer),
+            admission,
+            Some(profile),
+            Some(lifecycle),
         )
         .await
     }
@@ -238,6 +295,7 @@ impl DirectoryDeploymentRepository {
         observation: Source,
         admission: Option<Arc<dyn AdmissionAuthority>>,
         runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
     ) -> Result<Self, PlatformError> {
         let mut work = observation.begin(WorkOperation::Open);
         let result = async {
@@ -285,6 +343,7 @@ impl DirectoryDeploymentRepository {
                 &mut work,
                 true,
                 runtime_profile.as_deref(),
+                lifecycle.as_ref(),
             )
             .await?;
             if let Some(record) = restored {
@@ -297,14 +356,17 @@ impl DirectoryDeploymentRepository {
                 }
             }
             let (catalog, bytes) = catalog.into_parts();
-            recovery_admission::check(true, || catalog.check_admission_mode(admission.as_ref()))
-                .await?;
+            recovery_admission::check(true, || {
+                catalog.check_admission_mode(admission.as_ref(), lifecycle.as_ref())
+            })
+            .await?;
             let repository = Self {
                 root,
                 config,
                 artifacts,
                 admission,
                 runtime_profile,
+                lifecycle,
                 generation: AtomicU64::new(generation.0),
                 current: RwLock::new(Arc::new(catalog)),
                 writer: Mutex::new(()),
@@ -402,7 +464,7 @@ impl DirectoryDeploymentRepository {
         work: &mut Work,
     ) -> Result<CommitOutcome, PlatformError> {
         let (next, bytes) = next.into_parts();
-        next.check_admission_mode(self.admission.as_ref())?;
+        next.check_admission_mode(self.admission.as_ref(), self.lifecycle.as_ref())?;
         let next = Arc::new(next);
         let mut outcome = None;
         next.with_current_admission(&mut |checker| {
@@ -431,7 +493,7 @@ impl DirectoryDeploymentRepository {
         bytes: &[u8],
         precondition: Option<&ObjectPrecondition>,
         work: &mut Work,
-        checker: Option<&dyn AdmissionRecheck>,
+        checker: Option<&dyn ReleaseUseRecheck>,
     ) -> Result<CommitOutcome, PlatformError> {
         // No await, compilation, or artifact access occurs with this writer guard held.
         let _writer = self
@@ -463,7 +525,7 @@ impl DirectoryDeploymentRepository {
         // Rename is the visibility commit point. Even an uncertain directory fsync must
         // install the same complete state in memory, rather than continuing on the old state.
         let durable = self.sync_parent();
-        let currentness = checker.map_or(Ok(()), AdmissionRecheck::check);
+        let currentness = checker.map_or(Ok(()), ReleaseUseRecheck::check);
         let generation = next.generation.0;
         let old = {
             let mut current = self
@@ -525,6 +587,7 @@ impl RouteCompiler for DirectoryDeploymentRepository {
                     Some(&current),
                     &mut work,
                     self.runtime_profile.as_deref(),
+                    self.lifecycle.as_ref(),
                 )
                 .await?;
                 Ok(next.into_catalog().snapshot())
@@ -560,6 +623,7 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
                         Some(&current),
                         work,
                         self.runtime_profile.as_deref(),
+                        self.lifecycle.as_ref(),
                     )
                     .await?;
                     if !compiled.catalog().matches_snapshot(&snapshot) {
@@ -642,7 +706,7 @@ impl RouteResolver for DirectoryDeploymentRepository {
         let (resolved, eligibility) = {
             let catalog = self.invocation_catalog()?;
             let resolved = catalog.resolve(target, routing_key, self.config)?;
-            let eligibility = catalog.eligibility_for(&resolved.release).cloned();
+            let eligibility = catalog.selected_eligibility(&resolved.release);
             (resolved, eligibility)
         };
         admission_fence::check_selected(eligibility.as_ref(), &target.tenant)?;
@@ -674,7 +738,9 @@ impl RouteResolver for PinnedRouteResolver {
     ) -> Result<ResolvedRevision, PlatformError> {
         let resolved = self.catalog.resolve(target, routing_key, self.config)?;
         admission_fence::check_selected(
-            self.catalog.eligibility_for(&resolved.release),
+            self.catalog
+                .selected_eligibility(&resolved.release)
+                .as_ref(),
             &target.tenant,
         )?;
         Ok(resolved)

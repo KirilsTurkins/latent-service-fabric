@@ -21,6 +21,7 @@ use wasmtime::Engine;
 pub(super) struct PreparationContext {
     pub(super) runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     pub(super) admission: Option<Arc<dyn AdmissionAuthority>>,
+    pub(super) lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
     pub(super) runtime_ledger: crate::cache::PreparedRuntimeLedger,
     pub(super) next_untrusted: std::sync::atomic::AtomicU64,
     pub(super) engine: Engine,

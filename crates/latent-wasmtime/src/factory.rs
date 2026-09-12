@@ -60,8 +60,8 @@ impl WasmtimeComponentEngineFactory {
             crate::compiler::CompilerPool::quiesce,
         )
     }
-    /// Constructs an explicitly trusted-local embedding. Enforced nodes use
-    /// `with_enforced_admission` and never select this mode from missing policy.
+    /// Constructs an explicitly unmanaged trusted-local embedding. Directory
+    /// nodes use `with_catalog` and never fall back to this mode.
     pub fn new(config: WasmtimeConfig) -> Result<Self, PlatformError> {
         Self::with_mode(config, DispatchMode::Generic)
     }
@@ -81,7 +81,30 @@ impl WasmtimeComponentEngineFactory {
         services: WasmtimeHostServices,
         authority: Arc<dyn latent_artifacts::AdmissionAuthority>,
     ) -> Result<Self, PlatformError> {
-        Self::with_admission(config, DispatchMode::Generic, services, Some(authority))
+        Self::with_admission(
+            config,
+            DispatchMode::Generic,
+            services,
+            Some(authority),
+            None,
+        )
+    }
+
+    /// Binds every preparation and activation to this exact catalog owner,
+    /// including catalogs whose artifacts are trusted-local rather than signed.
+    pub fn with_catalog(
+        config: WasmtimeConfig,
+        services: WasmtimeHostServices,
+        lifecycle: latent_artifacts::LifecycleAuthorityHandle,
+    ) -> Result<Self, PlatformError> {
+        let admission = lifecycle.required_authority().cloned();
+        Self::with_admission(
+            config,
+            DispatchMode::Generic,
+            services,
+            admission,
+            Some(lifecycle),
+        )
     }
 
     pub(crate) fn with_mode(
@@ -96,7 +119,7 @@ impl WasmtimeComponentEngineFactory {
         mode: DispatchMode,
         services: WasmtimeHostServices,
     ) -> Result<Self, PlatformError> {
-        Self::with_admission(config, mode, services, None)
+        Self::with_admission(config, mode, services, None, None)
     }
 
     fn with_admission(
@@ -104,6 +127,7 @@ impl WasmtimeComponentEngineFactory {
         mode: DispatchMode,
         services: WasmtimeHostServices,
         admission: Option<Arc<dyn latent_artifacts::AdmissionAuthority>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
     ) -> Result<Self, PlatformError> {
         if mode == DispatchMode::Phase0 {
             // Preserve the Phase 0 64 KiB payload plus 16 KiB canonical ABI
@@ -143,6 +167,7 @@ impl WasmtimeComponentEngineFactory {
             engine.clone(),
             profile.clone(),
             admission,
+            lifecycle,
             Arc::clone(&runtime_profile),
         )?);
         Ok(Self {

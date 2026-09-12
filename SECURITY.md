@@ -18,6 +18,11 @@ Declared runtime/target/CPU requirements must match the actual node profile.
 Bounded [release comparison](docs/reference/release-compatibility.md) keeps
 unsupported or unknown analysis from authorizing promotion; its reports remain
 separate from live supply-chain authority.
+Both local and enforced catalogs bind execution to their exact
+[lifecycle owner](docs/reference/release-lifecycle.md). Durable revoke/retire
+transitions cut off new route/preparation/start decisions; already accepted
+activations may finish. Rejected uploads retain bounded operation outcomes and
+cannot alter admitted content. Uncertain persistence denies positive eligibility.
 Historical receipts and locally admitted flags do not grant current authority.
 See [authenticated package admission](docs/reference/package-admission.md).
 

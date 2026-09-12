@@ -6,6 +6,8 @@ mod catalog_queries;
 mod integrity;
 #[path = "integrity_publication_tests.rs"]
 mod integrity_publication;
+#[path = "lifecycle_tests.rs"]
+mod lifecycle;
 #[cfg(unix)]
 #[path = "lock_release_tests.rs"]
 mod lock_release;
@@ -574,9 +576,20 @@ fn concurrent_identical_publishers_on_one_owned_handle_observe_one_release() {
         }));
     }
     barrier.wait();
+    let mut busy = 0;
     for task in tasks {
+        match task.join().expect("publisher join") {
+            Ok(descriptor) => assert_eq!(descriptor, expected.descriptor),
+            Err(failure) => {
+                assert_eq!(failure.code, PlatformErrorCode::ResourceExhausted);
+                assert_eq!(failure.message, "admission-work-busy");
+                busy += 1;
+            }
+        }
+    }
+    for _ in 0..busy {
         assert_eq!(
-            task.join().expect("publisher join").expect("publish"),
+            block_on(repo.publish(expected.clone())).expect("bounded retry after owner is free"),
             expected.descriptor
         );
     }

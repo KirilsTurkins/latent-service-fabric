@@ -44,6 +44,7 @@ pub(super) async fn sample(
         &fixture.tenant,
         proto::PublishReleaseRequest {
             package: None,
+            operation: None,
             release: None,
             artifact: Some(upload),
         },

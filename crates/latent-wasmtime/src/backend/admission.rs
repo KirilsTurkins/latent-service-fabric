@@ -1,6 +1,6 @@
 //! Independent admission ownership; optimization stamps never grant execution.
 
-use latent_artifacts::ReleaseEligibility;
+use latent_artifacts::ReleaseUseEligibility;
 use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest};
 use latent_executor::ExecutionRequest;
 
@@ -17,9 +17,14 @@ pub(super) struct ExecutionEligibility(());
 impl PreparationContext {
     pub(super) fn check_eligibility(
         &self,
-        eligibility: Option<&ReleaseEligibility>,
+        eligibility: Option<&ReleaseUseEligibility>,
         release: &ReleaseDigest,
     ) -> Result<(), PlatformError> {
+        if let Some(owner) = &self.lifecycle {
+            eligibility
+                .ok_or_else(|| denied("prepared-lifecycle-required"))?
+                .check_for_lifecycle(owner)?;
+        }
         match (self.admission.as_ref(), eligibility) {
             (Some(authority), Some(eligibility)) => {
                 if eligibility.release() != release {
@@ -56,23 +61,21 @@ impl PreparationContext {
         }
         let mut accepted = None;
         if let Some(eligibility) = &runtime.eligibility {
-            if eligibility.tenant() != &request.activation.target.tenant {
-                return Err(denied("prepared-admission-tenant-mismatch"));
-            }
+            eligibility.authorize_tenant(&request.activation.target.tenant)?;
             eligibility.with_current(&mut |checker| {
                 checker.check()?;
                 accepted = Some(ExecutionEligibility(()));
                 Ok(())
             })?;
         } else {
-            // Only an explicitly trusted-local factory reaches this branch.
+            // Only an explicitly unmanaged trusted-local factory reaches here.
             accepted = Some(ExecutionEligibility(()));
         }
         accepted.ok_or_else(|| denied("prepared-admission-start-missing"))
     }
 }
 
-pub(super) fn scoped_handle(handle: String, eligibility: Option<&ReleaseEligibility>) -> String {
+pub(super) fn scoped_handle(handle: String, eligibility: Option<&ReleaseUseEligibility>) -> String {
     if let Some(eligibility) = eligibility {
         let mut hash = blake3::Hasher::new();
         hash.update(b"lsf-admitted-preparation-v1\0");

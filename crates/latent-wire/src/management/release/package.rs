@@ -33,12 +33,37 @@ pub(super) fn validate(
         super::super::identifier(&layer.path, 240.min(limits.max_string_bytes))?;
         budget.bytes(&layer.data, limits.max_component_bytes)?;
     }
+    validate_evidence(
+        &upload.signatures,
+        &upload.provenance,
+        &upload.sboms,
+        budget,
+        limits,
+        false,
+    )
+}
+
+pub(super) fn validate_evidence(
+    signatures: &Vec<proto::PackageAdmissionEvidence>,
+    provenance: &Vec<proto::PackageAdmissionEvidence>,
+    sboms: &Vec<proto::PackageAdmissionEvidence>,
+    budget: &mut RequestBudget,
+    limits: &ManagementLimits,
+    renewal: bool,
+) -> Result<(), Status> {
+    if renewal && (signatures.len() != 1 || provenance.len() != 1 || sboms.len() > 1) {
+        return Err(Status::invalid_argument(
+            "renewal requires one signature, one provenance and at most one SBOM",
+        ));
+    }
+    let document_limit = MAX_DOCUMENT_BYTES.min(limits.max_manifest_bytes);
+    let count = if renewal { 1 } else { MAX_EVIDENCE };
     for (entries, payload_limit) in [
-        (&upload.signatures, 4096),
-        (&upload.provenance, 49_152),
-        (&upload.sboms, 1024 * 1024),
+        (signatures, 4096),
+        (provenance, 49_152),
+        (sboms, 1024 * 1024),
     ] {
-        budget.sequence(entries, MAX_EVIDENCE.min(limits.max_collection_entries))?;
+        budget.sequence(entries, count.min(limits.max_collection_entries))?;
         budget.allocation::<AdmissionEvidence>(entries.len())?;
         for entry in entries {
             budget.bytes(&entry.manifest, document_limit)?;
@@ -47,9 +72,24 @@ pub(super) fn validate(
             for bytes in [&entry.manifest, &entry.configuration, &entry.payload] {
                 required(bytes)?;
             }
+            if renewal && entry.configuration != b"{}" {
+                return Err(Status::invalid_argument(
+                    "evidence configuration must be the exact empty object",
+                ));
+            }
         }
     }
     Ok(())
+}
+
+pub(super) fn into_evidence_upload(
+    upload: proto::ReleaseEvidenceUpload,
+) -> Result<latent_artifacts::ReleaseEvidenceUpload, Status> {
+    Ok(latent_artifacts::ReleaseEvidenceUpload {
+        signatures: evidence(upload.signatures)?,
+        provenance: evidence(upload.provenance)?,
+        sboms: evidence(upload.sboms)?,
+    })
 }
 
 fn required(bytes: &[u8]) -> Result<(), Status> {

@@ -13,6 +13,10 @@ pagination, node-operator inventory access, and explicit unsupported methods.
 The additive Phase 2 `PublishReleaseRequest.package` alternative performs
 [authenticated package admission](../../docs/reference/package-admission.md);
 enforced nodes reject the retained trusted-local `artifact` alternative.
+The additive [release lifecycle APIs](../../docs/reference/release-lifecycle.md)
+add tenant-scoped status, revoke/retire, evidence renewal and bounded operation
+receipts. Publication's optional operation precondition preserves existing
+callers; actor identity still comes from the listener's trusted principal.
 The [standalone Linux node](../../docs/reference/standalone-node.md) serves this
 subset through a bounded loopback listener with configured credentials.
 

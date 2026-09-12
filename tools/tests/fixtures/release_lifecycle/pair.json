@@ -1,0 +1,60 @@
+{
+  "record": {
+    "scope": {
+      "kind": "tenant",
+      "tenant": "schema-fixture"
+    },
+    "release": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "package": null,
+    "state": "admitted",
+    "generation": 1,
+    "actor": {
+      "subject": "fixture-admin",
+      "kind": "administrator"
+    },
+    "reason": "admitted",
+    "operationId": "schema-publish-1",
+    "policy": null,
+    "observedAtUnixMillis": 1700000000000,
+    "evidenceRevisionDigest": null
+  },
+  "receipt": {
+    "operationId": "schema-publish-1",
+    "requestDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "scope": {
+      "kind": "tenant",
+      "tenant": "schema-fixture"
+    },
+    "actor": {
+      "subject": "fixture-admin",
+      "kind": "administrator"
+    },
+    "action": "publish",
+    "disposition": "committed",
+    "reason": "admitted",
+    "componentDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "packageManifestDigest": null,
+    "expectedGeneration": 0,
+    "record": {
+      "scope": {
+        "kind": "tenant",
+        "tenant": "schema-fixture"
+      },
+      "release": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "package": null,
+      "state": "admitted",
+      "generation": 1,
+      "actor": {
+        "subject": "fixture-admin",
+        "kind": "administrator"
+      },
+      "reason": "admitted",
+      "operationId": "schema-publish-1",
+      "policy": null,
+      "observedAtUnixMillis": 1700000000000,
+      "evidenceRevisionDigest": null
+    },
+    "policy": null,
+    "observedAtUnixMillis": 1700000000000
+  }
+}

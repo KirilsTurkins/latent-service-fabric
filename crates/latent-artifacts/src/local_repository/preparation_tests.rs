@@ -265,7 +265,7 @@ fn verified_stamp_rejects_same_component_with_changed_descriptor_or_contracts() 
 }
 
 #[test]
-fn normalized_stamp_accepts_equivalent_noncanonical_persisted_metadata() {
+fn normalized_stamp_equivalence_does_not_replace_immutable_lifecycle_completion() {
     use latent_manifest::__serde_json as json;
     let temp = TempRoot::new();
     let value = artifact("normalized", b"abc");
@@ -291,13 +291,25 @@ fn normalized_stamp_accepts_equivalent_noncanonical_persisted_metadata() {
         &fs::read(entry.join("manifest.json")).unwrap(),
     );
     fs::write(entry.join("COMPLETE"), completion.encode().unwrap()).unwrap();
-    let fetched = block_on(repo.preparation_source().unwrap().fetch(&release)).unwrap();
-    original.verify_metadata(&fetched, 1024 * 1024, 32).unwrap();
+    let (descriptor, contracts) =
+        super::super::metadata_codec::decode_metadata(&changed, 1024 * 1024).unwrap();
+    let equivalent = CapsuleArtifact {
+        descriptor,
+        contracts,
+        ..value
+    };
+    original
+        .verify_metadata(&equivalent, 1024 * 1024, 32)
+        .unwrap();
     drop(repo);
-    let restored = repository(temp.path());
     assert_eq!(
-        identity(&restored, &release).metadata(),
-        original.metadata()
+        DirectoryArtifactRepository::open(
+            temp.path(),
+            DirectoryArtifactRepositoryConfig::default()
+        )
+        .expect_err("rewritten COMPLETE is not the admitted immutable association")
+        .code,
+        PlatformErrorCode::CorruptArtifact
     );
 }
 

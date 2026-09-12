@@ -24,6 +24,14 @@ requirements and compares exact old/candidate package contracts. Its report is
 an input to controlled rollout; it never grants execution authority or changes
 the immutable versioned contract identifiers selected by callers.
 
+[Release lifecycle](../reference/release-lifecycle.md) separately persists
+admitted, revoked and retired state, with rejected attempts retained as bounded
+operation outcomes. Authenticated mutations use exact lifecycle generations.
+Revocation preserves immutable content and invalidates old held capabilities;
+deploy, rollback or ordinary republication cannot restore permission. Evidence
+renewal requires fresh bounded control compilation, including startup recovery,
+before an old route can acquire current grants.
+
 ## Mutable deployment
 
 A deployment points to a release and supplies capability grants, resource ceilings
@@ -46,7 +54,7 @@ route generations while preserving `RevisionId`. See
 
 ## Route switch
 
-Deployments become active through atomic route-snapshot publication. Existing activations remain pinned to their selected release and policy generation. New activations use the new snapshot.
+Deployments become active through atomic route-snapshot publication. Existing activations remain pinned to their selected release and policy generation. A call accepted at the final execution fence may finish; a merely routed, queued or ready call still checks current lifecycle before starting. New activations use the new snapshot and current eligibility.
 
 ## Rollout
 
