@@ -37,6 +37,8 @@ A pull request should include:
 - conformance tests or a test specification,
 - generated artifacts only when generation is reproducible.
 
+The root [`.editorconfig`](.editorconfig) records repository whitespace and newline defaults for supporting editors. It intentionally exempts byte-sensitive fixtures, generated output, pinned upstream WIT data, and retained benchmark evidence. EditorConfig complements rather than replaces `cargo fmt`, generators, or repository validation.
+
 Run `make help` for a concise list of root contributor commands before selecting validation work.
 
 Run checks appropriate to the change using [VALIDATION.md](VALIDATION.md).
