@@ -1,7 +1,7 @@
 <!-- LSF-WIKI-MANAGED -->
 # Performance and infrastructure comparisons
 
-This page preserves the September 2026 Phase 1 extension evidence. Phase 2 adds functional trust, cache and control paths; these historical numbers are not a fresh measurement of that implementation. Its delivery gate #158 remains pending.
+This page preserves the September 2026 Phase 1 extension evidence. Phase 2 adds functional trust, cache and control paths; these historical numbers are not a fresh measurement of that implementation. Its [completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) records separate finite evidence and qualifications; see [Testing and benchmarks](Testing-and-Benchmarks) for that scope.
 
 The extension improves selected acquisition, cold-work isolation, recovery, ownership and catalog costs. It also retains regressions. Each report has its own population, configuration and source; percentages cannot be added across campaigns.
 

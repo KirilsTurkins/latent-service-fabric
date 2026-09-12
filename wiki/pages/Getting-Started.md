@@ -20,4 +20,4 @@ Registry and client credentials use separate files. Package output directories a
 
 The maintained [real workflow runner](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/tools/run_phase2_operator_workflow.py) exercises separate CLI/node processes and a TLS registry with temporary fixtures. It is a validation scenario, not a production provisioning system.
 
-Phase 2 delivery gate [#158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158) remains pending. General application HTTP ingress and provider capabilities are Phase 3 work.
+Read the [Phase 2 completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) for the gate decision, finite evidence and limitations. The current published release remains alpha.2; use development for the completed Phase 2 surface until product release publication. General application HTTP ingress and provider capabilities are Phase 3 work.

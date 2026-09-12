@@ -36,4 +36,4 @@
 - [[Phase-0-Status]]
 - [[Phase-0-Runbook]]
 
-Phase 2 delivery gate #158 is pending. Phase 3 has 41 planned tickets.
+Phase 2 complete: [report and qualifications](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md). Phase 3 has 41 planned tickets.

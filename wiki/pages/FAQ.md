@@ -1,7 +1,7 @@
 <!-- LSF-WIKI-MANAGED -->
 # Frequently asked questions
 
-**What is delivered now?** Phase 1 and its performance extension are complete. Phase 2 implements packages, signed admission/lifecycle, isolated AOT/native reuse, audit, rollouts, canary promotion, rollback and operator workflows. Delivery gate [#158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158) is pending; a Wiki refresh is not a release receipt.
+**What is delivered now?** Phase 1, its performance extension and Phase 2 are complete. Phase 2 implements packages, signed admission/lifecycle, isolated AOT/native reuse, audit, rollouts, canary promotion, rollback and operator workflows. The [completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) retains the finite evidence and qualifications. The current published release remains alpha.2; a Wiki refresh is not a product release receipt.
 
 **Does every dormant service have a process or heap?** No. Dormant services retain bounded metadata and artifacts. Execution cells, workers and pools are shared. Catalog RSS and storage can still grow with the number of releases.
 

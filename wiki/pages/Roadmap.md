@@ -7,7 +7,7 @@ Implementation, retained evidence, gate completion and release publication are d
 | --- | --- |
 | Phase 0 | Historical feasibility handoff completed August 30, 2026, for its exact recorded execution identity. |
 | Phase 1 | Single-node stateless runtime functionally complete September 8; performance extension complete September 11. |
-| Phase 2 | Packaging, verified admission, lifecycle, isolated AOT/native reuse, audit, rollouts, canary promotion, rollback and operator workflows implemented. Delivery gate #158 is pending. |
+| Phase 2 | Complete: packaging, verified admission, lifecycle, isolated AOT/native reuse, audit, rollouts, canary promotion, rollback and operator workflows. The completion report records finite evidence and qualifications. |
 | Phase 3 | 41 planned tickets covering capability brokers/providers, HTTP/web hosting, SDK delivery and operator/security/resource gates. |
 | Phase 4 | Transactional guest state and explicit effect handling. |
 | Phase 5 | Cluster control, placement, node identity and distributed operation. |
@@ -24,4 +24,6 @@ The plan includes operator tooling, security tests, resource accounting and docu
 
 Historical extension [epic #97](https://github.com/KirilsTurkins/latent-service-fabric/issues/97) and [gate #113](https://github.com/KirilsTurkins/latent-service-fabric/issues/113) remain closed; #110 was closed as not planned. Their measurements are retained unchanged. Follow [Phase 1 status](Phase-1-Status) and [performance evidence](Performance-and-Infrastructure) for those claims.
 
-Authorities: [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/roadmap.md), [Phase 2 gate](https://github.com/KirilsTurkins/latent-service-fabric/issues/158), [Phase 3 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
+The current published release remains alpha.2; completion does not itself publish a successor. Current Phase 2 guidance stays on development until product release publication.
+
+Authorities: [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/roadmap.md), [Phase 2 completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md), [Phase 3 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).

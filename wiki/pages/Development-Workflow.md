@@ -9,7 +9,7 @@ A useful change identifies the exact behavior, input bounds, owner and failure s
 
 Use `make help` and [VALIDATION](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/VALIDATION.md) to select required checks. Repository/schema/SDK tests, focused runtime tests, real workflow checks and heavy measurement campaigns serve different purposes. Do not run full 100k or historical authorization gates as routine documentation validation.
 
-Phase 2 delivery gate [#158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158) is pending. Phase 3's [41 planned tickets](https://github.com/KirilsTurkins/latent-service-fabric/issues/201) are decomposed capabilities with dependencies and resource/security acceptance. Planning and issue creation are not implementation delivery.
+The [Phase 2 completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) records the gate decision and exact evidence. Phase 3's [41 planned tickets](https://github.com/KirilsTurkins/latent-service-fabric/issues/201) are decomposed capabilities with dependencies and resource/security acceptance. Planning and issue creation are not implementation delivery.
 
 Update canonical repository docs alongside behavior and preserve historical measurement sources. The Wiki may summarize those docs, but it must not become the only home of a security rule, compatibility promise or operational recovery procedure.
 

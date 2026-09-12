@@ -25,7 +25,7 @@ Actual Docker and Kubernetes full comparisons each completed 9,926 offers succes
 
 Authorities: [functional completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-1-completion.md), [extension report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-1-extension-completion.md), [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/roadmap.md).
 
-## Phase 2 implementation and pending delivery gate
+## Phase 2 completion
 
 The historical results above are unchanged. Phase 2 extends that baseline with:
 
@@ -39,6 +39,6 @@ The historical results above are unchanged. Phase 2 extends that baseline with:
 | Rollout/canary/rollback | Operator commands, complete sealed-window promotion and fresh eligible restoration through a new route generation. |
 | Operator CLI | Real package/registry and authenticated node workflows, with explicit preconditions and no hidden mutation retries. |
 
-[Delivery gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158) is pending. The implementation map is not a Phase 2 release or performance receipt. Current guidance is on development until release publication; [Phase 3 has 41 planned tickets](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
+The [Phase 2 completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) records its gate decision, finite evidence and qualifications. These do not change the historical results above or publish a new release. Current guidance is on development until release publication; [Phase 3 has 41 planned tickets](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
 
 See [operator workflows](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-operator-workflows.md), [security](Security-and-Isolation) and [deployment/recovery](Deployment-and-Routing).

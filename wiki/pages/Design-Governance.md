@@ -11,6 +11,6 @@ Phase 3 has [41 planned tickets](https://github.com/KirilsTurkins/latent-service
 
 Reviews should connect a concrete trigger to observable behavior and meaningful failure tests. Exact actor/tenant/generation bindings, response preflight before critical side effects, retained owner accounting, private filesystem recovery and finite rejection paths are part of correctness.
 
-Measurements retain their original configuration, population and execution identity. Regressions are not removed because later features shipped. A source check, passing CI, issue closure, delivery gate and remote publication receipt establish different facts. Phase 2 gate [#158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158) remains pending.
+Measurements retain their original configuration, population and execution identity. Regressions are not removed because later features shipped. A source check, passing CI, issue closure, delivery gate and remote publication receipt establish different facts. The [Phase 2 completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) records the decision and retains failed attempts alongside its finite passing evidence.
 
 Authorities: [ADR index](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/adr/README.md), [RFC index](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/rfcs/README.md), [architecture](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/ARCHITECTURE.md), [roadmap](Roadmap).

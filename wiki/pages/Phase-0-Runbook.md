@@ -17,4 +17,4 @@ Optimization raw packages were compacted after Phase 1; the native Phase 0 raw a
 
 Authorities: [completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-0-completion.md), [validation](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/VALIDATION.md), [retention](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/testing/benchmark-retention.md).
 
-For current Phase 2 package, trust and operator checks, use [Testing and benchmarks](Testing-and-Benchmarks). The pending delivery gate does not reinterpret this historical authorization procedure.
+For current Phase 2 package, trust and operator checks, use [Testing and benchmarks](Testing-and-Benchmarks). Phase 2 completion does not reinterpret this historical authorization procedure.

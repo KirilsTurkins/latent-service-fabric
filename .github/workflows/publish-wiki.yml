@@ -78,7 +78,7 @@ jobs:
           - Wiki commit: ${wiki_commit}
           - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
           - Managed inventory: 26 pages and four assets, fully validated
-          - Scope: Phase 2 feature delivery; completion tracked by gate #158; Phase 3 planned
+          - Scope: Phase 2 completion and finite evidence qualifications; Phase 3 planned; product release remains separate
           EOF
           git add wiki/PUBLISHED_OK.md
           if ! git diff --cached --quiet; then

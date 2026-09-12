@@ -5,10 +5,20 @@ Refresh work uses a dedicated `chore/wiki-*` branch, reviewed and fast-forwarded
 only into `docs/wiki`. Never merge this Wiki branch into development or release:
 its non-Wiki code is an older snapshot, not a runnable product reference.
 
-All 26 pages describe the implemented Phase 2 surface as of September 13, 2026.
-Delivery gate #158 is pending; Phase 3 has 41 planned tickets under epic #201,
-including the retained web-hosting parent #44. Planning is not implementation,
-and a Wiki refresh is not a gate completion or a product release receipt.
+All 26 pages describe the completed Phase 2 surface and its evidence boundaries.
+The [completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md)
+owns the gate decision and qualifications. This completion refresh is prepared
+for publication only after gate #158 has passed its required checks and merged;
+its prospective wording is not a current publication receipt. Phase 3 has 41
+planned tickets under epic #201, including the retained web-hosting parent #44.
+The current published product release remains alpha.2. Planning, phase completion
+and a Wiki refresh do not publish a new product release.
+
+The finite resource experiment covers 32 signed releases, 16 deployments and
+two warmed portable runtime images, with the other 30 releases unprepared.
+Testing preserves the earlier failed operator attempt with unclassified
+`Unavailable`, independently of the later passing run. Neither establishes
+constant RSS, 100k Phase 2 scale or an availability/latency/throughput SLO.
 
 Current canonical links point to development until the release is published.
 The validator checks exact repository target casing against the supplied
@@ -49,7 +59,8 @@ Before the previous Phase 1 refresh, the live Wiki inspected at
 `82248d8e18db00384670cbfcd458370a80140346` had 22 managed pages and seven Phase0
 SVGs. That refresh established the current 26-page/four-asset inventory and
 retired those seven obsolete asset paths. The Phase 2 refresh keeps this exact
-inventory and updates every page plus both diagram generators' labels. The
+inventory. Its completion update changes status/evidence wording and both
+diagram labels without rewriting historical measurement claims. The
 stager preserves unknown files; it never recursively deletes the Wiki. It also
 updates the `.latent-service-fabric-wiki.json` manifest with exact source identity.
 Every staged file is SHA256-checked against the source, unknown files are
@@ -71,5 +82,6 @@ must match before claiming the live Wiki is current.
 
 Do not edit that receipt in anticipation of this refresh. Until the publication
 workflow verifies the remote commit, it truthfully describes the prior Wiki
-publication. The Phase 2 delivery gate and the product release have their own
-independent receipts.
+publication. Phase 2 completion and product release publication have their own
+independent receipts. Final validation must use the merged product authority
+containing the completion report before this source is published.
