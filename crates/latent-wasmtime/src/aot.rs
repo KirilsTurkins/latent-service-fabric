@@ -1,8 +1,11 @@
 //! Bounded isolated compilation and authenticated local native-output ownership.
-//! Native loading and persistent cache recovery are separate from compilation.
+//! Native loading accepts only authenticated immutable bytes and current input.
 
+pub(crate) mod cache;
 mod identity;
+pub(crate) mod image_budget;
 mod limits;
+pub(crate) mod loader;
 pub(crate) mod ownership;
 pub(crate) mod profile;
 pub(crate) mod protocol;
@@ -11,7 +14,12 @@ mod seal;
 pub(crate) mod supervisor;
 mod worker;
 
+pub use cache::{
+    AotReceiptCacheLimits, AotReceiptCacheSnapshot, NativeAotCacheConfig, NativeAotSettings,
+    NativeAotSnapshot,
+};
 pub use identity::AotCompatibilityKey;
+pub use image_budget::{NativeImageLimits, NativeImageSnapshot};
 pub use limits::AotCompilerLimits;
 pub use ownership::{AotResourceLimits, AotResourceSnapshot};
 pub use profile::ValidatedAotProfile;

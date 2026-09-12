@@ -1826,6 +1826,7 @@ dependencies = [
  "latent-testkit",
  "latent-wasmtime",
  "latent-wire",
+ "rustix",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -1835,6 +1836,7 @@ dependencies = [
  "tower",
  "wasm-encoder 0.252.0",
  "wasmparser 0.252.0",
+ "zeroize",
 ]
 
 [[package]]

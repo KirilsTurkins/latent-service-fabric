@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/node-isolated-aot.schema.json",
+  "title": "LSF standalone isolatedAot configuration member",
+  "$comment": "This schema covers only the optional isolatedAot member. Omission preserves ordinary compilation; explicit null is invalid. Runtime additionally checks Linux x86_64 support, canonical path/root separation, private exact 32-byte key ownership, executable approval, page rounding and checked cross-domain resource limits. Relative key/cache paths resolve against the config directory. The compiler executable must be absolute. No key bytes or environment expansion are accepted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["compilerExecutable", "compilerDigest", "keyFile", "blobRoot", "receiptRoot"],
+  "properties": {
+    "compilerExecutable": {
+      "allOf": [
+        {"$ref": "#/$defs/path"},
+        {"pattern": "^/"}
+      ]
+    },
+    "compilerDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "keyFile": {"$ref": "#/$defs/path"},
+    "blobRoot": {"$ref": "#/$defs/path"},
+    "receiptRoot": {"$ref": "#/$defs/path"},
+    "process": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "jobTimeoutMillis": {"type":"integer", "minimum":1, "maximum":300000, "default":30000},
+        "maximumOutputBytes": {"type":"integer", "minimum":1, "maximum":268435456, "default":134217728},
+        "addressSpaceBytes": {"type":"integer", "minimum":67108864, "maximum":4294967296, "default":536870912}
+      }
+    },
+    "cache": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "entries": {"type":"integer", "minimum":1, "maximum":16384, "default":1024},
+        "diskBytes": {"type":"integer", "minimum":1, "maximum":4294967296, "default":268435456}
+      }
+    },
+    "images": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "maximumImages": {"type":"integer", "minimum":1, "maximum":4096, "default":64},
+        "maximumImageBytes": {"type":"integer", "minimum":1, "maximum":268435456, "default":134217728},
+        "maximumTotalBytes": {"type":"integer", "minimum":1, "maximum":1073741824, "default":268435456}
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type":"string", "minLength":1, "maxLength":4096,
+      "pattern":"^[^\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])",
+      "$comment":"Rust applies UTF-8 byte and component limits, rejects parent-directory segments, and resolves canonical existing ancestors without creating future roots. Filesystem conditions are not established by JSON Schema."
+    }
+  }
+}

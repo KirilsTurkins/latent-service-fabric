@@ -127,7 +127,8 @@ The directory source issues a fixed-size token containing its open-instance
 epoch, canonical component digest and size, and the normalized metadata
 fingerprint with checked byte/depth requirements. The cache key includes this
 identity and the engine preparation key; a hit also compares the complete token.
-Warm acquisition performs no component I/O/hash or full metadata traversal.
+Warm acquisition from the resident prepared cache performs no component I/O/hash
+or full metadata traversal.
 It still performs the bounded cache lookup, an ordered catalog lookup, and
 clones the bounded descriptor/import list needed by the activation. A missing
 catalog entry returns `NotFound`. A cache miss reserves preparation capacity,
@@ -275,6 +276,46 @@ model. The focused Linux fixture verifies that preparing four dormant metadata
 variants does not increase helper-thread count after initial preparation, and
 creates no stores. Runtime and cache snapshots expose bounded occupancy and live activation
 resource counters for tests and node integration.
+
+## Optional isolated compilation and persistent native reuse
+
+`WasmtimeComponentEngineFactory::with_catalog_and_aot` opts into the
+[trusted AOT producer and cache](trusted-aot.md) with one exact directory catalog
+and `NativeAotSettings`. The standalone node exposes the same mode through
+[`isolatedAot`](../reference/standalone-node.md#optional-isolated-aot-compilation).
+Omitting it preserves ordinary local compilation. Configured isolated mode
+rejects preparation that supplies raw artifacts or another catalog; it never
+falls back to in-process `Component::new` after a cache or compiler failure.
+
+A resident prepared hit keeps the existing fast acquisition path. A persistent
+native hit follows a prepared miss and still fetches verified portable component
+bytes and metadata once from the sealed source. The complete current
+compatibility key selects an untrusted receipt. The configured host MAC is
+verified before reading its claimed native blob, and exact bytes are verified
+before the private copying loader. A missing or rejected cached entry can cause
+one bounded isolated compilation while the same checked input remains owned.
+Failure to persist freshly authenticated output can leave that preparation
+usable without durable reuse. Source, lifecycle, policy, deadline and capacity
+failures are not converted into compilation retries.
+
+The existing fixed compiler workers own isolated jobs through child termination
+and reap. Removing the last waiter signals cancellation, while removing one of
+several coalesced waiters leaves their shared job running. Native deserialization
+itself is synchronous and keeps its owners until it returns. Queued and prepared
+tokens still require final guarded start checks; cached native provenance cannot
+restore a revoked release or upgrade an older lifecycle generation.
+
+An independent native-image permit reserves a count and the complete serialized
+image size rounded to the actual host page size before loading. Defaults are
+64 images, 128 MiB per image and 256 MiB total; hard ceilings are 4,096 images,
+256 MiB and 1 GiB respectively. It remains with the prepared runtime through
+ready and active pins, including after eviction. Native handles drop before its
+final refund. The existing runtime ledger continues to report logical image
+spans, while `native_aot_snapshot()` additionally reports rounded image charges,
+actual loader attempts, cache observations, receipt/raw storage and producer
+allowances. Loading fields are subsets, and neither accounting domain measures
+process RSS or all Wasmtime allocations. No new performance or scaling result
+is implied by this optional integration.
 
 ## Focused validation
 

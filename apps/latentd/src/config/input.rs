@@ -26,6 +26,14 @@ pub(super) fn load(path: &Path) -> Result<NodeConfig, PlatformError> {
         return Err(invalid("configurationSize"));
     }
     let mut config = decode(&bytes)?;
+    if let Some(aot) = &mut config.isolated_aot {
+        let parent = absolute
+            .parent()
+            .ok_or_else(|| invalid("configurationPath"))?
+            .canonicalize()
+            .map_err(|_| invalid("configurationPath"))?;
+        super::aot::anchor(aot, &parent)?;
+    }
     if let super::SupplyChainConfig::Enforced { policy_file, .. } = &mut config.supply_chain {
         if policy_file.as_os_str().is_empty() {
             return Err(invalid("supplyChain.policyFile"));

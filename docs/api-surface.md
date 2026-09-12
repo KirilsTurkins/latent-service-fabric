@@ -74,7 +74,7 @@ through one bounded, authenticated loopback listener on Linux.
 | `latent-scheduler` | open `CellPool` with nonqueueing acquisition/change notifications, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `LocalScheduler`, `AdmittedSchedulingRequest`, `ScheduledActivation`, `SchedulerSnapshot`, `SchedulingCancellation`, `LocalNodePlacement` |
 | `latent-activation` | `ActivationRequest`, bounded `ActivationRequestBuilder`, `ActivationIdSource`, `ActivationManager`, `ActivationJournal` |
 | `latent-executor` | `ExecutionBackend::prepare_ready_from_repository`/`materialize_ready`, compatible `prepare_from_repository`, `PreparedActivation`, `PreparedReadiness`, affine `PreparedUse`, backend registry and cancellation |
-| `latent-wasmtime` | `WasmtimeComponentEngineFactory`, generic `WasmtimeBackend`, bounded preparation/value policy, `WasmtimeHostServices`, `ContextExposurePolicy`, `StructuredLogSink`, dynamic exports and cleanup proof; `IsolatedAotCompiler`, `ValidatedAotProfile` and affine `TrustedAotOutput`; retained Phase 0 facade |
+| `latent-wasmtime` | `WasmtimeComponentEngineFactory`, generic `WasmtimeBackend`, bounded preparation/value policy, `WasmtimeHostServices`, `ContextExposurePolicy`, `StructuredLogSink`, dynamic exports and cleanup proof; `IsolatedAotCompiler`, `ValidatedAotProfile`, affine `TrustedAotOutput`, opt-in `with_catalog_and_aot`, `NativeAotSettings`, `NativeImageLimits` and `native_aot_snapshot`; retained Phase 0 facade |
 | `latent-capabilities` | provider, broker, registry, handle model |
 | `latent-blobs` | large-value storage, leases, and transfer |
 | `latent-identity` | authentication, authorization, delegation, node identity |
@@ -86,6 +86,14 @@ through one bounded, authenticated loopback listener on Linux.
 | `latent-workflows` | continuation store and workflow runtime |
 | `latent-wire` | Generated `InvocationServiceAdapter`, `LocalInvocationRuntime`, bounded `ActivationCleanupOwner`/`ActivationCleanupHandle` and `ActivationCleanupSnapshot`, `ManagementServiceAdapter`, scoped principal/trace services and lossless converters; codec, duplex channel, request multiplexer seams |
 | `latent-wrpc` | remote client/server and connection factory |
+
+The [native AOT integration](runtime/trusted-aot.md) authenticates persisted
+receipts and exact immutable bytes before its private copying loader. It exposes
+configuration and aggregate usage, without a public arbitrary-byte restoration
+or native-load constructor. Both trusted-local and enforced catalogs retain
+their independent lifecycle/admission checks. The standalone
+[`isolatedAot` member](reference/standalone-node.md#optional-isolated-aot-compilation)
+is opt-in; it does not add an RPC, distributed compiler service or CLI cache.
 | `latent-node` | `LocalActivationManager`, immediate-ID `ActivationHandle` with trusted `interrupt_for_cleanup`/`ActivationTransportInterruption`, `ActivationReceipt`, scoped status/cancel, bounded `LocalActivationJournal`; retained Phase 0/budget adapters and node registration/inventory/watch seams |
 | `latent-control-store` | `DeploymentStore` versioned mutations, committed receipts and bounded tenant/service pages; `DirectoryDeploymentRepository` implements persistence, route compilation/publication, and resolution |
 | `latent-telemetry` | `TelemetryRuntime`, bounded `TelemetryHandle`, `StructuredLocalSink`, typed payload-free `ActivationObserver`, `SharedActivationObserver`, and borrowed `GuestLogObserver` |

@@ -37,6 +37,10 @@ sha2.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "net", "signal", "io-util"] }
 tonic.workspace = true
 tower.workspace = true
+zeroize = { version = "=1.9.0", features = ["alloc"] }
+
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
+rustix = { version = "=1.1.4", features = ["fs", "process", "param"] }
 
 [dev-dependencies]
 latent-control-store = { path = "../../crates/latent-control-store", features = ["catalog-observation"] }

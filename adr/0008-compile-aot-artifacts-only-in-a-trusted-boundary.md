@@ -7,9 +7,11 @@
 
 Phase 1 compiles verified portable components locally and retains bounded in-memory prepared entries. A trusted distributed/persistent AOT cache remains Phase 2 work.
 
-## Phase 2 isolated producer
+## Phase 2 isolated producer and authenticated native reuse
 
-Issue #150 adds a bounded Linux x86_64 compiler process that enters a filesystem and syscall sandbox before reading portable component bytes. Its private completion path authenticates the exact native output with a node-local key and binds the compiler, engine, source, and sandbox identities. The persistent native cache and loader remain issue #151 work; current execution does not consume this output automatically. See [trusted AOT production](../docs/runtime/trusted-aot.md) for the API, enforced limits, and ownership boundaries.
+Issue #150 adds a bounded Linux x86_64 compiler process that enters a filesystem and syscall sandbox before reading portable component bytes. Its private completion path authenticates the exact native output with a node-local key and binds the compiler, engine, source, and sandbox identities.
+
+Issue #151 integrates optional persistent reuse with the catalog-bound runtime. A fresh verified source fetch and exact current compatibility key precede receipt authentication; the receipt MAC is checked before reading its claimed blob. Only a private proof over authenticated immutable bytes reaches the one audited copying native loader. Native mappings receive a page-rounded allowance before loading and keep it through runtime pins, eviction and cleanup. Cache storage never grants lifecycle or publisher authority, and configured isolated mode has no in-process compilation fallback. See [trusted AOT production and reuse](../docs/runtime/trusted-aot.md) for the API, limits, optional persistence failures and memory-accounting exclusions.
 
 ## Context
 

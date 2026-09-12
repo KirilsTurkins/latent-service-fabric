@@ -183,13 +183,13 @@ impl StandaloneNode {
     }
 
     pub(super) async fn start_with_catalogs_and_clock(
-        settings: NodeSettings,
+        mut settings: NodeSettings,
         mut catalogs: Catalogs,
         control_runtime: tokio::runtime::Handle,
         threads: RuntimeThreads,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
-        let mut node = match Self::compose(&settings, &catalogs, clock) {
+        let mut node = match Self::compose(&mut settings, &catalogs, clock) {
             Ok(node) => node,
             Err(failure) => {
                 if let Some(control) = catalogs.control.take() {
@@ -297,7 +297,7 @@ impl StandaloneNode {
     }
 
     fn compose(
-        settings: &NodeSettings,
+        settings: &mut NodeSettings,
         catalogs: &Catalogs,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
@@ -329,11 +329,7 @@ impl StandaloneNode {
                 Arc::clone(&clock),
             ))),
         };
-        let factory = WasmtimeComponentEngineFactory::with_catalog(
-            settings.wasmtime.clone(),
-            host_services,
-            catalogs.artifacts.lifecycle_authority(),
-        )?;
+        let factory = factory(settings, catalogs, host_services)?;
         if factory.runtime_profile().digest() != settings.runtime_profile.digest() {
             return Err(error(
                 PlatformErrorCode::IncompatibleContract,
@@ -393,6 +389,28 @@ impl StandaloneNode {
             shutdown_grace: settings.shutdown_grace,
             cleanup_grace: settings.manager.cleanup_grace,
         })
+    }
+}
+
+fn factory(
+    settings: &mut NodeSettings,
+    catalogs: &Catalogs,
+    services: WasmtimeHostServices,
+) -> Result<WasmtimeComponentEngineFactory, PlatformError> {
+    // Consume the secret-bearing settings once. Configured isolation never
+    // falls back to the ordinary compiler when cache or sandbox setup fails.
+    match settings.isolated_aot.take() {
+        Some(aot) => WasmtimeComponentEngineFactory::with_catalog_and_aot(
+            settings.wasmtime.clone(),
+            services,
+            Arc::clone(&catalogs.artifacts),
+            aot,
+        ),
+        None => WasmtimeComponentEngineFactory::with_catalog(
+            settings.wasmtime.clone(),
+            services,
+            catalogs.artifacts.lifecycle_authority(),
+        ),
     }
 }
 

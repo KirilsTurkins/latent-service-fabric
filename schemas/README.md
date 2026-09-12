@@ -55,6 +55,7 @@ The package schemas describe a separate immutable artifact format:
 | [package-admission-receipt.schema.json](package-admission-receipt.schema.json) | Bounded historical admission identities and policy generations; never an executable grant. |
 | [supply-chain-policy.schema.json](supply-chain-policy.schema.json) | Complete approved publisher/builder/revocation/SBOM snapshots and tenant authorization. |
 | [node-supply-chain.schema.json](node-supply-chain.schema.json) | Standalone `supplyChain` member selecting local compatibility or enforced admission. |
+| [node-isolated-aot.schema.json](node-isolated-aot.schema.json) | Opt-in standalone `isolatedAot` member selecting an approved isolated compiler, protected local key and bounded native caches. |
 | [release-lifecycle-record.schema.json](release-lifecycle-record.schema.json) | Canonical durable lifecycle state with exact scope/content and historical actor. |
 | [release-operation-receipt.schema.json](release-operation-receipt.schema.json) | Canonical bounded mutation/rejected-attempt receipt; absence does not prove rollback. |
 | [release-lifecycle-api.schema.json](release-lifecycle-api.schema.json) | Named closed Protobuf JSON projections for lifecycle queries, mutations and evidence renewal. |

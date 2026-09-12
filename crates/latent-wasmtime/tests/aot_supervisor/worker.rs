@@ -67,12 +67,7 @@ fn work() -> io::Result<i32> {
     if maximum_output == 17 {
         readiness[0] ^= 1;
     }
-    if maximum_output == 19 {
-        fragmented(&mut output, &readiness)?;
-    } else {
-        output.write_all(&readiness)?;
-    }
-    output.flush()?;
+    write_readiness(&mut output, &readiness, maximum_output)?;
     let mut length = [0; 8];
     input.read_exact(&mut length)?;
     let bytes = body(
@@ -158,6 +153,15 @@ fn mark(path: &Path) -> io::Result<()> {
 
 fn invalid() -> io::Error {
     io::Error::other("invalid supervisor fixture protocol")
+}
+
+fn write_readiness(output: &mut impl Write, bytes: &[u8], maximum_output: u64) -> io::Result<()> {
+    if maximum_output == 19 {
+        fragmented(output, bytes)?;
+    } else {
+        output.write_all(bytes)?;
+    }
+    output.flush()
 }
 
 fn fragmented(output: &mut impl Write, bytes: &[u8]) -> io::Result<()> {
