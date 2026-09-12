@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -22,7 +23,8 @@ use latent_manifest::{
 };
 use latent_routing::InvocationTarget;
 use latent_wasmtime::{
-    Phase0WasmtimeBackend, Phase0WasmtimeConfig, Phase0WasmtimeEngineFactory, CONTEXT_IMPORT,
+    CapturedLog, LogSinkError, Phase0WasmtimeBackend, Phase0WasmtimeConfig,
+    Phase0WasmtimeEngineFactory, StructuredLogSink, WasmtimeHostServices, CONTEXT_IMPORT,
     ECHO_EXPORT, ECHO_SUCCESS_MEDIA_TYPE, ECHO_WORLD, LOG_IMPORT,
 };
 use sha2::{Digest, Sha256};
@@ -33,6 +35,97 @@ const MEMORY_MODE: &str = "__latent_test_memory";
 // Keep deadline fixtures comfortably below fuel exhaustion even on fast CI hosts.
 const MAXIMUM_FUEL: u64 = 1_000_000_000_000;
 const MAXIMUM_MEMORY_BYTES: u64 = 32 * 1024 * 1024;
+
+#[derive(Debug, Clone)]
+struct MixedMemoryRendezvousSnapshot {
+    expected: BTreeSet<String>,
+    arrived: BTreeSet<String>,
+    unexpected: BTreeSet<String>,
+    opened: bool,
+    timed_out: bool,
+}
+
+#[derive(Debug, Default)]
+struct MixedMemoryRendezvousState {
+    first_arrival: Option<Instant>,
+    arrived: BTreeSet<String>,
+    unexpected: BTreeSet<String>,
+    opened: bool,
+    timed_out: bool,
+}
+
+#[derive(Debug)]
+struct MixedMemoryRendezvous {
+    expected: BTreeSet<String>,
+    timeout: Duration,
+    state: Mutex<MixedMemoryRendezvousState>,
+}
+
+impl MixedMemoryRendezvous {
+    fn new(expected: BTreeSet<String>, timeout: Duration) -> Self {
+        Self {
+            expected,
+            timeout,
+            state: Mutex::new(MixedMemoryRendezvousState::default()),
+        }
+    }
+
+    fn snapshot(&self) -> MixedMemoryRendezvousSnapshot {
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        MixedMemoryRendezvousSnapshot {
+            expected: self.expected.clone(),
+            arrived: state.arrived.clone(),
+            unexpected: state.unexpected.clone(),
+            opened: state.opened,
+            timed_out: state.timed_out,
+        }
+    }
+
+    fn timeout_now(&self) {
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .timed_out = true;
+    }
+}
+
+impl StructuredLogSink for MixedMemoryRendezvous {
+    fn try_emit(&self, entry: &CapturedLog, _encoded: &[u8]) -> Result<(), LogSinkError> {
+        if entry.message != MIXED_MEMORY_READY_LOG_MESSAGE {
+            return Ok(());
+        }
+
+        let now = Instant::now();
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if state.opened || state.timed_out {
+            return Ok(());
+        }
+
+        let first_arrival = *state.first_arrival.get_or_insert(now);
+        if self.expected.contains(&entry.activation_id.0) {
+            state.arrived.insert(entry.activation_id.0.clone());
+        } else {
+            state.unexpected.insert(entry.activation_id.0.clone());
+        }
+
+        if state.arrived == self.expected {
+            state.opened = true;
+            return Ok(());
+        }
+        if now.duration_since(first_arrival) >= self.timeout {
+            state.timed_out = true;
+            return Ok(());
+        }
+
+        Err(LogSinkError::Unavailable)
+    }
+}
 
 #[derive(Default)]
 struct CancellationState {
@@ -526,6 +619,9 @@ fn now_unix_millis() -> u64 {
 const DELAYED_TRAP_MODE: &str = "__latent_test_delayed_trap";
 const DELAYED_MEMORY_MODE: &str = "__latent_test_delayed_memory";
 const MIXED_DELAYED_ECHO_PREFIX: &str = "__latent_test_mixed_delayed_echo:";
+const MIXED_MEMORY_ECHO_PREFIX: &str = "__latent_test_mixed_memory_echo:";
+const MIXED_MEMORY_READY_LOG_MESSAGE: &str = "containment mixed memory rendezvous";
+const MIXED_MEMORY_HEALTHY_COUNT: u64 = 4;
 const DEADLINE_CI_SCHEDULING_ALLOWANCE_MILLIS: u64 = 500;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
@@ -607,14 +703,25 @@ async fn healthy_activations_remain_correct_while_another_activation_traps() {
     assert_end_to_end_reclaimed(&runner, &pool, &backend, 5);
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[tokio::test(flavor = "multi_thread", worker_threads = 6)]
 #[ignore = "requires the containment component built by tools/validate_contracts.sh"]
 async fn memory_pressure_stays_within_the_grant_while_healthy_activations_complete() {
-    let (runner, pool, backend, _) = runner_fixture(5).await;
     let granted_memory = 8 * 1024 * 1024;
     let failure_id = ActivationId("mixed-memory-failure".to_owned());
+    let mut expected = BTreeSet::from([failure_id.0.clone()]);
+    expected.extend(
+        (0..MIXED_MEMORY_HEALTHY_COUNT).map(|index| format!("mixed-memory-healthy-{index}")),
+    );
+    let rendezvous = Arc::new(MixedMemoryRendezvous::new(
+        expected,
+        Duration::from_secs(2),
+    ));
+    let sink: Arc<dyn StructuredLogSink> = rendezvous.clone();
+    let (runner, pool, backend, _) = runner_fixture_with_log_sink(5, sink).await;
+
     let failure = {
         let runner = Arc::clone(&runner);
+        let failure_id = failure_id.clone();
         tokio::spawn(async move {
             runner
                 .invoke(activation_envelope(
@@ -625,9 +732,36 @@ async fn memory_pressure_stays_within_the_grant_while_healthy_activations_comple
                 .await
         })
     };
-    wait_for_runtime_active(&backend, 1).await;
-    let healthy = spawn_mixed_healthy(&runner, "memory", 4);
-    wait_for_runtime_active(&backend, 2).await;
+    let healthy = spawn_mixed_healthy_with_prefix(
+        &runner,
+        "memory",
+        MIXED_MEMORY_HEALTHY_COUNT,
+        MIXED_MEMORY_ECHO_PREFIX,
+    );
+
+    let witness = wait_for_mixed_memory_rendezvous(&rendezvous).await;
+    if !witness.opened {
+        let failure_finished = failure.is_finished();
+        let healthy_finished = healthy
+            .iter()
+            .map(|(activation_id, _, task)| (activation_id.0.clone(), task.is_finished()))
+            .collect::<Vec<_>>();
+        let runner_snapshot = runner.snapshot();
+        let pool_snapshot = pool.observations();
+        let runtime_snapshot = backend.resource_snapshot();
+        rendezvous.timeout_now();
+        let failure_outcome = describe_activation_task(failure).await;
+        let mut healthy_outcomes = Vec::new();
+        for (activation_id, _, task) in healthy {
+            healthy_outcomes.push((activation_id.0, describe_activation_task(task).await));
+        }
+        panic!(
+            "mixed memory rendezvous failed: witness={witness:?}, failure_finished={failure_finished}, healthy_finished={healthy_finished:?}, runner={runner_snapshot:?}, pool={pool_snapshot:?}, runtime={runtime_snapshot:?}, failure_outcome={failure_outcome}, healthy_outcomes={healthy_outcomes:?}"
+        );
+    }
+    assert_eq!(witness.arrived, witness.expected);
+    assert!(witness.unexpected.is_empty());
+    assert!(!witness.timed_out);
 
     let outcome = tokio::time::timeout(Duration::from_secs(5), failure)
         .await
@@ -656,6 +790,32 @@ async fn runner_fixture(
     Arc<Phase0WasmtimeBackend>,
     Phase0WasmtimeConfig,
 ) {
+    runner_fixture_with_services(capacity, WasmtimeHostServices::default()).await
+}
+
+async fn runner_fixture_with_log_sink(
+    capacity: u32,
+    log_sink: Arc<dyn StructuredLogSink>,
+) -> (
+    Arc<latent_node::Phase0ActivationRunner>,
+    latent_scheduler::FixedCellPool,
+    Arc<Phase0WasmtimeBackend>,
+    Phase0WasmtimeConfig,
+) {
+    let mut services = WasmtimeHostServices::default();
+    services.log_sink = Some(log_sink);
+    runner_fixture_with_services(capacity, services).await
+}
+
+async fn runner_fixture_with_services(
+    capacity: u32,
+    services: WasmtimeHostServices,
+) -> (
+    Arc<latent_node::Phase0ActivationRunner>,
+    latent_scheduler::FixedCellPool,
+    Arc<Phase0WasmtimeBackend>,
+    Phase0WasmtimeConfig,
+) {
     let artifact = load_containment_artifact();
     let config = Phase0WasmtimeConfig {
         maximum_memory_bytes: MAXIMUM_MEMORY_BYTES,
@@ -664,7 +824,8 @@ async fn runner_fixture(
         prepared_cache_maximum_entries: 2,
         ..Phase0WasmtimeConfig::default()
     };
-    let factory = Phase0WasmtimeEngineFactory::new(config.clone()).expect("factory must build");
+    let factory = Phase0WasmtimeEngineFactory::with_host_services(config.clone(), services)
+        .expect("factory must build");
     let backend = Arc::new(factory.create_backend_instance());
     let key = factory.preparation_key(artifact.descriptor.release_digest.clone());
     let prepared = backend
@@ -702,11 +863,24 @@ fn spawn_mixed_healthy(
     String,
     tokio::task::JoinHandle<ActivationOutcome>,
 )> {
+    spawn_mixed_healthy_with_prefix(runner, suite, count, MIXED_DELAYED_ECHO_PREFIX)
+}
+
+fn spawn_mixed_healthy_with_prefix(
+    runner: &Arc<latent_node::Phase0ActivationRunner>,
+    suite: &str,
+    count: u64,
+    prefix: &str,
+) -> Vec<(
+    ActivationId,
+    String,
+    tokio::task::JoinHandle<ActivationOutcome>,
+)> {
     (0..count)
         .map(|index| {
             let activation_id = ActivationId(format!("mixed-{suite}-healthy-{index}"));
             let expected = format!("{suite}-healthy-output-{index}");
-            let input = format!("{MIXED_DELAYED_ECHO_PREFIX}{expected}");
+            let input = format!("{prefix}{expected}");
             let runner = Arc::clone(runner);
             let task_activation_id = activation_id.clone();
             let task = tokio::spawn(async move {
@@ -750,12 +924,50 @@ async fn assert_mixed_healthy(
             }
         }
         let logs = backend.log_sink().snapshot_for(&activation_id);
-        assert_eq!(logs.len(), 1, "healthy activation has one isolated log");
+        if suite == "memory" {
+            assert_eq!(logs.len(), 2, "memory healthy activation has rendezvous and invocation logs");
+            assert_eq!(logs[0].message, MIXED_MEMORY_READY_LOG_MESSAGE);
+        } else {
+            assert_eq!(logs.len(), 1, "healthy activation has one isolated log");
+        }
+        let invocation_log = logs.last().expect("healthy activation retains invocation log");
         assert_eq!(
-            logs[0].fields.get("activation_id"),
+            invocation_log.fields.get("activation_id"),
             Some(&activation_id.0),
             "host context must remain activation-local"
         );
+    }
+}
+
+async fn wait_for_mixed_memory_rendezvous(
+    rendezvous: &MixedMemoryRendezvous,
+) -> MixedMemoryRendezvousSnapshot {
+    let observed = tokio::time::timeout(Duration::from_secs(3), async {
+        loop {
+            let snapshot = rendezvous.snapshot();
+            if snapshot.opened || snapshot.timed_out {
+                return snapshot;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+    })
+    .await;
+    observed.unwrap_or_else(|_| {
+        rendezvous.timeout_now();
+        rendezvous.snapshot()
+    })
+}
+
+async fn describe_activation_task(
+    mut task: tokio::task::JoinHandle<ActivationOutcome>,
+) -> String {
+    match tokio::time::timeout(Duration::from_secs(5), &mut task).await {
+        Ok(Ok(outcome)) => format!("{outcome:?}"),
+        Ok(Err(error)) => format!("join-error:{error:?}"),
+        Err(_) => {
+            task.abort();
+            format!("timed-out; abort={:?}", task.await)
+        }
     }
 }
 
