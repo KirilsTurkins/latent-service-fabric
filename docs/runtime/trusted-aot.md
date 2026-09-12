@@ -72,7 +72,15 @@ does not silently upgrade a queued job to a new capability.
 
 The implemented profile is Linux x86_64 with Landlock ABI 3 and seccomp.
 Unsupported hosts, unavailable facilities and partial enforcement fail closed.
-The child accepts only three directional pipe descriptors and one thread. It
+The child accepts only three directional pipe descriptors and one thread. Before
+reading its bootstrap header, it applies finite hard limits and marks inherited
+descriptors above stderr close-on-exec through the safe `close_fds` API, then
+re-executes `/proc/self/exe`. This preserves its PID and exact executable image.
+A private clean marker suppresses a second re-exec but still requires strict
+descriptor inventory; it grants no enforcement capability. The fallback CLOEXEC
+scan is fixed and bounded, and any descriptor left open causes rejection.
+
+The child
 sets a parent-death signal with a parent-identity race check, disables core dumps,
 sets hard resource limits and enables no-new-privileges. These prerequisites are
 checked again after trusted engine initialization.
@@ -96,12 +104,17 @@ bootstrap and host OS remain part of the trusted computing base.
 
 The executable is an internal worker, not a general-purpose CLI. Its fixed
 startup arguments carry the parent PID, sandbox limits and input/output ceilings.
-All numbers and argument counts are validated.
+All numbers and argument counts are validated. `--worker-v1` launches the
+bounded sanitation stage; `--worker-clean-v1` carries the same numeric arguments
+after re-exec and repeats prerequisite checks. Neither mode can skip full
+sandbox enforcement.
 
 1. Parent authenticates the running executable, then writes a four-byte
    little-endian bootstrap length and at most 4,096 trusted bootstrap bytes.
-   Child reads only the fixed prefix before applying bootstrap limits. Direct
-   descriptor I/O prevents read-ahead into later frames.
+   Child has already applied launch limits and checked clean descriptors before
+   reading the fixed prefix. Dump protection is deferred until after that
+   prefix, so it cannot interfere with the parent's executable authentication.
+   Direct descriptor I/O prevents read-ahead into later frames.
 2. Child initializes the trusted engine and enters the full sandbox. Its
    readiness frame contains `LSFAOTR1`, the 32-byte engine fingerprint, a
    two-byte profile-ID length and the exact

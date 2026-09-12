@@ -8,6 +8,7 @@ use latent_core::{PlatformError, PlatformErrorCode};
 use super::{profile, sandbox};
 
 pub(crate) const WORKER_ARGUMENT: &str = "--worker-v1";
+pub(crate) const CLEAN_WORKER_ARGUMENT: &str = "--worker-clean-v1";
 pub(crate) const MAX_BOOTSTRAP_BYTES: usize = profile::MAX_BOOTSTRAP_BYTES;
 pub(crate) const MAX_INPUT_BYTES: usize = 64 * 1024 * 1024;
 pub(crate) const MAX_OUTPUT_BYTES: usize = 512 * 1024 * 1024;
@@ -51,11 +52,17 @@ impl WorkerOptions {
 
     pub(crate) fn parse(
         arguments: impl IntoIterator<Item = OsString>,
-    ) -> Result<Self, PlatformError> {
+    ) -> Result<(Self, bool), PlatformError> {
         let mut arguments = arguments.into_iter();
-        if arguments.next().as_deref() != Some(std::ffi::OsStr::new(WORKER_ARGUMENT)) {
-            return Err(invalid());
-        }
+        let clean = match arguments
+            .next()
+            .as_deref()
+            .and_then(std::ffi::OsStr::to_str)
+        {
+            Some(WORKER_ARGUMENT) => false,
+            Some(CLEAN_WORKER_ARGUMENT) => true,
+            _ => return Err(invalid()),
+        };
         let mut values = [0_u64; 7];
         for value in &mut values {
             let argument = arguments.next().ok_or_else(invalid)?;
@@ -84,6 +91,7 @@ impl WorkerOptions {
             maximum_output_bytes: usize::try_from(values[6]).map_err(|_| invalid())?,
         }
         .validate()
+        .map(|options| (options, clean))
     }
 }
 
@@ -172,7 +180,13 @@ mod tests {
     fn arguments_are_exact_bounded_canonical_numbers() {
         let original = options();
         let arguments = original.arguments().unwrap().map(OsString::from);
-        assert_eq!(WorkerOptions::parse(arguments.clone()).unwrap(), original);
+        assert_eq!(
+            WorkerOptions::parse(arguments.clone()).unwrap(),
+            (original, false)
+        );
+        let mut clean = arguments.clone();
+        clean[0] = CLEAN_WORKER_ARGUMENT.into();
+        assert_eq!(WorkerOptions::parse(clean).unwrap(), (original, true));
         for replacement in ["", "-1", "+1", "01", "0", "18446744073709551616"] {
             let mut malformed = arguments.clone();
             malformed[1] = replacement.into();

@@ -13,9 +13,9 @@ pub fn run_aot_compiler_worker() -> i32 {
     // receives our fixed diagnostic, and still owns termination and reaping.
     std::panic::set_hook(Box::new(|_| {}));
     let result = std::panic::catch_unwind(|| {
-        let options =
+        let (options, clean) =
             WorkerOptions::parse(std::env::args_os().skip(1)).map_err(|_| "invalid arguments")?;
-        run(options)
+        run(options, clean)
     });
     let reason = match result {
         Ok(Ok(())) => return 0,
@@ -27,10 +27,21 @@ pub fn run_aot_compiler_worker() -> i32 {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn run(options: WorkerOptions) -> Result<(), &'static str> {
+fn run(options: WorkerOptions, clean: bool) -> Result<(), &'static str> {
     use super::{profile, protocol, sandbox, AotCompilerLimits};
     use std::io::Write as _;
 
+    let mut arguments = options
+        .arguments()
+        .map_err(|_| "invalid arguments")?
+        .map(std::ffi::OsString::from);
+    arguments[0] = protocol::CLEAN_WORKER_ARGUMENT.into();
+    sandbox::prepare_launch(
+        options.sandbox,
+        options.parent_pid,
+        (!clean).then_some(arguments.as_slice()),
+    )
+    .map_err(|_| "worker launch rejected")?;
     let mut input = Input(std::io::stdin());
     let mut output = Output(std::io::stdout());
     // Only this fixed four-byte header is read before bootstrap. The parent
@@ -96,7 +107,7 @@ fn compile(
 }
 
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
-fn run(_options: WorkerOptions) -> Result<(), &'static str> {
+fn run(_options: WorkerOptions, _clean: bool) -> Result<(), &'static str> {
     Err("unsupported compiler platform")
 }
 

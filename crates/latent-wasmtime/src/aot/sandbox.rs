@@ -82,6 +82,39 @@ pub(crate) struct EnforcedSandbox {
     _thread: PhantomData<Rc<()>>,
 }
 
+/// Sanitizes only a disposable single-thread child by re-executing this exact
+/// image. A clean marker skips re-exec, never the descriptor/limit checks. No
+/// enforcement capability is issued here, and no input has been read yet.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(crate) fn prepare_launch(
+    limits: SandboxLimits,
+    parent_pid: u32,
+    reexec_arguments: Option<&[std::ffi::OsString]>,
+) -> Result<(), PlatformError> {
+    let limits = limits.validate()?;
+    if parent_pid == 0 || parent_pid > i32::MAX as u32 {
+        return Err(failure(
+            PlatformErrorCode::InvalidArgument,
+            "invalid-aot-parent-pid",
+        ));
+    }
+    if let Some(arguments) = reexec_arguments {
+        if arguments.is_empty()
+            || arguments.len() > 16
+            || arguments.iter().any(|value| {
+                let bytes = value.as_encoded_bytes();
+                bytes.is_empty() || bytes.len() > 256 || !bytes.is_ascii() || bytes.contains(&0)
+            })
+        {
+            return Err(failure(
+                PlatformErrorCode::InvalidArgument,
+                "invalid-aot-reexec-arguments",
+            ));
+        }
+    }
+    linux::prepare_launch(limits, parent_pid, reexec_arguments)
+}
+
 pub(crate) fn bootstrap(
     limits: SandboxLimits,
     parent_pid: u32,

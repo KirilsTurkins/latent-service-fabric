@@ -14,14 +14,51 @@ use rustix::process::{self, Resource, Rlimit, Signal};
 use super::{failure, policy, SandboxLimits};
 
 pub(super) fn bootstrap(limits: SandboxLimits, parent_pid: u32) -> Result<(), PlatformError> {
+    launch_limits(limits, parent_pid)?;
+    // The parent's executable authentication handshake has completed before
+    // bootstrap. Earlier dump protection could block its /proc/pid/exe read.
+    process::set_dumpable_behavior(process::DumpableBehavior::NotDumpable)
+        .map_err(|_| denied("aot-dump-protection-unavailable"))?;
+    inventory(limits.maximum_fds)?;
+    personality()?;
+    Ok(())
+}
+
+pub(super) fn prepare_launch(
+    limits: SandboxLimits,
+    parent_pid: u32,
+    reexec_arguments: Option<&[std::ffi::OsString]>,
+) -> Result<(), PlatformError> {
+    use std::os::unix::process::CommandExt as _;
+
+    launch_limits(limits, parent_pid)?;
+    if let Some(arguments) = reexec_arguments {
+        // With no kept descriptors this uses one close_range(CLOEXEC). Disable
+        // proc iteration: if that syscall is blocked, the crate's numeric
+        // fallback is at most 1021 descriptors under our <=64 NOFILE ceiling.
+        // The API intentionally ignores syscall errors; the next image MUST
+        // check strict inventory instead of trusting the marker as success.
+        close_fds::CloseFdsBuilder::new()
+            .allow_filesystem(false)
+            .cloexecfrom(3);
+        let _error = std::process::Command::new("/proc/self/exe")
+            .env_clear()
+            .args(arguments)
+            .exec();
+        return Err(denied("aot-worker-reexec-failed"));
+    }
+    inventory(limits.maximum_fds)?;
+    personality()?;
+    Ok(())
+}
+
+fn launch_limits(limits: SandboxLimits, parent_pid: u32) -> Result<(), PlatformError> {
     check_parent(parent_pid)?;
     single_thread()?;
     process::set_parent_process_death_signal(Some(Signal::KILL))
         .map_err(|_| denied("aot-parent-death-guard-unavailable"))?;
     // Catch a parent exiting between the first check and PR_SET_PDEATHSIG.
     check_parent(parent_pid)?;
-    process::set_dumpable_behavior(process::DumpableBehavior::NotDumpable)
-        .map_err(|_| denied("aot-dump-protection-unavailable"))?;
     for (resource, bound) in limits_list(limits) {
         let inherited = process::getrlimit(resource).maximum.unwrap_or(u64::MAX);
         let actual = bound.min(inherited);
@@ -35,8 +72,6 @@ pub(super) fn bootstrap(limits: SandboxLimits, parent_pid: u32) -> Result<(), Pl
         .map_err(|_| denied("aot-resource-limit-unavailable"))?;
     }
     verify_limits(limits)?;
-    inventory(limits.maximum_fds)?;
-    personality()?;
     rustix::thread::set_no_new_privs(true)
         .map_err(|_| denied("aot-no-new-privileges-unavailable"))?;
     Ok(())

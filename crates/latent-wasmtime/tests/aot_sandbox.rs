@@ -23,6 +23,7 @@ fn main() {
 mod linux {
     use super::sandbox;
     use rustix::fs::{fcntl_getfl, fcntl_setfl, OFlags};
+    use rustix::io::{fcntl_setfd, FdFlags};
     use std::{
         fs::{File, OpenOptions},
         io::{Read, Write},
@@ -33,14 +34,23 @@ mod linux {
 
     pub(super) fn run() {
         let args: Vec<_> = std::env::args().collect();
-        if args.get(1).is_some_and(|value| value == "--probe") {
+        if args
+            .get(1)
+            .is_some_and(|value| value == "--probe" || value == "--probe-clean")
+        {
             assert_eq!(args.len(), 4);
-            probe(&args[2], args[3].parse().unwrap());
+            probe(
+                &args[2],
+                args[3].parse().unwrap(),
+                args[1] == "--probe-clean",
+            );
             return;
         }
         let executable = std::env::current_exe().unwrap();
         let cases = [
             "entry",
+            "inherited-fd",
+            "clean-marker-with-fd",
             "filesystem",
             "network",
             "descendants",
@@ -51,10 +61,21 @@ mod linux {
             "bad-pipes",
         ];
         for case in cases {
+            let inherited = if matches!(case, "inherited-fd" | "clean-marker-with-fd") {
+                let file = File::open("/dev/null").unwrap();
+                fcntl_setfd(&file, FdFlags::empty()).unwrap();
+                Some(file)
+            } else {
+                None
+            };
             let mut command = Command::new(&executable);
             command
                 .env_clear()
-                .arg("--probe")
+                .arg(if case == "clean-marker-with-fd" {
+                    "--probe-clean"
+                } else {
+                    "--probe"
+                })
                 .arg(case)
                 .arg(std::process::id().to_string());
             let result = bounded(command, &[], case == "bad-pipes");
@@ -64,6 +85,10 @@ mod linux {
                 String::from_utf8_lossy(&result.diagnostics)
             );
             assert_eq!(result.output, b"sandbox probe passed\n", "{case}");
+            if let Some(file) = inherited {
+                // Sanitation changes only the child: our original remains open.
+                assert!(file.metadata().is_ok());
+            }
         }
 
         // The safe mapping API can test mprotect, but raw executable mmap and
@@ -89,19 +114,27 @@ mod linux {
             String::from_utf8_lossy(&result.diagnostics)
         );
         assert_eq!(result.output, b"kernel syscall denial passed\n");
-        println!("AOT sandbox: 9 real-entry probes and exact-policy syscall probe passed");
+        println!("AOT sandbox: 11 real-entry probes and exact-policy syscall probe passed");
     }
 
-    fn probe(case: &str, parent_pid: u32) {
+    fn probe(case: &str, parent_pid: u32, clean: bool) {
         let limits = sandbox::SandboxLimits::default();
-        if case == "bad-pipes" {
+        let arguments = [
+            "--probe-clean".into(),
+            case.into(),
+            parent_pid.to_string().into(),
+        ];
+        let launch =
+            sandbox::prepare_launch(limits, parent_pid, (!clean).then_some(arguments.as_slice()));
+        if matches!(case, "bad-pipes" | "clean-marker-with-fd") {
             assert_eq!(
-                sandbox::bootstrap(limits, parent_pid).unwrap_err().message,
+                launch.unwrap_err().message,
                 "aot-sandbox-requires-only-three-pipes"
             );
             println!("sandbox probe passed");
             return;
         }
+        launch.unwrap();
         let prepared = sandbox::bootstrap(limits, parent_pid).unwrap();
         if case == "extra-fd" {
             let extra = File::open("/dev/null").unwrap();
@@ -131,7 +164,7 @@ mod linux {
         let enforced = prepared.enter().unwrap();
         assert_eq!(enforced.profile_id(), sandbox::PROFILE_ID);
         match case {
-            "entry" => {}
+            "entry" | "inherited-fd" => {}
             "filesystem" => {
                 assert_denied(File::open("/proc/self/status"));
                 assert_denied(OpenOptions::new().write(true).open("/dev/null"));

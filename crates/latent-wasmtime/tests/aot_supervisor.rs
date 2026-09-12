@@ -8,6 +8,9 @@ mod component;
 #[path = "aot_supervisor/driver.rs"]
 mod driver;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[path = "aot_supervisor/inherited.rs"]
+mod inherited;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "isolated_aot/support.rs"]
 #[allow(
     dead_code,

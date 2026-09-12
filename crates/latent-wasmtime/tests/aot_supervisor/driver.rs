@@ -23,7 +23,8 @@ pub fn run() {
     running_deadline();
     last_owner_drop();
     active_shutdown();
-    eprintln!("isolated AOT supervisor: 12 bounded protocol/ownership scenarios passed");
+    super::inherited::run();
+    eprintln!("isolated AOT supervisor: 13 bounded protocol/ownership scenarios passed");
 }
 
 fn protocol_failures(compiler: &IsolatedAotCompiler) {
