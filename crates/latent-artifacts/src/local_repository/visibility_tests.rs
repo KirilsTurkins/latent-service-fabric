@@ -117,7 +117,7 @@ fn readers_never_observe_partial_publication_and_wait_is_bounded() {
 fn visible_complete_publication_retries_fence_contention_at_resolve_and_fetch() {
     for during_fetch in [false, true] {
         let temp = TempRoot::new();
-        let repo = repository(temp.path());
+        let repo = Arc::new(repository(temp.path()));
         let expected = artifact("held-fence", b"complete-component");
         let descriptor = block_on(repo.publish(expected.clone())).unwrap();
         let query = ArtifactQuery {
@@ -125,16 +125,13 @@ fn visible_complete_publication_retries_fence_contention_at_resolve_and_fetch() 
             release_digest: Some(descriptor.release_digest.clone()),
             media_type: None,
         };
-        let token = repo
-            .execution_eligibility(&descriptor.release_digest)
-            .unwrap()
-            .unwrap();
+        let writer_repo = Arc::clone(&repo);
         let (start, wait) = mpsc::channel();
         let (held, acquired) = mpsc::channel();
         let (release, finish) = mpsc::channel();
         let writer = thread::spawn(move || {
             wait.recv_timeout(Duration::from_secs(5)).unwrap();
-            token.with_current(&mut |_| {
+            writer_repo.life_store().with_exclusive(&mut |_| {
                 held.send(()).unwrap();
                 finish.recv_timeout(Duration::from_secs(5)).unwrap();
                 Ok(())
@@ -174,6 +171,53 @@ fn visible_complete_publication_retries_fence_contention_at_resolve_and_fetch() 
         );
         assert_eq!(actual, expected);
     }
+}
+
+#[test]
+fn healthy_final_start_does_not_block_complete_catalog_reads() {
+    let temp = TempRoot::new();
+    let repo = repository(temp.path());
+    let expected = artifact("shared-fence", b"complete-component");
+    let descriptor = block_on(repo.publish(expected.clone())).unwrap();
+    let query = ArtifactQuery {
+        reference: None,
+        release_digest: Some(descriptor.release_digest.clone()),
+        media_type: None,
+    };
+    let token = repo
+        .execution_eligibility(&descriptor.release_digest)
+        .unwrap()
+        .unwrap();
+    let (held, acquired) = mpsc::channel();
+    let (release, finish) = mpsc::channel();
+    thread::scope(|scope| {
+        let first = scope.spawn(move || {
+            token
+                .with_current(&mut |checker| {
+                    checker.check()?;
+                    held.send(()).unwrap();
+                    finish.recv_timeout(Duration::from_secs(5)).unwrap();
+                    checker.check()
+                })
+                .unwrap();
+        });
+        acquired.recv_timeout(Duration::from_secs(5)).unwrap();
+        assert_eq!(
+            block_on(repo.resolve(&query)).unwrap(),
+            Some(descriptor.clone())
+        );
+        assert_eq!(
+            block_on(repo.fetch(&descriptor.release_digest)).unwrap(),
+            expected
+        );
+        let second = repo
+            .execution_eligibility(&descriptor.release_digest)
+            .unwrap()
+            .unwrap();
+        second.with_current(&mut |checker| checker.check()).unwrap();
+        release.send(()).unwrap();
+        first.join().unwrap();
+    });
 }
 
 #[test]

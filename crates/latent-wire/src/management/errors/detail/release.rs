@@ -1,7 +1,7 @@
 use super::proto;
 use latent_core::ErrorDetail;
 
-pub(super) struct ReleaseDetail {
+pub(in crate::management::errors) struct ReleaseDetail {
     operation_id: String,
     disposition: &'static str,
     reason: &'static str,

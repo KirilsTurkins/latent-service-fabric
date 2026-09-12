@@ -7,13 +7,13 @@ use std::{
     hash::{Hash, Hasher},
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
-        Arc, Mutex, MutexGuard,
+        Arc, RwLock, RwLockReadGuard, RwLockWriteGuard,
     },
 };
 
 /// Compact decision owner. It deliberately owns no catalog maps, files or lock.
 pub(super) struct Owner {
-    pub(super) fence: Mutex<()>,
+    pub(super) fence: RwLock<()>,
     live: AtomicBool,
     healthy: AtomicBool,
     authority: Option<Arc<dyn AdmissionAuthority>>,
@@ -21,7 +21,7 @@ pub(super) struct Owner {
 impl Owner {
     pub(super) fn new(authority: Option<Arc<dyn AdmissionAuthority>>) -> Arc<Self> {
         Arc::new(Self {
-            fence: Mutex::new(()),
+            fence: RwLock::new(()),
             live: AtomicBool::new(true),
             healthy: AtomicBool::new(true),
             authority,
@@ -34,9 +34,15 @@ impl Owner {
             Ok(())
         }
     }
-    pub(super) fn acquire(&self) -> Result<MutexGuard<'_, ()>, PlatformError> {
+    pub(super) fn read(&self) -> Result<RwLockReadGuard<'_, ()>, PlatformError> {
         self.check()?;
-        let guard = self.fence.try_lock().map_err(super::lock_error)?;
+        let guard = self.fence.try_read().map_err(super::lock_error)?;
+        self.check()?;
+        Ok(guard)
+    }
+    pub(super) fn write(&self) -> Result<RwLockWriteGuard<'_, ()>, PlatformError> {
+        self.check()?;
+        let guard = self.fence.try_write().map_err(super::lock_error)?;
         self.check()?;
         Ok(guard)
     }
@@ -350,7 +356,7 @@ impl ReleaseUseEligibility {
         action: &mut dyn FnMut(&dyn ReleaseUseRecheck) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
         let first = entries.first().ok_or_else(super::invalid)?;
-        let _fence = first.lifecycle.owner.acquire()?;
+        let _fence = first.lifecycle.owner.read()?;
         for entry in entries {
             if !Arc::ptr_eq(&first.lifecycle.owner, &entry.lifecycle.owner) {
                 return Err(super::invalid());

@@ -276,7 +276,7 @@ impl DirectoryArtifactRepository {
             semantic_version: verified.metadata.manifest().semantic_version.clone(),
             world: verified.metadata.manifest().world.clone(),
         };
-        self.life_store().with_current(&mut |_fence| {
+        self.life_store().with_exclusive(&mut |_fence| {
             let current = self
                 .life_store()
                 .record(release)?

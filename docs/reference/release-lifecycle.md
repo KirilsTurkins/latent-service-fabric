@@ -91,8 +91,16 @@ a call that only holds a route, queued compilation or ready object has not yet
 been accepted. Revocation does not require interrupting an already accepted
 guest or synchronously destroying its compiled code.
 
-Lifecycle reads and final activation decisions fail immediately on lock
-contention with retryable `Unavailable` reason `release-lifecycle-busy`.
+Healthy lifecycle reads and final activation decisions share a read fence;
+they do not exclude one another. Durable lifecycle mutations and replacement
+of the selected evidence proof hold an exclusive write fence. Only that
+exclusive fence exposes lifecycle commit, keeping publication and its indexed
+proof in one generation. Read-only lifecycle state snapshots also share access.
+The separate signing authority retains its own currentness and clock checks.
+
+Lifecycle reads and final activation decisions fail immediately on contention
+with an exclusive writer, using retryable `Unavailable` reason
+`release-lifecycle-busy`.
 The caller may retry within its existing deadline; the runtime does not wait
 for a lifecycle mutation. A just-published index entry can encounter this
 short contention window while its final publication fence is released, even

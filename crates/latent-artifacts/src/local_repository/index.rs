@@ -1,6 +1,8 @@
 //! One atomic immutable metadata index, including bounded scoped selection paths.
 
 mod sizing;
+#[cfg(test)]
+use crate::CapsuleArtifact;
 pub(super) use sizing::descriptor_bytes;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -13,7 +15,7 @@ use super::{
     PlatformErrorCode,
 };
 use crate::{
-    ArtifactCatalogEntry, ArtifactDescriptor, CapsuleArtifact, PreparationMetadataFingerprint,
+    ArtifactCatalogEntry, ArtifactDescriptor, PreparationMetadataFingerprint,
     VerifiedArtifactMetadata,
 };
 

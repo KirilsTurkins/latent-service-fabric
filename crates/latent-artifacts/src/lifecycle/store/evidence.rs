@@ -108,8 +108,8 @@ pub(super) struct EvidenceState {
 
 impl LifecycleStore {
     pub(crate) fn stage_evidence(&self, prepared: &LifecycleEvidence) -> Result<(), PlatformError> {
-        let _fence = self.owner.acquire()?;
-        let state = self.state.try_lock().map_err(lock_error)?;
+        let _fence = self.owner.write()?;
+        let state = self.state.try_read().map_err(lock_error)?;
         let entry = state
             .entries
             .get(&prepared.revision.identity.release)
@@ -170,7 +170,7 @@ impl LifecycleStore {
         release: &ReleaseDigest,
     ) -> Result<Option<(AdmissionBinding, ReleaseEvidenceUpload)>, PlatformError> {
         self.owner.check()?;
-        let state = self.state.try_lock().map_err(lock_error)?;
+        let state = self.state.try_read().map_err(lock_error)?;
         let Some(entry) = state.entries.get(release) else {
             return Ok(None);
         };
@@ -217,8 +217,8 @@ impl LifecycleStore {
     /// Only the one verified unreferenced candidate may be reclaimed. An old
     /// receipt is diagnostic history and does not pin obsolete raw evidence.
     pub(crate) fn reclaim_evidence(&self) -> Result<(), PlatformError> {
-        let _fence = self.owner.acquire()?;
-        let state = self.state.try_lock().map_err(lock_error)?;
+        let _fence = self.owner.write()?;
+        let state = self.state.try_read().map_err(lock_error)?;
         let mut evidence = self.evidence.try_lock().map_err(lock_error)?;
         let Some(digest) = evidence.unreferenced.clone() else {
             return Ok(());
@@ -244,7 +244,7 @@ impl LifecycleStore {
         Ok(())
     }
     pub(super) fn recover_evidence(&self) -> Result<(), PlatformError> {
-        let state = self.state.try_lock().map_err(lock_error)?;
+        let state = self.state.try_read().map_err(lock_error)?;
         let mut evidence = EvidenceState::default();
         let mut references = BTreeMap::new();
         for entry in state.entries.values() {

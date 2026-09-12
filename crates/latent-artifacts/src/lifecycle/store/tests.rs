@@ -1,4 +1,5 @@
 use super::*;
+mod readers;
 
 fn identity(label: &[u8]) -> LifecycleIdentity {
     LifecycleIdentity {
@@ -90,7 +91,7 @@ fn compact_capability_revokes_generation_and_owner_without_store_maps() {
         owner: Owner::new(None),
     };
     assert!(!token.belongs_to_catalog(&other));
-    let guard = owner.acquire().unwrap();
+    let guard = owner.write().unwrap();
     let mut entered = false;
     let failure = token
         .with_current(&mut |_| {
@@ -128,18 +129,18 @@ fn poisoned_fence_and_unhealthy_owner_are_never_reported_as_retryable_contention
     let owner = Owner::new(None);
     let poisoned = Arc::clone(&owner);
     assert!(std::thread::spawn(move || {
-        let _guard = poisoned.acquire().unwrap();
+        let _guard = poisoned.write().unwrap();
         panic!("inject poisoned lifecycle fence");
     })
     .join()
     .is_err());
-    let failure = owner.acquire().unwrap_err();
+    let failure = owner.read().unwrap_err();
     assert_eq!(failure.message, "release-lifecycle-unavailable");
     assert!(!failure.retryable);
 
     let owner = Owner::new(None);
     owner.poison();
-    let failure = owner.acquire().unwrap_err();
+    let failure = owner.read().unwrap_err();
     assert_eq!(failure.message, "release-lifecycle-unavailable");
     assert!(!failure.retryable);
 }
@@ -203,7 +204,7 @@ mod durable {
         let root = Root::new();
         let id = identity(b"read-state");
         let store = open(&root, std::slice::from_ref(&id), LifecycleLimits::default());
-        let guard = store.state.lock().unwrap();
+        let guard = store.state.write().unwrap();
         for failure in [
             store.record(&id.release).unwrap_err(),
             store.identity(&id.release).unwrap_err(),
@@ -216,7 +217,7 @@ mod durable {
         std::thread::scope(|scope| {
             assert!(scope
                 .spawn(|| {
-                    let _guard = store.state.lock().unwrap();
+                    let _guard = store.state.write().unwrap();
                     panic!("inject poisoned lifecycle state");
                 })
                 .join()
@@ -225,6 +226,54 @@ mod durable {
         let failure = store.record(&id.release).unwrap_err();
         assert_eq!(failure.message, "release-lifecycle-unavailable");
         assert!(!failure.retryable);
+    }
+    #[test]
+    fn state_snapshots_share_reads_and_only_commit_needs_exclusive_state() {
+        let root = Root::new();
+        let id = identity(b"shared-state");
+        let store = open(&root, std::slice::from_ref(&id), LifecycleLimits::default());
+        let token = store.eligibility(&id.release, None).unwrap();
+        let record = store.record(&id.release).unwrap().unwrap();
+        let guard = store.state.read().unwrap();
+        let prepared = store.prepare(revocation(&record, "revoke"), None).unwrap();
+        std::thread::scope(|scope| {
+            scope
+                .spawn(|| {
+                    assert_eq!(store.identity(&id.release).unwrap(), Some(id.clone()));
+                    assert_eq!(store.record(&id.release).unwrap(), Some(record.clone()));
+                    assert_eq!(
+                        store.operation(&id.scope, "unknown").unwrap(),
+                        ReleaseOperationLookup::Unknown
+                    );
+                    store
+                        .with_current(&mut |fence| {
+                            let current = fence.eligibility(&id.release, None)?;
+                            assert_eq!(current, token);
+                            current.with_current(&mut |checker| checker.check())
+                        })
+                        .unwrap();
+                })
+                .join()
+                .unwrap();
+        });
+        let failure = store
+            .with_prepared(&prepared, &mut |fence| fence.commit(&prepared))
+            .unwrap_err();
+        assert_eq!(failure.message, "release-lifecycle-busy");
+        assert!(failure.retryable);
+        token.check_current().unwrap();
+        drop(guard);
+        store
+            .with_prepared(&prepared, &mut |fence| fence.commit(&prepared))
+            .unwrap();
+        assert_eq!(
+            token.check_current().unwrap_err().code,
+            PlatformErrorCode::PermissionDenied
+        );
+        assert_eq!(
+            store.record(&id.release).unwrap().unwrap().state,
+            ReleaseLifecycleState::Revoked
+        );
     }
     #[test]
     fn bootstrap_is_explicit_and_later_orphan_complete_never_admits() {

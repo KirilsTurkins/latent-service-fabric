@@ -9,7 +9,7 @@ use std::{
     cell::Cell,
     collections::BTreeMap,
     path::{Path, PathBuf},
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 mod evidence;
 mod io;
@@ -65,7 +65,7 @@ pub(crate) struct LifecycleStore {
     root: PathBuf,
     limits: LifecycleLimits,
     owner: Arc<Owner>,
-    state: Mutex<State>,
+    state: RwLock<State>,
     evidence: Mutex<evidence::EvidenceState>,
 }
 pub(crate) struct LifecyclePrepared {
@@ -85,7 +85,13 @@ impl LifecyclePrepared {
 }
 pub(crate) struct LifecycleFence<'a> {
     store: &'a LifecycleStore,
+    _guard: RwLockWriteGuard<'a, ()>,
     mutated: Cell<bool>,
+}
+/// A shared snapshot fence cannot commit a prepared lifecycle transition.
+pub(crate) struct LifecycleReadFence<'a> {
+    store: &'a LifecycleStore,
+    _guard: RwLockReadGuard<'a, ()>,
 }
 
 impl LifecycleStore {
@@ -102,7 +108,7 @@ impl LifecycleStore {
             root,
             limits,
             owner: Owner::new(authority),
-            state: Mutex::new(state),
+            state: RwLock::new(state),
             evidence: Mutex::new(evidence::EvidenceState::default()),
         };
         store.recover_evidence()?;
@@ -124,7 +130,7 @@ impl LifecycleStore {
         release: &ReleaseDigest,
     ) -> Result<Option<ReleaseLifecycleRecord>, PlatformError> {
         self.owner.check()?;
-        let state = self.state.try_lock().map_err(lock_error)?;
+        let state = self.state.try_read().map_err(lock_error)?;
         Ok(state
             .entries
             .get(release)
@@ -135,7 +141,7 @@ impl LifecycleStore {
         release: &ReleaseDigest,
     ) -> Result<Option<LifecycleIdentity>, PlatformError> {
         self.owner.check()?;
-        let state = self.state.try_lock().map_err(lock_error)?;
+        let state = self.state.try_read().map_err(lock_error)?;
         Ok(state
             .entries
             .get(release)
@@ -151,7 +157,7 @@ impl LifecycleStore {
         if self.owner.check().is_err() {
             return Ok(ReleaseOperationLookup::Uncertain);
         }
-        let state = self.state.try_lock().map_err(lock_error)?;
+        let state = self.state.try_read().map_err(lock_error)?;
         Ok(state
             .receipts
             .values()
@@ -166,7 +172,7 @@ impl LifecycleStore {
         release: &ReleaseDigest,
         admission: Option<ReleaseEligibility>,
     ) -> Result<ReleaseUseEligibility, PlatformError> {
-        let _fence = self.owner.acquire()?;
+        let _fence = self.owner.read()?;
         self.make_eligibility(release, admission)
     }
     fn make_eligibility(
@@ -175,7 +181,7 @@ impl LifecycleStore {
         admission: Option<ReleaseEligibility>,
     ) -> Result<ReleaseUseEligibility, PlatformError> {
         self.owner.check()?;
-        let state = self.state.try_lock().map_err(lock_error)?;
+        let state = self.state.try_read().map_err(lock_error)?;
         let entry = state.entries.get(release).ok_or_else(unavailable)?;
         let lifecycle = LifecycleEligibility {
             owner: Arc::clone(&self.owner),
@@ -194,7 +200,7 @@ impl LifecycleStore {
     ) -> Result<LifecyclePrepared, PlatformError> {
         self.owner.check()?;
         validation::receipt(&receipt, self.limits)?;
-        let state = self.state.try_lock().map_err(lock_error)?;
+        let state = self.state.try_read().map_err(lock_error)?;
         if let Some(previous) = state.receipts.values().find(|entry| {
             entry.receipt.scope == receipt.scope
                 && entry.receipt.operation_id == receipt.operation_id
@@ -228,11 +234,23 @@ impl LifecycleStore {
     }
     pub(crate) fn with_current(
         &self,
+        action: &mut dyn FnMut(&LifecycleReadFence<'_>) -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        let fence = LifecycleReadFence {
+            store: self,
+            _guard: self.owner.read()?,
+        };
+        action(&fence)
+    }
+    /// Selected-proof replacement and durable transitions require an exclusive
+    /// fence even when they do not both modify the lifecycle journal.
+    pub(crate) fn with_exclusive(
+        &self,
         action: &mut dyn FnMut(&LifecycleFence<'_>) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        let _lock = self.owner.acquire()?;
         let fence = LifecycleFence {
             store: self,
+            _guard: self.owner.write()?,
             mutated: Cell::new(false),
         };
         let result = action(&fence);
@@ -246,22 +264,15 @@ impl LifecycleStore {
         prepared: &LifecyclePrepared,
         action: &mut dyn FnMut(&LifecycleFence<'_>) -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        let _lock = self.owner.acquire()?;
-        {
-            let state = self.state.try_lock().map_err(lock_error)?;
-            if state.head != prepared.head {
-                return Err(conflict());
+        self.with_exclusive(&mut |fence| {
+            {
+                let state = self.state.try_read().map_err(lock_error)?;
+                if state.head != prepared.head {
+                    return Err(conflict());
+                }
             }
-        }
-        let fence = LifecycleFence {
-            store: self,
-            mutated: Cell::new(false),
-        };
-        let result = action(&fence);
-        if result.is_err() && fence.mutated.get() {
-            self.owner.poison();
-        }
-        result
+            action(fence)
+        })
     }
 }
 impl Drop for LifecycleStore {
@@ -269,10 +280,7 @@ impl Drop for LifecycleStore {
         self.retire();
     }
 }
-impl LifecycleFence<'_> {
-    pub(crate) fn check(&self) -> Result<(), PlatformError> {
-        self.store.owner.check()
-    }
+impl LifecycleReadFence<'_> {
     pub(crate) fn eligibility(
         &self,
         release: &ReleaseDigest,
@@ -280,9 +288,14 @@ impl LifecycleFence<'_> {
     ) -> Result<ReleaseUseEligibility, PlatformError> {
         self.store.make_eligibility(release, admission)
     }
+}
+impl LifecycleFence<'_> {
+    pub(crate) fn check(&self) -> Result<(), PlatformError> {
+        self.store.owner.check()
+    }
     pub(crate) fn commit(&self, prepared: &LifecyclePrepared) -> Result<(), PlatformError> {
         self.check()?;
-        let mut state = self.store.state.try_lock().map_err(lock_error)?;
+        let mut state = self.store.state.try_write().map_err(lock_error)?;
         if state.head != prepared.head {
             return Err(conflict());
         }
