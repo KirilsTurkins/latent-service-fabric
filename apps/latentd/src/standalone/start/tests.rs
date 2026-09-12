@@ -13,6 +13,8 @@ mod audit;
 #[cfg(target_os = "linux")]
 mod control;
 #[cfg(target_os = "linux")]
+mod deployment_operations;
+#[cfg(target_os = "linux")]
 mod rollouts;
 
 fn settings(directory: &TempDir) -> NodeSettings {

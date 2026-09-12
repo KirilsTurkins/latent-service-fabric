@@ -13,6 +13,7 @@ mod lifecycle;
 #[cfg(target_os = "linux")]
 mod runtime;
 mod support;
+mod verification;
 
 use super::*;
 use support::*;

@@ -67,6 +67,7 @@ pub(crate) fn attempt(
     replay: bool,
 ) -> Result<AuditOperationAttempt> {
     Ok(AuditOperationAttempt {
+        expected_state_version: None,
         expected_rollback_target_generation: receipt
             .rollback_target
             .as_ref()

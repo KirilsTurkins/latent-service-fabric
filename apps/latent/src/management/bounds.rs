@@ -154,33 +154,50 @@ impl Check for proto::ListReleasesResponse {
 
 impl Check for proto::Deployment {
     fn check(&self, b: &mut Bounds) -> Result<(), Failure> {
-        b.id(&self.id)?;
-        b.id(&self.service)?;
-        b.digest(&self.release_digest)?;
-        let metadata = self.metadata.as_ref().ok_or_else(invalid_response)?;
-        b.id(&metadata.name)?;
-        b.id(metadata.tenant.as_deref().ok_or_else(invalid_response)?)?;
-        b.optional(metadata.namespace.as_deref())?;
-        b.map(&metadata.labels)?;
-        b.map(&metadata.annotations)?;
-        b.count(self.grants.len())?;
-        for grant in &self.grants {
-            b.id(&grant.capability)?;
-            b.id(&grant.policy)?;
-            b.texts(&grant.operations)?;
-            b.map(&grant.constraints)?;
-        }
-        let placement = self.placement.as_ref().ok_or_else(invalid_response)?;
-        b.text(&placement.trust_class)?;
-        b.texts(&placement.architectures)?;
-        b.texts(&placement.regions)?;
-        b.texts(&placement.zones)?;
-        b.texts(&placement.required_features)?;
         if self.generation == 0 {
             return Err(invalid_response());
         }
-        Ok(())
+        deployment_fields(self, b)
     }
+}
+
+/// Manifest hashing accepts request generation zero; generation is output-only
+/// and does not enter the normalized manifest. Response checks remain stricter.
+pub(super) fn checked_deployment_manifest(
+    value: &proto::Deployment,
+    maximum: usize,
+) -> Result<(), Failure> {
+    deployment_fields(value, &mut Bounds { remaining: 65_536 })?;
+    if value.encoded_len() > maximum {
+        return Err(invalid_response());
+    }
+    Ok(())
+}
+
+fn deployment_fields(value: &proto::Deployment, b: &mut Bounds) -> Result<(), Failure> {
+    b.id(&value.id)?;
+    b.id(&value.service)?;
+    b.digest(&value.release_digest)?;
+    let metadata = value.metadata.as_ref().ok_or_else(invalid_response)?;
+    b.id(&metadata.name)?;
+    b.id(metadata.tenant.as_deref().ok_or_else(invalid_response)?)?;
+    b.optional(metadata.namespace.as_deref())?;
+    b.map(&metadata.labels)?;
+    b.map(&metadata.annotations)?;
+    b.count(value.grants.len())?;
+    for grant in &value.grants {
+        b.id(&grant.capability)?;
+        b.id(&grant.policy)?;
+        b.texts(&grant.operations)?;
+        b.map(&grant.constraints)?;
+    }
+    let placement = value.placement.as_ref().ok_or_else(invalid_response)?;
+    b.text(&placement.trust_class)?;
+    b.texts(&placement.architectures)?;
+    b.texts(&placement.regions)?;
+    b.texts(&placement.zones)?;
+    b.texts(&placement.required_features)?;
+    Ok(())
 }
 impl Check for proto::ApplyDeploymentResponse {
     fn check(&self, b: &mut Bounds) -> Result<(), Failure> {
@@ -188,7 +205,12 @@ impl Check for proto::ApplyDeploymentResponse {
             .as_ref()
             .ok_or_else(invalid_response)?
             .check(b)?;
-        b.texts(&self.warnings)
+        b.texts(&self.warnings)?;
+        if let Some(receipt) = &self.receipt {
+            b.count(1)?;
+            super::phase2::projection::checked(receipt, 4096)?;
+        }
+        Ok(())
     }
 }
 impl Check for proto::GetDeploymentResponse {

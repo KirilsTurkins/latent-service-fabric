@@ -74,6 +74,7 @@ fn digest() -> ArtifactBlobDigest {
 }
 fn attempt() -> AuditOperationAttempt {
     AuditOperationAttempt {
+        expected_state_version: None,
         expected_rollback_target_generation: None,
         scope: AuditScope::Tenant(TenantId("test".into())),
         actor: AuditActorIdentity {
@@ -163,6 +164,59 @@ fn rollback_target_precondition_and_validated_history_are_distinct_and_optional(
     json["identities"]["rollbackTargetGeneration"] = serde_json::Value::Null;
     assert!(serde_json::from_value::<AuditOperationAttempt>(json).is_err());
 }
+
+#[test]
+fn managed_deployment_state_precondition_is_optional_and_distinct() {
+    let legacy = attempt();
+    let encoded = codec::encode(&legacy, 4096).unwrap();
+    assert!(!std::str::from_utf8(&encoded)
+        .unwrap()
+        .contains("expectedStateVersion"));
+    assert_eq!(
+        codec::decode::<AuditOperationAttempt>(&encoded, 4096).unwrap(),
+        legacy
+    );
+
+    let mut managed = legacy;
+    managed.action = AuditControlAction::DeploymentApply;
+    managed.expected_generation = None;
+    managed.expected_deployment_generation = Some(0);
+    managed.expected_state_version = Some(0);
+    managed.identities.deployment = Some(latent_core::DeploymentId("first".into()));
+    managed.identities.deployment_generation = Some(1);
+    managed.identities.route_generation = Some(latent_core::RouteGeneration(1));
+    managed.identities.state_version = Some(1);
+    codec::attempt(&managed).unwrap();
+    let encoded = codec::encode(&managed, 4096).unwrap();
+    assert_eq!(
+        codec::decode::<AuditOperationAttempt>(&encoded, 4096).unwrap(),
+        managed
+    );
+
+    let mut invalid = managed.clone();
+    invalid.action = AuditControlAction::Publish;
+    assert!(codec::attempt(&invalid).is_err());
+    invalid = managed.clone();
+    invalid.identities.deployment = None;
+    assert!(codec::attempt(&invalid).is_err());
+    invalid = managed.clone();
+    invalid.expected_deployment_generation = None;
+    assert!(codec::attempt(&invalid).is_err());
+    invalid = managed.clone();
+    invalid.expected_generation = Some(0);
+    assert!(codec::attempt(&invalid).is_err());
+    invalid = managed.clone();
+    invalid.action = AuditControlAction::DeploymentDelete;
+    assert!(codec::attempt(&invalid).is_err());
+    invalid.expected_deployment_generation = Some(1);
+    codec::attempt(&invalid).unwrap();
+    invalid.identities.state_version = Some(0);
+    assert!(codec::attempt(&invalid).is_err());
+    let mut json = serde_json::to_value(managed).unwrap();
+    json["expectedStateVersion"] = serde_json::Value::Null;
+    assert!(serde_json::from_value::<AuditOperationAttempt>(json).is_err());
+}
+
 fn query(scope: AuditScope) -> AuditQueryRequest {
     AuditQueryRequest {
         scope,

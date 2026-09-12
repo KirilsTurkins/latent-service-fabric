@@ -1,15 +1,11 @@
-use latent_artifacts::package::{LayerRole, PackageKind};
+use latent_artifacts::package::LayerRole;
 use latent_artifacts::{
     decode_contract_metadata, AdmissionBinding, AdmissionStorageLimits, ArtifactDescriptor,
     CapsuleArtifact, ContractMetadataLimits, PackageAdmissionUpload, VerifiedAdmission,
 };
 use latent_core::{ArtifactReference, PlatformError, ReleaseDigest, TenantId};
 use latent_manifest::{JsonManifestCodec, ManifestCodec, ManifestLimits};
-use latent_packaging::{
-    evaluate_sboms, inspect_bundle, BundleInput, PackageBundle, PackagingLimits,
-    SbomEvidenceLimits, SbomEvidenceRef,
-};
-use latent_signing::{PackageSigningSubject, ProvenanceEvidenceRef, SignatureEvidenceRef};
+use latent_packaging::{inspect_bundle, BundleInput, PackageBundle, PackagingLimits};
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
@@ -65,71 +61,31 @@ pub(super) fn with_state(
         },
         limits,
     )?;
-    if bundle.layout().config().kind != PackageKind::Capsule {
-        return Err(denied("admission-executable-package-required"));
-    }
-    let subject = PackageSigningSubject::from_package(
-        bundle.manifest_bytes(),
-        bundle.config_bytes(),
-        limits.package,
-    )?;
-    let signature = &signatures[0];
-    let publisher = state.verifiers()?.0.verify_package(
-        &subject,
-        SignatureEvidenceRef {
-            manifest: &signature.manifest,
-            config: &signature.configuration,
-            payload: &signature.payload,
-        },
-        now,
-    )?;
-    if !state
-        .policy
-        .tenants
-        .get(&tenant.0)
-        .is_some_and(|publishers| publishers.contains(&publisher.publisher().0))
-    {
-        return Err(denied("admission-tenant-publisher-denied"));
-    }
-    let provenance_entry = &provenance[0];
-    let builder = state.verifiers()?.1.verify_package(
-        &subject,
-        ProvenanceEvidenceRef {
-            manifest: &provenance_entry.manifest,
-            config: &provenance_entry.configuration,
-            payload: &provenance_entry.payload,
-        },
-        now,
-    )?;
-    let evidence = sboms
-        .iter()
-        .map(|entry| SbomEvidenceRef {
-            manifest: &entry.manifest,
-            config: &entry.configuration,
-            payload: &entry.payload,
-        })
-        .collect::<Vec<_>>();
-    let sbom = evaluate_sboms(
+    let checked = super::verification::check_evidence(
+        &state.policy,
+        state.verifiers()?,
+        tenant,
         &bundle,
-        &evidence,
-        &state.policy.sbom,
-        SbomEvidenceLimits::default(),
-    )
-    .map_err(|error| match error.message.as_str() {
-        "required-embedded-sbom-missing" => denied("required-embedded-sbom-missing"),
-        "required-detached-sbom-missing" => denied("required-detached-sbom-missing"),
-        "required-sbom-source-unavailable" => denied("required-sbom-source-unavailable"),
-        "required-sbom-license-unavailable" => denied("required-sbom-license-unavailable"),
-        _ => error,
-    })?;
-    if bundle
-        .sbom()
-        .and_then(latent_packaging::CheckedPackageSbom::source_snapshot_digest)
-        .is_some_and(|snapshot| snapshot != builder.source_snapshot_digest())
-    {
-        return Err(denied("admission-build-sbom-source-mismatch"));
-    }
-    let artifact = artifact(&bundle, tenant, publisher.publisher().clone())?;
+        super::verification::EvidenceInput {
+            signatures: &signatures,
+            provenance: &provenance,
+            sboms: &sboms,
+        },
+        now,
+    )?;
+    let super::verification::CheckedEvidence {
+        subject,
+        publisher,
+        builder,
+        sbom,
+    } = checked;
+    let metadata = metadata(&bundle, tenant, publisher.publisher().clone())?;
+    let artifact = CapsuleArtifact {
+        descriptor: metadata.descriptor,
+        manifest: metadata.manifest,
+        contracts: metadata.contracts,
+        component_bytes: component(&bundle)?.to_vec(),
+    };
     latent_manifest::check_runtime_compatibility(&artifact.manifest, owner.runtime.as_deref())?;
     let receipt = Receipt {
         format_version: 1,
@@ -194,11 +150,11 @@ pub(super) fn with_state(
     })
 }
 
-fn artifact(
+pub(super) fn metadata(
     bundle: &PackageBundle,
     tenant: &TenantId,
     publisher: latent_core::PublisherId,
-) -> Result<CapsuleArtifact, PlatformError> {
+) -> Result<PackageMetadata, PlatformError> {
     let content = |role| -> Result<&[u8], PlatformError> {
         let layer = bundle
             .layout()
@@ -231,7 +187,7 @@ fn artifact(
         .component_digest
         .as_ref()
         .ok_or_else(|| invalid("admission-component-missing"))?;
-    Ok(CapsuleArtifact {
+    Ok(PackageMetadata {
         descriptor: ArtifactDescriptor {
             reference: ArtifactReference(format!("package:{}", bundle.layout().digest())),
             release_digest: ReleaseDigest(release.to_string()),
@@ -243,6 +199,24 @@ fn artifact(
         },
         manifest,
         contracts,
-        component_bytes: component.to_vec(),
     })
+}
+
+pub(super) struct PackageMetadata {
+    pub descriptor: ArtifactDescriptor,
+    pub manifest: latent_manifest::CapsuleManifest,
+    pub contracts: Vec<latent_artifacts::ContractDescriptor>,
+}
+
+fn component(bundle: &PackageBundle) -> Result<&[u8], PlatformError> {
+    let layer = bundle
+        .layout()
+        .config()
+        .layers
+        .iter()
+        .find(|layer| layer.role == LayerRole::Component)
+        .ok_or_else(|| invalid("admission-component-missing"))?;
+    bundle
+        .blob(&layer.path)
+        .ok_or_else(|| invalid("admission-component-missing"))
 }

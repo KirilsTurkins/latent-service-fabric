@@ -90,3 +90,7 @@ workload is required. These checks establish that the interface can express the
 contract. Actual wire conversion and server behavior are covered separately by
 the invocation adapter tests and the completed
 [Phase 1 conformance gate](../docs/phase-1-completion.md).
+
+## Phase 2 management boundary
+
+The operator CLI and generated Rust RPC clients expose package, release, deployment, rollout and audit workflows. See the [operator workflow contract](../docs/phase-2-operator-workflows.md). These additive management RPCs do not change the six handwritten SDKs' invocation and guest interfaces; their existing identity/cancellation fixtures remain required. Capability/provider management models and usable Rust/TypeScript transports are tracked by [Phase 3 #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).

@@ -250,6 +250,7 @@ impl MeasurementNode {
             .apply_deployment(authenticated(
                 &fixture.target.tenant,
                 management::ApplyDeploymentRequest {
+                    operation: None,
                     deployment: Some(deployment),
                     expected_generation: None,
                 },

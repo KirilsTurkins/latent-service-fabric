@@ -11,7 +11,11 @@ mod ledger;
 mod receipt;
 #[cfg(test)]
 mod tests;
+mod verification;
 mod verify;
+pub use verification::{
+    verify_package_once, PackageVerificationReport, PackageVerificationRequest,
+};
 
 pub use clock::{SupplyChainClock, SystemSupplyChainClock};
 pub use config::SupplyChainPolicy;

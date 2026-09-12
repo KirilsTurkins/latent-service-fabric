@@ -4,6 +4,7 @@ mod admission_fence;
 mod compiler;
 mod mutations;
 mod observation;
+pub(crate) mod operations;
 mod pagination;
 mod persistence;
 mod publication;
@@ -121,6 +122,7 @@ pub struct DirectoryDeploymentRepository {
     lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
     current: RwLock<PublishedCatalog>,
     rollout_limits: crate::rollouts::RolloutLimits,
+    operation_budget: Arc<crate::deployment_operations::budget::Budget>,
     rollout_budget: Arc<rollouts::table::MetadataBudget>,
     rollout_work: Arc<std::sync::atomic::AtomicBool>,
     rollout_cursor_epoch: u64,
@@ -367,6 +369,36 @@ impl DirectoryDeploymentRepository {
         lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
         rollout_limits: crate::rollouts::RolloutLimits,
     ) -> Result<Self, PlatformError> {
+        Self::open_inner_with_control_limits(
+            root,
+            artifacts,
+            config,
+            observation,
+            admission,
+            runtime_profile,
+            lifecycle,
+            rollout_limits,
+            crate::deployment_operations::DeploymentOperationLimits::default(),
+        )
+        .await
+    }
+
+    #[expect(
+        clippy::too_many_arguments,
+        clippy::too_many_lines,
+        reason = "one bounded recovery initializes both optional control tables with the existing route owner"
+    )]
+    async fn open_inner_with_control_limits(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        observation: Source,
+        admission: Option<Arc<dyn AdmissionAuthority>>,
+        runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+        rollout_limits: crate::rollouts::RolloutLimits,
+        operation_limits: crate::deployment_operations::DeploymentOperationLimits,
+    ) -> Result<Self, PlatformError> {
         let mut work = observation.begin(WorkOperation::Open);
         let result = async {
             if config.max_deployments == 0
@@ -383,13 +415,16 @@ impl DirectoryDeploymentRepository {
                 ));
             }
             let rollout_limits = rollout_limits.validate()?;
+            let operation_limits = operation_limits.validate()?;
+            let operation_budget =
+                crate::deployment_operations::budget::Budget::new(operation_limits);
             let rollout_cursor_epoch = next_rollout_cursor_epoch()?;
             let root = root.into();
             let (root, owner_lock) = persistence::own_root(&root)?;
             let rollout_budget =
                 rollouts::table::MetadataBudget::new(rollout_limits.maximum_metadata_bytes);
             let mut restored = persistence::load(&root, config, &mut work)?;
-            let control = restored
+            let mut control = restored
                 .as_mut()
                 .and_then(|record| record.payload.control.take());
             let needs_initial_state = restored.is_none();
@@ -440,10 +475,20 @@ impl DirectoryDeploymentRepository {
             let transaction = control
                 .as_ref()
                 .map_or(generation.0, |v| v.transaction_version);
+            let operations = if let Some(data) = control
+                .as_mut()
+                .and_then(|value| value.deployment_operations.take())
+            {
+                operations::table::OperationTable::new(data, true, &operation_budget)?
+            } else {
+                operations::table::OperationTable::empty(&operation_budget)?
+            };
+            operations.validate_catalog(transaction, generation.0)?;
             let rollout_table = if let Some(control) = control {
+                let enabled = !control.rollouts.rows.is_empty();
                 rollouts::table::RolloutTable::new(
                     control.rollouts,
-                    true,
+                    enabled,
                     &rollout_budget,
                     rollout_limits,
                 )?
@@ -463,9 +508,11 @@ impl DirectoryDeploymentRepository {
                     transaction,
                     routes: Arc::new(catalog),
                     rollouts: rollout_table,
+                    operations,
                     confirmed: false,
                 }),
                 rollout_limits,
+                operation_budget,
                 rollout_budget,
                 rollout_work: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 rollout_cursor_epoch,
@@ -604,7 +651,7 @@ impl DirectoryDeploymentRepository {
                 "stale-catalog-transaction",
             ));
         }
-        let bytes = if publication.rollouts.enabled {
+        let bytes = if publication.has_control() {
             let control = persistence::ControlPayloadRef {
                 transaction_version: expected_transaction.checked_add(1).ok_or_else(|| {
                     error(
@@ -613,6 +660,10 @@ impl DirectoryDeploymentRepository {
                     )
                 })?,
                 rollouts: &publication.rollouts.data,
+                deployment_operations: publication
+                    .operations
+                    .enabled
+                    .then_some(&publication.operations.data),
             };
             drop(legacy_bytes);
             persistence::encode_combined(&next, &control, self.config.max_state_bytes, work)?
@@ -628,6 +679,7 @@ impl DirectoryDeploymentRepository {
                 expected,
                 expected_transaction,
                 Arc::clone(&publication.rollouts),
+                Arc::clone(&publication.operations),
                 Arc::clone(&next),
                 &bytes,
                 precondition,
@@ -653,6 +705,7 @@ impl DirectoryDeploymentRepository {
         expected: RouteGeneration,
         expected_transaction: u64,
         table: Arc<rollouts::table::RolloutTable>,
+        operations: Arc<operations::table::OperationTable>,
         next: Arc<CompiledCatalog>,
         bytes: &[u8],
         precondition: Option<&ObjectPrecondition>,
@@ -711,6 +764,7 @@ impl DirectoryDeploymentRepository {
                         .expect("validated transaction"),
                     routes: next,
                     rollouts: table,
+                    operations,
                     confirmed: durable.is_ok(),
                 },
             );
@@ -806,7 +860,7 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
                         work,
                         self.runtime_profile.as_deref(),
                         self.lifecycle.as_ref(),
-                        publication.rollouts.enabled,
+                        publication.has_control(),
                     )
                     .await?;
                     if !compiled.catalog().matches_snapshot(&snapshot) {

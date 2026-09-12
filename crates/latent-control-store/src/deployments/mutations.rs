@@ -104,7 +104,7 @@ impl DirectoryDeploymentRepository {
                 &mut work,
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
-                publication.rollouts.enabled,
+                publication.has_control(),
             )
             .await?;
             self.commit_versioned(
@@ -169,7 +169,7 @@ impl DirectoryDeploymentRepository {
                 &mut work,
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
-                publication.rollouts.enabled,
+                publication.has_control(),
             )
             .await?;
             let outcome = self.commit_checked(
@@ -237,7 +237,7 @@ impl DirectoryDeploymentRepository {
                 &mut work,
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
-                publication.rollouts.enabled,
+                publication.has_control(),
             )
             .await?;
             let outcome = self.commit_checked(
@@ -258,7 +258,11 @@ impl DirectoryDeploymentRepository {
         result
     }
 
-    fn validate_target(&self, tenant: &TenantId, id: &DeploymentId) -> Result<(), PlatformError> {
+    pub(super) fn validate_target(
+        &self,
+        tenant: &TenantId,
+        id: &DeploymentId,
+    ) -> Result<(), PlatformError> {
         if [&tenant.0, &id.0].iter().any(|identifier| {
             identifier.is_empty()
                 || identifier.len() > self.config.max_identifier_bytes
@@ -274,6 +278,69 @@ impl DirectoryDeploymentRepository {
 }
 
 impl DeploymentStore for DirectoryDeploymentRepository {
+    fn reserve_operation_request(
+        &self,
+    ) -> Result<crate::deployment_operations::DeploymentReadLease, PlatformError> {
+        DirectoryDeploymentRepository::reserve_operation_request(self)
+    }
+    fn prepare_operation(
+        &self,
+        request: crate::deployment_operations::DeploymentOperationRequest,
+    ) -> BoxFuture<
+        '_,
+        Result<crate::deployment_operations::PreparedDeploymentOperation, PlatformError>,
+    > {
+        Box::pin(DirectoryDeploymentRepository::prepare_operation(
+            self, request,
+        ))
+    }
+    fn commit_operation(
+        &self,
+        prepared: crate::deployment_operations::PreparedDeploymentOperation,
+    ) -> Result<
+        crate::deployment_operations::DeploymentOperationRead<
+            crate::deployment_operations::DeploymentOperationCommit,
+        >,
+        PlatformError,
+    > {
+        DirectoryDeploymentRepository::commit_operation(self, prepared)
+    }
+    fn get_operation<'a>(
+        &'a self,
+        tenant: &'a TenantId,
+        operation_id: &'a str,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            crate::deployment_operations::DeploymentOperationRead<
+                crate::deployment_operations::DeploymentOperationLookup,
+            >,
+            PlatformError,
+        >,
+    > {
+        Box::pin(DirectoryDeploymentRepository::get_operation(
+            self,
+            tenant,
+            operation_id,
+        ))
+    }
+    fn get_operation_snapshot<'a>(
+        &'a self,
+        tenant: &'a TenantId,
+        id: &'a DeploymentId,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            crate::deployment_operations::DeploymentOperationRead<
+                crate::deployment_operations::DeploymentOperationSnapshot,
+            >,
+            PlatformError,
+        >,
+    > {
+        Box::pin(DirectoryDeploymentRepository::get_operation_snapshot(
+            self, tenant, id,
+        ))
+    }
     fn apply_versioned<'a>(
         &'a self,
         tenant: &'a TenantId,
@@ -371,7 +438,7 @@ impl DeploymentStore for DirectoryDeploymentRepository {
     }
 }
 
-fn normalize(
+pub(super) fn normalize(
     mut deployment: DeploymentManifest,
     work: &mut Work,
 ) -> Result<DeploymentManifest, PlatformError> {
@@ -394,7 +461,7 @@ fn normalize(
     codec.decode_deployment(&bytes).map_err(manifest_error)
 }
 
-fn check_scope(
+pub(super) fn check_scope(
     existing: Option<&DeploymentManifest>,
     desired: &DeploymentManifest,
 ) -> Result<(), PlatformError> {

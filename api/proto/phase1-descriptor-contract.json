@@ -981,6 +981,15 @@
               "oneofIndex": 4,
               "proto3Optional": true,
               "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "expectedStateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_state_version",
+              "number": 12,
+              "oneofIndex": 5,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
             }
           ],
           "name": "Phase2AuditAttempt",
@@ -999,6 +1008,9 @@
             },
             {
               "name": "_expected_rollback_target_generation"
+            },
+            {
+              "name": "_expected_state_version"
             }
           ]
         },
@@ -2922,7 +2934,65 @@
     },
     {
       "dependency": [
-        "latent/control/v1/common.proto"
+        "latent/control/v1/common.proto",
+        "latent/control/v1/release.proto"
+      ],
+      "enumType": [
+        {
+          "name": "DeploymentDurability",
+          "value": [
+            {
+              "name": "DEPLOYMENT_DURABILITY_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "DEPLOYMENT_DURABILITY_CONFIRMED",
+              "number": 1
+            },
+            {
+              "name": "DEPLOYMENT_DURABILITY_UNCERTAIN",
+              "number": 2
+            }
+          ]
+        },
+        {
+          "name": "DeploymentOperationAction",
+          "value": [
+            {
+              "name": "DEPLOYMENT_OPERATION_ACTION_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "DEPLOYMENT_OPERATION_ACTION_APPLY",
+              "number": 1
+            },
+            {
+              "name": "DEPLOYMENT_OPERATION_ACTION_DELETE",
+              "number": 2
+            }
+          ]
+        },
+        {
+          "name": "DeploymentOperationLookupDisposition",
+          "value": [
+            {
+              "name": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_FOUND",
+              "number": 1
+            },
+            {
+              "name": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_UNKNOWN",
+              "number": 2
+            },
+            {
+              "name": "DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_UNCERTAIN",
+              "number": 3
+            }
+          ]
+        }
       ],
       "messageType": [
         {
@@ -3140,6 +3210,14 @@
               "oneofIndex": 0,
               "proto3Optional": true,
               "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.DeploymentOperationPrecondition"
             }
           ],
           "name": "ApplyDeploymentRequest",
@@ -3175,6 +3253,29 @@
               "proto3Optional": true,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.AuditAck"
+            },
+            {
+              "jsonName": "receipt",
+              "label": "LABEL_OPTIONAL",
+              "name": "receipt",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.DeploymentOperationReceipt"
+            },
+            {
+              "jsonName": "replayed",
+              "label": "LABEL_OPTIONAL",
+              "name": "replayed",
+              "number": 5,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "durability",
+              "label": "LABEL_OPTIONAL",
+              "name": "durability",
+              "number": 6,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.DeploymentDurability"
             }
           ],
           "name": "ApplyDeploymentResponse",
@@ -3192,6 +3293,13 @@
               "name": "id",
               "number": 1,
               "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "includeOperationSnapshot",
+              "label": "LABEL_OPTIONAL",
+              "name": "include_operation_snapshot",
+              "number": 2,
+              "type": "TYPE_BOOL"
             }
           ],
           "name": "GetDeploymentRequest"
@@ -3207,12 +3315,49 @@
               "proto3Optional": true,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.Deployment"
+            },
+            {
+              "jsonName": "stateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_version",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "routeGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_generation",
+              "number": 3,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "durability",
+              "label": "LABEL_OPTIONAL",
+              "name": "durability",
+              "number": 4,
+              "oneofIndex": 3,
+              "proto3Optional": true,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.DeploymentDurability"
             }
           ],
           "name": "GetDeploymentResponse",
           "oneofDecl": [
             {
               "name": "_deployment"
+            },
+            {
+              "name": "_state_version"
+            },
+            {
+              "name": "_route_generation"
+            },
+            {
+              "name": "_durability"
             }
           ]
         },
@@ -3281,12 +3426,227 @@
               "oneofIndex": 0,
               "proto3Optional": true,
               "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "operation",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.DeploymentOperationPrecondition"
             }
           ],
           "name": "DeleteDeploymentRequest",
           "oneofDecl": [
             {
               "name": "_expected_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedStateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_state_version",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "DeploymentOperationPrecondition",
+          "oneofDecl": [
+            {
+              "name": "_expected_state_version"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "formatVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "format_version",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "actor",
+              "label": "LABEL_OPTIONAL",
+              "name": "actor",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.ReleaseActor"
+            },
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "action",
+              "label": "LABEL_OPTIONAL",
+              "name": "action",
+              "number": 5,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.DeploymentOperationAction"
+            },
+            {
+              "jsonName": "deploymentId",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment_id",
+              "number": 6,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "requestDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "request_digest",
+              "number": 7,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "expectedStateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_state_version",
+              "number": 8,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 9,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "objectGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "object_generation",
+              "number": 10,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "routeGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_generation",
+              "number": 11,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "stateVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "state_version",
+              "number": 12,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "manifestDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "manifest_digest",
+              "number": 13,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "componentDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "component_digest",
+              "number": 14,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "completedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "completed_at_unix_millis",
+              "number": 15,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "receiptDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "receipt_digest",
+              "number": 16,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "DeploymentOperationReceipt"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "GetDeploymentOperationRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "disposition",
+              "label": "LABEL_OPTIONAL",
+              "name": "disposition",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.DeploymentOperationLookupDisposition"
+            },
+            {
+              "jsonName": "receipt",
+              "label": "LABEL_OPTIONAL",
+              "name": "receipt",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.DeploymentOperationReceipt"
+            },
+            {
+              "jsonName": "durability",
+              "label": "LABEL_OPTIONAL",
+              "name": "durability",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.DeploymentDurability"
+            },
+            {
+              "jsonName": "retainedFloor",
+              "label": "LABEL_OPTIONAL",
+              "name": "retained_floor",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "highWatermark",
+              "label": "LABEL_OPTIONAL",
+              "name": "high_watermark",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "GetDeploymentOperationResponse",
+          "oneofDecl": [
+            {
+              "name": "_durability"
             }
           ]
         },
@@ -3361,6 +3721,11 @@
               "inputType": ".latent.control.v1.DeleteDeploymentRequest",
               "name": "DeleteDeployment",
               "outputType": ".latent.control.v1.Empty"
+            },
+            {
+              "inputType": ".latent.control.v1.GetDeploymentOperationRequest",
+              "name": "GetDeploymentOperation",
+              "outputType": ".latent.control.v1.GetDeploymentOperationResponse"
             },
             {
               "inputType": ".latent.control.v1.WatchDeploymentRequest",

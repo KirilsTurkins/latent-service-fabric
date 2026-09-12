@@ -1,5 +1,5 @@
 mod canary;
-mod fixtures;
+pub(super) mod fixtures;
 mod recovery;
 mod rollback;
 use super::*;

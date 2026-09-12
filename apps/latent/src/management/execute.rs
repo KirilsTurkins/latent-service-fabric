@@ -24,6 +24,27 @@ macro_rules! call {
 }
 
 pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome, Failure> {
+    if matches!(
+        &operation,
+        Operation::PublishRelease(_)
+            | Operation::ApplyDeployment(_)
+            | Operation::DeleteDeployment(_)
+            | Operation::GetDeployment(_)
+            | Operation::GetReleaseLifecycle(_)
+            | Operation::LookupReleaseReceipt(_)
+            | Operation::ChangeReleaseLifecycle(_)
+            | Operation::RenewReleaseEvidence(_)
+            | Operation::LookupDeploymentReceipt(_)
+            | Operation::StartRollout(_)
+            | Operation::ChangeRollout(_)
+            | Operation::GetRollout(_)
+            | Operation::ListRollouts(_)
+            | Operation::LookupRolloutReceipt(_)
+            | Operation::EvaluateRollout(_)
+            | Operation::QueryAudit(_)
+    ) {
+        return super::phase2::execute(operation, session).await;
+    }
     match operation {
         Operation::PublishRelease(request) => {
             let digest = publication_digest(&request)?;

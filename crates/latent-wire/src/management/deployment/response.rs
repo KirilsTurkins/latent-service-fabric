@@ -16,6 +16,9 @@ pub(super) fn apply(
         deployment: Some(convert(deployment)?),
         warnings: Vec::new(),
         audit_ack: None,
+        receipt: None,
+        replayed: false,
+        durability: proto::DeploymentDurability::Unspecified as i32,
     })
 }
 
@@ -31,7 +34,12 @@ pub(super) fn get(
     } else {
         None
     };
-    Ok(proto::GetDeploymentResponse { deployment })
+    Ok(proto::GetDeploymentResponse {
+        deployment,
+        state_version: None,
+        route_generation: None,
+        durability: None,
+    })
 }
 
 pub(super) fn page(

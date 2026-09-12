@@ -1,6 +1,11 @@
 //! Explicit single-operation command grammar.
 
+pub mod audit;
 mod invoke;
+mod package;
+pub mod release;
+pub mod rollout;
+pub use package::{PackageCommand, PackagePullArgs, PackagePushArgs};
 mod management;
 #[cfg(test)]
 mod tests;
@@ -12,11 +17,13 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 pub use invoke::InvokeArgs;
 pub use management::{
-    ActivationCommand, DeploymentCommand, NodeCommand, PublishArgs, ReleaseCommand, RouteCommand,
-    ServicePageArgs, ValidateCommand,
+    ActivationCommand, ApplyArgs, DeploymentCommand, NodeCommand, PublishArgs, ReleaseCommand,
+    RouteCommand, ServicePageArgs, ValidateCommand,
 };
 #[cfg(test)]
-pub use management::{ApplyArgs, CancelArgs, DeleteArgs, FileArgs, IdArgs};
+pub use management::{CancelArgs, DeleteArgs, DeploymentOperationArgs, FileArgs, IdArgs};
+#[cfg(test)]
+pub use release::OptionalReleaseOperation;
 
 #[derive(Parser)]
 #[command(
@@ -56,6 +63,12 @@ pub enum OutputFormat {
 
 #[derive(Subcommand)]
 pub enum Command {
+    #[command(subcommand)]
+    Rollout(rollout::RolloutCommand),
+    #[command(subcommand)]
+    Audit(audit::AuditCommand),
+    #[command(subcommand)]
+    Package(PackageCommand),
     /// Validate a local manifest without contacting a node.
     #[command(subcommand)]
     Validate(ValidateCommand),

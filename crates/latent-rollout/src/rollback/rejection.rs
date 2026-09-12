@@ -46,6 +46,7 @@ pub(super) async fn run(
         ..AuditIdentities::default()
     };
     let attempt = AuditOperationAttempt {
+        expected_state_version: None,
         expected_rollback_target_generation: Some(target_generation),
         scope: AuditScope::Tenant(context.tenant.clone()),
         actor: AuditActorIdentity {

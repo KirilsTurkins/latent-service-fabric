@@ -91,6 +91,7 @@ pub(super) fn record(value: domain::AuditStoredRecord) -> Result<proto::Phase2Au
                 occurred_at_unix_millis: attempt.occurred_at_unix_millis,
                 replay: attempt.replay,
                 expected_deployment_generation: attempt.expected_deployment_generation,
+                expected_state_version: attempt.expected_state_version,
                 expected_rollout_revision: attempt.expected_rollout_revision,
                 expected_rollback_target_generation: attempt
                     .expected_rollback_target_generation

@@ -245,6 +245,12 @@ pub struct AuditOperationAttempt {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub expected_state_version: Option<u64>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
         with = "codec::generation"
     )]
     pub expected_rollback_target_generation: Option<RouteGeneration>,

@@ -30,7 +30,7 @@ pub use authentication::{LocalManagementPolicy, ManagementOperation, ManagementP
 use bounds::{identifier, RequestBudget};
 pub use deployment::{
     control_budget_from_proto, control_budget_to_proto, deployment_from_proto,
-    deployment_manifest_from_proto, deployment_to_proto,
+    deployment_manifest_from_proto, deployment_to_proto, DeploymentResponseService,
 };
 pub use inventory::{node_inventory_from_proto, node_inventory_to_proto};
 pub use latent_rpc::control::v1 as proto;
@@ -129,12 +129,15 @@ impl ManagementServiceAdapter {
     #[must_use]
     pub fn deployment_server(
         self,
-    ) -> proto::deployment_service_server::DeploymentServiceServer<Self> {
+    ) -> DeploymentResponseService<proto::deployment_service_server::DeploymentServiceServer<Self>>
+    {
         let input = self.limits.max_request_bytes;
         let output = self.limits.max_response_bytes;
-        proto::deployment_service_server::DeploymentServiceServer::new(self)
-            .max_decoding_message_size(input)
-            .max_encoding_message_size(output)
+        DeploymentResponseService::new(
+            proto::deployment_service_server::DeploymentServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
     }
 
     #[must_use]

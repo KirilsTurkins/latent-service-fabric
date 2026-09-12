@@ -7,8 +7,8 @@ use latent_artifacts::content_digest;
 use latent_manifest::ManifestCodec;
 
 use crate::args::{
-    ApplyArgs, Command, DeleteArgs, DeploymentCommand, FileArgs, PublishArgs, ReleaseCommand,
-    ServicePageArgs, ValidateCommand,
+    ApplyArgs, Command, DeleteArgs, DeploymentCommand, DeploymentOperationArgs, FileArgs,
+    OptionalReleaseOperation, PublishArgs, ReleaseCommand, ServicePageArgs, ValidateCommand,
 };
 use crate::config::{InputLimits, ResolvedConfig};
 use crate::operation::Operation;
@@ -60,6 +60,7 @@ fn apply_and_delete_keep_absent_zero_and_maximum_preconditions() {
     );
     for expected_generation in [None, Some(0), Some(u64::MAX)] {
         let command = Command::Deployment(DeploymentCommand::Apply(ApplyArgs {
+            operation: DeploymentOperationArgs::default(),
             file: file.clone(),
             expected_generation,
         }));
@@ -70,6 +71,7 @@ fn apply_and_delete_keep_absent_zero_and_maximum_preconditions() {
         assert_eq!(value.expected_generation, expected_generation);
         assert_eq!(value.deployment.unwrap().generation, 0);
         let command = Command::Deployment(DeploymentCommand::Delete(DeleteArgs {
+            operation: DeploymentOperationArgs::default(),
             id: "echo-production".to_owned(),
             expected_generation,
         }));
@@ -107,6 +109,7 @@ fn manifest_tenant_mismatch_is_a_local_failure() {
     cfg.tenant = "foreign".to_owned();
     assert!(prepare::prepare(
         &Command::Deployment(DeploymentCommand::Apply(ApplyArgs {
+            operation: DeploymentOperationArgs::default(),
             file,
             expected_generation: None
         })),
@@ -135,6 +138,7 @@ fn publish_preparation_checks_metadata_and_exact_component_digest() {
     );
     let component = files.put("component.wasm", bytes);
     let command = Command::Release(ReleaseCommand::Publish(PublishArgs {
+        operation: OptionalReleaseOperation::default(),
         manifest: manifest_file,
         component: component.clone(),
         contracts: contracts.clone(),
@@ -157,6 +161,7 @@ fn publish_preparation_checks_metadata_and_exact_component_digest() {
 #[test]
 fn publication_rejects_multiple_stdin_inputs_before_attempting_any_read() {
     let command = Command::Release(ReleaseCommand::Publish(PublishArgs {
+        operation: OptionalReleaseOperation::default(),
         manifest: "-".into(),
         component: "-".into(),
         contracts: "missing".into(),

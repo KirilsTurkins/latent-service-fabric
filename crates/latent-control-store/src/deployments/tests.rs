@@ -6,6 +6,7 @@ mod lifecycle;
 mod lock_release;
 #[cfg(feature = "catalog-observation")]
 mod observation;
+mod operations;
 mod pagination;
 mod recovery;
 #[cfg(target_os = "linux")]
