@@ -1,6 +1,7 @@
 //! Persistent cache composition; storage names never grant native-code trust.
 
 mod model;
+mod observation;
 mod paths;
 mod persistence;
 mod receipts;
@@ -40,6 +41,7 @@ pub(crate) struct NativeAotService {
     rejected: AtomicU64,
     compilations: AtomicU64,
     persistence_failures: AtomicU64,
+    audit: Option<latent_audit::AuditHandle>,
 }
 
 impl NativeAotService {
@@ -79,6 +81,7 @@ impl NativeAotService {
             rejected: AtomicU64::new(0),
             compilations: AtomicU64::new(0),
             persistence_failures: AtomicU64::new(0),
+            audit: settings.audit,
         }))
     }
 
@@ -121,9 +124,14 @@ impl NativeAotService {
         match self.lookup(input, engine) {
             Ok(Some(native)) => {
                 add(&self.hits);
+                observation::capture(self.audit.as_ref(), input.key(), observation::Event::Hit);
                 return Ok(native);
             }
-            Ok(None) => add(&self.misses),
+            Ok(None) => {
+                input.check()?;
+                add(&self.misses);
+                observation::capture(self.audit.as_ref(), input.key(), observation::Event::Miss);
+            }
             Err(error) => {
                 // Revocation/deadline/closure is checked independently of cache
                 // errors; none can be reinterpreted as a portable fallback.
@@ -133,6 +141,11 @@ impl NativeAotService {
                     return Err(error);
                 }
                 add(&self.rejected);
+                observation::capture(
+                    self.audit.as_ref(),
+                    input.key(),
+                    observation::Event::Corrupt,
+                );
                 // A failed cleanup remains charged by the receipt owner. It
                 // cannot authorize bytes or cause repeated compilation attempts.
                 let _ = self.receipts.invalidate(&key);

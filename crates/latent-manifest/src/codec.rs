@@ -535,21 +535,7 @@ impl Normalize for CapsuleManifest {
 
 impl Normalize for DeploymentManifest {
     fn normalize(&mut self) {
-        self.release.0.make_ascii_lowercase();
-        for grant in &mut self.grants {
-            grant.operations.sort();
-        }
-        self.grants.sort_by(|left, right| {
-            (&left.capability, &left.policy, &left.operations).cmp(&(
-                &right.capability,
-                &right.policy,
-                &right.operations,
-            ))
-        });
-        self.placement.architectures.sort();
-        self.placement.regions.sort();
-        self.placement.zones.sort();
-        self.placement.required_features.sort();
+        self.normalize_storage_fields();
     }
 }
 

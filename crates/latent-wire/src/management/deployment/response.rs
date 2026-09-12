@@ -15,6 +15,7 @@ pub(super) fn apply(
     Ok(proto::ApplyDeploymentResponse {
         deployment: Some(convert(deployment)?),
         warnings: Vec::new(),
+        audit_ack: None,
     })
 }
 

@@ -1389,6 +1389,7 @@ dependencies = [
 name = "latent-artifacts"
 version = "0.1.0-alpha.2"
 dependencies = [
+ "latent-audit",
  "latent-contracts",
  "latent-core",
  "latent-manifest",
@@ -1402,6 +1403,11 @@ name = "latent-audit"
 version = "0.1.0-alpha.2"
 dependencies = [
  "latent-core",
+ "libc",
+ "rustix",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
 ]
 
 [[package]]
@@ -1741,6 +1747,7 @@ dependencies = [
  "landlock",
  "latent-activation",
  "latent-artifacts",
+ "latent-audit",
  "latent-component-bindings",
  "latent-core",
  "latent-executor",
@@ -1766,10 +1773,12 @@ dependencies = [
 name = "latent-wire"
 version = "0.1.0-alpha.2"
 dependencies = [
+ "http-body",
  "hyper-util",
  "latent-activation",
  "latent-admission",
  "latent-artifacts",
+ "latent-audit",
  "latent-control-store",
  "latent-core",
  "latent-executor",
@@ -1781,6 +1790,8 @@ dependencies = [
  "latent-telemetry",
  "prost",
  "serde",
+ "sha2 0.10.9",
+ "tempfile",
  "tokio",
  "tonic",
  "tower",
@@ -1813,6 +1824,7 @@ dependencies = [
  "latent-activation",
  "latent-admission",
  "latent-artifacts",
+ "latent-audit",
  "latent-control-store",
  "latent-core",
  "latent-executor",

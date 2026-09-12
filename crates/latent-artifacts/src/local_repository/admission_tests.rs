@@ -1,6 +1,9 @@
 //! Storage/ownership tests use an explicitly configured test authority. They do
 //! not assert that the tiny arbitrary component or evidence is cryptographically
 //! or semantically valid; those checks belong to the injected policy integration.
+#[cfg(unix)]
+#[path = "admission_tests/audit.rs"]
+mod audit;
 #[path = "admission_tests/fixture.rs"]
 mod fixture;
 

@@ -93,6 +93,7 @@ impl DirectoryArtifactRepository {
             Err(failure) => return Err(self.reject_request(&request, failure, preflight)?),
         };
         preflight(ReleaseOperationPreview {
+            replay: false,
             receipt: prepared.receipt(),
             release: None,
             failure: None,
@@ -217,6 +218,7 @@ impl DirectoryArtifactRepository {
             Err(failure) => return Err(self.reject_request(&request, failure, preflight)?),
         };
         preflight(ReleaseOperationPreview {
+            replay: false,
             receipt: prepared.receipt(),
             release: None,
             failure: None,

@@ -20,12 +20,13 @@ pub fn run() {
     cancel_running_prefix(&compiler);
     compiler.shutdown(Duration::from_secs(1)).unwrap();
     malformed_readiness();
+    launch_failures();
     fragmented_success();
     running_deadline();
     last_owner_drop();
     active_shutdown();
     super::inherited::run();
-    eprintln!("isolated AOT supervisor: 14 bounded protocol/ownership scenarios passed");
+    eprintln!("isolated AOT supervisor: 16 bounded protocol/ownership scenarios passed");
 }
 
 fn fragmented_success() {
@@ -137,6 +138,41 @@ fn malformed_readiness() {
         "malformed readiness must not receive component input"
     );
     assert_eq!(compiler.snapshot(), AotResourceSnapshot::default());
+}
+
+fn launch_failures() {
+    for (output, code, reason) in [
+        (
+            21,
+            PlatformErrorCode::PermissionDenied,
+            Some("aot-worker-launch-mismatch"),
+        ),
+        (23, PlatformErrorCode::DeadlineExceeded, None),
+    ] {
+        let mut limits = support::limits();
+        limits.compiler.maximum_output_bytes = output;
+        if output == 23 {
+            limits.job_timeout = Duration::from_secs(1);
+        }
+        let compiler = compiler(limits);
+        let directory = Directory::new();
+        let marker = directory.path().join("worker.pid");
+        let fixture = fixture("hang", &marker);
+        let failure = compiler
+            .reserve(fixture.source(), fixture.release())
+            .unwrap()
+            .run()
+            .unwrap_err();
+        assert_eq!(failure.code, code);
+        if let Some(reason) = reason {
+            assert_eq!(failure.message, reason);
+        }
+        assert!(
+            !marker.exists(),
+            "launch failures must not receive component input"
+        );
+        assert_eq!(compiler.snapshot(), AotResourceSnapshot::default());
+    }
 }
 
 fn running_deadline() {

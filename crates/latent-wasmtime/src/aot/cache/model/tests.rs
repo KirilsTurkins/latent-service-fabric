@@ -12,6 +12,7 @@ fn settings(output: usize) -> NativeAotSettings {
         ..AotProcessLimits::default()
     };
     NativeAotSettings {
+        audit: None,
         executable: PathBuf::from("/unused-approved-compiler"),
         approved_digest: [7; 32],
         authority: TrustedAotCompilerAuthority::new(

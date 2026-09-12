@@ -152,6 +152,25 @@ active count is the pool's observed live workers, including idle workers. Job
 counts and joined workers do not stand in for live threads. The row uses the
 existing bounded topology writer; a selection that omits rows remains incomplete.
 
+## Phase 2 audit and canary observations
+
+The optional [durable audit owner](phase-2-audit.md) records supply-chain
+verification, protected native-cache lookups, and administrative mutations. Its
+bounded journal and authorized query surface have separate retention and failure
+semantics from the lossy telemetry exporter. Audit records retain validated
+identities and fixed reason codes; they do not persist credentials, invocation
+payloads, or arbitrary external errors. Critical control operations reserve their
+audit capacity before mutation. The activation path does no audit-journal I/O.
+
+`LocalActivationServices::canary` attaches a bounded capture handle to the same
+activation owner, independently of structured telemetry configuration. It binds
+the checked revision/component/generation and consumes the actual terminal
+winner. [Canary observation windows](phase-2-canary-observation.md) retain fixed
+outcome counts and latency buckets, with explicit open, draining, missing-sample,
+and incomplete coverage. Lost or unattributable outcomes cannot establish a
+healthy rollout. Window identities belong to bounded records, not metric labels;
+the metric dimension rules above remain unchanged.
+
 ## Validation
 
 ```bash

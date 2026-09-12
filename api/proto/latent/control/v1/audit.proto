@@ -4,6 +4,208 @@ package latent.control.v1;
 
 import "latent/control/v1/common.proto";
 
+enum AuditScopeKind {
+  AUDIT_SCOPE_KIND_UNSPECIFIED = 0;
+  AUDIT_SCOPE_KIND_TENANT = 1;
+  AUDIT_SCOPE_KIND_NODE = 2;
+}
+
+message AuditQueryScope {
+  AuditScopeKind kind = 1;
+  // TENANT must match the authenticated principal; NODE forbids this member.
+  optional string tenant = 2;
+}
+
+enum Phase2AuditEventKind {
+  PHASE2_AUDIT_EVENT_KIND_UNSPECIFIED = 0;
+  PHASE2_AUDIT_EVENT_KIND_VERIFICATION_ACCEPTED = 1;
+  PHASE2_AUDIT_EVENT_KIND_VERIFICATION_REJECTED = 2;
+  PHASE2_AUDIT_EVENT_KIND_RELEASE_REVOKED = 3;
+  PHASE2_AUDIT_EVENT_KIND_RELEASE_RETIRED = 4;
+  PHASE2_AUDIT_EVENT_KIND_CACHE_HIT = 5;
+  PHASE2_AUDIT_EVENT_KIND_CACHE_MISS = 6;
+  PHASE2_AUDIT_EVENT_KIND_CACHE_CORRUPTION = 7;
+  PHASE2_AUDIT_EVENT_KIND_ROLLOUT_STARTED = 8;
+  PHASE2_AUDIT_EVENT_KIND_ROLLOUT_STAGE_CHANGED = 9;
+  PHASE2_AUDIT_EVENT_KIND_ROLLOUT_PAUSED = 10;
+  PHASE2_AUDIT_EVENT_KIND_ROLLOUT_ABORTED = 11;
+  PHASE2_AUDIT_EVENT_KIND_PROMOTION_ACCEPTED = 12;
+  PHASE2_AUDIT_EVENT_KIND_PROMOTION_REJECTED = 13;
+  PHASE2_AUDIT_EVENT_KIND_ROLLBACK_ACCEPTED = 14;
+  PHASE2_AUDIT_EVENT_KIND_ROLLBACK_REJECTED = 15;
+}
+
+message Phase2AuditFilter {
+  optional Phase2AuditEventKind kind = 1;
+  optional string actor_subject = 2;
+  optional uint64 from_unix_millis = 3;
+  optional uint64 to_unix_millis = 4;
+}
+
+message QueryPhase2AuditRequest {
+  AuditQueryScope scope = 1;
+  Phase2AuditFilter filter = 2;
+  PageRequest page = 3;
+}
+
+enum AuditPageStop {
+  AUDIT_PAGE_STOP_UNSPECIFIED = 0;
+  AUDIT_PAGE_STOP_END = 1;
+  AUDIT_PAGE_STOP_RECORD_LIMIT = 2;
+  AUDIT_PAGE_STOP_BYTE_LIMIT = 3;
+  AUDIT_PAGE_STOP_SCAN_LIMIT = 4;
+}
+
+message AuditQueryCoverage {
+  string epoch = 1;
+  uint64 retained_floor = 2;
+  uint64 high_watermark = 3;
+  uint64 scanned = 4;
+  AuditPageStop stop = 5;
+  // Scan completion does not erase loss or unresolved mutation outcomes.
+  uint64 dropped_observations = 6;
+  uint64 unknown_outcomes = 7;
+  // Reopening cannot recover prior-session volatile diagnostic loss counters.
+  bool previous_session_loss_unknown = 8;
+}
+
+enum AuditActorKind {
+  AUDIT_ACTOR_KIND_UNSPECIFIED = 0;
+  AUDIT_ACTOR_KIND_USER = 1;
+  AUDIT_ACTOR_KIND_SERVICE = 2;
+  AUDIT_ACTOR_KIND_NODE = 3;
+  AUDIT_ACTOR_KIND_TRIGGER = 4;
+  AUDIT_ACTOR_KIND_ADMINISTRATOR = 5;
+  AUDIT_ACTOR_KIND_ANONYMOUS = 6;
+  AUDIT_ACTOR_KIND_HOST = 7;
+}
+
+message AuditActorIdentity {
+  AuditActorKind kind = 1;
+  string subject = 2;
+}
+
+enum AuditPolicyRole {
+  AUDIT_POLICY_ROLE_UNSPECIFIED = 0;
+  AUDIT_POLICY_ROLE_PUBLISHER = 1;
+  AUDIT_POLICY_ROLE_PUBLISHER_REVOCATION = 2;
+  AUDIT_POLICY_ROLE_BUILDER = 3;
+  AUDIT_POLICY_ROLE_BUILDER_REVOCATION = 4;
+  AUDIT_POLICY_ROLE_SBOM = 5;
+  AUDIT_POLICY_ROLE_ADMISSION = 6;
+  AUDIT_POLICY_ROLE_DELIVERY = 7;
+}
+
+message AuditPolicyIdentity {
+  AuditPolicyRole role = 1;
+  string scope = 2;
+  uint64 generation = 3;
+  string digest = 4;
+}
+
+message AuditIdentities {
+  optional string package_digest = 1;
+  optional string component_digest = 2;
+  repeated AuditPolicyIdentity policies = 3;
+  optional string rollout = 4;
+  optional string revision = 5;
+  optional uint64 route_generation = 6;
+  optional uint64 lifecycle_generation = 7;
+  // This may hash a rejected manifest; it does not assert a validated package.
+  optional string received_manifest_digest = 8;
+  optional string evidence_revision_digest = 9;
+  optional string deployment = 10;
+  optional uint64 deployment_generation = 11;
+}
+
+enum AuditControlAction {
+  AUDIT_CONTROL_ACTION_UNSPECIFIED = 0;
+  AUDIT_CONTROL_ACTION_PUBLISH = 1;
+  AUDIT_CONTROL_ACTION_REVOKE = 2;
+  AUDIT_CONTROL_ACTION_RETIRE = 3;
+  AUDIT_CONTROL_ACTION_RENEW_EVIDENCE = 4;
+  AUDIT_CONTROL_ACTION_DEPLOYMENT_APPLY = 5;
+  AUDIT_CONTROL_ACTION_ROLLOUT = 6;
+  AUDIT_CONTROL_ACTION_PROMOTION = 7;
+  AUDIT_CONTROL_ACTION_ROLLBACK = 8;
+  AUDIT_CONTROL_ACTION_DEPLOYMENT_DELETE = 9;
+}
+
+enum AuditOperationResult {
+  AUDIT_OPERATION_RESULT_UNSPECIFIED = 0;
+  AUDIT_OPERATION_RESULT_COMMITTED = 1;
+  AUDIT_OPERATION_RESULT_REJECTED = 2;
+  AUDIT_OPERATION_RESULT_NOT_STARTED = 3;
+  AUDIT_OPERATION_RESULT_UNKNOWN = 4;
+}
+
+enum AuditObservationOutcome {
+  AUDIT_OBSERVATION_OUTCOME_UNSPECIFIED = 0;
+  AUDIT_OBSERVATION_OUTCOME_SUCCEEDED = 1;
+  AUDIT_OBSERVATION_OUTCOME_DENIED = 2;
+  AUDIT_OBSERVATION_OUTCOME_FAILED = 3;
+}
+
+enum AuditCacheKind {
+  AUDIT_CACHE_KIND_UNSPECIFIED = 0;
+  AUDIT_CACHE_KIND_RAW = 1;
+  AUDIT_CACHE_KIND_PREPARED = 2;
+  AUDIT_CACHE_KIND_NATIVE = 3;
+}
+
+message Phase2AuditObservation {
+  Phase2AuditEventKind kind = 1;
+  AuditObservationOutcome outcome = 2;
+  AuditIdentities identities = 3;
+  // Fixed producer reason code, never an external error or secret-bearing text.
+  string reason = 4;
+  optional AuditCacheKind cache_kind = 5;
+  uint64 occurred_at_unix_millis = 6;
+}
+
+message Phase2AuditAttempt {
+  string operation_id = 1;
+  string request_digest = 2;
+  AuditControlAction action = 3;
+  AuditIdentities identities = 4;
+  optional uint64 expected_generation = 5;
+  uint64 occurred_at_unix_millis = 6;
+  bool replay = 7;
+  optional uint64 expected_deployment_generation = 8;
+  optional string preview_receipt_digest = 9;
+}
+
+message Phase2AuditOutcome {
+  uint64 attempt_sequence = 1;
+  AuditOperationResult result = 2;
+  string reason = 3;
+  optional string receipt_digest = 4;
+  AuditIdentities identities = 5;
+  bool replay = 6;
+  uint64 occurred_at_unix_millis = 7;
+}
+
+message Phase2AuditRecord {
+  uint32 format_version = 1;
+  string epoch = 2;
+  uint64 sequence = 3;
+  string previous_digest = 4;
+  uint64 accepted_at_unix_millis = 5;
+  AuditQueryScope scope = 6;
+  AuditActorIdentity actor = 7;
+  oneof data {
+    Phase2AuditObservation observation = 8;
+    Phase2AuditAttempt attempt = 9;
+    Phase2AuditOutcome outcome = 10;
+  }
+}
+
+message QueryPhase2AuditResponse {
+  repeated Phase2AuditRecord records = 1;
+  PageResponse page = 2;
+  AuditQueryCoverage coverage = 3;
+}
+
 message AuditActor {
   string subject = 1;
   string actor_type = 2;
@@ -39,4 +241,5 @@ message QueryAuditResponse {
 
 service AuditService {
   rpc QueryAudit(QueryAuditRequest) returns (QueryAuditResponse);
+  rpc QueryPhase2Audit(QueryPhase2AuditRequest) returns (QueryPhase2AuditResponse);
 }

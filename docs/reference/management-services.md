@@ -2,14 +2,16 @@
 
 `latent-wire::management::ManagementServiceAdapter` implements the generated
 `latent.control.v1` services over the node's existing artifact repository,
-versioned deployment store, compiled routes, and inventory reporter. It opens no
+versioned deployment store, compiled routes, inventory reporter, and optional
+shared durable audit handle. It opens no
 listener and creates no execution backend, guest instance, cell pool, or service
 worker. The embedding application supplies these shared services and a trusted
 authentication boundary. The [standalone Linux node](standalone-node.md)
 supplies this composition and a configured loopback listener. The
-[`latent` operator CLI](operator-cli.md) exposes these calls with bounded local
-input validation, exact object versions, private profiles, and one request per
-command. The [echo quickstart](../development/standalone-quickstart.md) uses its
+[`latent` operator CLI](operator-cli.md) exposes release, deployment, route and
+node calls with bounded local input validation, exact object versions, private
+profiles, and one request per command. Audit RPCs currently require a generated
+client; there is no audit CLI command. The [echo quickstart](../development/standalone-quickstart.md) uses its
 generated package inputs through this RPC boundary.
 
 ## Supported calls
@@ -20,10 +22,15 @@ generated package inputs through this RPC boundary.
 | Deployment | `ApplyDeployment`, `GetDeployment`, `ListDeployments`, `DeleteDeployment` | Atomic tenant-scoped object versions and bounded pages. |
 | Route | `GetRouteSnapshot` | Complete projection of the current catalog generation for one tenant. |
 | Node | `GetNode`, `ListNodes` | The one configured node's bounded inventory snapshot. |
+| Audit | `QueryAudit`, `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
 
 `WatchDeployment`, `WatchRouteSnapshots`, `RegisterNode`, `ReportInventory`, and
 `Heartbeat` return explicit gRPC `Unimplemented`. They do not open an idle stream
 or report fabricated cluster state.
+
+An omitted audit owner makes both audit calls return `Unimplemented` after
+authentication and scope validation. See [Phase 2 audit](../phase-2-audit.md) and
+the node's [durable audit settings](standalone-node.md#optional-durable-audit).
 
 `GetRelease` and `GetDeployment` return an absent optional record for both missing
 and foreign-tenant objects. `GetNode` returns an absent optional inventory for an
@@ -49,6 +56,12 @@ Node inventory can include information about the whole node. Its default policy
 therefore additionally requires the trusted claim `latent.node.operator=true`.
 Adding that text to payload metadata does not grant operator access. Inventory
 reads never become a tenant-filtered approximation of global resource usage.
+
+Audit tenant queries require the same administrator and exact tenant association.
+Typed node-scope queries additionally require the trusted node-operator claim
+and forbid a tenant member. Operators cannot query another tenant's history.
+The legacy `QueryAudit` call always uses the authenticated tenant, including
+when its optional tenant field is absent.
 
 See [release lifecycle](release-lifecycle.md) for authenticated actors, atomic
 mutation preconditions, evidence renewal, operation retention and uncertain
@@ -98,6 +111,15 @@ metadata, manifest, or tenant association. A lost response should be reconciled
 with `GetRelease` before deciding whether to repeat publication. The optional
 `operation` input retains a caller ID for exact operation reconciliation through
 `GetReleaseOperation`; zero generation then requires durable lifecycle absence.
+
+With audit configured, package verification may submit a lossy diagnostic
+observation after the authority's verification call returns. That diagnostic
+does not establish a durable publication attempt or authorize a commit. The
+critical publication audit begins only after the exact response and receipt
+preflight succeeds, before durable catalog mutation, on the bounded control
+worker outside lifecycle and authority fences. Consequently, a rejected
+response preflight can leave a verification diagnostic while leaving no
+critical mutation attempt. See [audit ordering and recovery](../phase-2-audit.md).
 
 ### Typed contract metadata
 
@@ -170,6 +192,66 @@ state before retrying. Bounded public error details retain supported catalog
 reasons and commit evidence such as operation, object/catalog generation, and
 `committed=true`, while excluding arbitrary repository diagnostics and paths.
 
+## Audit acknowledgements and queries
+
+Audited `PublishRelease`, `ChangeReleaseLifecycle`, `RenewReleaseEvidence`, and
+`ApplyDeployment` responses carry the additive `audit_ack` member. Its optional
+`attempt_sequence` identifies the durable attempt; its status describes audit
+coverage separately from the mutation's catalog result:
+
+| Status | Meaning |
+| --- | --- |
+| `DURABLE` | A durable audit outcome establishes the known operation disposition, which may be committed or rejected. |
+| `OUTCOME_UNKNOWN` | The audit attempt exists, but its definitive outcome was not durably established. |
+| `AUDIT_UNAVAILABLE` | An audit attempt could not be obtained; emergency revocation may still commit its mandatory lifecycle receipt. |
+| `DISABLED` | The protocol's explicit unaudited status; this node preserves compatibility by omitting `audit_ack` when audit is not configured. |
+
+`DeleteDeployment` retains its `Empty` response. Its acknowledgement uses
+bounded gRPC response metadata: `latent-audit-status` and, when available,
+`latent-audit-attempt`. The status values are `durable`, `outcome-unknown` and
+`audit-unavailable`; the attempt value is a decimal `uint64`. Mutation errors
+also carry this metadata when the adapter obtained an acknowledgement. Errors
+before the audit boundary need not include it. Disabled audit adds no metadata.
+
+Audit pressure normally rejects a critical operation before mutation. Emergency
+revocation alone may proceed with its durable lifecycle receipt and explicit
+audit degradation. A terminal audit-write failure after a catalog commit cannot
+turn that commit into a rejection: retain the real mutation result and
+reconcile unknown outcomes using the existing operation or deployment APIs.
+An audit acknowledgement is neither an execution capability nor evidence of
+rollback. Lost network responses require the same reconciliation.
+
+`QueryPhase2Audit` returns typed observations, attempts and outcomes, with exact
+identities where known. Actor and time filters apply to stored records; kind
+filters select the corresponding observation kind. The durable query time
+range uses `accepted_at_unix_millis`, the journal's acceptance timestamp, rather
+than the producer's `occurred_at_unix_millis`. Continuation tokens bind the
+journal identity, exact scope, filters and captured high watermark. Later
+appends do not silently extend that page sequence.
+
+Coverage includes the retained floor, high watermark, scanned count, stopping
+reason, dropped observations and durable unknown outcomes. A scan may stop at
+its record, byte or scan limit. After reopening,
+`previous_session_loss_unknown` reports that prior volatile diagnostic loss
+cannot be reconstructed. Reaching the end does not establish complete audit
+coverage or erase those limitations.
+
+`QueryAudit` returns a limited legacy projection of the same tenant-scoped
+records. Its action filter accepts supported observation names; unsupported
+actions and any resource-prefix filter are rejected. Use the typed call for
+full identities and coverage. Scope/filter cursor mismatches, malformed filters
+and invalid time ranges are `InvalidArgument`; foreign scopes are
+`PermissionDenied`. Page or owner pressure returns `ResourceExhausted`.
+
+Audit requests are capped at 8 KiB and encoded responses at 64 KiB, subject to
+lower embedding limits. The journal independently bounds page records, scan
+work and retained response owners. A page allowance remains owned through
+conversion, delayed protobuf encoding and HTTP body/frame consumption or drop;
+transport-retained bytes still count. The absolute query deadline includes
+conversion and is at most five seconds. These calls do not perform audit work
+on the invocation path. See [Phase 2 audit](../phase-2-audit.md) for persistence,
+loss accounting, producer scope and shutdown guarantees.
+
 ## Pages, routes, and inventory
 
 Release and deployment lists are ordered, bounded repository pages scoped to the
@@ -213,9 +295,11 @@ therefore exceed a configured allocation budget. Returned pages also obey the
 repository's separate record byte budget and the adapter's complete response
 limit. Ordinary release/apply receipts are checked before mutation.
 
-Use `release_server()`, `deployment_server()`, `route_server()`, and
-`node_server()` when constructing generated Tonic servers so decoding and
-encoding ceilings match the adapter. The listener remains responsible for
+Use `release_server()`, `deployment_server()`, `route_server()`, `node_server()`,
+and `audit_server()` when constructing Tonic servers so decoding and encoding
+ceilings match the adapter. The audit wrapper also retains the page allowance
+through HTTP body and frame ownership. `ManagementServices.audit` receives the
+same concrete `AuditHandle` for queries and control operations. The listener remains responsible for
 authentication, transport security, and worker/shutdown composition. Durable
 catalog mutation performs synchronous filesystem work and belongs on bounded
 control-plane workers, separate from invocation workers. These adapters do not

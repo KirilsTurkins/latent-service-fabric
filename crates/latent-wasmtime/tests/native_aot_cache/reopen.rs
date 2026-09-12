@@ -3,9 +3,10 @@ use super::support::{artifact, publish, Fixture, KEY};
 #[tokio::test(flavor = "current_thread")]
 async fn real_miss_invokes_then_reopened_native_hit_verifies_source_without_compiling() {
     let fixture = Fixture::new();
+    let (audit, mut worker) = fixture.audit();
     let repository = fixture.catalog();
     let release = publish(&repository, false).await;
-    let session = fixture.session(repository.clone(), KEY);
+    let session = fixture.session_with_audit(repository.clone(), KEY, Some(audit.clone()));
     let before = repository.verification_snapshot();
     let ready = session.prepare(repository.clone(), &release).await.unwrap();
     let first = session.snapshot();
@@ -33,7 +34,7 @@ async fn real_miss_invokes_then_reopened_native_hit_verifies_source_without_comp
     drop(repository);
 
     let repository = fixture.catalog();
-    let reopened = fixture.session(repository.clone(), KEY);
+    let reopened = fixture.session_with_audit(repository.clone(), KEY, Some(audit.clone()));
     let before = repository.verification_snapshot();
     let active = reopened
         .prepare_borrowed(repository.as_ref(), &release)
@@ -57,4 +58,9 @@ async fn real_miss_invokes_then_reopened_native_hit_verifies_source_without_comp
     assert_eq!(snapshot.images.loader_attempts, 1);
     reopened.answer_active(active).await;
     reopened.idle();
+    super::audit::assert_native_events(&audit, &release).await;
+    audit.close();
+    assert!(worker
+        .join_until(std::time::Instant::now() + std::time::Duration::from_secs(5))
+        .unwrap());
 }
