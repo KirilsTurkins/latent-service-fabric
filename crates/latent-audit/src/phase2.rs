@@ -171,10 +171,12 @@ impl BoundedPhase2AuditJournal {
             ));
         }
         let sequence = state.next_sequence;
-        state.next_sequence = state
-            .next_sequence
-            .checked_add(1)
-            .ok_or_else(|| error(PlatformErrorCode::ResourceExhausted, "phase2-audit-sequence-exhausted"))?;
+        state.next_sequence = state.next_sequence.checked_add(1).ok_or_else(|| {
+            error(
+                PlatformErrorCode::ResourceExhausted,
+                "phase2-audit-sequence-exhausted",
+            )
+        })?;
         state.entries.push_back(StoredEvent { sequence, event });
         Ok(Phase2AuditCursor(sequence))
     }
@@ -199,9 +201,7 @@ impl BoundedPhase2AuditJournal {
         let mut matching = state
             .entries
             .iter()
-            .filter(|stored| {
-                stored.sequence > after && &stored.event.identity.tenant == tenant
-            });
+            .filter(|stored| stored.sequence > after && &stored.event.identity.tenant == tenant);
         let mut selected = Vec::with_capacity(limit);
         let mut last_sequence = None;
         for stored in matching.by_ref().take(limit) {
@@ -230,18 +230,22 @@ impl BoundedPhase2AuditJournal {
     }
 
     fn lock_state(&self) -> Result<std::sync::MutexGuard<'_, JournalState>, PlatformError> {
-        self.state.lock().map_err(|_| {
-            error(
-                PlatformErrorCode::Internal,
-                "phase2-audit-journal-poisoned",
-            )
-        })
+        self.state
+            .lock()
+            .map_err(|_| error(PlatformErrorCode::Internal, "phase2-audit-journal-poisoned"))
     }
 }
 
-fn validate_event(event: &Phase2AuditEvent, limits: Phase2AuditLimits) -> Result<(), PlatformError> {
+fn validate_event(
+    event: &Phase2AuditEvent,
+    limits: Phase2AuditLimits,
+) -> Result<(), PlatformError> {
     validate_string(&event.id.0, limits, "invalid-phase2-audit-event-id")?;
-    validate_string(&event.identity.tenant.0, limits, "invalid-phase2-audit-tenant")?;
+    validate_string(
+        &event.identity.tenant.0,
+        limits,
+        "invalid-phase2-audit-tenant",
+    )?;
     validate_string(
         &event.identity.operation_id,
         limits,
