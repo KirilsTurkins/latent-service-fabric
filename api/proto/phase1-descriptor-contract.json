@@ -4,7 +4,994 @@
       "dependency": [
         "latent/control/v1/common.proto"
       ],
+      "enumType": [
+        {
+          "name": "AuditScopeKind",
+          "value": [
+            {
+              "name": "AUDIT_SCOPE_KIND_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_SCOPE_KIND_TENANT",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_SCOPE_KIND_NODE",
+              "number": 2
+            }
+          ]
+        },
+        {
+          "name": "Phase2AuditEventKind",
+          "value": [
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_VERIFICATION_ACCEPTED",
+              "number": 1
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_VERIFICATION_REJECTED",
+              "number": 2
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_RELEASE_REVOKED",
+              "number": 3
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_RELEASE_RETIRED",
+              "number": 4
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_CACHE_HIT",
+              "number": 5
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_CACHE_MISS",
+              "number": 6
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_CACHE_CORRUPTION",
+              "number": 7
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_ROLLOUT_STARTED",
+              "number": 8
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_ROLLOUT_STAGE_CHANGED",
+              "number": 9
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_ROLLOUT_PAUSED",
+              "number": 10
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_ROLLOUT_ABORTED",
+              "number": 11
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_PROMOTION_ACCEPTED",
+              "number": 12
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_PROMOTION_REJECTED",
+              "number": 13
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_ROLLBACK_ACCEPTED",
+              "number": 14
+            },
+            {
+              "name": "PHASE2_AUDIT_EVENT_KIND_ROLLBACK_REJECTED",
+              "number": 15
+            }
+          ]
+        },
+        {
+          "name": "AuditPageStop",
+          "value": [
+            {
+              "name": "AUDIT_PAGE_STOP_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_PAGE_STOP_END",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_PAGE_STOP_RECORD_LIMIT",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_PAGE_STOP_BYTE_LIMIT",
+              "number": 3
+            },
+            {
+              "name": "AUDIT_PAGE_STOP_SCAN_LIMIT",
+              "number": 4
+            }
+          ]
+        },
+        {
+          "name": "AuditActorKind",
+          "value": [
+            {
+              "name": "AUDIT_ACTOR_KIND_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_ACTOR_KIND_USER",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_ACTOR_KIND_SERVICE",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_ACTOR_KIND_NODE",
+              "number": 3
+            },
+            {
+              "name": "AUDIT_ACTOR_KIND_TRIGGER",
+              "number": 4
+            },
+            {
+              "name": "AUDIT_ACTOR_KIND_ADMINISTRATOR",
+              "number": 5
+            },
+            {
+              "name": "AUDIT_ACTOR_KIND_ANONYMOUS",
+              "number": 6
+            },
+            {
+              "name": "AUDIT_ACTOR_KIND_HOST",
+              "number": 7
+            }
+          ]
+        },
+        {
+          "name": "AuditPolicyRole",
+          "value": [
+            {
+              "name": "AUDIT_POLICY_ROLE_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_POLICY_ROLE_PUBLISHER",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_POLICY_ROLE_PUBLISHER_REVOCATION",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_POLICY_ROLE_BUILDER",
+              "number": 3
+            },
+            {
+              "name": "AUDIT_POLICY_ROLE_BUILDER_REVOCATION",
+              "number": 4
+            },
+            {
+              "name": "AUDIT_POLICY_ROLE_SBOM",
+              "number": 5
+            },
+            {
+              "name": "AUDIT_POLICY_ROLE_ADMISSION",
+              "number": 6
+            },
+            {
+              "name": "AUDIT_POLICY_ROLE_DELIVERY",
+              "number": 7
+            }
+          ]
+        },
+        {
+          "name": "AuditControlAction",
+          "value": [
+            {
+              "name": "AUDIT_CONTROL_ACTION_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_CONTROL_ACTION_PUBLISH",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_CONTROL_ACTION_REVOKE",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_CONTROL_ACTION_RETIRE",
+              "number": 3
+            },
+            {
+              "name": "AUDIT_CONTROL_ACTION_RENEW_EVIDENCE",
+              "number": 4
+            },
+            {
+              "name": "AUDIT_CONTROL_ACTION_DEPLOYMENT_APPLY",
+              "number": 5
+            },
+            {
+              "name": "AUDIT_CONTROL_ACTION_ROLLOUT",
+              "number": 6
+            },
+            {
+              "name": "AUDIT_CONTROL_ACTION_PROMOTION",
+              "number": 7
+            },
+            {
+              "name": "AUDIT_CONTROL_ACTION_ROLLBACK",
+              "number": 8
+            },
+            {
+              "name": "AUDIT_CONTROL_ACTION_DEPLOYMENT_DELETE",
+              "number": 9
+            }
+          ]
+        },
+        {
+          "name": "AuditOperationResult",
+          "value": [
+            {
+              "name": "AUDIT_OPERATION_RESULT_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_OPERATION_RESULT_COMMITTED",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_OPERATION_RESULT_REJECTED",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_OPERATION_RESULT_NOT_STARTED",
+              "number": 3
+            },
+            {
+              "name": "AUDIT_OPERATION_RESULT_UNKNOWN",
+              "number": 4
+            }
+          ]
+        },
+        {
+          "name": "AuditObservationOutcome",
+          "value": [
+            {
+              "name": "AUDIT_OBSERVATION_OUTCOME_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_OBSERVATION_OUTCOME_SUCCEEDED",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_OBSERVATION_OUTCOME_DENIED",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_OBSERVATION_OUTCOME_FAILED",
+              "number": 3
+            }
+          ]
+        },
+        {
+          "name": "AuditCacheKind",
+          "value": [
+            {
+              "name": "AUDIT_CACHE_KIND_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_CACHE_KIND_RAW",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_CACHE_KIND_PREPARED",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_CACHE_KIND_NATIVE",
+              "number": 3
+            }
+          ]
+        }
+      ],
       "messageType": [
+        {
+          "field": [
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditScopeKind"
+            },
+            {
+              "jsonName": "tenant",
+              "label": "LABEL_OPTIONAL",
+              "name": "tenant",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "AuditQueryScope",
+          "oneofDecl": [
+            {
+              "name": "_tenant"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.Phase2AuditEventKind"
+            },
+            {
+              "jsonName": "actorSubject",
+              "label": "LABEL_OPTIONAL",
+              "name": "actor_subject",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "fromUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "from_unix_millis",
+              "number": 3,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "toUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "to_unix_millis",
+              "number": 4,
+              "oneofIndex": 3,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "Phase2AuditFilter",
+          "oneofDecl": [
+            {
+              "name": "_kind"
+            },
+            {
+              "name": "_actor_subject"
+            },
+            {
+              "name": "_from_unix_millis"
+            },
+            {
+              "name": "_to_unix_millis"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "scope",
+              "label": "LABEL_OPTIONAL",
+              "name": "scope",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditQueryScope"
+            },
+            {
+              "jsonName": "filter",
+              "label": "LABEL_OPTIONAL",
+              "name": "filter",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Phase2AuditFilter"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageRequest"
+            }
+          ],
+          "name": "QueryPhase2AuditRequest"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "epoch",
+              "label": "LABEL_OPTIONAL",
+              "name": "epoch",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "retainedFloor",
+              "label": "LABEL_OPTIONAL",
+              "name": "retained_floor",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "highWatermark",
+              "label": "LABEL_OPTIONAL",
+              "name": "high_watermark",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "scanned",
+              "label": "LABEL_OPTIONAL",
+              "name": "scanned",
+              "number": 4,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "stop",
+              "label": "LABEL_OPTIONAL",
+              "name": "stop",
+              "number": 5,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditPageStop"
+            },
+            {
+              "jsonName": "droppedObservations",
+              "label": "LABEL_OPTIONAL",
+              "name": "dropped_observations",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "unknownOutcomes",
+              "label": "LABEL_OPTIONAL",
+              "name": "unknown_outcomes",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "previousSessionLossUnknown",
+              "label": "LABEL_OPTIONAL",
+              "name": "previous_session_loss_unknown",
+              "number": 8,
+              "type": "TYPE_BOOL"
+            }
+          ],
+          "name": "AuditQueryCoverage"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditActorKind"
+            },
+            {
+              "jsonName": "subject",
+              "label": "LABEL_OPTIONAL",
+              "name": "subject",
+              "number": 2,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "AuditActorIdentity"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "role",
+              "label": "LABEL_OPTIONAL",
+              "name": "role",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditPolicyRole"
+            },
+            {
+              "jsonName": "scope",
+              "label": "LABEL_OPTIONAL",
+              "name": "scope",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "generation",
+              "label": "LABEL_OPTIONAL",
+              "name": "generation",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "digest",
+              "label": "LABEL_OPTIONAL",
+              "name": "digest",
+              "number": 4,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "AuditPolicyIdentity"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "packageDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "package_digest",
+              "number": 1,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "componentDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "component_digest",
+              "number": 2,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "policies",
+              "label": "LABEL_REPEATED",
+              "name": "policies",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditPolicyIdentity"
+            },
+            {
+              "jsonName": "rollout",
+              "label": "LABEL_OPTIONAL",
+              "name": "rollout",
+              "number": 4,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "revision",
+              "label": "LABEL_OPTIONAL",
+              "name": "revision",
+              "number": 5,
+              "oneofIndex": 3,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "routeGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "route_generation",
+              "number": 6,
+              "oneofIndex": 4,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "lifecycleGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "lifecycle_generation",
+              "number": 7,
+              "oneofIndex": 5,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "receivedManifestDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "received_manifest_digest",
+              "number": 8,
+              "oneofIndex": 6,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "evidenceRevisionDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "evidence_revision_digest",
+              "number": 9,
+              "oneofIndex": 7,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "deployment",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment",
+              "number": 10,
+              "oneofIndex": 8,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "deploymentGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "deployment_generation",
+              "number": 11,
+              "oneofIndex": 9,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "AuditIdentities",
+          "oneofDecl": [
+            {
+              "name": "_package_digest"
+            },
+            {
+              "name": "_component_digest"
+            },
+            {
+              "name": "_rollout"
+            },
+            {
+              "name": "_revision"
+            },
+            {
+              "name": "_route_generation"
+            },
+            {
+              "name": "_lifecycle_generation"
+            },
+            {
+              "name": "_received_manifest_digest"
+            },
+            {
+              "name": "_evidence_revision_digest"
+            },
+            {
+              "name": "_deployment"
+            },
+            {
+              "name": "_deployment_generation"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "kind",
+              "label": "LABEL_OPTIONAL",
+              "name": "kind",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.Phase2AuditEventKind"
+            },
+            {
+              "jsonName": "outcome",
+              "label": "LABEL_OPTIONAL",
+              "name": "outcome",
+              "number": 2,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditObservationOutcome"
+            },
+            {
+              "jsonName": "identities",
+              "label": "LABEL_OPTIONAL",
+              "name": "identities",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditIdentities"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "cacheKind",
+              "label": "LABEL_OPTIONAL",
+              "name": "cache_kind",
+              "number": 5,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditCacheKind"
+            },
+            {
+              "jsonName": "occurredAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "occurred_at_unix_millis",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "Phase2AuditObservation",
+          "oneofDecl": [
+            {
+              "name": "_cache_kind"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "operationId",
+              "label": "LABEL_OPTIONAL",
+              "name": "operation_id",
+              "number": 1,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "requestDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "request_digest",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "action",
+              "label": "LABEL_OPTIONAL",
+              "name": "action",
+              "number": 3,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditControlAction"
+            },
+            {
+              "jsonName": "identities",
+              "label": "LABEL_OPTIONAL",
+              "name": "identities",
+              "number": 4,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditIdentities"
+            },
+            {
+              "jsonName": "expectedGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_generation",
+              "number": 5,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "occurredAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "occurred_at_unix_millis",
+              "number": 6,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "replay",
+              "label": "LABEL_OPTIONAL",
+              "name": "replay",
+              "number": 7,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "expectedDeploymentGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_deployment_generation",
+              "number": 8,
+              "oneofIndex": 1,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "previewReceiptDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "preview_receipt_digest",
+              "number": 9,
+              "oneofIndex": 2,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "Phase2AuditAttempt",
+          "oneofDecl": [
+            {
+              "name": "_expected_generation"
+            },
+            {
+              "name": "_expected_deployment_generation"
+            },
+            {
+              "name": "_preview_receipt_digest"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "attemptSequence",
+              "label": "LABEL_OPTIONAL",
+              "name": "attempt_sequence",
+              "number": 1,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "result",
+              "label": "LABEL_OPTIONAL",
+              "name": "result",
+              "number": 2,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditOperationResult"
+            },
+            {
+              "jsonName": "reason",
+              "label": "LABEL_OPTIONAL",
+              "name": "reason",
+              "number": 3,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "receiptDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "receipt_digest",
+              "number": 4,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "identities",
+              "label": "LABEL_OPTIONAL",
+              "name": "identities",
+              "number": 5,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditIdentities"
+            },
+            {
+              "jsonName": "replay",
+              "label": "LABEL_OPTIONAL",
+              "name": "replay",
+              "number": 6,
+              "type": "TYPE_BOOL"
+            },
+            {
+              "jsonName": "occurredAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "occurred_at_unix_millis",
+              "number": 7,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "Phase2AuditOutcome",
+          "oneofDecl": [
+            {
+              "name": "_receipt_digest"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "formatVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "format_version",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "epoch",
+              "label": "LABEL_OPTIONAL",
+              "name": "epoch",
+              "number": 2,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "sequence",
+              "label": "LABEL_OPTIONAL",
+              "name": "sequence",
+              "number": 3,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "previousDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "previous_digest",
+              "number": 4,
+              "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "acceptedAtUnixMillis",
+              "label": "LABEL_OPTIONAL",
+              "name": "accepted_at_unix_millis",
+              "number": 5,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "scope",
+              "label": "LABEL_OPTIONAL",
+              "name": "scope",
+              "number": 6,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditQueryScope"
+            },
+            {
+              "jsonName": "actor",
+              "label": "LABEL_OPTIONAL",
+              "name": "actor",
+              "number": 7,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditActorIdentity"
+            },
+            {
+              "jsonName": "observation",
+              "label": "LABEL_OPTIONAL",
+              "name": "observation",
+              "number": 8,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Phase2AuditObservation"
+            },
+            {
+              "jsonName": "attempt",
+              "label": "LABEL_OPTIONAL",
+              "name": "attempt",
+              "number": 9,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Phase2AuditAttempt"
+            },
+            {
+              "jsonName": "outcome",
+              "label": "LABEL_OPTIONAL",
+              "name": "outcome",
+              "number": 10,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Phase2AuditOutcome"
+            }
+          ],
+          "name": "Phase2AuditRecord",
+          "oneofDecl": [
+            {
+              "name": "data"
+            }
+          ]
+        },
+        {
+          "field": [
+            {
+              "jsonName": "records",
+              "label": "LABEL_REPEATED",
+              "name": "records",
+              "number": 1,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.Phase2AuditRecord"
+            },
+            {
+              "jsonName": "page",
+              "label": "LABEL_OPTIONAL",
+              "name": "page",
+              "number": 2,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.PageResponse"
+            },
+            {
+              "jsonName": "coverage",
+              "label": "LABEL_OPTIONAL",
+              "name": "coverage",
+              "number": 3,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditQueryCoverage"
+            }
+          ],
+          "name": "QueryPhase2AuditResponse"
+        },
         {
           "field": [
             {
@@ -282,6 +1269,11 @@
               "inputType": ".latent.control.v1.QueryAuditRequest",
               "name": "QueryAudit",
               "outputType": ".latent.control.v1.QueryAuditResponse"
+            },
+            {
+              "inputType": ".latent.control.v1.QueryPhase2AuditRequest",
+              "name": "QueryPhase2Audit",
+              "outputType": ".latent.control.v1.QueryPhase2AuditResponse"
             }
           ],
           "name": "AuditService"
@@ -901,6 +1893,33 @@
       "syntax": "proto3"
     },
     {
+      "enumType": [
+        {
+          "name": "AuditAckStatus",
+          "value": [
+            {
+              "name": "AUDIT_ACK_STATUS_UNSPECIFIED",
+              "number": 0
+            },
+            {
+              "name": "AUDIT_ACK_STATUS_DURABLE",
+              "number": 1
+            },
+            {
+              "name": "AUDIT_ACK_STATUS_OUTCOME_UNKNOWN",
+              "number": 2
+            },
+            {
+              "name": "AUDIT_ACK_STATUS_AUDIT_UNAVAILABLE",
+              "number": 3
+            },
+            {
+              "name": "AUDIT_ACK_STATUS_DISABLED",
+              "number": 4
+            }
+          ]
+        }
+      ],
       "messageType": [
         {
           "field": [
@@ -1234,6 +2253,33 @@
         },
         {
           "name": "Empty"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "status",
+              "label": "LABEL_OPTIONAL",
+              "name": "status",
+              "number": 1,
+              "type": "TYPE_ENUM",
+              "typeName": ".latent.control.v1.AuditAckStatus"
+            },
+            {
+              "jsonName": "attemptSequence",
+              "label": "LABEL_OPTIONAL",
+              "name": "attempt_sequence",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "AuditAck",
+          "oneofDecl": [
+            {
+              "name": "_attempt_sequence"
+            }
+          ]
         }
       ],
       "name": "latent/control/v1/common.proto",
@@ -1830,9 +2876,24 @@
               "name": "warnings",
               "number": 2,
               "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "auditAck",
+              "label": "LABEL_OPTIONAL",
+              "name": "audit_ack",
+              "number": 3,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditAck"
             }
           ],
-          "name": "ApplyDeploymentResponse"
+          "name": "ApplyDeploymentResponse",
+          "oneofDecl": [
+            {
+              "name": "_audit_ack"
+            }
+          ]
         },
         {
           "field": [
@@ -4445,9 +5506,24 @@
               "number": 1,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.ReleaseOperationReceipt"
+            },
+            {
+              "jsonName": "auditAck",
+              "label": "LABEL_OPTIONAL",
+              "name": "audit_ack",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditAck"
             }
           ],
-          "name": "ChangeReleaseLifecycleResponse"
+          "name": "ChangeReleaseLifecycleResponse",
+          "oneofDecl": [
+            {
+              "name": "_audit_ack"
+            }
+          ]
         },
         {
           "field": [
@@ -4522,9 +5598,24 @@
               "number": 1,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.ReleaseOperationReceipt"
+            },
+            {
+              "jsonName": "auditAck",
+              "label": "LABEL_OPTIONAL",
+              "name": "audit_ack",
+              "number": 2,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditAck"
             }
           ],
-          "name": "RenewReleaseEvidenceResponse"
+          "name": "RenewReleaseEvidenceResponse",
+          "oneofDecl": [
+            {
+              "name": "_audit_ack"
+            }
+          ]
         },
         {
           "field": [
@@ -4587,9 +5678,24 @@
               "number": 3,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.ReleaseOperationReceipt"
+            },
+            {
+              "jsonName": "auditAck",
+              "label": "LABEL_OPTIONAL",
+              "name": "audit_ack",
+              "number": 4,
+              "oneofIndex": 0,
+              "proto3Optional": true,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.AuditAck"
             }
           ],
-          "name": "PublishReleaseResponse"
+          "name": "PublishReleaseResponse",
+          "oneofDecl": [
+            {
+              "name": "_audit_ack"
+            }
+          ]
         },
         {
           "field": [

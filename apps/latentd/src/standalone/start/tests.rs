@@ -9,6 +9,8 @@ use crate::config::{NodeConfig, NodeSettings, SupplyChainSettings};
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod aot;
 #[cfg(target_os = "linux")]
+mod audit;
+#[cfg(target_os = "linux")]
 mod control;
 
 fn settings(directory: &TempDir) -> NodeSettings {

@@ -183,6 +183,33 @@ pub struct DeploymentManifest {
     pub placement: PlacementPolicy,
 }
 
+impl DeploymentManifest {
+    /// Applies the same field normalization used by the deployment JSON codec.
+    ///
+    /// Control-plane callers must validate input size and collection bounds
+    /// before calling this method. It lowercases the release spelling and uses
+    /// the existing stable ordering of grants, operations and placement lists.
+    /// It neither validates the manifest nor grants publication or execution
+    /// authority; optional resource values and all other fields remain exact.
+    pub fn normalize_storage_fields(&mut self) {
+        self.release.0.make_ascii_lowercase();
+        for grant in &mut self.grants {
+            grant.operations.sort();
+        }
+        self.grants.sort_by(|left, right| {
+            (&left.capability, &left.policy, &left.operations).cmp(&(
+                &right.capability,
+                &right.policy,
+                &right.operations,
+            ))
+        });
+        self.placement.architectures.sort();
+        self.placement.regions.sort();
+        self.placement.zones.sort();
+        self.placement.required_features.sort();
+    }
+}
+
 /// Binding implementation preference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]

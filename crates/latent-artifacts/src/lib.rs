@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod admission;
+mod audit;
 mod content_hash;
 mod historical_execution;
 mod lifecycle;
@@ -14,6 +15,10 @@ mod raw_cache;
 mod verification_statistics;
 mod verified_metadata;
 
+pub use audit::{
+    reconcile_release_audit, AuditedAdmissionAuthority, ReleaseAuditAck, ReleaseAuditGuard,
+    ReleaseAuditStatus,
+};
 pub use historical_execution::{
     HistoricalExecutionSnapshot, HistoricalExecutionState, HistoricalReleaseDenial,
 };

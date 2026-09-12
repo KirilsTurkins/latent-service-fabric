@@ -44,6 +44,21 @@ impl Fixture {
         self.directory.path().join("native-receipts")
     }
     pub fn session(&self, repository: Arc<DirectoryArtifactRepository>, key: [u8; 32]) -> Session {
+        self.session_with_audit(repository, key, None)
+    }
+    pub fn audit(&self) -> (latent_audit::AuditHandle, latent_audit::AuditWorker) {
+        latent_audit::DirectoryPhase2AuditJournal::open(
+            self.directory.path().join("audit"),
+            latent_audit::AuditLimits::default(),
+        )
+        .unwrap()
+    }
+    pub fn session_with_audit(
+        &self,
+        repository: Arc<DirectoryArtifactRepository>,
+        key: [u8; 32],
+        audit: Option<latent_audit::AuditHandle>,
+    ) -> Session {
         let process = compiler::limits();
         let authority = TrustedAotCompilerAuthority::new(
             compiler::COMPILER_NAME,
@@ -52,6 +67,7 @@ impl Fixture {
         )
         .unwrap();
         let settings = NativeAotSettings {
+            audit,
             executable: compiler::executable().to_path_buf(),
             approved_digest: compiler::executable_digest(),
             authority,

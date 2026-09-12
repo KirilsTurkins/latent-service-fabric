@@ -44,6 +44,13 @@ fn run(options: WorkerOptions, clean: bool) -> Result<(), &'static str> {
     .map_err(|_| "worker launch rejected")?;
     let mut input = Input(std::io::stdin());
     let mut output = Output(std::io::stdout());
+    // A PID returned by spawn does not establish that the new image has begun
+    // executing. Signal this fixed rendezvous only after the clean re-exec;
+    // it conveys no authority and consumes no parent input.
+    output
+        .write_all(protocol::LAUNCH_MAGIC)
+        .map_err(|_| "launch pipe failed")?;
+    output.flush().map_err(|_| "launch pipe failed")?;
     // Only this fixed four-byte header is read before bootstrap. The parent
     // authenticates /proc/pid/exe before sending it. Dump protection is applied
     // at final entry after the child's own last /proc inventory too. There is no

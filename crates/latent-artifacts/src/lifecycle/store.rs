@@ -17,6 +17,10 @@ mod persistence;
 mod validation;
 pub(crate) use evidence::LifecycleEvidence;
 
+pub(crate) fn validate_audit_receipt(value: &ReleaseOperationReceipt) -> Result<(), PlatformError> {
+    validation::receipt(value, LifecycleLimits::default())
+}
+
 /// Caller has already verified immutable content and its COMPLETE association.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

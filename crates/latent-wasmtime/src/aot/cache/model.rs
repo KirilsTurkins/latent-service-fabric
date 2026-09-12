@@ -39,6 +39,8 @@ pub struct NativeAotSettings {
     pub process: AotProcessLimits,
     pub cache: NativeAotCacheConfig,
     pub images: NativeImageLimits,
+    /// Optional lossy capture on the blocking preparation worker, never Invoke.
+    pub audit: Option<latent_audit::AuditHandle>,
 }
 
 impl NativeAotSettings {

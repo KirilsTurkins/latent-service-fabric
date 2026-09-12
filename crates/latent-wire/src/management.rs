@@ -1,7 +1,9 @@
 //! Bounded standalone management adapters over the local catalogs and inventory.
 
+mod audit;
 mod authentication;
 mod bounds;
+mod control_audit;
 mod deployment;
 mod errors;
 mod inspection;
@@ -22,6 +24,7 @@ use tonic::{Request, Response, Status};
 
 use crate::invocation::PrincipalPolicy;
 
+pub use audit::AuditResponseService;
 pub use authentication::{LocalManagementPolicy, ManagementOperation, ManagementPolicy};
 use bounds::{identifier, RequestBudget};
 pub use deployment::{
@@ -36,6 +39,7 @@ pub use release::{release_descriptor_from_proto, release_descriptor_to_proto};
 /// All services share existing node-owned state. The adapter opens no listener.
 #[derive(Clone)]
 pub struct ManagementServices {
+    pub audit: Option<latent_audit::AuditHandle>,
     pub artifacts: Arc<dyn ArtifactRepository>,
     pub deployments: Arc<dyn DeploymentStore>,
     pub routes: Arc<dyn CompiledRouteStore>,
@@ -133,6 +137,19 @@ impl ManagementServiceAdapter {
         proto::node_service_server::NodeServiceServer::new(self)
             .max_decoding_message_size(input)
             .max_encoding_message_size(output)
+    }
+
+    #[must_use]
+    pub fn audit_server(
+        self,
+    ) -> AuditResponseService<proto::audit_service_server::AuditServiceServer<Self>> {
+        let input = self.limits.max_request_bytes.min(audit::MAX_REQUEST_BYTES);
+        let output = self.limits.max_response_bytes;
+        AuditResponseService::new(
+            proto::audit_service_server::AuditServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
     }
 }
 

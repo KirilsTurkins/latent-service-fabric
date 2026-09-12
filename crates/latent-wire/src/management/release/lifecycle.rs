@@ -19,6 +19,7 @@ use super::super::{errors::platform_status, proto, ManagementLimits, ManagementS
 /// Captures an immutable, fully budgeted response before either a successful
 /// mutation or a rejected-operation receipt may be persisted.
 struct Preflight<'a> {
+    audit_enabled: bool,
     tenant: &'a TenantId,
     limits: &'a ManagementLimits,
     response: Option<proto::ReleaseOperationReceipt>,
@@ -42,6 +43,7 @@ impl<'a> Preflight<'a> {
         action: ReleaseLifecycleAction,
     ) -> Self {
         Self {
+            audit_enabled: false,
             tenant,
             limits,
             response: None,
@@ -61,7 +63,7 @@ impl<'a> Preflight<'a> {
         let result = if self.response.is_some() || self.rejected.is_some() {
             Err(Status::internal("release operation preflight repeated"))
         } else {
-            response::operation(preview.receipt, self.tenant, self.limits).and_then(|value| {
+            self.operation_response(preview.receipt).and_then(|value| {
                 if preview.receipt.actor != self.actor
                     || preview.receipt.action != self.action
                     || self
@@ -85,7 +87,11 @@ impl<'a> Preflight<'a> {
                     {
                         return Err(Status::internal("release failure preview is not rejected"));
                     }
-                    self.failure = Some(response::failure(failure, &value, self.limits)?);
+                    self.failure = Some(response::failure(
+                        failure,
+                        &value,
+                        &self.response_limits()?,
+                    )?);
                 } else if preview.receipt.disposition
                     != latent_artifacts::ReleaseOperationDisposition::Committed
                 {
@@ -120,6 +126,29 @@ impl<'a> Preflight<'a> {
                 Err(preflight_rejection())
             }
         }
+    }
+
+    fn operation_response(
+        &self,
+        receipt: &ReleaseOperationReceipt,
+    ) -> Result<proto::ReleaseOperationReceipt, Status> {
+        let limits = self.response_limits()?;
+        let value = response::operation(receipt, self.tenant, &limits)?;
+        if self.audit_enabled && self.action != ReleaseLifecycleAction::Publish {
+            super::super::control_audit::operation_preflight(&value, self.limits)?;
+        }
+        Ok(value)
+    }
+
+    fn response_limits(&self) -> Result<ManagementLimits, Status> {
+        let mut limits = self.limits.clone();
+        if self.audit_enabled {
+            limits.max_response_bytes = limits
+                .max_response_bytes
+                .checked_sub(128 + std::mem::size_of::<proto::AuditAck>())
+                .ok_or_else(super::super::bounds::exhausted)?;
+        }
+        Ok(limits)
     }
 
     fn finish(

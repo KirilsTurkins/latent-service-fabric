@@ -31,6 +31,7 @@ harness = false
 [dependencies]
 blake3.workspace = true
 latent-artifacts = { path = "../latent-artifacts" }
+latent-audit = { path = "../latent-audit" }
 latent-component-bindings = { path = "../latent-component-bindings" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
