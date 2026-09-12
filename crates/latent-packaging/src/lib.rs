@@ -8,6 +8,7 @@ mod bundle;
 mod directory;
 mod input;
 mod receipt;
+mod sbom;
 mod semantics;
 
 pub use assembly::build_package;
@@ -17,6 +18,11 @@ pub use directory::{
 };
 pub use input::{LayerInput, PackageFile, PackageInput, PackageSource, PackagingLimits};
 pub use receipt::{BuildInputIdentity, BuildReceipt, BUILD_INPUTS_PATH};
+pub use sbom::{
+    generate_cyclonedx_sbom, inspect_cyclonedx_sbom, SbomDocument, SbomEntryKind, SbomInspection,
+    SbomInventory, SbomInventoryEntry, SbomLimits, CYCLONEDX_JSON_MEDIA_TYPE,
+    CYCLONEDX_SPEC_VERSION,
+};
 pub use semantics::{validate_capsule, CheckedSurface, SemanticLimits, SurfaceCounts};
 
 use latent_core::{PlatformError, PlatformErrorCode};
