@@ -37,7 +37,7 @@ help:
 		'  phase0-gate-smoke             Run the deterministic retained Phase 0 smoke gate.' \
 		'' \
 		'Utility:' \
-		'  tree                          List repository files while excluding common generated trees.'
+		'  tree                          List tracked source-controlled files; omit untracked/ignored files.'
 
 rpc-bindings:
 	$(CARGO) check -p latent-rpc --all-targets --all-features --locked
@@ -98,8 +98,4 @@ phase1-foundation: fmt-check check clippy test contracts
 validate: phase1-foundation sdks
 
 tree:
-	find . -type f \
-		-not -path './.git/*' \
-		-not -path './target/*' \
-		-not -path '*/node_modules/*' \
-		| sort
+	git ls-files
