@@ -28,6 +28,21 @@ impl TrustStateId {
     }
 }
 
+#[cfg(test)]
+pub(crate) fn test_state_id(
+    policy_digest: ArtifactBlobDigest,
+    revocation_digest: ArtifactBlobDigest,
+    policy_generation: u64,
+    revocation_generation: u64,
+) -> TrustStateId {
+    TrustStateId {
+        policy_digest,
+        revocation_digest,
+        policy_generation,
+        revocation_generation,
+    }
+}
+
 #[derive(Debug)]
 pub struct PublisherTrust {
     pub(crate) policy: PublisherPolicy,
