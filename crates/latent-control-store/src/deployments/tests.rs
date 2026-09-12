@@ -11,6 +11,7 @@ mod recovery;
 #[cfg(target_os = "linux")]
 mod resources;
 mod reuse_integrity;
+mod rollouts;
 mod root_identity;
 mod runtime_compatibility;
 mod scoped_routes;

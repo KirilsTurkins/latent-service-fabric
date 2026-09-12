@@ -12,6 +12,8 @@ mod aot;
 mod audit;
 #[cfg(target_os = "linux")]
 mod control;
+#[cfg(target_os = "linux")]
+mod rollouts;
 
 fn settings(directory: &TempDir) -> NodeSettings {
     let config: NodeConfig = serde_json::from_value(serde_json::json!({

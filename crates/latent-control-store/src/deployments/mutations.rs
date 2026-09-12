@@ -12,8 +12,8 @@ use latent_manifest::{
 
 use super::observation::{count, CatalogWorkOperation as WorkOperation, Work};
 use super::{
-    compile_versioned_with_runtime, error, manifest_error, next_generation, now, CompiledCatalog,
-    DeploymentPage, DeploymentPageRequest, DirectoryDeploymentRepository,
+    compiler::compile_for_publication, error, manifest_error, next_generation, now,
+    CompiledCatalog, DeploymentPage, DeploymentPageRequest, DirectoryDeploymentRepository,
 };
 use crate::{
     DeploymentApplyReceipt, DeploymentDeleteReceipt, DeploymentStore, VersionedDeployment,
@@ -75,7 +75,8 @@ impl DirectoryDeploymentRepository {
                     "deployment-count-limit",
                 ));
             }
-            let previous = self.read_catalog();
+            let publication = self.read_publication();
+            let previous = &publication.routes;
             let generation = next_generation(previous.generation)?;
             let mut next = previous.deployments.clone();
             let mut versions = previous.versions.clone();
@@ -92,20 +93,26 @@ impl DirectoryDeploymentRepository {
                 versions.insert(deployment.id.clone(), generation.0);
                 next.insert(deployment.id.clone(), Arc::new(deployment));
             }
-            let compiled = compile_versioned_with_runtime(
+            let compiled = compile_for_publication(
                 next,
                 versions,
                 generation,
                 now()?,
                 self.artifacts.as_ref(),
                 self.config,
-                Some(&previous),
+                Some(previous),
                 &mut work,
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
+                publication.rollouts.enabled,
             )
             .await?;
-            self.commit(previous.generation, compiled, &mut work)?;
+            self.commit_versioned(
+                previous.generation,
+                publication.transaction,
+                compiled,
+                &mut work,
+            )?;
             Ok(generation)
         }
         .await;
@@ -126,7 +133,8 @@ impl DirectoryDeploymentRepository {
                 return Err(scope_conflict());
             }
             let deployment = normalize(deployment, &mut work)?;
-            let previous = self.read_catalog();
+            let publication = self.read_publication();
+            let previous = &publication.routes;
             check_scope(
                 previous.deployments.get(&deployment.id).map(Arc::as_ref),
                 &deployment,
@@ -137,7 +145,7 @@ impl DirectoryDeploymentRepository {
                 expected: expected_generation,
                 operation: Operation::Apply,
             };
-            precondition.check(&previous)?;
+            precondition.check(previous)?;
             let generation = next_generation(previous.generation)?;
             let receipt = DeploymentApplyReceipt {
                 deployment: VersionedDeployment {
@@ -150,21 +158,23 @@ impl DirectoryDeploymentRepository {
             let mut versions = previous.versions.clone();
             versions.insert(deployment.id.clone(), generation.0);
             next.insert(deployment.id.clone(), Arc::new(deployment));
-            let compiled = compile_versioned_with_runtime(
+            let compiled = compile_for_publication(
                 next,
                 versions,
                 generation,
                 now()?,
                 self.artifacts.as_ref(),
                 self.config,
-                Some(&previous),
+                Some(previous),
                 &mut work,
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
+                publication.rollouts.enabled,
             )
             .await?;
             let outcome = self.commit_checked(
                 previous.generation,
+                publication.transaction,
                 compiled,
                 Some(&precondition),
                 &mut work,
@@ -189,14 +199,15 @@ impl DirectoryDeploymentRepository {
         let mut work = self.observation.begin(WorkOperation::DeleteVersioned);
         let result = async {
             self.validate_target(tenant, id)?;
-            let previous = self.read_catalog();
+            let publication = self.read_publication();
+            let previous = &publication.routes;
             let precondition = ObjectPrecondition {
                 tenant: tenant.clone(),
                 id: id.clone(),
                 expected: expected_generation,
                 operation: Operation::Delete,
             };
-            precondition.check(&previous)?;
+            precondition.check(previous)?;
             let manifest = previous
                 .deployments
                 .get(id)
@@ -215,21 +226,23 @@ impl DirectoryDeploymentRepository {
             let mut versions = previous.versions.clone();
             next.remove(id);
             versions.remove(id);
-            let compiled = compile_versioned_with_runtime(
+            let compiled = compile_for_publication(
                 next,
                 versions,
                 generation,
                 now()?,
                 self.artifacts.as_ref(),
                 self.config,
-                Some(&previous),
+                Some(previous),
                 &mut work,
                 self.runtime_profile.as_deref(),
                 self.lifecycle.as_ref(),
+                publication.rollouts.enabled,
             )
             .await?;
             let outcome = self.commit_checked(
                 previous.generation,
+                publication.transaction,
                 compiled,
                 Some(&precondition),
                 &mut work,

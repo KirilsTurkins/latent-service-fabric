@@ -37,13 +37,15 @@ before an old route can acquire current grants.
 A deployment points to a release and supplies capability grants, resource ceilings
 and route weight. The schema also carries placement and availability declarations;
 Phase 1 validates supported local requirements but does not reconcile cached
-copies or place work across nodes. Three distinct identities describe updates:
+copies or place work across nodes. These distinct identities describe updates:
 
 | Identity | Meaning |
 | --- | --- |
 | Deployment generation | The object's last successful mutation version, used for caller preconditions. Unrelated object writes leave it unchanged. |
 | Route generation | The catalog's monotonically increasing publication sequence. A batch advances it once. |
 | `RevisionId` | A deterministic digest of the deployment's execution policy and release, excluding route weight. |
+| Rollout revision | The monotonically increasing version of one persisted rollout, used for rollout operation preconditions. |
+| State version | The combined catalog transaction sequence, including rollout-only changes that preserve the route generation. |
 
 Deployment generations are allocated from the catalog publication sequence.
 Accepted applies, including unchanged writes, assign the new stamp to affected
@@ -58,18 +60,20 @@ Deployments become active through atomic route-snapshot publication. Existing ac
 
 ## Rollout
 
-A future reconciler should support:
+The [single-node rollout coordinator](../phase-2-rollouts.md) persists an explicit
+base/candidate plan and operator-controlled weight stages. Start, advance and
+resume check current release eligibility and compatibility, then publish the
+complete route generation together with the rollout state and operation receipt.
+Pause and abort persist control state without replacing the executable snapshot.
+Every commit checks the combined transaction version; concurrent deployment
+edits cannot be overwritten by an earlier prepared rollout.
 
-1. artifact verification,
-2. compatibility checks,
-3. cache prefetch targets,
-4. canary route weight,
-5. health and error observation,
-6. progressive weight movement,
-7. draining of old route selection,
-8. rollback by route pointer.
-
-No step requires a continuously running service instance.
+One fixed worker and bounded shared storage serve all rollouts. Restart restores
+committed progress without automatically advancing it. Active invocations keep
+their route pins; newly selected work uses the current routes and still checks
+release authority at the execution fence. No stage creates a continuously running
+service instance. Canary-driven promotion and rollback are separate Phase 2
+integration tickets.
 
 ## Coexistence
 
@@ -88,6 +92,9 @@ validated compatibility keys. Snapshotting, fused composition and distributed
 AOT artifact acceptance remain planned; prepared entries retain no guest store.
 
 Phase 2 also provides an [isolated trusted-local compiler producer](../runtime/trusted-aot.md)
-with authenticated, bounded native-output ownership. Persistent storage and
-runtime loading of that output remain issue #151; the current prepared cache
-continues using its existing local compilation path.
+with authenticated, bounded native-output ownership. Opt-in persistent native
+storage and loading bind the approved compiler, actual engine/host compatibility,
+exact catalog source and protected host key. Reopened cache hits verify those
+identities and current release authority before loading; resident prepared hits
+retain their existing bounded ownership. The default mode continues local
+portable compilation.

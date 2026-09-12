@@ -10,6 +10,7 @@ mod inspection;
 mod inventory;
 mod limits;
 mod release;
+mod rollouts;
 mod routes;
 
 use std::fmt;
@@ -35,11 +36,13 @@ pub use inventory::{node_inventory_from_proto, node_inventory_to_proto};
 pub use latent_rpc::control::v1 as proto;
 pub use limits::ManagementLimits;
 pub use release::{release_descriptor_from_proto, release_descriptor_to_proto};
+pub use rollouts::RolloutResponseService;
 
 /// All services share existing node-owned state. The adapter opens no listener.
 #[derive(Clone)]
 pub struct ManagementServices {
     pub audit: Option<latent_audit::AuditHandle>,
+    pub rollouts: Option<latent_rollout::RolloutHandle>,
     pub artifacts: Arc<dyn ArtifactRepository>,
     pub deployments: Arc<dyn DeploymentStore>,
     pub routes: Arc<dyn CompiledRouteStore>,
@@ -61,6 +64,19 @@ impl ManagementServiceAdapter {
         limits: ManagementLimits,
     ) -> Result<Self, PlatformError> {
         limits.validate()?;
+        if services.rollouts.as_ref().is_some_and(|rollouts| {
+            services
+                .audit
+                .as_ref()
+                .is_none_or(|audit| !rollouts.audit_owner_matches(audit))
+        }) {
+            return Err(latent_core::PlatformError {
+                code: latent_core::PlatformErrorCode::InvalidArgument,
+                message: "rollout-audit-owner-mismatch".into(),
+                retryable: false,
+                details: Vec::new(),
+            });
+        }
         Ok(Self { services, limits })
     }
 
@@ -147,6 +163,25 @@ impl ManagementServiceAdapter {
         let output = self.limits.max_response_bytes;
         AuditResponseService::new(
             proto::audit_service_server::AuditServiceServer::new(self)
+                .max_decoding_message_size(input)
+                .max_encoding_message_size(output),
+        )
+    }
+
+    #[must_use]
+    pub fn rollout_server(
+        self,
+    ) -> RolloutResponseService<proto::rollout_service_server::RolloutServiceServer<Self>> {
+        let input = self
+            .limits
+            .max_request_bytes
+            .min(rollouts::MAX_REQUEST_BYTES);
+        let output = self
+            .limits
+            .max_response_bytes
+            .min(rollouts::MAX_RESPONSE_BYTES);
+        RolloutResponseService::new(
+            proto::rollout_service_server::RolloutServiceServer::new(self)
                 .max_decoding_message_size(input)
                 .max_encoding_message_size(output),
         )

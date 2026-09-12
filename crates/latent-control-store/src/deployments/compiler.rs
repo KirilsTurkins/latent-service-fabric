@@ -144,7 +144,7 @@ pub(super) async fn compile_versioned_with_runtime(
     reason = "startup adds bounded per-read retries without restarting compilation"
 )]
 pub(super) async fn compile_versioned_inner(
-    mut deployments: DesiredDeployments,
+    deployments: DesiredDeployments,
     versions: ObjectVersions,
     generation: RouteGeneration,
     generated_at_unix_millis: u64,
@@ -156,6 +156,136 @@ pub(super) async fn compile_versioned_inner(
     runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
     lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
 ) -> Result<super::persistence::EncodedCatalog, PlatformError> {
+    let result = compile_catalog_inner(
+        deployments,
+        versions,
+        generation,
+        generated_at_unix_millis,
+        artifacts,
+        config,
+        previous,
+        work,
+        recovery,
+        runtime_profile,
+        lifecycle,
+    )
+    .await
+    .and_then(|catalog| super::persistence::encode(catalog, config, work));
+    finish_compilation(&result, work);
+    result
+}
+
+/// Rollout control metadata is known only after compilation. Return the private
+/// compiled owner so its final v3 envelope is encoded once after that metadata exists.
+#[expect(
+    clippy::too_many_arguments,
+    reason = "same closed compiler inputs as legacy encoding"
+)]
+pub(super) async fn compile_catalog_with_runtime(
+    deployments: DesiredDeployments,
+    versions: ObjectVersions,
+    generation: RouteGeneration,
+    generated_at_unix_millis: u64,
+    artifacts: &dyn ArtifactRepository,
+    config: DirectoryDeploymentRepositoryConfig,
+    previous: Option<&CompiledCatalog>,
+    work: &mut Work,
+    runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+    lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+) -> Result<CompiledCatalog, PlatformError> {
+    let result = compile_catalog_inner(
+        deployments,
+        versions,
+        generation,
+        generated_at_unix_millis,
+        artifacts,
+        config,
+        previous,
+        work,
+        false,
+        runtime_profile,
+        lifecycle,
+    )
+    .await;
+    finish_compilation(&result, work);
+    result
+}
+
+fn finish_compilation<T>(result: &Result<T, PlatformError>, work: &mut Work) {
+    if result.is_ok() {
+        count!(work, compiler_completed, 1);
+    } else {
+        count!(work, compiler_failed, 1);
+    }
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "same bounded compiler inputs plus selected durable format"
+)]
+pub(super) async fn compile_for_publication(
+    deployments: DesiredDeployments,
+    versions: ObjectVersions,
+    generation: RouteGeneration,
+    generated_at_unix_millis: u64,
+    artifacts: &dyn ArtifactRepository,
+    config: DirectoryDeploymentRepositoryConfig,
+    previous: Option<&CompiledCatalog>,
+    work: &mut Work,
+    runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+    lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+    combined: bool,
+) -> Result<super::persistence::PublicationCandidate, PlatformError> {
+    if combined {
+        compile_catalog_with_runtime(
+            deployments,
+            versions,
+            generation,
+            generated_at_unix_millis,
+            artifacts,
+            config,
+            previous,
+            work,
+            runtime_profile,
+            lifecycle,
+        )
+        .await
+        .map(super::persistence::PublicationCandidate::Combined)
+    } else {
+        compile_versioned_with_runtime(
+            deployments,
+            versions,
+            generation,
+            generated_at_unix_millis,
+            artifacts,
+            config,
+            previous,
+            work,
+            runtime_profile,
+            lifecycle,
+        )
+        .await
+        .map(super::persistence::PublicationCandidate::Legacy)
+    }
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "the single compiler carries recovery and configured owner checks"
+)]
+async fn compile_catalog_inner(
+    mut deployments: DesiredDeployments,
+    versions: ObjectVersions,
+    generation: RouteGeneration,
+    generated_at_unix_millis: u64,
+    artifacts: &dyn ArtifactRepository,
+    config: DirectoryDeploymentRepositoryConfig,
+    previous: Option<&CompiledCatalog>,
+    work: &mut Work,
+    recovery: bool,
+    runtime_profile: Option<&latent_manifest::RuntimeCompatibilityProfile>,
+    lifecycle: Option<&latent_artifacts::LifecycleAuthorityHandle>,
+) -> Result<CompiledCatalog, PlatformError> {
     count!(work, compiler_calls, 1);
     work.generation(generation.0);
     let result = async {
@@ -555,15 +685,9 @@ pub(super) async fn compile_versioned_inner(
             candidates: packed.candidates,
             reuse: memo.finish(config, &mut metadata_budget),
         };
-        // Check exact persisted size, including JSON escaping, before publication.
-        super::persistence::encode(catalog, config, work)
+        Ok(catalog)
     }
     .await;
-    if result.is_ok() {
-        count!(work, compiler_completed, 1);
-    } else {
-        count!(work, compiler_failed, 1);
-    }
     result
 }
 

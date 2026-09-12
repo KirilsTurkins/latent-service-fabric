@@ -22,10 +22,14 @@ latent-node = { path = "../latent-node" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-policy = { path = "../latent-policy" }
 latent-audit = { path = "../latent-audit" }
+latent-contracts = { path = "../latent-contracts" }
+latent-packaging = { path = "../latent-packaging" }
 sha2.workspace = true
 tokio.workspace = true
 
 [dev-dependencies]
+wasm-encoder.workspace = true
+serde_json.workspace = true
 latent-admission = { path = "../latent-admission" }
 latent-activation = { path = "../latent-activation" }
 latent-executor = { path = "../latent-executor" }

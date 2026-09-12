@@ -84,6 +84,69 @@ class SourceTraversalTests(unittest.TestCase):
 
             self.assertEqual(validator.ERRORS, [])
 
+    def test_documentation_svg_rejects_duplicate_title_and_shape_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            asset = root / "docs/assets/duplicate.svg"
+            asset.parent.mkdir(parents=True)
+            asset.write_text(
+                """<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\" role=\"img\" aria-labelledby=\"shared description\">
+  <title id=\"shared\">Duplicate ID diagram</title>
+  <desc id=\"description\">The title and shape reuse one ID.</desc>
+  <rect id=\"shared\" width=\"10\" height=\"10\"/>
+</svg>""",
+                encoding="utf-8",
+            )
+
+            validator.validate_svg(root)
+
+            self.assertEqual(
+                validator.ERRORS,
+                ["SVG contains duplicate ID shared: docs/assets/duplicate.svg"],
+            )
+
+    def test_documentation_svg_rejects_duplicate_definition_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            asset = root / "docs/assets/duplicate-defs.svg"
+            asset.parent.mkdir(parents=True)
+            asset.write_text(
+                """<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\" role=\"img\" aria-labelledby=\"title description\">
+  <title id=\"title\">Duplicate definition IDs</title>
+  <desc id=\"description\">Two definitions reuse one local ID.</desc>
+  <defs>
+    <linearGradient id=\"paint\"/>
+    <clipPath id=\"paint\"/>
+  </defs>
+  <rect width=\"10\" height=\"10\"/>
+</svg>""",
+                encoding="utf-8",
+            )
+
+            validator.validate_svg(root)
+
+            self.assertEqual(
+                validator.ERRORS,
+                ["SVG contains duplicate ID paint: docs/assets/duplicate-defs.svg"],
+            )
+
+    def test_documentation_svg_allows_same_id_in_separate_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            assets = root / "docs/assets"
+            assets.mkdir(parents=True)
+            content = """<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\" role=\"img\" aria-labelledby=\"title description\">
+  <title id=\"title\">Valid diagram</title>
+  <desc id=\"description\">IDs are local to this document.</desc>
+  <rect id=\"shape\" width=\"10\" height=\"10\"/>
+</svg>"""
+            (assets / "first.svg").write_text(content, encoding="utf-8")
+            (assets / "second.svg").write_text(content, encoding="utf-8")
+
+            validator.validate_svg(root)
+
+            self.assertEqual(validator.ERRORS, [])
+
     def test_documentation_svg_rejects_active_or_incomplete_content(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

@@ -7,7 +7,7 @@ sockets, threads, guest heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-> Phase 1 and its performance extension are complete: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [functional completion review](docs/phase-1-completion.md) and [extension report](docs/phase-1-extension-completion.md) cover scale, soak, optimization, and actual Docker/Kubernetes comparisons. These are scoped engineering results, not production SLOs. Phase 2 delivery now includes deterministic packaging, OCI distribution, publisher/provenance/SBOM verification, trusted admission and release lifecycle management, isolated AOT compilation, a protected native cache, durable audit, and bounded canary observations. Rollout coordination and promotion/rollback integration remain in progress.
+> Phase 1 and its performance extension are complete: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [functional completion review](docs/phase-1-completion.md) and [extension report](docs/phase-1-extension-completion.md) cover scale, soak, optimization, and actual Docker/Kubernetes comparisons. These are scoped engineering results, not production SLOs. Phase 2 delivery now includes deterministic packaging, OCI distribution, publisher/provenance/SBOM verification, trusted admission and release lifecycle management, isolated AOT compilation, a protected native cache, durable audit, bounded canary observations, and manual rollout coordination. Canary-driven promotion and rollback integration remain in progress.
 
 ## Core invariant
 
@@ -107,9 +107,10 @@ production cluster capacity or a universal millisecond request budget.
 | Isolated compilation and native cache | Bounded compiler children and authenticated persistent native images with private keys and explicit cache ownership; [standalone configuration](docs/reference/standalone-node.md) |
 | Durable administrative audit | Bounded private journal, explicit mutation acknowledgements, tenant/operator query authorization, restart coverage and retained response ownership; [audit](docs/phase-2-audit.md) |
 | Canary observations | Attributable bounded outcome windows with explicit missing samples and incomplete coverage, integrated into the existing activation owner; [canary observations](docs/phase-2-canary-observation.md) |
+| Manual rollout coordination | Atomic route/state publication, exact revision and cohort conflicts, bounded receipts and restart recovery, pause/resume/abort; [rollouts](docs/phase-2-rollouts.md) |
 
-Canary observations are inputs for the upcoming rollout coordinator; they do not
-independently authorize promotion. The [roadmap](docs/roadmap.md) tracks the
+Canary observations do not independently authorize promotion. Policy-driven
+promotion and rollback integration remain in progress. The [roadmap](docs/roadmap.md) tracks the
 remaining Phase 2 delivery and completion gate.
 
 ## Historical Phase 0 result

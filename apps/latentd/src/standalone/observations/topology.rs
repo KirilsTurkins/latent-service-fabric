@@ -18,6 +18,7 @@ pub(in crate::standalone) struct TopologySource {
     cleanup: ActivationCleanupHandle,
     invocation_threads: Arc<AtomicUsize>,
     control_threads: Arc<AtomicUsize>,
+    rollouts: Option<latent_rollout::RolloutHandle>,
 }
 
 impl TopologySource {
@@ -52,7 +53,16 @@ impl TopologySource {
             cleanup,
             invocation_threads: threads.invocation,
             control_threads: threads.control,
+            rollouts: None,
         }
+    }
+
+    pub(in crate::standalone) fn with_rollouts(
+        mut self,
+        rollouts: Option<latent_rollout::RolloutHandle>,
+    ) -> Self {
+        self.rollouts = rollouts;
+        self
     }
 }
 
@@ -83,7 +93,32 @@ impl NodeTopologySource for TopologySource {
             cleanup_driver_alive: u64::from(cleanup.driver_alive),
             cleanup_slots: count(cleanup.reserved) + count(cleanup.queued) + count(cleanup.running),
         };
-        write_rows(writer, rows(self.limits, observed))
+        if !write_rows(writer, rows(self.limits, observed))? {
+            return Ok(false);
+        }
+        if let Some(handle) = &self.rollouts {
+            let snapshot = handle.snapshot();
+            return write_rows(
+                writer,
+                [
+                    row(
+                        "rollout-coordinator",
+                        "blocking-task",
+                        ResourceOwnership::NodeFixed,
+                        1,
+                        Some(u64::from(snapshot.worker_live)),
+                    ),
+                    row(
+                        "rollout-control-commands",
+                        "command",
+                        ResourceOwnership::NodeFixed,
+                        count(handle.limits().maximum_queued_commands.saturating_add(1)),
+                        Some(count(snapshot.queued_commands + snapshot.active_commands)),
+                    ),
+                ],
+            );
+        }
+        Ok(true)
     }
 }
 

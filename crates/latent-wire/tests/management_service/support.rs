@@ -30,6 +30,7 @@ pub(super) struct Harness {
     pub inventory: Arc<Inventory>,
     pub channel: Channel,
     server: transport::Server,
+    rollout_worker: Option<latent_rollout::RolloutWorker>,
     _root: TempRoot,
 }
 
@@ -50,6 +51,19 @@ impl Harness {
         source: Option<Arc<dyn ArtifactRepository>>,
         audit: Option<latent_audit::AuditHandle>,
     ) -> Self {
+        Self::open(limits, source, audit, false).await
+    }
+
+    pub async fn with_rollouts(limits: ManagementLimits, audit: latent_audit::AuditHandle) -> Self {
+        Self::open(limits, None, Some(audit), true).await
+    }
+
+    async fn open(
+        limits: ManagementLimits,
+        source: Option<Arc<dyn ArtifactRepository>>,
+        audit: Option<latent_audit::AuditHandle>,
+        enabled: bool,
+    ) -> Self {
         let root = TempRoot::new();
         let artifacts = Arc::new(
             DirectoryArtifactRepository::open(
@@ -67,8 +81,25 @@ impl Harness {
             .await
             .unwrap(),
         );
+        let (rollouts, rollout_worker) = if enabled {
+            let (handle, mut worker) = latent_rollout::RolloutCoordinator::start(
+                deployments.clone(),
+                audit.clone().unwrap(),
+                latent_rollout::CoordinatorLimits::default(),
+                &tokio::runtime::Handle::current(),
+            )
+            .unwrap();
+            worker
+                .wait_started(std::time::Instant::now() + std::time::Duration::from_secs(5))
+                .await
+                .unwrap();
+            (Some(handle), Some(worker))
+        } else {
+            (None, None)
+        };
         let inventory = Arc::new(Inventory::new());
         let services = ManagementServices {
+            rollouts,
             audit,
             artifacts: source.unwrap_or_else(|| artifacts.clone()),
             deployments: deployments.clone(),
@@ -86,6 +117,7 @@ impl Harness {
             inventory,
             channel,
             server,
+            rollout_worker,
             _root: root,
         }
     }
@@ -108,8 +140,14 @@ impl Harness {
         proto::node_service_client::NodeServiceClient::new(self.channel.clone())
     }
 
-    pub async fn shutdown(self) {
+    pub async fn shutdown(mut self) {
         self.server.shutdown().await;
+        if let Some(worker) = &mut self.rollout_worker {
+            assert!(worker
+                .join_until(std::time::Instant::now() + std::time::Duration::from_secs(5))
+                .await
+                .unwrap());
+        }
     }
 }
 

@@ -12,7 +12,7 @@ fn copied_metadata_discards_source_slack_but_injected_output_slack_is_rejected()
     run(store.apply(deployment("blue", "alice", &digest))).unwrap();
     {
         let mut current = store.current.write().unwrap();
-        let catalog = Arc::get_mut(&mut current).unwrap();
+        let catalog = Arc::get_mut(&mut current.routes).unwrap();
         let record = Arc::get_mut(&mut catalog.records[0]).unwrap();
         let mut slack = String::with_capacity(256 * 1024);
         slack.push('x');

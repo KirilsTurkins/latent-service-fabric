@@ -3,7 +3,7 @@
 `latent-wire::management::ManagementServiceAdapter` implements the generated
 `latent.control.v1` services over the node's existing artifact repository,
 versioned deployment store, compiled routes, inventory reporter, and optional
-shared durable audit handle. It opens no
+shared durable audit handle and rollout coordinator. It opens no
 listener and creates no execution backend, guest instance, cell pool, or service
 worker. The embedding application supplies these shared services and a trusted
 authentication boundary. The [standalone Linux node](standalone-node.md)
@@ -23,6 +23,7 @@ generated package inputs through this RPC boundary.
 | Route | `GetRouteSnapshot` | Complete projection of the current catalog generation for one tenant. |
 | Node | `GetNode`, `ListNodes` | The one configured node's bounded inventory snapshot. |
 | Audit | `QueryAudit`, `QueryPhase2Audit` | Bounded durable history when the node's optional audit owner is configured. |
+| Rollout | `StartRollout`, `ChangeRollout`, `GetRollout`, `ListRollouts`, `GetRolloutOperation` | Optional audited manual stages over one tenant/service cohort. |
 
 `WatchDeployment`, `WatchRouteSnapshots`, `RegisterNode`, `ReportInventory`, and
 `Heartbeat` return explicit gRPC `Unimplemented`. They do not open an idle stream
@@ -66,6 +67,68 @@ when its optional tenant field is absent.
 See [release lifecycle](release-lifecycle.md) for authenticated actors, atomic
 mutation preconditions, evidence renewal, operation retention and uncertain
 outcomes. Historical descriptors and live eligibility are separate.
+
+## Manual rollout control
+
+The optional rollout adapter requires the same configured `AuditHandle` as the
+other management services. Construction rejects mismatched owners. Every call
+requires an administrator with an exact authenticated tenant; the node-operator
+claim supplies no cross-tenant access. Actor and tenant are derived from this
+identity, never supplied in the rollout request. Disabled calls return
+`Unimplemented` after authentication and bounded request validation.
+
+`StartRollout` names one existing base deployment and one new candidate for the
+same tenant, namespace and service. The base must be the complete current
+default-route cohort; broader cohorts are explicitly unsupported. Start requires
+a positive base object generation, candidate ID absence, a zero candidate output
+generation and a present operation revision of zero. The candidate's input
+weight must equal the first stage. Candidate weights are strictly increasing
+basis points from 1 through 10000, ending at 10000. Each route-changing commit
+checks exact cohort membership, object versions and current source eligibility;
+the two releases must have different component identities and compatible exports.
+
+Start atomically installs stage zero and its receipt. `ChangeRollout` requires
+a positive exact expected revision and an operation ID. Advance names exactly
+the next step. Pause and Abort only change control state, preserving the same
+route generation and grants even after trust or cohort drift. Abort is terminal
+and does not roll back. Resume recompiles the same weights with current grants
+and publishes a new route generation before returning to Running. A final
+10000-basis-point stage atomically removes the base deployment and completes
+the rollout. This manual profile does not accept health thresholds or perform
+automatic promotion.
+
+Start and Change return the exact committed receipt, a separate durability
+value, audit acknowledgement and replay flag. A matching retained operation ID,
+request, actor and scope replays its original receipt before revision checks.
+Different content conflicts. Only committed receipts are retained; validation,
+preflight or CAS rejection has no durable rollout receipt. State-only changes
+advance the rollout revision and shared state version without changing routes.
+Response preflight runs before durable audit acceptance and catalog mutation.
+Audit failure cannot rewrite a real committed result.
+
+`GetRolloutOperation` distinguishes Found, Unknown and Uncertain. Unknown includes
+missing work, failed precommit work, foreign scope and evicted receipts; it never
+establishes that a change did not happen. Uncertain means the selected complete
+catalog lacks durable confirmation. The exact receipt and separate durability
+status prevent a post-rename sync failure from appearing to undo the mutation.
+Reconcile before issuing another operation. Retained rollout IDs are not deleted
+or recycled, and receipt eviction cannot make an old expected revision current.
+
+`GetRollout` hides missing and foreign records with the same absent status.
+List is tenant scoped with optional service/state filters and bounded cursors
+that expire on catalog publication or reopen. Returned status is historical
+control data and supplies no execution grant. Current cohort drift can be
+reported as Conflicted without mutating retained history.
+
+Requests are capped at 64 KiB (8 KiB for reads), with bounded identifiers,
+collections and caller capacities checked before conversion. Replies are capped
+at 64 KiB and retain one charged response owner through protobuf encoding, HTTP
+body ownership and retained byte frames. An absolute deadline covers queueing,
+work and final conversion. Cancellation does not release accepted worker
+ownership early. Audited errors reuse the bounded `latent-audit-status` and
+`latent-audit-attempt` metadata described below. Current rollout calls require
+a generated client; there is no rollout CLI command yet. See the node's
+[manual rollout settings](standalone-node.md#optional-manual-rollouts).
 
 ## Publishing a release
 

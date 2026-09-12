@@ -1460,15 +1460,19 @@ dependencies = [
  "latent-admission",
  "latent-artifacts",
  "latent-audit",
+ "latent-contracts",
  "latent-core",
  "latent-executor",
  "latent-manifest",
  "latent-node",
+ "latent-packaging",
  "latent-policy",
  "latent-routing",
  "latent-scheduler",
+ "serde_json",
  "sha2 0.10.9",
  "tokio",
+ "wasm-encoder 0.252.0",
 ]
 
 [[package]]
@@ -1618,6 +1622,22 @@ dependencies = [
  "serde_json",
  "tempfile",
  "wasm-encoder 0.252.0",
+]
+
+[[package]]
+name = "latent-rollout"
+version = "0.1.0-alpha.2"
+dependencies = [
+ "latent-artifacts",
+ "latent-audit",
+ "latent-control-store",
+ "latent-core",
+ "latent-manifest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -1784,6 +1804,7 @@ dependencies = [
  "latent-executor",
  "latent-manifest",
  "latent-node",
+ "latent-rollout",
  "latent-routing",
  "latent-rpc",
  "latent-scheduler",
@@ -1832,6 +1853,7 @@ dependencies = [
  "latent-node",
  "latent-optimization-workloads",
  "latent-policy",
+ "latent-rollout",
  "latent-routing",
  "latent-scheduler",
  "latent-telemetry",
