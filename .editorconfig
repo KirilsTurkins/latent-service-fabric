@@ -46,6 +46,22 @@ trim_trailing_whitespace = unset
 indent_style = unset
 indent_size = unset
 
+[examples/package-format/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+[tools/data/cyclonedx-1.6/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
 # Generated output and retained benchmark evidence must remain byte-stable.
 [.generated/**]
 charset = unset
@@ -63,7 +79,15 @@ trim_trailing_whitespace = unset
 indent_style = unset
 indent_size = unset
 
-[*.{bin,gif,gz,jpeg,jpg,png,tar,wasm,zst}]
+[*.{bin,gif,gz,jpeg,jpg,png,tar,wasm,zip,zst}]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+[*.gz.part-*]
 charset = unset
 end_of_line = unset
 insert_final_newline = unset
