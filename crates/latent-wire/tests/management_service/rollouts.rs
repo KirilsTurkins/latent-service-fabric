@@ -8,6 +8,9 @@ use std::time::{Duration, Instant};
 use tempfile::TempDir;
 use tonic::Code;
 
+#[path = "rollouts/canary.rs"]
+mod canary;
+
 async fn start_input(harness: &Harness) -> proto::StartRolloutRequest {
     let base = harness
         .artifacts
@@ -37,6 +40,7 @@ async fn start_input(harness: &Harness) -> proto::StartRolloutRequest {
         expected_base_generation: Some(receipt.deployment.generation),
         candidate: Some(candidate),
         candidate_weights: vec![1000, 10_000],
+        canary_policy: None,
         operation: Some(proto::RolloutOperationPrecondition {
             operation_id: "start".into(),
             expected_revision: Some(0),

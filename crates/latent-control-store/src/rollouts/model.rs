@@ -34,10 +34,12 @@ pub struct StartRolloutSpec {
     pub base: DeploymentExpectation,
     pub candidate: DeploymentManifest,
     pub candidate_weights: Vec<u16>,
+    pub canary_policy: Option<super::RolloutCanaryPolicy>,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RolloutCommand {
     Advance { next_step: u32 },
+    Promote { next_step: u32 },
     Pause,
     Resume,
     Abort,
@@ -73,6 +75,7 @@ enumeration!(RolloutState {
 enumeration!(RolloutAction {
     Start,
     Advance,
+    Promote,
     Pause,
     Resume,
     Abort
@@ -149,6 +152,12 @@ pub struct RolloutStatus {
     pub created_at_unix_millis: u64,
     pub updated_at_unix_millis: u64,
     pub retained_operation_floor: u64,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::canary::optional"
+    )]
+    pub canary_policy: Option<super::RolloutCanaryPolicy>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(
@@ -179,6 +188,12 @@ pub struct RolloutOperationReceipt {
     pub completed_at_unix_millis: u64,
     #[serde(with = "codec::text")]
     pub receipt_digest: ArtifactBlobDigest,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::canary::optional"
+    )]
+    pub canary_decision: Option<super::RolloutCanaryDecision>,
 }
 impl RolloutOperationReceipt {
     pub fn canonical_bytes(&self) -> Result<Vec<u8>> {

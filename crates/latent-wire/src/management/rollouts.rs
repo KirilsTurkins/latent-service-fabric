@@ -1,4 +1,5 @@
 //! Tenant-scoped control on the one configured, audited coordinator.
+mod canary;
 mod conversion;
 mod enums;
 mod lease;
@@ -67,6 +68,11 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
                         .expect("validated generation"),
                 },
                 candidate,
+                canary_policy: value
+                    .canary_policy
+                    .as_ref()
+                    .map(canary::policy::decode)
+                    .transpose()?,
                 candidate_weights: value
                     .candidate_weights
                     .into_iter()
@@ -102,6 +108,7 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
             audit_ack: value.1,
             replayed: value.2,
             durability: value.3,
+            observation: value.4,
         };
         response::finish(output, lease, &limits, deadline)
             .map_err(|status| control_audit::status(status, audit_ack))
@@ -118,6 +125,20 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
         validation::change(request.get_ref(), &limits)?;
         let handle = self.rollout_handle()?;
         validation::completed(deadline)?;
+        if matches!(
+            request.get_ref().command,
+            Some(proto::change_rollout_request::Command::Promote(_))
+        ) {
+            return canary::promote(
+                self,
+                request.into_inner(),
+                principal,
+                tenant,
+                limits,
+                deadline,
+            )
+            .await;
+        }
         let value = request.into_inner();
         let command = match value.command.expect("validated command") {
             proto::change_rollout_request::Command::Advance(value) => {
@@ -128,6 +149,9 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
             proto::change_rollout_request::Command::Pause(_) => domain::RolloutCommand::Pause,
             proto::change_rollout_request::Command::Resume(_) => domain::RolloutCommand::Resume,
             proto::change_rollout_request::Command::Abort(_) => domain::RolloutCommand::Abort,
+            proto::change_rollout_request::Command::Promote(_) => {
+                unreachable!("promotion dispatched separately")
+            }
         };
         let domain = domain::RolloutRequest::Change {
             context: validation::context(principal, value.operation.expect("validated operation"))?,
@@ -162,6 +186,7 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
             audit_ack: value.1,
             replayed: value.2,
             durability: value.3,
+            observation: value.4,
         };
         response::finish(output, lease, &limits, deadline)
             .map_err(|status| control_audit::status(status, audit_ack))
@@ -185,6 +210,13 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
     ) -> Result<Response<proto::GetRolloutOperationResponse>, Status> {
         reads::operation(self, request).await
     }
+
+    async fn evaluate_rollout(
+        &self,
+        request: Request<proto::EvaluateRolloutRequest>,
+    ) -> Result<Response<proto::EvaluateRolloutResponse>, Status> {
+        canary::evaluate(self, request).await
+    }
 }
 
 fn mutation(
@@ -194,6 +226,7 @@ fn mutation(
     Option<proto::AuditAck>,
     bool,
     i32,
+    Option<proto::RolloutObservation>,
 ) {
     let durability = if value.durability.is_ok() {
         proto::RolloutDurability::Confirmed
@@ -205,6 +238,7 @@ fn mutation(
         Some(control_audit::wire(value.audit_ack)),
         value.replayed,
         durability as i32,
+        value.observation.map(canary::observation),
     )
 }
 

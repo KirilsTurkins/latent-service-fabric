@@ -5,6 +5,8 @@ use latent_core::{
     TenantId,
 };
 use serde::{Deserialize, Serialize};
+mod canary;
+pub use canary::{AuditCanaryDecision, AuditCanaryReason, AuditCanaryVerdict};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AuditScope {
@@ -100,7 +102,14 @@ enumeration!(AuditReason {
     Committed,
     NotStarted,
     ReceiptUnavailable,
-    MutationUncertain
+    MutationUncertain,
+    CanaryCollecting,
+    CanaryDraining,
+    CanaryNoData,
+    CanaryInsufficient,
+    CanaryIncomplete,
+    CanaryFailed,
+    CanaryUnavailable
 });
 enumeration!(AuditCacheKind {
     Raw,
@@ -132,6 +141,18 @@ pub struct AuditPolicyIdentity {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditIdentities {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub canary_window_epoch: Option<u64>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "codec::optional"
+    )]
+    pub canary_evidence_digest: Option<ArtifactBlobDigest>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -252,6 +273,12 @@ pub struct AuditOperationAttempt {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditOperationConclusion {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub canary_decision: Option<AuditCanaryDecision>,
     pub result: AuditOperationResult,
     pub reason: AuditReason,
     #[serde(
@@ -400,6 +427,38 @@ mod tests {
         let decoded: AuditIdentities = serde_json::from_slice(old).unwrap();
         assert_eq!(serde_json::to_vec(&decoded).unwrap(), old);
         assert_eq!(decoded, AuditIdentities::default());
+    }
+
+    #[test]
+    fn canary_evidence_fields_require_exact_rollout_and_positive_epoch() {
+        let valid = AuditIdentities {
+            rollout: Some("rollout".into()),
+            canary_window_epoch: Some(7),
+            canary_evidence_digest: Some(format!("sha256:{}", "a".repeat(64)).parse().unwrap()),
+            ..AuditIdentities::default()
+        };
+        codec::identities(&valid).unwrap();
+        for invalid in [
+            AuditIdentities {
+                rollout: None,
+                ..valid.clone()
+            },
+            AuditIdentities {
+                canary_window_epoch: None,
+                ..valid.clone()
+            },
+            AuditIdentities {
+                canary_window_epoch: Some(0),
+                ..valid.clone()
+            },
+        ] {
+            assert!(codec::identities(&invalid).is_err());
+        }
+        for name in ["canaryWindowEpoch", "canaryEvidenceDigest"] {
+            let mut value = serde_json::to_value(&valid).unwrap();
+            value[name] = serde_json::Value::Null;
+            assert!(serde_json::from_value::<AuditIdentities>(value).is_err());
+        }
     }
 
     #[test]

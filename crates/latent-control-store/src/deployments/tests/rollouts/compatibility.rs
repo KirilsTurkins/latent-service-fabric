@@ -204,6 +204,7 @@ fn retained_package_bridge_compares_actual_nested_wit_and_binds_package_pair() {
                 },
                 candidate: proposed,
                 candidate_weights: vec![2500, 10000],
+                canary_policy: None,
             },
         };
         if changed_shape {

@@ -213,6 +213,7 @@ pub fn start() -> RolloutRequest {
             },
             candidate,
             candidate_weights: vec![1000, 5000, 10000],
+            canary_policy: None,
         },
     }
 }

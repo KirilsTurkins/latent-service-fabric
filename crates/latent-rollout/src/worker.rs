@@ -1,5 +1,5 @@
-mod mutation;
-mod size;
+pub(crate) mod mutation;
+pub(crate) mod size;
 
 use crate::{
     coordinator::{RequestCharge, Shared},
@@ -38,18 +38,20 @@ pub(crate) struct Job<I, O> {
 }
 pub(crate) enum Command {
     Mutation(Box<Job<MutationInput, MutationResult>>),
+    Promote(Box<Job<crate::canary::PromotionInput, MutationResult>>),
+    Evaluate(Job<crate::CanaryEvaluationRequest, crate::CanaryEvaluationReport>),
     Get(Job<(TenantId, RolloutId), Option<RolloutStatus>>),
     List(Job<RolloutPageRequest, RolloutPage>),
     Operation(Job<(TenantId, RolloutId, String), RolloutOperationLookup>),
 }
 impl<I, O> Job<I, O> {
-    fn check(&self, shared: &Shared) -> Result<()> {
+    pub(crate) fn check(&self, shared: &Shared) -> Result<()> {
         if shared.closed.load(Ordering::Acquire) {
             return Err(crate::closed());
         }
         self.control.check(self.expires)
     }
-    fn finish(mut self, result: Result<O>) {
+    pub(crate) fn finish(mut self, result: Result<O>) {
         self.control.done();
         let result = result
             .map(|value| OwnedResponse {
@@ -70,6 +72,7 @@ pub(crate) async fn run(
     shared: Arc<Shared>,
     startup: oneshot::Sender<Result<()>>,
 ) {
+    let mut windows = crate::canary::ObservationWindows::new(&repository, Arc::clone(&shared));
     let ready = crate::reconcile_rollout_audit(
         &audit,
         &repository,
@@ -86,7 +89,19 @@ pub(crate) async fn run(
     let _ = startup.send(ready.map_err(crate::bounded));
     while let Some(command) = receiver.recv().await {
         match command {
-            Command::Mutation(job) => mutation::run(&repository, &audit, &shared, *job).await,
+            Command::Mutation(job) => {
+                mutation::run(&repository, &audit, &shared, &mut windows, *job).await;
+            }
+            Command::Promote(job) => {
+                #[expect(
+                    clippy::large_futures,
+                    reason = "One fixed-size inline continuation runs only on this dedicated blocking worker; no per-command task or uncharged heap frame is created"
+                )]
+                crate::canary::promote(&repository, &audit, &shared, &mut windows, *job).await;
+            }
+            Command::Evaluate(job) => {
+                crate::canary::evaluate(&repository, &shared, &mut windows, job);
+            }
             Command::Get(mut job) => {
                 job.charge.activate();
                 let result = (|| {

@@ -2,9 +2,9 @@
 
 `latent-telemetry::BoundedPhase2CanaryOutcomeWindow` collects bounded activation
 outcomes for control-registered rollout cohorts. The activation manager now owns
-capture through terminal publication. The same primitive will supply data to the
-rollout coordinator (#153) and canary evaluator (#154); it does not implement
-staged rollout policy, promotion, persistence or a public outcome-submission RPC.
+capture through terminal publication. The [rollout coordinator](phase-2-rollouts.md)
+and [canary evaluator](phase-2-canary-promotion.md) use this primitive with explicit
+policies. There is no public outcome-submission RPC.
 The implementation evolves the outcome classes, finite labels, bounds and tests
 contributed in PR176.
 
@@ -24,14 +24,16 @@ one open window observes a tenant/service pair. Registration validates and makes
 fresh bounded copies of strings and revision rows, dropping caller spare
 capacity. An expired or explicitly closed window may coexist with a new window,
 but their epochs and sample owners remain separate. A `CanaryWindow` grants only
-access to its own readout. Network callers must still be authenticated by a
-future query adapter; supplying tenant text is never an authorization grant.
+access to its own readout. The rollout adapter authenticates tenant administrators;
+supplying tenant text is never an authorization grant. Rollout windows also bind
+an opaque control digest covering the catalog owner, exact rollout revision,
+policy and compiled cohort; diagnostic windows may omit it.
 
 Install `Some(owner.capture_handle())` in `LocalActivationServices.canary` before
 constructing the activation manager. This is optional and independent of its
-structured telemetry observer. The standalone node currently leaves it `None`;
-the future rollout owner supplies registrations and the capture handle. No
-additional canary configuration or management SDK operation is advertised yet.
+structured telemetry observer. The standalone node supplies the same repository
+and coordinator hub when optional `rollouts.canary` settings are enabled. Its
+clock is shared with activation capture. Otherwise the node leaves capture off.
 The maintained integration fixture shows the complete host setup in
 [`canary.rs`](../crates/latent-node/tests/activation_lifecycle/canary.rs).
 
@@ -80,9 +82,11 @@ retained readouts from becoming complete evidence.
 - per-revision selected/admitted/admitted-terminal counts and outcome classes;
 - nine fixed latency buckets from acceptance-relative monotonic elapsed time.
 
-Latency bucket upper bounds, inclusive in microseconds, are 100, 1,000, 5,000,
+Latency bucket upper bounds, expressed in microseconds, are 100, 1,000, 5,000,
 10,000, 50,000, 100,000, 1,000,000 and 10,000,000; the ninth is overflow. Latency
 includes all selected terminal outcomes, including selected admission failures.
+Comparison uses the exact duration: an edge plus one nanosecond is above that
+inclusive bound, without rounding it down to whole microseconds.
 Wall-clock sample timestamps are not used to choose cohort membership.
 
 The required count is for the whole cohort, not an implicit minimum for each
@@ -93,7 +97,9 @@ they cannot be fabricated as candidate successes or failures.
 `CanaryCoverage` distinguishes `Open`, `Draining`, `NoSamples`, `Insufficient`,
 `Incomplete` and `CompleteData`. Complete data requires closure, zero live owners,
 complete selected terminal accounting, no known loss and the requested count.
-It is not permission to promote. A drained closed window with no calls remains
+It is not permission to promote. Early explicit closure can produce complete
+diagnostic accounting, but cannot produce a full-duration sealed window.
+A drained closed window with no calls remains
 `NoSamples` rather than becoming a zero-error success rate.
 
 ## Loss, ownership and bounds
@@ -139,7 +145,20 @@ required. Counters, identities and snapshots are host observation data, not trus
 eligibility or promotion capabilities. Only fixed outcome/coverage labels are
 suitable metric dimensions; never export identifiers or digests as labels.
 
-## Validation and later rollout ownership
+## Sealed observation and validation
+
+`window.try_seal()` returns a private-constructed, non-cloneable
+`SealedCanaryWindow` only after the complete interval, closed membership, no live
+samples and no loss. An atomic live-attempt guard covers registry acquisition
+through loss publication. The seal requires that frontier to be quiescent, so a
+failed capture paused before publishing loss cannot disappear from the decision.
+Registration captures its loss baseline before the interval starts.
+
+A sealed window owns the same actual window slot and a snapshot allowance. Its
+frozen counters do not change when later, unrelated captures lose data. The
+catalog still verifies exact configured owner/control binding and policy itself;
+possession of copied counters or a diagnostic assessment cannot mint this input.
+Each attempted seal has a finite immediate result and creates no waiting task.
 
 The small unit tests retain PR176's limits/fresh-ownership/label cases and add
 success-to-cap followed by rejected failure, exact selection, live retirement,
@@ -154,8 +173,8 @@ cargo test -p latent-telemetry --locked
 cargo test -p latent-node --test activation_lifecycle --locked
 ```
 
-Issue153 supplies durable coordinator step ownership. Issue154 defines stage
-weights, observation windows, minimum samples per chosen denominator, latency
-criteria and manual/automatic decisions. It must recheck exact coordinator state
-and release eligibility when committing a decision. Neither copied counters nor
-`CompleteData` supplies that authority.
+The evaluator uses candidate-specific minimums and exact integer rate criteria,
+and promotion rechecks catalog state and release eligibility at commit. Tests
+also cover early closure, the delayed-loss frontier, registration loss ordering,
+nanosecond threshold boundaries, real retained proof allowances and restart
+without old positive evidence. Promotion remains operator-triggered.

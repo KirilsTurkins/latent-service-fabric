@@ -1,4 +1,5 @@
 //! Semantic rollout transitions committed through the deployment publication.
+pub(crate) mod canary;
 mod commit;
 mod comparison;
 mod prepare;
@@ -21,6 +22,7 @@ pub struct PreparedRolloutMutation {
     request_digest: ArtifactBlobDigest,
     replayed: bool,
     state_only: bool,
+    canary_proof: Option<latent_telemetry::phase2_canary::SealedCanaryWindow>,
     _work: WorkReservation,
 }
 impl PreparedRolloutMutation {

@@ -3,10 +3,10 @@
 use std::io::Read;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use latent_admission::{NodeLoadSnapshot, NodeLoadSource};
-use latent_core::{PlatformError, PlatformErrorCode};
+use latent_core::{ActivationClock, PlatformError, PlatformErrorCode};
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 
@@ -27,7 +27,7 @@ impl HostLoad {
         self.accepting.store(false, Ordering::Release);
     }
 
-    fn refresh(&self) {
+    fn refresh(&self, clock: &dyn ActivationClock) {
         let value = pressure("/proc/pressure/cpu")
             .zip(pressure("/proc/pressure/memory"))
             .map(|(cpu, memory)| NodeLoadSnapshot {
@@ -37,7 +37,7 @@ impl HostLoad {
                 // No additional external queue estimate. Admission already derives
                 // its own delay from atomically reserved class backlog.
                 queue_delay_millis: 0,
-                observed_at: Instant::now(),
+                observed_at: clock.monotonic_now(),
             });
         if let Ok(mut slot) = self.value.write() {
             *slot = value;
@@ -75,8 +75,9 @@ impl LoadSampler {
         interval: Duration,
         runtime: &tokio::runtime::Handle,
         supply_chain: Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>,
+        clock: Arc<dyn ActivationClock>,
     ) -> Self {
-        load.refresh();
+        load.refresh(clock.as_ref());
         let (stop, mut stopped) = oneshot::channel();
         let task = runtime.spawn(async move {
             let mut timer = tokio::time::interval(interval);
@@ -92,7 +93,7 @@ impl LoadSampler {
                         if let Some(authority) = &supply_chain {
                             let _ = authority.renew_clock_lease();
                         }
-                        load.refresh();
+                        load.refresh(clock.as_ref());
                     },
                 }
             }
@@ -180,6 +181,25 @@ fn parse_pressure(value: &str) -> Option<u16> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Instant;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn pressure_refresh_uses_the_same_clock_domain_as_admission() {
+        struct Clock(Instant);
+        impl ActivationClock for Clock {
+            fn sample(&self) -> latent_core::ClockSample {
+                latent_core::ClockSample::new(1, self.0)
+            }
+            fn monotonic_now(&self) -> Instant {
+                self.0
+            }
+        }
+        let clock = Clock(Instant::now().checked_sub(Duration::from_mins(1)).unwrap());
+        let load = HostLoad::default();
+        load.refresh(&clock);
+        assert_eq!(load.snapshot().unwrap().observed_at, clock.0);
+    }
 
     #[test]
     fn pressure_preserves_zero_and_rejects_missing_ambiguous_or_invalid_samples() {

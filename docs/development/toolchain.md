@@ -35,7 +35,7 @@ Workspace dependencies are exact requirements and workspace crates consume them 
 
 ## Reproducibility boundary
 
-CI uses `ubuntu-24.04`, not a floating runner label. Rust, contract tools, and language compilers are installed at the exact versions above. `tools/check_tool_versions.py` validates installed SDK compilers. TypeScript is pinned in both `package.json` and `package-lock.json` and installed with `npm ci`.
+CI uses `ubuntu-24.04`, not a floating runner label. Rust, contract tools, and language compilers are installed at the exact versions above. `tools/check_tool_versions.py` validates installed SDK compilers. Each SDK version probe has a 30-second timeout so a non-responsive local tool fails validation instead of blocking indefinitely. TypeScript is pinned in both `package.json` and `package-lock.json` and installed with `npm ci`.
 
 Rust Protobuf generation uses `protoc-bin-vendored`; the build does not depend on a runner or workstation `protoc`. The exhaustive `api/proto/latent-api.protos` manifest and foundation validator prevent undeclared input drift. Generated RPC and WIT source is written only to Cargo `OUT_DIR` and is recreated from authoritative inputs on each clean build.
 

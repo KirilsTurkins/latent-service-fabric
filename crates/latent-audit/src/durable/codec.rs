@@ -150,7 +150,11 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
     if let Some(r) = &v.rollout {
         token(r, 256)?;
     }
-    if v.rollout_revision == Some(0)
+    if v.canary_window_epoch == Some(0)
+        || (v.rollout.is_none()
+            && (v.canary_window_epoch.is_some() || v.canary_evidence_digest.is_some()))
+        || (v.canary_evidence_digest.is_some() && v.canary_window_epoch.is_none())
+        || v.rollout_revision == Some(0)
         || v.state_version == Some(0)
         || v.rollout_step.is_some_and(|step| step >= 64)
         || (v.rollout.is_none()
@@ -177,7 +181,10 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     actor(&v.actor)?;
     token(&v.operation_id, 128)?;
     if v.expected_rollout_revision.is_some()
-        && (v.action != AuditControlAction::Rollout || v.identities.rollout.is_none())
+        && (!matches!(
+            v.action,
+            AuditControlAction::Rollout | AuditControlAction::Promotion
+        ) || v.identities.rollout.is_none())
     {
         return Err(invalid());
     }
@@ -195,6 +202,18 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
 }
 pub(super) fn conclusion(v: &AuditOperationConclusion) -> Result<()> {
     identities(&v.identities)?;
+    if let Some(decision) = &v.canary_decision {
+        decision.validate()?;
+        if v.identities.rollout.is_none()
+            || v.identities.canary_window_epoch.is_none()
+            || !matches!(
+                v.result,
+                AuditOperationResult::Committed | AuditOperationResult::Rejected
+            )
+        {
+            return Err(invalid());
+        }
+    }
     if matches!(
         v.result,
         AuditOperationResult::NotStarted | AuditOperationResult::Unknown

@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 
 mod audit;
+mod canary;
 mod coordinator;
 mod lease;
 mod limits;
@@ -16,6 +17,10 @@ mod ticket;
 mod worker;
 
 pub use audit::reconcile_rollout_audit;
+pub use canary::{
+    CanaryEvaluationReport, CanaryEvaluationRequest, CanaryRevisionReport, PromotionPreview,
+    RolloutObservation, RolloutObservationState,
+};
 pub use coordinator::{RolloutCoordinator, RolloutHandle, RolloutWorker};
 pub use lease::{OwnedResponse, ResponseLease};
 pub use limits::CoordinatorLimits;
@@ -57,6 +62,19 @@ fn cancelled() -> PlatformError {
 
 fn bounded(failure: PlatformError) -> PlatformError {
     let code = failure.code;
+    let canary = match failure.message.as_str() {
+        "rollout-canary-collecting" => Some("rollout-canary-collecting"),
+        "rollout-canary-draining" => Some("rollout-canary-draining"),
+        "rollout-canary-no-data" => Some("rollout-canary-no-data"),
+        "rollout-canary-insufficient" => Some("rollout-canary-insufficient"),
+        "rollout-canary-incomplete" => Some("rollout-canary-incomplete"),
+        "rollout-canary-failed" => Some("rollout-canary-failed"),
+        "rollout-canary-unavailable" => Some("rollout-canary-unavailable"),
+        _ => None,
+    };
+    if let Some(message) = canary {
+        return error(code, message);
+    }
     let message = match code {
         PlatformErrorCode::StateConflict => "rollout-state-conflict",
         PlatformErrorCode::PermissionDenied => "rollout-operation-denied",

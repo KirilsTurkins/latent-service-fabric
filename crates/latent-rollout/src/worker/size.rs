@@ -18,7 +18,7 @@ impl Write for Counter {
         Ok(())
     }
 }
-pub(super) fn check<T: Serialize>(value: &T, maximum: usize) -> Result<()> {
+pub(crate) fn check<T: Serialize>(value: &T, maximum: usize) -> Result<()> {
     serde_json::to_writer(&mut Counter { bytes: 0, maximum }, value)
         .map_err(|_| crate::capacity("rollout-response-budget"))
 }

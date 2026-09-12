@@ -46,6 +46,7 @@ impl TopologySource {
                     .sum(),
                 instances: count(backend.maximum_instance_reservations()),
                 cleanup_slots: count(settings.manager.journal.maximum_active),
+                canary: settings.rollouts.and_then(|value| value.canary),
             },
             backend,
             scheduler,
@@ -98,7 +99,7 @@ impl NodeTopologySource for TopologySource {
         }
         if let Some(handle) = &self.rollouts {
             let snapshot = handle.snapshot();
-            return write_rows(
+            if !write_rows(
                 writer,
                 [
                     row(
@@ -116,7 +117,45 @@ impl NodeTopologySource for TopologySource {
                         Some(count(snapshot.queued_commands + snapshot.active_commands)),
                     ),
                 ],
-            );
+            )? {
+                return Ok(false);
+            }
+            if let (Some(limits), Some(snapshot)) = (self.limits.canary, handle.canary_snapshot()?)
+            {
+                return write_rows(
+                    writer,
+                    [
+                        row(
+                            "canary-observation-windows",
+                            "window",
+                            ResourceOwnership::NodeFixed,
+                            count(limits.maximum_series),
+                            Some(count(snapshot.tracked_series)),
+                        ),
+                        row(
+                            "canary-retained-samples",
+                            "sample",
+                            ResourceOwnership::NodeFixed,
+                            count(limits.maximum_total_samples),
+                            Some(count(snapshot.total_samples)),
+                        ),
+                        row(
+                            "canary-live-samples",
+                            "sample",
+                            ResourceOwnership::NodeFixed,
+                            count(limits.maximum_live_samples),
+                            Some(count(snapshot.live_samples)),
+                        ),
+                        row(
+                            "canary-snapshot-owners",
+                            "snapshot",
+                            ResourceOwnership::NodeFixed,
+                            count(limits.maximum_snapshot_owners),
+                            Some(count(snapshot.snapshot_owners)),
+                        ),
+                    ],
+                );
+            }
         }
         Ok(true)
     }
@@ -136,6 +175,7 @@ struct Limits {
     cells: u64,
     instances: u64,
     cleanup_slots: u64,
+    canary: Option<latent_telemetry::Phase2CanaryOutcomeWindowConfig>,
 }
 
 #[derive(Clone, Copy)]

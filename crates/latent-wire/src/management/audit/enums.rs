@@ -81,6 +81,13 @@ pub(super) fn reason(value: domain::AuditReason) -> &'static str {
         AuditReason::NotStarted => "not-started",
         AuditReason::ReceiptUnavailable => "receipt-unavailable",
         AuditReason::MutationUncertain => "mutation-uncertain",
+        AuditReason::CanaryCollecting => "canary-collecting",
+        AuditReason::CanaryDraining => "canary-draining",
+        AuditReason::CanaryNoData => "canary-no-data",
+        AuditReason::CanaryInsufficient => "canary-insufficient",
+        AuditReason::CanaryIncomplete => "canary-incomplete",
+        AuditReason::CanaryFailed => "canary-failed",
+        AuditReason::CanaryUnavailable => "canary-unavailable",
     }
 }
 pub(super) fn action_name(value: domain::AuditControlAction) -> &'static str {

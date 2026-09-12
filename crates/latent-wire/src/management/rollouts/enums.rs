@@ -20,6 +20,7 @@ pub(super) fn action(value: domain::RolloutAction) -> i32 {
         domain::RolloutAction::Pause => proto::RolloutAction::Pause as i32,
         domain::RolloutAction::Resume => proto::RolloutAction::Resume as i32,
         domain::RolloutAction::Abort => proto::RolloutAction::Abort as i32,
+        domain::RolloutAction::Promote => proto::RolloutAction::Promote as i32,
     }
 }
 

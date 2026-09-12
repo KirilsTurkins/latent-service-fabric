@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use latent_core::PlatformError;
+use latent_core::{ActivationClock, PlatformError};
 use latent_policy::supply_chain::SupplyChainAuthority;
 
 use super::super::load::{HostLoad, LoadSampler};
@@ -20,6 +20,7 @@ impl StartupControl {
         authority: Arc<SupplyChainAuthority>,
         interval: Duration,
         runtime: &tokio::runtime::Handle,
+        clock: Arc<dyn ActivationClock>,
     ) -> Self {
         let load = Arc::new(HostLoad::default());
         let sampler = LoadSampler::start(
@@ -27,6 +28,7 @@ impl StartupControl {
             interval,
             runtime,
             Some(Arc::clone(&authority)),
+            clock,
         );
         Self {
             load,

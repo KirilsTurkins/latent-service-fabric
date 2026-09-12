@@ -59,6 +59,9 @@ impl CanaryCapture {
         tenant: &TenantId,
         service: &ServiceId,
     ) -> CanaryCaptureAttempt {
+        // The guard enters before try_lock and retires after any loss is visible.
+        // A control seal cannot miss a failed capture paused before loss publication.
+        let _attempt = CaptureFrontier::enter(&self.0);
         let Ok(registry) = self.0.registry.try_lock() else {
             self.0.lose_unattributed();
             return CanaryCaptureAttempt::Lost;
@@ -176,12 +179,28 @@ impl CanarySample {
         if self.admitted {
             revision.admitted_terminal += 1;
         }
-        let micros = elapsed.as_micros();
         let bucket = CANARY_LATENCY_UPPER_MICROS
             .iter()
-            .position(|edge| micros <= u128::from(*edge))
+            .position(|edge| elapsed <= Duration::from_micros(*edge))
             .unwrap_or(8);
         revision.latency_buckets[bucket] += 1;
+    }
+}
+
+pub(super) struct CaptureFrontier<'a>(&'a Hub);
+
+impl<'a> CaptureFrontier<'a> {
+    pub(super) fn enter(hub: &'a Hub) -> Self {
+        // This is a live-owner count, not an ever-increasing event sequence.
+        // Every increment has its own nonzero-sized stack guard until retirement.
+        hub.attempts.fetch_add(1, Ordering::SeqCst);
+        Self(hub)
+    }
+}
+
+impl Drop for CaptureFrontier<'_> {
+    fn drop(&mut self) {
+        self.0.attempts.fetch_sub(1, Ordering::SeqCst);
     }
 }
 

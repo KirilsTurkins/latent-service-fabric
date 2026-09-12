@@ -8,6 +8,7 @@ use latent_routing::{RevisionPolicySource, RouteResolver};
 use super::fixtures::*;
 use crate::{rollouts::*, DeploymentStore};
 
+mod canary;
 mod compatibility;
 mod recovery;
 
@@ -53,6 +54,7 @@ fn setup(store: &Store, releases: &Releases) -> RolloutRequest {
             },
             candidate,
             candidate_weights: vec![2500, 5000, 10000],
+            canary_policy: None,
         },
     }
 }

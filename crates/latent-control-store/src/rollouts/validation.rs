@@ -120,6 +120,7 @@ impl RolloutRequest {
             Self::Start { .. } => RolloutAction::Start,
             Self::Change { command, .. } => match command {
                 RolloutCommand::Advance { .. } => RolloutAction::Advance,
+                RolloutCommand::Promote { .. } => RolloutAction::Promote,
                 RolloutCommand::Pause => RolloutAction::Pause,
                 RolloutCommand::Resume => RolloutAction::Resume,
                 RolloutCommand::Abort => RolloutAction::Abort,
@@ -169,6 +170,12 @@ impl RolloutRequest {
                     return Err(invalid());
                 }
                 weights(&spec.candidate_weights, limits.maximum_stages)?;
+                if let Some(policy) = spec.canary_policy {
+                    policy.validate()?;
+                    if spec.candidate_weights.len() < 2 {
+                        return Err(invalid());
+                    }
+                }
                 if spec.candidate.route_weight != spec.candidate_weights[0] {
                     return Err(invalid());
                 }
