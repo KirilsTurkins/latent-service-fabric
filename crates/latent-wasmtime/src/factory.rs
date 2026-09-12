@@ -77,7 +77,7 @@ impl WasmtimeComponentEngineFactory {
         Self::with_mode_and_services(config, mode, WasmtimeHostServices::default())
     }
 
-    fn with_mode_and_services(
+    pub(crate) fn with_mode_and_services(
         mut config: WasmtimeConfig,
         mode: DispatchMode,
         services: WasmtimeHostServices,
