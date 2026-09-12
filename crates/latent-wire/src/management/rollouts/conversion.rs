@@ -27,6 +27,7 @@ pub(super) fn receipt(value: domain::RolloutOperationReceipt) -> proto::RolloutO
         plan_digest: value.plan_digest.into_string(),
         completed_at_unix_millis: value.completed_at_unix_millis,
         receipt_digest: value.receipt_digest.into_string(),
+        canary_decision: value.canary_decision.map(super::canary::decision),
     }
 }
 
@@ -57,6 +58,7 @@ pub(super) fn status(value: domain::RolloutStatus) -> proto::RolloutStatus {
         created_at_unix_millis: value.created_at_unix_millis,
         updated_at_unix_millis: value.updated_at_unix_millis,
         retained_operation_floor: value.retained_operation_floor,
+        canary_policy: value.canary_policy.map(super::canary::policy::wire),
     }
 }
 fn release(value: domain::RolloutRelease) -> proto::RolloutRelease {

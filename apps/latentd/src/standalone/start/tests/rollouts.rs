@@ -1,3 +1,4 @@
+mod canary;
 mod fixtures;
 mod recovery;
 use super::*;
@@ -22,6 +23,7 @@ fn manual_owner_starts_and_joins_with_one_control_blocking_thread() {
             settings.rollouts = Some(crate::config::RolloutSettings {
                 store: RolloutLimits::default(),
                 coordinator: CoordinatorLimits::default(),
+                canary: None,
             });
             settings.shutdown_grace = Duration::from_secs(5);
             let node = super::super::StandaloneNode::start(
@@ -76,6 +78,7 @@ async fn configured_rollouts_cannot_compose_without_their_owner() {
     settings.rollouts = Some(crate::config::RolloutSettings {
         store: RolloutLimits::default(),
         coordinator: CoordinatorLimits::default(),
+        canary: None,
     });
     assert_eq!(
         super::super::StandaloneNode::compose(

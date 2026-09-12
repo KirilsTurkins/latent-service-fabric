@@ -31,6 +31,20 @@ impl RolloutHandle {
     pub fn snapshot(&self) -> CoordinatorSnapshot {
         self.owner.shared.snapshot()
     }
+    #[must_use]
+    pub fn canary_capture(&self) -> Option<latent_telemetry::CanaryCapture> {
+        self.owner
+            .canary
+            .as_ref()
+            .map(latent_telemetry::BoundedPhase2CanaryOutcomeWindow::capture_handle)
+    }
+    pub fn canary_snapshot(&self) -> Result<Option<latent_telemetry::Phase2CanaryWindowSnapshot>> {
+        self.owner
+            .canary
+            .as_ref()
+            .map(latent_telemetry::BoundedPhase2CanaryOutcomeWindow::snapshot)
+            .transpose()
+    }
     pub fn close(&self) {
         self.owner.close();
     }
@@ -47,6 +61,9 @@ impl RolloutHandle {
         F: for<'a> FnOnce(MutationPreview<'a>) -> Result<()> + Send + 'static,
     {
         request.validate(self.rollout_limits())?;
+        if crate::canary::is_promotion(&request) {
+            return Err(invalid("rollout-dedicated-promotion-required"));
+        }
         let bytes = request
             .retained_bytes()
             .checked_add(size_of::<F>())
@@ -60,6 +77,58 @@ impl RolloutHandle {
             self.limits().maximum_page_bytes,
             expires,
             |job| Command::Mutation(Box::new(job)),
+        )
+    }
+
+    /// Explicit operator action; diagnostic reports cannot be supplied as proof.
+    pub fn promote<F>(
+        &self,
+        request: RolloutRequest,
+        expires: Instant,
+        preflight: F,
+    ) -> Result<RolloutTicket<MutationResult>>
+    where
+        F: for<'a> FnOnce(crate::PromotionPreview<'a>) -> Result<()> + Send + 'static,
+    {
+        request.validate(self.rollout_limits())?;
+        crate::canary::require_promotion(&request)?;
+        let bytes = request
+            .retained_bytes()
+            .checked_add(size_of::<F>())
+            .ok_or_else(|| capacity("rollout-request-size"))?;
+        self.enqueue(
+            crate::canary::PromotionInput {
+                request,
+                preflight: Box::new(preflight),
+            },
+            bytes,
+            self.limits().maximum_page_bytes,
+            expires,
+            |job| Command::Promote(Box::new(job)),
+        )
+    }
+
+    pub fn evaluate(
+        &self,
+        request: crate::CanaryEvaluationRequest,
+        expires: Instant,
+    ) -> Result<RolloutTicket<crate::CanaryEvaluationReport>> {
+        text(&request.tenant.0, 256)?;
+        text(&request.id.0, 128)?;
+        text(&request.actor.subject, 512)?;
+        if request.expected_revision == 0 {
+            return Err(invalid("rollout-positive-revision-required"));
+        }
+        let bytes = size_of::<crate::CanaryEvaluationRequest>()
+            + request.tenant.0.capacity()
+            + request.id.0.capacity()
+            + request.actor.subject.capacity();
+        self.enqueue(
+            request,
+            bytes,
+            self.limits().maximum_page_bytes,
+            expires,
+            Command::Evaluate,
         )
     }
 

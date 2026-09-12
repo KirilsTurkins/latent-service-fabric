@@ -20,12 +20,22 @@ class NodeRolloutsSchema(unittest.TestCase):
 
     def test_individual_bounds(self):
         for name, field in SCHEMA["properties"].items():
-            if name == "mode":
+            if name in ("mode", "canary"):
                 continue
             for value in (field["minimum"], field["default"], field["maximum"]):
                 VALIDATOR.validate({"mode": "manual", name: value})
             for value in (field["minimum"] - 1, field["maximum"] + 1, None, True, 1.5):
                 self.assertFalse(VALIDATOR.is_valid({"mode": "manual", name: value}), (name, value))
+
+    def test_canary_capacity_is_optional_and_closed(self):
+        VALIDATOR.validate({"mode": "manual", "canary": {}})
+        for value in (None, [], {"healthy": True}, {"windows": 0}, {"windows": 65}):
+            self.assertFalse(VALIDATOR.is_valid({"mode": "manual", "canary": value}), value)
+        for name, field in SCHEMA["properties"]["canary"]["properties"].items():
+            for value in (field["minimum"], field["default"], field["maximum"]):
+                VALIDATOR.validate({"mode": "manual", "canary": {name: value}})
+            for value in (field["minimum"] - 1, field["maximum"] + 1, None, True, 1.5):
+                self.assertFalse(VALIDATOR.is_valid({"mode": "manual", "canary": {name: value}}))
 
     def test_operator_example(self):
         guide = (ROOT / "docs/reference/standalone-node.md").read_text(encoding="utf-8")

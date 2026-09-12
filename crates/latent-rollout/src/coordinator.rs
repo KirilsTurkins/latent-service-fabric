@@ -36,6 +36,7 @@ pub(crate) struct Owner {
     pub shared: Arc<Shared>,
     audit: AuditHandle,
     store_limits: RolloutLimits,
+    canary: Option<latent_telemetry::BoundedPhase2CanaryOutcomeWindow>,
 }
 impl Owner {
     fn close(&self) {
@@ -77,12 +78,15 @@ impl RolloutCoordinator {
             completed: AtomicBool::new(false),
             shutdown: tokio::sync::Notify::new(),
             stats: Mutex::default(),
+            canary_windows: std::sync::atomic::AtomicUsize::new(0),
+            canary_bytes: std::sync::atomic::AtomicUsize::new(0),
         });
         let owner = Arc::new(Owner {
             sender: Mutex::new(Some(sender)),
             shared: Arc::clone(&shared),
             audit: audit.clone(),
             store_limits,
+            canary: repository.canary_hub().cloned(),
         });
         let (started, startup) = oneshot::channel();
         let clock = runtime.clone();

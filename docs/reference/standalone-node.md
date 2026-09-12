@@ -468,13 +468,58 @@ Shutdown stops rollout admission and joins this worker before joining audit;
 a timed-out coordinator is an unclean shutdown and keeps its actual work owned.
 
 Manual Start installs the first declared stage. Advance applies exactly the
-next stage. Pause and Abort freeze routes without refreshing execution grants;
+next stage for a plan without a canary policy. Pause and Abort freeze routes without refreshing execution grants;
 Abort is terminal and does not restore a previous release. Resume recompiles
 the same weights with current release eligibility into a new route generation.
 Restart never automatically advances a stage. See the
 [rollout RPC contract](management-services.md#manual-rollout-control) for exact
-tenant scope, revision checks, receipts and uncertain outcomes. Automatic canary
-promotion and rollback are later extensions.
+tenant scope, revision checks, receipts and uncertain outcomes. Automatic
+promotion and rollback remain separate features.
+
+### Optional canary observations
+
+Add a `canary` object inside `rollouts` to enable bounded observations for explicit
+canary policies. Commands remain operator-triggered under `mode: "manual"`.
+These settings declare resource ceilings; each rollout supplies its own health
+thresholds and observation duration.
+
+```json
+{
+  "canary": {
+    "windows": 16,
+    "samplesPerWindow": 10000,
+    "totalSamples": 100000,
+    "liveSamples": 4096,
+    "snapshotOwners": 4
+  }
+}
+```
+
+The hard ceilings are 64 retained windows, 1,000,000 samples per window,
+16,000,000 total samples, 65,536 live samples and 16 snapshot owners. Every count
+is positive, and `totalSamples` must cover `samplesPerWindow`. Retired windows
+remain charged while samples or snapshots retain them. Pressure can prevent a
+fresh window even when the configured active-rollout limit has room.
+
+One shared hub supplies both the rollout coordinator and the actual activation
+manager, using the same trusted monotonic clock. It adds no worker, timer or
+retained guest instance. No window is created by status/list reads. Evaluate may
+start a missing interval and report Collecting; Promote evaluates the owner's
+sealed observations before changing weights. A returned Healthy report is not
+a reusable permission token.
+
+Inventory reports the bounded window, retained-sample, live-sample and snapshot
+owner counts. Shutdown retires windows through the existing coordinator and
+reports any remaining owners; retained observations cannot be refunded early or
+reported as a clean drain.
+
+Omitting `canary` keeps manual rollout commands available. Existing canary plans
+remain inspectable and can be paused or aborted; Resume refreshes the same weights
+with observation unavailable. New canary plans and promotion require the configured
+hub. Omitting `rollouts` continues to disable every rollout RPC while preserving
+durable history. Restart discards elapsed intervals and healthy observations;
+an explicit evaluation starts a fresh complete interval. An unavailable window
+after a committed Start/Resume/Promote is reported separately from its receipt.
 
 ## Transport, readiness and pressure
 

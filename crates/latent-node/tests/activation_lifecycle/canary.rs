@@ -14,6 +14,7 @@ use super::support::{finish, pending, tenant, Harness};
 
 fn spec() -> CanaryWindowSpec {
     CanaryWindowSpec {
+        control_digest: None,
         identity: CanaryWindowIdentity {
             tenant: tenant(),
             service: ServiceId("echo".into()),

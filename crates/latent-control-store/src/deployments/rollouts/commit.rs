@@ -82,6 +82,14 @@ impl DirectoryDeploymentRepository {
         if old.map_or(0, |r| r.status.revision) != receipt.expected_revision {
             return Err(conflict());
         }
+        if let Some(proof) = prepared.canary_proof.as_ref() {
+            let decision = self.canary_decision(&current, old.ok_or_else(conflict)?, proof)?;
+            if receipt.canary_decision.as_ref() != Some(&decision) {
+                return Err(conflict());
+            }
+        } else if receipt.canary_decision.is_some() {
+            return Err(conflict());
+        }
         if prepared.state_only {
             if !Arc::ptr_eq(&prepared.next_routes, &current.routes) {
                 return Err(conflict());

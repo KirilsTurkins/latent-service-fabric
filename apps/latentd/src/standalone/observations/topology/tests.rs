@@ -20,6 +20,7 @@ fn fixture(compiler_workers_live: u64) -> impl Iterator<Item = Row> {
             cells: 4,
             instances: 4,
             cleanup_slots: 68,
+            canary: None,
         },
         Observed {
             invocation_threads: 2,

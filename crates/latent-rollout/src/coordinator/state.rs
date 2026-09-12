@@ -15,6 +15,8 @@ pub(crate) struct Shared {
     pub live: AtomicBool,
     pub completed: AtomicBool,
     pub shutdown: tokio::sync::Notify,
+    pub canary_windows: std::sync::atomic::AtomicUsize,
+    pub canary_bytes: std::sync::atomic::AtomicUsize,
     pub(super) stats: Mutex<Stats>,
 }
 #[derive(Default)]
@@ -98,6 +100,8 @@ impl Shared {
             worker_completed: self.completed.load(Ordering::Acquire),
             closed: self.closed.load(Ordering::Acquire),
             failed: self.failed.load(Ordering::Acquire),
+            canary_windows: self.canary_windows.load(Ordering::Acquire),
+            canary_metadata_bytes: self.canary_bytes.load(Ordering::Acquire),
         }
     }
 }

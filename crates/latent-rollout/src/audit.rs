@@ -1,4 +1,5 @@
 use crate::{invalid, Result};
+pub(crate) mod canary;
 use latent_artifacts::{ReleaseActorKind, ReleaseAuditAck, ReleaseAuditStatus};
 use latent_audit::{
     AuditActorIdentity, AuditActorKind, AuditControlAction, AuditHandle, AuditIdentities,
@@ -25,16 +26,27 @@ pub(crate) fn digest(receipt: &RolloutOperationReceipt) -> Result<ArtifactBlobDi
         .map_err(|_| invalid("rollout-receipt-digest"))
 }
 fn identities(receipt: &RolloutOperationReceipt) -> AuditIdentities {
-    AuditIdentities {
+    let mut identities = AuditIdentities {
         rollout: Some(receipt.rollout_id.0.clone()),
         rollout_revision: Some(receipt.revision),
         rollout_step: Some(receipt.step),
         state_version: Some(receipt.state_version),
         route_generation: Some(receipt.route_generation),
         ..AuditIdentities::default()
+    };
+    if let Some(decision) = &receipt.canary_decision {
+        identities.canary_window_epoch = Some(decision.window_epoch);
+        identities.canary_evidence_digest = Some(decision.evidence_digest.clone());
+        identities.policies.push(latent_audit::AuditPolicyIdentity {
+            role: latent_audit::AuditPolicyRole::Delivery,
+            scope: receipt.rollout_id.0.clone(),
+            generation: 1,
+            digest: decision.policy_digest.clone(),
+        });
     }
+    identities
 }
-fn actor(kind: ReleaseActorKind) -> AuditActorKind {
+pub(crate) fn actor(kind: ReleaseActorKind) -> AuditActorKind {
     match kind {
         ReleaseActorKind::User => AuditActorKind::User,
         ReleaseActorKind::Service => AuditActorKind::Service,
@@ -58,7 +70,7 @@ pub(crate) fn attempt(
         operation_id: receipt.operation_id.clone(),
         request_digest: receipt.request_digest.clone(),
         preview_receipt_digest: Some(digest(receipt)?),
-        action: AuditControlAction::Rollout,
+        action: action(receipt),
         identities: identities(receipt),
         replay,
         expected_generation: None,
@@ -68,7 +80,7 @@ pub(crate) fn attempt(
     })
 }
 pub(crate) fn matches(attempt: &AuditOperationAttempt, receipt: &RolloutOperationReceipt) -> bool {
-    attempt.action == AuditControlAction::Rollout
+    attempt.action == action(receipt)
         && attempt.scope == AuditScope::Tenant(receipt.tenant.clone())
         && attempt.operation_id == receipt.operation_id
         && attempt.request_digest == receipt.request_digest
@@ -87,6 +99,7 @@ pub(crate) fn conclusion(
 ) -> AuditOperationConclusion {
     let known = receipt.filter(|receipt| matches(attempt, receipt));
     AuditOperationConclusion {
+        canary_decision: None,
         result: if known.is_some() {
             AuditOperationResult::Committed
         } else {
@@ -118,6 +131,7 @@ pub(crate) fn observe(audit: &AuditHandle, receipt: &RolloutOperationReceipt) {
     let kind = match receipt.action {
         RolloutAction::Start => Kind::RolloutStarted,
         RolloutAction::Advance | RolloutAction::Resume => Kind::RolloutStageChanged,
+        RolloutAction::Promote => Kind::PromotionAccepted,
         RolloutAction::Pause => Kind::RolloutPaused,
         RolloutAction::Abort => Kind::RolloutAborted,
     };
@@ -148,7 +162,10 @@ pub async fn reconcile_rollout_audit(
         return Err(crate::deadline());
     }
     for pending in audit.pending_attempts()? {
-        if pending.attempt.action != AuditControlAction::Rollout {
+        if !matches!(
+            pending.attempt.action,
+            AuditControlAction::Rollout | AuditControlAction::Promotion
+        ) {
             continue;
         }
         if Instant::now() >= expires {
@@ -166,7 +183,13 @@ pub async fn reconcile_rollout_audit(
             RolloutOperationLookup::Found(receipt) => Some(receipt),
             _ => None,
         };
-        let terminal = conclusion(&pending.attempt, receipt);
+        let mut terminal = conclusion(&pending.attempt, receipt);
+        if let Some(receipt) = receipt.filter(|receipt| matches(&pending.attempt, receipt)) {
+            match canary::from_receipt(repository, receipt) {
+                Ok(summary) => terminal.canary_decision = summary,
+                Err(_) => terminal = conclusion(&pending.attempt, None),
+            }
+        }
         let wait = audit.reconcile(pending.sequence, terminal)?.wait();
         tokio::time::timeout_at(expires.into(), wait)
             .await
@@ -176,4 +199,12 @@ pub async fn reconcile_rollout_audit(
         }
     }
     Ok(())
+}
+
+fn action(receipt: &RolloutOperationReceipt) -> AuditControlAction {
+    if receipt.action == RolloutAction::Promote {
+        AuditControlAction::Promotion
+    } else {
+        AuditControlAction::Rollout
+    }
 }

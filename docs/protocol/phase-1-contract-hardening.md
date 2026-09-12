@@ -294,6 +294,20 @@ Absent fields retain historical audit canonical bytes. The descriptor golden
 records the new service and fields without changing prior numbers or signatures;
 see [rollout semantics](../phase-2-rollouts.md).
 
+### Controlled canary promotion (#154)
+
+The rollout service adds an explicit optional Start policy, a distinct Promote
+command and an authenticated Evaluate RPC. Existing command tags and field numbers
+remain unchanged. Missing policy preserves manual rollout semantics; zero-valid
+thresholds require scalar presence. Diagnostic reports preserve candidate and
+baseline counts, fixed latency buckets and loss dispositions. Mutation responses
+separate durable receipts from transient observation availability.
+
+Audit conclusions gain an optional closed decision summary and typed canary
+identities. Absent additions preserve legacy canonical records. Reports and
+protobuf messages cannot construct the private observation input accepted by
+catalog promotion. See [canary promotion](../phase-2-canary-promotion.md).
+
 Phase 0 gate #25 and the executable build foundation in #2 are complete. This
 work is reconciled with the finalized Phase 0 retained/replaced classification
 and with `development`'s generated Rust, Component Model, and RPC ownership.

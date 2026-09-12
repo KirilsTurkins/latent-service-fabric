@@ -19,7 +19,7 @@ fn decoded_control_bindings_fail_closed_even_with_recomputed_outer_checksum() {
                 data.rows[0].status.plan_digest =
                     "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                         .parse()
-                        .unwrap()
+                        .unwrap();
             }
             1 => data.rows[0].status.state_version = u64::MAX,
             2 => data.receipts[0].sequence += 1,
@@ -109,6 +109,7 @@ fn pages_reject_other_filter_new_transaction_and_reopened_owner() {
                 },
                 candidate,
                 candidate_weights: vec![2500, 10000],
+                canary_policy: None,
             },
         },
     );

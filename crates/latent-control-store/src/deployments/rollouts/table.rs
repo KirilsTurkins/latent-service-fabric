@@ -262,15 +262,16 @@ pub(in crate::deployments) fn receipt_hash(
 }
 pub(in crate::deployments) fn plan_hash(row: &StoredRollout) -> Result<ArtifactBlobDigest> {
     let s = &row.status;
-    Ok(codec::hash(&codec::encode(
-        &json::json!({
-            "version":1,"tenant":s.tenant.0,"rollout":s.id.0,
-            "base":row.base_manifest,"candidate":row.candidate_manifest,
-            "weights":s.candidate_weights,"basePackage":s.base.package.as_ref().map(latent_core::PackageDigest::as_str),
-            "candidatePackage":s.candidate.package.as_ref().map(latent_core::PackageDigest::as_str)
-        }),
-        MAX_ROW_BYTES,
-    )?))
+    let mut value = json::json!({
+        "version":1,"tenant":s.tenant.0,"rollout":s.id.0,
+        "base":row.base_manifest,"candidate":row.candidate_manifest,
+        "weights":s.candidate_weights,"basePackage":s.base.package.as_ref().map(latent_core::PackageDigest::as_str),
+        "candidatePackage":s.candidate.package.as_ref().map(latent_core::PackageDigest::as_str)
+    });
+    if let Some(policy) = s.canary_policy {
+        value["canaryPolicy"] = json::to_value(policy).map_err(|_| corrupt())?;
+    }
+    Ok(codec::hash(&codec::encode(&value, MAX_ROW_BYTES)?))
 }
 #[expect(
     clippy::too_many_lines,
@@ -294,6 +295,12 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         crate::rollouts::validation::token(&s.tenant.0, 256)?;
         crate::rollouts::validation::token(&s.service.0, 256)?;
         crate::rollouts::validation::weights(&s.candidate_weights, limits.maximum_stages)?;
+        if let Some(policy) = s.canary_policy {
+            policy.validate().map_err(|_| corrupt())?;
+            if s.candidate_weights.len() < 2 {
+                return Err(corrupt());
+            }
+        }
         if s.revision == 0
             || s.state_version == 0
             || s.current_step as usize >= s.candidate_weights.len()
@@ -424,7 +431,7 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
                         && r.step == 0
                         && matches!(r.state, RolloutState::Running | RolloutState::Completed)
                 }
-                RolloutAction::Advance => {
+                RolloutAction::Advance | RolloutAction::Promote => {
                     r.expected_revision > 0
                         && r.step > 0
                         && matches!(r.state, RolloutState::Running | RolloutState::Completed)
@@ -437,6 +444,18 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
             }
         {
             return Err(corrupt());
+        }
+        match (
+            r.action,
+            row.status.canary_policy.as_ref(),
+            r.canary_decision.as_ref(),
+        ) {
+            (RolloutAction::Promote, Some(policy), Some(decision)) => decision.validate(policy)?,
+            (RolloutAction::Promote, _, _) | (RolloutAction::Advance, Some(_), _) => {
+                return Err(corrupt())
+            }
+            (_, _, Some(_)) => return Err(corrupt()),
+            (_, _, None) => {}
         }
         r.actor.validate()?;
         crate::rollouts::validation::token(&r.operation_id, 128)?;

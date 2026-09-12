@@ -30,6 +30,7 @@ pub(super) fn receipt() -> RolloutOperationReceipt {
         plan_digest: digest.clone(),
         completed_at_unix_millis: 1,
         receipt_digest: digest,
+        canary_decision: None,
     }
 }
 fn snapshot_journal(from: &std::path::Path, to: &std::path::Path) {

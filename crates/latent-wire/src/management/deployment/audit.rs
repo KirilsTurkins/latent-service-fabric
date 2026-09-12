@@ -228,6 +228,7 @@ impl DeploymentAudit {
         };
         let conclusion = actual.map_or_else(
             || AuditOperationConclusion {
+                canary_decision: None,
                 result: AuditOperationResult::Unknown,
                 reason: AuditReason::ReceiptUnavailable,
                 receipt_digest: None,
@@ -236,6 +237,7 @@ impl DeploymentAudit {
                 occurred_at_unix_millis: now(),
             },
             |(deployment, generation)| AuditOperationConclusion {
+                canary_decision: None,
                 result: AuditOperationResult::Committed,
                 reason: AuditReason::Committed,
                 receipt_digest: Some(digest::receipt(deployment, generation, self.delete)),

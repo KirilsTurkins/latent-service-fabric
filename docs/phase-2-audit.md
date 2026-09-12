@@ -29,7 +29,7 @@ Its closed payload is one of three forms:
 | --- | --- |
 | `AuditObservation` | A diagnostic result with a fixed event kind, outcome, reason and optional cache kind. Acceptance queues it; it does not acknowledge durability. |
 | `AuditOperationAttempt` | An attributed control operation with operation ID, exact request digest, action, expected generations and explicit replay flag. |
-| `AuditOperationConclusion` | A terminal result linked to its attempt sequence: `Committed`, `Rejected`, `NotStarted` or `Unknown`, with a receipt digest only where established. |
+| `AuditOperationConclusion` | A terminal result linked to its attempt sequence: `Committed`, `Rejected`, `NotStarted` or `Unknown`, with a receipt digest only where established and an optional typed canary decision summary. |
 
 Tenant and node scope are distinct. Management actors come from the authenticated
 principal; internal producers use fixed host actors. Identifiers remain separate:
@@ -201,9 +201,12 @@ or worker is added to Invoke or the final activation-start gate.
 
 [Canary outcome observation](phase-2-canary-observation.md) separately collects
 bounded, attributable activation outcomes. It does not emit one durable record
-per invocation. Issues 153–155 supply rollout coordination, canary decisions and
-promotion/rollback integrations; the existing event vocabulary and identity
-fields do not imply those control features already execute.
+per invocation. The [rollout coordinator](phase-2-rollouts.md) uses exact retained
+receipts for progression and startup reconciliation. [Canary promotion](phase-2-canary-promotion.md)
+records its declared thresholds, selected/admitted-terminal and success/failure/slow
+counts, fixed verdict and reason. Its typed identities retain the policy digest,
+window epoch and evidence digest where available. Healthy evaluation alone never
+emits a committed promotion result. Rollback integration remains ticket #155.
 
 Focused tests exercise transaction cutpoints, missing acknowledged history,
 private paths, full-record capacity, exact replay, post-commit sink failure,

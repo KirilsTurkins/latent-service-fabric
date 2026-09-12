@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, Weak};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use latent_core::{ActivationClock, PlatformError, PlatformErrorCode, SystemActivationClock};
 
@@ -20,6 +20,9 @@ pub(super) struct Hub {
     pub snapshots: AtomicUsize,
     pub loss_epoch: AtomicU64,
     pub exhausted: AtomicBool,
+    /// Entered capture attempts, including a failed registry acquisition whose
+    /// loss publication has not finished. Live guards bound this to actual calls.
+    pub attempts: AtomicUsize,
 }
 
 pub(super) struct Registry {
@@ -44,7 +47,9 @@ pub(super) struct Window {
     pub epoch: u64,
     pub loss_epoch: u64,
     pub deadline: Instant,
+    pub started: Instant,
     pub closed: AtomicBool,
+    pub early_closed: AtomicBool,
     pub retired: AtomicBool,
     pub lost: AtomicBool,
     pub live: AtomicUsize,
@@ -98,12 +103,17 @@ impl BoundedPhase2CanaryOutcomeWindow {
             snapshots: AtomicUsize::new(0),
             loss_epoch: AtomicU64::new(0),
             exhausted: AtomicBool::new(false),
+            attempts: AtomicUsize::new(0),
         })))
     }
 
     /// Control only. At most one open window may observe a tenant/service pair.
     pub fn register(&self, spec: &CanaryWindowSpec) -> Result<CanaryWindow, PlatformError> {
         let mut registry = self.0.registry.try_lock().map_err(|_| busy())?;
+        // Establish the loss baseline before the interval's start. A producer
+        // failing this held lock during registration cannot disappear into a
+        // newer baseline sampled after its failed in-window capture.
+        let loss_epoch = self.0.loss_epoch.load(Ordering::Acquire);
         let available = registry
             .slots
             .iter()
@@ -132,9 +142,11 @@ impl BoundedPhase2CanaryOutcomeWindow {
             hub: Arc::clone(&self.0),
             spec,
             epoch,
-            loss_epoch: self.0.loss_epoch.load(Ordering::Acquire),
+            loss_epoch,
             deadline,
+            started: now,
             closed: AtomicBool::new(false),
+            early_closed: AtomicBool::new(false),
             retired: AtomicBool::new(false),
             lost: AtomicBool::new(false),
             live: AtomicUsize::new(0),
@@ -155,6 +167,16 @@ impl BoundedPhase2CanaryOutcomeWindow {
     #[must_use]
     pub fn capture_handle(&self) -> CanaryCapture {
         CanaryCapture(Arc::clone(&self.0))
+    }
+
+    #[must_use]
+    pub fn same_owner(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+
+    #[must_use]
+    pub fn config(&self) -> Phase2CanaryOutcomeWindowConfig {
+        self.0.config
     }
 
     pub fn snapshot(&self) -> Result<Phase2CanaryWindowSnapshot, PlatformError> {
@@ -178,12 +200,25 @@ impl CanaryWindow {
     /// Stop memberships without waiting for live samples. Terminal owners remain charged.
     pub fn close(&self) -> Result<(), PlatformError> {
         let _registry = self.0.hub.registry.try_lock().map_err(|_| busy())?;
+        if self.0.hub.clock.monotonic_now() < self.0.deadline {
+            self.0.early_closed.store(true, Ordering::Release);
+        }
         self.0.closed.store(true, Ordering::Release);
         Ok(())
     }
 
     pub fn snapshot(&self, required_samples: usize) -> Result<CanaryWindowSnapshot, PlatformError> {
         CanaryWindowSnapshot::capture(&self.0, required_samples)
+    }
+
+    #[must_use]
+    pub fn elapsed(&self) -> Duration {
+        self.0
+            .hub
+            .clock
+            .monotonic_now()
+            .saturating_duration_since(self.0.started)
+            .min(self.0.spec.duration)
     }
 
     /// Owner Drop also closes capture; retained samples/snapshots keep the slot charged.
