@@ -1,5 +1,6 @@
 use crate::{invalid, Result};
 pub(crate) mod canary;
+mod pending;
 use latent_artifacts::{ReleaseActorKind, ReleaseAuditAck, ReleaseAuditStatus};
 use latent_audit::{
     AuditActorIdentity, AuditActorKind, AuditControlAction, AuditHandle, AuditIdentities,
@@ -161,7 +162,7 @@ pub async fn reconcile_rollout_audit(
     if Instant::now() >= expires {
         return Err(crate::deadline());
     }
-    for pending in audit.pending_attempts()? {
+    for pending in pending::read(audit, expires).await? {
         if !matches!(
             pending.attempt.action,
             AuditControlAction::Rollout | AuditControlAction::Promotion
