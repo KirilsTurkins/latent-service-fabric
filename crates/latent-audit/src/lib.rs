@@ -2,6 +2,13 @@
 
 #![forbid(unsafe_code)]
 
+mod phase2;
+
+pub use phase2::{
+    BoundedPhase2AuditJournal, Phase2AuditCursor, Phase2AuditEvent, Phase2AuditEventKind,
+    Phase2AuditIdentity, Phase2AuditLimits, Phase2AuditPage, Phase2AuditSnapshot,
+};
+
 use latent_core::{AuditEventId, BoxFuture, Metadata, PlatformError, TenantId};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
