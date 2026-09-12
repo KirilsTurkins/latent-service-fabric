@@ -59,6 +59,7 @@ pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentiti
         canary_evidence_digest: value
             .canary_evidence_digest
             .map(latent_core::ArtifactBlobDigest::into_string),
+        rollback_target_generation: value.rollback_target_generation.map(|value| value.0),
     }
 }
 pub(super) fn record(value: domain::AuditStoredRecord) -> Result<proto::Phase2AuditRecord, Status> {
@@ -91,6 +92,9 @@ pub(super) fn record(value: domain::AuditStoredRecord) -> Result<proto::Phase2Au
                 replay: attempt.replay,
                 expected_deployment_generation: attempt.expected_deployment_generation,
                 expected_rollout_revision: attempt.expected_rollout_revision,
+                expected_rollback_target_generation: attempt
+                    .expected_rollback_target_generation
+                    .map(|value| value.0),
                 preview_receipt_digest: attempt
                     .preview_receipt_digest
                     .map(latent_core::ArtifactBlobDigest::into_string),

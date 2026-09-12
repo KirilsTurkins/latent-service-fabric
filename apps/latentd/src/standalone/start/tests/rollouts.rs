@@ -1,6 +1,7 @@
 mod canary;
 mod fixtures;
 mod recovery;
+mod rollback;
 use super::*;
 use latent_audit::AuditLimits;
 use latent_control_store::rollouts::RolloutLimits;

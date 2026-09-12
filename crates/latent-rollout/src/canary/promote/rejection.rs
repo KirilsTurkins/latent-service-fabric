@@ -54,6 +54,7 @@ pub(super) async fn run(
         });
     }
     let attempt = AuditOperationAttempt {
+        expected_rollback_target_generation: None,
         scope: AuditScope::Tenant(context.tenant.clone()),
         actor: AuditActorIdentity {
             kind: audit::actor(context.actor.kind),
@@ -79,17 +80,7 @@ pub(super) async fn run(
         replay: false,
         occurred_at_unix_millis: audit::now(),
     };
-    audit_handle.preflight_conclusion(&attempt, &terminal)?;
-    let reservation = audit_handle.try_reserve_critical(&attempt)?;
-    job.check(shared)?;
-    let attempt = reservation.begin().wait().await?;
-    let sequence = attempt.sequence();
-    job.control.set_ack(audit::ack(sequence, false));
-    // No catalog mutation is attempted. This known rejection remains true even
-    // if the client cancels while its accepted audit write is completing.
-    let persisted = attempt.finish(terminal).wait().await.is_ok();
-    job.control.set_ack(audit::ack(sequence, persisted));
-    Err(failure)
+    crate::worker::rejection::finish(audit_handle, shared, job, attempt, terminal, failure).await
 }
 fn classify(
     failure: PlatformError,

@@ -33,6 +33,10 @@ fn identities(receipt: &RolloutOperationReceipt) -> AuditIdentities {
         rollout_step: Some(receipt.step),
         state_version: Some(receipt.state_version),
         route_generation: Some(receipt.route_generation),
+        rollback_target_generation: receipt
+            .rollback_target
+            .as_ref()
+            .map(|target| target.historical_route_generation),
         ..AuditIdentities::default()
     };
     if let Some(decision) = &receipt.canary_decision {
@@ -63,6 +67,10 @@ pub(crate) fn attempt(
     replay: bool,
 ) -> Result<AuditOperationAttempt> {
     Ok(AuditOperationAttempt {
+        expected_rollback_target_generation: receipt
+            .rollback_target
+            .as_ref()
+            .map(|target| target.historical_route_generation),
         scope: AuditScope::Tenant(receipt.tenant.clone()),
         actor: AuditActorIdentity {
             kind: actor(receipt.actor.kind),
@@ -91,6 +99,11 @@ pub(crate) fn matches(attempt: &AuditOperationAttempt, receipt: &RolloutOperatio
         && attempt.actor.subject == receipt.actor.subject
         && attempt.identities == identities(receipt)
         && attempt.expected_rollout_revision == Some(receipt.expected_revision)
+        && attempt.expected_rollback_target_generation
+            == receipt
+                .rollback_target
+                .as_ref()
+                .map(|target| target.historical_route_generation)
         && attempt.expected_generation.is_none()
         && attempt.expected_deployment_generation.is_none()
 }
@@ -133,6 +146,7 @@ pub(crate) fn observe(audit: &AuditHandle, receipt: &RolloutOperationReceipt) {
         RolloutAction::Start => Kind::RolloutStarted,
         RolloutAction::Advance | RolloutAction::Resume => Kind::RolloutStageChanged,
         RolloutAction::Promote => Kind::PromotionAccepted,
+        RolloutAction::Rollback => Kind::RollbackAccepted,
         RolloutAction::Pause => Kind::RolloutPaused,
         RolloutAction::Abort => Kind::RolloutAborted,
     };
@@ -165,7 +179,9 @@ pub async fn reconcile_rollout_audit(
     for pending in pending::read(audit, expires).await? {
         if !matches!(
             pending.attempt.action,
-            AuditControlAction::Rollout | AuditControlAction::Promotion
+            AuditControlAction::Rollout
+                | AuditControlAction::Promotion
+                | AuditControlAction::Rollback
         ) {
             continue;
         }
@@ -203,9 +219,13 @@ pub async fn reconcile_rollout_audit(
 }
 
 fn action(receipt: &RolloutOperationReceipt) -> AuditControlAction {
-    if receipt.action == RolloutAction::Promote {
-        AuditControlAction::Promotion
-    } else {
-        AuditControlAction::Rollout
+    match receipt.action {
+        RolloutAction::Promote => AuditControlAction::Promotion,
+        RolloutAction::Rollback => AuditControlAction::Rollback,
+        RolloutAction::Start
+        | RolloutAction::Advance
+        | RolloutAction::Pause
+        | RolloutAction::Resume
+        | RolloutAction::Abort => AuditControlAction::Rollout,
     }
 }

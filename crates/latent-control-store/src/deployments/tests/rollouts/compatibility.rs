@@ -59,7 +59,7 @@ fn unknown_named_types_and_breaking_local_shapes_never_create_a_rollout_or_route
     }
 }
 
-fn package(changed_shape: bool, changed_bytes: bool) -> PackageBundle {
+pub(super) fn package(changed_shape: bool, changed_bytes: bool) -> PackageBundle {
     let mut input = packages::capsule(packages::component::Options {
         signed_record_field: changed_shape,
         ..Default::default()
@@ -102,7 +102,7 @@ fn package(changed_shape: bool, changed_bytes: bool) -> PackageBundle {
     });
     build_package(input, PackagingLimits::default()).unwrap()
 }
-fn artifact_for(bundle: &PackageBundle) -> CapsuleArtifact {
+pub(super) fn artifact_for(bundle: &PackageBundle) -> CapsuleArtifact {
     let layer = |path: &str| {
         bundle
             .layers()
@@ -133,7 +133,7 @@ fn artifact_for(bundle: &PackageBundle) -> CapsuleArtifact {
         component_bytes,
     }
 }
-fn upload(bundle: &PackageBundle) -> PackageAdmissionUpload {
+pub(super) fn upload(bundle: &PackageBundle) -> PackageAdmissionUpload {
     let raw = packages::raw(bundle);
     PackageAdmissionUpload {
         manifest: raw.manifest,

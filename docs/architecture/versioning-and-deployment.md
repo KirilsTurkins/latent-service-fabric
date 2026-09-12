@@ -75,8 +75,11 @@ release authority at the execution fence. No stage creates a continuously runnin
 service instance. [Canary promotion](../phase-2-canary-promotion.md) requires an
 explicit policy and a full, drained observation window bound to the exact catalog
 owner, rollout revision and compiled cohort. The catalog rechecks the evidence
-and current release eligibility before publishing the next stage. Explicit
-rollback is the remaining separate Phase 2 integration ticket.
+and current release eligibility before publishing the next stage.
+[Explicit rollback](../phase-2-rollback.md) restores the plan-bound original base
+through a new publication generation, after current target eligibility and
+candidate-to-base compatibility checks. It records the historical target
+separately, preserves invocation pins and conflicts with intervening cohort edits.
 
 ## Coexistence
 

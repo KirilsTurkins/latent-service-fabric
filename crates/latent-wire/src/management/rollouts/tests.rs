@@ -117,7 +117,29 @@ fn all_manual_states_round_trip_without_an_automatic_or_pending_state() {
         domain::RolloutState::Completed,
         domain::RolloutState::Aborted,
         domain::RolloutState::Conflicted,
+        domain::RolloutState::RolledBack,
     ] {
         assert_eq!(enums::state_input(enums::state(value)).unwrap(), value);
+    }
+}
+
+#[test]
+fn rollback_requires_a_positive_target_selector_without_narrowing() {
+    let mut request = proto::ChangeRolloutRequest {
+        id: "rollout".into(),
+        operation: Some(proto::RolloutOperationPrecondition {
+            operation_id: "rollback".into(),
+            expected_revision: Some(1),
+        }),
+        command: None,
+    };
+    for (target_generation, valid) in [(0, false), (1, true), (u64::MAX, true)] {
+        request.command = Some(proto::change_rollout_request::Command::Rollback(
+            proto::RollbackRollout { target_generation },
+        ));
+        assert_eq!(
+            validation::change(&request, &ManagementLimits::default()).is_ok(),
+            valid
+        );
     }
 }

@@ -770,6 +770,15 @@
               "oneofIndex": 14,
               "proto3Optional": true,
               "type": "TYPE_STRING"
+            },
+            {
+              "jsonName": "rollbackTargetGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "rollback_target_generation",
+              "number": 17,
+              "oneofIndex": 15,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
             }
           ],
           "name": "AuditIdentities",
@@ -818,6 +827,9 @@
             },
             {
               "name": "_canary_evidence_digest"
+            },
+            {
+              "name": "_rollback_target_generation"
             }
           ]
         },
@@ -960,6 +972,15 @@
               "oneofIndex": 3,
               "proto3Optional": true,
               "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "expectedRollbackTargetGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "expected_rollback_target_generation",
+              "number": 11,
+              "oneofIndex": 4,
+              "proto3Optional": true,
+              "type": "TYPE_UINT64"
             }
           ],
           "name": "Phase2AuditAttempt",
@@ -975,6 +996,9 @@
             },
             {
               "name": "_expected_rollout_revision"
+            },
+            {
+              "name": "_expected_rollback_target_generation"
             }
           ]
         },
@@ -6279,6 +6303,10 @@
             {
               "name": "ROLLOUT_STATE_CONFLICTED",
               "number": 5
+            },
+            {
+              "name": "ROLLOUT_STATE_ROLLED_BACK",
+              "number": 6
             }
           ]
         },
@@ -6312,6 +6340,10 @@
             {
               "name": "ROLLOUT_ACTION_PROMOTE",
               "number": 6
+            },
+            {
+              "name": "ROLLOUT_ACTION_ROLLBACK",
+              "number": 7
             }
           ]
         },
@@ -6361,6 +6393,10 @@
             {
               "name": "ROLLOUT_REASON_OUTCOME_UNCERTAIN",
               "number": 10
+            },
+            {
+              "name": "ROLLOUT_REASON_ROLLBACK_APPLIED",
+              "number": 11
             }
           ]
         },
@@ -6589,6 +6625,15 @@
               "oneofIndex": 0,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.PromoteRollout"
+            },
+            {
+              "jsonName": "rollback",
+              "label": "LABEL_OPTIONAL",
+              "name": "rollback",
+              "number": 15,
+              "oneofIndex": 0,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RollbackRollout"
             }
           ],
           "name": "ChangeRolloutRequest",
@@ -6621,6 +6666,44 @@
             }
           ],
           "name": "PromoteRollout"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "targetGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "target_generation",
+              "number": 1,
+              "type": "TYPE_UINT64"
+            }
+          ],
+          "name": "RollbackRollout"
+        },
+        {
+          "field": [
+            {
+              "jsonName": "formatVersion",
+              "label": "LABEL_OPTIONAL",
+              "name": "format_version",
+              "number": 1,
+              "type": "TYPE_UINT32"
+            },
+            {
+              "jsonName": "historicalRouteGeneration",
+              "label": "LABEL_OPTIONAL",
+              "name": "historical_route_generation",
+              "number": 2,
+              "type": "TYPE_UINT64"
+            },
+            {
+              "jsonName": "manifestDigest",
+              "label": "LABEL_OPTIONAL",
+              "name": "manifest_digest",
+              "number": 3,
+              "type": "TYPE_STRING"
+            }
+          ],
+          "name": "RolloutRollbackTarget"
         },
         {
           "field": [
@@ -7484,6 +7567,14 @@
               "number": 19,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.RolloutCanaryPolicy"
+            },
+            {
+              "jsonName": "rollbackTarget",
+              "label": "LABEL_OPTIONAL",
+              "name": "rollback_target",
+              "number": 20,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutRollbackTarget"
             }
           ],
           "name": "RolloutStatus"
@@ -7621,6 +7712,14 @@
               "number": 18,
               "type": "TYPE_MESSAGE",
               "typeName": ".latent.control.v1.RolloutCanaryDecision"
+            },
+            {
+              "jsonName": "rollbackTarget",
+              "label": "LABEL_OPTIONAL",
+              "name": "rollback_target",
+              "number": 19,
+              "type": "TYPE_MESSAGE",
+              "typeName": ".latent.control.v1.RolloutRollbackTarget"
             }
           ],
           "name": "RolloutOperationReceipt"

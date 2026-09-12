@@ -4,6 +4,7 @@ mod commit;
 mod comparison;
 mod prepare;
 mod reads;
+mod rollback;
 pub(super) mod table;
 use super::{CompiledCatalog, PublicationView};
 use crate::rollouts::{capacity, Result, RolloutOperationReceipt};

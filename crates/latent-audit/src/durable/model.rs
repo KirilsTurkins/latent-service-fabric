@@ -144,6 +144,12 @@ pub struct AuditIdentities {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
+        with = "codec::generation"
+    )]
+    pub rollback_target_generation: Option<RouteGeneration>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
         deserialize_with = "codec::present"
     )]
     pub canary_window_epoch: Option<u64>,
@@ -236,6 +242,12 @@ pub struct AuditIdentities {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditOperationAttempt {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "codec::generation"
+    )]
+    pub expected_rollback_target_generation: Option<RouteGeneration>,
     pub scope: AuditScope,
     pub actor: AuditActorIdentity,
     pub operation_id: String,

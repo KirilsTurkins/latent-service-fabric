@@ -5,6 +5,7 @@ mod enums;
 mod lease;
 mod reads;
 mod response;
+mod rollback;
 mod validation;
 
 #[cfg(test)]
@@ -114,6 +115,10 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
             .map_err(|status| control_audit::status(status, audit_ack))
     }
 
+    #[allow(
+        clippy::too_many_lines,
+        reason = "bound and authenticate every mutation before dispatch to its single coordinator path"
+    )]
     async fn change_rollout(
         &self,
         mut request: Request<proto::ChangeRolloutRequest>,
@@ -139,6 +144,20 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
             )
             .await;
         }
+        if matches!(
+            request.get_ref().command,
+            Some(proto::change_rollout_request::Command::Rollback(_))
+        ) {
+            return rollback::change(
+                self,
+                request.into_inner(),
+                principal,
+                tenant,
+                limits,
+                deadline,
+            )
+            .await;
+        }
         let value = request.into_inner();
         let command = match value.command.expect("validated command") {
             proto::change_rollout_request::Command::Advance(value) => {
@@ -151,6 +170,9 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
             proto::change_rollout_request::Command::Abort(_) => domain::RolloutCommand::Abort,
             proto::change_rollout_request::Command::Promote(_) => {
                 unreachable!("promotion dispatched separately")
+            }
+            proto::change_rollout_request::Command::Rollback(_) => {
+                unreachable!("rollback dispatched separately")
             }
         };
         let domain = domain::RolloutRequest::Change {

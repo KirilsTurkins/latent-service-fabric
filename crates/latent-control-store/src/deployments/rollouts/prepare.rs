@@ -192,6 +192,11 @@ impl DirectoryDeploymentRepository {
                         updated_at_unix_millis: timestamp,
                         retained_operation_floor: previous.rollouts.floor(),
                         canary_policy: spec.canary_policy,
+                        rollback_target: Some(crate::rollouts::RolloutRollbackTarget {
+                            format_version: 1,
+                            historical_route_generation: previous.routes.generation,
+                            manifest_digest: codec::hash(base_manifest.as_bytes()),
+                        }),
                     },
                     base_manifest,
                     candidate_manifest,
@@ -259,6 +264,11 @@ impl DirectoryDeploymentRepository {
                         }
                         row.status.state = RolloutState::Aborted;
                     }
+                    RolloutCommand::Rollback { target_generation } => {
+                        super::rollback::validate_target(&previous, prior, *target_generation)?;
+                        row.status.state = RolloutState::RolledBack;
+                        row.status.reason = RolloutReason::RollbackApplied;
+                    }
                 }
                 row.status.revision = revision;
                 row.status.state_version = transaction;
@@ -276,6 +286,9 @@ impl DirectoryDeploymentRepository {
         let next_routes = if state_only {
             row.status.reason = RolloutReason::OperatorRequested;
             Arc::clone(&previous.routes)
+        } else if request.action() == RolloutAction::Rollback {
+            self.prepare_rollback_routes(&previous, &row, timestamp)
+                .await?
         } else {
             if matches!(request, RolloutRequest::Change { .. }) {
                 if !cohort_matches(&previous.routes, &row)? {
@@ -363,6 +376,11 @@ impl DirectoryDeploymentRepository {
             completed_at_unix_millis: timestamp,
             receipt_digest: codec::hash(b""),
             canary_decision,
+            rollback_target: if request.action() == RolloutAction::Rollback {
+                row.status.rollback_target.clone()
+            } else {
+                None
+            },
         };
         receipt.receipt_digest = table::receipt_hash(&receipt)?;
         receipt.canonical_bytes()?;
@@ -464,7 +482,11 @@ fn request_digest(request: &RolloutRequest) -> Result<ArtifactBlobDigest> {
             value
         }
         RolloutRequest::Change { command, .. } => {
-            json::json!({"nextStep":match command{RolloutCommand::Advance{next_step}|RolloutCommand::Promote{next_step}=>Some(*next_step),_=>None}})
+            if let RolloutCommand::Rollback { target_generation } = command {
+                json::json!({"targetGeneration":target_generation.0})
+            } else {
+                json::json!({"nextStep":match command{RolloutCommand::Advance{next_step}|RolloutCommand::Promote{next_step}=>Some(*next_step),_=>None}})
+            }
         }
     };
     Ok(codec::hash(&codec::encode(

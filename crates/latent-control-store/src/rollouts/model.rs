@@ -40,6 +40,7 @@ pub struct StartRolloutSpec {
 pub enum RolloutCommand {
     Advance { next_step: u32 },
     Promote { next_step: u32 },
+    Rollback { target_generation: RouteGeneration },
     Pause,
     Resume,
     Abort,
@@ -70,6 +71,7 @@ enumeration!(RolloutState {
     Paused,
     Completed,
     Aborted,
+    RolledBack,
     Conflicted
 });
 enumeration!(RolloutAction {
@@ -78,7 +80,8 @@ enumeration!(RolloutAction {
     Promote,
     Pause,
     Resume,
-    Abort
+    Abort,
+    Rollback
 });
 enumeration!(RolloutReason {
     OperatorRequested,
@@ -90,7 +93,8 @@ enumeration!(RolloutReason {
     IncompatibleRelease,
     ResourceLimit,
     RecoveryRequired,
-    OutcomeUncertain
+    OutcomeUncertain,
+    RollbackApplied
 });
 enumeration!(RolloutOperationOutcome { Committed });
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -158,6 +162,12 @@ pub struct RolloutStatus {
         deserialize_with = "super::canary::optional"
     )]
     pub canary_policy: Option<super::RolloutCanaryPolicy>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::canary::optional"
+    )]
+    pub rollback_target: Option<super::RolloutRollbackTarget>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(
@@ -194,6 +204,12 @@ pub struct RolloutOperationReceipt {
         deserialize_with = "super::canary::optional"
     )]
     pub canary_decision: Option<super::RolloutCanaryDecision>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "super::canary::optional"
+    )]
+    pub rollback_target: Option<super::RolloutRollbackTarget>,
 }
 impl RolloutOperationReceipt {
     pub fn canonical_bytes(&self) -> Result<Vec<u8>> {

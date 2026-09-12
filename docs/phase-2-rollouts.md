@@ -27,14 +27,18 @@ weight changes.
 | Pause | Running, exact revision | Becomes Paused; retains the existing executable route snapshot. |
 | Resume | Paused, exact revision | Rechecks and republishes the current stage with current release grants; becomes Running. |
 | Abort | Active rollout, exact revision | Becomes Aborted; preserves the currently installed routes. |
+| Rollback | Running, Paused, Completed or Aborted; exact revision, retained target and unchanged cohort | Restores the original base through a new generation; becomes RolledBack. |
 
 Abort does not restore the original deployment. Completed and aborted plans do
 not continue advancing. [Canary evaluation and promotion](phase-2-canary-promotion.md)
-add explicit declared acceptance criteria. Explicit rollback is the separate
-Phase 2 ticket #155.
+add explicit declared acceptance criteria. [Rollback](phase-2-rollback.md) restores
+the plan-bound original base after current eligibility and reverse compatibility
+checks; it preserves historical progress while replacing the installed cohort.
 
-Before any route-changing operation, the coordinator checks current tenant-scoped
-release eligibility and conservative old-to-candidate compatibility. Signed
+Before a forward route-changing operation, the coordinator checks current
+tenant-scoped release eligibility and conservative old-to-candidate compatibility.
+Rollback checks the replacement direction and independently authorizes its target;
+a historical read of the replaced candidate does not require renewed permission. Signed
 packages use exact retained package and WIT input from the artifact catalog.
 Reading historical input does not renew execution permission. Trusted-local
 artifacts without packages use bounded descriptor comparison and reject unknown
@@ -49,7 +53,7 @@ captured transaction and route generation at commit. A concurrent ordinary
 deployment edit therefore conflicts with an earlier prepared rollout, including
 when one of the operations changes only rollout state.
 
-Before advancing or resuming, the current managed cohort must still match the
+Before advancing, resuming or rolling back, the current managed cohort must still match the
 recorded deployment IDs, object versions and manifest digests. The coordinator
 does not overwrite an operator's intervening route changes. Pause and abort can
 still stop progress after cohort or trust changes, without obtaining new grants.

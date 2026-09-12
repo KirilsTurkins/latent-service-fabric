@@ -74,6 +74,7 @@ fn digest() -> ArtifactBlobDigest {
 }
 fn attempt() -> AuditOperationAttempt {
     AuditOperationAttempt {
+        expected_rollback_target_generation: None,
         scope: AuditScope::Tenant(TenantId("test".into())),
         actor: AuditActorIdentity {
             kind: AuditActorKind::Host,
@@ -118,6 +119,48 @@ fn expected_rollout_revision_is_distinct_from_other_generations() {
     assert_eq!(decoded, value);
     let mut json = serde_json::to_value(value).unwrap();
     json["expectedRolloutRevision"] = serde_json::Value::Null;
+    assert!(serde_json::from_value::<AuditOperationAttempt>(json).is_err());
+}
+
+#[test]
+fn rollback_target_precondition_and_validated_history_are_distinct_and_optional() {
+    let legacy = attempt();
+    let bytes = codec::encode(&legacy, 4096).unwrap();
+    assert!(!std::str::from_utf8(&bytes)
+        .unwrap()
+        .contains("rollbackTargetGeneration"));
+    assert_eq!(
+        codec::decode::<AuditOperationAttempt>(&bytes, 4096).unwrap(),
+        legacy
+    );
+    let mut value = legacy;
+    value.action = AuditControlAction::Rollback;
+    value.expected_generation = None;
+    value.expected_rollout_revision = Some(2);
+    value.expected_rollback_target_generation = Some(latent_core::RouteGeneration(1));
+    value.identities.rollout = Some("rollout".into());
+    value.identities.rollback_target_generation = Some(latent_core::RouteGeneration(1));
+    value.identities.route_generation = Some(latent_core::RouteGeneration(5));
+    codec::attempt(&value).unwrap();
+    let bytes = codec::encode(&value, 4096).unwrap();
+    assert_eq!(
+        codec::decode::<AuditOperationAttempt>(&bytes, 4096).unwrap(),
+        value
+    );
+    let mut wrong = value.clone();
+    wrong.action = AuditControlAction::Promotion;
+    assert!(codec::attempt(&wrong).is_err());
+    let mut wrong = value.clone();
+    wrong.expected_rollback_target_generation = Some(latent_core::RouteGeneration(0));
+    assert!(codec::attempt(&wrong).is_err());
+    let mut wrong = value.clone();
+    wrong.identities.rollout = None;
+    assert!(codec::attempt(&wrong).is_err());
+    let mut json = serde_json::to_value(&value).unwrap();
+    json["expectedRollbackTargetGeneration"] = serde_json::Value::Null;
+    assert!(serde_json::from_value::<AuditOperationAttempt>(json).is_err());
+    let mut json = serde_json::to_value(value).unwrap();
+    json["identities"]["rollbackTargetGeneration"] = serde_json::Value::Null;
     assert!(serde_json::from_value::<AuditOperationAttempt>(json).is_err());
 }
 fn query(scope: AuditScope) -> AuditQueryRequest {

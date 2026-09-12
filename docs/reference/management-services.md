@@ -90,8 +90,8 @@ the two releases must have different component identities and compatible exports
 Start atomically installs stage zero and its receipt. `ChangeRollout` requires
 a positive exact expected revision and an operation ID. Advance names exactly
 the next step. Pause and Abort only change control state, preserving the same
-route generation and grants even after trust or cohort drift. Abort is terminal
-and does not roll back. Resume recompiles the same weights with current grants
+route generation and grants even after trust or cohort drift. Abort ends forward
+progress and does not itself roll back. Resume recompiles the same weights with current grants
 and publishes a new route generation before returning to Running. A final
 10000-basis-point stage atomically removes the base deployment and completes
 the rollout. Plans without a canary policy retain these manual semantics.
@@ -128,6 +128,54 @@ ownership early. Audited errors reuse the bounded `latent-audit-status` and
 `latent-audit-attempt` metadata described below. Current rollout calls require
 a generated client; there is no rollout CLI command yet. See the node's
 [manual rollout settings](standalone-node.md#optional-manual-rollouts).
+
+### Restoring a retained rollout base
+
+New Starts capture one immutable `rollback_target` in status: format version 1,
+the route generation immediately before Start, and the digest of the exact
+original base deployment manifest. Read it with `GetRollout`; it is never an
+input to Start. Older plans without this field remain readable and replayable,
+but a fresh rollback reports target unavailable. No target is inferred from a
+receipt, current object generation or arbitrary historical route snapshot.
+
+`ChangeRollout.rollback` requires the usual operation ID and exact current
+revision, plus a positive `target_generation` equal to that stored target.
+For example, a status at revision 4 with historical target generation 12 permits
+this Protobuf JSON request:
+
+```json
+{
+  "id": "checkout-v2",
+  "operation": {"operationId": "restore-v1", "expectedRevision": "4"},
+  "rollback": {"targetGeneration": "12"}
+}
+```
+
+Rollback restores the original base weight, grants, resources and placement,
+removes the candidate, and publishes a fresh route generation atomically with
+the RolledBack state and receipt. Unrelated deployments remain. The receipt's
+`route_generation` is the new publication; its `rollback_target` identifies the
+older restoration origin. The step and candidate weights preserve historical
+progress and do not describe the restored traffic weights.
+
+Running, Paused, Completed and Aborted plans can roll back only while their
+current managed cohort still matches. Conflicted or already RolledBack plans
+reject new rollback operations. The target must be available, intact and
+currently eligible under lifecycle, trust and runtime policy. Compatibility is
+checked from the served candidate toward the restored base; a compatible
+forward update does not prove a compatible rollback. A revoked candidate can
+still supply intact historical comparison bytes, but a revoked target cannot
+receive new traffic.
+
+Rollback needs no canary hub, elapsed interval or healthy proof. A committed
+rollback retires the current observation and does not register another window.
+Already-started calls keep their original revision and budget; later route
+selection uses the restored base. Exact retained operation replay returns the
+original receipt without another mutation, including after restart. Rejections
+have bounded audit acknowledgement and no committed rollout receipt. Audit
+attempts preserve the requested target separately from a committed outcome's
+validated target and new route generation. See [atomic rollback](../phase-2-rollback.md)
+for recovery and durability boundaries.
 
 ### Declared canary evaluation and promotion
 

@@ -121,6 +121,8 @@ message AuditIdentities {
   optional uint64 state_version = 14;
   optional uint64 canary_window_epoch = 15;
   optional string canary_evidence_digest = 16;
+  // Validated restoration origin, never the new route publication generation.
+  optional uint64 rollback_target_generation = 17;
 }
 
 enum AuditControlAction {
@@ -179,6 +181,8 @@ message Phase2AuditAttempt {
   optional uint64 expected_deployment_generation = 8;
   optional string preview_receipt_digest = 9;
   optional uint64 expected_rollout_revision = 10;
+  // Caller selector retained independently of the validated outcome identity.
+  optional uint64 expected_rollback_target_generation = 11;
 }
 
 message Phase2AuditOutcome {

@@ -134,6 +134,7 @@ async fn disabled_rollouts_reconcile_existing_history_without_exposing_the_servi
         expected_generation: None,
         expected_deployment_generation: None,
         expected_rollout_revision: Some(0),
+        expected_rollback_target_generation: None,
         occurred_at_unix_millis: 1,
     };
     let audit = catalogs.audit.as_ref().unwrap().handle();

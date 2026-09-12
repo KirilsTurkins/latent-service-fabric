@@ -171,7 +171,7 @@ The selection hash is SHA-256 over `b"lsf-route-selection-v1\0"` followed by the
 
 Interpret the first eight hash bytes as an unsigned 64-bit big-endian integer. The bucket is that integer modulo the sum of eligible weights. Select the first cumulative weight strictly greater than the bucket.
 
-This is deterministic weighted selection, not random round-robin or consistent hashing. Without a varying routing key, requests select the same bucket. Reweighting or changing the candidate set can change selections. No canary controller, traffic feedback, or automatic rollback is implemented.
+This is deterministic weighted selection, not random round-robin or consistent hashing. Without a varying routing key, requests select the same bucket. Reweighting or changing the candidate set can change selections. [Controlled canary promotion](phase-2-canary-promotion.md) can evaluate bounded actual invocation outcomes before an explicit next-stage mutation. [Rollback](phase-2-rollback.md) explicitly restores one plan-bound target. Automatic promotion and rollback are not implemented.
 
 ## Complete publication and reader behavior
 

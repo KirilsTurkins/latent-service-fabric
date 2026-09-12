@@ -31,9 +31,10 @@ pub(super) fn receipt() -> RolloutOperationReceipt {
         completed_at_unix_millis: 1,
         receipt_digest: digest,
         canary_decision: None,
+        rollback_target: None,
     }
 }
-fn snapshot_journal(from: &std::path::Path, to: &std::path::Path) {
+pub(super) fn snapshot_journal(from: &std::path::Path, to: &std::path::Path) {
     std::fs::create_dir(to).unwrap();
     std::fs::set_permissions(to, std::fs::Permissions::from_mode(0o700)).unwrap();
     std::fs::create_dir(to.join("records")).unwrap();

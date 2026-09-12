@@ -188,5 +188,13 @@ pub(super) fn change(
     if value.command.is_none() {
         return Err(Status::invalid_argument("rollout command is required"));
     }
+    if matches!(
+        &value.command,
+        Some(proto::change_rollout_request::Command::Rollback(value)) if value.target_generation == 0
+    ) {
+        return Err(Status::invalid_argument(
+            "positive rollback target generation is required",
+        ));
+    }
     encoded(value, limits)
 }

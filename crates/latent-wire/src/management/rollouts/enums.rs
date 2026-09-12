@@ -10,6 +10,7 @@ pub(super) fn state(value: domain::RolloutState) -> i32 {
         domain::RolloutState::Completed => proto::RolloutState::Completed as i32,
         domain::RolloutState::Aborted => proto::RolloutState::Aborted as i32,
         domain::RolloutState::Conflicted => proto::RolloutState::Conflicted as i32,
+        domain::RolloutState::RolledBack => proto::RolloutState::RolledBack as i32,
     }
 }
 
@@ -21,6 +22,7 @@ pub(super) fn action(value: domain::RolloutAction) -> i32 {
         domain::RolloutAction::Resume => proto::RolloutAction::Resume as i32,
         domain::RolloutAction::Abort => proto::RolloutAction::Abort as i32,
         domain::RolloutAction::Promote => proto::RolloutAction::Promote as i32,
+        domain::RolloutAction::Rollback => proto::RolloutAction::Rollback as i32,
     }
 }
 
@@ -40,6 +42,7 @@ pub(super) fn reason(value: domain::RolloutReason) -> i32 {
         domain::RolloutReason::ResourceLimit => proto::RolloutReason::ResourceLimit as i32,
         domain::RolloutReason::RecoveryRequired => proto::RolloutReason::RecoveryRequired as i32,
         domain::RolloutReason::OutcomeUncertain => proto::RolloutReason::OutcomeUncertain as i32,
+        domain::RolloutReason::RollbackApplied => proto::RolloutReason::RollbackApplied as i32,
     }
 }
 
@@ -62,6 +65,7 @@ pub(super) fn state_input(value: i32) -> Result<domain::RolloutState, Status> {
         Ok(proto::RolloutState::Completed) => Ok(domain::RolloutState::Completed),
         Ok(proto::RolloutState::Aborted) => Ok(domain::RolloutState::Aborted),
         Ok(proto::RolloutState::Conflicted) => Ok(domain::RolloutState::Conflicted),
+        Ok(proto::RolloutState::RolledBack) => Ok(domain::RolloutState::RolledBack),
         _ => Err(Status::invalid_argument("invalid rollout state")),
     }
 }
