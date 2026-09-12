@@ -1,6 +1,8 @@
 //! Exact byte distribution and independently approved publisher evidence; no guest execution.
 #[path = "registry/fixtures.rs"]
 mod fixtures;
+#[path = "registry/provenance.rs"]
+mod provenance;
 #[path = "registry/signatures.rs"]
 mod signatures;
 
@@ -222,5 +224,14 @@ async fn real_tls_registry_roundtrips_tag_race_auth_and_referrers() {
     referrers(&client, &origin, &subject, &evidence).await;
     signatures::roundtrip(&client, &origin, capsule).await;
     authentication(&origin, &subject).await;
+    shutdown(&client).await;
+}
+
+#[tokio::test]
+#[ignore = "requires owned TLS registry and --provenance-input from the observed build driver"]
+async fn real_observed_build_provenance_roundtrip() {
+    let origin = std::env::var("LSF_OCI_TEST_ORIGIN").expect("run owned registry runner");
+    let client = HttpOciRegistry::new(config(&origin, credentials())).unwrap();
+    provenance::roundtrip(&client, &origin).await;
     shutdown(&client).await;
 }

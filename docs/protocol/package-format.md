@@ -127,8 +127,10 @@ size `2`. Exactly one evidence layer has title and role annotations; its role is
 
 These envelope types define subject associations. The
 [publisher signature profile](../reference/publisher-trust.md) defines the
-implemented signature payload and verification policy. Provenance and SBOM
-payload verification remain subsequent tickets. A referrer with a matching
+implemented signature payload and verification policy. The
+[build provenance profile](../reference/build-provenance.md) separately defines
+authenticated builder assertions and exact source constraints. SBOM payload
+verification remains a subsequent ticket. A referrer with a matching
 subject alone is not authenticated.
 Required evidence must pass independent subject, integrity and trust checks
 before admission. Evidence cannot be made part of the same manifest it signs;

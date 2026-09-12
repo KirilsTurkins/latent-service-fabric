@@ -9,15 +9,21 @@ import json
 import os
 import re
 import shlex
-import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import tomllib
 from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
+
+if __name__ == "__main__" and not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from tools.build_process import BuildProcessError, run_bounded
+from tools.build_snapshot import owned_child, remove_owned_directory
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLCHAIN = ROOT / "tools" / "toolchain.toml"
@@ -27,6 +33,10 @@ CAPSULE_SCHEMA = ROOT / "schemas" / "capsule-manifest.schema.json"
 CONTRACT_METADATA = ROOT / "examples" / "echo-contract" / "contracts.json"
 DEPLOYMENT_TEMPLATE = ROOT / "examples" / "echo-contract" / "deployment.json"
 DEPLOYMENT_SCHEMA = ROOT / "schemas" / "deployment.schema.json"
+_TOOL_COMMANDS: dict[str, list[str]] = {}
+_BUILD_ENVIRONMENT: dict[str, str] | None = None
+_BUILD_DEADLINE: float | None = None
+MAX_COMPONENT_BYTES = 64 * 1024 * 1024
 
 PACKAGE = "latent-toolchain-smoke"
 EXAMPLE = "echo-capsule"
@@ -50,7 +60,31 @@ class BuildError(RuntimeError):
     """Raised when the fixture cannot be built or validated."""
 
 
+def configure_source_root(source: Path) -> None:
+    """Run this maintained driver against an explicitly captured source tree."""
+    global ROOT, TOOLCHAIN, CONTRACT, CAPSULE_TEMPLATE, CAPSULE_SCHEMA
+    global CONTRACT_METADATA, DEPLOYMENT_TEMPLATE, DEPLOYMENT_SCHEMA
+    ROOT = source.resolve(strict=True)
+    TOOLCHAIN = ROOT / "tools/toolchain.toml"
+    CONTRACT = ROOT / "examples/echo-contract/wit/echo.wit"
+    CAPSULE_TEMPLATE = ROOT / "examples/echo-contract/capsule.json"
+    CAPSULE_SCHEMA = ROOT / "schemas/capsule-manifest.schema.json"
+    CONTRACT_METADATA = ROOT / "examples/echo-contract/contracts.json"
+    DEPLOYMENT_TEMPLATE = ROOT / "examples/echo-contract/deployment.json"
+    DEPLOYMENT_SCHEMA = ROOT / "schemas/deployment.schema.json"
+
+
+def configure_execution(commands: dict[str, list[str]], environment: dict[str, str] | None,
+                        deadline: float | None = None) -> None:
+    global _TOOL_COMMANDS, _BUILD_ENVIRONMENT, _BUILD_DEADLINE
+    _TOOL_COMMANDS = {name: list(command) for name, command in commands.items()}
+    _BUILD_ENVIRONMENT = None if environment is None else dict(environment)
+    _BUILD_DEADLINE = deadline
+
+
 def command_from_environment(name: str, default: str) -> list[str]:
+    if name in _TOOL_COMMANDS:
+        return list(_TOOL_COMMANDS[name])
     value = os.environ.get(name, default)
     command = shlex.split(value)
     if not command:
@@ -62,29 +96,24 @@ def run_checked(
     command: list[str],
     *,
     environment: dict[str, str] | None = None,
-    cwd: Path = ROOT,
+    cwd: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    print(f"+ {shlex.join(command)}", file=sys.stderr)
-    completed = subprocess.run(
-        command,
-        cwd=cwd,
-        env=environment,
-        check=False,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    if completed.returncode != 0:
-        if completed.stdout:
-            print(completed.stdout, file=sys.stderr, end="")
-        if completed.stderr:
-            print(completed.stderr, file=sys.stderr, end="")
-        raise BuildError(
-            f"command failed with exit code {completed.returncode}: {shlex.join(command)}"
+    timeout = 1200.0
+    if _BUILD_DEADLINE is not None:
+        timeout = min(timeout, _BUILD_DEADLINE - time.monotonic())
+        if timeout <= 0:
+            raise BuildError("build deadline exceeded")
+    try:
+        selected_environment = _BUILD_ENVIRONMENT if environment is None else environment
+        completed = run_bounded(
+            command, cwd=ROOT if cwd is None else cwd,
+            env=dict(os.environ) if selected_environment is None else selected_environment,
+            timeout_seconds=timeout, max_output_bytes=8 * 1024 * 1024,
         )
-    if completed.stderr:
-        print(completed.stderr, file=sys.stderr, end="")
-    return completed
+        return subprocess.CompletedProcess(command, completed.returncode,
+                                           completed.stdout.decode("utf-8"), "")
+    except (BuildProcessError, UnicodeDecodeError) as error:
+        raise BuildError("bounded build command failed") from error
 
 
 def load_toolchain() -> dict[str, Any]:
@@ -137,8 +166,10 @@ def verify_tool_versions(toolchain: dict[str, Any]) -> None:
 
 
 def canonical_build_environment() -> dict[str, str]:
-    environment = os.environ.copy()
-    for name in ("RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS", "CARGO_TARGET_DIR"):
+    environment = dict(os.environ if _BUILD_ENVIRONMENT is None else _BUILD_ENVIRONMENT)
+    for name in ("RUSTFLAGS", "CARGO_ENCODED_RUSTFLAGS", "CARGO_TARGET_DIR",
+                 "RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER", "CARGO_BUILD_RUSTC_WRAPPER",
+                 "CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER", "CARGO_BUILD_RUSTFLAGS"):
         environment.pop(name, None)
     environment.update(
         {
@@ -207,9 +238,12 @@ def extract_cargo_artifact(cargo_output: str) -> Path:
 
 
 def build_once(build_directory: Path) -> bytes:
+    build_directory = build_directory.absolute()
+    build_parent = build_directory.parent
+    build_parent.mkdir(parents=True, exist_ok=True)
+    owned_child(build_directory, build_parent)
     if build_directory.exists():
-        shutil.rmtree(build_directory)
-    build_directory.parent.mkdir(parents=True, exist_ok=True)
+        remove_owned_directory(build_directory, build_parent)
 
     cargo = command_from_environment("CARGO", "cargo")
     completed = run_checked(
@@ -232,6 +266,7 @@ def build_once(build_directory: Path) -> bytes:
         environment=canonical_build_environment(),
     )
     core_artifact = extract_cargo_artifact(completed.stdout)
+    owned_child(core_artifact, build_directory)
     component_artifact = build_directory / "componentized" / ARTIFACT_NAME
     component_artifact.parent.mkdir(parents=True, exist_ok=True)
     wasm_tools = command_from_environment("WASM_TOOLS", "wasm-tools")
@@ -246,11 +281,19 @@ def build_once(build_directory: Path) -> bytes:
         ],
         environment=canonical_build_environment(),
     )
-    return component_artifact.read_bytes()
+    with component_artifact.open("rb") as stream:
+        component = stream.read(MAX_COMPONENT_BYTES + 1)
+    if not component or len(component) > MAX_COMPONENT_BYTES:
+        raise BuildError("component output byte limit exceeded")
+    return component
 
 
 def build_component(target_root: Path, verify_reproducible: bool) -> tuple[bytes, bool]:
+    target_root = target_root.resolve()
+    target_root.mkdir(parents=True, exist_ok=True)
     build_parent = target_root / "capsule-build"
+    build_parent.mkdir(exist_ok=True)
+    owned_child(build_parent, target_root)
     if verify_reproducible:
         first_directory = build_parent / "echo-a"
         second_directory = build_parent / "echo-b"
@@ -258,8 +301,8 @@ def build_component(target_root: Path, verify_reproducible: bool) -> tuple[bytes
             first = build_once(first_directory)
             second = build_once(second_directory)
         finally:
-            shutil.rmtree(first_directory, ignore_errors=True)
-            shutil.rmtree(second_directory, ignore_errors=True)
+            remove_owned_directory(first_directory, build_parent)
+            remove_owned_directory(second_directory, build_parent)
         if first != second:
             first_digest = hashlib.sha256(first).hexdigest()
             second_digest = hashlib.sha256(second).hexdigest()
@@ -273,7 +316,7 @@ def build_component(target_root: Path, verify_reproducible: bool) -> tuple[bytes
     try:
         return build_once(build_directory), False
     finally:
-        shutil.rmtree(build_directory, ignore_errors=True)
+        remove_owned_directory(build_directory, build_parent)
 
 
 def parse_root_world(wit: str) -> tuple[set[str], set[str]]:
@@ -452,7 +495,11 @@ def validate_and_stage_output(
     reproducibility_verified: bool,
     toolchain: dict[str, Any],
 ) -> str:
+    if not component or len(component) > MAX_COMPONENT_BYTES:
+        raise BuildError("component output byte limit exceeded")
+    output_directory = output_directory.absolute()
     output_directory.parent.mkdir(parents=True, exist_ok=True)
+    owned_child(output_directory, output_directory.parent)
     staging = Path(
         tempfile.mkdtemp(prefix=".echo-output-", dir=output_directory.parent)
     )
@@ -522,11 +569,11 @@ def validate_and_stage_output(
         write_json(staging / "build.json", receipt)
 
         if output_directory.exists():
-            shutil.rmtree(output_directory)
+            remove_owned_directory(output_directory, output_directory.parent)
         staging.replace(output_directory)
         return digest
     except Exception:
-        shutil.rmtree(staging, ignore_errors=True)
+        remove_owned_directory(staging, output_directory.parent)
         raise
 
 

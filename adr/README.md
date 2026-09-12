@@ -23,3 +23,7 @@ authenticated OCI transfers, retained download budgets and owned upload cleanup.
 [ADR-0022](0022-bind-publisher-proofs-to-current-explicit-trust.md) defines bounded
 package signatures and publisher proofs bound to explicit current policy and
 revocation snapshots, separate from tenant/catalog admission.
+
+[ADR-0023](0023-bind-build-attestations-to-observed-inputs-and-builder-trust.md)
+defines observed committed-source builds and separately approved builder proofs,
+with exact package/component/source associations and bounded current trust.

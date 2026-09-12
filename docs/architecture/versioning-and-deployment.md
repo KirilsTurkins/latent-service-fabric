@@ -12,9 +12,11 @@ locally trusted filesystem boundary. See the
 Phase 2 introduces a separate `PackageDigest` over exact package-manifest bytes
 and a [bounded OCI library adapter](../reference/oci-registry.md) for immutable
 package distribution. These additions preserve the existing local release
-identity. Package signatures, provenance verification and remote-package
-catalog/management integration remain planned; an OCI transfer alone does not
-admit a release or make it routable.
+identity. Separate [publisher](../reference/publisher-trust.md) and
+[builder-provenance](../reference/build-provenance.md) verifiers authenticate
+exact package evidence against explicit current trust policies. Remote-package
+catalog/management admission remains planned; an OCI transfer or a standalone
+verification proof does not admit a release or make it routable.
 
 ## Mutable deployment
 

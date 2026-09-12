@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/builder-policy.schema.json",
+  "title": "LSF v1 explicit operator-approved builder policy",
+  "$comment": "Builder authority is separate from package-publisher authority. Shape validation never approves policy. Rust enforces configured lower bounds, <=65536bytes, canonical key validation, unique fingerprints/requirements, interval ordering and canonical identity. Empty keys or requirements deny every build.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "scope",
+    "generation",
+    "validFrom",
+    "validUntil",
+    "maxSignatureLifetimeSeconds",
+    "maxProofAgeSeconds",
+    "keys",
+    "requirements"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "scope": {
+      "$ref": "#/$defs/identifier"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551615
+    },
+    "validFrom": {
+      "$ref": "#/$defs/time"
+    },
+    "validUntil": {
+      "$ref": "#/$defs/time"
+    },
+    "maxSignatureLifetimeSeconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2678400
+    },
+    "maxProofAgeSeconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3600
+    },
+    "keys": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "builderId",
+          "publicKey",
+          "validFrom",
+          "validUntil"
+        ],
+        "properties": {
+          "builderId": {
+            "$ref": "#/$defs/identifier"
+          },
+          "publicKey": {
+            "type": "string",
+            "minLength": 44,
+            "maxLength": 44,
+            "pattern": "^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw048]=(?![\\s\\S])"
+          },
+          "validFrom": {
+            "$ref": "#/$defs/time"
+          },
+          "validUntil": {
+            "$ref": "#/$defs/time"
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "builderId",
+          "buildType",
+          "sourceRepository",
+          "requireReproducible"
+        ],
+        "properties": {
+          "builderId": {
+            "$ref": "#/$defs/identifier"
+          },
+          "buildType": {
+            "const": "https://latent.dev/build/echo-capsule/v1"
+          },
+          "sourceRepository": {
+            "$ref": "#/$defs/repository"
+          },
+          "sourceRevision": {
+            "$ref": "#/$defs/revision"
+          },
+          "sourceSnapshotDigest": {
+            "$ref": "#/$defs/digest"
+          },
+          "requireReproducible": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "time": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:/@-]+(?![\\s\\S])"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})(?![\\s\\S])"
+    },
+    "repository": {
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^https://(?=[^/]{1,253}/)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+(?:/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+)*(?![\\s\\S])"
+    }
+  }
+}

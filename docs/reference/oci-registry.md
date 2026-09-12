@@ -14,8 +14,9 @@ supplied component semantics before distribution; the registry itself cannot
 make that assertion trustworthy.
 
 The separate [publisher verifier](publisher-trust.md) can authenticate pulled
-signature evidence against explicit current policy/revocation snapshots. That
-library result does not by itself admit a release to the catalog.
+signature evidence against explicit current policy/revocation snapshots. The
+[builder verifier](build-provenance.md) authenticates provenance through separate
+builder anchors and source requirements. Neither result admits a catalog release.
 
 ## Configure the endpoint
 
