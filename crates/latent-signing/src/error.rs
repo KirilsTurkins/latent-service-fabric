@@ -18,6 +18,10 @@ pub enum SignatureFailure {
     UnapprovedKey,
     InvalidSignature,
     UntrustedPublisher,
+    UntrustedBuilder,
+    SourceDisallowed,
+    PredicateDisallowed,
+    MalformedProvenance,
     InvalidPolicy,
     InvalidRevocations,
     TrustExpired,
@@ -46,6 +50,10 @@ impl SignatureFailure {
             Self::UnapprovedKey => "signature-unapproved-key",
             Self::InvalidSignature => "signature-invalid",
             Self::UntrustedPublisher => "signature-untrusted-publisher",
+            Self::UntrustedBuilder => "provenance-untrusted-builder",
+            Self::SourceDisallowed => "provenance-source-disallowed",
+            Self::PredicateDisallowed => "provenance-predicate-disallowed",
+            Self::MalformedProvenance => "provenance-malformed",
             Self::InvalidPolicy => "signature-invalid-policy",
             Self::InvalidRevocations => "signature-invalid-revocations",
             Self::TrustExpired => "signature-trust-expired",
@@ -66,6 +74,9 @@ impl SignatureFailure {
             Self::UnapprovedKey
             | Self::InvalidSignature
             | Self::UntrustedPublisher
+            | Self::UntrustedBuilder
+            | Self::SourceDisallowed
+            | Self::PredicateDisallowed
             | Self::TrustExpired
             | Self::KeyExpired
             | Self::SignatureExpired

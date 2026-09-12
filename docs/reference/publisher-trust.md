@@ -184,8 +184,9 @@ and adversarial format/key tests cover the lower-level implementation.
 The existing [disposable Zot test](oci-registry.md#run-the-real-registry-check)
 adds sign/attach/discover/pull/verify in its single bounded container.
 
-Builder provenance, SBOM authentication policy, admission and trusted AOT output
-remain separate Phase 2 work. Future builder/compiler proofs require distinct
-payloads and explicitly scoped key roles. A package-publisher signature does not
+[Builder provenance](build-provenance.md) now provides a distinct signed payload
+and explicit builder keys for the maintained echo recipe. SBOM authentication,
+admission and trusted AOT output remain separate Phase 2 work; compiler proofs
+will require their own key roles. A package-publisher signature does not
 authenticate later detached provenance/SBOM merely because their subjects match,
 and it never authorizes native compiler output.

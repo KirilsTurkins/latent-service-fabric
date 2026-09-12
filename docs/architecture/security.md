@@ -4,8 +4,9 @@ Phase 1 provides the locally trusted standalone boundary: verified local
 artifact bytes/metadata, explicit tenant credentials, stateless Wasmtime
 containment and declared context/log/clock imports. Phase 2 additionally provides
 the [publisher signature library](../reference/publisher-trust.md), using exact
-package subjects and explicit current policy/revocation snapshots. Durable
-publisher-aware catalog admission, provenance verification, workload mTLS,
+package subjects and explicit current policy/revocation snapshots, plus separate
+[builder provenance](../reference/build-provenance.md) for the maintained echo
+recipe. Durable publisher-aware catalog admission, workload mTLS,
 secret providers, trust-sharded processes and native fallback remain future
 security work. See [standalone authentication](../reference/standalone-node.md),
 [catalog trust](../development/local-release-catalog.md#trust-boundary) and
@@ -45,6 +46,12 @@ approved public keys, validity and explicit revocations. Its private proof binds
 exact package/evidence bytes and both current trust snapshots. Certificate and
 keyless workflows are unsupported. A signature never establishes tenant
 ownership, semantic validity, routability or trusted native output.
+
+Builder provenance uses separately approved keys and explicit source requirements.
+It binds an observed component to the exact package and current builder trust.
+Unsigned observations, matching referrers and publisher-only keys do not create
+builder authority. The maintained build is nonhermetic and its repository label
+remains an operator assertion.
 
 Durable Phase 2 admission will combine these proofs with provenance/SBOM policy
 and existing content digest, manifest, import and resource checks. It must retain

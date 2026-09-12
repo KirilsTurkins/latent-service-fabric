@@ -73,17 +73,23 @@ jobs:
 
   oci-registry:
     name: OCI registry TLS integration
+    needs: contracts
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.97.1
+      - name: Receive bounded observed echo inputs
+        uses: actions/download-artifact@v4
+        with:
+          name: phase-2-observed-echo-${{ github.sha }}
+          path: target/capsules/echo-provenance
       - name: Fetch pinned disposable registry
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
       - name: Check runner ownership and cleanup guards
         run: python3 -m unittest discover -s tools/tests -p test_oci_registry_runner.py
       - name: Validate bounded authenticated OCI distribution
-        run: python3 tools/run_oci_registry_tests.py --state-file "$RUNNER_TEMP/lsf-oci-registry.json"
+        run: python3 tools/run_oci_registry_tests.py --state-file "$RUNNER_TEMP/lsf-oci-registry.json" --provenance-input target/capsules/echo-provenance
       - name: Recover only this job's disposable registry
         if: always()
         run: python3 tools/run_oci_registry_tests.py --cleanup-state "$RUNNER_TEMP/lsf-oci-registry.json"
@@ -155,6 +161,13 @@ jobs:
         run: |
           unset CARGO_INCREMENTAL
           tools/validate_contracts.sh
+      - name: Pass bounded observed build inputs to registry verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-2-observed-echo-${{ github.sha }}
+          path: target/capsules/echo-provenance/
+          if-no-files-found: error
+          retention-days: 1
       - name: Retain bounded Phase 1 conformance diagnostics
         if: always()
         uses: actions/upload-artifact@v4

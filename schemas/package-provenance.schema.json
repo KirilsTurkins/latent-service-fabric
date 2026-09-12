@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/package-provenance.schema.json",
+  "title": "LSF v1 DSSE build provenance envelope",
+  "$comment": "Single Ed25519 signature over DSSE PAE of exact decoded statement bytes. Rust checks raw envelope<=49152, decoded payload<=32768, strict canonical base64, duplicate keys, exact subject binding, cryptography and current builder authority. keyid is only a hint.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "payloadType",
+    "payload",
+    "signatures"
+  ],
+  "properties": {
+    "payloadType": {
+      "const": "application/vnd.in-toto+json"
+    },
+    "payload": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 43692,
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/][AQgw]==|[A-Za-z0-9+/]{2}[AEIMQUYcgkosw048]=)?(?![\\s\\S])"
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "keyid",
+          "sig"
+        ],
+        "properties": {
+          "keyid": {
+            "$ref": "#/$defs/digest"
+          },
+          "sig": {
+            "type": "string",
+            "minLength": 88,
+            "maxLength": 88,
+            "pattern": "^[A-Za-z0-9+/]{85}[AQgw]==(?![\\s\\S])"
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "payload": {
+            "minLength": 43692
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "pattern": "=(?![\\s\\S])"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "time": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:/@-]+(?![\\s\\S])"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})(?![\\s\\S])"
+    },
+    "repository": {
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^https://(?=[^/]{1,253}/)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+(?:/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+)*(?![\\s\\S])"
+    }
+  }
+}

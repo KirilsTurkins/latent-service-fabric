@@ -185,6 +185,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check-fixture", action="store_true", help="check TLS/auth startup and cleanup only")
     parser.add_argument("--test-binary", type=Path, help="run an already-built registry test binary")
+    parser.add_argument("--provenance-input", type=Path,
+                        help="include actual observed-build round trip using package-ready build_provenance output")
     parser.add_argument("--state-file", type=Path, help="exclusive CI recovery state, removed after cleanup")
     parser.add_argument("--cleanup-state", type=Path, help="recover only the labelled container in this state file")
     arguments = parser.parse_args()
@@ -206,9 +208,15 @@ def main() -> int:
                 return 0
             environment = os.environ.copy()
             environment.update(LSF_OCI_TEST_ORIGIN=origin, LSF_OCI_TEST_CA_DER=str(directory / "ca.der"))
+            environment.pop("LSF_OCI_PROVENANCE_INPUT", None)
+            extra = []
+            if arguments.provenance_input:
+                environment["LSF_OCI_PROVENANCE_INPUT"] = str(arguments.provenance_input.resolve(strict=True))
+            else:
+                extra = ["--skip", "real_observed_build_provenance_roundtrip"]
             test = ([str(arguments.test_binary.resolve())] if arguments.test_binary else
                     ["cargo", "test", "-p", "latent-oci", "--test", "registry", "--locked", "--"])
-            subprocess.run([*test, "--ignored", "--test-threads=1", "--nocapture"], cwd=ROOT,
+            subprocess.run([*test, "--ignored", "--test-threads=1", "--nocapture", *extra], cwd=ROOT,
                            env=environment, check=True, timeout=180)
             print("Disposable registry integration passed; no artifacts retained.")
             return 0

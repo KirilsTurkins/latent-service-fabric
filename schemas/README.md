@@ -38,6 +38,11 @@ The package schemas describe a separate immutable artifact format:
 | [package-signature-claims.schema.json](package-signature-claims.schema.json) | Exact signed package subject, publisher claim and validity interval. |
 | [publisher-policy.schema.json](publisher-policy.schema.json) | Explicit bounded publisher-key approval policy. |
 | [publisher-revocations.schema.json](publisher-revocations.schema.json) | Explicit expiring revocations bound to one exact canonical policy. |
+| [build-observation.schema.json](build-observation.schema.json) | Unsigned bounded observation of a committed-source echo build. |
+| [package-provenance-statement.schema.json](package-provenance-statement.schema.json) | Restricted in-toto statement binding exact package/component identities and build observations. |
+| [package-provenance.schema.json](package-provenance.schema.json) | Closed single-signature DSSE provenance envelope. |
+| [builder-policy.schema.json](builder-policy.schema.json) | Explicit builder anchors and source requirements, separate from publisher policy. |
+| [builder-revocations.schema.json](builder-revocations.schema.json) | Expiring builder revocations bound to one canonical builder policy. |
 
 These schemas close structural objects, enforce role/media-type combinations,
 and bound arrays, names and annotations. Package annotations permit at most 32
@@ -54,8 +59,12 @@ format validation does not establish publisher trust, payload semantic
 compatibility, registry availability or executable guest content. The signature
 schemas describe the implemented [publisher trust profile](../docs/reference/publisher-trust.md).
 Its Rust verifier additionally checks cryptography, exact subject association,
-canonical policy identity, freshness, revocation and owner limits. Provenance and
-SBOM payload authentication remain subsequent Phase 2 features.
+canonical policy identity, freshness, revocation and owner limits. The
+[build provenance profile](../docs/reference/build-provenance.md) separately
+authenticates builder assertions and exact source/component/package associations.
+Its byte bounds, timestamp ordering, duplicate material names, cross-field digest
+equality and current authority also require the Rust API. Synthetic schema
+fixtures confer no trust. SBOM authentication remains a subsequent Phase 2 feature.
 
 The [packaging workflow](../docs/component-development/packaging.md) validates
 supplied components against the pinned WIT graph and typed contracts. Recipe
