@@ -25,12 +25,13 @@ const MEMORY_MODE: &str = "__latent_test_memory";
 const DELAYED_MEMORY_MODE: &str = "__latent_test_delayed_memory";
 const DELAYED_ECHO_PREFIX: &str = "__latent_test_delayed_echo:";
 const MIXED_DELAYED_ECHO_PREFIX: &str = "__latent_test_mixed_delayed_echo:";
+const MIXED_MEMORY_ECHO_PREFIX: &str = "__latent_test_mixed_memory_echo:";
 const LOG_MESSAGE: &str = "containment fixture invocation";
+const MIXED_MEMORY_READY_LOG_MESSAGE: &str = "containment mixed memory rendezvous";
 const MEMORY_CHUNK_BYTES: usize = 64 * 1024;
 const CONTROLLED_DELAY_ITERATIONS: u64 = 2_000_000;
-// The mixed-containment tests must observe both failing and healthy invocations
-// while active. Keep this separate from the ordinary delayed echo fixture so
-// its benchmark workload remains unchanged.
+// Mixed trap/deadline tests retain their historical bounded delay. The mixed
+// memory test now synchronizes through the host log sink before this delay.
 const CONTROLLED_MIXED_DELAY_ITERATIONS: u64 = 50_000_000;
 
 struct ContainmentCapsule;
@@ -42,6 +43,11 @@ impl Guest for ContainmentCapsule {
             return normal_echo(delayed_message.to_owned());
         }
         if let Some(delayed_message) = message.strip_prefix(MIXED_DELAYED_ECHO_PREFIX) {
+            controlled_delay(CONTROLLED_MIXED_DELAY_ITERATIONS);
+            return normal_echo(delayed_message.to_owned());
+        }
+        if let Some(delayed_message) = message.strip_prefix(MIXED_MEMORY_ECHO_PREFIX) {
+            wait_for_mixed_memory_rendezvous();
             controlled_delay(CONTROLLED_MIXED_DELAY_ITERATIONS);
             return normal_echo(delayed_message.to_owned());
         }
@@ -58,6 +64,7 @@ impl Guest for ContainmentCapsule {
                 exhaust_guest_memory();
             }
             DELAYED_MEMORY_MODE => {
+                wait_for_mixed_memory_rendezvous();
                 controlled_delay(CONTROLLED_MIXED_DELAY_ITERATIONS);
                 exhaust_guest_memory();
             }
@@ -96,6 +103,16 @@ fn normal_echo(message: String) -> Result<String, EchoError> {
         MessageRejection::Empty => EchoError::EmptyMessage,
         MessageRejection::OverLimit => EchoError::MessageTooLarge,
     })
+}
+
+#[inline(never)]
+fn wait_for_mixed_memory_rendezvous() {
+    let fields: [Field; 0] = [];
+    let mut attempts = 0_u64;
+    while log::write(Level::Info, MIXED_MEMORY_READY_LOG_MESSAGE, &fields).is_err() {
+        attempts = attempts.wrapping_add(1);
+        std::hint::black_box(attempts);
+    }
 }
 
 #[inline(never)]
