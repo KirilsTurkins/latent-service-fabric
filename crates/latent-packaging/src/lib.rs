@@ -14,7 +14,9 @@ mod semantics;
 pub use assembly::build_package;
 pub use bundle::{inspect_bundle, BundleInput, PackageBlob, PackageBundle};
 pub use directory::{
-    decode_package_source, read_package_directory, read_package_input, write_package_directory,
+    decode_package_source, read_package_directory, read_package_evidence, read_package_file,
+    read_package_input, write_package_directory, write_package_evidence, PackageEvidenceFiles,
+    PackageEvidenceIndex,
 };
 pub use input::{LayerInput, PackageFile, PackageInput, PackageSource, PackagingLimits};
 pub use receipt::{BuildInputIdentity, BuildReceipt, BUILD_INPUTS_PATH};

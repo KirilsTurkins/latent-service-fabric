@@ -36,9 +36,9 @@ impl PreparedRolloutMutation {
         self.replayed
     }
 }
-struct WorkReservation(Arc<AtomicBool>);
+pub(super) struct WorkReservation(Arc<AtomicBool>);
 impl WorkReservation {
-    fn acquire(owner: &Arc<AtomicBool>) -> Result<Self> {
+    pub(super) fn acquire(owner: &Arc<AtomicBool>) -> Result<Self> {
         owner
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .map_err(|_| capacity())?;

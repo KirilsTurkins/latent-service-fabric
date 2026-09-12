@@ -61,6 +61,7 @@ impl Node {
             proto::deployment_service_client::DeploymentServiceClient::new(self.channel.clone())
                 .apply_deployment(setup_request(
                     proto::ApplyDeploymentRequest {
+                        operation: None,
                         deployment: Some(deployment),
                         expected_generation: None,
                     },

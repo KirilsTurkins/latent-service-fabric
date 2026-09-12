@@ -8,6 +8,7 @@
 mod audit;
 mod canary;
 mod coordinator;
+pub mod deployment_audit;
 mod lease;
 mod limits;
 mod model;

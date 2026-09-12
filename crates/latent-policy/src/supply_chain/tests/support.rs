@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+#[path = "operator_fixture.rs"]
+mod operator_fixture;
 #[path = "../../../../latent-packaging/tests/fixtures/mod.rs"]
 mod packaging;
 #[path = "../../../../latent-packaging/tests/sbom_association/support.rs"]

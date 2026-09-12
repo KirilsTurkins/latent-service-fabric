@@ -408,6 +408,10 @@ impl DirectoryDeploymentRepository {
         let control = persistence::ControlPayloadRef {
             transaction_version: transaction,
             rollouts: &next_table.data,
+            deployment_operations: previous
+                .operations
+                .enabled
+                .then_some(&previous.operations.data),
         };
         let bytes = persistence::encode_combined(
             &next_routes,

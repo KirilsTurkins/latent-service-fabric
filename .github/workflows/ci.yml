@@ -71,6 +71,22 @@ jobs:
           cargo test -p latent-admission -p latent-scheduler --doc --locked
           cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+      - name: Fetch the pinned operator workflow registry
+        run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - name: Validate the separate Phase 2 CLI, registry and node workflow
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          cargo build -p latent -p latentd --all-features --locked
+          fixture_root="$(mktemp -d "${RUNNER_TEMP}/lsf-operator-fixture.XXXXXXXX")"
+          trap 'rm -rf -- "$fixture_root"' EXIT
+          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" cargo test -p latent-policy --lib --all-features --locked export_operator_workflow_fixture -- --ignored --test-threads=1
+          python3 -m unittest tools.tests.test_phase2_operator_workflow tools.tests.test_phase2_operator_canary
+          python3 tools/run_phase2_operator_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs"
+
   oci-registry:
     name: OCI registry TLS integration
     needs: contracts

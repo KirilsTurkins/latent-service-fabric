@@ -24,7 +24,9 @@ pub(super) fn write_with_control(
     control: Option<&super::ControlPayloadRef<'_>>,
     work: &mut Work,
 ) -> io::Result<()> {
-    if control.is_some() {
+    if control.is_some_and(|value| value.deployment_operations.is_some()) {
+        output.write_all(b"{\"format_version\":4,\"checksum\":\"sha256:")?;
+    } else if control.is_some() {
         output.write_all(b"{\"format_version\":3,\"checksum\":\"sha256:")?;
     } else {
         output.write_all(PREFIX)?;

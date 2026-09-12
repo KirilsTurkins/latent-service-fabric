@@ -323,6 +323,23 @@ field 11 records the caller's expected target independently. Optional absent
 fields preserve legacy canonical bytes. Existing RPC signatures and field tags
 are unchanged. See [rollback semantics](../phase-2-rollback.md).
 
+### Operator workflows and managed deployment recovery (#156)
+
+Apply/Delete request field 3 optionally selects an audited operation with a caller
+ID and explicit catalog-state precondition, alongside the existing object-version
+precondition. Apply adds a compact receipt, replay flag and catalog durability.
+Delete retains its Empty response and adds bounded operation/audit metadata.
+`GetDeploymentOperation` returns a retained receipt or explicit unknown/uncertain
+coverage; missing history is not evidence that a mutation never ran.
+
+Get request field 2 explicitly requests a coherent managed snapshot, including
+object absence. Ordinary Get retains its prior store path and limits; an adapter
+that cannot supply the requested snapshot returns Unsupported. Snapshot response
+fields and audit attempt field 12 (`expected_state_version`) are additive. The
+descriptor golden includes these changes without renumbering existing fields.
+See [operator workflows](../phase-2-operator-workflows.md) for replay, authorization,
+finite retention, local package verification and client recovery semantics.
+
 Phase 0 gate #25 and the executable build foundation in #2 are complete. This
 work is reconciled with the finalized Phase 0 retained/replaced classification
 and with `development`'s generated Rust, Component Model, and RPC ownership.

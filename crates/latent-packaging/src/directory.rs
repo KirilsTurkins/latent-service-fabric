@@ -1,7 +1,11 @@
 //! Explicit regular-file inputs and manifest-last output directories. Root paths
 //! are caller-approved ambient authority; every descendant uses a capability
 //! directory handle with symlink following disabled at each path segment.
+mod evidence;
 mod io;
+pub use evidence::{
+    read_package_evidence, write_package_evidence, PackageEvidenceFiles, PackageEvidenceIndex,
+};
 mod read;
 mod write;
 
@@ -14,6 +18,20 @@ use std::path::Path;
 
 fn open_root(root: &Path) -> Result<Dir, PlatformError> {
     Dir::open_ambient_dir(root, cap_std::ambient_authority()).map_err(io_error)
+}
+
+/// Read one explicitly selected regular file below an approved capability root.
+/// All descendant segments reject symlinks; no filesystem path grants guest access.
+pub fn read_package_file(
+    root: &Path,
+    relative: &str,
+    maximum: u64,
+) -> Result<Vec<u8>, PlatformError> {
+    let limits = latent_artifacts::package::PackageLimits::default();
+    if maximum == 0 || maximum > limits.max_layer_bytes {
+        return Err(crate::exceeded("package-file-byte-limit"));
+    }
+    io::read(&open_root(root)?, relative, maximum, limits)
 }
 
 fn io_error(_: std::io::Error) -> PlatformError {

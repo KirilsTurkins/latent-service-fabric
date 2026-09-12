@@ -159,10 +159,8 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
         || v.rollout_revision == Some(0)
         || v.state_version == Some(0)
         || v.rollout_step.is_some_and(|step| step >= 64)
-        || (v.rollout.is_none()
-            && (v.rollout_revision.is_some()
-                || v.rollout_step.is_some()
-                || v.state_version.is_some()))
+        || (v.rollout.is_none() && (v.rollout_revision.is_some() || v.rollout_step.is_some()))
+        || (v.state_version.is_some() && v.rollout.is_none() && v.deployment.is_none())
     {
         return Err(invalid());
     }
@@ -182,6 +180,20 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     scope(&v.scope)?;
     actor(&v.actor)?;
     token(&v.operation_id, 128)?;
+    if v.expected_state_version.is_some()
+        && (!matches!(
+            v.action,
+            AuditControlAction::DeploymentApply | AuditControlAction::DeploymentDelete
+        ) || v.identities.deployment.is_none()
+            || v.expected_deployment_generation.is_none()
+            || v.expected_generation.is_some()
+            || v.expected_rollout_revision.is_some()
+            || v.expected_rollback_target_generation.is_some()
+            || (v.action == AuditControlAction::DeploymentDelete
+                && v.expected_deployment_generation == Some(0)))
+    {
+        return Err(invalid());
+    }
     if v.expected_rollout_revision.is_some()
         && (!matches!(
             v.action,

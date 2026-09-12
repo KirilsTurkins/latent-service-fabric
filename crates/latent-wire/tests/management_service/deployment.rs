@@ -1,5 +1,7 @@
 #[path = "deployment/authorization.rs"]
 mod authorization;
+#[path = "deployment/managed.rs"]
+mod managed;
 #[path = "deployment/pagination.rs"]
 mod pagination;
 #[path = "deployment/versions.rs"]
@@ -21,6 +23,7 @@ async fn apply(
         .apply_deployment(request(
             identity,
             proto::ApplyDeploymentRequest {
+                operation: None,
                 deployment: Some(desired),
                 expected_generation: expected,
             },
@@ -34,7 +37,10 @@ async fn get(harness: &Harness, identity: &str, id: &str) -> Option<proto::Deplo
         .deployments_client()
         .get_deployment(request(
             identity,
-            proto::GetDeploymentRequest { id: id.to_owned() },
+            proto::GetDeploymentRequest {
+                id: id.to_owned(),
+                include_operation_snapshot: false,
+            },
         ))
         .await
         .unwrap()
@@ -53,6 +59,7 @@ async fn delete(
         .delete_deployment(request(
             identity,
             proto::DeleteDeploymentRequest {
+                operation: None,
                 id: id.to_owned(),
                 expected_generation: expected,
             },

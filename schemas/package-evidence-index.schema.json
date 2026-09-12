@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/package-evidence-index.schema.json",
+  "title": "LSF v1 detached package evidence file selection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "packageDigest",
+    "signatures",
+    "provenance",
+    "sboms"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "packageDigest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}(?![\\s\\S])"
+    },
+    "signatures": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/files"
+      }
+    },
+    "provenance": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/files"
+      }
+    },
+    "sboms": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/files"
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64}(?:/(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64})*(?![\\s\\S])"
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest",
+        "configuration",
+        "payload"
+      ],
+      "properties": {
+        "manifest": {
+          "$ref": "#/$defs/path"
+        },
+        "configuration": {
+          "$ref": "#/$defs/path"
+        },
+        "payload": {
+          "$ref": "#/$defs/path"
+        }
+      }
+    }
+  }
+}

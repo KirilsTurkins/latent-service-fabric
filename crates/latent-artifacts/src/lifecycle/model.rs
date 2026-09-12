@@ -256,7 +256,7 @@ pub enum ReleaseOperationLookup {
     Unknown,
     Uncertain,
 }
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ReleaseEvidenceUpload {
     pub signatures: Vec<AdmissionEvidence>,
     pub provenance: Vec<AdmissionEvidence>,

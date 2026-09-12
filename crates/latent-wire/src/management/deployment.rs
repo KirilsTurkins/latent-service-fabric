@@ -1,6 +1,7 @@
 mod audit;
 mod budget;
 mod conversion;
+mod managed;
 mod response;
 pub(super) mod validation;
 
@@ -17,6 +18,7 @@ use super::{control_audit, proto, ManagementOperation, ManagementServiceAdapter,
 
 pub use budget::{control_budget_from_proto, control_budget_to_proto};
 pub use conversion::{deployment_from_proto, deployment_manifest_from_proto, deployment_to_proto};
+pub use managed::DeploymentResponseService;
 
 #[tonic::async_trait]
 impl proto::deployment_service_server::DeploymentService for ManagementServiceAdapter {
@@ -24,7 +26,11 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
         &self,
         mut request: Request<proto::ApplyDeploymentRequest>,
     ) -> Result<Response<proto::ApplyDeploymentResponse>, Status> {
+        let deadline = managed::deadline(&request);
         let principal = self.authenticate(&mut request, ManagementOperation::Tenant)?;
+        if request.get_ref().operation.is_some() {
+            return managed::apply(self, request.into_inner(), principal, deadline).await;
+        }
         let tenant = principal.tenant.clone().expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::ApplyDeploymentRequest>(&self.limits)?;
         let deployment = request
@@ -123,6 +129,7 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
         &self,
         mut request: Request<proto::GetDeploymentRequest>,
     ) -> Result<Response<proto::GetDeploymentResponse>, Status> {
+        let deadline = managed::deadline(&request);
         let tenant = self
             .authenticate(&mut request, ManagementOperation::Tenant)?
             .tenant
@@ -130,14 +137,19 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
         let mut budget = RequestBudget::new::<proto::GetDeploymentRequest>(&self.limits)?;
         validation::id(&request.get_ref().id, &mut budget, self.limits.max_id_bytes)?;
         self.check_encoded(request.get_ref())?;
-        let id = DeploymentId(request.into_inner().id);
-        let deployment = self
-            .services
-            .deployments
-            .get_versioned(&tenant, &id)
-            .await
-            .map_err(|error| platform_status(error, &self.limits))?;
-        self.response(response::get(deployment.as_ref(), &tenant, &self.limits)?)
+        let request = request.into_inner();
+        let id = DeploymentId(request.id);
+        if request.include_operation_snapshot {
+            managed::get(self, tenant, id, deadline).await
+        } else {
+            let value = self
+                .services
+                .deployments
+                .get_versioned(&tenant, &id)
+                .await
+                .map_err(|error| platform_status(error, &self.limits))?;
+            self.response(response::get(value.as_ref(), &tenant, &self.limits)?)
+        }
     }
 
     async fn list_deployments(
@@ -173,7 +185,11 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
         &self,
         mut request: Request<proto::DeleteDeploymentRequest>,
     ) -> Result<Response<proto::Empty>, Status> {
+        let deadline = managed::deadline(&request);
         let principal = self.authenticate(&mut request, ManagementOperation::Tenant)?;
+        if request.get_ref().operation.is_some() {
+            return managed::delete(self, request.into_inner(), principal, deadline).await;
+        }
         let tenant = principal.tenant.clone().expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::DeleteDeploymentRequest>(&self.limits)?;
         validation::id(&request.get_ref().id, &mut budget, self.limits.max_id_bytes)?;
@@ -227,6 +243,15 @@ impl proto::deployment_service_server::DeploymentService for ManagementServiceAd
             self.response(proto::Empty {})?,
             ack,
         ))
+    }
+
+    async fn get_deployment_operation(
+        &self,
+        mut request: Request<proto::GetDeploymentOperationRequest>,
+    ) -> Result<Response<proto::GetDeploymentOperationResponse>, Status> {
+        let deadline = managed::deadline(&request);
+        let principal = self.authenticate(&mut request, ManagementOperation::Tenant)?;
+        managed::lookup(self, request.into_inner(), principal, deadline).await
     }
 
     type WatchDeploymentStream = tonic::codegen::BoxStream<proto::DeploymentEvent>;

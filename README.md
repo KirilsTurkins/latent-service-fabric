@@ -7,7 +7,7 @@ sockets, threads, guest heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-> Phase 1 and its performance extension are complete: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [functional completion review](docs/phase-1-completion.md) and [extension report](docs/phase-1-extension-completion.md) cover scale, soak, optimization, and actual Docker/Kubernetes comparisons. These are scoped engineering results, not production SLOs. Phase 2 delivery now includes deterministic packaging, OCI distribution, publisher/provenance/SBOM verification, trusted admission and release lifecycle management, isolated AOT compilation, a protected native cache, durable audit, durable rollout coordination, controlled canary promotion and atomic eligible-release rollback. The remaining operator workflows and the Phase 2 completion gate remain in progress.
+> Phase 1 and its performance extension are complete: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [functional completion review](docs/phase-1-completion.md) and [extension report](docs/phase-1-extension-completion.md) cover scale, soak, optimization, and actual Docker/Kubernetes comparisons. These are scoped engineering results, not production SLOs. Phase 2 delivery now includes deterministic packaging, OCI distribution, publisher/provenance/SBOM verification, trusted admission and release lifecycle management, isolated AOT compilation, a protected native cache, durable audit, durable rollout coordination, controlled canary promotion and atomic eligible-release rollback. The CLI also exposes local package/OCI workflows and authenticated release, managed deployment, rollout and audit commands. Phase 2 validation and its completion gate remain in progress.
 
 ## Core invariant
 
@@ -17,7 +17,9 @@ resident state = fixed node runtime + bounded catalog metadata + active activati
 
 The number of operating-system processes, threads, sockets, and execution cells is node-defined and must not scale with the number of deployed services.
 
-![Completed Phase 1: authenticated local clients use durable catalogs, admission and scheduling, and generic Wasmtime cells; packaging, general capabilities, state, and clustering remain later phases.](docs/assets/phase1-delivery-boundary.svg)
+![Historical Phase 1 boundary: authenticated local clients use durable catalogs, admission and scheduling, and generic Wasmtime cells.](docs/assets/phase1-delivery-boundary.svg)
+
+This diagram records the completed Phase 1 scope. The Phase 2 additions are listed below.
 
 ## Authoritative interface layers
 
@@ -31,7 +33,7 @@ The number of operating-system processes, threads, sockets, and execution cells 
 
 ```text
 apps/                 Standalone latentd node, operator CLI, explicit Phase 0 spike, and control-plane placeholder
-crates/               Rust interfaces, delivered Phase 1 subsystems, and isolated Phase 0 regression paths
+crates/               Rust interfaces, Phase 1/2 subsystems, and isolated Phase 0 regression paths
 wit/                  WIT packages for platform capabilities
 api/proto/            Protobuf service definitions
 schemas/              JSON Schemas for declarative resources
@@ -50,13 +52,16 @@ tools/                 Pinned validation, generation, spike, benchmark, and gate
 
 - `latentd`: standalone Linux node through `serve --config PATH`, plus the finite local `phase0-spike invoke-once` harness and `verify-recovery` containment proof.
 - `latent-control`: clustered control-plane application placeholder.
-- `latent`: bounded local manifest validation, release publication, versioned deployment, invocation/cancellation/status, routing and node inspection through generated RPC clients.
+- `latent`: bounded local package build/inspect/verification and OCI transfer; authenticated release lifecycle, managed deployment receipts, rollout/canary/rollback, audit, invocation/cancellation/status, routing and node commands.
 
 See [standalone node configuration and operation](docs/reference/standalone-node.md)
 for loopback authentication, readiness, durable restart, and bounded shutdown.
 The [operator CLI reference](docs/reference/operator-cli.md) and
 [scriptable echo quickstart](docs/development/standalone-quickstart.md) cover the
-complete local client workflow.
+local invocation workflow. The [Phase 2 operator workflows](docs/phase-2-operator-workflows.md)
+cover package evidence, separate registry credentials, managed preconditions and
+finite operation recovery. The client never silently retries a mutation or replaces
+a stale precondition.
 The explicit Phase 0 spike retains its separate measured scope.
 
 ## Delivered Phase 1 features
@@ -110,9 +115,17 @@ production cluster capacity or a universal millisecond request budget.
 | Manual rollout coordination | Atomic route/state publication, exact revision and cohort conflicts, bounded receipts and restart recovery, pause/resume/abort; [rollouts](docs/phase-2-rollouts.md) |
 | Controlled canary promotion | Explicit policy, full-window candidate evaluation, sealed exact-cohort evidence, current eligibility and atomic next-stage publication; [canary promotion](docs/phase-2-canary-promotion.md) |
 | Atomic rollback | Plan-bound original target, current eligibility and reverse compatibility, fresh publication generation and exact operation recovery; [rollback](docs/phase-2-rollback.md) |
+| Operator workflows | Local package build/inspect/verification, OCI transfer, release lifecycle, managed deployment identities, rollout controls and typed audit queries; [CLI](docs/reference/operator-cli.md), [workflow and recovery contract](docs/phase-2-operator-workflows.md) |
 
-Copied canary observations do not authorize promotion. The [roadmap](docs/roadmap.md)
-tracks the remaining operator workflows and the Phase 2 completion gate.
+Local verification and copied canary observations do not authorize execution or
+promotion. Managed deployments bind a caller-retained operation ID, exact object
+generation and global catalog state version; receipt lookup is finite and Unknown
+does not prove a mutation never ran. The [roadmap](docs/roadmap.md) tracks remaining
+Phase 2 validation and the completion gate.
+
+General capability providers, HTTP/web hosting and expanded SDK transports are
+Phase 3 work. Durable service state, transactional effects and clustering remain
+later phases; the current node is a standalone stateless execution profile.
 
 ## Historical Phase 0 result
 

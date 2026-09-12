@@ -69,6 +69,7 @@ pub fn scenario() {
                 OPERATOR,
                 proto::GetDeploymentRequest {
                     id: applied.id.clone(),
+                    include_operation_snapshot: false,
                 },
             ))
             .await
@@ -129,6 +130,7 @@ async fn publish(
         .apply_deployment(request(
             OPERATOR,
             proto::ApplyDeploymentRequest {
+                operation: None,
                 deployment: Some(deployment(&digest)),
                 expected_generation: Some(0),
             },

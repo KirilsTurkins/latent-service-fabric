@@ -220,6 +220,12 @@ impl Catalogs {
                     )
                     .await?;
                 }
+                latent_rollout::deployment_audit::reconcile_deployment_audit(
+                    &audit.handle(),
+                    deployments.as_ref(),
+                    std::time::Instant::now() + std::time::Duration::from_secs(30),
+                )
+                .await?;
                 latent_artifacts::reconcile_release_audit(&audit.handle(), artifacts.as_ref())
                     .await?;
             }

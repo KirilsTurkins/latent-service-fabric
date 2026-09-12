@@ -24,6 +24,20 @@ impl Cli {
             path_argument(path)?;
         }
         match &self.command {
+            Command::Rollout(command) => rollout(command),
+            Command::Audit(super::audit::AuditCommand::Query(args)) => {
+                optional(args.actor.as_deref(), 512)?;
+                page_token(args.page_token.as_deref(), args.page_size)?;
+                if args
+                    .from_unix_millis
+                    .zip(args.to_unix_millis)
+                    .is_some_and(|(from, to)| from > to)
+                {
+                    return Err(invalid());
+                }
+                Ok(())
+            }
+            Command::Package(command) => command.validate(self.tenant.as_deref()),
             Command::Validate(
                 ValidateCommand::Capsule(args) | ValidateCommand::Deployment(args),
             ) => path_argument(&args.file),
@@ -47,23 +61,142 @@ impl Cli {
 fn release(command: &ReleaseCommand) -> Result<(), Failure> {
     match command {
         ReleaseCommand::Publish(args) => {
+            optional(args.operation.operation_id.as_deref(), 128)?;
+            if args.operation.operation_id.is_some() != args.operation.expected_generation.is_some()
+                || args.operation.expected_generation.is_some_and(|n| n != 0)
+            {
+                return Err(invalid());
+            }
             for path in [&args.manifest, &args.component, &args.contracts] {
                 path_argument(path)?;
             }
             single_stdin(&[&args.manifest, &args.component, &args.contracts])
         }
-        ReleaseCommand::Get(args) => identifier(&args.digest, 512),
+        ReleaseCommand::Get(args) | ReleaseCommand::Lifecycle(args) => {
+            identifier(&args.digest, 512)
+        }
         ReleaseCommand::List(args) => page(args),
+        ReleaseCommand::Operation(args) => identifier(&args.operation_id, 128),
+        ReleaseCommand::Revoke(args) | ReleaseCommand::Retire(args) => {
+            identifier(&args.digest, 71)?;
+            identifier(&args.operation.operation_id, 128)?;
+            if args.operation.expected_generation == 0 {
+                return Err(invalid());
+            }
+            Ok(())
+        }
+        ReleaseCommand::PublishPackage(args) => {
+            path_argument(&args.directory)?;
+            if let Some(path) = &args.evidence {
+                path_argument(path)?;
+            }
+            identifier(&args.operation_id, 128)?;
+            if args.expected_generation != 0 {
+                return Err(invalid());
+            }
+            Ok(())
+        }
+        ReleaseCommand::RenewEvidence(args) => {
+            identifier(&args.digest, 71)?;
+            identifier(&args.package_digest, 71)?;
+            identifier(&args.operation.operation_id, 128)?;
+            if args.operation.expected_generation == 0 {
+                return Err(invalid());
+            }
+            path_argument(&args.evidence)
+        }
     }
 }
 
 fn deployment(command: &DeploymentCommand) -> Result<(), Failure> {
     match command {
-        DeploymentCommand::Apply(args) => path_argument(&args.file),
+        DeploymentCommand::Apply(args) => {
+            deployment_operation(&args.operation, args.expected_generation, false)?;
+            path_argument(&args.file)
+        }
         DeploymentCommand::Get(args) => identifier(&args.id, 512),
-        DeploymentCommand::Delete(args) => identifier(&args.id, 512),
+        DeploymentCommand::Delete(args) => {
+            deployment_operation(&args.operation, args.expected_generation, true)?;
+            identifier(&args.id, 512)
+        }
         DeploymentCommand::List(args) => page(args),
+        DeploymentCommand::Operation(args) => identifier(&args.operation_id, 128),
     }
+}
+
+fn deployment_operation(
+    value: &super::management::DeploymentOperationArgs,
+    generation: Option<u64>,
+    delete: bool,
+) -> Result<(), Failure> {
+    optional(value.operation_id.as_deref(), 128)?;
+    if value.operation_id.is_some() != value.expected_state_version.is_some()
+        || (value.operation_id.is_some()
+            && (generation.is_none() || (delete && generation == Some(0))))
+    {
+        return Err(invalid());
+    }
+    Ok(())
+}
+
+fn rollout(command: &super::rollout::RolloutCommand) -> Result<(), Failure> {
+    use super::rollout::RolloutCommand as R;
+    let change = match command {
+        R::Start(args) => {
+            identifier(&args.id, 128)?;
+            identifier(&args.base, 512)?;
+            identifier(&args.operation_id, 128)?;
+            path_argument(&args.candidate)?;
+            if args.weights.is_empty()
+                || args.weights.len() > 64
+                || args.weights.last() != Some(&10000)
+                || args.weights.windows(2).any(|pair| pair[0] >= pair[1])
+                || args.weights[0] == 0
+                || args.expected_revision != 0
+                || args.expected_base_generation == 0
+            {
+                return Err(invalid());
+            }
+            if let Some(path) = &args.canary_policy {
+                path_argument(path)?;
+                single_stdin(&[&args.candidate, path])?;
+            }
+            return Ok(());
+        }
+        R::Get(args) => return identifier(&args.id, 128),
+        R::List(args) => {
+            optional(args.service.as_deref(), 512)?;
+            return page_token(args.page_token.as_deref(), args.page_size);
+        }
+        R::Operation(args) => {
+            identifier(&args.id, 128)?;
+            return identifier(&args.operation_id, 128);
+        }
+        R::Evaluate(args) => {
+            if args.expected_revision == 0 {
+                return Err(invalid());
+            }
+            return identifier(&args.id, 128);
+        }
+        R::Pause(args) | R::Resume(args) | R::Abort(args) => args,
+        R::Advance(args) | R::Promote(args) => {
+            if !(1..=63).contains(&args.next_step) {
+                return Err(invalid());
+            }
+            &args.change
+        }
+        R::Rollback(args) => {
+            if args.target_generation == 0 {
+                return Err(invalid());
+            }
+            &args.change
+        }
+    };
+    if change.expected_revision == 0 {
+        return Err(invalid());
+    }
+    identifier(&change.id, 128)?;
+    identifier(&change.operation_id, 128)
 }
 
 fn node(command: &NodeCommand) -> Result<(), Failure> {
@@ -151,7 +284,7 @@ fn optional(value: Option<&str>, maximum: usize) -> Result<(), Failure> {
     value.map_or(Ok(()), |value| identifier(value, maximum))
 }
 
-fn identifier(value: &str, maximum: usize) -> Result<(), Failure> {
+pub(super) fn identifier(value: &str, maximum: usize) -> Result<(), Failure> {
     if value.is_empty()
         || value.len() > maximum
         || value
@@ -163,7 +296,7 @@ fn identifier(value: &str, maximum: usize) -> Result<(), Failure> {
     Ok(())
 }
 
-fn path_argument(path: &Path) -> Result<(), Failure> {
+pub(super) fn path_argument(path: &Path) -> Result<(), Failure> {
     if path.as_os_str().is_empty() || path.as_os_str().len() > 4096 {
         return Err(invalid());
     }

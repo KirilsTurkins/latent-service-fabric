@@ -3,6 +3,7 @@ syntax = "proto3";
 package latent.control.v1;
 
 import "latent/control/v1/common.proto";
+import "latent/control/v1/release.proto";
 
 message CapabilityGrant {
   string capability = 1;
@@ -45,21 +46,33 @@ message ApplyDeploymentRequest {
   // Absent: unconditional upsert. Zero: require absence (create only).
   // Positive: require that exact existing deployment version at atomic commit.
   optional uint64 expected_generation = 2;
+  // Present selects audited, idempotent control; both CAS values are required.
+  DeploymentOperationPrecondition operation = 3;
 }
 
 message ApplyDeploymentResponse {
   Deployment deployment = 1;
   repeated string warnings = 2;
   optional AuditAck audit_ack = 3;
+  DeploymentOperationReceipt receipt = 4;
+  bool replayed = 5;
+  DeploymentDurability durability = 6;
 }
 
 message GetDeploymentRequest {
   // Resolved within the authenticated principal's tenant by the adapter.
   string id = 1;
+  // Explicit bounded managed snapshot; omission preserves legacy read limits.
+  bool include_operation_snapshot = 2;
 }
 
 message GetDeploymentResponse {
   optional Deployment deployment = 1;
+  // Coherent catalog snapshot, including when this tenant's object is absent.
+  // Absent on legacy Get. Explicit snapshots require supported store semantics.
+  optional uint64 state_version = 2;
+  optional uint64 route_generation = 3;
+  optional DeploymentDurability durability = 4;
 }
 
 message ListDeploymentsRequest {
@@ -84,6 +97,68 @@ message DeleteDeploymentRequest {
   // Zero requires absence, so an existing object conflicts and an absent object
   // returns not-found. This is checked atomically, never by adapter read/check.
   optional uint64 expected_generation = 2;
+  // Managed success retains Empty and supplies bounded operation/audit metadata.
+  DeploymentOperationPrecondition operation = 3;
+}
+
+message DeploymentOperationPrecondition {
+  string operation_id = 1;
+  // Required, including explicit zero for the first catalog publication.
+  optional uint64 expected_state_version = 2;
+}
+
+enum DeploymentDurability {
+  DEPLOYMENT_DURABILITY_UNSPECIFIED = 0;
+  DEPLOYMENT_DURABILITY_CONFIRMED = 1;
+  DEPLOYMENT_DURABILITY_UNCERTAIN = 2;
+}
+
+enum DeploymentOperationAction {
+  DEPLOYMENT_OPERATION_ACTION_UNSPECIFIED = 0;
+  DEPLOYMENT_OPERATION_ACTION_APPLY = 1;
+  DEPLOYMENT_OPERATION_ACTION_DELETE = 2;
+}
+
+// Compact committed history; this is never a current release eligibility grant.
+message DeploymentOperationReceipt {
+  uint32 format_version = 1;
+  string tenant = 2;
+  ReleaseActor actor = 3;
+  string operation_id = 4;
+  DeploymentOperationAction action = 5;
+  string deployment_id = 6;
+  string request_digest = 7;
+  uint64 expected_state_version = 8;
+  uint64 expected_generation = 9;
+  // New object version for Apply; removed object's version for Delete.
+  uint64 object_generation = 10;
+  uint64 route_generation = 11;
+  uint64 state_version = 12;
+  string manifest_digest = 13;
+  string component_digest = 14;
+  uint64 completed_at_unix_millis = 15;
+  string receipt_digest = 16;
+}
+
+message GetDeploymentOperationRequest {
+  // Exact operation ID in the authenticated tenant, including deleted objects.
+  string operation_id = 1;
+}
+
+enum DeploymentOperationLookupDisposition {
+  DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_UNSPECIFIED = 0;
+  DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_FOUND = 1;
+  // Includes absent and evicted receipts; never proof that a mutation did not run.
+  DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_UNKNOWN = 2;
+  DEPLOYMENT_OPERATION_LOOKUP_DISPOSITION_UNCERTAIN = 3;
+}
+
+message GetDeploymentOperationResponse {
+  DeploymentOperationLookupDisposition disposition = 1;
+  DeploymentOperationReceipt receipt = 2;
+  optional DeploymentDurability durability = 3;
+  uint64 retained_floor = 4;
+  uint64 high_watermark = 5;
 }
 
 message WatchDeploymentRequest {
@@ -106,6 +181,7 @@ service DeploymentService {
   rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
   // Phase 1 standalone: supported.
   rpc DeleteDeployment(DeleteDeploymentRequest) returns (Empty);
+  rpc GetDeploymentOperation(GetDeploymentOperationRequest) returns (GetDeploymentOperationResponse);
   // Phase 2+ control-plane watch. A Phase 1 standalone adapter must return an
   // explicit unimplemented response.
   rpc WatchDeployment(WatchDeploymentRequest) returns (stream DeploymentEvent);

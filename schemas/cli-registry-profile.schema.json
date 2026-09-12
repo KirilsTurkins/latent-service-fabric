@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/cli-registry-profile.schema.json",
+  "title": "LSF v1 explicit CLI registry profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "origin",
+    "repository",
+    "addresses"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "origin": {
+      "type": "string",
+      "minLength": 9,
+      "maxLength": 512,
+      "pattern": "^https?://[^\\s]+(?![\\s\\S])"
+    },
+    "repository": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "addresses": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 64
+      }
+    },
+    "allowInsecureLoopback": {
+      "type": "boolean",
+      "default": false
+    },
+    "credentialFile": {
+      "$ref": "#/$defs/path"
+    },
+    "rootCertificates": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/path"
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64}(?:/(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64})*(?![\\s\\S])"
+    }
+  }
+}

@@ -48,12 +48,20 @@ pub(super) struct Payload {
 pub(super) struct ControlPayload {
     pub transaction_version: u64,
     pub rollouts: super::rollouts::table::TableData,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "crate::deployment_operations::codec::present"
+    )]
+    pub deployment_operations: Option<super::operations::table::TableData>,
 }
 #[derive(Serialize)]
 #[serde(crate = "latent_manifest::__serde")]
 pub(super) struct ControlPayloadRef<'a> {
     pub transaction_version: u64,
     pub rollouts: &'a super::rollouts::table::TableData,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deployment_operations: Option<&'a super::operations::table::TableData>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -81,7 +89,7 @@ impl Record {
                 .keys()
                 .map(|id| (id.clone(), self.payload.generation))
                 .collect()),
-            (2 | 3, Some(stored)) if stored.len() == deployments.len() => {
+            (2 | 3 | 4, Some(stored)) if stored.len() == deployments.len() => {
                 let mut versions = BTreeMap::new();
                 for entry in stored {
                     let id = DeploymentId(entry.id.clone());
@@ -218,8 +226,20 @@ pub(super) fn load(
     }
     let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
     let checksum = payload_checksum(&record.payload, config.max_state_bytes, work)?;
-    if !matches!(record.format_version, 1..=3)
-        || (record.format_version == 3) != record.payload.control.is_some()
+    if !matches!(record.format_version, 1..=4)
+        || matches!(record.format_version, 3 | 4) != record.payload.control.is_some()
+        || (record.format_version == 4)
+            != record
+                .payload
+                .control
+                .as_ref()
+                .is_some_and(|v| v.deployment_operations.is_some())
+        || (record.format_version == 3
+            && record
+                .payload
+                .control
+                .as_ref()
+                .is_some_and(|v| v.rollouts.rows.is_empty()))
         || record
             .payload
             .control

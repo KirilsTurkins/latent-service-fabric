@@ -8,6 +8,10 @@ use super::super::{proto, ManagementLimits, RequestBudget};
 const MAX_DOCUMENT_BYTES: usize = 256 * 1024;
 const MAX_LAYERS: usize = 256;
 const MAX_EVIDENCE: usize = 8;
+const MAX_EVIDENCE_CONFIGURATION_BYTES: usize = 2;
+// Prost decodes Vec<u8> via reserve/put; even the two-byte empty object has
+// an eight-byte allocation. Keep content and retained allocation bounds separate.
+const MAX_EVIDENCE_CONFIGURATION_CAPACITY: usize = 8;
 
 pub(super) fn validate(
     upload: &proto::PackageAdmissionUpload,
@@ -67,7 +71,10 @@ pub(super) fn validate_evidence(
         budget.allocation::<AdmissionEvidence>(entries.len())?;
         for entry in entries {
             budget.bytes(&entry.manifest, document_limit)?;
-            budget.bytes(&entry.configuration, 2)?;
+            if entry.configuration.len() > MAX_EVIDENCE_CONFIGURATION_BYTES {
+                return Err(super::super::bounds::exhausted());
+            }
+            budget.bytes(&entry.configuration, MAX_EVIDENCE_CONFIGURATION_CAPACITY)?;
             budget.bytes(&entry.payload, payload_limit)?;
             for bytes in [&entry.manifest, &entry.configuration, &entry.payload] {
                 required(bytes)?;

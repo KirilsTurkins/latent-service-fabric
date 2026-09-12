@@ -133,6 +133,7 @@ impl DirectoryDeploymentRepository {
             transaction: receipt.state_version,
             routes: Arc::clone(&prepared.next_routes),
             rollouts: Arc::clone(&prepared.next_table),
+            operations: Arc::clone(&prepared.previous.operations),
             confirmed: durable.is_ok(),
         };
         let old = {

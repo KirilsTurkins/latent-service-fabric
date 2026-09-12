@@ -123,3 +123,28 @@ fn route_scope_mismatch_is_not_rendered_as_a_successful_projection() {
     };
     assert!(bounds::checked(&value, 4096).is_err());
 }
+
+#[test]
+fn unsolicited_receipts_are_validated_even_without_a_managed_request() {
+    let mut applied = proto::ApplyDeploymentResponse {
+        deployment: Some(deployment()),
+        ..proto::ApplyDeploymentResponse::default()
+    };
+    bounds::checked(&applied, 1024 * 1024).unwrap();
+    applied.receipt = Some(proto::DeploymentOperationReceipt {
+        action: 999,
+        ..proto::DeploymentOperationReceipt::default()
+    });
+    assert!(bounds::checked(&applied, 1024 * 1024).is_err());
+
+    let mut published = proto::PublishReleaseResponse {
+        release: Some(release()),
+        ..proto::PublishReleaseResponse::default()
+    };
+    bounds::checked(&published, 1024 * 1024).unwrap();
+    published.operation = Some(proto::ReleaseOperationReceipt {
+        action: 999,
+        ..proto::ReleaseOperationReceipt::default()
+    });
+    assert!(bounds::checked(&published, 1024 * 1024).is_err());
+}
