@@ -127,12 +127,13 @@ impl Phase2AuditLimits {
                 "invalid-phase2-audit-limits",
             )
         })?;
-        let page_budget = aggregate_string_budget(self.max_query_events, self).ok_or_else(|| {
-            error(
-                PlatformErrorCode::InvalidArgument,
-                "invalid-phase2-audit-limits",
-            )
-        })?;
+        let page_budget =
+            aggregate_string_budget(self.max_query_events, self).ok_or_else(|| {
+                error(
+                    PlatformErrorCode::InvalidArgument,
+                    "invalid-phase2-audit-limits",
+                )
+            })?;
         if retained_budget > MAX_PHASE2_AUDIT_RETAINED_STRING_BYTES
             || page_budget > MAX_PHASE2_AUDIT_PAGE_STRING_BYTES
         {
@@ -306,7 +307,11 @@ fn validate_event(
         validate_string(package.as_str(), limits, "invalid-phase2-audit-package")?;
     }
     validate_optional_string(
-        event.identity.component.as_ref().map(|value| value.0.as_str()),
+        event
+            .identity
+            .component
+            .as_ref()
+            .map(|value| value.0.as_str()),
         limits,
         "invalid-phase2-audit-component",
     )?;
@@ -321,7 +326,11 @@ fn validate_event(
         "invalid-phase2-audit-rollout-id",
     )?;
     validate_optional_string(
-        event.identity.revision.as_ref().map(|value| value.0.as_str()),
+        event
+            .identity
+            .revision
+            .as_ref()
+            .map(|value| value.0.as_str()),
         limits,
         "invalid-phase2-audit-revision",
     )?;
@@ -337,11 +346,7 @@ fn validate_event(
         "invalid-phase2-audit-actor-type",
     )?;
     if let Some(actor_tenant) = &event.actor.tenant {
-        validate_string(
-            &actor_tenant.0,
-            limits,
-            "invalid-phase2-audit-actor-tenant",
-        )?;
+        validate_string(&actor_tenant.0, limits, "invalid-phase2-audit-actor-tenant")?;
         if actor_tenant != &event.identity.tenant {
             return Err(error(
                 PlatformErrorCode::PermissionDenied,
@@ -640,8 +645,7 @@ mod tests {
         oversized_actor_key.push_str("role");
         let mut oversized_actor_value = String::with_capacity(4096);
         oversized_actor_value.push_str("operator");
-        source.actor.attributes =
-            BTreeMap::from([(oversized_actor_key, oversized_actor_value)]);
+        source.actor.attributes = BTreeMap::from([(oversized_actor_key, oversized_actor_value)]);
 
         let mut oversized_component = String::with_capacity(4096);
         oversized_component.push_str("sha256:component");
