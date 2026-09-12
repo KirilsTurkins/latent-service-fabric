@@ -6,6 +6,7 @@ executables; deliberate session escape and supervisor SIGKILL remain excluded.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -64,6 +65,44 @@ def write_json(path: Path, value):
     with path.open("xb") as target:
         target.write(data)
     path.chmod(0o600)
+
+
+def file_digest(path: Path, maximum, cancellation, deadline):
+    """Hash bounded supplied identity bytes without retaining them or their path."""
+    require(path.is_file() and not path.is_symlink(), "identity-file")
+    digest = hashlib.sha256()
+    total = 0
+    with path.open("rb") as source:
+        while True:
+            cancellation.check()
+            require(time.monotonic() < deadline, "workflow-deadline")
+            chunk = source.read(16384)
+            if not chunk:
+                break
+            total += len(chunk)
+            require(total <= maximum, "identity-file-bound")
+            digest.update(chunk)
+    require(total > 0, "identity-file-empty")
+    return "sha256:" + digest.hexdigest()
+
+
+def stopped_record(node):
+    """Accept the actual stopped message only after the real owner was reaped."""
+    lines = bytes(node.buffers[0]).splitlines()
+    require(len(lines) == 1 and len(lines[0]) <= 16384, "shutdown-record-bound")
+    record = json.loads(lines[0])
+    require(record["schemaVersion"] == "latent.standalone.status.v1"
+            and record["event"] == "stopped" and record["clean"] is True
+            and record["report"]["clean"] is True and node.closed
+            and node.owner.finished and node.owner.process.returncode == 0,
+            "shutdown-not-clean")
+    return {"processId": node.owner.process.pid, "reaped": True, "record": record}
+
+
+def bounded_receipt(value):
+    encoded = json.dumps(value, separators=(",", ":"), ensure_ascii=False)
+    require(len(encoded.encode("utf-8")) <= 65536, "receipt-byte-bound")
+    return encoded
 
 
 def write_candidate_manifest(source: Path, output: Path, weight: int):

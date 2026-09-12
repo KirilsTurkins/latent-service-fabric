@@ -5,7 +5,9 @@ import json
 import re
 import time
 
-from tools.phase2_operator_process import Process, read_json, require, write_candidate_manifest, write_json
+from tools.phase2_operator_process import (
+    Process, file_digest, read_json, require, stopped_record, write_candidate_manifest, write_json,
+)
 from tools.phase2_operator_canary import invoke, positive_canary, rollback_target
 
 TOKEN = "LSF-PUBLIC-OPERATOR-WORKFLOW-TEST-ONLY"
@@ -58,6 +60,9 @@ def connect(client, binary, directory, config, tenant, ordinal):
         while True:
             state = client.call("node", "get", NODE_ID)["data"]
             if state["inventory"]["health"]["ready"]:
+                reported = state["inventory"]["node"]
+                node.reported_identity = {key: reported[key] for key in (
+                    "id", "architecture", "operatingSystem", "cpuFeatures", "trustClasses")}
                 return node
             require(time.monotonic() < deadline, "node-readiness")
             time.sleep(0.025)
@@ -129,7 +134,11 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
     candidate = write_candidate_manifest(fixture / "green/deployment.json",
                                          client.directory / "candidate-1000.json", 1000)
     config = configure_node(directory, fixture, tenant)
+    config_digest = file_digest(config, 262144, client.cancellation, client.deadline)
     node = connect(client, binary, directory, config, tenant, 1)
+    runtime_identity = node.reported_identity
+    publications = {}
+    shutdown = []
     try:
         # A distinct client configuration carries an invalid public test token.
         valid_config = client.config
@@ -156,6 +165,7 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
             require(operation == published["operation"], "publication-receipt")
             replay = client.call(*arguments)["data"]
             require(replay["operation"] == operation, "publication-replay")
+            publications[name] = operation
             client.call("release", "lifecycle", summaries[name]["componentDigest"])
         first = client.call("release", "list", "--page-size", "1")["data"]
         require(len(first["releases"]) == 1 and first["nextPageToken"], "release-pagination")
@@ -215,8 +225,8 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
         change(client, "promote", "canary", started["revision"], "canary-denied", "--next-step", "1", codes=(4,))
         require(route(client) == before, "denied-promotion-mutated-route")
         aborted = receipt(change(client, "abort", "canary", started["revision"], "canary-abort"), "canary-abort")
-        receipt(change(client, "rollback", "canary", aborted["revision"], "canary-rollback",
-                       "--target-generation", negative_target), "canary-rollback")
+        negative_rollback = receipt(change(client, "rollback", "canary", aborted["revision"], "canary-rollback",
+                                          "--target-generation", negative_target), "canary-rollback")
 
         canary_counts = positive_canary(client, metadata, input_path, fixture, summaries, receipt, change)
 
@@ -235,6 +245,7 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
                              "manual-rollback", "canary-denied", "healthy-promote"})
         stable_route = route(client)
         stop(client, node)
+        shutdown.append(stopped_record(node))
         node = None
         # The enforced authority persists a future clock lease. Restart is
         # intentionally unavailable before that floor; wait the configured
@@ -244,7 +255,9 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
             client.cancellation.check()
             time.sleep(min(0.025, max(0, restart_after - time.monotonic())))
         node = connect(client, binary, directory, config, tenant, 2)
-        require(route_identity(route(client)) == route_identity(stable_route), "restart-route-identity")
+        recovered_route = route(client)
+        require(route_identity(recovered_route) == route_identity(stable_route), "restart-route-identity")
+        require(node.reported_identity == runtime_identity, "restart-runtime-identity")
         require(client.call("deployment", "operation", "apply-blue")["data"]["receipt"] == applied, "restart-apply-receipt")
         require(client.call("rollout", "operation", "manual", "manual-rollback")["data"]["receipt"] == rolled,
                 "restart-rollback-receipt")
@@ -268,8 +281,19 @@ def node_workflow(client, binary, directory, fixture, outputs, summaries, metada
         require(client.call("release", "operation", "revoke-green")["data"]["receipt"] == revoked,
                 "revoke-operation-receipt")
         stop(client, node)
+        shutdown.append(stopped_record(node))
         node = None
-        return {"successfulInvocations": 18, "positiveCanary": canary_counts, "revocationVerified": True}
+        require(file_digest(config, 262144, client.cancellation, client.deadline) == config_digest,
+                "node-configuration-changed")
+        return {"successfulInvocations": 18, "positiveCanary": canary_counts, "revocationVerified": True,
+                "nodeConfigurationDigest": config_digest, "reportedRuntime": runtime_identity,
+                "publicationReceipts": publications, "applyReceipt": applied,
+                "manualRollbackReceipt": rolled, "zeroDataEvaluation": evaluation,
+                "zeroDataRollbackReceipt": negative_rollback, "deleteReceipt": deleted,
+                "revocationReceipt": revoked, "revocationStatus": status,
+                "initialInvocation": initial_pin, "routeBeforeRestart": route_identity(stable_route),
+                "routeAfterRestart": route_identity(recovered_route),
+                "deadlineOperationLookup": inspected["data"], "shutdown": shutdown}
     finally:
         client.node = None
         if node is not None:

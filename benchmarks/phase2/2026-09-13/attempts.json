@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "latent.phase2.gate-attempt-ledger.v1",
+  "date": "2026-09-13",
+  "timeZone": "Europe/Berlin",
+  "retention": "Compact reviewed outcomes; raw compiler/CLI logs and duplicate intermediate passing receipts are not retained. Missing raw diagnostics cannot be replayed from this ledger.",
+  "attempts": [
+    {
+      "id": "operator-before-final-receipt",
+      "outcome": "failed",
+      "sourceBaseRevision": "32f9d3f03e2def6548afc4dd9f445bf819b1aa93",
+      "stage": "node-management-positive-canary",
+      "completedCliProcesses": 58,
+      "exitCode": 4,
+      "publicErrorCode": "unavailable",
+      "grpcErrorCode": null,
+      "exactInternalCause": "unclassified",
+      "disposition": "Not qualified. Owned node/registry cleanup completed. No canary promotion result or zero-error availability conclusion is inferred. The public result does not distinguish authority contention, clock availability or runtime capacity.",
+      "followup": "Source review found no added RPC or retained Rust owner in the Python collector. The separately retained passing attempt used the same production binaries, maintained collector code, bounds and logical workload, with fresh signed fixtures. No failed Invoke was retried or dropped from a denominator."
+    },
+    {
+      "id": "operator-final",
+      "outcome": "passed",
+      "receipt": "operator-receipt.json"
+    },
+    {
+      "id": "offline-initial-build-identity",
+      "outcome": "not-qualified",
+      "disposition": "An initial binary/source association was recognized as stale. Rebuilt production binaries at32f9d3f03e2def6548afc4dd9f445bf819b1aa93 before the retained fresh run; initial output is not evidence for another revision."
+    },
+    {
+      "id": "offline-final",
+      "outcome": "passed",
+      "receipt": "offline-receipt.json"
+    },
+    {
+      "id": "resource-initial",
+      "outcome": "passed-under-initial-validator",
+      "receiptFileSha256": "74547bbe5f2c60f8e16080b2dc31e0271eb1c091f624713f1835561dc704ece8",
+      "controls": 133,
+      "invocations": 32,
+      "samples": 12,
+      "elapsedMillis": 8652,
+      "rssMediansBytes": [
+        63700992,
+        64749568,
+        66060288,
+        66191360
+      ],
+      "disposition": "Superseded after formatting and offline-validator coverage improvements. Fixed PROFILE and workload were unchanged. Full initial receipt compacted; final receipt below is a separate fresh observation."
+    },
+    {
+      "id": "resource-final",
+      "outcome": "passed",
+      "receipt": "resource-receipt.json"
+    },
+    {
+      "id": "native-initial",
+      "outcome": "passed",
+      "passedTests": 3,
+      "disposition": "Three cases passed before test-only lint corrections; the final receipt binds a fresh run after those corrections."
+    },
+    {
+      "id": "native-final",
+      "outcome": "passed",
+      "receipt": "native-currentness-receipt.json"
+    },
+    {
+      "id": "strict-clippy-initial",
+      "outcome": "failed",
+      "diagnostics": [
+        "test fixture used inferred Default instead of RuntimeRequirements::default",
+        "test assertion took PlatformError by value without consuming it"
+      ],
+      "disposition": "Both test-only lints corrected; strict affected-package Clippy passed."
+    },
+    {
+      "id": "operator-pr-contracts-initial",
+      "outcome": "failed",
+      "workflowRun": 34722387591,
+      "reviewedHead": "32f9d3f03e2def6548afc4dd9f445bf819b1aa93",
+      "reason": "optimization retained-artifact bound",
+      "disposition": "Smoke-only builds now explicitly omit debuginfo and identify their recipe. No artifact bound increased. All seven checks passed on a35a58950bff187b2702164fd2f13b0fb54b237b in runs34723362373/34723362353."
+    },
+    {
+      "id": "shell-guard-windows-invocation",
+      "outcome": "unavailable",
+      "reason": "Host Windows/WSL bash RPC handle failure prevented Linux shell-guard cases from executing",
+      "disposition": "Not a test pass. Reran intended Linux tests inside the owned container: seven shell-guard tests passed."
+    }
+  ]
+}

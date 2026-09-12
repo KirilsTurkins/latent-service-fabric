@@ -17,7 +17,7 @@ use latent_executor::{
 };
 use latent_manifest::{
     CapsuleManifest, ContractExport, ExecutionBackendKind, ExecutionRequirements, ObjectMetadata,
-    StateModel, ThreadingModel,
+    RuntimeRequirements, StateModel, ThreadingModel,
 };
 use latent_routing::InvocationTarget;
 use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory, WasmtimeConfig};
@@ -158,7 +158,7 @@ pub fn artifact_bytes(component_bytes: Vec<u8>, exports: &[&str]) -> CapsuleArti
             fusion_eligible: false,
         },
         minimum_fabric_version: "0.1.0-alpha.0".to_owned(),
-        runtime_requirements: Default::default(),
+        runtime_requirements: RuntimeRequirements::default(),
     };
     CapsuleArtifact {
         descriptor: ArtifactDescriptor {

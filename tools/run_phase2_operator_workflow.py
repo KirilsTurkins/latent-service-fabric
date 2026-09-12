@@ -24,9 +24,43 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from tools.build_process_signals import owned_cancellation
-from tools.phase2_operator_process import Client, WorkflowError, read_json, require, write_json
+from tools.phase2_operator_process import (
+    Client, WorkflowError, bounded_receipt, file_digest, read_json, require, write_json,
+)
 from tools.phase2_operator_scenario import node_workflow
 from tools.run_oci_registry_tests import USERNAME, PASSWORD, Registry, certificates, ready
+
+
+COLLECTOR_FILES = (
+    "tools/run_phase2_operator_workflow.py", "tools/phase2_operator_scenario.py",
+    "tools/phase2_operator_process.py", "tools/phase2_operator_canary.py",
+    "tools/build_process.py", "tools/build_process_linux.py",
+    "tools/build_process_signals.py", "tools/run_oci_registry_tests.py",
+)
+
+
+def build_identity(args, cancellation, deadline):
+    root = Path(__file__).resolve().parents[1]
+    paths = {
+        "cliDigest": (args.cli, 1024 * 1024 * 1024),
+        "nodeDigest": (args.node, 1024 * 1024 * 1024),
+        "cargoLockDigest": (root / "Cargo.lock", 1024 * 1024),
+        "workspaceManifestDigest": (root / "Cargo.toml", 262144),
+        "rustToolchainDigest": (root / "rust-toolchain.toml", 262144),
+    }
+    result = {name: file_digest(path, maximum, cancellation, deadline)
+              for name, (path, maximum) in paths.items()}
+    if args.source_commit is not None:
+        # Supplied by the build owner (GITHUB_SHA in CI), not inferred from a
+        # binary's filename. Exact bytes are independently measured below.
+        result.update(sourceCommit=args.source_commit, sourceCommitKind="supplied-build-identity")
+    return result
+
+
+def collector_identity(cancellation, deadline):
+    root = Path(__file__).resolve().parents[1]
+    return {name: file_digest(root / name, 262144, cancellation, deadline)
+            for name in COLLECTOR_FILES}
 
 
 def inventory(directory):
@@ -149,7 +183,9 @@ def main():
     parser.add_argument("--fixture-root", type=Path, required=True)
     parser.add_argument("--registry-origin", help="Optional externally owned loopback TLS fixture; pair with --registry-ca")
     parser.add_argument("--registry-ca", type=Path, help="External fixture CA in DER format")
+    parser.add_argument("--source-commit", help="Optional exact source commit supplied by the binary build owner")
     args = parser.parse_args()
+    require(args.source_commit is None or re.fullmatch(r"[0-9a-f]{40}", args.source_commit), "source-commit")
     require(sys.platform == "linux" and sys.version_info >= (3, 13), "linux-python313-required")
     for path in (args.cli, args.node):
         require(path.is_absolute() and path.is_file() and not path.is_symlink(), "binary-required")
@@ -161,6 +197,11 @@ def main():
     stage = "acquire"
     try:
         with owned_cancellation() as cancellation:
+            deadline = time.monotonic() + 300
+            build = build_identity(args, cancellation, deadline)
+            collectors = collector_identity(cancellation, deadline)
+            policy_digest = file_digest(fixture / "policy.json", 262144, cancellation, deadline)
+            metadata_digest = file_digest(fixture / "fixture.json", 16384, cancellation, deadline)
             with tempfile.TemporaryDirectory(prefix="lsf-operator-workflow-") as temporary:
                 work = Path(temporary)
                 client_dir, node_dir = work / "client", work / "node"
@@ -168,7 +209,7 @@ def main():
                 node_dir.mkdir(mode=0o700)
                 outputs = client_dir / "outputs"
                 outputs.mkdir()
-                client = Client(args.cli, client_dir, cancellation, time.monotonic() + 300)
+                client = Client(args.cli, client_dir, cancellation, deadline)
                 stage = "registry-fixture"
                 with registry_fixture(args, work, cancellation) as (origin, ca):
                     profile = registry_profile(client_dir, origin, ca)
@@ -178,10 +219,19 @@ def main():
                     node_summary = node_workflow(client, args.node, node_dir, fixture, outputs, summaries, metadata)
                 result = {"schemaVersion": "latent.operator.workflow-test.v1", "passed": True,
                           "cliProcesses": client.calls, "packages": 2,
-                          "syntheticTestEvidence": True, "temporaryOutputsRemoved": True}
+                          "syntheticTestEvidence": True, "temporaryOutputsRemoved": True,
+                          "build": build, "collectorDigests": collectors,
+                          "policyFileDigest": policy_digest, "fixtureMetadataDigest": metadata_digest,
+                          "packageIdentities": summaries,
+                          "registryOwnership": "external" if args.registry_origin else "runner-owned"}
                 result.update(node_summary)
+                require(build_identity(args, cancellation, deadline) == build
+                        and collector_identity(cancellation, deadline) == collectors
+                        and file_digest(fixture / "policy.json", 262144, cancellation, deadline) == policy_digest
+                        and file_digest(fixture / "fixture.json", 16384, cancellation, deadline) == metadata_digest,
+                        "workflow-identity-changed")
             cancellation.check()
-        print(json.dumps(result, separators=(",", ":")))
+        print(bounded_receipt(result))
     except BaseException as error:
         if isinstance(error, (KeyboardInterrupt, SystemExit)):
             raise
