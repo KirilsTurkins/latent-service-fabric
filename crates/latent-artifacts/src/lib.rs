@@ -12,8 +12,10 @@ pub mod package;
 mod preparation;
 mod preparation_fingerprint;
 mod raw_cache;
+mod retained_package;
 mod verification_statistics;
 mod verified_metadata;
+pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
 
 pub use audit::{
     reconcile_release_audit, AuditedAdmissionAuthority, ReleaseAuditAck, ReleaseAuditGuard,
@@ -308,6 +310,19 @@ pub trait ArtifactRepository: Send + Sync {
         &'a self,
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>>;
+
+    /// Optional sealed retained package bytes for an explicit control comparison.
+    /// None means this source does not provide a package; it is not proof of local
+    /// provenance. Signed consumers must require the exact admitted package.
+    /// Currentness, compatibility and execution authority remain separate checks.
+    fn retained_package_source<'a>(
+        &'a self,
+        _tenant: &'a TenantId,
+        _release: &'a ReleaseDigest,
+        _maximum_bytes: usize,
+    ) -> BoxFuture<'a, Result<Option<RetainedPackageSource>, PlatformError>> {
+        Box::pin(async { Ok(None) })
+    }
 
     /// Reads metadata after verifying the component's content identity and length.
     /// The default fetches and checks the full artifact; local implementations may

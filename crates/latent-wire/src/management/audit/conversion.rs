@@ -50,6 +50,9 @@ pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentiti
             .map(latent_core::ArtifactBlobDigest::into_string),
         deployment: value.deployment.map(|value| value.0),
         deployment_generation: value.deployment_generation,
+        rollout_revision: value.rollout_revision,
+        rollout_step: value.rollout_step,
+        state_version: value.state_version,
     }
 }
 pub(super) fn record(value: domain::AuditStoredRecord) -> Result<proto::Phase2AuditRecord, Status> {
@@ -81,6 +84,7 @@ pub(super) fn record(value: domain::AuditStoredRecord) -> Result<proto::Phase2Au
                 occurred_at_unix_millis: attempt.occurred_at_unix_millis,
                 replay: attempt.replay,
                 expected_deployment_generation: attempt.expected_deployment_generation,
+                expected_rollout_revision: attempt.expected_rollout_revision,
                 preview_receipt_digest: attempt
                     .preview_receipt_digest
                     .map(latent_core::ArtifactBlobDigest::into_string),

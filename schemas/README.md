@@ -29,6 +29,18 @@ through binary floating point.
 See the [manifest codec contract](../docs/protocol/manifest-codec.md) for parser limits, normalization, semantic
 Phase 1 validation, and forward-compatibility rules.
 
+Optional standalone node members have their own closed schemas:
+
+| Schema | Configuration member |
+| --- | --- |
+| [node-isolated-aot.schema.json](node-isolated-aot.schema.json) | `isolatedAot`: bounded native compiler/cache configuration and protected host-key path. |
+| [node-audit.schema.json](node-audit.schema.json) | `audit`: optional durable audit resource limits. |
+| [node-rollouts.schema.json](node-rollouts.schema.json) | `rollouts`: manual shared coordinator limits, requiring the same enabled audit owner. |
+
+The node decoder additionally rejects duplicate members and explicit null
+enablement. Runtime derivation checks cross-field resource relationships and
+startup binds actual owners. See the [standalone node guide](../docs/reference/standalone-node.md).
+
 The package schemas describe a separate immutable artifact format:
 
 | Schema | Document |

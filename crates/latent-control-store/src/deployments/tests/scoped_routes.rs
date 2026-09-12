@@ -69,7 +69,7 @@ fn selected_capacity_limits_do_not_visit_unrelated_revision_metadata() {
     }
     {
         let mut current = store.current.write().unwrap();
-        let catalog = Arc::get_mut(&mut current).unwrap();
+        let catalog = Arc::get_mut(&mut current.routes).unwrap();
         let record = catalog
             .records
             .iter_mut()

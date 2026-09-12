@@ -6,6 +6,8 @@
 mod audit;
 #[path = "admission_tests/fixture.rs"]
 mod fixture;
+#[path = "admission_tests/retained_package.rs"]
+mod retained_package;
 
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;

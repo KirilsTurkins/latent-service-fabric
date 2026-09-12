@@ -150,6 +150,16 @@ pub(super) fn identities(v: &AuditIdentities) -> Result<()> {
     if let Some(r) = &v.rollout {
         token(r, 256)?;
     }
+    if v.rollout_revision == Some(0)
+        || v.state_version == Some(0)
+        || v.rollout_step.is_some_and(|step| step >= 64)
+        || (v.rollout.is_none()
+            && (v.rollout_revision.is_some()
+                || v.rollout_step.is_some()
+                || v.state_version.is_some()))
+    {
+        return Err(invalid());
+    }
     for (i, p) in v.policies.iter().enumerate() {
         token(&p.scope, 128)?;
         if p.generation == 0
@@ -166,6 +176,11 @@ pub(super) fn attempt(v: &AuditOperationAttempt) -> Result<()> {
     scope(&v.scope)?;
     actor(&v.actor)?;
     token(&v.operation_id, 128)?;
+    if v.expected_rollout_revision.is_some()
+        && (v.action != AuditControlAction::Rollout || v.identities.rollout.is_none())
+    {
+        return Err(invalid());
+    }
     if matches!(
         v.action,
         AuditControlAction::Publish

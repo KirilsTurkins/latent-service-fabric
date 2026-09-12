@@ -415,6 +415,67 @@ response owners, pending attempts and recovery state. Timeout or retained work
 prevents a clean shutdown report; dropping a network waiter does not release a
 worker's storage lock or accepted work.
 
+## Optional manual rollouts
+
+The optional `rollouts` member enables the manual, single-node rollout service.
+It requires the same enabled durable audit owner described above. Configure it
+alongside `audit`; [node-rollouts.schema.json](../../schemas/node-rollouts.schema.json)
+defines the closed member shape.
+
+```json
+{
+  "rollouts": {
+    "mode": "manual",
+    "active": 16,
+    "retained": 256,
+    "stages": 16,
+    "receipts": 256,
+    "metadataBytes": 8388608,
+    "queuedOperations": 8,
+    "queuedBytes": 524288,
+    "queryOwners": 4
+  }
+}
+```
+
+Omission disables rollout RPCs; it preserves existing rollout history and
+installed routes, recovering history within the storage hard limits while
+preserving its original receipt-ring capacity. Re-enabling the service with
+limits below retained history may reject startup. Explicit `null`, unknown
+members, automatic policies and an
+enabled rollout service without durable audit are rejected. The node decoder
+also rejects duplicate JSON members. Runtime validation enforces the shared
+catalog byte limit and relationships between resource limits.
+
+The default limits retain 256 rollout rows and 256 committed operation receipts,
+allow 16 active rollouts with up to 16 stages each, and budget 8 MiB of control
+metadata. Hard limits are 1024 retained rows and receipts, 64 active rollouts and
+stages, and 32 MiB of metadata. Retained rollout IDs are never recycled to make
+space; pressure rejects new work. The one coordinator admits eight queued
+commands by default (64 maximum), bounded by 512 KiB of queued input (4 MiB
+maximum), with one active preparation/commit. Every request is at most 64 KiB.
+Four response owners default to 1 MiB of aggregate allowance; 16 owners and
+4 MiB are the maxima. Each response is at most 64 KiB, with four times that
+amount reserved across domain data, protobuf conversion and transport frames.
+
+Startup recovers the shared deployment catalog and reconciles rollout audit
+attempts before the generic audit fallback, including when rollout RPCs are
+disabled. Enabled startup waits for the actual coordinator worker before
+readiness. Inventory reports its live count as a node-owned blocking task;
+there is one shared coordinator on the control runtime and no per-service
+worker. Invocation uses immutable route pins and does not acquire its locks.
+Shutdown stops rollout admission and joins this worker before joining audit;
+a timed-out coordinator is an unclean shutdown and keeps its actual work owned.
+
+Manual Start installs the first declared stage. Advance applies exactly the
+next stage. Pause and Abort freeze routes without refreshing execution grants;
+Abort is terminal and does not restore a previous release. Resume recompiles
+the same weights with current release eligibility into a new route generation.
+Restart never automatically advances a stage. See the
+[rollout RPC contract](management-services.md#manual-rollout-control) for exact
+tenant scope, revision checks, receipts and uncertain outcomes. Automatic canary
+promotion and rollback are later extensions.
+
 ## Transport, readiness and pressure
 
 Accepted connections and RPCs have separate fixed bounds. Global RPC capacity is

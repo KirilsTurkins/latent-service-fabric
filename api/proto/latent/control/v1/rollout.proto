@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package latent.control.v1;
+
+import "latent/control/v1/common.proto";
+import "latent/control/v1/deployment.proto";
+import "latent/control/v1/release.proto";
+
+// Manual single-node stages. Every method requires an administrator and uses
+// only the authenticated tenant. Omitted node enablement returns unimplemented.
+service RolloutService {
+  rpc StartRollout(StartRolloutRequest) returns (StartRolloutResponse);
+  rpc ChangeRollout(ChangeRolloutRequest) returns (ChangeRolloutResponse);
+  rpc GetRollout(GetRolloutRequest) returns (GetRolloutResponse);
+  rpc ListRollouts(ListRolloutsRequest) returns (ListRolloutsResponse);
+  rpc GetRolloutOperation(GetRolloutOperationRequest) returns (GetRolloutOperationResponse);
+}
+
+message RolloutOperationPrecondition {
+  string operation_id = 1;
+  // Required: zero for Start, positive for Change. Never unconditional.
+  optional uint64 expected_revision = 2;
+}
+
+message StartRolloutRequest {
+  string id = 1;
+  string base_deployment_id = 2;
+  // Required positive object version; the candidate ID must be absent.
+  optional uint64 expected_base_generation = 3;
+  // generation must be zero and route_weight must equal candidate_weights[0].
+  Deployment candidate = 4;
+  // Strictly increasing basis points, 1..10000, ending at 10000. Stage zero
+  // is installed by Start. The supported cohort is exactly base + candidate.
+  repeated uint32 candidate_weights = 5;
+  RolloutOperationPrecondition operation = 6;
+}
+
+message ChangeRolloutRequest {
+  string id = 1;
+  RolloutOperationPrecondition operation = 2;
+  oneof command {
+    AdvanceRollout advance = 10;
+    Empty pause = 11;
+    Empty resume = 12;
+    Empty abort = 13;
+  }
+}
+
+message AdvanceRollout {
+  // Must be exactly the next stage. No health-based promotion is implied.
+  uint32 next_step = 1;
+}
+
+enum RolloutDurability {
+  ROLLOUT_DURABILITY_UNSPECIFIED = 0;
+  ROLLOUT_DURABILITY_CONFIRMED = 1;
+  // The complete selected state is installed, but durable confirmation failed.
+  // Reconcile by operation lookup; never infer that a retry is new work.
+  ROLLOUT_DURABILITY_UNCERTAIN = 2;
+}
+
+message StartRolloutResponse {
+  RolloutOperationReceipt receipt = 1;
+  AuditAck audit_ack = 2;
+  bool replayed = 3;
+  RolloutDurability durability = 4;
+}
+
+message ChangeRolloutResponse {
+  RolloutOperationReceipt receipt = 1;
+  AuditAck audit_ack = 2;
+  bool replayed = 3;
+  RolloutDurability durability = 4;
+}
+
+message GetRolloutRequest {
+  string id = 1;
+}
+
+message GetRolloutResponse {
+  optional RolloutStatus status = 1;
+}
+
+message ListRolloutsRequest {
+  optional string service = 1;
+  optional RolloutState state = 2;
+  // Cursor binds tenant/filter, catalog state version and owner epoch.
+  PageRequest page = 3;
+}
+
+message ListRolloutsResponse {
+  repeated RolloutStatus rollouts = 1;
+  PageResponse page = 2;
+  uint64 state_version = 3;
+}
+
+message GetRolloutOperationRequest {
+  string id = 1;
+  string operation_id = 2;
+}
+
+enum RolloutOperationLookupDisposition {
+  ROLLOUT_OPERATION_LOOKUP_DISPOSITION_UNSPECIFIED = 0;
+  ROLLOUT_OPERATION_LOOKUP_DISPOSITION_FOUND = 1;
+  // Includes rejected/missing work, foreign scope and evicted receipts. Unknown
+  // never establishes that an operation was not started or that routes reverted.
+  ROLLOUT_OPERATION_LOOKUP_DISPOSITION_UNKNOWN = 2;
+  ROLLOUT_OPERATION_LOOKUP_DISPOSITION_UNCERTAIN = 3;
+}
+
+message GetRolloutOperationResponse {
+  RolloutOperationLookupDisposition disposition = 1;
+  optional RolloutOperationReceipt receipt = 2;
+}
+
+enum RolloutState {
+  ROLLOUT_STATE_UNSPECIFIED = 0;
+  ROLLOUT_STATE_RUNNING = 1;
+  ROLLOUT_STATE_PAUSED = 2;
+  ROLLOUT_STATE_COMPLETED = 3;
+  ROLLOUT_STATE_ABORTED = 4;
+  ROLLOUT_STATE_CONFLICTED = 5;
+}
+
+enum RolloutAction {
+  ROLLOUT_ACTION_UNSPECIFIED = 0;
+  ROLLOUT_ACTION_START = 1;
+  ROLLOUT_ACTION_ADVANCE = 2;
+  ROLLOUT_ACTION_PAUSE = 3;
+  ROLLOUT_ACTION_RESUME = 4;
+  ROLLOUT_ACTION_ABORT = 5;
+}
+
+enum RolloutReason {
+  ROLLOUT_REASON_UNSPECIFIED = 0;
+  ROLLOUT_REASON_OPERATOR_REQUESTED = 1;
+  ROLLOUT_REASON_STAGE_APPLIED = 2;
+  ROLLOUT_REASON_COMPLETED = 3;
+  ROLLOUT_REASON_GENERATION_CONFLICT = 4;
+  ROLLOUT_REASON_COHORT_CHANGED = 5;
+  ROLLOUT_REASON_RELEASE_INELIGIBLE = 6;
+  ROLLOUT_REASON_INCOMPATIBLE_RELEASE = 7;
+  ROLLOUT_REASON_RESOURCE_LIMIT = 8;
+  ROLLOUT_REASON_RECOVERY_REQUIRED = 9;
+  ROLLOUT_REASON_OUTCOME_UNCERTAIN = 10;
+}
+
+enum RolloutOperationOutcome {
+  ROLLOUT_OPERATION_OUTCOME_UNSPECIFIED = 0;
+  ROLLOUT_OPERATION_OUTCOME_COMMITTED = 1;
+}
+
+message RolloutRelease {
+  string deployment_id = 1;
+  string component_digest = 2;
+  // Absent for a trusted-local source with no real package identity.
+  optional string package_digest = 3;
+}
+
+message RolloutObjectVersion {
+  string deployment_id = 1;
+  uint64 generation = 2;
+}
+
+// Historical control state, never an execution or health authorization.
+message RolloutStatus {
+  string id = 1;
+  string tenant = 2;
+  string service = 3;
+  uint64 revision = 4;
+  RolloutState state = 5;
+  RolloutReason reason = 6;
+  uint32 current_step = 7;
+  repeated uint32 candidate_weights = 8;
+  RolloutRelease base = 9;
+  RolloutRelease candidate = 10;
+  repeated RolloutObjectVersion objects = 11;
+  uint64 route_generation = 12;
+  uint64 state_version = 13;
+  string plan_digest = 14;
+  uint64 previous_route_generation = 15;
+  uint64 created_at_unix_millis = 16;
+  uint64 updated_at_unix_millis = 17;
+  uint64 retained_operation_floor = 18;
+}
+
+// Only committed operations have durable receipts. Replay returns these exact
+// fields; separate response flags describe replay and durability observations.
+message RolloutOperationReceipt {
+  string rollout_id = 1;
+  string tenant = 2;
+  string operation_id = 3;
+  string request_digest = 4;
+  ReleaseActor actor = 5;
+  RolloutAction action = 6;
+  uint64 expected_revision = 7;
+  uint64 revision = 8;
+  RolloutOperationOutcome outcome = 9;
+  RolloutReason reason = 10;
+  uint64 state_version = 11;
+  uint64 route_generation = 12;
+  RolloutState state = 13;
+  uint32 step = 14;
+  string plan_digest = 15;
+  uint64 completed_at_unix_millis = 16;
+  string receipt_digest = 17;
+}

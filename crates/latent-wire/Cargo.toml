@@ -15,6 +15,7 @@ latent-core = { path = "../latent-core" }
 latent-activation = { path = "../latent-activation" }
 latent-node = { path = "../latent-node" }
 latent-routing = { path = "../latent-routing" }
+latent-rollout = { path = "../latent-rollout" }
 latent-rpc = { path = "../latent-rpc" }
 latent-artifacts = { path = "../latent-artifacts" }
 latent-audit = { path = "../latent-audit" }

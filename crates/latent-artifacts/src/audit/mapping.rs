@@ -29,6 +29,7 @@ pub(super) fn attempt(
         identities: identities(value),
         expected_generation: value.expected_generation,
         expected_deployment_generation: None,
+        expected_rollout_revision: None,
         replay,
         preview_receipt_digest,
         occurred_at_unix_millis: now(),

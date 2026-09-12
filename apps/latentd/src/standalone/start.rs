@@ -34,6 +34,7 @@ pub(super) struct Catalogs {
     pub(super) supply_chain: Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>,
     control: Option<control::StartupControl>,
     audit: Option<super::audit::AuditRuntime>,
+    rollouts: Option<super::rollouts::RolloutRuntime>,
 }
 
 impl Catalogs {
@@ -42,7 +43,10 @@ impl Catalogs {
         settings: &NodeSettings,
         observer: latent_control_store::CatalogWorkObserver,
     ) -> Result<Self, PlatformError> {
-        if settings.supply_chain.is_enforced() || settings.audit.is_some() {
+        if settings.supply_chain.is_enforced()
+            || settings.audit.is_some()
+            || settings.rollouts.is_some()
+        {
             return Err(mode_error());
         }
         let audit = super::audit::AuditRuntime::open(
@@ -72,12 +76,16 @@ impl Catalogs {
             supply_chain: None,
             control: None,
             audit,
+            rollouts: None,
         })
     }
 
     #[cfg(test)]
     pub(super) async fn open(settings: &NodeSettings) -> Result<Self, PlatformError> {
-        if settings.supply_chain.is_enforced() || settings.audit.is_some() {
+        if settings.supply_chain.is_enforced()
+            || settings.audit.is_some()
+            || settings.rollouts.is_some()
+        {
             return Err(mode_error());
         }
         Self::open_inner(settings, None).await
@@ -90,6 +98,10 @@ impl Catalogs {
         Self::open_inner(settings, Some(runtime)).await
     }
 
+    #[allow(
+        clippy::too_many_lines,
+        reason = "keep startup ownership and ordered failure cleanup in one visible scope"
+    )]
     async fn open_inner(
         settings: &NodeSettings,
         runtime: Option<&tokio::runtime::Handle>,
@@ -121,6 +133,7 @@ impl Catalogs {
                 runtime.expect("enforced startup requires its supplied control runtime"),
             )
         });
+        let mut rollouts = None;
         let opened = async {
             let artifacts = Arc::new(if let Some(authority) = &supply_chain {
                 let authority: Arc<dyn latent_artifacts::AdmissionAuthority> =
@@ -145,16 +158,41 @@ impl Catalogs {
                 )?
             });
             let deployments = Arc::new(
-                DirectoryDeploymentRepository::open_with_catalog(
+                DirectoryDeploymentRepository::open_with_catalog_and_rollout_limits(
                     settings.data_directory.join("deployments"),
                     artifacts.clone(),
                     settings.deployments,
                     artifacts.lifecycle_authority(),
                     Arc::clone(&settings.runtime_profile),
+                    settings.rollouts.map_or_else(
+                        latent_control_store::rollouts::RolloutLimits::recovery_maximum,
+                        |value| value.store,
+                    ),
                 )
                 .await?,
             );
+            if let Some(settings) = settings.rollouts {
+                rollouts = Some(super::rollouts::RolloutRuntime::start(
+                    deployments.clone(),
+                    audit.as_ref().ok_or_else(mode_error)?.handle(),
+                    settings.coordinator,
+                    runtime.ok_or_else(mode_error)?,
+                )?);
+                rollouts
+                    .as_ref()
+                    .expect("owned coordinator")
+                    .wait_started(std::time::Instant::now() + std::time::Duration::from_secs(30))
+                    .await?;
+            }
             if let Some(audit) = &audit {
+                if rollouts.is_none() {
+                    latent_rollout::reconcile_rollout_audit(
+                        &audit.handle(),
+                        deployments.as_ref(),
+                        std::time::Instant::now() + std::time::Duration::from_secs(30),
+                    )
+                    .await?;
+                }
                 latent_artifacts::reconcile_release_audit(&audit.handle(), artifacts.as_ref())
                     .await?;
             }
@@ -164,10 +202,17 @@ impl Catalogs {
         let (artifacts, deployments) = match opened {
             Ok(catalogs) => catalogs,
             Err(failure) => {
+                if let Some(rollouts) = &rollouts {
+                    let _ = rollouts.shutdown(settings.shutdown_grace).await;
+                }
                 if let Some(control) = control.take() {
                     let _ = control.shutdown(settings.shutdown_grace).await;
                 }
-                if let Some(audit) = &audit {
+                let joined = match &rollouts {
+                    Some(owner) => owner.worker_joined().await,
+                    None => true,
+                };
+                if let Some(audit) = audit.as_ref().filter(|_| joined) {
                     let _ = audit.shutdown(settings.shutdown_grace).await;
                 }
                 return Err(failure);
@@ -179,6 +224,7 @@ impl Catalogs {
             supply_chain,
             control,
             audit,
+            rollouts,
         })
     }
 }
@@ -233,10 +279,17 @@ impl StandaloneNode {
         let mut node = match Self::compose(&mut settings, &catalogs, clock) {
             Ok(node) => node,
             Err(failure) => {
+                if let Some(rollouts) = &catalogs.rollouts {
+                    let _ = rollouts.shutdown(settings.shutdown_grace).await;
+                }
                 if let Some(control) = catalogs.control.take() {
                     let _ = control.shutdown(settings.shutdown_grace).await;
                 }
-                if let Some(audit) = &catalogs.audit {
+                let joined = match &catalogs.rollouts {
+                    Some(owner) => owner.worker_joined().await,
+                    None => true,
+                };
+                if let Some(audit) = catalogs.audit.as_ref().filter(|_| joined) {
                     let _ = audit.shutdown(settings.shutdown_grace).await;
                 }
                 return Err(failure);
@@ -246,6 +299,7 @@ impl StandaloneNode {
             node.sampler = Some(control.transfer());
         }
         node.audit = catalogs.audit.take();
+        node.rollouts = catalogs.rollouts.take();
         if let Err(failure) =
             Box::pin(node.start_services(&settings, catalogs, control_runtime, threads)).await
         {
@@ -282,6 +336,10 @@ impl StandaloneNode {
         let management = ManagementServiceAdapter::new(
             ManagementServices {
                 audit: self.audit.as_ref().map(super::audit::AuditRuntime::handle),
+                rollouts: self
+                    .rollouts
+                    .as_ref()
+                    .map(super::rollouts::RolloutRuntime::handle),
                 artifacts: catalogs.artifacts,
                 deployments: catalogs.deployments.clone(),
                 routes: catalogs.deployments.clone(),
@@ -310,17 +368,24 @@ impl StandaloneNode {
         .await?;
         self.transport = Some(transport);
         let transport = self.transport.as_ref().expect("owned started transport");
-        let topology = Arc::new(observations::TopologySource::new(
-            settings,
-            self.backend.clone(),
-            self.scheduler.clone(),
-            transport.handle(),
-            self.cleanup
-                .as_ref()
-                .expect("owned cleanup driver")
-                .handle(),
-            threads,
-        ));
+        let topology = Arc::new(
+            observations::TopologySource::new(
+                settings,
+                self.backend.clone(),
+                self.scheduler.clone(),
+                transport.handle(),
+                self.cleanup
+                    .as_ref()
+                    .expect("owned cleanup driver")
+                    .handle(),
+                threads,
+            )
+            .with_rollouts(
+                self.rollouts
+                    .as_ref()
+                    .map(super::rollouts::RolloutRuntime::handle),
+            ),
+        );
         let mut descriptor = settings.node.clone();
         descriptor.endpoint = format!("http://{}", transport.local_addr());
         self.inventory
@@ -349,6 +414,7 @@ impl StandaloneNode {
     ) -> Result<Self, PlatformError> {
         if settings.supply_chain.is_enforced() != catalogs.supply_chain.is_some()
             || settings.audit.is_some() != catalogs.audit.is_some()
+            || settings.rollouts.is_some() != catalogs.rollouts.is_some()
             || (catalogs.supply_chain.is_some() && catalogs.control.is_none())
             || !catalogs
                 .deployments
@@ -414,6 +480,7 @@ impl StandaloneNode {
         Ok(Self {
             transport: None,
             audit: None,
+            rollouts: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),
             cleanup: Some(ActivationCleanupOwner::start_with_observer(
                 settings.manager.journal.maximum_active,

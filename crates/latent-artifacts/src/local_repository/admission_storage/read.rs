@@ -202,6 +202,59 @@ impl StoredAdmission {
         Ok(value)
     }
 
+    /// Reads only immutable package content. Detached policy evidence is neither
+    /// retained nor returned to a structural comparison consumer.
+    pub(in crate::local_repository) fn package_input(
+        &self,
+        directory: &Path,
+        maximum_bytes: usize,
+    ) -> Result<PackageAdmissionUpload, PlatformError> {
+        // Reserve conservative collection/identity space before allocating raw
+        // bytes. Each read uses the recorded exact size as its growth ceiling.
+        let mut charge = 2048_usize
+            .checked_add(
+                self.layers
+                    .len()
+                    .saturating_mul(std::mem::size_of::<(String, Vec<u8>)>()),
+            )
+            .ok_or_else(|| resource_exhausted("package-source-retention-limit"))?;
+        for layer in &self.layers {
+            charge = charge
+                .checked_add(layer.path.len())
+                .filter(|value| *value <= maximum_bytes)
+                .ok_or_else(|| resource_exhausted("package-source-retention-limit"))?;
+        }
+        for blob in [&self.manifest, &self.configuration]
+            .into_iter()
+            .chain(self.layers.iter().map(|layer| &layer.blob))
+        {
+            let size = usize::try_from(blob.size)
+                .map_err(|_| resource_exhausted("package-source-byte-limit"))?;
+            charge = charge
+                .checked_add(size)
+                .filter(|value| *value <= maximum_bytes)
+                .ok_or_else(|| resource_exhausted("package-source-retention-limit"))?;
+        }
+        let read = |blob: &Blob| {
+            let limit = usize::try_from(blob.size)
+                .map_err(|_| resource_exhausted("package-source-byte-limit"))?;
+            read_blob(directory, blob, limit)
+        };
+        let layers = self
+            .layers
+            .iter()
+            .map(|layer| Ok((layer.path.clone(), read(&layer.blob)?)))
+            .collect::<Result<Vec<_>, PlatformError>>()?;
+        Ok(PackageAdmissionUpload {
+            manifest: read(&self.manifest)?,
+            configuration: read(&self.configuration)?,
+            layers,
+            signatures: Vec::new(),
+            provenance: Vec::new(),
+            sboms: Vec::new(),
+        })
+    }
+
     fn blobs(&self) -> impl Iterator<Item = &Blob> {
         [&self.receipt, &self.manifest, &self.configuration]
             .into_iter()

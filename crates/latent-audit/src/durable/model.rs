@@ -178,6 +178,24 @@ pub struct AuditIdentities {
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub rollout_revision: Option<u64>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub rollout_step: Option<u32>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub state_version: Option<u64>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
         with = "codec::optional"
     )]
     pub revision: Option<RevisionId>,
@@ -223,6 +241,12 @@ pub struct AuditOperationAttempt {
         deserialize_with = "codec::present"
     )]
     pub expected_deployment_generation: Option<u64>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "codec::present"
+    )]
+    pub expected_rollout_revision: Option<u64>,
     pub occurred_at_unix_millis: u64,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -364,4 +388,59 @@ pub struct AuditSnapshot {
     pub recovery_pending: bool,
     pub closed: bool,
     pub previous_session_loss_unknown: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn absent_rollout_fields_preserve_old_canonical_identity_bytes() {
+        let old = br#"{"policies":[]}"#;
+        let decoded: AuditIdentities = serde_json::from_slice(old).unwrap();
+        assert_eq!(serde_json::to_vec(&decoded).unwrap(), old);
+        assert_eq!(decoded, AuditIdentities::default());
+    }
+
+    #[test]
+    fn rollout_counters_are_typed_bounded_and_require_their_identity() {
+        let valid = AuditIdentities {
+            rollout: Some("rollout".into()),
+            rollout_revision: Some(1),
+            rollout_step: Some(0),
+            state_version: Some(2),
+            ..AuditIdentities::default()
+        };
+        codec::identities(&valid).unwrap();
+        let bytes = serde_json::to_vec(&valid).unwrap();
+        assert_eq!(
+            serde_json::from_slice::<AuditIdentities>(&bytes).unwrap(),
+            valid
+        );
+        for value in [
+            AuditIdentities {
+                rollout: None,
+                ..valid.clone()
+            },
+            AuditIdentities {
+                rollout_revision: Some(0),
+                ..valid.clone()
+            },
+            AuditIdentities {
+                state_version: Some(0),
+                ..valid.clone()
+            },
+            AuditIdentities {
+                rollout_step: Some(64),
+                ..valid.clone()
+            },
+        ] {
+            assert!(codec::identities(&value).is_err());
+        }
+        for name in ["rolloutRevision", "rolloutStep", "stateVersion"] {
+            let mut value = serde_json::to_value(&valid).unwrap();
+            value[name] = serde_json::Value::Null;
+            assert!(serde_json::from_value::<AuditIdentities>(value).is_err());
+        }
+    }
 }

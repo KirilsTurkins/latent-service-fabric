@@ -9,5 +9,7 @@ mod deployment;
 mod inspection;
 #[path = "management_service/release.rs"]
 mod release;
+#[path = "management_service/rollouts.rs"]
+mod rollouts;
 #[path = "management_service/support.rs"]
 mod support;

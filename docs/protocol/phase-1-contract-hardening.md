@@ -279,6 +279,21 @@ descriptor golden includes these additions; old generated clients may ignore
 them, while new Rust response literals must initialize their optional fields.
 See [audit semantics](../phase-2-audit.md) for loss, recovery and response ownership.
 
+Phase 2 rollout #153 adds `rollout.proto` to the exhaustive manifest and its
+five unary `RolloutService` methods for start, change, status, listing and
+operation lookup. Required preconditions preserve optional integer presence:
+Start requires present rollout revision zero and a positive base object
+generation; Change requires a positive rollout revision. Responses separate the
+canonical committed receipt, replay flag, catalog durability and audit
+acknowledgement. Omitted node enablement returns Unimplemented.
+
+The existing audit identity gains optional rollout revision, step and combined
+state version, and the attempt gains an optional expected rollout revision.
+These fields are additive and distinct from lifecycle/deployment generations.
+Absent fields retain historical audit canonical bytes. The descriptor golden
+records the new service and fields without changing prior numbers or signatures;
+see [rollout semantics](../phase-2-rollouts.md).
+
 Phase 0 gate #25 and the executable build foundation in #2 are complete. This
 work is reconciled with the finalized Phase 0 retained/replaced classification
 and with `development`'s generated Rust, Component Model, and RPC ownership.
