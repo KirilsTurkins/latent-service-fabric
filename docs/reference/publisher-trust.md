@@ -9,8 +9,10 @@ native AOT loading. Those remain separate admission and execution boundaries.
 The library supports capsule, browser-assets and SSR package subjects from the
 [package format](../protocol/package-format.md). The [packager](../component-development/packaging.md)
 checks supplied component semantics separately. Existing locally trusted Phase 1
-publication remains unchanged; the operator CLI does not yet expose this signing
-workflow. This reference describes the library API.
+publication remains supported in that mode. Signature production uses the host
+library API described here. The [operator CLI](../phase-2-operator-workflows.md)
+transfers supplied signatures and performs local diagnostic verification; its
+package build command does not sign or create provenance.
 
 ## Exact subject and signature profile
 
@@ -190,7 +192,8 @@ and explicit builder keys for the maintained echo recipe. Authenticated package
 admission combines these proofs with embedded SBOM and current content policy.
 [Isolated AOT compilation](../runtime/trusted-aot.md) authenticates exact native
 output with a separate protected host key and approved executable identity.
-Persistent native loading remains Phase 2 issue #151; publisher and builder keys
-do not grant this local compiler authority. A package-publisher signature does not
+The [protected persistent native cache](../runtime/trusted-aot.md) authenticates
+local compiler output before loading; publisher and builder keys do not grant
+this local compiler authority. A package-publisher signature does not
 authenticate later detached provenance/SBOM merely because their subjects match,
 and it never authorizes native compiler output.

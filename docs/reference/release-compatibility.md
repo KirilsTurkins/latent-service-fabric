@@ -127,8 +127,9 @@ retained on each bundle, catalog release or dormant deployment.
 
 The Rust host API is the comparison surface for this slice. The existing
 `ContractService.CompareContracts` placeholder accepts only contract IDs and
-does not become package or rollout authority. The complete operator CLI remains
-[#156](https://github.com/KirilsTurkins/latent-service-fabric/issues/156).
+does not become package or rollout authority. The [operator CLI](../phase-2-operator-workflows.md)
+exposes node admission and rollout operations that enforce compatibility; it
+does not add a standalone package-comparison command.
 
 ## Use the host comparison API
 

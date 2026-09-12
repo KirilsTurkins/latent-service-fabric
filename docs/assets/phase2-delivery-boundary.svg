@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="phase2-delivery-title phase2-delivery-description">
+  <title id="phase2-delivery-title">Phase 2 trusted delivery and controlled rollout</title>
+  <desc id="phase2-delivery-description">Local package and evidence files travel through an authenticated OCI registry to a separate standalone node. Current publisher, builder, policy, lifecycle and runtime checks fence admission and execution. Atomic deployment and rollout receipts support explicit canary promotion, rollback and recovery. Shared owners and finite caches preserve dormant service resource boundaries. Completion requires the Phase 2 gate; general capability providers and application hosting belong to Phase 3.</desc>
+  <defs>
+    <linearGradient id="phase2-delivery-background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b102d"/><stop offset="1" stop-color="#1e3a5f"/>
+    </linearGradient>
+    <marker id="phase2-delivery-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 1 1 L 11 6 L 1 11 z" fill="#bfdbfe"/>
+    </marker>
+    <filter id="phase2-delivery-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="9" stdDeviation="11" flood-color="#09090b" flood-opacity=".38"/>
+    </filter>
+    <style>
+      .heading { font: 700 34px system-ui, sans-serif; fill: #faf5ff; }
+      .subheading { font: 400 18px system-ui, sans-serif; fill: #ddd6fe; }
+      .title { font: 700 21px system-ui, sans-serif; fill: #f8fafc; }
+      .copy { font: 400 15px system-ui, sans-serif; fill: #e0e7ff; }
+      .label { font: 600 14px system-ui, sans-serif; fill: #c4b5fd; }
+      .later { font: 400 15px system-ui, sans-serif; fill: #cbd5e1; }
+    </style>
+  </defs>
+  <rect width="1440" height="760" rx="34" fill="url(#phase2-delivery-background)"/>
+  <text x="74" y="84" class="heading">Phase 2: trusted packages, deliberate release changes</text>
+  <text x="74" y="120" class="subheading">Standalone Linux node · client and node storage are separate · completion evidence belongs to gate #158</text>
+  <g filter="url(#phase2-delivery-shadow)">
+    <rect x="74" y="176" width="390" height="266" rx="24" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <text x="108" y="220" class="label">CLIENT AND REGISTRY</text>
+    <text x="108" y="259" class="title">Build and transfer</text>
+    <text x="108" y="299" class="copy">Package, signature, provenance and SBOM</text>
+    <text x="108" y="327" class="copy">Authenticated OCI and immutable digests</text>
+    <text x="108" y="355" class="copy">Local verification is a diagnostic result</text>
+    <text x="108" y="397" class="copy">Registry credentials stay separate from RPC</text>
+    <rect x="524" y="176" width="390" height="266" rx="24" fill="#1e40af" stroke="#93c5fd" stroke-width="2"/>
+    <text x="558" y="220" class="label">CURRENT NODE AUTHORITY</text>
+    <text x="558" y="259" class="title">Admit, fence and prepare</text>
+    <text x="558" y="299" class="copy">Publisher, builder, tenant and policy checks</text>
+    <text x="558" y="327" class="copy">Lifecycle, expiry and runtime compatibility</text>
+    <text x="558" y="355" class="copy">Bounded raw, prepared and native caches</text>
+    <text x="558" y="397" class="copy">Fresh activations in the existing fixed cells</text>
+    <rect x="974" y="176" width="392" height="266" rx="24" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <text x="1008" y="220" class="label">OPERATOR CONTROL</text>
+    <text x="1008" y="259" class="title">Publish one atomic change</text>
+    <text x="1008" y="299" class="copy">Explicit operation IDs and version checks</text>
+    <text x="1008" y="327" class="copy">Manual rollout or observed canary promotion</text>
+    <text x="1008" y="355" class="copy">Rollback publishes a new route generation</text>
+    <text x="1008" y="397" class="copy">Inspect receipts after an uncertain response</text>
+  </g>
+  <path d="M 466 309 H 514" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase2-delivery-arrow)"/>
+  <path d="M 916 309 H 964" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase2-delivery-arrow)"/>
+  <rect x="74" y="486" width="1292" height="72" rx="18" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+  <text x="108" y="530" class="title">Finite shared owners; dormant services acquire no execution worker or guest heap.</text>
+  <rect x="74" y="594" width="1292" height="100" rx="24" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+  <text x="108" y="635" class="title">Phase 3: capabilities, provider integrations and application hosting</text>
+  <text x="108" y="667" class="later">Browser / SSR artifacts are packaging contracts here. Distributed placement, durable state and workflows remain later work.</text>
+</svg>
