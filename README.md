@@ -187,6 +187,12 @@ probe runs only when requested with the CI workflow's `run_catalog_scale` input
 or its documented local command; native-Linux calibration and resource soaks
 are also separate explicit work. See [validation tiers](VALIDATION.md).
 
+Pull requests use [CI profiles](docs/development/ci-profiles.md) to select the
+relevant checks. Approved Markdown/SVG-only changes run focused documentation
+validation; code and mixed changes retain full validation. Full jobs can reuse
+[dependency caches](docs/development/ci-caching.md) while still running all
+selected checks.
+
 Run the complete local Phase 0 executable demonstration with:
 
 ```bash
