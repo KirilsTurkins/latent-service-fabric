@@ -138,6 +138,10 @@ pub struct CacheConfig {
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields, default)]
 pub struct CatalogConfig {
+    pub publication_storage_bytes: u64,
+    pub content_index_bytes: usize,
+    pub content_blobs: usize,
+    pub publication_files: usize,
     pub release_entries: usize,
     pub release_index_bytes: usize,
     pub deployments: usize,

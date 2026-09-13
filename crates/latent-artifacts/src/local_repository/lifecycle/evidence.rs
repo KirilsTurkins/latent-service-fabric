@@ -3,7 +3,7 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use latent_core::{PackageDigest, PlatformError, PlatformErrorCode, ReleaseDigest};
+use latent_core::{PackageDigest, PlatformError, PlatformErrorCode};
 use sha2::{Digest, Sha256};
 
 use crate::local_repository::{
@@ -20,7 +20,7 @@ impl DirectoryArtifactRepository {
     /// state/scope before this read. No current original proof is required.
     pub(in crate::local_repository) fn verify_new_evidence(
         &self,
-        release: &ReleaseDigest,
+        reference: &crate::PublicationRef,
         package: &PackageDigest,
         evidence: ReleaseEvidenceUpload,
     ) -> Result<VerifiedAdmission, PlatformError> {
@@ -32,11 +32,11 @@ impl DirectoryArtifactRepository {
         )?;
         let expected_evidence =
             evidence_digest([&evidence.signatures, &evidence.provenance, &evidence.sboms]);
-        let path = self.entry_path(release)?;
+        let path = self.publication_path(&reference.id);
         let original = self.load_complete_entry(&path, Retention::Metadata)?;
-        self.verify_admission_index(release, &original)?;
+        self.verify_publication_index(reference, &original)?;
         let (binding, mut upload) = self.original_evidence_upload(&path, &original)?;
-        if &binding.package != package || &binding.release != release {
+        if &binding.package != package || binding.release != *original.metadata.verified_digest() {
             return Err(error(
                 PlatformErrorCode::PermissionDenied,
                 "renewal-package-mismatch",
@@ -68,10 +68,9 @@ impl DirectoryArtifactRepository {
         original: &VerifiedEntry,
     ) -> Result<Option<ReleaseEligibility>, PlatformError> {
         let config = self.admission.as_ref().ok_or_else(mode)?;
-        let release = original.metadata.verified_digest();
         let (binding, evidence) = self
             .life_store()
-            .read_evidence(release)?
+            .read_publication_evidence(&original.publication.id)?
             .ok_or_else(|| corrupt("selected-evidence-revision-missing"))?;
         config.limits.check_binding(&binding)?;
         check_input(

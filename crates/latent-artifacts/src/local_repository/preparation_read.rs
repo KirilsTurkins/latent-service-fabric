@@ -11,8 +11,7 @@ impl DirectoryArtifactRepository {
         self.current_eligibility(release)?;
         let index = self.index.read().map_err(lock_error)?;
         let entry = index
-            .by_digest
-            .get(release)
+            .legacy_component(None, release)?
             .ok_or_else(|| error(PlatformErrorCode::NotFound, "release digest not found"))?;
         Ok(ArtifactPreparationReadBounds {
             component_bytes: entry.value.descriptor.size_bytes,

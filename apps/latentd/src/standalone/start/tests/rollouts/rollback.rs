@@ -11,10 +11,13 @@ use latent_wire::invocation::proto as invocation;
 async fn rollback_restores_real_base_invocation_and_retires_canary_observation() {
     let directory = TempDir::new().unwrap();
     let settings = canary::configured(&directory);
+    // Rollback does not advance or evaluate a canary interval. Keep the node's
+    // real monotonic clock so transport deadlines remain relative to each RPC,
+    // including after compilation and durable catalog work on a busy runner.
     let catalogs = Catalogs::open_with_control_and_clock(
         &settings,
         &tokio::runtime::Handle::current(),
-        Arc::new(canary::Clock::new()),
+        Arc::new(SystemActivationClock),
     )
     .await
     .unwrap();

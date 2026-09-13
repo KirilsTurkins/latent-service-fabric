@@ -90,9 +90,38 @@ pub(super) fn validate(config: &NodeConfig) -> Result<Capacity, PlatformError> {
         "shutdownGraceMillis",
     )?;
     credentials(config)?;
+    content_limits(config)?;
     let capacity = cells(config)?;
     retained(config, &capacity)?;
     Ok(capacity)
+}
+
+fn content_limits(config: &NodeConfig) -> Result<(), PlatformError> {
+    range64(
+        config.catalogs.publication_storage_bytes,
+        1,
+        1 << 50,
+        "catalogs.publicationStorageBytes",
+    )?;
+    range(
+        config.catalogs.content_index_bytes,
+        1,
+        1024 * MIB,
+        "catalogs.contentIndexBytes",
+    )?;
+    range(
+        config.catalogs.content_blobs,
+        1,
+        1_000_000,
+        "catalogs.contentBlobs",
+    )?;
+    range(
+        config.catalogs.publication_files,
+        1,
+        1024,
+        "catalogs.publicationFiles",
+    )?;
+    Ok(())
 }
 
 fn cells(config: &NodeConfig) -> Result<Capacity, PlatformError> {

@@ -11,10 +11,12 @@ mod local_repository;
 pub mod package;
 mod preparation;
 mod preparation_fingerprint;
+mod publication;
 mod raw_cache;
 mod retained_package;
 mod verification_statistics;
 mod verified_metadata;
+pub use publication::{PublicationRef, PublicationSelector};
 pub use retained_package::{RetainedPackageParts, RetainedPackageSource};
 
 pub use audit::{
@@ -55,7 +57,10 @@ pub use admission::{
 pub use local_repository::contract_metadata::{
     decode_contract_metadata, encode_contract_metadata, ContractMetadataLimits,
 };
-pub use local_repository::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
+pub use local_repository::{
+    CatalogMigrationLimits, CatalogMigrationReceipt, DirectoryArtifactRepository,
+    DirectoryArtifactRepositoryConfig, PublicationContentReclamation, PublicationStorageSnapshot,
+};
 
 /// Contract metadata accepted by artifact publication and consumed by route compilation.
 pub use latent_contracts::{
