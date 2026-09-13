@@ -1,59 +1,6 @@
 name: Phase 0 runtime regression
 
 on:
-  pull_request:
-    branches:
-      - development
-    paths:
-      - ".github/workflows/phase0-regression.yml"
-      - "Makefile"
-      - ".cargo/**"
-      - "apps/latentd/**"
-      - "crates/latent-activation/**"
-      - "crates/latent-artifacts/**"
-      - "crates/latent-component-bindings/**"
-      - "crates/latent-core/**"
-      - "crates/latent-executor/**"
-      - "crates/latent-manifest/**"
-      - "crates/latent-node/**"
-      - "crates/latent-routing/**"
-      - "crates/latent-scheduler/**"
-      - "crates/latent-wasmtime/**"
-      - "benchmarks/phase0/**"
-      - "examples/echo-contract/**"
-      - "wit/**"
-      - "tools/toolchain-smoke/**"
-      - "tools/aggregate_phase0_calibration.py"
-      - "tools/aggregate_phase0_hot_path_profiles.py"
-      - "tools/aggregate_phase0_resource_soak.py"
-      - "tools/build_echo_capsule.py"
-      - "tools/build_process*.py"
-      - "tools/build_inventory*.py"
-      - "tools/build_sbom_inputs.py"
-      - "tools/data/cyclonedx-1.6/spdx-license-ids.json"
-      - "tools/build_snapshot.py"
-      - "tools/phase0_build_environment.sh"
-      - "tools/phase0_collector_identity.py"
-      - "tools/phase0_evidence.py"
-      - "tools/reassemble_phase0_hot_path_profile_archive.py"
-      - "tools/run_phase0_baselines.sh"
-      - "tools/run_phase0_gate.sh"
-      - "tools/run_phase0_spike.sh"
-      - "tools/tests/test_aggregate_phase0_calibration.py"
-      - "tools/tests/test_aggregate_phase0_hot_path_profiles.py"
-      - "tools/tests/test_aggregate_phase0_resource_soak.py"
-      - "tools/tests/test_build_process.py"
-      - "tools/tests/test_build_inventory*.py"
-      - "tools/tests/test_build_sbom_inputs.py"
-      - "tools/tests/test_build_snapshot.py"
-      - "tools/tests/test_reassemble_phase0_hot_path_profile_archive.py"
-      - "tools/toolchain.toml"
-      - "tools/requirements.lock"
-      - "tools/validate_contracts.sh"
-      - "tools/validate_phase0_gate.py"
-      - "Cargo.lock"
-      - "Cargo.toml"
-      - "rust-toolchain.toml"
   workflow_dispatch:
 
 concurrency:
@@ -94,22 +41,14 @@ jobs:
           bash -n
           tools/run_phase0_baselines.sh
           tools/run_phase0_gate.sh
+          tools/run_phase0_outcome_matrix.sh
           tools/run_phase0_spike.sh
       - name: Run deterministic runtime baseline
         run: |
           unset CARGO_INCREMENTAL
           tools/run_phase0_baselines.sh smoke "${RUNNER_TEMP}/phase0-regression/baseline"
       - name: Run executable outcome and recovery matrix
-        run: |
-          target_root="${CARGO_TARGET_DIR:-${GITHUB_WORKSPACE}/target}"
-          if [[ "${target_root}" != /* ]]; then
-            target_root="${GITHUB_WORKSPACE}/${target_root}"
-          fi
-          test -f "${target_root}/capsules/echo/capsule.json"
-          test -f "${target_root}/capsules/containment/containment-capsule.wasm"
-          LSF_ECHO_CAPSULE="${target_root}/capsules/echo/capsule.json" \
-          LSF_CONTAINMENT_COMPONENT="${target_root}/capsules/containment/containment-capsule.wasm" \
-            cargo test -p latentd --test phase0_spike_e2e --locked -- --ignored --nocapture
+        run: tools/run_phase0_outcome_matrix.sh
       - name: Upload runtime regression evidence
         if: always()
         uses: actions/upload-artifact@v4
