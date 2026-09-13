@@ -111,14 +111,16 @@ pub(super) fn basic_authorization(username: &str, password: &str) -> Result<Head
 }
 
 pub(super) fn bearer_authorization(token: &str) -> Result<HeaderValue> {
-    if token.is_empty() || token.len() > 8192 || !token.bytes().all(|byte| byte.is_ascii_graphic()) {
+    if token.is_empty() || token.len() > 8192 || !token.bytes().all(|byte| byte.is_ascii_graphic())
+    {
         return Err(invalid("invalid-oci-credentials"));
     }
     sensitive(&format!("Bearer {token}"))
 }
 
 fn sensitive(value: &str) -> Result<HeaderValue> {
-    let mut header = HeaderValue::from_str(value).map_err(|_| invalid("invalid-oci-credentials"))?;
+    let mut header =
+        HeaderValue::from_str(value).map_err(|_| invalid("invalid-oci-credentials"))?;
     header.set_sensitive(true);
     Ok(header)
 }
