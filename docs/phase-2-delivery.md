@@ -1,11 +1,12 @@
 # Phase 2 delivery notes
 
-These are unreleased development notes. The current tagged release remains
-`0.1.0-alpha.2`, which records Phase 1 and its prioritized performance extension.
-Phase 2 is complete under the collective
-[gate #158 review](phase-2-completion.md), which records the implementation,
-validation evidence and limitations. Completion does not change the tagged
-release or turn these observations into production SLOs.
+These delivery notes describe `0.1.0-alpha.3`, the Phase 2 source prerelease.
+The [GitHub release](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3)
+records its published tag and source commit. Phase 2 is complete under the
+collective [gate #158 review](phase-2-completion.md), which records the
+implementation, validation evidence and limitations. The earlier alpha.2
+release records Phase 1 and its prioritized performance extension. These
+finite observations do not establish production SLOs.
 
 ## Features
 
