@@ -14,6 +14,12 @@ The scan is deliberately independent of the ordinary docs/full CI profile:
 
 Markdown-only changes do not start a Rust dependency scan. The broader #282 work still needs lightweight secret/static coverage appropriate for documentation changes; this advisory slice does not claim that coverage.
 
+### Untrusted pull-request boundary
+
+A pull-request checkout is treated as untrusted scan input, not as scanner configuration. Scanner installation changes to runner-owned temporary storage first and uses a separate temporary `CARGO_HOME`, so a PR cannot supply repository-local Cargo configuration or aliases to the install step. The audit invokes the exact installed `cargo-audit` binary directly from runner-owned storage rather than invoking `cargo audit` through the checked-out Cargo configuration.
+
+The scan also passes `--file` with the absolute committed `Cargo.lock` path and executes from runner temporary storage. In `cargo-audit`, an explicitly supplied lockfile path is loaded directly rather than taking the missing-lockfile fallback that can ask Cargo to generate a lockfile. The workflow rejects a symlinked lockfile and caps its size at 8 MiB before parsing it. It does not execute workspace builds, build scripts, tests, examples, or package metadata from the pull request.
+
 ## Advisory database freshness and evidence
 
 Every job creates a fresh shallow clone of the [`RustSec/advisory-db`](https://github.com/RustSec/advisory-db) `main` branch in runner-owned temporary storage. It then resolves the remote `main` identity independently and requires the cloned commit to equal that remote identity before scanning. The audit itself runs with `--no-fetch` against that verified checkout.
