@@ -8,28 +8,33 @@ use wasmtime::component::{HasSelf, Linker};
 
 use crate::host::HostState;
 
-const INSTALLED_HOST_INTERFACES: [&str; 4] = [
+// This is the explicit registration manifest for the linker calls below. It is
+// intentionally not described as generated-binding introspection: the
+// `wasmtime::component::bindgen!` output does not expose a stable interface-name
+// manifest for this adapter to compare directly.
+const DECLARED_BUILTIN_LINKER_INTERFACES: [&str; 4] = [
     "latent:context/context@0.1.0",
     "latent:log/log@0.1.0",
     "latent:clock/monotonic@0.1.0",
     "latent:clock/wall@0.1.0",
 ];
 
-fn installed_profile_is_exact() -> bool {
-    PHASE3_HOST_ABI_V1.interfaces().len() == INSTALLED_HOST_INTERFACES.len()
-        && INSTALLED_HOST_INTERFACES.iter().all(|interface| {
+fn declared_linker_profile_is_exact() -> bool {
+    PHASE3_HOST_ABI_V1.interfaces().len() == DECLARED_BUILTIN_LINKER_INTERFACES.len()
+        && DECLARED_BUILTIN_LINKER_INTERFACES.iter().all(|interface| {
             PHASE3_HOST_ABI_V1
                 .interface(interface)
                 .is_some_and(|spec| spec.binding == HostInterfaceBinding::BuiltIn)
         })
 }
 
-/// Install only the exact interfaces in the active host ABI profile. Provider
-/// interfaces are added only after their bounded provider owners are available.
+/// Install only the exact interfaces declared for this built-in linker adapter.
+/// Provider interfaces are added only after their bounded provider owners are
+/// available.
 pub(crate) fn install_context_log_clock(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
-    if !installed_profile_is_exact() {
+    if !declared_linker_profile_is_exact() {
         return Err(wasmtime::Error::msg(
-            "compiled host bindings do not match the active host ABI profile",
+            "declared linker registrations do not match the active host ABI profile",
         ));
     }
     latent::context::context::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| {
@@ -47,7 +52,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn installed_bindings_match_active_profile_exactly() {
-        assert!(installed_profile_is_exact());
+    fn declared_linker_registrations_match_active_profile_exactly() {
+        assert!(declared_linker_profile_is_exact());
     }
 }
