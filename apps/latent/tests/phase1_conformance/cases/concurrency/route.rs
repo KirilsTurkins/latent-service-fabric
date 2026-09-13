@@ -38,6 +38,16 @@ pub async fn route_update(harness: &mut Harness, evidence: &mut Evidence, packag
     assert_eq!(payload(&current), json!([11]));
     let new_pin = &current["data"]["resolvedRevision"];
     assert_eq!(new_pin["releaseDigest"], old_pin["releaseDigest"]);
+    new_pin["publicationId"]
+        .as_str()
+        .expect("captured publication in invocation receipt")
+        .parse::<latent_core::PublicationId>()
+        .expect("canonical publication identity");
+    // Status retains its legacy metadata projection. Invocation receipts now
+    // also expose the captured publication; changing only resource policy must
+    // preserve that identity for both the old owner and the new invocation.
+    let mut expected_receipt_pin = old_pin.clone();
+    expected_receipt_pin["publicationId"] = new_pin["publicationId"].clone();
     assert_ne!(
         new_pin["revisionId"], old_pin["revisionId"],
         "policy changes revision identity"
@@ -47,8 +57,8 @@ pub async fn route_update(harness: &mut Harness, evidence: &mut Evidence, packag
     let old_result = harness.finish_cli(pending, 4, "platform-failure").await;
     assert_eq!(old_result["error"]["code"], "cancelled");
     assert_eq!(
-        old_result["data"]["resolvedRevision"], old_pin,
-        "accepted owner retains its original policy revision and catalog generation"
+        old_result["data"]["resolvedRevision"], expected_receipt_pin,
+        "accepted owner retains its publication, policy revision and catalog generation"
     );
     let old_status = harness
         .call(
