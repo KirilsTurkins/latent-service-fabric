@@ -7,11 +7,6 @@ pub(super) enum ProtectedFilePolicy {
     Integrity,
 }
 
-#[must_use]
-pub(super) const fn supported() -> bool {
-    cfg!(all(target_os = "linux", target_arch = "x86_64"))
-}
-
 pub(super) fn read(
     path: &Path,
     maximum_bytes: u64,
@@ -86,13 +81,13 @@ mod platform {
         let mut directory = File::from(
             rustix::fs::open("/", directory_flags(), Mode::empty()).map_err(|_| failure())?,
         );
-        validate_directory(&directory, uid, gid).map_err(|()| failure())?;
+        let mut private_path = validate_directory(&directory, uid, gid).map_err(|()| failure())?;
         for ancestor in ancestors {
             directory = File::from(
                 rustix::fs::openat(&directory, ancestor, directory_flags(), Mode::empty())
                     .map_err(|_| failure())?,
             );
-            validate_directory(&directory, uid, gid).map_err(|()| failure())?;
+            private_path |= validate_directory(&directory, uid, gid).map_err(|()| failure())?;
         }
 
         let mut file = File::from(
@@ -105,7 +100,8 @@ mod platform {
             .map_err(|_| failure())?,
         );
         let before = file.metadata().map_err(|_| failure())?;
-        validate_file(&before, policy, uid, gid, maximum_bytes).map_err(|()| failure())?;
+        validate_file(&before, policy, uid, gid, maximum_bytes, private_path)
+            .map_err(|()| failure())?;
         let before = Snapshot::from(&before);
 
         let mut bytes = Vec::with_capacity(
@@ -120,7 +116,8 @@ mod platform {
         }
 
         let after = file.metadata().map_err(|_| failure())?;
-        validate_file(&after, policy, uid, gid, maximum_bytes).map_err(|()| failure())?;
+        validate_file(&after, policy, uid, gid, maximum_bytes, private_path)
+            .map_err(|()| failure())?;
         if before != Snapshot::from(&after) || before.length != bytes.len() as u64 {
             return Err(failure());
         }
@@ -155,7 +152,11 @@ mod platform {
         OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK
     }
 
-    fn validate_directory(directory: &File, uid: u32, gid: u32) -> Result<(), ()> {
+    /// Returns whether this directory blocks traversal by accounts outside the
+    /// effective user/service group. Sticky root-owned world-writable ancestors
+    /// such as `/tmp` are accepted for name stability but do not make a secret
+    /// leaf private.
+    fn validate_directory(directory: &File, uid: u32, gid: u32) -> Result<bool, ()> {
         let metadata = directory.metadata().map_err(|_| ())?;
         if !metadata.is_dir() || (metadata.uid() != 0 && metadata.uid() != uid) {
             return Err(());
@@ -169,7 +170,9 @@ mod platform {
         if other_writable && !(metadata.uid() == 0 && mode & 0o1000 != 0) {
             return Err(());
         }
-        Ok(())
+        let trusted_group_can_traverse = metadata.gid() == gid && mode & 0o010 != 0;
+        let untrusted_can_traverse = mode & 0o001 != 0 || trusted_group_can_traverse;
+        Ok(!untrusted_can_traverse)
     }
 
     fn validate_file(
@@ -178,6 +181,7 @@ mod platform {
         uid: u32,
         gid: u32,
         maximum_bytes: u64,
+        private_path: bool,
     ) -> Result<(), ()> {
         if !metadata.is_file()
             || metadata.nlink() != 1
@@ -192,10 +196,12 @@ mod platform {
         }
         match policy {
             ProtectedFilePolicy::Secret => {
-                if mode & 0o007 != 0 || mode & 0o020 != 0 {
+                if mode & 0o022 != 0 {
                     return Err(());
                 }
-                if mode & 0o040 != 0 && metadata.gid() != gid {
+                let untrusted_read = mode & 0o004 != 0
+                    || (mode & 0o040 != 0 && metadata.gid() != gid);
+                if untrusted_read && !private_path {
                     return Err(());
                 }
             }
@@ -217,6 +223,10 @@ mod platform {
     use std::io::Read;
     use std::path::Path;
 
+    /// Compatibility-only loader. It preserves bounded regular-file behavior on
+    /// unsupported hosts, but it is not evidence for `external-capsule-v1`.
+    /// #280 must reject that profile where the Linux protected-file primitive is
+    /// unavailable rather than treating this fallback as equivalent protection.
     pub(super) fn read(
         path: &Path,
         maximum_bytes: u64,
@@ -246,7 +256,7 @@ mod tests {
     use super::*;
     use std::fs;
     use std::os::unix::fs::{symlink, PermissionsExt};
-    use tempfile::TempDir;
+    use tempfile::{Builder, TempDir};
 
     fn write(path: &Path, bytes: &[u8], mode: u32) {
         fs::write(path, bytes).expect("write protected fixture");
@@ -254,12 +264,14 @@ mod tests {
     }
 
     #[test]
-    fn secret_policy_accepts_owner_and_service_group_read_only_files() {
+    fn secret_policy_accepts_owner_service_group_and_private_directory_reads() {
         let root = TempDir::new().unwrap();
         let owner = root.path().join("owner.json");
         let group = root.path().join("group.json");
+        let private_public_mode = root.path().join("private-public-mode.json");
         write(&owner, b"owner", 0o600);
         write(&group, b"group", 0o640);
+        write(&private_public_mode, b"private", 0o644);
         assert_eq!(
             read(&owner, 32, ProtectedFilePolicy::Secret, "test").unwrap(),
             b"owner"
@@ -268,16 +280,28 @@ mod tests {
             read(&group, 32, ProtectedFilePolicy::Secret, "test").unwrap(),
             b"group"
         );
+        assert_eq!(
+            read(
+                &private_public_mode,
+                32,
+                ProtectedFilePolicy::Secret,
+                "test"
+            )
+            .unwrap(),
+            b"private"
+        );
     }
 
     #[test]
-    fn secret_policy_rejects_public_or_writable_group_access() {
+    fn secret_policy_rejects_public_reads_on_traversable_paths_and_writable_group_access() {
+        let public = Builder::new().prefix("lsf-protected-").tempfile_in("/tmp").unwrap();
+        fs::set_permissions(public.path(), fs::Permissions::from_mode(0o604)).unwrap();
+        assert!(read(public.path(), 32, ProtectedFilePolicy::Secret, "test").is_err());
+
         let root = TempDir::new().unwrap();
-        for (name, mode) in [("public", 0o604), ("group-write", 0o620)] {
-            let path = root.path().join(name);
-            write(&path, b"secret", mode);
-            assert!(read(&path, 32, ProtectedFilePolicy::Secret, "test").is_err());
-        }
+        let writable = root.path().join("group-write");
+        write(&writable, b"secret", 0o620);
+        assert!(read(&writable, 32, ProtectedFilePolicy::Secret, "test").is_err());
     }
 
     #[test]
