@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-08-17
+- **Follow-up:** [ADR-0030](0030-bound-disconnected-authorization-validity.md) defines the finite authorization and disconnected-validity contract; local resolution remains unchanged.
 
 ## Implementation status at Phase 1 completion
 
