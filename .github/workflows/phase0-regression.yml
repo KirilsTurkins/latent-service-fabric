@@ -48,7 +48,7 @@ jobs:
           unset CARGO_INCREMENTAL
           tools/run_phase0_baselines.sh smoke "${RUNNER_TEMP}/phase0-regression/baseline"
       - name: Run executable outcome and recovery matrix
-        run: tools/run_phase0_outcome_matrix.sh
+        run: bash tools/run_phase0_outcome_matrix.sh
       - name: Upload runtime regression evidence
         if: always()
         uses: actions/upload-artifact@v4
