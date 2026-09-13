@@ -122,15 +122,17 @@ impl ConfiguredBearer {
                     "oci-operation-deadline",
                 )
             })?;
+        let mut request_url = self.realm.clone();
+        {
+            let mut query = request_url.query_pairs_mut();
+            query.append_pair("service", self.service.as_ref());
+            query.append_pair("scope", self.scope.as_ref());
+        }
         let response = self
             .client
-            .get(self.realm.clone())
+            .get(request_url)
             .header(ACCEPT, HeaderValue::from_static("application/json"))
             .header(AUTHORIZATION, self.authorization.clone())
-            .query(&[
-                ("service", self.service.as_ref()),
-                ("scope", self.scope.as_ref()),
-            ])
             .timeout(remaining.min(request_timeout))
             .send()
             .await
