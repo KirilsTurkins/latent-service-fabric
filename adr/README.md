@@ -34,3 +34,9 @@ with exact package/component/source associations and bounded current trust.
 [ADR-0024](0024-bind-sbom-inventory-through-package-content.md) defines bounded
 declared-input SBOMs embedded before package assembly, exact detached associations
 and content policy separate from publisher authentication and admission currentness.
+
+[ADR-0025](0025-separate-immediate-capability-operations-from-transactional-effect-intents.md)
+separates Phase 3 immediate capability operations and explicit uncertain outcomes
+from Phase 4 transactional state/effect intents. It narrows ADR-0013's blanket
+external-effect statement while preserving ADR-0014's no-universal-exactly-once
+boundary.
