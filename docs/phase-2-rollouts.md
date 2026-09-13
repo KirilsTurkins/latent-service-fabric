@@ -64,10 +64,13 @@ the route snapshot. Invocation pins retain only that executable snapshot, so old
 activations do not retain rollout history. Already admitted execution and
 lifecycle fencing follow the existing [routing semantics](deployment-routing.md).
 
-Catalogs without rollout history retain the existing version-2 format. The first
-rollout uses a version-3 catalog document with one checksum and atomic rename for
-routes, state and receipts. Legacy version-1/2 recovery remains supported. Restart
-restores committed progress and never infers permission to advance automatically.
+Catalogs without rollout or managed deployment history retain the existing
+version-2 format. The first rollout uses a version-3 catalog document with one
+checksum and atomic rename for routes, state and receipts. Managed deployment
+operations use version 4 in that same document; all subsequent writers preserve
+both histories. Legacy version-1/2 recovery remains supported. Restart restores
+committed progress and never infers permission to advance automatically. See the
+[operator workflow contract](phase-2-operator-workflows.md).
 
 ## Receipts, retries and uncertain outcomes
 

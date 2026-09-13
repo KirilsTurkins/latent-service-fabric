@@ -1,13 +1,14 @@
 # Test invariants
 
 This document separates the historical Phase 0 executable invariants, delivered
-Phase 1 evidence, and target invariants that remain later-phase work. The retained
+Phase 1 and Phase 2 evidence, and invariants that remain later-phase work. The retained
 clean-checkout [completion receipt](../../benchmarks/phase0/receipts/native-linux-2026-08-30-b932a935/gate-summary.json)
 authorized Phase 1 for its recorded August 30 execution identity. It does not
-describe the current Phase 1 runtime or claim production readiness. See the
+describe the current runtime or claim production readiness. See the
 [historical Phase 0 decision](../phase-0-completion.md), completed
 [Phase 1 gate](../phase-1-completion.md), and
-[extension results](../phase-1-extension-completion.md) for their separate scopes.
+[extension results](../phase-1-extension-completion.md), and completed
+[Phase 2 gate](../phase-2-completion.md) for their separate scopes.
 
 ## Phase 0 exercised subset
 
@@ -62,6 +63,22 @@ Current scheduler, activation lifecycle, wire, Wasmtime and standalone owner
 suites additionally exercise their implemented fairness, route pinning, budget,
 context and restart boundaries. The Phase 0 paragraphs below describe historical
 evidence, not the limits of the current implementation.
+
+## Phase 2 delivery and current authority
+
+The completed [gate report](../phase-2-completion.md) maps all eighteen delivery
+dependencies to their source suites and retained results. Its bounded operator
+workflow covers real registry/CLI/node publication, rollout, promotion, rollback,
+revocation and recovery. Separate offline and native schedules distinguish a
+registry outage from current proof, policy and lifecycle permission. Neither
+cached bytes nor a held prepared token can revive a revoked grant.
+
+The [frozen resource profile](phase-2-resource-profile.md) measures 32 signed
+releases and 16 deployments while warming only two portable runtime images. It
+does not extend the historical 100,000-release measurements to Phase 2, native
+compilation or future provider populations. The report preserves an earlier
+unclassified `Unavailable` workflow attempt separately from the passing run;
+finite success is not an availability SLO or arbitrary-duration leak guarantee.
 
 ## Dormant-service scaling — observed at all four Phase 1 scales
 
@@ -129,17 +146,27 @@ The [Phase 1 completion report](../phase-1-completion.md) maps this evidence to
 the collective gate decision.
 Phase 0 has no production route table or snapshot path.
 
-## Budget hierarchy — future
+## Descendant budget hierarchy — planned Phase 3
 
 A child call cannot exceed the parent’s remaining deadline, CPU, fan-out,
 outbound-call, state, blob, log, or effect budget. Phase 0 exercises local
 deadline/fuel/memory/log limits only; it has no descendant call graph.
+The current standalone node enforces the intersection of caller, capsule,
+deployment and node limits. It rejects unsupported child/provider dimensions;
+the Phase 3 broker and descendant-delegation tickets must implement those
+dimensions before a guest can use them. State/effect execution remains later work.
 
-## Failure ambiguity — future
+## Failure ambiguity — delivered control, later provider effects
 
-Tests must cover response loss after state commit or provider dispatch.
-Automatic retries are permitted only when the operation contract and idempotency
-model allow them. Phase 0 has no durable state/effect commit path.
+Phase 2 control tests cover response loss and uncertain durability around release,
+deployment and rollout commits. Retained exact receipts support explicit lookup
+and replay; unknown or evicted history does not establish that a mutation never
+ran. The operator CLI never automatically resubmits an ambiguous operation. See
+the [recovery contract](../phase-2-operator-workflows.md).
+
+Future provider tests must separately cover response loss after external
+dispatch. Transactional state/effects and durable outboxes are not supplied by
+the Phase 2 control journal. Phase 0 has no durable state/effect commit path.
 
 ## Local/remote equivalence — selected pairs implemented
 

@@ -37,9 +37,12 @@
 
   <g filter="url(#phase0-lifecycle-shadow)">
     <rect x="74" y="226" width="276" height="292" rx="24" fill="url(#phase0-lifecycle-source)" stroke="#c4b5fd" stroke-width="2"/>
-    <text x="110" y="278" class="box-title">Prepared component</text>
-    <text x="110" y="314" class="box-copy">validated capsule and</text>
-    <text x="110" y="338" class="box-copy">bounded preparation cache</text>
+    <text x="110" y="266" class="box-title">
+      <tspan x="110">Prepared</tspan>
+      <tspan x="110" dy="26">component</tspan>
+    </text>
+    <text x="110" y="328" class="box-copy">validated capsule and</text>
+    <text x="110" y="352" class="box-copy">bounded preparation cache</text>
     <line x1="110" y1="370" x2="314" y2="370" stroke="#c4b5fd" stroke-width="1"/>
     <text x="110" y="408" class="small">reused only as node-owned</text>
     <text x="110" y="432" class="small">immutable prepared state</text>

@@ -2,6 +2,10 @@
 
 **Phase 1 status: COMPLETE — September 8, 2026.**
 
+> Current status: [Phase 2](phase-2-completion.md) is also complete. The scope and
+> measurements below remain the original Phase 1 evidence; current features and
+> planned Phase 3 work are mapped in the [roadmap](roadmap.md).
+
 The single-node stateless features are implemented. The full scale, soak and
 benchmark suite passed and is retained with its exact executed binary and raw
 measurements. Clean CI also passed the selected deterministic conformance

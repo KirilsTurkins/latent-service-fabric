@@ -173,7 +173,9 @@ cargo test -p latent-node --all-targets --locked
 
 Required CI also checks canonical formatting, the complete workspace at the
 current toolchain and MSRV, Clippy, generated bindings, repository contracts,
-SDK surfaces, and the retained Phase 0 runtime regression.
+SDK surfaces, and the executable Phase 0 outcome/recovery matrix in the
+Repository contracts job. Phase 0 baseline collection remains manual; see the
+[CI layout](../testing/phase0-ci-layout.md).
 
 The tests cover deadline boundaries, conservative clock sampling, reusable
 relative ceilings, deterministic intersection and effective-deadline

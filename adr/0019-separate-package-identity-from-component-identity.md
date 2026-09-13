@@ -57,6 +57,11 @@ admission and runtime adoption remain separate Phase 2 deliveries.
 
 ## References
 
+The separate packaging, evidence, admission and runtime deliveries described in
+this decision are now complete. Their identities remain distinct; see the
+[Phase 2 completion map](../docs/phase-2-completion.md) for the implemented
+composition and its finite validation.
+
 - [OCI image manifest 1.1.1](https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md)
 - [OCI content descriptors 1.1.1](https://github.com/opencontainers/image-spec/blob/v1.1.1/descriptor.md)
 - [OCI distribution decision](0007-distribute-capsules-as-oci-artifacts.md)

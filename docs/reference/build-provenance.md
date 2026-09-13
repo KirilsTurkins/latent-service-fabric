@@ -159,7 +159,9 @@ floors and atomically compares proof state at final publication and activation
 start. Serialized fields, referrer presence
 and matching subjects cannot recreate authority. [SBOM content policy](../component-development/sbom.md)
 checks presence and selected attribution requirements; it grants no builder or
-publisher authority. Trusted native compiler evidence remains separate Phase 2 work.
+publisher authority. The implemented [trusted native compiler and cache](../runtime/trusted-aot.md)
+use a separate protected host key and exact runtime/compiler compatibility
+binding. A builder signature cannot replace that local native-output authority.
 
 ## Bounds and validation
 

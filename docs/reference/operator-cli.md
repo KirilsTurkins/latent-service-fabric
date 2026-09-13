@@ -223,6 +223,12 @@ explicit absolute invocation deadline can tighten the allowance and is forwarded
 unchanged; it cannot extend server limits. A cold compilation can exhaust a short
 allowance, so configure client and node time ceilings deliberately.
 
+Invoke's transport allowance must also fit the node's
+`execution.maximumWallTimeMillis`. A smaller `--wall-time-ms` request does not
+make an oversized `--rpc-timeout-ms` transport header valid. A profile chosen
+for longer management operations can use an explicit smaller RPC timeout for
+Invoke; the CLI does not silently rewrite that choice.
+
 Ctrl-C drops the client future and exits 130. It does not send a hidden Cancel or
 claim server cancellation was accepted. Use a second process to explicitly cancel
 or query a known activation ID while the first call is pending. After a lost

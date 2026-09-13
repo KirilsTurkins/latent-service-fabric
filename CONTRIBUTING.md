@@ -1,11 +1,14 @@
 # Contributing
 
-LSF has completed Phase 1 and its performance/infrastructure extension. Phase 2
-packaging and supply-chain work is underway, with focused capabilities landing
-independently on `development`. Contributions should preserve the distinction
-between architectural contracts, generated surfaces, implemented behavior, and
-planned phase scope. Consult [the roadmap](docs/roadmap.md) together with the
-current `development` documentation for the exact delivered boundary.
+LSF has completed Phase 1, its performance/infrastructure extension, and Phase 2
+packaging and supply-chain delivery. Work is moving into the
+[Phase 3 capability and application-hosting backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
+Those planned interfaces and open pull requests do not establish delivered
+features; use the current `development` implementation and
+[Phase 2 completion review](docs/phase-2-completion.md) as the starting boundary.
+Contributions should distinguish architectural contracts, generated surfaces,
+implemented behavior, and planned phase scope. Consult [the roadmap](docs/roadmap.md)
+for dependencies and the later state, cluster, and workflow phases.
 
 ## First contribution
 
