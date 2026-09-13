@@ -1,4 +1,5 @@
 //! One explicitly scoped OCI endpoint with bounded transfer and retention owners.
+mod auth;
 mod body;
 mod cache;
 mod config;
@@ -10,7 +11,7 @@ mod transport;
 mod upload_worker;
 
 use crate::{OciDescriptor, OciManifestBytes, OciPushRequest, OciReference, OciRegistry};
-pub use config::{RegistryConfig, RegistryCredentials, RegistryLimits};
+pub use config::{RegistryBearerChallenge, RegistryConfig, RegistryCredentials, RegistryLimits};
 use latent_core::{BoxFuture, PackageDigest, PlatformError, PlatformErrorCode};
 pub use pull::OciPulledPackage;
 use std::sync::Arc;
@@ -30,7 +31,8 @@ pub(crate) fn corrupt(reason: &'static str) -> PlatformError {
 }
 
 /// One shared client/worker for one configured origin and repository. Construction
-/// requires a Tokio runtime; no DNS lookup, token flow or guest network authority.
+/// requires a Tokio runtime. Hostname destinations remain explicitly resolved;
+/// optional Bearer challenge reads use only an operator-approved HTTPS token realm.
 #[derive(Clone)]
 pub struct HttpOciRegistry {
     pub(crate) transport: Arc<Transport>,
