@@ -3,11 +3,15 @@
 #![forbid(unsafe_code)]
 
 mod compatibility;
+mod host_profile;
 #[doc(hidden)]
 pub use compatibility::Analysis;
 pub use compatibility::{
     compare_descriptors, BoundedCompatibilityChecker, ComparisonLimits, ComparisonWork,
     StructuralCompatibility, StructuralIssue, StructuralIssueCode, StructuralReport,
+};
+pub use host_profile::{
+    HostAbiProfile, HostInterfaceBinding, HostInterfaceSpec, PHASE3_HOST_ABI_V1,
 };
 
 use latent_core::{BoxFuture, ContractId, FunctionId, InterfaceId, Metadata, PlatformError};
