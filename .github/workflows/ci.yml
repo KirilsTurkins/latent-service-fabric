@@ -20,8 +20,43 @@ permissions:
   contents: read
 
 jobs:
+  profile:
+    name: Select CI profile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      profile: ${{ steps.select.outputs.profile }}
+      reason: ${{ steps.select.outputs.reason }}
+      changed_files: ${{ steps.select.outputs.changed_files }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Classify the complete change
+        id: select
+        run: python3 tools/ci_profile.py
+
+  docs:
+    name: Documentation and SVGs
+    needs: profile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+          cache: pip
+          cache-dependency-path: tools/requirements.lock
+      - name: Install documentation validator dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+      - name: Validate documentation and profile selection
+        run: |
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs
+          python3 tools/validate_docs.py
+
   rust:
     name: Rust 1.97.1
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +64,24 @@ jobs:
         with:
           components: rustfmt, clippy
           targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Check formatting
         run: cargo fmt --all --check
       - name: Check workspace
@@ -122,12 +175,31 @@ jobs:
 
   oci-registry:
     name: OCI registry TLS integration
-    needs: contracts
+    needs: [profile, contracts]
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.97.1
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Receive bounded observed echo inputs
         uses: actions/download-artifact@v4
         with:
@@ -145,12 +217,32 @@ jobs:
 
   catalog:
     name: Durable catalog acceptance
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     # 60m publication + 30m reopen, with build/cleanup/evidence-upload headroom.
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.97.1
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Run catalog recovery, routing, and dormancy regressions
         run: cargo test -p latent-artifacts -p latent-control-store --lib --locked -- --nocapture
       - name: Check catalog probe supervision
@@ -177,15 +269,37 @@ jobs:
 
   msrv:
     name: Rust MSRV 1.94.1
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.94.1
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Check workspace at MSRV
         run: cargo +1.94.1 check --workspace --all-targets --all-features --locked
 
   contracts:
     name: Repository contracts
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -199,6 +313,24 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
           targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - uses: bytecodealliance/actions/wasm-tools/setup@v1
         with:
           version: 1.254.0
@@ -267,6 +399,8 @@ jobs:
 
   sdks:
     name: Cross-language SDK surfaces
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -298,3 +432,34 @@ jobs:
           tools/validate_sdks.sh
           test "$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)" = \
             "Version ${EXPECTED_TYPESCRIPT_VERSION}"
+
+  result:
+    name: CI result
+    if: always()
+    needs: [profile, docs, rust, oci-registry, catalog, msrv, contracts, sdks]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every selected validation job
+        env:
+          CI_JOB_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          results = json.loads(os.environ['CI_JOB_RESULTS'])
+          profile = results['profile']['outputs'].get('profile')
+          full = {'rust', 'oci-registry', 'catalog', 'msrv', 'contracts', 'sdks'}
+          required = {'profile', 'docs'} | (full if profile == 'full' else set())
+          failures = [name for name in required if results[name]['result'] != 'success']
+          if profile not in {'docs', 'full'}:
+              failures.append('unknown CI profile')
+          if profile == 'docs':
+              failures.extend(name for name in full if results[name]['result'] != 'skipped')
+          print('Selected profile:', profile)
+          print('Job results:', {name: value['result'] for name, value in results.items()})
+          if failures:
+              print('CI did not satisfy its selected profile:', ', '.join(failures), file=sys.stderr)
+              sys.exit(1)
+          PY
