@@ -1,11 +1,11 @@
 # Contributing
 
-LSF has completed Phase 1 and its performance/infrastructure extension. Phase 2
-packaging and supply-chain work is underway, with focused capabilities landing
-independently on `development`. Contributions should preserve the distinction
-between architectural contracts, generated surfaces, implemented behavior, and
-planned phase scope. Consult [the roadmap](docs/roadmap.md) together with the
-current `development` documentation for the exact delivered boundary.
+LSF has completed Phase 1, its performance/infrastructure extension, and Phase 2.
+Phase 3 capabilities and application hosting are the active roadmap scope; only
+behavior merged to `development` is delivered. Contributions should preserve the
+distinction between architectural contracts, generated surfaces, implemented
+behavior, and planned phase scope. Consult [the roadmap](docs/roadmap.md) together
+with the current `development` documentation for the exact delivered boundary.
 
 ## First contribution
 
