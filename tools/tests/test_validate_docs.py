@@ -44,6 +44,7 @@ class DocumentationValidationTests(unittest.TestCase):
     def test_repository_document_inventory_remains_required(self) -> None:
         report = validator.validate_docs(self.root, self.tracked)
         self.assertIn("required documentation missing: README.md", report["errors"])
+        self.assertIn("required documentation missing: docs/development/build-foundation.md", report["errors"])
 
     def test_valid_local_links_encoded_names_references_and_svg_fragment(self) -> None:
         self.write("README.md", '''# Intro

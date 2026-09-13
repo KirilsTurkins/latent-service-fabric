@@ -517,6 +517,7 @@ def validate_required_docs() -> None:
         "VALIDATION.md",
         "docs/architecture/overview.md",
         "docs/api-surface.md",
+        "docs/development/build-foundation.md",
         "docs/development/toolchain.md",
         "docs/svg-style.md",
         "docs/testing/invariants.md",
