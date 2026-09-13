@@ -46,6 +46,29 @@ calls can yield, but an epoch tick alone is not a general scheduler fairness or
 millisecond response guarantee. The optional fuel-yield policy and interruption
 limits are documented in [the runtime reference](../runtime/wasmtime.md).
 
+## Waiting activation ownership
+
+[ADR-0028](../../adr/0028-retain-activation-ownership-across-asynchronous-waits.md)
+clarifies ADR-0006 for Phase 3 asynchronous providers and descendant calls.
+Yielding an invocation future releases the shared runtime thread for other work;
+it does **not** release the activation's cell lease, Wasmtime Store, guest memory,
+host bindings, budget or cancellation owner. A provider wait additionally keeps
+its bounded operation permits and retained buffers charged until physical cleanup
+or an explicitly specified affine transfer to a node-owned cleanup owner.
+
+A child service call is a separate activation with a fresh Store and normal
+scheduler assignment. The waiting parent keeps its own cell. Before the parent
+can block on a descendant, the Phase 3 child-call implementation must either
+establish progress inside fixed declared capacity or reject promptly. It may not
+create hidden cells/workers, overcommit the pool, wait indefinitely on cells held
+by its ancestor chain, or refund a still-live parent cell to manufacture capacity.
+
+`WaitingProvider` and `WaitingDescendant` are ownership descriptions, not new
+public lifecycle phases and not dormant-service states. LSF does not checkpoint
+or evict an active guest stack in this phase. Reuse still requires affirmative
+cleanup; a watchdog timeout identifies a failed bound but is not evidence that
+provider work, descendants or the cell were actually retired.
+
 ## Isolation model
 
 Each activation receives a separate guest store, memory, budget and host bindings.
@@ -87,6 +110,12 @@ A cell may be returned only after:
 5. accounting is finalized,
 6. activation identity is removed, and
 7. backend-specific memory reset guarantees hold.
+
+For Phase 3 asynchronous work, "host-call ownership is released" means that
+provider operations and descendant reservations have physically retired or were
+affinely transferred to a bounded owner that cannot reference the old cell,
+Store, guest memory or activation-local handles. Cancellation acceptance alone
+does not satisfy this requirement.
 
 Conformance tests must detect cross-activation data leakage.
 
