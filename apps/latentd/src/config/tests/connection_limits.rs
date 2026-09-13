@@ -8,7 +8,7 @@ fn connection_deadlines_are_derived_and_validated_together() {
     let settings = defaults.derive().unwrap();
     assert_eq!(
         settings.transport.maximum_connection_age,
-        Duration::from_secs(300)
+        Duration::from_mins(5)
     );
     assert_eq!(
         settings.transport.connection_drain_timeout,

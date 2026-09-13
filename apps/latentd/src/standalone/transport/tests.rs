@@ -27,7 +27,7 @@ pub(super) fn configuration() -> TransportConfig {
         maximum_header_bytes: 4096,
         maximum_streams_per_connection: 4,
         unauthenticated_timeout: Duration::from_secs(2),
-        maximum_connection_age: Duration::from_secs(60),
+        maximum_connection_age: Duration::from_mins(1),
         connection_drain_timeout: Duration::from_millis(200),
         request_timeout: Duration::from_secs(2),
         shutdown_timeout: Duration::from_millis(200),
