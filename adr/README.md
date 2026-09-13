@@ -56,6 +56,13 @@ deduplication, preserving legacy component fields and requiring explicit
 selectors, bounded migration and independent currentness. Implementation remains
 assigned to #265–#267 in [RFC-0002](../rfcs/0002-tenant-scoped-publication-identity.md).
 
+[ADR-0028](0028-retain-activation-ownership-across-asynchronous-waits.md) follows
+ADR-0006 by defining ownership while active guests await providers or descendant
+calls. Yielding the shared runtime thread does not refund a live cell, Store,
+buffer or reservation; nested calls must make progress within fixed declared
+capacity or reject promptly. Implementation and conformance remain assigned to
+#205, #208, #209 and #238.
+
 [ADR-0029](0029-separate-registry-authority-from-transport-profile.md) separates
 ADR-0021's permanent registry authority/ownership rules from versioned transport
 choices. `lsf-oci-static-v1` names the delivered restricted profile;

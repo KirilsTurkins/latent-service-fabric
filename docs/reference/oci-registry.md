@@ -32,8 +32,8 @@ choices.
 - operator-supplied socket addresses for hostname origins, with no runtime DNS;
 - anonymous, explicit Basic or preissued Bearer credentials;
 - no token-service exchange or refresh;
-- no redirects outside the existing same-origin upload/pagination continuation
-  rules;
+- no HTTP redirects; upload locations and pagination continuations remain within
+  the existing origin/repository rules;
 - native OCI 1.1 referrers only; no mutable legacy referrers-tag fallback.
 
 `lsf-oci-bearer-v1` is a **selected Phase 3 profile, not an implemented or
