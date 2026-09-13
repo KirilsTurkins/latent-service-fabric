@@ -69,13 +69,23 @@ pub(super) async fn sample(
         .0
         .checked_add(1)
         .ok_or("benchmark generation overflow")?;
-    let deployment = deployment_to_proto(&previous).map_err(|_| "benchmark deployment encoding")?;
+    let mut deployment =
+        deployment_to_proto(&previous).map_err(|_| "benchmark deployment encoding")?;
+    // A read response separates the captured publication from the original
+    // input selector. Restore that selector for this same-manifest benchmark.
+    // An explicit publication uses the component as an assertion, not a second
+    // selector; a legacy manifest retains its original component-only input.
+    deployment.publication = deployment.requested_publication.take();
+    let expected_component_digest = deployment
+        .publication
+        .is_some()
+        .then(|| std::mem::take(&mut deployment.release_digest));
     let mut deployments =
         proto::deployment_service_client::DeploymentServiceClient::new(node.channel());
     let request = authenticated(
         &fixture.tenant,
         proto::ApplyDeploymentRequest {
-            expected_component_digest: None,
+            expected_component_digest,
             operation: None,
             deployment: Some(deployment),
             expected_generation: Some(previous.generation),
@@ -95,6 +105,7 @@ pub(super) async fn sample(
         .ok_or("missing committed reapply")?;
     if receipt != committed
         || receipt.manifest != previous.manifest
+        || receipt.publication != previous.publication
         || receipt.generation != expected_catalog
         || receipt.generation <= previous.generation
         || node.deployments.generation().0 != expected_catalog
