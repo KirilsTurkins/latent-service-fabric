@@ -26,20 +26,24 @@ pub(super) struct ConfiguredBearer {
 
 impl ConfiguredBearer {
     pub(super) fn new(config: &RegistryConfig) -> Result<Option<Self>> {
-        let RegistryCredentials::BearerChallenge(credentials) = &config.credentials else {
+        let RegistryCredentials::BearerChallenge {
+            realm: configured_realm,
+            service,
+            username,
+            password,
+            addresses,
+        } = &config.credentials
+        else {
             return Ok(None);
         };
-        if credentials.realm.len() > MAX_REALM_BYTES
-            || credentials.service.is_empty()
-            || credentials.service.len() > MAX_SERVICE_BYTES
-            || credentials
-                .service
-                .bytes()
-                .any(|byte| !byte.is_ascii_graphic())
+        if configured_realm.len() > MAX_REALM_BYTES
+            || service.is_empty()
+            || service.len() > MAX_SERVICE_BYTES
+            || service.bytes().any(|byte| !byte.is_ascii_graphic())
         {
             return Err(invalid("invalid-oci-bearer-authority"));
         }
-        let realm = Url::parse(&credentials.realm)
+        let realm = Url::parse(configured_realm)
             .map_err(|_| invalid("invalid-oci-bearer-authority"))?;
         if realm.scheme() != "https"
             || realm.host().is_none()
@@ -56,10 +60,9 @@ impl ConfiguredBearer {
         let numeric = realm
             .host_str()
             .and_then(|host| host.trim_matches(['[', ']']).parse::<IpAddr>().ok());
-        if credentials.addresses.len() > MAX_AUTH_ADDRESSES
-            || (numeric.is_none() && credentials.addresses.is_empty())
-            || credentials
-                .addresses
+        if addresses.len() > MAX_AUTH_ADDRESSES
+            || (numeric.is_none() && addresses.is_empty())
+            || addresses
                 .iter()
                 .any(|address| address.port() != port || address.ip().is_unspecified())
         {
@@ -69,18 +72,15 @@ impl ConfiguredBearer {
         if scope.len() > MAX_SCOPE_BYTES {
             return Err(invalid("invalid-oci-bearer-scope"));
         }
-        let authorization = super::transport::client::basic_authorization(
-            &credentials.username,
-            &credentials.password,
-        )?;
+        let authorization = super::transport::client::basic_authorization(username, password)?;
         let client = super::transport::client::build_authority(
             config,
             realm.host_str().expect("checked bearer host"),
-            &credentials.addresses,
+            addresses,
         )?;
         Ok(Some(Self {
             realm,
-            service: credentials.service.clone().into_boxed_str(),
+            service: service.clone().into_boxed_str(),
             scope: scope.into_boxed_str(),
             authorization,
             client,
@@ -167,7 +167,7 @@ impl ConfiguredBearer {
 }
 
 pub(super) fn read_continuation_allowed(method: &Method, body_present: bool) -> bool {
-    !body_present && matches!(*method, Method::GET | Method::HEAD)
+    !body_present && (method == Method::GET || method == Method::HEAD)
 }
 
 struct Challenge<'a> {
@@ -242,19 +242,19 @@ fn unauthenticated(reason: &'static str) -> latent_core::PlatformError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http::{RegistryBearerChallenge, RegistryLimits};
+    use crate::http::RegistryLimits;
 
     fn config() -> RegistryConfig {
         RegistryConfig {
             origin: "https://127.0.0.1".to_owned(),
             repository: "tenant/site".to_owned(),
-            credentials: RegistryCredentials::BearerChallenge(RegistryBearerChallenge {
+            credentials: RegistryCredentials::BearerChallenge {
                 realm: "https://127.0.0.1/token".to_owned(),
                 service: "registry.example".to_owned(),
                 username: "robot".to_owned(),
                 password: "secret".to_owned(),
                 addresses: Vec::new(),
-            }),
+            },
             addresses: Vec::new(),
             additional_root_certificates: Vec::new(),
             allow_insecure_loopback: false,
@@ -316,25 +316,28 @@ mod tests {
     #[test]
     fn bearer_authority_requires_https_and_bounded_explicit_resolution() {
         let mut value = config();
-        let RegistryCredentials::BearerChallenge(credentials) = &mut value.credentials else {
+        let RegistryCredentials::BearerChallenge { realm, .. } = &mut value.credentials else {
             unreachable!();
         };
-        credentials.realm = "http://127.0.0.1/token".to_owned();
+        *realm = "http://127.0.0.1/token".to_owned();
         assert!(ConfiguredBearer::new(&value).is_err());
 
         let mut value = config();
-        let RegistryCredentials::BearerChallenge(credentials) = &mut value.credentials else {
+        let RegistryCredentials::BearerChallenge { realm, .. } = &mut value.credentials else {
             unreachable!();
         };
-        credentials.realm = "https://auth.example/token".to_owned();
+        *realm = "https://auth.example/token".to_owned();
         assert!(ConfiguredBearer::new(&value).is_err());
 
         let mut value = config();
-        let RegistryCredentials::BearerChallenge(credentials) = &mut value.credentials else {
+        let RegistryCredentials::BearerChallenge {
+            realm, addresses, ..
+        } = &mut value.credentials
+        else {
             unreachable!();
         };
-        credentials.realm = "https://auth.example/token".to_owned();
-        credentials.addresses = vec!["127.0.0.1:443".parse().unwrap()];
+        *realm = "https://auth.example/token".to_owned();
+        *addresses = vec!["127.0.0.1:443".parse().unwrap()];
         assert!(ConfiguredBearer::new(&value).is_ok());
     }
 
