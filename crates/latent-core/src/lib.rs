@@ -29,7 +29,7 @@ pub use deadline_wait_observer::{DeadlineWaitGuard, DeadlineWaitObserver, Deadli
 pub use digest::{ArtifactBlobDigest, DigestParseError, PackageDigest};
 pub use error::{DeclaredError, ErrorDetail, PlatformError, PlatformErrorCode};
 pub use host_profile::{
-    HostAbiProfile, HostInterfaceBinding, HostInterfaceSpec, PHASE3_HOST_ABI_V1,
+    HostAbiProfile, HostInterfaceBinding, HostInterfaceSpec, PHASE3_HOST_ABI_V1, PHASE3_HOST_ABI_V2,
 };
 pub use identity::{InvocationPrincipal, PrincipalKind};
 pub use ids::*;

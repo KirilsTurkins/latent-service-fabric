@@ -26,3 +26,35 @@ fn previous_patch_version_and_layout_cannot_alias_the_current_aot_policy() {
     );
     assert_ne!(declared_digest(&previous, limits).unwrap(), policy);
 }
+
+#[test]
+fn host_abi_identity_is_bound_to_prepared_and_native_compatibility() {
+    let limits = AotCompilerLimits::default();
+    let config = WasmtimeConfig::default();
+    let current = config.profile(DispatchMode::Generic);
+    let checked = ValidatedAotProfile::from_config(&config, limits).unwrap();
+    assert_eq!(
+        checked.capability_contract_digest(),
+        &crate::bindings::host_abi_digest()
+    );
+    assert_eq!(
+        current.configuration["host-abi-profile"],
+        latent_core::PHASE3_HOST_ABI_V2.id
+    );
+    let policy = declared_digest(&current, limits).unwrap();
+    for field in ["host-abi-profile", "host-abi-digest"] {
+        let mut stale = current.clone();
+        stale.configuration.remove(field);
+        assert_ne!(declared_digest(&stale, limits).unwrap(), policy);
+        stale
+            .configuration
+            .insert(field.into(), "legacy-or-forged".into());
+        assert_ne!(declared_digest(&stale, limits).unwrap(), policy);
+    }
+    let mut old = Sha256::new();
+    latent_core::PHASE3_HOST_ABI_V1.visit_identity_bytes(|part| old.update(part));
+    assert_ne!(
+        &<[u8; 32]>::from(old.finalize()),
+        checked.capability_contract_digest()
+    );
+}

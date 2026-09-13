@@ -41,6 +41,7 @@ SCHEMA_EXAMPLES: dict[str, tuple[str, ...]] = {
     "binding.schema.json": ("examples/bindings/*.json",),
     "capsule-manifest.schema.json": ("examples/**/capsule.json",),
     "deployment.schema.json": ("examples/**/deployment.json",),
+    "host-abi-profile.schema.json": ("wit/host-abi-*.json",),
     "package-config.schema.json": ("examples/package-format/*/config.json",),
     "package-evidence.schema.json": ("examples/package-format/evidence/*-manifest.json",),
     "package-manifest.schema.json": ("examples/package-format/*/manifest.json",),

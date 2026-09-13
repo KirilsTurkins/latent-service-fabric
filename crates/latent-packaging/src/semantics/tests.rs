@@ -6,6 +6,35 @@ use wit_parser::Resolve;
 
 const SOURCE: &str = "package example:shape@1.0.0; interface api { record item { count: u32, enabled: bool } variant outcome { empty, found(item) } run: func(value: result<outcome, u32>) -> u32; } world service { export api; }";
 
+#[test]
+fn separate_host_imports_cannot_each_spend_the_whole_comparison_allowance() {
+    let mut resolve = Resolve::default();
+    resolve
+        .push_source(
+            "clock.wit",
+            include_str!("../../../../wit/platform/clock/package.wit"),
+        )
+        .unwrap();
+    let imports: BTreeMap<_, _> = resolve
+        .interfaces
+        .iter()
+        .map(|(id, _)| (resolve.id_of(id).unwrap(), id))
+        .collect();
+    assert_eq!(imports.len(), 2);
+    let limits = SemanticLimits {
+        max_type_nodes: 3,
+        ..SemanticLimits::default()
+    };
+    for (name, id) in &imports {
+        host::validate(&resolve, &[(name.clone(), *id)].into(), limits).unwrap();
+    }
+    assert_eq!(
+        host::validate(&resolve, &imports, limits).unwrap_err().code,
+        PlatformErrorCode::ResourceExhausted
+    );
+    host::validate(&resolve, &imports, SemanticLimits::default()).unwrap();
+}
+
 fn resolve(source: &str) -> (Resolve, wit_parser::WorldId) {
     let mut resolve = Resolve::default();
     let package = resolve.push_source("fixture.wit", source).unwrap();
@@ -144,6 +173,9 @@ fn retained_host_imports_reject_changed_or_unknown_functions_and_types() {
 #[test]
 fn unsupported_shapes_are_rejected_even_when_both_inputs_match() {
     for source in [
+        "package example:shape@1.0.0; interface api { run: async func() -> u32; } world service { export api; }",
+        "package example:shape@1.0.0; interface api { run: func(value: future<u32>); } world service { export api; }",
+        "package example:shape@1.0.0; interface api { run: func(value: stream<u8>); } world service { export api; }",
         "package example:shape@1.0.0; interface api { flags options { one, two } record item { access: options } run: func(value: item); } world service { export api; }",
         "package example:shape@1.0.0; interface api { resource item; run: func(value: borrow<item>); } world service { export api; }",
         "package example:shape@1.0.0; world service { export run: func() -> u32; }",

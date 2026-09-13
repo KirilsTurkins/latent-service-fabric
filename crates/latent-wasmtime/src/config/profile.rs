@@ -21,11 +21,10 @@ impl WasmtimeConfig {
     ) -> WasmtimeEngineProfile {
         let mut configuration = self.compatibility_fields(mode);
         if let Some(runtime) = runtime {
-            let fingerprint = runtime
-                .digest()
-                .iter()
-                .map(|byte| format!("{byte:02x}"))
-                .collect::<String>();
+            let fingerprint = format!(
+                "{:x}",
+                sha2::digest::Output::<sha2::Sha256>::from(*runtime.digest())
+            );
             configuration.insert("runtime-compatibility-digest".into(), fingerprint);
         }
         configuration.insert("configuration-digest".to_owned(), digest(&configuration));
@@ -86,6 +85,15 @@ impl WasmtimeConfig {
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
         if mode == DispatchMode::Generic {
+            let abi = latent_core::PHASE3_HOST_ABI_V2;
+            fields.insert("host-abi-profile".into(), abi.id.into());
+            fields.insert(
+                "host-abi-digest".into(),
+                format!(
+                    "{:x}",
+                    sha2::digest::Output::<sha2::Sha256>::from(crate::bindings::host_abi_digest())
+                ),
+            );
             for (name, value) in [
                 ("compiler-workers", self.effective_compiler_workers()),
                 (

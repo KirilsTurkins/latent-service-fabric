@@ -47,6 +47,14 @@ pub(crate) fn install_context_log_clock(linker: &mut Linker<HostState>) -> wasmt
     latent::clock::wall::add_to_linker::<HostState, HasSelf<HostState>>(linker, |state| state)
 }
 
+/// Canonical recognition/shape identity, independently of grants or availability.
+pub(crate) fn host_abi_digest() -> [u8; 32] {
+    use sha2::{Digest, Sha256};
+    let mut hash = Sha256::new();
+    latent_core::PHASE3_HOST_ABI_V2.visit_identity_bytes(|part| hash.update(part));
+    hash.finalize().into()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -56,3 +64,7 @@ mod tests {
         assert!(declared_linker_profile_is_exact());
     }
 }
+
+#[cfg(test)]
+#[path = "bindings/tests.rs"]
+mod compatibility_tests;

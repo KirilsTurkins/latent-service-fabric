@@ -113,7 +113,7 @@ pub(crate) fn validate(
                         .and_then(|bytes| bytes.checked_add(4096))
                         .ok_or_else(exhausted)?;
                     retain(entry_bytes, &mut retained_bytes, config)?;
-                    let (params, results) = signature(&function, config, &mut remaining)?;
+                    let (params, results) = signature(&function, false, config, &mut remaining)?;
                     let (_, index) = component
                         .get_export(Some(&interface_index), name)
                         .ok_or_else(|| incompatible("component function index is unavailable"))?;
@@ -178,12 +178,14 @@ fn validate_imports(
     let mut imports = BTreeSet::new();
     for (name, item) in component_type.imports(engine) {
         take_name(name, config, remaining)?;
-        if !matches!(
-            name,
-            CONTEXT_IMPORT | LOG_IMPORT | MONOTONIC_CLOCK_IMPORT | WALL_CLOCK_IMPORT
-        ) {
+        let specification = latent_core::PHASE3_HOST_ABI_V2
+            .interface(name)
+            .ok_or_else(|| incompatible("component imports an unsupported host capability"))?;
+        if specification.binding == latent_core::HostInterfaceBinding::Provider {
+            // Recognition is data-only. The current runtime installs only the
+            // built-ins below; a label or a package manifest cannot install I/O.
             return Err(incompatible(
-                "component imports an unsupported host capability",
+                "required host capability provider is unavailable",
             ));
         }
         let ComponentItem::ComponentInstance(interface) = item.ty else {
@@ -195,7 +197,7 @@ fn validate_imports(
             take_name(name, config, remaining)?;
             match item.ty {
                 ComponentItem::ComponentFunc(function) => {
-                    signature(&function, config, remaining)?;
+                    signature(&function, specification.asynchronous, config, remaining)?;
                 }
                 ComponentItem::Type(ty) => {
                     check_types(&[ty], config, remaining)?;
@@ -281,12 +283,13 @@ fn register_functions(
 
 fn signature(
     function: &ComponentFunc,
+    asynchronous: bool,
     config: &WasmtimeConfig,
     remaining: &mut usize,
 ) -> Result<(Vec<Type>, Vec<Type>), PlatformError> {
-    if function.async_() {
+    if function.async_() != asynchronous {
         return Err(incompatible(
-            "asynchronous Component Model function types are not supported",
+            "Component Model function kind does not match the host/export profile",
         ));
     }
     let count = function
