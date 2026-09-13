@@ -203,6 +203,7 @@ fn envelope_adapter_discards_an_untrusted_resolved_revision() {
     let (builder, _) = builder(ActivationRequestLimits::default());
     let mut envelope = builder.build(request()).expect("envelope");
     envelope.resolved_revision = Some(ResolvedRevision {
+        publication: None,
         target: envelope.target.clone(),
         revision: RevisionId("untrusted".to_owned()),
         release: ReleaseDigest("wrong-release".to_owned()),

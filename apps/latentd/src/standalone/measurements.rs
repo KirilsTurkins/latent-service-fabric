@@ -31,6 +31,26 @@ pub fn platform(error: latent_core::PlatformError) -> Box<dyn std::error::Error 
     std::io::Error::other(message).into()
 }
 
+/// Direct preparation must select the same scoped publication as routed Invoke.
+/// These fixed fixtures have one association per tenant/component; ambiguity
+/// fails the collector rather than silently changing its measured identity.
+fn publication_key(
+    backend: &dyn latent_executor::ExecutionBackend,
+    artifacts: &dyn latent_artifacts::ArtifactRepository,
+    tenant: &str,
+    release: &latent_core::ReleaseDigest,
+) -> Result<latent_executor::PreparationKey> {
+    let mut key = backend.preparation_key(release).map_err(platform)?;
+    key.publication = artifacts
+        .select_execution_publication(&latent_core::TenantId(tenant.to_owned()), release, None)
+        .map_err(platform)?
+        .map(|reference| reference.id);
+    if key.publication.is_none() {
+        return Err("measurement publication identity missing".into());
+    }
+    Ok(key)
+}
+
 #[test]
 #[ignore = "explicit smoke/full measurement runner supplies bounded plan and prebuilt fixtures"]
 fn phase1_measurement_collector() {

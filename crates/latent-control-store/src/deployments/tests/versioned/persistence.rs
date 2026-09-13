@@ -45,7 +45,7 @@ pub(super) fn assert_committed_error(
 }
 
 #[test]
-fn legacy_state_opens_without_rewrite_then_next_mutation_persists_explicit_object_versions() {
+fn legacy_state_upgrades_publication_pins_without_advancing_object_versions() {
     let root = TempRoot::new();
     let releases = Arc::new(Releases::default());
     let one = releases.add("one");
@@ -59,6 +59,10 @@ fn legacy_state_opens_without_rewrite_then_next_mutation_persists_explicit_objec
     legacy["payload"]
         .as_object_mut()
         .unwrap()
+        .remove("publication_pins");
+    legacy["payload"]
+        .as_object_mut()
+        .unwrap()
         .remove("object_generations");
     let legacy_bytes = rechecksum(legacy);
     fs::write(root.0.join("catalog.json"), &legacy_bytes).unwrap();
@@ -67,12 +71,16 @@ fn legacy_state_opens_without_rewrite_then_next_mutation_persists_explicit_objec
     assert_eq!(store.generation(), RouteGeneration(2));
     assert_eq!(record(&store, "blue").generation, 2);
     assert_eq!(record(&store, "green").generation, 2);
-    assert_eq!(fs::read(root.0.join("catalog.json")).unwrap(), legacy_bytes);
+    assert_eq!(state(&root.0)["format_version"], 5);
+    assert_eq!(
+        state(&root.0)["payload"]["publication_pins"],
+        json::json!([])
+    );
     let committed = run(store.apply_versioned(&alice(), blue, Some(2))).unwrap();
     assert_eq!(committed.deployment.generation, 3);
     assert_eq!(record(&store, "green").generation, 2);
     let upgraded = state(&root.0);
-    assert_eq!(upgraded["format_version"], 2);
+    assert_eq!(upgraded["format_version"], 5);
     assert_eq!(
         upgraded["payload"]["object_generations"],
         json::json!([

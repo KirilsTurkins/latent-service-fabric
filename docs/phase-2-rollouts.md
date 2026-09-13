@@ -10,7 +10,9 @@ background service instances or automatically advance stages.
 A plan names a tenant, service, retained rollout ID, one existing base deployment
 with its exact object generation, and one explicitly named new candidate. Both
 deployments must have the same tenant, namespace and service, and different
-component identities. Start supports a cohort containing only that base; it
+component or publication identities. Phase 3's
+[publication propagation](reference/publication-runtime.md) permits corrected
+packages containing unchanged Wasm and pins each side independently. Start supports a cohort containing only that base; it
 rejects broader cohorts and existing candidate IDs.
 
 Candidate weights are integer basis points, strictly increasing from 1 through
@@ -64,13 +66,12 @@ the route snapshot. Invocation pins retain only that executable snapshot, so old
 activations do not retain rollout history. Already admitted execution and
 lifecycle fencing follow the existing [routing semantics](deployment-routing.md).
 
-Catalogs without rollout or managed deployment history retain the existing
-version-2 format. The first rollout uses a version-3 catalog document with one
-checksum and atomic rename for routes, state and receipts. Managed deployment
-operations use version 4 in that same document; all subsequent writers preserve
-both histories. Legacy version-1/2 recovery remains supported. Restart restores
-committed progress and never infers permission to advance automatically. See the
-[operator workflow contract](phase-2-operator-workflows.md).
+Current deployment catalog format 5 persists exact publication pins together with
+the combined route, rollout and managed deployment operation state. Older formats
+2–4 are recovered and upgraded before exposing routes. Legacy rollout plan and
+receipt hashes remain stable; new plans bind exact publication IDs under plan
+version 2. See [publication recovery](reference/publication-runtime.md) for migration,
+ambiguity, historical authority and rollback semantics.
 
 ## Receipts, retries and uncertain outcomes
 

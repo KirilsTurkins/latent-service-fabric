@@ -92,11 +92,12 @@ impl NativeAotService {
     pub(crate) fn reserve(
         &self,
         release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
     ) -> Result<AotCompilationJob, PlatformError> {
         let source = Arc::clone(&self.catalog)
             .owned_preparation_source()
             .ok_or_else(super::mismatch)?;
-        self.compiler.reserve(source, release)
+        self.compiler.reserve_selected(source, release, publication)
     }
 
     pub(crate) fn snapshot(&self) -> Result<NativeAotSnapshot, PlatformError> {

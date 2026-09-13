@@ -61,7 +61,11 @@ impl PreparationContext {
         mut reservation: PrepareReservation<PreparedRuntime>,
         queue: QueueWindow,
     ) -> Result<CompilationResult<PreparedRuntime>, PlatformError> {
-        self.check_eligibility(authority.eligibility.as_ref(), &key.release)?;
+        self.check_eligibility(
+            authority.eligibility.as_ref(),
+            &key.release,
+            key.publication.as_ref(),
+        )?;
         let job = self.observer.begin(&key.release);
         job.record_queue_wait(queue.started_nanos, queue.finished_nanos);
         let mut native = input.read_native(&authority, &job)?;
@@ -79,7 +83,11 @@ impl PreparationContext {
             ),
             ArtifactInput::Source { source, limits } => {
                 let fetch = job.stage(PreparationStage::RepositoryFetchVerified);
-                let artifact = source.fetch_blocking(&key.release, *limits)?;
+                let artifact = source.fetch_blocking_selected(
+                    &key.release,
+                    key.publication.as_ref(),
+                    *limits,
+                )?;
                 fetch.complete();
                 (
                     std::borrow::Cow::Owned(artifact),
@@ -109,6 +117,7 @@ impl PreparationContext {
                 identity.metadata().charged_bytes(),
                 Some(identity),
                 eligibility.as_ref(),
+                key.publication.as_ref(),
             )?
         } else {
             let discovered;
@@ -122,7 +131,12 @@ impl PreparationContext {
                 prepared_handle(&key, &component_digest, &metadata.digest),
                 eligibility.as_ref(),
             );
-            retained_metadata_bytes(metadata.bytes, None, eligibility.as_ref())?
+            retained_metadata_bytes(
+                metadata.bytes,
+                None,
+                eligibility.as_ref(),
+                key.publication.as_ref(),
+            )?
         };
         validation.complete();
         if authentication.is_none() {

@@ -48,24 +48,47 @@ fn bundle(
 pub(super) async fn compare(
     repository: &dyn ArtifactRepository,
     tenant: &TenantId,
-    old: &ReleaseDigest,
-    candidate: &ReleaseDigest,
+    old_release: &crate::rollouts::RolloutRelease,
+    candidate_release: &crate::rollouts::RolloutRelease,
 ) -> Result<(Option<PackageDigest>, Option<PackageDigest>)> {
-    for release in [old, candidate] {
-        if let Some(e) = repository.execution_eligibility(release)? {
+    let old = &old_release.component;
+    let candidate = &candidate_release.component;
+    let op = old_release.publication.as_ref();
+    let cp = candidate_release.publication.as_ref();
+    let old_eligibility = repository.execution_eligibility_selected(old, op)?;
+    let new_eligibility = repository.execution_eligibility_selected(candidate, cp)?;
+    for (eligibility, publication) in [(&old_eligibility, op), (&new_eligibility, cp)] {
+        if let Some(e) = eligibility {
+            if Some(e.publication()) != publication {
+                return Err(incompatible());
+            }
             e.authorize_tenant(tenant)?;
             e.check_current()?;
         }
     }
-    let old_proof = repository.release_eligibility(old)?;
-    let new_proof = repository.release_eligibility(candidate)?;
+    let old_proof = match &old_eligibility {
+        Some(e) => e.admission().cloned(),
+        None => repository.release_eligibility(old)?,
+    };
+    let new_proof = match &new_eligibility {
+        Some(e) => e.admission().cloned(),
+        None => repository.release_eligibility(candidate)?,
+    };
     let old_source = repository
-        .retained_package_source(tenant, old, MAX_PACKAGE)
+        .retained_package_source_selected(tenant, old, op, MAX_PACKAGE)
         .await?;
     let new_source = repository
-        .retained_package_source(tenant, candidate, MAX_PACKAGE)
+        .retained_package_source_selected(tenant, candidate, cp, MAX_PACKAGE)
         .await?;
-    for (proof, source) in [(&old_proof, &old_source), (&new_proof, &new_source)] {
+    for (proof, source, publication) in
+        [(&old_proof, &old_source, op), (&new_proof, &new_source, cp)]
+    {
+        if source
+            .as_ref()
+            .is_some_and(|source| Some(source.publication()) != publication)
+        {
+            return Err(incompatible());
+        }
         if let Some(proof) = proof {
             proof.check_current()?;
             if proof.tenant() != tenant
@@ -92,8 +115,10 @@ pub(super) async fn compare(
             ))
         }
         (None, None) if old_proof.is_none() && new_proof.is_none() => {
-            let previous = repository.fetch_verified_metadata(old).await?;
-            let next = repository.fetch_verified_metadata(candidate).await?;
+            let previous = repository.fetch_verified_metadata_selected(old, op).await?;
+            let next = repository
+                .fetch_verified_metadata_selected(candidate, cp)
+                .await?;
             descriptors(&previous, &next, old, candidate)?;
             Ok((None, None))
         }

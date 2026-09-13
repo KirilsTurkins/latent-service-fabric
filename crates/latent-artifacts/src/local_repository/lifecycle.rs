@@ -112,33 +112,7 @@ impl DirectoryArtifactRepository {
         &self,
         release: &ReleaseDigest,
     ) -> Result<HistoricalExecutionSnapshot, PlatformError> {
-        if !self
-            .index
-            .read()
-            .map_err(lock_error)?
-            .legacy_component(None, release)?
-            .is_some()
-        {
-            return Err(error(
-                PlatformErrorCode::NotFound,
-                "release digest not found",
-            ));
-        }
-        let verified = self.load_complete_entry(&self.entry_path(release)?, Retention::Metadata)?;
-        verified.metadata.verify_requested(release)?;
-        self.verify_admission_index(release, &verified)?;
-        let identity = self
-            .life_store()
-            .identity(release)?
-            .ok_or_else(|| corrupt("lifecycle-membership-missing"))?;
-        if identity.completion != verified.completion.identity()? {
-            return Err(corrupt("lifecycle-content-changed"));
-        }
-        HistoricalExecutionSnapshot::directory(
-            verified.metadata,
-            self.lifecycle_authority(),
-            self.current_execution_eligibility(release),
-        )
+        self.selected_historical_snapshot(release, None)
     }
 
     pub(super) fn lifecycle_status(

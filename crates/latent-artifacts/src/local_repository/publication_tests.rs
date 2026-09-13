@@ -24,6 +24,128 @@ fn selector(receipt: &ManagedPublicationReceipt) -> PublicationSelector {
 }
 
 #[test]
+fn sealed_preparation_preserves_exact_publication_through_coexistence_and_revocation() {
+    let root = TempRoot::new();
+    let repo = Arc::new(repository(root.path()));
+    let first = artifact("first", b"shared execution bytes");
+    let second = artifact("second", &first.component_bytes);
+    let release = &first.descriptor.release_digest;
+    let p1 = publish(&repo, first.clone(), "source-first");
+    let owned = repo.clone().owned_preparation_source().unwrap();
+    let old = owned
+        .execution_eligibility_selected(release, Some(&p1.publication.id))
+        .unwrap()
+        .unwrap();
+    let stamp = owned
+        .identity_selected(release, Some(&p1.publication.id))
+        .unwrap()
+        .unwrap();
+    let p2 = publish(&repo, second.clone(), "source-second");
+    let second_stamp = owned
+        .identity_selected(release, Some(&p2.publication.id))
+        .unwrap()
+        .unwrap();
+    assert_ne!(stamp, second_stamp);
+    assert_ne!(stamp.cache_digest(), second_stamp.cache_digest());
+    assert_eq!(stamp.publication(), &p1.publication.id);
+    assert!(
+        owned.identity(release).is_err(),
+        "fresh ambiguous legacy read is refused"
+    );
+    assert_eq!(
+        owned
+            .fetch_blocking_selected(
+                release,
+                Some(&p1.publication.id),
+                repo.repository_read_limits()
+            )
+            .unwrap(),
+        first
+    );
+    assert_eq!(
+        owned
+            .fetch_blocking_selected(
+                release,
+                Some(&p2.publication.id),
+                repo.repository_read_limits()
+            )
+            .unwrap(),
+        second
+    );
+    assert!(owned
+        .identity_selected(
+            &crate::content_digest(b"wrong component"),
+            Some(&p2.publication.id)
+        )
+        .is_err());
+    let unrelated = repo.select_execution_publication(
+        &TenantId("foreign".into()),
+        release,
+        Some(&p1.publication.id),
+    );
+    assert_eq!(unrelated.unwrap_err().code, PlatformErrorCode::NotFound);
+    assert_eq!(
+        repo.select_execution_publication(
+            &TenantId("foreign".into()),
+            &crate::content_digest(b"unrelated bytes"),
+            Some(&p1.publication.id)
+        )
+        .unwrap_err()
+        .code,
+        PlatformErrorCode::NotFound,
+        "foreign selectors reveal no component association"
+    );
+    repo.change_publication_lifecycle(
+        context("source-revoke", 1),
+        &selector(&p1),
+        ReleaseLifecycleAction::Revoke,
+        ReleaseLifecycleReason::OperatorRevocation,
+        &mut accept,
+    )
+    .unwrap();
+    assert!(old.check_current().is_err());
+    assert!(owned
+        .fetch_blocking_selected(
+            release,
+            Some(&p1.publication.id),
+            repo.repository_read_limits()
+        )
+        .is_err());
+    let denied = repo
+        .selected_historical_snapshot(release, Some(&p1.publication.id))
+        .unwrap();
+    let (_, state) = denied.into_parts();
+    let crate::HistoricalExecutionState::Denied(denied) = state else {
+        panic!("revocation must stay negative")
+    };
+    assert_eq!(denied.publication(), &p1.publication.id);
+    assert_eq!(
+        owned
+            .fetch_blocking_selected(
+                release,
+                Some(&p2.publication.id),
+                repo.repository_read_limits()
+            )
+            .unwrap(),
+        second
+    );
+    drop(owned);
+    drop(repo);
+    assert!(old.check_current().is_err());
+    let reopened = repository(root.path());
+    assert_eq!(
+        reopened
+            .selected_metadata(release, Some(&p2.publication.id))
+            .unwrap()
+            .manifest(),
+        &second.manifest
+    );
+    assert!(reopened
+        .selected_execution_eligibility(release, Some(&p1.publication.id))
+        .is_err());
+}
+
+#[test]
 fn same_component_metadata_revisions_keep_independent_authority_and_legacy_replay() {
     let root = TempRoot::new();
     let repo = repository(root.path());

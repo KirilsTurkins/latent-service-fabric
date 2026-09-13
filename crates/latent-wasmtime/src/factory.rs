@@ -237,6 +237,7 @@ impl WasmtimeComponentEngineFactory {
     #[must_use]
     pub fn preparation_key(&self, release: ReleaseDigest) -> PreparationKey {
         PreparationKey {
+            publication: None,
             release,
             engine_version: self.profile.wasmtime_version.clone(),
             engine_configuration_digest: self.profile.configuration["configuration-digest"].clone(),

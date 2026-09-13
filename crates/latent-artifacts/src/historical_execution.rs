@@ -1,6 +1,6 @@
 //! A sealed historical metadata read, explicitly separate from permission to run.
 
-use latent_core::{PlatformError, PlatformErrorCode, ReleaseDigest, TenantId};
+use latent_core::{PlatformError, PlatformErrorCode, PublicationId, ReleaseDigest, TenantId};
 
 use crate::{
     LifecycleAuthorityHandle, LifecycleScope, ReleaseUseEligibility, VerifiedArtifactMetadata,
@@ -26,6 +26,7 @@ pub struct HistoricalReleaseDenial {
     owner: LifecycleAuthorityHandle,
     scope: LifecycleScope,
     release: ReleaseDigest,
+    publication: PublicationId,
     failure: PlatformError,
 }
 
@@ -39,19 +40,28 @@ impl HistoricalExecutionSnapshot {
 
     pub(crate) fn directory(
         metadata: VerifiedArtifactMetadata,
+        publication: crate::PublicationRef,
         owner: LifecycleAuthorityHandle,
         eligibility: Result<ReleaseUseEligibility, PlatformError>,
     ) -> Result<Self, PlatformError> {
-        let scope = metadata
+        let scope = publication.scope;
+        if metadata
             .manifest()
             .metadata
             .tenant
-            .clone()
-            .map_or(LifecycleScope::LocalUnscoped, LifecycleScope::Tenant);
+            .as_ref()
+            .is_some_and(|tenant| scope.tenant() != Some(tenant))
+        {
+            return Err(error(
+                PlatformErrorCode::CorruptArtifact,
+                "historical-execution-scope-mismatch",
+            ));
+        }
         let release = metadata.verified_digest().clone();
         let state = match eligibility {
             Ok(token) => {
                 if token.release() != &release
+                    || token.lifecycle().publication() != &publication.id
                     || token.scope() != &scope
                     || !token.belongs_to_catalog(&owner)
                 {
@@ -76,6 +86,7 @@ impl HistoricalExecutionSnapshot {
                     owner,
                     scope,
                     release,
+                    publication: publication.id,
                     failure: error(failure.code, message),
                 })
             }
@@ -96,6 +107,10 @@ impl HistoricalExecutionSnapshot {
 
 impl HistoricalReleaseDenial {
     #[must_use]
+    pub fn publication(&self) -> &PublicationId {
+        &self.publication
+    }
+    #[must_use]
     pub fn release(&self) -> &ReleaseDigest {
         &self.release
     }
@@ -115,6 +130,7 @@ impl HistoricalReleaseDenial {
             .saturating_add(128)
             .saturating_add(scope)
             .saturating_add(self.release.0.capacity())
+            .saturating_add(PublicationId::TEXT_BYTES)
             .saturating_add(self.failure.message.capacity())
     }
 

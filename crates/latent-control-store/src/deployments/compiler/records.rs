@@ -19,6 +19,7 @@ pub(in crate::deployments) struct RecordIndex(pub(in crate::deployments) usize);
 pub(in crate::deployments) struct RevisionRecord {
     pub deployment: Arc<DeploymentManifest>,
     pub revision: RevisionId,
+    pub publication: Option<latent_core::PublicationId>,
     pub attributes: Metadata,
     pub execution: ExecutionRequirements,
 }

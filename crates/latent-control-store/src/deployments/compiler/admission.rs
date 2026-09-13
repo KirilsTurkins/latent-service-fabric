@@ -79,12 +79,14 @@ impl RevisionPolicySource for PinnedRouteResolver {
             })
             .map_err(|_| missing_policy())?;
         let record = self.catalog.record(candidates[index].record);
-        if record.deployment.release != revision.release {
+        if record.deployment.release != revision.release
+            || record.publication != revision.publication
+        {
             return Err(missing_policy());
         }
         crate::deployments::admission_fence::check_selected(
             self.catalog
-                .selected_eligibility(&revision.release)
+                .selected_eligibility(&revision.release, revision.publication.as_ref())
                 .as_ref(),
             &target.tenant,
         )?;

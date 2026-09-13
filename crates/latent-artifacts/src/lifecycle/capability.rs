@@ -268,6 +268,10 @@ impl ReleaseUseEligibility {
         self.lifecycle.release()
     }
     #[must_use]
+    pub fn publication(&self) -> &PublicationId {
+        self.lifecycle.publication()
+    }
+    #[must_use]
     pub fn generation(&self) -> u64 {
         self.lifecycle.generation()
     }

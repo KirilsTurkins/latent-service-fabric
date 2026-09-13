@@ -22,6 +22,8 @@ use latent_core::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PreparationKey {
     pub release: ReleaseDigest,
+    /// Exact catalog association. None is a legacy selector or unmanaged input.
+    pub publication: Option<latent_core::PublicationId>,
     pub engine_version: String,
     pub engine_configuration_digest: String,
     pub target_triple: String,

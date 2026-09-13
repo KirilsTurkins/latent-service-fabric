@@ -31,8 +31,9 @@ Create a `ValidatedAotProfile` from a validated `WasmtimeConfig`, configure a
 `IsolatedAotCompiler` with the absolute executable path, its approved SHA-256,
 the profile, authority and `AotProcessLimits`.
 
-`reserve` accepts a concrete `OwnedArtifactPreparationSource` and exact
-`ReleaseDigest`. It obtains the catalog's current lifecycle/admission capability
+`reserve_selected` accepts a concrete `OwnedArtifactPreparationSource`, exact
+`ReleaseDigest` and selected publication ID. The legacy `reserve` requires an
+unambiguous component association. The producer obtains the catalog's current lifecycle/admission capability
 and reserves resources before the fresh bounded fetch. The job checks component
 bytes, descriptor, manifest, metadata and the retained capability. Missing
 capabilities and different release associations are rejected. Enforced catalogs
@@ -41,13 +42,17 @@ explicit local scope. A local artifact without an OCI package has an absent
 package identity, never an invented digest.
 
 ```rust,ignore
-let job = compiler.reserve(catalog_source, &release)?;
+let job = compiler.reserve_selected(catalog_source, &release, Some(&publication))?;
 let cancellation = job.control();
 // Run on an existing bounded blocking worker; this call owns the child.
 let output = job.run()?;
 let native_bytes = output.output();
 let receipt = output.receipt();
 ```
+
+The [publication runtime contract](../reference/publication-runtime.md) also binds
+the native compatibility key and authenticated output/receipt to that publication.
+Sharing component bytes cannot transfer another tenant's or package's authority.
 
 `AotJobControl::cancel` signals the owner. Dropping an unstarted job starts no
 process. The producer has no internal queue, compiler thread pool or dormant
@@ -75,7 +80,7 @@ executable approval, private key-file checks and separate cache roots.
 
 Private construction of `AotCompatibilityKey` binds:
 
-- catalog scope, optional real package identity, component SHA-256 and size;
+- catalog scope, exact publication, optional real package identity, component SHA-256 and size;
 - the verified component metadata fingerprint;
 - complete validated runtime/security configuration, actual target and detected
   CPU requirements;
