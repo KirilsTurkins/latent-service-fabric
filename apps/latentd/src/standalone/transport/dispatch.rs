@@ -9,6 +9,7 @@ use tonic::codegen::http::{Request, Response};
 use tower::{Layer, Service, ServiceExt};
 
 use super::auth;
+use super::io::ConnectionInfo;
 use super::owned::{ControlTask, OwnedRpc, ResponseFuture};
 use super::state::{Kind, Shared};
 
@@ -50,6 +51,13 @@ where
         Poll::Ready(Ok(()))
     }
     fn call(&mut self, mut request: Request<Body>) -> ResponseFuture {
+        if let Some(address) = request
+            .extensions()
+            .get::<ConnectionInfo>()
+            .map(ConnectionInfo::address)
+        {
+            request.extensions_mut().insert(address);
+        }
         let inspection = matches!(
             request.uri().path(),
             "/latent.invocation.v1.InvocationService/Cancel"
