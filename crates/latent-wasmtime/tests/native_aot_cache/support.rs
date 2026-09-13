@@ -59,6 +59,15 @@ impl Fixture {
         key: [u8; 32],
         audit: Option<latent_audit::AuditHandle>,
     ) -> Session {
+        self.session_with_config(repository, key, audit, runtime::config())
+    }
+    pub fn session_with_config(
+        &self,
+        repository: Arc<DirectoryArtifactRepository>,
+        key: [u8; 32],
+        audit: Option<latent_audit::AuditHandle>,
+        config: latent_wasmtime::WasmtimeConfig,
+    ) -> Session {
         let process = compiler::limits();
         let authority = TrustedAotCompilerAuthority::new(
             compiler::COMPILER_NAME,
@@ -106,7 +115,7 @@ impl Fixture {
         };
         let config = latent_wasmtime::WasmtimeConfig {
             prepared_cache_maximum_entries: 1,
-            ..runtime::config()
+            ..config
         };
         let factory = WasmtimeComponentEngineFactory::with_catalog_and_aot(
             config,

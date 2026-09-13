@@ -1,4 +1,4 @@
-//! The pinned 47.0.3 layout and reset policy, shared by setters and identity.
+//! The pinned 47.0.4 layout and reset policy, shared by setters and identity.
 
 use latent_core::Metadata;
 use wasmtime::Config;
@@ -70,7 +70,7 @@ impl WasmtimeConfig {
         for (name, value) in [
             (
                 "engine-layout-policy",
-                "wasmtime-47.0.3-bounded-v1".to_owned(),
+                "wasmtime-47.0.4-bounded-v1".to_owned(),
             ),
             (
                 "compiler-optimization",
