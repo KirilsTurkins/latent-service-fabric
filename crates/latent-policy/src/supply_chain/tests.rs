@@ -11,6 +11,8 @@ mod history;
 #[cfg(target_os = "linux")]
 mod lifecycle;
 #[cfg(target_os = "linux")]
+mod lock_diagnostics;
+#[cfg(target_os = "linux")]
 mod runtime;
 mod support;
 mod verification;
