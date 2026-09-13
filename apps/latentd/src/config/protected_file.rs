@@ -170,8 +170,8 @@ mod platform {
         if other_writable && !(metadata.uid() == 0 && mode & 0o1000 != 0) {
             return Err(());
         }
-        let trusted_group_can_traverse = metadata.gid() == gid && mode & 0o010 != 0;
-        let untrusted_can_traverse = mode & 0o001 != 0 || trusted_group_can_traverse;
+        let untrusted_group_can_traverse = metadata.gid() != gid && mode & 0o010 != 0;
+        let untrusted_can_traverse = mode & 0o001 != 0 || untrusted_group_can_traverse;
         Ok(!untrusted_can_traverse)
     }
 
@@ -199,8 +199,8 @@ mod platform {
                 if mode & 0o022 != 0 {
                     return Err(());
                 }
-                let untrusted_read = mode & 0o004 != 0
-                    || (mode & 0o040 != 0 && metadata.gid() != gid);
+                let untrusted_read =
+                    mode & 0o004 != 0 || (mode & 0o040 != 0 && metadata.gid() != gid);
                 if untrusted_read && !private_path {
                     return Err(());
                 }
@@ -294,7 +294,10 @@ mod tests {
 
     #[test]
     fn secret_policy_rejects_public_reads_on_traversable_paths_and_writable_group_access() {
-        let public = Builder::new().prefix("lsf-protected-").tempfile_in("/tmp").unwrap();
+        let public = Builder::new()
+            .prefix("lsf-protected-")
+            .tempfile_in("/tmp")
+            .unwrap();
         fs::set_permissions(public.path(), fs::Permissions::from_mode(0o604)).unwrap();
         assert!(read(public.path(), 32, ProtectedFilePolicy::Secret, "test").is_err());
 
