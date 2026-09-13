@@ -12,6 +12,8 @@ The scan is deliberately independent of the ordinary docs/full CI profile:
 - pushes to `development` and `release` use the same dependency-sensitive selection;
 - the weekly schedule and manual dispatch explicitly scan **both** maintained branches, even when their lockfiles have not changed.
 
+GitHub emits `schedule` and `workflow_dispatch` events only for workflows present on the repository's default branch. LSF's default branch is currently `release`, while feature delivery integrates through `development`. Therefore the scheduled/manual matrix is defined and reviewable in this slice, but it does not become an active periodic repository control merely by merging this PR into `development`; normal promotion must also place the workflow on `release`. This slice does not bypass the repository's integration policy to activate it early.
+
 Markdown-only changes do not start a Rust dependency scan. The broader #282 work still needs lightweight secret/static coverage appropriate for documentation changes; this advisory slice does not claim that coverage.
 
 ### Untrusted pull-request boundary
@@ -45,6 +47,7 @@ There is currently no checked-in RustSec exception list. If a future advisory ca
 
 The following remain required before #282 can close:
 
+- activation/evidence of the scheduled/manual matrix after the workflow reaches default `release` through normal promotion;
 - inventory and advisory coverage for supported non-Rust SDK ecosystems;
 - repository vulnerability-alert/security-update configuration;
 - secret scanning and push protection or a documented equivalent where unavailable;
