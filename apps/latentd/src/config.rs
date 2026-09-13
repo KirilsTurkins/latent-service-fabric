@@ -83,7 +83,7 @@ impl NodeSettings {
 }
 
 impl NodeConfig {
-    /// Reads at most 64 KiB plus an overflow sentinel. On supported Linux x86_64
+    /// Reads at most 64 KiB plus an overflow sentinel. On supported Linux `x86_64`
     /// hosts the credential-bearing file is descriptor-anchored and must satisfy
     /// the protected secret-file policy before bytes are decoded. Relative data
     /// directories are anchored to the configuration file's absolute parent once.
