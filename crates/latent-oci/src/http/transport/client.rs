@@ -27,7 +27,7 @@ pub(super) fn build(config: &RegistryConfig, endpoint: &Endpoint) -> Result<Clie
 /// Separate client for one preapproved token authority. Keeping its resolver
 /// table separate prevents a same-host/different-port realm from rewriting the
 /// configured registry destination.
-pub(super) fn build_authority(
+pub(crate) fn build_authority(
     config: &RegistryConfig,
     host: &str,
     addresses: &[SocketAddr],
@@ -92,7 +92,7 @@ pub(super) fn authorization(credentials: &RegistryCredentials) -> Result<Option<
     }
 }
 
-pub(super) fn basic_authorization(username: &str, password: &str) -> Result<HeaderValue> {
+pub(crate) fn basic_authorization(username: &str, password: &str) -> Result<HeaderValue> {
     if username.is_empty()
         || username.len() > 256
         || username.contains(':')
@@ -110,7 +110,7 @@ pub(super) fn basic_authorization(username: &str, password: &str) -> Result<Head
     ))
 }
 
-pub(super) fn bearer_authorization(token: &str) -> Result<HeaderValue> {
+pub(crate) fn bearer_authorization(token: &str) -> Result<HeaderValue> {
     if token.is_empty() || token.len() > 8192 || !token.bytes().all(|byte| byte.is_ascii_graphic())
     {
         return Err(invalid("invalid-oci-credentials"));
