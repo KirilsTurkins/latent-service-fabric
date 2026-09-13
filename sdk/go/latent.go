@@ -67,9 +67,11 @@ type InvokeRequest struct {
 }
 
 type InvokeResponse struct {
-	ActivationID          string
-	RevisionID            string
-	ReleaseDigest         string
+	ActivationID  string
+	RevisionID    string
+	ReleaseDigest string
+	// Captured source, distinct from the component digest; nil for legacy/unresolved.
+	PublicationID         *string
 	RouteGeneration       uint64
 	Payload               []byte
 	MediaType             string
@@ -102,9 +104,11 @@ type DeclaredError struct {
 }
 
 type InvocationReceipt struct {
-	ActivationID    string
-	RevisionID      string
-	ReleaseDigest   string
+	ActivationID  string
+	RevisionID    string
+	ReleaseDigest string
+	// Captured source, distinct from the component digest; nil for legacy/unresolved.
+	PublicationID   *string
 	RouteGeneration uint64
 	Consumption     BudgetConsumption
 }

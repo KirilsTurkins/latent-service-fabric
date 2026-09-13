@@ -10,6 +10,7 @@ fn success() -> proto::InvokeResponse {
         revision_id: "revision".to_owned(),
         release_digest: format!("sha256:{}", "1".repeat(64)),
         route_generation: u64::MAX,
+        publication_id: Some(format!("publication:sha256:{}", "2".repeat(64))),
         result: Some(proto::invoke_response::Result::Success(proto::Success {
             payload: vec![0, 255, 10],
             media_type: "application/octet-stream".to_owned(),
@@ -44,6 +45,10 @@ fn success_preserves_full_bytes_optional_receipt_fields_and_every_integer() {
         .unwrap();
     assert_eq!(result.exit_code(), 0);
     assert_eq!(result.data["activationId"], "known");
+    assert_eq!(
+        result.data["resolvedRevision"]["publicationId"],
+        format!("publication:sha256:{}", "2".repeat(64))
+    );
     assert_eq!(
         result.data["resolvedRevision"]["routeGeneration"],
         u64::MAX.to_string()

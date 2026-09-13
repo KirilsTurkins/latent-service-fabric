@@ -208,6 +208,27 @@ class ReleaseLifecycleSchemaTests(unittest.TestCase):
         receipt = message(source, "DeploymentOperationReceipt")
         self.assertEqual(field(receipt, "publication")["number"], 17)
 
+    def test_rollout_and_invocation_receipts_add_captured_ids_without_new_authority(self):
+        source = descriptor_file(load_descriptor_golden(), "latent/control/v1/rollout.proto")
+        expected = (("StartRolloutRequest", "expected_candidate_component_digest", 8),
+                    ("RolloutRelease", "publication_id", 4),
+                    ("RolloutOperationReceipt", "base_publication_id", 20),
+                    ("RolloutOperationReceipt", "candidate_publication_id", 21))
+        for name, key, number in expected:
+            added = field(message(source, name), key)
+            self.assertEqual(added["number"], number)
+            self.assertTrue(added["proto3Optional"])
+        source = descriptor_file(load_descriptor_golden(), "latent/invocation/v1/invocation.proto")
+        receipt = message(source, "InvokeResponse")
+        self.assertEqual(field(receipt, "release_digest")["number"], 3)
+        self.assertEqual(field(receipt, "publication_id")["number"], 10)
+        self.assertTrue(field(receipt, "publication_id")["proto3Optional"])
+        source = descriptor_file(load_descriptor_golden(), "latent/control/v1/audit.proto")
+        identities = message(source, "AuditIdentities")
+        for key, number in (("publication_id", 18), ("base_publication_id", 19), ("candidate_publication_id", 20)):
+            self.assertEqual(field(identities, key)["number"], number)
+            self.assertTrue(field(identities, key)["proto3Optional"])
+
 
 if __name__ == "__main__":
     unittest.main()

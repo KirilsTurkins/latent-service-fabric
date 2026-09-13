@@ -9,6 +9,14 @@ public final class Models {
     private Models() {
     }
 
+    /** Tenant must match authenticated scope. An ID does not confer authority. */
+    public record PublicationRef(String id, String tenant) { }
+
+    /** Exactly one selector is valid; preserve present empty/both for rejection. */
+    public record ReleaseSelector(Optional<String> componentDigest, Optional<PublicationRef> publication) { }
+
+    public record PublicationIdentity(PublicationRef publication, String componentDigest, String packageDigest) { }
+
     public record ResourceBudget(
             long cpuFuel,
             long memoryBytes,
@@ -84,7 +92,15 @@ public final class Models {
             Optional<String> committedStateVersion,
             List<String> effectIds,
             BudgetConsumption consumption,
-            Map<String, String> metadata) {
+            Map<String, String> metadata,
+            Optional<String> publicationId) {
+        public InvokeResponse(String activationId, String revisionId, String releaseDigest,
+                long routeGeneration, ByteBuffer payload, String mediaType,
+                Optional<String> committedStateVersion, List<String> effectIds,
+                BudgetConsumption consumption, Map<String, String> metadata) {
+            this(activationId, revisionId, releaseDigest, routeGeneration, payload, mediaType,
+                    committedStateVersion, effectIds, consumption, metadata, Optional.empty());
+        }
     }
 
     public record PlatformFailure(
@@ -112,7 +128,12 @@ public final class Models {
             String revisionId,
             String releaseDigest,
             long routeGeneration,
-            BudgetConsumption consumption) {
+            BudgetConsumption consumption,
+            Optional<String> publicationId) {
+        public InvocationReceipt(String activationId, String revisionId, String releaseDigest,
+                long routeGeneration, BudgetConsumption consumption) {
+            this(activationId, revisionId, releaseDigest, routeGeneration, consumption, Optional.empty());
+        }
     }
 
     public sealed interface InvocationOutcome permits InvocationSuccess,

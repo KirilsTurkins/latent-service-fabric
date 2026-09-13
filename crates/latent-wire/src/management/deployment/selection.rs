@@ -6,7 +6,7 @@ use tonic::Status;
 
 use super::super::{errors::platform_status, proto, ManagementLimits, RequestBudget};
 
-pub(super) async fn input(
+pub(in crate::management) async fn input(
     mut value: proto::ApplyDeploymentRequest,
     tenant: &TenantId,
     repository: &dyn ArtifactRepository,

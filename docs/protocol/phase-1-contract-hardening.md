@@ -373,3 +373,12 @@ See [public selection and recovery](../reference/publication-api.md) for
 ambiguity, unscoped local compatibility, original manifest preservation and the
 deployment operation-table upgrade. The descriptor golden deliberately records
 these additions without changing any existing field number or RPC signature.
+
+StartRollout adds optional candidate component assertion field 8. RolloutRelease
+adds optional captured publication field 4, and RolloutOperationReceipt adds
+base/candidate publication fields 20/21. AuditIdentities adds base/candidate
+publication fields 19/20. InvokeResponse adds optional publication field 10;
+its component field 3 and generation field 4 retain their meaning. These result
+IDs describe captured sources and never provide execution authority. Present
+invalid IDs cannot be normalized to absent legacy values. All six SDK interfaces
+include corresponding presence-aware models and executable contract fixtures.

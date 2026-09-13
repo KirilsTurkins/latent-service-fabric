@@ -50,7 +50,14 @@ impl Project for proto::AuditCanaryDecision {
 impl Project for proto::AuditIdentities {
     fn validate(&self, b: &mut Tree) -> Result<(), Failure> {
         b.message::<Self>()?;
-        if let Some(value) = &self.publication_id {
+        for value in [
+            &self.publication_id,
+            &self.base_publication_id,
+            &self.candidate_publication_id,
+        ]
+        .into_iter()
+        .flatten()
+        {
             b.text(value, latent_core::PublicationId::TEXT_BYTES)?;
             value
                 .parse::<latent_core::PublicationId>()
@@ -90,6 +97,8 @@ impl Project for proto::AuditIdentities {
         json!({
         "packageDigest": self.package_digest.map(|value| json!(value)),
         "publicationId": self.publication_id.map(|value| json!(value)),
+        "basePublicationId": self.base_publication_id,
+        "candidatePublicationId": self.candidate_publication_id,
         "componentDigest": self.component_digest.map(|value| json!(value)),
         "policies": self.policies.into_iter().map(Project::project).collect::<Vec<_>>(),
         "rollout": self.rollout.map(|value| json!(value)),

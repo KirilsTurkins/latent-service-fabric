@@ -88,6 +88,91 @@ binaries reject table format 2; preserve a stopped backup before upgrading.
 The [publication schema](../../schemas/publication-ref.schema.json), release
 lifecycle schema, Protobuf descriptor contract and compatibility fixtures cover
 presence and additive field meanings. Generated Rust bindings are built from
-the authoritative Protobuf files. Public rollout and six-language SDK integration
-remain part of the same Phase 3 ticket #267; these release/deployment additions
-alone do not close that ticket or announce a new executable SDK client.
+the authoritative Protobuf files. All six SDKs expose matching interface models;
+this does not announce a new executable SDK client.
+
+| Client/server combination | Supported behavior |
+| --- | --- |
+| Legacy client, legacy server | Existing component fields retain their original meaning. |
+| Legacy client, upgraded server | Unique component selection works; a fresh ambiguous selection fails without listing candidates. |
+| Legacy operation replay, upgraded server | The retained tenant/operation association returns original history; it does not resolve the component again. |
+| Explicit selector, upgraded server | Exact tenant publication is selected; an optional component assertion must match. |
+| Explicit selector, old server | Empty legacy selector fails validation when the old server ignores the new field; no silent fallback. |
+| Old binary, upgraded catalog | Unsupported publication/deployment table versions fail closed. Restore only a consistent stopped backup for downgrade. |
+
+Phase 2 release roots first need the explicit [offline catalog migration](publication-catalog.md#offline-upgrade-and-recovery),
+using `latentd migrate-catalog --config /secure/node.json` with the original
+protected configuration. A nonempty legacy root is not implicitly admitted as a
+new publication catalog. Deployment operation-table recovery then follows the
+rules above; it is distinct from that release-root migration.
+
+## Rollout and invocation receipts
+
+StartRollout uses the same explicit selector in its candidate Deployment. Its
+optional `expected_candidate_component_digest` is a checksum assertion, with
+an empty candidate `release_digest`, just as on Apply. CLI candidate manifests
+retain `spec.release` and `spec.publication`; the CLI constructs that request.
+Get, list, operation lookup and rollback preserve the captured base and candidate
+publication IDs, including when both have the same component digest. Revoking
+the candidate does not revoke the base. Historical replay returns its original
+receipt without installing that candidate again. Status `objects` contains the
+currently surviving objects in the authenticated tenant, from zero to two. The
+historical base/candidate remain visible after completion, rollback or deletion;
+reusing an old object ID in another tenant does not disclose its generation.
+
+Rollout status and receipts expose `publication_id`, `base_publication_id` and
+`candidate_publication_id` as applicable. These are source identities, including
+a possible internal unscoped source; they do not assert tenant admission. Tenant
+scope on the enclosing operation still controls access. Rollout receipt canonical
+bytes remain unchanged. Their retained version-2 plan digest binds both captured
+IDs; recovery hydrates additive receipt fields from that bounded retained plan.
+Audit records also carry the captured pair. Pre-upgrade audit attempts retain
+their original bytes and can reconcile without invented historical fields.
+
+InvokeResponse field 10, optional `publication_id`, reports the actual source
+captured by route resolution. Its existing `release_digest` field still means
+component bytes. Publication selection happens through the deployed revision and
+route; an ID in a receipt grants no direct execution permission. Currentness is
+checked at activation start. A failure before route resolution has no publication
+or revision pin. An old response may omit the publication; a present empty or
+malformed ID fails validation. CLI JSON reports `resolvedRevision.publicationId`
+without converting 64-bit generations or consumption into floating point.
+
+## Six-language models and operator verification
+
+The [SDK models](../../sdk/README.md) expose `PublicationRef`, `ReleaseSelector`,
+`PublicationIdentity` and optional invocation publication IDs. ReleaseSelector
+is a transport-neutral choice that an eventual client maps to the method's
+legacy digest/publication fields. It does not add a direct Invoke selector.
+Phase 3 SDK/profile and executable-client work must reuse these identities and
+the authoritative Protobufs instead of defining another release identity.
+
+The bounded [publication workflow](../../tools/run_publication_workflow.py) runs
+real CLI and node processes against fresh signed test packages. Its fixture
+exporter corrects an embedded SBOM while retaining identical Wasm and capsule
+metadata. It publishes both packages independently in two tenants, deploys every
+exact publication, invokes it, restarts and inspects/replays original operations,
+revokes one candidate, rolls back to its eligible captured base, renews another
+tenant's evidence, and restarts again. It also checks legacy ambiguity, foreign
+versus missing references, audit identities and clean process reaping.
+
+CI runs this against its existing built binaries and an explicit fresh fixture:
+
+```sh
+LSF_OPERATOR_FIXTURE_ROOT="$FIXTURE" python3 tools/ci_rust_artifacts.py \
+  --inventory "$INVENTORY" --suite publication-fixture
+python3 tools/run_publication_workflow.py --cli target/debug/latent \
+  --node target/debug/latentd --fixture-root "$FIXTURE" --source-commit "$GITHUB_SHA"
+```
+
+`$FIXTURE` must be a nonexistent child of an owned private temporary directory.
+The runner requires Linux and Python 3.13, caps itself at 180 seconds and 160 CLI
+processes, removes temporary node data and emits a receipt of at most 64 KiB.
+The fresh exporter supplies synthetic signed test observations, not production
+build provenance. No registry or 100,000-request load is involved. For an upgrade,
+stop the node, back up catalogs and protected trust/configuration files, inspect
+the listed publication/package/component associations, migrate manifests to the
+exact desired IDs and restart after the enforced admission clock floor (up to
+five seconds after stopping the prior owner). Keep original operation IDs for
+recovery; do not
+retry an uncertain mutation under a new ID merely because a response was lost.

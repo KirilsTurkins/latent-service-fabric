@@ -96,9 +96,10 @@ public sealed record InvokeRequest(
     string? ParentActivationId = null);
 
 /// <summary>Represents a successful invocation response.</summary>
+/// <param name="PublicationId">The captured source publication, absent for a legacy pin; never authority.</param>
 /// <param name="ActivationId">The identifier of the completed activation.</param>
 /// <param name="RevisionId">The revision that handled the invocation.</param>
-/// <param name="ReleaseDigest">The digest of the release that handled the invocation.</param>
+/// <param name="ReleaseDigest">The executable component digest that handled the invocation.</param>
 /// <param name="RouteGeneration">The route generation used for the invocation.</param>
 /// <param name="Payload">The response payload.</param>
 /// <param name="MediaType">The media type of <paramref name="Payload"/>.</param>
@@ -116,7 +117,8 @@ public sealed record InvokeResponse(
     string? CommittedStateVersion,
     IReadOnlyList<string> EffectIds,
     BudgetConsumption Consumption,
-    IReadOnlyDictionary<string, string> Metadata);
+    IReadOnlyDictionary<string, string> Metadata,
+    string? PublicationId = null);
 
 /// <summary>Describes a failure returned by the platform.</summary>
 /// <param name="Code">The platform-defined failure code.</param>
@@ -150,9 +152,10 @@ public sealed record DeclaredError(
     IReadOnlyDictionary<string, string> Metadata);
 
 /// <summary>Identifies and accounts for a terminal invocation.</summary>
+/// <param name="PublicationId">The captured source publication, absent for legacy/unresolved pins; never authority.</param>
 /// <param name="ActivationId">The activation identifier.</param>
 /// <param name="RevisionId">The revision that handled the invocation.</param>
-/// <param name="ReleaseDigest">The release digest that handled the invocation.</param>
+/// <param name="ReleaseDigest">The executable component digest that handled the invocation.</param>
 /// <param name="RouteGeneration">The route generation used for the invocation.</param>
 /// <param name="Consumption">The finalized resource consumption.</param>
 public sealed record InvocationReceipt(
@@ -160,7 +163,8 @@ public sealed record InvocationReceipt(
     string RevisionId,
     string ReleaseDigest,
     ulong RouteGeneration,
-    BudgetConsumption Consumption);
+    BudgetConsumption Consumption,
+    string? PublicationId = null);
 
 /// <summary>Represents the typed terminal outcome of a synchronous invocation.</summary>
 public abstract record InvocationOutcome

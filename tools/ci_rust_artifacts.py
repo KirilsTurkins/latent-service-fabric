@@ -49,6 +49,10 @@ SUITES = {
         "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
         POLICY_PREFIX + "export_operator_workflow_fixture",
         frozenset({POLICY_PREFIX + "export_operator_workflow_fixture"}), True),
+    "publication-fixture": Suite(
+        "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
+        POLICY_PREFIX + "export_publication_workflow_fixture",
+        frozenset({POLICY_PREFIX + "export_publication_workflow_fixture"}), True),
     "resource-fixture": Suite(
         "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
         POLICY_PREFIX + "resources::export_phase2_resource_fixture",

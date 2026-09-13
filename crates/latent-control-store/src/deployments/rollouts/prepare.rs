@@ -388,6 +388,8 @@ impl DirectoryDeploymentRepository {
         }
         row.status.objects = managed_objects(&next_routes, &row);
         let mut receipt = RolloutOperationReceipt {
+            base_publication: row.status.base.publication.clone(),
+            candidate_publication: row.status.candidate.publication.clone(),
             rollout_id: row.status.id.clone(),
             tenant: context.tenant.clone(),
             operation_id: context.operation.operation_id.clone(),
@@ -579,7 +581,11 @@ pub(super) fn managed_objects(
         &row.status.base.deployment_id,
         &row.status.candidate.deployment_id,
     ] {
-        if let Some(generation) = catalog.versions.get(id) {
+        if let Some(generation) = catalog.versions.get(id).filter(|_| {
+            catalog.record_by_id(id).is_some_and(|record| {
+                record.deployment.metadata.tenant.as_ref() == Some(&row.status.tenant)
+            })
+        }) {
             objects.push(RolloutObjectVersion {
                 deployment_id: DeploymentId(id.0.as_str().into()),
                 generation: *generation,

@@ -105,12 +105,28 @@ fn start(
             .map(|tenant| tenant.0.as_str()),
         &config.tenant,
     )?;
-    let candidate = latent_wire::management::deployment_to_proto(&VersionedDeployment {
-        publication: None,
+    let expected_candidate_component_digest = manifest
+        .publication
+        .as_ref()
+        .map(|_| manifest.release.0.clone());
+    let mut candidate = latent_wire::management::deployment_to_proto(&VersionedDeployment {
+        publication: manifest
+            .publication
+            .as_ref()
+            .map(|id| latent_artifacts::PublicationRef {
+                id: id.clone(),
+                scope: latent_artifacts::LifecycleScope::Tenant(
+                    manifest.metadata.tenant.clone().expect("validated tenant"),
+                ),
+            }),
         manifest,
         generation: 0,
     })
     .map_err(|_| invalid_input())?;
+    candidate.requested_publication = None;
+    if candidate.publication.is_some() {
+        candidate.release_digest.clear();
+    }
     let policy = args
         .canary_policy
         .as_ref()
@@ -141,6 +157,7 @@ fn start(
         })
         .transpose()?;
     Ok(Operation::StartRollout(proto::StartRolloutRequest {
+        expected_candidate_component_digest,
         id: args.id.clone(),
         base_deployment_id: args.base.clone(),
         expected_base_generation: Some(args.expected_base_generation),
