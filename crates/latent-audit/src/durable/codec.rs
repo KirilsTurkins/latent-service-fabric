@@ -19,6 +19,14 @@ pub(super) trait WireText: Sized {
     fn text(&self) -> &str;
     fn parse(s: String) -> std::result::Result<Self, ()>;
 }
+impl WireText for latent_core::PublicationId {
+    fn text(&self) -> &str {
+        self.as_str()
+    }
+    fn parse(s: String) -> std::result::Result<Self, ()> {
+        s.parse().map_err(|_| ())
+    }
+}
 impl WireText for ArtifactBlobDigest {
     fn text(&self) -> &str {
         self.as_str()

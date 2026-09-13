@@ -1,6 +1,31 @@
 //! Bound additive receipts even while the full lifecycle CLI remains separate.
 use super::{invalid_response, proto, Bounds, Check, Failure};
 
+impl Check for proto::PublicationRef {
+    fn check(&self, b: &mut Bounds) -> Result<(), Failure> {
+        b.text(&self.id)?;
+        b.id(&self.tenant)?;
+        self.id
+            .parse::<latent_core::PublicationId>()
+            .map_err(|_| invalid_response())?;
+        Ok(())
+    }
+}
+
+pub(super) fn publication(
+    value: Option<&proto::PublicationRef>,
+    tenant: Option<&str>,
+    b: &mut Bounds,
+) -> Result<(), Failure> {
+    if let Some(value) = value {
+        value.check(b)?;
+        if Some(value.tenant.as_str()) != tenant {
+            return Err(invalid_response());
+        }
+    }
+    Ok(())
+}
+
 impl Check for proto::ReleaseActor {
     fn check(&self, b: &mut Bounds) -> Result<(), Failure> {
         b.id(&self.subject)?;
@@ -22,6 +47,7 @@ impl Check for proto::ReleasePolicyIdentity {
 }
 impl Check for proto::ReleaseLifecycleRecord {
     fn check(&self, b: &mut Bounds) -> Result<(), Failure> {
+        publication(self.publication.as_ref(), Some(&self.tenant), b)?;
         b.id(&self.tenant)?;
         b.digest(&self.component_digest)?;
         operation_id(&self.operation_id, b)?;
@@ -44,6 +70,7 @@ impl Check for proto::ReleaseLifecycleRecord {
 }
 impl Check for proto::ReleaseOperationReceipt {
     fn check(&self, b: &mut Bounds) -> Result<(), Failure> {
+        publication(self.publication.as_ref(), Some(&self.tenant), b)?;
         operation_id(&self.operation_id, b)?;
         b.digest(&self.request_digest)?;
         b.id(&self.tenant)?;
@@ -57,6 +84,7 @@ impl Check for proto::ReleaseOperationReceipt {
             record.check(b)?;
             if record.tenant != self.tenant
                 || self.component_digest.as_deref() != Some(&record.component_digest)
+                || record.publication != self.publication
             {
                 return Err(invalid_response());
             }

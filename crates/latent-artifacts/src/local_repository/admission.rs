@@ -267,6 +267,8 @@ impl DirectoryArtifactRepository {
             )
         })?;
         let summary = ArtifactCatalogEntry {
+            publication: Some(reference.id.clone()),
+            package: row.package.clone(),
             descriptor: verified.metadata.descriptor().clone(),
             tenant: reference.scope.tenant().cloned(),
             service: latent_core::ServiceId(verified.metadata.manifest().metadata.name.clone()),

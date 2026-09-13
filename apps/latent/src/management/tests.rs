@@ -1,6 +1,7 @@
 mod association;
 mod inventory;
 mod preparation;
+mod publications;
 
 use latent_control_store::VersionedDeployment;
 use latent_manifest::ManifestCodec;
@@ -10,6 +11,8 @@ use super::{bounds, node, prepare, response};
 
 fn release() -> proto::ReleaseDescriptor {
     proto::ReleaseDescriptor {
+        package_digest: None,
+        publication: None,
         digest: format!("sha256:{}", "a".repeat(64)),
         artifact_reference: "local:release:opaque".to_owned(),
         service: "examples/echo".to_owned(),

@@ -20,6 +20,7 @@ async fn authenticated_release_lifecycle_has_cas_receipts_and_tenant_private_que
     assert_eq!(initial.actor.unwrap().subject, "alice");
     let release = published.release.unwrap();
     let status_request = || proto::GetReleaseLifecycleRequest {
+        publication: None,
         digest: release.digest.clone(),
     };
     assert_eq!(
@@ -53,6 +54,7 @@ async fn authenticated_release_lifecycle_has_cas_receipts_and_tenant_private_que
     );
     let generation = initial.record.unwrap().generation;
     let revoke = proto::ChangeReleaseLifecycleRequest {
+        publication: None,
         digest: release.digest.clone(),
         action: proto::ReleaseLifecycleAction::Revoke as i32,
         operation: Some(proto::ReleaseOperationPrecondition {
@@ -153,6 +155,7 @@ async fn authenticated_release_lifecycle_has_cas_receipts_and_tenant_private_que
         .get_release(request(
             "alice",
             proto::GetReleaseRequest {
+                publication: None,
                 digest: release.digest,
             },
         ))
@@ -171,6 +174,7 @@ async fn renewal_rejects_missing_preconditions_and_ambiguous_evidence_before_own
     let capsule = artifact("acme", "renew", "small-renewal-input");
     let digest = capsule.descriptor.release_digest.0;
     let mut value = proto::RenewReleaseEvidenceRequest {
+        publication: None,
         digest: digest.clone(),
         package_digest: digest,
         operation: None,

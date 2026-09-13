@@ -59,7 +59,15 @@ pub struct IdArgs {
 
 #[derive(Args)]
 pub struct DigestArgs {
-    pub digest: String,
+    /// Legacy component digest. Ambiguous component selection fails closed.
+    #[arg(
+        required_unless_present = "publication",
+        conflicts_with = "publication"
+    )]
+    pub digest: Option<String>,
+    /// Exact publication ID in the configured authenticated tenant.
+    #[arg(long, required_unless_present = "digest", conflicts_with = "digest")]
+    pub publication: Option<String>,
 }
 
 #[derive(Args)]

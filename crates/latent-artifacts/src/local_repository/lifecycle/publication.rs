@@ -58,6 +58,7 @@ impl DirectoryArtifactRepository {
         };
         // The exact success DTO must fit before staging, receipts or payload I/O.
         preflight(ReleaseOperationPreview {
+            publication: Some(&candidate.reference.id),
             replay: false,
             receipt: candidate.lifecycle.receipt(),
             release: Some(&candidate.summary),
@@ -359,6 +360,12 @@ impl DirectoryArtifactRepository {
         )?;
         let artifact = &publication.artifact;
         let summary = ArtifactCatalogEntry {
+            publication: Some(reference.id.clone()),
+            package: lifecycle
+                .receipt()
+                .record
+                .as_ref()
+                .and_then(|record| record.package.clone()),
             descriptor: artifact.descriptor.clone(),
             tenant: reference.scope.tenant().cloned(),
             service: latent_core::ServiceId(artifact.manifest.metadata.name.clone()),

@@ -27,6 +27,8 @@ impl PublicationOwner {
         descriptor.publisher = Some(PublisherId("verified-publisher".to_owned()));
         Self {
             summary: ArtifactCatalogEntry {
+                publication: None,
+                package: None,
                 descriptor,
                 tenant: artifact.manifest.metadata.tenant,
                 service: ServiceId(artifact.manifest.metadata.name),
@@ -111,10 +113,16 @@ impl ArtifactRepository for PublicationOwner {
                     ]),
                 }],
             };
+            let publication =
+                latent_artifacts::PublicationRef::package(receipt.scope.clone(), &package)?;
+            let mut summary = self.summary.clone();
+            summary.publication = Some(publication.id.clone());
+            summary.package = Some(package);
             preflight(ReleaseOperationPreview {
+                publication: (!self.reject).then_some(&publication.id),
                 replay: false,
                 receipt: &receipt,
-                release: (!self.reject).then_some(&self.summary),
+                release: (!self.reject).then_some(&summary),
                 failure: self.reject.then_some(&failure),
             })?;
             self.commits.fetch_add(1, Ordering::SeqCst);
@@ -122,11 +130,8 @@ impl ArtifactRepository for PublicationOwner {
                 return Err(failure);
             }
             Ok(ManagedPublicationReceipt {
-                publication: latent_artifacts::PublicationRef::package(
-                    receipt.scope.clone(),
-                    &package,
-                )?,
-                release: self.summary.clone(),
+                publication,
+                release: summary,
                 operation: receipt,
             })
         })

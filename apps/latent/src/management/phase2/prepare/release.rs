@@ -17,10 +17,12 @@ pub(in crate::management) fn release(
     };
     match command {
         ReleaseCommand::Lifecycle(args) => {
-            crate::management::prepare::digest(&args.digest)?;
+            let (digest, publication) =
+                crate::management::prepare::publication_selector(args, config)?;
             Ok(Operation::GetReleaseLifecycle(
                 proto::GetReleaseLifecycleRequest {
-                    digest: args.digest.clone(),
+                    publication,
+                    digest,
                 },
             ))
         }
@@ -30,11 +32,13 @@ pub(in crate::management) fn release(
             },
         )),
         ReleaseCommand::Revoke(args) | ReleaseCommand::Retire(args) => {
-            crate::management::prepare::digest(&args.digest)?;
+            let (digest, publication) =
+                crate::management::prepare::publication_selector(&args.selector, config)?;
             let revoke = matches!(command, ReleaseCommand::Revoke(_));
             Ok(Operation::ChangeReleaseLifecycle(
                 proto::ChangeReleaseLifecycleRequest {
-                    digest: args.digest.clone(),
+                    publication,
+                    digest,
                     action: if revoke {
                         proto::ReleaseLifecycleAction::Revoke
                     } else {
@@ -53,14 +57,16 @@ pub(in crate::management) fn release(
             ))
         }
         ReleaseCommand::RenewEvidence(args) => {
-            crate::management::prepare::digest(&args.digest)?;
+            let (digest, publication) =
+                crate::management::prepare::publication_selector(&args.selector, config)?;
             crate::management::prepare::digest(&args.package_digest)?;
             let package = args.package_digest.parse().map_err(|_| invalid_input())?;
             let evidence =
                 crate::package::evidence(&args.evidence, parent(&args.evidence)?, &package)?;
             Ok(Operation::RenewReleaseEvidence(
                 proto::RenewReleaseEvidenceRequest {
-                    digest: args.digest.clone(),
+                    publication,
+                    digest,
                     package_digest: args.package_digest.clone(),
                     operation: Some(proto::ReleaseOperationPrecondition {
                         operation_id: args.operation.operation_id.clone(),

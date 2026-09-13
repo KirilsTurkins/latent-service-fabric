@@ -59,13 +59,22 @@ pub async fn execute(operation: Operation, session: &Session) -> Result<Outcome,
         }
         Operation::GetRelease(request) => {
             let digest = request.digest.clone();
+            let publication = request.publication.clone();
             let value = call!(session, ReleaseServiceClient, get_release, request);
             association::release(
                 value.release.as_ref(),
                 session.tenant(),
-                Some(&digest),
+                publication.is_none().then_some(digest.as_str()),
                 None,
             )?;
+            if let Some(release) = &value.release {
+                association::selected_publication(
+                    release.publication.as_ref(),
+                    Some(&release.digest),
+                    publication.as_ref(),
+                    &digest,
+                )?;
+            }
             response::got_release(value)
         }
         Operation::ListReleases(request) => list_releases(request, session).await,

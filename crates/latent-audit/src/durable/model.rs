@@ -141,6 +141,13 @@ pub struct AuditPolicyIdentity {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuditIdentities {
+    /// Captured publication inside the record's explicit authenticated scope.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "codec::optional"
+    )]
+    pub publication: Option<latent_core::PublicationId>,
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",

@@ -151,6 +151,7 @@ pub(super) fn measure(
         retained.string(&tenant.0)?;
     }
     // This covers all allocations in the returned owned entry, including sparse maps.
+    retained.add(Some(latent_core::PublicationId::TEXT_BYTES + 71))?;
     let materialized_bytes = retained.used;
     retained.add(Some(
         size_of::<Option<crate::PreparationMetadataFingerprint>>(),
@@ -189,6 +190,7 @@ pub(super) fn measure(
     let page_bytes = counter
         .used
         .checked_add(materialized_bytes)
+        .and_then(|bytes| bytes.checked_add(256))
         .ok_or_else(limit)?;
     Ok(EntryCost {
         descriptor: descriptor_bytes,

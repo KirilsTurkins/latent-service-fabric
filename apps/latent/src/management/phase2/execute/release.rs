@@ -181,6 +181,7 @@ async fn lifecycle(
     session: &Session,
 ) -> Result<Outcome, Failure> {
     let digest = request.digest.clone();
+    let publication = request.publication.clone();
     let value = call!(
         session,
         ReleaseServiceClient,
@@ -190,7 +191,13 @@ async fn lifecycle(
     if let Some(status) = &value.status {
         let record = status.record.as_ref().ok_or_else(invalid_response)?;
         bounds::checked(record, session.max_response_bytes())?;
-        if record.tenant != session.tenant() || record.component_digest != digest {
+        association::selected_publication(
+            record.publication.as_ref(),
+            Some(&record.component_digest),
+            publication.as_ref(),
+            &digest,
+        )?;
+        if record.tenant != session.tenant() {
             return Err(invalid_response());
         }
     }
@@ -240,6 +247,7 @@ async fn change(
         .ok_or_else(invalid_input)?
         .clone();
     let digest = request.digest.clone();
+    let publication = request.publication.clone();
     let action = request.action;
     let value = call!(
         session,
@@ -248,7 +256,19 @@ async fn change(
         request
     );
     let receipt = value.operation.as_ref().ok_or_else(invalid_response)?;
-    checked_receipt(receipt, session, &op.operation_id, Some(&digest), Some(&op))?;
+    association::selected_publication(
+        receipt.publication.as_ref(),
+        receipt.component_digest.as_deref(),
+        publication.as_ref(),
+        &digest,
+    )?;
+    checked_receipt(
+        receipt,
+        session,
+        &op.operation_id,
+        publication.is_none().then_some(digest.as_str()),
+        Some(&op),
+    )?;
     if receipt.action != action {
         return Err(invalid_response());
     }
@@ -266,6 +286,7 @@ async fn renew(
         .ok_or_else(invalid_input)?
         .clone();
     let digest = request.digest.clone();
+    let publication = request.publication.clone();
     let package = request.package_digest.clone();
     let value = call!(
         session,
@@ -274,7 +295,19 @@ async fn renew(
         request
     );
     let receipt = value.operation.as_ref().ok_or_else(invalid_response)?;
-    checked_receipt(receipt, session, &op.operation_id, Some(&digest), Some(&op))?;
+    association::selected_publication(
+        receipt.publication.as_ref(),
+        receipt.component_digest.as_deref(),
+        publication.as_ref(),
+        &digest,
+    )?;
+    checked_receipt(
+        receipt,
+        session,
+        &op.operation_id,
+        publication.is_none().then_some(digest.as_str()),
+        Some(&op),
+    )?;
     if receipt.action != proto::ReleaseLifecycleAction::RenewEvidence as i32
         || receipt
             .record

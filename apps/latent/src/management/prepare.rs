@@ -34,9 +34,10 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
         ) => super::phase2::prepare::release(command, config),
         Command::Release(ReleaseCommand::Publish(args)) => publish(args, config),
         Command::Release(ReleaseCommand::Get(args)) => {
-            digest(&args.digest)?;
+            let (digest, publication) = publication_selector(args, config)?;
             Ok(Operation::GetRelease(proto::GetReleaseRequest {
-                digest: args.digest.clone(),
+                publication,
+                digest,
             }))
         }
         Command::Release(ReleaseCommand::List(args)) => {
@@ -276,6 +277,38 @@ pub(super) fn page(page_size: u32, token: Option<&str>) -> Result<proto::PageReq
         page_size,
         page_token: token.map(str::to_owned),
     })
+}
+
+pub(super) fn publication_selector(
+    args: &crate::args::DigestArgs,
+    config: &ResolvedConfig,
+) -> Result<(String, Option<proto::PublicationRef>), Failure> {
+    let invalid = || {
+        Failure::local(
+            "invalid-publication-selector",
+            "Choose one component digest or exact publication ID.",
+        )
+    };
+    match (&args.digest, &args.publication) {
+        (Some(value), None) => {
+            digest(value)?;
+            Ok((value.clone(), None))
+        }
+        (None, Some(value)) => {
+            value
+                .parse::<latent_core::PublicationId>()
+                .map_err(|_| invalid())?;
+            identifier(&config.tenant)?;
+            Ok((
+                String::new(),
+                Some(proto::PublicationRef {
+                    id: value.clone(),
+                    tenant: config.tenant.clone(),
+                }),
+            ))
+        }
+        _ => Err(invalid()),
+    }
 }
 
 fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Operation, Failure> {

@@ -4,6 +4,13 @@ package latent.control.v1;
 
 import "latent/control/v1/common.proto";
 
+// Exact publication in the authenticated tenant. An ID grants no authority.
+// Local-unscoped publications are not a public tenant selector.
+message PublicationRef {
+  string id = 1;
+  string tenant = 2;
+}
+
 message ReleaseDescriptor {
   string digest = 1;
   // Server-assigned opaque locator only. A client must not provide a filesystem
@@ -23,6 +30,9 @@ message ReleaseDescriptor {
   // Explicit scope of a catalog descriptor. Phase 1 RPC publication requires it
   // in the capsule manifest; reads return only the authenticated tenant.
   optional string tenant = 12;
+  // Additive identities; digest remains the executable component identity.
+  PublicationRef publication = 13;
+  optional string package_digest = 14;
 }
 
 // The Phase 1 locally trusted publish representation. All byte fields are
@@ -179,6 +189,7 @@ message ReleaseLifecycleRecord {
   ReleasePolicyIdentity policy = 9;
   optional uint64 observed_at_unix_millis = 10;
   optional string evidence_revision_digest = 11;
+  PublicationRef publication = 12;
 }
 
 // A live observation, not a renewable or transferable admission grant.
@@ -204,10 +215,13 @@ message ReleaseOperationReceipt {
   ReleaseLifecycleRecord record = 11;
   ReleasePolicyIdentity policy = 12;
   optional uint64 observed_at_unix_millis = 13;
+  PublicationRef publication = 14;
 }
 
 message GetReleaseLifecycleRequest {
+  // Exactly one selector: nonempty legacy digest OR explicit publication.
   string digest = 1;
+  PublicationRef publication = 2;
 }
 
 message GetReleaseLifecycleResponse {
@@ -225,7 +239,9 @@ message GetReleaseOperationResponse {
 }
 
 message ChangeReleaseLifecycleRequest {
+  // Exactly one selector: nonempty legacy digest OR explicit publication.
   string digest = 1;
+  PublicationRef publication = 5;
   // Only REVOKE or RETIRE is accepted; publication/restoration is not implicit.
   ReleaseLifecycleAction action = 2;
   ReleaseOperationPrecondition operation = 3;
@@ -244,7 +260,9 @@ message ReleaseEvidenceUpload {
 }
 
 message RenewReleaseEvidenceRequest {
+  // Exactly one selector: nonempty legacy digest OR explicit publication.
   string digest = 1;
+  PublicationRef publication = 5;
   string package_digest = 2;
   ReleaseOperationPrecondition operation = 3;
   // Evidence only: immutable package/component layers are retained by the owner.
@@ -277,7 +295,9 @@ message PublishReleaseResponse {
 }
 
 message GetReleaseRequest {
+  // Exactly one selector: nonempty legacy digest OR explicit publication.
   string digest = 1;
+  PublicationRef publication = 2;
 }
 
 message GetReleaseResponse {

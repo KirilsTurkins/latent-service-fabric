@@ -124,6 +124,7 @@ fn protobuf_decoded_publication_accepts_bounded_empty_evidence_configuration() {
 fn renewal() -> proto::RenewReleaseEvidenceRequest {
     let entry = upload().package.unwrap().signatures.remove(0);
     proto::RenewReleaseEvidenceRequest {
+        publication: None,
         digest: format!("sha256:{}", "a".repeat(64)),
         package_digest: format!("sha256:{}", "b".repeat(64)),
         evidence: Some(proto::ReleaseEvidenceUpload {

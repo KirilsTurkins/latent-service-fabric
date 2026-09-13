@@ -251,3 +251,74 @@ fn returned_receipt_change_cannot_change_the_audited_durable_catalog_outcome() {
     assert_eq!(conclusion.identities.lifecycle_generation, Some(1));
     assert_eq!(conclusion.result, AuditOperationResult::Committed);
 }
+
+#[test]
+fn audit_publication_binding_survives_coexistence_revocation_and_receipt_recovery() {
+    let temp = TempRoot::new();
+    let repo = repository(temp.path());
+    let journal = Journal::new(12);
+    let value = scoped_artifact("audit-same-component");
+    let first = publish(&repo, &journal, "original", value.clone())
+        .0
+        .unwrap();
+    let mut corrected = value.clone();
+    corrected.manifest.semantic_version = "2.0.0".to_owned();
+    let second = publish(&repo, &journal, "corrected", corrected).0.unwrap();
+    assert_eq!(
+        first.release.descriptor.release_digest,
+        second.release.descriptor.release_digest
+    );
+    assert_ne!(first.publication, second.publication);
+    let selector = crate::PublicationSelector::Publication(first.publication.clone());
+    let mut audit = ReleaseAuditGuard::new(Some(&journal.handle), ReleaseLifecycleAction::Revoke);
+    let changed = block_on(repo.change_selected_lifecycle(
+        context("exact-revoke", 1),
+        &selector,
+        ReleaseLifecycleAction::Revoke,
+        ReleaseLifecycleReason::OperatorRevocation,
+        &mut |preview| audit.preview(preview),
+    ))
+    .unwrap();
+    assert_eq!(changed.publication, Some(first.publication.id.clone()));
+    let ack = block_on(Box::pin(audit.finish(&repo, Some(&changed.operation))));
+    assert_eq!(ack.status, ReleaseAuditStatus::Durable);
+    drop(repo);
+    let reopened = repository(temp.path());
+    let recovered = block_on(reopened.get_selected_operation(&scope(), "original")).unwrap();
+    assert_eq!(recovered.0, Some(first.publication.id.clone()));
+    assert!(
+        matches!(recovered.1, ReleaseOperationLookup::Found(receipt) if receipt == first.operation)
+    );
+    assert_eq!(
+        reopened
+            .publication_lifecycle_status(&second.publication)
+            .unwrap()
+            .unwrap()
+            .record
+            .state,
+        ReleaseLifecycleState::Admitted
+    );
+    let (replayed, ack) = publish(&reopened, &journal, "original", value);
+    assert_eq!(replayed.unwrap().publication, first.publication);
+    assert_eq!(ack.status, ReleaseAuditStatus::Durable);
+    let rows = journal.rows();
+    assert_eq!(rows.len(), 8);
+    for (index, row) in rows.iter().enumerate() {
+        let expected = if index == 2 || index == 3 {
+            &second.publication.id
+        } else {
+            &first.publication.id
+        };
+        let identities = match &row.data {
+            AuditRecordData::Attempt(attempt) => &attempt.identities,
+            AuditRecordData::Outcome { conclusion, .. } => &conclusion.identities,
+            _ => panic!("control record expected"),
+        };
+        assert_eq!(
+            row.scope,
+            AuditScope::Tenant(TenantId("examples".to_owned()))
+        );
+        assert_eq!(identities.publication.as_ref(), Some(expected));
+    }
+    assert_eq!(journal.handle.snapshot().reserved_records, 0);
+}

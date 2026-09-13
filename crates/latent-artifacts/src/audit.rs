@@ -80,7 +80,8 @@ impl ReleaseAuditGuard {
             return Ok(());
         };
         crate::lifecycle::validate_audit_receipt(preview.receipt)?;
-        let identity = mapping::attempt(preview.receipt, preview.replay)?;
+        let mut identity = mapping::attempt(preview.receipt, preview.replay)?;
+        identity.identities.publication = preview.publication.cloned();
         let accepted = audit
             .try_reserve_critical(&identity)
             .and_then(|reservation| reservation.begin().blocking_wait());
@@ -125,14 +126,19 @@ impl ReleaseAuditGuard {
             return self.ack;
         };
         let identity = self.identity.as_ref().expect("accepted audit identity");
-        let conclusion =
-            if let Some(receipt) = actual.filter(|value| mapping::matches(identity, value)) {
-                mapping::conclusion(receipt, self.replay).unwrap_or_else(|_| unknown())
-            } else {
-                lookup(repository, identity, self.replay)
-                    .await
-                    .unwrap_or_else(|_| unknown())
-            };
+        let conclusion = if identity.identities.publication.is_some() {
+            // Read publication and receipt under one catalog snapshot; an
+            // independently supplied legacy receipt cannot prove this pin.
+            lookup(repository, identity, self.replay)
+                .await
+                .unwrap_or_else(|_| unknown())
+        } else if let Some(receipt) = actual.filter(|value| mapping::matches(identity, value)) {
+            mapping::conclusion(receipt, self.replay).unwrap_or_else(|_| unknown())
+        } else {
+            lookup(repository, identity, self.replay)
+                .await
+                .unwrap_or_else(|_| unknown())
+        };
         let known = conclusion.result != AuditOperationResult::Unknown;
         if attempt.finish(conclusion).wait().await.is_ok() && known {
             self.ack.status = ReleaseAuditStatus::Durable;
@@ -174,12 +180,21 @@ async fn lookup(
     replay: bool,
 ) -> Result<AuditOperationConclusion, PlatformError> {
     let scope = mapping::lifecycle_scope(&identity.scope);
-    match repository
-        .get_release_operation(&scope, &identity.operation_id)
-        .await?
-    {
-        ReleaseOperationLookup::Found(receipt) if mapping::matches(identity, &receipt) => {
-            mapping::conclusion(&receipt, replay)
+    let (publication, operation) = repository
+        .get_selected_operation(&scope, &identity.operation_id)
+        .await?;
+    match operation {
+        ReleaseOperationLookup::Found(receipt)
+            if mapping::matches(identity, &receipt)
+                && identity
+                    .identities
+                    .publication
+                    .as_ref()
+                    .is_none_or(|id| Some(id) == publication.as_ref()) =>
+        {
+            let mut conclusion = mapping::conclusion(&receipt, replay)?;
+            conclusion.identities.publication = identity.identities.publication.clone();
+            Ok(conclusion)
         }
         ReleaseOperationLookup::Uncertain => Err(PlatformError {
             code: PlatformErrorCode::Unavailable,

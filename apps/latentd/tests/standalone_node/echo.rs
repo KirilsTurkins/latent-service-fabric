@@ -55,6 +55,7 @@ pub fn scenario() {
             .get_release(request(
                 OPERATOR,
                 proto::GetReleaseRequest {
+                    publication: None,
                     digest: digest.clone(),
                 },
             ))
@@ -118,6 +119,7 @@ async fn publish(
         .get_release(request(
             FOREIGN,
             proto::GetReleaseRequest {
+                publication: None,
                 digest: digest.clone(),
             }
         ))
