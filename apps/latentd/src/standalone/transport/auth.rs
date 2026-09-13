@@ -6,6 +6,7 @@ use tonic::body::Body;
 use tonic::codegen::http::Request;
 use tonic::Status;
 
+use super::io::ConnectionInfo;
 use super::TransportConfig;
 
 pub(super) fn authenticate(
@@ -77,6 +78,9 @@ pub(super) fn authenticate(
         }
     }
     request.extensions_mut().insert(context);
+    if let Some(connection) = request.extensions().get::<ConnectionInfo>() {
+        connection.mark_authenticated();
+    }
     Ok(())
 }
 
