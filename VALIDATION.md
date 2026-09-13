@@ -1,5 +1,10 @@
 # Validation baseline
 
+CI selects a [documentation or full profile](docs/development/ci-profiles.md)
+from the complete change. Documentation-only PRs run focused Markdown/SVG
+validation; code, build inputs, evidence, workflow changes and manual runs retain
+the full suite described below. `CI result` checks every selected job's outcome.
+
 Updated on **2026-09-13** for completed Phases 1 and 2 and the Phase 1 performance extension,
 the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
@@ -483,3 +488,7 @@ and therefore authorized the handoff. It never
 establishes production APIs, cross-platform byte identity, generic dispatch,
 production security, dormant-service density, cluster behavior, or production
 SLOs.
+
+See [CI dependency caching](docs/development/ci-caching.md) for reusable build
+paths, trusted cache writers and the fresh-evidence boundary. Cache hits do not
+skip validation steps.
