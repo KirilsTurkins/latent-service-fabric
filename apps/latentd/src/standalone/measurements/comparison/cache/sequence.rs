@@ -1,5 +1,4 @@
 use latent_core::ReleaseDigest;
-use latent_executor::ExecutionBackend;
 
 use super::{cold, Node, Result, State, Writer};
 
@@ -29,11 +28,12 @@ pub(super) async fn run(
             &releases[key as usize],
         )
         .await?;
-        let preparation = node
-            .owner
-            .backend
-            .preparation_key(&ReleaseDigest(releases[key as usize].clone()))
-            .map_err(super::super::super::platform)?;
+        let preparation = super::super::super::publication_key(
+            node.owner.backend.as_ref(),
+            node.artifacts.as_ref(),
+            &node.fixture.tenant,
+            &ReleaseDigest(releases[key as usize].clone()),
+        )?;
         state.descriptors[key as usize] = Some(
             node.owner
                 .backend
