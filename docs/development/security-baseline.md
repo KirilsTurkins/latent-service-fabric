@@ -14,11 +14,13 @@ The scan is deliberately independent of the ordinary docs/full CI profile:
 
 GitHub emits `schedule` and `workflow_dispatch` events only for workflows present on the repository's default branch. LSF's default branch is currently `release`, while feature delivery integrates through `development`. Therefore the scheduled/manual matrix is defined and reviewable in this slice, but it does not become an active periodic repository control merely by merging this PR into `development`; normal promotion must also place the workflow on `release`. This slice does not bypass the repository's integration policy to activate it early.
 
-Markdown-only changes do not start a Rust dependency scan. The broader #282 work still needs lightweight secret/static coverage appropriate for documentation changes; this advisory slice does not claim that coverage.
+Unrelated Markdown-only changes do not start a Rust dependency scan; this baseline runbook is an explicit exception so its described commands stay covered. The broader #282 work still needs lightweight secret/static coverage appropriate for documentation changes; this advisory slice does not claim that coverage.
 
 ### Untrusted pull-request boundary
 
 A pull-request checkout is treated as untrusted scan input, not as scanner configuration. Scanner installation changes to runner-owned temporary storage first and uses a separate temporary `CARGO_HOME`, so a PR cannot supply repository-local Cargo configuration or aliases to the install step. The audit invokes the exact installed `cargo-audit` binary directly from runner-owned storage rather than invoking `cargo audit` through the checked-out Cargo configuration.
+
+Direct invocation still requires the `audit` subcommand: `cargo-audit audit --db ... --no-fetch --file ...`. The top-level `cargo-audit --version` reports `cargo-audit 0.22.2`; the subcommand version has a different display name. Both maintained-branch and change scans use the same verified invocation.
 
 The scan also passes `--file` with the absolute committed `Cargo.lock` path and executes from runner temporary storage. In `cargo-audit`, an explicitly supplied lockfile path is loaded directly rather than taking the missing-lockfile fallback that can ask Cargo to generate a lockfile. The workflow rejects a symlinked lockfile and caps its size at 8 MiB before parsing it. It does not execute workspace builds, build scripts, tests, examples, or package metadata from the pull request.
 

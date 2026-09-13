@@ -53,10 +53,10 @@ class RustSecWorkflowTests(unittest.TestCase):
         self.assertEqual(env["RUSTSEC_DB_BRANCH"], "main")
         self.assertEqual(env["SCANNER_RUST"], "1.97.1")
         self.assertNotIn("continue-on-error", self.text)
-        self.assertIn('"${audit_bin}" --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"', self.text)
+        self.assertIn('"${audit_bin}" audit --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"', self.text)
         self.assertIn("git ls-remote", self.text)
         self.assertIn('test "${database_sha}" = "${remote_sha}"', self.text)
-        self.assertIn('test "${tool_version}" = "cargo-audit-audit ${CARGO_AUDIT_VERSION}"', self.text)
+        self.assertIn('test "${tool_version}" = "cargo-audit ${CARGO_AUDIT_VERSION}"', self.text)
 
     def test_untrusted_checkout_cannot_supply_cargo_config_or_aliases_to_scanner(self) -> None:
         self.assertGreaterEqual(self.text.count('cd "${RUNNER_TEMP}"'), 4)

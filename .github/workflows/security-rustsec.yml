@@ -62,7 +62,7 @@ jobs:
           CARGO_HOME="${cargo_home}" timeout --signal=TERM --kill-after=10s 8m \
             cargo install cargo-audit --version "${CARGO_AUDIT_VERSION}" --locked --root "${install_root}"
           tool_version="$("${install_root}/bin/cargo-audit" --version)"
-          test "${tool_version}" = "cargo-audit-audit ${CARGO_AUDIT_VERSION}"
+          test "${tool_version}" = "cargo-audit ${CARGO_AUDIT_VERSION}"
       - name: Fetch current RustSec advisory database
         shell: bash
         run: |
@@ -89,7 +89,7 @@ jobs:
           lock_bytes="$(stat -c '%s' "${lockfile}")"
           test "${lock_bytes}" -le 8388608
           tool_version="$("${audit_bin}" --version)"
-          test "${tool_version}" = "cargo-audit-audit ${CARGO_AUDIT_VERSION}"
+          test "${tool_version}" = "cargo-audit ${CARGO_AUDIT_VERSION}"
           lock_sha="$(sha256sum "${lockfile}" | awk '{print $1}')"
           {
             echo '### RustSec advisory scan'
@@ -101,7 +101,7 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
           cd "${RUNNER_TEMP}"
           timeout --signal=TERM --kill-after=10s 5m \
-            "${audit_bin}" --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"
+            "${audit_bin}" audit --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"
 
   maintained-branches:
     name: RustSec ${{ matrix.ref }}
@@ -134,7 +134,7 @@ jobs:
           CARGO_HOME="${cargo_home}" timeout --signal=TERM --kill-after=10s 8m \
             cargo install cargo-audit --version "${CARGO_AUDIT_VERSION}" --locked --root "${install_root}"
           tool_version="$("${install_root}/bin/cargo-audit" --version)"
-          test "${tool_version}" = "cargo-audit-audit ${CARGO_AUDIT_VERSION}"
+          test "${tool_version}" = "cargo-audit ${CARGO_AUDIT_VERSION}"
       - name: Fetch current RustSec advisory database
         shell: bash
         run: |
@@ -161,7 +161,7 @@ jobs:
           lock_bytes="$(stat -c '%s' "${lockfile}")"
           test "${lock_bytes}" -le 8388608
           tool_version="$("${audit_bin}" --version)"
-          test "${tool_version}" = "cargo-audit-audit ${CARGO_AUDIT_VERSION}"
+          test "${tool_version}" = "cargo-audit ${CARGO_AUDIT_VERSION}"
           lock_sha="$(sha256sum "${lockfile}" | awk '{print $1}')"
           source_sha="$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD)"
           {
@@ -174,4 +174,4 @@ jobs:
           } >> "${GITHUB_STEP_SUMMARY}"
           cd "${RUNNER_TEMP}"
           timeout --signal=TERM --kill-after=10s 5m \
-            "${audit_bin}" --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"
+            "${audit_bin}" audit --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"
