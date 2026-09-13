@@ -3,7 +3,7 @@
 Phase 2 issue #150 adds a bounded compiler producer to `latent-wasmtime`.
 `IsolatedAotCompiler` launches an approved one-job executable, verifies its input
 and output, and returns locally authenticated native bytes with an owned memory
-allowance. The child uses Wasmtime 47.0.3's safe `Engine::precompile_component`;
+allowance. The child uses Wasmtime 47.0.4's safe `Engine::precompile_component`;
 it never instantiates a guest or loads native output.
 
 Issue #151 adds opt-in persistent native reuse and authenticated loading. A
@@ -234,7 +234,7 @@ before the larger blob read. There is no public `load(bytes)` or restored-output
 constructor.
 
 The sole audited unsafe operation is `Component::deserialize` over this immutable
-authenticated slice. Wasmtime 47.0.3 copies the bytes into its own mapping; the
+authenticated slice. Wasmtime 47.0.4 copies the bytes into its own mapping; the
 loader never deserializes a replaceable file or trusts a filename. It checks the
 actual engine fingerprint, current input capability and job control before entry,
 then checks currentness again after the synchronous loader returns. Wasmtime
