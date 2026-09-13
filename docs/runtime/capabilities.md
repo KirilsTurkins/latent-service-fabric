@@ -9,8 +9,11 @@ environment, network, process, or other ambient authority is installed. The
 remaining platform capability packages are contracts for later implementation.
 Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
 currentness, native caching and rollout control; it does not expand this guest
-import set. The 41-ticket [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
-is planned work, with no Phase 3 providers or host ABI implementation merged.
+import set. The [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
+now includes the delivered [versioned host ABI profile](host-abi-profile.md).
+Package inspection recognizes its exact provider contracts and selected async
+imports, while preparation rejects providers without installed owners. General
+providers, the sealed broker and application hosting remain in progress.
 
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered

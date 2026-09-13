@@ -1791,6 +1791,7 @@ dependencies = [
  "tokio",
  "wasm-encoder 0.252.0",
  "wasmtime",
+ "wit-parser 0.252.0",
  "zeroize",
 ]
 

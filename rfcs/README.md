@@ -7,3 +7,5 @@ Use an RFC for unresolved changes to WIT, Protobuf, schemas, core invariants, ex
 - [RFC-0003: Versioned OCI transport profiles](0003-versioned-oci-transport-profiles.md), accepted by ADR-0029; the delivered static profile remains supported while Bearer authentication, bounded DNS/redirects and the selected real-registry matrix are tracked by #269–#270.
 
 - [RFC-0004: Route and authorization freshness](0004-route-and-authorization-freshness.md), accepted by ADR-0030; Phase 3 supplies the finite-validity design and conformance handoff, while all distributed implementation remains Phase 5.
+
+- [RFC-0005: Exact Phase 3 host ABI profiles](0005-phase3-host-abi-profiles.md), accepted by ADR-0031; #202 supplies bounded recognition, generated-binding parity and prepared/AOT identity. Provider installation, activation authority and streaming remain separately owned Phase 3 work.

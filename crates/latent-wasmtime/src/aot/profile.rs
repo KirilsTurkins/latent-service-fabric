@@ -181,14 +181,5 @@ fn declared_digest(
 }
 
 fn capabilities() -> [u8; 32] {
-    let mut digest = Sha256::new();
-    digest.update(b"lsf-aot-host-capability-contracts-v1\0");
-    for bytes in [
-        include_bytes!("../../../../wit/platform/context/package.wit").as_slice(),
-        include_bytes!("../../../../wit/platform/log/package.wit").as_slice(),
-        include_bytes!("../../../../wit/platform/clock/package.wit").as_slice(),
-    ] {
-        frame(&mut digest, bytes);
-    }
-    digest.finalize().into()
+    crate::bindings::host_abi_digest()
 }

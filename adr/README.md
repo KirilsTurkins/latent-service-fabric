@@ -76,3 +76,10 @@ finite lease/disconnection bounds independent of route retention, with explicit
 clock, replay, restart and guarded-start semantics. Phase 3 delivers the design;
 [the Phase 5 handoff](../docs/architecture/cluster-freshness-handoff.md) requires
 executable distributed conformance before support is claimed.
+
+[ADR-0031](0031-version-host-abi-recognition-independently-of-provider-authority.md)
+defines the exact Phase 3 host ABI recognition profile, selected asynchronous
+forms, immediate-operation error semantics and prepared/native identity. Real
+generated-binding checks enforce shape agreement; provider installation and
+activation authority remain separate, as specified in
+[RFC-0005](../rfcs/0005-phase3-host-abi-profiles.md).

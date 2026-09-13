@@ -1,10 +1,10 @@
 use super::{compare::Comparison, incompatible, SemanticLimits};
-use latent_core::{HostInterfaceBinding, PlatformError, PHASE3_HOST_ABI_V1};
+use latent_core::{PlatformError, PHASE3_HOST_ABI_V2};
 use std::collections::BTreeMap;
 use wit_parser::{InterfaceId, Resolve};
 
 pub(super) fn recognizes(name: &str) -> bool {
-    PHASE3_HOST_ABI_V1.interface(name).is_some()
+    PHASE3_HOST_ABI_V2.interface(name).is_some()
 }
 
 pub(super) fn validate(
@@ -14,25 +14,27 @@ pub(super) fn validate(
 ) -> Result<(), PlatformError> {
     let mut trusted = Resolve::default();
     let mut loaded = BTreeMap::new();
-    for (name, id) in imports {
-        let specification = PHASE3_HOST_ABI_V1
+    for name in imports.keys() {
+        let specification = PHASE3_HOST_ABI_V2
             .interface(name)
             .ok_or_else(|| incompatible("unsupported-host-import"))?;
-        if specification.binding != HostInterfaceBinding::BuiltIn {
-            return Err(incompatible("host-provider-unavailable"));
-        }
-        let source = match specification.package {
-            "latent:context" => include_str!("../../../../wit/platform/context/package.wit"),
-            "latent:log" => include_str!("../../../../wit/platform/log/package.wit"),
-            "latent:clock" => include_str!("../../../../wit/platform/clock/package.wit"),
-            _ => return Err(incompatible("host-profile-package-unavailable")),
-        };
+        // Semantic inspection recognizes the exact ABI without installing or
+        // authorizing a provider. Runtime preparation checks actual availability.
+        let source = specification.wit;
         if !loaded.contains_key(specification.package) {
             let package_id = trusted
                 .push_source(specification.package, source)
                 .map_err(|_| incompatible("invalid-pinned-host-wit"))?;
             loaded.insert(specification.package, package_id);
         }
+    }
+    // One work allowance across every required host, including repeated type
+    // visits. A caller cannot reset the comparison budget by adding interfaces.
+    let mut comparison = Comparison::new(resolve, &trusted, limits);
+    for (name, id) in imports {
+        let specification = PHASE3_HOST_ABI_V2
+            .interface(name)
+            .ok_or_else(|| incompatible("unsupported-host-import"))?;
         let interface = trusted
             .interfaces
             .iter()
@@ -40,7 +42,7 @@ pub(super) fn validate(
                 (trusted.id_of(index).as_deref() == Some(name.as_str())).then_some(index)
             })
             .ok_or_else(|| incompatible("pinned-host-interface-missing"))?;
-        Comparison::new(resolve, &trusted, limits).interface(*id, interface)?;
+        comparison.host_interface(*id, interface, specification.asynchronous)?;
     }
     Ok(())
 }

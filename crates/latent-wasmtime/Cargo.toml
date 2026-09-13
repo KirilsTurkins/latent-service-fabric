@@ -52,6 +52,7 @@ seccompiler = "=0.5.0"
 
 [dev-dependencies]
 wasm-encoder.workspace = true
+wit-parser = { version = "=0.252.0", default-features = false, features = ["std"] }
 latent-activation = { path = "../latent-activation" }
 latent-node = { path = "../latent-node" }
 latent-routing = { path = "../latent-routing" }

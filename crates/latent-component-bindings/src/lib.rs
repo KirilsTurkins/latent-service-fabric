@@ -13,6 +13,11 @@ pub mod host {
         include!(concat!(env!("OUT_DIR"), "/runtime_host.rs"));
     }
 
+    /// Versioned Phase 3 provider contracts. Generated types install no provider.
+    pub mod phase3 {
+        include!(concat!(env!("OUT_DIR"), "/phase3_host.rs"));
+    }
+
     /// Host bindings for the maintained echo integration fixture.
     pub mod echo {
         include!(concat!(env!("OUT_DIR"), "/echo_host.rs"));
@@ -25,4 +30,10 @@ pub mod guest {
     pub mod runtime {
         include!(concat!(env!("OUT_DIR"), "/runtime_guest.rs"));
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub mod phase3_guest {
+    //! Guest bindings for the exact Phase 3 ABI. Provider availability is separate.
+    include!(concat!(env!("OUT_DIR"), "/phase3_guest.rs"));
 }
