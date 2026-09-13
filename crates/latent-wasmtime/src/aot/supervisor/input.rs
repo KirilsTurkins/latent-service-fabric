@@ -225,11 +225,16 @@ pub(super) mod tests {
                 .unwrap()
         }
         fn remove_component_after_fetch(&self) {
+            let token = self
+                .repository
+                .execution_eligibility(&self.release)
+                .unwrap()
+                .unwrap();
             std::fs::remove_file(
                 self.directory
                     .0
-                    .join("releases")
-                    .join(self.release.0.strip_prefix("sha256:").unwrap())
+                    .join("publications")
+                    .join(token.lifecycle().publication().hex())
                     .join("component.wasm"),
             )
             .unwrap();

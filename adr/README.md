@@ -23,6 +23,8 @@ without compiling or invoking guests.
 
 [ADR-0021](0021-bound-registry-authority-and-transfer-ownership.md) defines scoped
 authenticated OCI transfers, retained download budgets and owned upload cleanup.
+Its permanent authority/ownership boundary is retained while ADR-0029 versions
+the transport interoperability choices.
 
 [ADR-0022](0022-bind-publisher-proofs-to-current-explicit-trust.md) defines bounded
 package signatures and publisher proofs bound to explicit current policy and
@@ -53,3 +55,17 @@ tenant-scoped immutable publication and lifecycle authority from component/code
 deduplication, preserving legacy component fields and requiring explicit
 selectors, bounded migration and independent currentness. Implementation remains
 assigned to #265–#267 in [RFC-0002](../rfcs/0002-tenant-scoped-publication-identity.md).
+
+[ADR-0028](0028-retain-activation-ownership-across-asynchronous-waits.md) follows
+ADR-0006 by defining ownership while active guests await providers or descendant
+calls. Yielding the shared runtime thread does not refund a live cell, Store,
+buffer or reservation; nested calls must make progress within fixed declared
+capacity or reject promptly. Implementation and conformance remain assigned to
+#205, #208, #209 and #238.
+
+[ADR-0029](0029-separate-registry-authority-from-transport-profile.md) separates
+ADR-0021's permanent registry authority/ownership rules from versioned transport
+choices. `lsf-oci-static-v1` names the delivered restricted profile;
+`lsf-oci-bearer-v1` remains selected but unsupported until #269/#270 deliver and
+validate token authentication, bounded DNS/redirects and the Harbor conformance
+matrix from [RFC-0003](../rfcs/0003-versioned-oci-transport-profiles.md).

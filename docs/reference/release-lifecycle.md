@@ -6,6 +6,12 @@ release additionally needs current publisher, builder, policy and host checks
 from [package admission](package-admission.md) and
 [release compatibility](release-compatibility.md).
 
+The format-2 [publication catalog](publication-catalog.md) keys storage and
+generations by tenant-scoped publication. Component-only management requests keep
+their legacy wire meaning and require a unique publication in the authorized
+scope. Exact public selector integration is tracked by #267; migration never
+reinterprets component fields as package or publication IDs.
+
 `ReleaseDescriptor.admitted` remains historical publication metadata. It does
 not authorize an invocation or describe current lifecycle eligibility. A revoked
 or retired release keeps its original component digest, package bytes and

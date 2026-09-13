@@ -28,20 +28,27 @@ impl DirectoryArtifactRepository {
             .admission_work
             .try_lock()
             .map_err(|_| resource_exhausted("admission-work-busy"))?;
-        let row = self.life_store().record(release)?;
+        let Some(reference) = self.resolve_publication(
+            &LifecycleScope::Tenant(tenant.clone()),
+            &crate::PublicationSelector::LegacyComponent(release.clone()),
+        )?
+        else {
+            return Ok(None);
+        };
+        let row = self.life_store().record_publication(&reference.id)?;
         let Some(row) = row.filter(|value| value.scope.tenant() == Some(tenant)) else {
             return Ok(None);
         };
         let Some(expected_package) = row.package.as_ref() else {
             return Ok(None);
         };
-        let directory = self.entry_path(release)?;
+        let directory = self.publication_path(&reference.id);
         let mut read_limits = self.repository_read_limits();
         read_limits.maximum_component_bytes =
             read_limits.maximum_component_bytes.min(maximum_bytes);
         let verified =
             self.load_complete_entry_with_limits(&directory, Retention::Metadata, read_limits)?;
-        self.verify_admission_index(release, &verified)?;
+        self.verify_publication_index(&reference, &verified)?;
         let stored = verified
             .admission
             .as_ref()

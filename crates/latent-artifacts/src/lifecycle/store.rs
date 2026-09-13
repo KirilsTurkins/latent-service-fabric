@@ -3,19 +3,21 @@ use super::{
     *,
 };
 use crate::{AdmissionAuthority, ReleaseEligibility};
-use latent_core::{ArtifactBlobDigest, PackageDigest, PlatformError, ReleaseDigest};
+use latent_core::{ArtifactBlobDigest, PackageDigest, PlatformError, PublicationId, ReleaseDigest};
 use serde::{Deserialize, Serialize};
 use std::{
     cell::Cell,
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     path::{Path, PathBuf},
     sync::{Arc, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard},
 };
 mod evidence;
 mod io;
+mod migration;
 mod persistence;
 mod validation;
 pub(crate) use evidence::LifecycleEvidence;
+pub(crate) use migration::LegacyLifecycleSnapshot;
 
 pub(crate) fn validate_audit_receipt(value: &ReleaseOperationReceipt) -> Result<(), PlatformError> {
     validation::receipt(value, LifecycleLimits::default())
@@ -32,6 +34,14 @@ pub(crate) struct LifecycleIdentity {
     pub package: Option<PackageDigest>,
     pub completion: [u8; 32],
 }
+impl LifecycleIdentity {
+    pub(crate) fn publication(&self) -> Result<crate::PublicationRef, PlatformError> {
+        match &self.package {
+            Some(package) => crate::PublicationRef::package(self.scope.clone(), package),
+            None => crate::PublicationRef::trusted_local(self.scope.clone(), &self.completion),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct StoredRow {
@@ -46,6 +56,12 @@ struct Entry {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct StoredReceipt {
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "crate::publication::optional_id_codec"
+    )]
+    publication: Option<PublicationId>,
     sequence: u64,
     receipt: ReleaseOperationReceipt,
 }
@@ -61,8 +77,25 @@ struct Head {
 }
 struct State {
     head: Head,
-    entries: BTreeMap<ReleaseDigest, Entry>,
+    entries: BTreeMap<PublicationId, Entry>,
+    by_component: BTreeMap<ReleaseDigest, BTreeSet<PublicationId>>,
+    by_scope: BTreeMap<(LifecycleScope, ReleaseDigest), BTreeSet<PublicationId>>,
     receipts: BTreeMap<usize, StoredReceipt>,
+}
+
+impl State {
+    fn index_identity(&mut self, identity: &LifecycleIdentity) -> Result<(), PlatformError> {
+        let id = identity.publication()?.id;
+        self.by_component
+            .entry(identity.release.clone())
+            .or_default()
+            .insert(id.clone());
+        self.by_scope
+            .entry((identity.scope.clone(), identity.release.clone()))
+            .or_default()
+            .insert(id);
+        Ok(())
+    }
 }
 
 pub(crate) struct LifecycleStore {
@@ -73,12 +106,17 @@ pub(crate) struct LifecycleStore {
     evidence: Mutex<evidence::EvidenceState>,
 }
 pub(crate) struct LifecyclePrepared {
+    publication: Option<PublicationId>,
     receipt: ReleaseOperationReceipt,
     identity: Option<LifecycleIdentity>,
     head: Head,
     replay: bool,
 }
 impl LifecyclePrepared {
+    pub(crate) fn publication(&self) -> Option<&PublicationId> {
+        self.publication.as_ref()
+    }
+
     pub(crate) fn receipt(&self) -> &ReleaseOperationReceipt {
         &self.receipt
     }
@@ -129,9 +167,9 @@ impl LifecycleStore {
     pub(crate) fn retire(&self) {
         self.owner.retire();
     }
-    pub(crate) fn record(
+    pub(crate) fn record_publication(
         &self,
-        release: &ReleaseDigest,
+        release: &PublicationId,
     ) -> Result<Option<ReleaseLifecycleRecord>, PlatformError> {
         self.owner.check()?;
         let state = self.state.try_read().map_err(lock_error)?;
@@ -140,9 +178,9 @@ impl LifecycleStore {
             .get(release)
             .map(|entry| entry.stored.record.clone()))
     }
-    pub(crate) fn identity(
+    pub(crate) fn identity_publication(
         &self,
-        release: &ReleaseDigest,
+        release: &PublicationId,
     ) -> Result<Option<LifecycleIdentity>, PlatformError> {
         self.owner.check()?;
         let state = self.state.try_read().map_err(lock_error)?;
@@ -150,6 +188,61 @@ impl LifecycleStore {
             .entries
             .get(release)
             .map(|entry| entry.stored.identity.clone()))
+    }
+    pub(crate) fn resolve_legacy(
+        &self,
+        scope: Option<&LifecycleScope>,
+        release: &ReleaseDigest,
+    ) -> Result<Option<PublicationId>, PlatformError> {
+        crate::publication::validate_component(release)?;
+        if let Some(scope) = scope {
+            scope.validate()?;
+        }
+        self.owner.check()?;
+        let state = self.state.try_read().map_err(lock_error)?;
+        let rows = match scope {
+            Some(scope) => state.by_scope.get(&(scope.clone(), release.clone())),
+            None => state.by_component.get(release),
+        };
+        match rows {
+            None => Ok(None),
+            Some(rows) if rows.len() == 1 => Ok(rows.first().cloned()),
+            Some(_) => Err(crate::publication::ambiguous()),
+        }
+    }
+    #[cfg(test)]
+    pub(crate) fn record(
+        &self,
+        release: &ReleaseDigest,
+    ) -> Result<Option<ReleaseLifecycleRecord>, PlatformError> {
+        match self.resolve_legacy(None, release)? {
+            Some(key) => self.record_publication(&key),
+            None => Ok(None),
+        }
+    }
+    pub(crate) fn identity(
+        &self,
+        release: &ReleaseDigest,
+    ) -> Result<Option<LifecycleIdentity>, PlatformError> {
+        match self.resolve_legacy(None, release)? {
+            Some(key) => self.identity_publication(&key),
+            None => Ok(None),
+        }
+    }
+    pub(crate) fn operation_publication(
+        &self,
+        scope: &LifecycleScope,
+        id: &str,
+    ) -> Result<Option<PublicationId>, PlatformError> {
+        scope.validate()?;
+        model::token(id, 128)?;
+        self.owner.check()?;
+        let state = self.state.try_read().map_err(lock_error)?;
+        Ok(state
+            .receipts
+            .values()
+            .find(|entry| entry.receipt.scope == *scope && entry.receipt.operation_id == id)
+            .and_then(|entry| entry.publication.clone()))
     }
     pub(crate) fn operation(
         &self,
@@ -177,11 +270,16 @@ impl LifecycleStore {
         admission: Option<ReleaseEligibility>,
     ) -> Result<ReleaseUseEligibility, PlatformError> {
         let _fence = self.owner.read()?;
-        self.make_eligibility(release, admission)
+        self.make_eligibility(
+            &self
+                .resolve_legacy(None, release)?
+                .ok_or_else(unavailable)?,
+            admission,
+        )
     }
     fn make_eligibility(
         &self,
-        release: &ReleaseDigest,
+        release: &PublicationId,
         admission: Option<ReleaseEligibility>,
     ) -> Result<ReleaseUseEligibility, PlatformError> {
         self.owner.check()?;
@@ -197,8 +295,24 @@ impl LifecycleStore {
     }
     /// Preparation is read-only; the trusted adapter invokes its rejection-only
     /// response preflight before staging any files or entering the final fence.
+    #[cfg(test)]
     pub(crate) fn prepare(
         &self,
+        receipt: ReleaseOperationReceipt,
+        identity: Option<LifecycleIdentity>,
+    ) -> Result<LifecyclePrepared, PlatformError> {
+        let publication = if let Some(identity) = &identity {
+            Some(identity.publication()?.id)
+        } else if let Some(release) = &receipt.component_digest {
+            self.resolve_legacy(Some(&receipt.scope), release)?
+        } else {
+            None
+        };
+        self.prepare_publication(publication, receipt, identity)
+    }
+    pub(crate) fn prepare_publication(
+        &self,
+        publication: Option<PublicationId>,
         receipt: ReleaseOperationReceipt,
         identity: Option<LifecycleIdentity>,
     ) -> Result<LifecyclePrepared, PlatformError> {
@@ -214,6 +328,7 @@ impl LifecycleStore {
             }
             return Ok(LifecyclePrepared {
                 receipt: previous.receipt.clone(),
+                publication: previous.publication.clone(),
                 identity: None,
                 head: state.head.clone(),
                 replay: true,
@@ -222,11 +337,13 @@ impl LifecycleStore {
         validation::transition(
             &state,
             &receipt,
+            publication.as_ref(),
             identity.as_ref(),
             self.owner_mode(),
             self.limits,
         )?;
         Ok(LifecyclePrepared {
+            publication,
             receipt,
             identity,
             head: state.head.clone(),
@@ -285,12 +402,27 @@ impl Drop for LifecycleStore {
     }
 }
 impl LifecycleReadFence<'_> {
+    pub(crate) fn publication_eligibility(
+        &self,
+        publication: &PublicationId,
+        admission: Option<ReleaseEligibility>,
+    ) -> Result<ReleaseUseEligibility, PlatformError> {
+        self.store.make_eligibility(publication, admission)
+    }
+
+    #[cfg(test)]
     pub(crate) fn eligibility(
         &self,
         release: &ReleaseDigest,
         admission: Option<ReleaseEligibility>,
     ) -> Result<ReleaseUseEligibility, PlatformError> {
-        self.store.make_eligibility(release, admission)
+        self.store.make_eligibility(
+            &self
+                .store
+                .resolve_legacy(None, release)?
+                .ok_or_else(unavailable)?,
+            admission,
+        )
     }
 }
 impl LifecycleFence<'_> {
@@ -309,13 +441,13 @@ impl LifecycleFence<'_> {
         validation::transition(
             &state,
             &prepared.receipt,
+            prepared.publication.as_ref(),
             prepared.identity.as_ref(),
             self.store.owner_mode(),
             self.store.limits,
         )?;
         let old_revision = prepared
-            .receipt
-            .component_digest
+            .publication
             .as_ref()
             .and_then(|release| state.entries.get(release))
             .and_then(|entry| entry.stored.record.evidence_revision_digest.clone());
@@ -330,7 +462,7 @@ impl LifecycleFence<'_> {
             old_revision.clone()
         };
         self.store.check_evidence_cutover(
-            prepared.receipt.component_digest.as_ref(),
+            prepared.publication.as_ref(),
             old_revision.as_ref(),
             new_revision.as_ref(),
         )?;

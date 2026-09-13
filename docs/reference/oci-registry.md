@@ -18,8 +18,57 @@ signature evidence against explicit current policy/revocation snapshots. The
 [builder verifier](build-provenance.md) authenticates provenance through separate
 builder anchors and source requirements. Neither result admits a catalog release.
 
+## Versioned transport profiles
+
+[ADR-0029](../../adr/0029-separate-registry-authority-from-transport-profile.md)
+and [RFC-0003](../../rfcs/0003-versioned-oci-transport-profiles.md) separate the
+registry's permanent authority/ownership boundary from transport interoperability
+choices.
+
+`lsf-oci-static-v1` is the **delivered** profile and names the current
+`HttpOciRegistry` behavior:
+
+- one explicit HTTPS origin and repository;
+- operator-supplied socket addresses for hostname origins, with no runtime DNS;
+- anonymous, explicit Basic or preissued Bearer credentials;
+- no token-service exchange or refresh;
+- no HTTP redirects; upload locations and pagination continuations remain within
+  the existing origin/repository rules;
+- native OCI 1.1 referrers only; no mutable legacy referrers-tag fallback.
+
+`lsf-oci-bearer-v1` is a **selected Phase 3 profile, not an implemented or
+supported profile**. #269 owns bounded Registry v2 Bearer challenge/token
+acquisition and #270 owns bounded DNS, authorized redirects and real-registry
+conformance. Existing `RegistryConfig` callers remain on the static profile; an
+upgrade does not silently authorize DNS, token services or redirect targets.
+
+The support matrix distinguishes delivered evidence from selected future tests:
+
+| Registry/version | Profile | Authentication/topology | Push/pull | Native referrers | Current status |
+| --- | --- | --- | --- | --- | --- |
+| Zot minimal 2.1.18, pinned `sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395` | `lsf-oci-static-v1` | ephemeral TLS loopback origin, explicit Basic credential | demonstrated | demonstrated | supported repository fixture |
+| Harbor 2.15.2 | `lsf-oci-bearer-v1` | private project using Registry v2 Bearer challenge; token authority must be explicitly approved | required by #269/#270 | required by #270 | selected conformance target; **not yet supported** |
+| Distribution 3.1.1 | no complete LSF evidence profile | deployment-specific | package transfer can interoperate | unavailable in the currently documented tested surface | explicit complete-profile exclusion |
+
+Harbor 2.15.2 is selected because Harbor uses Registry v2 token authentication;
+selection is not proof of LSF compatibility. The #270 fixture must record exact
+release/container identities, use disposable TLS and a disposable private project
+with least-privilege credentials, record the approved registry/token endpoint
+topology, bound local container resources, and destroy only resources it owns.
+Support is reported only after exact push, digest-pinned pull and native-referrer
+discovery pass on that fixture. A failure of the native referrers requirement is
+retained as a limitation; it does not authorize silent mutable fallback.
+
+Permanent rules apply to every profile: server-controlled challenges, DNS replies,
+redirects, links and manifests cannot grant endpoint or credential authority;
+all continuations consume one original operation deadline; physical network,
+buffer, cache and cleanup work stays charged until retirement; uncertain writes
+are not blindly replayed; and successful transfer/discovery is not publisher
+trust or catalog admission.
+
 ## Configure the endpoint
 
+The currently implemented configuration selects `lsf-oci-static-v1` behavior.
 Construct the client inside a Tokio runtime with `RegistryConfig`. `origin` is
 an HTTPS origin, including an optional port, without credentials, a path, query
 or fragment. `repository` is one permitted OCI repository. Every `OciReference`
@@ -28,18 +77,24 @@ field omits the scheme. Reference names are valid OCI tags or canonical lowercas
 SHA-256 digests. Use explicit digests for durable identity.
 
 For hostname origins, supply up to 16 approved `SocketAddr` values in `addresses`,
-using the origin's port. The adapter performs no runtime DNS lookup. Literal IP
-origins can leave this list empty. Certificate chain and hostname checks remain
-enabled. Trust roots are the pinned Mozilla root set plus up to eight explicit
-DER roots, each at most 64 KiB. It does not install roots globally or consult
-network certificate services.
+using the origin's port. The static profile performs no runtime DNS lookup.
+Literal IP origins can leave this list empty. Certificate chain and hostname
+checks remain enabled. Trust roots are the pinned Mozilla root set plus up to
+eight explicit DER roots, each at most 64 KiB. It does not install roots globally
+or consult network certificate services.
 
 Choose `RegistryCredentials::Anonymous`, explicit Basic credentials, or a
 preissued Bearer token. Credentials are scoped to this client and redacted from
-its diagnostic representations. There is no automatic token-service exchange,
-credential refresh, credential helper or implicit environment-proxy support.
-Obtain or refresh tokens outside this adapter and construct a new configured
-client when needed. Authentication failures remain errors.
+its diagnostic representations. The static profile has no automatic token-service
+exchange, credential refresh, credential helper or implicit environment-proxy
+support. Obtain or refresh tokens outside this adapter and construct a new
+configured client when needed. Authentication failures remain errors.
+
+The planned Bearer profile does not make a registry-supplied realm authoritative.
+Its future configuration must separately approve token authorities, credential
+provenance, service/audience, repository/actions, DNS destination policy and
+redirect destinations. Unknown, partially configured or unavailable profiles
+must fail before newly authorized network work begins.
 
 HTTPS is the normal transport. `allow_insecure_loopback` permits HTTP only for a
 numeric loopback address when explicitly enabled for local tests. It cannot
@@ -77,6 +132,13 @@ session, and registry-side expiry must reclaim it. Shutdown closes admission and
 waits for owned work until the supplied deadline; a deadline error does not
 claim that remote cleanup completed.
 
+For future profiles, token acquisition, DNS, redirects and upload continuations
+must all consume the same original absolute operation deadline. Existing
+`connect_timeout`, `request_timeout` and `cleanup_timeout` are inner ceilings,
+not fresh budgets after each continuation. Resolver work, token cache entries,
+sockets, redirect metadata and still-running cleanup remain charged until actual
+retirement or an explicitly bounded ownership transfer.
+
 ## Optional raw download cache
 
 `HttpOciRegistry::new_with_cache` accepts a shared
@@ -106,23 +168,26 @@ registry ignores the requested filter. Descriptors remain untrusted discovery
 metadata. Fetch each evidence manifest by its digest, verify its exact bytes and
 its subject association, then apply the separate required trust policy.
 
-This adapter requires the native OCI 1.1 referrers API. An unsupported API fails
-explicitly; it is not reported as a successful empty evidence list. Legacy
-referrers-tag fallback is not implemented, so this is a documented restricted
-distribution profile rather than a full OCI legacy-fallback client. The
+The delivered static profile requires the native OCI 1.1 referrers API. An
+unsupported API fails explicitly; it is not reported as a successful empty
+evidence list. Legacy referrers-tag fallback is not implemented, so this is a
+documented restricted distribution profile rather than a full OCI legacy-fallback
+client. The
 [OCI specification](https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md#unavailable-referrers-api)
 defines that fallback and its concurrent-writer caveat.
 
 Distribution 3.1.1 does not expose that native API and therefore does not support
-this adapter's evidence-discovery profile. Package transfer alone can work, but
-that must not be mistaken for complete supply-chain registry compatibility. The
-real integration fixture uses Zot minimal 2.1.18 for the complete profile.
+this adapter's complete evidence-discovery profile. Package transfer alone can
+work, but that must not be mistaken for complete supply-chain registry
+compatibility. The real static-profile integration fixture uses Zot minimal
+2.1.18 for the complete profile.
 
-Redirects are disabled. Upload `Location` and pagination `Link` URLs must remain
-within the approved origin/repository and the relevant operation path. Opaque
-upload query parameters are preserved. Registries that require object-store
-redirects or a separate automatic token origin need a future explicitly approved
-integration; this client does not forward credentials to them.
+Redirects are disabled in `lsf-oci-static-v1`. Upload `Location` and pagination
+`Link` URLs must remain within the approved origin/repository and the relevant
+operation path. Opaque upload query parameters are preserved. Registries that
+require object-store redirects or a separate automatic token origin require the
+planned `lsf-oci-bearer-v1` behavior and remain unsupported until #269/#270 pass.
+A challenge or redirect URL alone never grants authority to forward credentials.
 
 ## Default limits
 
@@ -147,11 +212,16 @@ limits, separate from the retained-body accounting. Compression, redirects and
 automatic retries are disabled. `usage()` reports active operations, retained
 package leases, charged raw bytes and whether admission is closed.
 
+The planned Bearer profile must add finite ceilings for resolver jobs/answers and
+cache entries, token acquisitions/cache entries and token bytes, redirect hops and
+metadata, and any additional shared socket/worker ownership. These are node-owned
+shared bounds, not per-service resources.
+
 ## Run the real registry check
 
 Docker must provide Linux containers. Python 3, OpenSSL and the repository's Rust
 toolchain are required. Git for Windows' bundled OpenSSL is detected when it is
-not on `PATH`. Pull the exact fixture image once:
+not on `PATH`. Pull the exact static-profile fixture image once:
 
 ```console
 docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
@@ -188,3 +258,7 @@ reuse an existing build. Without `--provenance-input`, the separate observed-bui
 provenance test is skipped. The Python fixture runner and test process must share
 access to the fixture's loopback endpoint and CA file; a Linux test binary in a
 separate container does not share the Windows host's loopback automatically.
+
+The Harbor 2.15.2 Bearer-profile workflow does not exist yet. #269/#270 must add
+that reproducible bounded fixture and retain its exact identities/results before
+this document can move Harbor or `lsf-oci-bearer-v1` into the supported column.

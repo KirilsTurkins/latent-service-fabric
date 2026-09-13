@@ -1,6 +1,6 @@
 use crate::{invalid, Result};
 pub(crate) mod canary;
-mod pending;
+pub(crate) mod pending;
 use latent_artifacts::{ReleaseActorKind, ReleaseAuditAck, ReleaseAuditStatus};
 use latent_audit::{
     AuditActorIdentity, AuditActorKind, AuditControlAction, AuditHandle, AuditIdentities,
@@ -208,7 +208,9 @@ pub async fn reconcile_rollout_audit(
                 Err(_) => terminal = conclusion(&pending.attempt, None),
             }
         }
-        let wait = audit.reconcile(pending.sequence, terminal)?.wait();
+        let wait = pending::reconcile(audit, pending.sequence, &terminal, expires)
+            .await?
+            .wait();
         tokio::time::timeout_at(expires.into(), wait)
             .await
             .map_err(|_| crate::deadline())??;

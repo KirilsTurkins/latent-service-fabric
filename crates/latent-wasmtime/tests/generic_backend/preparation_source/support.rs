@@ -32,11 +32,20 @@ impl Directory {
     }
 
     pub(super) fn corrupt_component(&self, release: &ReleaseDigest) {
-        let component = self
-            .0
-            .join("releases")
-            .join(release.0.strip_prefix("sha256:").unwrap())
-            .join("component.wasm");
+        let paths: Vec<_> = std::fs::read_dir(self.0.join("publications"))
+            .unwrap()
+            .map(Result::unwrap)
+            .filter_map(|entry| {
+                let value: serde_json::Value = serde_json::from_slice(
+                    &std::fs::read(entry.path().join("metadata.json")).unwrap(),
+                )
+                .unwrap();
+                (value["descriptor"]["release_digest"].as_str() == Some(release.0.as_str()))
+                    .then(|| entry.path())
+            })
+            .collect();
+        assert_eq!(paths.len(), 1, "fixture must name one publication");
+        let component = paths[0].join("component.wasm");
         let mut bytes = std::fs::read(&component).unwrap();
         bytes[0] ^= 1;
         std::fs::write(component, bytes).unwrap();

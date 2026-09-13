@@ -70,7 +70,7 @@ fn compact_capability_revokes_generation_and_owner_without_store_maps() {
     let id = identity(b"one");
     let record = publication(&id, "create").record.unwrap();
     let owner = Owner::new(None);
-    let row = Row::new(&record);
+    let row = Row::new(&record, id.publication().unwrap().id);
     let token = ReleaseUseEligibility::new(
         LifecycleEligibility {
             owner: Arc::clone(&owner),
@@ -418,11 +418,11 @@ mod durable {
                 );
             }
             let bytes = io::required(
-                &persistence::row_path(&root.path(), &id.release).unwrap(),
+                &persistence::row_path(&root.path(), &id.publication().unwrap().id).unwrap(),
                 limits.max_record_bytes,
             )
             .unwrap();
-            identities.push(id.release.clone());
+            identities.push(id.publication().unwrap().id);
             prior_bytes.push(bytes);
         }
         assert_eq!(
