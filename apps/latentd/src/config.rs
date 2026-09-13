@@ -7,6 +7,7 @@ mod engine;
 mod input;
 mod model;
 mod policy;
+mod protected_file;
 mod rollouts;
 mod runtime;
 mod supply_chain;
@@ -82,8 +83,10 @@ impl NodeSettings {
 }
 
 impl NodeConfig {
-    /// Reads at most 64 KiB plus an overflow sentinel. Relative data directories
-    /// are anchored to the configuration file's absolute parent exactly once.
+    /// Reads at most 64 KiB plus an overflow sentinel. On supported Linux x86_64
+    /// hosts the credential-bearing file is descriptor-anchored and must satisfy
+    /// the protected secret-file policy before bytes are decoded. Relative data
+    /// directories are anchored to the configuration file's absolute parent once.
     pub fn load(path: &Path) -> Result<Self, PlatformError> {
         input::load(path)
     }
