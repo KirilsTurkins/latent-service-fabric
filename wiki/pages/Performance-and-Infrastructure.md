@@ -1,7 +1,7 @@
 <!-- LSF-WIKI-MANAGED -->
 # Performance and infrastructure comparisons
 
-This page preserves the September 2026 Phase 1 extension evidence. Phase 2 adds functional trust, cache and control paths; these historical numbers are not a fresh measurement of that implementation. Its [completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) records separate finite evidence and qualifications; see [Testing and benchmarks](Testing-and-Benchmarks) for that scope.
+This page preserves the September 2026 Phase 1 extension evidence. Phase 2 adds functional trust, cache and control paths; these historical numbers are not a fresh measurement of that implementation. Its [completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md) records separate finite evidence and qualifications; see [Testing and benchmarks](Testing-and-Benchmarks) for that scope.
 
 The extension improves selected acquisition, cold-work isolation, recovery, ownership and catalog costs. It also retains regressions. Each report has its own population, configuration and source; percentages cannot be added across campaigns.
 
@@ -30,4 +30,4 @@ Warm comparisons used one-second budgets. Sub-2 ms percentiles do not qualify 99
 
 Kubernetes package replay passed independently on Linux and Windows without changing bytes. Failed/incomplete attempts and cleanup receipts remain separate. Current evidence retention is bounded to 600 MiB; historical raw packages are restored only when needed from exact storage commits.
 
-Authorities: [complete extension report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-1-extension-completion.md), [Docker comparison](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/benchmarks/optimization/docker-comparison/2026-09-11-container-linux-a56a6dc/README.md), [Kubernetes comparison](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/benchmarks/optimization/kubernetes-comparison/2026-09-11-container-linux-8b0441f/README.md), [retention](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/testing/benchmark-retention.md).
+Authorities: [complete extension report](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-extension-completion.md), [Docker comparison](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/benchmarks/optimization/docker-comparison/2026-09-11-container-linux-a56a6dc/README.md), [Kubernetes comparison](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/benchmarks/optimization/kubernetes-comparison/2026-09-11-container-linux-8b0441f/README.md), [retention](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/testing/benchmark-retention.md).

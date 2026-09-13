@@ -24,4 +24,4 @@ Shutdown and cancellation signal work and retain ownership until actual completi
 
 Historical engine-profile and memory comparisons retain their original configurations in [Performance and infrastructure](Performance-and-Infrastructure). They do not establish current Phase 2 throughput or universal latency targets.
 
-Authorities: [Wasmtime runtime](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/runtime/wasmtime.md), [isolated AOT and native cache](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/runtime/trusted-aot.md), [raw cache](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/reference/raw-artifact-cache.md).
+Authorities: [Wasmtime runtime](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/wasmtime.md), [isolated AOT and native cache](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/trusted-aot.md), [raw cache](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/raw-artifact-cache.md).

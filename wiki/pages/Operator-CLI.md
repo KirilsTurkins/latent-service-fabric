@@ -36,4 +36,4 @@ Registry manifests and detached referrers are separate publications, so a failed
 
 Signing-key provisioning, live policy updates and arbitrary administrative automation are outside this CLI surface. Six language SDK interfaces are described separately in [SDKs](SDKs).
 
-Authorities: [operator workflows](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-operator-workflows.md), [CLI reference](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/reference/operator-cli.md), [management services](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/reference/management-services.md).
+Authorities: [operator workflows](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md), [CLI reference](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/operator-cli.md), [management services](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/reference/management-services.md).

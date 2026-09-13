@@ -13,4 +13,4 @@ Transactional guest state and effects remain Phase 4. Cluster coordination belon
 
 An activation ID does not make effects exactly once. A timeout or Unknown result does not prove an external action did not occur. Future integrations must state their idempotency and recovery contracts rather than inferring them from transport cancellation.
 
-Authorities: [capabilities](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/runtime/capabilities.md), [resource budgets](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/runtime/resource-budgets.md), [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/roadmap.md).
+Authorities: [capabilities](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/capabilities.md), [resource budgets](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/runtime/resource-budgets.md), [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/roadmap.md).

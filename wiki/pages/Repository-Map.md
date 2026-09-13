@@ -1,7 +1,7 @@
 <!-- LSF-WIKI-MANAGED -->
 # Repository map
 
-Use development for current Phase 2 source while its product release is being prepared. The Wiki branch is a separate documentation lineage with an older non-Wiki snapshot.
+Use release for the published alpha.3 Phase 2 source; development remains the contributor branch. The Wiki branch is a separate documentation lineage with an older non-Wiki snapshot.
 
 | Location | Current purpose |
 | --- | --- |
@@ -23,4 +23,4 @@ The current node embeds local control ownership. Separate distributed control, p
 
 The Wiki's `wiki/pages/` contains exactly 26 managed pages and four generated visual assets. Publication preserves unmanaged Wiki files and records exact source/remote identities separately. Never treat an old Wiki code tree as the current build.
 
-Authorities: [repository root](https://github.com/KirilsTurkins/latent-service-fabric/tree/development), [architecture](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/ARCHITECTURE.md), [operator runner](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/tools/run_phase2_operator_workflow.py), [development workflow](Development-Workflow).
+Authorities: [repository root](https://github.com/KirilsTurkins/latent-service-fabric/tree/release), [architecture](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/ARCHITECTURE.md), [operator runner](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/tools/run_phase2_operator_workflow.py), [development workflow](Development-Workflow).

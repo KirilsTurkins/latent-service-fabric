@@ -18,4 +18,4 @@ Phase 3 plans guest bindings/helpers, six-language parity, a concrete Rust clien
 
 Use [Operator CLI](Operator-CLI) for current executable operator workflows. Keep future provider interfaces aligned with the versioned Phase 3 host ABI rather than assuming ambient network, secrets or filesystem imports.
 
-Authorities: [SDK guide](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/sdk/README.md), [WIT values](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/protocol/wit-values.md), [operator workflows](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-operator-workflows.md).
+Authorities: [SDK guide](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/sdk/README.md), [WIT values](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/protocol/wit-values.md), [operator workflows](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md).

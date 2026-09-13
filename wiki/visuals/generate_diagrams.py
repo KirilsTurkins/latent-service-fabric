@@ -45,7 +45,7 @@ def home_svg():
         if i<4: body+=arrow(prefix,x+242,x+258,410)
     body+=text(72,518,'Dormant services own metadata and artifacts; no dedicated guest heap, process or listener.',18)
     body+=card(72,552,1296,135,'Delivery boundary',['Phase 2 complete: packages, trust, local AOT reuse, audit, rollouts, canaries and rollback.','Phase 3: 41 planned tickets for capability providers, HTTP/web hosting, SDK delivery and gates.'],True)
-    body+=text(72,722,'Current authority: development until release publication. Fixed topology does not mean constant catalog RSS.',16,'#d1fae5',600)
+    body+=text(72,722,'Released authority: 0.1.0-alpha.3 / release. Fixed topology does not mean constant catalog RSS.',16,'#d1fae5',600)
     return shell(prefix,'Phase 2: package, control and invocation','One Linux node; current eligibility and explicit ownership from publication through cleanup.',body)
 
 def architecture_svg():

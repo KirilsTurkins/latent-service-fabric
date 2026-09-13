@@ -19,7 +19,7 @@ LEGACY={f'assets/{name}.svg' for name in ('activation-lifecycle','contract-bound
 BASE='https://github.com/KirilsTurkins/latent-service-fabric/'
 
 def git(*args,cwd=None):
-    return subprocess.check_output(['git',*args],cwd=cwd,text=True).strip()
+    return subprocess.check_output(['git','-c','gc.auto=0',*args],cwd=cwd,text=True).strip()
 
 def validate(authority_ref):
     expected={name+'.md' for name in PAGES}|ASSETS
@@ -133,7 +133,7 @@ def verify_published(destination,files):
     assert set(manifest['managed_files'])==files,'Published managed inventory differs'
     assert set(manifest['managed_sha256'])==files,'Published hash inventory differs'
     for rel in sorted(files):
-        blob=subprocess.check_output(['git','show',f'HEAD:{rel}'],cwd=destination)
+        blob=subprocess.check_output(['git','-c','gc.auto=0','show',f'HEAD:{rel}'],cwd=destination)
         assert hashlib.sha256(blob).hexdigest()==manifest['managed_sha256'][rel],f'Published bytes differ: {rel}'
         assert hashlib.sha256((SOURCE/rel).read_bytes()).hexdigest()==manifest['managed_sha256'][rel],f'Published source differs: {rel}'
     tracked=set(git('ls-tree','-r','--name-only','HEAD',cwd=destination).splitlines())
@@ -142,7 +142,7 @@ def verify_published(destination,files):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('--authority-ref',default='origin/development')
+    parser.add_argument('--authority-ref',default='origin/release')
     parser.add_argument('--stage',type=Path)
     parser.add_argument('--verify-published',type=Path)
     args=parser.parse_args()

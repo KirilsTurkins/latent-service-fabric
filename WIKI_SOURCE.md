@@ -5,19 +5,23 @@ Refresh work uses a dedicated `chore/wiki-*` branch, reviewed and fast-forwarded
 only into `docs/wiki`. Never merge this Wiki branch into development or release:
 its non-Wiki code is an older snapshot, not a runnable product reference.
 
-All 26 pages were audited against product development commit
-`2337336bfc3189a412f0b5b93aab01f9bfd5e190` on September 13, 2026. They describe
-the completed Phase 2 surface and its evidence boundaries. The
-[completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md)
+All 26 pages describe the released alpha.3 Phase 2 surface and its evidence
+boundaries. The preceding audit used development commit
+`2337336bfc3189a412f0b5b93aab01f9bfd5e190` on September 13, 2026; this refresh
+also covers the reviewed documentation/full CI profiles and dependency caches.
+The
+[completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md)
 owns the completed gate decision and qualifications. Phase 3 is the next
 planned workstream: 41 tickets under epic #201, including the retained
 web-hosting parent #44. Issue scope is not a delivered capability.
 
-The latest published product release is `0.1.0-alpha.2`. The upcoming
-`0.1.0-alpha.3` release is being prepared; no tag or release publication is
-claimed here. Planning, phase completion and a Wiki refresh do not publish a
-product release. This source audit also does not supersede the actual live
-publication receipt in `wiki/PUBLISHED_OK.md`.
+The release-aligned pages name
+[0.1.0-alpha.3](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3)
+as the latest published prerelease. Its tag and public release page were
+verified on September 13, 2026 against product release commit
+`44891f4158a663de5c08b177431686ec70c0bdf3`. Product release publication and Wiki
+publication have separate identities; the live Wiki publication receipt remains
+in `wiki/PUBLISHED_OK.md`.
 
 The finite resource experiment covers 32 signed releases, 16 deployments and
 two warmed portable runtime images, with the other 30 releases unprepared.
@@ -25,27 +29,28 @@ Testing preserves the earlier failed operator attempt with unclassified
 `Unavailable`, independently of the later passing run. Neither establishes
 constant RSS, 100k Phase 2 scale or an availability/latency/throughput SLO.
 
-Current canonical links point to development until alpha.3 is published.
+Current product links point to release. Explicit contributor workflow links
+continue to use development.
 The validator checks exact repository target casing against the supplied
-authority ref, normally `origin/development`; after an actual product promotion,
-a later refresh can deliberately move current links to release. No unique
+authority ref, normally `origin/release`. No unique
 security requirement or compatibility guarantee belongs only here. Historical
 Phase 0/1 evidence keeps its original dates, populations and execution identities.
 
 The audit covers package/build/SBOM provenance, trust and lifecycle currentness,
 native preparation, operation/replay/recovery semantics, resource limits,
 operator commands, all SDK surfaces, CI execution and the Phase 3 handoff.
-The contracts job now runs the executable outcome/recovery matrix using its
-already-built fixtures; the separate Phase 0 baseline workflow is manual-only.
-Both visual generators and all four existing assets match the current phase
-boundary; this refresh changes text without requiring a render.
+The full CI profile retains the executable outcome/recovery matrix in contracts
+using its already-built fixtures; the separate Phase 0 baseline workflow is
+manual-only. Approved Markdown/SVG-only changes receive focused documentation
+validation. Code, mixed, unrecognized and manual changes retain full validation.
+Dependency caching in five Rust-related jobs never substitutes for validation
+or freshly generated evidence. Both diagram generators and all four assets are
+regenerated consistently for the released authority.
 
-After an actual alpha.3 publication is verified, refresh release wording in
-Home, Getting-Started, Roadmap, FAQ, _Footer and this file, then validate canonical
-links against the deliberately chosen released authority. If current links move
-to release, update the architecture-at-a-glance generator's development footer
-and regenerate its SVG/GIF consistently. Preserve historical evidence and the
-independent Wiki publication receipt throughout that handoff.
+Final validation and publication use the promoted `origin/release` authority,
+including the completed Phase 2 documentation, CI profiles and alpha.3 metadata.
+Historical evidence retains its original execution identities. The independent
+Wiki receipt is updated only by the workflow after remote publication succeeds.
 
 ## Visuals and validation
 
@@ -59,7 +64,7 @@ unique authority or measurement claims.
 ```bash
 python -m pip install --requirement wiki/visuals/requirements.txt
 python wiki/visuals/generate_diagrams.py
-python wiki/visuals/validate_wiki.py --authority-ref origin/development
+python wiki/visuals/validate_wiki.py --authority-ref origin/release
 ```
 
 The validator requires all 26 page names, the four assets, complete sidebar
@@ -81,7 +86,7 @@ SVGs. That refresh established the current 26-page/four-asset inventory and
 retired those seven obsolete asset paths. The Phase 2 refresh keeps this exact
 inventory. Its published completion update changed status/evidence wording and
 both diagram labels without rewriting historical measurement claims. This
-release-preparation audit preserves those assets. The
+release-aligned refresh updates the authority footer and matching renders. The
 stager preserves unknown files; it never recursively deletes the Wiki. It also
 updates the `.latent-service-fabric-wiki.json` manifest with exact source identity.
 Every staged file is SHA256-checked against the source, unknown files are
@@ -104,5 +109,5 @@ must match before claiming the live Wiki is current.
 Do not edit that receipt in anticipation of this refresh. Until the publication
 workflow verifies the remote commit, it truthfully describes the prior Wiki
 publication. Phase 2 completion and product release publication have their own
-independent receipts. Final validation must use the merged product authority
-containing the completion report before this source is published.
+independent receipts. Final validation must use the promoted release authority
+containing the completion and CI profile documentation before publication.

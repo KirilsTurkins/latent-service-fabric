@@ -26,6 +26,6 @@ The plan includes operator tooling, security tests, resource accounting and docu
 
 Historical extension [epic #97](https://github.com/KirilsTurkins/latent-service-fabric/issues/97) and [gate #113](https://github.com/KirilsTurkins/latent-service-fabric/issues/113) remain closed; #110 was closed as not planned. Their measurements are retained unchanged. Follow [Phase 1 status](Phase-1-Status) and [performance evidence](Performance-and-Infrastructure) for those claims.
 
-The latest published release is 0.1.0-alpha.2. Alpha.3 is being prepared for the completed Phase 2 surface; completion does not itself publish that successor. Current guidance stays on development until its actual release publication. Planned Phase 3 capabilities are outside that Phase 2 delivery claim.
+The latest published prerelease is [0.1.0-alpha.3](https://github.com/KirilsTurkins/latent-service-fabric/releases/tag/0.1.0-alpha.3), delivering completed Phase 2. Product guidance uses release; development remains the contributor branch. Planned Phase 3 capabilities are outside this Phase 2 delivery claim.
 
-Authorities: [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/roadmap.md), [Phase 2 completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md), [Phase 3 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
+Authorities: [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/roadmap.md), [Phase 2 completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md), [Phase 3 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).

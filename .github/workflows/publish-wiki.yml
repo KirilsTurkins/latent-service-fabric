@@ -29,17 +29,17 @@ jobs:
         run: |
           python -m pip install --requirement wiki/visuals/requirements.txt
           python wiki/visuals/generate_diagrams.py
-          python wiki/visuals/validate_wiki.py --authority-ref origin/development
+          python wiki/visuals/validate_wiki.py --authority-ref origin/release
       - name: Record generated assets
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add wiki/pages/assets
-          if ! git diff --cached --quiet; then
-            git commit -m 'docs(wiki): record current diagram renders'
-            git push origin HEAD:docs/wiki
+          git -c gc.auto=0 config user.name 'github-actions[bot]'
+          git -c gc.auto=0 config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -c gc.auto=0 add wiki/pages/assets
+          if ! git -c gc.auto=0 diff --cached --quiet; then
+            git -c gc.auto=0 commit -m 'docs(wiki): record current diagram renders'
+            git -c gc.auto=0 push origin HEAD:docs/wiki
           fi
       - name: Publish reviewed managed inventory
         shell: bash
@@ -51,25 +51,25 @@ jobs:
           auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$WIKI_TOKEN" | base64 -w0)"
           echo "::add-mask::${auth_header}"
           wiki_url="https://github.com/${GITHUB_REPOSITORY}.wiki.git"
-          git -c "http.https://github.com/.extraheader=${auth_header}" clone "$wiki_url" "$wiki_dir"
-          python wiki/visuals/validate_wiki.py --authority-ref origin/development --stage "$wiki_dir"
-          source_commit=$(git rev-parse HEAD)
-          current_source=$(git ls-remote origin refs/heads/docs/wiki | cut -f1)
+          git -c gc.auto=0 -c "http.https://github.com/.extraheader=${auth_header}" clone "$wiki_url" "$wiki_dir"
+          python wiki/visuals/validate_wiki.py --authority-ref origin/release --stage "$wiki_dir"
+          source_commit=$(git -c gc.auto=0 rev-parse HEAD)
+          current_source=$(git -c gc.auto=0 ls-remote origin refs/heads/docs/wiki | cut -f1)
           test "$current_source" = "$source_commit"
-          git -C "$wiki_dir" config user.name 'github-actions[bot]'
-          git -C "$wiki_dir" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git -C "$wiki_dir" add --all
-          if ! git -C "$wiki_dir" diff --cached --quiet; then
-            git -C "$wiki_dir" commit -m 'docs: publish current LSF Wiki'
-            python wiki/visuals/validate_wiki.py --authority-ref origin/development --verify-published "$wiki_dir"
-            wiki_branch=$(git -C "$wiki_dir" branch --show-current)
-            current_source=$(git ls-remote origin refs/heads/docs/wiki | cut -f1)
+          git -c gc.auto=0 -C "$wiki_dir" config user.name 'github-actions[bot]'
+          git -c gc.auto=0 -C "$wiki_dir" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -c gc.auto=0 -C "$wiki_dir" add --all
+          if ! git -c gc.auto=0 -C "$wiki_dir" diff --cached --quiet; then
+            git -c gc.auto=0 -C "$wiki_dir" commit -m 'docs: publish current LSF Wiki'
+            python wiki/visuals/validate_wiki.py --authority-ref origin/release --verify-published "$wiki_dir"
+            wiki_branch=$(git -c gc.auto=0 -C "$wiki_dir" branch --show-current)
+            current_source=$(git -c gc.auto=0 ls-remote origin refs/heads/docs/wiki | cut -f1)
             test "$current_source" = "$source_commit"
-            git -C "$wiki_dir" -c "http.https://github.com/.extraheader=${auth_header}" push origin "HEAD:${wiki_branch}"
+            git -c gc.auto=0 -C "$wiki_dir" -c "http.https://github.com/.extraheader=${auth_header}" push origin "HEAD:${wiki_branch}"
           fi
-          wiki_commit=$(git -C "$wiki_dir" rev-parse HEAD)
-          python wiki/visuals/validate_wiki.py --authority-ref origin/development --verify-published "$wiki_dir"
-          remote_commit=$(git -C "$wiki_dir" -c "http.https://github.com/.extraheader=${auth_header}" ls-remote origin HEAD | cut -f1)
+          wiki_commit=$(git -c gc.auto=0 -C "$wiki_dir" rev-parse HEAD)
+          python wiki/visuals/validate_wiki.py --authority-ref origin/release --verify-published "$wiki_dir"
+          remote_commit=$(git -c gc.auto=0 -C "$wiki_dir" -c "http.https://github.com/.extraheader=${auth_header}" ls-remote origin HEAD | cut -f1)
           test "$remote_commit" = "$wiki_commit"
           cat > wiki/PUBLISHED_OK.md <<EOF
           # LSF Wiki publication succeeded
@@ -78,10 +78,10 @@ jobs:
           - Wiki commit: ${wiki_commit}
           - Workflow run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
           - Managed inventory: 26 pages and four assets, fully validated
-          - Scope: Phase 2 completion and finite evidence qualifications; Phase 3 planned; product release remains separate
+          - Scope: Released alpha.3 Phase 2 surface and finite evidence qualifications; Phase 3 planned; Wiki publication identity remains separate
           EOF
-          git add wiki/PUBLISHED_OK.md
-          if ! git diff --cached --quiet; then
-            git commit -m 'docs(wiki): record current publication receipt'
-            git push origin HEAD:docs/wiki
+          git -c gc.auto=0 add wiki/PUBLISHED_OK.md
+          if ! git -c gc.auto=0 diff --cached --quiet; then
+            git -c gc.auto=0 commit -m 'docs(wiki): record current publication receipt'
+            git -c gc.auto=0 push origin HEAD:docs/wiki
           fi

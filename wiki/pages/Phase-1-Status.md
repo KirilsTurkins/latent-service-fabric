@@ -23,7 +23,7 @@ The extension covers artifact recovery, warm acquisition, cold preparation, cach
 
 Actual Docker and Kubernetes full comparisons each completed 9,926 offers successfully. [Epic #97](https://github.com/KirilsTurkins/latent-service-fabric/issues/97), [gate #113](https://github.com/KirilsTurkins/latent-service-fabric/issues/113) and [milestone 5](https://github.com/KirilsTurkins/latent-service-fabric/milestone/5) are closed. #110 is closed as not planned. Test-reliability [#132](https://github.com/KirilsTurkins/latent-service-fabric/issues/132) was tracked separately from this extension milestone.
 
-Authorities: [functional completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-1-completion.md), [extension report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-1-extension-completion.md), [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/roadmap.md).
+Authorities: [functional completion](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-completion.md), [extension report](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-1-extension-completion.md), [roadmap](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/roadmap.md).
 
 ## Phase 2 completion
 
@@ -39,6 +39,6 @@ The historical results above are unchanged. Phase 2 extends that baseline with:
 | Rollout/canary/rollback | Operator commands, complete sealed-window promotion and fresh eligible restoration through a new route generation. |
 | Operator CLI | Real package/registry and authenticated node workflows, with explicit preconditions and no hidden mutation retries. |
 
-The [Phase 2 completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) records its gate decision, finite evidence and qualifications. These do not change the historical results above or publish a new release. Current guidance is on development until release publication; [Phase 3 has 41 planned tickets](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
+The [Phase 2 completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-completion.md) records its gate decision, finite evidence and qualifications. Alpha.3 delivers that separate Phase 2 surface without changing the historical Phase 1 results above. Current product guidance uses release; [Phase 3 has 41 planned tickets](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
 
-See [operator workflows](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-operator-workflows.md), [security](Security-and-Isolation) and [deployment/recovery](Deployment-and-Routing).
+See [operator workflows](https://github.com/KirilsTurkins/latent-service-fabric/blob/release/docs/phase-2-operator-workflows.md), [security](Security-and-Isolation) and [deployment/recovery](Deployment-and-Routing).
