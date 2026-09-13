@@ -127,20 +127,20 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
             page.next_page_token.as_ref(),
             self.limits.max_page_token_bytes,
         )?;
-        let mut previous = None;
+        // The repository's opaque cursor orders publication identities. Component
+        // digests in this legacy DTO need not increase and may repeat for distinct
+        // packages. They cannot validate publication ordering or uniqueness.
         for entry in &page.entries {
             validation::entry(entry, &tenant, &mut budget, &self.limits)?;
             if query
                 .service
                 .as_ref()
                 .is_some_and(|service| service != &entry.service)
-                || previous.is_some_and(|digest| digest >= &entry.descriptor.release_digest)
             {
                 return Err(Status::internal(
                     "artifact repository returned an invalid page",
                 ));
             }
-            previous = Some(&entry.descriptor.release_digest);
         }
         if page.entries.is_empty() && page.next_page_token.is_some() {
             return Err(Status::internal(
