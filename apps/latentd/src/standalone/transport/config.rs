@@ -21,6 +21,7 @@ pub struct TransportConfig {
     pub maximum_control_jobs: usize,
     pub maximum_header_bytes: u32,
     pub maximum_streams_per_connection: u32,
+    pub unauthenticated_timeout: Duration,
     pub request_timeout: Duration,
     pub shutdown_timeout: Duration,
     pub credentials: Vec<TransportCredential>,
@@ -38,6 +39,8 @@ impl TransportConfig {
             || !(1024..=65_536).contains(&self.maximum_header_bytes)
             || self.maximum_streams_per_connection == 0
             || self.maximum_streams_per_connection > 65_536
+            || self.unauthenticated_timeout < Duration::from_millis(100)
+            || self.unauthenticated_timeout > Duration::from_mins(1)
             || self.request_timeout.is_zero()
             || self.request_timeout > Duration::from_hours(24)
             || self.shutdown_timeout.is_zero()
