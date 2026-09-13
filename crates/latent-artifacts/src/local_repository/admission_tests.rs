@@ -138,7 +138,7 @@ fn admit(repo: &DirectoryArtifactRepository) -> Result<crate::ArtifactCatalogEnt
 }
 fn assert_no_releases(root: &TempRoot) {
     assert_eq!(
-        std::fs::read_dir(root.path().join("releases"))
+        std::fs::read_dir(root.path().join("publications"))
             .unwrap()
             .count(),
         0
@@ -290,7 +290,7 @@ fn post_rename_expiry_does_not_adopt_and_exact_retry_recovers() {
     );
     assert!(block_on(repo.list(None, 1)).unwrap().entries.is_empty());
     assert_eq!(
-        std::fs::read_dir(root.path().join("releases"))
+        std::fs::read_dir(root.path().join("publications"))
             .unwrap()
             .count(),
         1
@@ -383,12 +383,13 @@ fn corrupt_evidence_is_not_classified_as_expired_history() {
 }
 
 #[test]
-fn same_component_cannot_replace_immutable_package_or_evidence() {
+fn new_package_coexists_but_cannot_replace_an_existing_packages_evidence() {
     let root = TempRoot::new();
     let authority = Authority::new();
     let repo = open(&root, &authority);
     let release = admit(&repo).unwrap().descriptor.release_digest;
-    let before = std::fs::read(release_dir(root.path(), &release).join("COMPLETE")).unwrap();
+    let original = release_dir(root.path(), &release);
+    let before = std::fs::read(original.join("COMPLETE")).unwrap();
     for changed_package in [false, true] {
         let mut changed = upload();
         if changed_package {
@@ -396,18 +397,24 @@ fn same_component_cannot_replace_immutable_package_or_evidence() {
         } else {
             changed.signatures[0].manifest.push(b' ');
         }
-        assert_eq!(
-            block_on(repo.admit_package(&tenant(), changed, &mut |_| Ok(())))
-                .unwrap_err()
-                .code,
-            PlatformErrorCode::AlreadyExists
-        );
+        let result = block_on(repo.admit_package(&tenant(), changed, &mut |_| Ok(())));
+        if changed_package {
+            result.expect("test authority permits a distinct immutable package");
+        } else {
+            assert_eq!(result.unwrap_err().code, PlatformErrorCode::AlreadyExists);
+        }
     }
+    assert_eq!(std::fs::read(original.join("COMPLETE")).unwrap(), before);
     assert_eq!(
-        std::fs::read(release_dir(root.path(), &release).join("COMPLETE")).unwrap(),
-        before
+        block_on(repo.fetch(&release)).unwrap_err().code,
+        PlatformErrorCode::StateConflict
     );
-    assert_eq!(block_on(repo.fetch(&release)).unwrap(), artifact());
+    assert_eq!(
+        std::fs::read_dir(root.path().join("publications"))
+            .unwrap()
+            .count(),
+        2
+    );
 }
 
 #[test]
@@ -435,6 +442,73 @@ fn foreign_owner_and_spare_capacity_fail_without_staging() {
     );
     let configured = repo.admission.as_ref().unwrap().authority.clone();
     token.check_for_authority(&configured).unwrap();
+}
+
+#[cfg(unix)]
+#[test]
+fn offline_migration_preserves_denied_admission_without_issuing_new_authority() {
+    use super::lifecycle::{accept, context};
+    use crate::{CatalogMigrationLimits, LifecycleLimits, ManagedPublicationUpload};
+    let root = TempRoot::new();
+    let authority = Authority::new();
+    let repo = open(&root, &authority);
+    let original = block_on(repo.publish_managed(
+        context("legacy-admission", 0),
+        ManagedPublicationUpload::Package(upload()),
+        &mut accept,
+    ))
+    .unwrap();
+    let path = root
+        .path()
+        .join("publications")
+        .join(original.publication.id.hex());
+    let complete = std::fs::read(path.join("COMPLETE")).unwrap();
+    drop(repo);
+    std::fs::create_dir(root.path().join("releases")).unwrap();
+    std::fs::rename(
+        &path,
+        root.path()
+            .join("releases")
+            .join(&original.release.descriptor.release_digest.0[7..]),
+    )
+    .unwrap();
+    std::fs::remove_dir(root.path().join("publications")).unwrap();
+    std::fs::remove_dir_all(root.path().join("blobs")).unwrap();
+    crate::lifecycle::LegacyLifecycleSnapshot::write_legacy_fixture(
+        &root.path().join("lifecycle"),
+        LifecycleLimits::default(),
+    )
+    .unwrap();
+    authority.allowed.store(false, Ordering::Release);
+    DirectoryArtifactRepository::migrate_enforced_catalog(
+        root.path(),
+        DirectoryArtifactRepositoryConfig::default(),
+        AdmissionStorageLimits::default(),
+        host(&authority),
+        LifecycleLimits::default(),
+        CatalogMigrationLimits::default(),
+    )
+    .unwrap();
+    assert_eq!(std::fs::read(path.join("COMPLETE")).unwrap(), complete);
+    let repo = open(&root, &authority);
+    let status = repo
+        .publication_lifecycle_status(&original.publication)
+        .unwrap()
+        .unwrap();
+    assert_eq!(status.record.generation, 1);
+    assert_eq!(status.eligibility, crate::ReleaseLiveEligibility::Denied);
+    assert!(repo
+        .publication_execution_eligibility(&original.publication)
+        .is_err());
+    assert_eq!(
+        block_on(repo.publish_managed(
+            context("legacy-admission", 0),
+            ManagedPublicationUpload::Package(upload()),
+            &mut accept
+        ))
+        .unwrap(),
+        original
+    );
 }
 
 #[test]

@@ -128,6 +128,10 @@ reload live trust; the host replacement API owns that transaction.
 | `cache.compilerWorkers` | `min(2, cache.preparations)` | Fixed compiler threads, 1 to 8 and no greater than total compiler jobs. Remaining job slots form the bounded compiler queue. |
 | `catalogs.releaseEntries` | `4096` | Completed-release index count, at most 100000. |
 | `catalogs.releaseIndexBytes` | `67108864` | Release index allocation ceiling, 1 MiB–1 GiB. |
+| `catalogs.publicationStorageBytes` | `4294967296` | Conservative shared blob, publication link and incomplete file exposure ceiling, 1 byte–1 PiB. Lifecycle history has separate limits. |
+| `catalogs.contentIndexBytes` | `67108864` | Shared content/reference metadata ceiling, 1 byte–1 GiB. |
+| `catalogs.contentBlobs` | `1000000` | Shared immutable file count, 1–1000000. |
+| `catalogs.publicationFiles` | `1024` | Files in one publication directory, 1–1024. |
 | `catalogs.deployments` | `4096` | Deployment count, at most 100000. |
 | `catalogs.deploymentStateBytes` | `67108864` | Deployment/compiler state ceiling, 1 MiB–1 GiB. |
 | `supplyChain` | `{"mode":"trusted-local"}` | Explicit local compatibility or `enforced` with a required policy file. |

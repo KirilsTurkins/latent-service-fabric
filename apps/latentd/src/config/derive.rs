@@ -99,6 +99,10 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
 
 fn artifact_limits(config: &NodeConfig, page_size: u32) -> DirectoryArtifactRepositoryConfig {
     DirectoryArtifactRepositoryConfig {
+        max_storage_bytes: config.catalogs.publication_storage_bytes,
+        max_content_index_bytes: config.catalogs.content_index_bytes,
+        max_content_blobs: config.catalogs.content_blobs,
+        max_publication_files: config.catalogs.publication_files,
         max_index_entries: config.catalogs.release_entries,
         max_index_bytes: config.catalogs.release_index_bytes,
         max_component_bytes: config.limits.maximum_component_bytes,

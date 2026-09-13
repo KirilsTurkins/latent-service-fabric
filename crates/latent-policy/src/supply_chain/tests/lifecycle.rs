@@ -90,10 +90,7 @@ fn immutable_files(
     repo: &DirectoryArtifactRepository,
     release: &ReleaseDigest,
 ) -> BTreeMap<String, Vec<u8>> {
-    let directory = repo
-        .root()
-        .join("releases")
-        .join(release.0.strip_prefix("sha256:").unwrap());
+    let directory = super::catalog::publication_directory(repo, release);
     let mut result = BTreeMap::new();
     let mut bytes = 0;
     for entry in std::fs::read_dir(directory).unwrap() {
@@ -366,13 +363,9 @@ fn expired_trust_reopens_as_denied_history_and_emergency_revocation_remains_avai
         status(&reopened, &release).record.state,
         ReleaseLifecycleState::Revoked
     );
+    let path = super::catalog::publication_directory(&reopened, &release).join("component.wasm");
     drop(reopened);
     // Expired trust never turns corrupt retained bytes into acceptable history.
-    let path = root
-        .path()
-        .join("catalog/releases")
-        .join(release.0.strip_prefix("sha256:").unwrap())
-        .join("component.wasm");
     std::fs::write(path, b"corrupt fixture").unwrap();
     let configured: Arc<dyn AdmissionAuthority> = expired;
     assert_eq!(
