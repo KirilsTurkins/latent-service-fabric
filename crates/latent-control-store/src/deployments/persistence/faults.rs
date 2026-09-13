@@ -207,6 +207,10 @@ fn initialization_orders_state_marker_file_rename_and_directory_sync() {
         .collect::<Vec<_>>();
     let pending = root.join(INITIALIZED_PENDING_FILE);
     expected.extend([
+        (IoStep::StateCreated, root.join(super::PENDING_FILE)),
+        (IoStep::StateWritten, root.join(super::PENDING_FILE)),
+        (IoStep::StateFileSynced, root.join(super::PENDING_FILE)),
+        (IoStep::StateRename, root.join(super::PENDING_FILE)),
         (IoStep::StateDirectorySync, root.clone()),
         (IoStep::MarkerCreated, pending.clone()),
         (IoStep::MarkerPartialWrite, pending.clone()),
@@ -290,4 +294,55 @@ fn staging_marker_cleanup_never_repairs_corrupt_completed_state() {
         fs::read(root.join(STATE_FILE)).unwrap(),
         b"corrupt completed record"
     );
+}
+
+#[test]
+fn publication_upgrade_interruptions_expose_no_partial_catalog_and_retry_from_disk() {
+    use latent_manifest::__serde_json as json;
+    for step in [
+        IoStep::StateCreated,
+        IoStep::StateWritten,
+        IoStep::StateFileSynced,
+        IoStep::StateRename,
+        IoStep::StateDirectorySync,
+    ] {
+        let scratch = Scratch::new();
+        let root = scratch.0.join("catalog");
+        drop(open(&root).unwrap());
+        let path = root.join(STATE_FILE);
+        let mut value: json::Value = json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        value["format_version"] = json::json!(2);
+        value["payload"]
+            .as_object_mut()
+            .unwrap()
+            .remove("publication_pins");
+        let mut record: super::Record = json::from_value(value).unwrap();
+        record.checksum =
+            latent_artifacts::content_digest(&json::to_vec(&record.payload).unwrap()).0;
+        let original = json::to_vec(&record).unwrap();
+        fs::write(&path, &original).unwrap();
+        let failed_path = if step == IoStep::StateDirectorySync {
+            root.clone()
+        } else {
+            root.join(super::PENDING_FILE)
+        };
+        let guard = Guard::new(Some((step, failed_path.clone())));
+        assert!(
+            open(&root).is_err(),
+            "an interrupted upgrade cannot return a catalog handle"
+        );
+        assert_eq!(guard.events().last(), Some(&(step, failed_path)));
+        drop(guard);
+        if step != IoStep::StateDirectorySync {
+            assert_eq!(fs::read(&path).unwrap(), original);
+        }
+        drop(open(&root).unwrap());
+        let upgraded = fs::read(&path).unwrap();
+        let parsed: json::Value = json::from_slice(&upgraded).unwrap();
+        assert_eq!(parsed["format_version"], 5);
+        assert_eq!(parsed["payload"]["generation"], 0);
+        assert!(!root.join(super::PENDING_FILE).exists());
+        drop(open(&root).unwrap());
+        assert_eq!(fs::read(&path).unwrap(), upgraded);
+    }
 }

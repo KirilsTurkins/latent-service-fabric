@@ -405,6 +405,11 @@ fn validate_string(
     if let Some(pattern) = schema.get("pattern").and_then(Value::as_str) {
         let (matches, code, message) = match pattern {
             "^sha256:[a-fA-F0-9]{64}$" => (is_sha256_digest(value), "invalid-digest", "value must be a sha256: digest followed by exactly 64 hexadecimal characters"),
+            "^publication:sha256:[a-f0-9]{64}$" => (
+                value.parse::<latent_core::PublicationId>().is_ok(),
+                "invalid-publication",
+                "publication must be a canonical publication:sha256: identity with 64 lowercase hexadecimal characters",
+            ),
             r"^[A-Za-z0-9_.]+(?:-[A-Za-z0-9_.]+){2,}(?![\s\S])" => (
                 crate::runtime_compatibility::model::target(value),
                 "invalid-target-triple",

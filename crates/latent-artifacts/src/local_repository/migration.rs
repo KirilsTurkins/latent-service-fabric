@@ -125,6 +125,40 @@ pub(super) fn check_current_format(root: &Path) -> Result<(), PlatformError> {
 }
 
 impl DirectoryArtifactRepository {
+    /// Only deployment/rollout recovery may consult the immutable v1 association.
+    /// Ordinary legacy requests still require a unique current scoped mapping.
+    pub(crate) fn recover_execution_publication(
+        &self,
+        tenant: &latent_core::TenantId,
+        component: &ReleaseDigest,
+    ) -> Result<crate::PublicationRef, PlatformError> {
+        crate::publication::validate_component(component)?;
+        let path = self
+            .root
+            .join(NAMESPACE)
+            .join("associations")
+            .join(format!("{}.json", &component.0[7..]));
+        if let Some(bytes) = optional(&path, 4096)? {
+            let mapping: Association = decode(&bytes)?;
+            if mapping.format_version != 1
+                || mapping.legacy.release != *component
+                || mapping.legacy.publication()? != mapping.publication
+            {
+                return Err(corrupt("catalog-migration-legacy-association"));
+            }
+            let selected = self.select_execution_publication(
+                tenant,
+                component,
+                Some(&mapping.publication.id),
+            )?;
+            if selected != mapping.publication {
+                return Err(corrupt("catalog-migration-legacy-association"));
+            }
+            return Ok(selected);
+        }
+        self.select_execution_publication(tenant, component, None)
+    }
+
     pub fn migrate_catalog(
         root: impl Into<PathBuf>,
         config: DirectoryArtifactRepositoryConfig,

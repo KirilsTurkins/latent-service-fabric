@@ -220,6 +220,7 @@ impl LifecycleStore {
             None => Ok(None),
         }
     }
+    #[cfg(test)]
     pub(crate) fn identity(
         &self,
         release: &ReleaseDigest,

@@ -101,7 +101,7 @@ fn managed_first_publication_replays_exact_history_after_restart_without_fetch()
         request.request_digest().unwrap()
     );
     let persisted = stored(&root);
-    assert_eq!(persisted["format_version"], 4);
+    assert_eq!(persisted["format_version"], 5);
     assert!(persisted["payload"]["control"]["rollouts"]["rows"]
         .as_array()
         .unwrap()

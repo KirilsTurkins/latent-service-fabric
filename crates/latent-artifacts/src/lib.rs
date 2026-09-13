@@ -178,6 +178,83 @@ pub struct DerivedArtifactDescriptor {
 }
 
 pub trait ArtifactRepository: Send + Sync {
+    /// Recover a previously persisted legacy selection from the immutable migration
+    /// association, or from a unique scoped match. This creates no execution grant.
+    fn recover_execution_publication(
+        &self,
+        tenant: &TenantId,
+        release: &ReleaseDigest,
+    ) -> Result<Option<PublicationRef>, PlatformError> {
+        if let Some(source) = self.preparation_source() {
+            source
+                .recover_execution_publication(tenant, release)
+                .map(Some)
+        } else {
+            self.select_execution_publication(tenant, release, None)
+        }
+    }
+
+    /// Resolve only inside the authenticated tenant (or explicit local compatibility scope).
+    /// A returned reference is a selection, never an execution permission.
+    fn select_execution_publication(
+        &self,
+        tenant: &TenantId,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<Option<PublicationRef>, PlatformError> {
+        if let Some(source) = self.preparation_source() {
+            source
+                .select_execution_publication(tenant, release, publication)
+                .map(Some)
+        } else if publication.is_some() {
+            Err(unsupported_catalog_query())
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Exact reads use one sealed directory source for metadata and authority.
+    fn historical_execution_snapshot_selected<'a>(
+        &'a self,
+        release: &'a ReleaseDigest,
+        publication: Option<&'a latent_core::PublicationId>,
+    ) -> BoxFuture<'a, Result<HistoricalExecutionSnapshot, PlatformError>> {
+        if let Some(source) = self.preparation_source() {
+            Box::pin(async move { source.historical_snapshot_selected(release, publication) })
+        } else if publication.is_some() {
+            Box::pin(async { Err(unsupported_catalog_query()) })
+        } else {
+            self.historical_execution_snapshot(release)
+        }
+    }
+
+    fn fetch_verified_metadata_selected<'a>(
+        &'a self,
+        release: &'a ReleaseDigest,
+        publication: Option<&'a latent_core::PublicationId>,
+    ) -> BoxFuture<'a, Result<VerifiedArtifactMetadata, PlatformError>> {
+        if let Some(source) = self.preparation_source() {
+            Box::pin(async move { source.metadata_selected(release, publication) })
+        } else if publication.is_some() {
+            Box::pin(async { Err(unsupported_catalog_query()) })
+        } else {
+            self.fetch_verified_metadata(release)
+        }
+    }
+
+    fn execution_eligibility_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<Option<ReleaseUseEligibility>, PlatformError> {
+        if let Some(source) = self.preparation_source() {
+            source.execution_eligibility_selected(release, publication)
+        } else if publication.is_some() {
+            Err(unsupported_catalog_query())
+        } else {
+            self.execution_eligibility(release)
+        }
+    }
     /// Authenticated publication with a bounded durable retry receipt. The host
     /// callback must accept the exact response before any filesystem mutation.
     fn publish_managed<'a>(
@@ -315,6 +392,24 @@ pub trait ArtifactRepository: Send + Sync {
         &'a self,
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<CapsuleArtifact, PlatformError>>;
+
+    fn retained_package_source_selected<'a>(
+        &'a self,
+        tenant: &'a TenantId,
+        release: &'a ReleaseDigest,
+        publication: Option<&'a latent_core::PublicationId>,
+        maximum_bytes: usize,
+    ) -> BoxFuture<'a, Result<Option<RetainedPackageSource>, PlatformError>> {
+        if let Some(source) = self.preparation_source() {
+            Box::pin(async move {
+                source.retained_package_selected(tenant, release, publication, maximum_bytes)
+            })
+        } else if publication.is_some() {
+            Box::pin(async { Err(unsupported_catalog_query()) })
+        } else {
+            self.retained_package_source(tenant, release, maximum_bytes)
+        }
+    }
 
     /// Optional sealed retained package bytes for an explicit control comparison.
     /// None means this source does not provide a package; it is not proof of local

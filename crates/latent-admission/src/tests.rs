@@ -147,6 +147,7 @@ pub(super) fn node_policy() -> NodeAdmissionPolicy {
 
 fn revision(tenant: &str) -> ResolvedRevision {
     ResolvedRevision {
+        publication: None,
         target: InvocationTarget {
             tenant: TenantId(tenant.to_owned()),
             service: ServiceId("echo".to_owned()),

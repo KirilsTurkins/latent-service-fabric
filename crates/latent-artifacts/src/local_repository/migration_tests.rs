@@ -155,6 +155,29 @@ impl Fixture {
             ))
             .unwrap();
             assert_ne!(second.publication, self.receipts[1].publication);
+            let tenant = scope().tenant().unwrap().clone();
+            assert_eq!(
+                repo.recover_execution_publication(
+                    &tenant,
+                    &self.values[1].descriptor.release_digest
+                )
+                .unwrap(),
+                self.receipts[1].publication.clone(),
+                "only recovery may use the immutable legacy association after coexistence"
+            );
+            assert!(repo
+                .select_execution_publication(
+                    &tenant,
+                    &self.values[1].descriptor.release_digest,
+                    None
+                )
+                .is_err());
+            assert!(repo
+                .recover_execution_publication(
+                    &latent_core::TenantId("foreign".into()),
+                    &self.values[1].descriptor.release_digest
+                )
+                .is_err());
             assert!(repo
                 .resolve_publication(
                     &scope(),

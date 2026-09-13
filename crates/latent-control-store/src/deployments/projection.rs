@@ -33,6 +33,7 @@ impl CompiledCatalog {
                             .all(|(record, revision)| {
                                 record.revision == revision.revision
                                     && record.deployment.release == revision.release
+                                    && record.publication == revision.publication
                                     && record.deployment.route_weight == revision.weight
                                     && record.attributes == revision.attributes
                             })
@@ -65,6 +66,7 @@ impl CompiledCatalog {
                 cost.revision(
                     &record.revision,
                     &record.deployment.release,
+                    record.publication.as_ref(),
                     &record.attributes,
                 )?;
             }
@@ -90,6 +92,7 @@ fn service(route: RouteView<'_>) -> ServiceRoute {
     let rows = route.revisions();
     let mut revisions = Vec::with_capacity(rows.len());
     revisions.extend(rows.map(|record| RevisionRoute {
+        publication: record.publication.clone(),
         revision: record.revision.clone(),
         release: record.deployment.release.clone(),
         weight: record.deployment.route_weight,

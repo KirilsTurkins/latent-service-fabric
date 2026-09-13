@@ -60,6 +60,7 @@ impl WasmtimeBackend {
 
     pub(super) fn key_for_release(&self, release: &ReleaseDigest) -> PreparationKey {
         PreparationKey {
+            publication: None,
             release: release.clone(),
             engine_version: self.profile.wasmtime_version.clone(),
             engine_configuration_digest: self.profile.configuration["configuration-digest"].clone(),

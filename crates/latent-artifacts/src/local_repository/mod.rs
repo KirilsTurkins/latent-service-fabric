@@ -12,6 +12,7 @@ mod migration;
 mod paging;
 mod preparation_read;
 mod publication_access;
+mod publication_preparation;
 mod retained_package;
 mod root_durability;
 mod shared_content;
@@ -333,22 +334,7 @@ impl DirectoryArtifactRepository {
         &self,
         release: &ReleaseDigest,
     ) -> Result<Option<ArtifactPreparationIdentity>, PlatformError> {
-        self.current_eligibility(release)?;
-        let index = self.index.read().map_err(lock_error)?;
-        let entry = index
-            .legacy_component(None, release)?
-            .ok_or_else(|| error(PlatformErrorCode::NotFound, "release digest not found"))?;
-        entry
-            .preparation_stamp
-            .map(|stamp| {
-                ArtifactPreparationIdentity::new(
-                    Arc::clone(&self.preparation_epoch),
-                    release,
-                    entry.value.descriptor.size_bytes,
-                    stamp,
-                )
-            })
-            .transpose()
+        self.selected_preparation_identity(release, None)
     }
 
     fn preparation_stamp(

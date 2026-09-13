@@ -16,24 +16,30 @@ fn version_one(bytes: &[u8]) -> Record {
     let mut record: Record = json::from_slice(bytes).unwrap();
     record.format_version = 1;
     record.payload.object_generations = None;
+    record.payload.publication_pins = None;
     record.checksum = latent_artifacts::content_digest(&json::to_vec(&record.payload).unwrap()).0;
     record
 }
 
 #[test]
-fn reopened_v1_and_v2_keep_original_noncanonical_file_bytes() {
+fn old_formats_upgrade_before_exposure_and_current_format_preserves_file_bytes() {
     let releases = Arc::new(Releases::default());
     let digest = releases.add("serializer-recovery");
     let manifest = deployment("blue", "alice", &digest);
     let state = catalog(&releases, vec![manifest.clone()], 9);
     let bytes = assert_legacy_bytes(&state);
-    for format in [1, 2] {
+    for format in [1, 2, 5] {
         let root = TempRoot::new();
-        let record = if format == 1 {
-            version_one(&bytes)
-        } else {
-            json::from_slice(&bytes).unwrap()
-        };
+        let mut record: Record = json::from_slice(&bytes).unwrap();
+        record.format_version = format;
+        if format < 5 {
+            record.payload.publication_pins = None;
+        }
+        if format == 1 {
+            record.payload.object_generations = None;
+        }
+        record.checksum =
+            latent_artifacts::content_digest(&json::to_vec(&record.payload).unwrap()).0;
         // Change outer/typed-payload key order and whitespace. The checksum still
         // covers the original typed canonical payload, never these source bytes.
         let payload = json::to_value(&record.payload).unwrap();
@@ -54,14 +60,30 @@ fn reopened_v1_and_v2_keep_original_noncanonical_file_bytes() {
         assert_eq!(store.generation(), RouteGeneration(9));
         assert_eq!(run(store.list()).unwrap(), vec![manifest.clone()]);
         assert_eq!(run(store.current()).unwrap(), state.snapshot());
-        assert_eq!(fs::read(&path).unwrap(), source);
+        let persisted = fs::read(&path).unwrap();
+        if format == 5 {
+            assert_eq!(persisted, source);
+        } else {
+            let migrated: Record = json::from_slice(&persisted).unwrap();
+            assert_eq!(migrated.format_version, 5);
+            assert_eq!(migrated.payload.generation, record.payload.generation);
+            assert_eq!(migrated.payload.deployments, record.payload.deployments);
+            assert_eq!(migrated.payload.snapshot, record.payload.snapshot);
+        }
         drop(store);
-        assert_eq!(fs::read(&path).unwrap(), source);
+        let restarted = run(Store::open(
+            root.0.clone(),
+            releases.clone(),
+            Limits::default(),
+        ))
+        .unwrap();
+        assert_eq!(restarted.generation(), RouteGeneration(9));
+        assert_eq!(fs::read(&path).unwrap(), persisted);
     }
 }
 
 #[test]
-fn loaded_v1_is_still_recompiled_against_the_final_v2_size_limit() {
+fn loaded_v1_is_still_recompiled_against_the_current_envelope_size_limit() {
     let root = TempRoot::new();
     let releases = Releases::default();
     let state = catalog(&releases, Vec::new(), 0);

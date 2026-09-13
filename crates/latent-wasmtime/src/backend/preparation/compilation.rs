@@ -98,7 +98,11 @@ impl super::super::PreparationContext {
         if self.native_aot.is_some() {
             return Err(crate::backend::admission_association_error());
         }
-        self.check_eligibility(input.eligibility.as_ref(), &key.release)?;
+        self.check_eligibility(
+            input.eligibility.as_ref(),
+            &key.release,
+            key.publication.as_ref(),
+        )?;
         let compilation = job.stage(PreparationStage::ComponentNew);
         let component = Component::new(&self.engine, &artifact.component_bytes);
         if component.is_ok() {
@@ -123,7 +127,11 @@ impl super::super::PreparationContext {
         input: Compilation,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.check_eligibility(input.eligibility.as_ref(), &key.release)?;
+        self.check_eligibility(
+            input.eligibility.as_ref(),
+            &key.release,
+            key.publication.as_ref(),
+        )?;
         checked.check()?;
         let service = self
             .native_aot
@@ -151,7 +159,11 @@ impl super::super::PreparationContext {
         code: CompiledCode,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
         let component = code.component();
-        self.check_eligibility(input.eligibility.as_ref(), &key.release)?;
+        self.check_eligibility(
+            input.eligibility.as_ref(),
+            &key.release,
+            key.publication.as_ref(),
+        )?;
         let linking = job.stage(PreparationStage::SurfaceLink);
         let surface = surface::validate(component, &self.engine, artifact, &self.config)?;
         let metadata_bytes = input
