@@ -179,7 +179,7 @@ fn compare_manifest(
         return Err(incompatible("capsule-export-set-mismatch"));
     }
     for import in &manifest.imports {
-        if !host::IMPORTS.contains(&import.contract.0.as_str()) {
+        if !host::recognizes(&import.contract.0) {
             return Err(incompatible("unsupported-host-import"));
         }
         if !import.optional && !declared.imports.contains_key(&import.contract.0) {
