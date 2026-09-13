@@ -38,16 +38,16 @@ impl Stream for Incoming {
                 continue;
             };
             stream.set_nodelay(true)?;
+            let expires_at = tokio::time::Instant::now() + self.shared.config.unauthenticated_timeout;
             let connection = ConnectionInfo {
                 address,
+                expires_at,
                 authenticated: Arc::new(AtomicBool::new(false)),
             };
             return Poll::Ready(Some(Ok(OwnedIo {
                 stream: Some(stream),
                 connection,
-                unauthenticated_deadline: Box::pin(tokio::time::sleep(
-                    self.shared.config.unauthenticated_timeout,
-                )),
+                unauthenticated_deadline: Box::pin(tokio::time::sleep_until(expires_at)),
                 read_stop: self.shared.force.listen(),
                 write_stop: self.shared.force.listen(),
                 shared: Arc::clone(&self.shared),
@@ -62,12 +62,17 @@ impl Stream for Incoming {
 #[derive(Clone)]
 pub(super) struct ConnectionInfo {
     address: SocketAddr,
+    expires_at: tokio::time::Instant,
     authenticated: Arc<AtomicBool>,
 }
 
 impl ConnectionInfo {
-    pub(super) fn mark_authenticated(&self) {
+    pub(super) fn mark_authenticated(&self) -> bool {
+        if tokio::time::Instant::now() >= self.expires_at {
+            return false;
+        }
         self.authenticated.store(true, Ordering::Release);
+        true
     }
 
     fn is_authenticated(&self) -> bool {
