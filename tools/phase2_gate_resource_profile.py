@@ -249,8 +249,11 @@ def validate_receipt(value):
         require(previous_time is None or sample_time - previous_time >=
                 PROFILE["sampleIntervalMillis"] * 1000000, "receipt-sample-time")
         previous_time = sample_time
+        # VmHWM is an approximate Linux RSS observation, not a strictly
+        # monotonic counter: https://man7.org/linux/man-pages/man5/proc_pid_status.5.html
+        # Retain its raw value and integer checks above; do not clamp the samples.
         cumulative = [integer(observed[key]) for key in (
-            "cpuUserTicks", "cpuSystemTicks", "readBytes", "writeBytes", "kernelHighWaterRssBytes")]
+            "cpuUserTicks", "cpuSystemTicks", "readBytes", "writeBytes")]
         require(previous_cumulative is None or all(after >= before for before, after in
                 zip(previous_cumulative, cumulative)), "receipt-counter-regression")
         previous_cumulative = cumulative

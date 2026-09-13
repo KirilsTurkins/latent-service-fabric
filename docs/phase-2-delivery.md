@@ -78,6 +78,15 @@ The [completion review](phase-2-completion.md) additionally covers registry
 outage, real native trust invalidation and the fixed 32-release resource profile,
 with compact receipts and explicit failed or superseded attempts.
 
+Linux reports RSS and its high-water value as approximate observations. The
+resource validator preserves those readings, including decreases, while CPU
+ticks and I/O counters must remain monotonic. A release-validation run exposed
+an incorrect high-water monotonicity assertion when the reported value fell
+from 66,506,752 to 66,502,656 bytes. The correction changes no workload, limit,
+process identity or ownership check, and does not rewrite the failed receipt.
+See the [Linux field definitions](https://man7.org/linux/man-pages/man5/proc_pid_status.5.html)
+and [failed CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34747999705).
+
 This remains a standalone Linux stateless node. Package contracts for browser
 assets and SSR do not provide application ingress, browser hosting or rendering.
 The [Phase 3 backlog](roadmap.md#phase-3-capabilities-and-application-hosting)
