@@ -63,7 +63,6 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             max_identifier_bytes: IDENTIFIER_BYTES,
             max_page_size: management.max_page_size,
             max_page_bytes: MIB,
-            max_recovery_directories: config.catalogs.release_entries + 16,
             ..DirectoryDeploymentRepositoryConfig::default()
         },
         admission,
