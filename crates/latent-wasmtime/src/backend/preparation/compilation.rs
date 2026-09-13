@@ -95,7 +95,10 @@ impl super::super::PreparationContext {
         input: Compilation,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        if self.native_aot.is_some() {
+        if self.native_aot.is_some()
+            || self.config.execution_isolation_profile
+                == crate::ExecutionIsolationProfile::ExternalCapsule
+        {
             return Err(crate::backend::admission_association_error());
         }
         self.check_eligibility(

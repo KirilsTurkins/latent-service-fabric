@@ -19,17 +19,19 @@ The baseline matrix is defined by RFC-0001:
 - `local-experimental-v1` is the delivered T0 profile for operator-trusted/local workloads. Fresh Wasmtime stores provide the documented guest execution barrier under the node/engine/OS trusted computing base, but trusted-local admission and in-process compilation do not establish the end-to-end T1 external-capsule profile.
 - `isolated-aot-compiler-v1` is the delivered bounded Linux x86_64 compiler-child boundary. It isolates compiler work only.
 - `authenticated-native-aot-v1` is the delivered same-node authenticated native reuse/loading path. The native loader and node remain trusted; arbitrary external native artifacts are unsupported.
-- `external-capsule-v1` is planned and requires enforced package admission, exact ABI/profile compatibility, protected trust configuration, the reviewed runtime baseline and supported isolated compilation before it can be selected.
+- `external-capsule-v1` requires enforced package admission, exact ABI/profile compatibility, protected trust configuration, the reviewed runtime baseline and supported isolated compilation before it can be selected. Phase 3 #280 implements these requirements as documented in the [execution-profile reference](../docs/runtime/execution-security-profiles.md).
 - in-process provider and Component Model renderer profiles remain planned until their owning Phase 3 tickets implement and validate them.
 - work that requires containment after compromise of the process executing the guest/provider/renderer/native compatibility layer requires `fixed-execution-host-v1`, a separate node-owned fixed/bounded host pool. That profile is unsupported until implemented and tested.
 - host/kernel compromise and strong same-machine side-channel isolation remain outside the current standalone security boundary.
 
 A package signature, compiler sandbox, guest `Store` limiter, profile label or cache entry is not proof that another boundary is present.
 
-These names identify architectural profiles, not a newly delivered configuration
-selector. The current node exposes its existing trusted-local/enforced admission
-and opt-in isolated-AOT settings. Exact requested-profile enforcement is assigned
-to the implementation tickets below; unimplemented profiles remain unavailable.
+Implementation status: #280 delivers the `securityProfile` node selector for
+`local-experimental-v1` and `external-capsule-v1`, bounded compiler readiness in
+startup/check-config and a persisted restart requirement. The compiler/native
+subprofiles remain separately observable mechanisms. The provider, renderer and
+fixed-host profiles remain unavailable until their owning tickets implement them.
+This status update does not change the accepted threat-class taxonomy.
 
 ## Ownership of follow-up implementation
 

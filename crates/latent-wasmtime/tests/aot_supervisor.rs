@@ -2,6 +2,9 @@
 //! contract. It tests the parent supervisor, not the production child sandbox.
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[path = "aot_supervisor/availability.rs"]
+mod availability;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "admission/component.rs"]
 mod component;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -10,6 +13,13 @@ mod driver;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "aot_supervisor/inherited.rs"]
 mod inherited;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[path = "aot_supervisor/probe.rs"]
+mod probe;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[path = "generic_backend/support.rs"]
+#[allow(dead_code, reason = "reuse maintained bounded invocation inputs")]
+mod runtime;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[path = "isolated_aot/support.rs"]
 #[allow(

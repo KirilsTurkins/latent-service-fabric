@@ -29,6 +29,11 @@ struct CommandLine {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Check protected configuration and actual compiler/profile prerequisites.
+    CheckConfig {
+        #[arg(long, value_name = "PATH")]
+        config: PathBuf,
+    },
     /// Serve the standalone node using a versioned local configuration file.
     Serve {
         #[arg(long, value_name = "PATH")]
@@ -96,6 +101,7 @@ pub fn main_entry() -> ExitCode {
         }
     };
     let result = match command {
+        Command::CheckConfig { config } => run_check_config(&config),
         Command::Serve { config } => run_serve(&config),
         Command::MigrateCatalog { config, limits } => run_migrate(&config, limits.limits()),
         Command::Phase0Spike => Err(Failure::new("command", PlatformErrorCode::InvalidArgument)),
@@ -108,6 +114,22 @@ pub fn main_entry() -> ExitCode {
 
 fn is_phase0(argument: &OsStr) -> bool {
     argument == "phase0-spike" || argument == "spike"
+}
+
+#[cfg(target_os = "linux")]
+fn run_check_config(path: &std::path::Path) -> Result<(), Failure> {
+    let settings = crate::config::NodeConfig::load(path)
+        .and_then(|config| config.derive())
+        .map_err(|error| Failure::new("configuration", error.code))?;
+    let report = settings
+        .check_config()
+        .map_err(|error| Failure::new("execution-profile", error.code))?;
+    status::configuration(&report)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn run_check_config(_path: &std::path::Path) -> Result<(), Failure> {
+    Err(Failure::new("platform", PlatformErrorCode::Unavailable))
 }
 
 #[cfg(target_os = "linux")]

@@ -29,6 +29,7 @@ mod control;
 mod tests;
 
 pub(super) struct Catalogs {
+    profile: crate::config::ExecutionProfileReport,
     pub(super) artifacts: Arc<DirectoryArtifactRepository>,
     pub(super) deployments: Arc<DirectoryDeploymentRepository>,
     pub(super) supply_chain: Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>,
@@ -39,6 +40,34 @@ pub(super) struct Catalogs {
 }
 
 impl Catalogs {
+    fn validate_composition(
+        &self,
+        settings: &NodeSettings,
+        clock: &Arc<dyn ActivationClock>,
+    ) -> Result<(), PlatformError> {
+        if !self.profile.matches(settings)
+            || settings.supply_chain.is_enforced() != self.supply_chain.is_some()
+            || settings.audit.is_some() != self.audit.is_some()
+            || settings.rollouts.is_some() != self.rollouts.is_some()
+            || settings.rollouts.and_then(|value| value.canary).is_some()
+                != self.deployments.canary_hub().is_some()
+            || !self.accepts_activation_clock(clock)
+            || (self.supply_chain.is_some() && self.control.is_none())
+            || !self
+                .deployments
+                .is_bound_to_catalog(&self.artifacts.lifecycle_authority())
+            || settings.supply_chain.is_enforced()
+                != self
+                    .artifacts
+                    .lifecycle_authority()
+                    .required_authority()
+                    .is_some()
+        {
+            return Err(mode_error());
+        }
+        Ok(())
+    }
+
     fn accepts_activation_clock(&self, clock: &Arc<dyn ActivationClock>) -> bool {
         (self.control.is_none() && self.deployments.canary_hub().is_none())
             || Arc::ptr_eq(clock, &self.clock)
@@ -49,6 +78,7 @@ impl Catalogs {
         settings: &NodeSettings,
         observer: latent_control_store::CatalogWorkObserver,
     ) -> Result<Self, PlatformError> {
+        let profile = settings.check_config()?;
         if settings.supply_chain.is_enforced()
             || settings.audit.is_some()
             || settings.rollouts.is_some()
@@ -77,6 +107,7 @@ impl Catalogs {
             .await?,
         );
         Ok(Self {
+            profile,
             artifacts,
             deployments,
             supply_chain: None,
@@ -122,6 +153,8 @@ impl Catalogs {
         runtime: Option<&tokio::runtime::Handle>,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
+        let profile = settings.check_config()?;
+        settings.persist_execution_profile()?;
         let audit = super::audit::AuditRuntime::open(
             settings.data_directory.join("audit"),
             settings.audit,
@@ -252,6 +285,7 @@ impl Catalogs {
             }
         };
         Ok(Self {
+            profile,
             artifacts,
             deployments,
             supply_chain,
@@ -275,7 +309,7 @@ impl StandaloneNode {
                 "standalone durable node requires Linux",
             ));
         }
-        let catalogs = Catalogs::open_with_control(&settings, &control_runtime).await?;
+        let catalogs = Box::pin(Catalogs::open_with_control(&settings, &control_runtime)).await?;
         Box::pin(Self::start_with_catalogs(
             settings,
             catalogs,
@@ -442,25 +476,11 @@ impl StandaloneNode {
         catalogs: &Catalogs,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
-        if settings.supply_chain.is_enforced() != catalogs.supply_chain.is_some()
-            || settings.audit.is_some() != catalogs.audit.is_some()
-            || settings.rollouts.is_some() != catalogs.rollouts.is_some()
-            || settings.rollouts.and_then(|value| value.canary).is_some()
-                != catalogs.deployments.canary_hub().is_some()
-            || !catalogs.accepts_activation_clock(&clock)
-            || (catalogs.supply_chain.is_some() && catalogs.control.is_none())
-            || !catalogs
-                .deployments
-                .is_bound_to_catalog(&catalogs.artifacts.lifecycle_authority())
-            || settings.supply_chain.is_enforced()
-                != catalogs
-                    .artifacts
-                    .lifecycle_authority()
-                    .required_authority()
-                    .is_some()
-        {
-            return Err(mode_error());
-        }
+        catalogs.validate_composition(settings, &clock)?;
+        settings
+            .node
+            .attributes
+            .extend(catalogs.profile.attributes());
         let sink = Arc::new(StructuredLocalSink::new(settings.local_sink)?);
         let (telemetry, telemetry_runtime) =
             TelemetryRuntime::spawn(settings.telemetry, sink.clone())?;

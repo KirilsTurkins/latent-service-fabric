@@ -28,6 +28,9 @@ pub use seal::{TrustedAotCompilerAuthority, TrustedAotOutput};
 pub use supervisor::{AotCompilationJob, AotJobControl, AotProcessLimits, IsolatedAotCompiler};
 pub use worker::run_aot_compiler_worker;
 
+/// Exact readiness protocol identity, separate from the guest isolation profile.
+pub const ISOLATED_AOT_SANDBOX_PROFILE: &str = sandbox::PROFILE_ID;
+
 use latent_core::{ArtifactBlobDigest, PlatformError, PlatformErrorCode};
 use sha2::{Digest, Sha256};
 

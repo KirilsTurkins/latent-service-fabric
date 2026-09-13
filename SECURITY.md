@@ -44,12 +44,13 @@ evidence are implemented. Security-profile selection must fail closed rather
 than silently downgrade to a weaker boundary. The current trusted-local default
 is for operator-controlled workloads. Linux x86_64 configuration loading now has
 a descriptor-anchored protected-file policy for bearer credentials and enforced
-trust policy, but that control alone does not establish the planned
-`external-capsule-v1` profile. Enforced admission alone does not select compiler
-isolation either. The complete profile still requires exact host compatibility
-and deployment/startup enforcement owned by #202 and #280, together with the
-reviewed runtime and isolated-compilation prerequisites. See
-[protected configuration](docs/runtime/protected-configuration.md).
+trust policy. The explicit `external-capsule-v1` selector now requires enforced
+admission, exact Phase 3 host ABI, the reviewed runtime and a supported approved
+isolated compiler. `check-config` and startup verify those requirements; a
+protected persisted marker prevents weakening the profile on ordinary restart.
+Enforced admission alone still does not select compiler isolation. See
+[execution profiles and their finite evidence](docs/runtime/execution-security-profiles.md)
+and [protected configuration](docs/runtime/protected-configuration.md).
 
 General external capability providers, transactional state/effects, and cluster
 mTLS remain later work. They add trust boundaries when implemented. See the

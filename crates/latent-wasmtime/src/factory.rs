@@ -173,6 +173,11 @@ impl WasmtimeComponentEngineFactory {
             config.hostcall_fuel = config.hostcall_fuel.min(80 * 1024);
         }
         config.validate()?;
+        config.execution_isolation_profile.validate_owners(
+            mode,
+            admission.is_some(),
+            native.is_some(),
+        )?;
         let runtime_profile = Arc::new(config.detected_runtime_profile()?);
         if mode == DispatchMode::Generic && !config.prepared_cache_enabled {
             return Err(platform_error(

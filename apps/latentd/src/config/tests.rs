@@ -6,6 +6,7 @@ use tempfile::TempDir;
 
 mod connection_limits;
 mod engine;
+mod security;
 
 use super::{input, CellConfig, CredentialRole, NodeConfig, NodeSettings, MIB};
 

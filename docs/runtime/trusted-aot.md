@@ -15,11 +15,13 @@ automatic CLI cache or distributed native-artifact trust protocol.
 [ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
 [RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) distinguish
 these implemented compiler/native-load mechanisms from guest-process isolation.
-The trusted-local default remains for operator-controlled workloads. The planned
-external-capsule profile requires enforced admission, protected configuration,
-the [patched runtime baseline](../development/wasmtime-security-update.md) and
-supported isolated compilation together; enabling signatures alone does not
-select this compiler. Profile selection/enforcement remains assigned to #280.
+The trusted-local default remains for operator-controlled workloads. The
+[external-capsule profile](execution-security-profiles.md) now requires enforced
+admission, protected configuration, the
+[patched runtime baseline](../development/wasmtime-security-update.md) and
+supported isolated compilation together. `check-config` and startup authenticate
+an actual readiness child without sending a capsule or creating caches. Enabling
+signatures alone does not select this compiler.
 The parent parser, configured compiler, native loader, Wasmtime and OS remain
 trusted; a separate compiler process does not make its native output untrusted
 code safe to execute in the node.

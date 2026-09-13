@@ -60,6 +60,7 @@ SUITES = {
     "trust-currentness": Suite(
         "apps/latentd/Cargo.toml", "latentd", "src/lib_root.rs", CURRENTNESS_PREFIX,
         frozenset(CURRENTNESS_PREFIX + name for name in (
+            "profile::external_profile_preserves_cold_warm_and_restart_requirements",
             "real_proof_age_expiry_denies_retained_native_work_with_a_current_clock_lease",
             "real_policy_expiry_denies_native_work_and_recovers_readable_negative_history",
             "real_publisher_revocation_denies_native_work_without_any_registry_event",

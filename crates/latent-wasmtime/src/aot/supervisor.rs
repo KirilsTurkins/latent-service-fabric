@@ -2,6 +2,7 @@
 
 mod input;
 mod process;
+pub(in crate::aot) use process::verify_readiness;
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 pub(crate) use input::tests::Fixture as InputFixture;

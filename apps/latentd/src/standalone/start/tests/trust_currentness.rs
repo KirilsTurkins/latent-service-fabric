@@ -8,6 +8,9 @@
 )]
 mod runtime;
 
+#[path = "trust_currentness/profile.rs"]
+mod profile;
+
 use latent_artifacts::{
     package::{inspect_package, PackageLimits},
     AdmissionEvidence, AdmissionStorageLimits, ArtifactRepository, DirectoryArtifactRepository,
@@ -271,6 +274,7 @@ fn evidence(root: &Path, entries: &Value) -> Vec<AdmissionEvidence> {
 
 fn config() -> WasmtimeConfig {
     WasmtimeConfig {
+        execution_isolation_profile: latent_wasmtime::ExecutionIsolationProfile::ExternalCapsule,
         maximum_component_bytes: COMPONENT_BYTES,
         maximum_memory_bytes: 4 * 1024 * 1024,
         maximum_fuel: 1_000_000,
@@ -288,6 +292,14 @@ struct Session {
 }
 impl Session {
     fn new(fixture: &Fixture, repository: Arc<DirectoryArtifactRepository>) -> Self {
+        Self::with_config(fixture, repository, config())
+    }
+
+    fn with_config(
+        fixture: &Fixture,
+        repository: Arc<DirectoryArtifactRepository>,
+        config: WasmtimeConfig,
+    ) -> Self {
         let mut process = AotProcessLimits::default();
         process.compiler.maximum_output_bytes = OUTPUT_BYTES;
         process.resources.maximum_jobs = 1;
@@ -341,8 +353,16 @@ impl Session {
                 maximum_total_bytes: 2 * OUTPUT_BYTES,
             },
         };
+        settings.verify_compiler_readiness(&config).unwrap();
+        assert!(
+            fs::read_to_string("/proc/thread-self/children")
+                .unwrap()
+                .trim()
+                .is_empty(),
+            "the real readiness child is terminated and reaped"
+        );
         let factory = WasmtimeComponentEngineFactory::with_catalog_and_aot(
-            config(),
+            config,
             WasmtimeHostServices::default(),
             repository,
             settings,

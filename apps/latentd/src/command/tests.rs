@@ -14,6 +14,18 @@ fn legacy_dispatch_is_limited_to_explicit_first_command() {
 }
 
 #[test]
+fn check_config_requires_an_explicit_file_and_never_selects_serve() {
+    let parsed =
+        CommandLine::try_parse_from(["latentd", "check-config", "--config", "node.json"]).unwrap();
+    let Command::CheckConfig { config } = parsed.command else {
+        panic!("check-config")
+    };
+    assert_eq!(config, std::path::PathBuf::from("node.json"));
+    assert!(CommandLine::try_parse_from(["latentd", "check-config"]).is_err());
+    assert!(!is_phase0(OsStr::new("check-config")));
+}
+
+#[test]
 fn serve_requires_configuration_and_help_advertises_both_surfaces() {
     let parsed = CommandLine::try_parse_from(["latentd", "serve", "--config", "node.json"])
         .expect("parse product command");

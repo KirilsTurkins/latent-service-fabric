@@ -6,6 +6,64 @@ use latent_core::{PlatformError, PlatformErrorCode};
 use sha2::{Digest, Sha256};
 use std::{fs::File, io::Read, path::Path};
 
+struct Parameters<'a> {
+    executable: &'a Path,
+    compiler_digest: [u8; 32],
+    bootstrap: &'a [u8],
+    engine_compatibility: &'a [u8; 32],
+    limits: super::AotProcessLimits,
+}
+
+pub(in crate::aot) fn verify_readiness(
+    settings: &crate::NativeAotSettings,
+    config: &crate::WasmtimeConfig,
+) -> Result<(), PlatformError> {
+    supported()?;
+    settings.validate()?;
+    let deadline = std::time::Instant::now()
+        .checked_add(
+            settings
+                .process
+                .job_timeout
+                .min(std::time::Duration::from_secs(30)),
+        )
+        .ok_or_else(super::super::invalid)?;
+    let check = || {
+        if std::time::Instant::now() >= deadline {
+            Err(super::timed_out())
+        } else {
+            Ok(())
+        }
+    };
+    if !settings.executable.is_absolute() || settings.executable.as_os_str().len() > 4096 {
+        return Err(super::super::invalid());
+    }
+    let executable = settings.executable.canonicalize().map_err(|_| failed())?;
+    if executable.as_os_str().len() > 4096
+        || hash_executable(&executable, check)? != settings.approved_digest
+    {
+        return Err(rejected("aot-probe-executable-mismatch"));
+    }
+    let profile = super::ValidatedAotProfile::from_config(config, settings.process.compiler)?;
+    let bootstrap = profile.bootstrap()?;
+    let parameters = Parameters {
+        executable: &executable,
+        compiler_digest: settings.approved_digest,
+        bootstrap: &bootstrap,
+        engine_compatibility: profile.engine_compatibility(),
+        limits: settings.process,
+    };
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    {
+        linux::probe(&parameters, &check)
+    }
+    #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+    {
+        let _ = parameters;
+        supported()
+    }
+}
+
 const MAX_EXECUTABLE_BYTES: u64 = 512 * 1024 * 1024;
 pub(super) fn failed() -> PlatformError {
     error(PlatformErrorCode::Unavailable, "aot-compiler-failed")
@@ -72,7 +130,8 @@ pub(super) fn compile(job: &AotCompilationJob, input: &[u8]) -> Result<Vec<u8>, 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod linux {
     use super::{
-        exhausted, failed, hash_executable, rejected, AotCompilationJob, PlatformError, Read,
+        exhausted, failed, hash_executable, rejected, AotCompilationJob, Parameters, PlatformError,
+        Read,
     };
     use crate::aot::protocol;
     use rustix::fs::{fcntl_getfl, fcntl_setfl, OFlags};
@@ -133,10 +192,10 @@ mod linux {
         fn write(
             &mut self,
             mut bytes: &[u8],
-            job: &AotCompilationJob,
+            check: &impl Fn() -> Result<(), PlatformError>,
         ) -> Result<(), PlatformError> {
             while !bytes.is_empty() {
-                job.check_control()?;
+                check()?;
                 self.diagnostics()?;
                 let amount = bytes.len().min(64 * 1024);
                 match self
@@ -157,10 +216,10 @@ mod linux {
         fn read(
             &mut self,
             mut bytes: &mut [u8],
-            job: &AotCompilationJob,
+            check: &impl Fn() -> Result<(), PlatformError>,
         ) -> Result<(), PlatformError> {
             while !bytes.is_empty() {
-                job.check_control()?;
+                check()?;
                 self.diagnostics()?;
                 let amount = bytes.len().min(64 * 1024);
                 match self.output.read(&mut bytes[..amount]) {
@@ -181,10 +240,12 @@ mod linux {
         let flags = fcntl_getfl(&fd).map_err(|_| failed())?;
         fcntl_setfl(&fd, flags | OFlags::NONBLOCK).map_err(|_| failed())
     }
-    pub(super) fn compile(job: &AotCompilationJob, input: &[u8]) -> Result<Vec<u8>, PlatformError> {
-        job.check()?;
-        let state = &job.state;
-        let limits = state.limits;
+    fn start(
+        parameters: &Parameters<'_>,
+        check: &impl Fn() -> Result<(), PlatformError>,
+    ) -> Result<(ChildOwner, Pipes), PlatformError> {
+        check()?;
+        let limits = parameters.limits;
         let arguments = protocol::WorkerOptions {
             parent_pid: std::process::id(),
             sandbox: limits.sandbox,
@@ -192,7 +253,7 @@ mod linux {
             maximum_output_bytes: limits.compiler.maximum_output_bytes,
         }
         .arguments()?;
-        let child = Command::new(&state.executable)
+        let child = Command::new(parameters.executable)
             .env_clear()
             .current_dir("/")
             .args(arguments)
@@ -219,7 +280,7 @@ mod linux {
         // reading /proc/pid/exe. This fixed message is not authentication:
         // the actual executable hash remains mandatory before any input.
         let mut launched = [0; protocol::LAUNCH_MAGIC.len()];
-        pipes.read(&mut launched, job)?;
+        pipes.read(&mut launched, check)?;
         if &launched != protocol::LAUNCH_MAGIC {
             return Err(rejected("aot-worker-launch-mismatch"));
         }
@@ -227,23 +288,53 @@ mod linux {
         // arrives. /proc identifies the actual unreaped process's executable,
         // closing a path replacement between configuration hashing and spawn.
         let running = std::path::PathBuf::from(format!("/proc/{}/exe", owner.child.id()));
-        if hash_executable(&running, || job.check_control())? != state.compiler_digest {
+        if hash_executable(&running, check)? != parameters.compiler_digest {
             return Err(rejected("aot-running-executable-mismatch"));
         }
-        let bootstrap_length = u32::try_from(state.bootstrap.len()).map_err(|_| exhausted())?;
-        pipes.write(&bootstrap_length.to_le_bytes(), job)?;
-        pipes.write(&state.bootstrap, job)?;
+        let bootstrap_length =
+            u32::try_from(parameters.bootstrap.len()).map_err(|_| exhausted())?;
+        pipes.write(&bootstrap_length.to_le_bytes(), check)?;
+        pipes.write(parameters.bootstrap, check)?;
         let mut ready = [0; protocol::READY_BYTES];
-        pipes.read(&mut ready, job)?;
-        if ready != protocol::readiness(state.profile.engine_compatibility()) {
+        pipes.read(&mut ready, check)?;
+        if ready != protocol::readiness(parameters.engine_compatibility) {
             return Err(rejected("aot-worker-readiness-mismatch"));
         }
+        check()?;
+        Ok((owner, pipes))
+    }
+
+    pub(super) fn probe(
+        parameters: &Parameters<'_>,
+        check: &impl Fn() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        let (owner, pipes) = start(parameters, check)?;
+        // No component is sent and no native output is accepted. Actual
+        // termination/reap precedes returning the readiness result to its owner.
+        drop(pipes);
+        drop(owner);
+        check()
+    }
+
+    pub(super) fn compile(job: &AotCompilationJob, input: &[u8]) -> Result<Vec<u8>, PlatformError> {
+        job.check()?;
+        let state = &job.state;
+        let limits = state.limits;
+        let parameters = Parameters {
+            executable: &state.executable,
+            compiler_digest: state.compiler_digest,
+            bootstrap: &state.bootstrap,
+            engine_compatibility: state.profile.engine_compatibility(),
+            limits,
+        };
+        let check = || job.check_control();
+        let (mut owner, mut pipes) = start(&parameters, &check)?;
         // Only the approved fully isolated child now receives untrusted Wasm.
-        pipes.write(&(input.len() as u64).to_le_bytes(), job)?;
-        pipes.write(input, job)?;
+        pipes.write(&(input.len() as u64).to_le_bytes(), &check)?;
+        pipes.write(input, &check)?;
         drop(pipes.input.take());
         let mut length = [0; 8];
-        pipes.read(&mut length, job)?;
+        pipes.read(&mut length, &check)?;
         let length = usize::try_from(u64::from_le_bytes(length)).map_err(|_| exhausted())?;
         if length == 0 || length > limits.compiler.maximum_output_bytes {
             return Err(exhausted());
@@ -254,7 +345,7 @@ mod linux {
             return Err(exhausted());
         }
         output.resize(length, 0);
-        pipes.read(&mut output, job)?;
+        pipes.read(&mut output, &check)?;
         // Exact framing includes EOF and successful exit. Never sign a prefix
         // while an approved process is still alive or has emitted extra bytes.
         let mut eof = false;

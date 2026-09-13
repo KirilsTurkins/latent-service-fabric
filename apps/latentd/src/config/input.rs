@@ -22,6 +22,7 @@ pub(super) fn load(path: &Path) -> Result<NodeConfig, PlatformError> {
         "configurationFileProtection",
     )?;
     let mut config = decode(&bytes)?;
+    config.credentials_from_protected_file = cfg!(all(target_os = "linux", target_arch = "x86_64"));
     if let Some(aot) = &mut config.isolated_aot {
         let parent = absolute
             .parent()

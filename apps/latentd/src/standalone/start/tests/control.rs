@@ -82,6 +82,7 @@ async fn enforced_control_reuse_rejects_a_different_activation_clock_without_can
         .unwrap(),
     );
     let mut catalogs = super::Catalogs {
+        profile: settings.check_config().unwrap(),
         artifacts,
         deployments,
         supply_chain: Some(authority.clone()),
