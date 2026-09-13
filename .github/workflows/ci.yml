@@ -148,7 +148,12 @@ jobs:
           LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite operator-fixture
           python3 -m unittest tools.tests.test_phase2_operator_workflow tools.tests.test_phase2_operator_canary tools.tests.test_phase2_offline_workflow
           python3 tools/run_phase2_operator_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/operator-receipt.json"
-          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" LSF_AOT_COMPILER="${PWD}/target/debug/latent-aot-compiler" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite trust-currentness
+          # The executable is authenticated and hashed again in the child. Keep
+          # debug sections out of this bounded runtime fixture without rebuilding
+          # the workspace or modifying Cargo's cached executable.
+          objcopy --strip-debug "${PWD}/target/debug/latent-aot-compiler" "${fixture_root}/latent-aot-compiler"
+          stat --format='AOT compiler fixture: %s bytes' "${fixture_root}/latent-aot-compiler"
+          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" LSF_AOT_COMPILER="${fixture_root}/latent-aot-compiler" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite trust-currentness
           python3 tools/run_phase2_offline_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/offline-receipt.json"
           LSF_PHASE2_RESOURCE_FIXTURE_ROOT="${fixture_root}/resource-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite resource-fixture
           python3 -m unittest tools.tests.test_phase2_gate_resource
