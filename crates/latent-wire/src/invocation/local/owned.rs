@@ -105,6 +105,7 @@ fn response(receipt: ActivationReceipt) -> InvocationResponse {
                 .map(|revision| InvocationRevision {
                     revision_id: revision.revision,
                     release_digest: revision.release,
+                    publication_id: revision.publication,
                     route_generation: revision.route_generation,
                 }),
         },

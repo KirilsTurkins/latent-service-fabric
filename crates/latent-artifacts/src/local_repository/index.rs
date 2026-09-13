@@ -295,6 +295,8 @@ impl CatalogIndex {
         }
         let cost = sizing::measure(&descriptor, &manifest, publication.scope.tenant(), config)?;
         let mut value = ArtifactCatalogEntry {
+            publication: Some(publication.id.clone()),
+            package: None,
             descriptor,
             tenant: publication.scope.tenant().cloned(),
             service: ServiceId(manifest.metadata.name),
@@ -477,6 +479,7 @@ impl CatalogIndex {
             return Err(resource_exhausted("admission-history-byte-limit"));
         }
         let entry = self.by_publication.get_mut(id).expect("checked entry");
+        entry.value.package = Some(binding.package.clone());
         entry.admission_binding = Some(std::sync::Arc::new(binding));
         entry.admission_completion = Some(completion);
         self.accounted_bytes += charge;

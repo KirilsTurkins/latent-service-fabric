@@ -1,3 +1,5 @@
+export type { PublicationRef, ReleaseSelector, PublicationIdentity } from "./publication.js";
+
 export interface ResourceBudget {
   readonly cpuFuel: bigint;
   readonly memoryBytes: bigint;
@@ -60,7 +62,10 @@ export interface InvokeRequest {
 export interface InvokeResponse {
   readonly activationId: string;
   readonly revisionId: string;
+  /** Executable component bytes, never a publication/package identity. */
   readonly releaseDigest: string;
+  /** Captured source; undefined is legacy/unresolved. Present invalid IDs fail validation. */
+  readonly publicationId?: string;
   readonly routeGeneration: bigint;
   readonly payload: Uint8Array;
   readonly mediaType: string;
@@ -93,7 +98,10 @@ export interface DeclaredError {
 export interface InvocationReceipt {
   readonly activationId: string;
   readonly revisionId: string;
+  /** Executable component bytes, never a publication/package identity. */
   readonly releaseDigest: string;
+  /** Captured source; undefined is legacy/unresolved. Present invalid IDs fail validation. */
+  readonly publicationId?: string;
   readonly routeGeneration: bigint;
   readonly consumption: BudgetConsumption;
 }

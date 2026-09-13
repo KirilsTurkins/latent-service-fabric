@@ -250,18 +250,29 @@ impl LifecycleStore {
         scope: &LifecycleScope,
         id: &str,
     ) -> Result<ReleaseOperationLookup, PlatformError> {
+        self.selected_operation(scope, id)
+            .map(|(_, operation)| operation)
+    }
+    pub(crate) fn selected_operation(
+        &self,
+        scope: &LifecycleScope,
+        id: &str,
+    ) -> Result<(Option<PublicationId>, ReleaseOperationLookup), PlatformError> {
         scope.validate()?;
         model::token(id, 128)?;
         if self.owner.check().is_err() {
-            return Ok(ReleaseOperationLookup::Uncertain);
+            return Ok((None, ReleaseOperationLookup::Uncertain));
         }
         let state = self.state.try_read().map_err(lock_error)?;
         Ok(state
             .receipts
             .values()
             .find(|entry| entry.receipt.scope == *scope && entry.receipt.operation_id == id)
-            .map_or(ReleaseOperationLookup::Unknown, |entry| {
-                ReleaseOperationLookup::Found(entry.receipt.clone())
+            .map_or((None, ReleaseOperationLookup::Unknown), |entry| {
+                (
+                    entry.publication.clone(),
+                    ReleaseOperationLookup::Found(entry.receipt.clone()),
+                )
             }))
     }
     #[cfg(test)]

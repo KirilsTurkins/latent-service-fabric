@@ -211,10 +211,10 @@ impl DirectoryArtifactRepository {
         request: &Request,
         preflight: &mut Preflight<'_>,
     ) -> Result<Option<ReleaseOperationReceipt>, PlatformError> {
-        match self
+        let (publication, operation) = self
             .life_store()
-            .operation(&request.context.scope, &request.operation_id)?
-        {
+            .selected_operation(&request.context.scope, &request.operation_id)?;
+        match operation {
             crate::ReleaseOperationLookup::Found(receipt) => {
                 if receipt.request_digest != request.digest {
                     return Err(error(
@@ -233,6 +233,7 @@ impl DirectoryArtifactRepository {
                 let failure = (receipt.disposition == ReleaseOperationDisposition::Rejected)
                     .then(|| rejected_error(&receipt));
                 preflight(ReleaseOperationPreview {
+                    publication: publication.as_ref(),
                     replay: true,
                     receipt: &receipt,
                     release: summary.as_ref(),
@@ -303,6 +304,7 @@ impl DirectoryArtifactRepository {
                 .prepare_publication(request.publication.clone(), receipt, None)?;
         let failure = rejected_error(prepared.receipt());
         preflight(ReleaseOperationPreview {
+            publication: request.publication.as_ref(),
             replay: false,
             receipt: prepared.receipt(),
             release: None,

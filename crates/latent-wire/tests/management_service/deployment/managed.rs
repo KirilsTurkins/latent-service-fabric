@@ -52,6 +52,7 @@ async fn managed_apply_delete_and_exact_replay_preserve_original_receipts() {
         Some(proto::DeploymentDurability::Confirmed as i32)
     );
     let input = proto::ApplyDeploymentRequest {
+        expected_component_digest: None,
         deployment: Some(deployment("ship", "acme", "echo", &release.release_digest)),
         expected_generation: Some(0),
         operation: operation("create", 0),
@@ -217,6 +218,7 @@ async fn managed_requires_audit_and_response_capacity_before_any_catalog_effect(
             .apply_deployment(request(
                 "alice",
                 proto::ApplyDeploymentRequest {
+                    expected_component_digest: None,
                     deployment: Some(deployment("ship", "acme", "echo", &release.release_digest)),
                     expected_generation: Some(0),
                     operation: operation("blocked", 0),

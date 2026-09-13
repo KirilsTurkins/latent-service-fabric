@@ -48,12 +48,27 @@ impl proto::rollout_service_server::RolloutService for ManagementServiceAdapter 
         validation::start(request.get_ref(), &tenant, &limits)?;
         let handle = self.rollout_handle()?;
         validation::completed(deadline)?;
-        let value = request.into_inner();
-        let mut candidate =
-            super::deployment_manifest_from_proto(value.candidate.expect("validated candidate"))
-                .map_err(|_| {
-                    Status::invalid_argument("invalid rollout candidate representation")
-                })?;
+        let mut value = request.into_inner();
+        let selected = tokio::time::timeout_at(
+            deadline.into(),
+            super::deployment::selection::input(
+                proto::ApplyDeploymentRequest {
+                    deployment: value.candidate.take(),
+                    expected_component_digest: value.expected_candidate_component_digest.take(),
+                    expected_generation: None,
+                    operation: None,
+                },
+                &tenant,
+                self.services.artifacts.as_ref(),
+                &limits,
+            ),
+        )
+        .await
+        .map_err(|_| Status::deadline_exceeded("rollout selection deadline exceeded"))??;
+        let mut candidate = super::deployment_manifest_from_proto(
+            selected.deployment.expect("validated candidate"),
+        )
+        .map_err(|_| Status::invalid_argument("invalid rollout candidate representation"))?;
         Phase1ManifestValidator
             .validate_deployment(&candidate)
             .map_err(|_| Status::invalid_argument("invalid rollout candidate"))?;

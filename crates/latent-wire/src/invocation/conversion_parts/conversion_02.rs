@@ -136,13 +136,14 @@ pub(super) fn public_invocation_response_to_proto(
 ) -> proto::InvokeResponse {
     let (result, consumption) = owned_outcome_to_proto(response.outcome, limits);
     let pin = response.receipt.resolved_revision;
-    let (revision_id, release_digest, route_generation) = pin.map_or_else(
-        || (String::new(), String::new(), 0),
+    let (revision_id, release_digest, route_generation, publication_id) = pin.map_or_else(
+        || (String::new(), String::new(), 0, None),
         |pin| {
             (
                 pin.revision_id.0,
                 pin.release_digest.0,
                 pin.route_generation.0,
+                pin.publication_id.map(latent_core::PublicationId::into_string),
             )
         },
     );
@@ -151,6 +152,7 @@ pub(super) fn public_invocation_response_to_proto(
         revision_id,
         release_digest,
         route_generation,
+        publication_id,
         result: Some(result),
         consumption: Some(consumption_to_proto(&consumption)),
     }

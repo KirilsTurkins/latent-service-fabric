@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/publication-ref.schema.json",
+  "title": "Scoped immutable LSF publication reference",
+  "$comment": "An identifier is not an execution grant. Tenant must match authenticated scope; JSON Schema checks shape while the runtime enforces that association and UTF-8 byte limits.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "tenant"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 83,
+      "maxLength": 83,
+      "pattern": "^publication:sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "tenant": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])"
+    }
+  }
+}

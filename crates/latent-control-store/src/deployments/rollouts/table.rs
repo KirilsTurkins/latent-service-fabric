@@ -114,11 +114,17 @@ impl RolloutTable {
         Self::new(data, false, budget, limits)
     }
     pub fn new(
-        data: TableData,
+        mut data: TableData,
         enabled: bool,
         budget: &Arc<MetadataBudget>,
         limits: RolloutLimits,
     ) -> Result<Arc<Self>> {
+        let _scratch = budget.reserve(
+            data.receipts
+                .len()
+                .saturating_mul(2 * latent_core::PublicationId::TEXT_BYTES),
+        )?;
+        hydrate_publications(&mut data, limits)?;
         validate(&data, limits)?;
         let bytes = retained_bytes(&data);
         let charge = budget.reserve(bytes)?;
@@ -205,6 +211,28 @@ impl RolloutTable {
         Ok(())
     }
 }
+
+fn hydrate_publications(data: &mut TableData, limits: RolloutLimits) -> Result<()> {
+    if data.rows.len() > limits.maximum_rows || data.receipts.len() > limits.maximum_receipts {
+        return Err(capacity());
+    }
+    for stored in &mut data.receipts {
+        let receipt = &mut stored.receipt;
+        let row = data
+            .rows
+            .iter()
+            .find(|row| row.status.id == receipt.rollout_id && row.status.tenant == receipt.tenant)
+            .ok_or_else(corrupt)?;
+        receipt
+            .base_publication
+            .clone_from(&row.status.base.publication);
+        receipt
+            .candidate_publication
+            .clone_from(&row.status.candidate.publication);
+    }
+    Ok(())
+}
+
 pub(in crate::deployments) fn manifest(value: &DeploymentManifest) -> Result<String> {
     let bytes = JsonManifestCodec::default()
         .encode_deployment(value)
@@ -245,6 +273,7 @@ pub(in crate::deployments) fn retained_bytes(data: &TableData) -> usize {
     }
     for receipt in &data.receipts {
         n = n
+            .saturating_add(2 * latent_core::PublicationId::TEXT_BYTES)
             .saturating_add(
                 receipt
                     .receipt
@@ -482,6 +511,8 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
             .find(|row| row.status.tenant == r.tenant && row.status.id == r.rollout_id)
             .ok_or_else(corrupt)?;
         if r.revision > row.status.revision
+            || r.base_publication != row.status.base.publication
+            || r.candidate_publication != row.status.candidate.publication
             || r.state_version > row.status.state_version
             || r.plan_digest != row.status.plan_digest
             || r.step as usize >= row.status.candidate_weights.len()

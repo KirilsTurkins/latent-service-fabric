@@ -10,6 +10,8 @@ use latent_core::{
 };
 
 pub use latent_core::{ErrorDetail, PlatformError};
+mod publication;
+pub use publication::{PublicationIdentity, PublicationRef, ReleaseSelector};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationTarget {
@@ -53,7 +55,10 @@ pub struct InvokeRequest {
 pub struct InvokeResponse {
     pub activation_id: ActivationId,
     pub revision_id: RevisionId,
+    /// Executable component digest, unchanged by publication selection.
     pub release_digest: ReleaseDigest,
+    /// Captured source; absent for legacy/unresolved pins, never authority.
+    pub publication_id: Option<latent_core::PublicationId>,
     pub route_generation: RouteGeneration,
     pub payload: Payload,
     pub media_type: String,
@@ -68,7 +73,10 @@ pub struct InvokeResponse {
 pub struct InvocationReceipt {
     pub activation_id: ActivationId,
     pub revision_id: RevisionId,
+    /// Executable component digest, unchanged by publication selection.
     pub release_digest: ReleaseDigest,
+    /// Captured source; absent for legacy/unresolved pins, never authority.
+    pub publication_id: Option<latent_core::PublicationId>,
     pub route_generation: RouteGeneration,
     pub consumption: BudgetConsumption,
 }

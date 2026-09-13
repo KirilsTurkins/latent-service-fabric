@@ -8,7 +8,7 @@ WIT remains authoritative for typed capsule contracts. Language SDKs are conveni
 
 Every SDK's invocation request carries optional activation, root activation, and
 parent activation IDs. These map directly to Protobuf `InvokeRequest` fields
-1–3. Supplying an activation ID lets a caller retain it before invoking and use
+1â€“3. Supplying an activation ID lets a caller retain it before invoking and use
 it for cancellation or status while the invocation response is still pending.
 The ID is a correlation identifier, not an idempotency key or authorization
 credential. A lost response does not establish whether execution happened;
@@ -108,3 +108,38 @@ interface. The node still exposes only its supported context/log/clock guest
 imports; general providers, application ingress and browser/SSR execution remain
 planned. Package and SDK release versions do not change the independently
 versioned WIT and Protobuf contracts.
+
+## Publication identity (Phase 3)
+
+All six SDKs provide transport-neutral `PublicationRef` (ID and tenant),
+`ReleaseSelector` (optional component digest or scoped publication), and
+`PublicationIdentity` (publication, component and package) models. A corrected
+embedded SBOM changes the package identity while retaining executable bytes;
+the same package in two tenants has separate publications. These identities
+must remain distinct from opaque invocation payloads and authorization grants.
+
+A request boundary requires exactly one selector. The DTOs preserve absent,
+present empty and contradictory values for validation; they never choose a
+fallback, enumerate candidates, infer a tenant or pick the newest publication.
+Rust uses the canonical typed PublicationId parser and rejects malformed IDs
+before constructing that typed reference. Other interfaces retain strings for
+the future transport validator. `ReleaseSelector.componentDigest` maps to the
+specific RPC's legacy digest field; it is not an alternative wire schema.
+
+Successful responses and common invocation receipts add an optional captured
+publication ID, mapping to InvokeResponse field 10. The existing release digest
+still denotes component bytes. Absence supports old servers and unresolved
+failures; a present invalid ID must fail a real client's response validation.
+Route/deployment selection chooses the publication; these models do not add a
+direct Invoke publication selector. See [public API and migration](../docs/reference/publication-api.md)
+for precise selector, recovery, lifecycle and compatibility behavior.
+
+Rust struct literals need the new optional receipt field. Go keyed literals keep
+nil defaults; TypeScript fields remain optional. Java retains old constructors
+with Optional.empty; .NET retains old construction with a null default. Record
+shapes and the C response/receipt layouts change: rebuild binary consumers and
+producers together. No stable C ABI or executable management transport is claimed.
+All six small contract suites exercise coexistence, distinct tenant scope,
+legacy presence, present-invalid selection and full-width 64-bit receipt values.
+The Phase 3 shared SDK profiles and real-client tickets consume these models
+and authoritative RPC definitions; they do not define a second identity model.

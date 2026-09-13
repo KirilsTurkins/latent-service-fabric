@@ -7,11 +7,21 @@ use latent_core::{ArtifactBlobDigest, TenantId};
 use latent_manifest::__serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
+#[path = "publications.rs"]
+mod publications;
+pub(in crate::deployments) use publications::recover_publications;
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
 pub(in crate::deployments) struct StoredReceipt {
     pub sequence: u64,
     pub receipt: DeploymentOperationReceipt,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "publication_reference"
+    )]
+    pub publication: Option<latent_artifacts::PublicationRef>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
@@ -37,7 +47,10 @@ impl OperationTable {
         };
         Self::new(data, false, budget)
     }
-    pub fn new(data: TableData, enabled: bool, budget: &Arc<Budget>) -> Result<Arc<Self>> {
+    pub fn new(mut data: TableData, enabled: bool, budget: &Arc<Budget>) -> Result<Arc<Self>> {
+        for stored in &mut data.receipts {
+            stored.receipt.publication = stored.publication.clone();
+        }
         validate(&data, enabled, budget.limits)?;
         let retained_bytes = retained(&data)?;
         let charge = budget.reserve(retained_bytes)?;
@@ -110,12 +123,15 @@ fn retained(data: &TableData) -> Result<usize> {
     for value in &data.receipts {
         n = n
             .saturating_add(value.receipt.canonical_bytes()?.len().saturating_mul(2))
+            .saturating_add(value.publication.as_ref().map_or(0, |id| {
+                2 * (id.id.as_str().len() + id.scope.tenant().map_or(0, |tenant| tenant.0.len()))
+            }))
             .saturating_add(512);
     }
     Ok(n)
 }
 fn validate(data: &TableData, enabled: bool, limits: DeploymentOperationLimits) -> Result<()> {
-    if data.format_version != 1
+    if !matches!(data.format_version, 1 | 2)
         || data.receipt_slots == 0
         || data.receipt_slots > limits.maximum_receipts
         || data.receipts.len() as u64 != data.operation_sequence.min(data.receipt_slots as u64)
@@ -134,6 +150,8 @@ fn validate(data: &TableData, enabled: bool, limits: DeploymentOperationLimits) 
     for (i, stored) in data.receipts.iter().enumerate() {
         let r = &stored.receipt;
         if stored.sequence != floor + i as u64
+            || (data.format_version == 1 && stored.publication.is_some())
+            || stored.publication != r.publication
             || r.format_version != 1
             || r.state_version <= previous_state
             || stored.sequence > r.state_version
@@ -167,4 +185,10 @@ fn validate(data: &TableData, enabled: bool, limits: DeploymentOperationLimits) 
         r.canonical_bytes().map_err(|_| corrupt())?;
     }
     Ok(())
+}
+
+fn publication_reference<'de, D: latent_manifest::__serde::Deserializer<'de>>(
+    input: D,
+) -> std::result::Result<Option<latent_artifacts::PublicationRef>, D::Error> {
+    latent_artifacts::PublicationRef::deserialize(input).map(Some)
 }

@@ -8,6 +8,8 @@
 #define TEXT(value) ((latent_string){(value), sizeof(value) - 1u})
 #define CAPACITY 128u
 
+#include "publication_identity.h"
+
 typedef struct copied_string {
     char bytes[CAPACITY];
     size_t length;
@@ -416,6 +418,7 @@ static void absent_identity_is_server_assigned_and_present_empty_is_preserved(vo
 }
 
 int main(void) {
+    publication_models();
     pending_identity_supports_status_and_all_cancel_results();
     lost_response_can_be_recovered_by_id_without_reinvoking();
     absent_identity_is_server_assigned_and_present_empty_is_preserved();

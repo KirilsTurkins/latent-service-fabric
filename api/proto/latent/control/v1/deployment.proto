@@ -39,6 +39,12 @@ message Deployment {
   // generation. Unrelated writes leave it unchanged; delete/recreate never
   // reuses an old version. Adapters ignore this field on apply input.
   uint64 generation = 10;
+  // Apply selector: release_digest must be empty. Output: the exact captured
+  // publication, alongside its component digest. Never an eligibility grant.
+  PublicationRef publication = 11;
+  // Output-only original manifest selector. Absent for a legacy component
+  // request even when publication reports the captured exact association.
+  PublicationRef requested_publication = 12;
 }
 
 message ApplyDeploymentRequest {
@@ -48,6 +54,9 @@ message ApplyDeploymentRequest {
   optional uint64 expected_generation = 2;
   // Present selects audited, idempotent control; both CAS values are required.
   DeploymentOperationPrecondition operation = 3;
+  // Optional content assertion for an explicit publication selector. It never
+  // selects a publication and cannot be combined with a legacy digest selector.
+  optional string expected_component_digest = 4;
 }
 
 message ApplyDeploymentResponse {
@@ -138,6 +147,9 @@ message DeploymentOperationReceipt {
   string component_digest = 14;
   uint64 completed_at_unix_millis = 15;
   string receipt_digest = 16;
+  // Independently retained association; receipt_digest keeps its historical
+  // canonical format. It is not current eligibility or an execution grant.
+  PublicationRef publication = 17;
 }
 
 message GetDeploymentOperationRequest {

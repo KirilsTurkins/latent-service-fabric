@@ -683,6 +683,104 @@ impl DirectoryArtifactRepository {
 }
 
 impl ArtifactRepository for DirectoryArtifactRepository {
+    fn get_selected_catalog_entry<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        selector: &'a crate::PublicationSelector,
+    ) -> BoxFuture<'a, Result<Option<crate::ArtifactCatalogEntry>, PlatformError>> {
+        Box::pin(async move {
+            self.resolve_publication(scope, selector)?
+                .as_ref()
+                .map(|reference| self.publication_catalog_entry(reference))
+                .transpose()
+                .map(Option::flatten)
+        })
+    }
+    fn get_selected_lifecycle<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        selector: &'a crate::PublicationSelector,
+    ) -> BoxFuture<'a, Result<Option<crate::ReleaseLifecycleStatus>, PlatformError>> {
+        Box::pin(async move {
+            self.resolve_publication(scope, selector)?
+                .as_ref()
+                .map(|reference| self.publication_lifecycle_status(reference))
+                .transpose()
+                .map(Option::flatten)
+        })
+    }
+    fn get_selected_operation<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        operation_id: &'a str,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            (
+                Option<latent_core::PublicationId>,
+                crate::ReleaseOperationLookup,
+            ),
+            PlatformError,
+        >,
+    > {
+        Box::pin(async move { self.life_store().selected_operation(scope, operation_id) })
+    }
+    fn change_selected_lifecycle<'a>(
+        &'a self,
+        context: crate::ReleaseMutationContext,
+        selector: &'a crate::PublicationSelector,
+        action: crate::ReleaseLifecycleAction,
+        reason: crate::ReleaseLifecycleReason,
+        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<crate::PublicationOperationReceipt, PlatformError>> {
+        Box::pin(async move {
+            let mut publication = None;
+            let operation = self.change_publication_lifecycle(
+                context,
+                selector,
+                action,
+                reason,
+                &mut |preview| {
+                    preflight(preview)?;
+                    publication = preview.publication.cloned();
+                    Ok(())
+                },
+            )?;
+            Ok(crate::PublicationOperationReceipt {
+                publication,
+                operation,
+            })
+        })
+    }
+    fn renew_selected_evidence<'a>(
+        &'a self,
+        context: crate::ReleaseMutationContext,
+        selector: &'a crate::PublicationSelector,
+        package: &'a latent_core::PackageDigest,
+        evidence: crate::ReleaseEvidenceUpload,
+        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<crate::PublicationOperationReceipt, PlatformError>> {
+        Box::pin(async move {
+            let mut publication = None;
+            let operation = self.renew_publication_evidence(
+                context,
+                selector,
+                package,
+                evidence,
+                &mut |preview| {
+                    preflight(preview)?;
+                    publication = preview.publication.cloned();
+                    Ok(())
+                },
+            )?;
+            Ok(crate::PublicationOperationReceipt {
+                publication,
+                operation,
+            })
+        })
+    }
     fn retained_package_source<'a>(
         &'a self,
         tenant: &'a latent_core::TenantId,

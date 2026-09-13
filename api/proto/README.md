@@ -21,6 +21,9 @@ Completed Phase 2 also exposes managed deployment operation receipts, scoped
 durable audit queries and rollout/canary/promotion/rollback operations. See the
 [operator workflows](../../docs/phase-2-operator-workflows.md) and generated
 management reference for exact current methods and recovery semantics.
+Phase 3 adds [explicit publication selection](../../docs/reference/publication-api.md)
+to release, deployment and rollout RPCs, and captured source IDs to invocation
+receipts and audit, while retaining component fields and their numbers.
 The [standalone Linux node](../../docs/reference/standalone-node.md) serves this
 subset through a bounded loopback listener with configured credentials.
 Generated trigger, provider, clustered registration/watch and other later-phase

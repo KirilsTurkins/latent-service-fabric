@@ -41,6 +41,7 @@ pub(super) fn pin_from_wire(
     ) {
         (true, true)
             if response.route_generation == 0
+                && response.publication_id.is_none()
                 && matches!(
                     response.result,
                     Some(proto::invoke_response::Result::PlatformFailure(_))
@@ -57,6 +58,15 @@ pub(super) fn pin_from_wire(
                     &mut response.release_digest,
                 )),
                 route_generation: latent_core::RouteGeneration(response.route_generation),
+                publication_id: response
+                    .publication_id
+                    .take()
+                    .map(|id| {
+                        id.parse::<latent_core::PublicationId>().map_err(|_| {
+                            InvocationConversionError::new("invocation publication ID is invalid")
+                        })
+                    })
+                    .transpose()?,
             }))
         }
         _ => Err(InvocationConversionError::new(

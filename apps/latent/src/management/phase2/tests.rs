@@ -74,6 +74,24 @@ fn rollout_start_requires_matching_candidate_weight_without_rewriting_the_manife
     assert_eq!(request.candidate.unwrap().route_weight, 1000);
     assert_eq!(request.candidate_weights, vec![1000, 10000]);
     assert_eq!(std::fs::read(&path).unwrap(), aligned);
+    let selected = format!("publication:sha256:{}", "a".repeat(64));
+    manifest["spec"]["publication"] = serde_json::json!(selected);
+    let exact = serde_json::to_vec(&manifest).unwrap();
+    std::fs::write(&path, &exact).unwrap();
+    let Operation::StartRollout(request) =
+        crate::management::prepare(&cli.command, &config()).unwrap()
+    else {
+        panic!("start")
+    };
+    let candidate = request.candidate.unwrap();
+    assert!(candidate.release_digest.is_empty());
+    assert!(candidate.requested_publication.is_none());
+    assert_eq!(candidate.publication.unwrap().id, selected);
+    assert_eq!(
+        request.expected_candidate_component_digest.as_deref(),
+        manifest["spec"]["release"].as_str()
+    );
+    assert_eq!(std::fs::read(&path).unwrap(), exact);
 }
 
 #[test]

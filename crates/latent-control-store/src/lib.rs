@@ -53,6 +53,9 @@ pub trait ReleaseCatalog: Send + Sync {
 pub struct VersionedDeployment {
     pub manifest: DeploymentManifest,
     pub generation: u64,
+    /// Captured from the same immutable revision; never a current execution grant.
+    /// Separate from the caller's original optional manifest selector.
+    pub publication: Option<latent_artifacts::PublicationRef>,
 }
 
 /// The exact normalized record installed by an apply and its catalog publication generation.

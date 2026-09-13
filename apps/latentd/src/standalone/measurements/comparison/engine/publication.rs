@@ -83,6 +83,7 @@ async fn one(node: &mut Node, clock: Clock) -> Result<(Value, [Value; 2])> {
         component_media_type: fixture.artifact.descriptor.media_type.clone(),
     };
     let deployment = deployment_to_proto(&VersionedDeployment {
+        publication: None,
         manifest: fixture.deployment.clone(),
         generation: 0,
     })
@@ -115,6 +116,7 @@ async fn one(node: &mut Node, clock: Clock) -> Result<(Value, [Value; 2])> {
     let applied = proto::deployment_service_client::DeploymentServiceClient::new(node.channel())
         .apply_deployment(auth(
             proto::ApplyDeploymentRequest {
+                expected_component_digest: None,
                 operation: None,
                 deployment: Some(deployment),
                 expected_generation: None,

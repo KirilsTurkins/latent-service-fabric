@@ -15,6 +15,7 @@ use super::fixtures::*;
 use crate::{rollouts::*, DeploymentStore};
 
 mod history;
+mod operations;
 
 fn actor() -> ReleaseActor {
     ReleaseActor {

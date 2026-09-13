@@ -8,6 +8,7 @@ const MAX_SOURCE_FIELDS: usize = 32;
 const DIAGNOSTIC_STRING_FLOOR: usize = 64;
 
 pub(super) enum PublicDetail {
+    PublicationAmbiguous,
     Release(release::ReleaseDetail),
     Catalog(&'static str),
     Mutation {
@@ -39,6 +40,12 @@ impl PublicDetail {
             return None;
         }
         match source.kind.as_str() {
+            "publication-selector"
+                if source.fields.get("reason").map(String::as_str)
+                    == Some("publication-selector-ambiguous") =>
+            {
+                Some(Self::PublicationAmbiguous)
+            }
             "release-operation" => release::ReleaseDetail::parse(source).map(Self::Release),
             "deployment-catalog" => {
                 let reason = source.fields.get("reason")?;
@@ -71,6 +78,7 @@ impl PublicDetail {
     /// Source strings and their spare capacities are never moved into the result.
     pub(super) fn retained_cost(&self) -> usize {
         match self {
+            Self::PublicationAmbiguous => 4 * 128 + 64,
             Self::Release(value) => value.retained_cost(),
             Self::Catalog(reason) => {
                 4 * 128 + "deployment-catalog".len() + "reason".len() + reason.len()
@@ -89,6 +97,14 @@ impl PublicDetail {
 
     pub(super) fn into_proto(self) -> proto::ErrorDetail {
         match self {
+            Self::PublicationAmbiguous => proto::ErrorDetail {
+                kind: "publication-selector".to_owned(),
+                fields: [(
+                    "reason".to_owned(),
+                    "publication-selector-ambiguous".to_owned(),
+                )]
+                .into(),
+            },
             Self::Release(value) => value.into_proto(),
             Self::Catalog(reason) => proto::ErrorDetail {
                 kind: "deployment-catalog".to_owned(),

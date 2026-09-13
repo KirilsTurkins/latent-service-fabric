@@ -69,6 +69,8 @@ pub struct InvocationCommand {
 pub struct InvocationRevision {
     pub revision_id: RevisionId,
     pub release_digest: ReleaseDigest,
+    /// Exact captured source; an ID alone does not confer tenant authority.
+    pub publication_id: Option<latent_core::PublicationId>,
     pub route_generation: RouteGeneration,
 }
 
