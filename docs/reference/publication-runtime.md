@@ -104,3 +104,19 @@ remain separate from runtime tests that inject a trusted host verifier.
 
 These checks establish the selected authority and ownership behavior. They are
 not throughput benchmarks or evidence of hostile-multitenant production qualification.
+
+## Local currentness and the future cluster boundary
+
+These exact-publication checks consult the configured local lifecycle/admission
+owners. They do not establish freshness relative to a remote controller.
+[ADR-0030](../../adr/0030-bound-disconnected-authorization-validity.md) and
+[RFC-0004](../../rfcs/0004-route-and-authorization-freshness.md) require future
+cluster leases to bind this same publication and current authority independently
+from route retention and component/code identity. Finite expiry, new-boot
+revalidation and conservative clock checks are Phase 5 implementation work.
+
+The guarded-start callback is the acceptance cutover, not the first literal
+guest instruction. Work accepted before a later denial may finish under its own
+finite deadline/resources; routed, queued or prepared work still has to pass the
+current check. [Cluster conformance](../architecture/cluster-freshness-handoff.md)
+must preserve this boundary and test its distributed assumptions separately.
