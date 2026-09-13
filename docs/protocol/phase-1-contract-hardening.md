@@ -382,3 +382,24 @@ its component field 3 and generation field 4 retain their meaning. These result
 IDs describe captured sources and never provide execution authority. Present
 invalid IDs cannot be normalized to absent legacy values. All six SDK interfaces
 include corresponding presence-aware models and executable contract fixtures.
+
+### Phase 3 capability policy control addition (#203)
+
+`latent.control.v1.PolicyService` now has a concrete bounded implementation.
+All original field numbers/types and RPC signatures remain unchanged. Additions
+identify the closed policy language, policy/provider-binding record kind,
+content digest and revocation state; mutations carry explicit operation IDs and
+receipts. `ListPolicies` adds scoped opaque pagination and `GetPolicyOperation`
+adds bounded historical outcome recovery. Explanation adds exact service,
+publication, capability operation, typed resource and required policy/binding IDs.
+
+The previously descriptive generic policy requests do not constitute a supported
+executable language. The concrete profile requires kind/language, operation ID
+and present expected generation; unsafe legacy omissions reject. Old generic
+explanation subject/action/resource/attribute overrides must be empty, because
+identity comes from the trusted transport context. No existing field is silently
+reinterpreted as publication identity. Full semantics and limits are in
+[durable capability policies](../runtime/capability-policies.md).
+
+The normalized descriptor baseline deliberately records these additive changes.
+They do not change the guest WIT ABI or install a new provider.
