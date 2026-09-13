@@ -10,6 +10,7 @@ mod policy;
 mod protected_file;
 mod rollouts;
 mod runtime;
+mod security;
 mod supply_chain;
 #[cfg(test)]
 mod tests;
@@ -22,6 +23,7 @@ use latent_core::{PlatformError, PlatformErrorCode};
 
 pub use aot::{AotCacheConfig, AotImageConfig, AotProcessConfig, IsolatedAotConfig};
 pub use audit::AuditConfig;
+pub use latent_wasmtime::ExecutionIsolationProfile;
 pub use model::{
     CacheConfig, CatalogConfig, CellConfig, CredentialConfig, CredentialRole, EngineAllocator,
     EngineConfig, EngineOptimization, ExecutionConfig, LimitConfig, NodeConfig, RetentionConfig,
@@ -29,6 +31,7 @@ pub use model::{
 };
 pub use rollouts::RolloutConfig;
 pub(crate) use rollouts::RolloutSettings;
+pub use security::ExecutionProfileReport;
 pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
@@ -36,6 +39,7 @@ pub(crate) use supply_chain::SupplyChainSettings;
 /// plan passed to startup. This type intentionally has no `Debug` implementation
 /// because its transport configuration contains credentials.
 pub struct NodeSettings {
+    pub(crate) credentials_from_protected_file: bool,
     pub(crate) data_directory: PathBuf,
     pub(crate) node: latent_node::NodeDescriptor,
     pub(crate) runtime_workers: usize,
@@ -63,6 +67,16 @@ pub struct NodeSettings {
 }
 
 impl NodeSettings {
+    pub(crate) fn persist_execution_profile(&self) -> Result<(), PlatformError> {
+        security::persist(self)
+    }
+
+    /// Verify actual startup requirements without opening catalogs or listeners.
+    /// Configured isolated compilation uses one bounded, reaped readiness probe.
+    pub fn check_config(&self) -> Result<ExecutionProfileReport, PlatformError> {
+        security::check(self)
+    }
+
     /// Fixed invocation/network runtime worker count for the embedding owner.
     #[must_use]
     pub const fn runtime_workers(&self) -> usize {

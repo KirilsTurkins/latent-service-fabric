@@ -23,19 +23,17 @@ async fn configured_aot_startup_error_never_selects_ordinary_compilation() {
             "receiptRoot":directory.path().join("receipts")}
     }))
     .unwrap();
-    let mut settings = config.derive().unwrap();
-    let catalogs = Catalogs::open(&settings).await.unwrap();
-    let error = super::super::StandaloneNode::compose(
-        &mut settings,
-        &catalogs,
-        Arc::new(SystemActivationClock),
-    )
-    .err()
-    .expect("a missing approved executable cannot select the legacy factory");
+    let settings = config.derive().unwrap();
+    let error = Catalogs::open(&settings)
+        .await
+        .err()
+        .expect("a missing approved executable cannot select the legacy factory");
     assert!(matches!(
         error.code,
         PlatformErrorCode::Unavailable | PlatformErrorCode::InvalidArgument
     ));
     assert!(!error.message.contains("missing-approved-compiler"));
-    assert!(settings.isolated_aot.is_none());
+    assert!(settings.isolated_aot.is_some());
+    assert!(!directory.path().join("data").exists());
+    assert!(!directory.path().join("blobs").exists());
 }

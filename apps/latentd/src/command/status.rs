@@ -13,6 +13,11 @@ use super::Failure;
 const SCHEMA: &str = "latent.standalone.status.v1";
 const MAXIMUM_LINE_BYTES: usize = 16 * 1024;
 
+#[cfg(target_os = "linux")]
+pub(super) fn configuration(report: &crate::config::ExecutionProfileReport) -> Result<(), Failure> {
+    output(report)
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg(target_os = "linux")]

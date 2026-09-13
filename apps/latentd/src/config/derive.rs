@@ -16,6 +16,7 @@ use super::{
 };
 
 pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformError> {
+    super::security::validate(config)?;
     let capacity = validation::validate(config)?;
     let admission = policy::admission(config, &capacity)?;
     let invocation = runtime::invocation(config, &capacity)?;
@@ -48,6 +49,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         .map(ToString::to_string)
         .collect();
     Ok(NodeSettings {
+        credentials_from_protected_file: config.credentials_from_protected_file,
         data_directory: config.data_directory.as_path().to_path_buf(),
         supply_chain: super::supply_chain::derive(&config.supply_chain)?,
         isolated_aot,

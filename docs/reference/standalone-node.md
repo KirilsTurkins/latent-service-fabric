@@ -22,6 +22,18 @@ also use the [management](management-services.md) and
 `phase0-spike`/`spike` command family keeps its existing arguments, payload
 convention, output and exit codes.
 
+## Execution security profile
+
+`securityProfile` selects `local-experimental-v1` (default) or
+`external-capsule-v1`. External selection requires enforced admission, protected
+configuration and the supported approved isolated compiler; unknown or unavailable
+profiles fail. `latentd check-config --config FILE` checks these controls without
+creating storage or opening a listener. Startup repeats the check and persists an
+external-profile requirement so an omitted selector cannot weaken a catalog on
+restart. The [profile reference](../runtime/execution-security-profiles.md) covers
+configuration, reported controls, the compiler probe, recovery and residual limits.
+There is no live configuration reload API.
+
 ## Start a local node
 
 Install the [pinned build prerequisites](../development/toolchain.md), then build
@@ -38,6 +50,7 @@ produces a token accepted by this configuration format.
 ```json
 {
   "formatVersion": 1,
+  "securityProfile": "local-experimental-v1",
   "dataDirectory": "data",
   "bind": "127.0.0.1:50051",
   "nodeId": "local-node",

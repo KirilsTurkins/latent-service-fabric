@@ -168,7 +168,7 @@ class SelectionTests(unittest.TestCase):
                     continue
                 with self.subTest(value=value), self.assertRaises(artifacts.ArtifactError):
                     artifacts.validate_listing(value, suite)
-        self.assertEqual(len(artifacts.SUITES["trust-currentness"].names), 3)
+        self.assertEqual(len(artifacts.SUITES["trust-currentness"].names), 4)
 
     def test_source_identity_is_checked_without_running_tests_on_mismatch(self) -> None:
         commit = "a" * 40

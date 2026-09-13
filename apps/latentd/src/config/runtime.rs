@@ -17,6 +17,7 @@ pub(super) fn wasmtime(
     capacity: &Capacity,
 ) -> Result<WasmtimeConfig, PlatformError> {
     let mut runtime = WasmtimeConfig {
+        execution_isolation_profile: config.security_profile,
         instance_allocator: match config.engine.allocator {
             EngineAllocator::OnDemand => InstanceAllocator::OnDemand,
             EngineAllocator::Pooling => InstanceAllocator::Pooling,

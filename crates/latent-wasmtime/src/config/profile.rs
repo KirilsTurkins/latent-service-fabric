@@ -85,6 +85,10 @@ impl WasmtimeConfig {
         self.include_resource_policy(&mut fields);
         self.include_engine_policy(&mut fields);
         if mode == DispatchMode::Generic {
+            fields.insert(
+                "execution-isolation-profile".into(),
+                self.execution_isolation_profile.name().into(),
+            );
             let abi = latent_core::PHASE3_HOST_ABI_V2;
             fields.insert("host-abi-profile".into(), abi.id.into());
             fields.insert(

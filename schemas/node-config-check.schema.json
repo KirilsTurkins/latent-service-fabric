@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/node-config-check.schema.json",
+  "title": "Bounded standalone check-config observations",
+  "$comment": "Observed controls after successful configuration and compiler readiness checks. This report is neither execution authority nor a guarantee of catalog recovery, current admission policy or whole-process containment.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "profile",
+    "threatClass",
+    "guestBoundary",
+    "admission",
+    "protectedCredentialFile",
+    "hostAbiProfile",
+    "wasmtimeVersion",
+    "target",
+    "compiler",
+    "compilerSandbox",
+    "authenticatedNativeLoading"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "latent.standalone.config-check.v1"
+    },
+    "profile": {
+      "enum": [
+        "local-experimental-v1",
+        "external-capsule-v1"
+      ]
+    },
+    "threatClass": {
+      "enum": [
+        "T0",
+        "T1"
+      ]
+    },
+    "guestBoundary": {
+      "const": "in-process-wasmtime"
+    },
+    "admission": {
+      "enum": [
+        "trusted-local",
+        "enforced"
+      ]
+    },
+    "protectedCredentialFile": {
+      "type": "boolean"
+    },
+    "hostAbiProfile": {
+      "const": "lsf-host-abi-phase3-v2"
+    },
+    "wasmtimeVersion": {
+      "const": "47.0.4"
+    },
+    "target": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "compiler": {
+      "enum": [
+        "in-process",
+        "isolated-aot-compiler-v1"
+      ]
+    },
+    "compilerSandbox": {
+      "enum": [
+        null,
+        "lsf-linux-x86_64-landlock3-seccomp-v1"
+      ]
+    },
+    "authenticatedNativeLoading": {
+      "type": "boolean"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "external-capsule-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "threatClass": {
+            "const": "T1"
+          },
+          "admission": {
+            "const": "enforced"
+          },
+          "protectedCredentialFile": {
+            "const": true
+          },
+          "compiler": {
+            "const": "isolated-aot-compiler-v1"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "threatClass": {
+            "const": "T0"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "compiler": {
+            "const": "isolated-aot-compiler-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "compilerSandbox": {
+            "const": "lsf-linux-x86_64-landlock3-seccomp-v1"
+          },
+          "authenticatedNativeLoading": {
+            "const": true
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "compilerSandbox": {
+            "type": "null"
+          },
+          "authenticatedNativeLoading": {
+            "const": false
+          }
+        }
+      }
+    }
+  ]
+}

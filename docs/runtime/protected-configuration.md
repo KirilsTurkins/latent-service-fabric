@@ -2,10 +2,11 @@
 
 Phase 3 hardens the two standalone inputs that carry security authority: the
 credential-bearing node configuration and, when supply-chain admission is
-`enforced`, its trust-policy document. This is one prerequisite of the planned
+`enforced`, its trust-policy document. This is one prerequisite of the
 `external-capsule-v1` profile from [RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md).
-It does not by itself enable that profile; #280 owns profile selection and must
-fail closed where all prerequisites are unavailable.
+The [implemented selector](execution-security-profiles.md) additionally requires
+enforced admission, exact host compatibility and supported isolated compilation.
+A protected file alone does not enable that profile.
 
 ## Linux x86_64 protected-file boundary
 
@@ -87,9 +88,9 @@ runtime never silently retries under a weaker path policy.
 Other build targets retain the existing bounded regular-file loader so portable
 configuration parsing and development tooling continue to compile. That fallback
 does **not** establish protected trust configuration and is not evidence for
-`external-capsule-v1`. #280 must reject a requested profile that requires this
-boundary on a host where the Linux descriptor policy (or a separately reviewed
-equivalent) is unavailable; it may not downgrade to the compatibility loader.
+`external-capsule-v1`. The selector rejects this profile where the Linux
+descriptor policy is unavailable; it cannot downgrade to the compatibility
+loader. No alternative protected-file implementation is currently selected.
 
 The isolated-AOT key and native-cache ownership rules remain separate. This
 change does not weaken or reinterpret their existing authority checks.

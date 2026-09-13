@@ -11,18 +11,16 @@ use std::{
 };
 
 pub(super) struct Clock {
-    base: Instant,
     elapsed: AtomicU64,
 }
 impl Clock {
     pub(super) fn new() -> Self {
         Self {
-            base: Instant::now(),
             elapsed: AtomicU64::new(0),
         }
     }
     fn finish_interval(&self) {
-        self.elapsed.store(1000, Ordering::Release);
+        self.elapsed.store(30_000, Ordering::Release);
     }
 }
 impl ActivationClock for Clock {
@@ -30,7 +28,11 @@ impl ActivationClock for Clock {
         ClockSample::new(1, self.monotonic_now())
     }
     fn monotonic_now(&self) -> Instant {
-        self.base + Duration::from_millis(self.elapsed.load(Ordering::Acquire))
+        // The real transport derives RPC deadlines from this clock. Freezing
+        // it at construction makes those deadlines expire during catalog setup
+        // on a busy runner. Only fast-forward the observation after the call;
+        // before then, keep progressing in the real monotonic time domain.
+        Instant::now() + Duration::from_millis(self.elapsed.load(Ordering::Acquire))
     }
 }
 
@@ -103,10 +105,12 @@ pub(super) async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::Start
         }),
         canary_policy: Some(proto::RolloutCanaryPolicy {
             format_version: 1,
-            observation_millis: 1000,
+            observation_millis: 30_000,
             minimum_candidate_samples: 1,
             maximum_failure_basis_points: Some(0),
-            latency_threshold_micros: 100,
+            // This is a routing/outcome handoff test, not a latency benchmark.
+            // Successful calls already obey the one-second invocation budget.
+            latency_threshold_micros: 1_000_000,
             maximum_slow_basis_points: Some(0),
         }),
     }

@@ -136,10 +136,11 @@ limits are not a whole-process RSS boundary.
 
 This delivered default is T0: operator-trusted local admission and preparation.
 Its Wasm execution barrier does not turn the in-process compilation path into
-the planned T1 external-capsule admission profile. Enforced signatures and
-isolated compilation are separate controls; enabling one does not enable the
-other. Profile identifiers here describe the architectural contract, not a new
-configuration field delivered by this documentation change.
+the T1 external-capsule admission profile. Enforced signatures and isolated
+compilation remain separate controls; selecting `securityProfile` as
+`external-capsule-v1` requires both. Startup and `check-config` verify the actual
+approved compiler before storage or listeners are opened. See
+[execution-profile enforcement](../runtime/execution-security-profiles.md).
 
 The isolated compiler child (`isolated-aot-compiler-v1`) is a separate bounded
 compilation boundary, not a per-service execution host. Authenticated native AOT
@@ -147,9 +148,10 @@ reuse (`authenticated-native-aot-v1`) keeps the parent parser/validator, native
 loader, Wasmtime and OS inside the trusted computing base. Arbitrary external
 native artifacts are unsupported.
 
-The planned `external-capsule-v1` profile requires enforced admission, exact host
-compatibility, protected trust configuration, the reviewed runtime baseline and
-supported isolated compilation before it can be selected. It still uses the
+The implemented `external-capsule-v1` profile requires enforced admission, exact
+host compatibility, protected trust configuration, the reviewed runtime baseline
+and supported isolated compilation. Its persistent data-directory requirement
+prevents a restart with an omitted or weaker profile. It still uses the
 in-process Wasmtime guest boundary and therefore does not claim containment after
 compromise of that process.
 

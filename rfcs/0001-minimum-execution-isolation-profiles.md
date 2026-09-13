@@ -42,7 +42,7 @@ A profile may support more than one workload type, but it must never imply a str
 | `local-experimental-v1` | Delivered | guest execution and ordinary local preparation | T0 operator-trusted/local admission | fresh Wasmtime store in a fixed in-process cell; standalone node, Wasmtime, host bindings, parser/validator, in-process compiler and OS are trusted | current standalone-runtime platform support; no separate guest process or hardened external-capsule admission |
 | `isolated-aot-compiler-v1` | Delivered, opt-in | compilation of verified portable components | T1 for compiler work only | one bounded child per reserved job, authenticated executable, Landlock ABI 3 + seccomp, hard limits, bounded pipes, kill/reap ownership; parent parser/validator and OS remain trusted | Linux x86_64 with the exact sandbox prerequisites in `docs/runtime/trusted-aot.md` |
 | `authenticated-native-aot-v1` | Delivered, opt-in | same-node reuse/loading of output produced by the approved isolated compiler | T0/T1 input integrity under the node TCB; not T2 native-code isolation | protected host-local key, exact compatibility key, authenticated native bytes, bounded cache/image owners, one audited copying deserialize boundary; node/native loader/Wasmtime/OS are trusted | same supported isolated-AOT platform; arbitrary external native artifacts are unsupported |
-| `external-capsule-v1` | Planned | externally supplied component admission plus guest execution | T1 | enforced package admission, exact host ABI/profile compatibility, protected credentials/trust configuration, reviewed runtime baseline, supported isolated compilation, fresh in-process Wasmtime guest store | becomes supported only after #202, #278, #279 and #280 provide and test every prerequisite |
+| `external-capsule-v1` | Delivered by #280 | externally supplied component admission plus guest execution | T1 | enforced package admission, exact host ABI/profile compatibility, protected credentials/trust configuration, reviewed runtime baseline, supported isolated compilation, fresh in-process Wasmtime guest store | #202, #278, #279 and #280 provide exact compatibility, protected files, reviewed dependencies and enforced startup/preparation requirements; see the execution-profile reference |
 | `provider-inprocess-v1` | Planned | shared capability-provider execution | T0 provider implementation; T1 guest/provider inputs | bounded node-owned provider pool with policy, quotas, cancellation and cleanup; provider implementation remains inside the node TCB | #204 and provider-specific tickets must define exact compatibility and evidence before use |
 | `renderer-component-v1` | Planned | Component Model application renderer | T1 under the ordinary Wasmtime/node TCB | fixed generic execution cells and shared node ingress; no application-owned listener, persistent Node.js process, or service-specific worker pool | #224 must select and validate the renderer profile before it is supported |
 | `fixed-execution-host-v1` | Unsupported until implemented | guest, provider, renderer, or native-compatibility work requiring T2 | T2 | separate node-owned process boundary from a fixed/bounded trust-class host pool; host supervisor, IPC boundary, OS and kernel remain trusted | no current implementation; requires explicit implementation and #238 evidence |
@@ -53,15 +53,16 @@ A profile may support more than one workload type, but it must never imply a str
 The local default's Wasm execution barrier remains useful under the trusted
 Wasmtime/node implementation. It does not establish end-to-end T1 admission:
 the default is `TrustedLocal`, compilation is in-process unless isolated AOT is
-explicitly configured, and protected credential/trust files still require #278.
+explicitly configured, and protected credential/trust files are independently enforced by #278.
 Enforced admission does not automatically select isolated compilation. T1
 external-capsule support requires every `external-capsule-v1` prerequisite and
 its evidence to pass.
 
-The names in this table are architectural identities. This decision adds no new
-configuration selector or executable compatibility claim. Existing settings
-select the delivered mechanisms; #202/#204/#280 implement exact profile
-selection and enforcement before planned profiles can be advertised as usable.
+The names in this table are architectural identities. Implementation status:
+#280 now supplies the two node selectors and checks their actual owners before
+startup/preparation. The [execution-profile reference](../docs/runtime/execution-security-profiles.md)
+maps the delivered requirements to finite evidence. Provider/renderer/fixed-host
+profiles still require their separate implementations; the taxonomy is unchanged.
 
 The delivered compiler readiness protocol continues to require
 `lsf-linux-x86_64-landlock3-seccomp-v1`. The architectural

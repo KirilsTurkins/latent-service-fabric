@@ -15,6 +15,7 @@ use sha2::{Digest, Sha256};
 use super::support::{self, Directory, Fixture};
 
 pub fn run() {
+    super::probe::run();
     let compiler = compiler(support::limits());
     protocol_failures(&compiler);
     cancel_running_prefix(&compiler);
@@ -95,6 +96,7 @@ fn protocol_failures(compiler: &IsolatedAotCompiler) {
 }
 
 fn cancel_running_prefix(compiler: &IsolatedAotCompiler) {
+    let guest = super::availability::Guest::new();
     let directory = Directory::new();
     let marker = directory.path().join("worker.pid");
     let fixture = fixture("complete-then-hang", &marker);
@@ -109,6 +111,12 @@ fn cancel_running_prefix(compiler: &IsolatedAotCompiler) {
     assert_eq!(reserved.jobs, 1);
     assert_eq!(reserved.output_owners, 1);
     assert_eq!(reserved.native_bytes, support::OUTPUT_BYTES);
+    guest.invoke();
+    assert_eq!(
+        compiler.snapshot(),
+        reserved,
+        "unrelated work cannot refund the hung compiler"
+    );
     running.control.cancel();
     assert_eq!(
         running.finish().unwrap_err().code,
@@ -117,6 +125,7 @@ fn cancel_running_prefix(compiler: &IsolatedAotCompiler) {
     assert_reaped(pid);
     assert_eq!(compiler.snapshot(), AotResourceSnapshot::default());
     assert_eq!(std::sync::Arc::strong_count(&fixture.repository), 1);
+    guest.invoke();
 }
 
 fn malformed_readiness() {
@@ -250,9 +259,9 @@ fn fixture(mode: &str, marker: &Path) -> Fixture {
     Fixture::new(bytes)
 }
 
-fn compiler(limits: AotProcessLimits) -> IsolatedAotCompiler {
+pub(super) fn executable() -> &'static (PathBuf, [u8; 32]) {
     static EXECUTABLE: OnceLock<(PathBuf, [u8; 32])> = OnceLock::new();
-    let (executable, digest) = EXECUTABLE.get_or_init(|| {
+    EXECUTABLE.get_or_init(|| {
         let path = std::env::current_exe().unwrap().canonicalize().unwrap();
         let mut file = File::open(&path).unwrap();
         let mut hash = Sha256::new();
@@ -265,7 +274,11 @@ fn compiler(limits: AotProcessLimits) -> IsolatedAotCompiler {
             hash.update(&buffer[..count]);
         }
         (path, hash.finalize().into())
-    });
+    })
+}
+
+fn compiler(limits: AotProcessLimits) -> IsolatedAotCompiler {
+    let (executable, digest) = executable();
     let profile =
         ValidatedAotProfile::from_config(&WasmtimeConfig::default(), limits.compiler).unwrap();
     IsolatedAotCompiler::new(

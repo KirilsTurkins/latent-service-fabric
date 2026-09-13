@@ -16,6 +16,10 @@ pub(super) fn read(
     platform::read(path, maximum_bytes, policy, field)
 }
 
+pub(super) fn execution_profile_marker(root: &Path, create: bool) -> Result<bool, PlatformError> {
+    platform::execution_profile_marker(root, create)
+}
+
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod platform {
     use super::ProtectedFilePolicy;
@@ -28,6 +32,136 @@ mod platform {
     use std::path::{Component, Path, PathBuf};
 
     const MAXIMUM_PATH_BYTES: usize = 4096;
+
+    const EXECUTION_MARKER: &str = "EXECUTION_PROFILE";
+    const EXTERNAL_PROFILE: &[u8] = b"lsf-external-capsule-profile-v1\n";
+
+    fn marker_failure() -> PlatformError {
+        super::super::invalid("securityProfile.markerProtection")
+    }
+
+    fn marker_directory(path: &Path, create: bool) -> Result<Option<File>, PlatformError> {
+        let absolute = absolute(path).map_err(|()| marker_failure())?;
+        let parts = normal_components(&absolute).map_err(|()| marker_failure())?;
+        if parts.is_empty() || parts.len() > 256 {
+            return Err(marker_failure());
+        }
+        let uid = rustix::process::geteuid().as_raw();
+        let gid = rustix::process::getegid().as_raw();
+        let mut directory = File::from(
+            rustix::fs::open("/", directory_flags(), Mode::empty())
+                .map_err(|_| marker_failure())?,
+        );
+        validate_directory(&directory, uid, gid).map_err(|()| marker_failure())?;
+        for part in parts {
+            let next = match rustix::fs::openat(&directory, &part, directory_flags(), Mode::empty())
+            {
+                Ok(fd) => fd,
+                Err(rustix::io::Errno::NOENT) if !create => return Ok(None),
+                Err(rustix::io::Errno::NOENT) => {
+                    match rustix::fs::mkdirat(&directory, &part, Mode::from_raw_mode(0o700)) {
+                        Ok(()) | Err(rustix::io::Errno::EXIST) => (),
+                        Err(_) => return Err(marker_failure()),
+                    }
+                    directory.sync_all().map_err(|_| marker_failure())?;
+                    rustix::fs::openat(&directory, &part, directory_flags(), Mode::empty())
+                        .map_err(|_| marker_failure())?
+                }
+                Err(_) => return Err(marker_failure()),
+            };
+            directory = File::from(next);
+            validate_directory(&directory, uid, gid).map_err(|()| marker_failure())?;
+        }
+        // A mutable shared temporary directory may be an ancestor, never the
+        // external-capsule data root itself.
+        if directory.metadata().map_err(|_| marker_failure())?.mode() & 0o022 != 0 {
+            return Err(marker_failure());
+        }
+        Ok(Some(directory))
+    }
+
+    pub(super) fn execution_profile_marker(
+        root: &Path,
+        create: bool,
+    ) -> Result<bool, PlatformError> {
+        use std::io::Write as _;
+        let Some(directory) = marker_directory(root, create)? else {
+            return Ok(false);
+        };
+        let flags = OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK;
+        let mut file = match rustix::fs::openat(&directory, EXECUTION_MARKER, flags, Mode::empty())
+        {
+            Ok(fd) => File::from(fd),
+            Err(rustix::io::Errno::NOENT) if !create => return Ok(false),
+            Err(rustix::io::Errno::NOENT) => {
+                let flags = OFlags::WRONLY
+                    | OFlags::CREATE
+                    | OFlags::EXCL
+                    | OFlags::NOFOLLOW
+                    | OFlags::CLOEXEC;
+                match rustix::fs::openat(
+                    &directory,
+                    EXECUTION_MARKER,
+                    flags,
+                    Mode::from_raw_mode(0o600),
+                ) {
+                    Ok(fd) => {
+                        let mut file = File::from(fd);
+                        require_mode_only_permissions(&file).map_err(|()| marker_failure())?;
+                        validate_file(
+                            &file.metadata().map_err(|_| marker_failure())?,
+                            ProtectedFilePolicy::Integrity,
+                            rustix::process::geteuid().as_raw(),
+                            rustix::process::getegid().as_raw(),
+                            64,
+                            false,
+                        )
+                        .map_err(|()| marker_failure())?;
+                        file.write_all(EXTERNAL_PROFILE)
+                            .map_err(|_| marker_failure())?;
+                        file.sync_all().map_err(|_| marker_failure())?;
+                        directory.sync_all().map_err(|_| marker_failure())?;
+                        return Ok(true);
+                    }
+                    Err(rustix::io::Errno::EXIST) => File::from(
+                        rustix::fs::openat(
+                            &directory,
+                            EXECUTION_MARKER,
+                            OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK,
+                            Mode::empty(),
+                        )
+                        .map_err(|_| marker_failure())?,
+                    ),
+                    Err(_) => return Err(marker_failure()),
+                }
+            }
+            Err(_) => return Err(marker_failure()),
+        };
+        require_mode_only_permissions(&file).map_err(|()| marker_failure())?;
+        let before = file.metadata().map_err(|_| marker_failure())?;
+        validate_file(
+            &before,
+            ProtectedFilePolicy::Integrity,
+            rustix::process::geteuid().as_raw(),
+            rustix::process::getegid().as_raw(),
+            64,
+            false,
+        )
+        .map_err(|()| marker_failure())?;
+        let snapshot = Snapshot::from(&before);
+        let mut bytes = Vec::with_capacity(64);
+        (&mut file)
+            .take(65)
+            .read_to_end(&mut bytes)
+            .map_err(|_| marker_failure())?;
+        require_mode_only_permissions(&file).map_err(|()| marker_failure())?;
+        if snapshot != Snapshot::from(&file.metadata().map_err(|_| marker_failure())?)
+            || bytes != EXTERNAL_PROFILE
+        {
+            return Err(marker_failure());
+        }
+        Ok(true)
+    }
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub(super) enum ReadCheckpoint {
@@ -259,6 +393,15 @@ mod platform {
     use std::fs::File;
     use std::io::Read;
     use std::path::Path;
+
+    pub(super) fn execution_profile_marker(
+        _root: &Path,
+        _create: bool,
+    ) -> Result<bool, PlatformError> {
+        Err(super::super::invalid(
+            "securityProfile.markerPlatformUnsupported",
+        ))
+    }
 
     /// Compatibility-only loader. It preserves bounded regular-file behavior on
     /// unsupported hosts, but it is not evidence for `external-capsule-v1`.

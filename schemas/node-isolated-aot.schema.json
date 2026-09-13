@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://latent.dev/schemas/v1/node-isolated-aot.schema.json",
   "title": "LSF standalone isolatedAot configuration member",
-  "$comment": "This schema covers only the optional isolatedAot member. Omission preserves ordinary compilation; explicit null is invalid. Runtime additionally checks Linux x86_64 support, canonical path/root separation, private exact 32-byte key ownership, executable approval, page rounding and checked cross-domain resource limits. Relative key/cache paths resolve against the config directory. The compiler executable must be absolute. No key bytes or environment expansion are accepted.",
+  "$comment": "This schema covers only the optional isolatedAot member. Omission preserves ordinary compilation only under local-experimental-v1; external-capsule-v1 requires this member; explicit null is invalid. Runtime additionally checks Linux x86_64 support, canonical path/root separation, private exact 32-byte key ownership, executable approval, page rounding and checked cross-domain resource limits. Relative key/cache paths resolve against the config directory. The compiler executable must be absolute. No key bytes or environment expansion are accepted.",
   "type": "object",
   "additionalProperties": false,
   "required": ["compilerExecutable", "compilerDigest", "keyFile", "blobRoot", "receiptRoot"],
