@@ -43,8 +43,8 @@ impl ConfiguredBearer {
         {
             return Err(invalid("invalid-oci-bearer-authority"));
         }
-        let realm = Url::parse(configured_realm)
-            .map_err(|_| invalid("invalid-oci-bearer-authority"))?;
+        let realm =
+            Url::parse(configured_realm).map_err(|_| invalid("invalid-oci-bearer-authority"))?;
         if realm.scheme() != "https"
             || realm.host().is_none()
             || !realm.username().is_empty()
@@ -210,9 +210,7 @@ fn parse_challenge(value: &str) -> Result<Challenge<'_>> {
         }
         let value = &value[1..value.len() - 1];
         match name {
-            name if name.eq_ignore_ascii_case("realm") && realm.is_none() => {
-                realm = Some(value)
-            }
+            name if name.eq_ignore_ascii_case("realm") && realm.is_none() => realm = Some(value),
             name if name.eq_ignore_ascii_case("service") && service.is_none() => {
                 service = Some(value)
             }
@@ -296,7 +294,9 @@ mod tests {
     fn token_body_is_bounded_unambiguous_and_scope_bound() {
         let configured = ConfiguredBearer::new(&config()).unwrap().unwrap();
         let header = configured
-            .token_header(br#"{"token":"abc.def","expires_in":60,"scope":"repository:tenant/site:pull"}"#)
+            .token_header(
+                br#"{"token":"abc.def","expires_in":60,"scope":"repository:tenant/site:pull"}"#,
+            )
             .unwrap();
         assert!(header.is_sensitive());
         assert_eq!(header.as_bytes(), b"Bearer abc.def");
