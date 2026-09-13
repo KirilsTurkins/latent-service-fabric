@@ -4,12 +4,20 @@
 
 Latent Service Fabric is a component-native execution fabric in which deployed services are dormant immutable artifacts. Requests become temporary activations. Activations execute inside a fixed pool of reusable sandboxed cells and release activation-owned execution resources when they finish. Durable suspension remains a later-phase model.
 
-Phase 1 and its prioritized performance extension are complete. The current
-product is a locally trusted standalone Linux stateless node. Packaging and
-supply-chain features are the next Phase 2 scope; clustered control, guest state,
-workflows and general trigger/provider implementations remain later work.
+Phase 1 and its prioritized performance extension are complete. The completed
+[Phase 2](../phase-2-completion.md) adds packaging and authenticated OCI transfer,
+enforced catalog admission, release lifecycle, compatibility, raw/native caches, durable audit and
+atomic rollout, promotion and rollback. The current product remains a standalone
+Linux stateless node, with explicit trusted-local or enforced release policy.
+[Phase 3](../roadmap.md#phase-3-capabilities-and-application-hosting)
+has a concrete capability/provider and web-hosting backlog; those providers and
+application ingress are not implemented by their WIT or package declarations.
 
-![Phase 1 delivery boundary: durable local catalogs and RPC feed bounded preparation, fixed cells and fresh Wasmtime activations; measured comparisons retain limits, while packaging, distributed control and state remain later phases.](../assets/phase1-delivery-boundary.svg)
+![Phase 2 trusted delivery: exact packages and evidence, current node authority, and explicit atomic rollout operations.](../assets/phase2-delivery-boundary.svg)
+
+The [historical Phase 1 diagram](../assets/phase1-delivery-boundary.svg) and its
+retained measurements still describe that milestone. Phase 2 extends that
+delivery boundary without retroactively changing its evidence.
 
 ## Resource invariant
 
@@ -27,6 +35,13 @@ continues polling the same activation owner under its original deadline, keeping
 quota and cell ownership through bounded cleanup. It adds no per-service worker
 or per-disconnect task. Cell reuse still requires affirmative cleanup proof;
 uncertain cleanup remains quarantined.
+
+Phase 2's optional audit worker and rollout coordinator are fixed node owners.
+Configured native compilation may launch a bounded one-job child; it retains
+input, output and process reservations through actual reap. A deployment does
+not keep a compiler process or timer alive. Raw files, mapped code, retained
+responses and audit history have independent finite limits; those allowances
+are not claims of constant RSS or eagerly allocated capacity.
 
 ## Phase 0 evidence boundary
 
@@ -64,8 +79,13 @@ The current [standalone Linux node](../reference/standalone-node.md) composes
 durable release and deployment catalogs, immutable routing, admission, fair
 scheduling, [generic Wasmtime execution](../runtime/wasmtime.md), activation
 capabilities and lifecycle management, telemetry, and invocation and management
-RPCs. The [operator CLI](../reference/operator-cli.md) drives the local
-release-to-invocation workflow through generated clients. The
+RPCs. The [operator CLI](../reference/operator-cli.md) drives both the retained
+local release-to-invocation workflow and [Phase 2 operations](../phase-2-operator-workflows.md):
+package build/inspection/verification, OCI transfers, release evidence/lifecycle,
+managed deployment receipts, staged rollout, canary, rollback and audit queries.
+Node credentials and registry credentials remain separate. A local path never
+becomes a node catalog path, and diagnostic package verification cannot create
+execution authority. The
 [Phase 1 completion review](../phase-1-completion.md) records the delivered
 stateless surface, acceptance evidence and completion decision.
 [Bounded conformance](../testing/phase-1-conformance.md) covers selected scenarios.
@@ -84,11 +104,12 @@ a universal millisecond SLO or production cluster capacity.
 
 ```text
 Service = stable logical name
-Release = immutable capsule digest
+Release = immutable component digest
+Package = exact package-manifest digest, when packaged
 Revision = release + deployment configuration
 Route = rule selecting a revision
 Activation = revision × function × input × identity × budget × deadline
-Phase 1 result = output or typed failure + accounting
+Current stateless result = output or typed failure + accounting
 Later transactional result = output + state commit + effect intents + accounting
 ```
 
@@ -98,21 +119,30 @@ There is intentionally no `Service = PID + port + heap + threads` relationship.
 
 ### Developer plane
 
-Builds WIT contracts and language components, creates capsules, produces SBOM/provenance, signs artifacts, and publishes them as OCI artifacts.
+Builds WIT contracts and language components, packages supplied component bytes,
+produces explicit SBOM/provenance evidence, signs exact package identities and
+transfers immutable content through OCI. The package CLI does not execute build
+scripts or manufacture signatures/provenance.
 
 ### Control plane
 
-Stores desired state, validates releases, compiles bindings and routes, evaluates policy, records node inventories, and distributes immutable route snapshots. It does not participate in ordinary invocation routing after a snapshot reaches a node.
+Stores local desired state, validates releases and current authority, compiles
+routes, records bounded inventory/audit and atomically publishes immutable route
+snapshots with rollout progress and operation receipts. General capability
+binding compilation is Phase 3; remote distribution is Phase 5.
 
 ### Data plane
 
-Receives triggers and direct calls, resolves exact revisions from a local snapshot, performs admission, schedules activations, materializes code, binds capabilities, executes guest code, commits state, persists effect intents, and returns results.
+Receives authenticated direct calls, resolves exact local revisions, performs
+admission and bounded preparation, schedules fresh activations, checks current
+release authority, binds supported capabilities and executes guest code. It
+returns stateless results and accounting after contained cleanup.
 
-These plane descriptions include later-phase capabilities. Phase 1 implements
-the local stateless routing and execution path, management RPCs, and CLI. OCI
-distribution, clustered control, durable state/effects, and general trigger
-adapters remain later work. Phase 0 implements only the local component
-preparation, execution, containment, and reclamation slice.
+The [control-plane](control-plane.md), [data-plane](data-plane.md) and
+[security](security.md) pages explain the delivered seams. General HTTP/event
+ingress and providers are Phase 3. Guest transactions/effects, clustered control
+and durable workflows remain Phases 4, 5 and 6 respectively. Phase 0 implemented
+only the original local preparation, execution, containment and reclamation slice.
 
 ## Physical topology
 
@@ -129,11 +159,13 @@ Ingress ─────────────► latentd nodes ◄────
                          └── telemetry collector
 ```
 
-The diagram shows the intended clustered topology. Current standalone mode
-embeds local desired-state catalogs and the supported management services in
-one Linux `latentd` process, using durable local storage. A separate clustered
-control plane, PostgreSQL storage, and OCI distribution remain later work.
-Neither topology was a Phase 0 product surface.
+The diagram shows the intended Phase 5 clustered topology, not current
+deployment. Standalone mode embeds local desired-state catalogs and supported
+management services in one Linux `latentd` process using durable local storage.
+Operators can transfer a package through OCI and submit its exact bytes/evidence
+to the node's independent admission boundary. The node does not infer permission
+from a tag, registry credential or client-side verification result. PostgreSQL,
+inter-node invocation and state/effect backends remain later work.
 
 ## Fixed process model
 
@@ -148,7 +180,10 @@ latentd supervisor
 └── optional native compatibility host
 ```
 
-The count is configured by node policy, not by deployed service count. Phase 0 and the delivered Phase 1 standalone node each use one process and fixed in-process cells; stronger trust-class process isolation remains later work.
+This is a possible future execution topology. Current guest execution uses fixed
+in-process cells; stronger trust-class process isolation remains later work.
+The optional Phase 2 compiler child is temporary bounded compilation work, not
+one of these guest execution hosts or a dormant service process.
 
 ## Technology direction
 

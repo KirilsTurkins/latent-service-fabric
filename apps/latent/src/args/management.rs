@@ -13,14 +13,21 @@ pub enum ReleaseCommand {
     Publish(PublishArgs),
     Get(DigestArgs),
     List(ServicePageArgs),
+    Lifecycle(DigestArgs),
+    Operation(OperationIdArgs),
+    PublishPackage(super::release::PublishPackageArgs),
+    Revoke(super::release::ChangeReleaseArgs),
+    Retire(super::release::ChangeReleaseArgs),
+    RenewEvidence(super::release::RenewEvidenceArgs),
 }
 
 #[derive(Subcommand)]
 pub enum DeploymentCommand {
     Apply(ApplyArgs),
-    Get(IdArgs),
+    Get(DeploymentGetArgs),
     List(ServicePageArgs),
     Delete(DeleteArgs),
+    Operation(OperationIdArgs),
 }
 
 #[derive(Subcommand)]
@@ -63,6 +70,8 @@ pub struct PublishArgs {
     pub component: PathBuf,
     #[arg(long)]
     pub contracts: PathBuf,
+    #[command(flatten)]
+    pub operation: super::release::OptionalReleaseOperation,
 }
 
 #[derive(Args)]
@@ -71,6 +80,8 @@ pub struct ApplyArgs {
     /// Omitted: unconditional; zero: must be absent; positive: exact object version.
     #[arg(long)]
     pub expected_generation: Option<u64>,
+    #[command(flatten)]
+    pub operation: DeploymentOperationArgs,
 }
 
 #[derive(Args)]
@@ -78,6 +89,29 @@ pub struct DeleteArgs {
     pub id: String,
     #[arg(long)]
     pub expected_generation: Option<u64>,
+    #[command(flatten)]
+    pub operation: DeploymentOperationArgs,
+}
+
+#[derive(Args, Default)]
+pub struct DeploymentOperationArgs {
+    #[arg(long, requires_all = ["expected_state_version", "expected_generation"])]
+    pub operation_id: Option<String>,
+    #[arg(long, requires = "operation_id")]
+    pub expected_state_version: Option<u64>,
+}
+
+#[derive(Args)]
+pub struct DeploymentGetArgs {
+    pub id: String,
+    /// Obtain the coherent global state version needed for managed mutation CAS.
+    #[arg(long)]
+    pub operation_snapshot: bool,
+}
+
+#[derive(Args)]
+pub struct OperationIdArgs {
+    pub operation_id: String,
 }
 
 #[derive(Args)]

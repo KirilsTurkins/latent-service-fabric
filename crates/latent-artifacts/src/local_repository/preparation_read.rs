@@ -8,6 +8,7 @@ impl DirectoryArtifactRepository {
         &self,
         release: &ReleaseDigest,
     ) -> Result<ArtifactPreparationReadBounds, PlatformError> {
+        self.current_eligibility(release)?;
         let index = self.index.read().map_err(lock_error)?;
         let entry = index
             .by_digest
@@ -58,6 +59,8 @@ impl DirectoryArtifactRepository {
             Retention::Component,
             limits,
         )?;
+        self.verify_admission_index(release, &verified)?;
+        self.current_eligibility(release)?;
         let (descriptor, manifest, contracts) = verified.metadata.into_parts();
         Ok(CapsuleArtifact {
             descriptor,

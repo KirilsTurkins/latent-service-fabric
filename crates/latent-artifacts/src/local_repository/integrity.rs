@@ -26,6 +26,8 @@ pub(super) struct CompletionRecord {
     component_size_bytes: u64,
     metadata_digest: String,
     manifest_digest: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    admission_digest: Option<String>,
 }
 
 impl CompletionRecord {
@@ -40,11 +42,18 @@ impl CompletionRecord {
             component_size_bytes: descriptor.size_bytes,
             metadata_digest: content_digest(metadata_bytes).0,
             manifest_digest: content_digest(manifest_bytes).0,
+            admission_digest: None,
         }
     }
 
     pub(super) fn encode(&self) -> Result<Vec<u8>, PlatformError> {
-        if self.format_version != FORMAT_VERSION
+        if !matches!(
+            (self.format_version, self.admission_digest.as_deref()),
+            (1, None) | (2, Some(_))
+        ) || self
+            .admission_digest
+            .as_deref()
+            .is_some_and(|value| !canonical_digest(value))
             || !canonical_digest(&self.component_digest)
             || !canonical_digest(&self.metadata_digest)
             || !canonical_digest(&self.manifest_digest)
@@ -56,6 +65,24 @@ impl CompletionRecord {
             return Err(invalid_record());
         }
         Ok(bytes)
+    }
+
+    pub(super) fn bind_admission(&mut self, bytes: &[u8]) {
+        self.format_version = 2;
+        self.admission_digest = Some(content_digest(bytes).0);
+    }
+    pub(super) fn admission_digest(&self) -> Option<&str> {
+        self.admission_digest.as_deref()
+    }
+    pub(super) fn same_artifact(&self, other: &Self) -> bool {
+        self.component_digest == other.component_digest
+            && self.component_size_bytes == other.component_size_bytes
+            && self.metadata_digest == other.metadata_digest
+            && self.manifest_digest == other.manifest_digest
+    }
+    pub(super) fn identity(&self) -> Result<[u8; 32], PlatformError> {
+        use sha2::{Digest, Sha256};
+        Ok(Sha256::digest(self.encode()?).into())
     }
 
     pub(super) fn read(entry: &Path) -> Result<Self, PlatformError> {

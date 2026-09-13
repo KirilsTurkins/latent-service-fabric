@@ -105,6 +105,14 @@ ActivationSuccessSummary, and every SDK retain the same three fields.
 
 ## Local release publication
 
+Phase 2 adds `PublishReleaseRequest.package` at field 3 and the bounded package
+layer/evidence messages without changing existing field numbers or service
+signatures. Exactly one of `artifact` and `package` is required; package input
+forbids the optional legacy `release` descriptor. The checked descriptor golden
+includes this deliberate additive change. Existing Phase 1 clients keep the
+local upload representation below; enforced nodes reject it and require the
+[authenticated package path](../reference/package-admission.md).
+
 Phase 1 `PublishRelease` uses the bounded unary `CapsuleArtifactUpload`:
 
 - `capsule_manifest_json`;
@@ -238,6 +246,99 @@ reservations with that golden. tools/tests/test_phase1_contracts.py exercises
 the validator's drift detection and the cross-SDK surface requirements.
 
 ## Integration boundary
+
+Phase 2 lifecycle #148 adds `PublishReleaseRequest.operation` field 4 and
+`PublishReleaseResponse.operation` field 3 without reusing or changing existing
+field numbers. Omission preserves existing publication callers. New unary
+`GetReleaseLifecycle`, `GetReleaseOperation`, `ChangeReleaseLifecycle` and
+`RenewReleaseEvidence` methods expose bounded lifecycle state and operation
+receipts; actor/tenant authority comes from trusted authentication. Explicit
+operation preconditions preserve generation presence, including present zero
+for publication versus required positive generations for later mutations.
+`ReleaseDescriptor.admitted` remains historical. See
+[release lifecycle](../reference/release-lifecycle.md) for retention, uncertain
+outcomes and renewal semantics. Generated Rust struct literals require the
+additive fields; no generated source or new management-language SDK is checked in.
+
+Phase 2 audit #152 adds `AuditService.QueryPhase2Audit` with explicit query scope,
+typed records, bounded pagination and coverage. The existing `QueryAudit` RPC
+keeps its original request/response fields and service signature; its optional
+standalone implementation is a bounded tenant-scoped projection. Node-wide typed
+queries require the existing trusted operator claim. These services extend the
+Phase 1 subset described above; omission of audit configuration preserves the
+unaudited embedding surface.
+
+Optional `audit_ack` fields are additive: `PublishReleaseResponse` field 4,
+`ChangeReleaseLifecycleResponse` and `RenewReleaseEvidenceResponse` field 2,
+and `ApplyDeploymentResponse` field 3. `AuditAck` separates persistence status
+from the authoritative mutation result and preserves presence of its attempt
+sequence. Delete keeps its existing `Empty` response; bounded error/Delete
+acknowledgements use `latent-audit-status` and optional `latent-audit-attempt`
+metadata. Existing field numbers and enum values remain unchanged. The normalized
+descriptor golden includes these additions; old generated clients may ignore
+them, while new Rust response literals must initialize their optional fields.
+See [audit semantics](../phase-2-audit.md) for loss, recovery and response ownership.
+
+Phase 2 rollout #153 adds `rollout.proto` to the exhaustive manifest and its
+five unary `RolloutService` methods for start, change, status, listing and
+operation lookup. Required preconditions preserve optional integer presence:
+Start requires present rollout revision zero and a positive base object
+generation; Change requires a positive rollout revision. Responses separate the
+canonical committed receipt, replay flag, catalog durability and audit
+acknowledgement. Omitted node enablement returns Unimplemented.
+
+The existing audit identity gains optional rollout revision, step and combined
+state version, and the attempt gains an optional expected rollout revision.
+These fields are additive and distinct from lifecycle/deployment generations.
+Absent fields retain historical audit canonical bytes. The descriptor golden
+records the new service and fields without changing prior numbers or signatures;
+see [rollout semantics](../phase-2-rollouts.md).
+
+### Controlled canary promotion (#154)
+
+The rollout service adds an explicit optional Start policy, a distinct Promote
+command and an authenticated Evaluate RPC. Existing command tags and field numbers
+remain unchanged. Missing policy preserves manual rollout semantics; zero-valid
+thresholds require scalar presence. Diagnostic reports preserve candidate and
+baseline counts, fixed latency buckets and loss dispositions. Mutation responses
+separate durable receipts from transient observation availability.
+
+Audit conclusions gain an optional closed decision summary and typed canary
+identities. Absent additions preserve legacy canonical records. Reports and
+protobuf messages cannot construct the private observation input accepted by
+catalog promotion. See [canary promotion](../phase-2-canary-promotion.md).
+
+### Atomic eligible-release rollback (#155)
+
+Change adds rollback at oneof tag 15 with a positive target-generation comparison.
+New target messages preserve the historical generation and retained manifest
+digest separately from the resulting route generation. Status field 20 exposes
+the plan-bound target for new plans; receipt field 19 records it only for a
+committed rollback. RolledBack state, Rollback action and RollbackApplied reason
+are additive enum values. Older plans without a captured target remain readable
+but cannot authorize a fresh rollback.
+
+Audit identity field 17 records the validated rollback target generation; attempt
+field 11 records the caller's expected target independently. Optional absent
+fields preserve legacy canonical bytes. Existing RPC signatures and field tags
+are unchanged. See [rollback semantics](../phase-2-rollback.md).
+
+### Operator workflows and managed deployment recovery (#156)
+
+Apply/Delete request field 3 optionally selects an audited operation with a caller
+ID and explicit catalog-state precondition, alongside the existing object-version
+precondition. Apply adds a compact receipt, replay flag and catalog durability.
+Delete retains its Empty response and adds bounded operation/audit metadata.
+`GetDeploymentOperation` returns a retained receipt or explicit unknown/uncertain
+coverage; missing history is not evidence that a mutation never ran.
+
+Get request field 2 explicitly requests a coherent managed snapshot, including
+object absence. Ordinary Get retains its prior store path and limits; an adapter
+that cannot supply the requested snapshot returns Unsupported. Snapshot response
+fields and audit attempt field 12 (`expected_state_version`) are additive. The
+descriptor golden includes these changes without renumbering existing fields.
+See [operator workflows](../phase-2-operator-workflows.md) for replay, authorization,
+finite retention, local package verification and client recovery semantics.
 
 Phase 0 gate #25 and the executable build foundation in #2 are complete. This
 work is reconciled with the finalized Phase 0 retained/replaced classification

@@ -21,20 +21,32 @@ def copy_wit_tree(source: Path, destination: Path) -> None:
         shutil.copyfile(path, target)
 
 
+def paths_overlap(left: Path, right: Path) -> bool:
+    return left == right or left in right.parents or right in left.parents
+
+
 def stage(destination: Path, source: Path = DEFAULT_SOURCE) -> None:
     source = source.resolve()
     destination = destination.resolve()
+    platform_wit = PLATFORM_WIT.resolve()
     if not source.is_dir():
         raise FileNotFoundError(f"WIT package source does not exist: {source}")
-    if destination == source or source in destination.parents:
-        raise ValueError("WIT staging destination must not be inside the source package")
+    for protected_name, protected_root in (
+        ("source package", source),
+        ("platform WIT dependency tree", platform_wit),
+    ):
+        if paths_overlap(destination, protected_root):
+            raise ValueError(
+                f"WIT staging destination must not overlap the {protected_name}: "
+                f"{protected_root}"
+            )
 
     if destination.exists():
         shutil.rmtree(destination)
     (destination / "deps").mkdir(parents=True)
 
     copy_wit_tree(source, destination)
-    for package in sorted(path for path in PLATFORM_WIT.iterdir() if path.is_dir()):
+    for package in sorted(path for path in platform_wit.iterdir() if path.is_dir()):
         if package.name == "runtime" or package.resolve() == source:
             continue
         copy_wit_tree(package, destination / "deps" / package.name)

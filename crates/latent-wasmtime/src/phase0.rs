@@ -22,7 +22,7 @@ use crate::containment::{bounded_text, platform_error, MAX_DIAGNOSTIC_BYTES};
 use crate::factory::WasmtimeComponentEngineFactory;
 use crate::host::{BoundedLogSink, HostState};
 use crate::surface::{CONTEXT_IMPORT, LOG_IMPORT};
-use crate::{WasmtimeEngineFactory, WasmtimeEngineProfile};
+use crate::{WasmtimeEngineFactory, WasmtimeEngineProfile, WasmtimeHostServices};
 
 pub const BACKEND_ID: &str = PHASE0_BACKEND_ID;
 pub const ECHO_WORLD: &str = "examples:echo/service@0.1.0";
@@ -39,6 +39,21 @@ impl Phase0WasmtimeEngineFactory {
     pub fn new(config: Phase0WasmtimeConfig) -> Result<Self, PlatformError> {
         Ok(Self {
             inner: WasmtimeComponentEngineFactory::with_mode(config, DispatchMode::Phase0)?,
+        })
+    }
+
+    /// Preserves the Phase 0 facade while allowing explicit node-owned host
+    /// services for deterministic integration tests and controlled embeddings.
+    pub fn with_host_services(
+        config: Phase0WasmtimeConfig,
+        services: WasmtimeHostServices,
+    ) -> Result<Self, PlatformError> {
+        Ok(Self {
+            inner: WasmtimeComponentEngineFactory::with_mode_and_services(
+                config,
+                DispatchMode::Phase0,
+                services,
+            )?,
         })
     }
 

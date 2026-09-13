@@ -39,6 +39,29 @@ pub(super) struct Payload {
     // Omission preserves the exact v1 typed payload serialization used by its checksum.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     object_generations: Option<Vec<StoredObjectGeneration>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub control: Option<ControlPayload>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
+pub(super) struct ControlPayload {
+    pub transaction_version: u64,
+    pub rollouts: super::rollouts::table::TableData,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "crate::deployment_operations::codec::present"
+    )]
+    pub deployment_operations: Option<super::operations::table::TableData>,
+}
+#[derive(Serialize)]
+#[serde(crate = "latent_manifest::__serde")]
+pub(super) struct ControlPayloadRef<'a> {
+    pub transaction_version: u64,
+    pub rollouts: &'a super::rollouts::table::TableData,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deployment_operations: Option<&'a super::operations::table::TableData>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -66,7 +89,7 @@ impl Record {
                 .keys()
                 .map(|id| (id.clone(), self.payload.generation))
                 .collect()),
-            (2, Some(stored)) if stored.len() == deployments.len() => {
+            (2 | 3 | 4, Some(stored)) if stored.len() == deployments.len() => {
                 let mut versions = BTreeMap::new();
                 for entry in stored {
                     let id = DeploymentId(entry.id.clone());
@@ -203,7 +226,25 @@ pub(super) fn load(
     }
     let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
     let checksum = payload_checksum(&record.payload, config.max_state_bytes, work)?;
-    if !matches!(record.format_version, 1 | 2)
+    if !matches!(record.format_version, 1..=4)
+        || matches!(record.format_version, 3 | 4) != record.payload.control.is_some()
+        || (record.format_version == 4)
+            != record
+                .payload
+                .control
+                .as_ref()
+                .is_some_and(|v| v.deployment_operations.is_some())
+        || (record.format_version == 3
+            && record
+                .payload
+                .control
+                .as_ref()
+                .is_some_and(|v| v.rollouts.rows.is_empty()))
+        || record
+            .payload
+            .control
+            .as_ref()
+            .is_some_and(|v| v.transaction_version < record.payload.generation)
         || record.checksum.as_bytes().strip_prefix(b"sha256:") != Some(checksum.as_slice())
     {
         return Err(corrupt());
@@ -216,6 +257,35 @@ pub(super) fn load(
 pub(super) struct EncodedCatalog {
     catalog: CompiledCatalog,
     bytes: Vec<u8>,
+}
+
+/// A compiler-owned route candidate. Legacy callers already encoded their v2
+/// envelope; an established v3 owner supplies control metadata before encoding.
+pub(super) enum PublicationCandidate {
+    Legacy(EncodedCatalog),
+    Combined(CompiledCatalog),
+}
+impl From<EncodedCatalog> for PublicationCandidate {
+    fn from(value: EncodedCatalog) -> Self {
+        Self::Legacy(value)
+    }
+}
+impl PublicationCandidate {
+    pub(super) fn catalog(&self) -> &CompiledCatalog {
+        match self {
+            Self::Legacy(value) => value.catalog(),
+            Self::Combined(value) => value,
+        }
+    }
+    pub(super) fn into_parts(self) -> (CompiledCatalog, Option<Vec<u8>>) {
+        match self {
+            Self::Legacy(value) => {
+                let (catalog, bytes) = value.into_parts();
+                (catalog, Some(bytes))
+            }
+            Self::Combined(catalog) => (catalog, None),
+        }
+    }
 }
 
 impl EncodedCatalog {
@@ -265,6 +335,30 @@ fn encode_bytes(
     let result = encoding::write(&mut output, catalog, work);
     count!(work, encoded_buffer_bytes, output.bytes.len());
     maximum!(work, encoded_capacity_max, output.bytes.capacity());
+    result.map_err(|_| byte_limit())?;
+    Ok(output.bytes)
+}
+
+pub(super) fn encode_combined(
+    catalog: &CompiledCatalog,
+    control: &ControlPayloadRef<'_>,
+    limit: usize,
+    work: &mut Work,
+) -> Result<Vec<u8>, PlatformError> {
+    count!(work, encoder_calls, 1);
+    let mut output = LimitedBytes {
+        bytes: Vec::new(),
+        limit,
+    };
+    count!(work, envelope_serializations, 1);
+    let result = encoding::write_with_control(&mut output, catalog, Some(control), work);
+    count!(work, encoded_buffer_bytes, output.bytes.len());
+    maximum!(work, encoded_capacity_max, output.bytes.capacity());
+    if result.is_ok() {
+        count!(work, encoder_completed, 1);
+    } else {
+        count!(work, encoder_failed, 1);
+    }
     result.map_err(|_| byte_limit())?;
     Ok(output.bytes)
 }

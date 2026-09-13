@@ -6,6 +6,7 @@ pub mod budget;
 pub mod clock;
 pub mod deadline_diagnostic_observer;
 pub mod deadline_wait_observer;
+pub mod digest;
 pub mod error;
 pub mod identity;
 pub mod ids;
@@ -23,6 +24,7 @@ pub use deadline_diagnostic_observer::{
     DeadlineDiagnosticToken,
 };
 pub use deadline_wait_observer::{DeadlineWaitGuard, DeadlineWaitObserver, DeadlineWaitSnapshot};
+pub use digest::{ArtifactBlobDigest, DigestParseError, PackageDigest};
 pub use error::{DeclaredError, ErrorDetail, PlatformError, PlatformErrorCode};
 pub use identity::{InvocationPrincipal, PrincipalKind};
 pub use ids::*;

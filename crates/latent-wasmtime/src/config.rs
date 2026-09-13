@@ -2,9 +2,11 @@
 
 mod compiler;
 mod engine;
+pub(crate) use engine::CompilerEngineSettings;
 mod layout;
 mod pooling;
 mod profile;
+mod runtime_compatibility;
 #[cfg(test)]
 mod tests;
 

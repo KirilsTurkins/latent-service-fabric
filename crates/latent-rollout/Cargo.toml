@@ -1,0 +1,26 @@
+[package]
+name = "latent-rollout"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Bounded single-node rollout coordination over atomic deployment catalogs."
+
+[lints]
+workspace = true
+
+[dependencies]
+latent-core = { path = "../latent-core" }
+latent-control-store = { path = "../latent-control-store" }
+latent-audit = { path = "../latent-audit" }
+latent-artifacts = { path = "../latent-artifacts" }
+latent-telemetry = { path = "../latent-telemetry" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+latent-manifest = { path = "../latent-manifest" }

@@ -1,0 +1,26 @@
+{
+  "derivation": "Sorted licenseId values from nondeprecated SPDX3.23 licenses.json rows intersected with the pinned CycloneDX spdx.schema.json enum and the nondeprecated License records in the pinned spdx0.13.5 identifier table. No license text, names or legal conclusions are copied.",
+  "classificationSource": {
+    "source": "https://raw.githubusercontent.com/spdx/license-list-data/8c0ba506bd1be224c2a5454b7b12cfe080068e5c/json/licenses.json",
+    "bytes": 289377,
+    "sha256": "2eb4b4253ada6af3f24c72e9d716ff0ab5ddb8f8a58c3cb3e2708b69a50f144b"
+  },
+  "schemaSource": {
+    "path": "spdx.schema.json",
+    "sha256": "baa9d3bd1ed57b6751b0887edead6b5063ff53ff7429cf85d476c6c94af0166e"
+  },
+  "output": {
+    "path": "spdx-license-ids.json",
+    "bytes": 11603,
+    "sha256": "27f8b5e7c6feae722d7947ac30182dc33ce9235ac7932ccdf5ba86156892c372",
+    "licenses": 605
+  },
+  "parserSource": {
+    "source": "https://raw.githubusercontent.com/EmbarkStudios/spdx/10dcdc28d619b5bb1c14cbf546deea3578ead73c/src/identifiers.rs",
+    "bytes": 124796,
+    "sha256": "8f53921a86dfecda6092980d1c12dd99ae5132e6692ab45f45a4e23b779ea48e",
+    "excludedPreviouslyAdmitted": [
+      "Net-SNMP"
+    ]
+  }
+}

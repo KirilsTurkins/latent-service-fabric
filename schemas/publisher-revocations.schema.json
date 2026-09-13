@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/publisher-revocations.schema.json",
+  "title": "LSF v1 explicit publisher revocation snapshot",
+  "$comment": "An empty set is an explicit approved snapshot, not a substitute for an unavailable source. Rust checks the 65536-byte and configured lower limits, duplicate JSON keys, ordered validity, freshness and exact policy/scope association.",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "scope", "policyDigest", "generation", "validFrom", "validUntil", "revokedKeys", "revokedPublishers"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "scope": {"$ref": "#/$defs/identifier"},
+    "policyDigest": {"$ref": "#/$defs/digest"},
+    "generation": {"type": "integer", "minimum": 1, "maximum": 18446744073709551615},
+    "validFrom": {"$ref": "#/$defs/time"},
+    "validUntil": {"$ref": "#/$defs/time"},
+    "revokedKeys": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/digest"}},
+    "revokedPublishers": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9._:/@-]+(?![\\s\\S])"},
+    "digest": {"type": "string", "minLength": 71, "maxLength": 71, "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"},
+    "time": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615}
+  }
+}

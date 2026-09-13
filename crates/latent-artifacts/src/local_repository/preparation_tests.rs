@@ -34,7 +34,7 @@ fn identity(
 }
 
 #[test]
-fn fingerprint_preserves_the_existing_complete_debug_frame_and_exact_limits() {
+fn fingerprint_preserves_the_versioned_complete_debug_frame_and_exact_limits() {
     let value = artifact("fingerprint", b"abc");
     let actual = fingerprint(&value);
     let body = format!(
@@ -42,7 +42,7 @@ fn fingerprint_preserves_the_existing_complete_debug_frame_and_exact_limits() {
         value.descriptor, value.manifest, value.contracts
     );
     let mut expected = Sha256::new();
-    expected.update(b"lsf-wasmtime-preparation-metadata-v1\0");
+    expected.update(b"lsf-wasmtime-preparation-metadata-v2\0");
     expected.update(body.as_bytes());
     assert_eq!(*actual.digest(), <[u8; 32]>::from(expected.finalize()));
     assert!(actual.charged_bytes() >= body.len());
@@ -78,7 +78,7 @@ fn fingerprint_preserves_the_existing_complete_debug_frame_and_exact_limits() {
 fn every_preparation_metadata_family_participates_in_the_stamp() {
     let value = artifact("all-fields", b"abc");
     let expected = fingerprint(&value);
-    for change in 0..9 {
+    for change in 0..12 {
         let mut altered = value.clone();
         match change {
             0 => altered.descriptor.reference.0.push_str("-other"),
@@ -107,6 +107,23 @@ fn every_preparation_metadata_family_participates_in_the_stamp() {
                     .attributes
                     .insert("other".to_owned(), "value".to_owned());
             }
+            9 => {
+                altered.manifest.runtime_requirements.runtime =
+                    Some(latent_manifest::RuntimeRequirement {
+                        engine: "wasmtime".to_owned(),
+                        minimum_version: "47.0.3".to_owned(),
+                    });
+            }
+            10 => altered
+                .manifest
+                .runtime_requirements
+                .target_triples
+                .push("x86_64-unknown-linux-gnu".to_owned()),
+            11 => altered
+                .manifest
+                .runtime_requirements
+                .cpu_features
+                .push("x86_64.avx2".to_owned()),
             _ => unreachable!(),
         }
         assert_ne!(
@@ -115,6 +132,44 @@ fn every_preparation_metadata_family_participates_in_the_stamp() {
             "change {change}"
         );
     }
+}
+
+#[test]
+fn runtime_requirement_spare_capacity_is_rejected_before_fingerprinting() {
+    let mut value = artifact("runtime-capacity", b"abc");
+    value.manifest.runtime_requirements.target_triples = Vec::with_capacity(9);
+    assert_eq!(
+        preparation_metadata_fingerprint(
+            &value.descriptor,
+            &value.manifest,
+            &value.contracts,
+            1024 * 1024,
+            32,
+        )
+        .unwrap_err()
+        .code,
+        PlatformErrorCode::ResourceExhausted
+    );
+    value.manifest.runtime_requirements.target_triples = Vec::new();
+    let mut feature = String::with_capacity(4096);
+    feature.push_str("x86_64.avx2");
+    value
+        .manifest
+        .runtime_requirements
+        .cpu_features
+        .push(feature);
+    assert_eq!(
+        preparation_metadata_fingerprint(
+            &value.descriptor,
+            &value.manifest,
+            &value.contracts,
+            1024 * 1024,
+            32,
+        )
+        .unwrap_err()
+        .code,
+        PlatformErrorCode::ResourceExhausted
+    );
 }
 
 #[test]
@@ -210,7 +265,7 @@ fn verified_stamp_rejects_same_component_with_changed_descriptor_or_contracts() 
 }
 
 #[test]
-fn normalized_stamp_accepts_equivalent_noncanonical_persisted_metadata() {
+fn normalized_stamp_equivalence_does_not_replace_immutable_lifecycle_completion() {
     use latent_manifest::__serde_json as json;
     let temp = TempRoot::new();
     let value = artifact("normalized", b"abc");
@@ -236,13 +291,25 @@ fn normalized_stamp_accepts_equivalent_noncanonical_persisted_metadata() {
         &fs::read(entry.join("manifest.json")).unwrap(),
     );
     fs::write(entry.join("COMPLETE"), completion.encode().unwrap()).unwrap();
-    let fetched = block_on(repo.preparation_source().unwrap().fetch(&release)).unwrap();
-    original.verify_metadata(&fetched, 1024 * 1024, 32).unwrap();
+    let (descriptor, contracts) =
+        super::super::metadata_codec::decode_metadata(&changed, 1024 * 1024).unwrap();
+    let equivalent = CapsuleArtifact {
+        descriptor,
+        contracts,
+        ..value
+    };
+    original
+        .verify_metadata(&equivalent, 1024 * 1024, 32)
+        .unwrap();
     drop(repo);
-    let restored = repository(temp.path());
     assert_eq!(
-        identity(&restored, &release).metadata(),
-        original.metadata()
+        DirectoryArtifactRepository::open(
+            temp.path(),
+            DirectoryArtifactRepositoryConfig::default()
+        )
+        .expect_err("rewritten COMPLETE is not the admitted immutable association")
+        .code,
+        PlatformErrorCode::CorruptArtifact
     );
 }
 

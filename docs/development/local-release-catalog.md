@@ -1,8 +1,13 @@
 # Phase 1 local release catalog
 
 `latent-artifacts::DirectoryArtifactRepository` implements the local release
-catalog used by the [Phase 1 standalone node](../reference/standalone-node.md).
-The repository is also available directly as a Rust API.
+catalog used by the [standalone node](../reference/standalone-node.md).
+The repository is also available directly as a Rust API. Completed Phase 2
+[release lifecycle](../reference/release-lifecycle.md) adds authoritative durable
+membership, revocation/retirement and bounded operation outcomes to both local
+and enforced catalogs. The original immutable completion format is preserved;
+a completed directory alone does not authorize adoption after lifecycle
+initialization.
 Its owner holds one local release-catalog root exclusively for the lifetime of
 the repository. Ownership is acquired with an operating-system file lock on
 `.catalog.lock` before temporary cleanup or index rebuild. A second live opener
@@ -38,9 +43,9 @@ cleanup away from the directory whose ownership lock the handle holds.
 
 ## Layout and publication
 
-Completed releases live under `releases/<sha256>/` and contain `metadata.json`, canonical `manifest.json`, `component.wasm`, and a versioned `COMPLETE` integrity record. Publication validates the manifest, component identity, descriptor bounds, contract metadata and recovery-directory capacity before creating a private directory under `.tmp/`. It writes and fsyncs the payload files followed by the completion record, fsyncs the temporary directory, and renames that complete directory into its immutable digest location. It verifies the stored entry and fsyncs `releases/` before adopting the descriptor into the in-memory index.
+Completed releases live under `releases/<sha256>/` and contain `metadata.json`, canonical `manifest.json`, `component.wasm`, and a versioned `COMPLETE` integrity record. Publication validates the manifest, component identity, descriptor bounds, contract metadata and recovery-directory capacity before creating a private directory under `.tmp/`. It writes and fsyncs the payload files followed by the completion record, fsyncs the temporary directory, and renames that complete directory into its immutable digest location. It verifies the stored entry and fsyncs `releases/`, then commits lifecycle membership and the bounded operation outcome before adopting the descriptor into the in-memory index.
 
-Every successful publication/adoption path uses the same sync-and-adopt operation. Thus `publish -> Ok` implies immediate eligibility for `resolve`, `fetch`, and `list` on that handle. Identical publication is idempotent; different content under an existing digest or reference is rejected.
+Every successful publication/adoption path synchronizes content and lifecycle state before returning. Historical catalog metadata remains available separately from execution eligibility; `resolve` and `fetch` require current lifecycle and, in enforced mode, signed authority. Identical ordinary publication cannot clear a revoked/retired record or replace evidence. Different content under an existing digest or reference is rejected.
 
 ### Completion record and immutable metadata
 
@@ -48,11 +53,12 @@ Every successful publication/adoption path uses the same sync-and-adopt operatio
 
 | Field | Meaning |
 | --- | --- |
-| `format_version` | Integer `1`, identifying this completion-record format. |
+| `format_version` | Integer `1` for trusted-local completion or `2` for enforced completion. |
 | `component_digest` | The release's `sha256:` digest of component bytes. |
 | `component_size_bytes` | Component byte length. |
 | `metadata_digest` | SHA-256 of the exact stored `metadata.json` bytes, covering the descriptor and all contract metadata. |
 | `manifest_digest` | SHA-256 of the exact canonical `manifest.json` bytes. |
+| `admission_digest` | Required only in version 2: SHA-256 of the exact retained `admission.json` bytes, binding the package, evidence and historical receipt associations described by [package admission](../reference/package-admission.md). Omitted in version 1. |
 
 The record has a fixed 1 KiB maximum, independent of configurable payload limits. Unknown versions or fields, duplicate fields, noncanonical serialization, missing or damaged records, and integrity mismatches are corruption errors. Verification checks the component digest against the record, descriptor, manifest and actual bytes, and checks byte length against the record and descriptor. The directory name must match the release digest. Recovery, fetch, identical retries and initial publication all verify before returning or adopting a completed artifact. Valid JSON alone cannot make a changed descriptor, contract or manifest acceptable.
 
@@ -62,13 +68,28 @@ The release identity remains SHA-256 of component bytes. Metadata fingerprints p
 
 Earlier catalogs wrote the literal `complete\n` marker without metadata fingerprints. Opening a legacy catalog returns `CorruptArtifact` with message `legacy catalog completion marker is unsupported`. A mixed legacy/new completed catalog also fails opening. The reader preserves committed files and never generates a new integrity record from unverified legacy contents.
 
-To move an existing catalog forward, stop its owner and retain the entire old root. Re-register the trusted original component, manifest, descriptor and contracts through `ArtifactRepository::publish` into a fresh root, then open the application against that verified root. Do not manufacture completion records from possibly damaged old metadata or overwrite the old root during recovery. This compatibility policy does not change component digests or automatically migrate stored files.
+To move a catalog with literal legacy markers forward, stop its owner and retain the entire old root. Re-register the trusted original component, manifest, descriptor and contracts through `ArtifactRepository::publish` into a fresh root, then open the application against that verified root. Do not manufacture completion records from possibly damaged old metadata or overwrite the old root during recovery. This legacy-marker compatibility policy does not change component digests or automatically migrate those stored files.
+
+A valid completed catalog predating lifecycle support follows a different path:
+one verified bootstrap adds the bounded lifecycle state and its durable mode
+marker. It preserves the original component, metadata and completion bytes.
+After initialization, recovery uses that authoritative lifecycle state; finding
+another valid completed directory does not grant it membership.
 
 ### Indeterminate durability and the mutation gate
 
 A verification, parent-directory sync or index-adoption failure after rename is returned as a publication failure. The completed destination may remain on disk while a newly published release remains hidden from that handle's readers. Under the writer mutex, the repository records the pending release digest before verifying the destination and rejects publications of any other digest with `unavailable`. This includes an otherwise nonconflicting release: the pending directory must not be bypassed for reference uniqueness, entry capacity, aggregate index-byte capacity, or recovery-directory capacity.
 
-Retrying the pending artifact verifies the existing complete entry, re-syncs `releases/`, and adopts it before clearing the gate. A changed artifact with the same digest is not an identical retry and is rejected. Repeated sync/adoption failures keep the gate closed. Previously indexed releases remain readable. The alternative recovery is to drop all references to the repository and reopen its root; rebuild validates and accounts for every completed entry and syncs `releases/` before allowing new mutations. An unsuccessful publication acknowledgment therefore means the release may be recovered after restart, not that its bytes were rolled back.
+An exact pending retry must reconcile both immutable content and authoritative
+lifecycle membership before adoption. Changed input under the same digest or
+operation ID is not an identical retry. Indeterminate lifecycle durability
+blocks positive eligibility through the shared owner; an old indexed token is
+not a fallback. Recovery validates and accounts for completed directories but
+does not auto-admit an orphan `COMPLETE` missing from initialized lifecycle
+state. Such a hidden completed directory still reserves its immutable reference,
+preventing publication of another digest under that reference. Bounded operation
+status distinguishes retained outcomes from
+unknown/uncertain state. A failed acknowledgment does not establish rollback.
 
 The root lock means `.tmp` cleanup cannot delete another live repository handle's active stage. On startup, once ownership is acquired, all `.tmp` contents are treated as abandoned crash debris and removed, whether their completion record is absent, partial or complete. A digest-named final directory must contain a valid record: publication writes the record before the final rename, so a missing record is corruption and must not silently erase a release from recovery. Non-digest directories with no completion record remain invisible incomplete debris and count toward recovery capacity. This protocol assumes cooperating publishers and a local filesystem supporting directory fsync and atomic directory rename; manual changes to an owned root are outside that protocol.
 
@@ -158,7 +179,22 @@ not total decoder or compiler heap usage.
 
 ## Trust boundary
 
-Phase 1 is locally trusted. The catalog validates and canonicalizes capsule manifests and verifies SHA-256 agreement between transferred component bytes, the manifest component digest, and the immutable release digest. It does not claim signature, provenance, SBOM, registry-authentication, OCI, or trusted-AOT verification; those remain later-phase work. Registration validates catalog data without preparing or instantiating the component.
+The Phase 1 compatibility mode is locally trusted. It validates and canonicalizes
+capsule manifests and verifies SHA-256 agreement between component bytes,
+manifest and immutable release identity. It does not authenticate publishers or
+builders. Registration validates catalog data without preparing or instantiating
+the component.
+
+Phase 2 [authenticated package admission](../reference/package-admission.md)
+adds an explicit enforced repository mode, shared live authority, versioned
+completion records binding exact retained package/evidence bytes and a bounded
+historical receipt. Enforced roots reject raw publication and local reopening;
+legacy version-1 records are not automatically upgraded to enforced version 2.
+Fresh verification when current authority permits it and sealed eligibility
+checks on deployment/preparation/activation
+keep historical publication separate from current execution authority. The
+linked migration procedure preserves local history in its original catalog.
+Trusted AOT and untrusted-filesystem protection are separate boundaries.
 
 ## Execution-resource invariant and acceptance evidence
 
@@ -208,5 +244,5 @@ physical power loss.
 2. Alternatively stop the standalone node and drop all repository handles so `.catalog.lock` is released. Preserve the root before any manual repair.
 3. Remove only known abandoned `.tmp` content if manual cleanup is necessary; normal startup performs this automatically after acquiring ownership.
 4. Do not promote directories lacking a valid `COMPLETE` record manually. A damaged digest-named final directory fails recovery; preserve it and recover from trusted source artifacts. Only non-digest incomplete debris is excluded from the visible index while counting against recovery-directory capacity, and may be inspected or removed offline.
-5. Reopen the repository. Rebuild checks bounded/readable contract metadata, canonical manifests, digest-directory identity, component bytes, reference uniqueness and all configured limits. It syncs the release directory before exposing the rebuilt index and rebuilds the directory count before accepting publications.
+5. Reopen the repository. Rebuild checks bounded/readable contract metadata, canonical manifests, digest-directory identity, component bytes, reference uniqueness and all configured limits. It also validates authoritative lifecycle membership and selected evidence revisions before minting any usable capability. It synchronizes directories and rebuilds bounded directory accounting before accepting publications; an orphan completion record cannot create admitted membership.
 6. Conflicting completed mappings, corrupt completed data or unsupported metadata are operator-visible open failures, never silently selected records. Preserve evidence and repair/remove the offending completed entry only offline; do not bypass bounds or JSON recursion protection to force startup.

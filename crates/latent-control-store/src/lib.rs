@@ -2,7 +2,9 @@
 
 #![forbid(unsafe_code)]
 
+pub mod deployment_operations;
 mod deployments;
+pub mod rollouts;
 mod scoped_routes;
 
 pub use scoped_routes::{RouteReadLimits, ScopedRouteRequest, ScopedRouteSnapshot};
@@ -68,6 +70,61 @@ pub struct DeploymentDeleteReceipt {
 }
 
 pub trait DeploymentStore: Send + Sync {
+    /// Reserves shared request/audit scratch before managed request normalization or hashing.
+    /// Retain the lease through the helper's last use; this grants no mutation authority.
+    fn reserve_operation_request(
+        &self,
+    ) -> Result<deployment_operations::DeploymentReadLease, PlatformError> {
+        Err(deployment_operations::unsupported())
+    }
+    fn prepare_operation(
+        &self,
+        _request: deployment_operations::DeploymentOperationRequest,
+    ) -> BoxFuture<'_, Result<deployment_operations::PreparedDeploymentOperation, PlatformError>>
+    {
+        Box::pin(async { Err(deployment_operations::unsupported()) })
+    }
+    fn commit_operation(
+        &self,
+        _prepared: deployment_operations::PreparedDeploymentOperation,
+    ) -> Result<
+        deployment_operations::DeploymentOperationRead<
+            deployment_operations::DeploymentOperationCommit,
+        >,
+        PlatformError,
+    > {
+        Err(deployment_operations::unsupported())
+    }
+    fn get_operation<'a>(
+        &'a self,
+        _tenant: &'a TenantId,
+        _operation_id: &'a str,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            deployment_operations::DeploymentOperationRead<
+                deployment_operations::DeploymentOperationLookup,
+            >,
+            PlatformError,
+        >,
+    > {
+        Box::pin(async { Err(deployment_operations::unsupported()) })
+    }
+    fn get_operation_snapshot<'a>(
+        &'a self,
+        _tenant: &'a TenantId,
+        _id: &'a DeploymentId,
+    ) -> BoxFuture<
+        'a,
+        Result<
+            deployment_operations::DeploymentOperationRead<
+                deployment_operations::DeploymentOperationSnapshot,
+            >,
+            PlatformError,
+        >,
+    > {
+        Box::pin(async { Err(deployment_operations::unsupported()) })
+    }
     /// Atomically checks the caller's object stamp and applies inside the explicit tenant.
     /// `None` is unconditional, zero requires absence, and a positive stamp requires equality.
     fn apply_versioned<'a>(

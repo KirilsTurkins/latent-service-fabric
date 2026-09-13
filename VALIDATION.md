@@ -1,16 +1,26 @@
 # Validation baseline
 
-Updated on **2026-09-11** for completed Phase 1 and its performance extension,
+CI selects a [documentation or full profile](docs/development/ci-profiles.md)
+from the complete change. Documentation-only PRs run focused Markdown/SVG
+validation; code, build inputs, evidence, workflow changes and manual runs retain
+the full suite described below. `CI result` checks every selected job's outcome.
+
+Updated on **2026-09-13** for completed Phases 1 and 2 and the Phase 1 performance extension,
 the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
 generic execution, activation capabilities/lifecycle, invocation and management
-service adapters, standalone Linux node composition, operator CLI workflows, and explicit heavy
+service adapters, standalone Linux node composition, Phase 2 package/OCI policy,
+authenticated native caching, audit, staged rollout/canary/rollback and operator
+workflows, and explicit heavy
 validation gates. These commands describe validation coverage; the
 [Phase 1 completion review](docs/phase-1-completion.md) and
 [extension report](docs/phase-1-extension-completion.md) record the completed
 decisions. The [September 7 audit](docs/development/feature-audit-2026-09-07.md)
-is an earlier snapshot.
+is an earlier snapshot. The [Phase 2 completion review](docs/phase-2-completion.md)
+records the collective gate decision and its retained evidence. Phase 3 providers
+remain planned. Historical Phase 0/1 receipts below retain their recorded source
+identities and do not validate newly added Phase 2 paths.
 
 ## Entry point
 
@@ -31,6 +41,19 @@ durable 100,000-release catalog probe, or run native profiling, calibration,
 or resource soaks. An eight-entry index fixture checks normal capacity
 accounting without selecting the large probes. Heavy execution and durable scale evidence
 require the explicit commands below.
+
+Routine pull-request CI runs the executable Phase 0 outcome/recovery matrix
+inside `CI / Repository contracts`, immediately after contract validation builds
+its echo and containment fixtures. It does not run a second complete contract
+job or collect a new Phase 0 baseline. The separate runtime-regression workflow
+is manual-only; complete baseline and authorization paths remain available.
+See the [CI layout](docs/testing/phase0-ci-layout.md) for the current division.
+
+For a source release, required checks must pass on the reviewed release inputs.
+Package versions must agree across the Rust workspace and versioned SDKs, while
+dependency locks, WIT/schema compatibility versions and historical measured
+identities retain their separate meanings. Phase 3 declarations and planned
+providers do not extend this release's executed capability coverage.
 
 ## Phase 0 completion sequence
 
@@ -107,6 +130,68 @@ Run it from an isolated clone or worktree when local build output is present.
   [docs/svg-style.md](docs/svg-style.md).
 - Deterministic test IDs, manual time, temporary workspaces, and a current-thread future executor are covered by Rust unit tests.
 - The Phase 0 gate receipt rejects omitted, duplicate, unexpected, or failed baseline checks; missing required terminal scenarios; a dirty executable shutdown/topology result; malformed, unsafe, incomplete, or altered raw archives; unverified calibration/profile measurements; weakened optimization guardrails; free-form optimization decisions; stale execution evidence; and incomplete resource evidence represented as an authorization.
+
+## Phase 2 focused validation
+
+Use the pinned prerequisites and committed lockfile. These focused commands
+exercise implemented package, policy, storage, native-image, audit, delivery and
+operator boundaries without selecting catalog scale or performance campaigns:
+
+```bash
+cargo test -p latent-packaging -p latent-signing -p latent-policy --lib --all-features --locked
+cargo test -p latent-artifacts -p latent-control-store -p latent-audit -p latent-rollout --lib --all-features --locked
+cargo test -p latent-telemetry -p latent-wire -p latentd --lib --all-features --locked
+cargo test -p latent --all-targets --all-features --locked
+cargo test -p latent-wire --test management_service --all-features --locked
+cargo test -p latent-wasmtime --test native_aot_cache --all-features --locked
+```
+
+Native AOT integration requires the documented Linux x86_64 sandbox and compiler
+prerequisites in [trusted AOT](docs/runtime/trusted-aot.md); unsupported hosts do
+not establish successful isolation or native loading.
+
+The tests cover exact package/evidence association, publisher/builder policy and
+runtime compatibility, lifecycle cutover and denied recovery, authority-free raw
+cache pressure, authenticated native receipt/image ownership, durable audit
+query/control leases, exact rollout and managed deployment transactions, canary
+loss and attribution, rollback target validation, and CLI response association.
+Ordinary Rust/SDK/schema checks remain required; no single listed target replaces
+the workspace or contract checks.
+
+For the actual separate-process CLI, registry and node schedule, follow the
+[bounded operator workflow](docs/development/standalone-quickstart.md#bounded-phase-2-operator-workflow).
+It explicitly builds current binaries, fetches the pinned TLS registry image,
+and selects only the ignored `export_operator_workflow_fixture` test into a new
+directory. Run the workflow immediately with that fresh signed fixture. The
+runner itself builds nothing, never mounts node catalogs into the CLI and owns
+its disposable process/registry resources. It rejects stale fixtures and missing
+prerequisites.
+
+That schedule checks two compatible packages, exact OCI/evidence transfer,
+independent node admission, deployment receipt replay/lookup, actual attributed
+invocation, manual and canary stages, explicit rollback, audit pagination,
+interrupted-result inspection and restart. Its bounded
+`latent.operator.workflow-test.v1` result is integration evidence, not a benchmark
+or a completion receipt. Its fresh publisher and builder signatures bind
+synthetic test observations; they do not establish an actual production build.
+Observed-build provenance has its separate maintained integration.
+
+The [Phase 2 completion review](docs/phase-2-completion.md) combines those
+dependency checks with three real native-currentness tests: proof-age expiry,
+policy expiry and publisher revocation each deny retained preparation, final
+start and persistent-cache reopen without another compile or load. The separate
+[offline schedule](docs/testing/phase-2-offline-validation.md) records a failed
+new registry pull, successful eligible local execution, then denial after local
+revocation while the registry remains stopped.
+
+The fixed [resource profile](docs/testing/phase-2-resource-profile.md) retains
+32 signed releases, 16 deployments, two warmed portable images, 32 successful
+Invokes and 12 OS samples, with transient ownership returning to zero and actual
+worker joins/process reap. Its final collector and validator checks passed
+38/38. The [compact evidence set](benchmarks/phase2/2026-09-13/README.md) preserves
+source and binary identities, finite limits, failed/superseded attempts and the
+WSL2 host boundary. This is no new 100k-scale or production SLO claim; historical
+Phase 1 scale/soak reports retain their original measurement scope.
 
 ## Echo fixture commands
 
@@ -341,7 +426,7 @@ historical.
 
 ## CI jobs
 
-Normal pull requests use two automated workflows. `CI` runs formatting,
+Normal pull requests use the `CI` workflow. It runs formatting,
 workspace compilation, generated binding checks, Clippy, tests, the MSRV check,
 repository/contract validation, the reproducible echo component build, and all
 SDK surfaces. Its core Rust job also retains the strict `latentd` Clippy policy
@@ -353,12 +438,18 @@ and catalog-probe supervision regressions. Its expensive 100,000-release
 publication/reopen step and retained scale logs are enabled only by manual
 dispatch with `run_catalog_scale: true`; the default is `false`.
 
-`Phase 0 runtime regression` is path-filtered to execution-relevant sources. It
-runs the deterministic executable baseline smoke and then the ignored
-`latentd` outcome/recovery matrix against the already-built fixtures. The job
-also syntax-checks the retained Phase 0 runners and uploads its raw measurements
-and report. It does not repeat the full workspace formatting, compilation,
-Clippy, test, MSRV, or SDK matrix.
+`Repository contracts` runs the ignored `latentd` outcome/recovery matrix
+immediately after building its current echo and containment fixtures. The
+dependent `OCI registry TLS integration` job verifies real bounded transfer and
+the separately captured observed-build inputs. The Rust job also executes the
+bounded Phase 2 operator, native-currentness, offline and resource schedules,
+retaining compact receipts for seven days.
+
+`Phase 0 runtime regression` is manual-only. It runs the complete deterministic
+baseline smoke, including its mandatory contract validation, and then the shared
+outcome/recovery runner. Its owned baseline evidence is retained for 14 days.
+The routine PR path reuses same-job fresh fixtures and does not collect that
+additional baseline. See [the CI layout](docs/testing/phase0-ci-layout.md).
 
 `Phase 0 full validation` is manual-only. Its `workflow_dispatch` input selects
 the full authorization gate or the deterministic smoke gate from a clean,
@@ -397,3 +488,7 @@ and therefore authorized the handoff. It never
 establishes production APIs, cross-platform byte identity, generic dispatch,
 production security, dormant-service density, cluster behavior, or production
 SLOs.
+
+See [CI dependency caching](docs/development/ci-caching.md) for reusable build
+paths, trusted cache writers and the fresh-evidence boundary. Cache hits do not
+skip validation steps.

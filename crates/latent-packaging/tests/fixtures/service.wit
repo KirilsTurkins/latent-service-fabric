@@ -1,0 +1,23 @@
+package tests:packaging@1.0.0;
+
+interface api {
+    record payload {
+        value: u32,
+        enabled: bool,
+    }
+    variant choice {
+        empty,
+        payload(payload),
+    }
+    type outcome = result<choice, u32>;
+    record input {
+        count: u32,
+        outcome: outcome,
+    }
+    inspect: func(input: input) -> u32;
+}
+
+world service {
+    import latent:clock/monotonic@0.1.0;
+    export api;
+}

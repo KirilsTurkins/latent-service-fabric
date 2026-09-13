@@ -7,7 +7,12 @@ source tools/phase0_build_environment.sh
 phase0_reject_inherited_build_overrides
 phase0_reject_hidden_cargo_configuration
 case "${profile}" in
-  smoke) cargo build -p latent -p latentd -p latent-optimization-bench --bins --locked ;;
+  smoke)
+    # Keep all four retained smoke executables within the existing evidence
+    # budget. This command-local setting follows the inherited-override guard;
+    # the full native recipe and release guest build remain unchanged.
+    CARGO_PROFILE_DEV_DEBUG=0 cargo build -p latent -p latentd -p latent-optimization-bench --bins --locked
+    ;;
   full) phase0_release_cargo build -p latent -p latentd -p latent-optimization-bench --bins --release --locked ;;
   *) printf '%s\n' 'profile must be smoke or full' >&2; exit 2 ;;
 esac

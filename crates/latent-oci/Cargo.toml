@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
-description = "Interface contracts for latent-oci."
+description = "Bounded authenticated OCI artifact distribution."
 
 [lints]
 workspace = true
@@ -13,3 +13,16 @@ workspace = true
 [dependencies]
 latent-core = { path = "../latent-core" }
 latent-artifacts = { path = "../latent-artifacts" }
+base64.workspace = true
+bytes = "=1.12.1"
+reqwest = { version = "=0.13.5", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "=0.23.44", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = "=1.0.9"
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["net", "io-util"] }
+
+[dev-dependencies]
+latent-packaging = { path = "../latent-packaging" }
+latent-signing = { path = "../latent-signing" }
+tempfile.workspace = true

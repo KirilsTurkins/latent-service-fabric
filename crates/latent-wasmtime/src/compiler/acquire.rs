@@ -121,6 +121,7 @@ impl<T: Send + Sync + 'static> CompilerPool<T> {
             waiters: vec![Arc::clone(&waiter)],
             reservation: Some(reservation),
             task: None,
+            native_control: None,
             submitted_nanos: 0,
             documents: input.document_bytes,
             abandoned: false,

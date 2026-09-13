@@ -8,12 +8,37 @@ use latent_executor::PreparationKey;
 use wasmtime::component::Component;
 
 use super::{metadata_overflow, Compilation};
+use crate::aot::{
+    image_budget::NativeImagePermit, loader::LoadedNative, supervisor::AotPreparedInput,
+};
 use crate::backend::{bounded_error, PreparedRuntime};
 use crate::cache::PrepareReservation;
 use crate::config::PHASE0_BACKEND_ID;
 use crate::containment::platform_error;
 use crate::preparation_observer::{PreparationJob, PreparationStage};
 use crate::surface;
+
+enum CompiledCode {
+    Local(Component),
+    Native(LoadedNative),
+}
+impl CompiledCode {
+    fn component(&self) -> &Component {
+        match self {
+            Self::Local(value) => value,
+            Self::Native(value) => value.component(),
+        }
+    }
+    fn retire_component(self) -> Option<NativeImagePermit> {
+        match self {
+            Self::Local(value) => {
+                drop(value);
+                None
+            }
+            Self::Native(value) => Some(value.retire_component()),
+        }
+    }
+}
 
 impl super::super::PreparationContext {
     pub(in crate::backend) fn compile_runtime(
@@ -70,6 +95,10 @@ impl super::super::PreparationContext {
         input: Compilation,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
+        if self.native_aot.is_some() {
+            return Err(crate::backend::admission_association_error());
+        }
+        self.check_eligibility(input.eligibility.as_ref(), &key.release)?;
         let compilation = job.stage(PreparationStage::ComponentNew);
         let component = Component::new(&self.engine, &artifact.component_bytes);
         if component.is_ok() {
@@ -84,13 +113,52 @@ impl super::super::PreparationContext {
                 false,
             )
         })?;
+        self.link_runtime(artifact, key, input, job, CompiledCode::Local(component))
+    }
+
+    pub(in crate::backend) fn build_native_runtime(
+        &self,
+        checked: &mut AotPreparedInput,
+        key: &PreparationKey,
+        input: Compilation,
+        job: &PreparationJob,
+    ) -> Result<Arc<PreparedRuntime>, PlatformError> {
+        self.check_eligibility(input.eligibility.as_ref(), &key.release)?;
+        checked.check()?;
+        let service = self
+            .native_aot
+            .as_ref()
+            .ok_or_else(crate::backend::admission_association_error)?;
+        let code = service.load(checked, &self.engine)?;
+        checked.check()?;
+        let runtime = self.link_runtime(
+            checked.artifact(),
+            key,
+            input,
+            job,
+            CompiledCode::Native(code),
+        )?;
+        checked.check()?;
+        Ok(runtime)
+    }
+
+    fn link_runtime(
+        &self,
+        artifact: &CapsuleArtifact,
+        key: &PreparationKey,
+        input: Compilation,
+        job: &PreparationJob,
+        code: CompiledCode,
+    ) -> Result<Arc<PreparedRuntime>, PlatformError> {
+        let component = code.component();
+        self.check_eligibility(input.eligibility.as_ref(), &key.release)?;
         let linking = job.stage(PreparationStage::SurfaceLink);
-        let surface = surface::validate(&component, &self.engine, artifact, &self.config)?;
+        let surface = surface::validate(component, &self.engine, artifact, &self.config)?;
         let metadata_bytes = input
             .metadata_bytes
             .checked_add(surface.retained_bytes)
             .ok_or_else(metadata_overflow)?;
-        let pre = self.link_component(&component)?;
+        let pre = self.link_component(component)?;
         if self.profile.id == PHASE0_BACKEND_ID {
             crate::phase0::validate_prepared(&pre)?;
         }
@@ -102,33 +170,39 @@ impl super::super::PreparationContext {
             input.handle.clone(),
             input.component_digest,
         );
-        // InstancePre now owns the image. Do not retain an extra local native
-        // owner beyond construction of its uniquely charged prepared runtime.
-        drop(component);
+        // Keep the ordered component/permit owner through every fallible setup.
+        let lifetime_charge = self
+            .runtime_ledger
+            .register(crate::cache::PreparedRuntimeCost {
+                source_bytes: artifact.component_bytes.len(),
+                metadata_bytes,
+                compiled_image_bytes: image_bytes,
+            })?;
+        let declared_budget = artifact.manifest.execution.resource_budget_ceiling.clone();
+        let imports = artifact
+            .manifest
+            .imports
+            .iter()
+            .map(|import| import.contract.clone())
+            .collect();
+        // InstancePre now owns the image. Only infallible moves remain before
+        // adoption into the ordered runtime owner.
+        let native_image = code.retire_component();
         let runtime = Arc::new(PreparedRuntime {
             pre,
-            declared_budget: artifact.manifest.execution.resource_budget_ceiling.clone(),
+            declared_budget,
             surface,
             descriptor,
             authentication: input.authentication,
+            eligibility: input.eligibility,
             metadata_bytes,
             image_bytes,
-            // The existing full metadata charge includes these manifest fields.
-            imports: artifact
-                .manifest
-                .imports
-                .iter()
-                .map(|import| import.contract.clone())
-                .collect(),
-            lifetime_charge: self
-                .runtime_ledger
-                .register(crate::cache::PreparedRuntimeCost {
-                    source_bytes: artifact.component_bytes.len(),
-                    metadata_bytes,
-                    compiled_image_bytes: image_bytes,
-                })?,
+            imports,
+            lifetime_charge,
+            _native_image: native_image,
         });
         linking.complete();
+        self.check_runtime(&runtime)?;
         Ok(runtime)
     }
 }

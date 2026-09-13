@@ -1,6 +1,23 @@
 use super::*;
 
 #[test]
+fn output_failure_preserves_managed_recovery_without_bulk_response() {
+    let data = json!({
+        "recovery":{"family":"deployment","tenant":"tests","operationId":"apply-blue",
+            "deploymentId":"blue","expectedGeneration":"0","expectedStateVersion":u64::MAX.to_string()},
+        "auditAck":{"status":"durable","attemptSequence":"12"},
+        "deployment":{"manifest":{"irrelevant":"bulk"}},
+        "evidence":[{"payload":"must not retain"}]
+    });
+    let retained = receipt(&data);
+    assert_eq!(retained["recovery"], data["recovery"]);
+    assert_eq!(retained["auditAck"], data["auditAck"]);
+    assert!(retained.get("deployment").is_none());
+    assert!(retained.get("evidence").is_none());
+    assert!(serde_json::to_vec(&retained).unwrap().len() < 512);
+}
+
+#[test]
 fn local_output_failure_retains_completed_remote_result_and_exact_receipt() {
     let mut failure = Failure::local(
         "payload-output-failed",

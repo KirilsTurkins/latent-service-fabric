@@ -56,7 +56,12 @@ cargo check -p latent-toolchain-smoke --example oversized-log-capsule --target w
 cargo check -p latent-toolchain-smoke --example containment-capsule --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example generic-capsule --target wasm32-wasip2 --locked
 cargo check -p latent-toolchain-smoke --example capabilities-capsule --target wasm32-wasip2 --locked
-python3 tools/build_echo_capsule.py --verify-reproducible
+python3 tools/reset_validation_echo.py --target-root "${TARGET_ROOT}"
+python3 tools/build_provenance.py --verify-reproducible \
+    --repository https://github.com/KirilsTurkins/latent-service-fabric \
+    --output-dir "${TARGET_ROOT}/capsules/echo-provenance" \
+    --legacy-output-dir "${TARGET_ROOT}/capsules/echo"
+python3 tools/validate_package_smoke.py
 cargo build -p latent-toolchain-smoke --example oversized-log-capsule \
     --target wasm32-unknown-unknown --release --locked
 OVERSIZED_LOG_CORE="${TARGET_ROOT}/wasm32-unknown-unknown/release/examples/oversized_log_capsule.wasm"

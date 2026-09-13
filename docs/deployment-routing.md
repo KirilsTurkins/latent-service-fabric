@@ -116,7 +116,7 @@ encode manifests, or scan unrelated tenant/service records. Cached record sizes
 are computed when indexes are built and remain bound to the immutable catalog.
 
 The repository page size must be in `1..=max_page_size`, whose default is 1,000;
-zero is invalid. In the future #37 wire adapter, a missing `PageRequest` or zero
+zero is invalid. In the [management adapter](reference/management-services.md), a missing `PageRequest` or zero
 `page_size` selects the adapter's configured positive default within that limit.
 Omitted and explicit zero are indistinguishable in the non-optional Protobuf
 scalar. The default `max_page_bytes` is 4 MiB and bounds the sum of
@@ -171,7 +171,7 @@ The selection hash is SHA-256 over `b"lsf-route-selection-v1\0"` followed by the
 
 Interpret the first eight hash bytes as an unsigned 64-bit big-endian integer. The bucket is that integer modulo the sum of eligible weights. Select the first cumulative weight strictly greater than the bucket.
 
-This is deterministic weighted selection, not random round-robin or consistent hashing. Without a varying routing key, requests select the same bucket. Reweighting or changing the candidate set can change selections. No canary controller, traffic feedback, or automatic rollback is implemented.
+This is deterministic weighted selection, not random round-robin or consistent hashing. Without a varying routing key, requests select the same bucket. Reweighting or changing the candidate set can change selections. [Controlled canary promotion](phase-2-canary-promotion.md) can evaluate bounded actual invocation outcomes before an explicit next-stage mutation. [Rollback](phase-2-rollback.md) explicitly restores one plan-bound target. Automatic promotion and rollback are not implemented.
 
 ## Complete publication and reader behavior
 
@@ -191,9 +191,16 @@ The writer takes the reader lock only to replace the complete catalog pointer an
 
 The fixed node-owned files are `catalog.json`, `INITIALIZED`, and `.catalog.lock`. A mutation temporarily creates `.catalog.pending`; first initialization can also create `.INITIALIZED.pending`. Deployment identifiers are metadata, never filesystem paths.
 
-One versioned JSON record contains desired deployments, their object generation stamps, and the complete compiled snapshot. Its SHA-256 checksum covers the canonical payload. Format version 2 stores a sorted `object_generations` list of `{id, generation}` entries alongside the manifests. The key set must match the live deployments, and each stamp must be positive and no greater than the catalog generation. A mutation writes and synchronizes a complete pending record, atomically renames it over the current record, synchronizes the parent directory, and installs the complete in-memory catalog.
+One versioned JSON record contains desired deployments, their object generation stamps, and the complete compiled snapshot. Its SHA-256 checksum covers the canonical payload. Format version 2 stores a sorted `object_generations` list of `{id, generation}` entries alongside the manifests. The key set must match the live deployments, and each stamp must be positive and no greater than the catalog generation. Version 3 adds bounded rollout state and receipts; version 4 also retains managed deployment operation receipts. Every writer preserves existing control history in the same document. A mutation writes and synchronizes a complete pending record, atomically renames it over the current record, synchronizes the parent directory, and installs the complete in-memory catalog.
 
-Compilation streams the canonical version-2 record into one bounded final buffer, hashing its payload as it writes and filling the reserved checksum field afterward. It borrows canonical deployment fragments from the compiled records; their snapshot attributes remain JSON strings with normal escaping. No separate payload-sized JSON tree or payload buffer is built by the final encoder. A private owner keeps the validated catalog and its exact bytes together. Commit checks the object precondition and then the live catalog generation before consuming those bytes for staging; it does not encode the catalog again. This applies to each compilation separately: the public compile-then-publish API still validates and recompiles at publication.
+Compilation streams the applicable canonical version-2, version-3 or version-4 record into one bounded final buffer, hashing its payload as it writes and filling the reserved checksum field afterward. It borrows canonical deployment fragments from the compiled records; their snapshot attributes remain JSON strings with normal escaping. No separate payload-sized JSON tree or payload buffer is built by the final encoder. A private owner keeps the validated catalog and its exact bytes together. Commit checks the object precondition, live route generation and combined transaction version before consuming those bytes for staging; it does not encode the catalog again. This applies to each compilation separately: the public compile-then-publish API still validates and recompiles at publication.
+
+[Managed deployment operations](phase-2-operator-workflows.md) additionally bind
+the actor, operation ID, normalized request, expected object generation and
+expected combined state version. Exact retained replay precedes current CAS;
+the finite receipt ring is committed with the resulting catalog. Receipt expiry
+does not permit an old create request to succeed after a later delete. Legacy
+mutations retain their existing response and retry semantics below.
 
 A failure before rename leaves old desired state and routing visible. Rename is the visibility commit point: a failure synchronizing the directory after rename returns `Unavailable` with reason `commit-durability-uncertain`, but installs the same complete renamed state in memory. A versioned mutation adds a `deployment-mutation` structured detail containing `deployment_id`, `object_generation`, `catalog_generation`, `operation` (`apply` or `delete`), and `committed=true`, captured from that exact transaction. For delete, the object stamp is the deleted record's old version. Callers must not assume rollback or mistake a later read for the original mutation's receipt. An unconditional reapply consumes another generation; a conditional retry with the old object version conflicts after a committed update.
 
@@ -201,13 +208,14 @@ Existing format-version-1 catalogs are accepted only after the existing checksum
 manifest and reconstructed-route validation succeeds. Since they have no object
 versions, every live deployment deterministically receives that persisted
 catalog generation as its initial stamp. Opening does not rewrite the committed
-file; the next normal mutation writes version 2 through the existing atomic
-publication protocol. An empty legacy generation-zero catalog remains empty.
+file; a legacy mutation writes version 2 until rollout or managed operation
+history requires version 3 or 4. Later writers preserve that history through the
+same atomic publication protocol. An empty legacy generation-zero catalog remains empty.
 The fixed initialization marker keeps its existing meaning independently of the
 record version. Unsupported or inconsistent persisted version data is corruption,
 never silently reset state.
 
-Startup ignores interrupted pending files, bounds reads, verifies the format and checksum, decodes and validates deployments, verifies their releases, deterministically rebuilds indexes with the stored generation and timestamp, and compares the rebuilt snapshot with the persisted one. Missing releases, corrupt complete state, or changed contract metadata fail startup rather than silently changing routes. A valid checksum does not bypass the reconstructed-snapshot comparison. Loading hashes the same typed canonical payload, including version-1 field omission, through a bounded sink. Accepted source whitespace or key ordering does not change the checksum rules. Reopening also checks the reconstructed version-2 encoding against the current state-byte limit, even when the stored version-1 file fits; successful open does not rewrite that file.
+Startup ignores interrupted pending files, bounds reads, verifies the format and checksum, decodes and validates deployments, verifies their releases, deterministically rebuilds indexes with the stored generation and timestamp, and compares the rebuilt snapshot with the persisted one. Missing releases, corrupt complete state, or changed contract metadata fail startup rather than silently changing routes. Verified historical rows whose lifecycle, trust or runtime profile now denies execution remain available for management as nonauthorizing rows; reopening does not grant them execution. A valid checksum does not bypass the reconstructed-snapshot comparison. Loading hashes the same typed canonical payload, including version-1 field omission, through a bounded sink. Accepted source whitespace or key ordering does not change the checksum rules. Reopening also checks the reconstructed encoding against the current state-byte limit, even when a stored legacy file fits; successful open does not rewrite that file.
 
 The initialization marker distinguishes a new root from loss of an already initialized state file. After synchronizing the complete catalog record and its directory entry, initialization writes `.INITIALIZED.pending`, synchronizes that file, atomically renames it to `INITIALIZED`, then synchronizes the containing directory again. An interruption after creation or during writing leaves only a non-authoritative temporary marker. After acquiring the exclusive root lock, startup removes that regular staging file and completes a missing marker only after verifying/rebuilding the complete catalog. A corrupt completed marker, a marker without its complete state, or a corrupt complete record is still rejected. Existing malformed completed markers are not silently reclassified as staging files.
 

@@ -93,6 +93,7 @@ async fn publish(channel: Channel) {
         .unwrap();
     DeploymentServiceClient::new(channel)
         .apply_deployment(support::request(proto::ApplyDeploymentRequest {
+            operation: None,
             deployment: Some(fixture::deployment(&digest)),
             expected_generation: Some(0),
         }))

@@ -10,7 +10,7 @@ use crate::containment::platform_error;
 use crate::host::HostState;
 use crate::preparation_observer::PreparationObserver;
 use crate::{preparation_metadata, WasmtimeEngineProfile};
-use latent_artifacts::{ArtifactPreparationIdentity, CapsuleArtifact};
+use latent_artifacts::{AdmissionAuthority, ArtifactPreparationIdentity, CapsuleArtifact};
 use latent_core::{Metadata, PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedComponent};
 use latent_manifest::{ExecutionBackendKind, StateModel, ThreadingModel};
@@ -19,6 +19,10 @@ use wasmtime::component::{Component, InstancePre, Linker};
 use wasmtime::Engine;
 
 pub(super) struct PreparationContext {
+    pub(super) native_aot: Option<Arc<crate::aot::cache::NativeAotService>>,
+    pub(super) runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    pub(super) admission: Option<Arc<dyn AdmissionAuthority>>,
+    pub(super) lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
     pub(super) runtime_ledger: crate::cache::PreparedRuntimeLedger,
     pub(super) next_untrusted: std::sync::atomic::AtomicU64,
     pub(super) engine: Engine,
@@ -174,7 +178,7 @@ impl PreparationContext {
                 false,
             ));
         }
-        Ok(())
+        self.runtime_profile.check_capsule(manifest)
     }
 
     pub(super) fn prepared_descriptor(

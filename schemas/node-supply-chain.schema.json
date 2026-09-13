@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/node-supply-chain.schema.json",
+  "title": "LSF standalone supplyChain configuration member",
+  "$comment": "Schema for the supplyChain member of NodeConfig, not the whole node document. Omission preserves Phase1 trusted-local mode only for local catalogs; an enforced root marker rejects that downgrade. Relative policyFile resolves against the configuration directory. The runtime bounds/reads the complete policy before authority construction.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "const": "trusted-local"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "policyFile"
+      ],
+      "properties": {
+        "mode": {
+          "const": "enforced"
+        },
+        "policyFile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "clockLeaseSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 5
+        }
+      }
+    }
+  ]
+}

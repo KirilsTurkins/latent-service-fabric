@@ -29,6 +29,9 @@ impl WasmtimeBackend {
         handle: &str,
     ) -> Result<(ActiveInstancePermit, Arc<PreparedRuntime>), PlatformError> {
         if let Some(prepared) = prepared {
+            self.shared
+                .preparation_context
+                .check_runtime(&prepared.runtime)?;
             Ok((prepared.permit, prepared.runtime))
         } else {
             let permit = self.shared.instances.try_acquire()?;
@@ -39,6 +42,7 @@ impl WasmtimeBackend {
                     true,
                 )
             })?;
+            self.shared.preparation_context.check_runtime(&runtime)?;
             Ok((permit, runtime))
         }
     }
@@ -138,6 +142,9 @@ impl WasmtimeBackend {
         {
             return Err(invalid_owner());
         }
+        self.shared
+            .preparation_context
+            .check_runtime(&ownership.runtime)?;
         Ok(ownership)
     }
 }

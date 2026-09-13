@@ -269,7 +269,7 @@ def run(profile: str, output: Path, target: Path) -> None:
     build = build_configuration(profile)
     build["overrides"]["collector_surface"] = "separate-standalone-server-and-load-client"
     if profile == "smoke":
-        build["overrides"]["recipe"] = "cargo-build-debug"
+        build["overrides"].update(recipe="cargo-build-debug-no-debuginfo", debug="0")
     build["overrides"]["optimization_recipe_sha256"] = digest(ROOT / "tools/build_optimization_bench.sh")[0]
     build["overrides"]["recipe_sha256"] = digest(ROOT / "tools/phase0_build_environment.sh")[0]
     source_files = sorted((ROOT / "tools/optimization-workloads").rglob("*.rs"))

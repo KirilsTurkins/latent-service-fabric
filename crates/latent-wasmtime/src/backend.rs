@@ -3,7 +3,10 @@ use std::fmt::Write as _;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Instant;
 
-use latent_artifacts::{ArtifactPreparationIdentity, ArtifactRepository, CapsuleArtifact};
+use latent_artifacts::{
+    AdmissionAuthority, ArtifactPreparationIdentity, ArtifactRepository, CapsuleArtifact,
+    ReleaseUseEligibility,
+};
 use latent_core::{
     ActivationClock, ActivationId, BoxFuture, BudgetConsumption, ContractId, Metadata,
     PlatformError, PlatformErrorCode, ResourceBudget,
@@ -34,6 +37,7 @@ use crate::preparation_observer::{PreparationJob, PreparationObserver, Preparati
 use crate::timing::{InvocationTimingStore, InvocationTimingStoreSnapshot, Phase0InvocationTiming};
 use crate::{surface, values, ContextExposurePolicy, WasmtimeEngineProfile, WasmtimeHostServices};
 
+mod admission;
 #[cfg(test)]
 mod dispatch_tests;
 mod input;
@@ -51,6 +55,14 @@ pub use preparation::PreparationActivitySnapshot;
 use preparation::{Compilation, ComponentIntegrity, PreparationCounters};
 use store::AccountedStore;
 
+fn admission_association_error() -> PlatformError {
+    platform_error(
+        PlatformErrorCode::PermissionDenied,
+        "prepared-admission-association",
+        false,
+    )
+}
+
 pub(crate) struct PreparedRuntime {
     pre: InstancePre<HostState>,
     declared_budget: ResourceBudget,
@@ -58,10 +70,13 @@ pub(crate) struct PreparedRuntime {
     descriptor: PreparedComponent,
     imports: Vec<ContractId>,
     authentication: Option<ArtifactPreparationIdentity>,
+    eligibility: Option<ReleaseUseEligibility>,
     metadata_bytes: usize,
     image_bytes: usize,
     // Runtime-owned costs retire only after all native and metadata fields.
     lifetime_charge: crate::cache::PreparedRuntimeCharge,
+    // All native owners above must retire before live-image quota is refunded.
+    _native_image: Option<crate::aot::image_budget::NativeImagePermit>,
 }
 
 impl PreparedRuntime {
@@ -97,6 +112,15 @@ pub(crate) struct SharedRuntime {
     preparation_context: Arc<PreparationContext>,
 }
 impl SharedRuntime {
+    pub(crate) fn native_aot_snapshot(
+        &self,
+    ) -> Result<Option<crate::NativeAotSnapshot>, PlatformError> {
+        self.preparation_context
+            .native_aot
+            .as_ref()
+            .map(|service| service.snapshot())
+            .transpose()
+    }
     pub(crate) fn cache_accounting_snapshot(&self) -> crate::PreparedCacheAccountingSnapshot {
         self.cache.accounting_snapshot()
     }
@@ -105,18 +129,30 @@ impl SharedRuntime {
         self.cache.prepared_runtime_observer()
     }
 
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "factory transfers the fixed engine, worker, and independent policy owners once"
+    )]
     pub(crate) fn new(
         config: &WasmtimeConfig,
         services: WasmtimeHostServices,
         epoch_ticker: EpochTicker,
         engine: Engine,
         profile: WasmtimeEngineProfile,
+        admission: Option<Arc<dyn AdmissionAuthority>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+        runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+        native_aot: Option<Arc<crate::aot::cache::NativeAotService>>,
     ) -> Result<Self, PlatformError> {
         let cache = Arc::new(PreparedCache::new_tracked(config.cache_limits())?);
         let preparation = Arc::new(PreparationCounters::default());
         let preparation_observer = PreparationObserver::new(config.maximum_concurrent_preparations);
         let uncached_prepared = Arc::new(Mutex::new(None));
         let preparation_context = Arc::new(PreparationContext {
+            native_aot,
+            admission,
+            lifecycle,
+            runtime_profile,
             engine,
             profile: profile.clone(),
             config: config.clone(),
@@ -186,6 +222,9 @@ pub struct WasmtimeBackend {
     shared: Arc<SharedRuntime>,
 }
 impl WasmtimeBackend {
+    pub fn native_aot_snapshot(&self) -> Result<Option<crate::NativeAotSnapshot>, PlatformError> {
+        self.shared.native_aot_snapshot()
+    }
     #[must_use]
     pub fn compiler_snapshot(&self) -> crate::PreparationCompilerSnapshot {
         self.shared
@@ -271,9 +310,17 @@ impl WasmtimeBackend {
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
+        self.shared
+            .preparation_context
+            .check_eligibility(None, &key.release)?;
         let job = self.shared.preparation_observer.begin(&key.release);
-        let runtime =
-            self.prepare_runtime_with_integrity(artifact, key, ComponentIntegrity::Verify, &job)?;
+        let runtime = self.prepare_runtime_with_integrity(
+            artifact,
+            key,
+            ComponentIntegrity::Verify,
+            None,
+            &job,
+        )?;
         job.complete();
         Ok(runtime)
     }
@@ -283,8 +330,12 @@ impl WasmtimeBackend {
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
         integrity: ComponentIntegrity,
+        eligibility: Option<ReleaseUseEligibility>,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
+        self.shared
+            .preparation_context
+            .check_eligibility(eligibility.as_ref(), &key.release)?;
         let validation = job.stage(PreparationStage::MetadataValidation);
         let identity = self
             .shared
@@ -300,8 +351,12 @@ impl WasmtimeBackend {
             .shared
             .preparation_context
             .component_identity(artifact, key, integrity)?;
-        let handle = prepared_handle(key, &component_digest, &identity.digest);
-        let metadata_bytes = preparation::retained_metadata_bytes(identity.bytes, None)?;
+        let handle = admission::scoped_handle(
+            prepared_handle(key, &component_digest, &identity.digest),
+            eligibility.as_ref(),
+        );
+        let metadata_bytes =
+            preparation::retained_metadata_bytes(identity.bytes, None, eligibility.as_ref())?;
         let reserved_metadata = self
             .shared
             .preparation_context
@@ -314,7 +369,13 @@ impl WasmtimeBackend {
             artifact.component_bytes.len(),
             reserved_metadata,
         )? {
-            PrepareAccess::Hit(runtime) => return Ok(runtime),
+            PrepareAccess::Hit(runtime) => {
+                if runtime.eligibility != eligibility {
+                    return Err(admission_association_error());
+                }
+                self.shared.preparation_context.check_runtime(&runtime)?;
+                return Ok(runtime);
+            }
             PrepareAccess::Compile(reservation) => reservation,
         };
         self.shared.preparation_context.compile_runtime(
@@ -325,6 +386,7 @@ impl WasmtimeBackend {
                 component_digest,
                 metadata_bytes,
                 authentication: None,
+                eligibility,
             },
             reservation,
             job,
@@ -359,6 +421,10 @@ impl WasmtimeBackend {
         // transfers its original reservation and never looks in the cache again.
         let (instance_permit, runtime) =
             self.invocation_runtime(prepared, &request.prepared.opaque_handle)?;
+        let _execution_eligibility = self
+            .shared
+            .preparation_context
+            .start_execution(&runtime, &request)?;
         let function = self.requested_function(&runtime, &request)?;
         let temporary_buffer_guard = self.shared.resources.temporary_buffer();
         let raw_input = input::RawInvocationInput::new(

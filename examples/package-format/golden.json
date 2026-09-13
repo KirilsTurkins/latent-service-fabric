@@ -1,0 +1,180 @@
+{
+  "formatVersion": 1,
+  "packages": [
+    {
+      "kind": "capsule",
+      "config": {
+        "file": "capsule/config.json",
+        "digest": "sha256:ac7432487dd667a56e73ef9d53aa19f89bfac6609371bbacc4df5e7cfb4a72f5",
+        "size": 1206
+      },
+      "manifest": {
+        "file": "capsule/manifest.json",
+        "digest": "sha256:c0beb2102f66f5adbed5450c9ff78c0564ca117b8ff9ede8417b736483895ae0",
+        "size": 1577
+      },
+      "blobs": [
+        {
+          "file": "capsule/blobs/manifest.payload.json",
+          "digest": "sha256:65bd35859e32d4ffa68fb9133ded548e8839ff1578907f44390a0134877a5658",
+          "size": 22,
+          "path": "capsule-manifest.json",
+          "role": "capsule-manifest",
+          "mediaType": "application/vnd.latent.capsule.manifest.v1+json"
+        },
+        {
+          "file": "capsule/blobs/component.fixture",
+          "digest": "sha256:a5529f14d5d62abc87fe1bbd855fe6d31f6833ef935bc3aaab0f4b9fff451217",
+          "size": 41,
+          "path": "component.wasm",
+          "role": "component",
+          "mediaType": "application/wasm"
+        },
+        {
+          "file": "capsule/blobs/contracts.payload.json",
+          "digest": "sha256:ace63694df9286d7787bb88be343f4c580c759bba7ad71d0f8e56ac8d2573c4f",
+          "size": 37,
+          "path": "contracts.json",
+          "role": "contracts",
+          "mediaType": "application/vnd.latent.contracts.v1+json"
+        },
+        {
+          "file": "capsule/blobs/wit-lock.json",
+          "digest": "sha256:d61a116da4470a864dda2aa9182b93ba45ecd8fdd3740948d07267796fdebf45",
+          "size": 327,
+          "path": "wit-lock.json",
+          "role": "wit-lock",
+          "mediaType": "application/vnd.latent.wit-lock.v1+json"
+        },
+        {
+          "file": "capsule/blobs/example.wit",
+          "digest": "sha256:f219448dbad9232235d4d058d4e2f3937c70a9ef2ab8c3c5927a1771768466ab",
+          "size": 48,
+          "path": "wit/example.wit",
+          "role": "asset",
+          "mediaType": "text/plain"
+        }
+      ]
+    },
+    {
+      "kind": "browser-assets",
+      "config": {
+        "file": "browser-assets/config.json",
+        "digest": "sha256:137cc3e531e9f79e7934a89c4c9656a9d92d7975d00670b44904539b0a49c064",
+        "size": 507
+      },
+      "manifest": {
+        "file": "browser-assets/manifest.json",
+        "digest": "sha256:c786071a4536d4fa7b68524b32b2cc9ca52bdf560bbd6ff9eee8a9357c7fa741",
+        "size": 796
+      },
+      "blobs": [
+        {
+          "file": "browser-assets/blobs/app.js",
+          "digest": "sha256:f7fbcd6788da98c1fe7e53aea5c3de9f41e028e19d896fa4754c5e0ab2df9b50",
+          "size": 34,
+          "path": "assets/app.js",
+          "role": "asset",
+          "mediaType": "text/javascript"
+        },
+        {
+          "file": "browser-assets/blobs/index.html",
+          "digest": "sha256:9020406bda256884daf210951388deb6045f809c12cc0690bcfe5823f792c766",
+          "size": 45,
+          "path": "index.html",
+          "role": "asset",
+          "mediaType": "text/html"
+        }
+      ]
+    },
+    {
+      "kind": "ssr-package",
+      "config": {
+        "file": "ssr-package/config.json",
+        "digest": "sha256:ae24e0a93e6e9e8ceb2f2cd0c9a10db3c90158def87991299d155878cd112734",
+        "size": 518
+      },
+      "manifest": {
+        "file": "ssr-package/manifest.json",
+        "digest": "sha256:909fdf474402674834bf55615dd9d396597148c3c966e9a109d58d5dabab8829",
+        "size": 806
+      },
+      "blobs": [
+        {
+          "file": "ssr-package/blobs/client.js",
+          "digest": "sha256:868a312e2b15fd092c5fe15dca048fca19edcbd7beb265698a39a83c8dc36b32",
+          "size": 33,
+          "path": "assets/client.js",
+          "role": "asset",
+          "mediaType": "text/javascript"
+        },
+        {
+          "file": "ssr-package/blobs/renderer.js",
+          "digest": "sha256:e3f996f97c61b2c25d639d48ba235c2ff34f141caad306b57e095c8e6110a843",
+          "size": 61,
+          "path": "renderer.js",
+          "role": "renderer",
+          "mediaType": "text/javascript"
+        }
+      ]
+    }
+  ],
+  "emptyConfig": {
+    "file": "evidence/payloads/empty-config.json",
+    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "size": 2
+  },
+  "evidence": [
+    {
+      "kind": "signature",
+      "manifest": {
+        "file": "evidence/signature-manifest.json",
+        "digest": "sha256:c257103a032530bd4296a64503c1346c0c9ee2e71ed469ccf8b6016557b09403",
+        "size": 777
+      },
+      "subjectKind": "capsule",
+      "payload": {
+        "file": "evidence/payloads/signature.json",
+        "digest": "sha256:87908ef4fcdba23de5a1e77aad1e9699ed1284d36cdec64406734489e57fb714",
+        "size": 56,
+        "path": "signature.json",
+        "role": "evidence",
+        "mediaType": "application/vnd.latent.signature.payload.v1+json"
+      }
+    },
+    {
+      "kind": "provenance",
+      "manifest": {
+        "file": "evidence/provenance-manifest.json",
+        "digest": "sha256:909273fdd08295863345e9bdfdbe78c62dd811562c1cf5dc53c027f1b4020bcb",
+        "size": 780
+      },
+      "subjectKind": "capsule",
+      "payload": {
+        "file": "evidence/payloads/provenance.json",
+        "digest": "sha256:da7ec743c6d88bfd6c40500f1da880251f899e756b67a8e3266f11117fdbc370",
+        "size": 57,
+        "path": "provenance.json",
+        "role": "evidence",
+        "mediaType": "application/vnd.latent.provenance.payload.v1+json"
+      }
+    },
+    {
+      "kind": "sbom",
+      "manifest": {
+        "file": "evidence/sbom-manifest.json",
+        "digest": "sha256:cbbb9ba72af1f0642ffdedfc14d41cb7f5558878bbfbe0c00a51b09eee21ff87",
+        "size": 762
+      },
+      "subjectKind": "capsule",
+      "payload": {
+        "file": "evidence/payloads/sbom.json",
+        "digest": "sha256:737a3874618c1f17929b35d8fc5bcd0db14fe0d0a29e4028e63952d60f0e8084",
+        "size": 51,
+        "path": "sbom.json",
+        "role": "evidence",
+        "mediaType": "application/vnd.latent.sbom.payload.v1+json"
+      }
+    }
+  ]
+}

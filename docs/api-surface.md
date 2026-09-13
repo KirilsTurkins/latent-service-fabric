@@ -1,133 +1,184 @@
 # API surface map
 
-This map includes implemented APIs and architectural contracts. The current
-implementation status is summarized in [the roadmap](roadmap.md). Generated
-bindings and declared traits do not by themselves provide running services.
+This map distinguishes implemented APIs from declared architectural contracts.
+Phase 1 and its performance extension are complete. The
+[Phase 2 completion review](phase-2-completion.md) records its accepted delivery
+scope and evidence. Generated bindings and schemas do not themselves implement a
+service. [The roadmap](roadmap.md) maps Phase 3's concrete capability, provider,
+web and SDK work without claiming it has shipped.
 
 ## Guest-facing WIT packages
 
-| Package | Purpose |
-|---|---|
-| `latent:context` | Identity, trace, deadline, metadata, and remaining budget |
-| `latent:log` | Budgeted structured logging |
-| `latent:clock` | Monotonic and wall clocks |
-| `latent:random` | Budgeted random values |
-| `latent:blob` | Large immutable and staged binary values |
-| `latent:state` | Transactional keyed state |
-| `latent:events` | Durable event publication intents |
-| `latent:http` | Policy-scoped outbound HTTP |
-| `latent:secrets` | Scoped secret reads |
-| `latent:timer` | Durable timer scheduling |
-| `latent:telemetry` | Custom budgeted metrics |
-| `latent:service` | Component-to-component invocation |
-| `latent:platform/capsule` | Aggregate platform world |
+| Package | Current status and intended purpose |
+| --- | --- |
+| `latent:context` | Implemented filtered activation identity, trace, deadline, metadata and remaining budget. |
+| `latent:log` | Implemented budgeted structured logging. |
+| `latent:clock` | Implemented monotonic and wall-clock interfaces. |
+| `latent:random` | Declared; budgeted cryptographic randomness is Phase 3. |
+| `latent:blob` | Declared; bounded local/S3 immutable values and staged transfer are Phase 3. |
+| `latent:http` | Declared; policy-scoped outbound HTTP and streaming are Phase 3. |
+| `latent:secrets` | Declared; protected local/Vault references and rotation are Phase 3. |
+| `latent:telemetry` | Declared; guest custom metrics with cardinality policy are Phase 3. |
+| `latent:service` | Declared; broker-authorized isolated local invocation and descendant budgets are Phase 3. |
+| `latent:events` | Declared; real provider publication is Phase 3, while transactional durable event intents require Phase 4. |
+| `latent:state` | Declared; transactional keyed state is Phase 4. |
+| `latent:timer` | Declared; durable workflow timers are Phase 6. |
+| `latent:platform/capsule` | Aggregate platform world; its declarations do not imply all imports are executable. |
 
-Rust bindings for the aggregate runtime world and maintained echo fixture are generated into Cargo `OUT_DIR` by `latent-component-bindings`. The executable echo guest generates its canonical ABI exports in the final component crate from the same authoritative WIT.
+`latent-component-bindings` generates Rust bindings for the aggregate runtime
+world and maintained echo fixture into Cargo `OUT_DIR`. The executable echo
+guest derives its canonical ABI exports from the same authoritative WIT.
 
-The generic Wasmtime backend supports components with no imports and four
-[activation capabilities](runtime/capabilities.md): filtered context, budgeted
-structured logging, and monotonic/wall clocks. The other capability packages
-describe later-phase surfaces. Dynamic exported value mapping follows the
-[canonical WIT value protocol](protocol/wit-values.md).
+The generic backend accepts components without imports and the four supported
+[activation interfaces](runtime/capabilities.md): context, log, monotonic clock
+and wall clock. Other imports fail explicitly. Dynamic exports use the
+[canonical WIT value protocol](protocol/wit-values.md). Phase 3 must preserve
+exact versioned ABI identity and actual host-profile compatibility when adding
+providers; it cannot turn a declared import or caller-supplied grant into authority.
 
 ## Protobuf services
 
-| Service | Purpose |
-|---|---|
-| `ReleaseService` | Publish, inspect, and list release metadata |
-| `ContractService` | Inspect contracts and compare compatibility |
-| `CapabilityService` | Discover providers and explain grants |
-| `AuditService` | Query administrative and security audit events |
-| `DeploymentService` | Apply, inspect, list, delete, and watch deployments |
-| `BindingService` | Apply bindings and validate binding graphs |
-| `TriggerService` | Manage shared ingress triggers |
-| `PolicyService` | Manage and explain policy decisions |
-| `NodeService` | Register nodes and report inventory/health |
-| `RouteService` | Retrieve and watch immutable route snapshots |
-| `InvocationService` | Generic invocation, cancellation, and activation status |
+`latent-rpc` generates messages, Tonic clients/server wrappers and an embedded
+descriptor set from the checked-in Protobuf. It opens no listener. The
+[standalone node](reference/standalone-node.md) composes implementations through
+one bounded authenticated loopback listener on Linux.
 
-`latent-rpc` generates Rust messages, Tonic clients, Tonic server traits/wrappers, and an embedded descriptor set for every checked-in Protobuf file. It contains no listener or service implementation.
+| Service | Implemented standalone surface |
+| --- | --- |
+| `InvocationService` | Invoke, Cancel and GetActivation through the local activation owner. |
+| `ReleaseService` | Publish/Get/List, lifecycle status, retained operation lookup, revoke/retire and detached evidence renewal. Package publication uses independent current node admission. |
+| `DeploymentService` | Apply/Get/List/Delete, optional managed operation IDs and exact object/state preconditions, coherent operation snapshots and GetDeploymentOperation. |
+| `RolloutService` | Optional audited Start/Change/Evaluate/Get/List/GetOperation; Change includes manual stages, pause/resume/abort, sealed canary promotion and explicit rollback. |
+| `AuditService` | Optional QueryPhase2Audit with typed scope/filter/cursor/coverage and a limited legacy QueryAudit projection. |
+| `RouteService` | Tenant-scoped GetRouteSnapshot. |
+| `NodeService` | GetNode and ListNodes for the configured node's bounded inventory. |
+| `ContractService` | Declared registry/comparison RPCs; compatibility is currently a Rust host API used by local control compilation. |
+| `CapabilityService` | Declared provider discovery and grant explanation; concrete Phase 3 work. |
+| `BindingService` | Declared binding management and graph validation; concrete Phase 3 work. |
+| `TriggerService` | Declared shared ingress trigger management; concrete Phase 3 work. |
+| `PolicyService` | Declared policy management/explanation; supply-chain policy is currently explicit node/host configuration. |
 
-Phase 1's standalone subset and the methods that report explicit
-unsupported/unimplemented behavior are defined in
-[Phase 1 contract hardening](protocol/phase-1-contract-hardening.md).
-[Invocation adapters](protocol/invocation-service.md) (#12) implement Invoke,
-Cancel, and GetActivation through the local manager.
-[Management adapters](reference/management-services.md) (#37) implement release,
-versioned deployment, tenant-scoped route and operator inventory methods.
-The [standalone node](reference/standalone-node.md) (#14) serves these adapters
-through one bounded, authenticated loopback listener on Linux.
+WatchDeployment, WatchRouteSnapshots, RegisterNode, ReportInventory and Heartbeat
+return explicit `Unimplemented`; they do not fabricate streams or cluster state.
+Omitted optional owners also return explicit unsupported behavior after the
+applicable authentication and validation. Managed deployment requests require
+their audit composition and never silently downgrade to legacy writes.
+See [management services](reference/management-services.md),
+[invocation](protocol/invocation-service.md) and the retained
+[Phase 1 contract](protocol/phase-1-contract-hardening.md).
 
-## Rust internal interfaces
+Tenant and actor come from trusted authentication, not DTO claims. Missing and
+foreign tenant-scoped objects share absence behavior. Node-level inventory and
+audit need the trusted node-operator claim; it grants no cross-tenant access.
 
-| Crate | Primary seams |
-|---|---|
-| `latent-core` | IDs/errors/lifecycle models, `ActivationClock`, `ActivationBudget`, `EffectiveActivationBudget`, reservations and terminal consumption |
-| `latent-manifest` | `ManifestCodec`, `ManifestValidator`, bounded `JsonManifestCodec`, `Phase1ManifestValidator` |
-| `latent-rpc` | generated Protobuf messages, Tonic clients/servers, descriptor set |
-| `latent-component-bindings` | shared generated runtime/echo Component Model bindings |
-| `latent-artifacts` | `ArtifactRepository`, `DirectoryArtifactRepository`, sealed `VerifiedArtifactMetadata` and `ArtifactPreparationSource`/`OwnedArtifactPreparationSource`, bounded preparation reads, compact `ArtifactPreparationIdentity`, `ArtifactVerificationSnapshot`, `ArtifactCache`, `ArtifactVerifier` |
-| `latent-contracts` | `ContractRegistry`, `CompatibilityChecker`, `BindingCompiler` |
-| `latent-policy` | `PolicyEngine`, `PolicyRepository` |
-| `latent-routing` | `RouteResolver`, `RouteCompiler`, snapshot source/publisher |
-| `latent-admission` | `AdmissionController`, `QuotaProvider`, `LocalAdmissionController`, `LocalQuotaProvider`, affine admission/execution permits |
-| `latent-scheduler` | open `CellPool` with nonqueueing acquisition/change notifications, affine `CellLease`/`CellLeaseLifecycle`, `FixedCellPool`, `LocalScheduler`, `AdmittedSchedulingRequest`, `ScheduledActivation`, `SchedulerSnapshot`, `SchedulingCancellation`, `LocalNodePlacement` |
-| `latent-activation` | `ActivationRequest`, bounded `ActivationRequestBuilder`, `ActivationIdSource`, `ActivationManager`, `ActivationJournal` |
-| `latent-executor` | `ExecutionBackend::prepare_ready_from_repository`/`materialize_ready`, compatible `prepare_from_repository`, `PreparedActivation`, `PreparedReadiness`, affine `PreparedUse`, backend registry and cancellation |
-| `latent-wasmtime` | `WasmtimeComponentEngineFactory`, generic `WasmtimeBackend`, bounded preparation/value policy, `WasmtimeHostServices`, `ContextExposurePolicy`, `StructuredLogSink`, dynamic exports and cleanup proof; retained Phase 0 facade and future AOT interfaces |
-| `latent-capabilities` | provider, broker, registry, handle model |
-| `latent-blobs` | large-value storage, leases, and transfer |
-| `latent-identity` | authentication, authorization, delegation, node identity |
-| `latent-triggers` | trigger sources, cursors, mapping, and dispatch |
-| `latent-ingress` | shared protocol adapters and ingress routing |
-| `latent-commit` | atomic state/effect commit and recovery |
-| `latent-state` | state backend and entity lease manager |
-| `latent-effects` | effect store, dispatcher, and provider |
-| `latent-workflows` | continuation store and workflow runtime |
-| `latent-wire` | Generated `InvocationServiceAdapter`, `LocalInvocationRuntime`, bounded `ActivationCleanupOwner`/`ActivationCleanupHandle` and `ActivationCleanupSnapshot`, `ManagementServiceAdapter`, scoped principal/trace services and lossless converters; codec, duplex channel, request multiplexer seams |
-| `latent-wrpc` | remote client/server and connection factory |
-| `latent-node` | `LocalActivationManager`, immediate-ID `ActivationHandle` with trusted `interrupt_for_cleanup`/`ActivationTransportInterruption`, `ActivationReceipt`, scoped status/cancel, bounded `LocalActivationJournal`; retained Phase 0/budget adapters and node registration/inventory/watch seams |
-| `latent-control-store` | `DeploymentStore` versioned mutations, committed receipts and bounded tenant/service pages; `DirectoryDeploymentRepository` implements persistence, route compilation/publication, and resolution |
-| `latent-telemetry` | `TelemetryRuntime`, bounded `TelemetryHandle`, `StructuredLocalSink`, typed payload-free `ActivationObserver`, `SharedActivationObserver`, and borrowed `GuestLogObserver` |
-| `latent-audit` | audit store and publisher |
-| `latent-testkit` | conformance suite, deterministic async/process/resource utilities, invariant probes |
+## Package and control Rust APIs
 
-The [local scheduler](scheduling.md) consumes admission permits and returns an
-affine cell/quota assignment. Its cooperative enqueue futures use the caller's
-runtime and the activation owner's cancellation state. The
-[local activation manager](activation-lifecycle.md) composes those owners with
-catalog pinning, preparation, execution, and bounded terminal publication.
-Repository-backed preparation returns the pinned runtime and its declared
-imports together. The directory repository's sealed source binds verified
-snapshot identity and cold fetch to one concrete owner; custom repositories
-default to fully verified fetching. The [runtime contract](runtime/wasmtime.md)
-describes cache compatibility, fresh activation state, and the retained direct
-artifact preparation API.
+| Crate | Delivered seams and authority boundary |
+| --- | --- |
+| `latent-artifacts` | `ArtifactRepository`, `DirectoryArtifactRepository`, sealed preparation/verified metadata, `ReleaseUseEligibility`, `LifecycleAuthorityHandle`, historical execution snapshots and retained package sources. Managed publication, lifecycle and evidence methods retain bounded outcomes; historical metadata grants no execution. |
+| `latent-artifacts::package` | Exact package, evidence, publisher-signature and builder-provenance formats and bounded associations. |
+| `latent-artifacts` raw cache | `RawArtifactCache`, typed keys, affine write/read/reclaim owners, pins, `RawArtifactBytes`, limits and actual snapshots. Cached bytes are replaceable and authority-free. |
+| `latent-packaging` | `build_package`, `inspect_bundle`, bounded directory/evidence I/O, SBOM generation/inspection, `compare_packages`, `PackageComparisonLimits`, sealed checked surfaces and exact-pair breaking allowances. Builds supplied bytes without executing guest/build scripts. |
+| `latent-oci` | `HttpOciRegistry`, scoped registry configuration/credentials, `OciPulledPackage` leases and optional shared raw-cache integration. Transfer success is not admission. |
+| `latent-policy::supply_chain` | `SupplyChainAuthority`, explicit policy/clock configuration, durable floors and current admission grants; `verify_package_once` returns a diagnostic report without durable floors or execution authority. |
+| `latent-contracts` | Typed contract descriptors and conservative `CompatibilityChecker`; general `ContractRegistry` and `BindingCompiler` remain architectural interfaces. |
+| `latent-manifest` | Bounded `JsonManifestCodec`, structural schemas, `Phase1ManifestValidator` and runtime requirement models. Schema acceptance is distinct from semantic/current-host validation. |
+| `latent-control-store` | `DirectoryDeploymentRepository`, `DeploymentStore`, immutable route pins, scoped pages and combined catalog persistence. `deployment_operations` exposes sealed prepare/synchronous commit, exact receipt lookup/snapshot and `DeploymentReadLease`. `rollouts` owns plans, policies, target provenance and atomic cohort publication. |
+| `latent-rollout` | `RolloutCoordinator`, `RolloutHandle`, one `RolloutWorker`, bounded tickets/control, response leases and explicit promote/rollback previews. `deployment_audit` shares exact receipt audit helpers without adding a deployment worker. |
+| `latent-audit` | `AuditWorker`, `AuditHandle`, typed records, critical reservations/attempts, bounded query pages and retained response ownership. `BoundedPhase2AuditJournal` remains an explicit volatile embedding API. |
+| `latent-telemetry` | Shared runtime/lifecycle observations plus `BoundedPhase2CanaryOutcomeWindow`, `CanaryCapture`, snapshots, thresholds and affine `SealedCanaryWindow`. Diagnostic evaluation does not authorize promotion. |
+
+[Lifecycle](reference/release-lifecycle.md) composes a sealed catalog capability
+with optional real signing proof. The node binds runtime and deployment owners
+to that exact catalog. A delegating custom repository cannot pair arbitrary
+metadata with a genuine historical token: the historical snapshot is sealed.
+A retained package source grants bounded access to exact original comparison
+bytes, not a refreshed execution grant.
+
+[Managed operations](phase-2-operator-workflows.md) retain compact receipts in
+catalog format 4 alongside rollout history. Exact replay precedes fresh state
+checks; finite retention and mandatory original state preconditions prevent an
+evicted create from executing again after delete. Leased snapshots and receipt
+queries are coherent reads. Catalog commit, durability and audit outcome are
+separate facts.
+
+## Runtime and node APIs
+
+| Crate | Delivered runtime seams |
+| --- | --- |
+| `latent-core` | IDs, errors, lifecycle models, `ActivationClock`, budgets, reservations and terminal consumption. |
+| `latent-rpc` / `latent-component-bindings` | Generated control transport and shared Component Model bindings. |
+| `latent-routing` | `RouteResolver`, route compiler and immutable snapshot source/publisher contracts used by local routing. |
+| `latent-admission` | `LocalAdmissionController`, `LocalQuotaProvider`, affine admission/execution permits and their public interfaces. |
+| `latent-scheduler` | `FixedCellPool`, `LocalScheduler`, nonqueueing acquisition/change notifications, cell lifecycle, fair bounded queues and scoped cancellation. |
+| `latent-activation` | Bounded activation request construction, activation ID source, manager and journal contracts. |
+| `latent-executor` | Repository-backed preparation/readiness, `PreparedReadiness`, affine `PreparedUse`, materialization, backend registry and cancellation. |
+| `latent-wasmtime` | Generic component factory/backend, bounded value/host policy, fresh stores, cleanup proof and prepared-cache ownership. Opt-in `IsolatedAotCompiler`, `TrustedAotOutput`, `NativeAotSettings`, `NativeImageLimits`, `with_catalog_and_aot` and aggregate native usage. |
+| `latent-node` | `LocalActivationManager`, immediate-ID handles, scoped cancel/status, bounded journal, transport cleanup interruption and inventory seams. |
+| `latent-wire` | Invocation/management adapters, trusted principal/trace boundaries, finite request conversion and response services. Audit, deployment and rollout response leases remain attached through body/frame ownership. |
+| `latent-testkit` | Deterministic async/process/resource helpers and invariant/conformance probes. |
+
+Repository preparation returns the pinned runtime and its declared imports
+together. Its sealed source binds verified identity and cold fetch to one owner;
+generic repository fallbacks perform verified fetching rather than claiming a
+directory identity. Scheduling consumes admitted permits only after readiness;
+each activation still creates fresh guest state.
+
+The [native loader](runtime/trusted-aot.md) authenticates persisted receipts and
+exact immutable bytes before its private copying load. There is no public
+arbitrary-byte restoration or native-load constructor. Both local and enforced
+catalogs retain independent lifecycle/admission checks. Standalone
+[`isolatedAot`](reference/standalone-node.md#optional-isolated-aot-compilation)
+is opt-in, adds no RPC/distributed compiler service, and leaves the default
+portable compilation path available as explicit configuration.
+
 `latentd::config::{NodeConfig, NodeSettings}` and
-`latentd::standalone::StandaloneNode` provide validated single-node composition;
-`latentd serve --config PATH` owns its fixed runtimes and command lifecycle.
-`NodeSettings` is opaque: embedders configure `NodeConfig` before deriving a plan
-and use read-only worker-count/shutdown accessors to construct outer runtimes.
+`latentd::standalone::StandaloneNode` provide validated composition.
+`latentd serve --config PATH` owns fixed runtimes and shutdown. Opaque
+`NodeSettings` is derived from mutable configuration before opening resources;
+embedders use read-only worker/shutdown accessors for outer runtimes. Audit,
+rollout, native-cache and canary owners must match the configured catalogs and
+clock. Omitting rollout configuration still permits bounded historical catalog
+recovery while disabling rollout RPCs. An initialized durable audit owner cannot
+silently downgrade to volatile or absent audit on reopen.
 
-[Shared telemetry](telemetry.md) observes that existing lifecycle owner directly.
-`StandaloneInventoryReporter` implements bounded node snapshots from configured
-classes and shared resource sources, including explicit unavailable observations.
+The following crates still contain primarily architectural interfaces for
+future integrations: `latent-capabilities`, `latent-blobs`, `latent-triggers`,
+`latent-ingress`, `latent-state`, `latent-commit`, `latent-effects`,
+`latent-workflows` and `latent-wrpc`. Identity/delegation and generic
+`PolicyEngine`/`PolicyRepository` traits likewise do not imply distributed
+identity or general provider policy management is running.
 
 ## Declarative schemas
 
-The JSON Schemas in `schemas/` define capsules, deployments, bindings, policies, triggers, and compiled route snapshots.
+[The schema index](../schemas/README.md) covers capsule/deployment/binding/policy/
+trigger manifests and route snapshots; package formats, WIT locks and source
+inputs; publisher/builder/SBOM evidence and trust policy; admission and lifecycle;
+optional node audit/AOT/rollout settings; canary policy; and CLI evidence/registry
+profiles. `latent-manifest` embeds its manifest schemas and applies bounded
+structure checks plus separate semantic validation.
 
-The seventh schema defines locally trusted release-publication requests.
-`latent-manifest` embeds the five manifest schemas and applies bounded
-structural validation plus separate Phase 1 semantic rules; see the
-[manifest codec contract](protocol/manifest-codec.md).
+Canonical stored records and protobuf JSON projections have distinct contracts.
+For example, lifecycle records use stored scope and integer fields, while the
+API projection uses symbolic enums and decimal-string `uint64`. Closed schemas,
+duplicate-key rejection, finite decoding and exact associations remain required.
+Schema success neither grants permission nor proves durability, and no schema
+adds a JSON management listener.
 
-## Language SDKs
+## CLI and language SDKs
 
-The Rust, Go, .NET, Java, TypeScript, and C directories define client and guest context surfaces. Transport-facing generated Rust is owned centrally by `latent-rpc`; cross-language transport generation remains a later implementation choice.
+The [operator CLI](reference/operator-cli.md) exposes local package
+build/inspect/verify, scoped OCI push/pull, release evidence/lifecycle and
+operation lookup, legacy or managed deployment writes, coherent operation reads,
+rollout/canary/rollback, audit queries and retained invocation/route/node calls.
+It performs one control RPC per command, keeps caller operation identities for
+recovery and never retries a mutation automatically. New typed counters and
+generations remain lossless decimal strings.
 
-All six invocation request models expose optional caller activation/root/parent
-identity and cancellation/status by known activation ID. C cancellation uses a
-callback with a separate transport-error channel. The [SDK contract](../sdk/README.md)
-documents absence and lineage rules, callback ownership, compatibility, and
-the executable fake-client checks for operations before invocation completion.
+The Rust, Go, .NET, Java, TypeScript and C SDKs retain their invocation/guest
+interfaces. All six request models expose optional activation/root/parent IDs
+and cancellation/status by known activation ID. C cancellation uses a callback
+with a separate transport-error channel. Their [contract fixtures](../sdk/README.md)
+cover absence, lineage and in-flight ownership. Phase 2 does not claim complete
+management/provider transports in all six languages. Phase 3 adds typed guest
+bindings, cross-language parity and actual Rust/TypeScript transport workflows.

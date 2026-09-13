@@ -5,6 +5,7 @@
 mod local;
 mod observation;
 mod observer;
+pub mod phase2_canary;
 mod pipeline;
 
 pub use local::{LocalSinkConfig, LocalSinkSnapshot, StructuredLocalSink, TelemetryRecord};
@@ -14,6 +15,14 @@ pub use observation::{
     ActivationTerminalObservation, GuestLogObserver, GuestLogRecord, NoopActivationObserver,
 };
 pub use observer::{ObserverSnapshot, SharedActivationObserver, SharedActivationObserverConfig};
+pub use phase2_canary::{
+    BoundedPhase2CanaryOutcomeWindow, CanaryAssessment, CanaryCapture, CanaryCaptureAttempt,
+    CanaryCoverage, CanaryDecisionReason, CanaryRevisionBinding, CanaryRevisionSnapshot,
+    CanarySample, CanaryThresholds, CanaryVerdict, CanaryWindow, CanaryWindowIdentity,
+    CanaryWindowSnapshot, CanaryWindowSpec, Phase2CanaryOutcomeClass, Phase2CanaryOutcomeCounters,
+    Phase2CanaryOutcomeWindowConfig, Phase2CanaryWindowSnapshot, SealedCanaryWindow,
+    SelectedOutcomeRevision, CANARY_LATENCY_UPPER_MICROS,
+};
 pub use pipeline::{
     TelemetryDropReason, TelemetryHandle, TelemetryPipelineConfig, TelemetryPipelineSnapshot,
     TelemetryRuntime,

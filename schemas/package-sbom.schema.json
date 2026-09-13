@@ -1,0 +1,1490 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/package-sbom.schema.json",
+  "title": "LSF embedded CycloneDX 1.6 SBOM",
+  "description": "Closed pre-package inventory profile. No final package digest or inline trust authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bomFormat",
+    "specVersion",
+    "version",
+    "metadata",
+    "components"
+  ],
+  "properties": {
+    "bomFormat": {
+      "const": "CycloneDX"
+    },
+    "specVersion": {
+      "const": "1.6"
+    },
+    "version": {
+      "const": 1
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "component",
+        "properties"
+      ],
+      "properties": {
+        "component": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "bom-ref",
+            "name",
+            "version"
+          ],
+          "properties": {
+            "type": {
+              "const": "application"
+            },
+            "bom-ref": {
+              "const": "urn:lsf:package:input"
+            },
+            "name": {
+              "$ref": "#/$defs/packageText"
+            },
+            "version": {
+              "$ref": "#/$defs/packageText"
+            }
+          }
+        },
+        "properties": {
+          "$ref": "#/$defs/metadataProperties"
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[ -~]+(?![\\s\\S])"
+    },
+    "packageText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[ -~]+(?![\\s\\S])"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[ -~]+(?![\\s\\S])"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[ -~]+(?![\\s\\S])",
+      "anyOf": [
+        {
+          "pattern": "^https://(?=[^/]{1,253}(?:/|$))[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*(?:/[A-Za-z0-9._~/-]*)?(?![\\s\\S])",
+          "not": {
+            "pattern": "^https://[^/]+/(?:[^/]*/)*\\.{1,2}(?:/|$)"
+          }
+        },
+        {
+          "pattern": "^urn:lsf:(?:workspace|package-path|wit|build-tool|registry|captured):[A-Za-z0-9._~:@-]+(?:/[A-Za-z0-9._~:@-]+)*(?![\\s\\S])",
+          "not": {
+            "pattern": "^urn:lsf:[^:]+:(?:[^/]*/)*\\.{1,2}(?:/|$)"
+          }
+        }
+      ]
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[ -~]+(?![\\s\\S])"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64}(?:/(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64})*(?![\\s\\S])",
+      "not": {
+        "enum": [
+          "package/sbom.cdx.json",
+          "package/build-inputs.json"
+        ]
+      }
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "maxLength": 71
+    },
+    "metadataProperties": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "value"
+        ],
+        "properties": {
+          "name": {
+            "enum": [
+              "lsf:profile",
+              "lsf:subject-kind",
+              "lsf:package-kind",
+              "lsf:dependency-completeness",
+              "lsf:source-snapshot-digest"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:profile"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "const": "lsf-cyclonedx-embedded-1"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:subject-kind"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "const": "package-content"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:package-kind"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "capsule",
+                    "browser-assets",
+                    "ssr-package"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:dependency-completeness"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "observed-units-incomplete",
+                    "declared-inputs-incomplete"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:source-snapshot-digest"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/digest"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:profile"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:subject-kind"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:package-kind"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:dependency-completeness"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:source-snapshot-digest"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        }
+      ]
+    },
+    "entryProperties": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "value"
+        ],
+        "properties": {
+          "name": {
+            "enum": [
+              "lsf:role",
+              "lsf:origin",
+              "lsf:source-status",
+              "lsf:license-status",
+              "lsf:source",
+              "lsf:digest-scope",
+              "lsf:size",
+              "lsf:path",
+              "lsf:manifest-digest",
+              "lsf:manifest-size"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:role"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "guest-dependency",
+                    "build-dependency",
+                    "proc-macro",
+                    "build-script",
+                    "wit-package",
+                    "build-tool",
+                    "asset",
+                    "component",
+                    "renderer"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:origin"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "captured-source",
+                    "observed-cache",
+                    "toolchain",
+                    "package-input",
+                    "supplied"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:source-status"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "declared",
+                    "unavailable"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:license-status"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "declared",
+                    "unavailable"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:source"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/source"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:digest-scope"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "enum": [
+                    "output-bytes",
+                    "wit-source",
+                    "tool-executable",
+                    "registry-archive-declared",
+                    "source-manifest"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:size"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "pattern": "^(?:0|[1-9][0-9]{0,7}|1[0-9]{8}|2[0-5][0-9]{7}|26[0-7][0-9]{6}|268[0-3][0-9]{5}|2684[0-2][0-9]{4}|26843[0-4][0-9]{3}|268435[0-3][0-9]{2}|2684354[0-4][0-9]{1}|26843545[0-5]|268435456)(?![\\s\\S])",
+                  "maxLength": 9
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:path"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/path"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:manifest-digest"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "$ref": "#/$defs/digest"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "name": {
+                  "const": "lsf:manifest-size"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "string",
+                  "pattern": "^(?:[1-9][0-9]{0,5}|[1-3][0-9]{6}|40[0-9]{5}|41[0-8][0-9]{4}|419[0-3][0-9]{3}|4194[0-2][0-9]{2}|419430[0-3]|4194304)(?![\\s\\S])",
+                  "maxLength": 7
+                }
+              }
+            }
+          }
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:role"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:origin"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:source-status"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:license-status"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:source"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:digest-scope"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:size"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:path"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:manifest-digest"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "lsf:manifest-size"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "if": {
+            "contains": {
+              "properties": {
+                "name": {
+                  "const": "lsf:source-status"
+                },
+                "value": {
+                  "const": "declared"
+                }
+              },
+              "required": [
+                "name",
+                "value"
+              ]
+            }
+          },
+          "then": {
+            "contains": {
+              "properties": {
+                "name": {
+                  "const": "lsf:source"
+                }
+              },
+              "required": [
+                "name"
+              ]
+            }
+          },
+          "else": {
+            "not": {
+              "contains": {
+                "properties": {
+                  "name": {
+                    "const": "lsf:source"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "contains": {
+              "properties": {
+                "name": {
+                  "const": "lsf:manifest-digest"
+                }
+              },
+              "required": [
+                "name"
+              ]
+            }
+          },
+          "then": {
+            "contains": {
+              "properties": {
+                "name": {
+                  "const": "lsf:manifest-size"
+                }
+              },
+              "required": [
+                "name"
+              ]
+            }
+          },
+          "else": {
+            "not": {
+              "contains": {
+                "properties": {
+                  "name": {
+                    "const": "lsf:manifest-size"
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "contains": {
+              "properties": {
+                "name": {
+                  "const": "lsf:digest-scope"
+                },
+                "value": {
+                  "const": "source-manifest"
+                }
+              },
+              "required": [
+                "name",
+                "value"
+              ]
+            }
+          },
+          "then": {
+            "allOf": [
+              {
+                "contains": {
+                  "properties": {
+                    "name": {
+                      "const": "lsf:manifest-digest"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "name": {
+                      "const": "lsf:manifest-size"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "bom-ref",
+        "name",
+        "properties"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "application",
+            "library",
+            "file"
+          ]
+        },
+        "bom-ref": {
+          "type": "string",
+          "pattern": "^urn:lsf:entry:sha256:[0-9a-f]{64}(?![\\s\\S])",
+          "maxLength": 85
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "hashes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "alg",
+              "content"
+            ],
+            "properties": {
+              "alg": {
+                "const": "SHA-256"
+              },
+              "content": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}(?![\\s\\S])",
+                "minLength": 64,
+                "maxLength": 64
+              }
+            }
+          }
+        },
+        "licenses": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "expression"
+            ],
+            "properties": {
+              "expression": {
+                "$ref": "#/$defs/license"
+              }
+            }
+          }
+        },
+        "properties": {
+          "$ref": "#/$defs/entryProperties"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "properties": {
+                "contains": {
+                  "properties": {
+                    "name": {
+                      "const": "lsf:license-status"
+                    },
+                    "value": {
+                      "const": "declared"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "licenses"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "licenses"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "hashes"
+            ]
+          },
+          "then": {
+            "properties": {
+              "properties": {
+                "contains": {
+                  "properties": {
+                    "name": {
+                      "const": "lsf:digest-scope"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "properties": {
+                "not": {
+                  "contains": {
+                    "properties": {
+                      "name": {
+                        "const": "lsf:digest-scope"
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "properties": {
+                "contains": {
+                  "properties": {
+                    "name": {
+                      "const": "lsf:role"
+                    },
+                    "value": {
+                      "enum": [
+                        "guest-dependency",
+                        "build-dependency",
+                        "proc-macro",
+                        "build-script"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "const": "library"
+              },
+              "properties": {
+                "allOf": [
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:path"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:size"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "items": {
+                      "if": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:digest-scope"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      },
+                      "then": {
+                        "properties": {
+                          "value": {
+                            "enum": [
+                              "registry-archive-declared",
+                              "source-manifest"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "properties": {
+                "contains": {
+                  "properties": {
+                    "name": {
+                      "const": "lsf:role"
+                    },
+                    "value": {
+                      "enum": [
+                        "wit-package"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "const": "library"
+              },
+              "properties": {
+                "allOf": [
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:digest-scope"
+                        },
+                        "value": {
+                          "const": "wit-source"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "value"
+                      ]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:size"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:manifest-digest"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:manifest-size"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:path"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "required": [
+              "hashes"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "properties": {
+                "contains": {
+                  "properties": {
+                    "name": {
+                      "const": "lsf:role"
+                    },
+                    "value": {
+                      "enum": [
+                        "build-tool"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "const": "application"
+              },
+              "properties": {
+                "allOf": [
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:digest-scope"
+                        },
+                        "value": {
+                          "const": "tool-executable"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "value"
+                      ]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:size"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:manifest-digest"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:manifest-size"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:path"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "required": [
+              "hashes"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "properties": {
+                "contains": {
+                  "properties": {
+                    "name": {
+                      "const": "lsf:role"
+                    },
+                    "value": {
+                      "enum": [
+                        "asset"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "const": "file"
+              },
+              "properties": {
+                "allOf": [
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:digest-scope"
+                        },
+                        "value": {
+                          "const": "output-bytes"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "value"
+                      ]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:size"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:manifest-digest"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:manifest-size"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:path"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "required": [
+              "hashes"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "properties": {
+                "contains": {
+                  "properties": {
+                    "name": {
+                      "const": "lsf:role"
+                    },
+                    "value": {
+                      "enum": [
+                        "component",
+                        "renderer"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "value"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "type": {
+                "const": "application"
+              },
+              "properties": {
+                "allOf": [
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:digest-scope"
+                        },
+                        "value": {
+                          "const": "output-bytes"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "value"
+                      ]
+                    }
+                  },
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:size"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:manifest-digest"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "not": {
+                      "contains": {
+                        "properties": {
+                          "name": {
+                            "const": "lsf:manifest-size"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "contains": {
+                      "properties": {
+                        "name": {
+                          "const": "lsf:path"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            "required": [
+              "hashes"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "$comment": "Rust additionally checks original-byte budgets, canonical numeric token spelling, SPDX grammar/known IDs, entry-reference hashes, exact source-manifest digest equality, unique identities/paths and package output associations. Property order is insignificant; each admitted name occurs at most once."
+}

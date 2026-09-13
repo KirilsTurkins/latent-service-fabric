@@ -99,6 +99,12 @@ only intentional open objects in the current contracts are:
 - capability-grant constraints, whose values are strings;
 - trigger `spec.configuration`, whose values may be arbitrary bounded JSON.
 
+The additive Phase 2 capsule compatibility profile defines optional `runtime`,
+`targetTriples` and `cpuFeatures` under the existing closed `compatibility`
+member. Omitted requirements preserve earlier canonical bytes. Older schemas
+reject these new fields instead of silently ignoring host requirements. See
+[runtime requirements and release comparison](../reference/release-compatibility.md).
+
 Every open object and every array nested below trigger configuration is subject
 to the same schema and parser cardinality ceiling. Trigger configuration is
 retained without numeric precision loss but normalized to canonical JSON values;

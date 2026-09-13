@@ -1,12 +1,14 @@
 # Contracts and bindings
 
-Phase 1 validates local component metadata and dispatches supported exported
+The current node validates component metadata and dispatches supported exported
 contracts/functions through the [generic Wasmtime backend](../runtime/wasmtime.md).
-It binds only declared context, log and clock imports. SDK interface projections
-compile, while general SDK transports remain unimplemented. Binding-graph
-compilation, provider-to-provider calls, remote/inline modes and automatic
-compatibility migration below are design contracts for later phases, not
-available Phase 1 execution modes.
+Phase 2 adds verified package association and bounded release compatibility
+comparison. Guest imports remain limited to declared context, log and clock
+bindings. SDK interface projections compile; general SDK transports remain
+unimplemented. Phase 3 plans the exact host ABI, capability broker and bounded
+isolated local service calls. Binding-graph compilation, remote/inline modes and
+automatic compatibility migration below remain design contracts; an open Phase 3
+proposal does not make them available. See the [roadmap](../roadmap.md).
 
 ## Contract authority
 
@@ -56,5 +58,9 @@ Compatibility checks consider removed functions, changed parameter/result types,
 
 Current preparation checks agreement between the supplied manifest/contract
 metadata and actual component imports, exports and supported value signatures.
-It does not supply a general WIT-version compatibility analyzer. WIT package
+Phase 2 adds [bounded release comparison](../reference/release-compatibility.md)
+using the exact pinned WIT definitions of checked packages, plus actual-node
+runtime requirements. Descriptor-only analysis cannot establish named record or
+variant structure. Unsupported and unknown results deny compatibility approval;
+general WIT migration and binding-graph compilation remain future work. WIT
 versions remain distinct from workspace and SDK package release versions.

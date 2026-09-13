@@ -154,6 +154,11 @@ pub(super) fn measure(
     retained.add(Some(
         size_of::<Option<crate::PreparationMetadataFingerprint>>(),
     ))?;
+    retained.add(Some(
+        size_of::<Option<crate::ReleaseEligibility>>()
+            + size_of::<Option<std::sync::Arc<crate::AdmissionBinding>>>()
+            + size_of::<Option<[u8; 32]>>(),
+    ))?;
     // Seven potentially sparse index nodes plus boxed record and collection bookkeeping.
     // Repeated charging for shared scope keys intentionally overestimates their storage.
     retained.add(Some(8192))?;

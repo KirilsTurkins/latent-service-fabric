@@ -53,6 +53,14 @@ impl<T: Send + Sync + 'static> PreparationWait<T> {
         &self,
         build: impl FnOnce(PrepareReservation<T>) -> Task<T>,
     ) -> Result<(), PlatformError> {
+        self.start_with_control(None, build)
+    }
+
+    pub(crate) fn start_with_control(
+        &self,
+        control: Option<crate::aot::AotJobControl>,
+        build: impl FnOnce(PrepareReservation<T>) -> Task<T>,
+    ) -> Result<(), PlatformError> {
         let reservation = {
             let mut state = self.core.lock();
             if !state.accepting {
@@ -78,6 +86,9 @@ impl<T: Send + Sync + 'static> PreparationWait<T> {
             drop(task);
             return Err(capacity_error("compiler-job-no-longer-pending"));
         };
+        // Publish the cancellation signal before making the job runnable.
+        // cancel() only flips an atomic flag; no callback or I/O holds this lock.
+        job.native_control = control;
         job.task = Some(task);
         job.submitted_nanos = submitted_nanos;
         drop(state);
@@ -161,6 +172,9 @@ impl<T: Send + Sync + 'static> Drop for PreparationWait<T> {
         let phase = job.phase;
         if empty {
             job.abandoned = true;
+            if let Some(control) = &job.native_control {
+                control.cancel();
+            }
         }
         state.waiters -= 1;
         self.core

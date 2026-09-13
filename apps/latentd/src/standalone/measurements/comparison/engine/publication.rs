@@ -93,6 +93,8 @@ async fn one(node: &mut Node, clock: Clock) -> Result<(Value, [Value; 2])> {
     let published = proto::release_service_client::ReleaseServiceClient::new(node.channel())
         .publish_release(auth(
             proto::PublishReleaseRequest {
+                package: None,
+                operation: None,
                 release: None,
                 artifact: Some(upload),
             },
@@ -113,6 +115,7 @@ async fn one(node: &mut Node, clock: Clock) -> Result<(Value, [Value; 2])> {
     let applied = proto::deployment_service_client::DeploymentServiceClient::new(node.channel())
         .apply_deployment(auth(
             proto::ApplyDeploymentRequest {
+                operation: None,
                 deployment: Some(deployment),
                 expected_generation: None,
             },

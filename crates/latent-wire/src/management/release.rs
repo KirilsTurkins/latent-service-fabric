@@ -1,10 +1,14 @@
 mod conversion;
+mod lifecycle;
+mod package;
+#[cfg(test)]
+mod package_tests;
 mod publication;
 #[cfg(test)]
 mod tests;
 mod validation;
 
-use latent_artifacts::{ArtifactCatalogPageRequest, ArtifactDescriptor};
+use latent_artifacts::ArtifactCatalogPageRequest;
 use latent_core::{ReleaseDigest, ServiceId};
 use tonic::{Request, Response, Status};
 
@@ -20,41 +24,36 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
         &self,
         mut request: Request<proto::PublishReleaseRequest>,
     ) -> Result<Response<proto::PublishReleaseResponse>, Status> {
-        let tenant = self
-            .authenticate(&mut request, ManagementOperation::Tenant)?
-            .tenant
-            .expect("authenticated tenant");
+        let principal = self.authenticate(&mut request, ManagementOperation::Tenant)?;
         validation::publish(request.get_ref(), &self.limits)?;
         self.check_encoded(request.get_ref())?;
-        let (artifact, summary) =
-            publication::prepare(request.into_inner(), &tenant, &self.limits)?;
-        // Validate the exact prospective response before durable publication.
-        let mut budget =
-            RequestBudget::for_response::<proto::PublishReleaseResponse>(&self.limits)?;
-        validation::entry(&summary, &tenant, &mut budget, &self.limits)?;
-        let expected: ArtifactDescriptor = summary.descriptor.clone();
-        let response = proto::PublishReleaseResponse {
-            release: Some(
-                release_descriptor_to_proto(summary)
-                    .map_err(|_| Status::invalid_argument("invalid release descriptor"))?,
-            ),
-            admission_warnings: Vec::new(),
-        };
-        let response = self.response(response)?;
-        let actual = self
-            .services
-            .artifacts
-            .publish(artifact)
+        self.publish_managed_release(principal, request.into_inner())
             .await
-            .map_err(|error| platform_status(error, &self.limits))?;
-        let mut receipt_budget = RequestBudget::for_response::<ArtifactDescriptor>(&self.limits)?;
-        validation::descriptor(&actual, &mut receipt_budget, &self.limits)?;
-        if actual != expected {
-            return Err(Status::internal(
-                "artifact repository returned a different publication receipt",
-            ));
-        }
-        Ok(response)
+    }
+
+    async fn get_release_lifecycle(
+        &self,
+        request: Request<proto::GetReleaseLifecycleRequest>,
+    ) -> Result<Response<proto::GetReleaseLifecycleResponse>, Status> {
+        self.lifecycle_status(request).await
+    }
+    async fn get_release_operation(
+        &self,
+        request: Request<proto::GetReleaseOperationRequest>,
+    ) -> Result<Response<proto::GetReleaseOperationResponse>, Status> {
+        self.lifecycle_operation(request).await
+    }
+    async fn change_release_lifecycle(
+        &self,
+        request: Request<proto::ChangeReleaseLifecycleRequest>,
+    ) -> Result<Response<proto::ChangeReleaseLifecycleResponse>, Status> {
+        self.lifecycle_change(request).await
+    }
+    async fn renew_release_evidence(
+        &self,
+        request: Request<proto::RenewReleaseEvidenceRequest>,
+    ) -> Result<Response<proto::RenewReleaseEvidenceResponse>, Status> {
+        self.lifecycle_renew(request).await
     }
 
     async fn get_release(

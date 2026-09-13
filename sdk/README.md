@@ -90,3 +90,21 @@ workload is required. These checks establish that the interface can express the
 contract. Actual wire conversion and server behavior are covered separately by
 the invocation adapter tests and the completed
 [Phase 1 conformance gate](../docs/phase-1-completion.md).
+
+## Phase 2 management boundary
+
+The operator CLI and generated Rust RPC clients expose package, release,
+deployment, rollout and audit workflows. See the
+[operator workflow contract](../docs/phase-2-operator-workflows.md) and
+[completed Phase 2 gate](../docs/phase-2-completion.md). These additive management
+RPCs do not change the six handwritten SDKs' invocation and guest interfaces;
+their existing identity/cancellation fixtures remain required.
+
+Capability/provider management models, usable Rust/TypeScript transports and
+maintained guest capability bindings are planned in
+[Phase 3 #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
+None is implemented merely by the presence of a WIT package or a compiling SDK
+interface. The node still exposes only its supported context/log/clock guest
+imports; general providers, application ingress and browser/SSR execution remain
+planned. Package and SDK release versions do not change the independently
+versioned WIT and Protobuf contracts.

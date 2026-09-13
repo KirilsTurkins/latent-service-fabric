@@ -7,7 +7,7 @@ pub(super) use counters::PreparationCounters;
 
 use std::mem::size_of;
 
-use latent_artifacts::{ArtifactPreparationIdentity, ArtifactRepository};
+use latent_artifacts::{ArtifactPreparationIdentity, ArtifactRepository, ReleaseUseEligibility};
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedActivation};
 
@@ -21,6 +21,13 @@ pub(super) struct Compilation {
     pub(super) component_digest: String,
     pub(super) metadata_bytes: usize,
     pub(super) authentication: Option<ArtifactPreparationIdentity>,
+    pub(super) eligibility: Option<ReleaseUseEligibility>,
+}
+
+/// The optimization identity and live admission capability have separate roles.
+pub(super) struct SourceAuthority {
+    pub(super) authentication: Option<ArtifactPreparationIdentity>,
+    pub(super) eligibility: Option<ReleaseUseEligibility>,
 }
 
 #[derive(Clone, Copy)]
@@ -44,6 +51,29 @@ impl WasmtimeBackend {
         counters::add(&self.shared.preparation.repository_acquisitions, 1);
         self.shared.preparation_context.validate_engine_key(key)?;
         let source = repository.preparation_source();
+        let eligibility = if let Some(source) = &source {
+            source.execution_eligibility(&key.release)?
+        } else {
+            if repository.execution_eligibility(&key.release)?.is_some() {
+                return Err(super::admission_association_error());
+            }
+            None
+        };
+        self.shared
+            .preparation_context
+            .check_eligibility(eligibility.as_ref(), &key.release)?;
+        if let Some(native) = &self.shared.preparation_context.native_aot {
+            // Validate the borrowed caller's sealed source first, then use the
+            // same owned readiness queue. Recheck the ORIGINAL capability after
+            // the await so renewal cannot silently upgrade this request.
+            let ready = self
+                .prepare_ready_repository(native.catalog(), key.clone())
+                .await?;
+            self.shared
+                .preparation_context
+                .check_eligibility(eligibility.as_ref(), &key.release)?;
+            return self.materialize_readiness(ready);
+        }
         let identity = source
             .as_ref()
             .map(|source| source.identity(&key.release))
@@ -76,16 +106,21 @@ impl WasmtimeBackend {
             self.shared
                 .preparation_context
                 .validate_repository_manifest(&artifact)?;
-            let runtime = self.prepare_runtime_with_integrity(&artifact, key, integrity, &job)?;
+            let runtime =
+                self.prepare_runtime_with_integrity(&artifact, key, integrity, eligibility, &job)?;
+            self.shared.preparation_context.check_runtime(&runtime)?;
             job.complete();
             return Ok(self.activation_use(runtime, permit));
         };
         self.shared
             .preparation_context
             .validate_identity(&identity, key)?;
-        let metadata_bytes =
-            retained_metadata_bytes(identity.metadata().charged_bytes(), Some(&identity))?;
-        let handle = authenticated_handle(key, &identity);
+        let metadata_bytes = retained_metadata_bytes(
+            identity.metadata().charged_bytes(),
+            Some(&identity),
+            eligibility.as_ref(),
+        )?;
+        let handle = authenticated_handle(key, &identity, eligibility.as_ref());
         let reservation = match self.shared.cache.begin(
             handle.clone(),
             usize::try_from(identity.component_bytes()).map_err(|_| metadata_overflow())?,
@@ -96,6 +131,7 @@ impl WasmtimeBackend {
             PrepareAccess::Hit(runtime) => {
                 if runtime.authentication.as_ref() != Some(&identity)
                     || runtime.descriptor.key != *key
+                    || runtime.eligibility != eligibility
                 {
                     return Err(platform_error(
                         PlatformErrorCode::CorruptArtifact,
@@ -104,6 +140,7 @@ impl WasmtimeBackend {
                     ));
                 }
                 counters::add(&self.shared.preparation.authenticated_hits, 1);
+                self.shared.preparation_context.check_runtime(&runtime)?;
                 return Ok(self.activation_use(runtime, permit));
             }
             PrepareAccess::Compile(reservation) => reservation,
@@ -147,11 +184,13 @@ impl WasmtimeBackend {
                 component_digest,
                 metadata_bytes,
                 authentication: Some(identity),
+                eligibility,
             },
             reservation,
             &job,
         )?;
         job.complete();
+        self.shared.preparation_context.check_runtime(&runtime)?;
         Ok(self.activation_use(runtime, permit))
     }
 }
@@ -159,6 +198,7 @@ impl WasmtimeBackend {
 pub(super) fn retained_metadata_bytes(
     bytes: usize,
     identity: Option<&ArtifactPreparationIdentity>,
+    eligibility: Option<&ReleaseUseEligibility>,
 ) -> Result<usize, PlatformError> {
     bytes
         .checked_add(identity.map_or(
@@ -169,6 +209,16 @@ pub(super) fn retained_metadata_bytes(
                     .max(size_of::<Option<ArtifactPreparationIdentity>>())
             },
         ))
+        .and_then(|bytes| {
+            bytes.checked_add(eligibility.map_or(
+                size_of::<Option<ReleaseUseEligibility>>(),
+                |value| {
+                    value
+                        .retained_bytes()
+                        .max(size_of::<Option<ReleaseUseEligibility>>())
+                },
+            ))
+        })
         .ok_or_else(metadata_overflow)
 }
 
@@ -191,6 +241,7 @@ pub(super) fn empty_component() -> PlatformError {
 pub(super) fn authenticated_handle(
     key: &PreparationKey,
     identity: &ArtifactPreparationIdentity,
+    eligibility: Option<&ReleaseUseEligibility>,
 ) -> String {
     let mut digest = blake3::Hasher::new();
     digest.update(b"lsf-wasmtime-authenticated-preparation-v1\0");
@@ -205,5 +256,8 @@ pub(super) fn authenticated_handle(
         digest.update(value.as_bytes());
     }
     digest.update(&identity.cache_digest());
-    format!("wasmtime-authenticated:{}", digest.finalize().to_hex())
+    super::admission::scoped_handle(
+        format!("wasmtime-authenticated:{}", digest.finalize().to_hex()),
+        eligibility,
+    )
 }

@@ -14,21 +14,28 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = ROOT / "tools" / "toolchain.toml"
 TSC = ROOT / "sdk" / "typescript-client" / "node_modules" / "typescript" / "bin" / "tsc"
+PROBE_TIMEOUT_SECONDS = 30
 
 
 class VersionError(RuntimeError):
     """Raised when an installed tool does not match the repository baseline."""
 
 
-def run(command: Sequence[str]) -> str:
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        check=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
+def run(command: Sequence[str], tool: str) -> str:
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=ROOT,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=PROBE_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        raise VersionError(
+            f"{tool} version probe timed out after {PROBE_TIMEOUT_SECONDS} seconds"
+        ) from None
     return completed.stdout.strip()
 
 
@@ -58,11 +65,19 @@ def validate() -> None:
     sdk = baseline["sdk"]
 
     require_exact("Python", platform.python_version(), contracts["python"])
-    require_exact("Go", extract(r"\bgo(\d+\.\d+\.\d+)\b", run(["go", "version"]), "Go"), sdk["go"])
-    require_exact("Node", run(["node", "--version"]).removeprefix("v"), sdk["node"])
+    require_exact(
+        "Go",
+        extract(r"\bgo(\d+\.\d+\.\d+)\b", run(["go", "version"], "Go"), "Go"),
+        sdk["go"],
+    )
+    require_exact("Node", run(["node", "--version"], "Node").removeprefix("v"), sdk["node"])
     require_exact(
         "TypeScript",
-        extract(r"^Version\s+(\S+)$", run(["node", str(TSC), "--version"]), "TypeScript"),
+        extract(
+            r"^Version\s+(\S+)$",
+            run(["node", str(TSC), "--version"], "TypeScript"),
+            "TypeScript",
+        ),
         sdk["typescript"],
     )
 
@@ -70,10 +85,10 @@ def validate() -> None:
     expected_javac = expected_java.split("+", maxsplit=1)[0]
     require_exact(
         "javac",
-        extract(r"^javac\s+(\S+)$", run(["javac", "-version"]), "javac"),
+        extract(r"^javac\s+(\S+)$", run(["javac", "-version"], "javac"), "javac"),
         expected_javac,
     )
-    java_settings = run(["java", "-XshowSettings:properties", "-version"])
+    java_settings = run(["java", "-XshowSettings:properties", "-version"], "Java runtime")
     if not re.search(r"^\s*java\.vendor\s*=\s*Eclipse Adoptium\s*$", java_settings, re.MULTILINE):
         raise VersionError("Java distribution mismatch: expected Eclipse Adoptium Temurin")
     require_exact(
@@ -82,13 +97,13 @@ def validate() -> None:
         expected_java,
     )
 
-    require_exact(".NET", run(["dotnet", "--version"]), sdk["dotnet"])
-    require_exact("Zig", run(["zig", "version"]), sdk["zig"])
+    require_exact(".NET", run(["dotnet", "--version"], ".NET"), sdk["dotnet"])
+    require_exact("Zig", run(["zig", "version"], "Zig"), sdk["zig"])
     require_exact(
         "Zig C frontend",
         extract(
             r"^clang version (\d+\.\d+\.\d+)",
-            run(["zig", "cc", "--version"]),
+            run(["zig", "cc", "--version"], "Zig C frontend"),
             "Zig C frontend",
         ),
         sdk["zig_clang"],

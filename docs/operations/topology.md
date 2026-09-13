@@ -1,81 +1,97 @@
 # Operational topology
 
-The development topology is implemented by the
-[standalone Linux node](../reference/standalone-node.md): local catalogs,
-invocation/management RPCs, fixed execution resources and bounded telemetry.
-Later production topologies remain roadmap work. The finite
-[Phase 0 spike](../phase-0-spike.md) retains its separate evidence boundary.
+The [standalone Linux node](../reference/standalone-node.md) combines stateless
+execution with durable local release, deployment and delivery control. Completed
+Phase 2 provides supply-chain checks, lifecycle revocation, bounded caches, audit and
+manual/canary/rollback operations. Its [completion review](../phase-2-completion.md)
+records the accepted scope and bounded resource evidence.
+Phase 3 capability providers and shared application ingress are forthcoming;
+cluster controllers, transactional state and durable workflows belong to later
+phases. The [Phase 0 spike](../phase-0-spike.md) keeps its separate evidence boundary.
 
-## Delivered Phase 1 standalone topology
-
-```text
-standalone latentd
-├── embedded control modules
-├── local route snapshot
-├── local artifact directory
-├── bounded activation status and telemetry
-└── fixed execution-cell pool
-```
-
-## Planned production topology
-
-This topology belongs to later phases; Phase 1 uses local storage and stateless
-execution without PostgreSQL, OCI, state/effect providers, or clustering.
+## Implemented single-node topology
 
 ```text
-management LB
-  → latent-control × 2–3
-      → PostgreSQL
-      → OCI registry
+latent CLI / generated management clients
+  -> one authenticated loopback gRPC listener
+      -> fixed control runtime and management admission
+          -> authoritative release catalog + optional supply-chain owner
+          -> one deployment/route/rollout catalog transaction
+          -> optional shared rollout coordinator
+          -> optional durable audit worker
+      -> immutable route pins + activation admission
+          -> fixed execution-cell pool
+          -> bounded compiler workers and resident prepared cache
+              -> optional isolated compiler child per admitted job
+              -> optional authenticated native cache
+          -> one activation cleanup driver + bounded telemetry
 
-shared ingress
-  → latentd nodes
-      → state backend
-      → effect providers
-      → OTLP collector
+latent package push/pull -> external OCI registry
 ```
+
+The CLI transfers package bytes over RPC; its source/evidence directories remain
+separate from node storage. The OCI registry is an external distribution service,
+not a database that the node consults on Invoke. Registry credentials are separate
+from node credentials. The local management listener is still loopback plaintext
+gRPC; TLS in the registry workflow does not turn it into a remotely exposed node
+endpoint.
+
+Enforced startup creates one supply-chain owner and starts the existing clock/load
+sampler before catalog recovery. Optional audit opens before recovery and retains
+accepted work independently of RPC waiters. Rollout and managed deployment audit
+reconciliation dispatches through retained receipts before the generic fallback.
+Omitting rollout RPCs preserves durable history and routes. Corrupt authoritative
+content prevents startup; verified ineligible desired releases retain denying
+routes so management can remove or update them.
+
+There is one optional rollout worker, no worker per rollout or service, and no
+extra worker for managed deployment mutations. Canary capture uses one bounded
+hub and the same trusted clock as activation admission. It adds no timer or
+worker. Promotion and rollback require explicit commands. Invocation reads pinned
+routes and current eligibility; it does not append audit records or acquire the
+rollout coordinator's locks.
+
+Shutdown stops producers and joins rollout before audit, then releases the outer
+control runtime. Compiler cancellation retains jobs and reservations until actual
+completion or child exit. Lost waiters and expired deadlines do not prove stopped
+filesystem work. Owner, queue and retained response counts participate in clean
+shutdown reporting; an external process supervisor provides the hard termination
+boundary for noncooperative operating-system work.
 
 ## Capacity planning
 
-For the delivered standalone node, plan capacity by:
+Plan each finite ownership domain separately:
 
-- cell classes and count,
-- compute worker count,
-- I/O concurrency,
-- global cache bounds,
-- expected active activation concurrency,
-- bounded cold-compilation jobs and waiters,
-- retained catalog metadata and activation journal bounds.
+- Fixed runtime/control workers, connection/RPC gates, cells and bounded queues.
+- Prepared entry, source, metadata, image and waiter limits, plus cold compiler jobs.
+- Authoritative catalog metadata, rollout rows/stages and separate finite operation receipt rings.
+- Audit disk/record/queue limits and retained query responses; the journal does not prune automatically.
+- Optional native blob/receipt storage, staging and read leases, compiler output and page-rounded live mappings.
+- Canary windows, live/retained samples, snapshot owners and activation status retention.
 
-Provider pools, trust-sharded execution processes, state locality and cross-node
-placement belong to later topology planning; configuring the Phase 1 node does
-not create those services.
-
-Do not plan by one heap, connection pool, or listener per service.
+Evicting a cache entry cannot refund code still held by a ready or active owner.
+An authenticated native cache hit still requires current catalog-owned source,
+proof and exact compatibility. Cache files cannot restore revoked authority.
+Logical byte counters, native mappings and total process RSS describe different
+resources. Do not plan one heap, connection pool or listener per service.
 
 The [measured tuning guidance](../phase-1-extension-completion.md#tuning-and-closure)
-separates active component working sets, prepared-cache capacity and
-available cells from dormant catalog size. Budget queue/admission headroom
-and cleanup separately. Infrastructure comparisons retain native resource
-partitioning, LSF pooling and observed effective CPU caps; they do not
-establish an isolated orchestration cost or a production capacity limit.
+retains its original source revisions, workload controls and limitations. Those
+Phase 1 results do not measure the added Phase 2 audit, signing, OCI or native
+cache paths. The [bounded operator workflow](../development/standalone-quickstart.md#bounded-phase-2-operator-workflow)
+checks integration and cleanup; it is not a scale or production-capacity campaign.
 
-## Observability and dashboard planning
+## Observability and future production topology
 
-Phase 1 exposes bounded [telemetry and inventory](../telemetry.md); it does not
-ship a hosted dashboard or OTLP exporter. Existing observations support local
-cell/queue/cache/activation health inspection. Operator-built dashboards can
-combine these with process/resource probes:
+Current inventory, [telemetry](../telemetry.md), [audit](../phase-2-audit.md) and
+[canary observations](../phase-2-canary-observation.md) expose distinct evidence.
+Audit scan completion does not erase dropped observations, unknown outcomes or
+prior-session loss. Healthy promotion uses sealed attributed observations, not
+arbitrary dashboard counters. No hosted dashboard or general OTLP exporter is
+included.
 
-- fixed runtime RSS versus activation RSS,
-- active/available cells by class,
-- queue delay by tenant and priority,
-- materialization/AOT cache hit rates,
-- activation success, trap, timeout, and cancellation rates,
-- process/thread/socket counts versus registered releases.
-
-State conflicts, effect retries and remote route-generation lag become useful
-when the corresponding state/effect and cluster features are implemented. The
-[extension report](../phase-1-extension-completion.md) closes the measured Phase 1
-campaigns with their limitations; use those scoped results as sizing evidence,
-not a promise that all workloads meet the same warm latency or RSS ceiling.
+Provider pools, outbound HTTP/blob/secrets/events, shared application ingress,
+service calls and web/SSR integration belong to [Phase 3](../roadmap.md).
+PostgreSQL-backed control, remote placement, state/effect providers and durable
+workflow suspension remain their later-phase work. Existing configuration does
+not instantiate any of those services.

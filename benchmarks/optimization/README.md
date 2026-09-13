@@ -40,6 +40,15 @@ processes, bounds output and execution time, records clean shutdown, and retains
 failed attempts and original logs. Output directories must be new and empty.
 CI runs smoke; smoke validates the protocol and cannot establish performance.
 
+Current smoke builds the four native executables with the Cargo dev/debug
+profile and command-local `CARGO_PROFILE_DEV_DEBUG=0`, after rejecting inherited
+build overrides. Removing debug information keeps retained executable bytes
+within the unchanged 1 GiB evidence budget. The suite records `debug: "0"`,
+the `cargo-build-debug-no-debuginfo` recipe and the exact build-script hash;
+`profile: "debug"` still identifies the Cargo profile/output directory.
+The release guest build and full native release recipe are unchanged.
+Historical evidence keeps its original build identities and measurements.
+
 Explicit full collection requires a clean source checkout:
 
 ```sh

@@ -6,12 +6,52 @@ use super::layout::{
 use super::{CompilerOptimization, InstanceAllocator, WasmtimeConfig};
 use latent_core::PlatformError;
 
-impl WasmtimeConfig {
-    pub(crate) fn apply_engine(&self, engine_config: &mut Config) -> Result<(), PlatformError> {
-        self.validate()?;
-        engine_config.cranelift_opt_level(match self.compiler_optimization {
-            CompilerOptimization::Speed => OptLevel::Speed,
-            CompilerOptimization::SpeedAndSize => OptLevel::SpeedAndSize,
+/// Closed code-generation settings shared by the runtime and compiler bootstrap.
+/// Applying these does not construct a pooling allocator or an execution Store.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct CompilerEngineSettings {
+    optimization: Optimization,
+    maximum_wasm_stack_bytes: usize,
+    async_stack_bytes: usize,
+    memory: super::layout::MemoryLayout,
+    copy_on_write_images: bool,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum Optimization {
+    Speed,
+    SpeedAndSize,
+}
+
+impl CompilerEngineSettings {
+    pub(crate) fn from_config(config: &WasmtimeConfig) -> Self {
+        Self {
+            optimization: match config.compiler_optimization {
+                CompilerOptimization::Speed => Optimization::Speed,
+                CompilerOptimization::SpeedAndSize => Optimization::SpeedAndSize,
+            },
+            maximum_wasm_stack_bytes: config.maximum_wasm_stack_bytes,
+            async_stack_bytes: config.async_stack_bytes,
+            memory: config.memory_layout(),
+            copy_on_write_images: config.copy_on_write_images,
+        }
+    }
+    pub(crate) fn validate_compiler(&self) -> Result<(), PlatformError> {
+        if self.maximum_wasm_stack_bytes == 0
+            || self.maximum_wasm_stack_bytes > 64 * 1024 * 1024
+            || self.async_stack_bytes < self.maximum_wasm_stack_bytes
+            || self.async_stack_bytes > 128 * 1024 * 1024
+            || !self.memory.compiler_bounded()
+        {
+            return Err(super::invalid_config());
+        }
+        Ok(())
+    }
+    pub(crate) fn apply(&self, engine_config: &mut Config) {
+        engine_config.cranelift_opt_level(match self.optimization {
+            Optimization::Speed => OptLevel::Speed,
+            Optimization::SpeedAndSize => OptLevel::SpeedAndSize,
         });
         engine_config.wasm_component_model(true);
         engine_config.wasm_component_model_async(true);
@@ -20,10 +60,17 @@ impl WasmtimeConfig {
         engine_config.max_wasm_stack(self.maximum_wasm_stack_bytes);
         engine_config.async_stack_size(self.async_stack_bytes);
         engine_config.async_stack_zeroing(ASYNC_STACK_ZEROING);
-        self.memory_layout().apply(engine_config);
+        self.memory.apply(engine_config);
         engine_config.memory_init_cow(self.copy_on_write_images);
         engine_config.wasm_backtrace_details(WasmBacktraceDetails::Disable);
         engine_config.wasm_backtrace_max_frames(None);
+    }
+}
+
+impl WasmtimeConfig {
+    pub(crate) fn apply_engine(&self, engine_config: &mut Config) -> Result<(), PlatformError> {
+        self.validate()?;
+        CompilerEngineSettings::from_config(self).apply(engine_config);
         if matches!(self.instance_allocator, InstanceAllocator::Pooling) {
             self.apply_pooling(engine_config);
         }

@@ -231,6 +231,8 @@ impl MeasurementNode {
             .publish_release(authenticated(
                 &fixture.target.tenant,
                 management::PublishReleaseRequest {
+                    package: None,
+                    operation: None,
                     release: None,
                     artifact: Some(upload),
                 },
@@ -248,6 +250,7 @@ impl MeasurementNode {
             .apply_deployment(authenticated(
                 &fixture.target.tenant,
                 management::ApplyDeploymentRequest {
+                    operation: None,
                     deployment: Some(deployment),
                     expected_generation: None,
                 },

@@ -82,6 +82,12 @@ impl RevisionPolicySource for PinnedRouteResolver {
         if record.deployment.release != revision.release {
             return Err(missing_policy());
         }
+        crate::deployments::admission_fence::check_selected(
+            self.catalog
+                .selected_eligibility(&revision.release)
+                .as_ref(),
+            &target.tenant,
+        )?;
         Ok(RevisionAdmissionPolicy {
             deployment_ceiling: record.deployment.resources.clone(),
             execution: record.execution.clone(),

@@ -31,6 +31,7 @@ pub(crate) use wait::PreparationWait;
 pub(crate) struct CoalescingKey {
     pub(crate) key: PreparationKey,
     pub(crate) source: ArtifactPreparationIdentity,
+    pub(crate) eligibility: Option<latent_artifacts::ReleaseUseEligibility>,
 }
 
 pub(crate) struct Admission {
@@ -52,7 +53,8 @@ pub(crate) struct QueueWindow {
     pub(crate) finished_nanos: u64,
 }
 
-type Task<T> = Box<dyn FnOnce(QueueWindow) -> Result<CompilationResult<T>, PlatformError> + Send>;
+pub(crate) type Task<T> =
+    Box<dyn FnOnce(QueueWindow) -> Result<CompilationResult<T>, PlatformError> + Send>;
 
 pub(crate) enum Acquisition<T: Send + Sync + 'static> {
     Ready(ReadyPin<T>),

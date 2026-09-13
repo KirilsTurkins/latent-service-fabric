@@ -2,11 +2,13 @@
 
 An execution cell is a reusable sandbox allocation slot. It is not associated with a service identity while idle.
 
-Phase 1 implements fixed in-process cell pools, fresh Wasmtime stores and
+The current node retains the Phase 1 fixed in-process cell pools, fresh Wasmtime stores and
 affirmative reuse/quarantine through the [local scheduler](../scheduling.md)
-and [activation lifecycle](../activation-lifecycle.md). Trust-sharded processes,
-state transactions and external asynchronous capability providers described as
-extensions below remain later work.
+and [activation lifecycle](../activation-lifecycle.md). Phase 2 adds optional
+isolated native compilation and authenticated native loading; compiler children
+are temporary bounded workers, not guest execution cells. Trust-sharded guest
+processes, state transactions and external asynchronous capability providers
+remain later work.
 
 ## Cell contents during an activation
 
@@ -14,7 +16,7 @@ extensions below remain later work.
 - isolated guest store and linear memory,
 - bounded stack and table allocation,
 - activation context,
-- capability handle table,
+- activation-local host bindings,
 - budget counters,
 - cancellation signal,
 - temporary input/output buffers,
@@ -38,7 +40,7 @@ limits are documented in [the runtime reference](../runtime/wasmtime.md).
 
 ## Isolation model
 
-Each activation receives a separate guest store, memory, budget, and handle table. A guest trap must terminate only that activation. Stronger process isolation can be provided by a fixed number of trust-sharded execution hosts.
+Each activation receives a separate guest store, memory, budget and host bindings. A guest trap must terminate only that activation. Phase 3 plans the general broker handle table. Stronger guest process isolation remains a planned fixed set of trust-sharded execution hosts.
 
 ## Cancellation
 
@@ -50,7 +52,7 @@ A cell may be returned only after:
 
 1. guest execution is stopped,
 2. capability handles are revoked,
-3. state transaction ownership is released,
+3. host-call ownership is released,
 4. temporary buffers are cleared,
 5. accounting is finalized,
 6. activation identity is removed, and

@@ -41,6 +41,11 @@ SCHEMA_EXAMPLES: dict[str, tuple[str, ...]] = {
     "binding.schema.json": ("examples/bindings/*.json",),
     "capsule-manifest.schema.json": ("examples/**/capsule.json",),
     "deployment.schema.json": ("examples/**/deployment.json",),
+    "package-config.schema.json": ("examples/package-format/*/config.json",),
+    "package-evidence.schema.json": ("examples/package-format/evidence/*-manifest.json",),
+    "package-manifest.schema.json": ("examples/package-format/*/manifest.json",),
+    "package-wit-lock.schema.json": ("examples/package-format/capsule/blobs/wit-lock.json",),
+    "package-source.schema.json": ("examples/package-inputs/*/package-source.json",),
     "policy.schema.json": ("examples/policies/*.json",),
     "release-publish.schema.json": ("examples/**/publish-release.json",),
     "route-snapshot.schema.json": ("examples/route-snapshot.json",),
@@ -106,10 +111,22 @@ def files_with_suffix(suffix: str, root: Path = ROOT) -> Iterator[Path]:
     return (path for path in iter_source_files(root) if path.suffix.lower() == suffix.lower())
 
 
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate key {key!r}")
+        result[key] = value
+    return result
+
+
 def validate_json(root: Path = ROOT) -> None:
     for path in files_with_suffix(".json", root):
         try:
-            json.loads(path.read_text(encoding="utf-8"))
+            json.loads(
+                path.read_text(encoding="utf-8"),
+                object_pairs_hook=_unique_json_object,
+            )
         except Exception as exc:  # noqa: BLE001 - validator must report every parser failure
             fail(f"invalid JSON {path.relative_to(root).as_posix()}: {exc}")
 
@@ -148,11 +165,18 @@ def validate_svg(root: Path = ROOT) -> None:
             fail(f"SVG role must be img: {relative}")
 
         elements = list(svg.iter())
-        identifiers = {
-            element.get("id")
-            for element in elements
-            if isinstance(element.tag, str) and element.get("id")
-        }
+        identifier_counts: dict[str, int] = {}
+        for element in elements:
+            if not isinstance(element.tag, str):
+                continue
+            identifier = element.get("id")
+            if identifier:
+                identifier_counts[identifier] = identifier_counts.get(identifier, 0) + 1
+        for identifier in sorted(
+            identifier for identifier, count in identifier_counts.items() if count > 1
+        ):
+            fail(f"SVG contains duplicate ID {identifier}: {relative}")
+        identifiers = set(identifier_counts)
         required_labels = set(svg.get("aria-labelledby", "").split())
         if not required_labels <= identifiers:
             missing = ", ".join(sorted(required_labels - identifiers))
@@ -493,6 +517,7 @@ def validate_required_docs() -> None:
         "VALIDATION.md",
         "docs/architecture/overview.md",
         "docs/api-surface.md",
+        "docs/development/build-foundation.md",
         "docs/development/toolchain.md",
         "docs/svg-style.md",
         "docs/testing/invariants.md",

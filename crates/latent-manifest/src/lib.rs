@@ -9,12 +9,17 @@
 
 mod bounded_codec;
 mod json_number;
+mod runtime_compatibility;
 mod schema;
 mod validation;
 #[path = "codec.rs"]
 mod wire_codec;
 
 pub use bounded_codec::{JsonManifestCodec, ManifestLimits};
+pub use runtime_compatibility::{
+    check_runtime_compatibility, RuntimeCompatibilityProfile, RuntimeRequirement,
+    RuntimeRequirements, CPU_FEATURES,
+};
 pub use validation::{Phase1ManifestValidator, MANIFEST_API_VERSION, PHASE1_FABRIC_VERSION};
 pub use wire_codec::{ManifestDocument, ManifestKind};
 
@@ -120,6 +125,7 @@ pub struct CapsuleManifest {
     pub imports: Vec<ContractImport>,
     pub execution: ExecutionRequirements,
     pub minimum_fabric_version: String,
+    pub runtime_requirements: RuntimeRequirements,
 }
 
 /// Deployment availability requirements.
@@ -175,6 +181,33 @@ pub struct DeploymentManifest {
     pub resources: ResourceBudget,
     pub availability: AvailabilityPolicy,
     pub placement: PlacementPolicy,
+}
+
+impl DeploymentManifest {
+    /// Applies the same field normalization used by the deployment JSON codec.
+    ///
+    /// Control-plane callers must validate input size and collection bounds
+    /// before calling this method. It lowercases the release spelling and uses
+    /// the existing stable ordering of grants, operations and placement lists.
+    /// It neither validates the manifest nor grants publication or execution
+    /// authority; optional resource values and all other fields remain exact.
+    pub fn normalize_storage_fields(&mut self) {
+        self.release.0.make_ascii_lowercase();
+        for grant in &mut self.grants {
+            grant.operations.sort();
+        }
+        self.grants.sort_by(|left, right| {
+            (&left.capability, &left.policy, &left.operations).cmp(&(
+                &right.capability,
+                &right.policy,
+                &right.operations,
+            ))
+        });
+        self.placement.architectures.sort();
+        self.placement.regions.sort();
+        self.placement.zones.sort();
+        self.placement.required_features.sort();
+    }
 }
 
 /// Binding implementation preference.

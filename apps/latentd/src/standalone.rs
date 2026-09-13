@@ -1,11 +1,13 @@
 //! Fixed node-owned composition for the standalone stateless runtime.
 
+mod audit;
 mod load;
 #[cfg(all(test, target_os = "linux"))]
 mod measurements;
 mod observations;
 #[cfg(all(test, target_os = "linux"))]
 mod parity;
+mod rollouts;
 mod shutdown;
 mod start;
 pub mod transport;
@@ -26,6 +28,8 @@ use latent_telemetry::{
 use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory};
 use latent_wire::invocation::{ActivationCleanupOwner, ActivationCleanupSnapshot};
 
+pub use audit::AuditShutdownReport;
+pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
 
 /// Runtime builder callbacks count actual node-owned runtime and blocking threads.
@@ -37,7 +41,10 @@ pub struct RuntimeThreads {
 
 /// Retain this owner until explicit shutdown has joined its services and helpers.
 pub struct StandaloneNode {
+    supply_chain: SupplyChainLifetime,
     transport: Option<transport::Transport>,
+    audit: Option<audit::AuditRuntime>,
+    rollouts: Option<rollouts::RolloutRuntime>,
     cleanup: Option<ActivationCleanupOwner>,
     sampler: Option<load::LoadSampler>,
     telemetry_runtime: Option<TelemetryRuntime>,
@@ -55,6 +62,20 @@ pub struct StandaloneNode {
     classes: Vec<CellClass>,
     shutdown_grace: Duration,
     cleanup_grace: Duration,
+}
+
+struct SupplyChainLifetime(Option<Arc<latent_policy::supply_chain::SupplyChainAuthority>>);
+impl SupplyChainLifetime {
+    fn retire(&self) {
+        if let Some(authority) = &self.0 {
+            authority.retire();
+        }
+    }
+}
+impl Drop for SupplyChainLifetime {
+    fn drop(&mut self) {
+        self.retire();
+    }
 }
 
 impl StandaloneNode {

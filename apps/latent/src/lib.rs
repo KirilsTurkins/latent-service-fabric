@@ -9,5 +9,6 @@ mod invocation;
 mod management;
 mod operation;
 mod output;
+mod package;
 
 pub use command::main_entry;
