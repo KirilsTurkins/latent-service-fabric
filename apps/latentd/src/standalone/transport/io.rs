@@ -2,6 +2,7 @@ use std::future::Future;
 use std::io;
 use std::net::SocketAddr;
 use std::pin::Pin;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
@@ -37,11 +38,19 @@ impl Stream for Incoming {
                 continue;
             };
             stream.set_nodelay(true)?;
+            let connection = ConnectionInfo {
+                address,
+                authenticated: Arc::new(AtomicBool::new(false)),
+            };
             return Poll::Ready(Some(Ok(OwnedIo {
                 stream: Some(stream),
-                address,
+                connection,
+                unauthenticated_deadline: Box::pin(tokio::time::sleep(
+                    self.shared.config.unauthenticated_timeout,
+                )),
                 read_stop: self.shared.force.listen(),
                 write_stop: self.shared.force.listen(),
+                shared: Arc::clone(&self.shared),
                 guard: Some(guard),
             })));
         }
@@ -50,18 +59,36 @@ impl Stream for Incoming {
     }
 }
 
+#[derive(Clone)]
+pub(super) struct ConnectionInfo {
+    address: SocketAddr,
+    authenticated: Arc<AtomicBool>,
+}
+
+impl ConnectionInfo {
+    pub(super) fn mark_authenticated(&self) {
+        self.authenticated.store(true, Ordering::Release);
+    }
+
+    fn is_authenticated(&self) -> bool {
+        self.authenticated.load(Ordering::Acquire)
+    }
+}
+
 pub(super) struct OwnedIo {
     stream: Option<TcpStream>,
-    address: SocketAddr,
+    connection: ConnectionInfo,
+    unauthenticated_deadline: Pin<Box<tokio::time::Sleep>>,
     read_stop: SignalWaiter,
     write_stop: SignalWaiter,
+    shared: Arc<Shared>,
     guard: Option<Guard>,
 }
 
 impl Connected for OwnedIo {
-    type ConnectInfo = SocketAddr;
-    fn connect_info(&self) -> SocketAddr {
-        self.address
+    type ConnectInfo = ConnectionInfo;
+    fn connect_info(&self) -> ConnectionInfo {
+        self.connection.clone()
     }
 }
 
@@ -70,6 +97,25 @@ impl OwnedIo {
         drop(self.stream.take());
         drop(self.guard.take());
     }
+
+    fn expire_unauthenticated(&mut self) {
+        if self.guard.is_some() {
+            self.shared.expire_unauthenticated_connection();
+        }
+        self.close();
+    }
+
+    fn poll_unauthenticated_expiry(&mut self, cx: &mut Context<'_>) -> bool {
+        if self.connection.is_authenticated() {
+            return false;
+        }
+        if self.unauthenticated_deadline.as_mut().poll(cx).is_ready() {
+            self.expire_unauthenticated();
+            return true;
+        }
+        false
+    }
+
     fn closed() -> io::Error {
         io::Error::new(
             io::ErrorKind::ConnectionAborted,
@@ -88,6 +134,9 @@ impl AsyncRead for OwnedIo {
             self.close();
             return Poll::Ready(Err(Self::closed()));
         }
+        if self.poll_unauthenticated_expiry(cx) {
+            return Poll::Ready(Err(Self::closed()));
+        }
         match self.stream.as_mut() {
             Some(stream) => Pin::new(stream).poll_read(cx, buffer),
             None => Poll::Ready(Err(Self::closed())),
@@ -104,6 +153,9 @@ impl AsyncWrite for OwnedIo {
             self.close();
             return Poll::Ready(Err(Self::closed()));
         }
+        if self.poll_unauthenticated_expiry(cx) {
+            return Poll::Ready(Err(Self::closed()));
+        }
         match self.stream.as_mut() {
             Some(stream) => Pin::new(stream).poll_write(cx, bytes),
             None => Poll::Ready(Err(Self::closed())),
@@ -114,6 +166,9 @@ impl AsyncWrite for OwnedIo {
             self.close();
             return Poll::Ready(Err(Self::closed()));
         }
+        if self.poll_unauthenticated_expiry(cx) {
+            return Poll::Ready(Err(Self::closed()));
+        }
         match self.stream.as_mut() {
             Some(stream) => Pin::new(stream).poll_flush(cx),
             None => Poll::Ready(Err(Self::closed())),
@@ -122,6 +177,9 @@ impl AsyncWrite for OwnedIo {
     fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         if Pin::new(&mut self.write_stop).poll(cx).is_ready() {
             self.close();
+            return Poll::Ready(Ok(()));
+        }
+        if self.poll_unauthenticated_expiry(cx) {
             return Poll::Ready(Ok(()));
         }
         match self.stream.as_mut() {
