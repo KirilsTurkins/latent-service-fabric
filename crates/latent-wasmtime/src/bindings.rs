@@ -18,9 +18,9 @@ const INSTALLED_HOST_INTERFACES: [&str; 4] = [
 fn installed_profile_is_exact() -> bool {
     PHASE3_HOST_ABI_V1.interfaces().len() == INSTALLED_HOST_INTERFACES.len()
         && INSTALLED_HOST_INTERFACES.iter().all(|interface| {
-            PHASE3_HOST_ABI_V1.interface(interface).is_some_and(|spec| {
-                spec.binding == HostInterfaceBinding::BuiltIn
-            })
+            PHASE3_HOST_ABI_V1
+                .interface(interface)
+                .is_some_and(|spec| spec.binding == HostInterfaceBinding::BuiltIn)
         })
 }
 
