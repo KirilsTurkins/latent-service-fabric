@@ -303,7 +303,12 @@ impl PreparationContext {
         identity: &ArtifactPreparationIdentity,
         key: &PreparationKey,
     ) -> Result<(), PlatformError> {
-        if !identity.matches_release(&key.release) {
+        if !identity.matches_release(&key.release)
+            || key
+                .publication
+                .as_ref()
+                .is_some_and(|id| identity.publication() != id)
+        {
             return Err(platform_error(
                 PlatformErrorCode::CorruptArtifact,
                 "artifact repository returned a different release",

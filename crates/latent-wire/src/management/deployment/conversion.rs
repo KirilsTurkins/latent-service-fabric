@@ -30,6 +30,7 @@ pub fn deployment_from_proto(
     Ok(VersionedDeployment {
         generation: deployment.generation,
         manifest: DeploymentManifest {
+            publication: None,
             api_version: MANIFEST_API_VERSION.to_owned(),
             id: DeploymentId(deployment.id),
             metadata: ObjectMetadata {

@@ -5,8 +5,9 @@ Catalog format 2 implements the storage contract in
 [ADR-0027](../../adr/0027-separate-publication-authority-from-component-identity.md).
 It separates component bytes, complete immutable packages and permission to use
 a package in a particular tenant. The catalog library and offline migration are
-implemented. Runtime/deployment propagation (#266) and public selectors in the
-RPC, CLI and six SDKs (#267) remain their own integration steps.
+implemented. [Deployment and runtime propagation](publication-runtime.md) carries
+exact selections through guest start. Public selectors in the RPC, CLI and six
+SDKs (#267) remain their own integration step.
 
 `ReleaseDigest` remains the SHA-256 of executable bytes. `PackageDigest` remains
 the complete immutable package identity. A `PublicationRef` contains an explicit

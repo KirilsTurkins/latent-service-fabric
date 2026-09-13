@@ -141,6 +141,7 @@ fn request() -> ExecutionRequest {
             },
             target: target.clone(),
             resolved_revision: Some(ResolvedRevision {
+                publication: None,
                 target,
                 revision: RevisionId("revision".to_owned()),
                 release: ReleaseDigest("release".to_owned()),
@@ -164,6 +165,7 @@ fn request() -> ExecutionRequest {
         },
         prepared: PreparedComponent {
             key: PreparationKey {
+                publication: None,
                 release: ReleaseDigest("release".to_owned()),
                 engine_version: "version".to_owned(),
                 engine_configuration_digest: "config".to_owned(),

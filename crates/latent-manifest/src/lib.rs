@@ -176,6 +176,8 @@ pub struct DeploymentManifest {
     pub metadata: ObjectMetadata,
     pub service: ServiceId,
     pub release: ReleaseDigest,
+    /// Exact publication in metadata.tenant; release remains executable identity.
+    pub publication: Option<latent_core::PublicationId>,
     pub route_weight: u16,
     pub grants: Vec<CapabilityGrantSpec>,
     pub resources: ResourceBudget,

@@ -180,6 +180,7 @@ fn deployment(capsule: &CapsuleManifest) -> Result<DeploymentManifest> {
         return Err("tenant-required");
     }
     Ok(DeploymentManifest {
+        publication: None,
         api_version: capsule.api_version.clone(),
         id: DeploymentId("artifact-identity-probe".to_owned()),
         metadata: ObjectMetadata {

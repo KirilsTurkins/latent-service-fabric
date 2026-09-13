@@ -57,6 +57,7 @@ pub(super) fn request() -> ExecutionRequest {
         },
         prepared: PreparedComponent {
             key: PreparationKey {
+                publication: None,
                 release: ReleaseDigest("release".to_owned()),
                 engine_version: "version".to_owned(),
                 engine_configuration_digest: "config".to_owned(),

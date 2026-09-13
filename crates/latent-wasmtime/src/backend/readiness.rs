@@ -33,17 +33,20 @@ impl WasmtimeBackend {
         context.validate_engine_key(&key)?;
         let source = Arc::clone(&repository).owned_preparation_source();
         let eligibility = if let Some(source) = &source {
-            source.execution_eligibility(&key.release)?
+            source.execution_eligibility_selected(&key.release, key.publication.as_ref())?
         } else {
-            if repository.execution_eligibility(&key.release)?.is_some() {
+            if repository
+                .execution_eligibility_selected(&key.release, key.publication.as_ref())?
+                .is_some()
+            {
                 return Err(super::admission_association_error());
             }
             None
         };
-        context.check_eligibility(eligibility.as_ref(), &key.release)?;
+        context.check_eligibility(eligibility.as_ref(), &key.release, key.publication.as_ref())?;
         let identity = source
             .as_ref()
-            .map(|source| source.identity(&key.release))
+            .map(|source| source.identity_selected(&key.release, key.publication.as_ref()))
             .transpose()?
             .flatten();
         let mut bounds = None;
@@ -57,12 +60,13 @@ impl WasmtimeBackend {
                     identity.metadata().charged_bytes(),
                     Some(identity),
                     eligibility.as_ref(),
+                    key.publication.as_ref(),
                 )?)?,
             )
         } else {
             bounds = source
                 .as_ref()
-                .map(|source| source.read_bounds(&key.release))
+                .map(|source| source.read_bounds_selected(&key.release, key.publication.as_ref()))
                 .transpose()?;
             let bytes = bounds.map_or(self.config.maximum_component_bytes as u64, |bounds| {
                 bounds.component_bytes
@@ -86,6 +90,7 @@ impl WasmtimeBackend {
                     self.config.maximum_artifact_metadata_bytes,
                     None,
                     eligibility.as_ref(),
+                    key.publication.as_ref(),
                 )?)?,
             )
         };
@@ -120,13 +125,16 @@ impl WasmtimeBackend {
                         let bounds = source
                             .as_ref()
                             .ok_or_else(super::admission_association_error)?
-                            .read_bounds(&key.release)?;
+                            .read_bounds_selected(&key.release, key.publication.as_ref())?;
                         future.reserve_documents(document_bytes(bounds)?)?;
-                        let job = native.reserve(&key.release)?;
+                        let job = native.reserve(&key.release, key.publication.as_ref())?;
                         drop(source);
                         input::ArtifactInput::Native(Some(job))
                     } else if let Some(source) = source {
-                        let bounds = bounds.map_or_else(|| source.read_bounds(&key.release), Ok)?;
+                        let bounds = bounds.map_or_else(
+                            || source.read_bounds_selected(&key.release, key.publication.as_ref()),
+                            Ok,
+                        )?;
                         if bounds.component_bytes != source_bytes as u64 {
                             return Err(invalid("preparation-read-size-changed"));
                         }

@@ -63,6 +63,11 @@ pub(in crate::deployments) struct CohortMember {
     deny_unknown_fields
 )]
 pub(in crate::deployments) struct StoredRollout {
+    #[serde(
+        default = "legacy_plan_version",
+        skip_serializing_if = "is_legacy_plan"
+    )]
+    pub plan_version: u32,
     pub status: RolloutStatus,
     pub base_manifest: String,
     pub candidate_manifest: String,
@@ -260,14 +265,35 @@ pub(in crate::deployments) fn receipt_hash(
         .remove("receiptDigest");
     Ok(codec::hash(&codec::encode(&value, MAX_RECEIPT_BYTES)?))
 }
+fn legacy_plan_version() -> u32 {
+    1
+}
+fn is_legacy_plan(version: &u32) -> bool {
+    *version == 1
+}
+
 pub(in crate::deployments) fn plan_hash(row: &StoredRollout) -> Result<ArtifactBlobDigest> {
     let s = &row.status;
     let mut value = json::json!({
-        "version":1,"tenant":s.tenant.0,"rollout":s.id.0,
+        "version":row.plan_version,"tenant":s.tenant.0,"rollout":s.id.0,
         "base":row.base_manifest,"candidate":row.candidate_manifest,
         "weights":s.candidate_weights,"basePackage":s.base.package.as_ref().map(latent_core::PackageDigest::as_str),
         "candidatePackage":s.candidate.package.as_ref().map(latent_core::PackageDigest::as_str)
     });
+    if row.plan_version == 2 {
+        value["basePublication"] = json::json!(s
+            .base
+            .publication
+            .as_ref()
+            .map(latent_core::PublicationId::as_str));
+        value["candidatePublication"] = json::json!(s
+            .candidate
+            .publication
+            .as_ref()
+            .map(latent_core::PublicationId::as_str));
+    } else if row.plan_version != 1 {
+        return Err(corrupt());
+    }
     if let Some(policy) = s.canary_policy {
         value["canaryPolicy"] = json::to_value(policy).map_err(|_| corrupt())?;
     }
@@ -307,7 +333,8 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         if s.revision == 0
             || s.state_version == 0
             || s.current_step as usize >= s.candidate_weights.len()
-            || s.base.component == s.candidate.component
+            || (s.base.component == s.candidate.component
+                && s.base.publication == s.candidate.publication)
             || !ids.insert((s.tenant.clone(), s.id.clone()))
             || row.cohort.is_empty()
             || row.cohort.len() > 2
@@ -395,8 +422,16 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         let candidate = decode_manifest(&row.candidate_manifest)?;
         if base.id != s.base.deployment_id
             || base.release != s.base.component
+            || base
+                .publication
+                .as_ref()
+                .is_some_and(|p| Some(p) != s.base.publication.as_ref())
             || candidate.id != s.candidate.deployment_id
             || candidate.release != s.candidate.component
+            || candidate
+                .publication
+                .as_ref()
+                .is_some_and(|p| Some(p) != s.candidate.publication.as_ref())
             || base.metadata.tenant.as_ref() != Some(&s.tenant)
             || candidate.metadata.tenant.as_ref() != Some(&s.tenant)
             || base.service != s.service
@@ -516,6 +551,74 @@ fn validate(data: &TableData, limits: RolloutLimits) -> Result<()> {
         || data.receipts.is_empty() && data.operation_sequence != 0
     {
         return Err(corrupt());
+    }
+    Ok(())
+}
+
+pub(super) fn publication_pins(row: &StoredRollout) -> super::super::compiler::PublicationPins {
+    [&row.status.base, &row.status.candidate]
+        .into_iter()
+        .filter_map(|release| {
+            release
+                .publication
+                .as_ref()
+                .map(|publication| (release.deployment_id.clone(), publication.clone()))
+        })
+        .collect()
+}
+
+/// Upgrade selection only; old plan digests, receipt bytes, CAS and manifests stay
+/// unchanged. Current evidence is checked later when a new route grant is needed.
+pub(in crate::deployments) async fn recover_publications(
+    data: &mut TableData,
+    artifacts: &dyn latent_artifacts::ArtifactRepository,
+    upgrade: bool,
+) -> Result<()> {
+    for row in &mut data.rows {
+        for release in [&mut row.status.base, &mut row.status.candidate] {
+            let selected = if upgrade && release.publication.is_none() {
+                artifacts.recover_execution_publication(&row.status.tenant, &release.component)?
+            } else {
+                artifacts.select_execution_publication(
+                    &row.status.tenant,
+                    &release.component,
+                    release.publication.as_ref(),
+                )?
+            };
+            if !upgrade && selected.as_ref().map(|v| &v.id) != release.publication.as_ref() {
+                return Err(corrupt());
+            }
+            if let Some(selected) = selected {
+                let snapshot = artifacts
+                    .historical_execution_snapshot_selected(&release.component, Some(&selected.id))
+                    .await?;
+                let (_, state) = snapshot.into_parts();
+                let package = match state {
+                    latent_artifacts::HistoricalExecutionState::Eligible(token) => {
+                        token.authorize_tenant(&row.status.tenant)?;
+                        token.package().cloned()
+                    }
+                    latent_artifacts::HistoricalExecutionState::Denied(denied) => {
+                        denied.authorize_tenant(&row.status.tenant)?;
+                        // Retained source verification authenticates package identity below.
+                        artifacts
+                            .retained_package_source_selected(
+                                &row.status.tenant,
+                                &release.component,
+                                Some(&selected.id),
+                                32 * 1024 * 1024,
+                            )
+                            .await?
+                            .map(|source| source.package().clone())
+                    }
+                    latent_artifacts::HistoricalExecutionState::Unmanaged => return Err(corrupt()),
+                };
+                if package != release.package {
+                    return Err(corrupt());
+                }
+                release.publication = Some(selected.id);
+            }
+        }
     }
     Ok(())
 }

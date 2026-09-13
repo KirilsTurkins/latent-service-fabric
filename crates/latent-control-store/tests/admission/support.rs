@@ -154,12 +154,40 @@ impl AdmissionAuthority for Authority {
         let release = layout
             .component_release()
             .ok_or_else(|| denied("fixture-kind"))?;
+        let capsule_layer = layout
+            .config()
+            .layers
+            .iter()
+            .find(|layer| layer.role == package::LayerRole::CapsuleManifest)
+            .ok_or_else(|| denied("fixture-manifest"))?;
+        let capsule_bytes = upload
+            .layers
+            .iter()
+            .find(|(path, _)| path == &capsule_layer.path)
+            .map(|(_, bytes)| bytes)
+            .ok_or_else(|| denied("fixture-manifest"))?;
+        package::verify_layer_bytes(
+            capsule_layer,
+            capsule_bytes,
+            package::PackageLimits::default(),
+        )?;
+        let manifest = JsonManifestCodec::default()
+            .decode_capsule(capsule_bytes)
+            .map_err(|_| denied("fixture-manifest"))?;
         let artifact = self
             .artifacts
             .iter()
-            .find(|artifact| artifact.descriptor.release_digest == release)
+            .find(|artifact| {
+                artifact.descriptor.release_digest == release && artifact.manifest == manifest
+            })
             .ok_or_else(|| denied("fixture-release"))?;
-        if artifact.manifest.metadata.tenant.as_ref() != Some(tenant) {
+        if artifact
+            .manifest
+            .metadata
+            .tenant
+            .as_ref()
+            .is_some_and(|scope| scope != tenant)
+        {
             return Err(denied("fixture-tenant"));
         }
         let mut artifact = artifact.clone();

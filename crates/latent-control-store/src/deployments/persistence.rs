@@ -41,6 +41,8 @@ pub(super) struct Payload {
     object_generations: Option<Vec<StoredObjectGeneration>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub control: Option<ControlPayload>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    publication_pins: Option<Vec<StoredPublicationPin>>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -79,7 +81,46 @@ pub(super) struct Record {
     pub payload: Payload,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "latent_manifest::__serde", deny_unknown_fields)]
+struct StoredPublicationPin {
+    id: String,
+    publication: String,
+}
+
 impl Record {
+    pub(super) fn needs_publication_upgrade(&self) -> bool {
+        self.format_version < 5
+    }
+
+    pub(super) fn publication_pins(
+        &self,
+        deployments: &BTreeMap<DeploymentId, DeploymentManifest>,
+    ) -> Result<Option<super::compiler::PublicationPins>, PlatformError> {
+        let Some(entries) = &self.payload.publication_pins else {
+            return Ok(None);
+        };
+        if entries.len() > deployments.len() {
+            return Err(corrupt());
+        }
+        let mut pins = BTreeMap::new();
+        for entry in entries {
+            let id = DeploymentId(entry.id.clone());
+            let manifest = deployments.get(&id).ok_or_else(corrupt)?;
+            let publication: latent_core::PublicationId =
+                entry.publication.parse().map_err(|_| corrupt())?;
+            if manifest
+                .publication
+                .as_ref()
+                .is_some_and(|value| value != &publication)
+                || pins.insert(id, publication).is_some()
+            {
+                return Err(corrupt());
+            }
+        }
+        Ok(Some(pins))
+    }
+
     pub(super) fn object_generations(
         &self,
         deployments: &BTreeMap<DeploymentId, DeploymentManifest>,
@@ -89,7 +130,7 @@ impl Record {
                 .keys()
                 .map(|id| (id.clone(), self.payload.generation))
                 .collect()),
-            (2 | 3 | 4, Some(stored)) if stored.len() == deployments.len() => {
+            (2 | 3 | 4 | 5, Some(stored)) if stored.len() == deployments.len() => {
                 let mut versions = BTreeMap::new();
                 for entry in stored {
                     let id = DeploymentId(entry.id.clone());
@@ -226,14 +267,16 @@ pub(super) fn load(
     }
     let record: Record = json::from_slice(&bytes).map_err(|_| corrupt())?;
     let checksum = payload_checksum(&record.payload, config.max_state_bytes, work)?;
-    if !matches!(record.format_version, 1..=4)
-        || matches!(record.format_version, 3 | 4) != record.payload.control.is_some()
-        || (record.format_version == 4)
-            != record
-                .payload
-                .control
-                .as_ref()
-                .is_some_and(|v| v.deployment_operations.is_some())
+    if !matches!(record.format_version, 1..=5)
+        || (record.format_version == 5) != record.payload.publication_pins.is_some()
+        || (record.format_version < 5
+            && (matches!(record.format_version, 3 | 4) != record.payload.control.is_some()
+                || (record.format_version == 4)
+                    != record
+                        .payload
+                        .control
+                        .as_ref()
+                        .is_some_and(|v| v.deployment_operations.is_some())))
         || (record.format_version == 3
             && record
                 .payload
@@ -405,6 +448,29 @@ impl Write for LimitedBytes {
     }
 }
 
+pub(super) fn matches_restored_snapshot(record: &Record, catalog: &CompiledCatalog) -> bool {
+    let mut expected = catalog_snapshot_value(catalog);
+    if record.needs_publication_upgrade() {
+        if let Some(services) = expected["services"].as_array_mut() {
+            for service in services {
+                if let Some(revisions) = service["revisions"].as_array_mut() {
+                    for revision in revisions {
+                        revision
+                            .as_object_mut()
+                            .expect("owned revision")
+                            .remove("publication");
+                        revision["attributes"]
+                            .as_object_mut()
+                            .expect("owned attributes")
+                            .remove("lsf.publication");
+                    }
+                }
+            }
+        }
+    }
+    record.payload.snapshot == expected
+}
+
 /// Direct canonical traversal avoids a second owned public route snapshot.
 pub(super) fn catalog_snapshot_value(catalog: &CompiledCatalog) -> json::Value {
     let services = catalog
@@ -413,12 +479,16 @@ pub(super) fn catalog_snapshot_value(catalog: &CompiledCatalog) -> json::Value {
             let revisions = route
                 .revisions()
                 .map(|record| {
-                    json::json!({
+                    let mut value = json::json!({
                         "revision": record.revision.0,
                         "release": record.deployment.release.0,
                         "weight": record.deployment.route_weight,
                         "attributes": record.attributes,
-                    })
+                    });
+                    if let Some(publication) = &record.publication {
+                        value["publication"] = json::json!(publication.as_str());
+                    }
+                    value
                 })
                 .collect::<Vec<_>>();
             json::json!({
@@ -447,13 +517,16 @@ pub(super) fn stage(root: &Path, bytes: &[u8], work: &mut Work) -> Result<(), Pl
         .write(true)
         .open(root.join(PENDING_FILE))
         .map_err(io_error)?;
+    checkpoint(IoStep::StateCreated, &root.join(PENDING_FILE)).map_err(io_error)?;
     write_stage(&mut pending, bytes, work)?;
+    checkpoint(IoStep::StateWritten, &root.join(PENDING_FILE)).map_err(io_error)?;
     if let Err(failure) = pending.sync_all() {
         count!(work, stage_sync_failures, 1);
         return Err(io_error(failure));
     }
     count!(work, stage_completed, 1);
     count!(work, stage_synced_bytes, bytes.len());
+    checkpoint(IoStep::StateFileSynced, &root.join(PENDING_FILE)).map_err(io_error)?;
     Ok(())
 }
 
@@ -472,6 +545,7 @@ fn write_stage(
 }
 
 pub(super) fn replace(root: &Path) -> Result<(), PlatformError> {
+    checkpoint(IoStep::StateRename, &root.join(PENDING_FILE)).map_err(io_error)?;
     fs::rename(root.join(PENDING_FILE), root.join(STATE_FILE)).map_err(io_error)
 }
 
@@ -514,6 +588,10 @@ pub(super) fn sync_root(root: &Path) -> Result<(), PlatformError> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum IoStep {
     PathDirectorySync,
+    StateCreated,
+    StateWritten,
+    StateFileSynced,
+    StateRename,
     StateDirectorySync,
     MarkerCreated,
     MarkerPartialWrite,

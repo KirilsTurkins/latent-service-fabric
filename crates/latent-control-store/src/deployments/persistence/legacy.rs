@@ -1,4 +1,4 @@
-//! Original two-tree/two-buffer serializer retained only as a differential oracle.
+//! Independent two-tree/two-buffer serializer for the current envelope, retained only as a differential oracle.
 
 use super::{
     byte_limit, catalog_snapshot_value, corrupt, CompiledCatalog,
@@ -39,12 +39,27 @@ pub(super) fn encode(
                 .collect(),
         ),
         control: None,
+        publication_pins: Some(
+            catalog
+                .records
+                .iter()
+                .filter_map(|record| {
+                    record
+                        .publication
+                        .as_ref()
+                        .map(|publication| super::StoredPublicationPin {
+                            id: record.deployment.id.0.clone(),
+                            publication: publication.as_str().to_owned(),
+                        })
+                })
+                .collect(),
+        ),
     };
     let payload_bytes = bounded_json(&payload, config.max_state_bytes)?;
     let checksum = content_digest(&payload_bytes).0;
     drop(payload_bytes);
     let record = Record {
-        format_version: 2,
+        format_version: 5,
         checksum,
         payload,
     };

@@ -84,3 +84,38 @@ impl OwnedArtifactPreparationSource {
         self.repository.fetch_with_limits(release, limits)
     }
 }
+
+impl OwnedArtifactPreparationSource {
+    pub fn execution_eligibility_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<Option<crate::ReleaseUseEligibility>, PlatformError> {
+        self.repository
+            .selected_execution_eligibility(release, publication)
+            .map(Some)
+    }
+    pub fn identity_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<Option<ArtifactPreparationIdentity>, PlatformError> {
+        self.repository
+            .selected_preparation_identity(release, publication)
+    }
+    pub fn read_bounds_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+    ) -> Result<ArtifactPreparationReadBounds, PlatformError> {
+        self.repository.selected_read_bounds(release, publication)
+    }
+    pub fn fetch_blocking_selected(
+        &self,
+        release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
+        limits: ArtifactPreparationReadLimits,
+    ) -> Result<CapsuleArtifact, PlatformError> {
+        self.repository.selected_fetch(release, publication, limits)
+    }
+}

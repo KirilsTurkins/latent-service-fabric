@@ -8,6 +8,7 @@ mod lock_release;
 mod observation;
 mod operations;
 mod pagination;
+mod publications;
 mod recovery;
 #[cfg(target_os = "linux")]
 mod resources;

@@ -428,10 +428,39 @@ impl DirectoryDeploymentRepository {
                 .as_mut()
                 .and_then(|record| record.payload.control.take());
             let needs_initial_state = restored.is_none();
+            let needs_publication_upgrade = restored
+                .as_ref()
+                .is_some_and(persistence::Record::needs_publication_upgrade);
+            let mut publication_pins = None;
             let (deployments, versions, generation, generated_at) = match &restored {
                 Some(record) => {
                     let deployments = record.deployments(config)?;
                     let versions = record.object_generations(&deployments)?;
+                    publication_pins = record.publication_pins(&deployments)?;
+                    if needs_publication_upgrade {
+                        let mut pins = compiler::PublicationPins::new();
+                        for (id, manifest) in &deployments {
+                            let tenant = manifest.metadata.tenant.as_ref().ok_or_else(|| {
+                                error(
+                                    PlatformErrorCode::CorruptArtifact,
+                                    "persisted-tenant-missing",
+                                )
+                            })?;
+                            let selected = match &manifest.publication {
+                                Some(publication) => artifacts.select_execution_publication(
+                                    tenant,
+                                    &manifest.release,
+                                    Some(publication),
+                                )?,
+                                None => artifacts
+                                    .recover_execution_publication(tenant, &manifest.release)?,
+                            };
+                            if let Some(selected) = selected {
+                                pins.insert(id.clone(), selected.id);
+                            }
+                        }
+                        publication_pins = Some(pins);
+                    }
                     (
                         deployments
                             .into_iter()
@@ -456,10 +485,24 @@ impl DirectoryDeploymentRepository {
                 true,
                 runtime_profile.as_deref(),
                 lifecycle.as_ref(),
+                publication_pins.as_ref(),
             )
             .await?;
             if let Some(record) = restored {
-                if record.payload.snapshot != persistence::catalog_snapshot_value(catalog.catalog())
+                if !persistence::matches_restored_snapshot(&record, catalog.catalog())
+                    || publication_pins.as_ref().is_some_and(|pins| {
+                        catalog
+                            .catalog()
+                            .records
+                            .iter()
+                            .filter_map(|record| {
+                                record
+                                    .publication
+                                    .as_ref()
+                                    .map(|p| (&record.deployment.id, p))
+                            })
+                            .ne(pins.iter())
+                    })
                 {
                     return Err(error(
                         PlatformErrorCode::CorruptArtifact,
@@ -467,7 +510,7 @@ impl DirectoryDeploymentRepository {
                     ));
                 }
             }
-            let (catalog, bytes) = catalog.into_parts();
+            let (catalog, mut bytes) = catalog.into_parts();
             recovery_admission::check(true, || {
                 catalog.check_admission_mode(admission.as_ref(), lifecycle.as_ref())
             })
@@ -484,7 +527,13 @@ impl DirectoryDeploymentRepository {
                 operations::table::OperationTable::empty(&operation_budget)?
             };
             operations.validate_catalog(transaction, generation.0)?;
-            let rollout_table = if let Some(control) = control {
+            let rollout_table = if let Some(mut control) = control {
+                rollouts::table::recover_publications(
+                    &mut control.rollouts,
+                    artifacts.as_ref(),
+                    needs_publication_upgrade,
+                )
+                .await?;
                 let enabled = !control.rollouts.rows.is_empty();
                 rollouts::table::RolloutTable::new(
                     control.rollouts,
@@ -496,6 +545,18 @@ impl DirectoryDeploymentRepository {
                 rollouts::table::RolloutTable::empty(&rollout_budget, rollout_limits)?
             };
             rollout_table.validate_catalog(transaction, generation)?;
+            if needs_publication_upgrade && (rollout_table.enabled || operations.enabled) {
+                bytes = persistence::encode_combined(
+                    &catalog,
+                    &persistence::ControlPayloadRef {
+                        transaction_version: transaction,
+                        rollouts: &rollout_table.data,
+                        deployment_operations: operations.enabled.then_some(&operations.data),
+                    },
+                    config.max_state_bytes,
+                    &mut work,
+                )?;
+            }
             let repository = Self {
                 root,
                 config,
@@ -535,7 +596,7 @@ impl DirectoryDeploymentRepository {
                 let mut started = false;
                 let result = catalog.with_current_admission(&mut |checker| {
                     started = true;
-                    if needs_initial_state {
+                    if needs_initial_state || needs_publication_upgrade {
                         persistence::stage(&repository.root, &bytes, &mut work)?;
                         if let Some(checker) = checker {
                             checker.check()?;
@@ -948,7 +1009,8 @@ impl RouteResolver for DirectoryDeploymentRepository {
         let (resolved, eligibility) = {
             let catalog = self.invocation_catalog()?;
             let resolved = catalog.resolve(target, routing_key, self.config)?;
-            let eligibility = catalog.selected_eligibility(&resolved.release);
+            let eligibility =
+                catalog.selected_eligibility(&resolved.release, resolved.publication.as_ref());
             (resolved, eligibility)
         };
         admission_fence::check_selected(eligibility.as_ref(), &target.tenant)?;
@@ -981,7 +1043,7 @@ impl RouteResolver for PinnedRouteResolver {
         let resolved = self.catalog.resolve(target, routing_key, self.config)?;
         admission_fence::check_selected(
             self.catalog
-                .selected_eligibility(&resolved.release)
+                .selected_eligibility(&resolved.release, resolved.publication.as_ref())
                 .as_ref(),
             &target.tenant,
         )?;

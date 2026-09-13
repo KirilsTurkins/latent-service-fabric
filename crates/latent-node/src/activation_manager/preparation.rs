@@ -26,7 +26,13 @@ impl Inner {
             .as_ref()
             .expect("pinned revision")
             .release;
-        let key = self.dependencies.backend.preparation_key(release)?;
+        let mut key = self.dependencies.backend.preparation_key(release)?;
+        key.publication = envelope
+            .resolved_revision
+            .as_ref()
+            .expect("pinned revision")
+            .publication
+            .clone();
         if &key.release != release {
             return Err(error(
                 PlatformErrorCode::IncompatibleContract,
