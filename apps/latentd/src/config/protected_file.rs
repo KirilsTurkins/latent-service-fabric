@@ -30,6 +30,12 @@ mod platform {
     const MAXIMUM_PATH_BYTES: usize = 4096;
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub(super) enum ReadCheckpoint {
+        OpenedLeaf,
+        SnapshottedLeaf,
+    }
+
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     struct Snapshot {
         device: u64,
         inode: u64,
@@ -68,6 +74,19 @@ mod platform {
         policy: ProtectedFilePolicy,
         field: &'static str,
     ) -> Result<Vec<u8>, PlatformError> {
+        read_with_checkpoint(path, maximum_bytes, policy, field, |_| Ok(()))
+    }
+
+    pub(super) fn read_with_checkpoint<F>(
+        path: &Path,
+        maximum_bytes: u64,
+        policy: ProtectedFilePolicy,
+        field: &'static str,
+        mut checkpoint: F,
+    ) -> Result<Vec<u8>, PlatformError>
+    where
+        F: FnMut(ReadCheckpoint) -> Result<(), PlatformError>,
+    {
         let failure = || super::super::invalid(field);
         if maximum_bytes == 0 || path.as_os_str().len() > MAXIMUM_PATH_BYTES {
             return Err(failure());
@@ -99,10 +118,12 @@ mod platform {
             )
             .map_err(|_| failure())?,
         );
+        checkpoint(ReadCheckpoint::OpenedLeaf)?;
         let before = file.metadata().map_err(|_| failure())?;
         validate_file(&before, policy, uid, gid, maximum_bytes, private_path)
             .map_err(|()| failure())?;
         let before = Snapshot::from(&before);
+        checkpoint(ReadCheckpoint::SnapshottedLeaf)?;
 
         let mut bytes = Vec::with_capacity(
             usize::try_from(before.length.min(maximum_bytes)).map_err(|_| failure())?,
@@ -339,6 +360,54 @@ mod tests {
         let nested = writable.join("secret");
         write(&nested, b"secret", 0o600);
         assert!(read(&nested, 32, ProtectedFilePolicy::Secret, "test").is_err());
+    }
+
+    #[test]
+    fn pathname_replacement_does_not_redirect_opened_descriptor() {
+        let root = TempDir::new().unwrap();
+        let path = root.path().join("authority");
+        let replacement = root.path().join("replacement");
+        let archived = root.path().join("archived");
+        write(&path, b"original", 0o600);
+        write(&replacement, b"replacement", 0o600);
+
+        let bytes = platform::read_with_checkpoint(
+            &path,
+            32,
+            ProtectedFilePolicy::Secret,
+            "test",
+            |point| {
+                if point == platform::ReadCheckpoint::OpenedLeaf {
+                    fs::rename(&path, &archived).unwrap();
+                    fs::rename(&replacement, &path).unwrap();
+                }
+                Ok(())
+            },
+        )
+        .unwrap();
+        assert_eq!(bytes, b"original");
+        assert_eq!(fs::read(path).unwrap(), b"replacement");
+    }
+
+    #[test]
+    fn content_change_after_snapshot_fails_closed() {
+        let root = TempDir::new().unwrap();
+        let path = root.path().join("authority");
+        write(&path, b"before", 0o600);
+
+        let result = platform::read_with_checkpoint(
+            &path,
+            32,
+            ProtectedFilePolicy::Secret,
+            "test",
+            |point| {
+                if point == platform::ReadCheckpoint::SnapshottedLeaf {
+                    fs::write(&path, b"after!").unwrap();
+                }
+                Ok(())
+            },
+        );
+        assert!(result.is_err());
     }
 
     #[test]
