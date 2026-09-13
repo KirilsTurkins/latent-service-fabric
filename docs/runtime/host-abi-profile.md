@@ -14,9 +14,16 @@ interfaces:
 
 Package semantic validation uses the profile to decide whether a declared host
 import is recognized, then compares the imported interface against the pinned
-repository WIT. The Wasmtime linker setup independently verifies that the
-compiled built-in bindings match the same complete profile before publishing an
-instance pre-link. Same-name interfaces at a different version are not matched.
+repository WIT. The Wasmtime adapter separately checks that its explicit set of
+built-in linker registrations matches the same complete profile before adding
+the generated bindings. Same-name interfaces at a different version are not
+matched.
+
+That linker guard verifies the adapter's declared registration manifest; it does
+not introspect interface identities emitted by `wasmtime::component::bindgen!`.
+A generated-binding identity drift test tied directly to generated or registered
+identities therefore remains outstanding before #202 can claim that stronger
+guarantee.
 
 The profile describes ABI recognition only. It does not grant a capability,
 renew a mutable policy decision, prove that a provider is configured, or create
