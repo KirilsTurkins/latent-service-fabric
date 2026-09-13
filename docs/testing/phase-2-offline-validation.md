@@ -4,6 +4,12 @@ These bounded checks distinguish unavailable transfer from invalid local
 authority. They do not extend a trust snapshot or substitute a registry result
 for signature, tenant or lifecycle checks.
 
+The [completed Phase 2 gate](../phase-2-completion.md) retains the
+[24-command outage/revocation run](../../benchmarks/phase2/2026-09-13/offline-receipt.json)
+and [three native-currentness cases](../../benchmarks/phase2/2026-09-13/native-currentness-receipt.json).
+Commands below create a new observation with fresh evidence and current binaries;
+they do not reproduce those historical execution identities merely by passing.
+
 ## Real registry outage and local revocation
 
 The fixed `phase2-offline-r1` schedule uses two freshly signed test packages, one

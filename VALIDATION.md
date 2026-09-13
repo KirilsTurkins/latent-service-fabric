@@ -37,6 +37,19 @@ or resource soaks. An eight-entry index fixture checks normal capacity
 accounting without selecting the large probes. Heavy execution and durable scale evidence
 require the explicit commands below.
 
+Routine pull-request CI runs the executable Phase 0 outcome/recovery matrix
+inside `CI / Repository contracts`, immediately after contract validation builds
+its echo and containment fixtures. It does not run a second complete contract
+job or collect a new Phase 0 baseline. The separate runtime-regression workflow
+is manual-only; complete baseline and authorization paths remain available.
+See the [CI layout](docs/testing/phase0-ci-layout.md) for the current division.
+
+For a source release, required checks must pass on the reviewed release inputs.
+Package versions must agree across the Rust workspace and versioned SDKs, while
+dependency locks, WIT/schema compatibility versions and historical measured
+identities retain their separate meanings. Phase 3 declarations and planned
+providers do not extend this release's executed capability coverage.
+
 ## Phase 0 completion sequence
 
 The clean-checkout Phase 0 sequence is:
@@ -408,7 +421,7 @@ historical.
 
 ## CI jobs
 
-Normal pull requests use two automated workflows. `CI` runs formatting,
+Normal pull requests use the `CI` workflow. It runs formatting,
 workspace compilation, generated binding checks, Clippy, tests, the MSRV check,
 repository/contract validation, the reproducible echo component build, and all
 SDK surfaces. Its core Rust job also retains the strict `latentd` Clippy policy
@@ -420,12 +433,18 @@ and catalog-probe supervision regressions. Its expensive 100,000-release
 publication/reopen step and retained scale logs are enabled only by manual
 dispatch with `run_catalog_scale: true`; the default is `false`.
 
-`Phase 0 runtime regression` is path-filtered to execution-relevant sources. It
-runs the deterministic executable baseline smoke and then the ignored
-`latentd` outcome/recovery matrix against the already-built fixtures. The job
-also syntax-checks the retained Phase 0 runners and uploads its raw measurements
-and report. It does not repeat the full workspace formatting, compilation,
-Clippy, test, MSRV, or SDK matrix.
+`Repository contracts` runs the ignored `latentd` outcome/recovery matrix
+immediately after building its current echo and containment fixtures. The
+dependent `OCI registry TLS integration` job verifies real bounded transfer and
+the separately captured observed-build inputs. The Rust job also executes the
+bounded Phase 2 operator, native-currentness, offline and resource schedules,
+retaining compact receipts for seven days.
+
+`Phase 0 runtime regression` is manual-only. It runs the complete deterministic
+baseline smoke, including its mandatory contract validation, and then the shared
+outcome/recovery runner. Its owned baseline evidence is retained for 14 days.
+The routine PR path reuses same-job fresh fixtures and does not collect that
+additional baseline. See [the CI layout](docs/testing/phase0-ci-layout.md).
 
 `Phase 0 full validation` is manual-only. Its `workflow_dispatch` input selects
 the full authorization gate or the deterministic smoke gate from a clean,

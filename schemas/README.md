@@ -2,7 +2,9 @@
 
 These JSON Schemas define the versioned external shape of capsule, deployment,
 locally trusted release-publish, binding, policy, trigger, and compiled route
-documents, plus the Phase 2 package format.
+documents, plus the completed Phase 2 package/evidence, trust, lifecycle, native
+cache, audit and rollout configuration surfaces. General Phase 3 provider and
+web-serving behavior is not established by a schema declaration.
 
 The schemas are the wire-format authority. `latent-manifest` embeds the capsule,
 deployment, binding, policy, and trigger schemas and evaluates them before a

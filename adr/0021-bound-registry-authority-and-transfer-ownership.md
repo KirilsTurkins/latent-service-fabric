@@ -56,6 +56,10 @@ release, and it cannot extend guest networking capabilities. Publisher trust,
 evidence verification, durable cache/admission and rollout remain separate
 Phase 2 tickets.
 
+Those separate deliveries have since completed in Phase 2. The
+[completion map](../docs/phase-2-completion.md) records their composition; this
+transfer decision's authority and ownership limits remain unchanged.
+
 Some registries require separate token exchanges, object-store redirects or
 legacy referrer fallback. They must use preissued credentials and this supported
 profile, or wait for a separately designed authority/consistency extension.

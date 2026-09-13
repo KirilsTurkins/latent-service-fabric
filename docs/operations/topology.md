@@ -1,8 +1,8 @@
 # Operational topology
 
 The [standalone Linux node](../reference/standalone-node.md) combines stateless
-execution with durable local release, deployment and delivery control. Phase 2
-adds supply-chain checks, lifecycle revocation, bounded caches, audit and
+execution with durable local release, deployment and delivery control. Completed
+Phase 2 provides supply-chain checks, lifecycle revocation, bounded caches, audit and
 manual/canary/rollback operations. Its [completion review](../phase-2-completion.md)
 records the accepted scope and bounded resource evidence.
 Phase 3 capability providers and shared application ingress are forthcoming;

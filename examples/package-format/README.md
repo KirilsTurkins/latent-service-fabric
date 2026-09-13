@@ -11,8 +11,11 @@ WIT lock pins an exact source file and contracts payload, but this does not
 prove agreement with a compiled component. The JavaScript renderer is an opaque
 format example without an SSR runtime integration claim. Evidence payloads are
 unsigned placeholders; their MIME types and subject associations confer no
-authenticity. Packaging, semantic compatibility and evidence verification are
-subsequent Phase 2 work.
+authenticity. The completed Phase 2 [packaging](../../docs/component-development/packaging.md),
+[compatibility](../../docs/reference/release-compatibility.md) and
+[admission](../../docs/reference/package-admission.md) implementations use their
+own executable and signed fixtures; these golden format bytes do not become
+executable or trusted because those features are delivered.
 
 `golden.json` is a checked-in known-answer index. Paths in it are relative to this
 directory. Each `packages` entry records its `kind`, `config` and `manifest`

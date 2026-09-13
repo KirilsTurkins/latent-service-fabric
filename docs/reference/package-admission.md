@@ -178,6 +178,13 @@ may therefore be unavailable for up to the configured lease duration.
 Missing floor data in an initialized authority is corruption, not permission to
 reset the policy generation or clock history.
 
+Internal lock diagnostics distinguish temporary `admission-authority-busy`
+contention from `admission-authority-poisoned`. Both preserve the existing public
+`Unavailable` shape and fail closed. Retrying the same poisoned authority cannot
+clear poison, renew its clock lease or restore grants; startup's exact busy-only
+retry does not retry poison. Public RPC error redaction remains unchanged, so a
+generic `Unavailable` response alone does not identify either internal cause.
+
 A valid policy outside its current validity interval may open with no positive
 verification grants, allowing historical lifecycle status and management of
 retained releases. It cannot admit or execute them until current checks pass.

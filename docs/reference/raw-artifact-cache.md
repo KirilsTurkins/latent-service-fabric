@@ -5,9 +5,12 @@ under one shared filesystem owner. It supports package-manifest and blob keys.
 The cache verifies exact lengths and SHA-256 identities; a hit grants no
 publisher trust, catalog admission or execution permission.
 
-The raw owner is a Rust host API; the OCI library can optionally share it. Configuring it does not
-create a guest instance, service process, listener or service-specific worker.
-Standalone node and operator CLI composition remain separate delivery work.
+The raw owner is a Rust host API; the OCI library can optionally share it.
+The standalone node's optional [native cache](../runtime/trusted-aot.md) also
+uses this owner for authenticated native blobs, with separate receipt and image
+allowances. The operator CLI's package push/pull commands use bounded uncached
+OCI transfer and expose no raw-cache setting. Configuring a shared cache does
+not create a guest instance, service process, listener or service-specific worker.
 
 ## Storage ownership
 
