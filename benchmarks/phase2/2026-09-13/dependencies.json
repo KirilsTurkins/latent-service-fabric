@@ -1,0 +1,1031 @@
+{
+  "schemaVersion": "latent.phase2.dependency-receipt.v1",
+  "scope": "18 Phase 2 implementation/documentation children; explicit reviewed PR mapping (not inferred from GitHub closing references)",
+  "children": [
+    {
+      "baseRefName": "development",
+      "headRefOid": "478092ce38baa996ca670e567da78eb4a71c05d1",
+      "mergeCommit": {
+        "oid": "4f9f182f5b68bb8c6cd21d53360384d087dd2245"
+      },
+      "mergedAt": "2026-09-11T22:11:05Z",
+      "number": 159,
+      "state": "MERGED",
+      "title": "feat: define immutable package identity and bounded artifact formats",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/159",
+      "issue": 140,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34651648457/job/103434938941",
+          "completedAt": "2026-09-11T22:00:36Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34651648447/job/103434938834",
+          "completedAt": "2026-09-11T22:10:18Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34651648457/job/103434938871",
+          "completedAt": "2026-09-11T21:58:32Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34651648457/job/103434939001",
+          "completedAt": "2026-09-11T21:56:48Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34651648457/job/103434939031",
+          "completedAt": "2026-09-11T22:07:55Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34651648457/job/103434938950",
+          "completedAt": "2026-09-11T21:56:45Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "123de73662e198512677f807040ad517e09b5b63",
+      "mergeCommit": {
+        "oid": "616555311a4a7b05dd80c295d020424e8252004e"
+      },
+      "mergedAt": "2026-09-11T23:03:16Z",
+      "number": 160,
+      "state": "MERGED",
+      "title": "feat: deterministic validated capsule and asset packaging",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/160",
+      "issue": 141,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34655647934/job/103447341200",
+          "completedAt": "2026-09-11T22:57:12Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34655647960/job/103447341021",
+          "completedAt": "2026-09-11T23:02:43Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34655647934/job/103447341232",
+          "completedAt": "2026-09-11T22:52:58Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34655647934/job/103447341247",
+          "completedAt": "2026-09-11T22:51:25Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34655647934/job/103447341190",
+          "completedAt": "2026-09-11T22:59:55Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34655647934/job/103447341093",
+          "completedAt": "2026-09-11T22:51:19Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "8878e944df1a45e3152a6cf3bcf01725e1a2b8a6",
+      "mergeCommit": {
+        "oid": "1a8151774a818c0e242606e35531806a8e097b46"
+      },
+      "mergedAt": "2026-09-11T23:49:19Z",
+      "number": 161,
+      "state": "MERGED",
+      "title": "feat: bounded authenticated OCI distribution",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/161",
+      "issue": 142,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34658506850/job/103455973505",
+          "completedAt": "2026-09-11T23:41:27Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34658506840/job/103455939816",
+          "completedAt": "2026-09-11T23:49:11Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34658506850/job/103455973553",
+          "completedAt": "2026-09-11T23:34:45Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34658506850/job/103455973452",
+          "completedAt": "2026-09-11T23:36:52Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34658506850/job/103455973507",
+          "completedAt": "2026-09-11T23:35:23Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34658506850/job/103455973497",
+          "completedAt": "2026-09-11T23:45:48Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34658506850/job/103455973552",
+          "completedAt": "2026-09-11T23:35:10Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "b1c4ec3461730b20c0ee4981bf629f3032c71236",
+      "mergeCommit": {
+        "oid": "6fd1e6f628c098fe22a77dead20b1b9904ba9d5f"
+      },
+      "mergedAt": "2026-09-12T08:23:26Z",
+      "number": 162,
+      "state": "MERGED",
+      "title": "feat: verify package signatures against current publisher trust",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/162",
+      "issue": 143,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34661009308/job/103463329313",
+          "completedAt": "2026-09-12T00:23:59Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34661009348/job/103463328957",
+          "completedAt": "2026-09-12T00:31:10Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34661009308/job/103463329275",
+          "completedAt": "2026-09-12T00:16:29Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34661009308/job/103463329282",
+          "completedAt": "2026-09-12T00:18:29Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34661009308/job/103463329234",
+          "completedAt": "2026-09-12T00:17:08Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34661009308/job/103463329220",
+          "completedAt": "2026-09-12T00:26:30Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34661009308/job/103463329115",
+          "completedAt": "2026-09-12T00:16:47Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "9fca6b17b71613696fe51b5b0ded13d68b142d6d",
+      "mergeCommit": {
+        "oid": "0913b5b4e4b435c0bdfa349f583bf0070e12b636"
+      },
+      "mergedAt": "2026-09-12T09:42:35Z",
+      "number": 167,
+      "state": "MERGED",
+      "title": "feat(signing): observe builds and verify current package provenance",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/167",
+      "issue": 144,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34685704222/job/103532240822",
+          "completedAt": "2026-09-12T09:31:35Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34685704192/job/103532241897",
+          "completedAt": "2026-09-12T09:39:17Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34685704222/job/103532240854",
+          "completedAt": "2026-09-12T09:25:57Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34685704222/job/103532240946",
+          "completedAt": "2026-09-12T09:25:06Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34685704222/job/103532241064",
+          "completedAt": "2026-09-12T09:36:02Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34685704222/job/103532240990",
+          "completedAt": "2026-09-12T09:24:44Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34685704222/job/103533698716",
+          "completedAt": "2026-09-12T09:37:19Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "12a386e3825ad733da1e9e2ce4f97628ea9bfb01",
+      "mergeCommit": {
+        "oid": "2dda708d667bdd87c8880be22c1d529a16d6fc8c"
+      },
+      "mergedAt": "2026-09-12T10:30:54Z",
+      "number": 172,
+      "state": "MERGED",
+      "title": "feat: generate and verify package-bound SBOM inventories",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/172",
+      "issue": 145,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34687899171/job/103538014455",
+          "completedAt": "2026-09-12T10:19:57Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34687899129/job/103538014160",
+          "completedAt": "2026-09-12T10:29:37Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34687899171/job/103538014304",
+          "completedAt": "2026-09-12T10:16:44Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34687899171/job/103538014258",
+          "completedAt": "2026-09-12T10:15:54Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34687899171/job/103538014324",
+          "completedAt": "2026-09-12T10:24:52Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34687899171/job/103538014311",
+          "completedAt": "2026-09-12T10:15:47Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34687899171/job/103539268146",
+          "completedAt": "2026-09-12T10:26:11Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "72cccac7da17737283df56d973f2a7ac8b02a778",
+      "mergeCommit": {
+        "oid": "b22420ffd77110e9ae375f9051743b78943fab00"
+      },
+      "mergedAt": "2026-09-12T11:55:39Z",
+      "number": 177,
+      "state": "MERGED",
+      "title": "feat: enforce verified package admission and execution eligibility",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/177",
+      "issue": 146,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34691576728/job/103547638394",
+          "completedAt": "2026-09-12T11:47:14Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34691576716/job/103547638173",
+          "completedAt": "2026-09-12T11:55:15Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34691576728/job/103547638278",
+          "completedAt": "2026-09-12T11:40:59Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34691576728/job/103547638380",
+          "completedAt": "2026-09-12T11:40:10Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34691576728/job/103547638471",
+          "completedAt": "2026-09-12T11:52:15Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34691576728/job/103547638444",
+          "completedAt": "2026-09-12T11:40:03Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34691576728/job/103549218787",
+          "completedAt": "2026-09-12T11:53:29Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "bba0becc83baf18f67f9c3fecdd87bb2c0121d54",
+      "mergeCommit": {
+        "oid": "00d23f902c7b565e866bd76143848cd5146e00e4"
+      },
+      "mergedAt": "2026-09-12T12:37:45Z",
+      "number": 179,
+      "state": "MERGED",
+      "title": "feat: validate release and host runtime compatibility",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/179",
+      "issue": 147,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34693405210/job/103552610112",
+          "completedAt": "2026-09-12T12:29:26Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34693405195/job/103552609951",
+          "completedAt": "2026-09-12T12:37:06Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34693405210/job/103552610126",
+          "completedAt": "2026-09-12T12:23:52Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34693405210/job/103552610122",
+          "completedAt": "2026-09-12T12:21:59Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34693405210/job/103552610131",
+          "completedAt": "2026-09-12T12:33:01Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34693405210/job/103552609996",
+          "completedAt": "2026-09-12T12:22:06Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34693405210/job/103554145779",
+          "completedAt": "2026-09-12T12:34:19Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "cf53945875aed281e310808c3628baa5e0d129c7",
+      "mergeCommit": {
+        "oid": "c59e0161916c853edc62f76f64405988a6e094ee"
+      },
+      "mergedAt": "2026-09-12T14:43:55Z",
+      "number": 180,
+      "state": "MERGED",
+      "title": "feat: persist release lifecycle and execution eligibility",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/180",
+      "issue": 148,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34699310074/job/103568132524",
+          "completedAt": "2026-09-12T14:35:48Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34699310070/job/103568132361",
+          "completedAt": "2026-09-12T14:43:12Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34699310074/job/103568132495",
+          "completedAt": "2026-09-12T14:30:13Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34699310074/job/103568132557",
+          "completedAt": "2026-09-12T14:28:43Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34699310074/job/103568132521",
+          "completedAt": "2026-09-12T14:39:38Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34699310074/job/103568132409",
+          "completedAt": "2026-09-12T14:28:28Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34699310074/job/103569775624",
+          "completedAt": "2026-09-12T14:41:02Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "3480e93e27d45c4d43ed20fd7560a0f97f261d7b",
+      "mergeCommit": {
+        "oid": "acfb2ab96f19a8b0fc51369e8fd20c0f96c3f614"
+      },
+      "mergedAt": "2026-09-12T15:08:13Z",
+      "number": 187,
+      "state": "MERGED",
+      "title": "feat: add bounded raw artifact cache and authorized OCI reuse",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/187",
+      "issue": 149,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34700430521/job/103571095087",
+          "completedAt": "2026-09-12T14:58:24Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34700430496/job/103571094734",
+          "completedAt": "2026-09-12T15:03:35Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34700430521/job/103571094939",
+          "completedAt": "2026-09-12T14:53:22Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34700430521/job/103571095139",
+          "completedAt": "2026-09-12T14:51:33Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34700430521/job/103571095069",
+          "completedAt": "2026-09-12T15:02:29Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34700430521/job/103571095181",
+          "completedAt": "2026-09-12T14:51:22Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34700430521/job/103572690413",
+          "completedAt": "2026-09-12T15:03:43Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "80fc0fc9252ec65e0dc20d9cc68138daccfe9e21",
+      "mergeCommit": {
+        "oid": "f2feb4445ae0b5431a33ab0d08e52de550d55b73"
+      },
+      "mergedAt": "2026-09-12T17:27:17Z",
+      "number": 188,
+      "state": "MERGED",
+      "title": "feat(aot): compile verified artifacts in an isolated trusted boundary",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/188",
+      "issue": 150,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34707385006/job/103589789202",
+          "completedAt": "2026-09-12T17:22:45Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34707385009/job/103589789153",
+          "completedAt": "2026-09-12T17:26:18Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34707385006/job/103589789277",
+          "completedAt": "2026-09-12T17:13:28Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34707385006/job/103589789353",
+          "completedAt": "2026-09-12T17:11:31Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34707385006/job/103589789247",
+          "completedAt": "2026-09-12T17:22:27Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34707385006/job/103589789312",
+          "completedAt": "2026-09-12T17:11:03Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34707385006/job/103591551349",
+          "completedAt": "2026-09-12T17:23:51Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "e316aa1d6d7542df51c2ed1a087e49e455dbd356",
+      "mergeCommit": {
+        "oid": "7c4080c2760f75c272e35aaef25162be005c27a0"
+      },
+      "mergedAt": "2026-09-12T17:51:55Z",
+      "number": 190,
+      "state": "MERGED",
+      "title": "feat(aot): persist verified native artifacts and retain bounded runtime images",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/190",
+      "issue": 151,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34708651798/job/103593248805",
+          "completedAt": "2026-09-12T17:49:13Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34708651761/job/103593248261",
+          "completedAt": "2026-09-12T17:51:14Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34708651798/job/103593248847",
+          "completedAt": "2026-09-12T17:38:50Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34708651798/job/103593248862",
+          "completedAt": "2026-09-12T17:37:15Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34708651798/job/103593248869",
+          "completedAt": "2026-09-12T17:48:07Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34708651798/job/103593248793",
+          "completedAt": "2026-09-12T17:36:27Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34708651798/job/103595005714",
+          "completedAt": "2026-09-12T17:49:21Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "8ef16cec41cec35f6e0c9273e57905aee831e217",
+      "mergeCommit": {
+        "oid": "172e5c1ebe218de02263c686b3eb900e161b80e6"
+      },
+      "mergedAt": "2026-09-12T19:28:18Z",
+      "number": 192,
+      "state": "MERGED",
+      "title": "[FD] Deliver durable Phase 2 audit and canary observations",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/192",
+      "issue": 152,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34713445100/job/103606261966",
+          "completedAt": "2026-09-12T19:25:30Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34713445081/job/103606261675",
+          "completedAt": "2026-09-12T19:27:30Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34713445100/job/103606261930",
+          "completedAt": "2026-09-12T19:15:36Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34713445100/job/103606261949",
+          "completedAt": "2026-09-12T19:13:35Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34713445100/job/103606261968",
+          "completedAt": "2026-09-12T19:25:20Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34713445100/job/103606261984",
+          "completedAt": "2026-09-12T19:13:08Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34713445100/job/103608050112",
+          "completedAt": "2026-09-12T19:26:36Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "d76f86d7e6c5eada6dd7ecba4c0d14e70b11e9d4",
+      "mergeCommit": {
+        "oid": "97b9e4c10248bb0a0004a5b446b2c939016e8cef"
+      },
+      "mergedAt": "2026-09-12T19:52:40Z",
+      "number": 196,
+      "state": "MERGED",
+      "title": "feat: coordinate durable bounded single-node rollouts",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/196",
+      "issue": 153,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34714542134/job/103609290478",
+          "completedAt": "2026-09-12T19:48:52Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34714542145/job/103609290360",
+          "completedAt": "2026-09-12T19:51:22Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34714542134/job/103609290489",
+          "completedAt": "2026-09-12T19:38:06Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34714542134/job/103609290491",
+          "completedAt": "2026-09-12T19:36:05Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34714542134/job/103609290470",
+          "completedAt": "2026-09-12T19:47:21Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34714542134/job/103609290424",
+          "completedAt": "2026-09-12T19:35:21Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34714542134/job/103611044818",
+          "completedAt": "2026-09-12T19:48:38Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "4c277054cb6b56aefc1c8ae3479c48e02a447a4c",
+      "mergeCommit": {
+        "oid": "23152e2f2561abd173fdc3d7d8504aceaa24d675"
+      },
+      "mergedAt": "2026-09-12T21:03:11Z",
+      "number": 200,
+      "state": "MERGED",
+      "title": "feat(rollout): evaluate bounded canaries and gate explicit promotion",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/200",
+      "issue": 154,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718130410/job/103618952113",
+          "completedAt": "2026-09-12T21:03:01Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718130421/job/103619006437",
+          "completedAt": "2026-09-12T21:02:49Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718130410/job/103618951987",
+          "completedAt": "2026-09-12T20:51:47Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718130410/job/103618952257",
+          "completedAt": "2026-09-12T20:49:46Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718130410/job/103618952244",
+          "completedAt": "2026-09-12T20:59:43Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718130410/job/103618952236",
+          "completedAt": "2026-09-12T20:49:23Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718130410/job/103620371234",
+          "completedAt": "2026-09-12T21:00:58Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "bc23ac54db605f95c6e2e6c7a7b1862145ebecdd",
+      "mergeCommit": {
+        "oid": "52ed893db2e3d5c986f624f2b94b89a6eb0fae31"
+      },
+      "mergedAt": "2026-09-12T21:23:28Z",
+      "number": 241,
+      "state": "MERGED",
+      "title": "feat(rollout): restore exact retained targets through atomic rollback",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/241",
+      "issue": 155,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718954606/job/103621130451",
+          "completedAt": "2026-09-12T21:20:40Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718954624/job/103621130360",
+          "completedAt": "2026-09-12T21:23:19Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718954606/job/103621130336",
+          "completedAt": "2026-09-12T21:08:16Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718954606/job/103621130416",
+          "completedAt": "2026-09-12T21:07:14Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718954606/job/103621130369",
+          "completedAt": "2026-09-12T21:18:29Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718954606/job/103621130466",
+          "completedAt": "2026-09-12T21:06:45Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34718954606/job/103622818633",
+          "completedAt": "2026-09-12T21:19:45Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "a35a58950bff187b2702164fd2f13b0fb54b237b",
+      "mergeCommit": {
+        "oid": "bda3017345b0bf7d656d151cec10a5b3fd8cb165"
+      },
+      "mergedAt": "2026-09-12T22:59:24Z",
+      "number": 242,
+      "state": "MERGED",
+      "title": "feat: expose Phase 2 operator workflows and deployment recovery",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/242",
+      "issue": 156,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34723362373/job/103633105259",
+          "completedAt": "2026-09-12T22:54:24Z"
+        },
+        {
+          "name": "Executable and invariant smoke",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34723362353/job/103633105195",
+          "completedAt": "2026-09-12T22:59:09Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34723362373/job/103633105150",
+          "completedAt": "2026-09-12T22:44:05Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34723362373/job/103633105254",
+          "completedAt": "2026-09-12T22:41:50Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34723362373/job/103633105297",
+          "completedAt": "2026-09-12T22:55:53Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34723362373/job/103633105291",
+          "completedAt": "2026-09-12T22:41:32Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34723362373/job/103634959303",
+          "completedAt": "2026-09-12T22:57:43Z"
+        }
+      ]
+    },
+    {
+      "baseRefName": "development",
+      "headRefOid": "9105947399bbc82491de281d84d4fbe434b7b1ea",
+      "mergeCommit": {
+        "oid": "939cdc836bf2a512b6001dd1031c4ae636847ca3"
+      },
+      "mergedAt": "2026-09-12T23:19:25Z",
+      "number": 243,
+      "state": "MERGED",
+      "title": "docs: align operator guidance and diagrams with Phase 2 delivery",
+      "url": "https://github.com/KirilsTurkins/latent-service-fabric/pull/243",
+      "issue": 157,
+      "checks": [
+        {
+          "name": "Rust 1.97.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34724347899/job/103635738490",
+          "completedAt": "2026-09-12T23:15:03Z"
+        },
+        {
+          "name": "Durable catalog acceptance",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34724347899/job/103635738417",
+          "completedAt": "2026-09-12T23:06:31Z"
+        },
+        {
+          "name": "Rust MSRV 1.94.1",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34724347899/job/103635738453",
+          "completedAt": "2026-09-12T23:04:27Z"
+        },
+        {
+          "name": "Repository contracts",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34724347899/job/103635738471",
+          "completedAt": "2026-09-12T23:18:04Z"
+        },
+        {
+          "name": "Cross-language SDK surfaces",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34724347899/job/103635738484",
+          "completedAt": "2026-09-12T23:04:13Z"
+        },
+        {
+          "name": "OCI registry TLS integration",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34724347899/job/103637606519",
+          "completedAt": "2026-09-12T23:19:20Z"
+        }
+      ]
+    }
+  ],
+  "gateIssue": 158,
+  "gateReview": "Final gate PR and its checked merge are recorded on issue158; this ledger does not self-certify an unmerged gate",
+  "relatedOutsideMilestone": [
+    {
+      "issue": 132,
+      "state": "CLOSED",
+      "completionPullRequest": 163,
+      "deterministicRendezvousPullRequest": 197,
+      "disposition": "Retains its own historical failure and completion; not reassigned or duplicated"
+    },
+    {
+      "issue": 244,
+      "state": "OPEN",
+      "milestone": null,
+      "disposition": "Optional contributor diagnostic distinction for poisoning vs contention; no attribution of the recorded generic Unavailable failure"
+    }
+  ]
+}

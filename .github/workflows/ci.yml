@@ -76,16 +76,49 @@ jobs:
           python-version: 3.13.5
       - name: Fetch the pinned operator workflow registry
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
-      - name: Validate the separate Phase 2 CLI, registry and node workflow
+      - name: Validate bounded Phase 2 delivery and resource workflows
         timeout-minutes: 10
         shell: bash
         run: |
           cargo build -p latent -p latentd --all-features --locked
           fixture_root="$(mktemp -d "${RUNNER_TEMP}/lsf-operator-fixture.XXXXXXXX")"
+          mkdir -p "${RUNNER_TEMP}/phase2-gate"
           trap 'rm -rf -- "$fixture_root"' EXIT
           LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" cargo test -p latent-policy --lib --all-features --locked export_operator_workflow_fixture -- --ignored --test-threads=1
-          python3 -m unittest tools.tests.test_phase2_operator_workflow tools.tests.test_phase2_operator_canary
-          python3 tools/run_phase2_operator_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs"
+          python3 -m unittest tools.tests.test_phase2_operator_workflow tools.tests.test_phase2_operator_canary tools.tests.test_phase2_offline_workflow
+          python3 tools/run_phase2_operator_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/operator-receipt.json"
+          cargo build -p latent-wasmtime --bin latent-aot-compiler --all-features --locked
+          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" LSF_AOT_COMPILER="${PWD}/target/debug/latent-aot-compiler" cargo test -p latentd --lib --all-features --locked standalone::start::tests::trust_currentness:: -- --ignored --test-threads=1
+          python3 tools/run_phase2_offline_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/offline-receipt.json"
+          LSF_PHASE2_RESOURCE_FIXTURE_ROOT="${fixture_root}/resource-inputs" cargo test -p latent-policy --lib --all-features --locked export_phase2_resource_fixture -- --ignored --test-threads=1
+          python3 -m unittest tools.tests.test_phase2_gate_resource
+          LSF_GATE_FIXTURE_ROOT="${fixture_root}" python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path.cwd()
+          def digest(path):
+              with path.open("rb") as source:
+                  return "sha256:" + hashlib.file_digest(source, "sha256").hexdigest()
+          identity = {
+              "schemaVersion": "latent.phase2.resource-build.v1",
+              "sourceRevision": os.environ["GITHUB_SHA"],
+              "cargoLockSha256": digest(root / "Cargo.lock"),
+              "cliSha256": digest(root / "target/debug/latent"),
+              "nodeSha256": digest(root / "target/debug/latentd"),
+              "rustcVersion": subprocess.check_output(["rustc", "--version"], text=True).strip(),
+              "buildProfile": "debug",
+          }
+          (pathlib.Path(os.environ["LSF_GATE_FIXTURE_ROOT"]) / "build.json").write_text(json.dumps(identity))
+          PY
+          python3 tools/phase2_gate_resource.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+          python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+      - name: Retain compact Phase 2 gate receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-2-gate-${{ github.sha }}
+          path: ${{ runner.temp }}/phase2-gate/*.json
+          if-no-files-found: warn
+          retention-days: 7
 
   oci-registry:
     name: OCI registry TLS integration

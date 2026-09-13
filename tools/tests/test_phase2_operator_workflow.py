@@ -2,14 +2,81 @@
 import json
 from pathlib import Path
 import tempfile
+import time
+from types import SimpleNamespace
 import unittest
+from unittest.mock import Mock, patch
 
-from tools.phase2_operator_process import WorkflowError, diagnostic_code, diagnostic_grpc, write_candidate_manifest, write_json
+from tools.phase2_operator_process import (
+    WorkflowError, bounded_receipt, diagnostic_code, diagnostic_grpc, file_digest,
+    stopped_record, write_candidate_manifest, write_json,
+)
 from tools.phase2_operator_scenario import DENIED_TOKEN, TOKEN, configure_node, route_identity
-from tools.run_phase2_operator_workflow import inventory, registry_profile
+from tools.run_phase2_operator_workflow import build_identity, inventory, registry_profile
 
 
 class OperatorWorkflowTests(unittest.TestCase):
+    def test_final_receipt_checks_encoded_bytes_including_non_ascii(self):
+        self.assertEqual(len(bounded_receipt({"v": "x" * 65528}).encode("utf-8")), 65536)
+        for value in ("x" * 65529, "\u00e9" * 32765):
+            with self.subTest(value_bytes=len(value.encode("utf-8"))), self.assertRaisesRegex(
+                    WorkflowError, "receipt-byte-bound"):
+                bounded_receipt({"v": value})
+
+    def test_binary_identity_hashes_exact_bytes_without_retaining_paths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            binary = Path(temporary) / "private-host-path"
+            binary.write_bytes(b"fixed executable fixture")
+            cancellation = Mock()
+            deadline = time.monotonic() + 5
+            first = file_digest(binary, 64, cancellation, deadline)
+            self.assertRegex(first, r"\Asha256:[0-9a-f]{64}\Z")
+            binary.write_bytes(b"changed executable fixture")
+            self.assertNotEqual(file_digest(binary, 64, cancellation, deadline), first)
+            with self.assertRaisesRegex(WorkflowError, "identity-file-bound"):
+                file_digest(binary, 1, cancellation, deadline)
+            with self.assertRaisesRegex(WorkflowError, "workflow-deadline"):
+                file_digest(binary, 64, cancellation, time.monotonic() - 1)
+            args = SimpleNamespace(cli=binary, node=binary, source_commit=None)
+            identity = build_identity(args, cancellation, deadline)
+            self.assertNotIn("sourceCommit", identity)
+            self.assertNotIn(str(binary), json.dumps(identity))
+            args.source_commit = "1" * 40
+            self.assertEqual(build_identity(args, cancellation, deadline)["sourceCommit"], "1" * 40)
+
+    def test_invalid_source_commit_rejects_before_fixture_or_process_acquisition(self):
+        from tools import run_phase2_operator_workflow as workflow
+        for commit in ("short", "A" * 40, "1" * 40 + "\n"):
+            arguments = ["workflow", "--cli", "/unused", "--node", "/unused",
+                         "--fixture-root", "/unused", "--source-commit", commit]
+            with self.subTest(commit=commit), patch.object(workflow.sys, "argv", arguments), \
+                    patch.object(workflow, "Client") as client, \
+                    self.assertRaisesRegex(WorkflowError, "source-commit"):
+                workflow.main()
+            client.assert_not_called()
+
+    def test_clean_shutdown_requires_the_actual_message_and_reaped_owner(self):
+        record = {"schemaVersion": "latent.standalone.status.v1", "event": "stopped",
+                  "clean": True, "report": {"clean": True, "activeActivations": 0}}
+        node = SimpleNamespace(buffers=[bytearray(json.dumps(record).encode())], closed=True,
+                               owner=SimpleNamespace(finished=True,
+                                                     process=SimpleNamespace(returncode=0, pid=42)))
+        self.assertEqual(stopped_record(node), {"processId": 42, "reaped": True, "record": record})
+        for owner, field, value in ((node, "closed", False), (node.owner, "finished", False),
+                                    (node.owner.process, "returncode", None)):
+            original = getattr(owner, field)
+            setattr(owner, field, value)
+            with self.subTest(field=field), self.assertRaisesRegex(WorkflowError, "shutdown-not-clean"):
+                stopped_record(node)
+            setattr(owner, field, original)
+        record["report"]["clean"] = False
+        node.buffers[0] = bytearray(json.dumps(record).encode())
+        with self.assertRaisesRegex(WorkflowError, "shutdown-not-clean"):
+            stopped_record(node)
+        node.buffers[0] = bytearray()
+        with self.assertRaisesRegex(WorkflowError, "shutdown-record-bound"):
+            stopped_record(node)
+
     def test_candidate_weights_are_explicit_client_copies_only(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

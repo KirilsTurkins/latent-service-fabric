@@ -2,9 +2,10 @@
 
 The delivered data plane is a standalone Linux stateless runtime. Phase 2 adds
 current catalog authority, bounded raw and native caches, isolated compilation
-and canary observations to the retained Phase 1 activation owner. Feature
-delivery is present; [gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)
-is pending. Historical [Phase 1 evidence](../phase-1-completion.md) and its
+and canary observations to the retained Phase 1 activation owner. Its
+[completion review](../phase-2-completion.md) records the accepted scope and
+bounded currentness/resource evidence. Historical
+[Phase 1 evidence](../phase-1-completion.md) and its
 [performance extension](../phase-1-extension-completion.md) retain their scope.
 
 ## Current invocation path

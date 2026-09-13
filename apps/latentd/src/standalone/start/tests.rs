@@ -16,6 +16,8 @@ mod control;
 mod deployment_operations;
 #[cfg(target_os = "linux")]
 mod rollouts;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod trust_currentness;
 
 fn settings(directory: &TempDir) -> NodeSettings {
     let config: NodeConfig = serde_json::from_value(serde_json::json!({

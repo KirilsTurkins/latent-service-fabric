@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "latent.phase2.ci-observation-receipt.v1",
+  "repository": "KirilsTurkins/latent-service-fabric",
+  "pullRequest": 242,
+  "headRevision": "a35a58950bff187b2702164fd2f13b0fb54b237b",
+  "testedMergeRevision": "c0c3d5c39acfcdc3326987805da49c17e69bfdcf",
+  "workflowRun": 34723362373,
+  "artifactId": 10306997403,
+  "artifactName": "phase-2-observed-echo-c0c3d5c39acfcdc3326987805da49c17e69bfdcf",
+  "files": [
+    {
+      "path": "capsule.json",
+      "bytes": 1392,
+      "sha256": "23b88625b4e8aaf8ef6af7b270fa46d37fb8c7ae7318fbb07032d4e0cbce107e"
+    },
+    {
+      "path": "contracts.json",
+      "bytes": 1349,
+      "sha256": "8e2d862da2819d6a5a43266af2c8e79eb8f98e16f4492ae325f2a995081b003e"
+    },
+    {
+      "path": "echo-capsule.wasm",
+      "bytes": 24754,
+      "sha256": "ba02e631de810d616eec2f7f3fcfbdec81ebd9fd8a985d3c2ec02b19f8d07ac4"
+    },
+    {
+      "path": "observation.json",
+      "bytes": 1789,
+      "sha256": "c612500c3815309276b3914f60e6ced780ef9d3e00f4718a578b4bb3012220f5"
+    },
+    {
+      "path": "package-source.json",
+      "bytes": 900,
+      "sha256": "a16bf9eb306d4e6bb340dca294ecc39ccb230bd60398b246bc651b94810debc9"
+    },
+    {
+      "path": "sbom-inputs.json",
+      "bytes": 24705,
+      "sha256": "246fb3ab5db091ecdee4319ea5c5deb104a92139af79f67a34826a5229d7d35f"
+    },
+    {
+      "path": "wit/context.wit",
+      "bytes": 1409,
+      "sha256": "9b5d08ce6d4f698ea43b17aaf879e196e2e8d64610fabc2b626ad40560daadc1"
+    },
+    {
+      "path": "wit/echo.wit",
+      "bytes": 302,
+      "sha256": "5a36463c6f335b2fa8a3c169242f7d01bacd9dd33589b439ecc869e89ca293c6"
+    },
+    {
+      "path": "wit/log.wit",
+      "bytes": 418,
+      "sha256": "071bf3e49c5fd64a2ce32e9d5326eb1add1629231f8c6110421c81b6cdf3ea0e"
+    },
+    {
+      "path": "wit-lock.json",
+      "bytes": 677,
+      "sha256": "c99032dd003ec3983cc7d84c3c5a25eb8e88c8d1975eb1b04d6b1ddb6f103144"
+    }
+  ]
+}

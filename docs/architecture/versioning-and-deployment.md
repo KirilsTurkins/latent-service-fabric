@@ -1,8 +1,7 @@
 # Versioning and deployment
 
-Phase 2 feature delivery extends the completed Phase 1 local routing model.
-[Gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)
-remains pending. Identity, historical outcome and current permission remain
+The completed [Phase 2](../phase-2-completion.md) extends the Phase 1 local
+routing model. Identity, historical outcome and current permission remain
 separate at every publication boundary.
 
 ## Immutable release

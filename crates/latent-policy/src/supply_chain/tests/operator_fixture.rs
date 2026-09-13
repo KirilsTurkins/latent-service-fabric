@@ -6,6 +6,9 @@ use latent_packaging::{PackageFile, PackageSource};
 use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+#[path = "operator_fixture/resources.rs"]
+mod resources;
+
 #[test]
 #[ignore = "Explicit fixture exporter for tools/run_phase2_operator_workflow.py"]
 fn export_operator_workflow_fixture() {
@@ -130,6 +133,9 @@ fn export_operator_workflow_fixture() {
             "contract":packaging::component::CONTRACT,"function":"inspect",
             "input":[{"count":7,"outcome":{"ok":{"case":"empty"}}}],
             "expiresAtUnixSeconds":(now+1800).to_string(),
+            "verifiedAtUnixSeconds":now.to_string(),
+            "proofAgeExpiresAtUnixSeconds":(now+601).to_string(),
+            "policyExpiresAtUnixSeconds":(now+3601).to_string(),
             "provenance":"synthetic signed test observation; no actual build provenance claim"
         }),
     );

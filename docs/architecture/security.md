@@ -3,9 +3,9 @@
 The current standalone boundary combines authenticated tenant management,
 stateless Wasmtime containment and exact directory-catalog ownership. Phase 2
 delivers enforced package admission, durable lifecycle, authenticated local
-native reuse and control audit. Its [completion gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)
-remains pending; these features do not establish production readiness or a
-multi-node security boundary.
+native reuse and control audit. Its [completion review](../phase-2-completion.md)
+records the accepted evidence and limitations; these features do not establish
+production readiness or a multi-node security boundary.
 
 ## Untrusted inputs and authority
 

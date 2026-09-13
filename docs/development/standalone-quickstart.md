@@ -281,9 +281,10 @@ The command has a finite workflow deadline and fixed fixture populations;
 retained child ownership and separate cleanup deadlines cover interruption.
 Its result uses `latent.operator.workflow-test.v1`. Successful execution establishes
 this bounded integration schedule only. The signed build observation is synthetic
-test data, not evidence of a real production build; actual observed-build tests,
-the historical Phase 1 measurements, and the pending Phase 2 completion gate
-(#158) have separate purposes. Phase 3 providers are forthcoming.
+test data, not evidence of a real production build. Actual observed-build tests
+and historical Phase 1 measurements retain their separate purposes. The
+[Phase 2 completion review](../phase-2-completion.md) combines the relevant
+evidence and records its limitations; Phase 3 providers remain planned.
 
 For an already owned matching loopback TLS fixture, supply both
 `--registry-origin https://127.0.0.1:PORT` and `--registry-ca /absolute/ca.der`.

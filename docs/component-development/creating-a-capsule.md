@@ -23,8 +23,9 @@ supplied components, capsule metadata, typed contracts and pinned WIT sources.
 OCI transfer, publisher and independent builder verification, SBOM policy,
 release lifecycle and rollout controls are implemented alongside it. The
 packager consumes existing build output; it does not compile source, execute
-package scripts, sign bytes or invent build provenance. The Phase 2 completion
-gate (#158) is still pending.
+package scripts, sign bytes or invent build provenance. The
+[Phase 2 completion review](../phase-2-completion.md) records the accepted scope,
+validation evidence and limitations.
 
 ```text
 component.wasm

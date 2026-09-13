@@ -7,8 +7,8 @@ bounded lifecycle/status retention, telemetry, and the invocation and management
 RPC adapters. Worker and listener counts come from node configuration and do not
 grow with deployed services. Phase 2 adds authenticated package admission,
 release lifecycle, optional authenticated native caching, durable audit and
-manual/canary/rollback control. The Phase 2 completion gate (#158) is pending;
-Phase 3 capability providers remain forthcoming.
+manual/canary/rollback control. The [Phase 2 completion review](../phase-2-completion.md)
+records its accepted scope and evidence; Phase 3 capability providers remain planned.
 
 The [`latent` operator CLI](operator-cli.md) uses the generated clients to publish,
 deploy, invoke, cancel, reconcile operation receipts, control rollouts and query
@@ -641,7 +641,9 @@ provide that separate evidence for their recorded source revisions.
 The [separate Phase 2 workflow](../development/standalone-quickstart.md#bounded-phase-2-operator-workflow)
 uses current binaries, freshly signed test packages and a disposable TLS registry
 to exercise these boundaries through actual CLI and node processes. Its
-synthetic signing fixture is not production build provenance or completion-gate
-authorization. See [validation commands](../../VALIDATION.md) for the focused configuration,
+synthetic signing fixture is not production build provenance. The
+[completion review](../phase-2-completion.md) combines it with independent
+currentness, offline and bounded resource evidence. See
+[validation commands](../../VALIDATION.md) for the focused configuration,
 transport, catalog and execution tests. No heavy scale or soak run is required
 to exercise these startup and shutdown checks.

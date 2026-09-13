@@ -120,6 +120,8 @@ def positive_canary(client, metadata, input_path, fixture, summaries, receipt, c
     final_pin = invoke(client, metadata, input_path, "operator-promoted-green")
     require(final_pin["releaseDigest"] == summaries["green"]["componentDigest"]
             and final_pin["routeGeneration"] == promoted["routeGeneration"], "promoted-route-selection")
-    receipt(change(client, "rollback", "healthy", promoted["revision"], "healthy-rollback",
-                   "--target-generation", target), "healthy-rollback")
-    return {"candidateSamples": int(candidate["selected"]), "baselineSamples": int(baseline["selected"])}
+    rolled = receipt(change(client, "rollback", "healthy", promoted["revision"], "healthy-rollback",
+                            "--target-generation", target), "healthy-rollback")
+    return {"candidateSamples": int(candidate["selected"]), "baselineSamples": int(baseline["selected"]),
+            "evaluation": report, "promotionReceipt": promoted, "rollbackReceipt": rolled,
+            "invocationPins": pins, "promotedInvocation": final_pin}

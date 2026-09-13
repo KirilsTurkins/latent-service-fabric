@@ -1,6 +1,6 @@
 # Validation baseline
 
-Updated on **2026-09-13** for completed Phase 1 and its performance extension,
+Updated on **2026-09-13** for completed Phases 1 and 2 and the Phase 1 performance extension,
 the retained Phase 0 evidence, generated build
 foundation, Phase 1 manifest validation, resource budgets/cancellation, durable
 release and deployment catalogs, immutable local routing, admission, scheduling,
@@ -12,9 +12,9 @@ validation gates. These commands describe validation coverage; the
 [Phase 1 completion review](docs/phase-1-completion.md) and
 [extension report](docs/phase-1-extension-completion.md) record the completed
 decisions. The [September 7 audit](docs/development/feature-audit-2026-09-07.md)
-is an earlier snapshot. Phase 2 feature validation is distinct from completion
-authorization: the Phase 2 gate (#158) is pending, and Phase 3 providers are
-forthcoming. Historical Phase 0/1 receipts below retain their recorded source
+is an earlier snapshot. The [Phase 2 completion review](docs/phase-2-completion.md)
+records the collective gate decision and its retained evidence. Phase 3 providers
+remain planned. Historical Phase 0/1 receipts below retain their recorded source
 identities and do not validate newly added Phase 2 paths.
 
 ## Entry point
@@ -158,10 +158,22 @@ or a completion receipt. Its fresh publisher and builder signatures bind
 synthetic test observations; they do not establish an actual production build.
 Observed-build provenance has its separate maintained integration.
 
-The Phase 2 completion gate (#158) must evaluate its own declared evidence before
-authorization. A passing workflow, CI job, feature ticket or documentation change
-does not independently authorize Phase 3. Do not rerun or reinterpret historical
-Phase 1 scale/soak reports as measurements of the new delivery pipeline.
+The [Phase 2 completion review](docs/phase-2-completion.md) combines those
+dependency checks with three real native-currentness tests: proof-age expiry,
+policy expiry and publisher revocation each deny retained preparation, final
+start and persistent-cache reopen without another compile or load. The separate
+[offline schedule](docs/testing/phase-2-offline-validation.md) records a failed
+new registry pull, successful eligible local execution, then denial after local
+revocation while the registry remains stopped.
+
+The fixed [resource profile](docs/testing/phase-2-resource-profile.md) retains
+32 signed releases, 16 deployments, two warmed portable images, 32 successful
+Invokes and 12 OS samples, with transient ownership returning to zero and actual
+worker joins/process reap. Its final collector and validator checks passed
+38/38. The [compact evidence set](benchmarks/phase2/2026-09-13/README.md) preserves
+source and binary identities, finite limits, failed/superseded attempts and the
+WSL2 host boundary. This is no new 100k-scale or production SLO claim; historical
+Phase 1 scale/soak reports retain their original measurement scope.
 
 ## Echo fixture commands
 

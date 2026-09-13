@@ -1,0 +1,16 @@
+package examples:echo@0.1.0;
+
+interface api {
+    variant echo-error {
+        empty-message,
+        message-too-large,
+    }
+
+    echo: func(message: string) -> result<string, echo-error>;
+}
+
+world service {
+    import latent:context/context@0.1.0;
+    import latent:log/log@0.1.0;
+    export api;
+}
