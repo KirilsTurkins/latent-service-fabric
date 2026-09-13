@@ -84,7 +84,7 @@ fn builder(config: &RegistryConfig) -> Result<ClientBuilder> {
 
 pub(super) fn authorization(credentials: &RegistryCredentials) -> Result<Option<HeaderValue>> {
     match credentials {
-        RegistryCredentials::Anonymous | RegistryCredentials::BearerChallenge(_) => Ok(None),
+        RegistryCredentials::Anonymous | RegistryCredentials::BearerChallenge { .. } => Ok(None),
         RegistryCredentials::Basic { username, password } => {
             basic_authorization(username, password).map(Some)
         }
