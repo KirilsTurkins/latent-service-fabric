@@ -1,6 +1,5 @@
 use super::{compare::Comparison, incompatible, SemanticLimits};
-use latent_contracts::{HostInterfaceBinding, PHASE3_HOST_ABI_V1};
-use latent_core::PlatformError;
+use latent_core::{HostInterfaceBinding, PlatformError, PHASE3_HOST_ABI_V1};
 use std::collections::BTreeMap;
 use wit_parser::{InterfaceId, Resolve};
 
