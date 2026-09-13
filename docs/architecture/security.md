@@ -127,9 +127,36 @@ Lowered limits cannot silently discard security history to make room.
 
 ## Isolation scope
 
-The delivered guest boundary is a fresh Wasmtime store in fixed in-process
-cells. The compiler child is a separate bounded compilation boundary, not a
-per-service execution host. Trust-sharded guest processes, native compatibility
-hosts, containers/microVM fallback and separate-machine side-channel isolation
-remain architectural options, not current execution modes. Phase 3 adds provider
-and browser isolation tests; Phase 5 adds node identity and transport security.
+[ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
+[RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) define the
+minimum profile matrix and evidence boundary. The delivered guest boundary is a
+fresh Wasmtime store in fixed in-process cells (`local-experimental-v1`). The
+standalone node, Wasmtime, host bindings and host OS remain trusted. Guest Store
+limits are not a whole-process RSS boundary.
+
+This delivered default is T0: operator-trusted local admission and preparation.
+Its Wasm execution barrier does not turn the in-process compilation path into
+the planned T1 external-capsule admission profile. Enforced signatures and
+isolated compilation are separate controls; enabling one does not enable the
+other. Profile identifiers here describe the architectural contract, not a new
+configuration field delivered by this documentation change.
+
+The isolated compiler child (`isolated-aot-compiler-v1`) is a separate bounded
+compilation boundary, not a per-service execution host. Authenticated native AOT
+reuse (`authenticated-native-aot-v1`) keeps the parent parser/validator, native
+loader, Wasmtime and OS inside the trusted computing base. Arbitrary external
+native artifacts are unsupported.
+
+The planned `external-capsule-v1` profile requires enforced admission, exact host
+compatibility, protected trust configuration, the reviewed runtime baseline and
+supported isolated compilation before it can be selected. It still uses the
+in-process Wasmtime guest boundary and therefore does not claim containment after
+compromise of that process.
+
+Trust-sharded guest/provider/renderer/native-compatibility work that requires
+process-compromise resistance must use a separate fixed/bounded node-owned
+execution host. That profile is currently unsupported. A requested stronger
+profile must fail closed rather than downgrade. Host/kernel compromise and strong
+same-machine side-channel isolation remain outside the current standalone model.
+Phase 3 adds provider and browser isolation tests; Phase 5 adds node identity and
+transport security.

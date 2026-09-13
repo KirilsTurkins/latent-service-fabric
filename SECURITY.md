@@ -26,9 +26,29 @@ cannot alter admitted content. Uncertain persistence denies positive eligibility
 Historical receipts and locally admitted flags do not grant current authority.
 See [authenticated package admission](docs/reference/package-admission.md).
 
-Trusted external AOT loading remains planned Phase 2 work. General external
-capability providers, transactional state/effects, and cluster mTLS remain later
-phases. They add trust boundaries when implemented. See the
+Phase 2 also delivers an opt-in authenticated same-node isolated AOT path on its
+supported Linux x86_64 sandbox profile. Compilation runs in a bounded child and
+persistent native reuse accepts only locally authenticated output bound to exact
+engine, component and security configuration. The parent parser/validator,
+standalone node, Wasmtime native loader and host OS remain trusted. This does not
+support arbitrary external native artifacts and does not provide a separate guest
+execution process. See [trusted AOT](docs/runtime/trusted-aot.md).
+
+[ADR-0026](adr/0026-require-explicit-execution-isolation-profiles.md) and
+[RFC-0001](rfcs/0001-minimum-execution-isolation-profiles.md) define the current
+isolation-profile boundary. Fresh in-process Wasmtime stores remain the delivered
+guest execution model. A stronger profile that must remain isolated after
+compromise of the guest/provider/renderer process requires a separate fixed,
+node-owned execution host and is unsupported until that backend and its finite
+evidence are implemented. Security-profile selection must fail closed rather
+than silently downgrade to a weaker boundary. The current trusted-local default
+is for operator-controlled workloads; its in-process compiler and main
+configuration loader's missing protected-file checks do not establish the planned external-capsule
+profile. Enforced admission alone does not select compiler isolation. That
+profile requires the complete #202/#278/#279/#280 implementation and evidence.
+
+General external capability providers, transactional state/effects, and cluster
+mTLS remain later work. They add trust boundaries when implemented. See the
 [security architecture](docs/architecture/security.md) and
 [Phase 1 completion scope](docs/phase-1-completion.md). This remains an
 experimental prerelease without a production security certification.

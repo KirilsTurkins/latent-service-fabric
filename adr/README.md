@@ -6,9 +6,10 @@ Acceptance records architectural direction, not feature availability. Phase 1,
 its performance extension, and Phase 2 are complete. Verified package admission,
 OCI transfer, publisher/builder/SBOM policy, isolated compilation, bounded native
 reuse and controlled rollout now have delivered implementations. General
-capability providers and application hosting enter Phase 3; state/effects,
-clustered control and fixed external execution hosts retain their later scope.
-The [roadmap](../docs/roadmap.md) and
+capability providers and application hosting enter Phase 3. Transactional
+state/effects and clustered control retain their later scope. Stronger external
+execution hosts remain unsupported until their explicit isolation profile is
+implemented and validated. The [roadmap](../docs/roadmap.md) and
 [Phase 2 completion report](../docs/phase-2-completion.md) identify the delivered
 boundary. Dated implementation snapshots within ADRs keep their original context.
 
@@ -40,3 +41,8 @@ separates Phase 3 immediate capability operations and explicit uncertain outcome
 from Phase 4 transactional state/effect intents. It narrows ADR-0013's blanket
 external-effect statement while preserving ADR-0014's no-universal-exactly-once
 boundary.
+
+[ADR-0026](0026-require-explicit-execution-isolation-profiles.md) defines exact
+security-profile selection, trusted-computing-base boundaries and fail-closed
+requirements for in-process guests, isolated compilation, authenticated native
+reuse and future provider/renderer/fixed-host execution.
