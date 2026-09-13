@@ -254,11 +254,26 @@ class Phase2ResourceTests(unittest.TestCase):
 
     def test_duplicate_or_reordered_os_observations_and_counter_regression_fail(self):
         for field, number in (("observedMonotonicNanos", "1000000000"),
-                              ("cpuUserTicks", "9"), ("writeBytes", "0")):
+                              ("cpuUserTicks", "9"), ("cpuSystemTicks", "9"),
+                              ("readBytes", "0"), ("writeBytes", "0")):
             value = complete_receipt()
             value["samples"][5]["os"][field] = number
-            with self.subTest(field=field), self.assertRaises(WorkflowError):
+            reason = "receipt-sample-time" if field == "observedMonotonicNanos" else \
+                "receipt-counter-regression"
+            with self.subTest(field=field), self.assertRaisesRegex(WorkflowError, reason):
                 validate_receipt(value)
+
+    def test_approximate_kernel_high_water_rss_can_fall_one_page_without_rewriting(self):
+        value = complete_receipt()
+        value["samples"][8]["os"]["kernelHighWaterRssBytes"] = "66506752"
+        for sample in value["samples"][9:]:
+            sample["os"]["kernelHighWaterRssBytes"] = "66502656"
+        before = copy.deepcopy(value)
+        validate_receipt(value)
+        self.assertEqual(value, before)
+        self.assertEqual(int(value["samples"][8]["os"]["kernelHighWaterRssBytes"])
+                         - int(value["samples"][9]["os"]["kernelHighWaterRssBytes"]),
+                         int(value["host"]["pageSize"]))
 
     def test_phase_counts_require_real_warm_and_cohort_progress(self):
         for target, field, altered in (("cell", "granted", "2"), ("cache", "hits", "0"),
