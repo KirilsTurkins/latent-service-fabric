@@ -22,6 +22,7 @@ use super::invalid_manifest;
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
+        Command::Policy(command) => super::policies::prepare(command, config),
         Command::Rollout(command) => super::phase2::prepare::rollout(command, config),
         Command::Audit(command) => super::phase2::prepare::audit(command, config),
         Command::Release(

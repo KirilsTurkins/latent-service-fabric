@@ -7,6 +7,7 @@ mod measurements;
 mod observations;
 #[cfg(all(test, target_os = "linux"))]
 mod parity;
+mod policies;
 mod rollouts;
 mod shutdown;
 mod start;
@@ -29,6 +30,7 @@ use latent_wasmtime::{WasmtimeBackend, WasmtimeComponentEngineFactory};
 use latent_wire::invocation::{ActivationCleanupOwner, ActivationCleanupSnapshot};
 
 pub use audit::AuditShutdownReport;
+pub use policies::PolicyShutdownReport;
 pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
 
@@ -45,6 +47,7 @@ pub struct StandaloneNode {
     transport: Option<transport::Transport>,
     audit: Option<audit::AuditRuntime>,
     rollouts: Option<rollouts::RolloutRuntime>,
+    policies: Option<policies::PolicyRuntime>,
     cleanup: Option<ActivationCleanupOwner>,
     sampler: Option<load::LoadSampler>,
     telemetry_runtime: Option<TelemetryRuntime>,

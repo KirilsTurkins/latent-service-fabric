@@ -2,6 +2,7 @@
 
 mod aot;
 mod audit;
+mod capability_policies;
 mod derive;
 mod engine;
 mod input;
@@ -23,6 +24,7 @@ use latent_core::{PlatformError, PlatformErrorCode};
 
 pub use aot::{AotCacheConfig, AotImageConfig, AotProcessConfig, IsolatedAotConfig};
 pub use audit::AuditConfig;
+pub use capability_policies::CapabilityPolicyConfig;
 pub use latent_wasmtime::ExecutionIsolationProfile;
 pub use model::{
     CacheConfig, CatalogConfig, CellConfig, CredentialConfig, CredentialRole, EngineAllocator,
@@ -50,6 +52,7 @@ pub struct NodeSettings {
     pub(crate) isolated_aot: Option<latent_wasmtime::NativeAotSettings>,
     pub(crate) audit: Option<latent_audit::AuditLimits>,
     pub(crate) rollouts: Option<RolloutSettings>,
+    pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) scheduler: latent_scheduler::LocalSchedulerConfig,
     pub(crate) wasmtime: latent_wasmtime::WasmtimeConfig,
@@ -74,6 +77,7 @@ impl NodeSettings {
     /// Verify actual startup requirements without opening catalogs or listeners.
     /// Configured isolated compilation uses one bounded, reaped readiness probe.
     pub fn check_config(&self) -> Result<ExecutionProfileReport, PlatformError> {
+        capability_policies::check_existing(self)?;
         security::check(self)
     }
 

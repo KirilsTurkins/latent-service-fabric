@@ -7,6 +7,7 @@ pub(crate) struct RecoveryContext(Value);
 impl RecoveryContext {
     pub(crate) fn from_operation(operation: &Operation, tenant: &str) -> Self {
         let selected = match operation {
+            Operation::Policy(value) => value.recovery(),
             Operation::PublishRelease(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),
             Operation::ChangeReleaseLifecycle(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"componentDigest":value.digest,"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),
             Operation::RenewReleaseEvidence(value) => value.operation.as_ref().map(|op|json!({"family":"release","operationId":op.operation_id,"componentDigest":value.digest,"packageDigest":value.package_digest,"expectedGeneration":op.expected_generation.map(|v|v.to_string())})),

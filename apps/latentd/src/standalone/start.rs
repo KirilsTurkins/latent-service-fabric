@@ -36,6 +36,7 @@ pub(super) struct Catalogs {
     control: Option<control::StartupControl>,
     audit: Option<super::audit::AuditRuntime>,
     rollouts: Option<super::rollouts::RolloutRuntime>,
+    policies: Option<super::policies::PolicyRuntime>,
     clock: Arc<dyn ActivationClock>,
 }
 
@@ -49,6 +50,17 @@ impl Catalogs {
             || settings.supply_chain.is_enforced() != self.supply_chain.is_some()
             || settings.audit.is_some() != self.audit.is_some()
             || settings.rollouts.is_some() != self.rollouts.is_some()
+            || settings.capability_policies.is_some() != self.policies.is_some()
+            || self.policies.as_ref().is_some_and(|owner| {
+                let handle = owner.handle();
+                !handle
+                    .store()
+                    .catalog_owner_matches(&self.artifacts.lifecycle_authority())
+                    || settings.capability_policies.is_none_or(|config| {
+                        handle.store().limits() != config.store
+                            || handle.maximum_jobs() != config.maximum_control_jobs
+                    })
+            })
             || settings.rollouts.and_then(|value| value.canary).is_some()
                 != self.deployments.canary_hub().is_some()
             || !self.accepts_activation_clock(clock)
@@ -82,6 +94,7 @@ impl Catalogs {
         if settings.supply_chain.is_enforced()
             || settings.audit.is_some()
             || settings.rollouts.is_some()
+            || settings.capability_policies.is_some()
         {
             return Err(mode_error());
         }
@@ -114,6 +127,7 @@ impl Catalogs {
             control: None,
             audit,
             rollouts: None,
+            policies: None,
             clock: Arc::new(SystemActivationClock),
         })
     }
@@ -123,6 +137,7 @@ impl Catalogs {
         if settings.supply_chain.is_enforced()
             || settings.audit.is_some()
             || settings.rollouts.is_some()
+            || settings.capability_policies.is_some()
         {
             return Err(mode_error());
         }
@@ -184,6 +199,7 @@ impl Catalogs {
             )
         });
         let mut rollouts = None;
+        let mut policies = None;
         let opened = async {
             let artifacts = Arc::new(if let Some(authority) = &supply_chain {
                 let authority: Arc<dyn latent_artifacts::AdmissionAuthority> =
@@ -207,6 +223,12 @@ impl Catalogs {
                     settings.artifacts,
                 )?
             });
+            policies = super::policies::PolicyRuntime::open(
+                &settings.data_directory.join("capability-policies"),
+                settings.capability_policies,
+                artifacts.lifecycle_authority(),
+                runtime,
+            )?;
             let deployments = DirectoryDeploymentRepository::open_with_catalog_and_rollout_limits(
                 settings.data_directory.join("deployments"),
                 artifacts.clone(),
@@ -292,6 +314,7 @@ impl Catalogs {
             control,
             audit,
             rollouts,
+            policies,
             clock,
         })
     }
@@ -363,6 +386,7 @@ impl StandaloneNode {
         }
         node.audit = catalogs.audit.take();
         node.rollouts = catalogs.rollouts.take();
+        node.policies = catalogs.policies.take();
         if let Err(failure) =
             Box::pin(node.start_services(&settings, catalogs, control_runtime, threads)).await
         {
@@ -396,7 +420,7 @@ impl StandaloneNode {
                 ..InvocationServiceServices::default()
             },
         )?;
-        let management = ManagementServiceAdapter::new(
+        let mut management = ManagementServiceAdapter::new(
             ManagementServices {
                 audit: self.audit.as_ref().map(super::audit::AuditRuntime::handle),
                 rollouts: self
@@ -413,6 +437,9 @@ impl StandaloneNode {
             },
             settings.management.clone(),
         )?;
+        if let Some(policies) = &self.policies {
+            management = management.with_policy_control(policies.handle())?;
+        }
         if self.sampler.is_none() {
             self.sampler = Some(load::LoadSampler::start(
                 Arc::clone(&self.load),
@@ -443,6 +470,11 @@ impl StandaloneNode {
                     .expect("owned cleanup driver")
                     .handle(),
                 threads,
+            )
+            .with_policies(
+                self.policies
+                    .as_ref()
+                    .map(super::policies::PolicyRuntime::handle),
             )
             .with_rollouts(
                 self.rollouts
@@ -537,6 +569,7 @@ impl StandaloneNode {
             transport: None,
             audit: None,
             rollouts: None,
+            policies: None,
             supply_chain: super::SupplyChainLifetime(catalogs.supply_chain.clone()),
             cleanup: Some(ActivationCleanupOwner::start_with_observer(
                 settings.manager.journal.maximum_active,

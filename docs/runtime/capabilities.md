@@ -15,6 +15,12 @@ Package inspection recognizes its exact provider contracts and selected async
 imports, while preparation rejects providers without installed owners. General
 providers, the sealed broker and application hosting remain in progress.
 
+The delivered [durable capability policy owner](capability-policies.md) provides
+bounded rules, scoped revisions, provider-binding metadata and authenticated
+apply/get/list/revoke/explain control. Sealed decisions recheck policy and
+publication authority at final admission. This control foundation does not itself
+install the remaining guest providers.
+
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
 [standalone node](../reference/standalone-node.md). Phase 3 plans the shared

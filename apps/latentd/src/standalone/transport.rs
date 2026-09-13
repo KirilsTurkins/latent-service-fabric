@@ -44,6 +44,7 @@ impl Transport {
             .add_service(management.clone().route_server())
             .add_service(management.clone().audit_server())
             .add_service(management.clone().rollout_server())
+            .add_service(management.clone().policy_server())
             .add_service(management.node_server())
             .prepare();
         Self::start_routes(config, routes, clock, control_runtime).await

@@ -82,12 +82,19 @@ Rollout operations retain their own revision and operation identity:
 
 There is no automatic pagination, cursor restart, retry, stale-precondition
 replacement, operation-ID generation, or hidden reconciliation request. Source
-compilation, signing/key creation, policy mutation, watch, cluster registration,
+compilation, signing/key creation, watch, cluster registration,
 and benchmark commands remain outside this CLI. General capability providers,
 HTTP/web hosting and expanded SDK transports belong to Phase 3; durable service
 state, transactional effects and clustering remain later phases.
 
 ## Credentials and limits
+
+`latent policy` also supports bounded capability-policy and provider-binding
+apply/get/list/revoke, operation recovery and read-only explanation. Mutations
+require explicit operation IDs and expected generations; historical replay cannot
+restore a revoked policy. See the [policy command examples and
+contract](../runtime/capability-policies.md#operator-api-and-recovery). Returned
+`allow` explanations never authorize execution.
 
 Node RPC commands require an explicit `--config FILE`. The CLI performs no automatic
 directory search or environment-based credential selection. Keep this JSON file

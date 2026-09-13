@@ -24,6 +24,7 @@ impl Cli {
             path_argument(path)?;
         }
         match &self.command {
+            Command::Policy(command) => command.validate(),
             Command::Rollout(command) => rollout(command),
             Command::Audit(super::audit::AuditCommand::Query(args)) => {
                 optional(args.actor.as_deref(), 512)?;
@@ -315,7 +316,7 @@ pub(super) fn path_argument(path: &Path) -> Result<(), Failure> {
     Ok(())
 }
 
-fn invalid() -> Failure {
+pub(super) fn invalid() -> Failure {
     Failure::local(
         "invalid-arguments",
         "Command arguments are invalid or exceed their limits.",

@@ -94,6 +94,7 @@ async fn enforced_control_reuse_rejects_a_different_activation_clock_without_can
         )),
         audit: None,
         rollouts: None,
+        policies: None,
         clock,
     };
     assert!(catalogs.deployments.canary_hub().is_none());

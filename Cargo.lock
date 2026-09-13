@@ -1616,15 +1616,18 @@ dependencies = [
 name = "latent-policy"
 version = "0.1.0-alpha.3"
 dependencies = [
+ "blake3",
  "base64 0.22.1",
  "latent-artifacts",
  "latent-core",
  "latent-manifest",
  "latent-packaging",
  "latent-signing",
+ "rustix",
  "serde",
  "serde_json",
  "tempfile",
+ "tokio",
  "wasm-encoder 0.252.0",
 ]
 
@@ -1810,6 +1813,7 @@ dependencies = [
  "latent-executor",
  "latent-manifest",
  "latent-node",
+ "latent-policy",
  "latent-rollout",
  "latent-routing",
  "latent-rpc",

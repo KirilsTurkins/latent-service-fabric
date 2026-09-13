@@ -1,5 +1,11 @@
 # Standalone node
 
+Phase 3's optional `capabilityPolicies` section enables one bounded durable policy
+owner on the existing control runtime and listener. See [capability policy
+configuration and recovery](../runtime/capability-policies.md#durable-owner-and-finite-retention).
+It adds policy/provider-binding management and sealed revision checks; it does not
+install application providers or change dormant-service execution resources.
+
 `latentd serve` runs the standalone stateless node on Linux. One process composes
 durable release and deployment catalogs, immutable routing, admission and quotas,
 fixed execution cells, generic Wasmtime execution, activation capabilities,

@@ -10,6 +10,13 @@ authority. Phase 3 plans the general capability broker, bounded delegation and
 external providers below. Node workload mTLS remains part of the later cluster
 architecture. See the [security boundary](security.md) and [roadmap](../roadmap.md).
 
+The delivered [capability policy owner](../runtime/capability-policies.md) binds
+tenant-scoped immutable policy revisions and provider selections to real
+publication eligibility. Its sealed decisions require a final currentness check;
+updates/revocations invalidate held authority. Required policies and additional
+restrictions intersect. The remaining broker work connects that foundation to
+actual installed providers and resource reservations.
+
 ## Identity layers
 
 LSF distinguishes:

@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1alpha1/capability-policy-resource.schema.json",
+  "title": "LSF descriptive policy explanation target",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "context"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "clock"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "const": "random"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "level"
+      ],
+      "properties": {
+        "kind": {
+          "const": "log"
+        },
+        "level": {
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "origin",
+        "method",
+        "path"
+      ],
+      "properties": {
+        "kind": {
+          "const": "http"
+        },
+        "origin": {
+          "$ref": "capability-policy.schema.json#/$defs/origin"
+        },
+        "method": {
+          "enum": [
+            "GET",
+            "HEAD",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "pattern": "^/(?!.*(?:^|/)\\.{1,2}(?:/|$))[^\\x00-\\x20\\x7f%\\\\?#]*$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "namespace"
+      ],
+      "properties": {
+        "kind": {
+          "const": "blob"
+        },
+        "namespace": {
+          "$ref": "capability-policy.schema.json#/$defs/identifier"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "reference"
+      ],
+      "properties": {
+        "kind": {
+          "const": "secrets"
+        },
+        "reference": {
+          "$ref": "capability-policy.schema.json#/$defs/identifier"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "subject"
+      ],
+      "properties": {
+        "kind": {
+          "const": "events"
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9_:/@-]+(?:\\.[A-Za-z0-9_:/@-]+)*$"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "kind": {
+          "const": "telemetry"
+        },
+        "name": {
+          "$ref": "capability-policy.schema.json#/$defs/identifier"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "service",
+        "publication"
+      ],
+      "properties": {
+        "kind": {
+          "const": "service"
+        },
+        "service": {
+          "$ref": "capability-policy.schema.json#/$defs/identifier"
+        },
+        "publication": {
+          "$ref": "capability-policy.schema.json#/$defs/publication"
+        }
+      }
+    }
+  ]
+}

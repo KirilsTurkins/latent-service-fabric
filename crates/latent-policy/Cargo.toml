@@ -18,6 +18,11 @@ latent-packaging = { path = "../latent-packaging" }
 latent-signing = { path = "../latent-signing" }
 serde.workspace = true
 serde_json.workspace = true
+blake3.workspace = true
+tokio.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+rustix = { version = "=1.1.4", features = ["process", "fs"] }
 
 [dev-dependencies]
 tempfile.workspace = true

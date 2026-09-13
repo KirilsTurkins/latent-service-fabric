@@ -3,6 +3,7 @@
 pub mod audit;
 mod invoke;
 mod package;
+pub mod policy;
 pub mod release;
 pub mod rollout;
 pub use package::{PackageCommand, PackagePullArgs, PackagePushArgs};
@@ -63,6 +64,8 @@ pub enum OutputFormat {
 
 #[derive(Subcommand)]
 pub enum Command {
+    /// Manage bounded tenant policies and provider binding metadata.
+    Policy(policy::PolicyArgs),
     #[command(subcommand)]
     Rollout(rollout::RolloutCommand),
     #[command(subcommand)]

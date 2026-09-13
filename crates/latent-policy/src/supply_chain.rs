@@ -6,7 +6,7 @@
 mod clock;
 mod config;
 mod grant;
-mod json;
+pub(crate) mod json;
 mod ledger;
 mod receipt;
 #[cfg(test)]
