@@ -137,6 +137,8 @@ jobs:
           python-version: 3.13.5
       - name: Fetch the pinned operator workflow registry
         run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - name: Validate protected configuration ownership with the built test artifact
+        run: python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite protected-config-owner
       - name: Validate bounded Phase 2 delivery and resource workflows
         timeout-minutes: 10
         shell: bash

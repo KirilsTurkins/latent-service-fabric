@@ -119,6 +119,7 @@ mod platform {
             .map_err(|_| failure())?,
         );
         checkpoint(ReadCheckpoint::OpenedLeaf)?;
+        require_mode_only_permissions(&file).map_err(|()| failure())?;
         let before = file.metadata().map_err(|_| failure())?;
         validate_file(&before, policy, uid, gid, maximum_bytes, private_path)
             .map_err(|()| failure())?;
@@ -137,6 +138,7 @@ mod platform {
         }
 
         let after = file.metadata().map_err(|_| failure())?;
+        require_mode_only_permissions(&file).map_err(|()| failure())?;
         validate_file(&after, policy, uid, gid, maximum_bytes, private_path)
             .map_err(|()| failure())?;
         if before != Snapshot::from(&after) || before.length != bytes.len() as u64 {
@@ -173,11 +175,24 @@ mod platform {
         OFlags::RDONLY | OFlags::DIRECTORY | OFlags::NOFOLLOW | OFlags::CLOEXEC | OFlags::NONBLOCK
     }
 
+    // POSIX group mode bits represent the ACL mask when a named-user/group ACL
+    // exists. A trusted owning GID alone cannot prove who can read or traverse.
+    // A one-byte probe rejects any extended ACL without allocating its payload.
+    // Unknown/unsupported inspection fails closed rather than assuming privacy.
+    fn require_mode_only_permissions(file: &File) -> Result<(), ()> {
+        let mut probe = [0_u8; 1];
+        match rustix::fs::fgetxattr(file, "system.posix_acl_access", &mut probe) {
+            Err(rustix::io::Errno::NODATA) => Ok(()),
+            Ok(_) | Err(_) => Err(()),
+        }
+    }
+
     /// Returns whether this directory blocks traversal by accounts outside the
     /// effective user/service group. Sticky root-owned world-writable ancestors
     /// such as `/tmp` are accepted for name stability but do not make a secret
     /// leaf private.
     fn validate_directory(directory: &File, uid: u32, gid: u32) -> Result<bool, ()> {
+        require_mode_only_permissions(directory)?;
         let metadata = directory.metadata().map_err(|_| ())?;
         if !metadata.is_dir() || (metadata.uid() != 0 && metadata.uid() != uid) {
             return Err(());
@@ -274,161 +289,4 @@ mod platform {
 }
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
-mod tests {
-    use super::*;
-    use std::fs;
-    use std::os::unix::fs::{symlink, PermissionsExt};
-    use tempfile::{Builder, TempDir};
-
-    fn write(path: &Path, bytes: &[u8], mode: u32) {
-        fs::write(path, bytes).expect("write protected fixture");
-        fs::set_permissions(path, fs::Permissions::from_mode(mode)).expect("set protected mode");
-    }
-
-    #[test]
-    fn secret_policy_accepts_owner_service_group_and_private_directory_reads() {
-        let root = TempDir::new().unwrap();
-        let owner = root.path().join("owner.json");
-        let group = root.path().join("group.json");
-        let private_public_mode = root.path().join("private-public-mode.json");
-        write(&owner, b"owner", 0o600);
-        write(&group, b"group", 0o640);
-        write(&private_public_mode, b"private", 0o644);
-        assert_eq!(
-            read(&owner, 32, ProtectedFilePolicy::Secret, "test").unwrap(),
-            b"owner"
-        );
-        assert_eq!(
-            read(&group, 32, ProtectedFilePolicy::Secret, "test").unwrap(),
-            b"group"
-        );
-        assert_eq!(
-            read(
-                &private_public_mode,
-                32,
-                ProtectedFilePolicy::Secret,
-                "test"
-            )
-            .unwrap(),
-            b"private"
-        );
-    }
-
-    #[test]
-    fn secret_policy_rejects_public_reads_on_traversable_paths_and_writable_group_access() {
-        let public = Builder::new()
-            .prefix("lsf-protected-")
-            .tempfile_in("/tmp")
-            .unwrap();
-        fs::set_permissions(public.path(), fs::Permissions::from_mode(0o604)).unwrap();
-        assert!(read(public.path(), 32, ProtectedFilePolicy::Secret, "test").is_err());
-
-        let root = TempDir::new().unwrap();
-        let writable = root.path().join("group-write");
-        write(&writable, b"secret", 0o620);
-        assert!(read(&writable, 32, ProtectedFilePolicy::Secret, "test").is_err());
-    }
-
-    #[test]
-    fn integrity_policy_allows_public_reads_but_not_untrusted_writes() {
-        let root = TempDir::new().unwrap();
-        let readable = root.path().join("readable.json");
-        let writable = root.path().join("writable.json");
-        write(&readable, b"policy", 0o644);
-        write(&writable, b"policy", 0o664);
-        assert_eq!(
-            read(&readable, 32, ProtectedFilePolicy::Integrity, "test").unwrap(),
-            b"policy"
-        );
-        assert!(read(&writable, 32, ProtectedFilePolicy::Integrity, "test").is_err());
-    }
-
-    #[test]
-    fn symlinks_hardlinks_and_untrusted_ancestor_writes_fail_closed() {
-        let root = TempDir::new().unwrap();
-        let original = root.path().join("original");
-        let alias = root.path().join("alias");
-        let link = root.path().join("link");
-        write(&original, b"secret", 0o600);
-        fs::hard_link(&original, &alias).unwrap();
-        symlink(&original, &link).unwrap();
-        assert!(read(&original, 32, ProtectedFilePolicy::Secret, "test").is_err());
-        assert!(read(&link, 32, ProtectedFilePolicy::Secret, "test").is_err());
-
-        let writable = root.path().join("writable");
-        fs::create_dir(&writable).unwrap();
-        fs::set_permissions(&writable, fs::Permissions::from_mode(0o777)).unwrap();
-        let nested = writable.join("secret");
-        write(&nested, b"secret", 0o600);
-        assert!(read(&nested, 32, ProtectedFilePolicy::Secret, "test").is_err());
-    }
-
-    #[test]
-    fn pathname_replacement_does_not_redirect_opened_descriptor() {
-        let root = TempDir::new().unwrap();
-        let path = root.path().join("authority");
-        let replacement = root.path().join("replacement");
-        let archived = root.path().join("archived");
-        write(&path, b"original", 0o600);
-        write(&replacement, b"replacement", 0o600);
-
-        let bytes = platform::read_with_checkpoint(
-            &path,
-            32,
-            ProtectedFilePolicy::Secret,
-            "test",
-            |point| {
-                if point == platform::ReadCheckpoint::OpenedLeaf {
-                    fs::rename(&path, &archived).unwrap();
-                    fs::rename(&replacement, &path).unwrap();
-                }
-                Ok(())
-            },
-        )
-        .unwrap();
-        assert_eq!(bytes, b"original");
-        assert_eq!(fs::read(path).unwrap(), b"replacement");
-    }
-
-    #[test]
-    fn content_change_after_snapshot_fails_closed() {
-        let root = TempDir::new().unwrap();
-        let path = root.path().join("authority");
-        write(&path, b"before", 0o600);
-
-        let result = platform::read_with_checkpoint(
-            &path,
-            32,
-            ProtectedFilePolicy::Secret,
-            "test",
-            |point| {
-                if point == platform::ReadCheckpoint::SnapshottedLeaf {
-                    fs::write(&path, b"after!").unwrap();
-                }
-                Ok(())
-            },
-        );
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn fifo_is_rejected_without_waiting_for_a_writer() {
-        let root = TempDir::new().unwrap();
-        let fifo = root.path().join("fifo");
-        rustix::fs::mkfifoat(
-            rustix::fs::CWD,
-            &fifo,
-            rustix::fs::Mode::RUSR | rustix::fs::Mode::WUSR,
-        )
-        .unwrap();
-        assert!(read(&fifo, 32, ProtectedFilePolicy::Secret, "test").is_err());
-    }
-
-    #[test]
-    fn bounded_read_rejects_oversized_content() {
-        let root = TempDir::new().unwrap();
-        let path = root.path().join("large");
-        write(&path, b"12345", 0o600);
-        assert!(read(&path, 4, ProtectedFilePolicy::Secret, "test").is_err());
-    }
-}
+mod tests;

@@ -21,9 +21,19 @@ Other-writable ancestors are rejected except for root-owned sticky directories
 such as `/tmp`; the next opened descriptor still anchors each subsequent lookup.
 Symlink ancestors and parent-directory components are rejected.
 
+Extended POSIX access ACLs on either an ancestor or the leaf are rejected using
+an opened-descriptor xattr probe. With a named-user/group ACL, the visible group
+mode bits describe an ACL mask, so a trusted owning GID cannot prove that other
+users lack access. Missing ACLs are accepted; unavailable or failed inspection
+fails closed. This initial file policy requires ordinary Linux POSIX permission
+semantics and inspectable ACLs; it does not certify other filesystem ACL models.
+Administrators must review and remove extended access ACLs on a dedicated secret
+path or move the configuration to an appropriate protected local path. The node
+does not modify permissions or ACLs itself.
+
 Protected leaves must be regular files, owned by root or the effective service
 UID, have exactly one hard link, contain no executable/set-id permission bits,
-and remain unchanged while their bounded contents are read. The reader compares
+and pass before/after descriptor checks around the bounded read. The reader compares
 opened-descriptor identity, owner/mode/link count, size, modification time and
 change time before and after the read. FIFOs and other special files are opened
 nonblocking and rejected before content is consumed, so a malicious named pipe
@@ -48,6 +58,15 @@ read. Relative policy paths continue to anchor to the node configuration
 parent; this code does not create, chmod, chown, or otherwise repair configuration
 files or ancestors.
 
+Regression fixtures explicitly protect their credential paths. Tests cover named
+user ACLs on files and ancestors as well as modes, links, bounded reads and
+descriptor replacement. The regular Linux CI job reuses its already-built libtest
+for one privileged disposable `/tmp` fixture: it changes file and directory owners
+to a third UID and verifies rejection. Cargo and the ordinary tests remain
+unprivileged; the same bounded artifact runner checks the exact test identity,
+deadline, output and completion. This is a functional security check, not a load
+or benchmark campaign.
+
 ## Links and concurrent replacement
 
 Final-component and ancestor symlinks are rejected. Leaf hard links are rejected
@@ -55,7 +74,11 @@ because an alternate pathname could otherwise mutate the same authority-bearing
 inode. Directory-descriptor traversal means renaming a pathname component after
 it has been opened does not redirect later lookups through a different directory.
 A mutation of the opened leaf during the read is rejected when its descriptor
-snapshot changes. The runtime never silently retries under a weaker path policy.
+snapshot or ACL check changes. These checks do not promise an atomic snapshot
+against a concurrently writing trusted owner; a same-length change within a
+filesystem timestamp tick may not be distinguishable. Owners must publish
+configuration through replacement and avoid in-place edits during loading. The
+runtime never silently retries under a weaker path policy.
 
 ## Non-Linux compatibility boundary
 

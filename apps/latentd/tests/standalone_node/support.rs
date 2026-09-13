@@ -110,6 +110,11 @@ pub fn write_config(directory: &Path) -> PathBuf {
         serde_json::to_vec(&value).expect("raw JSON configuration"),
     )
     .expect("configuration file");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    }
     path
 }
 

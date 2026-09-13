@@ -19,6 +19,11 @@ fn document() -> String {
 
 fn config() -> (TempDir, NodeConfig) {
     let directory = TempDir::new().expect("temporary configuration directory");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(directory.path(), std::fs::Permissions::from_mode(0o700)).unwrap();
+    }
     let path = directory.path().join("node.json");
     fs::write(&path, document()).expect("write configuration");
     let config = NodeConfig::load(&path).expect("load configuration");
