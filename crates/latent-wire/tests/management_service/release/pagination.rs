@@ -47,7 +47,25 @@ async fn release_pages_are_scoped_ordered_and_expire_only_on_visible_publication
     .unwrap();
     assert_eq!(second.releases.len(), 1);
     assert!(second.page.unwrap().next_page_token.is_none());
-    assert!(first.releases[0].digest < second.releases[0].digest);
+    // Format-2 cursors order exact publications, whose component digests need
+    // not be ordered (and may even be identical). Every matching row is returned.
+    let actual = std::collections::BTreeSet::from([
+        first.releases[0].digest.clone(),
+        second.releases[0].digest.clone(),
+    ]);
+    let expected = std::collections::BTreeSet::from([
+        artifact("acme", "echo", "page-a")
+            .descriptor
+            .release_digest
+            .0,
+        artifact("acme", "echo", "page-b")
+            .descriptor
+            .release_digest
+            .0,
+    ]);
+    assert_eq!(actual, expected);
+    let repeat = list(&harness, "alice", Some("echo"), None).await.unwrap();
+    assert_eq!(repeat.releases, first.releases);
     for scope in [Some("another"), None] {
         assert_eq!(
             list(&harness, "alice", scope, Some(page(Some(token.clone()))))

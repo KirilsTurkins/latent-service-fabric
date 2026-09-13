@@ -35,6 +35,11 @@ does not silently choose a different package. Non-unique artifact references
 also require explicit selection. Invalid selectors never fall back to legacy
 selection, and a foreign ID in the authorized scope appears absent.
 
+Scoped catalog pages use deterministic publication-ID order and version-2 opaque
+cursors. Component digests are not a unique row key or a pagination ordering
+contract. A repeated page in the same catalog generation preserves its order;
+scope changes and stale generations invalidate its cursor.
+
 Generations, lifecycle records, selected evidence and live grants are independent
 per publication. A mutation's compare-and-swap precondition belongs to that
 publication. A new package starts with expected generation zero. Reusing the
