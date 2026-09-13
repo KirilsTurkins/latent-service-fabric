@@ -48,4 +48,5 @@ def node_config(directory, data_directory):
     value["cache"].update(preparations=4, compilerWorkers=2)
     path = directory / "node.json"
     fixtures.write(path, value)
+    path.chmod(0o600)
     return path

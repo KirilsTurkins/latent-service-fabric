@@ -47,6 +47,10 @@ impl Harness {
                 {"token":FOREIGN,"subject":"foreign","tenant":"other","role":"admin"}
             ]
         })).expect("node configuration JSON")).expect("node configuration");
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).unwrap();
+        }
         let mut harness = Self {
             profile: client_directory.path().join("client.json"),
             _node_directory: node_directory,

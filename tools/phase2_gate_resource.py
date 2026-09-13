@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run or validate phase2-dormant-32-r1; no build, install, registry or retries."""
+"""Run or validate phase2-dormant-32-r2; no build, install, registry or retries."""
 from __future__ import annotations
 
 import argparse
@@ -183,7 +183,7 @@ def main():
             args.cli, args.node, args.fixture_root, args.build_identity, args.output)),
             "validation-arguments")
         validate_receipt(read_json(args.validate, PROFILE["maximumReceiptBytes"]))
-        print('{"valid":true,"profile":"phase2-dormant-32-r1"}')
+        print(json.dumps({"valid": True, "profile": PROFILE["id"]}, separators=(",", ":")))
     else:
         execute(args)
 
