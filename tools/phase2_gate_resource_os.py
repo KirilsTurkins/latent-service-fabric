@@ -12,6 +12,21 @@ from tools.phase2_gate_resource_profile import PROFILE
 from tools.phase2_operator_process import require
 
 
+def load_sampler_descriptor(root, entry, target, read):
+    """Identify the fixed sampler's single read-only PSI descriptor, not any FD."""
+    if target not in ("/proc/pressure/cpu", "/proc/pressure/memory"):
+        return 0
+    fields = [line.split(":", 1)[1].strip()
+              for line in read(root / "fdinfo" / entry.name).splitlines()
+              if line.startswith("flags:")]
+    require(len(fields) == 1 and re.fullmatch(r"[0-7]{1,12}", fields[0]) is not None,
+            "proc-sampler-flags")
+    # Decode Linux proc flags even when offline fixtures run on another host.
+    require(int(fields[0], 8) & 0o3 == 0
+            and os.readlink(entry.path) == target, "proc-sampler-descriptor")
+    return 1
+
+
 def checkpoint(deadline=None, cancellation=None):
     if cancellation is not None:
         cancellation.check()
@@ -123,7 +138,7 @@ class Probe:
 
         status = dict(line.split(":", 1) for line in read(root / "status").splitlines())
         io = dict(line.split(":", 1) for line in read(root / "io").splitlines())
-        sockets, descriptors = set(), 0
+        sockets, descriptors, sampler_descriptors = set(), 0, 0
         with os.scandir(root / "fd") as entries:
             for entry in entries:
                 descriptors += 1
@@ -131,6 +146,8 @@ class Probe:
                         "proc-fd-bound")
                 target = os.readlink(entry.path)
                 require(len(target) <= 4096, "proc-link-bound")
+                sampler_descriptors += load_sampler_descriptor(root, entry, target, read)
+                require(sampler_descriptors <= limits["transientLoadFds"], "proc-sampler-bound")
                 match = re.fullmatch(r"socket:\[([0-9]{1,20})\]", target)
                 if match:
                     sockets.add(match[1])
@@ -162,6 +179,7 @@ class Probe:
             "cpuUserTicks": after[11], "cpuSystemTicks": after[12],
             "readBytes": io["read_bytes"].strip(), "writeBytes": io["write_bytes"].strip(),
             "threads": int(status["Threads"]), "tasks": tasks, "fdCount": descriptors,
+            "loadSamplerFdCount": sampler_descriptors,
             "socketCount": len(sockets), "listeningTcpSockets": len(listening),
             "descendants": len(children), "procBytesRead": 4 * 1024 * 1024 - remaining,
         }
