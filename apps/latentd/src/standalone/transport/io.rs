@@ -38,7 +38,8 @@ impl Stream for Incoming {
                 continue;
             };
             stream.set_nodelay(true)?;
-            let expires_at = tokio::time::Instant::now() + self.shared.config.unauthenticated_timeout;
+            let expires_at =
+                tokio::time::Instant::now() + self.shared.config.unauthenticated_timeout;
             let connection = ConnectionInfo {
                 address,
                 expires_at,
