@@ -7,7 +7,9 @@ sockets, threads, guest heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-Phase 1, its performance extension, and Phase 2 are complete in development.
+Phase 1, its performance extension, and Phase 2 are complete.
+The `0.1.0-alpha.3` source prerelease is described in the
+[Phase 2 delivery notes](docs/phase-2-delivery.md).
 The [Phase 2 completion review](docs/phase-2-completion.md) covers deterministic
 packaging, authenticated OCI transfer, publisher/provenance/SBOM verification,
 current admission and lifecycle, isolated compilation and native reuse, durable
