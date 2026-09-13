@@ -122,6 +122,10 @@ impl ArtifactRepository for PublicationOwner {
                 return Err(failure);
             }
             Ok(ManagedPublicationReceipt {
+                publication: latent_artifacts::PublicationRef::package(
+                    receipt.scope.clone(),
+                    &package,
+                )?,
                 release: self.summary.clone(),
                 operation: receipt,
             })
