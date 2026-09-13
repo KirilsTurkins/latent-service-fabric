@@ -194,19 +194,15 @@ fn retained(config: &NodeConfig, capacity: &Capacity) -> Result<(), PlatformErro
         86_400_000,
         "retention.terminalTtlMillis",
     )?;
+    let required = (capacity.reservations as usize)
+        .checked_mul(JOURNAL_RECORD_BYTES)
+        .ok_or_else(|| invalid("retention.bytes"))?;
     range(
         config.retention.bytes,
-        JOURNAL_RECORD_BYTES,
+        required,
         1024 * MIB,
         "retention.bytes",
     )?;
-    let active_bytes = usize::try_from(capacity.reservations)
-        .ok()
-        .and_then(|count| count.checked_mul(JOURNAL_RECORD_BYTES))
-        .ok_or_else(|| invalid("retention.bytes"))?;
-    if config.retention.bytes < active_bytes {
-        return Err(invalid("retention.bytes"));
-    }
     range(
         config.telemetry.queue_entries,
         1,
@@ -224,44 +220,45 @@ fn retained(config: &NodeConfig, capacity: &Capacity) -> Result<(), PlatformErro
         64 * 1024,
         256 * MIB,
         "telemetry.retainedBytes",
-    )?;
-    Ok(())
+    )
 }
 
 fn credentials(config: &NodeConfig) -> Result<(), PlatformError> {
     range(config.credentials.len(), 1, 64, "credentials")?;
-    for (index, credential) in config.credentials.iter().enumerate() {
-        identifier(&credential.token, 512, "credentials.token")?;
-        if !credential.token.is_ascii() {
-            return Err(invalid("credentials.token"));
-        }
-        identifier(&credential.subject, 512, "credentials.subject")?;
-        identifier(&credential.tenant, 512, "credentials.tenant")?;
-        if config.credentials[..index]
-            .iter()
-            .any(|other| other.token == credential.token)
+    let mut tokens = BTreeSet::new();
+    for credential in &config.credentials {
+        let token = &credential.token;
+        if !(32..=256).contains(&token.len())
+            || !token
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+            || !tokens.insert(token.as_str())
         {
             return Err(invalid("credentials.token"));
         }
+        identifier(&credential.subject, IDENTIFIER_BYTES, "credentials.subject")?;
+        let tenant = &credential.tenant;
+        if tenant.is_empty()
+            || tenant.len() > 128
+            || !tenant
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.'))
+            || !tenant.as_bytes()[0].is_ascii_alphanumeric()
+            || !tenant.as_bytes()[tenant.len() - 1].is_ascii_alphanumeric()
+        {
+            return Err(invalid("credentials.tenant"));
+        }
     }
     Ok(())
-}
-
-pub(super) fn class(value: &str) -> Result<CellClass, PlatformError> {
-    match value {
-        "tiny" => Ok(CellClass::Tiny),
-        "small" => Ok(CellClass::Small),
-        "standard" => Ok(CellClass::Standard),
-        "large" => Ok(CellClass::Large),
-        "extra-large" => Ok(CellClass::ExtraLarge),
-        _ => Err(invalid("cells.class")),
-    }
 }
 
 fn identifier(value: &str, maximum: usize, field: &'static str) -> Result<(), PlatformError> {
     if value.is_empty()
         || value.len() > maximum
-        || value.chars().any(|value| value.is_control() || value.is_whitespace())
+        || !value.is_ascii()
+        || value
+            .bytes()
+            .any(|byte| byte.is_ascii_control() || byte.is_ascii_whitespace())
     {
         return Err(invalid(field));
     }
@@ -290,4 +287,15 @@ fn range64(
         return Err(invalid(field));
     }
     Ok(())
+}
+
+pub(super) fn class(name: &str) -> Result<CellClass, PlatformError> {
+    match name {
+        "tiny" => Ok(CellClass::Tiny),
+        "small" => Ok(CellClass::Small),
+        "standard" => Ok(CellClass::Standard),
+        "large" => Ok(CellClass::Large),
+        "extra-large" => Ok(CellClass::ExtraLarge),
+        _ => Err(invalid("cells.class")),
+    }
 }
