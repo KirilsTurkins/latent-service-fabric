@@ -77,10 +77,16 @@ pub(super) fn authenticate(
             }
         }
     }
-    request.extensions_mut().insert(context);
-    if let Some(connection) = request.extensions().get::<ConnectionInfo>() {
-        connection.mark_authenticated();
+    if request
+        .extensions()
+        .get::<ConnectionInfo>()
+        .is_some_and(|connection| !connection.mark_authenticated())
+    {
+        return Err(Status::deadline_exceeded(
+            "standalone connection authentication deadline expired",
+        ));
     }
+    request.extensions_mut().insert(context);
     Ok(())
 }
 
