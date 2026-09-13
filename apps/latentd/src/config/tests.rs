@@ -4,6 +4,7 @@ use latent_core::{PlatformError, PrincipalKind, TenantId};
 use latent_scheduler::CellClass;
 use tempfile::TempDir;
 
+mod connection_limits;
 mod engine;
 
 use super::{input, CellConfig, CredentialRole, NodeConfig, NodeSettings, MIB};
@@ -38,6 +39,10 @@ fn defaults_derive_compatible_node_limits_without_creating_storage() {
     assert_eq!(settings.runtime_workers(), 2);
     assert_eq!(settings.control_workers(), 2);
     assert_eq!(settings.shutdown_grace(), std::time::Duration::from_secs(1));
+    assert_eq!(
+        settings.transport.unauthenticated_timeout,
+        std::time::Duration::from_secs(5)
+    );
     assert!(settings.data_directory.is_absolute());
     assert!(!directory.path().join("data").exists());
     assert_eq!(
@@ -194,7 +199,7 @@ fn relative_paths_anchor_to_configuration_parent_and_port_zero_is_valid() {
 #[test]
 fn invalid_capacity_and_retention_combinations_fail_before_startup() {
     let (_directory, config) = config();
-    let mutations: [fn(&mut NodeConfig); 8] = [
+    let mutations: [fn(&mut NodeConfig); 9] = [
         |value| value.cells[0].queue_capacity = 0,
         |value| value.cells[0].capacity = 0,
         |value| value.cache.source_bytes = value.limits.maximum_component_bytes - 1,
@@ -203,6 +208,7 @@ fn invalid_capacity_and_retention_combinations_fail_before_startup() {
         |value| value.catalogs.release_entries = usize::MAX,
         |value| value.execution.maximum_cpu_fuel = u64::MAX,
         |value| value.cache.preparations = 1025,
+        |value| value.limits.unauthenticated_connection_timeout_millis = 99,
     ];
     for mutate in mutations {
         let mut invalid = config.clone();

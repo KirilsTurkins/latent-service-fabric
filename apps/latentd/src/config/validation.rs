@@ -35,6 +35,24 @@ pub(super) fn validate(config: &NodeConfig) -> Result<Capacity, PlatformError> {
         1024,
         "limits.maximumConnections",
     )?;
+    range64(
+        config.limits.unauthenticated_connection_timeout_millis,
+        100,
+        60_000,
+        "limits.unauthenticatedConnectionTimeoutMillis",
+    )?;
+    range64(
+        config.limits.maximum_connection_age_millis,
+        config.limits.unauthenticated_connection_timeout_millis,
+        86_400_000,
+        "limits.maximumConnectionAgeMillis",
+    )?;
+    range64(
+        config.limits.connection_drain_timeout_millis,
+        1,
+        60_000,
+        "limits.connectionDrainTimeoutMillis",
+    )?;
     range(
         config.limits.maximum_component_bytes,
         1,
