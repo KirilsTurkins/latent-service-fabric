@@ -60,12 +60,14 @@ files or ancestors.
 
 Regression fixtures explicitly protect their credential paths. Tests cover named
 user ACLs on files and ancestors as well as modes, links, bounded reads and
-descriptor replacement. The regular Linux CI job reuses its already-built libtest
-for one privileged disposable `/tmp` fixture: it changes file and directory owners
-to a third UID and verifies rejection. Cargo and the ordinary tests remain
-unprivileged; the same bounded artifact runner checks the exact test identity,
-deadline, output and completion. This is a functional security check, not a load
-or benchmark campaign.
+descriptor replacement. A separate opt-in test,
+`config::protected_file::tests::unexpected_file_and_directory_owners_are_rejected`,
+requires root inside a disposable Linux environment and creates only temporary
+`/tmp` fixtures. It changes file and directory owners to a third UID and verifies
+rejection. Run that exact built libtest with `--exact --ignored --test-threads=1`;
+ordinary CI remains unprivileged and does not count this ignored case as evidence.
+The privileged fixture was exercised in the bounded local Linux validation for
+#278. This is a functional security check, not a load or benchmark campaign.
 
 ## Links and concurrent replacement
 

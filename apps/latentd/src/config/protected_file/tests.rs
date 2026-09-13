@@ -52,7 +52,7 @@ fn named_user_acl_cannot_hide_behind_a_trusted_service_group() {
 }
 
 #[test]
-#[ignore = "requires a privileged disposable Linux fixture; run by the bounded CI owner gate"]
+#[ignore = "requires a privileged disposable Linux fixture; run explicitly with --ignored"]
 fn unexpected_file_and_directory_owners_are_rejected() {
     use rustix::process::Uid;
     assert!(rustix::process::geteuid().is_root());

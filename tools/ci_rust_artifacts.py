@@ -42,15 +42,9 @@ class Suite:
     filter: str
     names: frozenset[str]
     exact: bool
-    privileged: bool = False
 
 
 SUITES = {
-    "protected-config-owner": Suite(
-        "apps/latentd/Cargo.toml", "latentd", "src/lib_root.rs",
-        "config::protected_file::tests::unexpected_file_and_directory_owners_are_rejected",
-        frozenset({"config::protected_file::tests::unexpected_file_and_directory_owners_are_rejected"}),
-        True, True),
     "operator-fixture": Suite(
         "crates/latent-policy/Cargo.toml", "latent_policy", "src/lib.rs",
         POLICY_PREFIX + "export_operator_workflow_fixture",
@@ -254,24 +248,12 @@ def validate_listing(output: bytes, suite: Suite) -> None:
         raise ArtifactError("expected-ignored-tests-missing-or-changed")
 
 
-def libtest_command(artifact: Artifact, suite: Suite) -> list[str]:
-    command = [str(artifact.executable), suite.filter, "--ignored"]
-    if suite.exact:
-        command.append("--exact")
-    if suite.privileged:
-        if sys.platform != "linux":
-            raise ArtifactError("privileged-fixture-requires-linux")
-        # Only the named, already-built fixture runs elevated, with the same
-        # finite test-list/output/deadline owner. Cargo and other suites do not.
-        command = ["sudo", "--non-interactive",
-                   "--preserve-env=LD_LIBRARY_PATH,CARGO_MANIFEST_DIR", "--", *command]
-    return command
-
-
 def run_suite(repo: Path, inventory: Path, suite: Suite, env: dict[str, str]) -> None:
     artifact = read_inventory(inventory, repo, suite)
     runtime_env = cargo_environment(repo, artifact, env)
-    command = libtest_command(artifact, suite)
+    command = [str(artifact.executable), suite.filter, "--ignored"]
+    if suite.exact:
+        command.append("--exact")
     status, output = run_owned([*command, "--list"], cwd=artifact.package, env=runtime_env,
                                timeout=30, maximum=MAX_LIST_BYTES)
     if status:

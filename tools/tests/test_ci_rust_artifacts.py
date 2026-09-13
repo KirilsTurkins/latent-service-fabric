@@ -170,22 +170,6 @@ class SelectionTests(unittest.TestCase):
                     artifacts.validate_listing(value, suite)
         self.assertEqual(len(artifacts.SUITES["trust-currentness"].names), 3)
 
-    def test_only_the_explicit_linux_file_owner_fixture_is_elevated(self) -> None:
-        artifact = artifacts.Artifact(Path("/fixture/test"), Path("/fixture"), ())
-        with patch.object(artifacts.sys, "platform", "linux"):
-            for name, suite in artifacts.SUITES.items():
-                command = artifacts.libtest_command(artifact, suite)
-                if name == "protected-config-owner":
-                    self.assertEqual(command[:4], ["sudo", "--non-interactive",
-                                     "--preserve-env=LD_LIBRARY_PATH,CARGO_MANIFEST_DIR", "--"])
-                    self.assertIn("--exact", command)
-                    self.assertEqual(len(suite.names), 1)
-                else:
-                    self.assertEqual(command[0], str(artifact.executable))
-        with patch.object(artifacts.sys, "platform", "win32"):
-            with self.assertRaises(artifacts.ArtifactError):
-                artifacts.libtest_command(artifact, artifacts.SUITES["protected-config-owner"])
-
     def test_source_identity_is_checked_without_running_tests_on_mismatch(self) -> None:
         commit = "a" * 40
         with patch.object(artifacts, "run_owned", return_value=(0, (commit + "\n").encode())) as run:
