@@ -6,7 +6,8 @@ Ordinary source/contracts/SDK checks, deterministic runtime conformance and full
 | Evidence | Scope |
 | --- | --- |
 | Build/contract/SDK CI | Pinned Rust/MSRV, repository contracts, components and six SDK interface fixtures. |
-| Runtime smoke | Finite real executable/invariant checks. |
+| Contracts-job outcome matrix | Finite executable outcome/recovery checks reusing the job's checked echo and containment fixtures. |
+| Manual Phase 0 baseline smoke | Deterministic baseline collection followed by the same outcome/recovery matrix; separate from full historical authorization. |
 | Phase 1 conformance | Selected scheduling, ownership, isolation and failure scenarios. |
 | Original full campaign | Four scales through 100k, three mixed soaks and seven benchmark runs with exact binaries. |
 | Historical/current pairs | Seven controlled pairs with productionization overhead retained. |
@@ -17,6 +18,8 @@ Ordinary source/contracts/SDK checks, deterministic runtime conformance and full
 Fixed topology at 100k does not imply constant metadata RSS. Finite reclamation/plateau evidence does not prove arbitrary-duration leak freedom. Regressions and unavailable attributions remain visible.
 
 Heavy 100k, long soak or fresh native-Linux Phase 0 work is opt-in and manual. Use bounded commands from [VALIDATION](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/VALIDATION.md) and [conformance guidance](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/testing/phase-1-conformance.md). Documentation validation needs no new load campaign.
+
+The [current CI contracts job](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/.github/workflows/ci.yml) runs `tools/validate_contracts.sh` and then `bash tools/run_phase0_outcome_matrix.sh`. That matrix executes the ignored `latentd` outcome/recovery cases without a second fixture build or baseline collection. The separate [Phase 0 runtime regression workflow](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/.github/workflows/phase0-regression.yml) is manual-only and retains the baseline-plus-matrix schedule. A contracts check therefore covers those runtime outcomes; it does not claim a newly measured full Phase 0 baseline.
 
 The [retention policy](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/testing/benchmark-retention.md) caps current data, preserves reports/provenance and records exact restoration commands. Docker raw parts were compacted; Kubernetes replay requires restoring only that original dependency. See [performance and infrastructure](Performance-and-Infrastructure).
 

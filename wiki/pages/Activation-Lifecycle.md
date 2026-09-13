@@ -9,7 +9,7 @@ An activation pins one selected revision and route generation, owns its admitted
 4. Prepare through the bound catalog and cache/compilation path before leasing a cell.
 5. Recheck current eligibility at the guarded invocation start.
 6. Run in a fresh Store with the pinned deadline and supported host state.
-7. Publish terminal accounting, reclaim owned work and reuse or quarantine the cell.
+7. Account for execution cleanup and release or quarantine the cell, then publish terminal accounting. Cleanup failure remains a terminal failure, not proof of successful reclamation.
 
 A cache hit cannot skip eligibility. Queued or prepared pins are not accepted starts. A policy, lifecycle or authority change can deny old work before start; calls already accepted by the final authority fence may finish.
 

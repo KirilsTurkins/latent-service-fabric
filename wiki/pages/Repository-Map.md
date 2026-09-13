@@ -1,7 +1,7 @@
 <!-- LSF-WIKI-MANAGED -->
 # Repository map
 
-Use development for current Phase 2 source until a release is published. The Wiki branch is a separate documentation lineage with an older non-Wiki snapshot.
+Use development for current Phase 2 source while its product release is being prepared. The Wiki branch is a separate documentation lineage with an older non-Wiki snapshot.
 
 | Location | Current purpose |
 | --- | --- |
@@ -14,10 +14,10 @@ Use development for current Phase 2 source until a release is published. The Wik
 | `crates/latent-audit`, `latent-telemetry` | Durable control audit and bounded activation/canary observations. |
 | `crates/latent-wasmtime` | Generic execution, isolated compilation and protected native reuse. |
 | Other `crates/` | Domain models, contracts, budgets, scheduling, wire adapters and runtime composition. |
-| `api/`, `schemas/`, `sdk/` | WIT/Protobuf, closed JSON profiles and six SDK interface fixtures. |
+| `wit/`, `api/`, `schemas/`, `sdk/` | WIT/Protobuf, closed JSON profiles and six SDK interface fixtures. |
 | `docs/`, `adr/`, `rfcs/` | Canonical explanation, decisions and planned architecture. |
 | `tools/` | Bounded build/validation runners and the maintained real operator workflow. |
-| `benchmarks/` | Historical evidence, reports and exact restoration metadata. |
+| `benchmarks/` | Phase 2 completion receipts, historical evidence, reports and exact restoration metadata. |
 
 The current node embeds local control ownership. Separate distributed control, placement and general cluster operation remain later phases; repository scaffolding is not proof of those capabilities.
 

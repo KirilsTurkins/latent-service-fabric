@@ -13,7 +13,7 @@ A service describes callable behavior. A release identifies immutable component 
 | Route generation | Version of the atomically published routing snapshot. |
 | State version | Catalog-wide compare-and-swap identity for managed Apply/Delete, including absent-object snapshots. |
 | Operation ID | Caller-selected identity bound to the authenticated actor, tenant and exact normalized request. |
-| Operation receipt | Retained committed result; finite history can instead report Unknown or Uncertain. |
+| Operation receipt | An exact retained control result: deployment/rollout receipts describe commits; release operations can also retain rejection receipts. Lookup can instead report Unknown or Uncertain. |
 | Activation | One admitted call, with its own fresh guest state and finite resource ledger. |
 | Execution cell | A configured reusable execution slot, not a service-owned process. |
 | Cache pin | Resource ownership over bytes or prepared code; it grants no trust or permission by itself. |

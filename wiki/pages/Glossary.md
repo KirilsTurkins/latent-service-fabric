@@ -16,7 +16,7 @@
 | Execution cell | Shared configured execution slot. |
 | Native compatibility key | Derived source, runtime, compiler and sandbox identity for protected local native reuse. |
 | Native receipt | Untrusted stored metadata until authenticated by the configured protected local key. |
-| Operation receipt | Exact retained committed result bound to actor, tenant, request and operation ID. |
+| Operation receipt | Exact retained control result bound to actor, tenant, request and operation ID; a release-operation receipt can record rejection as well as commit. |
 | Package digest | Exact OCI package manifest identity, separate from its component. |
 | Policy/clock floor | Durable monotonic recovery boundary that prevents accepting older authority state. |
 | Prepared pin | Ownership of prepared code/resources; not proof that invocation start was accepted. |

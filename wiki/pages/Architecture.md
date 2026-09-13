@@ -17,7 +17,7 @@ The delivered runtime is one Linux node with local durable catalogs, immutable r
 
 An activation selects and pins one revision and route generation. Admission reserves its execution budget; preparation completes before the cell lease. A fresh Wasmtime Store supplies supported host imports. Deadline, cancellation and completion keep their owners until cleanup actually retires work. Revocation cannot be bypassed by a prepared cache hit or an old queued token.
 
-Control-plane I/O stays outside Invoke. Canary capture uses bounded in-memory accounting and an affine terminal owner; it never writes audit files or changes an activation's execution budget. Critical control audit and complete response preflight precede mutation. A lost caller may leave a committed operation whose terminal audit outcome is Unknown; exact durable lookup resolves what is retained.
+Durable control mutations have separate owners from invocation. Cold preparation can read artifact bytes and compile code; a warm hit still checks current eligibility. Canary capture uses bounded in-memory accounting and an affine terminal owner; it never writes audit files or changes an activation's execution budget. Complete response preflight and critical control audit begin precede mutation. A lost caller may leave a committed operation whose terminal audit outcome is Unknown; exact durable lookup resolves what is retained.
 
 Resources have distinct limits: catalog metadata, queue slots, request/response bytes, audit retention, raw cache storage, compiler jobs and native images. Fixed workers do not imply constant catalog RSS. Cancellation does not refund bytes or job slots while another owner still holds them.
 

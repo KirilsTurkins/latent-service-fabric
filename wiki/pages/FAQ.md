@@ -1,7 +1,9 @@
 <!-- LSF-WIKI-MANAGED -->
 # Frequently asked questions
 
-**What is delivered now?** Phase 1, its performance extension and Phase 2 are complete. Phase 2 implements packages, signed admission/lifecycle, isolated AOT/native reuse, audit, rollouts, canary promotion, rollback and operator workflows. The [completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) retains the finite evidence and qualifications. The current published release remains alpha.2; a Wiki refresh is not a product release receipt.
+**What is delivered now?** Phase 1, its performance extension and Phase 2 are complete. Phase 2 implements packages, signed admission/lifecycle, isolated AOT/native reuse, audit, rollouts, canary promotion, rollback and operator workflows. The [completion report](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/docs/phase-2-completion.md) retains the finite evidence and qualifications. These current implementation claims refer to development.
+
+**Which release should I use for that surface?** The latest published release is 0.1.0-alpha.2, the Phase 1 snapshot. Alpha.3 is being prepared for Phase 2; until it is published, follow development for the completed features described here. A Wiki refresh is not a product release receipt, and planned Phase 3 capabilities are not part of this delivery claim.
 
 **Does every dormant service have a process or heap?** No. Dormant services retain bounded metadata and artifacts. Execution cells, workers and pools are shared. Catalog RSS and storage can still grow with the number of releases.
 
@@ -25,4 +27,4 @@
 
 **Does cancellation mean cleanup is complete?** No. Owners remain charged through actual retirement, child reaping and retained pins. Status acknowledgement is separate.
 
-**What comes next?** Phase 3 has [41 planned tickets](https://github.com/KirilsTurkins/latent-service-fabric/issues/201) for host capabilities, concrete providers, web hosting, SDKs and gates. Those tickets do not imply the functionality already exists.
+**What comes next?** Phase 3 is the next planned workstream, with [41 tickets](https://github.com/KirilsTurkins/latent-service-fabric/issues/201) for host capabilities, concrete providers, web hosting, SDKs and gates. Contracts, grants and shared ownership precede provider and web integration. Those tickets do not imply the functionality already exists.
