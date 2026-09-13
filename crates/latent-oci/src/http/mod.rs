@@ -11,7 +11,7 @@ mod transport;
 mod upload_worker;
 
 use crate::{OciDescriptor, OciManifestBytes, OciPushRequest, OciReference, OciRegistry};
-pub use config::{RegistryBearerChallenge, RegistryConfig, RegistryCredentials, RegistryLimits};
+pub use config::{RegistryConfig, RegistryCredentials, RegistryLimits};
 use latent_core::{BoxFuture, PackageDigest, PlatformError, PlatformErrorCode};
 pub use pull::OciPulledPackage;
 use std::sync::Arc;
