@@ -5,7 +5,10 @@ use std::{fmt, net::SocketAddr, time::Duration};
 /// Explicit origin/repository-scoped credentials. Debug never renders their bytes.
 pub enum RegistryCredentials {
     Anonymous,
-    Basic { username: String, password: String },
+    Basic {
+        username: String,
+        password: String,
+    },
     Bearer(String),
     /// Operator-approved Registry v2 challenge authority. The realm must be an
     /// exact HTTPS URL without query/userinfo/fragment. Credentials are sent only
