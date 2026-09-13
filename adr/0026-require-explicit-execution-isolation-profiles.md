@@ -1,4 +1,4 @@
-# ADR-0025: Require explicit execution isolation profiles
+# ADR-0026: Require explicit execution isolation profiles
 
 - **Status:** Accepted
 - **Date:** 2026-09-13
@@ -16,7 +16,7 @@ Profile compatibility fails closed. A requested profile that is unknown, unavail
 
 The baseline matrix is defined by RFC-0001:
 
-- `local-experimental-v1` is the delivered fresh-store, in-process Wasmtime boundary. It supports trusted/local workloads and untrusted guest code only while the node, Wasmtime, host bindings and operating system remain trusted.
+- `local-experimental-v1` is the delivered T0 profile for operator-trusted/local workloads. Fresh Wasmtime stores provide the documented guest execution barrier under the node/engine/OS trusted computing base, but trusted-local admission and in-process compilation do not establish the end-to-end T1 external-capsule profile.
 - `isolated-aot-compiler-v1` is the delivered bounded Linux x86_64 compiler-child boundary. It isolates compiler work only.
 - `authenticated-native-aot-v1` is the delivered same-node authenticated native reuse/loading path. The native loader and node remain trusted; arbitrary external native artifacts are unsupported.
 - `external-capsule-v1` is planned and requires enforced package admission, exact ABI/profile compatibility, protected trust configuration, the reviewed runtime baseline and supported isolated compilation before it can be selected.
@@ -25,6 +25,11 @@ The baseline matrix is defined by RFC-0001:
 - host/kernel compromise and strong same-machine side-channel isolation remain outside the current standalone security boundary.
 
 A package signature, compiler sandbox, guest `Store` limiter, profile label or cache entry is not proof that another boundary is present.
+
+These names identify architectural profiles, not a newly delivered configuration
+selector. The current node exposes its existing trusted-local/enforced admission
+and opt-in isolated-AOT settings. Exact requested-profile enforcement is assigned
+to the implementation tickets below; unimplemented profiles remain unavailable.
 
 ## Ownership of follow-up implementation
 
@@ -37,6 +42,13 @@ This ADR assigns enforcement rather than expanding the current runtime:
 - provider-specific tickets own provider bounds and failure behavior.
 
 A new external execution backend is not required to complete this decision. If one is later implemented, its process count must remain fixed or node-configured bounded independently of service count. The supervisor may create, stop, kill, quarantine, reap and replace only those node-owned hosts. A failed host remains charged until termination and reap are observed and is never returned to the reusable pool.
+
+A separate PID alone does not establish T2. OS and IPC restrictions must prevent
+a compromised host from accessing supervisor memory, trust/signing keys and
+unrelated resources. CPU, memory, descriptors, IPC buffers and descendant work
+require independent hard boundaries. Untrusted executable/provider/native work
+stays in the execution host; the supervisor accepts bounded authenticated
+messages rather than executing worker-supplied native code or callbacks.
 
 ## Interruption and accounting
 

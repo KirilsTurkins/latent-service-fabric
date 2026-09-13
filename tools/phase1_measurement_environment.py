@@ -6,6 +6,7 @@ from pathlib import Path
 import platform
 import re
 import subprocess
+import tomllib
 
 from tools.run_phase1_conformance import ROOT, digest, git, identity
 
@@ -86,8 +87,10 @@ def build_configuration(profile: str) -> dict:
         }
     else:
         overrides = {"collector_surface": "libtest", "recipe": "cargo-test-debug"}
+    manifest = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
+    wasmtime = manifest["workspace"]["dependencies"]["wasmtime"]["version"].removeprefix("=")
     return {"profile": "release" if profile == "full" else "debug", "rustc": rustc,
-            "cargo": command("cargo", "--version"), "wasmtime": "47.0.3", "target": target,
+            "cargo": command("cargo", "--version"), "wasmtime": wasmtime, "target": target,
             "overrides": overrides}
 
 

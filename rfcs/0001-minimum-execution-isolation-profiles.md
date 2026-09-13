@@ -39,7 +39,7 @@ A profile may support more than one workload type, but it must never imply a str
 
 | Profile | Status | Work | Supported threat | Boundary and trusted components | Platform / prerequisites |
 | --- | --- | --- | --- | --- | --- |
-| `local-experimental-v1` | Delivered | guest execution and ordinary local preparation | T0, and T1 only under the documented Wasmtime/node TCB | fresh Wasmtime store in a fixed in-process cell; standalone node, Wasmtime, host bindings, parser/validator, compiler path and OS are trusted | current standalone-runtime platform support; no separate guest process |
+| `local-experimental-v1` | Delivered | guest execution and ordinary local preparation | T0 operator-trusted/local admission | fresh Wasmtime store in a fixed in-process cell; standalone node, Wasmtime, host bindings, parser/validator, in-process compiler and OS are trusted | current standalone-runtime platform support; no separate guest process or hardened external-capsule admission |
 | `isolated-aot-compiler-v1` | Delivered, opt-in | compilation of verified portable components | T1 for compiler work only | one bounded child per reserved job, authenticated executable, Landlock ABI 3 + seccomp, hard limits, bounded pipes, kill/reap ownership; parent parser/validator and OS remain trusted | Linux x86_64 with the exact sandbox prerequisites in `docs/runtime/trusted-aot.md` |
 | `authenticated-native-aot-v1` | Delivered, opt-in | same-node reuse/loading of output produced by the approved isolated compiler | T0/T1 input integrity under the node TCB; not T2 native-code isolation | protected host-local key, exact compatibility key, authenticated native bytes, bounded cache/image owners, one audited copying deserialize boundary; node/native loader/Wasmtime/OS are trusted | same supported isolated-AOT platform; arbitrary external native artifacts are unsupported |
 | `external-capsule-v1` | Planned | externally supplied component admission plus guest execution | T1 | enforced package admission, exact host ABI/profile compatibility, protected credentials/trust configuration, reviewed runtime baseline, supported isolated compilation, fresh in-process Wasmtime guest store | becomes supported only after #202, #278, #279 and #280 provide and test every prerequisite |
@@ -49,6 +49,23 @@ A profile may support more than one workload type, but it must never imply a str
 | `host-machine-isolated-v1` | Unsupported | workloads requiring T3 | T3 | separate-machine or stronger hardware boundary | outside current standalone delivery |
 
 `external-capsule-v1` intentionally does not claim T2. Enforced signatures, provenance, isolated compilation, and fresh Wasmtime stores reduce different risks; none makes the Wasmtime/node process itself an untrusted boundary.
+
+The local default's Wasm execution barrier remains useful under the trusted
+Wasmtime/node implementation. It does not establish end-to-end T1 admission:
+the default is `TrustedLocal`, compilation is in-process unless isolated AOT is
+explicitly configured, and protected credential/trust files still require #278.
+Enforced admission does not automatically select isolated compilation. T1
+external-capsule support requires every `external-capsule-v1` prerequisite and
+its evidence to pass.
+
+The names in this table are architectural identities. This decision adds no new
+configuration selector or executable compatibility claim. Existing settings
+select the delivered mechanisms; #202/#204/#280 implement exact profile
+selection and enforcement before planned profiles can be advertised as usable.
+
+The delivered compiler readiness protocol continues to require
+`lsf-linux-x86_64-landlock3-seccomp-v1`. The architectural
+`isolated-aot-compiler-v1` name does not replace or alias that wire identity.
 
 ### Exact compatibility and no downgrade
 
@@ -71,6 +88,22 @@ A cache hit, previously prepared artifact, package signature, profile label, gue
 If `fixed-execution-host-v1` is implemented, the node supervisor may create, stop, kill, quarantine, reap, and replace only a fixed or configured-bounded set of node-owned hosts. Host count is independent of registered service count. Work enters through bounded authenticated IPC owned by the node; a deployment cannot request a dedicated persistent host.
 
 A compromised, crashed, timed-out, or non-cooperatively stuck host is not returned to the reusable pool. It remains charged until termination and reap are observed. Replacement capacity is acquired under the same node-owned ceiling. Guest/provider code may not create descendants or widen the supervisor's allowed operations.
+
+Process separation alone is insufficient. The selected OS facilities must
+prevent worker access to supervisor memory, trust/signing keys, inherited
+privileged descriptors and unrelated files, sockets or tenant resources. Workers
+receive only the exact activation authority delegated over bounded authenticated
+IPC. Untrusted native code, provider callbacks and renderer execution stay behind
+that boundary; the supervisor does not execute worker-supplied code.
+
+Each host needs independent enforced CPU-time, address-space or memory, wall-time,
+descriptor, task/descendant and IPC byte/queue limits. Limits must remain effective
+after worker compromise and must not be supplied or relaxed by that worker.
+Descendants are denied unless a later reviewed profile contains and accounts for
+the complete process tree. Kill/reap must cover that tree before any host slot or
+resource allowance is returned. OS-policy or IPC enforcement failure rejects the
+profile before untrusted work starts; no T2 claim is made from a PID or a
+supervisor timeout alone.
 
 ### Interruption, quarantine, shutdown, and recovery
 
@@ -112,21 +145,38 @@ Profile selection fails closed. Unsupported/partially enforced profiles are reje
 
 - **One universal "secure" profile:** rejected because it collapses independent trust assumptions and would overstate the delivered boundary.
 - **Per-service host processes:** rejected because resident process count would scale with service count and violate the dormant-resource invariant.
-- **Require a new external guest host before any Phase 3 work:** rejected because T0/T1 work can continue under the documented in-process TCB while stronger T2 claims remain unavailable.
+- **Require a new external guest host before any Phase 3 work:** rejected because T0 work can continue under the documented in-process TCB, and T1 external-capsule support can follow its explicit prerequisites while T2 remains unavailable.
 - **Treat compiler isolation as guest isolation:** rejected because compilation and execution occur in different processes and have different trusted components.
 
 ## Validation plan
 
 Finite acceptance evidence is profile-specific:
 
-- `local-experimental-v1`: existing activation isolation, budgets, cancellation, cleanup, cross-activation leakage, and Wasmtime conformance tests; evidence supports T0/T1-under-TCB only.
+- `local-experimental-v1`: existing activation isolation, budgets, cancellation, cleanup, cross-activation leakage, and Wasmtime conformance tests; evidence supports the T0 default and its documented Wasm execution barrier, not hardened external-capsule admission.
 - `isolated-aot-compiler-v1`: existing sandbox prerequisite probes plus bounded timeout, cancellation, malformed I/O, crash, kill/reap, descriptor, filesystem/network, process/thread creation, and cleanup tests.
 - `authenticated-native-aot-v1`: exact engine/config/security identity, tamper/rejection, currentness, cache miss/rebuild, image ownership, restart, and authenticated-load tests.
 - `external-capsule-v1`: #280 startup/check-config and every-preparation-path fail-closed tests, using #278/#279 prerequisites and #238 integrated adversarial evidence.
 - provider/renderer profiles: provider-specific malformed response, quota, cancellation, overload, secret-leak/cross-tenant, shutdown, and renderer containment evidence before support.
-- `fixed-execution-host-v1`: process crash/kill/quarantine/reap, bounded host replacement, IPC limits, cross-activation/tenant leakage, stuck-work shutdown, and resource-accounting tests before any T2 claim.
+- `fixed-execution-host-v1`: process crash/kill/quarantine/reap, bounded host replacement, OS-enforced denial of supervisor memory/keys/descriptors, CPU/memory/process-tree/IPC limits under worker compromise, cross-activation/tenant leakage, stuck-work shutdown, and resource-accounting tests before any T2 claim.
 
 Historical benchmark evidence remains historical. This decision does not require a new scale or performance campaign.
+
+The delivered mechanisms have concrete, bounded test entry points:
+
+| Mechanism | Executable evidence |
+| --- | --- |
+| Fresh stores, guest limits, cancellation and reuse | [generic backend](../crates/latent-wasmtime/tests/generic_backend.rs), [containment](../crates/latent-wasmtime/tests/containment_backend.rs), [lifecycle](../crates/latent-wasmtime/tests/lifecycle.rs) and host-accounting library tests |
+| Isolated compilation and enforced OS facilities | [real compiler](../crates/latent-wasmtime/tests/isolated_aot.rs), [supervision](../crates/latent-wasmtime/tests/aot_supervisor.rs) and [sandbox probes](../crates/latent-wasmtime/tests/aot_sandbox.rs) |
+| Authenticated native loading and independent currentness | [native cache/restart/tamper tests](../crates/latent-wasmtime/tests/native_aot_cache.rs), [admission](../crates/latent-wasmtime/tests/admission.rs) and AOT profile/seal/image ownership library tests |
+
+The patched runtime/compiler baseline passed these suites and the bounded
+real-node workflows in [PR #286's CI run](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34756145022).
+That result supports the documented mechanisms, not an unimplemented profile.
+Compiler/native-cache acceptance requires supported Linux x86-64 facilities;
+Windows compilation alone is not an isolation result. See the
+[baseline record](../docs/development/wasmtime-security-update.md) for the exact
+dependency/advisory and platform limits. Subsequent profile expansions must add
+their own finite negative/cleanup cases to #238 before stronger support claims.
 
 ## Open questions
 

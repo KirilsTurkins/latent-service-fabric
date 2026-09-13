@@ -20,6 +20,36 @@ and custom metrics, application ingress and web/SSR integration. Transactional
 state/effects, cluster transport and durable workflow suspension remain later
 phases; declared WIT alone makes none of them callable.
 
+## Planned Phase 3 immediate provider operations
+
+[ADR-0025](../../adr/0025-separate-immediate-capability-operations-from-transactional-effect-intents.md)
+defines the semantic mode for Phase 3 external providers. HTTP, blob and event
+operations are immediate activation-scoped capability calls, not application
+state transactions or durable effect intents. Provider contracts must distinguish
+rejection before dispatch, provider acknowledgement, known provider failure and
+uncertain outcome after possible dispatch wherever the underlying protocol can
+support that distinction.
+
+Cancellation and deadline expiry stop work that LSF still controls. Once an
+external operation may have been dispatched, they cannot prove that the remote
+effect did not occur. A lost acknowledgement therefore cannot be rewritten as a
+definite failure or used to justify automatic replay of an uncertain mutation.
+An idempotency key is an input to an explicit provider retry/deduplication policy;
+it is not permission for a hidden retry.
+
+Provider acknowledgement is also narrower than application completion. An HTTP
+response, blob-provider acknowledgement or broker publication receipt does not
+by itself prove downstream consumer processing, invocation success, a guest-state
+commit or end-to-end exactly-once execution. Audit observations report what LSF
+observed; provider cleanup/recovery records retain provider-owned work. Neither is
+a Phase 4 transaction/outbox receipt.
+
+The shared async ownership work in #205 and concrete HTTP/blob/event providers in
+#211, #214 and #217 must preserve those distinctions in typed results and cleanup.
+#238 owns integrated adversarial uncertainty/resource-retirement evidence and
+#240 reviews that evidence at the Phase 3 gate. These are planned constraints,
+not claims that the provider implementations are currently available.
+
 ## Context disclosure
 
 Identity, lineage, authenticated principal identity, core trace fields, and the

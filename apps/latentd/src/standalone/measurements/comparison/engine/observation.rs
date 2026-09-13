@@ -51,15 +51,19 @@ pub(super) fn profile(node: &Node, plan: &super::plan::Plan) -> Result<Value> {
         .profile();
     let c = &node.runtime_config;
     let pooled = profile.pooling_allocator;
+    let pinned_defaults = format!(
+        "pinned-wasmtime-{}-default",
+        latent_wasmtime::WASMTIME_VERSION
+    );
     Ok(
         json!({"id":profile.id,"wasmtime_version":profile.wasmtime_version,"target_triple":profile.target_triple,"cpu_feature_set":profile.cpu_feature_set,
         "pooling_allocator":pooled,"copy_on_write_images":profile.copy_on_write_images,"async_support":profile.async_support,"fuel_enabled":profile.fuel_enabled,"epoch_interruption_enabled":profile.epoch_interruption_enabled,"configuration":profile.configuration,
         "effective_policy":{"source":"common-source-projection","allocator":c.instance_allocator.name(),
             "optimization":plan.requested_engine.as_ref().map_or("speed",|v|v.optimization.as_str()),
-            "optimization_source":if plan.variant=="control" {"pinned-wasmtime-47.0.3-default"}else{"requested-config-bound-to-candidate-profile"},
+            "optimization_source":if plan.variant=="control" {pinned_defaults.as_str()}else{"requested-config-bound-to-candidate-profile"},
             "memory_reservation_bytes":if pooled {c.maximum_memory_bytes.to_string()}else{"4294967296".into()},
             "memory_guard_bytes":if pooled {"0"}else{"33554432"},"memory_reservation_for_growth_bytes":if pooled {"0"}else{"2147483648"},
-            "layout_source":if pooled {"existing-source-override"}else{"pinned-wasmtime-47.0.3-default"},
+            "layout_source":if pooled {"existing-source-override"}else{pinned_defaults.as_str()},
             "async_stack_zeroing":false,"memory_may_move":true,"guard_before_linear_memory":true,
             "pooling_maximum_instances":c.pooling_maximum_instances.to_string(),"maximum_active_instances":c.maximum_active_instances.to_string(),
             "pooling_unused_warm_slots":pooled.then_some("0"),"pooling_decommit_batch_size":pooled.then_some("1"),"pooling_keep_resident_bytes":pooled.then_some("0"),

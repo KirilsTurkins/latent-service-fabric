@@ -127,12 +127,19 @@ Lowered limits cannot silently discard security history to make room.
 
 ## Isolation scope
 
-[ADR-0025](../../adr/0025-require-explicit-execution-isolation-profiles.md) and
+[ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
 [RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) define the
 minimum profile matrix and evidence boundary. The delivered guest boundary is a
 fresh Wasmtime store in fixed in-process cells (`local-experimental-v1`). The
 standalone node, Wasmtime, host bindings and host OS remain trusted. Guest Store
 limits are not a whole-process RSS boundary.
+
+This delivered default is T0: operator-trusted local admission and preparation.
+Its Wasm execution barrier does not turn the in-process compilation path into
+the planned T1 external-capsule admission profile. Enforced signatures and
+isolated compilation are separate controls; enabling one does not enable the
+other. Profile identifiers here describe the architectural contract, not a new
+configuration field delivered by this documentation change.
 
 The isolated compiler child (`isolated-aot-compiler-v1`) is a separate bounded
 compilation boundary, not a per-service execution host. Authenticated native AOT

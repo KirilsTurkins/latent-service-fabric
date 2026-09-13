@@ -3,7 +3,7 @@
 Phase 2 issue #150 adds a bounded compiler producer to `latent-wasmtime`.
 `IsolatedAotCompiler` launches an approved one-job executable, verifies its input
 and output, and returns locally authenticated native bytes with an owned memory
-allowance. The child uses Wasmtime 47.0.3's safe `Engine::precompile_component`;
+allowance. The child uses Wasmtime 47.0.4's safe `Engine::precompile_component`;
 it never instantiates a guest or loads native output.
 
 Issue #151 adds opt-in persistent native reuse and authenticated loading. A
@@ -11,6 +11,18 @@ configured factory uses its exact directory catalog, approved isolated compiler,
 protected host key, bounded raw-blob cache and bounded receipt cache. The normal
 configuration continues to compile portable components locally. There is no
 automatic CLI cache or distributed native-artifact trust protocol.
+
+[ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
+[RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) distinguish
+these implemented compiler/native-load mechanisms from guest-process isolation.
+The trusted-local default remains for operator-controlled workloads. The planned
+external-capsule profile requires enforced admission, protected configuration,
+the [patched runtime baseline](../development/wasmtime-security-update.md) and
+supported isolated compilation together; enabling signatures alone does not
+select this compiler. Profile selection/enforcement remains assigned to #280.
+The parent parser, configured compiler, native loader, Wasmtime and OS remain
+trusted; a separate compiler process does not make its native output untrusted
+code safe to execute in the node.
 
 ## Host API and input authority
 
@@ -234,7 +246,7 @@ before the larger blob read. There is no public `load(bytes)` or restored-output
 constructor.
 
 The sole audited unsafe operation is `Component::deserialize` over this immutable
-authenticated slice. Wasmtime 47.0.3 copies the bytes into its own mapping; the
+authenticated slice. Wasmtime 47.0.4 copies the bytes into its own mapping; the
 loader never deserializes a replaceable file or trusts a filename. It checks the
 actual engine fingerprint, current input capability and job control before entry,
 then checks currentness again after the synchronous loader returns. Wasmtime

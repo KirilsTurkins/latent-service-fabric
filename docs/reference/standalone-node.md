@@ -117,6 +117,9 @@ reload live trust; the host replacement API owns that transaction.
 | `limits.maximumComponentBytes` | `16777216` | Upload, repository and backend component ceiling, up to 64 MiB. |
 | `limits.maximumPayloadBytes` | `1048576` | Invocation/codec input and output ceiling, up to 1 MiB. |
 | `limits.maximumConnections` | `32` | Accepted transport connections, 1–1024. |
+| `limits.unauthenticatedConnectionTimeoutMillis` | `5000` | Accept-to-first-authenticated-RPC deadline, 100–60000 ms; protocol traffic does not renew it. |
+| `limits.maximumConnectionAgeMillis` | `300000` | Accept-to-drain age, at least the authentication timeout and at most 86400000 ms. |
+| `limits.connectionDrainTimeoutMillis` | `5000` | Allowance for already admitted RPCs after connection age expiry, 1–60000 ms; then close the connection. |
 | `cache.entries` | `8` | Retained prepared components, 1–4096. |
 | `cache.sourceBytes` | `67108864` | Associated component-byte ceiling for resident code, at least one maximum component and at most 1 GiB; not retained source buffers. |
 | `cache.metadataBytes` | `8388608` | Resident preparation metadata accounting ceiling, 1 MiB–1 GiB. |
@@ -136,6 +139,11 @@ reload live trust; the host replacement API owns that transaction.
 | `telemetry.retainedEntries` | `1024` | Local diagnostic capture, 1–65536 records. |
 | `telemetry.retainedBytes` | `8388608` | Local diagnostic allocation ceiling, 64 KiB–256 MiB. |
 | `shutdownGraceMillis` | `1000` | Bounded drain/transport/runtime shutdown interval, 1–60000 ms. |
+
+The [connection deadline policy](../runtime/transport-connection-deadlines.md)
+defines first authentication, maximum age, draining, reconnect/status recovery
+and the residual local admission-flood boundary. Successful authentication does
+not renew a connection's maximum age or bypass authentication on later RPCs.
 
 A cell entry has `class`, `capacity`, `queueCapacity`, and `maximumMemoryBytes`.
 Known classes are `tiny`, `small`, `standard`, `large`, and `extra-large`. Omit

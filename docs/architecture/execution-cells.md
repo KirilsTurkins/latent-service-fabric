@@ -10,7 +10,7 @@ are temporary bounded workers, not guest execution cells. Trust-sharded guest
 processes, state transactions and external asynchronous capability providers
 remain later work.
 
-[ADR-0025](../../adr/0025-require-explicit-execution-isolation-profiles.md) and
+[ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
 [RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) define the
 security-profile boundary. The delivered in-process cell is not a process-compromise
 boundary. A workload that requires containment after compromise of the process
@@ -53,6 +53,12 @@ A guest trap must terminate only that activation. Phase 3 plans the general brok
 handle table. The current `local-experimental-v1` profile trusts the standalone
 node, Wasmtime, host bindings and operating system. Guest Store limits constrain
 guest-visible resources; they are not a complete process-RSS boundary.
+
+This default covers T0 operator-trusted preparation and execution. Supporting
+external/adversarial capsule admission also requires the enforced admission,
+protected configuration and isolated compilation of the planned
+`external-capsule-v1` profile. Guest sandboxing alone does not supply those
+preparation and configuration boundaries.
 
 A future stronger profile may use a fixed/bounded pool of trust-class execution
 hosts. Host count must remain independent of service count. A failed, stuck or

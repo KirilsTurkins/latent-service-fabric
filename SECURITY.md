@@ -34,14 +34,18 @@ standalone node, Wasmtime native loader and host OS remain trusted. This does no
 support arbitrary external native artifacts and does not provide a separate guest
 execution process. See [trusted AOT](docs/runtime/trusted-aot.md).
 
-[ADR-0025](adr/0025-require-explicit-execution-isolation-profiles.md) and
+[ADR-0026](adr/0026-require-explicit-execution-isolation-profiles.md) and
 [RFC-0001](rfcs/0001-minimum-execution-isolation-profiles.md) define the current
 isolation-profile boundary. Fresh in-process Wasmtime stores remain the delivered
 guest execution model. A stronger profile that must remain isolated after
 compromise of the guest/provider/renderer process requires a separate fixed,
 node-owned execution host and is unsupported until that backend and its finite
 evidence are implemented. Security-profile selection must fail closed rather
-than silently downgrade to a weaker boundary.
+than silently downgrade to a weaker boundary. The current trusted-local default
+is for operator-controlled workloads; its in-process compiler and main
+configuration loader's missing protected-file checks do not establish the planned external-capsule
+profile. Enforced admission alone does not select compiler isolation. That
+profile requires the complete #202/#278/#279/#280 implementation and evidence.
 
 General external capability providers, transactional state/effects, and cluster
 mTLS remain later work. They add trust boundaries when implemented. See the

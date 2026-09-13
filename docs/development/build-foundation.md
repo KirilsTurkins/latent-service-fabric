@@ -32,7 +32,7 @@ The exact dependency baseline is recorded in both the root `Cargo.toml` and `too
 | Tonic Prost Build | 0.14.6 |
 | Vendored `protoc` | 3.2.0 |
 | Tracing / tracing-subscriber | 0.1.44 / 0.3.23 |
-| Wasmtime | 47.0.3 |
+| Wasmtime | 47.0.4 |
 | `wit-bindgen` | 0.60.0 |
 
 The committed root `Cargo.lock` is authoritative. Local commands and CI use `--locked`; they do not silently replace the dependency graph.
