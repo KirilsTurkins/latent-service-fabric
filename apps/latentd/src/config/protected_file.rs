@@ -185,10 +185,11 @@ mod platform {
         let mode = metadata.mode();
         let group_writable = mode & 0o020 != 0;
         let other_writable = mode & 0o002 != 0;
-        if group_writable && metadata.gid() != gid {
+        let sticky_shared = metadata.uid() == 0 && other_writable && mode & 0o1000 != 0;
+        if group_writable && metadata.gid() != gid && !sticky_shared {
             return Err(());
         }
-        if other_writable && !(metadata.uid() == 0 && mode & 0o1000 != 0) {
+        if other_writable && !sticky_shared {
             return Err(());
         }
         let untrusted_group_can_traverse = metadata.gid() != gid && mode & 0o010 != 0;
