@@ -32,6 +32,10 @@ pub fn configuration(directory: &Path) -> PathBuf {
         .unwrap(),
     )
     .unwrap();
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    }
     path
 }
 

@@ -42,10 +42,14 @@ compromise of the guest/provider/renderer process requires a separate fixed,
 node-owned execution host and is unsupported until that backend and its finite
 evidence are implemented. Security-profile selection must fail closed rather
 than silently downgrade to a weaker boundary. The current trusted-local default
-is for operator-controlled workloads; its in-process compiler and main
-configuration loader's missing protected-file checks do not establish the planned external-capsule
-profile. Enforced admission alone does not select compiler isolation. That
-profile requires the complete #202/#278/#279/#280 implementation and evidence.
+is for operator-controlled workloads. Linux x86_64 configuration loading now has
+a descriptor-anchored protected-file policy for bearer credentials and enforced
+trust policy, but that control alone does not establish the planned
+`external-capsule-v1` profile. Enforced admission alone does not select compiler
+isolation either. The complete profile still requires exact host compatibility
+and deployment/startup enforcement owned by #202 and #280, together with the
+reviewed runtime and isolated-compilation prerequisites. See
+[protected configuration](docs/runtime/protected-configuration.md).
 
 General external capability providers, transactional state/effects, and cluster
 mTLS remain later work. They add trust boundaries when implemented. See the

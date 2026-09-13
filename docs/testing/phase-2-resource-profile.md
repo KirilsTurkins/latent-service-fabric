@@ -1,9 +1,14 @@
 # Phase 2 resource profile
 
-`phase2-dormant-32-r1` is a fixed Linux resource experiment for gate #158.
+`phase2-dormant-32-r2` is a fixed Linux resource experiment for gate #158.
 A profile definition
 is not a passing result. The gate remains pending until its retained evidence
 has been reviewed alongside the other Phase 2 checks.
+
+Revision 2 records the fixed load sampler's transient descriptor separately.
+Its workload, deadlines and resource ceilings remain the same. Historical
+revision 1 receipts retain their original identity and require their pinned
+collector/validator; this revision does not rewrite those measurements.
 
 The runner starts an actual `latentd`, uses actual authenticated `latent`
 commands, and owns every process through exit and reap. It does not build,
@@ -88,8 +93,15 @@ observation may each occupy at most one slot; these are reported explicitly.
 OS sampling occurs after the inventory caller has exited and been reaped.
 The node PID, start ticks, group/session and executable identity must still
 match. Task children must be absent. There must be exactly one listening TCP
-socket. Threads, tasks, descriptor count, socket count, listener count and
-descendant count must match the warm baseline across all twelve samples.
+socket. Threads, tasks, retained descriptor count, socket count, listener count
+and descendant count must match the warm baseline across all twelve samples.
+The raw `fdCount` is preserved. `loadSamplerFdCount` separately identifies at
+most one read-only `/proc/pressure/cpu` or `/proc/pressure/memory` descriptor
+held by the fixed load sampler. Its exact link and Linux access flags must be
+observed consistently. Only that count is subtracted for the retained-descriptor
+comparison; another file, writable descriptor, or additional sampler descriptor
+cannot be hidden by this accounting. This corrects the collector's assumption
+that a quiet invocation inventory stops the node's periodic pressure reads.
 No missing observation is converted to zero. A raced, inaccessible or
 oversized proc observation fails the experiment instead of extending its bounds.
 
