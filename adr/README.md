@@ -69,3 +69,10 @@ choices. `lsf-oci-static-v1` names the delivered restricted profile;
 `lsf-oci-bearer-v1` remains selected but unsupported until #269/#270 deliver and
 validate token authentication, bounded DNS/redirects and the Harbor conformance
 matrix from [RFC-0003](../rfcs/0003-versioned-oci-transport-profiles.md).
+
+[ADR-0030](0030-bound-disconnected-authorization-validity.md) clarifies
+ADR-0011's temporary disconnected operation. Exact publication authorization has
+finite lease/disconnection bounds independent of route retention, with explicit
+clock, replay, restart and guarded-start semantics. Phase 3 delivers the design;
+[the Phase 5 handoff](../docs/architecture/cluster-freshness-handoff.md) requires
+executable distributed conformance before support is claimed.

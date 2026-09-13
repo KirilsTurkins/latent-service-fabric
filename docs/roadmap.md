@@ -116,10 +116,12 @@ identities, actual outcomes and failed or superseded attempts.
 ## Phase 3: capabilities and application hosting
 
 [Epic #201](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
-defines the next capability-rich implementation phase. Issues #202–240
-and the retained [Angular umbrella #44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44)
-form a concrete 41-ticket planned backlog. The context, logging and
-clock surface already delivered in #10 remains the baseline.
+tracks the capability and application-hosting implementation now in progress,
+including the architecture/security audit requirements and the retained
+[Angular umbrella #44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44).
+The tracker records scoped delivery, dependencies and acceptance evidence.
+The context, logging and clock surface already delivered in #10 remains the
+baseline.
 
 The sequence starts with exact versioned contracts, durable grants and a sealed
 broker. Shared I/O ownership, provider pools and descendant reservations then
@@ -140,7 +142,7 @@ boundary. SDK and operator work must exercise the actual implementations.
 | HTTP application routing | [Request/response contracts #222](https://github.com/KirilsTurkins/latent-service-fabric/issues/222), [atomic scoped trigger routes #223](https://github.com/KirilsTurkins/latent-service-fabric/issues/223), [shared authenticated ingress #229](https://github.com/KirilsTurkins/latent-service-fabric/issues/229). |
 | Browser storage and responses | [Exact renderer/asset release admission #225](https://github.com/KirilsTurkins/latent-service-fabric/issues/225), [immutable asset serving #231](https://github.com/KirilsTurkins/latent-service-fabric/issues/231), [safe HTTP response-cache policy #232](https://github.com/KirilsTurkins/latent-service-fabric/issues/232). |
 | Angular SSR and hydration | [Execution-profile proof #224](https://github.com/KirilsTurkins/latent-service-fabric/issues/224), [bounded renderer cells #233](https://github.com/KirilsTurkins/latent-service-fabric/issues/233), [deterministic renderer/hydration packaging #234](https://github.com/KirilsTurkins/latent-service-fabric/issues/234), [browser isolation #235](https://github.com/KirilsTurkins/latent-service-fabric/issues/235), [real-browser reference workflow #236](https://github.com/KirilsTurkins/latent-service-fabric/issues/236), under [#44](https://github.com/KirilsTurkins/latent-service-fabric/issues/44). |
-| SDKs and executable examples | [Typed guest bindings and Rust/C examples #221](https://github.com/KirilsTurkins/latent-service-fabric/issues/221), [six-SDK parity #227](https://github.com/KirilsTurkins/latent-service-fabric/issues/227), [real Rust transport #228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228), [bounded TypeScript/browser client #230](https://github.com/KirilsTurkins/latent-service-fabric/issues/230). |
+| SDKs and executable examples | [Typed guest bindings and Rust/C examples #221](https://github.com/KirilsTurkins/latent-service-fabric/issues/221), [six-SDK parity #227](https://github.com/KirilsTurkins/latent-service-fabric/issues/227), [real Rust transport #228](https://github.com/KirilsTurkins/latent-service-fabric/issues/228), [bounded TypeScript/browser client #230](https://github.com/KirilsTurkins/latent-service-fabric/issues/230), and executable clients for [Go #260](https://github.com/KirilsTurkins/latent-service-fabric/issues/260), [C #261](https://github.com/KirilsTurkins/latent-service-fabric/issues/261), [Java #262](https://github.com/KirilsTurkins/latent-service-fabric/issues/262) and [.NET #263](https://github.com/KirilsTurkins/latent-service-fabric/issues/263). |
 | Operators and completion evidence | [Policy/provider/web management #226](https://github.com/KirilsTurkins/latent-service-fabric/issues/226), [runbooks #237](https://github.com/KirilsTurkins/latent-service-fabric/issues/237), [adversarial isolation #238](https://github.com/KirilsTurkins/latent-service-fabric/issues/238), [resource/preparation measurements #239](https://github.com/KirilsTurkins/latent-service-fabric/issues/239), [collective gate #240](https://github.com/KirilsTurkins/latent-service-fabric/issues/240). |
 
 Every provider must preserve exact tenant/grant/owner identity and fail closed
@@ -168,6 +170,15 @@ Separate control plane, route watches, direct node invocation, mTLS identity,
 artifact prefetch, state affinity and multi-zone placement. Phase 3 service calls
 are isolated local calls; they do not establish distributed routing or remote
 delegation.
+
+Before cluster implementation begins, carry [RFC-0004](../rfcs/0004-route-and-authorization-freshness.md)
+and its [implementation/conformance handoff](architecture/cluster-freshness-handoff.md)
+into the Phase 5 plan. Phase 3 ticket #274 delivers this design only: separate
+route retention from finite publication authorization, preserve local guarded
+start, define clock/replay/restart/reconnect behavior, and explicitly bound
+availability during a partition. Phase 5 owns the wire/storage/control-plane
+implementation and executed multi-node fault evidence; local tests do not prove
+remote-revocation freshness.
 
 ## Phase 6: durable workflows
 

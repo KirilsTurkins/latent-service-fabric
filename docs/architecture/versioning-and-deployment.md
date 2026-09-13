@@ -6,12 +6,14 @@ separate at every publication boundary.
 
 ## Immutable release
 
-`ReleaseDigest` remains SHA-256 of component bytes. The local catalog's
-versioned completion record separately binds the descriptor, contracts and
-canonical capsule manifest to those bytes. Metadata cannot change under an
-existing release identity. This detects accidental storage corruption under the
-locally trusted filesystem boundary. See the
-[local release catalog](../development/local-release-catalog.md).
+`ReleaseDigest` remains SHA-256 of component bytes. The catalog's versioned
+completion record binds the descriptor, contracts and canonical capsule manifest
+to those bytes. Phase 3's [publication identity](../reference/publication-catalog.md)
+separates the immutable package/local-completion association from tenant-scoped
+admission. Metadata cannot change under an existing publication, but different
+immutable packages may contain the same component. A corrected embedded SBOM
+therefore creates another package/publication without changing `ReleaseDigest`.
+The protected local catalog verifies those associations during recovery.
 
 Phase 2 adds a separate `PackageDigest` over exact package-manifest bytes
 and [bounded OCI transfer](../reference/oci-registry.md) for immutable
@@ -45,6 +47,7 @@ copies or place work across nodes. These distinct identities describe updates:
 
 | Identity | Meaning |
 | --- | --- |
+| Publication reference | Exact publication ID plus scope, independent of component/package digests. Owns lifecycle/admission; captured deployment and rollback pins do not reselect by component. |
 | Deployment generation | The object's last successful mutation version, used for caller preconditions. Unrelated object writes leave it unchanged. |
 | Route generation | The catalog's monotonically increasing publication sequence. A batch advances it once. |
 | `RevisionId` | A deterministic digest of the deployment's execution policy and release, excluding route weight. |
@@ -184,3 +187,20 @@ exact catalog source and protected host key. Reopened cache hits verify those
 identities and current release authority before loading; resident prepared hits
 retain their existing bounded ownership. The default mode continues local
 portable compilation.
+
+## Route data and authorization lifetime
+
+An immutable snapshot and a historical deployment/operation receipt do not
+renew execution permission. The delivered standalone runtime checks exact local
+publication/lifecycle/admission at guarded start. It has no distributed lease or
+remote-policy watch.
+
+[ADR-0030](../../adr/0030-bound-disconnected-authorization-validity.md) specifies
+future cluster authority separately: monotonic snapshot and policy identities,
+finite node/boot-bound authorization leases, conservative time/disconnection
+limits, durable replay floors and fresh restart/reconnect validation. Queued or
+ready activations remain subject to current authority; already accepted work may
+finish within its original bounded execution contract. A rollback publishes new
+route state and checks the captured publication's present permission. It never
+restores an old lease. The [Phase 5 matrix](cluster-freshness-handoff.md) covers
+expiry with retained routes, stale restart, reordering and cutover races.

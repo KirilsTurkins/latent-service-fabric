@@ -16,9 +16,11 @@ PostgreSQL, remote route watches and distributed reconciliation belong to Phase 
 
 The directory catalog retains immutable component bytes, descriptor, capsule
 manifest, contracts and a completion record binding their association.
-`ReleaseDigest` identifies component bytes. Packaged content additionally has an
-independent `PackageDigest` identifying its exact OCI manifest. A registry pull
-or local verification report grants no catalog permission.
+`ReleaseDigest` identifies component bytes. `PackageDigest` identifies the exact
+immutable package manifest. Phase 3's [publication catalog](../reference/publication-catalog.md)
+separates these from the scoped publication that owns admission and lifecycle.
+Different packages and tenants may share component bytes without sharing grants.
+A registry pull or local verification report grants no catalog permission.
 
 [Enforced admission](../reference/package-admission.md) checks package semantics,
 tenant ownership, current publisher and independent builder policy, provenance,
@@ -77,9 +79,10 @@ original state precondition prevents an evicted create from executing again
 after an intervening delete. Legacy writers preserve both operation histories.
 
 Format 3 combines routes and rollout history; format 4 adds managed deployment
-receipts. Formats 1 through 3 retain their existing absent-field and checksum
-rules. The first managed deployment operation writes format 4. Lowering limits
-does not silently prune retained state.
+receipts. Phase 3 format 5 also retains exact publication pins and upgrades earlier
+validated associations before serving routes, preserving historical canonical
+manifests and receipts. See [publication-bound recovery](../reference/publication-runtime.md).
+Lowering limits does not silently prune retained state.
 
 Compilation still visits the bounded desired state and encodes a complete
 catalog candidate. Fresh verified metadata can reuse immutable derivations and
@@ -140,3 +143,20 @@ placement, state affinity and a separate persistent control service are later
 phases. A local snapshot remains usable only while its own lifecycle, trust and
 runtime requirements remain valid; loss of a remote control service cannot
 turn stale authority into permission.
+
+## Disconnected authorization handoff
+
+[ADR-0030](../../adr/0030-bound-disconnected-authorization-validity.md) gives
+"temporary" disconnected use an explicit Phase 5 contract. Route content/digests
+and their retention are separate from exact scoped publication permission,
+lifecycle/evidence generations and trust/grant-policy checkpoints. A future node
+starts work only while the complete local association and finite authorization
+lease remain valid, with conservative clock/disconnection checks. No invocation
+performs a synchronous control-plane lookup.
+
+The current node has local guarded-start currentness, not distributed leases or
+remote-revocation knowledge. Future expiry/reconnect behavior, replay floors,
+new-boot revalidation and the queued/accepted cutover are specified in
+[RFC-0004](../../rfcs/0004-route-and-authorization-freshness.md).
+[Phase 5 implementation owners and conformance scenarios](cluster-freshness-handoff.md)
+must be carried into the cluster plan before support is advertised.

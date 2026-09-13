@@ -25,9 +25,16 @@ Node and control communication requires mutually authenticated transport. The ar
 
 ## Remote invocation
 
-A remote call carries the exact revision ID, release digest, contract, function, route generation, principal delegation, trace context, remaining deadline, delegated resource budget, and idempotency information.
+A future remote call carries the exact scoped publication, package/component
+identities, revision, contract, function, route generation/digest, principal
+delegation, trace context, remaining deadline, delegated resource budget and
+idempotency information. The receiving node independently validates current
+local authority and its own authorization lease for the exact target. A sender's
+cached route or signature cannot replace that check.
 
-The receiving node must execute that exact release or reject the call. It may not silently substitute a newer route.
+The receiving node executes the exact publication or rejects the call. It cannot
+substitute another publication with identical component bytes or a newer route.
+The wire/storage implementation and old-reader behavior remain Phase 5 work.
 
 ## Availability
 
@@ -50,3 +57,25 @@ required accelerators or CPU features
 - effect intents in the outbox remain durable,
 - entity leases expire,
 - workflow continuations remain persisted.
+
+## Finite control-plane outage behavior
+
+The accepted [freshness contract](../../rfcs/0004-route-and-authorization-freshness.md)
+keeps ordinary resolution local and bounds disconnected authorization separately
+from route retention. Its initial Phase 5 lease/disconnection policy defaults to
+30 seconds with a 300-second hard ceiling, intersected with stricter configured
+bounds and underlying expiries. These are selected future settings, not current
+standalone options or observed availability guarantees.
+
+Known revocations deny at local guarded start. Unseen remote revocations cannot
+be immediate during a partition; existing authority expires conservatively and
+then denies new starts. Accepted activations may finish under their finite
+execution limits. Queued/ready work and new descendants recheck current
+permission. Restart requires a new-boot checkpoint and lease; retained snapshots
+cannot revive authorization. Reconnect reconciles floors, time and exact
+publication authority before resuming.
+
+The [Phase 5 handoff](cluster-freshness-handoff.md) assigns protocol, storage,
+clock, node, runtime and conformance responsibilities and records the required
+outage/revoke/restart/reordering matrix. Those distributed paths are not yet
+implemented. The current local lifecycle fence is not a remote-freshness claim.
