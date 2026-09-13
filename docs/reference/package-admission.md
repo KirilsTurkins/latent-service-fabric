@@ -8,6 +8,15 @@ for deployment or execution. `latent-policy::supply_chain::SupplyChainAuthority`
 is the shared node owner. It retains approved public trust configuration and
 durable policy/time floors; request data cannot construct that authority.
 
+The accepted Phase 3 correction in
+[ADR-0027](../../adr/0027-separate-publication-authority-from-component-identity.md)
+and [RFC-0002](../../rfcs/0002-tenant-scoped-publication-identity.md) separates
+tenant-scoped publication from component identity. The implementation described
+below still uses the delivered one-component/one-publication rule until #265–#267
+complete its storage, runtime and public-selector migration. The decision does
+not yet make tenant-neutral package admission or same-component package
+coexistence available. Existing component fields retain their byte identity.
+
 ## Select the node mode
 
 The `supplyChain` member of [node configuration](standalone-node.md) selects one

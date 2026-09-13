@@ -46,3 +46,10 @@ boundary.
 security-profile selection, trusted-computing-base boundaries and fail-closed
 requirements for in-process guests, isolated compilation, authenticated native
 reuse and future provider/renderer/fixed-host execution.
+
+[ADR-0027](0027-separate-publication-authority-from-component-identity.md)
+supersedes only ADR-0019's one-component/one-publication rule. It separates
+tenant-scoped immutable publication and lifecycle authority from component/code
+deduplication, preserving legacy component fields and requiring explicit
+selectors, bounded migration and independent currentness. Implementation remains
+assigned to #265–#267 in [RFC-0002](../rfcs/0002-tenant-scoped-publication-identity.md).
