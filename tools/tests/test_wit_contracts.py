@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import re
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 STAGER_PATH = ROOT / "tools" / "stage_runtime_wit.py"
@@ -58,6 +60,39 @@ def duplicate_interface_items(text: str) -> list[tuple[str, str, int, int]]:
 
 
 class WitContractTests(unittest.TestCase):
+    def assert_staging_overlap_is_rejected(
+        self, destination: Path, source: Path, platform_wit: Path
+    ) -> None:
+        source_sentinel = source / "source.sentinel"
+        platform_sentinel = platform_wit / "platform.sentinel"
+        with (
+            mock.patch.object(stager, "PLATFORM_WIT", platform_wit),
+            mock.patch.object(stager.shutil, "rmtree") as rmtree,
+            mock.patch.object(stager.shutil, "copyfile") as copyfile,
+            mock.patch.object(stager.Path, "mkdir") as mkdir,
+        ):
+            with self.assertRaisesRegex(ValueError, "must not overlap"):
+                stager.stage(destination, source)
+
+        rmtree.assert_not_called()
+        copyfile.assert_not_called()
+        mkdir.assert_not_called()
+        self.assertEqual(source_sentinel.read_text(encoding="utf-8"), "source\n")
+        self.assertEqual(platform_sentinel.read_text(encoding="utf-8"), "platform\n")
+
+    def make_staging_inputs(self, root: Path) -> tuple[Path, Path]:
+        source = root / "example" / "source"
+        platform_wit = root / "platform"
+        (platform_wit / "context").mkdir(parents=True)
+        source.mkdir(parents=True)
+        (source / "package.wit").write_text("package example:source;\n", encoding="utf-8")
+        (platform_wit / "context" / "package.wit").write_text(
+            "package latent:context;\n", encoding="utf-8"
+        )
+        (source / "source.sentinel").write_text("source\n", encoding="utf-8")
+        (platform_wit / "platform.sentinel").write_text("platform\n", encoding="utf-8")
+        return source, platform_wit
+
     def test_interface_item_names_are_unique(self) -> None:
         wit_files = sorted((ROOT / "wit").rglob("*.wit")) + sorted(
             (ROOT / "examples").rglob("*.wit")
@@ -88,6 +123,23 @@ class WitContractTests(unittest.TestCase):
             [("context", "principal", 3, 6)],
         )
 
+    def test_staging_rejects_source_and_platform_overlaps_before_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, platform_wit = self.make_staging_inputs(root)
+            relative_source = Path(os.path.relpath(source, Path.cwd()))
+            cases = {
+                "source equal": source,
+                "source descendant": source / "generated",
+                "resolved relative source ancestor": relative_source / "..",
+                "platform dependency tree": platform_wit / "generated",
+            }
+            for label, destination in cases.items():
+                with self.subTest(label=label):
+                    self.assert_staging_overlap_is_rejected(
+                        destination, relative_source, platform_wit
+                    )
+
     def test_example_package_is_staged_with_platform_dependencies(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             destination = Path(temporary) / "echo"
@@ -100,6 +152,11 @@ class WitContractTests(unittest.TestCase):
             )
             self.assertTrue((destination / "deps" / "context" / "package.wit").is_file())
             self.assertFalse((destination / "deps" / "runtime").exists())
+
+            (destination / "stale.txt").write_text("stale\n", encoding="utf-8")
+            stager.stage(destination, source)
+            self.assertFalse((destination / "stale.txt").exists())
+            self.assertTrue((destination / "deps" / "context" / "package.wit").is_file())
 
 
 if __name__ == "__main__":
