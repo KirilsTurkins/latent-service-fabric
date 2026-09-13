@@ -127,7 +127,9 @@ async fn remote_inner(cli: &Cli) -> Result<Outcome, Failure> {
             if is_invocation {
                 invocation::execute(operation, &session).await
             } else {
-                management::execute(operation, &session).await
+                // One bounded CLI management operation owns its larger DTO
+                // future on the heap rather than growing every command's stack.
+                Box::pin(management::execute(operation, &session)).await
             }
         };
         let result = tokio::select! {

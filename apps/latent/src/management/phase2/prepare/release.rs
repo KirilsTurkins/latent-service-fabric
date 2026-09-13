@@ -76,48 +76,7 @@ pub(in crate::management) fn release(
                 },
             ))
         }
-        ReleaseCommand::PublishPackage(args) => {
-            let package = crate::package::read(&args.directory)?;
-            let evidence = args
-                .evidence
-                .as_ref()
-                .map(|path| {
-                    crate::package::evidence(path, parent(path)?, package.layout().digest())
-                })
-                .transpose()?
-                .unwrap_or_default();
-            // Package inspection is association only. The node authenticates its
-            // tenant and checks current policy; no client authority is asserted.
-            let input = package.into_input();
-            if input
-                .layers
-                .iter()
-                .any(|(_, bytes)| bytes.len() > config.limits.maximum_component_bytes)
-            {
-                return Err(invalid_input());
-            }
-            let evidence = convert_evidence(evidence);
-            Ok(Operation::PublishRelease(proto::PublishReleaseRequest {
-                release: None,
-                artifact: None,
-                operation: Some(proto::ReleaseOperationPrecondition {
-                    operation_id: args.operation_id.clone(),
-                    expected_generation: Some(args.expected_generation),
-                }),
-                package: Some(proto::PackageAdmissionUpload {
-                    manifest: input.manifest,
-                    configuration: input.configuration,
-                    layers: input
-                        .layers
-                        .into_iter()
-                        .map(|(path, data)| proto::PackageAdmissionLayer { path, data })
-                        .collect(),
-                    signatures: evidence.signatures,
-                    provenance: evidence.provenance,
-                    sboms: evidence.sboms,
-                }),
-            }))
-        }
+        ReleaseCommand::PublishPackage(args) => publish_package(args, config),
         _ => Err(invalid_input()),
     }
 }
@@ -146,4 +105,48 @@ fn convert_evidence(value: ReleaseEvidenceUpload) -> proto::ReleaseEvidenceUploa
         provenance: convert(value.provenance),
         sboms: convert(value.sboms),
     }
+}
+
+fn publish_package(
+    args: &crate::args::release::PublishPackageArgs,
+    config: &ResolvedConfig,
+) -> Result<Operation, Failure> {
+    let package = crate::package::read(&args.directory)?;
+    let evidence = args
+        .evidence
+        .as_ref()
+        .map(|path| crate::package::evidence(path, parent(path)?, package.layout().digest()))
+        .transpose()?
+        .unwrap_or_default();
+    // Package inspection is association only. The node authenticates its
+    // tenant and checks current policy; no client authority is asserted.
+    let input = package.into_input();
+    if input
+        .layers
+        .iter()
+        .any(|(_, bytes)| bytes.len() > config.limits.maximum_component_bytes)
+    {
+        return Err(invalid_input());
+    }
+    let evidence = convert_evidence(evidence);
+    Ok(Operation::PublishRelease(proto::PublishReleaseRequest {
+        release: None,
+        artifact: None,
+        operation: Some(proto::ReleaseOperationPrecondition {
+            operation_id: args.operation_id.clone(),
+            expected_generation: Some(args.expected_generation),
+        }),
+        package: Some(proto::PackageAdmissionUpload {
+            manifest: input.manifest,
+            configuration: input.configuration,
+            layers: input
+                .layers
+                .into_iter()
+                .map(|(path, data)| proto::PackageAdmissionLayer { path, data })
+                .collect(),
+            signatures: evidence.signatures,
+            provenance: evidence.provenance,
+            sboms: evidence.sboms,
+        }),
+    }))
 }

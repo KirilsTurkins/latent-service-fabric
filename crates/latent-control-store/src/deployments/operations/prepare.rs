@@ -62,6 +62,7 @@ impl DirectoryDeploymentRepository {
                         return Err(conflict());
                     }
                     Some(VersionedDeployment {
+                        publication: receipt.publication.clone(),
                         manifest,
                         generation: receipt.object_generation,
                     })
@@ -115,12 +116,13 @@ impl DirectoryDeploymentRepository {
         let timestamp = super::super::now()?;
         let mut desired = previous.routes.deployments.clone();
         let mut versions = previous.routes.versions.clone();
-        let (apply_result, manifest_digest, component, object_generation) =
+        let (mut apply_result, manifest_digest, component, object_generation) =
             if let Some(manifest) = manifest {
                 let encoded = super::super::rollouts::table::manifest(&manifest)?;
                 let digest = codec::hash(encoded.as_bytes());
                 let component = manifest.release.clone();
                 let result = VersionedDeployment {
+                    publication: None,
                     manifest: manifest.clone(),
                     generation: route_generation.0,
                 };
@@ -155,7 +157,19 @@ impl DirectoryDeploymentRepository {
             )
             .await?,
         );
+        let publication = if apply_result.is_some() {
+            &next_routes
+        } else {
+            &previous.routes
+        }
+        .record_by_id(&id)
+        .ok_or_else(crate::deployment_operations::corrupt)?
+        .publication_reference(self.artifacts.as_ref())?;
+        if let Some(result) = &mut apply_result {
+            result.publication.clone_from(&publication);
+        }
         let mut receipt = DeploymentOperationReceipt {
+            publication: publication.clone(),
             format_version: 1,
             tenant: context.tenant,
             actor: context.actor,
@@ -181,12 +195,13 @@ impl DirectoryDeploymentRepository {
         receipts.extend(old.receipts.iter().skip(skip).cloned());
         let sequence = old.operation_sequence.checked_add(1).ok_or_else(capacity)?;
         receipts.push(StoredReceipt {
+            publication,
             sequence,
             receipt: receipt.clone(),
         });
         let next_operations = OperationTable::from_reserved(
             TableData {
-                format_version: 1,
+                format_version: 2,
                 receipt_slots: old.receipt_slots,
                 operation_sequence: sequence,
                 receipts,

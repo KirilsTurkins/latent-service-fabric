@@ -106,6 +106,7 @@ fn start(
         &config.tenant,
     )?;
     let candidate = latent_wire::management::deployment_to_proto(&VersionedDeployment {
+        publication: None,
         manifest,
         generation: 0,
     })

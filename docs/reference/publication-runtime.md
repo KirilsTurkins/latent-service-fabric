@@ -44,7 +44,9 @@ current admission fence. It preserves canonical legacy manifests, revision IDs,
 object generations, route generations, transaction versions and historical
 receipt bytes. A failed upgrade returns no usable catalog; reopening resumes
 from the validated old or completed new record. A current format-5 restart does
-not rewrite accepted source bytes. Keep a stopped backup for rollback to older
+not rewrite accepted source bytes once its operation tables are also current.
+The [public API integration](publication-api.md) upgrades legacy deployment
+operation tables to format 2 without changing canonical receipt bytes. Keep a stopped backup for rollback to older
 binaries, which cannot read this new envelope.
 
 ## Rollouts and historical authority

@@ -132,6 +132,7 @@ async fn publish(
         .apply_deployment(request(
             OPERATOR,
             proto::ApplyDeploymentRequest {
+                expected_component_digest: None,
                 operation: None,
                 deployment: Some(deployment(&digest)),
                 expected_generation: Some(0),
@@ -222,6 +223,7 @@ fn deployment(digest: &str) -> proto::Deployment {
         .expect("maintained echo deployment");
     manifest.release = latent_core::ReleaseDigest(digest.to_owned());
     deployment_to_proto(&VersionedDeployment {
+        publication: None,
         manifest,
         generation: 0,
     })

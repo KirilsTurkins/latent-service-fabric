@@ -351,3 +351,25 @@ by the normal `CI` workflow and the path-filtered `Phase 0 runtime regression`
 workflow, including Phase 1 descriptor/SDK checks and retained executable
 containment coverage. The Phase 0 full completion gate and heavy catalog scale
 probe require explicit manual selection; see [validation](../../VALIDATION.md).
+
+### Explicit publication references (#267)
+
+The additive `PublicationRef` carries an exact ID and tenant. Release Get and
+lifecycle requests add it at field 2; lifecycle changes and renewal add it at
+field 5. Release descriptors add publication/package fields 13/14, lifecycle
+records add publication field 12 and release operation receipts add field 14.
+Audit identity field 18 records the captured publication ID. Existing component
+fields retain their meanings, and legacy receipts keep their canonical bytes.
+
+Deployment adds `publication` at 11 and output-only `requested_publication` at
+12. Apply adds an optional component assertion at 4, and managed operation
+receipts add the captured publication at 17. Requests choose one selector;
+results may describe component and publication together. Old generated clients
+ignore new result fields and can still address a unique component association.
+New clients sending exact selection to an older server cannot fall back: the
+legacy component selector is empty and the older server rejects the request.
+
+See [public selection and recovery](../reference/publication-api.md) for
+ambiguity, unscoped local compatibility, original manifest preservation and the
+deployment operation-table upgrade. The descriptor golden deliberately records
+these additions without changing any existing field number or RPC signature.

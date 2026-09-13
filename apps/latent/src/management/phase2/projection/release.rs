@@ -9,7 +9,12 @@ impl Project for proto::PublicationRef {
         self.id
             .parse::<latent_core::PublicationId>()
             .map_err(|_| invalid_response())?;
-        if self.tenant.is_empty() || self.tenant.chars().any(char::is_control) {
+        if self.tenant.is_empty()
+            || self
+                .tenant
+                .chars()
+                .any(|c| c.is_control() || c.is_whitespace())
+        {
             return Err(invalid_response());
         }
         Ok(())

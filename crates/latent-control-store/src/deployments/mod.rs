@@ -518,10 +518,17 @@ impl DirectoryDeploymentRepository {
             let transaction = control
                 .as_ref()
                 .map_or(generation.0, |v| v.transaction_version);
-            let operations = if let Some(data) = control
+            let mut needs_operation_upgrade = false;
+            let operations = if let Some(mut data) = control
                 .as_mut()
                 .and_then(|value| value.deployment_operations.take())
             {
+                needs_operation_upgrade = operations::table::recover_publications(
+                    &mut data,
+                    artifacts.as_ref(),
+                    &catalog,
+                    &operation_budget,
+                )?;
                 operations::table::OperationTable::new(data, true, &operation_budget)?
             } else {
                 operations::table::OperationTable::empty(&operation_budget)?
@@ -545,7 +552,9 @@ impl DirectoryDeploymentRepository {
                 rollouts::table::RolloutTable::empty(&rollout_budget, rollout_limits)?
             };
             rollout_table.validate_catalog(transaction, generation)?;
-            if needs_publication_upgrade && (rollout_table.enabled || operations.enabled) {
+            if (needs_publication_upgrade || needs_operation_upgrade)
+                && (rollout_table.enabled || operations.enabled)
+            {
                 bytes = persistence::encode_combined(
                     &catalog,
                     &persistence::ControlPayloadRef {
@@ -596,7 +605,7 @@ impl DirectoryDeploymentRepository {
                 let mut started = false;
                 let result = catalog.with_current_admission(&mut |checker| {
                     started = true;
-                    if needs_initial_state || needs_publication_upgrade {
+                    if needs_initial_state || needs_publication_upgrade || needs_operation_upgrade {
                         persistence::stage(&repository.root, &bytes, &mut work)?;
                         if let Some(checker) = checker {
                             checker.check()?;

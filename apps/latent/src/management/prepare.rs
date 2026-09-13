@@ -299,6 +299,9 @@ pub(super) fn publication_selector(
                 .parse::<latent_core::PublicationId>()
                 .map_err(|_| invalid())?;
             identifier(&config.tenant)?;
+            if config.tenant.chars().any(char::is_whitespace) {
+                return Err(invalid());
+            }
             Ok((
                 String::new(),
                 Some(proto::PublicationRef {
@@ -332,12 +335,30 @@ fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Opera
             .map(|value| value.0.as_str()),
         &config.tenant,
     )?;
-    let deployment = deployment_to_proto(&VersionedDeployment {
+    let expected_component_digest = manifest
+        .publication
+        .as_ref()
+        .map(|_| manifest.release.0.clone());
+    let mut deployment = deployment_to_proto(&VersionedDeployment {
+        publication: manifest
+            .publication
+            .as_ref()
+            .map(|id| latent_artifacts::PublicationRef {
+                id: id.clone(),
+                scope: latent_artifacts::LifecycleScope::Tenant(
+                    manifest.metadata.tenant.clone().expect("validated tenant"),
+                ),
+            }),
         manifest,
         generation: 0,
     })
     .map_err(|_| invalid_manifest())?;
+    deployment.requested_publication = None;
+    if deployment.publication.is_some() {
+        deployment.release_digest.clear();
+    }
     Ok(Operation::ApplyDeployment(proto::ApplyDeploymentRequest {
+        expected_component_digest,
         deployment: Some(deployment),
         expected_generation: args.expected_generation,
         operation: args.operation.operation_id.as_ref().map(|id| {

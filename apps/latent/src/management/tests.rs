@@ -35,6 +35,7 @@ fn deployment() -> proto::Deployment {
         ))
         .unwrap();
     deployment_to_proto(&VersionedDeployment {
+        publication: None,
         manifest,
         generation: u64::MAX,
     })

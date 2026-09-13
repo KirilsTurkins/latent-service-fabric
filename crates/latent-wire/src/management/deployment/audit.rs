@@ -53,6 +53,7 @@ impl DeploymentAudit {
             principal,
             AuditIdentities {
                 deployment: Some(manifest.id.clone()),
+                publication: manifest.publication.clone(),
                 component: Some(manifest.release.clone()),
                 ..Default::default()
             },
@@ -245,6 +246,10 @@ impl DeploymentAudit {
                 receipt_digest: Some(digest::receipt(deployment, generation, self.delete)),
                 identities: AuditIdentities {
                     deployment: Some(deployment.manifest.id.clone()),
+                    publication: deployment
+                        .publication
+                        .as_ref()
+                        .map(|reference| reference.id.clone()),
                     component: Some(deployment.manifest.release.clone()),
                     deployment_generation: Some(deployment.generation),
                     route_generation: Some(generation),

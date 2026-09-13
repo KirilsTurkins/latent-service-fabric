@@ -185,6 +185,19 @@ fn deployment_fields(value: &proto::Deployment, b: &mut Bounds) -> Result<(), Fa
     b.id(&value.service)?;
     b.digest(&value.release_digest)?;
     let metadata = value.metadata.as_ref().ok_or_else(invalid_response)?;
+    release_operation::publication(value.publication.as_ref(), metadata.tenant.as_deref(), b)?;
+    release_operation::publication(
+        value.requested_publication.as_ref(),
+        metadata.tenant.as_deref(),
+        b,
+    )?;
+    if value
+        .requested_publication
+        .as_ref()
+        .is_some_and(|selected| Some(selected) != value.publication.as_ref())
+    {
+        return Err(invalid_response());
+    }
     b.id(&metadata.name)?;
     b.id(metadata.tenant.as_deref().ok_or_else(invalid_response)?)?;
     b.optional(metadata.namespace.as_deref())?;

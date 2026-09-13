@@ -29,6 +29,7 @@ impl Node {
             component_media_type: fixture.artifact.descriptor.media_type.clone(),
         };
         let deployment = deployment_to_proto(&VersionedDeployment {
+            publication: None,
             manifest: fixture.deployment.clone(),
             generation: 0,
         })
@@ -61,6 +62,7 @@ impl Node {
             proto::deployment_service_client::DeploymentServiceClient::new(self.channel.clone())
                 .apply_deployment(setup_request(
                     proto::ApplyDeploymentRequest {
+                        expected_component_digest: None,
                         operation: None,
                         deployment: Some(deployment),
                         expected_generation: None,

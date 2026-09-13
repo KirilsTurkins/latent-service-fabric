@@ -125,6 +125,7 @@ async fn published_typed_capsule_can_be_deployed_without_editing_the_data_direct
         .apply_deployment(request(
             "alice",
             proto::ApplyDeploymentRequest {
+                expected_component_digest: None,
                 operation: None,
                 deployment: Some(desired),
                 expected_generation: Some(0),

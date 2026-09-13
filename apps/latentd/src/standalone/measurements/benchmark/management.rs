@@ -75,6 +75,7 @@ pub(super) async fn sample(
     let request = authenticated(
         &fixture.tenant,
         proto::ApplyDeploymentRequest {
+            expected_component_digest: None,
             operation: None,
             deployment: Some(deployment),
             expected_generation: Some(previous.generation),

@@ -5,6 +5,9 @@ impl Check for proto::PublicationRef {
     fn check(&self, b: &mut Bounds) -> Result<(), Failure> {
         b.text(&self.id)?;
         b.id(&self.tenant)?;
+        if self.tenant.chars().any(char::is_whitespace) {
+            return Err(invalid_response());
+        }
         self.id
             .parse::<latent_core::PublicationId>()
             .map_err(|_| invalid_response())?;

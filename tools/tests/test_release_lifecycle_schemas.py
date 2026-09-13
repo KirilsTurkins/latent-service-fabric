@@ -149,6 +149,65 @@ class ReleaseLifecycleSchemaTests(unittest.TestCase):
                          {"PublishRelease", "GetRelease", "ListReleases", "GetReleaseLifecycle",
                           "GetReleaseOperation", "ChangeReleaseLifecycle", "RenewReleaseEvidence"})
 
+    def test_explicit_selector_presence_does_not_fall_back_to_component_digest(self):
+        selected = {"id": "publication:sha256:" + "b" * 64, "tenant": "acme"}
+        for name in ("GetReleaseRequest", "GetReleaseLifecycleRequest",
+                     "ChangeReleaseLifecycleRequest", "RenewReleaseEvidenceRequest"):
+            common = {}
+            if name == "ChangeReleaseLifecycleRequest":
+                common.update(action="RELEASE_LIFECYCLE_ACTION_REVOKE",
+                              reason="RELEASE_LIFECYCLE_REASON_OPERATOR_REVOCATION",
+                              operation={"operationId": "revoke", "expectedGeneration": "1"})
+            elif name == "RenewReleaseEvidenceRequest":
+                document = dict(manifest="e30=", configuration="e30=", payload="e30=")
+                common.update(packageDigest=DIGEST,
+                              operation={"operationId": "renew", "expectedGeneration": "1"},
+                              evidence={"signatures": [document], "provenance": [document], "sboms": []})
+            validator = self.api(name)
+            with self.subTest(message=name):
+                validator.validate(common | {"digest": DIGEST})
+                validator.validate(common | {"publication": selected})
+                validator.validate(common | {"digest": "", "publication": selected})
+                for selector in ({}, {"digest": ""}, {"digest": DIGEST, "publication": selected},
+                                 {"publication": None}, {"publication": {}},
+                                 {"publication": selected | {"id": ""}},
+                                 {"publication": selected | {"id": selected["id"].upper()}},
+                                 {"publication": selected | {"tenant": ""}},
+                                 {"publication": selected | {"tenant": "two tenants"}},
+                                 {"publication": selected | {"tenant": "acme\u00a0"}}):
+                    self.assertFalse(validator.is_valid(common | selector), (name, selector))
+
+    def test_publication_fields_are_additive_and_preserve_component_field_numbers(self):
+        source = descriptor_file(load_descriptor_golden(), "latent/control/v1/release.proto")
+        for name, old_field, old_number, new_number in (
+            ("GetReleaseRequest", "digest", 1, 2),
+            ("GetReleaseLifecycleRequest", "digest", 1, 2),
+            ("ChangeReleaseLifecycleRequest", "digest", 1, 5),
+            ("RenewReleaseEvidenceRequest", "digest", 1, 5),
+            ("ReleaseDescriptor", "digest", 1, 13),
+            ("ReleaseLifecycleRecord", "component_digest", 2, 12),
+            ("ReleaseOperationReceipt", "component_digest", 8, 14),
+        ):
+            item = message(source, name)
+            self.assertEqual(field(item, old_field)["number"], old_number)
+            added = field(item, "publication")
+            self.assertEqual(added["number"], new_number)
+            self.assertEqual(added["typeName"], ".latent.control.v1.PublicationRef")
+
+    def test_deployment_fields_keep_legacy_meaning_and_explicit_assertion_presence(self):
+        source = descriptor_file(load_descriptor_golden(), "latent/control/v1/deployment.proto")
+        deployment = message(source, "Deployment")
+        self.assertEqual(field(deployment, "release_digest")["number"], 4)
+        self.assertEqual(field(deployment, "publication")["number"], 11)
+        self.assertEqual(field(deployment, "requested_publication")["number"], 12)
+        request = message(source, "ApplyDeploymentRequest")
+        self.assertEqual(field(request, "operation")["number"], 3)
+        assertion = field(request, "expected_component_digest")
+        self.assertEqual(assertion["number"], 4)
+        self.assertTrue(assertion["proto3Optional"])
+        receipt = message(source, "DeploymentOperationReceipt")
+        self.assertEqual(field(receipt, "publication")["number"], 17)
+
 
 if __name__ == "__main__":
     unittest.main()

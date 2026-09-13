@@ -41,7 +41,14 @@ pub(super) fn deployment(value: proto::Deployment) -> Result<Value, Failure> {
         .encode_deployment(&versioned.manifest)
         .map_err(|_| invalid_response())?;
     let manifest: Value = serde_json::from_slice(&encoded).map_err(|_| invalid_response())?;
-    Ok(json!({"generation": versioned.generation.to_string(), "manifest": manifest}))
+    let publication = versioned.publication.as_ref().map(|id| {
+        json!({
+            "id": id.id.as_str(), "tenant": id.scope.tenant().map(|tenant| &tenant.0),
+        })
+    });
+    Ok(
+        json!({"generation": versioned.generation.to_string(), "manifest": manifest, "publication": publication}),
+    )
 }
 
 pub(super) fn published(value: proto::PublishReleaseResponse) -> Result<Outcome, Failure> {
