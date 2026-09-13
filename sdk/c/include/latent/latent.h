@@ -68,6 +68,26 @@ typedef struct latent_budget_consumption {
     uint32_t effect_count;
 } latent_budget_consumption;
 
+/* Exact tenant scope; IDs never supply authorization. No stable C ABI is claimed. */
+typedef struct latent_publication_ref {
+    latent_string id;
+    latent_string tenant;
+} latent_publication_ref;
+
+/* Exactly one member is valid. Presence is independent of string length. */
+typedef struct latent_release_selector {
+    bool has_component_digest;
+    latent_string component_digest;
+    bool has_publication;
+    latent_publication_ref publication;
+} latent_release_selector;
+
+typedef struct latent_publication_identity {
+    latent_publication_ref publication;
+    latent_string component_digest;
+    latent_string package_digest;
+} latent_publication_identity;
+
 typedef struct latent_target {
     latent_string tenant;
     latent_string service;
@@ -115,6 +135,9 @@ typedef struct latent_invoke_response {
     latent_budget_consumption consumption;
     const latent_key_value *metadata;
     size_t metadata_count;
+    /* Captured source; absent for legacy/unresolved. Rebuild both ABI sides. */
+    bool has_publication_id;
+    latent_string publication_id;
 } latent_invoke_response;
 
 typedef struct latent_platform_error {
@@ -140,6 +163,8 @@ typedef struct latent_invocation_receipt {
     latent_string release_digest;
     uint64_t route_generation;
     latent_budget_consumption consumption;
+    bool has_publication_id;
+    latent_string publication_id;
 } latent_invocation_receipt;
 
 typedef struct latent_declared_invocation_error {

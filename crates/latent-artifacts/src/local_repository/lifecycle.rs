@@ -185,6 +185,7 @@ impl DirectoryArtifactRepository {
             }
         };
         Ok(Some(ReleaseLifecycleStatus {
+            publication: Some(reference.id.clone()),
             record,
             eligibility,
             eligibility_reason,

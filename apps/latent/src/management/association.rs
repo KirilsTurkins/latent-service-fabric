@@ -6,6 +6,22 @@ use crate::error::Failure;
 
 use super::invalid_response;
 
+pub(super) fn selected_publication(
+    actual: Option<&proto::PublicationRef>,
+    component: Option<&str>,
+    expected: Option<&proto::PublicationRef>,
+    legacy_component: &str,
+) -> Result<(), Failure> {
+    if let Some(expected) = expected {
+        if actual != Some(expected) || !legacy_component.is_empty() {
+            return Err(invalid_response());
+        }
+    } else if component != Some(legacy_component) {
+        return Err(invalid_response());
+    }
+    Ok(())
+}
+
 pub(super) fn release(
     value: Option<&proto::ReleaseDescriptor>,
     tenant: &str,

@@ -1,3 +1,4 @@
+import "./publication-identity.js";
 import type { InvokeRequest, LatentClient } from "../src/index.js";
 import { FakeClient, ServerRejection, TransportFailure } from "./fake-client.js";
 

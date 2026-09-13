@@ -182,6 +182,11 @@ pub struct RolloutStatus {
     deny_unknown_fields
 )]
 pub struct RolloutOperationReceipt {
+    /// Captured from the same retained plan; legacy canonical bytes stay unchanged.
+    #[serde(skip)]
+    pub base_publication: Option<latent_core::PublicationId>,
+    #[serde(skip)]
+    pub candidate_publication: Option<latent_core::PublicationId>,
     pub rollout_id: RolloutId,
     #[serde(with = "codec::text")]
     pub tenant: TenantId,

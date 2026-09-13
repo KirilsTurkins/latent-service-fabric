@@ -323,6 +323,7 @@ async fn revoke_target(channel: &tonic::transport::Channel, digest: String) {
         .get_release_lifecycle(request(
             "alice",
             proto::GetReleaseLifecycleRequest {
+                publication: None,
                 digest: digest.clone(),
             },
         ))
@@ -338,6 +339,7 @@ async fn revoke_target(channel: &tonic::transport::Channel, digest: String) {
         .change_release_lifecycle(request(
             "alice",
             proto::ChangeReleaseLifecycleRequest {
+                publication: None,
                 digest,
                 action: proto::ReleaseLifecycleAction::Revoke as i32,
                 operation: Some(proto::ReleaseOperationPrecondition {

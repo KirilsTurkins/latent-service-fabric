@@ -72,13 +72,11 @@ fn release(command: &ReleaseCommand) -> Result<(), Failure> {
             }
             single_stdin(&[&args.manifest, &args.component, &args.contracts])
         }
-        ReleaseCommand::Get(args) | ReleaseCommand::Lifecycle(args) => {
-            identifier(&args.digest, 512)
-        }
+        ReleaseCommand::Get(args) | ReleaseCommand::Lifecycle(args) => release_selector(args),
         ReleaseCommand::List(args) => page(args),
         ReleaseCommand::Operation(args) => identifier(&args.operation_id, 128),
         ReleaseCommand::Revoke(args) | ReleaseCommand::Retire(args) => {
-            identifier(&args.digest, 71)?;
+            release_selector(&args.selector)?;
             identifier(&args.operation.operation_id, 128)?;
             if args.operation.expected_generation == 0 {
                 return Err(invalid());
@@ -97,7 +95,7 @@ fn release(command: &ReleaseCommand) -> Result<(), Failure> {
             Ok(())
         }
         ReleaseCommand::RenewEvidence(args) => {
-            identifier(&args.digest, 71)?;
+            release_selector(&args.selector)?;
             identifier(&args.package_digest, 71)?;
             identifier(&args.operation.operation_id, 128)?;
             if args.operation.expected_generation == 0 {
@@ -105,6 +103,20 @@ fn release(command: &ReleaseCommand) -> Result<(), Failure> {
             }
             path_argument(&args.evidence)
         }
+    }
+}
+
+fn release_selector(args: &super::management::DigestArgs) -> Result<(), Failure> {
+    match (&args.digest, &args.publication) {
+        (Some(digest), None) => identifier(digest, 71),
+        (None, Some(publication)) => {
+            identifier(publication, latent_core::PublicationId::TEXT_BYTES)?;
+            publication
+                .parse::<latent_core::PublicationId>()
+                .map_err(|_| invalid())?;
+            Ok(())
+        }
+        _ => Err(invalid()),
     }
 }
 

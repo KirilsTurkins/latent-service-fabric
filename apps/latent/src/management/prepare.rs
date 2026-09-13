@@ -34,9 +34,10 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
         ) => super::phase2::prepare::release(command, config),
         Command::Release(ReleaseCommand::Publish(args)) => publish(args, config),
         Command::Release(ReleaseCommand::Get(args)) => {
-            digest(&args.digest)?;
+            let (digest, publication) = publication_selector(args, config)?;
             Ok(Operation::GetRelease(proto::GetReleaseRequest {
-                digest: args.digest.clone(),
+                publication,
+                digest,
             }))
         }
         Command::Release(ReleaseCommand::List(args)) => {
@@ -278,6 +279,41 @@ pub(super) fn page(page_size: u32, token: Option<&str>) -> Result<proto::PageReq
     })
 }
 
+pub(super) fn publication_selector(
+    args: &crate::args::DigestArgs,
+    config: &ResolvedConfig,
+) -> Result<(String, Option<proto::PublicationRef>), Failure> {
+    let invalid = || {
+        Failure::local(
+            "invalid-publication-selector",
+            "Choose one component digest or exact publication ID.",
+        )
+    };
+    match (&args.digest, &args.publication) {
+        (Some(value), None) => {
+            digest(value)?;
+            Ok((value.clone(), None))
+        }
+        (None, Some(value)) => {
+            value
+                .parse::<latent_core::PublicationId>()
+                .map_err(|_| invalid())?;
+            identifier(&config.tenant)?;
+            if config.tenant.chars().any(char::is_whitespace) {
+                return Err(invalid());
+            }
+            Ok((
+                String::new(),
+                Some(proto::PublicationRef {
+                    id: value.clone(),
+                    tenant: config.tenant.clone(),
+                }),
+            ))
+        }
+        _ => Err(invalid()),
+    }
+}
+
 fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Operation, Failure> {
     let maximum = if args.operation.operation_id.is_some() {
         latent_control_store::deployment_operations::MAX_REQUEST_BYTES
@@ -299,12 +335,30 @@ fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Opera
             .map(|value| value.0.as_str()),
         &config.tenant,
     )?;
-    let deployment = deployment_to_proto(&VersionedDeployment {
+    let expected_component_digest = manifest
+        .publication
+        .as_ref()
+        .map(|_| manifest.release.0.clone());
+    let mut deployment = deployment_to_proto(&VersionedDeployment {
+        publication: manifest
+            .publication
+            .as_ref()
+            .map(|id| latent_artifacts::PublicationRef {
+                id: id.clone(),
+                scope: latent_artifacts::LifecycleScope::Tenant(
+                    manifest.metadata.tenant.clone().expect("validated tenant"),
+                ),
+            }),
         manifest,
         generation: 0,
     })
     .map_err(|_| invalid_manifest())?;
+    deployment.requested_publication = None;
+    if deployment.publication.is_some() {
+        deployment.release_digest.clear();
+    }
     Ok(Operation::ApplyDeployment(proto::ApplyDeploymentRequest {
+        expected_component_digest,
         deployment: Some(deployment),
         expected_generation: args.expected_generation,
         operation: args.operation.operation_id.as_ref().map(|id| {

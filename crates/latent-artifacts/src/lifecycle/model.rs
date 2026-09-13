@@ -226,6 +226,7 @@ pub enum ReleaseEligibilityReason {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReleaseLifecycleStatus {
+    pub publication: Option<latent_core::PublicationId>,
     pub record: ReleaseLifecycleRecord,
     pub eligibility: ReleaseLiveEligibility,
     pub eligibility_reason: ReleaseEligibilityReason,
@@ -276,6 +277,8 @@ pub struct ManagedPublicationReceipt {
 /// Rejection-only callback input; no field grants admission or mutation authority.
 #[derive(Debug, Clone, Copy)]
 pub struct ReleaseOperationPreview<'a> {
+    /// Exact captured identity outside the unchanged historical receipt codec.
+    pub publication: Option<&'a latent_core::PublicationId>,
     /// This receipt already exists durably; accepting the callback does not
     /// perform a second lifecycle mutation.
     pub replay: bool,

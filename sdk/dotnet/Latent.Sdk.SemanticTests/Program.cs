@@ -108,6 +108,7 @@ internal static class Program
 
     public static async Task Main()
     {
+        PublicationIdentityTests.Run();
         await PendingCancellation();
         await LostResponse();
         await OptionalIdentity();

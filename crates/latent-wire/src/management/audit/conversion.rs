@@ -28,6 +28,13 @@ fn scope_to_proto(value: domain::AuditScope) -> proto::AuditQueryScope {
 }
 pub(super) fn identities(value: domain::AuditIdentities) -> proto::AuditIdentities {
     proto::AuditIdentities {
+        base_publication_id: value
+            .base_publication
+            .map(latent_core::PublicationId::into_string),
+        candidate_publication_id: value
+            .candidate_publication
+            .map(latent_core::PublicationId::into_string),
+        publication_id: value.publication.map(|id| id.into_string()),
         package_digest: value.package.map(latent_core::PackageDigest::into_string),
         component_digest: value.component.map(|value| value.0),
         policies: value

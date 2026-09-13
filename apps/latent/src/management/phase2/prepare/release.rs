@@ -17,10 +17,12 @@ pub(in crate::management) fn release(
     };
     match command {
         ReleaseCommand::Lifecycle(args) => {
-            crate::management::prepare::digest(&args.digest)?;
+            let (digest, publication) =
+                crate::management::prepare::publication_selector(args, config)?;
             Ok(Operation::GetReleaseLifecycle(
                 proto::GetReleaseLifecycleRequest {
-                    digest: args.digest.clone(),
+                    publication,
+                    digest,
                 },
             ))
         }
@@ -30,11 +32,13 @@ pub(in crate::management) fn release(
             },
         )),
         ReleaseCommand::Revoke(args) | ReleaseCommand::Retire(args) => {
-            crate::management::prepare::digest(&args.digest)?;
+            let (digest, publication) =
+                crate::management::prepare::publication_selector(&args.selector, config)?;
             let revoke = matches!(command, ReleaseCommand::Revoke(_));
             Ok(Operation::ChangeReleaseLifecycle(
                 proto::ChangeReleaseLifecycleRequest {
-                    digest: args.digest.clone(),
+                    publication,
+                    digest,
                     action: if revoke {
                         proto::ReleaseLifecycleAction::Revoke
                     } else {
@@ -53,14 +57,16 @@ pub(in crate::management) fn release(
             ))
         }
         ReleaseCommand::RenewEvidence(args) => {
-            crate::management::prepare::digest(&args.digest)?;
+            let (digest, publication) =
+                crate::management::prepare::publication_selector(&args.selector, config)?;
             crate::management::prepare::digest(&args.package_digest)?;
             let package = args.package_digest.parse().map_err(|_| invalid_input())?;
             let evidence =
                 crate::package::evidence(&args.evidence, parent(&args.evidence)?, &package)?;
             Ok(Operation::RenewReleaseEvidence(
                 proto::RenewReleaseEvidenceRequest {
-                    digest: args.digest.clone(),
+                    publication,
+                    digest,
                     package_digest: args.package_digest.clone(),
                     operation: Some(proto::ReleaseOperationPrecondition {
                         operation_id: args.operation.operation_id.clone(),
@@ -70,48 +76,7 @@ pub(in crate::management) fn release(
                 },
             ))
         }
-        ReleaseCommand::PublishPackage(args) => {
-            let package = crate::package::read(&args.directory)?;
-            let evidence = args
-                .evidence
-                .as_ref()
-                .map(|path| {
-                    crate::package::evidence(path, parent(path)?, package.layout().digest())
-                })
-                .transpose()?
-                .unwrap_or_default();
-            // Package inspection is association only. The node authenticates its
-            // tenant and checks current policy; no client authority is asserted.
-            let input = package.into_input();
-            if input
-                .layers
-                .iter()
-                .any(|(_, bytes)| bytes.len() > config.limits.maximum_component_bytes)
-            {
-                return Err(invalid_input());
-            }
-            let evidence = convert_evidence(evidence);
-            Ok(Operation::PublishRelease(proto::PublishReleaseRequest {
-                release: None,
-                artifact: None,
-                operation: Some(proto::ReleaseOperationPrecondition {
-                    operation_id: args.operation_id.clone(),
-                    expected_generation: Some(args.expected_generation),
-                }),
-                package: Some(proto::PackageAdmissionUpload {
-                    manifest: input.manifest,
-                    configuration: input.configuration,
-                    layers: input
-                        .layers
-                        .into_iter()
-                        .map(|(path, data)| proto::PackageAdmissionLayer { path, data })
-                        .collect(),
-                    signatures: evidence.signatures,
-                    provenance: evidence.provenance,
-                    sboms: evidence.sboms,
-                }),
-            }))
-        }
+        ReleaseCommand::PublishPackage(args) => publish_package(args, config),
         _ => Err(invalid_input()),
     }
 }
@@ -140,4 +105,48 @@ fn convert_evidence(value: ReleaseEvidenceUpload) -> proto::ReleaseEvidenceUploa
         provenance: convert(value.provenance),
         sboms: convert(value.sboms),
     }
+}
+
+fn publish_package(
+    args: &crate::args::release::PublishPackageArgs,
+    config: &ResolvedConfig,
+) -> Result<Operation, Failure> {
+    let package = crate::package::read(&args.directory)?;
+    let evidence = args
+        .evidence
+        .as_ref()
+        .map(|path| crate::package::evidence(path, parent(path)?, package.layout().digest()))
+        .transpose()?
+        .unwrap_or_default();
+    // Package inspection is association only. The node authenticates its
+    // tenant and checks current policy; no client authority is asserted.
+    let input = package.into_input();
+    if input
+        .layers
+        .iter()
+        .any(|(_, bytes)| bytes.len() > config.limits.maximum_component_bytes)
+    {
+        return Err(invalid_input());
+    }
+    let evidence = convert_evidence(evidence);
+    Ok(Operation::PublishRelease(proto::PublishReleaseRequest {
+        release: None,
+        artifact: None,
+        operation: Some(proto::ReleaseOperationPrecondition {
+            operation_id: args.operation_id.clone(),
+            expected_generation: Some(args.expected_generation),
+        }),
+        package: Some(proto::PackageAdmissionUpload {
+            manifest: input.manifest,
+            configuration: input.configuration,
+            layers: input
+                .layers
+                .into_iter()
+                .map(|(path, data)| proto::PackageAdmissionLayer { path, data })
+                .collect(),
+            signatures: evidence.signatures,
+            provenance: evidence.provenance,
+            sboms: evidence.sboms,
+        }),
+    }))
 }

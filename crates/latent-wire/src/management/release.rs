@@ -4,12 +4,13 @@ mod package;
 #[cfg(test)]
 mod package_tests;
 mod publication;
+mod selector;
 #[cfg(test)]
 mod tests;
 mod validation;
 
-use latent_artifacts::ArtifactCatalogPageRequest;
-use latent_core::{ReleaseDigest, ServiceId};
+use latent_artifacts::{ArtifactCatalogPageRequest, LifecycleScope};
+use latent_core::ServiceId;
 use tonic::{Request, Response, Status};
 
 use super::{
@@ -65,20 +66,38 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
             .tenant
             .expect("authenticated tenant");
         let mut budget = RequestBudget::new::<proto::GetReleaseRequest>(&self.limits)?;
-        validation::digest(&request.get_ref().digest, &mut budget, &self.limits)?;
+        let selector = selector::request(
+            &request.get_ref().digest,
+            request.get_ref().publication.as_ref(),
+            &tenant,
+            &mut budget,
+            &self.limits,
+        )?;
         self.check_encoded(request.get_ref())?;
-        let digest = ReleaseDigest(request.into_inner().digest);
+        drop(request);
         let entry = self
             .services
             .artifacts
-            .get_catalog_entry(&tenant, &digest)
+            .get_selected_catalog_entry(&LifecycleScope::Tenant(tenant.clone()), &selector)
             .await
             .map_err(|error| platform_status(error, &self.limits))?;
+        if entry.is_none()
+            && matches!(
+                selector,
+                latent_artifacts::PublicationSelector::Publication(_)
+            )
+        {
+            return Err(Status::not_found("publication not found"));
+        }
         let mut budget = RequestBudget::for_response::<proto::GetReleaseResponse>(&self.limits)?;
         let release = entry
             .map(|entry| {
                 validation::entry(&entry, &tenant, &mut budget, &self.limits)?;
-                if entry.descriptor.release_digest != digest {
+                if !selector::matches(
+                    &selector,
+                    &entry.descriptor.release_digest,
+                    entry.publication.as_ref(),
+                ) {
                     return Err(Status::internal(
                         "artifact repository returned a different release",
                     ));
@@ -127,11 +146,19 @@ impl proto::release_service_server::ReleaseService for ManagementServiceAdapter 
             page.next_page_token.as_ref(),
             self.limits.max_page_token_bytes,
         )?;
-        // The repository's opaque cursor orders publication identities. Component
-        // digests in this legacy DTO need not increase and may repeat for distinct
-        // packages. They cannot validate publication ordering or uniqueness.
+        // Components may repeat. Explicit publication IDs carry the ordering
+        // contract; legacy third-party repositories can omit these new fields.
+        let mut previous = None;
         for entry in &page.entries {
             validation::entry(entry, &tenant, &mut budget, &self.limits)?;
+            if let Some(id) = entry.publication.as_ref() {
+                if previous.is_some_and(|previous| previous >= id) {
+                    return Err(Status::internal(
+                        "artifact repository returned an unordered publication page",
+                    ));
+                }
+                previous = Some(id);
+            }
             if query
                 .service
                 .as_ref()

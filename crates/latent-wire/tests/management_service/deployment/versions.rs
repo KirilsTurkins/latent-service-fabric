@@ -23,6 +23,9 @@ async fn versioned_rpc_round_trip_preserves_fields_and_delete_recreate_stamps() 
         .unwrap();
     assert!(created.generation > 0 && created.generation < u64::MAX);
     desired.generation = created.generation;
+    assert!(created.publication.is_some());
+    assert!(created.requested_publication.is_none());
+    desired.publication = created.publication.clone();
     assert_eq!(created, desired);
     assert_eq!(get(&harness, "alice", "ship").await.unwrap(), created);
     apply(

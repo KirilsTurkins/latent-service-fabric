@@ -68,7 +68,14 @@ pub(crate) fn ambiguous() -> PlatformError {
         code: PlatformErrorCode::StateConflict,
         message: "publication-selector-ambiguous".to_owned(),
         retryable: false,
-        details: Vec::new(),
+        details: vec![latent_core::ErrorDetail {
+            kind: "publication-selector".to_owned(),
+            fields: [(
+                "reason".to_owned(),
+                "publication-selector-ambiguous".to_owned(),
+            )]
+            .into(),
+        }],
     }
 }
 

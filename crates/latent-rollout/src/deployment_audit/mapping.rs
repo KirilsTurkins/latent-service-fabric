@@ -15,6 +15,10 @@ fn digest(receipt: &DeploymentOperationReceipt) -> crate::Result<ArtifactBlobDig
 }
 fn identities(receipt: &DeploymentOperationReceipt) -> AuditIdentities {
     AuditIdentities {
+        publication: receipt
+            .publication
+            .as_ref()
+            .map(|reference| reference.id.clone()),
         deployment: Some(receipt.deployment_id.clone()),
         component: Some(receipt.component.clone()),
         deployment_generation: Some(receipt.object_generation),
@@ -59,6 +63,11 @@ pub(super) fn matches(
     expected: &AuditOperationAttempt,
     receipt: &DeploymentOperationReceipt,
 ) -> bool {
+    let mut actual_identities = identities(receipt);
+    if expected.identities.publication.is_none() {
+        // A migrated association must not rewrite an older audit attempt.
+        actual_identities.publication = None;
+    }
     expected.scope == AuditScope::Tenant(receipt.tenant.clone())
         && expected.actor.kind == crate::audit::actor(receipt.actor.kind)
         && expected.actor.subject == receipt.actor.subject
@@ -67,7 +76,7 @@ pub(super) fn matches(
         && expected.request_digest == receipt.request_digest
         && expected.preview_receipt_digest.is_some()
         && expected.preview_receipt_digest == digest(receipt).ok()
-        && expected.identities == identities(receipt)
+        && expected.identities == actual_identities
         && expected.expected_deployment_generation == Some(receipt.expected_generation)
         && expected.expected_state_version == Some(receipt.expected_state_version)
         && expected.expected_generation.is_none()

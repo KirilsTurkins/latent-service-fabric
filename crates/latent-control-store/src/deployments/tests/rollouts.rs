@@ -440,3 +440,39 @@ fn receipt_ring_evicts_only_history_and_reopens_under_higher_recovery_ceiling() 
         RolloutOperationLookup::Unknown
     );
 }
+
+#[test]
+fn retained_rollout_objects_do_not_disclose_a_reused_foreign_deployment_id() {
+    let root = TempRoot::new();
+    let releases = Arc::new(Releases::default());
+    let store = open(&root, &releases);
+    let request = setup(&store, &releases);
+    execute(&store, request);
+    execute(&store, change("abort", 1, RolloutCommand::Abort));
+    assert_eq!(
+        store
+            .get_rollout(&alice(), &id())
+            .unwrap()
+            .unwrap()
+            .objects
+            .len(),
+        2
+    );
+    for name in ["base", "candidate"] {
+        run(store.delete(&DeploymentId(name.into()))).unwrap();
+    }
+    let foreign = releases.add("foreign-reuse");
+    run(store.apply(deployment("base", "bob", &foreign))).unwrap();
+    let status = store.get_rollout(&alice(), &id()).unwrap().unwrap();
+    assert_eq!(status.state, RolloutState::Aborted);
+    assert!(status.objects.is_empty());
+    assert_eq!(status.base.deployment_id.0, "base");
+    drop(store);
+    let reopened = open(&root, &releases);
+    assert!(reopened
+        .get_rollout(&alice(), &id())
+        .unwrap()
+        .unwrap()
+        .objects
+        .is_empty());
+}

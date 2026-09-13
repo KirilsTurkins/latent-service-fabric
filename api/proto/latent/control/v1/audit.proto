@@ -104,6 +104,12 @@ message AuditPolicyIdentity {
 }
 
 message AuditIdentities {
+  // Exact captured source publication. The record scopes the operation; a
+  // local-unscoped compatibility source does not acquire tenant admission.
+  // Absence on a historical record never requests fresh component resolution.
+  optional string publication_id = 18;
+  optional string base_publication_id = 19;
+  optional string candidate_publication_id = 20;
   optional string package_digest = 1;
   optional string component_digest = 2;
   repeated AuditPolicyIdentity policies = 3;

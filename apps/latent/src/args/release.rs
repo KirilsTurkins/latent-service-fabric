@@ -19,7 +19,8 @@ pub struct ReleaseMutation {
 
 #[derive(Args)]
 pub struct ChangeReleaseArgs {
-    pub digest: String,
+    #[command(flatten)]
+    pub selector: super::management::DigestArgs,
     #[command(flatten)]
     pub operation: ReleaseMutation,
 }
@@ -38,7 +39,8 @@ pub struct PublishPackageArgs {
 
 #[derive(Args)]
 pub struct RenewEvidenceArgs {
-    pub digest: String,
+    #[command(flatten)]
+    pub selector: super::management::DigestArgs,
     #[arg(long)]
     pub package_digest: String,
     #[arg(long)]

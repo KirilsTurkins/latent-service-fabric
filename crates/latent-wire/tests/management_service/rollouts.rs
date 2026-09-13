@@ -10,6 +10,8 @@ use tonic::Code;
 
 #[path = "rollouts/canary.rs"]
 mod canary;
+#[path = "rollouts/publications.rs"]
+mod publications;
 #[path = "rollouts/rollback.rs"]
 mod rollback;
 
@@ -37,6 +39,7 @@ async fn start_input(harness: &Harness) -> proto::StartRolloutRequest {
     let mut candidate = deployment("candidate", "acme", "echo", &candidate.release_digest);
     candidate.route_weight = 1000;
     proto::StartRolloutRequest {
+        expected_candidate_component_digest: None,
         id: "rollout".into(),
         base_deployment_id: "base".into(),
         expected_base_generation: Some(receipt.deployment.generation),

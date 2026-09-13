@@ -155,6 +155,14 @@ pub(super) fn start(
         .ok_or_else(|| Status::invalid_argument("rollout candidate is required"))?;
     budget.allocation::<proto::Deployment>(1)?;
     deployment::validation::wire(candidate, &mut budget, limits)?;
+    if let Some(component) = &value.expected_candidate_component_digest {
+        budget.string(component, 71)?;
+    }
+    if candidate.publication.is_some() {
+        // Include the resolved component string in the whole Start request's
+        // ownership allowance before lookup or coordinator submission.
+        budget.allocation::<u8>(71)?;
+    }
     if candidate
         .metadata
         .as_ref()

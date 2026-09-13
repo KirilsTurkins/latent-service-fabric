@@ -240,6 +240,7 @@ impl MeasurementNode {
             .await?;
         let published = started.elapsed().as_nanos().to_string();
         let deployment = deployment_to_proto(&VersionedDeployment {
+            publication: None,
             manifest: fixture.deployment.clone(),
             generation: 0,
         })
@@ -250,6 +251,7 @@ impl MeasurementNode {
             .apply_deployment(authenticated(
                 &fixture.target.tenant,
                 management::ApplyDeploymentRequest {
+                    expected_component_digest: None,
                     operation: None,
                     deployment: Some(deployment),
                     expected_generation: None,

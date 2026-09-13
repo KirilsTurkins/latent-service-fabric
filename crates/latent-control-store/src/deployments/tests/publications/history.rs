@@ -141,7 +141,15 @@ fn v3_and_v4_recovery_keep_legacy_receipts_cas_and_exact_rollback_after_coexiste
         let catalog = store(&roots[1], &repository);
         let replay = execute(&catalog, start);
         assert!(replay.replayed);
-        assert_eq!(replay.receipt, receipts[0]);
+        assert_eq!(
+            replay.receipt.canonical_bytes().unwrap(),
+            receipts[0].canonical_bytes().unwrap()
+        );
+        assert_eq!(replay.receipt.base_publication.as_ref(), Some(&first.id));
+        assert_eq!(
+            replay.receipt.candidate_publication.as_ref(),
+            Some(&second.id)
+        );
         let rollback = execute(
             &catalog,
             RolloutRequest::Change {

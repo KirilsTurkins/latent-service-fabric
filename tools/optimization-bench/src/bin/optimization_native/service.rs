@@ -184,6 +184,7 @@ fn response(
     result: proto::invoke_response::Result,
 ) -> proto::InvokeResponse {
     proto::InvokeResponse {
+        publication_id: None, // The comparison server has no LSF catalog publication.
         activation_id: id,
         revision_id: REFERENCE_PIN.to_owned(),
         release_digest: REFERENCE_PIN.to_owned(),

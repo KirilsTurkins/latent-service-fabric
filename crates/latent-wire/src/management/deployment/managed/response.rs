@@ -80,6 +80,14 @@ pub(super) fn charge(
         return Err(Status::internal("deployment receipt scope mismatch"));
     }
     budget.allocation::<proto::DeploymentOperationReceipt>(1)?;
+    if let Some(id) = &value.publication {
+        if id.scope.tenant().is_some_and(|scope| scope != tenant) {
+            return Err(Status::internal("deployment publication scope mismatch"));
+        }
+        budget.allocation::<proto::PublicationRef>(1)?;
+        budget.allocation::<u8>(id.id.as_str().len())?;
+        budget.string(&value.tenant.0, limits.max_id_bytes)?;
+    }
     budget.allocation::<proto::ReleaseActor>(1)?;
     for text in [&value.tenant.0, &value.deployment_id.0] {
         budget.string(text, limits.max_id_bytes)?;
@@ -95,6 +103,15 @@ pub(super) fn charge(
 }
 pub(super) fn receipt(value: DeploymentOperationReceipt) -> proto::DeploymentOperationReceipt {
     proto::DeploymentOperationReceipt {
+        publication: value.publication.as_ref().and_then(|reference| {
+            reference
+                .scope
+                .tenant()
+                .map(|tenant| proto::PublicationRef {
+                    id: reference.id.as_str().to_owned(),
+                    tenant: tenant.0.clone(),
+                })
+        }),
         format_version: value.format_version,
         tenant: value.tenant.0,
         actor: Some(proto::ReleaseActor {

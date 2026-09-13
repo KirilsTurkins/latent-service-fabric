@@ -1,3 +1,6 @@
+#[path = "support/publication.rs"]
+mod publication;
+pub(super) use publication::publish_variant;
 #[path = "support/inventory.rs"]
 mod inventory;
 #[path = "support/model.rs"]

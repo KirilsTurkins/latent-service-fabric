@@ -91,6 +91,7 @@ pub(super) async fn seed(catalogs: &Catalogs, trust_class: &str) -> proto::Start
     candidate.placement.as_mut().unwrap().trust_class = trust_class.to_owned();
     candidate.route_weight = 5000;
     proto::StartRolloutRequest {
+        expected_candidate_component_digest: None,
         id: "observed".into(),
         base_deployment_id: "base".into(),
         expected_base_generation: Some(base.deployment.generation),

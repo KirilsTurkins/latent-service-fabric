@@ -6,6 +6,8 @@ mod lifecycle;
 mod package;
 #[path = "release/pagination.rs"]
 mod pagination;
+#[path = "release/publications.rs"]
+mod publications;
 
 use latent_artifacts::{encode_contract_metadata, CapsuleArtifact, ContractMetadataLimits};
 use latent_manifest::{JsonManifestCodec, ManifestCodec};
@@ -53,6 +55,7 @@ async fn get(harness: &Harness, identity: &str, digest: &str) -> Option<proto::R
         .get_release(request(
             identity,
             proto::GetReleaseRequest {
+                publication: None,
                 digest: digest.to_owned(),
             },
         ))
@@ -122,6 +125,7 @@ async fn published_typed_capsule_can_be_deployed_without_editing_the_data_direct
         .apply_deployment(request(
             "alice",
             proto::ApplyDeploymentRequest {
+                expected_component_digest: None,
                 operation: None,
                 deployment: Some(desired),
                 expected_generation: Some(0),
