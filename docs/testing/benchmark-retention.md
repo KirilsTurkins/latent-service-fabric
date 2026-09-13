@@ -76,3 +76,19 @@ historical observations.
 Removing payloads from the current tree does not erase their Git history or
 shrink an existing clone's object database. No history rewrite is part of this
 retention change.
+
+## Phase 2 gate receipts
+
+The [Phase 2 evidence package](../../benchmarks/phase2/2026-09-13/README.md)
+retains compact operator, offline, native-currentness and resource receipts,
+the dependency/check ledger, published Wiki verification and the distinct
+observed-build CI artifact. Its attempt ledger preserves failed, unavailable
+and superseded runs; a later passing run does not replace their disposition.
+Synthetic signed test fixtures remain labeled separately from captured CI build
+provenance. Binary, source, collector and policy identities belong to their
+recorded executions, not to a later documentation or release version.
+
+The frozen `docs/testing/phase-2-resource-profile.md` is itself a hash-bound
+collector input. Preserve its original bytes with the retained receipt; place
+current interpretation and limitations in the [completion report](../phase-2-completion.md).
+New workload or collector versions produce new evidence with their own identities.

@@ -12,7 +12,7 @@ body:
     attributes:
       label: Affected revision or version
       description: Provide the release tag, commit SHA, or branch revision where you reproduced the problem.
-      placeholder: e.g. 0.1.0-alpha.1 or 0123456789abcdef
+      placeholder: Release tag or exact commit SHA
     validations:
       required: true
   - type: input

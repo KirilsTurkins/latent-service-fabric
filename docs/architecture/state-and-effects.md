@@ -1,10 +1,12 @@
 # State and effect architecture
 
-Phase 1 implements only the stateless model below. Release/deployment catalog
-durability is implemented, but guest state transactions, effect outboxes, entity
-leases and durable workflows remain later-phase design contracts. The generic
-runtime rejects their unavailable imports, and ordinary stateless outcomes
-contain no committed state versions or effect IDs. See the
+The completed Phase 2 node implements the stateless model below. Its durable
+release/deployment receipts and audit journal do not constitute a guest state
+transaction. Guest state, effect outboxes and entity leases belong to Phase 4;
+durable workflows belong to Phase 6. The runtime rejects their unavailable
+imports, and ordinary stateless outcomes contain no committed state versions or
+effect IDs. Phase 3 external providers must report their own acceptance and
+uncertainty without claiming these future transaction guarantees. See the
 [current activation lifecycle](../activation-lifecycle.md) and [roadmap](../roadmap.md).
 
 ## State models
@@ -37,7 +39,7 @@ begin state transaction
 
 A guest trap or cancellation before commit discards staged mutations and uncommitted intents.
 
-## External effects
+## Planned durable external effects
 
 External operations are represented as durable effect intents with:
 

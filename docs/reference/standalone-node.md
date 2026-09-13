@@ -5,10 +5,12 @@ durable release and deployment catalogs, immutable routing, admission and quotas
 fixed execution cells, generic Wasmtime execution, activation capabilities,
 bounded lifecycle/status retention, telemetry, and the invocation and management
 RPC adapters. Worker and listener counts come from node configuration and do not
-grow with deployed services. Phase 2 adds authenticated package admission,
+grow with deployed services. Completed Phase 2 provides authenticated package admission,
 release lifecycle, optional authenticated native caching, durable audit and
 manual/canary/rollback control. The [Phase 2 completion review](../phase-2-completion.md)
-records its accepted scope and evidence; Phase 3 capability providers remain planned.
+records its accepted scope and evidence. Phase 3 capability providers and
+application ingress remain planned; no such implementation is enabled by these
+settings.
 
 The [`latent` operator CLI](operator-cli.md) uses the generated clients to publish,
 deploy, invoke, cancel, reconcile operation receipts, control rollouts and query

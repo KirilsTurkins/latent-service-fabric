@@ -1,5 +1,15 @@
 # Phase 2 completion review
 
+> Current status, September 13, 2026: Phase 2 was accepted when
+> [PR #245](https://github.com/KirilsTurkins/latent-service-fabric/pull/245)
+> merged as `fa47cf9bfc8d7270868570e7abe23b8978cb72ab` after all seven applicable
+> CI checks passed. Gate #158 and epic #139 are closed. The report below retains
+> its review-time conditions and measured source identities; subsequent merges
+> do not replace those measurements. [Phase 3](roadmap.md#phase-3-capabilities-and-application-hosting)
+> remains planned work.
+
+## Reviewed gate report
+
 **Gate decision: accept Phase 2 on the reviewed, CI-passing merge of this report.**
 
 This report maps [gate #158](https://github.com/KirilsTurkins/latent-service-fabric/issues/158)

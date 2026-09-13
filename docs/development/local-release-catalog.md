@@ -1,8 +1,8 @@
 # Phase 1 local release catalog
 
 `latent-artifacts::DirectoryArtifactRepository` implements the local release
-catalog used by the [Phase 1 standalone node](../reference/standalone-node.md).
-The repository is also available directly as a Rust API. Phase 2
+catalog used by the [standalone node](../reference/standalone-node.md).
+The repository is also available directly as a Rust API. Completed Phase 2
 [release lifecycle](../reference/release-lifecycle.md) adds authoritative durable
 membership, revocation/retirement and bounded operation outcomes to both local
 and enforced catalogs. The original immutable completion format is preserved;

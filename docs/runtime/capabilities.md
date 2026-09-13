@@ -7,11 +7,18 @@ each activation. Preparation verifies the component's declared surface, and an
 invocation must bind exactly its prepared imports. No WASI filesystem,
 environment, network, process, or other ambient authority is installed. The
 remaining platform capability packages are contracts for later implementation.
+Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
+currentness, native caching and rollout control; it does not expand this guest
+import set. The 41-ticket [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
+is planned work, with no Phase 3 providers or host ABI implementation merged.
 
 The [local activation manager](../activation-lifecycle.md) supplies these
 capabilities with the activation's shared accounting owner inside the delivered
-[standalone node](../reference/standalone-node.md). A capability broker for
-state, network, secrets, or child-call access remains later-phase work.
+[standalone node](../reference/standalone-node.md). Phase 3 plans the shared
+capability broker, HTTP/blob/secrets/events providers, local child calls, random
+and custom metrics, application ingress and web/SSR integration. Transactional
+state/effects, cluster transport and durable workflow suspension remain later
+phases; declared WIT alone makes none of them callable.
 
 ## Context disclosure
 
