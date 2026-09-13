@@ -27,7 +27,9 @@ pub use deadline_diagnostic_observer::{
 pub use deadline_wait_observer::{DeadlineWaitGuard, DeadlineWaitObserver, DeadlineWaitSnapshot};
 pub use digest::{ArtifactBlobDigest, DigestParseError, PackageDigest};
 pub use error::{DeclaredError, ErrorDetail, PlatformError, PlatformErrorCode};
-pub use host_profile::{HostAbiProfile, HostInterfaceBinding, HostInterfaceSpec, PHASE3_HOST_ABI_V1};
+pub use host_profile::{
+    HostAbiProfile, HostInterfaceBinding, HostInterfaceSpec, PHASE3_HOST_ABI_V1,
+};
 pub use identity::{InvocationPrincipal, PrincipalKind};
 pub use ids::*;
 pub use lifecycle::{ActivationPhase, ActivationTerminalState, CancelDisposition};
