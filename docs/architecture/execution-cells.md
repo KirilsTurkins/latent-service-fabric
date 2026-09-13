@@ -10,6 +10,14 @@ are temporary bounded workers, not guest execution cells. Trust-sharded guest
 processes, state transactions and external asynchronous capability providers
 remain later work.
 
+[ADR-0025](../../adr/0025-require-explicit-execution-isolation-profiles.md) and
+[RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) define the
+security-profile boundary. The delivered in-process cell is not a process-compromise
+boundary. A workload that requires containment after compromise of the process
+executing guest/provider/renderer/native-compatibility work requires a separate
+fixed node-owned execution host and remains unsupported until that profile is
+implemented and validated.
+
 ## Cell contents during an activation
 
 - cell identifier and allocation class,
@@ -40,11 +48,27 @@ limits are documented in [the runtime reference](../runtime/wasmtime.md).
 
 ## Isolation model
 
-Each activation receives a separate guest store, memory, budget and host bindings. A guest trap must terminate only that activation. Phase 3 plans the general broker handle table. Stronger guest process isolation remains a planned fixed set of trust-sharded execution hosts.
+Each activation receives a separate guest store, memory, budget and host bindings.
+A guest trap must terminate only that activation. Phase 3 plans the general broker
+handle table. The current `local-experimental-v1` profile trusts the standalone
+node, Wasmtime, host bindings and operating system. Guest Store limits constrain
+guest-visible resources; they are not a complete process-RSS boundary.
+
+A future stronger profile may use a fixed/bounded pool of trust-class execution
+hosts. Host count must remain independent of service count. A failed, stuck or
+compromised host may not return to the reusable pool until its supervisor has
+terminated/reaped it; replacement capacity remains charged to the same node-owned
+ceiling.
 
 ## Cancellation
 
 Wall-clock deadlines and explicit cancellation are propagated through an `ExecutionCancellation` interface. Cooperative interruption is preferred. An execution backend must also provide a non-cooperative containment mechanism for runaway guest execution.
+
+For the delivered in-process profile, a failure that cannot safely interrupt and
+clean a guest cannot be converted into a guest-process containment claim. The
+cell must not be reused; node-level recovery may be required. A future separate
+host profile uses process termination and actual reap as its non-cooperative
+refund boundary.
 
 ## Reuse safety
 
