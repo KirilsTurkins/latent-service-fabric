@@ -1,14 +1,12 @@
 use super::{compare::Comparison, incompatible, SemanticLimits};
+use latent_contracts::{HostInterfaceBinding, PHASE3_HOST_ABI_V1};
 use latent_core::PlatformError;
 use std::collections::BTreeMap;
 use wit_parser::{InterfaceId, Resolve};
 
-pub(super) const IMPORTS: [&str; 4] = [
-    "latent:context/context@0.1.0",
-    "latent:log/log@0.1.0",
-    "latent:clock/monotonic@0.1.0",
-    "latent:clock/wall@0.1.0",
-];
+pub(super) fn recognizes(name: &str) -> bool {
+    PHASE3_HOST_ABI_V1.interface(name).is_some()
+}
 
 pub(super) fn validate(
     resolve: &Resolve,
@@ -18,30 +16,23 @@ pub(super) fn validate(
     let mut trusted = Resolve::default();
     let mut loaded = BTreeMap::new();
     for (name, id) in imports {
-        if !IMPORTS.contains(&name.as_str()) {
-            return Err(incompatible("unsupported-host-import"));
+        let specification = PHASE3_HOST_ABI_V1
+            .interface(name)
+            .ok_or_else(|| incompatible("unsupported-host-import"))?;
+        if specification.binding != HostInterfaceBinding::BuiltIn {
+            return Err(incompatible("host-provider-unavailable"));
         }
-        let (package, source) = if name.starts_with("latent:context/") {
-            (
-                "latent:context",
-                include_str!("../../../../wit/platform/context/package.wit"),
-            )
-        } else if name.starts_with("latent:log/") {
-            (
-                "latent:log",
-                include_str!("../../../../wit/platform/log/package.wit"),
-            )
-        } else {
-            (
-                "latent:clock",
-                include_str!("../../../../wit/platform/clock/package.wit"),
-            )
+        let source = match specification.package {
+            "latent:context" => include_str!("../../../../wit/platform/context/package.wit"),
+            "latent:log" => include_str!("../../../../wit/platform/log/package.wit"),
+            "latent:clock" => include_str!("../../../../wit/platform/clock/package.wit"),
+            _ => return Err(incompatible("host-profile-package-unavailable")),
         };
-        if !loaded.contains_key(package) {
+        if !loaded.contains_key(specification.package) {
             let package_id = trusted
-                .push_source(package, source)
+                .push_source(specification.package, source)
                 .map_err(|_| incompatible("invalid-pinned-host-wit"))?;
-            loaded.insert(package, package_id);
+            loaded.insert(specification.package, package_id);
         }
         let interface = trusted
             .interfaces
