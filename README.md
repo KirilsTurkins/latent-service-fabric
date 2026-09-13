@@ -7,7 +7,9 @@ sockets, threads, guest heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-Phase 1, its performance extension, and Phase 2 are complete in development.
+Phase 1, its performance extension, and Phase 2 are complete.
+The `0.1.0-alpha.3` source prerelease is described in the
+[Phase 2 delivery notes](docs/phase-2-delivery.md).
 The [Phase 2 completion review](docs/phase-2-completion.md) covers deterministic
 packaging, authenticated OCI transfer, publisher/provenance/SBOM verification,
 current admission and lifecycle, isolated compilation and native reuse, durable
@@ -186,6 +188,12 @@ ignored tests require explicit selection. The durable 100,000-release catalog
 probe runs only when requested with the CI workflow's `run_catalog_scale` input
 or its documented local command; native-Linux calibration and resource soaks
 are also separate explicit work. See [validation tiers](VALIDATION.md).
+
+Pull requests use [CI profiles](docs/development/ci-profiles.md) to select the
+relevant checks. Approved Markdown/SVG-only changes run focused documentation
+validation; code and mixed changes retain full validation. Full jobs can reuse
+[dependency caches](docs/development/ci-caching.md) while still running all
+selected checks.
 
 Run the complete local Phase 0 executable demonstration with:
 
