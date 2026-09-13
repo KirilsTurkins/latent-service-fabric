@@ -1,0 +1,177 @@
+name: RustSec advisory baseline
+
+on:
+  pull_request:
+    branches:
+      - development
+    paths:
+      - Cargo.lock
+      - '**/Cargo.toml'
+      - rust-toolchain.toml
+      - .cargo/audit.toml
+      - .github/workflows/security-rustsec.yml
+      - tools/tests/test_security_rustsec_workflow.py
+      - docs/development/security-baseline.md
+  push:
+    branches:
+      - development
+      - release
+    paths:
+      - Cargo.lock
+      - '**/Cargo.toml'
+      - rust-toolchain.toml
+      - .cargo/audit.toml
+      - .github/workflows/security-rustsec.yml
+      - tools/tests/test_security_rustsec_workflow.py
+      - docs/development/security-baseline.md
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_AUDIT_VERSION: '0.22.2'
+  RUSTSEC_DB_URL: https://github.com/RustSec/advisory-db.git
+  RUSTSEC_DB_BRANCH: main
+  SCANNER_RUST: '1.97.1'
+
+jobs:
+  changed-lockfile:
+    name: RustSec current change
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out the event revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install scanner Rust toolchain
+        uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          toolchain: ${{ env.SCANNER_RUST }}
+      - name: Install exact cargo-audit outside the checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          install_root="${RUNNER_TEMP}/cargo-audit"
+          cargo_home="${RUNNER_TEMP}/cargo-home"
+          cd "${RUNNER_TEMP}"
+          CARGO_HOME="${cargo_home}" timeout --signal=TERM --kill-after=10s 8m \
+            cargo install cargo-audit --version "${CARGO_AUDIT_VERSION}" --locked --root "${install_root}"
+          tool_version="$("${install_root}/bin/cargo-audit" --version)"
+          test "${tool_version}" = "cargo-audit ${CARGO_AUDIT_VERSION}"
+      - name: Fetch current RustSec advisory database
+        shell: bash
+        run: |
+          set -euo pipefail
+          database="${RUNNER_TEMP}/rustsec-advisory-db"
+          timeout --signal=TERM --kill-after=10s 90s \
+            git clone --quiet --depth 1 --filter=blob:none --branch "${RUSTSEC_DB_BRANCH}" \
+              "${RUSTSEC_DB_URL}" "${database}"
+          database_sha="$(git -C "${database}" rev-parse HEAD)"
+          remote_sha="$(timeout --signal=TERM --kill-after=5s 30s \
+            git ls-remote "${RUSTSEC_DB_URL}" "refs/heads/${RUSTSEC_DB_BRANCH}" | awk 'NR == 1 {print $1}')"
+          test -n "${remote_sha}"
+          test "${database_sha}" = "${remote_sha}"
+          echo "RUSTSEC_DB_PATH=${database}" >> "${GITHUB_ENV}"
+          echo "RUSTSEC_DB_SHA=${database_sha}" >> "${GITHUB_ENV}"
+      - name: Audit committed Cargo.lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          audit_bin="${RUNNER_TEMP}/cargo-audit/bin/cargo-audit"
+          lockfile="${GITHUB_WORKSPACE}/Cargo.lock"
+          test -f "${lockfile}"
+          test ! -L "${lockfile}"
+          lock_bytes="$(stat -c '%s' "${lockfile}")"
+          test "${lock_bytes}" -le 8388608
+          tool_version="$("${audit_bin}" --version)"
+          test "${tool_version}" = "cargo-audit ${CARGO_AUDIT_VERSION}"
+          lock_sha="$(sha256sum "${lockfile}" | awk '{print $1}')"
+          {
+            echo '### RustSec advisory scan'
+            echo
+            echo "- tool: \`${tool_version}\`"
+            echo "- advisory database: \`${RUSTSEC_DB_SHA}\`"
+            echo "- Cargo.lock SHA-256: \`${lock_sha}\`"
+            echo "- source revision: \`${GITHUB_SHA}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+          cd "${RUNNER_TEMP}"
+          timeout --signal=TERM --kill-after=10s 5m \
+            "${audit_bin}" audit --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"
+
+  maintained-branches:
+    name: RustSec ${{ matrix.ref }}
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        ref:
+          - development
+          - release
+    steps:
+      - name: Check out maintained branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ matrix.ref }}
+          persist-credentials: false
+      - name: Install scanner Rust toolchain
+        uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        with:
+          toolchain: ${{ env.SCANNER_RUST }}
+      - name: Install exact cargo-audit outside the checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          install_root="${RUNNER_TEMP}/cargo-audit"
+          cargo_home="${RUNNER_TEMP}/cargo-home"
+          cd "${RUNNER_TEMP}"
+          CARGO_HOME="${cargo_home}" timeout --signal=TERM --kill-after=10s 8m \
+            cargo install cargo-audit --version "${CARGO_AUDIT_VERSION}" --locked --root "${install_root}"
+          tool_version="$("${install_root}/bin/cargo-audit" --version)"
+          test "${tool_version}" = "cargo-audit ${CARGO_AUDIT_VERSION}"
+      - name: Fetch current RustSec advisory database
+        shell: bash
+        run: |
+          set -euo pipefail
+          database="${RUNNER_TEMP}/rustsec-advisory-db"
+          timeout --signal=TERM --kill-after=10s 90s \
+            git clone --quiet --depth 1 --filter=blob:none --branch "${RUSTSEC_DB_BRANCH}" \
+              "${RUSTSEC_DB_URL}" "${database}"
+          database_sha="$(git -C "${database}" rev-parse HEAD)"
+          remote_sha="$(timeout --signal=TERM --kill-after=5s 30s \
+            git ls-remote "${RUSTSEC_DB_URL}" "refs/heads/${RUSTSEC_DB_BRANCH}" | awk 'NR == 1 {print $1}')"
+          test -n "${remote_sha}"
+          test "${database_sha}" = "${remote_sha}"
+          echo "RUSTSEC_DB_PATH=${database}" >> "${GITHUB_ENV}"
+          echo "RUSTSEC_DB_SHA=${database_sha}" >> "${GITHUB_ENV}"
+      - name: Audit committed Cargo.lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          audit_bin="${RUNNER_TEMP}/cargo-audit/bin/cargo-audit"
+          lockfile="${GITHUB_WORKSPACE}/Cargo.lock"
+          test -f "${lockfile}"
+          test ! -L "${lockfile}"
+          lock_bytes="$(stat -c '%s' "${lockfile}")"
+          test "${lock_bytes}" -le 8388608
+          tool_version="$("${audit_bin}" --version)"
+          test "${tool_version}" = "cargo-audit ${CARGO_AUDIT_VERSION}"
+          lock_sha="$(sha256sum "${lockfile}" | awk '{print $1}')"
+          source_sha="$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD)"
+          {
+            echo "### RustSec advisory scan: ${source_sha}"
+            echo
+            echo "- maintained branch: \`${{ matrix.ref }}\`"
+            echo "- tool: \`${tool_version}\`"
+            echo "- advisory database: \`${RUSTSEC_DB_SHA}\`"
+            echo "- Cargo.lock SHA-256: \`${lock_sha}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+          cd "${RUNNER_TEMP}"
+          timeout --signal=TERM --kill-after=10s 5m \
+            "${audit_bin}" audit --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"
