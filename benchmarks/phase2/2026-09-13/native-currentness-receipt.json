@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "latent.phase2.native-currentness-test.v1",
+  "passed": true,
+  "sourceBaseRevision": "32f9d3f03e2def6548afc4dd9f445bf819b1aa93",
+  "testSourceDigests": {
+    "apps/latentd/src/standalone/start/tests.rs": "sha256:4dd2224421dfe65adfe6d00ab8992593d71fef0a1b5aeecd79d64d1b74f3a54a",
+    "apps/latentd/src/standalone/start/tests/trust_currentness.rs": "sha256:1550c3650932796c0b926e24b9db4430ebe8b95b01ac1e4637072e3c524a8168",
+    "crates/latent-wasmtime/tests/generic_backend/support.rs": "sha256:5c821119cdcee4366dc7384b3718f2f04a0af15b2032b37af160dfb03ec5eb42",
+    "crates/latent-policy/src/supply_chain/tests/operator_fixture.rs": "sha256:15cdc39b30ed614a5c54fc2d4dd3ab1762c451d9ded723f9eff64929f1a289cc"
+  },
+  "tests": [
+    "standalone::start::tests::trust_currentness::real_policy_expiry_denies_native_work_and_recovers_readable_negative_history",
+    "standalone::start::tests::trust_currentness::real_proof_age_expiry_denies_retained_native_work_with_a_current_clock_lease",
+    "standalone::start::tests::trust_currentness::real_publisher_revocation_denies_native_work_without_any_registry_event"
+  ],
+  "passedTests": 3,
+  "failedTests": 0,
+  "syntheticTestEvidence": true,
+  "unprivilegedUid": 65534,
+  "compileJobsPerTest": 1,
+  "nativeLoadsPerTest": 1,
+  "scope": "Real enforced authority, isolated native compilation and persistent-cache reopen; logical ownership assertions, not an OS resource measurement",
+  "binaryAndFixtureDigests": {
+    "testBinary": "sha256:67809f3c6278a644e9ce605f6dc513876ebf058db0a054c352f51228e6f07f70",
+    "fixtureExporter": "sha256:f134d0f26f07e1ec1dbb194f11bf0a68c09e710a504c977b7c411e5855927fd9",
+    "isolatedCompiler": "sha256:fb94982954bfe0ad38e171f19ba8055271921805306dee69b111a7cfb62cc6a9",
+    "fixtureMetadata": "sha256:3c1ee3a6b557d34c90cb54cef8d95ca3bf2cf41522706e852bfc6b5085dfd721",
+    "publicPolicy": "sha256:9918b9c59dd81c75974426e7179c94c8aad1e73b9f03b9ee7f15ef4e580bef39"
+  },
+  "host": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "kernelRelease": "6.6.87.2-microsoft-standard-WSL2"
+  }
+}

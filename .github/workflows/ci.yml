@@ -20,8 +20,43 @@ permissions:
   contents: read
 
 jobs:
+  profile:
+    name: Select CI profile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      profile: ${{ steps.select.outputs.profile }}
+      reason: ${{ steps.select.outputs.reason }}
+      changed_files: ${{ steps.select.outputs.changed_files }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Classify the complete change
+        id: select
+        run: python3 tools/ci_profile.py
+
+  docs:
+    name: Documentation and SVGs
+    needs: profile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+          cache: pip
+          cache-dependency-path: tools/requirements.lock
+      - name: Install documentation validator dependencies
+        run: python -m pip install --requirement tools/requirements.lock
+      - name: Validate documentation and profile selection
+        run: |
+          python3 -m unittest tools.tests.test_ci_profile tools.tests.test_validate_docs
+          python3 tools/validate_docs.py
+
   rust:
     name: Rust 1.97.1
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +64,24 @@ jobs:
         with:
           components: rustfmt, clippy
           targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Check formatting
         run: cargo fmt --all --check
       - name: Check workspace
@@ -69,15 +122,127 @@ jobs:
         run: |
           cargo test --workspace --all-targets --all-features --locked
           cargo test -p latent-admission -p latent-scheduler --doc --locked
+          cargo test -p latent-signing --lib --locked --features ed25519-dalek/legacy_compatibility crypto::tests
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.5
+      - name: Fetch the pinned operator workflow registry
+        run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - name: Validate bounded Phase 2 delivery and resource workflows
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          cargo build -p latent -p latentd --all-features --locked
+          fixture_root="$(mktemp -d "${RUNNER_TEMP}/lsf-operator-fixture.XXXXXXXX")"
+          mkdir -p "${RUNNER_TEMP}/phase2-gate"
+          trap 'rm -rf -- "$fixture_root"' EXIT
+          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" cargo test -p latent-policy --lib --all-features --locked export_operator_workflow_fixture -- --ignored --test-threads=1
+          python3 -m unittest tools.tests.test_phase2_operator_workflow tools.tests.test_phase2_operator_canary tools.tests.test_phase2_offline_workflow
+          python3 tools/run_phase2_operator_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/operator-receipt.json"
+          cargo build -p latent-wasmtime --bin latent-aot-compiler --all-features --locked
+          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" LSF_AOT_COMPILER="${PWD}/target/debug/latent-aot-compiler" cargo test -p latentd --lib --all-features --locked standalone::start::tests::trust_currentness:: -- --ignored --test-threads=1
+          python3 tools/run_phase2_offline_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/offline-receipt.json"
+          LSF_PHASE2_RESOURCE_FIXTURE_ROOT="${fixture_root}/resource-inputs" cargo test -p latent-policy --lib --all-features --locked export_phase2_resource_fixture -- --ignored --test-threads=1
+          python3 -m unittest tools.tests.test_phase2_gate_resource
+          LSF_GATE_FIXTURE_ROOT="${fixture_root}" python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path.cwd()
+          def digest(path):
+              with path.open("rb") as source:
+                  return "sha256:" + hashlib.file_digest(source, "sha256").hexdigest()
+          identity = {
+              "schemaVersion": "latent.phase2.resource-build.v1",
+              "sourceRevision": os.environ["GITHUB_SHA"],
+              "cargoLockSha256": digest(root / "Cargo.lock"),
+              "cliSha256": digest(root / "target/debug/latent"),
+              "nodeSha256": digest(root / "target/debug/latentd"),
+              "rustcVersion": subprocess.check_output(["rustc", "--version"], text=True).strip(),
+              "buildProfile": "debug",
+          }
+          (pathlib.Path(os.environ["LSF_GATE_FIXTURE_ROOT"]) / "build.json").write_text(json.dumps(identity))
+          PY
+          python3 tools/phase2_gate_resource.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/resource-inputs" --build-identity "${fixture_root}/build.json" --output "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+          python3 tools/phase2_gate_resource.py --validate "${RUNNER_TEMP}/phase2-gate/resource-receipt.json"
+      - name: Retain compact Phase 2 gate receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-2-gate-${{ github.sha }}
+          path: ${{ runner.temp }}/phase2-gate/*.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  oci-registry:
+    name: OCI registry TLS integration
+    needs: [profile, contracts]
+    if: needs.profile.outputs.profile == 'full'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
+      - name: Receive bounded observed echo inputs
+        uses: actions/download-artifact@v4
+        with:
+          name: phase-2-observed-echo-${{ github.sha }}
+          path: target/capsules/echo-provenance
+      - name: Fetch pinned disposable registry
+        run: docker pull ghcr.io/project-zot/zot-minimal-linux-amd64@sha256:f1ffb7a5bbddc0feea83646e29c587ecf39b3193733b447749d4c9ead111a395
+      - name: Check runner ownership and cleanup guards
+        run: python3 -m unittest discover -s tools/tests -p test_oci_registry_runner.py
+      - name: Validate bounded authenticated OCI distribution
+        run: python3 tools/run_oci_registry_tests.py --state-file "$RUNNER_TEMP/lsf-oci-registry.json" --provenance-input target/capsules/echo-provenance
+      - name: Recover only this job's disposable registry
+        if: always()
+        run: python3 tools/run_oci_registry_tests.py --cleanup-state "$RUNNER_TEMP/lsf-oci-registry.json"
 
   catalog:
     name: Durable catalog acceptance
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     # 60m publication + 30m reopen, with build/cleanup/evidence-upload headroom.
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.97.1
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Run catalog recovery, routing, and dormancy regressions
         run: cargo test -p latent-artifacts -p latent-control-store --lib --locked -- --nocapture
       - name: Check catalog probe supervision
@@ -104,15 +269,37 @@ jobs:
 
   msrv:
     name: Rust MSRV 1.94.1
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.94.1
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - name: Check workspace at MSRV
         run: cargo +1.94.1 check --workspace --all-targets --all-features --locked
 
   contracts:
     name: Repository contracts
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -126,6 +313,24 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.97.1
         with:
           targets: wasm32-wasip2,wasm32-unknown-unknown
+      - name: Restore compiled Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          prefix-key: lsf-ci-dependencies-v1
+          key: ubuntu-24.04-${{ hashFiles('.github/workflows/ci.yml', 'Cargo.toml', '.cargo/config.toml') }}
+          cache-targets: false
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          cache-directories: |
+            target/debug/.fingerprint
+            target/debug/build
+            target/debug/deps
+          save-if: >-
+            ${{ (github.event_name == 'push' && github.ref == 'refs/heads/development') ||
+                (github.event_name == 'workflow_dispatch' &&
+                 (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/release')) }}
       - uses: bytecodealliance/actions/wasm-tools/setup@v1
         with:
           version: 1.254.0
@@ -137,6 +342,15 @@ jobs:
         run: |
           unset CARGO_INCREMENTAL
           tools/validate_contracts.sh
+      - name: Run executable outcome and recovery matrix
+        run: bash tools/run_phase0_outcome_matrix.sh
+      - name: Pass bounded observed build inputs to registry verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase-2-observed-echo-${{ github.sha }}
+          path: target/capsules/echo-provenance/
+          if-no-files-found: error
+          retention-days: 1
       - name: Retain bounded Phase 1 conformance diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -185,6 +399,8 @@ jobs:
 
   sdks:
     name: Cross-language SDK surfaces
+    needs: profile
+    if: needs.profile.outputs.profile == 'full'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -216,3 +432,34 @@ jobs:
           tools/validate_sdks.sh
           test "$(node sdk/typescript-client/node_modules/typescript/bin/tsc --version)" = \
             "Version ${EXPECTED_TYPESCRIPT_VERSION}"
+
+  result:
+    name: CI result
+    if: always()
+    needs: [profile, docs, rust, oci-registry, catalog, msrv, contracts, sdks]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every selected validation job
+        env:
+          CI_JOB_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          results = json.loads(os.environ['CI_JOB_RESULTS'])
+          profile = results['profile']['outputs'].get('profile')
+          full = {'rust', 'oci-registry', 'catalog', 'msrv', 'contracts', 'sdks'}
+          required = {'profile', 'docs'} | (full if profile == 'full' else set())
+          failures = [name for name in required if results[name]['result'] != 'success']
+          if profile not in {'docs', 'full'}:
+              failures.append('unknown CI profile')
+          if profile == 'docs':
+              failures.extend(name for name in full if results[name]['result'] != 'skipped')
+          print('Selected profile:', profile)
+          print('Job results:', {name: value['result'] for name, value in results.items()})
+          if failures:
+              print('CI did not satisfy its selected profile:', ', '.join(failures), file=sys.stderr)
+              sys.exit(1)
+          PY

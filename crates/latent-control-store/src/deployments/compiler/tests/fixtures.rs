@@ -166,6 +166,7 @@ pub(super) fn artifact(marker: &str) -> CapsuleArtifact {
                 fusion_eligible: false,
             },
             minimum_fabric_version: "0.1.0".to_owned(),
+            runtime_requirements: Default::default(),
         },
         contracts: vec![ContractDescriptor {
             id: ContractId(CONTRACT.to_owned()),

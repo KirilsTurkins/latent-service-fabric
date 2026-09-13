@@ -1,97 +1,122 @@
 # Data-plane architecture
 
-The delivered data plane is the single-node stateless composition described in
-[the Phase 1 completion report](../phase-1-completion.md). Its
-[performance extension](../phase-1-extension-completion.md) adds bounded cold
-preparation, warm identity/cache reuse and transport cleanup while retaining
-the same activation ownership and admission boundaries.
+The delivered data plane is a standalone Linux stateless runtime. Phase 2 adds
+current catalog authority, bounded raw and native caches, isolated compilation
+and canary observations to the retained Phase 1 activation owner. Its
+[completion review](../phase-2-completion.md) records the accepted scope and
+bounded currentness/resource evidence. Historical
+[Phase 1 evidence](../phase-1-completion.md) and its
+[performance extension](../phase-1-extension-completion.md) retain their scope.
 
 ## Current invocation path
 
 ```text
 authenticated loopback invocation RPC
-  → pinned local route and policy
+  → pinned local route and execution policy
   → admission controller
   → bounded repository-backed preparation readiness
   → fair scheduler
   → cell assignment and prepared-use materialization
-  → context/log/clock capability binding
-  → fresh Wasmtime store and execution
-  → contained cleanup and cell release or quarantine
-  → finalized accounting, status, result and telemetry
+  → final current lifecycle/admission decision
+  → context/log/clock binding and fresh Wasmtime store
+  → execution and contained cleanup
+  → cell release or quarantine, accounting, status and result
 ```
 
-## Shared ingress
+Release authority is also checked during routing and preparation. Holding a
+route, compiler job or readiness object is not acceptance to start. Lifecycle
+mutation and the final start decision share a fence; a call already accepted at
+that decision may finish. Subsequent decisions reject old capabilities. The
+audit worker and rollout coordinator are absent from this path.
 
-Phase 1 supplies direct RPC. HTTP, event, queue, timer and blob adapters remain
-planned. Capsules never own network listeners or consumer loops.
+## Route and admission ownership
 
-## Route resolution
+Resolution selects an exact revision from the node's immutable tenant/service
+snapshot. The activation pins its route, release and execution policy for its
+lifetime. Rollout, promotion and rollback affect new selections by publishing a
+new snapshot; they do not rewrite an existing invocation's pin.
 
-Resolution pins the node's immutable route and policy snapshot and selects an
-exact revision. Remote propagation of that identity is a later-phase contract;
-Phase 1 does not forward calls between nodes.
+Admission occurs before allocating a cell. It checks authenticated identity,
+payload bounds, requested trust/cell class, policy, quota, deadline feasibility
+and overload state. The scheduler uses bounded class queues, tenant fairness,
+admitted priorities, deadlines and aging. Preparation readiness completes before
+scheduler enqueue; cold arrivals are not guaranteed FIFO cell eligibility.
+Overload never creates a worker or process for a dormant service.
 
-## Admission
+## Materialization and caches
 
-Admission occurs before a cell is allocated. It checks identity, policy, payload size, quota, deadline feasibility, trust-class capacity, requested cell class, and overload state.
+The [runtime](../runtime/wasmtime.md) retains immutable compiled code in a bounded
+prepared cache. Verified warm identity lookup can reuse a preparation without
+component I/O. Cold reads and preparation run on fixed compiler workers with
+finite jobs, input bytes and waiters. Cancellation does not release a running
+job's resources until the work actually stops. Readiness owns no cell, guest
+store or activation heap.
 
-## Scheduling
+The implemented storage and execution owners have different authority:
 
-The scheduler uses bounded class queues, round-robin tenant fairness, admitted
-priorities, deadlines and aging. Admission fixes the permitted trust/cell class.
-Preparation readiness completes before scheduler enqueue, so cold arrivals are
-not guaranteed FIFO cell eligibility. Artifact-locality placement and state
-affinity remain planned. Overload never creates service-specific threads or processes.
+| Owner | Contents and permission |
+| --- | --- |
+| Authoritative catalog | Immutable original package/component metadata and evidence, plus durable lifecycle. Its sealed current capabilities authorize use. |
+| [Raw cache](../reference/raw-artifact-cache.md) | Replaceable digest-addressed manifests/blobs with file pins and verified buffers. A hit grants no trust and cannot evict catalog content. |
+| Native cache | Locally authenticated serialized output plus a bounded receipt locator. Exact source, compiler, host and engine checks precede loading. |
+| Prepared cache | Linked immutable runtime preparation, with use pins that may outlive eviction. It retains no guest store. |
+| Activation | Fresh store, host state, transfer values and execution permits; released or quarantined after actual cleanup. |
 
-## Materialization
+The default runtime compiles portable components in process. Opt-in
+[native AOT](../runtime/trusted-aot.md) uses a bounded isolated Linux x86_64
+compiler and persistent reuse. A persistent hit still performs a fresh verified
+catalog source fetch. Receipt authentication precedes the claimed raw-blob read;
+exact immutable bytes and actual engine compatibility are authenticated before
+the private copying loader. A malformed cache entry can trigger one configured
+recompile. Capacity, deadline, cancellation and authority failure do not select
+an unrestricted fallback.
 
-Phase 1 verifies local artifacts and retains immutable compiled code in a bounded
-shared prepared cache. Warm verified identity lookup avoids component I/O and
-full metadata traversal. Cold directory reads and compilation run on fixed
-compiler workers with bounded jobs, inputs and waiters; the compiler retains
-ownership until native work returns even if callers cancel. A readiness pin
-owns no cell or guest store. The [runtime reference](../runtime/wasmtime.md)
-documents cache, preparation and in-flight accounting independently.
+Image permits charge page-rounded native mapping bytes before loading and remain
+held until the last runtime/readiness owner releases the image. These are logical
+mapping limits, not total process RSS or all Wasmtime allocations. Raw-file pins,
+output byte leases, mapped image permits and prepared-cache accounting are
+separate resources; eviction of one cannot refund another.
 
-The broader future cache-tier model is:
+Snapshots of guest state, fused derivatives, distributed native-image trust and
+cross-node materialization remain future work.
 
-```text
-metadata → raw capsule → AOT artifact → mapped code → prepared imports → snapshot → fused derivative
-```
+## Capabilities and execution
 
-Mapped snapshots and fused derivatives are not implemented. Cache entries are
-reclaimable node resources, but in-flight pins may outlive eviction. No entry
-constitutes a required running service instance.
+Declared imports, deployment grants and admitted policy constrain the supported
+context, structured log and monotonic/wall clock interfaces. Each activation has
+fresh host state. General HTTP, blob, secret, event and service-call providers
+remain unavailable until their Phase 3 implementations; a WIT declaration is
+not a host implementation. Capsules cannot acquire unrestricted filesystem,
+socket, process, environment or thread access.
 
-## Capability binding
+Execution enforces CPU fuel, monotonic deadline/wall time, aggregate linear
+memory and accepted log-byte budgets, plus stack, context, transfer and canonical
+value limits. Unsupported budget dimensions must remain zero. Conserved
+descendant reservations and cancellation trees accompany Phase 3 local service
+calls, rather than being inferred from today's root activation budget. See
+[resource budgets](../runtime/resource-budgets.md).
 
-The deployment's grants, declared imports and admitted policy constrain the
-supported context/log/clock interfaces. Each activation receives fresh host
-state and handles. General network, blob, state, secret and child-call providers
-remain unavailable and their imports fail explicitly.
+## Observation and reclamation
 
-## Execution
+Bounded telemetry observes activation selection, admission and terminal outcomes.
+When configured, canary capture attributes these observations to the selected
+compiled generation and revision. A promotion window does not create a timer,
+sampler or execution resource for each service. Loss, unattributed work or an
+undrained interval cannot become successful evidence.
 
-A generic cell receives a fresh activation context and isolated store. Phase 1
-enforces CPU fuel, monotonic wall/deadline, aggregate linear memory and accepted
-log-byte budgets, plus node stack, context, transfer and value-codec limits.
-Later-phase budget dimensions must be zero; descendant call accounting awaits
-child-call implementation. See [resource budgets](../runtime/resource-budgets.md).
+On success, cancellation, trap, deadline or permanent failure, the activation
+owner drives cleanup. Cell reuse requires affirmative backend proof and pool
+disposition; uncertain cleanup quarantines the cell. After a transport loss,
+one fixed supervisor keeps polling the same owner under its original deadline.
+A terminal response alone does not establish safe reuse, and dropping a waiter
+does not end underlying compiler, file or child-process work.
 
-## Planned commit and effects
+## Later execution surfaces
 
-Guest code returns output, state mutations, and effect intents. State and outbox records commit atomically where the selected state backend supports it. External effects are dispatched by shared providers with stable idempotency identities.
-
-That transactional path is not part of Phase 1. Current stateless calls return
-output or a typed guest/platform failure without guest state commits or outboxes.
-
-## Reclamation
-
-On completion, cancellation, trap, deadline, or permanent failure, the store and
-activation-scoped capability handles are dropped and activation resources are
-reclaimed. Returning a cell to the generic pool requires affirmative backend
-cleanup proof and successful pool disposition; uncertain cleanup quarantines it.
-After transport loss, standalone's bounded supervisor continues the same
-activation owner under its original deadline to obtain that proof. A terminal
-outcome alone does not establish reuse safety.
+Phase 3 adds one shared application HTTP ingress, external event consumers,
+bounded provider I/O and renderer execution profiles. Listeners, provider pools
+and consumers belong to shared node owners, never individual dormant services.
+Phase 4 adds transactional state and outboxes. Phase 5 adds remote routing and
+placement. Phase 6 adds durable workflow timers and continuations. Current
+stateless calls return output or typed failure without guest state commits,
+outboxes or durable suspension.

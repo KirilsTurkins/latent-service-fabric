@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 import tempfile
+import sys
 import unittest
 from pathlib import Path
 
@@ -24,6 +25,18 @@ SPEC.loader.exec_module(build_echo_capsule)
 
 
 class BuildEchoCapsuleTests(unittest.TestCase):
+    def test_checked_process_uses_configured_source_and_explicit_environment(self) -> None:
+        original = build_echo_capsule.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as temporary:
+                source = Path(temporary)
+                build_echo_capsule.configure_source_root(source)
+                result = build_echo_capsule.run_checked([
+                    sys.executable, "-c", "import os; print(os.path.basename(os.getcwd()))"])
+                self.assertEqual(result.stdout.strip(), source.name)
+        finally:
+            build_echo_capsule.configure_source_root(original)
+
     def test_component_build_uses_a_self_contained_core_target(self) -> None:
         self.assertEqual(build_echo_capsule.BINDINGS_TARGET, "wasm32-wasip2")
         self.assertEqual(build_echo_capsule.CORE_TARGET, "wasm32-unknown-unknown")

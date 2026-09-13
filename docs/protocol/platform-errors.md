@@ -14,7 +14,7 @@ Component domain errors are declared by each WIT contract. Infrastructure failur
 | `not-found` | Service, release, state, effect, or capability not found | Usually no |
 | `already-exists` | Requested identity or activation already exists | Usually no |
 | `incompatible-contract` | Consumer and provider contracts cannot bind | No |
-| `state-conflict` | Optimistic transaction conflict | Only when declared safe |
+| `state-conflict` | Catalog, object-generation or optimistic transaction conflict | Only when declared safe |
 | `dependency-failed` | Child invocation or capability operation failed | Depends on cause |
 | `guest-trap` | Guest code trapped | Only under explicit policy |
 | `corrupt-artifact` | Digest, validation, or preparation failure | No until artifact changes |

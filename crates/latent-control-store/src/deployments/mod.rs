@@ -1,10 +1,15 @@
 //! Embedded, tenant-safe deployment catalog and immutable route publication.
 
+mod admission_fence;
 mod compiler;
 mod mutations;
 mod observation;
+pub(crate) mod operations;
 mod pagination;
 mod persistence;
+mod publication;
+mod recovery_admission;
+pub(crate) mod rollouts;
 mod scoped_routes;
 #[cfg(test)]
 mod tests;
@@ -17,7 +22,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, TryLockError};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use latent_artifacts::ArtifactRepository;
+use latent_artifacts::{AdmissionAuthority, ArtifactRepository, ReleaseUseRecheck};
 use latent_core::{
     BoxFuture, ContractId, ErrorDetail, Metadata, PlatformError, PlatformErrorCode, RevisionId,
     RouteGeneration,
@@ -32,7 +37,7 @@ use latent_routing::{
 };
 
 use crate::CompiledRouteStore;
-use compiler::{compile_versioned, CompiledCatalog};
+use compiler::{compile_versioned_with_runtime, CompiledCatalog};
 use mutations::{CommitOutcome, ObjectPrecondition};
 use observation::{count, CatalogWorkOperation as WorkOperation, Source, Work};
 #[cfg(feature = "catalog-observation")]
@@ -41,7 +46,20 @@ pub use observation::{
     CatalogWorkReceipt, CatalogWorkSnapshot,
 };
 pub use pagination::{DeploymentPage, DeploymentPageRequest};
-use persistence::EncodedCatalog;
+use publication::{PublicationView, PublishedCatalog};
+
+fn next_rollout_cursor_epoch() -> Result<u64, PlatformError> {
+    static NEXT: AtomicU64 = AtomicU64::new(1);
+    NEXT.fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+        value.checked_add(1)
+    })
+    .map_err(|_| {
+        error(
+            PlatformErrorCode::ResourceExhausted,
+            "rollout-owner-epoch-exhausted",
+        )
+    })
+}
 
 impl latent_routing::ActivationCatalogSource for DirectoryDeploymentRepository {
     fn pin(&self) -> Result<Arc<dyn latent_routing::ActivationCatalog>, PlatformError> {
@@ -99,7 +117,16 @@ pub struct DirectoryDeploymentRepository {
     root: PathBuf,
     config: DirectoryDeploymentRepositoryConfig,
     artifacts: Arc<dyn ArtifactRepository>,
-    current: RwLock<Arc<CompiledCatalog>>,
+    admission: Option<Arc<dyn AdmissionAuthority>>,
+    runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+    lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+    current: RwLock<PublishedCatalog>,
+    rollout_limits: crate::rollouts::RolloutLimits,
+    operation_budget: Arc<crate::deployment_operations::budget::Budget>,
+    rollout_budget: Arc<rollouts::table::MetadataBudget>,
+    rollout_work: Arc<std::sync::atomic::AtomicBool>,
+    rollout_cursor_epoch: u64,
+    canary: Option<latent_telemetry::phase2_canary::BoundedPhase2CanaryOutcomeWindow>,
     generation: AtomicU64,
     writer: Mutex<()>,
     pagination_fingerprint: RandomState,
@@ -109,6 +136,8 @@ pub struct DirectoryDeploymentRepository {
     fail_before_rename: std::sync::atomic::AtomicBool,
     #[cfg(test)]
     fail_parent_sync: std::sync::atomic::AtomicBool,
+    #[cfg(test)]
+    after_parent_sync: Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
 
 /// An owned read view that stays on its original generation after replacement or deletion.
@@ -120,6 +149,14 @@ pub struct PinnedRouteResolver {
 }
 
 impl DirectoryDeploymentRepository {
+    /// Reports exact catalog-owner identity without checking any release grant.
+    #[must_use]
+    pub fn is_bound_to_catalog(&self, owner: &latent_artifacts::LifecycleAuthorityHandle) -> bool {
+        self.lifecycle
+            .as_ref()
+            .is_some_and(|configured| configured.same_owner(owner))
+    }
+
     /// Restores and verifies the latest complete state; never silently resets a corrupt catalog.
     /// Relative paths are anchored on first poll, before suspension. The retained
     /// canonical absolute root keeps later operations bound to the owned directory.
@@ -128,7 +165,26 @@ impl DirectoryDeploymentRepository {
         artifacts: Arc<dyn ArtifactRepository>,
         config: DirectoryDeploymentRepositoryConfig,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, artifacts, config, Source::default()).await
+        Self::open_inner(root, artifacts, config, Source::default(), None, None, None).await
+    }
+
+    /// Opens a catalog whose releases must belong to this exact live authority.
+    pub async fn open_enforced(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        authority: Arc<dyn AdmissionAuthority>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::default(),
+            Some(authority),
+            None,
+            None,
+        )
+        .await
     }
 
     /// Opens with optional bounded work receipts, including recovery and failed initialization.
@@ -140,7 +196,118 @@ impl DirectoryDeploymentRepository {
         config: DirectoryDeploymentRepositoryConfig,
         observer: CatalogWorkObserver,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(root, artifacts, config, Source::observed(observer)).await
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::observed(observer),
+            None,
+            None,
+            None,
+        )
+        .await
+    }
+
+    /// Restores a trusted-local catalog against one immutable host profile.
+    pub async fn open_with_runtime(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::default(),
+            None,
+            Some(profile),
+            None,
+        )
+        .await
+    }
+
+    /// Enforces both current release authority and declared host requirements.
+    pub async fn open_enforced_with_runtime(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        authority: Arc<dyn AdmissionAuthority>,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::default(),
+            Some(authority),
+            Some(profile),
+            None,
+        )
+        .await
+    }
+
+    #[cfg(feature = "catalog-observation")]
+    pub async fn open_observed_with_runtime(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        observer: CatalogWorkObserver,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::observed(observer),
+            None,
+            Some(profile),
+            None,
+        )
+        .await
+    }
+
+    /// Binds historical recovery and active routes to this exact catalog owner.
+    pub async fn open_with_catalog(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        lifecycle: latent_artifacts::LifecycleAuthorityHandle,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        let admission = lifecycle.required_authority().cloned();
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::default(),
+            admission,
+            Some(profile),
+            Some(lifecycle),
+        )
+        .await
+    }
+
+    #[cfg(feature = "catalog-observation")]
+    pub async fn open_observed_with_catalog(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        observer: CatalogWorkObserver,
+        lifecycle: latent_artifacts::LifecycleAuthorityHandle,
+        profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+    ) -> Result<Self, PlatformError> {
+        let admission = lifecycle.required_authority().cloned();
+        Self::open_inner(
+            root,
+            artifacts,
+            config,
+            Source::observed(observer),
+            admission,
+            Some(profile),
+            Some(lifecycle),
+        )
+        .await
     }
 
     async fn open_inner(
@@ -148,6 +315,89 @@ impl DirectoryDeploymentRepository {
         artifacts: Arc<dyn ArtifactRepository>,
         config: DirectoryDeploymentRepositoryConfig,
         observation: Source,
+        admission: Option<Arc<dyn AdmissionAuthority>>,
+        runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner_with_limits(
+            root,
+            artifacts,
+            config,
+            observation,
+            admission,
+            runtime_profile,
+            lifecycle,
+            crate::rollouts::RolloutLimits::default(),
+        )
+        .await
+    }
+
+    pub async fn open_with_catalog_and_rollout_limits(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        lifecycle: latent_artifacts::LifecycleAuthorityHandle,
+        runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
+        limits: crate::rollouts::RolloutLimits,
+    ) -> Result<Self, PlatformError> {
+        let admission = lifecycle.required_authority().cloned();
+        Self::open_inner_with_limits(
+            root,
+            artifacts,
+            config,
+            Source::default(),
+            admission,
+            Some(runtime_profile),
+            Some(lifecycle),
+            limits,
+        )
+        .await
+    }
+
+    #[expect(
+        clippy::too_many_arguments,
+        clippy::too_many_lines,
+        reason = "one recovery transaction carries existing catalog owners plus bounded rollout metadata"
+    )]
+    async fn open_inner_with_limits(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        observation: Source,
+        admission: Option<Arc<dyn AdmissionAuthority>>,
+        runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+        rollout_limits: crate::rollouts::RolloutLimits,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner_with_control_limits(
+            root,
+            artifacts,
+            config,
+            observation,
+            admission,
+            runtime_profile,
+            lifecycle,
+            rollout_limits,
+            crate::deployment_operations::DeploymentOperationLimits::default(),
+        )
+        .await
+    }
+
+    #[expect(
+        clippy::too_many_arguments,
+        clippy::too_many_lines,
+        reason = "one bounded recovery initializes both optional control tables with the existing route owner"
+    )]
+    async fn open_inner_with_control_limits(
+        root: impl Into<PathBuf>,
+        artifacts: Arc<dyn ArtifactRepository>,
+        config: DirectoryDeploymentRepositoryConfig,
+        observation: Source,
+        admission: Option<Arc<dyn AdmissionAuthority>>,
+        runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+        rollout_limits: crate::rollouts::RolloutLimits,
+        operation_limits: crate::deployment_operations::DeploymentOperationLimits,
     ) -> Result<Self, PlatformError> {
         let mut work = observation.begin(WorkOperation::Open);
         let result = async {
@@ -164,9 +414,19 @@ impl DirectoryDeploymentRepository {
                     "invalid-catalog-limits",
                 ));
             }
+            let rollout_limits = rollout_limits.validate()?;
+            let operation_limits = operation_limits.validate()?;
+            let operation_budget =
+                crate::deployment_operations::budget::Budget::new(operation_limits);
+            let rollout_cursor_epoch = next_rollout_cursor_epoch()?;
             let root = root.into();
             let (root, owner_lock) = persistence::own_root(&root)?;
-            let restored = persistence::load(&root, config, &mut work)?;
+            let rollout_budget =
+                rollouts::table::MetadataBudget::new(rollout_limits.maximum_metadata_bytes);
+            let mut restored = persistence::load(&root, config, &mut work)?;
+            let mut control = restored
+                .as_mut()
+                .and_then(|record| record.payload.control.take());
             let needs_initial_state = restored.is_none();
             let (deployments, versions, generation, generated_at) = match &restored {
                 Some(record) => {
@@ -184,7 +444,7 @@ impl DirectoryDeploymentRepository {
                 }
                 None => (BTreeMap::new(), BTreeMap::new(), RouteGeneration(0), 0),
             };
-            let catalog = compile_versioned(
+            let catalog = compiler::compile_versioned_inner(
                 deployments,
                 versions,
                 generation,
@@ -193,6 +453,9 @@ impl DirectoryDeploymentRepository {
                 config,
                 None,
                 &mut work,
+                true,
+                runtime_profile.as_deref(),
+                lifecycle.as_ref(),
             )
             .await?;
             if let Some(record) = restored {
@@ -205,12 +468,55 @@ impl DirectoryDeploymentRepository {
                 }
             }
             let (catalog, bytes) = catalog.into_parts();
+            recovery_admission::check(true, || {
+                catalog.check_admission_mode(admission.as_ref(), lifecycle.as_ref())
+            })
+            .await?;
+            let transaction = control
+                .as_ref()
+                .map_or(generation.0, |v| v.transaction_version);
+            let operations = if let Some(data) = control
+                .as_mut()
+                .and_then(|value| value.deployment_operations.take())
+            {
+                operations::table::OperationTable::new(data, true, &operation_budget)?
+            } else {
+                operations::table::OperationTable::empty(&operation_budget)?
+            };
+            operations.validate_catalog(transaction, generation.0)?;
+            let rollout_table = if let Some(control) = control {
+                let enabled = !control.rollouts.rows.is_empty();
+                rollouts::table::RolloutTable::new(
+                    control.rollouts,
+                    enabled,
+                    &rollout_budget,
+                    rollout_limits,
+                )?
+            } else {
+                rollouts::table::RolloutTable::empty(&rollout_budget, rollout_limits)?
+            };
+            rollout_table.validate_catalog(transaction, generation)?;
             let repository = Self {
                 root,
                 config,
                 artifacts,
+                admission,
+                runtime_profile,
+                lifecycle,
                 generation: AtomicU64::new(generation.0),
-                current: RwLock::new(Arc::new(catalog)),
+                current: RwLock::new(PublishedCatalog {
+                    transaction,
+                    routes: Arc::new(catalog),
+                    rollouts: rollout_table,
+                    operations,
+                    confirmed: false,
+                }),
+                rollout_limits,
+                operation_budget,
+                rollout_budget,
+                rollout_work: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                rollout_cursor_epoch,
+                canary: None,
                 writer: Mutex::new(()),
                 pagination_fingerprint: RandomState::new(),
                 observation: observation.clone(),
@@ -219,15 +525,43 @@ impl DirectoryDeploymentRepository {
                 fail_before_rename: std::sync::atomic::AtomicBool::new(false),
                 #[cfg(test)]
                 fail_parent_sync: std::sync::atomic::AtomicBool::new(false),
+                #[cfg(test)]
+                after_parent_sync: Mutex::new(None),
             };
             // A durable empty catalog makes subsequent loss distinguishable from first startup.
-            if needs_initial_state {
-                persistence::stage(&repository.root, &bytes, &mut work)?;
-                persistence::replace(&repository.root)?;
+            let catalog = Arc::clone(&repository.read_catalog());
+            let retry = recovery_admission::Retry::new(true);
+            loop {
+                let mut started = false;
+                let result = catalog.with_current_admission(&mut |checker| {
+                    started = true;
+                    if needs_initial_state {
+                        persistence::stage(&repository.root, &bytes, &mut work)?;
+                        if let Some(checker) = checker {
+                            checker.check()?;
+                        }
+                        persistence::replace(&repository.root)?;
+                    }
+                    persistence::sync_root(&repository.root)?;
+                    if let Some(checker) = checker {
+                        checker.check()?;
+                    }
+                    Ok(())
+                });
+                match result {
+                    Err(failure) if !started && retry.pause(&failure).await => {}
+                    result => {
+                        result?;
+                        break;
+                    }
+                }
             }
             drop(bytes);
-            // Also completes initialization interrupted after the first state rename.
-            persistence::sync_root(&repository.root)?;
+            repository
+                .current
+                .write()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .confirmed = true;
             Ok(repository)
         }
         .await;
@@ -239,14 +573,12 @@ impl DirectoryDeploymentRepository {
     pub fn pin(&self) -> Result<PinnedRouteResolver, PlatformError> {
         let catalog = self.invocation_catalog()?;
         Ok(PinnedRouteResolver {
-            catalog: Arc::clone(&catalog),
+            catalog: Arc::clone(&catalog.routes),
             config: self.config,
         })
     }
 
-    fn invocation_catalog(
-        &self,
-    ) -> Result<RwLockReadGuard<'_, Arc<CompiledCatalog>>, PlatformError> {
+    fn invocation_catalog(&self) -> Result<RwLockReadGuard<'_, PublishedCatalog>, PlatformError> {
         match self.current.try_read() {
             Ok(current) => Ok(current),
             Err(TryLockError::Poisoned(poisoned)) => Ok(poisoned.into_inner()),
@@ -262,34 +594,133 @@ impl DirectoryDeploymentRepository {
             &self
                 .current
                 .read()
-                .unwrap_or_else(std::sync::PoisonError::into_inner),
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .routes,
         )
     }
 
+    fn read_publication(&self) -> PublicationView {
+        self.current
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .capture()
+    }
+
+    fn commit_versioned(
+        &self,
+        expected: RouteGeneration,
+        transaction: u64,
+        next: impl Into<persistence::PublicationCandidate>,
+        work: &mut Work,
+    ) -> Result<(), PlatformError> {
+        self.commit_checked(expected, transaction, next, None, work)?
+            .durability
+    }
+    #[cfg(test)]
     fn commit(
         &self,
         expected: RouteGeneration,
-        next: EncodedCatalog,
+        next: impl Into<persistence::PublicationCandidate>,
         work: &mut Work,
     ) -> Result<(), PlatformError> {
-        self.commit_checked(expected, next, None, work)?.durability
+        self.commit_versioned(expected, self.read_publication().transaction, next, work)
     }
 
     fn commit_checked(
         &self,
         expected: RouteGeneration,
-        next: EncodedCatalog,
+        expected_transaction: u64,
+        next: impl Into<persistence::PublicationCandidate>,
         precondition: Option<&ObjectPrecondition>,
         work: &mut Work,
+    ) -> Result<CommitOutcome, PlatformError> {
+        let (next, legacy_bytes) = next.into().into_parts();
+        let publication = self.read_publication();
+        if let Some(precondition) = precondition {
+            precondition.check(&publication.routes)?;
+        }
+        if publication.routes.generation != expected {
+            return Err(error(
+                PlatformErrorCode::StateConflict,
+                "stale-route-generation",
+            ));
+        }
+        if publication.transaction != expected_transaction {
+            return Err(error(
+                PlatformErrorCode::StateConflict,
+                "stale-catalog-transaction",
+            ));
+        }
+        let bytes = if publication.has_control() {
+            let control = persistence::ControlPayloadRef {
+                transaction_version: expected_transaction.checked_add(1).ok_or_else(|| {
+                    error(
+                        PlatformErrorCode::ResourceExhausted,
+                        "catalog-transaction-exhausted",
+                    )
+                })?,
+                rollouts: &publication.rollouts.data,
+                deployment_operations: publication
+                    .operations
+                    .enabled
+                    .then_some(&publication.operations.data),
+            };
+            drop(legacy_bytes);
+            persistence::encode_combined(&next, &control, self.config.max_state_bytes, work)?
+        } else {
+            legacy_bytes
+                .ok_or_else(|| error(PlatformErrorCode::Internal, "catalog-format-mismatch"))?
+        };
+        next.check_admission_mode(self.admission.as_ref(), self.lifecycle.as_ref())?;
+        let next = Arc::new(next);
+        let mut outcome = None;
+        next.with_current_admission(&mut |checker| {
+            outcome = Some(self.commit_admitted(
+                expected,
+                expected_transaction,
+                Arc::clone(&publication.rollouts),
+                Arc::clone(&publication.operations),
+                Arc::clone(&next),
+                &bytes,
+                precondition,
+                work,
+                checker,
+            )?);
+            Ok(())
+        })?;
+        outcome.ok_or_else(|| {
+            error(
+                PlatformErrorCode::Internal,
+                "route-admission-commit-missing",
+            )
+        })
+    }
+
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "one fenced publication binds route and transaction versions, complete bytes, and admission checker"
+    )]
+    fn commit_admitted(
+        &self,
+        expected: RouteGeneration,
+        expected_transaction: u64,
+        table: Arc<rollouts::table::RolloutTable>,
+        operations: Arc<operations::table::OperationTable>,
+        next: Arc<CompiledCatalog>,
+        bytes: &[u8],
+        precondition: Option<&ObjectPrecondition>,
+        work: &mut Work,
+        checker: Option<&dyn ReleaseUseRecheck>,
     ) -> Result<CommitOutcome, PlatformError> {
         // No await, compilation, or artifact access occurs with this writer guard held.
         let _writer = self
             .writer
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let current = self.read_catalog();
+        let publication = self.read_publication();
+        let current = &publication.routes;
         if let Some(precondition) = precondition {
-            precondition.check(&current)?;
+            precondition.check(current)?;
         }
         if current.generation != expected {
             return Err(error(
@@ -297,9 +728,13 @@ impl DirectoryDeploymentRepository {
                 "stale-route-generation",
             ));
         }
-        let (next, bytes) = next.into_parts();
-        let next = Arc::new(next);
-        persistence::stage(&self.root, &bytes, work)?;
+        if publication.transaction != expected_transaction {
+            return Err(error(
+                PlatformErrorCode::StateConflict,
+                "stale-catalog-transaction",
+            ));
+        }
+        persistence::stage(&self.root, bytes, work)?;
         #[cfg(test)]
         if self.fail_before_rename.swap(false, Ordering::SeqCst) {
             return Err(error(
@@ -307,23 +742,38 @@ impl DirectoryDeploymentRepository {
                 "injected-before-rename",
             ));
         }
+        if let Some(checker) = checker {
+            checker.check()?;
+        }
         persistence::replace(&self.root)?;
         // Rename is the visibility commit point. Even an uncertain directory fsync must
         // install the same complete state in memory, rather than continuing on the old state.
         let durable = self.sync_parent();
+        let currentness = checker.map_or(Ok(()), ReleaseUseRecheck::check);
         let generation = next.generation.0;
         let old = {
             let mut current = self
                 .current
                 .write()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
-            let old = std::mem::replace(&mut *current, next);
+            let old = std::mem::replace(
+                &mut *current,
+                PublishedCatalog {
+                    transaction: expected_transaction
+                        .checked_add(1)
+                        .expect("validated transaction"),
+                    routes: next,
+                    rollouts: table,
+                    operations,
+                    confirmed: durable.is_ok(),
+                },
+            );
             self.generation.store(generation, Ordering::Release);
             old
         };
         drop(old); // Potentially large destruction is deliberately outside the reader lock.
         Ok(CommitOutcome {
-            durability: durable,
+            durability: durable.and(currentness),
         })
     }
 
@@ -335,7 +785,12 @@ impl DirectoryDeploymentRepository {
                 "commit-durability-uncertain",
             ));
         }
-        persistence::sync_root(&self.root)
+        let result = persistence::sync_root(&self.root);
+        #[cfg(test)]
+        if let Some(after) = self.after_parent_sync.lock().unwrap().take() {
+            after();
+        }
+        result
     }
 }
 
@@ -357,7 +812,7 @@ impl RouteCompiler for DirectoryDeploymentRepository {
                         "stale-route-generation",
                     ));
                 }
-                let next = compile_versioned(
+                let next = compile_versioned_with_runtime(
                     current.deployments.clone(),
                     current.versions.clone(),
                     next_generation(current.generation)?,
@@ -366,6 +821,8 @@ impl RouteCompiler for DirectoryDeploymentRepository {
                     self.config,
                     Some(&current),
                     &mut work,
+                    self.runtime_profile.as_deref(),
+                    self.lifecycle.as_ref(),
                 )
                 .await?;
                 Ok(next.into_catalog().snapshot())
@@ -384,22 +841,26 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
             let result = {
                 let work = &mut work;
                 async move {
-                    let current = self.read_catalog();
+                    let publication = self.read_publication();
+                    let current = &publication.routes;
                     if snapshot.generation != next_generation(current.generation)? {
                         return Err(error(
                             PlatformErrorCode::StateConflict,
                             "stale-route-generation",
                         ));
                     }
-                    let compiled = compile_versioned(
+                    let compiled = compiler::compile_for_publication(
                         current.deployments.clone(),
                         current.versions.clone(),
                         snapshot.generation,
                         snapshot.generated_at_unix_millis,
                         self.artifacts.as_ref(),
                         self.config,
-                        Some(&current),
+                        Some(current),
                         work,
+                        self.runtime_profile.as_deref(),
+                        self.lifecycle.as_ref(),
+                        publication.has_control(),
                     )
                     .await?;
                     if !compiled.catalog().matches_snapshot(&snapshot) {
@@ -408,7 +869,12 @@ impl RouteSnapshotPublisher for DirectoryDeploymentRepository {
                             "uncompiled-route-snapshot",
                         ));
                     }
-                    self.commit(current.generation, compiled, work)
+                    self.commit_versioned(
+                        current.generation,
+                        publication.transaction,
+                        compiled,
+                        work,
+                    )
                 }
             }
             .await;
@@ -479,8 +945,14 @@ impl RouteResolver for DirectoryDeploymentRepository {
     ) -> Result<ResolvedRevision, PlatformError> {
         // Borrow instead of pinning: a normal lookup never becomes the last owner that
         // has to destroy an entire retired catalog on the invocation worker.
-        self.invocation_catalog()?
-            .resolve(target, routing_key, self.config)
+        let (resolved, eligibility) = {
+            let catalog = self.invocation_catalog()?;
+            let resolved = catalog.resolve(target, routing_key, self.config)?;
+            let eligibility = catalog.selected_eligibility(&resolved.release);
+            (resolved, eligibility)
+        };
+        admission_fence::check_selected(eligibility.as_ref(), &target.tenant)?;
+        Ok(resolved)
     }
 
     fn resolve_binding(
@@ -506,7 +978,14 @@ impl RouteResolver for PinnedRouteResolver {
         target: &InvocationTarget,
         routing_key: Option<&str>,
     ) -> Result<ResolvedRevision, PlatformError> {
-        self.catalog.resolve(target, routing_key, self.config)
+        let resolved = self.catalog.resolve(target, routing_key, self.config)?;
+        admission_fence::check_selected(
+            self.catalog
+                .selected_eligibility(&resolved.release)
+                .as_ref(),
+            &target.tenant,
+        )?;
+        Ok(resolved)
     }
 
     fn resolve_binding(

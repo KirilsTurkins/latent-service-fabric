@@ -27,6 +27,23 @@ pub(super) fn publish(
     limits: &ManagementLimits,
 ) -> Result<(), Status> {
     let mut budget = RequestBudget::new::<proto::PublishReleaseRequest>(limits)?;
+    super::lifecycle::operation(value.operation.as_ref(), &mut budget, limits, true)?;
+    match (&value.artifact, &value.package) {
+        (None, Some(package)) => {
+            if value.release.is_some() {
+                return Err(Status::invalid_argument(
+                    "package admission forbids caller release claims",
+                ));
+            }
+            return super::package::validate(package, &mut budget, limits);
+        }
+        (Some(_), None) => {}
+        _ => {
+            return Err(Status::invalid_argument(
+                "exactly one release upload is required",
+            ))
+        }
+    }
     let upload = value
         .artifact
         .as_ref()

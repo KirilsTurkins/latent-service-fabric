@@ -179,7 +179,9 @@ pub fn emit(mut outcome: Outcome, command: &str, format: OutputFormat, quiet: bo
 
 pub fn receipt(data: &Value) -> Value {
     let mut result = json!({});
-    for key in ["activationId", "resolvedRevision"] {
+    // Recovery is built locally from bounded caller selectors before dispatch;
+    // auditAck is separately shape checked. Never copy package/evidence payloads.
+    for key in ["activationId", "resolvedRevision", "recovery", "auditAck"] {
         if let Some(value) = data.get(key) {
             result[key] = value.clone();
         }

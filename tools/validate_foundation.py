@@ -8,6 +8,8 @@ import tomllib
 from collections.abc import Iterator
 from pathlib import Path
 
+from native_loader_boundary import validate as validate_native_loader
+
 ROOT = Path(__file__).resolve().parents[1]
 ERRORS: list[str] = []
 
@@ -229,6 +231,7 @@ def validate_ci_and_docs(root: Path = ROOT) -> None:
 
 
 def main() -> int:
+    ERRORS.extend(validate_native_loader(ROOT))
     validate_workspace_dependency_graph()
     validate_generated_contract_boundaries()
     validate_ci_and_docs()

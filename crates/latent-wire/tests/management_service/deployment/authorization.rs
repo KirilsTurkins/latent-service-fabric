@@ -16,6 +16,7 @@ async fn authenticated_admin_is_tenant_scoped_and_invalid_apply_never_commits() 
         .unwrap();
     let desired = deployment("ship", "acme", "echo", &release.release_digest);
     let message = proto::ApplyDeploymentRequest {
+        operation: None,
         deployment: Some(desired.clone()),
         expected_generation: Some(0),
     };

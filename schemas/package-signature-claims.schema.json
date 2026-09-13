@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/package-signature-claims.schema.json",
+  "title": "LSF v1 decoded package signature claims",
+  "$comment": "This schema describes the exact payload bytes carried by package-signature.schema.json after decoding. Rust checks its 2048-byte limit, positive lifetime at most 31 days, exact expected subject, clock, key and trust validity. Shape validation grants no authority.",
+  "type": "object", "additionalProperties": false,
+  "required": ["formatVersion", "publisherId", "subject", "issuedAt", "expiresAt"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "publisherId": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9._:/@-]+(?![\\s\\S])"},
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mediaType", "digest", "size"],
+      "properties": {
+        "mediaType": {"const": "application/vnd.oci.image.manifest.v1+json"},
+        "digest": {"type": "string", "minLength": 71, "maxLength": 71, "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"},
+        "size": {"type": "integer", "minimum": 1, "maximum": 262144}
+      }
+    },
+    "issuedAt": {"$ref": "#/$defs/time"},
+    "expiresAt": {"$ref": "#/$defs/time"}
+  },
+  "$defs": {"time": {"type": "integer", "minimum": 0, "maximum": 18446744073709551615}}
+}

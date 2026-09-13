@@ -16,6 +16,8 @@ message ReleaseDescriptor {
   string media_type = 7;
   uint64 size_bytes = 8;
   uint64 created_at_unix_millis = 9;
+  // Historical catalog admission, never a transferable authorization grant or
+  // a promise of current eligibility after trust/clock changes.
   bool admitted = 10;
   map<string, string> annotations = 11;
   // Explicit scope of a catalog descriptor. Phase 1 RPC publication requires it
@@ -35,14 +37,243 @@ message CapsuleArtifactUpload {
   bytes contract_metadata_json = 5;
 }
 
+// Exact received package bytes. Paths associate layers with the verified package
+// configuration; they are never interpreted as client-selected filesystem paths.
+message PackageAdmissionLayer {
+  string path = 1;
+  bytes data = 2;
+}
+
+// One exact detached OCI evidence envelope, empty config, and payload. Association
+// alone confers no authority; the configured node authority verifies every item.
+message PackageAdmissionEvidence {
+  bytes manifest = 1;
+  bytes configuration = 2;
+  bytes payload = 3;
+}
+
+// Bounded executable capsule admission. Publisher and tenant authority cannot be
+// supplied as request flags: the node authenticates the tenant separately and
+// verifies package semantics, publisher, builder, evidence, and configured policy.
+message PackageAdmissionUpload {
+  bytes manifest = 1;
+  bytes configuration = 2;
+  repeated PackageAdmissionLayer layers = 3;
+  repeated PackageAdmissionEvidence signatures = 4;
+  repeated PackageAdmissionEvidence provenance = 5;
+  repeated PackageAdmissionEvidence sboms = 6;
+}
+
+// Caller correlation and atomic lifecycle precondition, never actor authority.
+// Publication with an explicit operation requires a present zero generation;
+// lifecycle changes and renewal require a present positive generation.
+message ReleaseOperationPrecondition {
+  string operation_id = 1;
+  optional uint64 expected_generation = 2;
+}
+
+enum ReleaseActorKind {
+  RELEASE_ACTOR_KIND_UNSPECIFIED = 0;
+  RELEASE_ACTOR_KIND_USER = 1;
+  RELEASE_ACTOR_KIND_SERVICE = 2;
+  RELEASE_ACTOR_KIND_NODE = 3;
+  RELEASE_ACTOR_KIND_TRIGGER = 4;
+  RELEASE_ACTOR_KIND_ADMINISTRATOR = 5;
+  RELEASE_ACTOR_KIND_ANONYMOUS = 6;
+  RELEASE_ACTOR_KIND_HOST = 7;
+}
+
+enum ReleaseLifecycleState {
+  RELEASE_LIFECYCLE_STATE_UNSPECIFIED = 0;
+  RELEASE_LIFECYCLE_STATE_ADMITTED = 1;
+  RELEASE_LIFECYCLE_STATE_REVOKED = 2;
+  RELEASE_LIFECYCLE_STATE_RETIRED = 3;
+}
+
+enum ReleaseLifecycleAction {
+  RELEASE_LIFECYCLE_ACTION_UNSPECIFIED = 0;
+  RELEASE_LIFECYCLE_ACTION_PUBLISH = 1;
+  RELEASE_LIFECYCLE_ACTION_REVOKE = 2;
+  RELEASE_LIFECYCLE_ACTION_RETIRE = 3;
+  RELEASE_LIFECYCLE_ACTION_RENEW_EVIDENCE = 4;
+}
+
+enum ReleaseOperationDisposition {
+  RELEASE_OPERATION_DISPOSITION_UNSPECIFIED = 0;
+  RELEASE_OPERATION_DISPOSITION_COMMITTED = 1;
+  RELEASE_OPERATION_DISPOSITION_REJECTED = 2;
+}
+
+enum ReleaseLifecycleReason {
+  RELEASE_LIFECYCLE_REASON_UNSPECIFIED = 0;
+  RELEASE_LIFECYCLE_REASON_ADMITTED = 1;
+  RELEASE_LIFECYCLE_REASON_EVIDENCE_RENEWED = 2;
+  RELEASE_LIFECYCLE_REASON_OPERATOR_REVOCATION = 3;
+  RELEASE_LIFECYCLE_REASON_SECURITY_INCIDENT = 4;
+  RELEASE_LIFECYCLE_REASON_CORRUPT_CONTENT = 5;
+  RELEASE_LIFECYCLE_REASON_SUPERSEDED = 6;
+  RELEASE_LIFECYCLE_REASON_END_OF_SUPPORT = 7;
+  RELEASE_LIFECYCLE_REASON_OPERATOR_RETIREMENT = 8;
+  RELEASE_LIFECYCLE_REASON_INVALID_PACKAGE = 9;
+  RELEASE_LIFECYCLE_REASON_INTEGRITY_MISMATCH = 10;
+  RELEASE_LIFECYCLE_REASON_INCOMPATIBLE_CONTRACT = 11;
+  RELEASE_LIFECYCLE_REASON_EVIDENCE_REJECTED = 12;
+  RELEASE_LIFECYCLE_REASON_POLICY_DENIED = 13;
+  RELEASE_LIFECYCLE_REASON_RELEASE_REVOKED = 14;
+  RELEASE_LIFECYCLE_REASON_RELEASE_RETIRED = 15;
+  RELEASE_LIFECYCLE_REASON_GENERATION_CONFLICT = 16;
+  RELEASE_LIFECYCLE_REASON_CONTENT_CONFLICT = 17;
+}
+
+enum ReleaseLiveEligibility {
+  RELEASE_LIVE_ELIGIBILITY_UNSPECIFIED = 0;
+  RELEASE_LIVE_ELIGIBILITY_ELIGIBLE = 1;
+  RELEASE_LIVE_ELIGIBILITY_DENIED = 2;
+  RELEASE_LIVE_ELIGIBILITY_UNKNOWN = 3;
+}
+
+enum ReleaseEligibilityReason {
+  RELEASE_ELIGIBILITY_REASON_UNSPECIFIED = 0;
+  RELEASE_ELIGIBILITY_REASON_LOCAL_ELIGIBLE = 1;
+  RELEASE_ELIGIBILITY_REASON_VERIFIED = 2;
+  RELEASE_ELIGIBILITY_REASON_REVOKED = 3;
+  RELEASE_ELIGIBILITY_REASON_RETIRED = 4;
+  RELEASE_ELIGIBILITY_REASON_POLICY_DENIED = 5;
+  RELEASE_ELIGIBILITY_REASON_PROOF_EXPIRED = 6;
+  RELEASE_ELIGIBILITY_REASON_RUNTIME_INCOMPATIBLE = 7;
+  RELEASE_ELIGIBILITY_REASON_CORRUPT_CONTENT = 8;
+  RELEASE_ELIGIBILITY_REASON_AUTHORITY_UNAVAILABLE = 9;
+  RELEASE_ELIGIBILITY_REASON_MUTATION_UNCERTAIN = 10;
+}
+
+enum ReleaseOperationLookupDisposition {
+  RELEASE_OPERATION_LOOKUP_DISPOSITION_UNSPECIFIED = 0;
+  RELEASE_OPERATION_LOOKUP_DISPOSITION_FOUND = 1;
+  RELEASE_OPERATION_LOOKUP_DISPOSITION_UNKNOWN = 2;
+  RELEASE_OPERATION_LOOKUP_DISPOSITION_UNCERTAIN = 3;
+}
+
+// Output-only historical actor from the authenticated host boundary.
+message ReleaseActor {
+  string subject = 1;
+  ReleaseActorKind kind = 2;
+}
+
+message ReleasePolicyIdentity {
+  string scope = 1;
+  uint64 generation = 2;
+  string digest = 3;
+}
+
+// Historical state; this message grants no execution authority. Local-unscoped
+// host records are never returned through the tenant management service.
+message ReleaseLifecycleRecord {
+  string tenant = 1;
+  string component_digest = 2;
+  optional string package_digest = 3;
+  ReleaseLifecycleState state = 4;
+  uint64 generation = 5;
+  ReleaseActor actor = 6;
+  ReleaseLifecycleReason reason = 7;
+  string operation_id = 8;
+  ReleasePolicyIdentity policy = 9;
+  optional uint64 observed_at_unix_millis = 10;
+  optional string evidence_revision_digest = 11;
+}
+
+// A live observation, not a renewable or transferable admission grant.
+message ReleaseLifecycleStatus {
+  ReleaseLifecycleRecord record = 1;
+  ReleaseLiveEligibility eligibility = 2;
+  ReleaseEligibilityReason eligibility_reason = 3;
+}
+
+// Immutable bounded operation outcome. A rejected package-manifest digest is
+// only a hash of received bytes, not a claim that the package validated.
+message ReleaseOperationReceipt {
+  string operation_id = 1;
+  string request_digest = 2;
+  string tenant = 3;
+  ReleaseActor actor = 4;
+  ReleaseLifecycleAction action = 5;
+  ReleaseOperationDisposition disposition = 6;
+  ReleaseLifecycleReason reason = 7;
+  optional string component_digest = 8;
+  optional string package_manifest_digest = 9;
+  optional uint64 expected_generation = 10;
+  ReleaseLifecycleRecord record = 11;
+  ReleasePolicyIdentity policy = 12;
+  optional uint64 observed_at_unix_millis = 13;
+}
+
+message GetReleaseLifecycleRequest {
+  string digest = 1;
+}
+
+message GetReleaseLifecycleResponse {
+  optional ReleaseLifecycleStatus status = 1;
+}
+
+message GetReleaseOperationRequest {
+  string operation_id = 1;
+}
+
+message GetReleaseOperationResponse {
+  // UNKNOWN includes absent/foreign/expired retention and proves no rollback.
+  ReleaseOperationLookupDisposition lookup = 1;
+  ReleaseOperationReceipt receipt = 2;
+}
+
+message ChangeReleaseLifecycleRequest {
+  string digest = 1;
+  // Only REVOKE or RETIRE is accepted; publication/restoration is not implicit.
+  ReleaseLifecycleAction action = 2;
+  ReleaseOperationPrecondition operation = 3;
+  ReleaseLifecycleReason reason = 4;
+}
+
+message ChangeReleaseLifecycleResponse {
+  ReleaseOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
+message ReleaseEvidenceUpload {
+  repeated PackageAdmissionEvidence signatures = 1;
+  repeated PackageAdmissionEvidence provenance = 2;
+  repeated PackageAdmissionEvidence sboms = 3;
+}
+
+message RenewReleaseEvidenceRequest {
+  string digest = 1;
+  string package_digest = 2;
+  ReleaseOperationPrecondition operation = 3;
+  // Evidence only: immutable package/component layers are retained by the owner.
+  ReleaseEvidenceUpload evidence = 4;
+}
+
+message RenewReleaseEvidenceResponse {
+  ReleaseOperationReceipt operation = 1;
+  optional AuditAck audit_ack = 2;
+}
+
 message PublishReleaseRequest {
+  // Optional legacy claims; forbidden with package admission.
   ReleaseDescriptor release = 1;
+  // Explicitly trusted-local compatibility only; enforced catalogs reject it.
   CapsuleArtifactUpload artifact = 2;
+  // Exactly one of artifact and package must be present. This additive field
+  // preserves existing wire numbers without silently discarding either input.
+  PackageAdmissionUpload package = 3;
+  // Absence preserves existing publication callers and exact-content retries.
+  // Retain a caller operation ID before sending to reconcile a lost response.
+  ReleaseOperationPrecondition operation = 4;
 }
 
 message PublishReleaseResponse {
   ReleaseDescriptor release = 1;
   repeated string admission_warnings = 2;
+  ReleaseOperationReceipt operation = 3;
+  optional AuditAck audit_ack = 4;
 }
 
 message GetReleaseRequest {
@@ -70,4 +301,8 @@ service ReleaseService {
   rpc GetRelease(GetReleaseRequest) returns (GetReleaseResponse);
   // Phase 1 standalone: supported.
   rpc ListReleases(ListReleasesRequest) returns (ListReleasesResponse);
+  rpc GetReleaseLifecycle(GetReleaseLifecycleRequest) returns (GetReleaseLifecycleResponse);
+  rpc GetReleaseOperation(GetReleaseOperationRequest) returns (GetReleaseOperationResponse);
+  rpc ChangeReleaseLifecycle(ChangeReleaseLifecycleRequest) returns (ChangeReleaseLifecycleResponse);
+  rpc RenewReleaseEvidence(RenewReleaseEvidenceRequest) returns (RenewReleaseEvidenceResponse);
 }

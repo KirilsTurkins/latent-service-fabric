@@ -41,6 +41,19 @@ fn defaults_derive_compatible_node_limits_without_creating_storage() {
     assert!(settings.data_directory.is_absolute());
     assert!(!directory.path().join("data").exists());
     assert_eq!(
+        settings.runtime_profile.as_ref(),
+        &settings.wasmtime.detected_runtime_profile().unwrap()
+    );
+    assert_eq!(
+        settings.node.cpu_features,
+        settings
+            .runtime_profile
+            .cpu_features()
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
         settings.scheduler.queue_capacity_per_class[&CellClass::Standard],
         16
     );

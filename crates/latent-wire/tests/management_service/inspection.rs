@@ -20,6 +20,7 @@ async fn seed(harness: &Harness, tenant: &str, identity: &str, marker: &str) {
         .apply_deployment(request(
             identity,
             proto::ApplyDeploymentRequest {
+                operation: None,
                 deployment: Some(deployment(marker, tenant, "echo", &release.release_digest)),
                 expected_generation: Some(0),
             },

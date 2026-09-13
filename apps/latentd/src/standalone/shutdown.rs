@@ -9,6 +9,10 @@ use super::{error, transport, Duration, PlatformError, PlatformErrorCode, Standa
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ShutdownReport {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audit: Option<super::AuditShutdownReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rollouts: Option<super::RolloutShutdownReport>,
     pub clean: bool,
     pub active_connections: usize,
     pub active_rpcs: usize,
@@ -44,7 +48,11 @@ pub struct ShutdownReport {
 
 impl ShutdownReport {
     fn reclaimed(&self) -> bool {
-        self.active_connections == 0
+        self.audit.is_none_or(super::AuditShutdownReport::clean)
+            && self
+                .rollouts
+                .is_none_or(super::RolloutShutdownReport::clean)
+            && self.active_connections == 0
             && self.active_rpcs == 0
             && self.active_control_jobs == 0
             && self.active_activations == 0
@@ -79,7 +87,11 @@ impl StandaloneNode {
         reason = "one ordered teardown keeps forced cleanup, resource observations and native joins together"
     )]
     pub async fn shutdown(mut self) -> Result<ShutdownReport, PlatformError> {
+        self.supply_chain.retire();
         self.load.stop_accepting();
+        if let Some(rollouts) = &self.rollouts {
+            rollouts.handle().close();
+        }
         let handle = self
             .transport
             .as_ref()
@@ -144,6 +156,52 @@ impl StandaloneNode {
                 )
             });
         }
+        let rollout_report = if let Some(rollouts) = &self.rollouts {
+            match rollouts.shutdown(self.shutdown_grace).await {
+                Ok(report) => {
+                    if !report.clean() {
+                        failure.get_or_insert_with(|| {
+                            error(
+                                PlatformErrorCode::DeadlineExceeded,
+                                "rollout coordinator did not stop cleanly",
+                            )
+                        });
+                    }
+                    Some(report)
+                }
+                Err(error) => {
+                    failure.get_or_insert(error);
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        let coordinator_joined = match &self.rollouts {
+            Some(owner) => owner.worker_joined().await,
+            None => true,
+        };
+        let audit_report = if let Some(audit) = self.audit.as_ref().filter(|_| coordinator_joined) {
+            match audit.shutdown(self.shutdown_grace).await {
+                Ok(report) => {
+                    if !report.clean() {
+                        failure.get_or_insert_with(|| {
+                            error(
+                                PlatformErrorCode::DeadlineExceeded,
+                                "durable audit did not stop cleanly",
+                            )
+                        });
+                    }
+                    Some(report)
+                }
+                Err(error) => {
+                    failure.get_or_insert(error);
+                    None
+                }
+            }
+        } else {
+            None
+        };
         let mut report = self.shutdown_observations(
             handle.as_ref().map_or_else(
                 transport::TransportSnapshot::default,
@@ -151,6 +209,10 @@ impl StandaloneNode {
             ),
             cleanup_handle.snapshot(),
         );
+        if let Ok(report) = &mut report {
+            report.audit = audit_report;
+            report.rollouts = rollout_report;
+        }
         if report.as_ref().is_ok_and(|report| !report.reclaimed()) {
             failure.get_or_insert_with(|| {
                 error(
@@ -223,6 +285,8 @@ impl StandaloneNode {
         let backend = self.backend.resource_snapshot();
         let cache = self.backend.cache_snapshot();
         Ok(ShutdownReport {
+            audit: None,
+            rollouts: None,
             clean: false,
             active_connections: transport.active_connections,
             active_rpcs: transport.active_rpcs,

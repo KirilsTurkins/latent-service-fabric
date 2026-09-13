@@ -138,6 +138,20 @@ impl Harness {
         observer: Option<Arc<dyn latent_telemetry::ActivationObserver>>,
         pool: Option<Arc<dyn latent_scheduler::CellPool>>,
     ) -> Self {
+        Self::with_options(parallelism, maximum_terminal, observer, pool, None)
+    }
+
+    pub fn with_canary(canary: latent_telemetry::CanaryCapture) -> Self {
+        Self::with_options(2, 8, None, None, Some(canary))
+    }
+
+    fn with_options(
+        parallelism: u32,
+        maximum_terminal: usize,
+        observer: Option<Arc<dyn latent_telemetry::ActivationObserver>>,
+        pool: Option<Arc<dyn latent_scheduler::CellPool>>,
+        canary: Option<latent_telemetry::CanaryCapture>,
+    ) -> Self {
         let clock = Arc::new(Clock(Mutex::new(ClockSample::system_now())));
         let ids = Arc::new(Ids::default());
         let catalog = Arc::new(CatalogSource::default());
@@ -195,6 +209,7 @@ impl Harness {
                 clock: clock.clone(),
                 ids: ids.clone(),
                 observer,
+                canary,
             },
         )
         .expect("manager");

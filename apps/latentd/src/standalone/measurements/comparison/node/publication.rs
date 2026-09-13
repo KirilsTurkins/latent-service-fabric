@@ -3,11 +3,17 @@ use latent_control_store::VersionedDeployment;
 use latent_manifest::{JsonManifestCodec, ManifestCodec};
 use latent_wire::management::{deployment_to_proto, proto};
 use serde_json::{json, Value};
+use std::time::Duration;
 
 use super::{authenticated, platform, Node, Result};
 
 impl Node {
     pub async fn publish(&mut self) -> Result<Value> {
+        self.publish_with_timeout(Duration::from_secs(1)).await
+    }
+
+    /// A separate setup deadline for unmeasured correctness fixtures.
+    pub async fn publish_with_timeout(&mut self, timeout: Duration) -> Result<Value> {
         let fixture = &self.fixture;
         let upload = proto::CapsuleArtifactUpload {
             capsule_manifest_json: JsonManifestCodec::default()
@@ -30,11 +36,19 @@ impl Node {
         self.command(false)?;
         let published =
             proto::release_service_client::ReleaseServiceClient::new(self.channel.clone())
-                .publish_release(authenticated(proto::PublishReleaseRequest {
-                    release: None,
-                    artifact: Some(upload),
-                })?)
-                .await?
+                .publish_release(setup_request(
+                    proto::PublishReleaseRequest {
+                        package: None,
+                        operation: None,
+                        release: None,
+                        artifact: Some(upload),
+                    },
+                    timeout,
+                )?)
+                .await
+                .map_err(|status| {
+                    format!("comparison PublishRelease failed ({:?})", status.code())
+                })?
                 .into_inner();
         let release = published
             .release
@@ -45,11 +59,18 @@ impl Node {
         self.command(false)?;
         let applied =
             proto::deployment_service_client::DeploymentServiceClient::new(self.channel.clone())
-                .apply_deployment(authenticated(proto::ApplyDeploymentRequest {
-                    deployment: Some(deployment),
-                    expected_generation: None,
-                })?)
-                .await?
+                .apply_deployment(setup_request(
+                    proto::ApplyDeploymentRequest {
+                        operation: None,
+                        deployment: Some(deployment),
+                        expected_generation: None,
+                    },
+                    timeout,
+                )?)
+                .await
+                .map_err(|status| {
+                    format!("comparison ApplyDeployment failed ({:?})", status.code())
+                })?
                 .into_inner();
         let deployment = applied
             .deployment
@@ -63,4 +84,10 @@ impl Node {
             "object_generation":deployment.generation.to_string(),"catalog_generation":catalog_generation.to_string()}),
         )
     }
+}
+
+fn setup_request<T>(message: T, timeout: Duration) -> Result<tonic::Request<T>> {
+    let mut request = authenticated(message)?;
+    request.set_timeout(timeout);
+    Ok(request)
 }

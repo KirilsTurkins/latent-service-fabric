@@ -15,14 +15,29 @@ pub(super) fn write(
     catalog: &CompiledCatalog,
     work: &mut Work,
 ) -> io::Result<()> {
-    output.write_all(PREFIX)?;
+    write_with_control(output, catalog, None, work)
+}
+
+pub(super) fn write_with_control(
+    output: &mut LimitedBytes,
+    catalog: &CompiledCatalog,
+    control: Option<&super::ControlPayloadRef<'_>>,
+    work: &mut Work,
+) -> io::Result<()> {
+    if control.is_some_and(|value| value.deployment_operations.is_some()) {
+        output.write_all(b"{\"format_version\":4,\"checksum\":\"sha256:")?;
+    } else if control.is_some() {
+        output.write_all(b"{\"format_version\":3,\"checksum\":\"sha256:")?;
+    } else {
+        output.write_all(PREFIX)?;
+    }
     let checksum_start = output.bytes.len();
     output.write_all(&[b'0'; 64])?;
     output.write_all(b"\",\"payload\":")?;
     let limit = output.limit;
     let mut payload = Hashing::new(&mut *output, limit);
     count!(work, payload_serializations, 1);
-    write_payload(&mut payload, catalog)?;
+    write_payload(&mut payload, catalog, control)?;
     let checksum = payload.finish();
     output.write_all(b"}")?;
     // The reserved range is structural, never a search through user-controlled strings.
@@ -34,7 +49,11 @@ fn value(output: &mut impl Write, value: &(impl Serialize + ?Sized)) -> io::Resu
     json::to_writer(output, value).map_err(io::Error::other)
 }
 
-fn write_payload(output: &mut impl Write, catalog: &CompiledCatalog) -> io::Result<()> {
+fn write_payload(
+    output: &mut impl Write,
+    catalog: &CompiledCatalog,
+    control: Option<&super::ControlPayloadRef<'_>>,
+) -> io::Result<()> {
     output.write_all(b"{\"generation\":")?;
     value(output, &catalog.generation.0)?;
     output.write_all(b",\"generated_at_unix_millis\":")?;
@@ -69,7 +88,12 @@ fn write_payload(output: &mut impl Write, catalog: &CompiledCatalog) -> io::Resu
             },
         )?;
     }
-    output.write_all(b"]}")
+    output.write_all(b"]")?;
+    if let Some(control) = control {
+        output.write_all(b",\"control\":")?;
+        value(output, control)?;
+    }
+    output.write_all(b"}")
 }
 
 #[derive(Serialize)]

@@ -22,6 +22,16 @@ use super::invalid_manifest;
 
 pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, Failure> {
     match command {
+        Command::Rollout(command) => super::phase2::prepare::rollout(command, config),
+        Command::Audit(command) => super::phase2::prepare::audit(command, config),
+        Command::Release(
+            ReleaseCommand::Lifecycle(_)
+            | ReleaseCommand::Operation(_)
+            | ReleaseCommand::PublishPackage(_)
+            | ReleaseCommand::Revoke(_)
+            | ReleaseCommand::Retire(_)
+            | ReleaseCommand::RenewEvidence(_),
+        ) => super::phase2::prepare::release(command, config),
         Command::Release(ReleaseCommand::Publish(args)) => publish(args, config),
         Command::Release(ReleaseCommand::Get(args)) => {
             digest(&args.digest)?;
@@ -36,36 +46,12 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
                 page: Some(page(args.page_size, args.page_token.as_deref())?),
             }))
         }
-        Command::Deployment(DeploymentCommand::Apply(args)) => {
-            let bytes = input::read(&args.file, MAXIMUM_MANIFEST_BYTES, "manifest")?;
-            let manifest = codec()
-                .decode_deployment(&bytes)
-                .map_err(|_| invalid_manifest())?;
-            Phase1ManifestValidator
-                .validate_deployment(&manifest)
-                .map_err(|_| invalid_manifest())?;
-            tenant(
-                manifest
-                    .metadata
-                    .tenant
-                    .as_ref()
-                    .map(|value| value.0.as_str()),
-                &config.tenant,
-            )?;
-            let deployment = deployment_to_proto(&VersionedDeployment {
-                manifest,
-                generation: 0,
-            })
-            .map_err(|_| invalid_manifest())?;
-            Ok(Operation::ApplyDeployment(proto::ApplyDeploymentRequest {
-                deployment: Some(deployment),
-                expected_generation: args.expected_generation,
-            }))
-        }
+        Command::Deployment(DeploymentCommand::Apply(args)) => apply(args, config),
         Command::Deployment(DeploymentCommand::Get(args)) => {
             identifier(&args.id)?;
             Ok(Operation::GetDeployment(proto::GetDeploymentRequest {
                 id: args.id.clone(),
+                include_operation_snapshot: args.operation_snapshot,
             }))
         }
         Command::Deployment(DeploymentCommand::Delete(args)) => {
@@ -74,6 +60,12 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
                 proto::DeleteDeploymentRequest {
                     id: args.id.clone(),
                     expected_generation: args.expected_generation,
+                    operation: args.operation.operation_id.as_ref().map(|id| {
+                        proto::DeploymentOperationPrecondition {
+                            operation_id: id.clone(),
+                            expected_state_version: args.operation.expected_state_version,
+                        }
+                    }),
                 },
             ))
         }
@@ -84,6 +76,11 @@ pub fn prepare(command: &Command, config: &ResolvedConfig) -> Result<Operation, 
                 page: Some(page(args.page_size, args.page_token.as_deref())?),
             }))
         }
+        Command::Deployment(DeploymentCommand::Operation(args)) => Ok(
+            Operation::LookupDeploymentReceipt(proto::GetDeploymentOperationRequest {
+                operation_id: args.operation_id.clone(),
+            }),
+        ),
         Command::Route(RouteCommand::Get(args)) => Ok(Operation::GetRouteSnapshot(
             proto::GetRouteSnapshotRequest {
                 generation: args.generation,
@@ -201,6 +198,13 @@ fn publish(args: &PublishArgs, config: &ResolvedConfig) -> Result<Operation, Fai
         ));
     }
     Ok(Operation::PublishRelease(proto::PublishReleaseRequest {
+        package: None,
+        operation: args.operation.operation_id.as_ref().map(|id| {
+            proto::ReleaseOperationPrecondition {
+                operation_id: id.clone(),
+                expected_generation: args.operation.expected_generation,
+            }
+        }),
         release: None,
         artifact: Some(proto::CapsuleArtifactUpload {
             capsule_manifest_json,
@@ -220,7 +224,7 @@ pub(super) fn codec() -> JsonManifestCodec {
     })
 }
 
-fn tenant(actual: Option<&str>, expected: &str) -> Result<(), Failure> {
+pub(super) fn tenant(actual: Option<&str>, expected: &str) -> Result<(), Failure> {
     if actual == Some(expected) {
         Ok(())
     } else {
@@ -246,7 +250,7 @@ fn optional_identifier(value: Option<&str>) -> Result<(), Failure> {
     value.map_or(Ok(()), identifier)
 }
 
-fn digest(value: &str) -> Result<(), Failure> {
+pub(super) fn digest(value: &str) -> Result<(), Failure> {
     if super::canonical_digest(value) {
         Ok(())
     } else {
@@ -257,7 +261,7 @@ fn digest(value: &str) -> Result<(), Failure> {
     }
 }
 
-fn page(page_size: u32, token: Option<&str>) -> Result<proto::PageRequest, Failure> {
+pub(super) fn page(page_size: u32, token: Option<&str>) -> Result<proto::PageRequest, Failure> {
     if page_size > 1000
         || token.is_some_and(|value| {
             value.is_empty() || value.len() > 8192 || value.chars().any(char::is_control)
@@ -272,4 +276,42 @@ fn page(page_size: u32, token: Option<&str>) -> Result<proto::PageRequest, Failu
         page_size,
         page_token: token.map(str::to_owned),
     })
+}
+
+fn apply(args: &crate::args::ApplyArgs, config: &ResolvedConfig) -> Result<Operation, Failure> {
+    let maximum = if args.operation.operation_id.is_some() {
+        latent_control_store::deployment_operations::MAX_REQUEST_BYTES
+    } else {
+        MAXIMUM_MANIFEST_BYTES
+    };
+    let bytes = input::read(&args.file, maximum, "manifest")?;
+    let manifest = codec()
+        .decode_deployment(&bytes)
+        .map_err(|_| invalid_manifest())?;
+    Phase1ManifestValidator
+        .validate_deployment(&manifest)
+        .map_err(|_| invalid_manifest())?;
+    tenant(
+        manifest
+            .metadata
+            .tenant
+            .as_ref()
+            .map(|value| value.0.as_str()),
+        &config.tenant,
+    )?;
+    let deployment = deployment_to_proto(&VersionedDeployment {
+        manifest,
+        generation: 0,
+    })
+    .map_err(|_| invalid_manifest())?;
+    Ok(Operation::ApplyDeployment(proto::ApplyDeploymentRequest {
+        deployment: Some(deployment),
+        expected_generation: args.expected_generation,
+        operation: args.operation.operation_id.as_ref().map(|id| {
+            proto::DeploymentOperationPrecondition {
+                operation_id: id.clone(),
+                expected_state_version: args.operation.expected_state_version,
+            }
+        }),
+    }))
 }

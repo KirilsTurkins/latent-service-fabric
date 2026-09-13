@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a reproducible problem in existing LSF behavior
+title: "[Bug] "
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve LSF. Before filing, review the [contribution guidance](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/CONTRIBUTING.md). If the report may describe a security vulnerability, follow [SECURITY.md](https://github.com/KirilsTurkins/latent-service-fabric/blob/development/SECURITY.md) instead of publishing sensitive details here.
+  - type: input
+    id: revision
+    attributes:
+      label: Affected revision or version
+      description: Provide the release tag, commit SHA, or branch revision where you reproduced the problem.
+      placeholder: Release tag or exact commit SHA
+    validations:
+      required: true
+  - type: input
+    id: host-os
+    attributes:
+      label: Host operating system
+      description: Include the OS/distribution and version relevant to the reproduction.
+      placeholder: e.g. Fedora Linux 43 or Ubuntu 24.04
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: List the smallest commands, inputs, or steps needed to reproduce the problem.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe the behavior you expected for the reproduction above.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Describe what happened instead, including a bounded error message or outcome when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Relevant diagnostics
+      description: Optional. Include only a small relevant log, error, or status excerpt. Do not upload a full benchmark archive or unrelated diagnostic bundle.
+      render: shell
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Optional. Add any other concise context that materially helps reproduce or classify the problem.

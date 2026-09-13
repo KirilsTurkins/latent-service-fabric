@@ -30,12 +30,38 @@ pub struct NodeConfig {
     #[serde(default)]
     pub catalogs: CatalogConfig,
     #[serde(default)]
+    pub supply_chain: SupplyChainConfig,
+    #[serde(default, deserialize_with = "super::aot::present")]
+    pub isolated_aot: Option<super::IsolatedAotConfig>,
+    #[serde(default, deserialize_with = "super::audit::present")]
+    pub audit: Option<super::AuditConfig>,
+    #[serde(default, deserialize_with = "super::rollouts::present")]
+    pub rollouts: Option<super::RolloutConfig>,
+    #[serde(default)]
     pub retention: RetentionConfig,
     #[serde(default)]
     pub telemetry: TelemetryConfig,
     pub credentials: Vec<CredentialConfig>,
     #[serde(default = "default_shutdown")]
     pub shutdown_grace_millis: u64,
+}
+
+/// Legacy catalogs remain explicitly local. Enforced roots persist their mode
+/// and refuse a later local configuration, including an omitted field.
+#[derive(Clone, Default, Deserialize)]
+#[serde(tag = "mode", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum SupplyChainConfig {
+    #[default]
+    TrustedLocal,
+    Enforced {
+        #[serde(rename = "policyFile")]
+        policy_file: PathBuf,
+        #[serde(rename = "clockLeaseSeconds", default = "default_clock_lease")]
+        clock_lease_seconds: u64,
+    },
+}
+const fn default_clock_lease() -> u64 {
+    5
 }
 
 #[derive(Clone, Deserialize)]

@@ -1,12 +1,16 @@
+mod admission;
+mod admission_storage;
 mod component_reader;
 pub(crate) mod contract_metadata;
 mod document_reader;
 mod index;
 mod integrity;
+mod lifecycle;
 mod metadata;
 mod metadata_codec;
 mod paging;
 mod preparation_read;
+mod retained_package;
 mod root_durability;
 mod sha256;
 
@@ -18,7 +22,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::ops::Bound::{Excluded, Unbounded};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(test)]
@@ -114,11 +118,7 @@ struct VerifiedEntry {
     metadata: VerifiedArtifactMetadata,
     component_bytes: Vec<u8>,
     completion: CompletionRecord,
-}
-
-struct PublicationAdoption {
-    artifact: CapsuleArtifact,
-    stamp: Option<PreparationMetadataFingerprint>,
+    admission: Option<admission_storage::StoredAdmission>,
 }
 
 struct PreparedPublication {
@@ -126,13 +126,6 @@ struct PreparedPublication {
     metadata_bytes: Vec<u8>,
     manifest_bytes: Vec<u8>,
     completion: CompletionRecord,
-}
-
-impl PreparedPublication {
-    /// Release caller-owned payloads before materializing the persisted entry.
-    fn into_completion(self) -> CompletionRecord {
-        self.completion
-    }
 }
 
 /// Releases ownership even while a forked child still has a duplicate descriptor.
@@ -147,14 +140,19 @@ impl Drop for OwnerLock {
     }
 }
 
-/// Crash-safe local trusted release catalog for standalone `latentd`.
+/// Crash-safe standalone release catalog with an explicit trust mode.
 ///
 /// A repository owns its root exclusively for its lifetime using an OS file
 /// lock acquired before temporary cleanup or index rebuild. The lock is
 /// released automatically on normal drop and process exit/crash.
+/// `open` retains the Phase 1 trusted-local contract; `open_enforced` requires a
+/// configured admission authority and refuses raw publication. Catalog pages
+/// retain bounded historical summaries, while resolution and preparation require
+/// current eligibility. Enforced roots cannot reopen in trusted-local mode.
 pub struct DirectoryArtifactRepository {
     root: PathBuf,
     config: DirectoryArtifactRepositoryConfig,
+    lifecycle_limits: crate::LifecycleLimits,
     codec: JsonManifestCodec,
     validator: Phase1ManifestValidator,
     index: RwLock<CatalogIndex>,
@@ -164,6 +162,9 @@ pub struct DirectoryArtifactRepository {
     /// Serializes writers, reserves directory capacity and gates mutations after
     /// indeterminate durability. Only a retry of the pending digest may proceed.
     publish_lock: Mutex<PublicationState>,
+    admission_work: Mutex<()>,
+    admission: Option<admission::RepositoryAdmission>,
+    lifecycle: OnceLock<crate::lifecycle::LifecycleStore>,
     _owner_lock: OwnerLock,
     #[cfg(test)]
     fail_parent_sync_once: AtomicBool,
@@ -186,8 +187,56 @@ impl DirectoryArtifactRepository {
         root: impl Into<PathBuf>,
         config: DirectoryArtifactRepositoryConfig,
     ) -> Result<Self, PlatformError> {
+        Self::open_with_lifecycle_limits(root, config, crate::LifecycleLimits::default())
+    }
+
+    pub fn open_with_lifecycle_limits(
+        root: impl Into<PathBuf>,
+        config: DirectoryArtifactRepositoryConfig,
+        lifecycle_limits: crate::LifecycleLimits,
+    ) -> Result<Self, PlatformError> {
+        Self::open_configured(root.into(), config, None, lifecycle_limits)
+    }
+
+    pub fn open_enforced(
+        root: impl Into<PathBuf>,
+        config: DirectoryArtifactRepositoryConfig,
+        limits: crate::AdmissionStorageLimits,
+        authority: Arc<dyn crate::AdmissionAuthority>,
+    ) -> Result<Self, PlatformError> {
+        Self::open_enforced_with_lifecycle_limits(
+            root,
+            config,
+            limits,
+            authority,
+            crate::LifecycleLimits::default(),
+        )
+    }
+
+    pub fn open_enforced_with_lifecycle_limits(
+        root: impl Into<PathBuf>,
+        config: DirectoryArtifactRepositoryConfig,
+        limits: crate::AdmissionStorageLimits,
+        authority: Arc<dyn crate::AdmissionAuthority>,
+        lifecycle_limits: crate::LifecycleLimits,
+    ) -> Result<Self, PlatformError> {
+        limits.validate()?;
+        Self::open_configured(
+            root.into(),
+            config,
+            Some(admission::RepositoryAdmission::new(authority, limits)),
+            lifecycle_limits,
+        )
+    }
+
+    fn open_configured(
+        root: PathBuf,
+        config: DirectoryArtifactRepositoryConfig,
+        admission: Option<admission::RepositoryAdmission>,
+        lifecycle_limits: crate::LifecycleLimits,
+    ) -> Result<Self, PlatformError> {
         validate_config(config)?;
-        let root = root.into();
+        lifecycle_limits.validate()?;
         let root = root_durability::create_durable_root(&root)?;
 
         let owner_lock = OpenOptions::new()
@@ -203,6 +252,7 @@ impl DirectoryArtifactRepository {
             )
         })?;
         let owner_lock = OwnerLock(owner_lock);
+        admission::check_mode(&root, admission.is_some())?;
 
         fs::create_dir_all(root.join(RELEASES_DIR)).map_err(io_error)?;
         fs::create_dir_all(root.join(TEMP_DIR)).map_err(io_error)?;
@@ -212,6 +262,7 @@ impl DirectoryArtifactRepository {
         let repository = Self {
             root,
             config,
+            lifecycle_limits,
             codec: JsonManifestCodec::default(),
             validator: Phase1ManifestValidator::new(),
             index: RwLock::new(CatalogIndex::default()),
@@ -219,13 +270,20 @@ impl DirectoryArtifactRepository {
             preparation_epoch: Arc::new(RepositoryEpoch),
             verification_statistics: VerificationStatistics::default(),
             publish_lock: Mutex::new(PublicationState::default()),
+            admission_work: Mutex::new(()),
+            admission,
+            lifecycle: OnceLock::new(),
             _owner_lock: owner_lock,
             #[cfg(test)]
             fail_parent_sync_once: AtomicBool::new(false),
             #[cfg(test)]
             stamp_byte_limit: crate::preparation::MAXIMUM_STAMP_BYTES,
         };
-        repository.rebuild_index()?;
+        let baseline = repository.rebuild_index()?;
+        repository.initialize_lifecycle(&baseline)?;
+        if repository.admission.is_some() {
+            admission::persist_mode(&repository.root)?;
+        }
         Ok(repository)
     }
 
@@ -247,6 +305,7 @@ impl DirectoryArtifactRepository {
         &self,
         release: &ReleaseDigest,
     ) -> Result<Option<ArtifactPreparationIdentity>, PlatformError> {
+        self.current_eligibility(release)?;
         let index = self.index.read().map_err(lock_error)?;
         let entry = index
             .by_digest
@@ -280,8 +339,7 @@ impl DirectoryArtifactRepository {
         repository_stamp(metadata, maximum)
     }
 
-    fn rebuild_index(&self) -> Result<(), PlatformError> {
-        let mut publication = self.publish_lock.lock().map_err(lock_error)?;
+    fn rebuild_index(&self) -> Result<Vec<crate::lifecycle::LifecycleIdentity>, PlatformError> {
         let releases = self.root.join(RELEASES_DIR);
         let mut complete_entries = Vec::new();
         let mut scanned = 0_usize;
@@ -300,7 +358,12 @@ impl DirectoryArtifactRepository {
             if !is_recovery_candidate(&path)? {
                 continue;
             }
-            if complete_entries.len() >= self.config.max_index_entries {
+            if complete_entries.len()
+                >= self
+                    .config
+                    .max_index_entries
+                    .min(self.lifecycle_limits.max_records)
+            {
                 return Err(resource_exhausted(
                     "catalog contains more complete releases than the configured index bound",
                 ));
@@ -310,20 +373,45 @@ impl DirectoryArtifactRepository {
         complete_entries.sort();
 
         let mut next = CatalogIndex::default();
+        let mut baseline = Vec::with_capacity(complete_entries.len());
         for path in complete_entries {
-            let metadata = self
-                .load_complete_entry(&path, Retention::Metadata)?
-                .metadata;
+            let verified = self.load_complete_entry(&path, Retention::Metadata)?;
+            let eligibility = self.recover_eligibility(&path, &verified)?;
+            let completion = verified.completion.identity()?;
+            let metadata = verified.metadata;
+            baseline.push(crate::lifecycle::LifecycleIdentity {
+                scope: metadata.manifest().metadata.tenant.clone().map_or(
+                    crate::LifecycleScope::LocalUnscoped,
+                    crate::LifecycleScope::Tenant,
+                ),
+                release: metadata.verified_digest().clone(),
+                package: eligibility
+                    .as_ref()
+                    .map(|value| value.binding.package.clone()),
+                completion,
+            });
             let stamp = self.preparation_stamp(&metadata);
-            next.insert_verified(metadata, stamp, self.config)?;
+            if let Some(recovered) = eligibility {
+                next.insert_admitted(
+                    metadata,
+                    stamp,
+                    recovered.binding,
+                    recovered.eligibility,
+                    completion,
+                    self.config,
+                )?;
+            } else {
+                next.insert_verified(metadata, stamp, self.config)?;
+            }
         }
         // Reconcile completed entries from an interrupted publication before
         // exposing the rebuilt index or allowing further mutations.
         sync_dir(&releases)?;
+        let mut publication = self.publish_lock.lock().map_err(lock_error)?;
         *self.index.write().map_err(lock_error)? = next;
         publication.release_directories = scanned;
         publication.pending = None;
-        Ok(())
+        Ok(baseline)
     }
 
     fn load_complete_entry(
@@ -341,6 +429,16 @@ impl DirectoryArtifactRepository {
         limits: ArtifactPreparationReadLimits,
     ) -> Result<VerifiedEntry, PlatformError> {
         let completion = CompletionRecord::read(path)?;
+        let admission = match (self.admission.as_ref(), completion.admission_digest()) {
+            (Some(config), Some(digest)) => Some(admission_storage::StoredAdmission::read(
+                path,
+                digest,
+                config.limits,
+                self.config.max_component_bytes,
+            )?),
+            (None, None) => None,
+            _ => return Err(corrupt("catalog-admission-mode-mismatch")),
+        };
         let metadata_bytes = read_bounded_file(
             &path.join(METADATA_FILE),
             limits.maximum_metadata_document_bytes,
@@ -404,6 +502,7 @@ impl DirectoryArtifactRepository {
             ),
             component_bytes: component.bytes,
             completion,
+            admission,
         })
     }
 
@@ -418,6 +517,7 @@ impl DirectoryArtifactRepository {
         index::descriptor_bytes(descriptor, self.config.max_descriptor_bytes)
     }
 
+    #[cfg(test)]
     fn finalize_adoption(
         &self,
         artifact: CapsuleArtifact,
@@ -432,31 +532,11 @@ impl DirectoryArtifactRepository {
         index.preflight(&artifact.descriptor, &artifact.manifest, self.config)
     }
 
-    fn sync_and_adopt(
-        &self,
-        adoption: PublicationAdoption,
-        pending: &mut Option<ReleaseDigest>,
-    ) -> Result<ArtifactDescriptor, PlatformError> {
-        // The completed destination now exists. Keep the mutation gate closed
-        // across every failure, including repeated sync or adoption failures.
-        *pending = Some(adoption.artifact.descriptor.release_digest.clone());
-        #[cfg(test)]
-        if self.fail_parent_sync_once.swap(false, Ordering::SeqCst) {
-            return Err(error(
-                PlatformErrorCode::Internal,
-                "injected parent-directory sync failure after rename",
-            ));
-        }
-        sync_dir(&self.root.join(RELEASES_DIR))?;
-        let adopted = self.finalize_adoption(adoption.artifact, adoption.stamp)?;
-        *pending = None;
-        Ok(adopted)
-    }
-
     fn prepare_publication(
         &self,
         mut artifact: CapsuleArtifact,
     ) -> Result<PreparedPublication, PlatformError> {
+        lifecycle::input::check(&artifact, self.config)?;
         self.validator
             .validate_capsule(&artifact.manifest)
             .map_err(|_| {
@@ -501,7 +581,11 @@ impl DirectoryArtifactRepository {
         })
     }
 
-    fn stage_publication(&self, prepared: &PreparedPublication) -> Result<PathBuf, PlatformError> {
+    fn stage_publication_with_admission(
+        &self,
+        prepared: &PreparedPublication,
+        admission: Option<&admission_storage::PreparedAdmissionFiles>,
+    ) -> Result<PathBuf, PlatformError> {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|_| {
@@ -525,6 +609,9 @@ impl DirectoryArtifactRepository {
                 &tmp_path.join(COMPONENT_FILE),
                 &prepared.artifact.component_bytes,
             )?;
+            if let Some(admission) = admission {
+                admission.write(&tmp_path)?;
+            }
             write_synced(
                 &tmp_path.join(COMPLETE_FILE),
                 &prepared.completion.encode()?,
@@ -538,101 +625,6 @@ impl DirectoryArtifactRepository {
         Ok(tmp_path)
     }
 
-    /// Only verified identical persisted bytes are eligible for publication adoption.
-    /// Streams the component without retaining it before directory sync/index work.
-    fn read_for_adoption(
-        &self,
-        path: &Path,
-        expected: &CompletionRecord,
-    ) -> Result<Option<PublicationAdoption>, PlatformError> {
-        let verified = self.load_complete_entry(path, Retention::Metadata)?;
-        if &verified.completion != expected {
-            return Ok(None);
-        }
-        let stamp = self.preparation_stamp(&verified.metadata);
-        // Adoption needs only descriptor/manifest. Release decoded contracts
-        // before directory synchronization and index locking, as before.
-        let (descriptor, manifest, contracts) = verified.metadata.into_parts();
-        drop(contracts);
-        Ok(Some(PublicationAdoption {
-            artifact: CapsuleArtifact {
-                descriptor,
-                manifest,
-                contracts: Vec::new(),
-                component_bytes: Vec::new(),
-            },
-            stamp,
-        }))
-    }
-
-    fn publish_sync(&self, artifact: CapsuleArtifact) -> Result<ArtifactDescriptor, PlatformError> {
-        let mut publication = self.publish_lock.lock().map_err(lock_error)?;
-        let digest = artifact.descriptor.release_digest.clone();
-        if publication
-            .pending
-            .as_ref()
-            .is_some_and(|pending| pending != &digest)
-        {
-            return Err(error(
-                PlatformErrorCode::Unavailable,
-                "catalog needs publication recovery: retry the pending release or reopen the root",
-            ));
-        }
-        let prepared = self.prepare_publication(artifact)?;
-        let destination = self.entry_path(&digest)?;
-        if destination.exists() {
-            let expected = prepared.into_completion();
-            let descriptor = self
-                .read_for_adoption(&destination, &expected)?
-                .ok_or_else(|| {
-                    error(
-                        PlatformErrorCode::AlreadyExists,
-                        "release digest already contains different catalog content",
-                    )
-                })?;
-            return self.sync_and_adopt(descriptor, &mut publication.pending);
-        }
-        // Holding the writer mutex reserves this slot until rename or failure.
-        // Existing-entry retries above use their already-accounted directory.
-        if publication.release_directories >= self.config.max_recovery_directories {
-            return Err(resource_exhausted(
-                "catalog recovery directory capacity reached",
-            ));
-        }
-        let tmp_path = self.stage_publication(&prepared)?;
-        let expected = prepared.into_completion();
-
-        if let Err(rename_failure) = fs::rename(&tmp_path, &destination).map_err(io_error) {
-            let _ = fs::remove_dir_all(&tmp_path);
-            if destination.exists() {
-                // A destination appeared after the initial absence check.
-                // Account for it before adoption, even if validation/sync fails.
-                publication.release_directories += 1;
-                publication.pending = Some(digest);
-                let descriptor = self
-                    .read_for_adoption(&destination, &expected)?
-                    .ok_or_else(|| {
-                        error(
-                            PlatformErrorCode::AlreadyExists,
-                            "release digest was externally published with different content",
-                        )
-                    })?;
-                return self.sync_and_adopt(descriptor, &mut publication.pending);
-            }
-            return Err(rename_failure);
-        }
-        // Rename consumes the reserved slot independently of index visibility.
-        // Keep the mutation gate and charge across every verification/sync failure.
-        publication.release_directories += 1;
-        publication.pending = Some(digest);
-        #[cfg(test)]
-        integrity::faults::after_rename(&destination);
-        let descriptor = self
-            .read_for_adoption(&destination, &expected)?
-            .ok_or_else(integrity::invalid_record)?;
-        self.sync_and_adopt(descriptor, &mut publication.pending)
-    }
-
     #[cfg(test)]
     fn inject_parent_sync_failure_once(&self) {
         self.fail_parent_sync_once.store(true, Ordering::SeqCst);
@@ -640,6 +632,87 @@ impl DirectoryArtifactRepository {
 }
 
 impl ArtifactRepository for DirectoryArtifactRepository {
+    fn retained_package_source<'a>(
+        &'a self,
+        tenant: &'a latent_core::TenantId,
+        release: &'a ReleaseDigest,
+        maximum_bytes: usize,
+    ) -> BoxFuture<'a, Result<Option<crate::RetainedPackageSource>, PlatformError>> {
+        Box::pin(async move { self.retained_package(tenant, release, maximum_bytes) })
+    }
+    fn execution_eligibility(
+        &self,
+        release: &ReleaseDigest,
+    ) -> Result<Option<crate::ReleaseUseEligibility>, PlatformError> {
+        self.current_execution_eligibility(release).map(Some)
+    }
+    fn historical_execution_snapshot<'a>(
+        &'a self,
+        release: &'a ReleaseDigest,
+    ) -> BoxFuture<'a, Result<crate::HistoricalExecutionSnapshot, PlatformError>> {
+        Box::pin(async move { self.historical_snapshot(release) })
+    }
+    fn publish_managed<'a>(
+        &'a self,
+        context: crate::ReleaseMutationContext,
+        upload: crate::ManagedPublicationUpload,
+        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<crate::ManagedPublicationReceipt, PlatformError>> {
+        Box::pin(async move { self.managed_publish(context, upload, preflight) })
+    }
+    fn get_release_lifecycle<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        release: &'a ReleaseDigest,
+    ) -> BoxFuture<'a, Result<Option<crate::ReleaseLifecycleStatus>, PlatformError>> {
+        Box::pin(async move { self.lifecycle_status(scope, release) })
+    }
+    fn get_release_operation<'a>(
+        &'a self,
+        scope: &'a crate::LifecycleScope,
+        operation_id: &'a str,
+    ) -> BoxFuture<'a, Result<crate::ReleaseOperationLookup, PlatformError>> {
+        Box::pin(async move { self.life_store().operation(scope, operation_id) })
+    }
+    fn change_release_lifecycle<'a>(
+        &'a self,
+        context: crate::ReleaseMutationContext,
+        release: &'a ReleaseDigest,
+        action: crate::ReleaseLifecycleAction,
+        reason: crate::ReleaseLifecycleReason,
+        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<crate::ReleaseOperationReceipt, PlatformError>> {
+        Box::pin(async move { self.change_lifecycle(context, release, action, reason, preflight) })
+    }
+    fn renew_release_evidence<'a>(
+        &'a self,
+        context: crate::ReleaseMutationContext,
+        release: &'a ReleaseDigest,
+        package: &'a latent_core::PackageDigest,
+        evidence: crate::ReleaseEvidenceUpload,
+        preflight: &'a mut (dyn for<'p> FnMut(crate::ReleaseOperationPreview<'p>) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<crate::ReleaseOperationReceipt, PlatformError>> {
+        Box::pin(async move { self.renew_evidence(context, release, package, evidence, preflight) })
+    }
+    fn release_eligibility(
+        &self,
+        release: &ReleaseDigest,
+    ) -> Result<Option<crate::ReleaseEligibility>, PlatformError> {
+        self.current_eligibility(release)
+    }
+
+    fn admit_package<'a>(
+        &'a self,
+        tenant: &'a latent_core::TenantId,
+        upload: crate::PackageAdmissionUpload,
+        preflight: &'a mut (dyn FnMut(&crate::ArtifactCatalogEntry) -> Result<(), PlatformError>
+                     + Send),
+    ) -> BoxFuture<'a, Result<crate::ArtifactCatalogEntry, PlatformError>> {
+        Box::pin(async move { self.admit_legacy(tenant, upload, preflight) })
+    }
     fn owned_preparation_source(self: Arc<Self>) -> Option<OwnedArtifactPreparationSource> {
         Some(OwnedArtifactPreparationSource::new(self))
     }
@@ -678,7 +751,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
             } else {
                 None
             };
-            Ok(descriptor
+            let value = descriptor
                 .map(|entry| &entry.value.descriptor)
                 .filter(|value| {
                     query
@@ -690,7 +763,12 @@ impl ArtifactRepository for DirectoryArtifactRepository {
                             .as_ref()
                             .is_none_or(|media_type| &value.media_type == media_type)
                 })
-                .cloned())
+                .cloned();
+            drop(index);
+            if let Some(descriptor) = &value {
+                self.current_eligibility(&descriptor.release_digest)?;
+            }
+            Ok(value)
         })
     }
 
@@ -706,6 +784,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         digest: &'a ReleaseDigest,
     ) -> BoxFuture<'a, Result<VerifiedArtifactMetadata, PlatformError>> {
         Box::pin(async move {
+            self.current_eligibility(digest)?;
             add(&self.verification_statistics.metadata_fetch_attempts, 1);
             if !self
                 .index
@@ -721,7 +800,9 @@ impl ArtifactRepository for DirectoryArtifactRepository {
             }
             let verified =
                 self.load_complete_entry(&self.entry_path(digest)?, Retention::Metadata)?;
+            self.verify_admission_index(digest, &verified)?;
             verified.metadata.verify_requested(digest)?;
+            self.current_eligibility(digest)?;
             Ok(verified.metadata)
         })
     }
@@ -730,7 +811,7 @@ impl ArtifactRepository for DirectoryArtifactRepository {
         &'a self,
         artifact: CapsuleArtifact,
     ) -> BoxFuture<'a, Result<ArtifactDescriptor, PlatformError>> {
-        Box::pin(async move { self.publish_sync(artifact) })
+        Box::pin(async move { self.publish_legacy(artifact) })
     }
 
     fn list<'a>(

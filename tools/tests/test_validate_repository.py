@@ -66,6 +66,37 @@ class SourceTraversalTests(unittest.TestCase):
             self.assertEqual(len(validator.ERRORS), 1)
             self.assertIn("src/build/broken.json", validator.ERRORS[0])
 
+    def test_json_rejects_duplicate_keys_in_each_bad_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cases = {
+                "top-level.json": '{"label":"first","label":"second"}',
+                "nested.json": '{"outer":{"name":1,"name":2}}',
+                "escaped.json": '{"label":1,"la\\u0062el":2}',
+            }
+            for name, content in cases.items():
+                (root / name).write_text(content, encoding="utf-8")
+
+            validator.validate_json(root)
+
+            self.assertEqual(len(validator.ERRORS), 3)
+            for name in cases:
+                matching = [error for error in validator.ERRORS if name in error]
+                self.assertEqual(len(matching), 1)
+                self.assertIn("duplicate key", matching[0])
+
+    def test_json_allows_same_key_in_separate_objects(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "valid.json").write_text(
+                '{"left":{"name":1},"right":{"name":2}}',
+                encoding="utf-8",
+            )
+
+            validator.validate_json(root)
+
+            self.assertEqual(validator.ERRORS, [])
+
     def test_documentation_svg_requires_accessibility_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -79,6 +110,69 @@ class SourceTraversalTests(unittest.TestCase):
 </svg>""",
                 encoding="utf-8",
             )
+
+            validator.validate_svg(root)
+
+            self.assertEqual(validator.ERRORS, [])
+
+    def test_documentation_svg_rejects_duplicate_title_and_shape_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            asset = root / "docs/assets/duplicate.svg"
+            asset.parent.mkdir(parents=True)
+            asset.write_text(
+                """<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\" role=\"img\" aria-labelledby=\"shared description\">
+  <title id=\"shared\">Duplicate ID diagram</title>
+  <desc id=\"description\">The title and shape reuse one ID.</desc>
+  <rect id=\"shared\" width=\"10\" height=\"10\"/>
+</svg>""",
+                encoding="utf-8",
+            )
+
+            validator.validate_svg(root)
+
+            self.assertEqual(
+                validator.ERRORS,
+                ["SVG contains duplicate ID shared: docs/assets/duplicate.svg"],
+            )
+
+    def test_documentation_svg_rejects_duplicate_definition_ids(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            asset = root / "docs/assets/duplicate-defs.svg"
+            asset.parent.mkdir(parents=True)
+            asset.write_text(
+                """<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\" role=\"img\" aria-labelledby=\"title description\">
+  <title id=\"title\">Duplicate definition IDs</title>
+  <desc id=\"description\">Two definitions reuse one local ID.</desc>
+  <defs>
+    <linearGradient id=\"paint\"/>
+    <clipPath id=\"paint\"/>
+  </defs>
+  <rect width=\"10\" height=\"10\"/>
+</svg>""",
+                encoding="utf-8",
+            )
+
+            validator.validate_svg(root)
+
+            self.assertEqual(
+                validator.ERRORS,
+                ["SVG contains duplicate ID paint: docs/assets/duplicate-defs.svg"],
+            )
+
+    def test_documentation_svg_allows_same_id_in_separate_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            assets = root / "docs/assets"
+            assets.mkdir(parents=True)
+            content = """<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\" role=\"img\" aria-labelledby=\"title description\">
+  <title id=\"title\">Valid diagram</title>
+  <desc id=\"description\">IDs are local to this document.</desc>
+  <rect id=\"shape\" width=\"10\" height=\"10\"/>
+</svg>"""
+            (assets / "first.svg").write_text(content, encoding="utf-8")
+            (assets / "second.svg").write_text(content, encoding="utf-8")
 
             validator.validate_svg(root)
 

@@ -40,22 +40,6 @@ impl ManifestKind {
     pub fn schema(self) -> &'static str {
         schema_text(self)
     }
-
-    fn from_wire_kind(kind: &str) -> Option<Self> {
-        match kind {
-            "Capsule" => Some(Self::Capsule),
-            "Deployment" => Some(Self::Deployment),
-            "Binding" => Some(Self::Binding),
-            "Policy" => Some(Self::Policy),
-            "HttpTrigger"
-            | "EventTrigger"
-            | "TimerTrigger"
-            | "QueueTrigger"
-            | "BlobTrigger"
-            | "DirectInvocationTrigger" => Some(Self::Trigger),
-            _ => None,
-        }
-    }
 }
 
 /// Type-erased decoded manifest used by generic admission and tooling paths.
@@ -119,59 +103,12 @@ impl JsonManifestCodec {
         Self { limits }
     }
 
-    #[must_use]
-    pub const fn limits(&self) -> ManifestLimits {
-        self.limits
-    }
-
-    /// Decodes any manifest kind identified by its top-level `kind` field.
-    pub fn decode_document(&self, bytes: &[u8]) -> ManifestResult<ManifestDocument> {
-        let value = self.parse_limited(bytes)?;
-        let kind = document_kind(&value)?;
-        self.decode_preparsed(kind, value)
-    }
-
-    /// Canonically encodes a type-erased manifest.
-    pub fn encode_document(&self, manifest: &ManifestDocument) -> ManifestResult<Vec<u8>> {
-        match manifest {
-            ManifestDocument::Capsule(value) => self.encode_capsule(value),
-            ManifestDocument::Deployment(value) => self.encode_deployment(value),
-            ManifestDocument::Binding(value) => self.encode_binding(value),
-            ManifestDocument::Trigger(value) => self.encode_trigger(value),
-            ManifestDocument::Policy(value) => self.encode_policy(value),
-        }
-    }
-
     fn decode_kind<T>(&self, bytes: &[u8], kind: ManifestKind) -> ManifestResult<T>
     where
         T: DeserializeOwned + Normalize,
     {
         let value = self.parse_limited(bytes)?;
         self.validate_and_decode(value, kind)
-    }
-
-    fn decode_preparsed(
-        &self,
-        kind: ManifestKind,
-        value: Value,
-    ) -> ManifestResult<ManifestDocument> {
-        match kind {
-            ManifestKind::Capsule => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Capsule),
-            ManifestKind::Deployment => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Deployment),
-            ManifestKind::Binding => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Binding),
-            ManifestKind::Trigger => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Trigger),
-            ManifestKind::Policy => self
-                .validate_and_decode(value, kind)
-                .map(ManifestDocument::Policy),
-        }
     }
 
     fn validate_and_decode<T>(&self, value: Value, kind: ManifestKind) -> ManifestResult<T>
@@ -259,6 +196,13 @@ impl ManifestCodec for JsonManifestCodec {
     }
 
     fn encode_capsule(&self, manifest: &CapsuleManifest) -> ManifestResult<Vec<u8>> {
+        manifest.runtime_requirements.validate().map_err(|_| {
+            vec![ManifestViolation::new(
+                "$.compatibility",
+                "invalid-runtime-requirements",
+                "runtime requirements exceed their closed profile or bounds",
+            )]
+        })?;
         let mut normalized = manifest.clone();
         normalized.normalize();
         self.encode_normalized(&normalized, ManifestKind::Capsule)
@@ -319,37 +263,6 @@ fn ensure_wire_identity(id: &str, metadata_name: &str) -> ManifestResult<()> {
             "the domain ID must equal metadata.name because the JSON resource has one identity field",
         )])
     }
-}
-
-fn document_kind(value: &Value) -> ManifestResult<ManifestKind> {
-    let object = value.as_object().ok_or_else(|| {
-        vec![ManifestViolation::new(
-            "$",
-            "invalid-type",
-            "a manifest document must be a JSON object",
-        )]
-    })?;
-    let kind = object.get("kind").ok_or_else(|| {
-        vec![ManifestViolation::new(
-            "$.kind",
-            "missing-field",
-            "required field `kind` is missing",
-        )]
-    })?;
-    let kind = kind.as_str().ok_or_else(|| {
-        vec![ManifestViolation::new(
-            "$.kind",
-            "invalid-type",
-            "field `kind` must be a string",
-        )]
-    })?;
-    ManifestKind::from_wire_kind(kind).ok_or_else(|| {
-        vec![ManifestViolation::new(
-            "$.kind",
-            "unexpected-kind",
-            format!("unsupported manifest kind `{kind}`"),
-        )]
-    })
 }
 
 fn validate_model_integer_ranges(
@@ -609,6 +522,8 @@ trait Normalize {
 
 impl Normalize for CapsuleManifest {
     fn normalize(&mut self) {
+        self.runtime_requirements.target_triples.sort();
+        self.runtime_requirements.cpu_features.sort();
         self.component_digest.0.make_ascii_lowercase();
         self.exports
             .sort_by(|left, right| left.contract.cmp(&right.contract));
@@ -620,21 +535,7 @@ impl Normalize for CapsuleManifest {
 
 impl Normalize for DeploymentManifest {
     fn normalize(&mut self) {
-        self.release.0.make_ascii_lowercase();
-        for grant in &mut self.grants {
-            grant.operations.sort();
-        }
-        self.grants.sort_by(|left, right| {
-            (&left.capability, &left.policy, &left.operations).cmp(&(
-                &right.capability,
-                &right.policy,
-                &right.operations,
-            ))
-        });
-        self.placement.architectures.sort();
-        self.placement.regions.sort();
-        self.placement.zones.sort();
-        self.placement.required_features.sort();
+        self.normalize_storage_fields();
     }
 }
 
@@ -813,6 +714,22 @@ const fn default_call_depth() -> u32 {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct CapsuleCompatibilityWire {
     minimum_fabric_version: String,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "runtime_requirement"
+    )]
+    runtime: Option<crate::RuntimeRequirement>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    target_triples: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    cpu_features: Vec<String>,
+}
+
+fn runtime_requirement<'de, D: Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<crate::RuntimeRequirement>, D::Error> {
+    crate::RuntimeRequirement::deserialize(deserializer).map(Some)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -833,6 +750,9 @@ impl Serialize for CapsuleManifest {
     where
         S: Serializer,
     {
+        self.runtime_requirements
+            .validate()
+            .map_err(|error| serde::ser::Error::custom(error.message))?;
         CapsuleDocumentWire::from(self).serialize(serializer)
     }
 }
@@ -846,7 +766,12 @@ impl<'de> Deserialize<'de> for CapsuleManifest {
         if document.kind != FixedKind::Capsule {
             return Err(de::Error::custom("manifest kind must be Capsule"));
         }
-        Ok(document.into())
+        let manifest: Self = document.into();
+        manifest
+            .runtime_requirements
+            .validate()
+            .map_err(|error| de::Error::custom(error.message))?;
+        Ok(manifest)
     }
 }
 
@@ -886,6 +811,9 @@ impl From<&CapsuleManifest> for CapsuleDocumentWire {
             },
             compatibility: CapsuleCompatibilityWire {
                 minimum_fabric_version: value.minimum_fabric_version.clone(),
+                runtime: value.runtime_requirements.runtime.clone(),
+                target_triples: value.runtime_requirements.target_triples.clone(),
+                cpu_features: value.runtime_requirements.cpu_features.clone(),
             },
         }
     }
@@ -925,6 +853,11 @@ impl From<CapsuleDocumentWire> for CapsuleManifest {
                 fusion_eligible: value.execution.fusion_eligible,
             },
             minimum_fabric_version: value.compatibility.minimum_fabric_version,
+            runtime_requirements: crate::RuntimeRequirements {
+                runtime: value.compatibility.runtime,
+                target_triples: value.compatibility.target_triples,
+                cpu_features: value.compatibility.cpu_features,
+            },
         }
     }
 }

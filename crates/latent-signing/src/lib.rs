@@ -1,68 +1,62 @@
-//! Signature, provenance, attestation, and publisher trust interfaces.
+//! Exact package signatures, build provenance and bounded current trust decisions.
+//!
+//! Independent publisher and builder proofs do not establish tenant authority,
+//! catalog admission, guest validity, routability or permission to load native code.
 
 #![forbid(unsafe_code)]
 
-use latent_core::{BoxFuture, Metadata, PlatformError, PublisherId, ReleaseDigest};
+mod builder_policy;
+mod builder_verify;
+mod crypto;
+mod dsse;
+mod error;
+mod evidence;
+mod format;
+mod keys;
+mod limits;
+mod policy;
+mod provenance;
+mod signer;
+mod subject;
+mod verify;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SignatureEnvelope {
-    pub subject: ReleaseDigest,
-    pub algorithm: String,
-    pub signature: Vec<u8>,
-    pub certificate_chain: Vec<Vec<u8>>,
-    pub key_hint: Option<String>,
-    pub annotations: Metadata,
-}
+pub use builder_policy::{
+    BuilderKeyConfig, BuilderPolicy, BuilderPolicyConfig, BuilderRequirement,
+    BuilderRevocationSnapshot, BuilderRevocationSnapshotConfig, BuilderTrust, BuilderTrustStateId,
+};
+pub use builder_verify::{BuilderVerifier, VerifiedBuildProvenance};
+pub use error::{SignatureError, SignatureFailure, SignatureResult};
+pub use evidence::{SignatureEvidence, SignatureEvidenceRef};
+pub use format::{
+    inspect_signature, SignatureValidity, UnverifiedSignature, SIGNATURE_PAYLOAD_TYPE,
+};
+pub use keys::{generate_signing_key, GeneratedSigningKey};
+pub use limits::SignatureLimits;
+pub use policy::{
+    PublisherKeyConfig, PublisherPolicy, PublisherPolicyConfig, PublisherTrust, RevocationSnapshot,
+    RevocationSnapshotConfig, TrustStateId,
+};
+pub use provenance::{
+    decode_build_observation, inspect_provenance, BuildMaterial, BuildObservation, BuildParameters,
+    BuildSource, LocalBuilderSigner, ProvenanceEvidence, ProvenanceEvidenceRef, ProvenanceLimits,
+    UnverifiedProvenance, PROVENANCE_BUILD_TYPE, PROVENANCE_PAYLOAD_TYPE,
+    PROVENANCE_PREDICATE_TYPE,
+};
+pub use signer::LocalSigner;
+pub use subject::PackageSigningSubject;
+pub use verify::{PublisherVerifier, VerifiedPackageSignature};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProvenanceStatement {
-    pub subject: ReleaseDigest,
-    pub builder: String,
-    pub source_repository: Option<String>,
-    pub source_revision: Option<String>,
-    pub build_parameters: Metadata,
-    pub predicate_type: String,
-    pub predicate: Vec<u8>,
-}
+/// The v1 signature profile's maximum lifetime, in seconds.
+pub const MAX_SIGNATURE_LIFETIME_SECONDS: u64 = 31 * 24 * 60 * 60;
+/// Maximum lifetime of a reusable positive proof, without extending its evidence.
+pub const MAX_PROOF_AGE_SECONDS: u64 = 60 * 60;
 
+use latent_core::PackageDigest;
+
+/// Untrusted association metadata, without any SBOM authenticity assertion.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SbomReference {
-    pub subject: ReleaseDigest,
+    pub subject: PackageDigest,
     pub media_type: String,
     pub digest: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PublisherIdentity {
-    pub id: PublisherId,
-    pub display_name: Option<String>,
-    pub claims: Metadata,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct VerificationReport {
-    pub trusted: bool,
-    pub publisher: Option<PublisherIdentity>,
-    pub signature_valid: bool,
-    pub provenance_valid: bool,
-    pub sbom_present: bool,
-    pub reasons: Vec<String>,
-}
-
-pub trait SignatureVerifier: Send + Sync {
-    fn verify<'a>(
-        &'a self,
-        envelope: &'a SignatureEnvelope,
-    ) -> BoxFuture<'a, Result<VerificationReport, PlatformError>>;
-}
-
-pub trait AttestationVerifier: Send + Sync {
-    fn verify_provenance<'a>(
-        &'a self,
-        statement: &'a ProvenanceStatement,
-    ) -> BoxFuture<'a, Result<VerificationReport, PlatformError>>;
-}
-
-pub trait TrustPolicy: Send + Sync {
-    fn evaluate(&self, report: &VerificationReport) -> Result<(), PlatformError>;
 }

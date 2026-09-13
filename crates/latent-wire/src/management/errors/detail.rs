@@ -1,4 +1,5 @@
 use latent_core::ErrorDetail;
+mod release;
 
 use super::super::{proto, ManagementLimits};
 
@@ -7,6 +8,7 @@ const MAX_SOURCE_FIELDS: usize = 32;
 const DIAGNOSTIC_STRING_FLOOR: usize = 64;
 
 pub(super) enum PublicDetail {
+    Release(release::ReleaseDetail),
     Catalog(&'static str),
     Mutation {
         object_generation: u64,
@@ -25,7 +27,9 @@ impl PublicDetail {
         }
         // Check all retained source allocations before field lookup or reconstruction.
         if source.fields.iter().any(|(key, value)| {
-            let value_bound = if source.kind == "deployment-mutation" && key == "deployment_id" {
+            let value_bound = if source.kind == "release-operation" && key == "operation_id" {
+                128.min(limits.max_id_bytes)
+            } else if source.kind == "deployment-mutation" && key == "deployment_id" {
                 limits.max_id_bytes
             } else {
                 string_bound
@@ -35,6 +39,7 @@ impl PublicDetail {
             return None;
         }
         match source.kind.as_str() {
+            "release-operation" => release::ReleaseDetail::parse(source).map(Self::Release),
             "deployment-catalog" => {
                 let reason = source.fields.get("reason")?;
                 CATALOG_REASONS
@@ -66,6 +71,7 @@ impl PublicDetail {
     /// Source strings and their spare capacities are never moved into the result.
     pub(super) fn retained_cost(&self) -> usize {
         match self {
+            Self::Release(value) => value.retained_cost(),
             Self::Catalog(reason) => {
                 4 * 128 + "deployment-catalog".len() + "reason".len() + reason.len()
             }
@@ -83,6 +89,7 @@ impl PublicDetail {
 
     pub(super) fn into_proto(self) -> proto::ErrorDetail {
         match self {
+            Self::Release(value) => value.into_proto(),
             Self::Catalog(reason) => proto::ErrorDetail {
                 kind: "deployment-catalog".to_owned(),
                 fields: [("reason".to_owned(), reason.to_owned())]

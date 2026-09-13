@@ -1,8 +1,9 @@
 //! Bounded generic Wasmtime Component Model execution with fresh stores.
 //! A compatibility facade retains the Phase 0 echo payload contract.
 
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 
+mod aot;
 mod backend;
 mod bindings;
 mod cache;
@@ -25,6 +26,13 @@ use latent_artifacts::CapsuleArtifact;
 use latent_core::{BoxFuture, Metadata, PlatformError, ReleaseDigest};
 use latent_executor::{ExecutionBackend, PreparationKey, PreparedComponent};
 
+pub use aot::{
+    run_aot_compiler_worker, AotCompatibilityKey, AotCompilationJob, AotCompilerLimits,
+    AotJobControl, AotProcessLimits, AotReceiptCacheLimits, AotReceiptCacheSnapshot,
+    AotResourceLimits, AotResourceSnapshot, AotSandboxLimits, IsolatedAotCompiler,
+    NativeAotCacheConfig, NativeAotSettings, NativeAotSnapshot, NativeImageLimits,
+    NativeImageSnapshot, TrustedAotCompilerAuthority, TrustedAotOutput, ValidatedAotProfile,
+};
 pub use backend::{PreparationActivitySnapshot, WasmtimeBackend};
 pub use cache::{
     PreparedCacheAccountingSnapshot, PreparedCacheSnapshot, PreparedRuntimeObserver,

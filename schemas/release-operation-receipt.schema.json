@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/release-operation-receipt.schema.json",
+  "title": "LSF canonical immutable release operation receipt",
+  "$comment": "Actual Rust storage JSON, not a transferable grant or Protobuf JSON. The codec enforces 8192 bytes and bound/identity/state consistency. Rejected packageManifestDigest hashes received bytes without asserting valid package content. Bounded receipt absence cannot prove rollback.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operationId",
+    "requestDigest",
+    "scope",
+    "actor",
+    "action",
+    "disposition",
+    "reason",
+    "componentDigest",
+    "packageManifestDigest",
+    "expectedGeneration",
+    "record",
+    "policy",
+    "observedAtUnixMillis"
+  ],
+  "properties": {
+    "operationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])"
+    },
+    "requestDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
+      "minLength": 71,
+      "maxLength": 71
+    },
+    "scope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "tenant"
+          ],
+          "properties": {
+            "kind": {
+              "const": "tenant"
+            },
+            "tenant": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "local-unscoped"
+            }
+          }
+        }
+      ]
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "kind"
+      ],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])"
+        },
+        "kind": {
+          "enum": [
+            "user",
+            "service",
+            "node",
+            "trigger",
+            "administrator",
+            "anonymous",
+            "host"
+          ]
+        }
+      }
+    },
+    "action": {
+      "enum": [
+        "publish",
+        "revoke",
+        "retire",
+        "renew-evidence"
+      ]
+    },
+    "disposition": {
+      "enum": [
+        "committed",
+        "rejected"
+      ]
+    },
+    "reason": {
+      "enum": [
+        "admitted",
+        "evidence-renewed",
+        "operator-revocation",
+        "security-incident",
+        "corrupt-content",
+        "superseded",
+        "end-of-support",
+        "operator-retirement",
+        "invalid-package",
+        "integrity-mismatch",
+        "incompatible-contract",
+        "evidence-rejected",
+        "policy-denied",
+        "release-revoked",
+        "release-retired",
+        "generation-conflict",
+        "content-conflict"
+      ]
+    },
+    "componentDigest": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
+          "minLength": 71,
+          "maxLength": 71
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "packageManifestDigest": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
+          "minLength": 71,
+          "maxLength": 71
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "expectedGeneration": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "record": {
+      "anyOf": [
+        {
+          "$ref": "https://latent.dev/schemas/v1/release-lifecycle-record.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "policy": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "generation",
+            "digest"
+          ],
+          "properties": {
+            "scope": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])"
+            },
+            "generation": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 18446744073709551615
+            },
+            "digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
+              "minLength": 71,
+              "maxLength": 71
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "observedAtUnixMillis": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "disposition": {
+            "const": "committed"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "record": {
+            "$ref": "https://latent.dev/schemas/v1/release-lifecycle-record.schema.json"
+          },
+          "componentDigest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
+            "minLength": 71,
+            "maxLength": 71
+          }
+        }
+      }
+    }
+  ]
+}

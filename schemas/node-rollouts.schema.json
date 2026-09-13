@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/node-rollouts.schema.json",
+  "title": "Standalone node optional rollout and canary observation configuration",
+  "description": "Value of the optional rollouts node setting. Requires the same enabled durable audit owner; runtime validation enforces cross-field capacity relationships.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode"],
+  "properties": {
+    "mode": {"const": "manual"},
+    "active": {"type": "integer", "minimum": 1, "maximum": 64, "default": 16},
+    "retained": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 256},
+    "stages": {"type": "integer", "minimum": 1, "maximum": 64, "default": 16},
+    "receipts": {"type": "integer", "minimum": 1, "maximum": 1024, "default": 256},
+    "metadataBytes": {"type": "integer", "minimum": 262144, "maximum": 33554432, "default": 8388608},
+    "queuedOperations": {"type": "integer", "minimum": 1, "maximum": 64, "default": 8},
+    "queuedBytes": {"type": "integer", "minimum": 65536, "maximum": 4194304, "default": 524288},
+    "queryOwners": {"type": "integer", "minimum": 1, "maximum": 16, "default": 4},
+    "canary": {
+      "description": "Optional shared observation capacity; it does not declare health thresholds or enable automatic promotion. Runtime requires totalSamples >= samplesPerWindow.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "windows": {"type": "integer", "minimum": 1, "maximum": 64, "default": 16},
+        "samplesPerWindow": {"type": "integer", "minimum": 1, "maximum": 1000000, "default": 10000},
+        "totalSamples": {"type": "integer", "minimum": 1, "maximum": 16000000, "default": 100000},
+        "liveSamples": {"type": "integer", "minimum": 1, "maximum": 65536, "default": 4096},
+        "snapshotOwners": {"type": "integer", "minimum": 1, "maximum": 16, "default": 4}
+      }
+    }
+  }
+}

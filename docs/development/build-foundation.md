@@ -1,6 +1,9 @@
 # Executable build foundation
 
-This document is the clean-checkout contract for the first Phase 1 foundation. It turns the checked-in Rust, Protobuf, and WIT interfaces into compilable generated surfaces while preserving the Phase 0 execution and evidence paths.
+This document describes the maintained clean-checkout build foundation introduced
+in Phase 1 and used by the completed Phase 2 delivery surface. It turns the
+checked-in Rust, Protobuf, and WIT interfaces into compilable generated surfaces
+while preserving the Phase 0 execution and evidence paths.
 
 ## Scope
 
@@ -125,7 +128,21 @@ make guest-bindings
 
 ## CI contract
 
-`.github/workflows/ci.yml` runs for every pull request, pushes to `development`, and manual dispatches. Its Rust job verifies formatting, the whole workspace, host and guest Component Model bindings, RPC generation, Clippy, and tests. Separate jobs verify the MSRV, repository contracts, the reproducible echo fixture, catalog/routing regressions, and all language SDK surfaces. The path-filtered `Phase 0 runtime regression` workflow owns the retained executable echo/containment integration. The durable 100,000-release catalog probe runs only when `CI` is dispatched with `run_catalog_scale: true`; ordinary checks leave it ignored.
+`.github/workflows/ci.yml` runs for every pull request, pushes to `development`,
+and manual dispatches. Its Rust job verifies formatting, the whole workspace,
+host and guest Component Model bindings, RPC generation, Clippy and tests,
+followed by bounded Phase 2 operator, native-currentness, offline and resource
+workflows. Separate jobs verify the MSRV, repository contracts, catalog/routing
+regressions, OCI TLS/observed-build integration and all language SDK surfaces.
+
+`CI / Repository contracts` builds the maintained echo and containment fixtures
+through `tools/validate_contracts.sh`, then runs the executable outcome/recovery
+matrix against those same outputs. The separate `Phase 0 runtime regression`
+workflow is manual-only and retains its deterministic smoke baseline and matrix;
+the full Phase 0 gate remains a separate manual workflow. See the
+[CI layout](../testing/phase0-ci-layout.md). The durable 100,000-release catalog
+probe runs only when `CI` is dispatched with `run_catalog_scale: true`; ordinary
+checks leave it ignored.
 
 ## Phase 0 continuity
 

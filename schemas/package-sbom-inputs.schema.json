@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/package-sbom-inputs.schema.json",
+  "title": "LSF normalized SBOM inventory",
+  "description": "Untrusted declared inputs. Byte bounds, SPDX syntax, source/path semantics and exact package associations additionally require the Rust codec.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "packageKind",
+    "packageName",
+    "packageVersion",
+    "dependencyCompleteness",
+    "entries"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "packageKind": {
+      "enum": [
+        "capsule",
+        "browser-assets",
+        "ssr-package"
+      ]
+    },
+    "packageName": {
+      "$ref": "#/$defs/packageText"
+    },
+    "packageVersion": {
+      "$ref": "#/$defs/packageText"
+    },
+    "dependencyCompleteness": {
+      "enum": [
+        "observed-units-incomplete",
+        "declared-inputs-incomplete"
+      ]
+    },
+    "sourceSnapshotDigest": {
+      "$ref": "#/$defs/digest"
+    },
+    "entries": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[ -~]+(?![\\s\\S])"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[ -~]+(?![\\s\\S])"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "maxLength": 71
+    },
+    "size": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 268435456
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name",
+        "origin"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "guest-dependency",
+            "build-dependency",
+            "proc-macro",
+            "build-script",
+            "wit-package",
+            "build-tool",
+            "asset",
+            "component",
+            "renderer"
+          ]
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "licenseExpression": {
+          "$ref": "#/$defs/license"
+        },
+        "digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "digestScope": {
+          "enum": [
+            "output-bytes",
+            "wit-source",
+            "tool-executable",
+            "registry-archive-declared",
+            "source-manifest"
+          ]
+        },
+        "size": {
+          "$ref": "#/$defs/size"
+        },
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "manifestDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "manifestSize": {
+          "$ref": "#/$defs/manifestSize"
+        },
+        "origin": {
+          "enum": [
+            "captured-source",
+            "observed-cache",
+            "toolchain",
+            "package-input",
+            "supplied"
+          ]
+        }
+      },
+      "dependentRequired": {
+        "digest": [
+          "digestScope"
+        ],
+        "digestScope": [
+          "digest"
+        ],
+        "manifestDigest": [
+          "manifestSize"
+        ],
+        "manifestSize": [
+          "manifestDigest"
+        ]
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "asset",
+                  "component",
+                  "renderer"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "digest",
+              "digestScope",
+              "size",
+              "path"
+            ],
+            "properties": {
+              "digestScope": {
+                "const": "output-bytes"
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "manifestDigest"
+                  ]
+                },
+                {
+                  "required": [
+                    "manifestSize"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "wit-package"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "digest",
+              "digestScope",
+              "size",
+              "path"
+            ],
+            "properties": {
+              "digestScope": {
+                "const": "wit-source"
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "manifestDigest"
+                  ]
+                },
+                {
+                  "required": [
+                    "manifestSize"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "build-tool"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "digest",
+              "digestScope",
+              "size"
+            ],
+            "properties": {
+              "digestScope": {
+                "const": "tool-executable"
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "manifestDigest"
+                  ]
+                },
+                {
+                  "required": [
+                    "manifestSize"
+                  ]
+                },
+                {
+                  "required": [
+                    "path"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "guest-dependency",
+                  "build-dependency",
+                  "proc-macro",
+                  "build-script"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "digestScope": {
+                "enum": [
+                  "registry-archive-declared",
+                  "source-manifest"
+                ]
+              }
+            },
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "path"
+                  ]
+                },
+                {
+                  "required": [
+                    "size"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "digestScope": {
+                "const": "source-manifest"
+              }
+            },
+            "required": [
+              "digestScope"
+            ]
+          },
+          "then": {
+            "required": [
+              "manifestDigest",
+              "manifestSize"
+            ]
+          }
+        }
+      ]
+    },
+    "packageText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[ -~]+(?![\\s\\S])"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[ -~]+(?![\\s\\S])",
+      "anyOf": [
+        {
+          "pattern": "^https://(?=[^/]{1,253}(?:/|$))[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*(?:/[A-Za-z0-9._~/-]*)?(?![\\s\\S])",
+          "not": {
+            "pattern": "^https://[^/]+/(?:[^/]*/)*\\.{1,2}(?:/|$)"
+          }
+        },
+        {
+          "pattern": "^urn:lsf:(?:workspace|package-path|wit|build-tool|registry|captured):[A-Za-z0-9._~:@-]+(?:/[A-Za-z0-9._~:@-]+)*(?![\\s\\S])",
+          "not": {
+            "pattern": "^urn:lsf:[^:]+:(?:[^/]*/)*\\.{1,2}(?:/|$)"
+          }
+        }
+      ]
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[ -~]+(?![\\s\\S])"
+    },
+    "manifestSize": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4194304
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64}(?:/(?!\\.{1,2}(?:/|$))(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])(?:\\.|/|$))(?![A-Za-z0-9_.-]*\\.(?:/|$))[A-Za-z0-9_.-]{1,64})*(?![\\s\\S])",
+      "not": {
+        "enum": [
+          "package/sbom.cdx.json",
+          "package/build-inputs.json"
+        ]
+      }
+    }
+  },
+  "$comment": "Defaults/hard caps: 1 MiB raw JSON, 4096 entries, depth12, 131072 nodes, generic strings4096 bytes. Raw integer spelling, duplicate JSON members, exact source-manifest hash equality, output associations, unique paths and cross-role attribution conflicts additionally require the Rust codec."
+}

@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "kind": "ssr-package",
+  "name": "example-renderer",
+  "version": "1.0.0",
+  "entrypoint": "renderer.js",
+  "annotations": {},
+  "layers": [
+    {"path": "client.js", "source": "client.js", "role": "asset", "mediaType": "text/javascript"},
+    {"path": "renderer.js", "source": "renderer.js", "role": "renderer", "mediaType": "text/javascript"}
+  ]
+}

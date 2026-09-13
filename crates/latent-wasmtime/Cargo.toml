@@ -7,12 +7,31 @@ license.workspace = true
 authors.workspace = true
 description = "Bounded Wasmtime Component Model runtime with a retained Phase 0 compatibility facade."
 
-[lints]
-workspace = true
+[lints.rust]
+# Only the private authenticated copying loader may locally allow unsafe.
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+[[test]]
+name = "aot_supervisor"
+path = "tests/aot_supervisor.rs"
+harness = false
+
+[[test]]
+name = "aot_sandbox"
+path = "tests/aot_sandbox.rs"
+harness = false
 
 [dependencies]
 blake3.workspace = true
 latent-artifacts = { path = "../latent-artifacts" }
+latent-audit = { path = "../latent-audit" }
 latent-component-bindings = { path = "../latent-component-bindings" }
 latent-core = { path = "../latent-core" }
 latent-executor = { path = "../latent-executor" }
@@ -22,8 +41,17 @@ serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
 wasmtime.workspace = true
+zeroize = { version = "=1.9.0", features = ["alloc"] }
+
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dependencies]
+close_fds = "=0.3.2"
+landlock = "=0.4.5"
+libc = "=0.2.189"
+rustix = { version = "=1.1.4", features = ["process", "thread", "fs", "pipe", "mm", "param", "event"] }
+seccompiler = "=0.5.0"
 
 [dev-dependencies]
+wasm-encoder.workspace = true
 latent-activation = { path = "../latent-activation" }
 latent-node = { path = "../latent-node" }
 latent-routing = { path = "../latent-routing" }
@@ -32,3 +60,6 @@ tokio = { workspace = true, features = ["rt-multi-thread"] }
 
 [target.'cfg(target_os = "linux")'.dev-dependencies]
 rustix = { version = "=1.1.4", features = ["time"] }
+
+[target.'cfg(all(target_os = "linux", target_arch = "x86_64"))'.dev-dependencies]
+memmap2 = "=0.9.11"

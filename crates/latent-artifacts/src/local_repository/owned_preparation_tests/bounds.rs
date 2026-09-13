@@ -160,7 +160,7 @@ fn fresh_owned_fetch_preserves_complete_and_component_integrity_errors() {
 }
 
 #[test]
-fn existing_noncanonical_metadata_whitespace_is_not_limited_by_normalized_stamp_size() {
+fn noncanonical_whitespace_bounds_do_not_replace_lifecycle_content_identity() {
     use latent_manifest::__serde_json as json;
     let temp = TempRoot::new();
     let value = artifact("whitespace", b"abc");
@@ -174,6 +174,21 @@ fn existing_noncanonical_metadata_whitespace_is_not_limited_by_normalized_stamp_
         json::from_slice(&fs::read(entry.join("metadata.json")).unwrap()).unwrap();
     let mut changed = json::to_vec_pretty(&parsed).unwrap();
     changed.resize(changed.len() + proof.metadata().charged_bytes(), b' ');
+    let (descriptor, contracts) =
+        super::super::super::metadata_codec::decode_metadata(&changed, changed.len()).unwrap();
+    let equivalent = CapsuleArtifact {
+        descriptor,
+        contracts,
+        ..value.clone()
+    };
+    proof
+        .verify_metadata(
+            &equivalent,
+            proof.metadata().charged_bytes(),
+            proof.metadata().required_type_depth(),
+        )
+        .unwrap();
+    assert_eq!(equivalent, value);
     let completion = super::super::super::integrity::CompletionRecord::from_payloads(
         &value.descriptor,
         &changed,
@@ -181,15 +196,11 @@ fn existing_noncanonical_metadata_whitespace_is_not_limited_by_normalized_stamp_
     );
     fs::write(entry.join("metadata.json"), changed).unwrap();
     fs::write(entry.join("COMPLETE"), completion.encode().unwrap()).unwrap();
-    let fetched = owned
-        .fetch_blocking(release, limits(&owned, release))
-        .unwrap();
-    proof
-        .verify_metadata(
-            &fetched,
-            proof.metadata().charged_bytes(),
-            proof.metadata().required_type_depth(),
-        )
-        .unwrap();
-    assert_eq!(fetched, value);
+    assert_eq!(
+        owned
+            .fetch_blocking(release, limits(&owned, release))
+            .expect_err("fresh reads bind the exact admitted COMPLETE")
+            .code,
+        PlatformErrorCode::CorruptArtifact
+    );
 }

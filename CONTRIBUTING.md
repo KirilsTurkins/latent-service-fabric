@@ -1,9 +1,22 @@
 # Contributing
 
-LSF has completed Phase 1 and its performance/infrastructure extension;
-Phase 2 packaging and supply-chain work is next. Contributions should preserve the distinction between
-architectural contracts, generated surfaces, and implemented behavior. Consult
-[the roadmap](docs/roadmap.md) for the current boundary.
+LSF has completed Phase 1, its performance/infrastructure extension, and Phase 2
+packaging and supply-chain delivery. Work is moving into the
+[Phase 3 capability and application-hosting backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201).
+Those planned interfaces and open pull requests do not establish delivered
+features; use the current `development` implementation and
+[Phase 2 completion review](docs/phase-2-completion.md) as the starting boundary.
+Contributions should distinguish architectural contracts, generated surfaces,
+implemented behavior, and planned phase scope. Consult [the roadmap](docs/roadmap.md)
+for dependencies and the later state, cluster, and workflow phases.
+
+## First contribution
+
+Start with the live [open `good first issue` queue](https://github.com/KirilsTurkins/latent-service-fabric/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22). Read the selected issue completely, check its assignee and linked or existing pull requests, and coordinate on the issue before starting work that could overlap another contribution.
+
+Create your branch from the current `development` branch and target `development` in the pull request, even though the repository's GitHub default branch is `release`. Follow the existing branch conventions for the kind of change, for example `chore/<short-description>` for documentation or maintenance and `feat/<short-description>` for feature work.
+
+Install the pinned prerequisites from the [development toolchain guide](docs/development/toolchain.md), then select checks appropriate to the change using [VALIDATION.md](VALIDATION.md). Keep expensive scale probes, profiling, calibration, and resource soaks opt-in unless the issue or acceptance criteria explicitly require them.
 
 ## Change categories
 
@@ -34,6 +47,10 @@ A pull request should include:
 - relevant ADR or RFC,
 - conformance tests or a test specification,
 - generated artifacts only when generation is reproducible.
+
+The root [`.editorconfig`](.editorconfig) records repository whitespace and newline defaults for supporting editors. It intentionally exempts byte-sensitive fixtures, generated output, pinned upstream WIT data, and retained benchmark evidence. EditorConfig complements rather than replaces `cargo fmt`, generators, or repository validation.
+
+Run `make help` for a concise list of root contributor commands before selecting validation work.
 
 Run checks appropriate to the change using [VALIDATION.md](VALIDATION.md).
 Normal validation excludes expensive ignored acceptance tests; request

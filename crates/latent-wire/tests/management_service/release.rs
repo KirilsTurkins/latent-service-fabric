@@ -1,5 +1,9 @@
 #[path = "release/authorization.rs"]
 mod authorization;
+#[path = "release/lifecycle.rs"]
+mod lifecycle;
+#[path = "release/package.rs"]
+mod package;
 #[path = "release/pagination.rs"]
 mod pagination;
 
@@ -12,6 +16,8 @@ use super::support::{artifact, deployment, request, Harness};
 
 fn upload(artifact: &CapsuleArtifact) -> proto::PublishReleaseRequest {
     proto::PublishReleaseRequest {
+        package: None,
+        operation: None,
         release: None,
         artifact: Some(proto::CapsuleArtifactUpload {
             capsule_manifest_json: JsonManifestCodec::default()
@@ -116,6 +122,7 @@ async fn published_typed_capsule_can_be_deployed_without_editing_the_data_direct
         .apply_deployment(request(
             "alice",
             proto::ApplyDeploymentRequest {
+                operation: None,
                 deployment: Some(desired),
                 expected_generation: Some(0),
             },

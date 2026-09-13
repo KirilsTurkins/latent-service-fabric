@@ -16,10 +16,35 @@ pub struct WasmtimeComponentEngineFactory {
     engine: Engine,
     config: WasmtimeConfig,
     profile: WasmtimeEngineProfile,
+    runtime_profile: Arc<latent_manifest::RuntimeCompatibilityProfile>,
     shared: Arc<SharedRuntime>,
 }
 
 impl WasmtimeComponentEngineFactory {
+    /// Fixed native-cache and image ownership; absent in local compilation mode.
+    pub fn native_aot_snapshot(&self) -> Result<Option<crate::NativeAotSnapshot>, PlatformError> {
+        self.shared.native_aot_snapshot()
+    }
+
+    /// Use one approved isolated compiler and authenticated persistent cache.
+    /// Both repository preparation APIs are bound to this exact catalog owner.
+    pub fn with_catalog_and_aot(
+        config: WasmtimeConfig,
+        services: WasmtimeHostServices,
+        catalog: Arc<latent_artifacts::DirectoryArtifactRepository>,
+        settings: crate::NativeAotSettings,
+    ) -> Result<Self, PlatformError> {
+        let lifecycle = catalog.lifecycle_authority();
+        let admission = lifecycle.required_authority().cloned();
+        Self::with_admission_and_aot(
+            config,
+            DispatchMode::Generic,
+            services,
+            admission,
+            Some(lifecycle),
+            Some((catalog, settings)),
+        )
+    }
     /// Independent opt-in input observations, available after factory shutdown.
     #[must_use]
     pub fn invocation_input_observer(&self) -> crate::InvocationInputObserver {
@@ -59,15 +84,51 @@ impl WasmtimeComponentEngineFactory {
             crate::compiler::CompilerPool::quiesce,
         )
     }
+    /// Constructs an explicitly unmanaged trusted-local embedding. Directory
+    /// nodes use `with_catalog` and never fall back to this mode.
     pub fn new(config: WasmtimeConfig) -> Result<Self, PlatformError> {
         Self::with_mode(config, DispatchMode::Generic)
     }
 
+    /// Trusted-local embedding with host services; no supply-chain authority.
     pub fn with_host_services(
         config: WasmtimeConfig,
         services: WasmtimeHostServices,
     ) -> Result<Self, PlatformError> {
         Self::with_mode_and_services(config, DispatchMode::Generic, services)
+    }
+
+    /// Enforces one configured admission authority independently of cache stamps.
+    /// Raw artifact preparation is rejected; directory-issued eligibility is required.
+    pub fn with_enforced_admission(
+        config: WasmtimeConfig,
+        services: WasmtimeHostServices,
+        authority: Arc<dyn latent_artifacts::AdmissionAuthority>,
+    ) -> Result<Self, PlatformError> {
+        Self::with_admission(
+            config,
+            DispatchMode::Generic,
+            services,
+            Some(authority),
+            None,
+        )
+    }
+
+    /// Binds every preparation and activation to this exact catalog owner,
+    /// including catalogs whose artifacts are trusted-local rather than signed.
+    pub fn with_catalog(
+        config: WasmtimeConfig,
+        services: WasmtimeHostServices,
+        lifecycle: latent_artifacts::LifecycleAuthorityHandle,
+    ) -> Result<Self, PlatformError> {
+        let admission = lifecycle.required_authority().cloned();
+        Self::with_admission(
+            config,
+            DispatchMode::Generic,
+            services,
+            admission,
+            Some(lifecycle),
+        )
     }
 
     pub(crate) fn with_mode(
@@ -77,10 +138,34 @@ impl WasmtimeComponentEngineFactory {
         Self::with_mode_and_services(config, mode, WasmtimeHostServices::default())
     }
 
-    fn with_mode_and_services(
+    pub(crate) fn with_mode_and_services(
+        config: WasmtimeConfig,
+        mode: DispatchMode,
+        services: WasmtimeHostServices,
+    ) -> Result<Self, PlatformError> {
+        Self::with_admission(config, mode, services, None, None)
+    }
+
+    fn with_admission(
+        config: WasmtimeConfig,
+        mode: DispatchMode,
+        services: WasmtimeHostServices,
+        admission: Option<Arc<dyn latent_artifacts::AdmissionAuthority>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+    ) -> Result<Self, PlatformError> {
+        Self::with_admission_and_aot(config, mode, services, admission, lifecycle, None)
+    }
+
+    fn with_admission_and_aot(
         mut config: WasmtimeConfig,
         mode: DispatchMode,
         services: WasmtimeHostServices,
+        admission: Option<Arc<dyn latent_artifacts::AdmissionAuthority>>,
+        lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+        native: Option<(
+            Arc<latent_artifacts::DirectoryArtifactRepository>,
+            crate::NativeAotSettings,
+        )>,
     ) -> Result<Self, PlatformError> {
         if mode == DispatchMode::Phase0 {
             // Preserve the Phase 0 64 KiB payload plus 16 KiB canonical ABI
@@ -88,6 +173,7 @@ impl WasmtimeComponentEngineFactory {
             config.hostcall_fuel = config.hostcall_fuel.min(80 * 1024);
         }
         config.validate()?;
+        let runtime_profile = Arc::new(config.detected_runtime_profile()?);
         if mode == DispatchMode::Generic && !config.prepared_cache_enabled {
             return Err(platform_error(
                 PlatformErrorCode::InvalidArgument,
@@ -107,22 +193,32 @@ impl WasmtimeComponentEngineFactory {
                 false,
             )
         })?;
+        let native = native
+            .map(|(catalog, settings)| {
+                crate::aot::cache::NativeAotService::new(&config, &engine, catalog, settings)
+            })
+            .transpose()?;
         let epoch_ticker = EpochTicker::start(
             &engine,
             Duration::from_millis(config.epoch_tick_interval_millis),
         )?;
-        let profile = config.profile(mode);
+        let profile = config.profile_with_runtime(mode, Some(&runtime_profile));
         let shared = Arc::new(SharedRuntime::new(
             &config,
             services,
             epoch_ticker,
             engine.clone(),
             profile.clone(),
+            admission,
+            lifecycle,
+            Arc::clone(&runtime_profile),
+            native,
         )?);
         Ok(Self {
             engine,
             config,
             profile,
+            runtime_profile,
             shared,
         })
     }
@@ -130,6 +226,12 @@ impl WasmtimeComponentEngineFactory {
     #[must_use]
     pub fn profile(&self) -> &WasmtimeEngineProfile {
         &self.profile
+    }
+
+    /// Immutable detected host facts also bound into preparation identity.
+    #[must_use]
+    pub fn runtime_profile(&self) -> &latent_manifest::RuntimeCompatibilityProfile {
+        &self.runtime_profile
     }
 
     #[must_use]

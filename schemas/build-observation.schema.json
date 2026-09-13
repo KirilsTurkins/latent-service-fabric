@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/build-observation.schema.json",
+  "title": "LSF v1 unsigned observed echo build",
+  "$comment": "This shape confers no builder authority. Rust additionally checks raw bytes <=32768, unique material names, snapshot material equality, ordered timestamps within3600seconds, duplicate keys and integer token spelling. Repo is an operator assertion, not authenticated source ownership.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "buildType",
+    "source",
+    "componentDigest",
+    "componentSize",
+    "materials",
+    "parameters",
+    "startedAt",
+    "finishedAt",
+    "reproducibility",
+    "hermetic",
+    "dependencyCompleteness"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "buildType": {
+      "const": "https://latent.dev/build/echo-capsule/v1"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "revision",
+        "snapshotDigest",
+        "repositoryTrust",
+        "capture"
+      ],
+      "properties": {
+        "repository": {
+          "$ref": "#/$defs/repository"
+        },
+        "revision": {
+          "$ref": "#/$defs/revision"
+        },
+        "snapshotDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "repositoryTrust": {
+          "const": "operator-asserted"
+        },
+        "capture": {
+          "const": "git-archive-allowlist"
+        }
+      }
+    },
+    "componentDigest": {
+      "$ref": "#/$defs/digest"
+    },
+    "componentSize": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 67108864
+    },
+    "materials": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "digest",
+          "size"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(?![\\s\\S])"
+          },
+          "digest": {
+            "$ref": "#/$defs/digest"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 268435456
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "source-snapshot"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "dependency-lock"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "build-recipe"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "toolchain-config"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "cargo"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "rustc"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": {
+                "const": "wasm-tools"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ]
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cargoPackage",
+        "cargoExample",
+        "target",
+        "profile",
+        "locked",
+        "incremental"
+      ],
+      "properties": {
+        "cargoPackage": {
+          "const": "latent-toolchain-smoke"
+        },
+        "cargoExample": {
+          "const": "echo-capsule"
+        },
+        "target": {
+          "const": "wasm32-unknown-unknown"
+        },
+        "profile": {
+          "const": "release"
+        },
+        "locked": {
+          "const": true
+        },
+        "incremental": {
+          "const": false
+        }
+      }
+    },
+    "startedAt": {
+      "$ref": "#/$defs/time"
+    },
+    "finishedAt": {
+      "$ref": "#/$defs/time"
+    },
+    "reproducibility": {
+      "enum": [
+        "not-checked",
+        "two-build-byte-equality"
+      ]
+    },
+    "hermetic": {
+      "const": false
+    },
+    "dependencyCompleteness": {
+      "const": "lockfile-only"
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "minLength": 71,
+      "maxLength": 71,
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "time": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:/@-]+(?![\\s\\S])"
+    },
+    "revision": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})(?![\\s\\S])"
+    },
+    "repository": {
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^https://(?=[^/]{1,253}/)[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+(?:/(?!\\.{1,2}(?:/|(?![\\s\\S])))[A-Za-z0-9._-]+)*(?![\\s\\S])"
+    }
+  }
+}

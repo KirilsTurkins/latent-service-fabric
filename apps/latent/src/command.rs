@@ -52,6 +52,7 @@ pub fn main_entry() -> ExitCode {
     let result = match cli.validate() {
         Err(failure) => failure.into(),
         Ok(()) => match &cli.command {
+            Command::Package(command) => crate::package::execute(&cli, command),
             Command::Validate(command) => management::validate(command).unwrap_or_else(Into::into),
             _ => match tokio::runtime::Builder::new_current_thread()
                 .enable_all()
@@ -72,7 +73,7 @@ fn exit(code: i32) -> ExitCode {
 }
 
 async fn remote(cli: &Cli) -> Outcome {
-    let result = remote_inner(cli).await;
+    let result = Box::pin(remote_inner(cli)).await;
     let mut outcome = result.unwrap_or_else(Into::into);
     if let Command::Invoke(args) = &cli.command {
         if outcome.data.get("activationId").is_none() {
@@ -108,37 +109,51 @@ async fn remote_inner(cli: &Cli) -> Result<Outcome, Failure> {
             "The encoded request exceeds the configured limit.",
         ));
     }
-    let absolute = match &cli.command {
-        Command::Invoke(args) => args.deadline_unix_millis,
-        _ => None,
-    };
-    let interrupt_signal = tokio::signal::ctrl_c();
-    tokio::pin!(interrupt_signal);
-    let session = tokio::select! {
-        biased;
-        signal = &mut interrupt_signal => return Err(interrupt(signal.is_ok(), false)),
-        result = Session::connect(&config, absolute) => result?,
-    };
-    let is_invocation = operation.is_invocation();
-    let future = async {
-        if is_invocation {
-            invocation::execute(operation, &session).await
-        } else {
-            management::execute(operation, &session).await
+    let recovery = management::phase2::RecoveryContext::from_operation(&operation, &config.tenant);
+    let result = async {
+        let absolute = match &cli.command {
+            Command::Invoke(args) => args.deadline_unix_millis,
+            _ => None,
+        };
+        let interrupt_signal = tokio::signal::ctrl_c();
+        tokio::pin!(interrupt_signal);
+        let session = tokio::select! {
+            biased;
+            signal = &mut interrupt_signal => return Err(interrupt(signal.is_ok(), false)),
+            result = Session::connect(&config, absolute) => result?,
+        };
+        let is_invocation = operation.is_invocation();
+        let future = async {
+            if is_invocation {
+                invocation::execute(operation, &session).await
+            } else {
+                management::execute(operation, &session).await
+            }
+        };
+        let result = tokio::select! {
+            biased;
+            signal = &mut interrupt_signal => Err(interrupt(signal.is_ok(), session.dispatched())),
+            result = future => result,
+        };
+        match result {
+            Ok(mut outcome) => {
+                outcome.request_dispatched = session.dispatched();
+                Ok(outcome)
+            }
+            Err(mut failure) => {
+                failure.request_dispatched |= session.dispatched();
+                Err(failure)
+            }
         }
-    };
-    let result = tokio::select! {
-        biased;
-        signal = &mut interrupt_signal => Err(interrupt(signal.is_ok(), session.dispatched())),
-        result = future => result,
-    };
+    }
+    .await;
     match result {
         Ok(mut outcome) => {
-            outcome.request_dispatched = session.dispatched();
+            recovery.outcome(&mut outcome);
             Ok(outcome)
         }
         Err(mut failure) => {
-            failure.request_dispatched |= session.dispatched();
+            recovery.failure(&mut failure);
             Err(failure)
         }
     }
@@ -177,8 +192,30 @@ fn name(command: &Command) -> &'static str {
         RouteCommand as Route, ValidateCommand as V,
     };
     match command {
+        Command::Package(command) => command.name(),
         Command::Validate(V::Capsule(_)) => "validate capsule",
         Command::Validate(V::Deployment(_)) => "validate deployment",
+        Command::Audit(_) => "audit query",
+        Command::Rollout(command) => match command {
+            args::rollout::RolloutCommand::Start(_) => "rollout start",
+            args::rollout::RolloutCommand::Get(_) => "rollout get",
+            args::rollout::RolloutCommand::List(_) => "rollout list",
+            args::rollout::RolloutCommand::Operation(_) => "rollout operation",
+            args::rollout::RolloutCommand::Advance(_) => "rollout advance",
+            args::rollout::RolloutCommand::Pause(_) => "rollout pause",
+            args::rollout::RolloutCommand::Resume(_) => "rollout resume",
+            args::rollout::RolloutCommand::Abort(_) => "rollout abort",
+            args::rollout::RolloutCommand::Evaluate(_) => "rollout evaluate",
+            args::rollout::RolloutCommand::Promote(_) => "rollout promote",
+            args::rollout::RolloutCommand::Rollback(_) => "rollout rollback",
+        },
+        Command::Release(R::Lifecycle(_)) => "release lifecycle",
+        Command::Release(R::Operation(_)) => "release operation",
+        Command::Release(R::PublishPackage(_)) => "release publish-package",
+        Command::Release(R::Revoke(_)) => "release revoke",
+        Command::Release(R::Retire(_)) => "release retire",
+        Command::Release(R::RenewEvidence(_)) => "release renew-evidence",
+        Command::Deployment(D::Operation(_)) => "deployment operation",
         Command::Release(R::Publish(_)) => "release publish",
         Command::Release(R::Get(_)) => "release get",
         Command::Release(R::List(_)) => "release list",

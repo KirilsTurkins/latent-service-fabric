@@ -1,13 +1,26 @@
 # Latent Service Fabric
 
 Latent Service Fabric (LSF) is a component-native execution-fabric engineering
-project. Its delivered Phase 1 runs independently deployable stateless service
+project. Its standalone runtime runs independently deployable stateless service
 capsules on a standalone Linux node without assigning persistent processes,
 sockets, threads, guest heaps, or connection pools to idle services.
 
 A deployed service is represented by immutable code, contracts, policy, deployment metadata, and routing metadata. Execution resources are allocated when an invocation becomes an activation. Activations execute in a fixed pool of reusable sandboxed cells; bounded catalog metadata remains resident independently of execution.
 
-> Phase 1 and its performance extension are complete: durable catalogs and routing, admission/scheduling, generic Wasmtime execution, activation capabilities and lifecycle, telemetry, invocation/management RPCs, and an operator CLI. The [functional completion review](docs/phase-1-completion.md) and [extension report](docs/phase-1-extension-completion.md) cover scale, soak, optimization, and actual Docker/Kubernetes comparisons. These are scoped engineering results, not production SLOs. Phase 2 packaging and supply-chain work is next.
+Phase 1, its performance extension, and Phase 2 are complete in development.
+The [Phase 2 completion review](docs/phase-2-completion.md) covers deterministic
+packaging, authenticated OCI transfer, publisher/provenance/SBOM verification,
+current admission and lifecycle, isolated compilation and native reuse, durable
+audit, managed deployment receipts, canary promotion, rollback and operator
+workflows. Its compact evidence includes real registry/node execution, offline
+trust checks, native currentness and a predefined 32-release resource profile.
+
+The [Phase 1 review](docs/phase-1-completion.md) and
+[extension report](docs/phase-1-extension-completion.md) preserve the earlier
+scale, soak, optimization and Docker/Kubernetes comparisons. These are scoped
+engineering results, not production SLOs. Phase 3 has
+[41 planned tickets](docs/roadmap.md#phase-3-capabilities-and-application-hosting)
+for capability providers, application/web hosting, SDK delivery and validation.
 
 ## Core invariant
 
@@ -17,7 +30,10 @@ resident state = fixed node runtime + bounded catalog metadata + active activati
 
 The number of operating-system processes, threads, sockets, and execution cells is node-defined and must not scale with the number of deployed services.
 
-![Completed Phase 1: authenticated local clients use durable catalogs, admission and scheduling, and generic Wasmtime cells; packaging, general capabilities, state, and clustering remain later phases.](docs/assets/phase1-delivery-boundary.svg)
+![Phase 2 delivery: bounded package transfer, current node admission and explicit rollout control.](docs/assets/phase2-delivery-boundary.svg)
+
+The [historical Phase 1 boundary](docs/assets/phase1-delivery-boundary.svg) retains
+its original scope. Phase 2 features are listed below.
 
 ## Authoritative interface layers
 
@@ -31,7 +47,7 @@ The number of operating-system processes, threads, sockets, and execution cells 
 
 ```text
 apps/                 Standalone latentd node, operator CLI, explicit Phase 0 spike, and control-plane placeholder
-crates/               Rust interfaces, delivered Phase 1 subsystems, and isolated Phase 0 regression paths
+crates/               Rust interfaces, Phase 1/2 subsystems, and isolated Phase 0 regression paths
 wit/                  WIT packages for platform capabilities
 api/proto/            Protobuf service definitions
 schemas/              JSON Schemas for declarative resources
@@ -42,7 +58,7 @@ rfcs/                  Future design proposals
 research/              Experimental tracks kept outside the production core
 docs/                  Architecture, protocol, operations, and security documentation
 tests/                 Cross-phase test specifications; executable tests also live with crates/apps/tools
-benchmarks/            Benchmark definitions and retained Phase 0 / Phase 1 evidence
+benchmarks/            Benchmark definitions, historical measurements and compact Phase 2 gate evidence
 tools/                 Pinned validation, generation, spike, benchmark, and gate tooling
 ```
 
@@ -50,13 +66,16 @@ tools/                 Pinned validation, generation, spike, benchmark, and gate
 
 - `latentd`: standalone Linux node through `serve --config PATH`, plus the finite local `phase0-spike invoke-once` harness and `verify-recovery` containment proof.
 - `latent-control`: clustered control-plane application placeholder.
-- `latent`: bounded local manifest validation, release publication, versioned deployment, invocation/cancellation/status, routing and node inspection through generated RPC clients.
+- `latent`: bounded local package build/inspect/verification and OCI transfer; authenticated release lifecycle, managed deployment receipts, rollout/canary/rollback, audit, invocation/cancellation/status, routing and node commands.
 
 See [standalone node configuration and operation](docs/reference/standalone-node.md)
 for loopback authentication, readiness, durable restart, and bounded shutdown.
 The [operator CLI reference](docs/reference/operator-cli.md) and
 [scriptable echo quickstart](docs/development/standalone-quickstart.md) cover the
-complete local client workflow.
+local invocation workflow. The [Phase 2 operator workflows](docs/phase-2-operator-workflows.md)
+cover package evidence, separate registry credentials, managed preconditions and
+finite operation recovery. The client never silently retries a mutation or replaces
+a stale precondition.
 The explicit Phase 0 spike retains its separate measured scope.
 
 ## Delivered Phase 1 features
@@ -96,6 +115,32 @@ services had lower warm request latency; LSF used less application memory at
 8 and 32 services. The reports retain cold-start boundaries, resource-limit
 differences, and the Docker Desktop/WSL2 environment. They do not establish
 production cluster capacity or a universal millisecond request budget.
+
+## Delivered Phase 2 features
+
+| Feature | Implemented surface and documentation |
+| --- | --- |
+| Package and distribution | Deterministic content identities and bounded authenticated registry transfer; [packaging](docs/component-development/packaging.md), [OCI distribution](docs/reference/oci-registry.md) |
+| Supply-chain verification | Publisher trust, build provenance, and package SBOM verification; [publisher trust](docs/reference/publisher-trust.md), [provenance](docs/reference/build-provenance.md), [SBOMs](docs/component-development/sbom.md) |
+| Trusted admission and lifecycle | Verified catalog admission, current eligibility, durable idempotent publication/revocation/retirement/evidence renewal; [admission](docs/reference/package-admission.md), [release lifecycle](docs/reference/release-lifecycle.md) |
+| Isolated compilation and native cache | Bounded compiler children and authenticated persistent native images with private keys and explicit cache ownership; [standalone configuration](docs/reference/standalone-node.md) |
+| Durable administrative audit | Bounded private journal, explicit mutation acknowledgements, tenant/operator query authorization, restart coverage and retained response ownership; [audit](docs/phase-2-audit.md) |
+| Canary observations | Attributable bounded outcome windows with explicit missing samples and incomplete coverage, integrated into the existing activation owner; [canary observations](docs/phase-2-canary-observation.md) |
+| Manual rollout coordination | Atomic route/state publication, exact revision and cohort conflicts, bounded receipts and restart recovery, pause/resume/abort; [rollouts](docs/phase-2-rollouts.md) |
+| Controlled canary promotion | Explicit policy, full-window candidate evaluation, sealed exact-cohort evidence, current eligibility and atomic next-stage publication; [canary promotion](docs/phase-2-canary-promotion.md) |
+| Atomic rollback | Plan-bound original target, current eligibility and reverse compatibility, fresh publication generation and exact operation recovery; [rollback](docs/phase-2-rollback.md) |
+| Operator workflows | Local package build/inspect/verification, OCI transfer, release lifecycle, managed deployment identities, rollout controls and typed audit queries; [CLI](docs/reference/operator-cli.md), [workflow and recovery contract](docs/phase-2-operator-workflows.md) |
+
+Local verification and copied canary observations do not authorize execution or
+promotion. Managed deployments bind a caller-retained operation ID, exact object
+generation and global catalog state version; receipt lookup is finite and Unknown
+does not prove a mutation never ran. The [completion report](docs/phase-2-completion.md)
+maps all eighteen delivery tickets and records validation, failed attempts and
+the finite scope of the gate decision.
+
+General capability providers, HTTP/web hosting and expanded SDK transports are
+Phase 3 work. Durable service state, transactional effects and clustering remain
+later phases; the current node is a standalone stateless execution profile.
 
 ## Historical Phase 0 result
 

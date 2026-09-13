@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://latent.dev/schemas/v1/release-lifecycle-record.schema.json",
+  "title": "LSF canonical historical release lifecycle record",
+  "$comment": "Actual canonical Rust lifecycle storage JSON, not Protobuf JSON. Optional fields are explicit null. Shape validation is not owner authority; codec also bounds UTF-8 bytes, retained capacity, duplicate keys and whole document (4096 bytes). Cross-field identity equality and durable generation/currentness are host checks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "scope",
+    "release",
+    "package",
+    "state",
+    "generation",
+    "actor",
+    "reason",
+    "operationId",
+    "policy",
+    "observedAtUnixMillis",
+    "evidenceRevisionDigest"
+  ],
+  "properties": {
+    "scope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "tenant"
+          ],
+          "properties": {
+            "kind": {
+              "const": "tenant"
+            },
+            "tenant": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512,
+              "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "local-unscoped"
+            }
+          }
+        }
+      ]
+    },
+    "release": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
+      "minLength": 71,
+      "maxLength": 71
+    },
+    "package": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
+          "minLength": 71,
+          "maxLength": 71
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "state": {
+      "enum": [
+        "admitted",
+        "revoked",
+        "retired"
+      ]
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 18446744073709551615
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "kind"
+      ],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])"
+        },
+        "kind": {
+          "enum": [
+            "user",
+            "service",
+            "node",
+            "trigger",
+            "administrator",
+            "anonymous",
+            "host"
+          ]
+        }
+      }
+    },
+    "reason": {
+      "enum": [
+        "admitted",
+        "evidence-renewed",
+        "operator-revocation",
+        "security-incident",
+        "corrupt-content",
+        "superseded",
+        "end-of-support",
+        "operator-retirement",
+        "invalid-package",
+        "integrity-mismatch",
+        "incompatible-contract",
+        "evidence-rejected",
+        "policy-denied",
+        "release-revoked",
+        "release-retired",
+        "generation-conflict",
+        "content-conflict"
+      ]
+    },
+    "operationId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])"
+    },
+    "policy": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "generation",
+            "digest"
+          ],
+          "properties": {
+            "scope": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[^\\s\\u0000-\\u001f\\u007f-\\u009f]+(?![\\s\\S])"
+            },
+            "generation": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 18446744073709551615
+            },
+            "digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
+              "minLength": 71,
+              "maxLength": 71
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "observedAtUnixMillis": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidenceRevisionDigest": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])",
+          "minLength": 71,
+          "maxLength": 71
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "admitted"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "admitted",
+              "evidence-renewed"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "revoked"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "operator-revocation",
+              "security-incident",
+              "corrupt-content"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "retired"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "reason": {
+            "enum": [
+              "superseded",
+              "end-of-support",
+              "operator-retirement"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

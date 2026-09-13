@@ -46,6 +46,9 @@ impl WasmtimeBackend {
         self.shared
             .preparation_context
             .validate_engine_key(&descriptor.key)?;
+        self.shared
+            .preparation_context
+            .check_runtime(&owner.runtime)?;
         let active = self.shared.instances.try_acquire()?;
         let use_owner = WasmtimePreparedUse {
             runtime: owner.runtime,

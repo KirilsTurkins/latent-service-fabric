@@ -1,11 +1,15 @@
 //! Versioned standalone configuration, validated before opening node resources.
 
+mod aot;
+mod audit;
 mod derive;
 mod engine;
 mod input;
 mod model;
 mod policy;
+mod rollouts;
 mod runtime;
+mod supply_chain;
 #[cfg(test)]
 mod tests;
 mod validation;
@@ -15,11 +19,16 @@ use std::time::Duration;
 
 use latent_core::{PlatformError, PlatformErrorCode};
 
+pub use aot::{AotCacheConfig, AotImageConfig, AotProcessConfig, IsolatedAotConfig};
+pub use audit::AuditConfig;
 pub use model::{
     CacheConfig, CatalogConfig, CellConfig, CredentialConfig, CredentialRole, EngineAllocator,
     EngineConfig, EngineOptimization, ExecutionConfig, LimitConfig, NodeConfig, RetentionConfig,
-    TelemetryConfig, WorkerConfig,
+    SupplyChainConfig, TelemetryConfig, WorkerConfig,
 };
+pub use rollouts::RolloutConfig;
+pub(crate) use rollouts::RolloutSettings;
+pub(crate) use supply_chain::SupplyChainSettings;
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
 /// Configure the input before derivation; callers cannot alter the validated
@@ -32,9 +41,14 @@ pub struct NodeSettings {
     pub(crate) control_workers: usize,
     pub(crate) artifacts: latent_artifacts::DirectoryArtifactRepositoryConfig,
     pub(crate) deployments: latent_control_store::DirectoryDeploymentRepositoryConfig,
+    pub(crate) supply_chain: SupplyChainSettings,
+    pub(crate) isolated_aot: Option<latent_wasmtime::NativeAotSettings>,
+    pub(crate) audit: Option<latent_audit::AuditLimits>,
+    pub(crate) rollouts: Option<RolloutSettings>,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) scheduler: latent_scheduler::LocalSchedulerConfig,
     pub(crate) wasmtime: latent_wasmtime::WasmtimeConfig,
+    pub(crate) runtime_profile: std::sync::Arc<latent_manifest::RuntimeCompatibilityProfile>,
     pub(crate) manager: latent_node::LocalActivationManagerConfig,
     pub(crate) invocation: latent_wire::invocation::InvocationLimits,
     pub(crate) management: latent_wire::management::ManagementLimits,

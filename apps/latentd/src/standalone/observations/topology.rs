@@ -18,6 +18,7 @@ pub(in crate::standalone) struct TopologySource {
     cleanup: ActivationCleanupHandle,
     invocation_threads: Arc<AtomicUsize>,
     control_threads: Arc<AtomicUsize>,
+    rollouts: Option<latent_rollout::RolloutHandle>,
 }
 
 impl TopologySource {
@@ -45,6 +46,7 @@ impl TopologySource {
                     .sum(),
                 instances: count(backend.maximum_instance_reservations()),
                 cleanup_slots: count(settings.manager.journal.maximum_active),
+                canary: settings.rollouts.and_then(|value| value.canary),
             },
             backend,
             scheduler,
@@ -52,7 +54,16 @@ impl TopologySource {
             cleanup,
             invocation_threads: threads.invocation,
             control_threads: threads.control,
+            rollouts: None,
         }
+    }
+
+    pub(in crate::standalone) fn with_rollouts(
+        mut self,
+        rollouts: Option<latent_rollout::RolloutHandle>,
+    ) -> Self {
+        self.rollouts = rollouts;
+        self
     }
 }
 
@@ -83,7 +94,70 @@ impl NodeTopologySource for TopologySource {
             cleanup_driver_alive: u64::from(cleanup.driver_alive),
             cleanup_slots: count(cleanup.reserved) + count(cleanup.queued) + count(cleanup.running),
         };
-        write_rows(writer, rows(self.limits, observed))
+        if !write_rows(writer, rows(self.limits, observed))? {
+            return Ok(false);
+        }
+        if let Some(handle) = &self.rollouts {
+            let snapshot = handle.snapshot();
+            if !write_rows(
+                writer,
+                [
+                    row(
+                        "rollout-coordinator",
+                        "blocking-task",
+                        ResourceOwnership::NodeFixed,
+                        1,
+                        Some(u64::from(snapshot.worker_live)),
+                    ),
+                    row(
+                        "rollout-control-commands",
+                        "command",
+                        ResourceOwnership::NodeFixed,
+                        count(handle.limits().maximum_queued_commands.saturating_add(1)),
+                        Some(count(snapshot.queued_commands + snapshot.active_commands)),
+                    ),
+                ],
+            )? {
+                return Ok(false);
+            }
+            if let (Some(limits), Some(snapshot)) = (self.limits.canary, handle.canary_snapshot()?)
+            {
+                return write_rows(
+                    writer,
+                    [
+                        row(
+                            "canary-observation-windows",
+                            "window",
+                            ResourceOwnership::NodeFixed,
+                            count(limits.maximum_series),
+                            Some(count(snapshot.tracked_series)),
+                        ),
+                        row(
+                            "canary-retained-samples",
+                            "sample",
+                            ResourceOwnership::NodeFixed,
+                            count(limits.maximum_total_samples),
+                            Some(count(snapshot.total_samples)),
+                        ),
+                        row(
+                            "canary-live-samples",
+                            "sample",
+                            ResourceOwnership::NodeFixed,
+                            count(limits.maximum_live_samples),
+                            Some(count(snapshot.live_samples)),
+                        ),
+                        row(
+                            "canary-snapshot-owners",
+                            "snapshot",
+                            ResourceOwnership::NodeFixed,
+                            count(limits.maximum_snapshot_owners),
+                            Some(count(snapshot.snapshot_owners)),
+                        ),
+                    ],
+                );
+            }
+        }
+        Ok(true)
     }
 }
 
@@ -101,6 +175,7 @@ struct Limits {
     cells: u64,
     instances: u64,
     cleanup_slots: u64,
+    canary: Option<latent_telemetry::Phase2CanaryOutcomeWindowConfig>,
 }
 
 #[derive(Clone, Copy)]

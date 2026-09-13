@@ -51,6 +51,15 @@ impl Failure {
         }
     }
     pub fn from_status(status: &Status) -> Self {
+        let mut failure = Self::from_status_inner(status);
+        match crate::management::phase2::audit_metadata(status.metadata()) {
+            Ok(Some(ack)) => failure.data["auditAck"] = ack,
+            Ok(None) => {}
+            Err(error) => return error,
+        }
+        failure
+    }
+    fn from_status_inner(status: &Status) -> Self {
         let code = status.code();
         if !status.details().is_empty() {
             let decoded = decode_platform(status.details());

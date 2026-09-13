@@ -104,6 +104,7 @@ async fn publish(channel: &Channel, work: &WorkCounter, package: fixture::Packag
     management::deployment_service_client::DeploymentServiceClient::new(channel.clone())
         .apply_deployment(fixture::authenticated(
             management::ApplyDeploymentRequest {
+                operation: None,
                 deployment: Some(package.deployment),
                 expected_generation: Some(0),
             },

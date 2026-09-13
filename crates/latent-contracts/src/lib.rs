@@ -2,6 +2,14 @@
 
 #![forbid(unsafe_code)]
 
+mod compatibility;
+#[doc(hidden)]
+pub use compatibility::Analysis;
+pub use compatibility::{
+    compare_descriptors, BoundedCompatibilityChecker, ComparisonLimits, ComparisonWork,
+    StructuralCompatibility, StructuralIssue, StructuralIssueCode, StructuralReport,
+};
+
 use latent_core::{BoxFuture, ContractId, FunctionId, InterfaceId, Metadata, PlatformError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]

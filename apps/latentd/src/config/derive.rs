@@ -33,20 +33,30 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         ..TelemetryPipelineConfig::default()
     };
     telemetry.validate().map_err(|_| invalid("telemetry"))?;
+    let wasmtime = runtime::wasmtime(config, &capacity)?;
+    let runtime_profile = std::sync::Arc::new(wasmtime.detected_runtime_profile()?);
+    let artifacts = artifact_limits(config, management.max_page_size);
+    let isolated_aot = config
+        .isolated_aot
+        .as_ref()
+        .map(|aot| super::aot::derive(aot, config, artifacts))
+        .transpose()?;
+    let mut node = descriptor(config);
+    node.cpu_features = runtime_profile
+        .cpu_features()
+        .iter()
+        .map(ToString::to_string)
+        .collect();
     Ok(NodeSettings {
         data_directory: config.data_directory.as_path().to_path_buf(),
-        node: descriptor(config),
+        supply_chain: super::supply_chain::derive(&config.supply_chain)?,
+        isolated_aot,
+        audit: super::audit::derive(config.audit.as_ref())?,
+        rollouts: super::rollouts::derive(config.rollouts.as_ref(), config.audit.is_some())?,
+        node,
         runtime_workers: config.workers.runtime,
         control_workers: config.workers.control,
-        artifacts: DirectoryArtifactRepositoryConfig {
-            max_index_entries: config.catalogs.release_entries,
-            max_index_bytes: config.catalogs.release_index_bytes,
-            max_component_bytes: config.limits.maximum_component_bytes,
-            max_page_size: management.max_page_size as usize,
-            max_page_bytes: MIB,
-            max_recovery_directories: config.catalogs.release_entries + 16,
-            ..DirectoryArtifactRepositoryConfig::default()
-        },
+        artifacts,
         deployments: DirectoryDeploymentRepositoryConfig {
             max_deployments: config.catalogs.deployments,
             max_state_bytes: config.catalogs.deployment_state_bytes,
@@ -61,7 +71,8 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             queue_capacity_per_class: classes.clone(),
             starvation_after: Duration::from_millis(100),
         },
-        wasmtime: runtime::wasmtime(config, &capacity)?,
+        wasmtime,
+        runtime_profile,
         manager: runtime::manager(config, &capacity),
         invocation,
         management,
@@ -84,6 +95,18 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
         shutdown_grace: Duration::from_millis(config.shutdown_grace_millis),
         load_sample_interval: Duration::from_millis(250),
     })
+}
+
+fn artifact_limits(config: &NodeConfig, page_size: u32) -> DirectoryArtifactRepositoryConfig {
+    DirectoryArtifactRepositoryConfig {
+        max_index_entries: config.catalogs.release_entries,
+        max_index_bytes: config.catalogs.release_index_bytes,
+        max_component_bytes: config.limits.maximum_component_bytes,
+        max_page_size: page_size as usize,
+        max_page_bytes: MIB,
+        max_recovery_directories: config.catalogs.release_entries + 16,
+        ..DirectoryArtifactRepositoryConfig::default()
+    }
 }
 
 fn descriptor(config: &NodeConfig) -> NodeDescriptor {

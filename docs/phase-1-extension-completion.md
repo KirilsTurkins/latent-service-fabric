@@ -2,6 +2,11 @@
 
 **Extension status: COMPLETE — September 11, 2026.**
 
+> Current status: the subsequent [Phase 2 gate](phase-2-completion.md) is also
+> complete. This report preserves the September 11 handoff and its original
+> measurements; [Phase 3](roadmap.md#phase-3-capabilities-and-application-hosting)
+> is the next planned implementation phase.
+
 The prioritized Phase 1 optimizations and Docker/Kubernetes comparisons are merged. This report records their measured results, remaining limits and handoff to Phase 2 packaging and supply-chain feature delivery. It supplements the original [functional Phase 1 completion](phase-1-completion.md), whose decision and receipts remain unchanged. The extension delivered useful-success, recovery, ownership and catalog improvements, with material latency and memory costs. It does not establish a universal service SLO.
 
 Every comparison uses its report's actual control/candidate source, binaries, configuration and population. The [#98 reference](../benchmarks/optimization/reference/2026-09-08-container-linux-8bbc1fd/REPORT.md) retained 88,326 offers; its separate [rejected predecessor](../benchmarks/optimization/diagnostics/2026-09-08-container-linux-7857e6c/REPORT.md) remains failed evidence. Neither merged commit identities nor later medians replace measured sources. Percentages are not additive; campaigns are not pooled into synthetic repetitions.

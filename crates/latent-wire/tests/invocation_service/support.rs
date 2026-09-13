@@ -217,6 +217,7 @@ impl Harness {
                 clock: clock.clone(),
                 ids: ids.clone(),
                 observer,
+                canary: None,
             },
         )
         .expect("manager");

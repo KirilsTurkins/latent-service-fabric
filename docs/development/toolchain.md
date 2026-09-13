@@ -1,6 +1,12 @@
 # Toolchain and reproducibility baseline
 
-The executable build foundation uses exact project-selected versions from `tools/toolchain.toml` and the committed root `Cargo.lock`. It preserves the Phase 0 Component Model evidence path and supplies maintained Protobuf RPC generation, centralized WIT bindings, and test infrastructure for the current Phase 1 runtime. Toolchain and code-generation steps are separate from the explicit [standalone node](../reference/standalone-node.md) startup command.
+The executable build foundation uses exact project-selected versions from
+`tools/toolchain.toml` and the committed root `Cargo.lock`. It preserves the
+Phase 0 Component Model evidence path and supplies maintained Protobuf RPC
+generation, centralized WIT bindings and test infrastructure for the current
+runtime and completed Phase 2 delivery surface. Toolchain and code-generation
+steps are separate from the explicit [standalone node](../reference/standalone-node.md)
+startup command.
 
 See [build-foundation.md](build-foundation.md) for generation ownership, focused commands, test utilities, dependency-cycle validation, and the clean-checkout Phase 1 sequence.
 
@@ -35,7 +41,7 @@ Workspace dependencies are exact requirements and workspace crates consume them 
 
 ## Reproducibility boundary
 
-CI uses `ubuntu-24.04`, not a floating runner label. Rust, contract tools, and language compilers are installed at the exact versions above. `tools/check_tool_versions.py` validates installed SDK compilers. TypeScript is pinned in both `package.json` and `package-lock.json` and installed with `npm ci`.
+CI uses `ubuntu-24.04`, not a floating runner label. Rust, contract tools, and language compilers are installed at the exact versions above. `tools/check_tool_versions.py` validates installed SDK compilers. Each SDK version probe has a 30-second timeout so a non-responsive local tool fails validation instead of blocking indefinitely. TypeScript is pinned in both `package.json` and `package-lock.json` and installed with `npm ci`.
 
 Rust Protobuf generation uses `protoc-bin-vendored`; the build does not depend on a runner or workstation `protoc`. The exhaustive `api/proto/latent-api.protos` manifest and foundation validator prevent undeclared input drift. Generated RPC and WIT source is written only to Cargo `OUT_DIR` and is recreated from authoritative inputs on each clean build.
 
@@ -55,6 +61,14 @@ make validate
 ```
 
 `make validate` executes formatting, locked workspace checks, Clippy, tests, repository/foundation/contract validation, retained echo and containment integration, and all SDK compilation. `make phase1-foundation` runs the Rust and contract subset. A missing or stale `Cargo.lock` fails all locked commands.
+
+Routine PR CI runs the executable Phase 0 outcome/recovery matrix immediately
+after fixture generation in `CI / Repository contracts`. The separate runtime
+regression workflow collects a smoke baseline only on manual dispatch; it is not
+an additional path-filtered PR check. See [CI ownership](../testing/phase0-ci-layout.md).
+Fresh Phase 2 evidence uses the bounded commands in
+[offline validation](../testing/phase-2-offline-validation.md) and the
+[operator walkthrough](standalone-quickstart.md#bounded-phase-2-operator-workflow).
 
 The MSRV check is reproducible with:
 

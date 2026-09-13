@@ -161,9 +161,11 @@ async fn foreign_factory_materialization_drops_ready_bytes_without_taking_an_ins
     let backend = factory.create_backend_instance();
     let foreign = foreign_factory.create_backend_instance();
     let key = backend.preparation_key(&digest).unwrap();
+    // Keep the catalog authority alive while checking the independent factory
+    // boundary. Ready capabilities deliberately do not retain that owner.
     let ready = tokio::time::timeout(
         WATCHDOG,
-        backend.prepare_ready_from_repository(repository, key),
+        backend.prepare_ready_from_repository(repository.clone(), key),
     )
     .await
     .unwrap()

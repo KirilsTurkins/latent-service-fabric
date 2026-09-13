@@ -29,17 +29,17 @@
   <text x="74" y="122" class="subheading">August 30, 2026 native-Linux receipt. Phase 1 and its extension have separate completed gates.</text>
 
   <g filter="url(#phase0-gate-shadow)">
-    <rect x="74" y="184" width="310" height="132" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <rect x="74" y="184" width="390" height="132" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
     <text x="108" y="232" class="box-title">Measured identity</text>
     <text x="108" y="260" class="box-copy">clean tree · fixture · configuration</text>
     <text x="108" y="286" class="small">documentation-only changes stay visible</text>
 
-    <rect x="74" y="344" width="310" height="132" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <rect x="74" y="344" width="390" height="132" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
     <text x="108" y="392" class="box-title">Retained raw evidence</text>
     <text x="108" y="420" class="box-copy">calibration · profile · resource soak</text>
     <text x="108" y="446" class="small">archives, manifests, and aggregates</text>
 
-    <rect x="74" y="504" width="310" height="132" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
+    <rect x="74" y="504" width="390" height="132" rx="22" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
     <text x="108" y="552" class="box-title">Fresh full baseline</text>
     <text x="108" y="580" class="box-copy">real executable and containment path</text>
     <text x="108" y="606" class="small">same fixture, config, and toolchain</text>
@@ -57,9 +57,9 @@
     <text x="582" y="518" class="small">`authorization_status: authorized`</text>
   </g>
 
-  <path d="M 386 250 H 532" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase0-gate-arrow)"/>
-  <path d="M 386 410 H 500 V 410 H 532" fill="none" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase0-gate-arrow)"/>
-  <path d="M 386 570 H 468 V 510 H 532" fill="none" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase0-gate-arrow)"/>
+  <path d="M 466 250 H 532" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase0-gate-arrow)"/>
+  <path d="M 466 410 H 532" fill="none" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase0-gate-arrow)"/>
+  <path d="M 466 570 H 500 V 510 H 532" fill="none" stroke="#bfdbfe" stroke-width="5" marker-end="url(#phase0-gate-arrow)"/>
 
   <g filter="url(#phase0-gate-shadow)">
     <rect x="1012" y="194" width="354" height="178" rx="24" fill="#78350f" stroke="#fbbf24" stroke-width="3"/>

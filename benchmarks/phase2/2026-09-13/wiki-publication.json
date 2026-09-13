@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "latent.phase2.wiki-publication-receipt.v1",
+  "sourceRevision": "d9778eae9d83d5738e3f70b6ba15080a24c0d63a",
+  "publicationReceiptRevision": "ce2ee1f940e930b8a17221160a92c35277208b49",
+  "wikiRevision": "7cd26bb98c751df82b530d635f978f9934131414",
+  "workflowRun": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/34724297039",
+  "authorityRevision": "bda3017345b0bf7d656d151cec10a5b3fd8cb165",
+  "pages": 26,
+  "assets": 4,
+  "links": 147,
+  "verifiedPublishedGitBlobs": 30,
+  "scope": "Phase 2 delivered features; gate #158 pending at this publication; Phase 3 planned",
+  "verification": "Live Wiki HEAD matched receipt; validate_wiki.py --verify-published checked SHA256 of all 30 actual Git blobs against managed source inventory",
+  "managedManifestSha256": "f651941a27e4bf9451cc389deda8b7bc0cca151576a4e767bf0182b4fce575dd"
+}

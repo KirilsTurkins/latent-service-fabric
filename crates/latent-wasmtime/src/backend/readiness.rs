@@ -10,7 +10,9 @@ use latent_artifacts::{ArtifactPreparationReadBounds, ArtifactRepository};
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_executor::{PreparationKey, PreparedReadiness};
 
-use super::preparation::{authenticated_handle, counters, retained_metadata_bytes};
+use super::preparation::{
+    authenticated_handle, counters, retained_metadata_bytes, SourceAuthority,
+};
 use super::WasmtimeBackend;
 use crate::compiler::{Acquisition, Admission, CoalescingKey};
 use crate::containment::platform_error;
@@ -30,6 +32,15 @@ impl WasmtimeBackend {
         counters::add(&context.preparation.repository_acquisitions, 1);
         context.validate_engine_key(&key)?;
         let source = Arc::clone(&repository).owned_preparation_source();
+        let eligibility = if let Some(source) = &source {
+            source.execution_eligibility(&key.release)?
+        } else {
+            if repository.execution_eligibility(&key.release)?.is_some() {
+                return Err(super::admission_association_error());
+            }
+            None
+        };
+        context.check_eligibility(eligibility.as_ref(), &key.release)?;
         let identity = source
             .as_ref()
             .map(|source| source.identity(&key.release))
@@ -39,12 +50,13 @@ impl WasmtimeBackend {
         let (handle, source_bytes, metadata_bytes) = if let Some(identity) = &identity {
             context.validate_identity(identity, &key)?;
             (
-                authenticated_handle(&key, identity),
+                authenticated_handle(&key, identity, eligibility.as_ref()),
                 usize::try_from(identity.component_bytes())
                     .map_err(|_| invalid("component-byte-overflow"))?,
                 context.reserved_metadata(retained_metadata_bytes(
                     identity.metadata().charged_bytes(),
                     Some(identity),
+                    eligibility.as_ref(),
                 )?)?,
             )
         } else {
@@ -73,6 +85,7 @@ impl WasmtimeBackend {
                 context.reserved_metadata(retained_metadata_bytes(
                     self.config.maximum_artifact_metadata_bytes,
                     None,
+                    eligibility.as_ref(),
                 )?)?,
             )
         };
@@ -80,6 +93,7 @@ impl WasmtimeBackend {
             identity: identity.clone().map(|source| CoalescingKey {
                 key: key.clone(),
                 source,
+                eligibility: eligibility.clone(),
             }),
             handle: handle.clone(),
             source_bytes,
@@ -102,7 +116,16 @@ impl WasmtimeBackend {
                         u64::from(identity.is_some()),
                     );
                     counters::add(&context.preparation.repository_fetches, 1);
-                    let input = if let Some(source) = source {
+                    let input = if let Some(native) = &context.native_aot {
+                        let bounds = source
+                            .as_ref()
+                            .ok_or_else(super::admission_association_error)?
+                            .read_bounds(&key.release)?;
+                        future.reserve_documents(document_bytes(bounds)?)?;
+                        let job = native.reserve(&key.release)?;
+                        drop(source);
+                        input::ArtifactInput::Native(Some(job))
+                    } else if let Some(source) = source {
                         let bounds = bounds.map_or_else(|| source.read_bounds(&key.release), Ok)?;
                         if bounds.component_bytes != source_bytes as u64 {
                             return Err(invalid("preparation-read-size-changed"));
@@ -125,19 +148,32 @@ impl WasmtimeBackend {
                     };
                     let context = Arc::clone(context);
                     let key = key.clone();
-                    let authentication = identity.clone();
-                    future.start(move |reservation| {
-                        Box::new(move |queue| {
-                            context.compile_input(
-                                input,
-                                key,
-                                handle,
-                                authentication,
-                                reservation,
-                                queue,
-                            )
-                        })
-                    })?;
+                    let authority = SourceAuthority {
+                        authentication: identity.clone(),
+                        eligibility: eligibility.clone(),
+                    };
+                    let native_control = match &input {
+                        input::ArtifactInput::Native(Some(job)) => Some(job.control()),
+                        _ => None,
+                    };
+                    let build =
+                        move |reservation| -> crate::compiler::Task<super::PreparedRuntime> {
+                            Box::new(move |queue| {
+                                context.compile_input(
+                                    input,
+                                    key,
+                                    handle,
+                                    authority,
+                                    reservation,
+                                    queue,
+                                )
+                            })
+                        };
+                    if let Some(control) = native_control {
+                        future.start_with_control(Some(control), build)?;
+                    } else {
+                        future.start(build)?;
+                    }
                 } else {
                     // Only the distinct job owns the directory/root lock.
                     drop(source);
@@ -146,9 +182,13 @@ impl WasmtimeBackend {
                 future.await?
             }
         };
-        if pin.runtime.descriptor.key != key || pin.runtime.authentication != identity {
+        if pin.runtime.descriptor.key != key
+            || pin.runtime.authentication != identity
+            || pin.runtime.eligibility != eligibility
+        {
             return Err(invalid("prepared-source-association"));
         }
+        context.check_runtime(&pin.runtime)?;
         Ok(self.ready_owner(pin))
     }
 }
