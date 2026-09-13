@@ -51,16 +51,18 @@ jobs:
       - name: Install scanner Rust toolchain
         uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
-          toolchain: '1.97.1'
-      - name: Install exact cargo-audit
+          toolchain: ${{ env.SCANNER_RUST }}
+      - name: Install exact cargo-audit outside the checkout
         shell: bash
         run: |
           set -euo pipefail
           install_root="${RUNNER_TEMP}/cargo-audit"
-          timeout --signal=TERM --kill-after=10s 8m \
+          cargo_home="${RUNNER_TEMP}/cargo-home"
+          cd "${RUNNER_TEMP}"
+          CARGO_HOME="${cargo_home}" timeout --signal=TERM --kill-after=10s 8m \
             cargo install cargo-audit --version "${CARGO_AUDIT_VERSION}" --locked --root "${install_root}"
-          "${install_root}/bin/cargo-audit" --version
-          echo "${install_root}/bin" >> "${GITHUB_PATH}"
+          tool_version="$("${install_root}/bin/cargo-audit" --version)"
+          test "${tool_version}" = "cargo-audit-audit ${CARGO_AUDIT_VERSION}"
       - name: Fetch current RustSec advisory database
         shell: bash
         run: |
@@ -76,12 +78,19 @@ jobs:
           test "${database_sha}" = "${remote_sha}"
           echo "RUSTSEC_DB_PATH=${database}" >> "${GITHUB_ENV}"
           echo "RUSTSEC_DB_SHA=${database_sha}" >> "${GITHUB_ENV}"
-      - name: Audit Cargo.lock
+      - name: Audit committed Cargo.lock
         shell: bash
         run: |
           set -euo pipefail
-          tool_version="$(cargo audit --version)"
-          lock_sha="$(sha256sum Cargo.lock | awk '{print $1}')"
+          audit_bin="${RUNNER_TEMP}/cargo-audit/bin/cargo-audit"
+          lockfile="${GITHUB_WORKSPACE}/Cargo.lock"
+          test -f "${lockfile}"
+          test ! -L "${lockfile}"
+          lock_bytes="$(stat -c '%s' "${lockfile}")"
+          test "${lock_bytes}" -le 8388608
+          tool_version="$("${audit_bin}" --version)"
+          test "${tool_version}" = "cargo-audit-audit ${CARGO_AUDIT_VERSION}"
+          lock_sha="$(sha256sum "${lockfile}" | awk '{print $1}')"
           {
             echo '### RustSec advisory scan'
             echo
@@ -90,8 +99,9 @@ jobs:
             echo "- Cargo.lock SHA-256: \`${lock_sha}\`"
             echo "- source revision: \`${GITHUB_SHA}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
+          cd "${RUNNER_TEMP}"
           timeout --signal=TERM --kill-after=10s 5m \
-            cargo audit --db "${RUSTSEC_DB_PATH}" --no-fetch --file Cargo.lock
+            "${audit_bin}" --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"
 
   maintained-branches:
     name: RustSec ${{ matrix.ref }}
@@ -113,16 +123,18 @@ jobs:
       - name: Install scanner Rust toolchain
         uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
         with:
-          toolchain: '1.97.1'
-      - name: Install exact cargo-audit
+          toolchain: ${{ env.SCANNER_RUST }}
+      - name: Install exact cargo-audit outside the checkout
         shell: bash
         run: |
           set -euo pipefail
           install_root="${RUNNER_TEMP}/cargo-audit"
-          timeout --signal=TERM --kill-after=10s 8m \
+          cargo_home="${RUNNER_TEMP}/cargo-home"
+          cd "${RUNNER_TEMP}"
+          CARGO_HOME="${cargo_home}" timeout --signal=TERM --kill-after=10s 8m \
             cargo install cargo-audit --version "${CARGO_AUDIT_VERSION}" --locked --root "${install_root}"
-          "${install_root}/bin/cargo-audit" --version
-          echo "${install_root}/bin" >> "${GITHUB_PATH}"
+          tool_version="$("${install_root}/bin/cargo-audit" --version)"
+          test "${tool_version}" = "cargo-audit-audit ${CARGO_AUDIT_VERSION}"
       - name: Fetch current RustSec advisory database
         shell: bash
         run: |
@@ -138,13 +150,20 @@ jobs:
           test "${database_sha}" = "${remote_sha}"
           echo "RUSTSEC_DB_PATH=${database}" >> "${GITHUB_ENV}"
           echo "RUSTSEC_DB_SHA=${database_sha}" >> "${GITHUB_ENV}"
-      - name: Audit Cargo.lock
+      - name: Audit committed Cargo.lock
         shell: bash
         run: |
           set -euo pipefail
-          tool_version="$(cargo audit --version)"
-          lock_sha="$(sha256sum Cargo.lock | awk '{print $1}')"
-          source_sha="$(git rev-parse HEAD)"
+          audit_bin="${RUNNER_TEMP}/cargo-audit/bin/cargo-audit"
+          lockfile="${GITHUB_WORKSPACE}/Cargo.lock"
+          test -f "${lockfile}"
+          test ! -L "${lockfile}"
+          lock_bytes="$(stat -c '%s' "${lockfile}")"
+          test "${lock_bytes}" -le 8388608
+          tool_version="$("${audit_bin}" --version)"
+          test "${tool_version}" = "cargo-audit-audit ${CARGO_AUDIT_VERSION}"
+          lock_sha="$(sha256sum "${lockfile}" | awk '{print $1}')"
+          source_sha="$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD)"
           {
             echo "### RustSec advisory scan: ${source_sha}"
             echo
@@ -153,5 +172,6 @@ jobs:
             echo "- advisory database: \`${RUSTSEC_DB_SHA}\`"
             echo "- Cargo.lock SHA-256: \`${lock_sha}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
+          cd "${RUNNER_TEMP}"
           timeout --signal=TERM --kill-after=10s 5m \
-            cargo audit --db "${RUSTSEC_DB_PATH}" --no-fetch --file Cargo.lock
+            "${audit_bin}" --db "${RUSTSEC_DB_PATH}" --no-fetch --file "${lockfile}"
