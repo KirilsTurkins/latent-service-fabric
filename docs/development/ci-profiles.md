@@ -23,7 +23,7 @@ history selects full validation; malformed events or Git failures fail the
 selection job. Manual dispatch always runs the full profile, with the separate
 100,000-release probe still disabled unless explicitly requested.
 
-The documentation validator checks the current tracked document inventory,
+The documentation validator checks the required and nonempty document inventory,
 including references to other tracked files and directories. It does not run
 the full Python suite, compile Rust, start a registry or replay benchmark
 receipts. It checks local links; external URL availability and visual layout

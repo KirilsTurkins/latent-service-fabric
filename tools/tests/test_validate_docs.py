@@ -35,7 +35,15 @@ class DocumentationValidationTests(unittest.TestCase):
         return path
 
     def report(self) -> dict:
-        return validator.validate_docs(self.root, self.tracked)
+        return validator.validate_docs(self.root, self.tracked, require_documents=False)
+
+    def test_empty_markdown_is_rejected(self) -> None:
+        self.write("README.md", " \n\t\n")
+        self.assertIn("empty Markdown", self.report()["errors"][0])
+
+    def test_repository_document_inventory_remains_required(self) -> None:
+        report = validator.validate_docs(self.root, self.tracked)
+        self.assertIn("required documentation missing: README.md", report["errors"])
 
     def test_valid_local_links_encoded_names_references_and_svg_fragment(self) -> None:
         self.write("README.md", '''# Intro

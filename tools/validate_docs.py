@@ -182,7 +182,7 @@ def ordinary_path(root: Path, relative: str) -> bool:
     return current.exists()
 
 
-def svg_errors(root: Path, paths: list[Path]) -> list[str]:
+def svg_errors(root: Path, paths: list[Path], require_documents: bool = False) -> list[str]:
     # A private module instance reuses the authoritative SVG rules while replacing
     # only file enumeration. It neither walks untracked outputs nor reads JSON.
     spec = importlib.util.spec_from_file_location(
@@ -193,10 +193,14 @@ def svg_errors(root: Path, paths: list[Path]) -> list[str]:
     spec.loader.exec_module(module)
     module.files_with_suffix = lambda suffix, root: iter(paths)
     module.validate_svg(root)
+    if require_documents:
+        module.ROOT = root
+        module.validate_required_docs()
     return list(module.ERRORS)
 
 
-def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None) -> dict:
+def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None,
+                  *, require_documents: bool = True) -> dict:
     root = root.resolve()
     tracked = set(tracked_paths) if tracked_paths is not None else tracked_files(root)
     errors: list[str] = []
@@ -219,7 +223,10 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None)
             svgs.append(path)
         else:
             try:
-                documents[name] = prose(path.read_text(encoding="utf-8"), name, errors)
+                content = path.read_text(encoding="utf-8")
+                if not content.strip():
+                    errors.append(f"{name}: empty Markdown document")
+                documents[name] = prose(content, name, errors)
             except (OSError, UnicodeError) as exc:
                 errors.append(f"{name}: cannot read UTF-8 Markdown: {type(exc).__name__}")
     anchors = {name: heading_anchors(text) for name, text in documents.items()}
@@ -258,7 +265,7 @@ def validate_docs(root: Path = ROOT, tracked_paths: Iterable[str] | None = None)
                         errors.append(f"{source}: missing SVG anchor {raw!r}")
                 except (OSError, ET.ParseError):
                     pass  # The shared SVG validator reports the parse failure.
-    errors.extend(svg_errors(root, svgs))
+    errors.extend(svg_errors(root, svgs, require_documents))
     return {"documents": len(documents), "svgs": len(svgs), "local_links": checked_links,
             "anchors": checked_anchors, "errors": errors}
 
