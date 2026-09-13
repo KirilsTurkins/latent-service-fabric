@@ -27,6 +27,11 @@ README_AREAS = frozenset({
     "apps", "crates", "sdk", "tools", "tests", "examples", "schemas", "api", "wit",
 })
 FROZEN_DOCS = frozenset({"docs/testing/phase-2-resource-profile.md"})
+ISSUE_FORM_DOCS = frozenset({
+    ".github/ISSUE_TEMPLATE/bug_report.yml",
+    ".github/ISSUE_TEMPLATE/architecture.yml",
+    ".github/ISSUE_TEMPLATE/config.yml",
+})
 
 
 class ProfileError(Exception):
@@ -50,7 +55,7 @@ def documentation_path(name: str) -> bool:
         return False
     if name in FROZEN_DOCS or parts[0] == "benchmarks":
         return False
-    if name in ROOT_DOCS:
+    if name in ROOT_DOCS or name in ISSUE_FORM_DOCS:
         return True
     path = PurePosixPath(name)
     if len(parts) > 1 and parts[0] in {"docs", "adr", "research", "rfcs"}:
@@ -209,7 +214,7 @@ def classify_event(event_name: str, event: dict, repo: Path) -> Decision:
     assert output is not None
     decision = classify_paths(diff_paths(output))
     if decision.profile == "docs":
-        # A Markdown symlink or executable-mode change is not documentation-only.
+        # A Markdown/YAML symlink or executable-mode change is not documentation-only.
         modes = git_command(repo, "diff", "--no-ext-diff", "--no-textconv", "--raw",
                             "-z", "--no-renames", start, head, "--")
         assert modes is not None
