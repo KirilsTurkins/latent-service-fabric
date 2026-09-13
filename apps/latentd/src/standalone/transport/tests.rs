@@ -26,7 +26,7 @@ pub(super) fn configuration() -> TransportConfig {
         maximum_control_jobs: 1,
         maximum_header_bytes: 4096,
         maximum_streams_per_connection: 4,
-        unauthenticated_timeout: Duration::from_millis(100),
+        unauthenticated_timeout: Duration::from_secs(2),
         request_timeout: Duration::from_secs(2),
         shutdown_timeout: Duration::from_millis(200),
         credentials: vec![TransportCredential {
