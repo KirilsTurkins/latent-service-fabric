@@ -111,10 +111,22 @@ def files_with_suffix(suffix: str, root: Path = ROOT) -> Iterator[Path]:
     return (path for path in iter_source_files(root) if path.suffix.lower() == suffix.lower())
 
 
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate key {key!r}")
+        result[key] = value
+    return result
+
+
 def validate_json(root: Path = ROOT) -> None:
     for path in files_with_suffix(".json", root):
         try:
-            json.loads(path.read_text(encoding="utf-8"))
+            json.loads(
+                path.read_text(encoding="utf-8"),
+                object_pairs_hook=_unique_json_object,
+            )
         except Exception as exc:  # noqa: BLE001 - validator must report every parser failure
             fail(f"invalid JSON {path.relative_to(root).as_posix()}: {exc}")
 
