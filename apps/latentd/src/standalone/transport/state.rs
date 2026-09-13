@@ -20,6 +20,7 @@ pub struct TransportSnapshot {
     pub active_rpcs: usize,
     pub active_control_jobs: usize,
     pub rejected_connections: u64,
+    pub expired_unauthenticated_connections: u64,
     pub rejected_rpcs: u64,
     pub rejected_control_jobs: u64,
 }
@@ -90,6 +91,7 @@ pub(super) struct Shared {
     pub(super) force: Arc<Signal>,
     changed: Arc<Notify>,
     rejected_connections: AtomicU64,
+    expired_unauthenticated_connections: AtomicU64,
     rejected_rpcs: AtomicU64,
     rejected_control_jobs: AtomicU64,
 }
@@ -117,6 +119,7 @@ impl Shared {
             force: Arc::default(),
             changed: Arc::default(),
             rejected_connections: AtomicU64::new(0),
+            expired_unauthenticated_connections: AtomicU64::new(0),
             rejected_rpcs: AtomicU64::new(0),
             rejected_control_jobs: AtomicU64::new(0),
         })
@@ -186,6 +189,14 @@ impl Shared {
         });
     }
 
+    pub(super) fn expire_unauthenticated_connection(&self) {
+        let _ = self.expired_unauthenticated_connections.fetch_update(
+            Ordering::Relaxed,
+            Ordering::Relaxed,
+            |value| Some(value.saturating_add(1)),
+        );
+    }
+
     pub(super) fn snapshot(&self) -> TransportSnapshot {
         let counts = self
             .counts
@@ -199,6 +210,9 @@ impl Shared {
             active_rpcs: counts.rpcs,
             active_control_jobs: counts.control_jobs,
             rejected_connections: self.rejected_connections.load(Ordering::Relaxed),
+            expired_unauthenticated_connections: self
+                .expired_unauthenticated_connections
+                .load(Ordering::Relaxed),
             rejected_rpcs: self.rejected_rpcs.load(Ordering::Relaxed),
             rejected_control_jobs: self.rejected_control_jobs.load(Ordering::Relaxed),
         }
