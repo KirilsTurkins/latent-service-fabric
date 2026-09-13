@@ -47,13 +47,14 @@ fn connection_and_control_job_guards_are_independent_and_nonqueued() {
 #[test]
 fn malformed_configuration_is_rejected_before_listener_creation() {
     configuration().validate().unwrap();
-    for case in 0..5 {
+    for case in 0..6 {
         let mut config = configuration();
         match case {
             0 => config.bind = "0.0.0.0:0".parse().unwrap(),
             1 => config.credentials.push(config.credentials[0].clone()),
             2 => config.maximum_rpcs = config.reserved_cancel_status_rpcs,
             3 => config.credentials[0].token = "bad token".to_owned(),
+            4 => config.unauthenticated_timeout = Duration::from_millis(99),
             _ => config.shutdown_timeout = Duration::ZERO,
         }
         assert!(config.validate().is_err());
