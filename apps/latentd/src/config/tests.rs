@@ -4,6 +4,7 @@ use latent_core::{PlatformError, PrincipalKind, TenantId};
 use latent_scheduler::CellClass;
 use tempfile::TempDir;
 
+mod connection_limits;
 mod engine;
 
 use super::{input, CellConfig, CredentialRole, NodeConfig, NodeSettings, MIB};

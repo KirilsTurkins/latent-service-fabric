@@ -118,6 +118,8 @@ pub struct LimitConfig {
     pub maximum_payload_bytes: usize,
     pub maximum_connections: usize,
     pub unauthenticated_connection_timeout_millis: u64,
+    pub maximum_connection_age_millis: u64,
+    pub connection_drain_timeout_millis: u64,
 }
 
 #[derive(Clone, Deserialize)]

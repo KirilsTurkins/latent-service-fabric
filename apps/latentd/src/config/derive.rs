@@ -138,6 +138,10 @@ fn transport(config: &NodeConfig, maximum_rpcs: usize) -> TransportConfig {
             config.limits.unauthenticated_connection_timeout_millis,
         ),
         request_timeout: Duration::from_millis(config.execution.maximum_wall_time_millis),
+        maximum_connection_age: Duration::from_millis(config.limits.maximum_connection_age_millis),
+        connection_drain_timeout: Duration::from_millis(
+            config.limits.connection_drain_timeout_millis,
+        ),
         shutdown_timeout: Duration::from_millis(config.shutdown_grace_millis),
         credentials: config
             .credentials

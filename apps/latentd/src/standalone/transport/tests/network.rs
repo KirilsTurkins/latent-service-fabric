@@ -2,6 +2,10 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use super::*;
 
+mod lifetime;
+mod protocol;
+mod support;
+
 #[test]
 fn accepted_connections_are_bounded_and_incomplete_http2_is_closed_on_shutdown() {
     run(|control| async move {
@@ -41,14 +45,7 @@ fn unauthenticated_deadline_reclaims_silent_and_partial_connection_slots() {
         let mut config = configuration();
         config.maximum_connections = 2;
         config.unauthenticated_timeout = Duration::from_millis(150);
-        let transport = Transport::start_routes(
-            config,
-            tonic::service::Routes::default(),
-            Arc::new(SystemActivationClock),
-            control,
-        )
-        .await
-        .unwrap();
+        let (transport, _) = support::start(config, control).await;
         let handle = transport.handle();
 
         let mut silent = tokio::net::TcpStream::connect(transport.local_addr())
@@ -99,16 +96,12 @@ fn unauthenticated_deadline_reclaims_silent_and_partial_connection_slots() {
         assert_peer_closed(&mut silent).await;
         assert_peer_closed(&mut partial).await;
 
-        let fresh = tokio::net::TcpStream::connect(transport.local_addr())
-            .await
-            .unwrap();
-        tokio::time::timeout(Duration::from_secs(1), async {
-            while handle.snapshot().active_connections != 1 {
-                tokio::task::yield_now().await;
-            }
-        })
-        .await
-        .unwrap();
+        let mut fresh = support::client(&transport).await;
+        assert_eq!(
+            support::status(&mut fresh).await.unwrap().activation_id,
+            "observed"
+        );
+        assert_eq!(handle.snapshot().active_connections, 1);
         assert_eq!(handle.snapshot().expired_unauthenticated_connections, 2);
         drop(fresh);
 

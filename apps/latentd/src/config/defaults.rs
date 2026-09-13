@@ -29,6 +29,8 @@ impl Default for LimitConfig {
             maximum_payload_bytes: MIB,
             maximum_connections: 32,
             unauthenticated_connection_timeout_millis: 5000,
+            maximum_connection_age_millis: 300_000,
+            connection_drain_timeout_millis: 5000,
         }
     }
 }

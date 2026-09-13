@@ -63,6 +63,16 @@ where
             "/latent.invocation.v1.InvocationService/Cancel"
                 | "/latent.invocation.v1.InvocationService/GetActivation"
         );
+        if request
+            .extensions()
+            .get::<ConnectionInfo>()
+            .is_some_and(ConnectionInfo::is_draining)
+        {
+            return Box::pin(std::future::ready(Ok(tonic::Status::unavailable(
+                "standalone connection is draining; reconnect for new RPCs",
+            )
+            .into_http())));
+        }
         let guard = match self.layer.shared.acquire(Kind::Rpc { inspection }) {
             Ok(guard) => guard,
             Err(status) => return Box::pin(std::future::ready(Ok(status.into_http()))),

@@ -75,6 +75,11 @@ impl Transport {
         };
         let server = tonic::transport::Server::builder()
             .timeout(shared.config.request_timeout)
+            // Dispatch denies new RPCs after the accept-time age limit. This
+            // independent driver timeout also retires a backpressured HTTP/2
+            // connection that has stopped polling its underlying socket.
+            .max_connection_age(shared.config.maximum_connection_age)
+            .max_connection_age_grace(shared.config.connection_drain_timeout)
             .max_concurrent_streams(Some(shared.config.maximum_streams_per_connection))
             .http2_max_header_list_size(Some(shared.config.maximum_header_bytes))
             .max_frame_size(Some(16_384))
