@@ -117,6 +117,7 @@ pub struct LimitConfig {
     pub maximum_component_bytes: usize,
     pub maximum_payload_bytes: usize,
     pub maximum_connections: usize,
+    pub unauthenticated_connection_timeout_millis: u64,
 }
 
 #[derive(Clone, Deserialize)]
