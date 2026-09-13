@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 pub mod component;
-pub mod host;
 
 use latent_artifacts::package::{
     artifact_blob_digest, encode_wit_lock, LayerRole, PackageKind, PackageLimits, WitLock,
@@ -86,49 +85,6 @@ pub fn layer(path: &str, role: LayerRole, media_type: &str, bytes: Vec<u8>) -> L
         media_type: media_type.into(),
         bytes,
     }
-}
-
-pub fn host_capsule(
-    name: &str,
-    source: &str,
-    compiled_source: &str,
-    asynchronous: Option<bool>,
-) -> PackageInput {
-    let bytes = component::with_host(
-        component::Options::default(),
-        name,
-        &host::interface(compiled_source, name, asynchronous),
-    );
-    let mut input = capsule(component::Options::default());
-    let service = String::from_utf8(component::SERVICE_WIT.to_vec())
-        .unwrap()
-        .replace(component::CLOCK, name)
-        .into_bytes();
-    let (package_interface, version) = name.rsplit_once('@').unwrap();
-    let package = format!("{}@{version}", package_interface.split_once('/').unwrap().0);
-    let digest = artifact_blob_digest(&bytes);
-    for layer in &mut input.layers {
-        match layer.path.as_str() {
-            "component.wasm" => layer.bytes.clone_from(&bytes),
-            "wit/clock.wit" => {
-                layer.path = "wit/host.wit".into();
-                layer.bytes = source.as_bytes().to_vec();
-            }
-            "wit/service.wit" => layer.bytes.clone_from(&service),
-            _ => (),
-        }
-    }
-    mutate_json(&mut input, "capsule.json", |manifest| {
-        manifest["component"]["digest"] = json!(digest.as_str());
-        manifest["imports"][0]["contract"] = json!(name);
-    });
-    mutate_json(&mut input, "wit-lock.json", |lock| {
-        lock["packages"][0] = json!({"id": package, "sourcePath": "wit/host.wit",
-            "digest": artifact_blob_digest(source.as_bytes()).as_str(), "dependencies": []});
-        lock["packages"][1]["digest"] = json!(artifact_blob_digest(&service).as_str());
-        lock["packages"][1]["dependencies"] = json!([package]);
-    });
-    input
 }
 
 pub fn pruned_context_capsule(wrong_signature: bool) -> PackageInput {
