@@ -1,6 +1,5 @@
 use std::future::Future;
 use std::io;
-use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -28,7 +27,7 @@ impl Stream for Incoming {
         }
         // Reject floods in bounded batches without monopolizing a runtime poll.
         for _ in 0..16 {
-            let (stream, address) = match self.listener.poll_accept(cx) {
+            let (stream, _address) = match self.listener.poll_accept(cx) {
                 Poll::Pending => return Poll::Pending,
                 Poll::Ready(Err(error)) => return Poll::Ready(Some(Err(error))),
                 Poll::Ready(Ok(accepted)) => accepted,
@@ -40,7 +39,6 @@ impl Stream for Incoming {
             stream.set_nodelay(true)?;
             let expires_at = tokio::time::Instant::now() + self.shared.config.unauthenticated_timeout;
             let connection = ConnectionInfo {
-                address,
                 expires_at,
                 authenticated: Arc::new(AtomicBool::new(false)),
             };
@@ -61,7 +59,6 @@ impl Stream for Incoming {
 
 #[derive(Clone)]
 pub(super) struct ConnectionInfo {
-    address: SocketAddr,
     expires_at: tokio::time::Instant,
     authenticated: Arc<AtomicBool>,
 }
