@@ -8,13 +8,20 @@ files, benchmark retention bounds, and forbidden Rust placeholder tokens.
 The visual rules for those SVGs
 are in [`../docs/svg-style.md`](../docs/svg-style.md).
 
-Phase 1 and its performance extension are complete. Use the
+Phase 1, its performance extension, and Phase 2 are complete. Use the
 [validation guide](../VALIDATION.md) for ordinary checks and the
 [extension report](../docs/phase-1-extension-completion.md) for retained results.
 The [Docker](../docs/testing/docker-comparison.md) and
 [Kubernetes](../docs/testing/kubernetes-comparison.md) collectors are explicit
 infrastructure experiments; their archives replay without rerunning workloads.
 Historical Phase 0 tools below retain their original native-Linux restrictions.
+
+The [Phase 2 completion map](../docs/phase-2-completion.md) links the bounded
+operator, offline and dormant-resource collectors plus native-currentness
+tests. These produce compact receipts with explicit identities and limitations.
+Routine PR CI runs `run_phase0_outcome_matrix.sh` immediately after contract
+validation in the same job; baseline collection remains manual. See the
+[current CI layout](../docs/testing/phase0-ci-layout.md).
 
 `run_phase0_hot_path_profiles.sh` is the manual native-Linux evidence command
 for issue 40. It requires a clean source tree, a durable published branch/tag

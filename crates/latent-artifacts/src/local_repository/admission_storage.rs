@@ -1,12 +1,10 @@
 //! Closed exact-byte side material, bound by the version-2 completion record.
 mod read;
 
-use std::path::Path;
-
 use latent_core::PlatformError;
 use serde::{Deserialize, Serialize};
 
-use super::{corrupt, resource_exhausted, write_synced, COMPONENT_FILE};
+use super::{corrupt, resource_exhausted, COMPONENT_FILE};
 use crate::package::{inspect_package, verify_layer_bytes, LayerRole, PackageKind, PackageLimits};
 use crate::{
     content_digest, AdmissionBinding, AdmissionEvidence, AdmissionStorageLimits, CapsuleArtifact,
@@ -73,7 +71,12 @@ impl PreparedAdmissionFiles {
         )?;
         if layout.digest() != &binding.package
             || layout.config().kind != PackageKind::Capsule
-            || artifact.manifest.metadata.tenant.as_ref() != Some(&binding.tenant)
+            || artifact
+                .manifest
+                .metadata
+                .tenant
+                .as_ref()
+                .is_some_and(|embedded| embedded != &binding.tenant)
             || artifact.descriptor.release_digest != binding.release
             || artifact.manifest.component_digest != binding.release
             || upload.layers.len() != layout.config().layers.len()
@@ -152,11 +155,14 @@ impl PreparedAdmissionFiles {
         })
     }
 
-    pub(super) fn write(&self, directory: &Path) -> Result<(), PlatformError> {
+    pub(super) fn content_file_count(&self) -> usize {
+        self.files.len() + 1
+    }
+    pub(super) fn append_content_files<'a>(&'a self, files: &mut Vec<(&'a str, &'a [u8])>) {
         for (name, bytes) in &self.files {
-            write_synced(&directory.join(name), bytes)?;
+            files.push((name, bytes));
         }
-        write_synced(&directory.join(RECORD_FILE), &self.record_bytes)
+        files.push((RECORD_FILE, &self.record_bytes));
     }
 
     pub(super) fn same_upload(&self, stored: &StoredAdmission) -> bool {

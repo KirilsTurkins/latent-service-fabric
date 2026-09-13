@@ -11,9 +11,12 @@ pub(super) async fn initial(node: &MeasurementNode, writer: &mut MeasurementWrit
     let backend = &node.node.backend;
     let fixture = &node.fixtures.echo;
     drop(published(node, fixture).await?);
-    let key = backend
-        .preparation_key(&fixture.artifact.descriptor.release_digest)
-        .map_err(platform)?;
+    let key = super::super::publication_key(
+        backend.as_ref(),
+        node.artifacts.as_ref(),
+        &fixture.tenant,
+        &fixture.artifact.descriptor.release_digest,
+    )?;
     let before = backend.cache_snapshot();
     let started = Instant::now();
     let _prepared = prepare(node, &key).await?;
@@ -39,9 +42,12 @@ pub(super) async fn pair(
     let backend = &node.node.backend;
     let fixture = &node.fixtures.echo;
     drop(published(node, fixture).await?);
-    let key = backend
-        .preparation_key(&fixture.artifact.descriptor.release_digest)
-        .map_err(platform)?;
+    let key = super::super::publication_key(
+        backend.as_ref(),
+        node.artifacts.as_ref(),
+        &fixture.tenant,
+        &fixture.artifact.descriptor.release_digest,
+    )?;
     let descriptor = prepare(node, &key).await?;
     backend.release(descriptor).await.map_err(platform)?;
     let before = backend.cache_snapshot();
@@ -81,9 +87,12 @@ pub(super) async fn prewarm_failures(node: &MeasurementNode) -> Result<()> {
     let backend = &node.node.backend;
     for fixture in [&node.fixtures.generic, &node.fixtures.capabilities] {
         let artifact = published(node, fixture).await?;
-        let key = backend
-            .preparation_key(&artifact.descriptor.release_digest)
-            .map_err(platform)?;
+        let key = super::super::publication_key(
+            backend.as_ref(),
+            node.artifacts.as_ref(),
+            &fixture.tenant,
+            &artifact.descriptor.release_digest,
+        )?;
         drop(
             backend
                 .prepare_from_repository(node.artifacts.as_ref(), &key)

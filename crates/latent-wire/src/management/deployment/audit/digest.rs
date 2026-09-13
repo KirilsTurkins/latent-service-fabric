@@ -86,12 +86,17 @@ fn deployment(hash: &mut Hash, manifest: &DeploymentManifest) {
         metadata,
         service,
         release,
+        publication,
         route_weight,
         grants,
         resources,
         availability,
         placement,
     } = manifest;
+    if let Some(publication) = publication {
+        hash.part(b"lsf-audit-deployment-publication-v1");
+        hash.part(publication.as_str().as_bytes());
+    }
     let ObjectMetadata {
         name,
         tenant,

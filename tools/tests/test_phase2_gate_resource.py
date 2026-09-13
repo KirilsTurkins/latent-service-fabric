@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 from tools import phase2_gate_resource as workflow
 from tools.phase2_gate_resource import SOURCE_FILES
-from tools.phase2_gate_resource_os import fixture_inventory
+from tools.phase2_gate_resource_os import fixture_inventory, load_sampler_descriptor
 from tools.phase2_gate_resource_profile import (
     FIXED_LIVE_ROWS, FIXED_RUNTIME_ROWS, FIXED_UNKNOWN_ROWS,
     OBSERVATION_ROWS, PHASES, PROFILE, ZERO_ROWS, configuration, digest, integer,
@@ -107,7 +107,7 @@ def complete_receipt():
             "processId": 42, "startTimeTicks": "100", "observedMonotonicNanos": str(1000000000 + i * 60000000),
             "rssBytes": str(1000000 + i * 4096), "kernelHighWaterRssBytes": str(2000000 + i * 4096),
             "cpuUserTicks": "10", "cpuSystemTicks": "10", "readBytes": "1024", "writeBytes": "2048",
-            "threads": 8, "tasks": 8, "fdCount": 12, "socketCount": 3,
+            "threads": 8, "tasks": 8, "fdCount": 12, "loadSamplerFdCount": 0, "socketCount": 3,
             "listeningTcpSockets": 1, "descendants": 0, "procBytesRead": 512}}
             for i, phase in enumerate(phase for phase in PHASES for _ in range(3))],
         "catalog": {"peakReleases": 32, "peakDeployments": 16,
@@ -120,6 +120,35 @@ def complete_receipt():
 
 
 class Phase2ResourceTests(unittest.TestCase):
+    def test_fixed_load_sampler_is_recorded_without_hiding_other_descriptor_growth(self):
+        value = complete_receipt()
+        observed = value["samples"][7]["os"]
+        observed.update(fdCount=13, loadSamplerFdCount=1)
+        validate_receipt(value)
+        self.assertEqual(observed["fdCount"], 13)
+        observed["fdCount"] = 14
+        with self.assertRaisesRegex(WorkflowError, "receipt-topology-growth"):
+            validate_receipt(value)
+        observed["loadSamplerFdCount"] = 2
+        with self.assertRaisesRegex(WorkflowError, "receipt-sampler-bound"):
+            validate_receipt(value)
+
+    def test_only_stable_read_only_exact_psi_descriptor_is_identified(self):
+        entry = SimpleNamespace(name="7", path="/proc/42/fd/7")
+        root = Path("/proc/42")
+        for target in ("/proc/pressure/cpu", "/proc/pressure/memory"):
+            with patch("os.readlink", return_value=target):
+                self.assertEqual(load_sampler_descriptor(root, entry, target,
+                                                        lambda _: "flags:\t0100000\n"), 1)
+                for flags in ("flags: 1", "flags: 2", "flags: 0\nflags: 0", "flags: invalid"):
+                    with self.subTest(flags=flags), self.assertRaises(WorkflowError):
+                        load_sampler_descriptor(root, entry, target, lambda _: flags)
+            with patch("os.readlink", return_value="/unrelated"):
+                with self.assertRaisesRegex(WorkflowError, "proc-sampler-descriptor"):
+                    load_sampler_descriptor(root, entry, target, lambda _: "flags: 0")
+        self.assertEqual(load_sampler_descriptor(root, entry, "/proc/pressure/cpu (deleted)",
+                                                lambda _: self.fail("unrelated descriptor read")), 0)
+
     def test_exact_profile_is_frozen_and_retained_config_excludes_token(self):
         receipt = complete_receipt()
         validate_receipt(receipt)
@@ -254,11 +283,26 @@ class Phase2ResourceTests(unittest.TestCase):
 
     def test_duplicate_or_reordered_os_observations_and_counter_regression_fail(self):
         for field, number in (("observedMonotonicNanos", "1000000000"),
-                              ("cpuUserTicks", "9"), ("writeBytes", "0")):
+                              ("cpuUserTicks", "9"), ("cpuSystemTicks", "9"),
+                              ("readBytes", "0"), ("writeBytes", "0")):
             value = complete_receipt()
             value["samples"][5]["os"][field] = number
-            with self.subTest(field=field), self.assertRaises(WorkflowError):
+            reason = "receipt-sample-time" if field == "observedMonotonicNanos" else \
+                "receipt-counter-regression"
+            with self.subTest(field=field), self.assertRaisesRegex(WorkflowError, reason):
                 validate_receipt(value)
+
+    def test_approximate_kernel_high_water_rss_can_fall_one_page_without_rewriting(self):
+        value = complete_receipt()
+        value["samples"][8]["os"]["kernelHighWaterRssBytes"] = "66506752"
+        for sample in value["samples"][9:]:
+            sample["os"]["kernelHighWaterRssBytes"] = "66502656"
+        before = copy.deepcopy(value)
+        validate_receipt(value)
+        self.assertEqual(value, before)
+        self.assertEqual(int(value["samples"][8]["os"]["kernelHighWaterRssBytes"])
+                         - int(value["samples"][9]["os"]["kernelHighWaterRssBytes"]),
+                         int(value["host"]["pageSize"]))
 
     def test_phase_counts_require_real_warm_and_cohort_progress(self):
         for target, field, altered in (("cell", "granted", "2"), ("cache", "hits", "0"),

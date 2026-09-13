@@ -37,7 +37,7 @@ def validate(root: Path) -> list[str]:
     if workspace["lints"]["rust"].get("unsafe_code") != "forbid":
         errors.append("workspace unsafe_code must remain forbid")
     engine = workspace["dependencies"]["wasmtime"]
-    if engine.get("version") != "=47.0.3" or engine.get("default-features") is not False:
+    if engine.get("version") != "=47.0.4" or engine.get("default-features") is not False:
         errors.append("native loader requires review of the pinned Wasmtime engine")
     if "parallel-compilation" in engine.get("features", []):
         errors.append("isolated compiler must not enable parallel-compilation")

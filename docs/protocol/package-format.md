@@ -8,8 +8,9 @@ build/inspection and component/WIT checks. The [registry adapter](../reference/o
 adds scoped authenticated transfers. [Publisher signature verification](../reference/publisher-trust.md)
 binds exact packages to approved keys and current trust state. [Build provenance](../reference/build-provenance.md)
 adds independent builder policy; [SBOM inspection](../component-development/sbom.md)
-binds inventories to package content. Trusted catalog admission and rollout remain subsequent tickets in the
-[Phase 2 epic](https://github.com/KirilsTurkins/latent-service-fabric/issues/139).
+binds inventories to package content. [Trusted catalog admission](../reference/package-admission.md)
+and [durable rollout](../phase-2-rollouts.md) complete the delivery path accepted
+by the [Phase 2 gate](../phase-2-completion.md).
 
 ## Identity and compatibility
 
@@ -30,9 +31,9 @@ digests. Canonical publishing is deterministic but does not relabel received
 content.
 
 No migration rewrites Phase 1 catalog keys, completion records, historical
-receipts, RPC descriptors or SDK invocation fields. A future verified importer
-must persist the association between package and component identity, enforce
-existing metadata immutability, and derive trust from verified evidence. An old
+receipts, RPC descriptors or SDK invocation fields. The verified package
+admission path persists the association between package and component identity,
+enforces existing metadata immutability, and derives trust from verified evidence. An old
 local record is not evidence of a signed package. Deduplicating bytes never
 grants another tenant authority to discover, deploy or inspect them.
 

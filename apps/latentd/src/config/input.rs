@@ -1,9 +1,8 @@
-use std::fs::File;
-use std::io::Read;
 use std::path::Path;
 
 use latent_core::PlatformError;
 
+use super::protected_file::ProtectedFilePolicy;
 use super::{invalid, NodeConfig};
 
 const MAXIMUM_CONFIG_BYTES: u64 = 64 * 1024;
@@ -16,15 +15,12 @@ pub(super) fn load(path: &Path) -> Result<NodeConfig, PlatformError> {
             .map_err(|_| invalid("configurationPath"))?
             .join(path)
     };
-    let mut bytes = Vec::new();
-    File::open(&absolute)
-        .map_err(|_| invalid("configurationFile"))?
-        .take(MAXIMUM_CONFIG_BYTES + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|_| invalid("configurationFile"))?;
-    if bytes.len() as u64 > MAXIMUM_CONFIG_BYTES {
-        return Err(invalid("configurationSize"));
-    }
+    let bytes = super::protected_file::read(
+        &absolute,
+        MAXIMUM_CONFIG_BYTES,
+        ProtectedFilePolicy::Secret,
+        "configurationFileProtection",
+    )?;
     let mut config = decode(&bytes)?;
     if let Some(aot) = &mut config.isolated_aot {
         let parent = absolute

@@ -26,9 +26,33 @@ cannot alter admitted content. Uncertain persistence denies positive eligibility
 Historical receipts and locally admitted flags do not grant current authority.
 See [authenticated package admission](docs/reference/package-admission.md).
 
-Trusted external AOT loading remains planned Phase 2 work. General external
-capability providers, transactional state/effects, and cluster mTLS remain later
-phases. They add trust boundaries when implemented. See the
+Phase 2 also delivers an opt-in authenticated same-node isolated AOT path on its
+supported Linux x86_64 sandbox profile. Compilation runs in a bounded child and
+persistent native reuse accepts only locally authenticated output bound to exact
+engine, component and security configuration. The parent parser/validator,
+standalone node, Wasmtime native loader and host OS remain trusted. This does not
+support arbitrary external native artifacts and does not provide a separate guest
+execution process. See [trusted AOT](docs/runtime/trusted-aot.md).
+
+[ADR-0026](adr/0026-require-explicit-execution-isolation-profiles.md) and
+[RFC-0001](rfcs/0001-minimum-execution-isolation-profiles.md) define the current
+isolation-profile boundary. Fresh in-process Wasmtime stores remain the delivered
+guest execution model. A stronger profile that must remain isolated after
+compromise of the guest/provider/renderer process requires a separate fixed,
+node-owned execution host and is unsupported until that backend and its finite
+evidence are implemented. Security-profile selection must fail closed rather
+than silently downgrade to a weaker boundary. The current trusted-local default
+is for operator-controlled workloads. Linux x86_64 configuration loading now has
+a descriptor-anchored protected-file policy for bearer credentials and enforced
+trust policy, but that control alone does not establish the planned
+`external-capsule-v1` profile. Enforced admission alone does not select compiler
+isolation either. The complete profile still requires exact host compatibility
+and deployment/startup enforcement owned by #202 and #280, together with the
+reviewed runtime and isolated-compilation prerequisites. See
+[protected configuration](docs/runtime/protected-configuration.md).
+
+General external capability providers, transactional state/effects, and cluster
+mTLS remain later work. They add trust boundaries when implemented. See the
 [security architecture](docs/architecture/security.md) and
 [Phase 1 completion scope](docs/phase-1-completion.md). This remains an
 experimental prerelease without a production security certification.

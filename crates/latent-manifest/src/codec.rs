@@ -905,6 +905,12 @@ struct PlacementPolicyWire {
 struct DeploymentSpecWire {
     service: String,
     release: String,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "publication_option"
+    )]
+    publication: Option<latent_core::PublicationId>,
     route: RouteWeightWire,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     grants: Vec<CapabilityGrantWire>,
@@ -920,6 +926,27 @@ struct DeploymentDocumentWire {
     kind: FixedKind,
     metadata: ObjectMetadataWire,
     spec: DeploymentSpecWire,
+}
+
+mod publication_option {
+    use super::*;
+    pub fn serialize<S: Serializer>(
+        value: &Option<latent_core::PublicationId>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        value
+            .as_ref()
+            .map(latent_core::PublicationId::as_str)
+            .serialize(serializer)
+    }
+    pub fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<latent_core::PublicationId>, D::Error> {
+        String::deserialize(deserializer)?
+            .parse()
+            .map(Some)
+            .map_err(de::Error::custom)
+    }
 }
 
 impl Serialize for DeploymentManifest {
@@ -958,6 +985,7 @@ impl From<&DeploymentManifest> for DeploymentDocumentWire {
             spec: DeploymentSpecWire {
                 service: value.service.0.clone(),
                 release: value.release.0.clone(),
+                publication: value.publication.clone(),
                 route: RouteWeightWire {
                     weight: value.route_weight,
                 },
@@ -997,6 +1025,7 @@ impl From<DeploymentDocumentWire> for DeploymentManifest {
             metadata: value.metadata.into_domain(),
             service: ServiceId(value.spec.service),
             release: ReleaseDigest(value.spec.release),
+            publication: value.spec.publication,
             route_weight: value.spec.route.weight,
             grants: value
                 .spec

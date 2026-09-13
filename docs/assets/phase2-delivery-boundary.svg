@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 760" role="img" aria-labelledby="phase2-delivery-title phase2-delivery-description">
   <title id="phase2-delivery-title">Phase 2 trusted delivery and controlled rollout</title>
-  <desc id="phase2-delivery-description">Local package and evidence files travel through an authenticated OCI registry to a separate standalone node. Current publisher, builder, policy, lifecycle and runtime checks fence admission and execution. Atomic deployment and rollout receipts support explicit canary promotion, rollback and recovery. Shared owners and finite caches preserve dormant service resource boundaries. Completion requires the Phase 2 gate; general capability providers and application hosting belong to Phase 3.</desc>
+  <desc id="phase2-delivery-description">Local package and evidence files travel through an authenticated OCI registry to a separate standalone node. Current publisher, builder, policy, lifecycle and runtime checks fence admission and execution. Atomic deployment and rollout receipts support explicit canary promotion, rollback and recovery. Shared owners and finite caches preserve dormant service resource boundaries. Phase 2 passed gate 158. General capability providers and application hosting remain planned Phase 3 work.</desc>
   <defs>
     <linearGradient id="phase2-delivery-background" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#1b102d"/><stop offset="1" stop-color="#1e3a5f"/>
@@ -22,7 +22,7 @@
   </defs>
   <rect width="1440" height="760" rx="34" fill="url(#phase2-delivery-background)"/>
   <text x="74" y="84" class="heading">Phase 2: trusted packages, deliberate release changes</text>
-  <text x="74" y="120" class="subheading">Standalone Linux node · client and node storage are separate · completion evidence belongs to gate #158</text>
+  <text x="74" y="120" class="subheading">Phase 2 complete · standalone Linux node · separate client and node storage · reviewed gate #158</text>
   <g filter="url(#phase2-delivery-shadow)">
     <rect x="74" y="176" width="390" height="266" rx="24" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
     <text x="108" y="220" class="label">CLIENT AND REGISTRY</text>
@@ -51,6 +51,6 @@
   <rect x="74" y="486" width="1292" height="72" rx="18" fill="#312e81" stroke="#a5b4fc" stroke-width="2"/>
   <text x="108" y="530" class="title">Finite shared owners; dormant services acquire no execution worker or guest heap.</text>
   <rect x="74" y="594" width="1292" height="100" rx="24" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
-  <text x="108" y="635" class="title">Phase 3: capabilities, provider integrations and application hosting</text>
+  <text x="108" y="635" class="title">Planned Phase 3: capabilities, providers and application hosting</text>
   <text x="108" y="667" class="later">Browser / SSR artifacts are packaging contracts here. Distributed placement, durable state and workflows remain later work.</text>
 </svg>

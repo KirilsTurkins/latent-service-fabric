@@ -256,7 +256,8 @@ python3 -m unittest tools.tests.test_phase2_operator_workflow \
 python3 tools/run_phase2_operator_workflow.py \
   --cli "$CARGO_TARGET_DIR/debug/latent" \
   --node "$CARGO_TARGET_DIR/debug/latentd" \
-  --fixture-root "$FIXTURE_PARENT/inputs"
+  --fixture-root "$FIXTURE_PARENT/inputs" \
+  --source-commit "$(git -c gc.auto=0 rev-parse HEAD)"
 ```
 
 Run the workflow immediately after exporting. The exporter generates publisher
@@ -284,7 +285,13 @@ this bounded integration schedule only. The signed build observation is syntheti
 test data, not evidence of a real production build. Actual observed-build tests
 and historical Phase 1 measurements retain their separate purposes. The
 [Phase 2 completion review](../phase-2-completion.md) combines the relevant
-evidence and records its limitations; Phase 3 providers remain planned.
+evidence and records the completed gate's limitations; Phase 3 providers remain
+planned. The retained passing run is a fixed integration observation, not a
+zero-error availability guarantee. Its preceding unclassified `Unavailable`
+attempt remains in the [attempt ledger](../../benchmarks/phase2/2026-09-13/attempts.json).
+The supplied source commit identifies the binary build's base; run from a clean
+checkout when associating it with unchanged source, and retain the actual binary
+and collector digests instead of substituting a later release revision.
 
 For an already owned matching loopback TLS fixture, supply both
 `--registry-origin https://127.0.0.1:PORT` and `--registry-ca /absolute/ca.der`.

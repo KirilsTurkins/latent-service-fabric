@@ -1,13 +1,16 @@
-# Phase 1 local release catalog
+# Local publication catalog
 
 `latent-artifacts::DirectoryArtifactRepository` implements the local release
-catalog used by the [Phase 1 standalone node](../reference/standalone-node.md).
-The repository is also available directly as a Rust API. Phase 2
+catalog used by the [standalone node](../reference/standalone-node.md).
+The repository is also available directly as a Rust API. Completed Phase 2
 [release lifecycle](../reference/release-lifecycle.md) adds authoritative durable
 membership, revocation/retirement and bounded operation outcomes to both local
 and enforced catalogs. The original immutable completion format is preserved;
 a completed directory alone does not authorize adoption after lifecycle
 initialization.
+Phase 3 [publication identity](../reference/publication-catalog.md) adds independent
+tenant/package publications, shared immutable content and an explicit offline
+format-1 upgrade. Component digests continue to identify executable bytes.
 Its owner holds one local release-catalog root exclusively for the lifetime of
 the repository. Ownership is acquired with an operating-system file lock on
 `.catalog.lock` before temporary cleanup or index rebuild. A second live opener
@@ -16,7 +19,7 @@ close or process exit/crash. Never unlink `.catalog.lock` while a repository is
 open: cooperating owners must lock the same file.
 
 The supported persistence environment is a Linux local filesystem with file
-locking, atomic same-directory rename, and file/directory synchronization, as
+locking, hard links, atomic same-directory rename, and file/directory synchronization, as
 for the [deployment repository](../deployment-routing.md).
 
 `open` may create a nonexistent nested root. It anchors relative input against
@@ -43,9 +46,9 @@ cleanup away from the directory whose ownership lock the handle holds.
 
 ## Layout and publication
 
-Completed releases live under `releases/<sha256>/` and contain `metadata.json`, canonical `manifest.json`, `component.wasm`, and a versioned `COMPLETE` integrity record. Publication validates the manifest, component identity, descriptor bounds, contract metadata and recovery-directory capacity before creating a private directory under `.tmp/`. It writes and fsyncs the payload files followed by the completion record, fsyncs the temporary directory, and renames that complete directory into its immutable digest location. It verifies the stored entry and fsyncs `releases/`, then commits lifecycle membership and the bounded operation outcome before adopting the descriptor into the in-memory index.
+Completed publications live under `publications/<publication hex>/` and contain `metadata.json`, canonical `manifest.json`, `component.wasm`, and a versioned `COMPLETE` integrity record. Publication validates the manifest, component identity, descriptor bounds, contract metadata and recovery-directory capacity before creating a private directory under `.tmp/`. It writes and fsyncs new shared blobs, hard-links immutable files into the staging directory, fsyncs that directory, and renames the completed directory into its publication location. It verifies the stored entry and fsyncs `publications/`, then commits lifecycle membership and the bounded operation outcome before adopting the descriptor into the in-memory index.
 
-Every successful publication/adoption path synchronizes content and lifecycle state before returning. Historical catalog metadata remains available separately from execution eligibility; `resolve` and `fetch` require current lifecycle and, in enforced mode, signed authority. Identical ordinary publication cannot clear a revoked/retired record or replace evidence. Different content under an existing digest or reference is rejected.
+Every successful publication/adoption path synchronizes content and lifecycle state before returning. Historical catalog metadata remains available separately from execution eligibility; `resolve` and `fetch` require current lifecycle and, in enforced mode, signed authority. Identical ordinary publication cannot clear a revoked/retired record or replace evidence. Different content under an existing publication is rejected. Independent publications may share component bytes or an artifact reference; non-unique legacy selection is an explicit ambiguity error.
 
 ### Completion record and immutable metadata
 
@@ -60,44 +63,45 @@ Every successful publication/adoption path synchronizes content and lifecycle st
 | `manifest_digest` | SHA-256 of the exact canonical `manifest.json` bytes. |
 | `admission_digest` | Required only in version 2: SHA-256 of the exact retained `admission.json` bytes, binding the package, evidence and historical receipt associations described by [package admission](../reference/package-admission.md). Omitted in version 1. |
 
-The record has a fixed 1 KiB maximum, independent of configurable payload limits. Unknown versions or fields, duplicate fields, noncanonical serialization, missing or damaged records, and integrity mismatches are corruption errors. Verification checks the component digest against the record, descriptor, manifest and actual bytes, and checks byte length against the record and descriptor. The directory name must match the release digest. Recovery, fetch, identical retries and initial publication all verify before returning or adopting a completed artifact. Valid JSON alone cannot make a changed descriptor, contract or manifest acceptable.
+The record has a fixed 1 KiB maximum, independent of configurable payload limits. Unknown versions or fields, duplicate fields, noncanonical serialization, missing or damaged records, and integrity mismatches are corruption errors. Verification checks the component digest against the record, descriptor, manifest and actual bytes, and checks byte length against the record and descriptor. The directory name must match the derived publication ID; the component digest is verified independently. Recovery, fetch, identical retries and initial publication all verify before returning or adopting a completed artifact. Valid JSON alone cannot make a changed descriptor, contract or manifest acceptable.
 
 The release identity remains SHA-256 of component bytes. Metadata fingerprints provide accidental-corruption detection under the existing locally trusted filesystem boundary; they do not authenticate a publisher or protect against an administrator who can replace both data and integrity records.
 
 ### Compatibility with legacy catalogs
 
-Earlier catalogs wrote the literal `complete\n` marker without metadata fingerprints. Opening a legacy catalog returns `CorruptArtifact` with message `legacy catalog completion marker is unsupported`. A mixed legacy/new completed catalog also fails opening. The reader preserves committed files and never generates a new integrity record from unverified legacy contents.
+Earlier catalogs wrote the literal `complete\n` marker without metadata fingerprints. Such markers are unsupported by the verified format-1 reader and the migration path. A mixed legacy/verified completed catalog also fails verification. The reader preserves committed files and never generates a new integrity record from unverified legacy contents.
 
 To move a catalog with literal legacy markers forward, stop its owner and retain the entire old root. Re-register the trusted original component, manifest, descriptor and contracts through `ArtifactRepository::publish` into a fresh root, then open the application against that verified root. Do not manufacture completion records from possibly damaged old metadata or overwrite the old root during recovery. This legacy-marker compatibility policy does not change component digests or automatically migrate those stored files.
 
-A valid completed catalog predating lifecycle support follows a different path:
-one verified bootstrap adds the bounded lifecycle state and its durable mode
-marker. It preserves the original component, metadata and completion bytes.
-After initialization, recovery uses that authoritative lifecycle state; finding
-another valid completed directory does not grant it membership.
+The format-2 reader requires explicit offline migration of a format-1 catalog
+with its original lifecycle history. It does not invent lifecycle membership
+from completed directories. A valid catalog predating lifecycle support first
+needs the prior compatible release's verified lifecycle bootstrap, preserving
+original component, metadata and completion bytes. Retain a complete backup and
+follow the [upgrade procedure](../reference/publication-catalog.md#offline-upgrade-and-recovery).
 
 ### Indeterminate durability and the mutation gate
 
-A verification, parent-directory sync or index-adoption failure after rename is returned as a publication failure. The completed destination may remain on disk while a newly published release remains hidden from that handle's readers. Under the writer mutex, the repository records the pending release digest before verifying the destination and rejects publications of any other digest with `unavailable`. This includes an otherwise nonconflicting release: the pending directory must not be bypassed for reference uniqueness, entry capacity, aggregate index-byte capacity, or recovery-directory capacity.
+A verification, parent-directory sync or index-adoption failure after rename is returned as a publication failure. The completed destination may remain on disk while a newly published release remains hidden from that handle's readers. Under the writer mutex, the repository records the pending publication ID before verifying the destination and rejects other publications with `unavailable`. This includes an otherwise nonconflicting release: the pending directory must not be bypassed for lifecycle membership, entry capacity, aggregate index/content capacity, or recovery-directory capacity.
 
 An exact pending retry must reconcile both immutable content and authoritative
-lifecycle membership before adoption. Changed input under the same digest or
+lifecycle membership before adoption. Changed input under the same publication or
 operation ID is not an identical retry. Indeterminate lifecycle durability
 blocks positive eligibility through the shared owner; an old indexed token is
 not a fallback. Recovery validates and accounts for completed directories but
 does not auto-admit an orphan `COMPLETE` missing from initialized lifecycle
-state. Such a hidden completed directory still reserves its immutable reference,
-preventing publication of another digest under that reference. Bounded operation
+state. Such a hidden completed directory retains its bounded metadata, directory and
+content charges until reconciliation or bounded uncommitted-content reclamation. Bounded operation
 status distinguishes retained outcomes from
 unknown/uncertain state. A failed acknowledgment does not establish rollback.
 
-The root lock means `.tmp` cleanup cannot delete another live repository handle's active stage. On startup, once ownership is acquired, all `.tmp` contents are treated as abandoned crash debris and removed, whether their completion record is absent, partial or complete. A digest-named final directory must contain a valid record: publication writes the record before the final rename, so a missing record is corruption and must not silently erase a release from recovery. Non-digest directories with no completion record remain invisible incomplete debris and count toward recovery capacity. This protocol assumes cooperating publishers and a local filesystem supporting directory fsync and atomic directory rename; manual changes to an owned root are outside that protocol.
+The root lock means `.tmp` cleanup cannot delete another live repository handle's active stage. On startup, once ownership is acquired, all `.tmp` contents are treated as abandoned crash debris and removed, whether their completion record is absent, partial or complete. A publication-ID-named final directory must contain a valid record: publication writes the record before the final rename, so a missing record is corruption and must not silently erase a release from recovery. Other directories with no completion record remain invisible incomplete debris and count toward recovery capacity. This protocol assumes cooperating publishers and a local filesystem supporting directory fsync and atomic directory rename; manual changes to an owned root are outside that protocol.
 
 ## Bounds and the metadata codec
 
 The repository has independent bounds for completed index entries, conservatively accounted retained index bytes, per-descriptor bytes, list entry count, list response bytes, persisted metadata bytes, component bytes, and recovery directories. Defaults are 250,000 completed entries, 64 MiB accounted index bytes, 1,000 rows per page, 4 MiB materialized descriptor bytes per page, 256 KiB per descriptor, 4 MiB persisted metadata, 256 MiB component bytes, and 1,000,000 recovery directories. Limits are simultaneous: the byte or directory budget can be exhausted before the completed-entry count.
 
-Index accounting charges compact descriptor and manifest-summary strings, vectors and sparse metadata maps, plus 8 KiB per release for the boxed summary, index nodes and bookkeeping. Duplicate digest, reference, tenant and service keys are charged separately before insertion. The default 64 MiB byte ceiling therefore admits fewer entries than the independent 250,000-entry ceiling. This conservative accounting is not a measurement of process RSS. Oversized descriptors and aggregate index exhaustion are rejected before staging a new release.
+Index accounting charges compact descriptor and manifest-summary strings, vectors and sparse metadata maps, plus 16 KiB per publication and explicit publication-ID storage for the boxed summary, index nodes and bookkeeping. Duplicate component, reference, publication, tenant and service keys are charged separately before insertion. The default 64 MiB byte ceiling therefore admits fewer entries than the independent 250,000-entry ceiling. This conservative accounting is not a measurement of process RSS. Oversized descriptors and aggregate index exhaustion are rejected before staging a new release.
 
 The index also charges `size_of::<Option<PreparationMetadataFingerprint>>()`
 per release, whether its optional stamp is present or absent. Per-repository
@@ -108,11 +112,11 @@ accounting excludes the private stamp because it is not returned in a page.
 
 Contract field types have a maximum structural depth of 32 (the root type counts as one) and an aggregate limit of 16,384 type nodes across all contract parameters and results in an artifact. These checks precede recursive conversion and serialization, and apply again when reading persisted metadata. All recursive variants, including both result branches and tuple elements, participate. The JSON reader retains its normal recursion protection. Publication also decodes the exact serialized metadata bytes with the production decoder and checks descriptor/contract equality before writing any files; accepting data that fetch or reopen cannot deserialize is not permitted.
 
-Startup reads inspect file length before allocation and reject persisted metadata, manifests, or components that exceed their configured limits with `ResourceExhausted`. An oversized completion record returns `CorruptArtifact` under its separate fixed bound. Publication releases caller payload buffers before reading back the stored component for verification. Retained non-digest incomplete directories count only toward the separate recovery-directory bound, never the completed-release index quota. Listing is served from the ordered in-memory digest index without directory scans per request, with ascending digest order and both row-count and descriptor-byte bounds.
+Startup reads inspect file length before allocation and reject persisted metadata, manifests, or components that exceed their configured limits with `ResourceExhausted`. An oversized completion record returns `CorruptArtifact` under its separate fixed bound. Publication releases caller payload buffers before reading back the stored component for verification. Retained incomplete directories count toward recovery-directory and content-exposure bounds, without creating completed-publication index membership. Legacy unscoped `list` remains a component-ordered compatibility interface and refuses a non-unique component. Scoped publication pages use their own exact row ordering, without directory scans per request.
 
 ### Scoped metadata reads
 
-`get_catalog_entry` and `list_catalog_entries` expose only the authenticated tenant's compact descriptor and manifest summary. Ordered tenant/service indexes select rows without loading components, fetching full artifacts, or scanning unrelated tenants. Trusted local entries with no tenant remain outside these queries. Pages are bounded before cloning and ordered by digest; their fixed-size opaque tokens bind tenant, optional service, visible catalog generation and this open instance. A new visible publication or reopen expires tokens; an identical retry does not. The global content digest remains unique, so another tenant cannot replace its metadata or acquire an alias for the same bytes. See [management services](../reference/management-services.md) for the RPC upload codec and scope conventions.
+`get_catalog_entry` and `list_catalog_entries` expose only the authenticated tenant's compact descriptor and manifest summary. Ordered tenant/service indexes select rows without loading components, fetching full artifacts, or scanning unrelated tenants. Trusted local entries with no tenant remain outside these queries. Pages are bounded before cloning and ordered by publication ID; their fixed-size opaque tokens bind tenant, optional service, visible catalog generation and this open instance. A new visible publication or reopen expires tokens; an identical retry does not. Another tenant may independently publish identical bytes without replacing the original publication or sharing its authority. Component-only reads resolve inside the authorized tenant and reject multiple candidates. See [management services](../reference/management-services.md) for the RPC upload codec and scope conventions.
 
 ### Verified preparation snapshots
 
@@ -152,7 +156,7 @@ sampled independently; warm identity lookups change none of them.
 
 ### Recovery-directory capacity
 
-`max_recovery_directories` bounds every directory directly under `releases/`, including completed, pending-adoption and retained incomplete directories. Startup records that count under the publication mutex. A new publication checks the same capacity before creating its staging directory; holding the writer mutex reserves the available slot across staging and rename. Rename charges the slot before the parent sync and index adoption, so a post-rename error does not make that slot available to another release. A failure before a destination exists does not consume a slot. Identical publication and pending-release retries reuse their existing directory, including at the limit.
+`max_recovery_directories` bounds every directory directly under `publications/`, including completed, pending-adoption and retained incomplete directories. Startup records that count under the publication mutex. A new publication checks the same capacity before creating its staging directory; the admission-work owner serializes the preflight, staging and final writer-gated adoption. Rename charges the slot before the parent sync and index adoption, so a post-rename error does not make that slot available to another release. A failure before a destination exists does not consume a slot. Identical publication and pending-release retries reuse their existing directory, including at the limit.
 
 The count is maintained by the exclusive root owner, not recomputed with a per-publication directory scan. Index-entry and recovery-directory limits remain independent: configuring three index entries and two recovery directories is valid, but only two new releases can be published into an empty root. With both limits set to two and one retained incomplete directory, only one new release fits. Further publication returns `resource-exhausted` before staging, while all accepted releases remain retrievable after reopening with the same configuration.
 
@@ -206,7 +210,7 @@ The separate Linux `latentd` integration target `catalog_scale` exercises the pu
 
 Each child owns a real fixed cell pool with two generic node-owned cells before establishing its baseline. The probe measures process identity, child processes across all tasks, thread count, owned socket descriptors, owned TCP/Unix listening sockets, open file descriptors, pool capacity/availability, active leases, queue depth and quarantined cells. Measurements are checked after opening, at publication checkpoints, after complete verification and after closing. JSON output reports baseline/after measurements, zero-growth assertions for service-specific resources, and fixed helpers separately: the isolated probe process, its observed harness threads, two generic cells, and one catalog lock FD. These are controlled catalog-integration measurements, not a claim to benchmark the full running node or Wasmtime allocation behavior.
 
-The scale probe opts into a 1 GiB index-accounting budget to fit 100,000 records. It runs on the ordinary disk-backed temporary directory with production syncs enabled. Ordinary unit-test invocations compile but ignore the expensive integration tests. The maintained `Durable catalog acceptance` job in the existing CI workflow runs the probe and retains its logs only when a manual dispatch sets `run_catalog_scale` to `true` (default `false`). Normal pull requests, pushes, and default dispatches still run the catalog recovery, routing, and supervisor regressions.
+The opt-in scale probe configures 3 GiB for publication-index accounting, 2 GiB for shared-content metadata and 1 GiB for lifecycle accounting, to accommodate the conservative format-2 charges for 100,000 records. These are ceilings, not measured RSS or new scale-run results. It runs on the ordinary disk-backed temporary directory with production syncs enabled. Ordinary unit-test invocations compile but ignore the expensive integration tests. The maintained `Durable catalog acceptance` job in the existing CI workflow runs the probe and retains its logs only when a manual dispatch sets `run_catalog_scale` to `true` (default `false`). Normal pull requests, pushes, and default dispatches still run the catalog recovery, routing, and supervisor regressions.
 
 Run the acceptance probe explicitly with:
 
@@ -243,6 +247,6 @@ physical power loss.
 1. For a post-rename publication error, retry the exact pending artifact; do not assume failure removed its completed directory. Other publications receive `unavailable` until reconciliation.
 2. Alternatively stop the standalone node and drop all repository handles so `.catalog.lock` is released. Preserve the root before any manual repair.
 3. Remove only known abandoned `.tmp` content if manual cleanup is necessary; normal startup performs this automatically after acquiring ownership.
-4. Do not promote directories lacking a valid `COMPLETE` record manually. A damaged digest-named final directory fails recovery; preserve it and recover from trusted source artifacts. Only non-digest incomplete debris is excluded from the visible index while counting against recovery-directory capacity, and may be inspected or removed offline.
-5. Reopen the repository. Rebuild checks bounded/readable contract metadata, canonical manifests, digest-directory identity, component bytes, reference uniqueness and all configured limits. It also validates authoritative lifecycle membership and selected evidence revisions before minting any usable capability. It synchronizes directories and rebuilds bounded directory accounting before accepting publications; an orphan completion record cannot create admitted membership.
+4. Do not promote directories lacking a valid `COMPLETE` record manually. A damaged publication-ID-named final directory fails recovery; preserve it and recover from trusted source artifacts. Only incomplete debris outside valid publication names is excluded from the visible index while counting against recovery-directory capacity, and may be inspected or removed offline.
+5. Reopen the repository. Rebuild checks bounded/readable contract metadata, canonical manifests, publication-directory identity, component bytes, exact immutable associations and all configured limits. It also validates authoritative lifecycle membership and selected evidence revisions before minting any usable capability. It synchronizes directories and rebuilds bounded directory accounting before accepting publications; an orphan completion record cannot create admitted membership.
 6. Conflicting completed mappings, corrupt completed data or unsupported metadata are operator-visible open failures, never silently selected records. Preserve evidence and repair/remove the offending completed entry only offline; do not bypass bounds or JSON recursion protection to force startup.

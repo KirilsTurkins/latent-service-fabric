@@ -5,10 +5,12 @@ durable release and deployment catalogs, immutable routing, admission and quotas
 fixed execution cells, generic Wasmtime execution, activation capabilities,
 bounded lifecycle/status retention, telemetry, and the invocation and management
 RPC adapters. Worker and listener counts come from node configuration and do not
-grow with deployed services. Phase 2 adds authenticated package admission,
+grow with deployed services. Completed Phase 2 provides authenticated package admission,
 release lifecycle, optional authenticated native caching, durable audit and
 manual/canary/rollback control. The [Phase 2 completion review](../phase-2-completion.md)
-records its accepted scope and evidence; Phase 3 capability providers remain planned.
+records its accepted scope and evidence. Phase 3 capability providers and
+application ingress remain planned; no such implementation is enabled by these
+settings.
 
 The [`latent` operator CLI](operator-cli.md) uses the generated clients to publish,
 deploy, invoke, cancel, reconcile operation receipts, control rollouts and query
@@ -115,6 +117,9 @@ reload live trust; the host replacement API owns that transaction.
 | `limits.maximumComponentBytes` | `16777216` | Upload, repository and backend component ceiling, up to 64 MiB. |
 | `limits.maximumPayloadBytes` | `1048576` | Invocation/codec input and output ceiling, up to 1 MiB. |
 | `limits.maximumConnections` | `32` | Accepted transport connections, 1–1024. |
+| `limits.unauthenticatedConnectionTimeoutMillis` | `5000` | Accept-to-first-authenticated-RPC deadline, 100–60000 ms; protocol traffic does not renew it. |
+| `limits.maximumConnectionAgeMillis` | `300000` | Accept-to-drain age, at least the authentication timeout and at most 86400000 ms. |
+| `limits.connectionDrainTimeoutMillis` | `5000` | Allowance for already admitted RPCs after connection age expiry, 1–60000 ms; then close the connection. |
 | `cache.entries` | `8` | Retained prepared components, 1–4096. |
 | `cache.sourceBytes` | `67108864` | Associated component-byte ceiling for resident code, at least one maximum component and at most 1 GiB; not retained source buffers. |
 | `cache.metadataBytes` | `8388608` | Resident preparation metadata accounting ceiling, 1 MiB–1 GiB. |
@@ -123,6 +128,10 @@ reload live trust; the host replacement API owns that transaction.
 | `cache.compilerWorkers` | `min(2, cache.preparations)` | Fixed compiler threads, 1 to 8 and no greater than total compiler jobs. Remaining job slots form the bounded compiler queue. |
 | `catalogs.releaseEntries` | `4096` | Completed-release index count, at most 100000. |
 | `catalogs.releaseIndexBytes` | `67108864` | Release index allocation ceiling, 1 MiB–1 GiB. |
+| `catalogs.publicationStorageBytes` | `4294967296` | Conservative shared blob, publication link and incomplete file exposure ceiling, 1 byte–1 PiB. Lifecycle history has separate limits. |
+| `catalogs.contentIndexBytes` | `67108864` | Shared content/reference metadata ceiling, 1 byte–1 GiB. |
+| `catalogs.contentBlobs` | `1000000` | Shared immutable file count, 1–1000000. |
+| `catalogs.publicationFiles` | `1024` | Files in one publication directory, 1–1024. |
 | `catalogs.deployments` | `4096` | Deployment count, at most 100000. |
 | `catalogs.deploymentStateBytes` | `67108864` | Deployment/compiler state ceiling, 1 MiB–1 GiB. |
 | `supplyChain` | `{"mode":"trusted-local"}` | Explicit local compatibility or `enforced` with a required policy file. |
@@ -134,6 +143,11 @@ reload live trust; the host replacement API owns that transaction.
 | `telemetry.retainedEntries` | `1024` | Local diagnostic capture, 1–65536 records. |
 | `telemetry.retainedBytes` | `8388608` | Local diagnostic allocation ceiling, 64 KiB–256 MiB. |
 | `shutdownGraceMillis` | `1000` | Bounded drain/transport/runtime shutdown interval, 1–60000 ms. |
+
+The [connection deadline policy](../runtime/transport-connection-deadlines.md)
+defines first authentication, maximum age, draining, reconnect/status recovery
+and the residual local admission-flood boundary. Successful authentication does
+not renew a connection's maximum age or bypass authentication on later RPCs.
 
 A cell entry has `class`, `capacity`, `queueCapacity`, and `maximumMemoryBytes`.
 Known classes are `tiny`, `small`, `standard`, `large`, and `extra-large`. Omit

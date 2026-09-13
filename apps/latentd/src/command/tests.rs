@@ -44,3 +44,29 @@ fn status_encoding_is_one_bounded_json_line() {
     );
     assert!(status::encode(&json!({"oversized": "x".repeat(16 * 1024)})).is_err());
 }
+
+#[test]
+fn offline_migration_has_finite_defaults_and_rejects_unbounded_batches() {
+    let parsed =
+        CommandLine::try_parse_from(["latentd", "migrate-catalog", "--config", "node.json"])
+            .unwrap();
+    let Command::MigrateCatalog { limits, .. } = parsed.command else {
+        panic!("migration command");
+    };
+    assert_eq!(
+        limits.limits(),
+        latent_artifacts::CatalogMigrationLimits::default()
+    );
+    for value in ["0", "1025", "65536"] {
+        assert!(CommandLine::try_parse_from([
+            "latentd",
+            "migrate-catalog",
+            "--config",
+            "node.json",
+            "--batch-size",
+            value
+        ])
+        .is_err());
+    }
+    assert!(CommandLine::try_parse_from(["latentd", "migrate-catalog"]).is_err());
+}

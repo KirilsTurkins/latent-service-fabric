@@ -4,7 +4,7 @@ use latent_audit::{
 };
 use latent_control_store::{deployment_operations::DeploymentOperationLookup, DeploymentStore};
 use latent_core::PlatformErrorCode;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 pub(super) async fn lookup(
     repository: &dyn DeploymentStore,
@@ -48,20 +48,7 @@ pub async fn reconcile_deployment_audit(
     repository: &dyn DeploymentStore,
     expires: Instant,
 ) -> crate::Result<()> {
-    let pending = loop {
-        check_deadline(expires)?;
-        match audit.pending_attempts() {
-            Ok(pending) => break pending,
-            Err(error)
-                if error.code == PlatformErrorCode::ResourceExhausted
-                    && error.message == "audit-busy" =>
-            {
-                let wake = (Instant::now() + Duration::from_millis(1)).min(expires);
-                tokio::time::sleep_until(wake.into()).await;
-            }
-            Err(error) => return Err(error),
-        }
-    };
+    let pending = crate::audit::pending::read(audit, expires).await?;
     for pending in pending {
         if !matches!(
             pending.attempt.action,
@@ -75,7 +62,9 @@ pub async fn reconcile_deployment_audit(
         } else {
             mapping::conclusion(&pending.attempt, None)
         };
-        let wait = audit.reconcile(pending.sequence, terminal)?.wait();
+        let wait = crate::audit::pending::reconcile(audit, pending.sequence, &terminal, expires)
+            .await?
+            .wait();
         tokio::time::timeout_at(expires.into(), wait)
             .await
             .map_err(|_| super::deadline())??;

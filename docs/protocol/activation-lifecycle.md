@@ -1,10 +1,12 @@
 # Activation lifecycle protocol
 
-This is the cross-phase target protocol. The delivered
-[Phase 1 lifecycle](../activation-lifecycle.md) runs stateless activations through
+This is the cross-phase target protocol. The current
+[stateless lifecycle](../activation-lifecycle.md) runs activations through
 `Received`, `Resolved`, `Admitted`, `Queued`, `Materializing`, and `Running`, then
-publishes a separate terminal state. Suspension, durable commit, effects, and
-durable workflow continuation below remain later-phase requirements.
+publishes a separate terminal state. Phase 2 adds current release authority
+checks and controlled route publication without changing that stateless result
+model. Durable commit and effects below belong to Phase 4; durable suspension and
+workflow continuation belong to Phase 6. See the [roadmap](../roadmap.md).
 
 ## State machine
 
@@ -38,4 +40,4 @@ Ordinary async suspension keeps the activation logical context but releases the 
 
 ## Journal
 
-Lifecycle events are monotonically sequenced per activation and contain only non-secret metadata. Journaling may be sampled for low-value stateless calls but commit, effect, security, and failure transitions require durable records according to policy.
+In the target protocol, lifecycle events are monotonically sequenced per activation and contain only non-secret metadata. Commit, effect, security and failure transitions require durable records according to policy. The current bounded invocation status journal and optional [Phase 2 audit journal](../phase-2-audit.md) have separate retention and loss contracts; Phase 2 does not emit a mandatory durable audit record for every Invoke.

@@ -1,6 +1,8 @@
 use super::{LifecycleScope, ReleaseLifecycleRecord, ReleaseLifecycleState};
 use crate::{AdmissionAuthority, AdmissionRecheck, ReleaseEligibility};
-use latent_core::{PackageDigest, PlatformError, PlatformErrorCode, ReleaseDigest, TenantId};
+use latent_core::{
+    PackageDigest, PlatformError, PlatformErrorCode, PublicationId, ReleaseDigest, TenantId,
+};
 use sha2::{Digest, Sha256};
 use std::{
     fmt,
@@ -86,14 +88,16 @@ impl PartialEq for LifecycleAuthorityHandle {
 impl Eq for LifecycleAuthorityHandle {}
 
 pub(super) struct Row {
+    pub(super) publication: PublicationId,
     pub(super) scope: LifecycleScope,
     pub(super) release: ReleaseDigest,
     pub(super) package: Option<PackageDigest>,
     allowed_generation: AtomicU64,
 }
 impl Row {
-    pub(super) fn new(record: &ReleaseLifecycleRecord) -> Arc<Self> {
+    pub(super) fn new(record: &ReleaseLifecycleRecord, publication: PublicationId) -> Arc<Self> {
         Arc::new(Self {
+            publication,
             scope: record.scope.clone(),
             release: record.release.clone(),
             package: record.package.clone(),
@@ -125,6 +129,11 @@ pub struct LifecycleEligibility {
     pub(super) generation: u64,
 }
 impl LifecycleEligibility {
+    #[must_use]
+    pub fn publication(&self) -> &PublicationId {
+        &self.row.publication
+    }
+
     #[must_use]
     pub fn scope(&self) -> &LifecycleScope {
         &self.row.scope
@@ -164,6 +173,7 @@ impl LifecycleEligibility {
             + std::mem::size_of::<Owner>()
             + std::mem::size_of::<Row>()
             + 128
+            + PublicationId::TEXT_BYTES
             + self.row.release.0.capacity()
             + self
                 .row
@@ -256,6 +266,10 @@ impl ReleaseUseEligibility {
     #[must_use]
     pub fn release(&self) -> &ReleaseDigest {
         self.lifecycle.release()
+    }
+    #[must_use]
+    pub fn publication(&self) -> &PublicationId {
+        self.lifecycle.publication()
     }
     #[must_use]
     pub fn generation(&self) -> u64 {

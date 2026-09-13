@@ -120,10 +120,18 @@ impl Fixture {
             .unwrap()
     }
     pub fn component_path(&self) -> PathBuf {
+        let publication = self
+            .repository
+            .resolve_publication(
+                &LifecycleScope::Tenant(TenantId("tests".into())),
+                &latent_artifacts::PublicationSelector::LegacyComponent(self.release().clone()),
+            )
+            .unwrap()
+            .unwrap();
         self.directory
             .0
-            .join("releases")
-            .join(self.release().0.strip_prefix("sha256:").unwrap())
+            .join("publications")
+            .join(publication.id.hex())
             .join("component.wasm")
     }
     pub fn revoke(&self) {

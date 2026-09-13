@@ -99,6 +99,10 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
 
 fn artifact_limits(config: &NodeConfig, page_size: u32) -> DirectoryArtifactRepositoryConfig {
     DirectoryArtifactRepositoryConfig {
+        max_storage_bytes: config.catalogs.publication_storage_bytes,
+        max_content_index_bytes: config.catalogs.content_index_bytes,
+        max_content_blobs: config.catalogs.content_blobs,
+        max_publication_files: config.catalogs.publication_files,
         max_index_entries: config.catalogs.release_entries,
         max_index_bytes: config.catalogs.release_index_bytes,
         max_component_bytes: config.limits.maximum_component_bytes,
@@ -134,7 +138,14 @@ fn transport(config: &NodeConfig, maximum_rpcs: usize) -> TransportConfig {
         maximum_control_jobs: config.workers.control,
         maximum_header_bytes: 16 * 1024,
         maximum_streams_per_connection: 32,
+        unauthenticated_timeout: Duration::from_millis(
+            config.limits.unauthenticated_connection_timeout_millis,
+        ),
         request_timeout: Duration::from_millis(config.execution.maximum_wall_time_millis),
+        maximum_connection_age: Duration::from_millis(config.limits.maximum_connection_age_millis),
+        connection_drain_timeout: Duration::from_millis(
+            config.limits.connection_drain_timeout_millis,
+        ),
         shutdown_timeout: Duration::from_millis(config.shutdown_grace_millis),
         credentials: config
             .credentials

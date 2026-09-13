@@ -110,6 +110,7 @@ pub(in super::super) fn descriptor_bytes(
 pub(super) fn measure(
     descriptor: &ArtifactDescriptor,
     manifest: &CapsuleManifest,
+    tenant: Option<&latent_core::TenantId>,
     config: DirectoryArtifactRepositoryConfig,
 ) -> Result<EntryCost, PlatformError> {
     let descriptor_bytes = descriptor_bytes(descriptor, config.max_descriptor_bytes)?;
@@ -146,7 +147,7 @@ pub(super) fn measure(
     ] {
         retained.string(text)?;
     }
-    if let Some(tenant) = &manifest.metadata.tenant {
+    if let Some(tenant) = tenant {
         retained.string(&tenant.0)?;
     }
     // This covers all allocations in the returned owned entry, including sparse maps.
@@ -159,15 +160,15 @@ pub(super) fn measure(
             + size_of::<Option<std::sync::Arc<crate::AdmissionBinding>>>()
             + size_of::<Option<[u8; 32]>>(),
     ))?;
-    // Seven potentially sparse index nodes plus boxed record and collection bookkeeping.
+    // Publication and scoped/global component/reference indexes, including sparse nodes.
     // Repeated charging for shared scope keys intentionally overestimates their storage.
-    retained.add(Some(8192))?;
+    retained.add(Some(16384 + 8 * latent_core::PublicationId::TEXT_BYTES))?;
     retained.add(Some(descriptor.reference.0.len()))?;
     for _ in 0..4 {
         retained.add(Some(descriptor.release_digest.0.len()))?;
     }
-    if let Some(tenant) = &manifest.metadata.tenant {
-        retained.add(tenant.0.len().checked_mul(2))?;
+    if let Some(tenant) = tenant {
+        retained.add(tenant.0.len().checked_mul(5))?;
         retained.add(Some(manifest.metadata.name.len()))?;
     }
     let mut counter = Counter {
@@ -178,7 +179,7 @@ pub(super) fn measure(
         &mut counter,
         &Summary {
             descriptor: Descriptor::from(descriptor),
-            tenant: manifest.metadata.tenant.as_ref().map(|t| t.0.as_str()),
+            tenant: tenant.map(|t| t.0.as_str()),
             service: &manifest.metadata.name,
             semantic_version: &manifest.semantic_version,
             world: &manifest.world.0,

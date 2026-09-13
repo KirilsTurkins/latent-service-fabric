@@ -274,9 +274,15 @@ impl Inner {
         if self.retired.load(Ordering::Acquire) {
             return Err(unavailable("admission-owner-retired"));
         }
-        self.state
-            .try_lock()
-            .map_err(|_| unavailable("admission-authority-busy"))
+        match self.state.try_lock() {
+            Ok(state) => Ok(state),
+            Err(std::sync::TryLockError::WouldBlock) => {
+                Err(unavailable("admission-authority-busy"))
+            }
+            Err(std::sync::TryLockError::Poisoned(_)) => {
+                Err(unavailable("admission-authority-poisoned"))
+            }
+        }
     }
     fn sample(&self, state: &mut State) -> Result<u64, PlatformError> {
         let now = self.sample_clock(state)?;

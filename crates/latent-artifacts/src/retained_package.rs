@@ -12,6 +12,7 @@ pub type RetainedPackageParts = (Vec<u8>, Vec<u8>, Vec<(String, Vec<u8>)>);
 /// and require current lifecycle/admission at their actual mutation boundary.
 #[derive(Debug)]
 pub struct RetainedPackageSource {
+    pub(crate) publication: latent_core::PublicationId,
     pub(crate) tenant: TenantId,
     pub(crate) package: PackageDigest,
     pub(crate) component: ReleaseDigest,
@@ -19,6 +20,10 @@ pub struct RetainedPackageSource {
 }
 
 impl RetainedPackageSource {
+    #[must_use]
+    pub fn publication(&self) -> &latent_core::PublicationId {
+        &self.publication
+    }
     #[must_use]
     pub fn tenant(&self) -> &TenantId {
         &self.tenant
@@ -37,6 +42,7 @@ impl RetainedPackageSource {
     pub fn retained_bytes(&self) -> usize {
         self.input.layers.iter().fold(
             std::mem::size_of::<Self>()
+                .saturating_add(self.publication.as_str().len())
                 .saturating_add(self.tenant.0.capacity())
                 .saturating_add(self.package.as_str().len())
                 .saturating_add(self.component.0.capacity())

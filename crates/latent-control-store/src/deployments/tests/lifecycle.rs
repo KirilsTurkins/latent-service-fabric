@@ -222,10 +222,17 @@ fn inactive_history_never_hides_component_corruption() {
     run(store.apply(deployment("blue", "alice", &first))).unwrap();
     revoke(&releases, &first);
     drop(store);
+    let publication = releases
+        .resolve_publication(
+            &LifecycleScope::LocalUnscoped,
+            &latent_artifacts::PublicationSelector::LegacyComponent(first.clone()),
+        )
+        .unwrap()
+        .unwrap();
     let file = roots[0]
         .0
-        .join("releases")
-        .join(first.0.strip_prefix("sha256:").unwrap())
+        .join("publications")
+        .join(publication.id.hex())
         .join("component.wasm");
     std::fs::write(file, b"tampered").unwrap();
     assert_code(

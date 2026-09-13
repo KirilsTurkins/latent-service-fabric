@@ -1,10 +1,12 @@
 # Blob model
 
-This is the planned blob capability model. Phase 1 exposes blob contract types
-but implements no guest blob provider, leases, replication, or garbage collector.
-The standalone runtime rejects unavailable blob imports; its current invocation
-path uses bounded inline payloads. See the [capability surface](../runtime/capabilities.md)
-and [roadmap](../roadmap.md).
+This is the planned guest blob capability model. The completed Phase 2 node
+stores verified packages and maintains an optional bounded raw artifact cache;
+neither grants guest blob access. Its invocation path uses bounded inline
+payloads and rejects unavailable blob imports. Phase 3 plans local and S3 blob
+providers with bounded writes, reads and leases. Cluster replication remains
+later work. See the [capability surface](../runtime/capabilities.md) and
+[roadmap](../roadmap.md).
 
 Large payloads should not be repeatedly serialized through the router, runtime, and component call graph. The intended model represents them as immutable content-addressed blob references.
 

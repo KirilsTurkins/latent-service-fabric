@@ -6,6 +6,7 @@ use tonic::body::Body;
 use tonic::codegen::http::Request;
 use tonic::Status;
 
+use super::io::ConnectionInfo;
 use super::TransportConfig;
 
 pub(super) fn authenticate(
@@ -75,6 +76,15 @@ pub(super) fn authenticate(
                 context = context.with_deadline_diagnostic_token(token);
             }
         }
+    }
+    if request
+        .extensions()
+        .get::<ConnectionInfo>()
+        .is_some_and(|connection| !connection.mark_authenticated())
+    {
+        return Err(Status::deadline_exceeded(
+            "standalone connection authentication deadline expired",
+        ));
     }
     request.extensions_mut().insert(context);
     Ok(())

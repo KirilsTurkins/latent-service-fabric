@@ -60,8 +60,12 @@ impl Serialize for Revisions<'_, '_> {
 struct Revision<'a>(&'a super::super::compiler::RevisionRecord);
 impl Serialize for Revision<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut state = serializer.serialize_struct("Revision", 4)?;
+        let mut state = serializer
+            .serialize_struct("Revision", 4 + usize::from(self.0.publication.is_some()))?;
         state.serialize_field("attributes", &self.0.attributes)?;
+        if let Some(publication) = &self.0.publication {
+            state.serialize_field("publication", publication.as_str())?;
+        }
         state.serialize_field("release", &self.0.deployment.release.0)?;
         state.serialize_field("revision", &self.0.revision.0)?;
         state.serialize_field("weight", &self.0.deployment.route_weight)?;

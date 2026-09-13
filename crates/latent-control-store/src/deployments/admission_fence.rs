@@ -20,21 +20,27 @@ impl CompiledCatalog {
     pub(super) fn selected_eligibility(
         &self,
         release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
     ) -> Option<SelectedEligibility> {
-        if let Some(positive) = self.eligibility_for(release) {
+        if let Some(positive) = self.eligibility_for(release, publication) {
             return Some(SelectedEligibility::Eligible(positive.clone()));
         }
         self.inactive
-            .binary_search_by(|entry| entry.release().cmp(release))
+            .binary_search_by(|entry| {
+                (entry.release(), Some(entry.publication())).cmp(&(release, publication))
+            })
             .ok()
             .map(|index| SelectedEligibility::Inactive(self.inactive[index].clone()))
     }
     pub(super) fn eligibility_for(
         &self,
         release: &ReleaseDigest,
+        publication: Option<&latent_core::PublicationId>,
     ) -> Option<&ReleaseUseEligibility> {
         self.eligibility
-            .binary_search_by(|entry| entry.release().cmp(release))
+            .binary_search_by(|entry| {
+                (entry.release(), Some(entry.publication())).cmp(&(release, publication))
+            })
             .ok()
             .map(|position| &self.eligibility[position])
     }

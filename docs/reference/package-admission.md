@@ -8,6 +8,16 @@ for deployment or execution. `latent-policy::supply_chain::SupplyChainAuthority`
 is the shared node owner. It retains approved public trust configuration and
 durable policy/time floors; request data cannot construct that authority.
 
+The accepted Phase 3 correction in
+[ADR-0027](../../adr/0027-separate-publication-authority-from-component-identity.md)
+and [RFC-0002](../../rfcs/0002-tenant-scoped-publication-identity.md) separates
+tenant-scoped publication from component identity. The catalog now implements
+independent publications, tenant-neutral package admission and package coexistence.
+[Catalog format 2 and offline migration](publication-catalog.md) describe the
+storage boundary. Runtime and deployment propagation (#266), and public RPC/CLI/SDK
+selectors (#267), are separate integration work. Existing component fields retain
+their byte identity; legacy selection fails explicitly when it becomes ambiguous.
+
 ## Select the node mode
 
 The `supplyChain` member of [node configuration](standalone-node.md) selects one
@@ -178,6 +188,13 @@ may therefore be unavailable for up to the configured lease duration.
 Missing floor data in an initialized authority is corruption, not permission to
 reset the policy generation or clock history.
 
+Internal lock diagnostics distinguish temporary `admission-authority-busy`
+contention from `admission-authority-poisoned`. Both preserve the existing public
+`Unavailable` shape and fail closed. Retrying the same poisoned authority cannot
+clear poison, renew its clock lease or restore grants; startup's exact busy-only
+retry does not retry poison. Public RPC error redaction remains unchanged, so a
+generic `Unavailable` response alone does not identify either internal cause.
+
 A valid policy outside its current validity interval may open with no positive
 verification grants, allowing historical lifecycle status and management of
 retained releases. It cannot admit or execute them until current checks pass.
@@ -186,9 +203,13 @@ state still abort opening; expired validity does not enable local-mode fallback.
 
 Exact retries use the original package/artifact/evidence bytes and current
 trust. The original historical receipt and verification time are retained.
-There is one immutable package association per component release digest;
-different package, tenant, metadata or evidence submitted through ordinary
-publication for the same component conflicts. Retained selected evidence can be
+One immutable package can be admitted independently in each authorized tenant.
+Different packages containing the same component have distinct publications;
+correcting an embedded SBOM requires a new package and its own valid proofs.
+An embedded tenant restricts admission to that tenant. A tenant-neutral manifest
+keeps its original bytes when admitted into an explicitly authorized scope.
+Ordinary publication cannot overwrite the original evidence of an existing
+publication. Retained selected evidence can be
 explicitly reverified while it remains valid. Reissued envelopes use the separate
 [lifecycle evidence-renewal operation](release-lifecycle.md#evidence-renewal-and-route-refresh),
 with an exact generation precondition and immutable evidence revision. Original

@@ -1,12 +1,14 @@
 # Identity and capability architecture
 
-Phase 1 authenticates configured bearer credentials on the standalone node's
+The current node authenticates configured bearer credentials on its
 loopback RPC listener and applies tenant-scoped management, invocation, status
 and cancellation authorization. Its guest imports are limited to context, log
 and monotonic/wall clocks. See the [node credential model](../reference/standalone-node.md)
-and [capability implementation](../runtime/capabilities.md). Node workload mTLS,
-delegated child calls and general external capability providers below remain
-later-phase design contracts.
+and [capability implementation](../runtime/capabilities.md). Phase 2 also binds
+execution to current release lifecycle and, in enforced mode, verified signing
+authority. Phase 3 plans the general capability broker, bounded delegation and
+external providers below. Node workload mTLS remains part of the later cluster
+architecture. See the [security boundary](security.md) and [roadmap](../roadmap.md).
 
 ## Identity layers
 
@@ -21,17 +23,17 @@ LSF distinguishes:
 
 A future remote child call must carry a bounded delegation rather than the caller's unrestricted original credential. Phase 1 root/parent IDs are correlation metadata and do not grant delegated authority.
 
-## Authorization
+## Planned broker authorization
 
 Authorization decisions bind principal, action, resource, deployment generation, route generation, capability policy, and relevant request attributes. Decisions can attach obligations such as reduced budgets, redaction, audit requirements, or placement constraints.
 
-## Capability intersection
+## Planned capability intersection
 
 A guest import becomes usable only when requested by the immutable capsule, granted by deployment policy, and permitted for the current principal and operation.
 
-## Handle properties
+## Planned broker handle properties
 
-Capability handles are opaque, activation-scoped, non-transferable unless explicitly delegated, operation-scoped, quota-bound, expiring, and revocable. The runtime prevents use after activation completion.
+Capability handles must be opaque, activation-scoped, non-transferable unless explicitly delegated, operation-scoped, quota-bound, expiring, and revocable. The broker must prevent use after activation completion. Existing context, log and clock bindings already check their activation context; descriptive policy and handle DTOs alone do not grant provider authority.
 
 ## Node identity
 

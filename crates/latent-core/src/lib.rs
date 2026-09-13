@@ -12,6 +12,7 @@ pub mod host_profile;
 pub mod identity;
 pub mod ids;
 pub mod lifecycle;
+pub mod publication;
 
 pub use budget::{
     ActivationBudget, BudgetConsumption, BudgetDimension, BudgetError, BudgetFinalization,
@@ -33,6 +34,7 @@ pub use host_profile::{
 pub use identity::{InvocationPrincipal, PrincipalKind};
 pub use ids::*;
 pub use lifecycle::{ActivationPhase, ActivationTerminalState, CancelDisposition};
+pub use publication::{PublicationId, PublicationIdParseError};
 
 use std::future::Future;
 use std::pin::Pin;

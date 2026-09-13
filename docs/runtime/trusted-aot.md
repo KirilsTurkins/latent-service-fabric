@@ -3,7 +3,7 @@
 Phase 2 issue #150 adds a bounded compiler producer to `latent-wasmtime`.
 `IsolatedAotCompiler` launches an approved one-job executable, verifies its input
 and output, and returns locally authenticated native bytes with an owned memory
-allowance. The child uses Wasmtime 47.0.3's safe `Engine::precompile_component`;
+allowance. The child uses Wasmtime 47.0.4's safe `Engine::precompile_component`;
 it never instantiates a guest or loads native output.
 
 Issue #151 adds opt-in persistent native reuse and authenticated loading. A
@@ -12,6 +12,18 @@ protected host key, bounded raw-blob cache and bounded receipt cache. The normal
 configuration continues to compile portable components locally. There is no
 automatic CLI cache or distributed native-artifact trust protocol.
 
+[ADR-0026](../../adr/0026-require-explicit-execution-isolation-profiles.md) and
+[RFC-0001](../../rfcs/0001-minimum-execution-isolation-profiles.md) distinguish
+these implemented compiler/native-load mechanisms from guest-process isolation.
+The trusted-local default remains for operator-controlled workloads. The planned
+external-capsule profile requires enforced admission, protected configuration,
+the [patched runtime baseline](../development/wasmtime-security-update.md) and
+supported isolated compilation together; enabling signatures alone does not
+select this compiler. Profile selection/enforcement remains assigned to #280.
+The parent parser, configured compiler, native loader, Wasmtime and OS remain
+trusted; a separate compiler process does not make its native output untrusted
+code safe to execute in the node.
+
 ## Host API and input authority
 
 Create a `ValidatedAotProfile` from a validated `WasmtimeConfig`, configure a
@@ -19,8 +31,9 @@ Create a `ValidatedAotProfile` from a validated `WasmtimeConfig`, configure a
 `IsolatedAotCompiler` with the absolute executable path, its approved SHA-256,
 the profile, authority and `AotProcessLimits`.
 
-`reserve` accepts a concrete `OwnedArtifactPreparationSource` and exact
-`ReleaseDigest`. It obtains the catalog's current lifecycle/admission capability
+`reserve_selected` accepts a concrete `OwnedArtifactPreparationSource`, exact
+`ReleaseDigest` and selected publication ID. The legacy `reserve` requires an
+unambiguous component association. The producer obtains the catalog's current lifecycle/admission capability
 and reserves resources before the fresh bounded fetch. The job checks component
 bytes, descriptor, manifest, metadata and the retained capability. Missing
 capabilities and different release associations are rejected. Enforced catalogs
@@ -29,13 +42,17 @@ explicit local scope. A local artifact without an OCI package has an absent
 package identity, never an invented digest.
 
 ```rust,ignore
-let job = compiler.reserve(catalog_source, &release)?;
+let job = compiler.reserve_selected(catalog_source, &release, Some(&publication))?;
 let cancellation = job.control();
 // Run on an existing bounded blocking worker; this call owns the child.
 let output = job.run()?;
 let native_bytes = output.output();
 let receipt = output.receipt();
 ```
+
+The [publication runtime contract](../reference/publication-runtime.md) also binds
+the native compatibility key and authenticated output/receipt to that publication.
+Sharing component bytes cannot transfer another tenant's or package's authority.
 
 `AotJobControl::cancel` signals the owner. Dropping an unstarted job starts no
 process. The producer has no internal queue, compiler thread pool or dormant
@@ -63,7 +80,7 @@ executable approval, private key-file checks and separate cache roots.
 
 Private construction of `AotCompatibilityKey` binds:
 
-- catalog scope, optional real package identity, component SHA-256 and size;
+- catalog scope, exact publication, optional real package identity, component SHA-256 and size;
 - the verified component metadata fingerprint;
 - complete validated runtime/security configuration, actual target and detected
   CPU requirements;
@@ -234,7 +251,7 @@ before the larger blob read. There is no public `load(bytes)` or restored-output
 constructor.
 
 The sole audited unsafe operation is `Component::deserialize` over this immutable
-authenticated slice. Wasmtime 47.0.3 copies the bytes into its own mapping; the
+authenticated slice. Wasmtime 47.0.4 copies the bytes into its own mapping; the
 loader never deserializes a replaceable file or trusts a filename. It checks the
 actual engine fingerprint, current input capability and job control before entry,
 then checks currentness again after the synchronous loader returns. Wasmtime

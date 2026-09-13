@@ -2,12 +2,16 @@
 
 ADRs record decisions that constrain implementations and compatibility. Accepted ADRs may be superseded only by another ADR.
 
-Acceptance records architectural direction, not feature availability. Phase 1
-and its performance extension are complete; durable catalog admission,
-general capabilities, state/effects, clustered control, and fixed external
-execution hosts remain future implementation work. The
-[roadmap](../docs/roadmap.md) and [completion report](../docs/phase-1-extension-completion.md)
-identify the delivered boundary without changing these decisions.
+Acceptance records architectural direction, not feature availability. Phase 1,
+its performance extension, and Phase 2 are complete. Verified package admission,
+OCI transfer, publisher/builder/SBOM policy, isolated compilation, bounded native
+reuse and controlled rollout now have delivered implementations. General
+capability providers and application hosting enter Phase 3. Transactional
+state/effects and clustered control retain their later scope. Stronger external
+execution hosts remain unsupported until their explicit isolation profile is
+implemented and validated. The [roadmap](../docs/roadmap.md) and
+[Phase 2 completion report](../docs/phase-2-completion.md) identify the delivered
+boundary. Dated implementation snapshots within ADRs keep their original context.
 
 [ADR-0019](0019-separate-package-identity-from-component-identity.md) defines the
 Phase 2 package identity and format foundation while preserving Phase 1 component
@@ -19,6 +23,8 @@ without compiling or invoking guests.
 
 [ADR-0021](0021-bound-registry-authority-and-transfer-ownership.md) defines scoped
 authenticated OCI transfers, retained download budgets and owned upload cleanup.
+Its permanent authority/ownership boundary is retained while ADR-0029 versions
+the transport interoperability choices.
 
 [ADR-0022](0022-bind-publisher-proofs-to-current-explicit-trust.md) defines bounded
 package signatures and publisher proofs bound to explicit current policy and
@@ -31,3 +37,35 @@ with exact package/component/source associations and bounded current trust.
 [ADR-0024](0024-bind-sbom-inventory-through-package-content.md) defines bounded
 declared-input SBOMs embedded before package assembly, exact detached associations
 and content policy separate from publisher authentication and admission currentness.
+
+[ADR-0025](0025-separate-immediate-capability-operations-from-transactional-effect-intents.md)
+separates Phase 3 immediate capability operations and explicit uncertain outcomes
+from Phase 4 transactional state/effect intents. It narrows ADR-0013's blanket
+external-effect statement while preserving ADR-0014's no-universal-exactly-once
+boundary.
+
+[ADR-0026](0026-require-explicit-execution-isolation-profiles.md) defines exact
+security-profile selection, trusted-computing-base boundaries and fail-closed
+requirements for in-process guests, isolated compilation, authenticated native
+reuse and future provider/renderer/fixed-host execution.
+
+[ADR-0027](0027-separate-publication-authority-from-component-identity.md)
+supersedes only ADR-0019's one-component/one-publication rule. It separates
+tenant-scoped immutable publication and lifecycle authority from component/code
+deduplication, preserving legacy component fields and requiring explicit
+selectors, bounded migration and independent currentness. Implementation remains
+assigned to #265–#267 in [RFC-0002](../rfcs/0002-tenant-scoped-publication-identity.md).
+
+[ADR-0028](0028-retain-activation-ownership-across-asynchronous-waits.md) follows
+ADR-0006 by defining ownership while active guests await providers or descendant
+calls. Yielding the shared runtime thread does not refund a live cell, Store,
+buffer or reservation; nested calls must make progress within fixed declared
+capacity or reject promptly. Implementation and conformance remain assigned to
+#205, #208, #209 and #238.
+
+[ADR-0029](0029-separate-registry-authority-from-transport-profile.md) separates
+ADR-0021's permanent registry authority/ownership rules from versioned transport
+choices. `lsf-oci-static-v1` names the delivered restricted profile;
+`lsf-oci-bearer-v1` remains selected but unsupported until #269/#270 deliver and
+validate token authentication, bounded DNS/redirects and the Harbor conformance
+matrix from [RFC-0003](../rfcs/0003-versioned-oci-transport-profiles.md).

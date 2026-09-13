@@ -117,6 +117,9 @@ pub struct LimitConfig {
     pub maximum_component_bytes: usize,
     pub maximum_payload_bytes: usize,
     pub maximum_connections: usize,
+    pub unauthenticated_connection_timeout_millis: u64,
+    pub maximum_connection_age_millis: u64,
+    pub connection_drain_timeout_millis: u64,
 }
 
 #[derive(Clone, Deserialize)]
@@ -135,6 +138,10 @@ pub struct CacheConfig {
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields, default)]
 pub struct CatalogConfig {
+    pub publication_storage_bytes: u64,
+    pub content_index_bytes: usize,
+    pub content_blobs: usize,
+    pub publication_files: usize,
     pub release_entries: usize,
     pub release_index_bytes: usize,
     pub deployments: usize,

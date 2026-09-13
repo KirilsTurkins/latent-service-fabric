@@ -3,7 +3,10 @@
 This target matrix spans multiple phases. The completed Phase 1
 [bounded conformance profile](../../docs/testing/phase-1-conformance.md) and
 [completion gate](../../docs/phase-1-completion.md) cover the supported stateless
-Wasmtime and inline-adapter/network boundaries. Futures, streams, transactional
+Wasmtime and inline-adapter/network boundaries. The
+[Phase 2 gate](../../docs/phase-2-completion.md) adds package-to-execution trust,
+offline use/revocation, native currentness and controlled release delivery.
+Futures, streams, transactional
 state, effects and descendant budget delegation below require later-phase
 implementations and their own executable coverage.
 

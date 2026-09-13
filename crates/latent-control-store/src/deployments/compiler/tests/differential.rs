@@ -207,8 +207,8 @@ fn irrelevant_verified_metadata_refreshes_generation_stamp_without_owning_it_in_
         64,
     )
     .unwrap();
-    assert!(reuse::prior_release(Some(&old), &digest, Some(stamp)).is_none());
-    assert!(reuse::prior_release(Some(&new), &digest, Some(stamp)).is_some());
+    assert!(reuse::prior_release(Some(&old), &digest, None, Some(stamp)).is_none());
+    assert!(reuse::prior_release(Some(&new), &digest, None, Some(stamp)).is_some());
     assert_eq!(releases.fetches.load(Ordering::Relaxed), 3);
 }
 

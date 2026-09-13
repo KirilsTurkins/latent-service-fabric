@@ -56,6 +56,10 @@ release, and it cannot extend guest networking capabilities. Publisher trust,
 evidence verification, durable cache/admission and rollout remain separate
 Phase 2 tickets.
 
+Those separate deliveries have since completed in Phase 2. The
+[completion map](../docs/phase-2-completion.md) records their composition; this
+transfer decision's authority and ownership limits remain unchanged.
+
 Some registries require separate token exchanges, object-store redirects or
 legacy referrer fallback. They must use preissued credentials and this supported
 profile, or wait for a separately designed authority/consistency extension.
@@ -69,3 +73,14 @@ immutable ID and ownership label match its recovery record. No persistent
 registry volume or load-benchmark evidence is needed. The
 [registry reference](../docs/reference/oci-registry.md) documents configuration,
 limits, ownership and supported interoperability.
+
+## Phase 3 transport profiles
+
+[ADR-0029](0029-separate-registry-authority-from-transport-profile.md) and
+[RFC-0003](../rfcs/0003-versioned-oci-transport-profiles.md) preserve this ADR's
+registry/repository authority, digest pinning, credential provenance, finite
+ownership and uncertain-write rules while making static addresses, preissued
+credentials, DNS/token challenge handling and redirects explicit versioned
+transport choices. The implementation delivered by this ADR is named
+`lsf-oci-static-v1`; the broader `lsf-oci-bearer-v1` profile is not supported
+until #269/#270 implement and validate it.

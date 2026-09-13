@@ -106,8 +106,7 @@ impl DirectoryArtifactRepository {
         let token = {
             let index = self.index.read().map_err(lock_error)?;
             let entry = index
-                .by_digest
-                .get(release)
+                .legacy_component(None, release)?
                 .ok_or_else(|| error(PlatformErrorCode::NotFound, "release digest not found"))?;
             entry.eligibility.clone().ok_or_else(|| {
                 error(
@@ -125,29 +124,7 @@ impl DirectoryArtifactRepository {
         release: &ReleaseDigest,
         verified: &VerifiedEntry,
     ) -> Result<(), PlatformError> {
-        if let Some(lifecycle) = self.lifecycle.get() {
-            let expected = lifecycle
-                .identity(release)?
-                .ok_or_else(|| corrupt("lifecycle-membership-missing"))?;
-            if expected.completion != verified.completion.identity()? {
-                return Err(corrupt("stored-content-changed-after-lifecycle-adoption"));
-            }
-        }
-        if self.admission.is_none() {
-            return Ok(());
-        }
-        let expected = self
-            .index
-            .read()
-            .map_err(lock_error)?
-            .by_digest
-            .get(release)
-            .and_then(|entry| entry.admission_completion)
-            .ok_or_else(|| corrupt("admission-index-history-missing"))?;
-        if expected != verified.completion.identity()? {
-            return Err(corrupt("stored-admission-changed-after-adoption"));
-        }
-        Ok(())
+        self.verify_publication_index(&self.require_legacy_publication(None, release)?, verified)
     }
 
     pub(super) fn recover_eligibility(
@@ -217,7 +194,13 @@ impl DirectoryArtifactRepository {
             return Err(resource_exhausted("admission-grant-retention-limit"));
         }
         if &value.grant.binding().tenant != tenant
-            || value.artifact.manifest.metadata.tenant.as_ref() != Some(tenant)
+            || value
+                .artifact
+                .manifest
+                .metadata
+                .tenant
+                .as_ref()
+                .is_some_and(|embedded| embedded != tenant)
             || value.grant.binding().release != value.artifact.descriptor.release_digest
             || value.artifact.descriptor.publisher.is_none()
         {
@@ -233,6 +216,20 @@ impl DirectoryArtifactRepository {
         tenant: &TenantId,
         release: &ReleaseDigest,
     ) -> Result<ArtifactCatalogEntry, PlatformError> {
+        let reference = self.require_legacy_publication(
+            Some(&crate::LifecycleScope::Tenant(tenant.clone())),
+            release,
+        )?;
+        self.reverify_publication(&reference)
+    }
+
+    pub fn reverify_publication(
+        &self,
+        reference: &crate::PublicationRef,
+    ) -> Result<ArtifactCatalogEntry, PlatformError> {
+        let _summary = self
+            .publication_catalog_entry(reference)?
+            .ok_or_else(|| error(PlatformErrorCode::NotFound, "publication not found"))?;
         let _work = self
             .admission_work
             .try_lock()
@@ -245,8 +242,8 @@ impl DirectoryArtifactRepository {
         })?;
         let row = self
             .life_store()
-            .record(release)?
-            .filter(|row| row.scope.tenant() == Some(tenant))
+            .record_publication(&reference.id)?
+            .filter(|row| row.scope == reference.scope)
             .ok_or_else(|| error(PlatformErrorCode::NotFound, "release digest not found"))?;
         if row.state != crate::ReleaseLifecycleState::Admitted {
             return Err(error(
@@ -254,9 +251,9 @@ impl DirectoryArtifactRepository {
                 "release-lifecycle-ineligible",
             ));
         }
-        let destination = self.entry_path(release)?;
+        let destination = self.publication_path(&reference.id);
         let verified = self.load_complete_entry(&destination, Retention::Metadata)?;
-        self.verify_admission_index(release, &verified)?;
+        self.verify_publication_index(reference, &verified)?;
         let token = if row.evidence_revision_digest.is_some() {
             self.recover_selected_evidence(&destination, &verified)?
         } else {
@@ -271,7 +268,7 @@ impl DirectoryArtifactRepository {
         })?;
         let summary = ArtifactCatalogEntry {
             descriptor: verified.metadata.descriptor().clone(),
-            tenant: verified.metadata.manifest().metadata.tenant.clone(),
+            tenant: reference.scope.tenant().cloned(),
             service: latent_core::ServiceId(verified.metadata.manifest().metadata.name.clone()),
             semantic_version: verified.metadata.manifest().semantic_version.clone(),
             world: verified.metadata.manifest().world.clone(),
@@ -279,7 +276,7 @@ impl DirectoryArtifactRepository {
         self.life_store().with_exclusive(&mut |_fence| {
             let current = self
                 .life_store()
-                .record(release)?
+                .record_publication(&reference.id)?
                 .ok_or_else(|| corrupt("lifecycle-record-missing"))?;
             if current != row {
                 return Err(error(
@@ -292,7 +289,7 @@ impl DirectoryArtifactRepository {
                 let mut index = self.index.write().map_err(lock_error)?;
                 check.check()?;
                 index.install_selected_eligibility(
-                    release,
+                    &reference.id,
                     Some(token.clone()),
                     verified.completion.identity()?,
                     self.config,

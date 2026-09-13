@@ -147,6 +147,23 @@ fn check_selection(
         for revision in &service.revisions {
             cost.string(&revision.revision.0, true)?;
             cost.string(&revision.release.0, true)?;
+            if revision
+                .publication
+                .as_ref()
+                .map(latent_core::PublicationId::as_str)
+                != revision
+                    .attributes
+                    .get("lsf.publication")
+                    .map(String::as_str)
+            {
+                return Err(failure(
+                    PlatformErrorCode::InvalidArgument,
+                    "route-publication-mismatch",
+                ));
+            }
+            if let Some(publication) = &revision.publication {
+                cost.text(publication.as_str(), publication.as_str().len(), true)?;
+            }
             if revision.attributes.len() > limits.maximum_attributes_per_revision {
                 return Err(exhausted());
             }

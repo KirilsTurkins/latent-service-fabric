@@ -77,7 +77,7 @@ fn stages_commit_one_combined_catalog_and_replay_exact_history_after_restart() {
     let releases = Arc::new(Releases::default());
     let store = open(&root, &releases);
     let request = setup(&store, &releases);
-    assert_eq!(persisted(&root)["format_version"], 2);
+    assert_eq!(persisted(&root)["format_version"], 5);
     let original_pin = store.pin().unwrap();
     let original = original_pin
         .resolve(&target("alice", None), Some("pinned-activation"))
@@ -104,7 +104,7 @@ fn stages_commit_one_combined_catalog_and_replay_exact_history_after_restart() {
         2500
     );
     let encoded = persisted(&root);
-    assert_eq!(encoded["format_version"], 3);
+    assert_eq!(encoded["format_version"], 5);
     assert_eq!(
         encoded["payload"]["control"]["transaction_version"],
         first.receipt.state_version
@@ -162,7 +162,7 @@ fn stages_commit_one_combined_catalog_and_replay_exact_history_after_restart() {
         run(store.prepare_rollout(change("too-late", 3, RolloutCommand::Resume))),
         Code::StateConflict,
     );
-    assert_eq!(persisted(&root)["format_version"], 3);
+    assert_eq!(persisted(&root)["format_version"], 5);
 }
 
 #[test]

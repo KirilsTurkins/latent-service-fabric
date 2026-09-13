@@ -107,9 +107,10 @@ substitute for either check.
 Unknown, unsupported or exhausted analysis never authorizes promotion, including
 when a caller permits breaking changes. An allowance for a known breaking pair
 does not bypass runtime requirements, package integrity or current supply-chain
-authority. Automatic rollout coordination and canary policy remain
-[#153](https://github.com/KirilsTurkins/latent-service-fabric/issues/153) and
-[#154](https://github.com/KirilsTurkins/latent-service-fabric/issues/154).
+authority. The implemented [rollout coordinator](../phase-2-rollouts.md) uses
+these checks for exact candidate transitions. [Canary promotion](../phase-2-canary-promotion.md)
+additionally requires sealed attributed observations and an explicit operator
+command; it does not advance a plan automatically on a timer.
 
 ## Descriptor and package boundaries
 

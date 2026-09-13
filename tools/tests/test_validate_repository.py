@@ -66,6 +66,37 @@ class SourceTraversalTests(unittest.TestCase):
             self.assertEqual(len(validator.ERRORS), 1)
             self.assertIn("src/build/broken.json", validator.ERRORS[0])
 
+    def test_json_rejects_duplicate_keys_in_each_bad_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cases = {
+                "top-level.json": '{"label":"first","label":"second"}',
+                "nested.json": '{"outer":{"name":1,"name":2}}',
+                "escaped.json": '{"label":1,"la\\u0062el":2}',
+            }
+            for name, content in cases.items():
+                (root / name).write_text(content, encoding="utf-8")
+
+            validator.validate_json(root)
+
+            self.assertEqual(len(validator.ERRORS), 3)
+            for name in cases:
+                matching = [error for error in validator.ERRORS if name in error]
+                self.assertEqual(len(matching), 1)
+                self.assertIn("duplicate key", matching[0])
+
+    def test_json_allows_same_key_in_separate_objects(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "valid.json").write_text(
+                '{"left":{"name":1},"right":{"name":2}}',
+                encoding="utf-8",
+            )
+
+            validator.validate_json(root)
+
+            self.assertEqual(validator.ERRORS, [])
+
     def test_documentation_svg_requires_accessibility_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

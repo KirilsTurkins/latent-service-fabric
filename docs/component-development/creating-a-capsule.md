@@ -24,7 +24,7 @@ OCI transfer, publisher and independent builder verification, SBOM policy,
 release lifecycle and rollout controls are implemented alongside it. The
 packager consumes existing build output; it does not compile source, execute
 package scripts, sign bytes or invent build provenance. The
-[Phase 2 completion review](../phase-2-completion.md) records the accepted scope,
+[completed Phase 2 gate](../phase-2-completion.md) records the accepted scope,
 validation evidence and limitations.
 
 ```text
@@ -84,8 +84,10 @@ separate observed-build workflow when evaluating real source and tool evidence.
 - Domain errors are explicit WIT variants.
 - Platform failures remain separate.
 
-Phase 1 provides activation context, clocks, resource budgets and structured
-logging. Calls execute within finite activation budgets; persistent guest state
-and background work are unavailable. General capabilities, including blob
-storage, belong to Phase 3. Stable idempotency for state/effects and durable
-workflow suspension belong to later phases; see the [roadmap](../roadmap.md).
+The current runtime provides activation context, clocks, resource budgets and
+structured logging. Calls execute within finite activation budgets; persistent
+guest state and background work are unavailable. Phase 2 packaging of browser
+assets or SSR content does not launch a browser or renderer. General providers,
+including blob storage and shared application ingress, remain planned Phase 3
+work. Stable idempotency for state/effects and durable workflow suspension belong
+to later phases; see the [roadmap](../roadmap.md).

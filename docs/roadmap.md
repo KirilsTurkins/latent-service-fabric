@@ -80,7 +80,7 @@ including all eighteen delivery dependencies (#140–157), currentness and offli
 checks, the fixed dormant-resource profile and retained limitations.
 
 The [Phase 2 delivery notes](phase-2-delivery.md) summarize current features,
-migration and recovery boundaries. They remain unreleased development notes.
+migration and recovery boundaries and identify their release status.
 
 | Delivered surface | Contract and scope |
 | --- | --- |

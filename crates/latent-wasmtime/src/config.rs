@@ -17,7 +17,7 @@ use crate::containment::platform_error;
 use crate::host::policy::ContextExposurePolicy;
 use crate::values::ValueCodecLimits;
 
-pub const WASMTIME_VERSION: &str = "47.0.3";
+pub const WASMTIME_VERSION: &str = "47.0.4";
 pub const GENERIC_BACKEND_ID: &str = "wasmtime-component-phase-1";
 pub const PHASE0_BACKEND_ID: &str = "wasmtime-component-phase-0";
 const MAXIMUM_EPOCH_OBSERVATION_MILLIS: u64 = 1_000;

@@ -6,6 +6,12 @@ release additionally needs current publisher, builder, policy and host checks
 from [package admission](package-admission.md) and
 [release compatibility](release-compatibility.md).
 
+The format-2 [publication catalog](publication-catalog.md) keys storage and
+generations by tenant-scoped publication. Component-only management requests keep
+their legacy wire meaning and require a unique publication in the authorized
+scope. Exact public selector integration is tracked by #267; migration never
+reinterprets component fields as package or publication IDs.
+
 `ReleaseDescriptor.admitted` remains historical publication metadata. It does
 not authorize an invocation or describe current lifecycle eligibility. A revoked
 or retired release keeps its original component digest, package bytes and
@@ -73,8 +79,11 @@ The corresponding Rust host methods are `ArtifactRepository::publish_managed`,
 `get_release_lifecycle`, `get_release_operation`, `change_release_lifecycle`
 and `renew_release_evidence`. Generic repositories return explicit unsupported
 errors until implemented. Rust clients are generated from Protobuf; the other
-language SDKs remain invocation interfaces. Full operator CLI workflows remain
-separate Phase 2 work.
+language SDKs remain invocation interfaces. The delivered
+[operator CLI](operator-cli.md) exposes publication, lifecycle/status and
+operation lookup, revoke/retire and evidence renewal. Its
+[workflow contract](../phase-2-operator-workflows.md) preserves caller-selected
+operation IDs, exact preconditions and separate audit/durability outcomes.
 
 The native `publish_managed` method also accepts the exact current positive
 generation for identical content that remains admitted. This records a new
@@ -143,9 +152,11 @@ Lifecycle and evidence generations also define the eligibility boundary for
 derived caches. The [raw download cache](raw-artifact-cache.md) retains no
 execution authority and never evicts authoritative catalog content. Retiring a
 release therefore cannot break retained deployment or rollback dependencies by
-deleting their original bytes. Persistent native artifacts belong to the later
-native-cache ticket; the current lifecycle feature does not claim that such a
-cache already exists.
+deleting their original bytes. Persistent native artifacts use the separate
+native execution boundary described in [trusted AOT](../runtime/trusted-aot.md).
+That optional cache is implemented: it authenticates exact native bytes while
+retaining independent current lifecycle and signed-admission checks. Neither a
+resident prepared hit nor a persistent native hit revives an old grant.
 
 ## Bounds and serialization
 

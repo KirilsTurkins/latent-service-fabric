@@ -28,6 +28,19 @@ pub(super) fn ready<T>(mut future: Pin<Box<dyn Future<Output = T> + Send + '_>>)
 fn tenant() -> TenantId {
     TenantId("tests".to_owned())
 }
+pub(super) fn publication_directory(
+    repo: &DirectoryArtifactRepository,
+    release: &ReleaseDigest,
+) -> std::path::PathBuf {
+    let reference = repo
+        .resolve_publication(
+            &latent_artifacts::LifecycleScope::Tenant(tenant()),
+            &latent_artifacts::PublicationSelector::LegacyComponent(release.clone()),
+        )
+        .unwrap()
+        .unwrap();
+    repo.root().join("publications").join(reference.id.hex())
+}
 fn authority(fixture: &Fixture, root: &std::path::Path) -> Arc<SupplyChainAuthority> {
     Arc::new(
         SupplyChainAuthority::open(root, fixture.approved(), fixture.clock.clone(), 5).unwrap(),
@@ -134,7 +147,7 @@ fn malformed_or_missing_evidence_never_creates_preparation_authority() {
             PlatformErrorCode::NotFound
         );
         assert_eq!(
-            std::fs::read_dir(repo.root().join("releases"))
+            std::fs::read_dir(repo.root().join("publications"))
                 .unwrap()
                 .count(),
             0
@@ -233,10 +246,7 @@ fn aged_proof_refresh_preserves_original_durable_receipt_and_package() {
         .descriptor
         .release_digest;
     let previous = repo.release_eligibility(&release).unwrap().unwrap();
-    let directory = repo
-        .root()
-        .join("releases")
-        .join(release.0.strip_prefix("sha256:").unwrap());
+    let directory = publication_directory(&repo, &release);
     let complete = std::fs::read(directory.join("COMPLETE")).unwrap();
     fixture.clock.set(NOW + 60);
     authority.renew_clock_lease().unwrap();

@@ -310,9 +310,11 @@ impl WasmtimeBackend {
         artifact: &CapsuleArtifact,
         key: &PreparationKey,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.shared
-            .preparation_context
-            .check_eligibility(None, &key.release)?;
+        self.shared.preparation_context.check_eligibility(
+            None,
+            &key.release,
+            key.publication.as_ref(),
+        )?;
         let job = self.shared.preparation_observer.begin(&key.release);
         let runtime = self.prepare_runtime_with_integrity(
             artifact,
@@ -333,9 +335,11 @@ impl WasmtimeBackend {
         eligibility: Option<ReleaseUseEligibility>,
         job: &PreparationJob,
     ) -> Result<Arc<PreparedRuntime>, PlatformError> {
-        self.shared
-            .preparation_context
-            .check_eligibility(eligibility.as_ref(), &key.release)?;
+        self.shared.preparation_context.check_eligibility(
+            eligibility.as_ref(),
+            &key.release,
+            key.publication.as_ref(),
+        )?;
         let validation = job.stage(PreparationStage::MetadataValidation);
         let identity = self
             .shared
@@ -355,8 +359,12 @@ impl WasmtimeBackend {
             prepared_handle(key, &component_digest, &identity.digest),
             eligibility.as_ref(),
         );
-        let metadata_bytes =
-            preparation::retained_metadata_bytes(identity.bytes, None, eligibility.as_ref())?;
+        let metadata_bytes = preparation::retained_metadata_bytes(
+            identity.bytes,
+            None,
+            eligibility.as_ref(),
+            key.publication.as_ref(),
+        )?;
         let reserved_metadata = self
             .shared
             .preparation_context
@@ -866,7 +874,7 @@ fn is_memory_limit_error(error: &wasmtime::Error) -> bool {
 
 fn prepared_handle(key: &PreparationKey, component_digest: &str, metadata_digest: &str) -> String {
     let material = format!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}",
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         key.release.0,
         key.engine_version,
         key.engine_configuration_digest,
@@ -874,6 +882,9 @@ fn prepared_handle(key: &PreparationKey, component_digest: &str, metadata_digest
         key.cpu_feature_set,
         component_digest,
         metadata_digest,
+        key.publication
+            .as_ref()
+            .map_or("", latent_core::PublicationId::as_str),
     );
     format!("wasmtime:{}", blake3::hash(material.as_bytes()).to_hex())
 }

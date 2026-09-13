@@ -1,6 +1,12 @@
 # Toolchain and reproducibility baseline
 
-The executable build foundation uses exact project-selected versions from `tools/toolchain.toml` and the committed root `Cargo.lock`. It preserves the Phase 0 Component Model evidence path and supplies maintained Protobuf RPC generation, centralized WIT bindings, and test infrastructure for the current Phase 1 runtime. Toolchain and code-generation steps are separate from the explicit [standalone node](../reference/standalone-node.md) startup command.
+The executable build foundation uses exact project-selected versions from
+`tools/toolchain.toml` and the committed root `Cargo.lock`. It preserves the
+Phase 0 Component Model evidence path and supplies maintained Protobuf RPC
+generation, centralized WIT bindings and test infrastructure for the current
+runtime and completed Phase 2 delivery surface. Toolchain and code-generation
+steps are separate from the explicit [standalone node](../reference/standalone-node.md)
+startup command.
 
 See [build-foundation.md](build-foundation.md) for generation ownership, focused commands, test utilities, dependency-cycle validation, and the clean-checkout Phase 1 sequence.
 
@@ -18,7 +24,7 @@ See [build-foundation.md](build-foundation.md) for generation ownership, focused
 | `tonic-prost-build` | 0.14.6 | Build-time Rust generation from every authoritative `.proto` |
 | `protoc-bin-vendored` | 3.2.0 | Pinned cross-platform `protoc`; no ambient compiler lookup |
 | Tracing / tracing-subscriber | 0.1.44 / 0.3.23 | Structured instrumentation baseline and compile probe |
-| Wasmtime | 47.0.3 | Generic Component Model runtime and retained Phase 0 compatibility facade |
+| Wasmtime | 47.0.4 | Generic Component Model runtime and retained Phase 0 compatibility facade |
 | `wit-bindgen` | 0.60.0 | Guest bindings and canonical ABI exports generated from WIT |
 | Serde / `serde_json` | 1.0.229 / 1.0.150 | Rust contract serialization |
 | TOML | 1.1.4 | Configuration parsing and serialization |
@@ -56,6 +62,14 @@ make validate
 
 `make validate` executes formatting, locked workspace checks, Clippy, tests, repository/foundation/contract validation, retained echo and containment integration, and all SDK compilation. `make phase1-foundation` runs the Rust and contract subset. A missing or stale `Cargo.lock` fails all locked commands.
 
+Routine PR CI runs the executable Phase 0 outcome/recovery matrix immediately
+after fixture generation in `CI / Repository contracts`. The separate runtime
+regression workflow collects a smoke baseline only on manual dispatch; it is not
+an additional path-filtered PR check. See [CI ownership](../testing/phase0-ci-layout.md).
+Fresh Phase 2 evidence uses the bounded commands in
+[offline validation](../testing/phase-2-offline-validation.md) and the
+[operator walkthrough](standalone-quickstart.md#bounded-phase-2-operator-workflow).
+
 The MSRV check is reproducible with:
 
 ```bash
@@ -86,6 +100,9 @@ git status --porcelain --untracked-files=all
 The retained August 30 Phase 0 receipt records an authorized pass for its canonical execution identity. It remains historical evidence; the build foundation does not modify the measured thresholds or results.
 
 ## Generated-output policy
+
+The [Wasmtime security baseline](wasmtime-security-update.md) records the 47.0.4
+advisory scan, native-loader review and runtime/compiler upgrade requirements.
 
 Handwritten Rust, WIT, Protobuf, JSON Schema, examples, and SDK sources remain authoritative. Generated build products normally live in Cargo `OUT_DIR`, `target/contracts/`, `target/capsules/`, and SDK compiler directories. The type-only codec fixture described below is an explicit checked-in exception:
 

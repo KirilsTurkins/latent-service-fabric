@@ -110,7 +110,11 @@ impl Fixture {
             policy["validUntil"] = json!(now + 60);
         }
         let file = fs::symlink_metadata(&compiler).unwrap();
-        assert!(file.is_file() && file.len() <= 256 * 1024 * 1024);
+        assert!(
+            file.is_file() && file.len() > 0 && file.len() <= 256 * 1024 * 1024,
+            "AOT fixture requires a regular compiler executable of at most 256 MiB; got {} bytes",
+            file.len()
+        );
         let mut executable = File::open(&compiler).unwrap();
         let mut hash = Sha256::new();
         let mut chunk = [0_u8; 16 * 1024];

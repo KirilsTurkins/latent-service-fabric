@@ -1,10 +1,12 @@
 # Cluster topology
 
-This is the intended clustered topology, not a delivered Phase 1 deployment
-mode. The completed [standalone Linux node](../reference/standalone-node.md) uses
-one process, local durable catalogs and a loopback RPC listener. Cluster control,
-remote invocation, workload mTLS, PostgreSQL, OCI distribution, durable state and
-workflows remain [later-phase work](../roadmap.md). The extension's
+This is the intended Phase 5 clustered topology. The current
+[standalone Linux node](../reference/standalone-node.md) uses one node process,
+local durable catalogs and a loopback RPC listener. Phase 2 delivers authenticated
+OCI transfers and trusted package admission without a cluster control plane.
+Cluster control, remote invocation, workload mTLS and PostgreSQL remain planned;
+guest state belongs to Phase 4 and durable workflows to Phase 6. See the
+[roadmap](../roadmap.md). The extension's
 [Docker/Kubernetes benchmarks](../phase-1-extension-completion.md#kubernetes-112)
 run that same standalone product inside containers; they do not implement this
 control plane or establish production HA.
