@@ -269,6 +269,7 @@ pub enum ManagedPublicationUpload {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ManagedPublicationReceipt {
+    pub publication: crate::PublicationRef,
     pub release: ArtifactCatalogEntry,
     pub operation: ReleaseOperationReceipt,
 }

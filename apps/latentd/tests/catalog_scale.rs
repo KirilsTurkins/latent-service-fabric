@@ -341,7 +341,7 @@ fn production_catalog_100k() {
     fs::create_dir_all(&logs).expect("persistent diagnostic directory");
     run_child(root.path(), "publish", &logs.join("publish.log"));
     assert_eq!(
-        fs::read_dir(root.path().join("releases"))
+        fs::read_dir(root.path().join("publications"))
             .expect("completed directories")
             .count(),
         RELEASE_COUNT as usize

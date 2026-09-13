@@ -173,7 +173,12 @@ pub(super) fn metadata(
     })
     .decode_capsule(content(LayerRole::CapsuleManifest)?)
     .map_err(|_| invalid("admission-capsule-manifest"))?;
-    if manifest.metadata.tenant.as_ref() != Some(tenant) {
+    if manifest
+        .metadata
+        .tenant
+        .as_ref()
+        .is_some_and(|embedded| embedded != tenant)
+    {
         return Err(denied("admission-capsule-tenant-mismatch"));
     }
     let contracts = decode_contract_metadata(

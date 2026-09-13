@@ -14,10 +14,10 @@ use latent_core::{PlatformError, TenantId};
 fn scoped_artifact(label: &str) -> CapsuleArtifact {
     artifact(label, label.as_bytes())
 }
-fn scope() -> LifecycleScope {
+pub(super) fn scope() -> LifecycleScope {
     LifecycleScope::Tenant(TenantId("examples".to_owned()))
 }
-fn context(id: &str, generation: u64) -> ReleaseMutationContext {
+pub(super) fn context(id: &str, generation: u64) -> ReleaseMutationContext {
     ReleaseMutationContext {
         scope: scope(),
         actor: ReleaseActor {
@@ -30,7 +30,7 @@ fn context(id: &str, generation: u64) -> ReleaseMutationContext {
         }),
     }
 }
-fn accept(_: ReleaseOperationPreview<'_>) -> Result<(), PlatformError> {
+pub(super) fn accept(_: ReleaseOperationPreview<'_>) -> Result<(), PlatformError> {
     Ok(())
 }
 fn reject(_: ReleaseOperationPreview<'_>) -> Result<(), PlatformError> {
@@ -113,7 +113,7 @@ fn operation_identity_conflict_does_not_publish_different_content() {
     assert!(!release_dir(temp.path(), &second_digest).exists());
 }
 #[test]
-fn rejected_metadata_conflict_never_poisoned_the_admitted_release() {
+fn new_metadata_cannot_reuse_another_publications_generation() {
     let temp = TempRoot::new();
     let repo = repository(temp.path());
     let first = scoped_artifact("content-conflict");
@@ -132,16 +132,16 @@ fn rejected_metadata_conflict_never_poisoned_the_admitted_release() {
         &mut accept,
     ))
     .unwrap_err();
-    assert_eq!(failure.code, PlatformErrorCode::AlreadyExists);
+    assert_eq!(failure.code, PlatformErrorCode::StateConflict);
     let ReleaseOperationLookup::Found(receipt) =
         block_on(repo.get_release_operation(&scope(), "conflict")).unwrap()
     else {
         panic!("retained rejection")
     };
-    assert_eq!(receipt.reason, ReleaseLifecycleReason::ContentConflict);
-    assert_eq!(
-        receipt.record.as_ref().unwrap().state,
-        ReleaseLifecycleState::Admitted
+    assert_eq!(receipt.reason, ReleaseLifecycleReason::GenerationConflict);
+    assert!(
+        receipt.record.is_none(),
+        "new publication has no committed generation"
     );
     assert_eq!(block_on(repo.fetch(&digest)).unwrap(), first);
     let other = LifecycleScope::Tenant(TenantId("other-tenant".to_owned()));
@@ -278,7 +278,7 @@ fn renamed_complete_without_lifecycle_membership_stays_hidden_on_reopen() {
 }
 
 #[test]
-fn orphan_reference_stays_reserved_without_becoming_visible() {
+fn orphan_stays_hidden_while_an_independent_publication_can_commit() {
     let temp = TempRoot::new();
     let repo = repository(temp.path());
     let first = scoped_artifact("reserved-orphan");
@@ -295,25 +295,18 @@ fn orphan_reference_stays_reserved_without_becoming_visible() {
     let mut second = scoped_artifact("different-content");
     let second_release = second.descriptor.release_digest.clone();
     second.descriptor.reference = first.descriptor.reference.clone();
-    assert_eq!(
-        block_on(reopened.publish_managed(
-            context("reference-conflict", 0),
-            ManagedPublicationUpload::Local(second),
-            &mut accept
-        ))
-        .unwrap_err()
-        .code,
-        PlatformErrorCode::AlreadyExists
-    );
-    assert!(!release_dir(temp.path(), &second_release).exists());
+    block_on(reopened.publish_managed(
+        context("independent-publication", 0),
+        ManagedPublicationUpload::Local(second),
+        &mut accept,
+    ))
+    .unwrap();
+    assert!(release_dir(temp.path(), &second_release).exists());
     assert_eq!(
         block_on(reopened.fetch(&release)).unwrap_err().code,
         PlatformErrorCode::NotFound
     );
-    assert!(block_on(reopened.list(None, 10))
-        .unwrap()
-        .entries
-        .is_empty());
+    assert_eq!(block_on(reopened.list(None, 10)).unwrap().entries.len(), 1);
     drop(reopened);
     let reopened = repository(temp.path());
     block_on(reopened.publish_managed(
@@ -329,7 +322,7 @@ fn orphan_reference_stays_reserved_without_becoming_visible() {
             .unwrap()
             .entries
             .len(),
-        1
+        2
     );
 }
 

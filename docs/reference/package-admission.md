@@ -11,11 +11,12 @@ durable policy/time floors; request data cannot construct that authority.
 The accepted Phase 3 correction in
 [ADR-0027](../../adr/0027-separate-publication-authority-from-component-identity.md)
 and [RFC-0002](../../rfcs/0002-tenant-scoped-publication-identity.md) separates
-tenant-scoped publication from component identity. The implementation described
-below still uses the delivered one-component/one-publication rule until #265–#267
-complete its storage, runtime and public-selector migration. The decision does
-not yet make tenant-neutral package admission or same-component package
-coexistence available. Existing component fields retain their byte identity.
+tenant-scoped publication from component identity. The catalog now implements
+independent publications, tenant-neutral package admission and package coexistence.
+[Catalog format 2 and offline migration](publication-catalog.md) describe the
+storage boundary. Runtime and deployment propagation (#266), and public RPC/CLI/SDK
+selectors (#267), are separate integration work. Existing component fields retain
+their byte identity; legacy selection fails explicitly when it becomes ambiguous.
 
 ## Select the node mode
 
@@ -202,9 +203,13 @@ state still abort opening; expired validity does not enable local-mode fallback.
 
 Exact retries use the original package/artifact/evidence bytes and current
 trust. The original historical receipt and verification time are retained.
-There is one immutable package association per component release digest;
-different package, tenant, metadata or evidence submitted through ordinary
-publication for the same component conflicts. Retained selected evidence can be
+One immutable package can be admitted independently in each authorized tenant.
+Different packages containing the same component have distinct publications;
+correcting an embedded SBOM requires a new package and its own valid proofs.
+An embedded tenant restricts admission to that tenant. A tenant-neutral manifest
+keeps its original bytes when admitted into an explicitly authorized scope.
+Ordinary publication cannot overwrite the original evidence of an existing
+publication. Retained selected evidence can be
 explicitly reverified while it remains valid. Reissued envelopes use the separate
 [lifecycle evidence-renewal operation](release-lifecycle.md#evidence-renewal-and-route-refresh),
 with an exact generation precondition and immutable evidence revision. Original
