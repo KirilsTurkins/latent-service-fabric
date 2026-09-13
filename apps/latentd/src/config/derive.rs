@@ -63,6 +63,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             max_identifier_bytes: IDENTIFIER_BYTES,
             max_page_size: management.max_page_size,
             max_page_bytes: MIB,
+            max_recovery_directories: config.catalogs.release_entries + 16,
             ..DirectoryDeploymentRepositoryConfig::default()
         },
         admission,
@@ -134,6 +135,9 @@ fn transport(config: &NodeConfig, maximum_rpcs: usize) -> TransportConfig {
         maximum_control_jobs: config.workers.control,
         maximum_header_bytes: 16 * 1024,
         maximum_streams_per_connection: 32,
+        unauthenticated_timeout: Duration::from_millis(
+            config.limits.unauthenticated_connection_timeout_millis,
+        ),
         request_timeout: Duration::from_millis(config.execution.maximum_wall_time_millis),
         shutdown_timeout: Duration::from_millis(config.shutdown_grace_millis),
         credentials: config
