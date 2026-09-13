@@ -8,6 +8,32 @@ steps: the same checks and tests run after a hit or a miss. A cold or
 evicted cache remains a supported build path. Caching does not establish a
 measured speedup or change the retained benchmark results.
 
+## Reusing builds within the Rust job
+
+The Rust job builds workspace binaries and test harnesses with one package,
+target and feature selection: `--workspace --all-targets --all-features`.
+Its ordinary workspace test suite runs once. A fresh Cargo JSON inventory from
+the same selection identifies the exact library test executables used for the
+two fixture exporters and three native currentness tests. Those later steps
+execute the already-built harnesses through
+[the artifact runner](../../tools/ci_rust_artifacts.py), which checks source and
+package ownership and verifies the expected ignored test names before execution.
+Fixtures and receipts are still generated during the current run.
+
+This avoids switching back to narrower linked build graphs after workspace
+testing. Independently selected CLI/node and compiler packages still receive
+`cargo check`, so workspace feature unification cannot hide missing dependency
+features in those builds. The legacy Ed25519 compatibility probe remains
+separate. Host versus WebAssembly targets, ordinary versus MSRV toolchains, and
+check/Clippy metadata versus linked executable artifacts remain distinct work.
+The custom Wasmtime integration harnesses still run through the original full
+workspace suite; filtered exporter calls do not rerun those custom harnesses.
+
+The test inventory lives in the runner's temporary directory. It is never
+restored from a cache, selected through filename globbing, or reused as proof
+that a test ran. This consolidation is separate from dependency caching;
+compare actual build steps before attributing a timing change to either.
+
 ## Cached files and fresh evidence
 
 The workflow pins

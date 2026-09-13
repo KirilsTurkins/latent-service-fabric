@@ -93,6 +93,10 @@ jobs:
           cargo check -p latent-component-bindings --target wasm32-wasip2 --locked
           cargo check -p latent-toolchain-smoke --target wasm32-wasip2 --locked
           cargo check -p latent-toolchain-smoke --example echo-capsule --target wasm32-wasip2 --locked
+      - name: Check independently selected production packages
+        run: |
+          cargo check -p latent -p latentd --all-features --locked
+          cargo check -p latent-wasmtime --bin latent-aot-compiler --all-features --locked
       - name: Run Clippy
         id: clippy
         env:
@@ -118,6 +122,10 @@ jobs:
       - name: "Clippy diagnostics: ${{ steps.clippy.outputs.diagnostic }}"
         if: failure() && steps.clippy.outcome == 'failure'
         run: tail -n 120 "$RUNNER_TEMP/lsf-clippy.log"
+      - name: Build workspace binaries and test harnesses
+        run: |
+          cargo build --workspace --all-targets --all-features --locked
+          cargo test --workspace --all-targets --all-features --locked --no-run --message-format=json,json-render-diagnostics > "$RUNNER_TEMP/lsf-workspace-tests.jsonl"
       - name: Run tests
         run: |
           cargo test --workspace --all-targets --all-features --locked
@@ -133,17 +141,16 @@ jobs:
         timeout-minutes: 10
         shell: bash
         run: |
-          cargo build -p latent -p latentd --all-features --locked
+          python3 -m unittest tools.tests.test_ci_rust_artifacts
           fixture_root="$(mktemp -d "${RUNNER_TEMP}/lsf-operator-fixture.XXXXXXXX")"
           mkdir -p "${RUNNER_TEMP}/phase2-gate"
           trap 'rm -rf -- "$fixture_root"' EXIT
-          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" cargo test -p latent-policy --lib --all-features --locked export_operator_workflow_fixture -- --ignored --test-threads=1
+          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite operator-fixture
           python3 -m unittest tools.tests.test_phase2_operator_workflow tools.tests.test_phase2_operator_canary tools.tests.test_phase2_offline_workflow
           python3 tools/run_phase2_operator_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/operator-receipt.json"
-          cargo build -p latent-wasmtime --bin latent-aot-compiler --all-features --locked
-          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" LSF_AOT_COMPILER="${PWD}/target/debug/latent-aot-compiler" cargo test -p latentd --lib --all-features --locked standalone::start::tests::trust_currentness:: -- --ignored --test-threads=1
+          LSF_OPERATOR_FIXTURE_ROOT="${fixture_root}/inputs" LSF_AOT_COMPILER="${PWD}/target/debug/latent-aot-compiler" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite trust-currentness
           python3 tools/run_phase2_offline_workflow.py --cli "${PWD}/target/debug/latent" --node "${PWD}/target/debug/latentd" --fixture-root "${fixture_root}/inputs" --source-commit "${GITHUB_SHA}" > "${RUNNER_TEMP}/phase2-gate/offline-receipt.json"
-          LSF_PHASE2_RESOURCE_FIXTURE_ROOT="${fixture_root}/resource-inputs" cargo test -p latent-policy --lib --all-features --locked export_phase2_resource_fixture -- --ignored --test-threads=1
+          LSF_PHASE2_RESOURCE_FIXTURE_ROOT="${fixture_root}/resource-inputs" python3 tools/ci_rust_artifacts.py --inventory "$RUNNER_TEMP/lsf-workspace-tests.jsonl" --suite resource-fixture
           python3 -m unittest tools.tests.test_phase2_gate_resource
           LSF_GATE_FIXTURE_ROOT="${fixture_root}" python3 - <<'PY'
           import hashlib, json, os, pathlib, subprocess
