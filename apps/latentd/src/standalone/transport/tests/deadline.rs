@@ -32,10 +32,9 @@ fn delayed_unary_body_keeps_arrival_deadline_and_expiry_drop_cause() {
             let routes = tonic::service::Routes::new(adapter.into_server());
             let mut config = configuration();
             config.unauthenticated_timeout = Duration::from_millis(100);
-            let transport =
-                Transport::start_routes(config, routes, clock.clone(), control.clone())
-                    .await
-                    .unwrap();
+            let transport = Transport::start_routes(config, routes, clock.clone(), control.clone())
+                .await
+                .unwrap();
             transport.handle().start_accepting().unwrap();
             let gate = Arc::new(signal::Signal::default());
             let channel = tonic::transport::Endpoint::from_shared(format!(
