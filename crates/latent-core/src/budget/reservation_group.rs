@@ -75,6 +75,50 @@ impl ActivationBudget {
     }
 }
 impl BudgetReservationGroup {
+    /// A child execution owner retires its conserved grant with actual totals.
+    /// This is unavailable to ordinary callers and cannot exceed the reservation.
+    pub(super) fn settle_descendant(
+        mut self,
+        used: &super::BudgetConsumption,
+    ) -> Result<(), BudgetError> {
+        for dimension in BudgetDimension::CUMULATIVE {
+            let held = self
+                .charges
+                .iter()
+                .flatten()
+                .find(|(d, _)| *d == dimension)
+                .map_or(0, |(_, amount)| *amount);
+            if used.consumed(dimension) > held {
+                // Missing trustworthy accounting conservatively consumes the
+                // entire accepted reservation, never a refund on malformed data.
+                self.close(false)?;
+                return Err(BudgetError::Exhausted {
+                    dimension,
+                    limit: held,
+                    consumed: used.consumed(dimension),
+                    requested: 0,
+                });
+            }
+        }
+        let mut state = self.budget.lock_state();
+        debug_assert_eq!(self.budget.profile(), super::BudgetProfile::Phase3);
+        for &(dimension, held) in self.charges.iter().flatten() {
+            let actual = used.consumed(dimension);
+            let reserved = state.reserved.consumed(dimension);
+            let consumed = state.consumption.consumed(dimension);
+            let children = state.child_consumption.consumed(dimension);
+            state.reserved.set_consumed(dimension, reserved - held);
+            state
+                .consumption
+                .set_consumed(dimension, consumed - (held - actual));
+            state
+                .child_consumption
+                .set_consumed(dimension, children + actual);
+        }
+        state.outstanding_reservations -= 1;
+        self.active = false;
+        Ok(())
+    }
     pub fn commit(mut self) -> Result<(), BudgetError> {
         self.close(false)
     }
@@ -87,7 +131,7 @@ impl BudgetReservationGroup {
         }
         let mut state = self.budget.lock_state();
         self.active = false;
-        if state.finalized.is_some() {
+        if state.finalized.is_some() && self.budget.profile() == super::BudgetProfile::Phase1 {
             return Err(BudgetError::AccountingFinalized);
         }
         for &(dimension, amount) in self.charges.iter().flatten() {

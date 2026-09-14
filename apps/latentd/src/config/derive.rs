@@ -19,6 +19,7 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     super::security::validate(config)?;
     let capacity = validation::validate(config)?;
     let admission = policy::admission(config, &capacity)?;
+    let delegation_limits = config.budget_profile.limits()?;
     let invocation = runtime::invocation(config, &capacity)?;
     let management = runtime::management(config, &invocation)?;
     let classes = config
@@ -69,6 +70,8 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
             ..DirectoryDeploymentRepositoryConfig::default()
         },
         admission,
+        budget_profile: config.budget_profile.profile(),
+        delegation_limits,
         scheduler: LocalSchedulerConfig {
             node: NodeId(config.node_id.clone()),
             queue_capacity_per_class: classes.clone(),

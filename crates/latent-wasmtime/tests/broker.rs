@@ -12,6 +12,52 @@ use fixture::*;
 mod async_io;
 
 #[tokio::test]
+async fn real_guest_runs_with_the_original_phase3_ledger_and_unused_counters_stay_zero() {
+    use latent_core::{ActivationBudget, BudgetProfile, EffectiveActivationBudget};
+    let mut ceiling = support::budget();
+    ceiling.child_calls = 4;
+    ceiling.outbound_requests = 2;
+    ceiling.blob_read_bytes = 1024;
+    ceiling.blob_write_bytes = 1024;
+    let f = Fixture::with_budget(ceiling.clone()).await;
+    let (mut request, mut control) = f.request("phase3-budget-owner");
+    request.budget = ceiling;
+    request.activation.budget = request.budget.clone();
+    let grant = EffectiveActivationBudget::admit_profile_at(
+        BudgetProfile::Phase3,
+        &request.budget,
+        &request.budget,
+        &request.budget,
+        None,
+        ClockSample::system_now(),
+    )
+    .unwrap();
+    control.budget = ActivationBudget::with_profile(grant, BudgetProfile::Phase3).unwrap();
+    let report = f.backend.invoke_contained(request, &control).await;
+    let GuestOutcome::Returned { consumption, .. } = report.outcome.unwrap() else {
+        panic!("real component must execute its two clock calls");
+    };
+    assert_eq!(report.cleanup, ExecutionCleanup::Reusable);
+    let finalized = control
+        .budget
+        .finalize_at(Some(&consumption), Instant::now());
+    assert!(finalized.violation().is_none());
+    assert_eq!(finalized.consumption().cpu_fuel, consumption.cpu_fuel);
+    assert!(consumption.cpu_fuel > 0);
+    assert_eq!(
+        (
+            finalized.consumption().child_calls,
+            finalized.consumption().outbound_requests,
+            finalized.consumption().blob_read_bytes,
+            finalized.consumption().blob_write_bytes
+        ),
+        (0, 0, 0, 0)
+    );
+    assert_eq!(f.clock.calls.load(Ordering::Acquire), 2);
+    f.idle();
+}
+
+#[tokio::test]
 async fn real_guest_calls_use_fresh_sessions_on_the_same_warm_cell() {
     let f = Fixture::new().await;
     for _ in 0..3 {

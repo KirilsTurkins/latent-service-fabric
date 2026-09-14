@@ -224,6 +224,13 @@ struct Harness {
 
 impl Harness {
     fn new(policy: NodeAdmissionPolicy, revision_policy: RevisionAdmissionPolicy) -> Self {
+        Self::with_profile(policy, revision_policy, latent_core::BudgetProfile::Phase1)
+    }
+    fn with_profile(
+        policy: NodeAdmissionPolicy,
+        revision_policy: RevisionAdmissionPolicy,
+        profile: latent_core::BudgetProfile,
+    ) -> Self {
         let sample = ClockSample::new(10_000, Instant::now());
         let source = Arc::new(Source {
             policy: revision_policy,
@@ -240,7 +247,12 @@ impl Harness {
             })
             .unwrap(),
         );
-        let quotas = LocalQuotaProvider::new(policy).unwrap();
+        let quotas = LocalQuotaProvider::with_profile(
+            policy,
+            profile,
+            latent_core::DelegationLimits::default(),
+        )
+        .unwrap();
         let controller =
             LocalAdmissionController::new(source.clone(), quotas.clone(), load.clone());
         Self {
@@ -297,6 +309,56 @@ impl Harness {
             assert_eq!(snapshot.reset_at_unix_millis, None);
         }
     }
+}
+
+#[test]
+fn phase3_admission_intersects_every_ceiling_without_enabling_state_or_effects() {
+    let mut node = node_policy();
+    node.budget_ceiling.child_calls = 5;
+    node.budget_ceiling.outbound_requests = 6;
+    node.budget_ceiling.blob_read_bytes = 100;
+    assert!(LocalQuotaProvider::new(node.clone()).is_err());
+    let mut revision = revision_policy();
+    revision.deployment_ceiling = node.budget_ceiling.clone();
+    revision.deployment_ceiling.child_calls = 3;
+    revision.deployment_ceiling.outbound_requests = 2;
+    revision.deployment_ceiling.blob_read_bytes = 90;
+    revision.execution.resource_budget_ceiling = node.budget_ceiling.clone();
+    revision.execution.resource_budget_ceiling.blob_read_bytes = 80;
+    let harness = Harness::with_profile(node, revision, latent_core::BudgetProfile::Phase3);
+    let mut request = Harness::request("phase3");
+    request.requested_budget.child_calls = 9;
+    request.requested_budget.outbound_requests = 3;
+    request.requested_budget.blob_read_bytes = 120;
+    let permit = harness
+        .controller
+        .admit_at(request.clone(), harness.sample)
+        .unwrap();
+    let grant = permit.granted_budget();
+    assert_eq!(
+        (
+            grant.child_calls,
+            grant.outbound_requests,
+            grant.blob_read_bytes,
+            grant.blob_write_bytes
+        ),
+        (3, 2, 80, 0)
+    );
+    assert_eq!(permit.budget_profile(), latent_core::BudgetProfile::Phase3);
+    drop(permit);
+    for dimension in 0..3 {
+        let mut unsupported = request.clone();
+        match dimension {
+            0 => unsupported.requested_budget.state_read_bytes = 1,
+            1 => unsupported.requested_budget.state_write_bytes = 1,
+            _ => unsupported.requested_budget.effect_count = 1,
+        }
+        assert!(harness
+            .controller
+            .admit_at(unsupported, harness.sample)
+            .is_err());
+    }
+    harness.assert_empty();
 }
 
 fn detail(error: &PlatformError, name: &str) -> String {

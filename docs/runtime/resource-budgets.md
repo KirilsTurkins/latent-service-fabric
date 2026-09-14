@@ -1,4 +1,8 @@
-# Phase 1 resource budgets, deadlines, and cancellation
+# Resource budgets, deadlines, and cancellation
+
+This page describes the default Phase 1 profile. The explicit
+[Phase 3 profile and conserved descendant budgets](descendant-budgets.md) add
+child/outbound/blob counters while preserving the defaults documented here.
 
 Issue [#6](https://github.com/KirilsTurkins/latent-service-fabric/issues/6)
 implements the executable semantics behind the hardened contracts from issue
@@ -157,9 +161,9 @@ publication and accounting finalization.
 ## Phase boundary
 
 This implementation does not provide tenant billing, a distributed quota
-ledger, cluster-wide budgets, durable cancellation, state/effect providers, or
-parent-to-child budget delegation. The data model retains the corresponding
-counter fields, while descendant delegation remains Phase 3 work.
+ledger, cluster-wide budgets, durable cancellation or state/effect providers.
+Parent-to-child delegation is available through the explicit Phase 3 accounting
+profile; the default Phase 1 profile continues to reject later counters.
 
 ## Validation
 

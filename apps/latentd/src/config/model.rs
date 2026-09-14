@@ -13,6 +13,8 @@ pub struct NodeConfig {
     pub format_version: u32,
     #[serde(default)]
     pub security_profile: super::ExecutionIsolationProfile,
+    #[serde(default)]
+    pub budget_profile: super::BudgetConfig,
     #[serde(skip)]
     pub(crate) credentials_from_protected_file: bool,
     pub data_directory: PathBuf,

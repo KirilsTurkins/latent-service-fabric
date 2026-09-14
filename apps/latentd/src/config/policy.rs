@@ -96,7 +96,9 @@ pub(super) fn admission(
         region: None,
         zone: None,
     };
-    policy.validate().map_err(|_| invalid("admission"))?;
+    policy
+        .validate_profile(config.budget_profile.profile())
+        .map_err(|_| invalid("admission"))?;
     Ok(policy)
 }
 
@@ -116,8 +118,8 @@ fn quota(config: &NodeConfig, capacity: &Capacity) -> Result<QuotaLimits, Platfo
     })
 }
 
-fn budget(config: &NodeConfig, memory: u64) -> ResourceBudget {
-    ResourceBudget {
+pub(super) fn budget(config: &NodeConfig, memory: u64) -> ResourceBudget {
+    let mut budget = ResourceBudget {
         cpu_fuel: config.execution.maximum_cpu_fuel,
         memory_bytes: memory,
         wall_time_limit_millis: Some(config.execution.maximum_wall_time_millis),
@@ -129,7 +131,9 @@ fn budget(config: &NodeConfig, memory: u64) -> ResourceBudget {
         blob_write_bytes: 0,
         log_bytes: config.execution.maximum_log_bytes,
         effect_count: 0,
-    }
+    };
+    config.budget_profile.apply(&mut budget);
+    budget
 }
 
 pub(super) fn principal(credential: &CredentialConfig) -> InvocationPrincipal {

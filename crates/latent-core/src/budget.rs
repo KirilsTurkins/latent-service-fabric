@@ -8,9 +8,16 @@ use crate::error::{ErrorDetail, PlatformError, PlatformErrorCode};
 use crate::lifecycle::ActivationTerminalState;
 use crate::Metadata;
 
+mod descendants;
 mod incoming;
+mod profile;
 mod reservation_group;
 mod runtime_usage;
+pub use descendants::{
+    BudgetCancellationProbe, ChildBudgetDelegation, ChildBudgetOwner, DelegationLimits,
+    DescendantBudgetSnapshot,
+};
+pub use profile::BudgetProfile;
 pub use reservation_group::BudgetReservationGroup;
 
 pub use incoming::IncomingDeadline;
@@ -740,6 +747,9 @@ pub struct ActivationBudget {
 
 #[derive(Debug)]
 struct ActivationBudgetInner {
+    profile: BudgetProfile,
+    closed: std::sync::atomic::AtomicBool,
+    lineage: std::sync::OnceLock<descendants::Lineage>,
     granted: ResourceBudget,
     deadline: EffectiveDeadline,
     started_at: Instant,
@@ -752,14 +762,35 @@ struct AccountingState {
     reserved: BudgetConsumption,
     finalized: Option<BudgetFinalization>,
     outstanding_reservations: u64,
+    own_memory_peak: u64,
+    child_reserved_memory: u64,
+    child_observed_memory: u64,
+    child_consumption: BudgetConsumption,
 }
 
 impl ActivationBudget {
     #[must_use]
     pub fn new(grant: EffectiveActivationBudget) -> Self {
+        Self::from_profile(grant, BudgetProfile::Phase1)
+    }
+
+    /// The trusted node selects the supported accounting profile. Wire budgets
+    /// cannot opt themselves into future dimensions by setting nonzero fields.
+    pub fn with_profile(
+        grant: EffectiveActivationBudget,
+        profile: BudgetProfile,
+    ) -> Result<Self, BudgetError> {
+        profile.validate_request(&grant.budget)?;
+        Ok(Self::from_profile(grant, profile))
+    }
+
+    fn from_profile(grant: EffectiveActivationBudget, profile: BudgetProfile) -> Self {
         let started_at = grant.deadline.admitted_at_monotonic();
         Self {
             inner: Arc::new(ActivationBudgetInner {
+                profile,
+                closed: std::sync::atomic::AtomicBool::new(false),
+                lineage: std::sync::OnceLock::new(),
                 granted: grant.budget,
                 deadline: grant.deadline,
                 started_at,
@@ -771,6 +802,11 @@ impl ActivationBudget {
     #[must_use]
     pub fn granted(&self) -> &ResourceBudget {
         &self.inner.granted
+    }
+
+    #[must_use]
+    pub fn profile(&self) -> BudgetProfile {
+        self.inner.profile
     }
 
     /// Whether two handles refer to the same activation accounting state.
@@ -842,16 +878,8 @@ impl ActivationBudget {
     pub fn observe_peak_memory(&self, bytes: u64) -> Result<(), BudgetError> {
         let mut state = self.lock_state();
         Self::ensure_mutable(&state)?;
-        let limit = self.inner.granted.memory_bytes;
-        if bytes > limit {
-            return Err(BudgetError::Exhausted {
-                dimension: BudgetDimension::MemoryBytes,
-                limit,
-                consumed: state.consumption.peak_memory_bytes,
-                requested: bytes,
-            });
-        }
-        state.consumption.peak_memory_bytes = state.consumption.peak_memory_bytes.max(bytes);
+        self.check_owned_memory(&state, bytes)?;
+        self.record_owned_memory(&mut state, bytes);
         Ok(())
     }
 
@@ -889,16 +917,19 @@ impl ActivationBudget {
     /// Returns capacity already occupied by committed consumption and live
     /// reservations. This representation is used only to calculate remaining
     /// capacity and is never a terminal consumption report.
-    fn capacity_snapshot_at(&self, now: Instant) -> BudgetConsumption {
+    fn capacity_snapshot_at(&self, now: Instant) -> (BudgetConsumption, bool) {
         let state = self.lock_state();
         if let Some(finalized) = &state.finalized {
-            return finalized.consumption().clone();
+            return (finalized.consumption().clone(), true);
         }
         let mut snapshot = state.consumption.clone();
+        if self.profile() == BudgetProfile::Phase3 {
+            snapshot.peak_memory_bytes = state.own_memory_peak + state.child_reserved_memory;
+        }
         snapshot.wall_time_micros = snapshot.wall_time_micros.max(duration_micros(
             now.saturating_duration_since(self.inner.started_at),
         ));
-        snapshot
+        (snapshot, false)
     }
 
     /// Remaining Phase 1 budget, suitable for immutable activation context.
@@ -906,7 +937,11 @@ impl ActivationBudget {
     /// refunded, dropped, or atomically resolved by finalization.
     #[must_use]
     pub fn remaining_at(&self, now: Instant) -> ResourceBudget {
-        let snapshot = self.capacity_snapshot_at(now);
+        let (snapshot, finalized) = self.capacity_snapshot_at(now);
+        if finalized && self.inner.profile == BudgetProfile::Phase3 {
+            return profile::closed_budget();
+        }
+        let phase3 = self.inner.profile == BudgetProfile::Phase3;
         ResourceBudget {
             cpu_fuel: self
                 .inner
@@ -919,12 +954,40 @@ impl ActivationBudget {
                 .memory_bytes
                 .saturating_sub(snapshot.peak_memory_bytes),
             wall_time_limit_millis: self.inner.deadline.remaining_at(now).map(duration_millis),
-            child_calls: 0,
-            outbound_requests: 0,
+            child_calls: if phase3 {
+                self.inner
+                    .granted
+                    .child_calls
+                    .saturating_sub(snapshot.child_calls)
+            } else {
+                0
+            },
+            outbound_requests: if phase3 {
+                self.inner
+                    .granted
+                    .outbound_requests
+                    .saturating_sub(snapshot.outbound_requests)
+            } else {
+                0
+            },
             state_read_bytes: 0,
             state_write_bytes: 0,
-            blob_read_bytes: 0,
-            blob_write_bytes: 0,
+            blob_read_bytes: if phase3 {
+                self.inner
+                    .granted
+                    .blob_read_bytes
+                    .saturating_sub(snapshot.blob_read_bytes)
+            } else {
+                0
+            },
+            blob_write_bytes: if phase3 {
+                self.inner
+                    .granted
+                    .blob_write_bytes
+                    .saturating_sub(snapshot.blob_write_bytes)
+            } else {
+                0
+            },
             log_bytes: self
                 .inner
                 .granted
@@ -937,12 +1000,15 @@ impl ActivationBudget {
     /// Finalizes terminal consumption exactly once and returns the same frozen
     /// transition on every subsequent call.
     ///
-    /// Unresolved reservations are atomically refunded before the terminal
+    /// In Phase 1, unresolved reservations are atomically refunded before the terminal
     /// snapshot is frozen. A reservation handle that loses this race observes
     /// [`BudgetError::AccountingFinalized`] from an explicit commit or refund,
-    /// and dropping it cannot mutate the frozen result.
+    /// and dropping it cannot mutate the frozen result. Phase 3 preserves occupied
+    /// reservations until their actual owners retire; early terminal reports count
+    /// them conservatively and remain frozen after later cleanup/refunds.
     ///
-    /// `reported` is an execution backend's total terminal report. Host-owned
+    /// `reported` contains the execution backend's own guest totals. Phase 3
+    /// child/provider usage is maintained independently by the host ledgers. Host-owned
     /// monotonic elapsed time is authoritative for wall time, while valid CPU
     /// and peak-memory totals are reconciled as lower bounds. Host log accounting
     /// is authoritative and cannot be raised by a wrapped report. If a backend-
@@ -961,13 +1027,39 @@ impl ActivationBudget {
             return finalized.clone();
         }
 
-        let mut consumption = Self::committed_consumption(&state);
+        self.inner
+            .closed
+            .store(true, std::sync::atomic::Ordering::Release);
+        // Phase 3 terminal observations conservatively retain occupied capacity.
+        // Only the actual reservation owner can retire it after this boundary.
+        let phase3 = self.inner.profile == BudgetProfile::Phase3;
+        let reconciliation = if phase3 {
+            reported.and_then(|report| self.reconcile_phase3_report(&mut state, report).err())
+        } else {
+            None
+        };
+        let mut consumption = if phase3 {
+            state.consumption.clone()
+        } else {
+            Self::committed_consumption(&state)
+        };
+        if phase3 {
+            consumption.peak_memory_bytes = consumption
+                .peak_memory_bytes
+                .max(state.own_memory_peak + state.child_reserved_memory);
+        }
         consumption.wall_time_micros =
             duration_micros(now.saturating_duration_since(self.inner.started_at));
 
-        let violation =
-            reported.and_then(|report| report.validate_phase1_report(&self.inner.granted).err());
-        if let Some(report) = reported {
+        let violation = reported
+            .and_then(|report| {
+                self.inner
+                    .profile
+                    .validate_report(report, &self.inner.granted)
+                    .err()
+            })
+            .or(reconciliation);
+        if let Some(report) = reported.filter(|_| !phase3) {
             for dimension in BudgetDimension::PHASE1_BACKEND_RECONCILED {
                 let reported_value = report.consumed(dimension);
                 let reserved = state.reserved.consumed(dimension);
@@ -985,9 +1077,15 @@ impl ActivationBudget {
             violation,
         };
         state.consumption = finalized.consumption().clone();
-        state.reserved = BudgetConsumption::default();
-        state.outstanding_reservations = 0;
+        if !phase3 {
+            state.reserved = BudgetConsumption::default();
+            state.outstanding_reservations = 0;
+        }
         state.finalized = Some(finalized.clone());
+        drop(state);
+        if let Some(lineage) = self.inner.lineage.get() {
+            lineage.mark_terminal();
+        }
         finalized
     }
 
@@ -1089,7 +1187,7 @@ impl BudgetReservation {
             return Ok(());
         }
         let mut state = self.budget.lock_state();
-        if state.finalized.is_some() {
+        if state.finalized.is_some() && self.budget.profile() == BudgetProfile::Phase1 {
             self.active = false;
             return Err(BudgetError::AccountingFinalized);
         }
@@ -1468,7 +1566,7 @@ mod tests {
 
             let committed = accounting.snapshot_at(now);
             assert_eq!(committed.consumed(dimension), 0);
-            let capacity_inclusive_report = accounting.capacity_snapshot_at(now);
+            let (capacity_inclusive_report, _) = accounting.capacity_snapshot_at(now);
             assert_eq!(capacity_inclusive_report.consumed(dimension), 2);
 
             let finalized = accounting.finalize_at(Some(&capacity_inclusive_report), now);

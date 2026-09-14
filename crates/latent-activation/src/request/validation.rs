@@ -7,6 +7,7 @@ use super::{error, ActivationRequest, ActivationRequestLimits};
 pub(super) fn validate(
     request: &ActivationRequest,
     limits: ActivationRequestLimits,
+    profile: latent_core::BudgetProfile,
 ) -> Result<(), PlatformError> {
     if request.input.capacity() > limits.maximum_input_bytes {
         return Err(exhausted());
@@ -81,9 +82,8 @@ pub(super) fn validate(
     ] {
         bytes.metadata(metadata)?;
     }
-    request
-        .budget
-        .validate_phase1_request()
+    profile
+        .validate_request(&request.budget)
         .map_err(|error| error.to_platform_error())
 }
 

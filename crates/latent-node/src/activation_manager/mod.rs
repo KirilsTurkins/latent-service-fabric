@@ -183,7 +183,11 @@ impl LocalActivationManager {
                 "invalid activation cleanup grace",
             ));
         }
-        let requests = ActivationRequestBuilder::new(config.requests, services.ids)?;
+        let requests = ActivationRequestBuilder::with_profile(
+            config.requests,
+            services.ids,
+            dependencies.admission.quotas().budget_profile(),
+        )?;
         let journal = LocalActivationJournal::new(config.journal, Arc::clone(&services.clock))?;
         let cancellations =
             ActivationCancellationRegistry::new(config.maximum_cancellation_reason_bytes)?;

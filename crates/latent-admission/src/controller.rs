@@ -239,7 +239,14 @@ impl LocalAdmissionController {
                     "trust-class-not-authorized",
                 )
             })?;
-        let grant = effective_grant(&request, &policy, node, incoming, sample)?;
+        let grant = effective_grant(
+            &request,
+            &policy,
+            node,
+            self.quotas.budget_profile(),
+            incoming,
+            sample,
+        )?;
         let class = select_class(
             &policy,
             node,
@@ -291,6 +298,7 @@ fn effective_grant(
     request: &AdmissionRequest,
     policy: &RevisionAdmissionPolicy,
     node: &NodeAdmissionPolicy,
+    profile: latent_core::BudgetProfile,
     incoming: Option<&IncomingDeadline>,
     sample: ClockSample,
 ) -> Result<EffectiveActivationBudget, PlatformError> {
@@ -298,14 +306,16 @@ fn effective_grant(
         .deployment_ceiling
         .intersect(&policy.execution.resource_budget_ceiling);
     let grant = match incoming {
-        Some(incoming) => EffectiveActivationBudget::admit_with_deadline_at(
+        Some(incoming) => EffectiveActivationBudget::admit_profile_with_deadline_at(
+            profile,
             &request.requested_budget,
             &deployment_ceiling,
             &node.budget_ceiling,
             incoming,
             sample,
         ),
-        None => EffectiveActivationBudget::admit_at(
+        None => EffectiveActivationBudget::admit_profile_at(
+            profile,
             &request.requested_budget,
             &deployment_ceiling,
             &node.budget_ceiling,

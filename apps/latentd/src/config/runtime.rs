@@ -79,7 +79,13 @@ pub(super) fn invocation(
     config: &NodeConfig,
     capacity: &Capacity,
 ) -> Result<InvocationLimits, PlatformError> {
+    let budget = super::policy::budget(config, capacity.maximum_memory);
     let limits = InvocationLimits {
+        budget_profile: config.budget_profile.profile(),
+        max_child_calls: budget.child_calls,
+        max_outbound_requests: budget.outbound_requests,
+        max_blob_read_bytes: budget.blob_read_bytes,
+        max_blob_write_bytes: budget.blob_write_bytes,
         max_payload_bytes: config.limits.maximum_payload_bytes,
         max_id_bytes: IDENTIFIER_BYTES,
         max_cancel_reason_bytes: 256,

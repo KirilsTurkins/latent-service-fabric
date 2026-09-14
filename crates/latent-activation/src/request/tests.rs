@@ -26,6 +26,40 @@ fn builder(limits: ActivationRequestLimits) -> (ActivationRequestBuilder, Arc<Id
 }
 
 #[test]
+fn only_node_selected_profile_accepts_phase3_counters_and_lineage_is_still_correlation() {
+    let mut request = request();
+    request.budget.child_calls = 4;
+    request.budget.outbound_requests = 2;
+    request.budget.blob_read_bytes = 100;
+    let (legacy, _) = builder(ActivationRequestLimits::default());
+    assert!(legacy.build(request.clone()).is_err());
+    let phase3 = ActivationRequestBuilder::with_profile(
+        ActivationRequestLimits::default(),
+        Arc::new(Ids::default()),
+        latent_core::BudgetProfile::Phase3,
+    )
+    .unwrap();
+    let envelope = phase3.build(request.clone()).unwrap();
+    assert_eq!(envelope.budget, request.budget);
+    assert_eq!(envelope.parent_activation_id, None);
+    for dimension in [
+        latent_core::BudgetDimension::StateReadBytes,
+        latent_core::BudgetDimension::StateWriteBytes,
+        latent_core::BudgetDimension::EffectCount,
+    ] {
+        let mut unsupported = request.clone();
+        match dimension {
+            latent_core::BudgetDimension::StateReadBytes => unsupported.budget.state_read_bytes = 1,
+            latent_core::BudgetDimension::StateWriteBytes => {
+                unsupported.budget.state_write_bytes = 1;
+            }
+            _ => unsupported.budget.effect_count = 1,
+        }
+        assert!(phase3.build(unsupported).is_err());
+    }
+}
+
+#[test]
 fn missing_identity_is_assigned_once_and_root_uses_that_identity() {
     let (builder, ids) = builder(ActivationRequestLimits::default());
     let envelope = builder.build(request()).expect("new root");
