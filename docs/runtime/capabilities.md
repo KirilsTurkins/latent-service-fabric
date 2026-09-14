@@ -15,6 +15,7 @@ capability packages remain contracts for subsequent implementation. The Linux
 scoped durable references and owned read chunks. The configured
 [local](local-secrets.md) and [Vault KV-v2](vault-secrets.md) secret providers implement `latent:secrets/reader@0.1.0`
 with protected sources, atomic rotation and separate opaque provider credentials.
+[NATS JetStream publication](nats-events.md) implements immediate `latent:events/publisher@0.2.0` with broker receipts and explicit uncertainty.
 Completion of [Phase 2](../phase-2-completion.md) adds package delivery,
 currentness, native caching and rollout control; it does not expand this guest
 import set. The [Phase 3 backlog](https://github.com/KirilsTurkins/latent-service-fabric/issues/201)
@@ -81,8 +82,8 @@ a Phase 4 transaction/outbox receipt.
 The shared async ownership work in #205 and concrete HTTP/blob/event providers in
 #211, #214 and #217 must preserve those distinctions in typed results and cleanup.
 #238 owns integrated adversarial uncertainty/resource-retirement evidence and
-#240 reviews that evidence at the Phase 3 gate. Buffered/streaming HTTP, local/S3 immutable blobs and local/Vault secrets are implemented; event
-adapters retain their separate delivery tickets.
+#240 reviews that evidence at the Phase 3 gate. Buffered/streaming HTTP, local/S3 immutable blobs, local/Vault secrets and immediate NATS publication are implemented; inbound consumer
+triggers remain #218.
 
 ## Context disclosure
 

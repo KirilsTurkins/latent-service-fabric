@@ -162,3 +162,8 @@ traps, cell reuse, audit redaction, environment capture, capacity and dormant
 deployments. Shared protected-file tests cover ACLs, modes, links, descriptor and
 ancestor replacement, FIFO rejection and bounded reads. HTTP tests use real
 connections to check opaque header rotation and rejection after revocation.
+
+Non-HTTP TLS credentials use the distinct `TlsProviderCredential` purpose and
+`bind_tls_credential` path. The [NATS publisher](nats-events.md) checks the tenant,
+provider and exact protocol/server-name/port destination; this cannot substitute
+for an HTTP credential or authorize a guest read.

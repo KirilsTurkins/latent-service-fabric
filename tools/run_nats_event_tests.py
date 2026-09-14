@@ -7,11 +7,9 @@ import json
 import os
 from pathlib import Path
 import signal
-import ssl
 import subprocess
 import sys
 import tempfile
-import time
 import uuid
 
 from run_oci_registry_tests import command, certificates
